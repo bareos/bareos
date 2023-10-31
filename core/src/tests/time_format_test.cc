@@ -46,25 +46,31 @@ TEST(time_format, correct_time_and_date_format)
   // make sure bstrftime gets the current timezone offset appended
   auto t = time(0);
   EXPECT_THAT(bstrftime().c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
-  EXPECT_THAT(bstrftime(august_ts).c_str(), EndsWith(GetCurrentTimezoneOffset(august_ts)));
-  EXPECT_THAT(bstrftime(january_ts).c_str(), EndsWith(GetCurrentTimezoneOffset(january_ts)));
+  EXPECT_THAT(bstrftime(august_ts).c_str(),
+              EndsWith(GetCurrentTimezoneOffset(august_ts)));
+  EXPECT_THAT(bstrftime(january_ts).c_str(),
+              EndsWith(GetCurrentTimezoneOffset(january_ts)));
 
-  EXPECT_THAT(bstrftime_debug().c_str(),
-              EndsWith(GetCurrentTimezoneOffset(t)));
+  EXPECT_THAT(bstrftime_debug().c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
 #if defined(HAVE_WIN32)
   // gtest regex on windows doesn't support character classes
   EXPECT_THAT(bstrftime_debug().c_str(),
               testing::MatchesRegex("20..-..-..T..:..:..\\..*"));
 #else
   EXPECT_THAT(bstrftime_debug().c_str(),
-              testing::MatchesRegex("20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-1][0-9]:[0-6][0-9]:[0-6][0-9]\\..*"));
+              testing::MatchesRegex("20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-1][0-"
+                                    "9]:[0-6][0-9]:[0-6][0-9]\\..*"));
 #endif
 
-  EXPECT_THAT(bstrftime_scheduler_preview(t).c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
-  EXPECT_THAT(bstrftime_scheduler_preview(1'000'000'000).c_str(), testing::MatchesRegex("... 0.-...-2001 ..:46.*"));
+  EXPECT_THAT(bstrftime_scheduler_preview(t).c_str(),
+              EndsWith(GetCurrentTimezoneOffset(t)));
+  EXPECT_THAT(bstrftime_scheduler_preview(1'000'000'000).c_str(),
+              testing::MatchesRegex("... 0.-...-2001 ..:46.*"));
 
-  EXPECT_THAT(bstrftime_filename(t).c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
-  EXPECT_THAT(bstrftime_filename(1'000'000'000).c_str(), testing::MatchesRegex( "2001-09-0.T...46.40.*"));
+  EXPECT_THAT(bstrftime_filename(t).c_str(),
+              EndsWith(GetCurrentTimezoneOffset(t)));
+  EXPECT_THAT(bstrftime_filename(1'000'000'000).c_str(),
+              testing::MatchesRegex("2001-09-0.T...46.40.*"));
 
 #if !defined(HAVE_WIN32)
 

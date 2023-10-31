@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -150,12 +150,10 @@ static inline bool trigger_plugin_event(bDirEventType eventType,
       case bRC_More:
         break;
       case bRC_Term:
-        /*
-         * Request to unload this plugin.
+        /* Request to unload this plugin.
          * As we remove the plugin from the list of plugins we decrement
          * the running index value so the next plugin gets triggered as
-         * that moved back a position in the alist.
-         */
+         * that moved back a position in the alist. */
         if (index) {
           UnloadPlugin(dird_plugin_list, ctx->plugin, *index);
           *index = ((*index) - 1);
@@ -288,10 +286,8 @@ void LoadDirPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
       return;
     }
   }
-  /*
-   * Verify that the plugin is acceptable, and print information
-   *  about it.
-   */
+  /* Verify that the plugin is acceptable, and print information
+   *  about it. */
   foreach_alist_index (i, plugin, dird_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
@@ -340,16 +336,16 @@ static bool IsPluginCompatible(Plugin* plugin)
   if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
       && !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
-         info->plugin_license);
+         T_("Plugin license incompatible. Plugin=%s license=%s\n"),
+         plugin->file, info->plugin_license);
     Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
           plugin->file, info->plugin_license);
     return false;
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
-         sizeof(PluginInformation), info->size);
+         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }
 
@@ -440,17 +436,15 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
       if (instance > HIGHEST_PLUGIN_INSTANCE) {
         Jmsg(NULL, M_ERROR, 0,
              T_("Illegal DIR plugin options encountered, %s instance %d "
-               "skipping\n"),
+                "skipping\n"),
              plugin_options, instance);
         continue;
       }
 
       len = strlen(plugin_name);
 
-      /*
-       * See if this plugin options are for an already instantiated plugin
-       * instance.
-       */
+      /* See if this plugin options are for an already instantiated plugin
+       * instance. */
       if (jcr->plugin_ctx_list) {
         foreach_alist (ctx, jcr->plugin_ctx_list) {
           if (ctx->instance == instance && ctx->plugin->file_len == len

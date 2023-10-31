@@ -319,7 +319,8 @@ void DumpCryptoCache(int fd)
   }
   foreach_dlist (cce, cached_crypto_keys) {
     len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
-               max_key_length, cce->EncryptionKey, bstrftime(cce->added).c_str(),
+               max_key_length, cce->EncryptionKey,
+               bstrftime(cce->added).c_str(),
                bstrftime(cce->added + CRYPTO_CACHE_MAX_AGE).c_str());
 
     if (write(fd, msg.c_str(), len) <= 0) {

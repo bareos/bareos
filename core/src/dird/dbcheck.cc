@@ -196,7 +196,9 @@ static bool DropTmpIdx(const char* idx_name, const char* table_name)
       printf("%s\n", db->strerror());
       return false;
     } else {
-      if (verbose) { printf(T_("Temporary index %s deleted.\n"), idx_tmp_name); }
+      if (verbose) {
+        printf(T_("Temporary index %s deleted.\n"), idx_tmp_name);
+      }
     }
     fflush(stdout);
   }
@@ -882,12 +884,12 @@ int main(int argc, char* argv[])
       if (!catalogname.empty()) {
         Pmsg2(0,
               T_("Error can not find the Catalog name[%s] in the given config "
-                "file [%s]\n"),
+                 "file [%s]\n"),
               catalogname.c_str(), configfile.c_str());
       } else {
         Pmsg1(0,
               T_("Error there is no Catalog section in the given config file "
-                "[%s]\n"),
+                 "[%s]\n"),
               configfile.c_str());
       }
       exit(BEXIT_FAILURE);

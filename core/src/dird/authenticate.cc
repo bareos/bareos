@@ -91,11 +91,11 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
           sd->host(), sd->port());
     Jmsg(jcr, M_FATAL, 0,
          T_("Director unable to authenticate with Storage daemon at \"%s:%d\". "
-           "Possible causes:\n"
-           "Passwords or names not the same or\n"
-           "TLS negotiation problem or\n"
-           "Maximum Concurrent Jobs exceeded on the SD or\n"
-           "SD networking messed up (restart daemon).\n"),
+            "Possible causes:\n"
+            "Passwords or names not the same or\n"
+            "TLS negotiation problem or\n"
+            "Maximum Concurrent Jobs exceeded on the SD or\n"
+            "SD networking messed up (restart daemon).\n"),
          sd->host(), sd->port());
     return false;
   }
@@ -112,8 +112,8 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
   if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))) {
     Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
     Jmsg2(jcr, M_FATAL, 0,
-          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"), sd->host(),
-          sd->port());
+          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),
+          sd->host(), sd->port());
     return false;
   }
 
@@ -181,7 +181,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
           BnetStrerror(fd));
     Jmsg(jcr, M_FATAL, 0,
          T_("Bad response from File daemon at \"%s:%d\" to Hello command: "
-           "ERR=%s\n"),
+            "ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
     return false;
   }

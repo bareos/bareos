@@ -395,10 +395,10 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
     Jmsg(jcr, M_FATAL, 0, fmt);
     Dmsg0(debuglevel, fmt);
   } else if (password.encoding != p_encoding_md5) {
-    const char* fmt
-        = T_("Password encoding is not MD5. You are probably restoring a NDMP "
-            "Backup "
-            "with a restore job not configured for NDMP protocol.\n");
+    const char* fmt = T_(
+        "Password encoding is not MD5. You are probably restoring a NDMP "
+        "Backup "
+        "with a restore job not configured for NDMP protocol.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
     Dmsg0(debuglevel, fmt);
   } else {
@@ -410,9 +410,9 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
     if (ConnectionReceivedTerminateSignal()) {
       if (tid) { StopBsockTimer(tid); }
-      const char* fmt
-          = T_("TwoWayAuthenticate failed, because connection was reset by "
-              "destination peer.\n");
+      const char* fmt = T_(
+          "TwoWayAuthenticate failed, because connection was reset by "
+          "destination peer.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);
       Dmsg0(debuglevel, fmt);
       return false;

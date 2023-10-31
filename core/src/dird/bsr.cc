@@ -227,7 +227,8 @@ bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
     JobDbRecord jr;
     jr.JobId = bsr->JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-      ua->ErrorMsg(T_("Unable to get Job record. ERR=%s\n"), ua->db->strerror());
+      ua->ErrorMsg(T_("Unable to get Job record. ERR=%s\n"),
+                   ua->db->strerror());
       return false;
     }
     bsr->VolSessionId = jr.VolSessionId;
@@ -350,11 +351,11 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
 
   // Tell the user what he will need to mount
   ua->SendMsg("\n");
-  ua->SendMsg(
-      T_("The job will require the following\n"
-        "   Volume(s)                 Storage(s)                SD Device(s)\n"
-        "======================================================================"
-        "=====\n"));
+  ua->SendMsg(T_(
+      "The job will require the following\n"
+      "   Volume(s)                 Storage(s)                SD Device(s)\n"
+      "======================================================================"
+      "=====\n"));
 
   // Create Unique list of Volumes using prompt list
   StartPrompt(ua, "");

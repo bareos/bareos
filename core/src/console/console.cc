@@ -707,7 +707,8 @@ static bool SelectDirector(const char* director,
                           director_resource_tmp->DIRport);
     }
 
-    if (GetCmd(stdin, T_("Select Director by entering a number: "), UA_sock, 600)
+    if (GetCmd(stdin, T_("Select Director by entering a number: "), UA_sock,
+               600)
         < 0) {
       WSACleanup(); /* Cleanup Windows sockets */
       return 0;
@@ -715,7 +716,7 @@ static bool SelectDirector(const char* director,
     if (!Is_a_number(UA_sock->msg)) {
       ConsoleOutputFormat(
           T_("%s is not a number. You must enter a number between "
-            "1 and %d\n"),
+             "1 and %d\n"),
           UA_sock->msg, numdir);
       goto try_again;
     }
@@ -1025,7 +1026,7 @@ int main(int argc, char* argv[])
 #else
     ConsoleOutput(
         T_("PAM authentication requested by Director, however this console "
-          "does not have this feature. Giving up.\n"));
+           "does not have this feature. Giving up.\n"));
     TerminateConsole(0);
     return 1;
 #endif /* HAVE_PAM */
@@ -1136,7 +1137,7 @@ static int CheckResources()
     const std::string& configfile = my_config->get_base_config_path();
     Emsg1(M_FATAL, 0,
           T_("No Director resource defined in %s\n"
-            "Without that I don't how to speak to the Director :-(\n"),
+             "Without that I don't how to speak to the Director :-(\n"),
           configfile.c_str());
     OK = false;
   }
@@ -1231,7 +1232,8 @@ static int ExecCmd(FILE*, BareosSocket*)
   int wait = 0;
 
   if (argc > 3) {
-    ConsoleOutput(T_("Too many arguments. Enclose command in double quotes.\n"));
+    ConsoleOutput(
+        T_("Too many arguments. Enclose command in double quotes.\n"));
     return 1;
   }
   if (argc == 3) { wait = atoi(argk[2]); }

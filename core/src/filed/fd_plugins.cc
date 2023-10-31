@@ -725,7 +725,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             if (sp.type == 0) {
               Jmsg1(jcr, M_FATAL, 0,
                     T_("Command plugin \"%s\": no type in startBackupFile "
-                      "packet.\n"),
+                       "packet.\n"),
                     cmd);
               goto bail_out;
             }
@@ -751,7 +751,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
           case bRC_Term:
             Jmsg1(jcr, M_ERROR, 0,
                   T_("Command plugin \"%s\": unhandled returncode from "
-                    "startBackupFile.\n"),
+                     "startBackupFile.\n"),
                   cmd);
 
             goto fun_end;
@@ -771,7 +771,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         if (!sp.object_name) {
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Command plugin \"%s\": no object_name in startBackupFile "
-                  "packet.\n"),
+                   "packet.\n"),
                 cmd);
           goto bail_out;
         }
@@ -785,7 +785,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         if (!sp.fname) {
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Command plugin \"%s\": no fname in startBackupFile "
-                  "packet.\n"),
+                   "packet.\n"),
                 cmd);
           goto bail_out;
         }
@@ -970,7 +970,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         if (!sp.fname) {
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Command plugin \"%s\": no fname in startBackupFile "
-                  "packet.\n"),
+                   "packet.\n"),
                 cmd);
           goto bail_out;
         }
@@ -1493,7 +1493,7 @@ BxattrExitCode PluginBuildXattrStreams(
         if (expected_serialize_len >= MAX_XATTR_STREAM) {
           Mmsg2(jcr->errmsg,
                 T_("Xattr stream on file \"%s\" exceeds maximum size of %d "
-                  "bytes\n"),
+                   "bytes\n"),
                 xattr_data->last_fname, MAX_XATTR_STREAM);
           goto bail_out;
         }
@@ -1697,16 +1697,16 @@ static bool IsPluginCompatible(Plugin* plugin)
   if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
       && !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
-         info->plugin_license);
+         T_("Plugin license incompatible. Plugin=%s license=%s\n"),
+         plugin->file, info->plugin_license);
     Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
           plugin->file, info->plugin_license);
     return false;
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
-         sizeof(PluginInformation), info->size);
+         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }
 

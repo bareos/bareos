@@ -130,7 +130,7 @@ bool BnetTlsServer(BareosSocket* bsock,
     if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
       Qmsg1(bsock->jcr(), M_FATAL, 0,
             T_("TLS certificate verification failed."
-              " Peer certificate did not match a required commonName\n"),
+               " Peer certificate did not match a required commonName\n"),
             bsock->host());
       goto err;
     }
@@ -173,7 +173,7 @@ bool BnetTlsClient(BareosSocket* bsock,
       if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
         Qmsg1(bsock->jcr(), M_FATAL, 0,
               T_("TLS certificate verification failed."
-                " Peer certificate did not match a required commonName\n"),
+                 " Peer certificate did not match a required commonName\n"),
               bsock->host());
         goto err;
       }
@@ -181,7 +181,7 @@ bool BnetTlsClient(BareosSocket* bsock,
       if (!bsock->tls_conn_init->TlsPostconnectVerifyHost(jcr, bsock->host())) {
         Qmsg1(bsock->jcr(), M_FATAL, 0,
               T_("TLS host certificate verification failed. Host name \"%s\" "
-                "did not match presented certificate\n"),
+                 "did not match presented certificate\n"),
               bsock->host());
         goto err;
       }

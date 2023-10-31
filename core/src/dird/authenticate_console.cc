@@ -127,7 +127,7 @@ class ConsoleAuthenticatorBefore_18_2 : public ConsoleAuthenticator {
       std::string cipher = ua_->UA_sock->GetCipherMessageString();
       if (ua_->UA_sock) {
         return ua_->UA_sock->fsend(T_("1000 OK: %s Version: %s (%s) "
-                                     "-- %s\n"),
+                                      "-- %s\n"),
                                    my_name, kBareosVersionStrings.Full,
                                    kBareosVersionStrings.Date, cipher.c_str());
       }
@@ -409,14 +409,14 @@ bool AuthenticateConsole(UaContext* ua)
     if (num_leases > me->MaxConsoleConnections) {
       Emsg0(M_INFO, 0,
             T_("Number of console connections exceeded\n"
-              "Maximum: %u, Current: %zu\n"),
+               "Maximum: %u, Current: %zu\n"),
             me->MaxConsoleConnections, num_leases);
     }
   } else {
     if (num_leases > me->MaxConsoleConnections) {
       Emsg0(M_ERROR, 0,
             T_("Number of console connections exceeded "
-              "Maximum :%u, Current: %zu\n"),
+               "Maximum :%u, Current: %zu\n"),
             me->MaxConsoleConnections, num_leases);
       return false;
     }

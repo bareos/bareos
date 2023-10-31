@@ -29,8 +29,8 @@
 
 /* New btime definition -- use this */
 btime_t GetCurrentBtime(void);
-std::time_t BtimeToUnix(btime_t bt);   /* bareos time to epoch time */
-utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
+std::time_t BtimeToUnix(btime_t bt); /* bareos time to epoch time */
+utime_t BtimeToUtime(btime_t bt);    /* bareos time to utime_t */
 
 int TmWoy(std::time_t stime);
 

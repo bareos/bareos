@@ -103,7 +103,8 @@ static void SetOwnMod(Attributes* attr,
 #endif
     BErrNo be;
     Jmsg2(attr->jcr, M_WARNING, 0,
-          T_("Cannot change permissions of %s: ERR=%s\n"), path, be.bstrerror());
+          T_("Cannot change permissions of %s: ERR=%s\n"), path,
+          be.bstrerror());
   }
 }
 

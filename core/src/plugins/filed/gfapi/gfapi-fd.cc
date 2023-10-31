@@ -1680,7 +1680,7 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 
           Jmsg(ctx, M_ERROR, 0,
                T_("gfapi-fd: File %s already exists and could not be replaced. "
-                 "ERR=%s.\n"),
+                  "ERR=%s.\n"),
                rp->ofname, be.bstrerror());
           // Continue despite error
         }

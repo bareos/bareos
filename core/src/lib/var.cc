@@ -2490,69 +2490,70 @@ static const char* var_errors[] = {
     T_("invalid octal value"),          /* VAR_ERR_INVALID_OCTAL */
     T_("incomplete octal value"),       /* VAR_ERR_INCOMPLETE_OCTAL */
     T_("incomplete grouped hexadecimal value"), /* VAR_ERR_INCOMPLETE_GROUPED_HEX
-                                                */
+                                                 */
     T_("incorrect character class specification"), /* VAR_ERR_INCORRECT_CLASS_SPEC
-                                                   */
+                                                    */
     T_("invalid expansion configuration"),   /* VAR_ERR_INVALID_CONFIGURATION */
     T_("out of memory"),                     /* VAR_ERR_OUT_OF_MEMORY */
     T_("incomplete variable specification"), /* VAR_ERR_INCOMPLETE_VARIABLE_SPEC
-                                             */
+                                              */
     T_("undefined variable"),                /* VAR_ERR_UNDEFINED_VARIABLE */
     T_("input is neither text nor variable"), /* VAR_ERR_INPUT_ISNT_TEXT_NOR_VARIABLE
-                                              */
+                                               */
     T_("unknown command character in variable"), /* VAR_ERR_UNKNOWN_COMMAND_CHAR
-                                                 */
+                                                  */
     T_("malformatted search and replace operation"), /* VAR_ERR_MALFORMATTED_REPLACE
-                                                     */
+                                                      */
     T_("unknown flag in search and replace operation"), /* VAR_ERR_UNKNOWN_REPLACE_FLAG
-                                                        */
-    T_("invalid regex in search and replace operation"), /* VAR_ERR_INVALID_REGEX_IN_REPLACE
                                                          */
+    T_("invalid regex in search and replace operation"), /* VAR_ERR_INVALID_REGEX_IN_REPLACE
+                                                          */
     T_("missing parameter in command"), /* VAR_ERR_MISSING_PARAMETER_IN_COMMAND
-                                        */
+                                         */
     T_("empty search string in search and replace operation"), /* VAR_ERR_EMPTY_SEARCH_STRING
-                                                               */
+                                                                */
     T_("start offset missing in cut operation"), /* VAR_ERR_MISSING_START_OFFSET
-                                                 */
+                                                  */
     T_("offsets in cut operation delimited by unknown character"), /* VAR_ERR_INVALID_OFFSET_DELIMITER
-                                                                   */
-    T_("range out of bounds in cut operation"), /* VAR_ERR_RANGE_OUT_OF_BOUNDS */
+                                                                    */
+    T_("range out of bounds in cut operation"),  /* VAR_ERR_RANGE_OUT_OF_BOUNDS
+                                                  */
     T_("offset out of bounds in cut operation"), /* VAR_ERR_OFFSET_OUT_OF_BOUNDS
-                                                 */
+                                                  */
     T_("logic error in cut operation"),          /* VAR_ERR_OFFSET_LOGIC */
     T_("malformatted transpose operation"), /* VAR_ERR_MALFORMATTED_TRANSPOSE */
     T_("source and target class mismatch in transpose operation"), /* VAR_ERR_TRANSPOSE_CLASSES_MISMATCH
-                                                                   */
+                                                                    */
     T_("empty character class in transpose operation"), /* VAR_ERR_EMPTY_TRANSPOSE_CLASS
-                                                        */
+                                                         */
     T_("incorrect character class in transpose operation"), /* VAR_ERR_INCORRECT_TRANSPOSE_CLASS_SPEC
-                                                            */
+                                                             */
     T_("malformatted padding operation"), /* VAR_ERR_MALFORMATTED_PADDING */
     T_("width parameter missing in padding operation"), /* VAR_ERR_MISSING_PADDING_WIDTH
-                                                        */
+                                                         */
     T_("fill string missing in padding operation"), /* VAR_ERR_EMPTY_PADDING_FILL_STRING
-                                                    */
+                                                     */
     T_("unknown quoted pair in search and replace operation"), /* VAR_ERR_UNKNOWN_QUOTED_PAIR_IN_REPLACE
-                                                               */
+                                                                */
     T_("sub-matching reference out of range"), /* VAR_ERR_SUBMATCH_OUT_OF_RANGE
-                                               */
+                                                */
     T_("invalid argument"),                    /* VAR_ERR_INVALID_ARGUMENT */
     T_("incomplete quoted pair"), /* VAR_ERR_INCOMPLETE_QUOTED_PAIR */
     T_("lookup function does not support variable arrays"), /* VAR_ERR_ARRAY_LOOKUPS_ARE_UNSUPPORTED
-                                                            */
+                                                             */
     T_("index of array variable contains an invalid character"), /* VAR_ERR_INVALID_CHAR_IN_INDEX_SPEC
-                                                                 */
+                                                                  */
     T_("index of array variable is incomplete"), /* VAR_ERR_INCOMPLETE_INDEX_SPEC
-                                                 */
+                                                  */
     T_("bracket expression in array variable's index not closed"), /* VAR_ERR_UNCLOSED_BRACKET_IN_INDEX
-                                                                   */
+                                                                    */
     T_("division by zero error in index specification"), /* VAR_ERR_DIVISION_BY_ZERO_IN_INDEX
-                                                         */
+                                                          */
     T_("unterminated loop construct"), /* VAR_ERR_UNTERMINATED_LOOP_CONSTRUCT */
     T_("invalid character in loop limits"), /* VAR_ERR_INVALID_CHAR_IN_LOOP_LIMITS
-                                            */
-    T_("malformed operation argument list"), /* VAR_ERR_MALFORMED_OPERATION_ARGUMENTS
                                              */
+    T_("malformed operation argument list"), /* VAR_ERR_MALFORMED_OPERATION_ARGUMENTS
+                                              */
     T_("undefined operation"),               /* VAR_ERR_UNDEFINED_OPERATION */
     T_("formatting failure")                 /* VAR_ERR_FORMATTING_FAILURE */
 };

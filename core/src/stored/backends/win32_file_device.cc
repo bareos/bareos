@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -239,15 +239,13 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
     return false;
   }
 
-  /*
-   * Check for a successful ftruncate() and issue a work-around for devices
+  /* Check for a successful ftruncate() and issue a work-around for devices
    * (mostly cheap NAS) that don't support truncation.
    * Workaround supplied by Martin Schmid as a solution to bug #1011.
    * 1. close file
    * 2. delete file
    * 3. open new file with same mode
-   * 4. change ownership to original
-   */
+   * 4. change ownership to original */
   if (fstat(fd, &st) != 0) {
     BErrNo be;
 

@@ -198,7 +198,7 @@ int main(int argc, char* const* argv)
       && (generate_passphrase || show_keydata || dump_cache || populate_cache
           || reset_cache)) {
     fprintf(stderr, T_("Don't mix operations which are incompatible "
-                      "e.g. generate/show vs set/clear etc.\n"));
+                       "e.g. generate/show vs set/clear etc.\n"));
     retval = 1;
     goto bail_out;
   }
@@ -404,7 +404,7 @@ int main(int argc, char* const* argv)
           == 0) {
         fprintf(stderr,
                 T_("Failed to base64 decode the keydata read from %s, "
-                  "aborting...\n"),
+                   "aborting...\n"),
                 keyfile);
         free(wrapped_passphrase);
         goto bail_out;
@@ -420,7 +420,7 @@ int main(int argc, char* const* argv)
           == -1) {
         fprintf(stderr,
                 T_("Failed to aes unwrap the keydata read from %s using the "
-                  "wrap data from %s, aborting...\n"),
+                   "wrap data from %s, aborting...\n"),
                 keyfile, wrap_keyfile);
         free(wrapped_passphrase);
         goto bail_out;

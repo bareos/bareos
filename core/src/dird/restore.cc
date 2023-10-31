@@ -187,7 +187,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
         Jmsg(jcr, M_FATAL, 0,
              T_("Client \"%s\" doesn't support passive client mode. "
-               "Please upgrade your client or disable compat mode.\n"),
+                "Please upgrade your client or disable compat mode.\n"),
              jcr->dir_impl->res.client->resource_name_);
         goto bail_out;
       }
@@ -304,7 +304,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
         if (jcr->dir_impl->plugin_options) {
           Jmsg(jcr, M_FATAL, 0,
                T_("Client \"%s\" doesn't support plugin option passing. "
-                 "Please upgrade your client or disable compat mode.\n"),
+                  "Please upgrade your client or disable compat mode.\n"),
                jcr->dir_impl->res.client->resource_name_);
           goto bail_out;
         }
@@ -386,8 +386,8 @@ bool DoNativeRestore(JobControlRecord* jcr)
   if (!jcr->RestoreBootstrap) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Cannot restore without a bootstrap file.\n"
-           "You probably ran a restore job directly. All restore jobs must\n"
-           "be run using the restore command.\n"));
+            "You probably ran a restore job directly. All restore jobs must\n"
+            "be run using the restore command.\n"));
     goto bail_out;
   }
 
@@ -511,21 +511,21 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
     case PT_NDMP_NATIVE:
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
-             "  Build OS:               %s\n"
-             "  JobId:                  %d\n"
-             "  Job:                    %s\n"
-             "  Restore Client:         \"%s\" %s\n"
-             "  Start time:             %s\n"
-             "  End time:               %s\n"
-             "  Elapsed time:           %s\n"
-             "  Files Expected:         %s\n"
-             "  Files Restored:         %s\n"
-             "  Bytes Restored:         %s\n"
-             "  Rate:                   %.1f KB/s\n"
-             "  SD termination status:  %s\n"
-             "  Bareos binary info:     %s\n"
-             "  Job triggered by:       %s\n"
-             "  Termination:            %s\n\n"),
+              "  Build OS:               %s\n"
+              "  JobId:                  %d\n"
+              "  Job:                    %s\n"
+              "  Restore Client:         \"%s\" %s\n"
+              "  Start time:             %s\n"
+              "  End time:               %s\n"
+              "  Elapsed time:           %s\n"
+              "  Files Expected:         %s\n"
+              "  Files Restored:         %s\n"
+              "  Bytes Restored:         %s\n"
+              "  Rate:                   %.1f KB/s\n"
+              "  SD termination status:  %s\n"
+              "  Bareos binary info:     %s\n"
+              "  Job triggered by:       %s\n"
+              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
@@ -558,24 +558,24 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
 
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
-             "  Build OS:               %s\n"
-             "  JobId:                  %d\n"
-             "  Job:                    %s\n"
-             "  Restore Client:         \"%s\" %s\n"
-             "  Start time:             %s\n"
-             "  End time:               %s\n"
-             "  Elapsed time:           %s\n"
-             "  Files Expected:         %s\n"
-             "  Files Restored:         %s\n"
-             "  Bytes Restored:         %s\n"
-             "  Rate:                   %.1f KB/s\n"
-             "  FD Errors:              %d\n"
-             "  FD termination status:  %s\n"
-             "  SD termination status:  %s\n"
-             "%s"
-             "  Bareos binary info:     %s\n"
-             "  Job triggered by:       %s\n"
-             "  Termination:            %s\n\n"),
+              "  Build OS:               %s\n"
+              "  JobId:                  %d\n"
+              "  Job:                    %s\n"
+              "  Restore Client:         \"%s\" %s\n"
+              "  Start time:             %s\n"
+              "  End time:               %s\n"
+              "  Elapsed time:           %s\n"
+              "  Files Expected:         %s\n"
+              "  Files Restored:         %s\n"
+              "  Bytes Restored:         %s\n"
+              "  Rate:                   %.1f KB/s\n"
+              "  FD Errors:              %d\n"
+              "  FD termination status:  %s\n"
+              "  SD termination status:  %s\n"
+              "%s"
+              "  Bareos binary info:     %s\n"
+              "  Job triggered by:       %s\n"
+              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,

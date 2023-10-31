@@ -159,7 +159,8 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
        = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void*)addrs))
       != 0) {
     BErrNo be;
-    Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"), be.bstrerror(status));
+    Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"),
+          be.bstrerror(status));
   }
 
   int tries = 200; /* consider bind() tries in BnetThreadServerTcp */

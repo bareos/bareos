@@ -929,7 +929,7 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
         bs->SetTimedOut();
         Qmsg(jcr, M_ERROR, 0,
              T_("Watchdog sending kill after %d secs to thread stalled reading "
-               "Storage daemon.\n"),
+                "Storage daemon.\n"),
              watchdog_time - timer_start);
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       }
@@ -942,7 +942,7 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
         bs->SetTimedOut();
         Qmsg(jcr, M_ERROR, 0,
              T_("Watchdog sending kill after %d secs to thread stalled reading "
-               "File daemon.\n"),
+                "File daemon.\n"),
              watchdog_time - timer_start);
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       }
@@ -955,7 +955,7 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
         bs->SetTimedOut();
         Qmsg(jcr, M_ERROR, 0,
              T_("Watchdog sending kill after %d secs to thread stalled reading "
-               "Director.\n"),
+                "Director.\n"),
              watchdog_time - timer_start);
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       }
@@ -1042,10 +1042,10 @@ void DbgPrintJcr(FILE* fp)
     fprintf(fp, "\tJobType=%c JobLevel=%c\n", jcr->getJobType(),
             jcr->getJobLevel());
 
-    fprintf(fp, "\tsched_time=%s start_time=%s\n\tend_time=%s wait_time=%s\n",
-            bstrftime(jcr->sched_time).c_str(),
-            bstrftime(jcr->start_time).c_str(), bstrftime(jcr->end_time).c_str(),
-            bstrftime(jcr->wait_time).c_str());
+    fprintf(
+        fp, "\tsched_time=%s start_time=%s\n\tend_time=%s wait_time=%s\n",
+        bstrftime(jcr->sched_time).c_str(), bstrftime(jcr->start_time).c_str(),
+        bstrftime(jcr->end_time).c_str(), bstrftime(jcr->wait_time).c_str());
     fprintf(fp, "\tdb=%p db_batch=%p batch_started=%i\n", jcr->db,
             jcr->db_batch, jcr->batch_started);
 

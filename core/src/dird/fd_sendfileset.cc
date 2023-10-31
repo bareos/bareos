@@ -144,7 +144,7 @@ static void SendFilesetOptions(JobControlRecord* jcr,
       if (done) {
         Jmsg(jcr, M_INFO, 0,
              T_("FD compression disabled for this Job because "
-               "AllowCompress=No in Storage resource.\n"));
+                "AllowCompress=No in Storage resource.\n"));
       }
 
       // Send the new trimmed option set without overwriting fo->opts

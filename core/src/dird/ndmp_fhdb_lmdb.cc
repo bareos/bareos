@@ -302,7 +302,8 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
         }
         break;
       default:
-        Dmsg1(debuglevel, T_("Unable get old data: %s\n"), mdb_strerror(result));
+        Dmsg1(debuglevel, T_("Unable get old data: %s\n"),
+              mdb_strerror(result));
         Jmsg1(nis->jcr, M_FATAL, 0, T_("Unable get old data: %s\n"),
               mdb_strerror(result));
         goto bail_out;
@@ -473,14 +474,16 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
     result = mdb_env_open(fhdb_state->db_env, fhdb_state->lmdb_name,
                           MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);
     if (result != MDB_SUCCESS) {
-      Dmsg2(debuglevel,
-            T_("Unable to create LMDB database %s: %s. Check OS ulimit settings "
-              "or adapt FileHistorySize\n"),
-            fhdb_state->lmdb_name, mdb_strerror(result));
-      Jmsg2(nis->jcr, M_FATAL, 0,
-            T_("Unable to create LMDB database %s: %s. Check OS ulimit settings "
-              "or adapt FileHistorySize\n"),
-            fhdb_state->lmdb_name, mdb_strerror(result));
+      Dmsg2(
+          debuglevel,
+          T_("Unable to create LMDB database %s: %s. Check OS ulimit settings "
+             "or adapt FileHistorySize\n"),
+          fhdb_state->lmdb_name, mdb_strerror(result));
+      Jmsg2(
+          nis->jcr, M_FATAL, 0,
+          T_("Unable to create LMDB database %s: %s. Check OS ulimit settings "
+             "or adapt FileHistorySize\n"),
+          fhdb_state->lmdb_name, mdb_strerror(result));
       goto bail_out;
     }
 
@@ -687,7 +690,8 @@ void NdmpFhdbLmdbProcessDb(struct ndmlog* ixlog)
     }
     result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
     if (result != MDB_SUCCESS) {
-      Jmsg1(nis->jcr, M_FATAL, 0, T_("Unable to create write transaction: %s\n"),
+      Jmsg1(nis->jcr, M_FATAL, 0,
+            T_("Unable to create write transaction: %s\n"),
             mdb_strerror(result));
       return;
     }

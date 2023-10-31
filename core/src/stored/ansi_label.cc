@@ -331,7 +331,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
           BErrNo be;
           Jmsg3(jcr, M_FATAL, 0,
                 T_("Could not write ANSI VOL1 label. Wanted size=%d got=%d "
-                  "ERR=%s\n"),
+                   "ERR=%s\n"),
                 sizeof(label), status, be.bstrerror());
           return false;
         }

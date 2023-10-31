@@ -462,7 +462,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
     if (jcr->IsJobCanceled()) {
       Mmsg(dev->errmsg,
            T_("Job %s canceled while waiting for mount on Storage Device "
-             "\"%s\".\n"),
+              "\"%s\".\n"),
            jcr->Job, dev->print_name());
       Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
       return false;
@@ -474,10 +474,10 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
       if (status == W_TIMEOUT || status == W_MOUNT) {
         Mmsg(dev->errmsg,
              T_("Job %s is waiting. Cannot find any appendable volumes.\n"
-               "Please use the \"label\" command to create a new Volume for:\n"
-               "    Storage:      %s\n"
-               "    Pool:         %s\n"
-               "    Media type:   %s\n"),
+                "Please use the \"label\" command to create a new Volume for:\n"
+                "    Storage:      %s\n"
+                "    Pool:         %s\n"
+                "    Media type:   %s\n"),
              jcr->Job, dev->print_name(), pool_name, media_type);
         Jmsg(jcr, M_MOUNT, 0, "%s", dev->errmsg);
         Dmsg1(debuglevel, "%s", dev->errmsg);
@@ -498,7 +498,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
       if (!DoubleDevWaitTime(dev)) {
         Mmsg(dev->errmsg,
              T_("Max time exceeded waiting to mount Storage Device %s for Job "
-               "%s\n"),
+                "%s\n"),
              dev->print_name(), jcr->Job);
         Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
         Dmsg1(debuglevel, "Gave up waiting on device %s\n", dev->print_name());
@@ -547,9 +547,10 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
   ASSERT(dev->blocked());
   while (1) {
     if (jcr->IsJobCanceled()) {
-      Mmsg(dev->errmsg,
-           T_("Job %s canceled while waiting for mount on Storage Device %s.\n"),
-           jcr->Job, dev->print_name());
+      Mmsg(
+          dev->errmsg,
+          T_("Job %s canceled while waiting for mount on Storage Device %s.\n"),
+          jcr->Job, dev->print_name());
       return false;
     }
 
@@ -559,19 +560,19 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
       const char* msg;
 
       if (mode == ST_APPENDREADY) {
-        msg
-            = T_("Please mount append Volume \"%s\" or label a new one for:\n"
-                "    Job:          %s\n"
-                "    Storage:      %s\n"
-                "    Pool:         %s\n"
-                "    Media type:   %s\n");
+        msg = T_(
+            "Please mount append Volume \"%s\" or label a new one for:\n"
+            "    Job:          %s\n"
+            "    Storage:      %s\n"
+            "    Pool:         %s\n"
+            "    Media type:   %s\n");
       } else {
-        msg
-            = T_("Please mount read Volume \"%s\" for:\n"
-                "    Job:          %s\n"
-                "    Storage:      %s\n"
-                "    Pool:         %s\n"
-                "    Media type:   %s\n");
+        msg = T_(
+            "Please mount read Volume \"%s\" for:\n"
+            "    Job:          %s\n"
+            "    Storage:      %s\n"
+            "    Pool:         %s\n"
+            "    Media type:   %s\n");
       }
       Jmsg(jcr, M_MOUNT, 0, msg, VolumeName, jcr->Job, dev->print_name(),
            pool_name, media_type);
@@ -594,7 +595,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
       if (!DoubleDevWaitTime(dev)) {
         Mmsg(dev->errmsg,
              T_("Max time exceeded waiting to mount Storage Device %s for Job "
-               "%s\n"),
+                "%s\n"),
              dev->print_name(), jcr->Job);
         Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
         Dmsg1(debuglevel, "Gave up waiting on device %s\n", dev->print_name());

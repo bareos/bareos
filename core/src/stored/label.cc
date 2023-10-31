@@ -147,7 +147,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
       != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
     Mmsg(jcr->errmsg,
          T_("Requested Volume \"%s\" on %s is not a Bareos "
-           "labeled Volume, because: ERR=%s"),
+            "labeled Volume, because: ERR=%s"),
          NPRT(VolName), dcr->dev->print_name(), dcr->dev->print_errmsg());
     Dmsg1(130, "%s", jcr->errmsg);
   } else if (!ReadRecordFromBlock(dcr, record)) {
@@ -795,18 +795,18 @@ void DumpVolumeLabel(Device* dev)
 
   Pmsg11(-1,
          T_("\nVolume Label:\n"
-           "Id                : %s"
-           "VerNo             : %d\n"
-           "VolName           : %s\n"
-           "PrevVolName       : %s\n"
-           "VolFile           : %d\n"
-           "LabelType         : %s\n"
-           "LabelSize         : %d\n"
-           "PoolName          : %s\n"
-           "MediaType         : %s\n"
-           "PoolType          : %s\n"
-           "HostName          : %s\n"
-           ""),
+            "Id                : %s"
+            "VerNo             : %d\n"
+            "VolName           : %s\n"
+            "PrevVolName       : %s\n"
+            "VolFile           : %d\n"
+            "LabelType         : %s\n"
+            "LabelSize         : %d\n"
+            "PoolName          : %s\n"
+            "MediaType         : %s\n"
+            "PoolType          : %s\n"
+            "HostName          : %s\n"
+            ""),
          dev->VolHdr.Id, dev->VolHdr.VerNum, dev->VolHdr.VolumeName,
          dev->VolHdr.PrevVolumeName, File, LabelType, dev->VolHdr.LabelSize,
          dev->VolHdr.PoolName, dev->VolHdr.MediaType, dev->VolHdr.PoolType,
@@ -832,37 +832,37 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
   debug_level = 1;
   Pmsg7(-1,
         T_("\n%s Record:\n"
-          "JobId             : %d\n"
-          "VerNum            : %d\n"
-          "PoolName          : %s\n"
-          "PoolType          : %s\n"
-          "JobName           : %s\n"
-          "ClientName        : %s\n"
-          ""),
+           "JobId             : %d\n"
+           "VerNum            : %d\n"
+           "PoolName          : %s\n"
+           "PoolType          : %s\n"
+           "JobName           : %s\n"
+           "ClientName        : %s\n"
+           ""),
         type, label.JobId, label.VerNum, label.PoolName, label.PoolType,
         label.JobName, label.ClientName);
 
   if (label.VerNum >= 10) {
     Pmsg4(-1,
           T_("Job (unique name) : %s\n"
-            "FileSet           : %s\n"
-            "JobType           : %c\n"
-            "JobLevel          : %c\n"
-            ""),
+             "FileSet           : %s\n"
+             "JobType           : %c\n"
+             "JobLevel          : %c\n"
+             ""),
           label.Job, label.FileSetName, label.JobType, label.JobLevel);
   }
 
   if (rec->FileIndex == EOS_LABEL) {
     Pmsg8(-1,
           T_("JobFiles          : %s\n"
-            "JobBytes          : %s\n"
-            "StartBlock        : %s\n"
-            "EndBlock          : %s\n"
-            "StartFile         : %s\n"
-            "EndFile           : %s\n"
-            "JobErrors         : %s\n"
-            "JobStatus         : %c\n"
-            ""),
+             "JobBytes          : %s\n"
+             "StartBlock        : %s\n"
+             "EndBlock          : %s\n"
+             "StartFile         : %s\n"
+             "EndFile           : %s\n"
+             "JobErrors         : %s\n"
+             "JobStatus         : %c\n"
+             ""),
           edit_uint64_with_commas(label.JobFiles, ec1),
           edit_uint64_with_commas(label.JobBytes, ec2),
           edit_uint64_with_commas(label.StartBlock, ec3),
@@ -929,7 +929,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
       case EOM_LABEL:
         Pmsg7(-1,
               T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d "
-                "DataLen=%d\n"),
+                 "DataLen=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, rec->Stream, rec->data_len);
         break;
@@ -939,7 +939,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
       default:
         Pmsg7(-1,
               T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d "
-                "DataLen=%d\n"),
+                 "DataLen=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, rec->Stream, rec->data_len);
         break;
@@ -969,7 +969,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
         Pmsg7(
             -1,
             T_("   Job=%s Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%d "
-              "Status=%c\n"),
+               "Status=%c\n"),
             label.Job, dt.c_str(), label.JobLevel, label.JobType,
             edit_uint64_with_commas(label.JobFiles, ed1),
             edit_uint64_with_commas(label.JobBytes, ed2), label.JobErrors,
@@ -981,7 +981,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
       default:
         Pmsg7(-1,
               T_("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d "
-                "DataLen=%d\n"),
+                 "DataLen=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, rec->Stream, rec->data_len);
         break;
@@ -1007,7 +1007,8 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
   dev->SetLabelBlocksize(dcr);
 
   if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
-    Jmsg3(jcr, M_WARNING, 0, T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+    Jmsg3(jcr, M_WARNING, 0,
+          T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
           dev->print_name(), dcr->VolumeName, dev->bstrerror());
     return false;
   }

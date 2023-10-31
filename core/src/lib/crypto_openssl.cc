@@ -508,7 +508,7 @@ int CryptoKeypairLoadCert(X509_KEYPAIR* keypair, const char* file)
   if ((keypair->keyid = openssl_cert_keyid(cert)) == NULL) {
     Jmsg0(NULL, M_ERROR, 0,
           T_("Provided certificate does not include the required "
-            "subjectKeyIdentifier extension."));
+             "subjectKeyIdentifier extension."));
     goto err;
   }
 
@@ -792,7 +792,8 @@ crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
         return CRYPTO_ERROR_NONE;
       }
     } else {
-      OpensslPostErrors(sig->jcr, M_ERROR, T_("OpenSSL sign get digest failed"));
+      OpensslPostErrors(sig->jcr, M_ERROR,
+                        T_("OpenSSL sign get digest failed"));
     }
   }
 
@@ -1392,8 +1393,8 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
   /* Add the key and IV to the cipher context */
   if (!EVP_CipherInit_ex(cipher_ctx->ctx, NULL, NULL, cs->session_key,
                          M_ASN1_STRING_data(cs->cryptoData->iv), -1)) {
-    OpensslPostErrors(M_ERROR,
-                      T_("OpenSSL cipher context key/IV initialization failed"));
+    OpensslPostErrors(
+        M_ERROR, T_("OpenSSL cipher context key/IV initialization failed"));
     goto err;
   }
 

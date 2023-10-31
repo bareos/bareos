@@ -85,12 +85,12 @@ bool PurgeCmd(UaContext* ua, const char*)
 
   ua->WarningMsg(
       T_("\nThis command can be DANGEROUS!!!\n\n"
-        "It purges (deletes) all Files from a Job,\n"
-        "JobId, Client or Volume; or it purges (deletes)\n"
-        "all Jobs from a Client or Volume without regard\n"
-        "to retention periods. Normally you should use the\n"
-        "PRUNE command, which respects retention periods.\n"
-        "This command requires full access to all resources.\n"));
+         "It purges (deletes) all Files from a Job,\n"
+         "JobId, Client or Volume; or it purges (deletes)\n"
+         "all Jobs from a Client or Volume without regard\n"
+         "to retention periods. Normally you should use the\n"
+         "PRUNE command, which respects retention periods.\n"
+         "This command requires full access to all resources.\n"));
 
   /* Check for console ACL permissions.
    * These permission might be harder than required.
@@ -377,8 +377,9 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
                    static_cast<void*>(&delete_list));
 
   if (delete_list.empty()) {
-    ua->WarningMsg(T_("No Jobs found for client %s to purge from %s catalog.\n"),
-                   client->resource_name_, client->catalog->resource_name_);
+    ua->WarningMsg(
+        T_("No Jobs found for client %s to purge from %s catalog.\n"),
+        client->resource_name_, client->catalog->resource_name_);
   } else {
     ua->InfoMsg(T_("Found %d Jobs for client \"%s\" in catalog \"%s\".\n"),
                 delete_list.size(), client->resource_name_,
@@ -487,7 +488,8 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
   if (!status) {
     ua->ErrorMsg(
         T_("\nVolume \"%s\" has VolStatus \"%s\" and cannot be purged.\n"
-          "The VolStatus must be: Append, Full, Used or Error to be purged.\n"),
+           "The VolStatus must be: Append, Full, Used or Error to be "
+           "purged.\n"),
         mr->VolumeName, mr->VolStatus);
     return false;
   }
@@ -584,7 +586,7 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
   bool purged = false;
   if (cnt.count == 0) {
     ua->WarningMsg(T_("There are no more Jobs associated with Volume \"%s\". "
-                     "Marking it purged.\n"),
+                      "Marking it purged.\n"),
                    mr->VolumeName);
     if (!(purged = MarkMediaPurged(ua, mr))) {
       ua->ErrorMsg("%s", ua->db->strerror());
@@ -614,8 +616,8 @@ static void do_truncate_on_purge(UaContext* ua,
   // Do it only if action on purge = truncate is set
   if (!(mr->ActionOnPurge & ON_PURGE_TRUNCATE)) {
     ua->ErrorMsg(T_("\nThe option \"Action On Purge = Truncate\" was not "
-                   "defined in the Pool resource.\n"
-                   "Unable to truncate volume \"%s\"\n"),
+                    "defined in the Pool resource.\n"
+                    "Unable to truncate volume \"%s\"\n"),
                  mr->VolumeName);
     return;
   }
@@ -821,7 +823,7 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
         // Check if destination pool size is ok
         if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
           ua->ErrorMsg(T_("Unable move recycled Volume in full "
-                         "Pool \"%s\" MaxVols=%d\n"),
+                          "Pool \"%s\" MaxVols=%d\n"),
                        newpr.Name, newpr.MaxVols);
 
         } else { /* move media */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,7 +109,7 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
           response_id)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Director authorization problem.\n"
-           "Most likely the passwords do not agree.\n"));
+            "Most likely the passwords do not agree.\n"));
     return AuthenticationResult::kCramMd5HandshakeFailed;
   }
 
@@ -164,11 +164,11 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
           sd->host(), sd->port());
     Jmsg(jcr, M_FATAL, 0,
          T_("Director unable to authenticate with Storage daemon at \"%s:%d\". "
-           "Possible causes:\n"
-           "Passwords or names not the same or\n"
-           "TLS negotiation problem or\n"
-           "Maximum Concurrent Jobs exceeded on the SD or\n"
-           "SD networking messed up (restart daemon).\n"),
+            "Possible causes:\n"
+            "Passwords or names not the same or\n"
+            "TLS negotiation problem or\n"
+            "Maximum Concurrent Jobs exceeded on the SD or\n"
+            "SD networking messed up (restart daemon).\n"),
          sd->host(), sd->port());
     return AuthenticationResult::kCramMd5HandshakeFailed;
   }
@@ -185,8 +185,8 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   if (!bstrncmp(sd->msg, SDOKhello, sizeof(SDOKhello))) {
     Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
     Jmsg2(jcr, M_FATAL, 0,
-          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"), sd->host(),
-          sd->port());
+          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),
+          sd->host(), sd->port());
     return AuthenticationResult::kRejectedByDaemon;
   }
 
@@ -240,11 +240,11 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
           fd->host(), fd->port());
     Jmsg(jcr, M_FATAL, 0,
          T_("Unable to authenticate with File daemon at \"%s:%d\". Possible "
-           "causes:\n"
-           "Passwords or names not the same or\n"
-           "TLS negotiation failed or\n"
-           "Maximum Concurrent Jobs exceeded on the FD or\n"
-           "FD networking messed up (restart daemon).\n"),
+            "causes:\n"
+            "Passwords or names not the same or\n"
+            "TLS negotiation failed or\n"
+            "Maximum Concurrent Jobs exceeded on the FD or\n"
+            "FD networking messed up (restart daemon).\n"),
          fd->host(), fd->port());
     return AuthenticationResult::kCramMd5HandshakeFailed;
   }
@@ -256,7 +256,7 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
           BnetStrerror(fd));
     Jmsg(jcr, M_FATAL, 0,
          T_("Bad response from File daemon at \"%s:%d\" to Hello command: "
-           "ERR=%s\n"),
+            "ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
     return AuthenticationResult::kDaemonResponseFailed;
   }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
@@ -81,10 +81,8 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
     remaining = jcr->dir_impl->res.client->HardQuota
                 - jcr->dir_impl->jr.JobSumTotalBytes;
   } else {
-    /*
-     * If just over quota return 0. This shouldnt happen because quotas
-     * are checked properly prior to this code.
-     */
+    /* If just over quota return 0. This shouldnt happen because quotas
+     * are checked properly prior to this code. */
     remaining = 0;
   }
 
@@ -211,10 +209,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
 
   if ((jcr->dir_impl->jr.JobSumTotalBytes + jcr->dir_impl->SDJobBytes)
       > jcr->dir_impl->res.client->SoftQuota) {
-    /*
-     * Only warn once about softquotas in the job
-     * Check if gracetime has been set
-     */
+    /* Only warn once about softquotas in the job
+     * Check if gracetime has been set */
     if (jcr->dir_impl->res.client->GraceTime == 0
         && jcr->dir_impl->res.client->SoftQuotaGracePeriod) {
       Dmsg1(debuglevel, "UpdateQuotaGracetime: %d\n", now);
@@ -233,15 +229,13 @@ bool CheckSoftquotas(JobControlRecord* jcr)
                             jcr->dir_impl->res.client->SoftQuotaGracePeriod) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Softquota Exceeded, will be enforced after Grace Period "
-             "expires.\n"));
+              "expires.\n"));
     } else if (jcr->dir_impl->res.client->SoftQuotaGracePeriod
                && (now - (uint64_t)jcr->dir_impl->res.client->GraceTime)
                       > (uint64_t)
                             jcr->dir_impl->res.client->SoftQuotaGracePeriod) {
-      /*
-       * If gracetime has expired update else check more if not set softlimit
-       * yet then set and bail out.
-       */
+      /* If gracetime has expired update else check more if not set softlimit
+       * yet then set and bail out. */
       if (jcr->dir_impl->res.client->QuotaLimit < 1) {
         if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->dir_impl->jr)) {
           Jmsg(jcr, M_WARNING, 0, T_("Error setting Quota Softlimit: ERR=%s\n"),
@@ -256,10 +250,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
         retval = true;
         goto bail_out;
       } else {
-        /*
-         * If gracetime has expired update else check more if not set softlimit
-         * yet then set and bail out.
-         */
+        /* If gracetime has expired update else check more if not set softlimit
+         * yet then set and bail out. */
         if (jcr->dir_impl->res.client->QuotaLimit < 1) {
           if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->dir_impl->jr)) {
             Jmsg(jcr, M_WARNING, 0,

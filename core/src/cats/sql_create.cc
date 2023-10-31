@@ -960,7 +960,8 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
   errmsg[0] = 0;
   // Make sure we have an acceptable attributes record.
   if (!ar) {
-    Mmsg0(errmsg, T_("Attempt to create file attributes record with no data\n"));
+    Mmsg0(errmsg,
+          T_("Attempt to create file attributes record with no data\n"));
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
     return false;
   }
@@ -1214,8 +1215,8 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
        esc_name, "0");
   if (INSERT_DB(jcr, cmd) != 1) {
-    Mmsg2(errmsg, T_("Create DB NDMP Level Map record %s failed. ERR=%s\n"), cmd,
-          sql_strerror());
+    Mmsg2(errmsg, T_("Create DB NDMP Level Map record %s failed. ERR=%s\n"),
+          cmd, sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     return false;
   } else {

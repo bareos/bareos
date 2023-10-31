@@ -197,8 +197,8 @@ static struct ua_cmdstruct commands[] = {
      false},
     {NT_(".help"), DotHelpCmd, T_("Print parsable information about a command"),
      NT_("[ all | item=cmd ]"), false, false},
-    {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"), NULL,
-     true, false},
+    {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"),
+     NULL, true, false},
     {NT_(".jobs"), DotJobsCmd, T_("List all job resources"),
      NT_("[type=<jobtype>] | [enabled | disabled]"), true, false},
     {NT_(".jobstatus"), DotJobstatusCmd, T_("List jobstatus information"),
@@ -300,7 +300,7 @@ static struct ua_cmdstruct commands[] = {
      true, true},
     {NT_("gui"), gui_cmd,
      T_("Switch between interactive (gui off) and non-interactive (gui on) "
-       "mode"),
+        "mode"),
      NT_("on | off"), false, false},
     {NT_("help"), help_cmd, T_("Print help on specific command"),
      NT_("add autodisplay automount cancel configure create delete disable\n"
@@ -650,8 +650,8 @@ static bool add_cmd(UaContext* ua, const char*)
 
   ua->SendMsg(
       T_("You probably don't want to be using this command since it\n"
-        "creates database records without labeling the Volumes.\n"
-        "You probably want to use the \"label\" command.\n\n"));
+         "creates database records without labeling the Volumes.\n"
+         "You probably want to use the \"label\" command.\n\n"));
 
   if (!OpenClientDb(ua)) { return true; }
 
@@ -860,7 +860,7 @@ static bool CreateCmd(UaContext* ua, const char*)
   switch (CreatePool(ua->jcr, ua->db, pool, POOL_OP_CREATE)) {
     case 0:
       ua->ErrorMsg(T_("Error: Pool %s already exists.\n"
-                     "Use update to change it.\n"),
+                      "Use update to change it.\n"),
                    pool->resource_name_);
       break;
 
@@ -897,7 +897,8 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   if (!SendBwlimitToFd(ua->jcr, Job)) {
     ua->ErrorMsg(T_("Failed to set bandwidth limit on Client.\n"));
   } else {
-    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
+    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024,
+                Job);
   }
 
   ua->jcr->file_bsock->signal(BNET_TERMINATE);
@@ -922,7 +923,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
     case APT_NDMPV4:
       ua->ErrorMsg(
           T_("Storage selected is NDMP storage which cannot have a bandwidth "
-            "limit\n"));
+             "limit\n"));
       return true;
     default:
       break;
@@ -945,7 +946,8 @@ static inline bool setbwlimit_stored(UaContext* ua,
   if (!SendBwlimitToFd(ua->jcr, Job)) {
     ua->ErrorMsg(T_("Failed to set bandwidth limit on Storage daemon.\n"));
   } else {
-    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
+    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024,
+                Job);
   }
 
   ua->jcr->store_bsock->signal(BNET_TERMINATE);
@@ -1125,8 +1127,8 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
 
   ua->WarningMsg(
       T_("%sabling is a temporary operation until the director reloads.\n"
-        "For a permanent setting, please set the value of the \"Enabled\"\n"
-        "directive in the relevant configuration resource file.\n"),
+         "For a permanent setting, please set the value of the \"Enabled\"\n"
+         "directive in the relevant configuration resource file.\n"),
       setting ? "En" : "Dis");
 }
 
@@ -1823,7 +1825,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
         if (!IsYesno(ua->argv[i], &accurate)) {
           ua->ErrorMsg(
               T_("Invalid value for accurate. "
-                "It must be yes or no.\n"));
+                 "It must be yes or no.\n"));
         }
         accurate_set = true;
         continue;
@@ -2122,7 +2124,7 @@ static bool TruncateCmd(UaContext* ua, const char*)
   if (ua->GetStoreResWithId(mr.StorageId)->Protocol != APT_NATIVE) {
     ua->WarningMsg(
         T_("Storage uses a non-native protocol. Truncate is only supported for "
-          "native protocols.\n"));
+           "native protocols.\n"));
     goto bail_out;
   }
 
@@ -2236,9 +2238,10 @@ static bool DeleteCmd(UaContext* ua, const char*)
   if (keyword < 0) {
     ua->WarningMsg(
         T_("In general it is not a good idea to delete either a\n"
-          "Pool or a Volume since they may contain data.\n\n"));
+           "Pool or a Volume since they may contain data.\n\n"));
 
-    keyword = DoKeywordPrompt(ua, T_("Choose catalog item to delete"), keywords);
+    keyword
+        = DoKeywordPrompt(ua, T_("Choose catalog item to delete"), keywords);
   }
 
   switch (keyword) {
@@ -2284,8 +2287,8 @@ static void DeleteStorage(UaContext* ua)
       == orphaned_storages.end()) {
     ua->ErrorMsg(
         T_("The given storage '%s' either does not exist at all, or still "
-          "exists in the configuration. In order to remove a storage "
-          "from the catalog, its configuration must be removed first.\n"),
+           "exists in the configuration. In order to remove a storage "
+           "from the catalog, its configuration must be removed first.\n"),
         given_storagename.c_str());
     return;
   }
@@ -2407,7 +2410,7 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
       for (j = j1; j <= j2; j++) { DoJobDelete(ua, j); }
     } else {
       ua->ErrorMsg(T_("Illegal JobId range %s - %s should define increasing "
-                     "JobIds, ignored\n"),
+                      "JobIds, ignored\n"),
                    tok, tok2);
     }
   } else {
@@ -2437,7 +2440,7 @@ static bool DeleteVolume(UaContext* ua)
 
   if (!SelectMediaDbr(ua, &mr)) { return true; }
   ua->WarningMsg(T_("\nThis command will delete volume %s\n"
-                   "and all Jobs saved on that volume from the Catalog\n"),
+                    "and all Jobs saved on that volume from the Catalog\n"),
                  mr.VolumeName);
 
   if ((!ua->batch) && (FindArg(ua, "yes") < 0)) {
@@ -2461,7 +2464,7 @@ static bool DeleteVolume(UaContext* ua)
       ua->send->ArrayEnd("jobids");
       ua->InfoMsg(
           T_("Deleted %d jobs and associated records deleted from the catalog "
-            "(jobids: %s).\n"),
+             "(jobids: %s).\n"),
           lst.size(), lst.GetAsString().c_str());
     }
   }
@@ -2481,8 +2484,8 @@ static bool DeletePool(UaContext* ua)
   char buf[200];
 
   if (ua->batch) {
-    ua->ErrorMsg(
-        T_("Deleting pools from the catalog is not supported in batch mode.\n"));
+    ua->ErrorMsg(T_(
+        "Deleting pools from the catalog is not supported in batch mode.\n"));
     return false;
   }
 
@@ -2591,8 +2594,8 @@ static bool use_cmd(UaContext* ua, const char*)
     ua->catalog = catalog;
   }
   if (OpenDb(ua)) {
-    ua->SendMsg(T_("Using Catalog name=%s DB=%s\n"), ua->catalog->resource_name_,
-                ua->catalog->db_name);
+    ua->SendMsg(T_("Using Catalog name=%s DB=%s\n"),
+                ua->catalog->resource_name_, ua->catalog->db_name);
   }
   return true;
 }
@@ -2772,8 +2775,9 @@ static bool help_cmd(UaContext* ua, const char*)
 {
   int i;
 
-  ua->send->Decoration("%s", T_("  Command            Description\n  =======    "
-                               "        ===========\n"));
+  ua->send->Decoration("%s",
+                       T_("  Command            Description\n  =======    "
+                          "        ===========\n"));
   for (i = 0; i < comsize; i++) {
     if (ua->argc == 2) {
       if (Bstrcasecmp(ua->argk[1], commands[i].key)) {

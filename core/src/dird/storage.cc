@@ -420,7 +420,7 @@ bool HasPairedStorage(JobControlRecord* jcr)
       } else {
         Jmsg(jcr, M_FATAL, 0,
              T_("No write storage, don't know how to check for paired "
-               "storage\n"));
+                "storage\n"));
         return false;
       }
       break;
@@ -432,9 +432,9 @@ bool HasPairedStorage(JobControlRecord* jcr)
           if (!store->paired_storage) { return false; }
         }
       } else {
-        Jmsg(
-            jcr, M_FATAL, 0,
-            T_("No read storage, don't know how to check for paired storage\n"));
+        Jmsg(jcr, M_FATAL, 0,
+             T_("No read storage, don't know how to check for paired "
+                "storage\n"));
         return false;
       }
       break;

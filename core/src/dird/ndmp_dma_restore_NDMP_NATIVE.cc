@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,10 +65,8 @@ static inline bool fill_restore_environment_ndmp_native(
   nbf_options = ndmp_lookup_backup_format_options(job->bu_type);
 
 
-  /*
-   * Selected JobIds are stored in jcr->JobIds, comma separated
-   * We use the first jobid to get the environment string
-   */
+  /* Selected JobIds are stored in jcr->JobIds, comma separated
+   * We use the first jobid to get the environment string */
 
   JobId_t JobId{str_to_uint32(jcr->JobIds)};
   if (JobId <= 0) {
@@ -113,10 +111,8 @@ static inline bool fill_restore_environment_ndmp_native(
   if (nbf_options && nbf_options->restore_prefix_relative) {
     switch (*restore_prefix) {
       case '^':
-        /*
-         * Use the restore_prefix as an absolute restore prefix.
-         * We skip the leading ^ that is the trigger for absolute restores.
-         */
+        /* Use the restore_prefix as an absolute restore prefix.
+         * We skip the leading ^ that is the trigger for absolute restores. */
         PmStrcpy(destination_path, restore_prefix + 1);
         break;
       default:
@@ -166,8 +162,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
 
   node = FirstTreeNode(jcr->dir_impl->restore_tree_root);
   while (node) {
-    /*
-     * node->extract_dir  means that only the directory should be selected for
+    /* node->extract_dir  means that only the directory should be selected for
      * extraction itself, the subdirs and subfiles are not automaticaly marked
      * for extraction ( i.e. set node->extract)
      *
@@ -178,8 +173,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
      *
      * Restoring a whole directory using this mechanism is much more efficient
      * than creating an namelist entry for every single file and directory below
-     * the selected one.
-     */
+     * the selected one. */
     if (node->extract_dir || node->extract) {
       PmStrcpy(restore_pathname, node->fname);
       // Walk up the parent until we hit the head of the list.
@@ -187,10 +181,8 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
         PmStrcpy(tmp, restore_pathname.c_str());
         Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
       }
-      /*
-       * only add nodes that have valid DAR info i.e. fhinfo is not
-       * NDMP9_INVALID_U_QUAD
-       */
+      /* only add nodes that have valid DAR info i.e. fhinfo is not
+       * NDMP9_INVALID_U_QUAD */
       if (node->fhinfo != NDMP9_INVALID_U_QUAD) {
         // See if we need to strip the prefix from the filename.
         len = 0;
@@ -212,7 +204,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
       } else {
         Jmsg(jcr, M_INFO, 0,
              T_("not added node \"%s\" to namelist because "
-               "of missing fhinfo: node:%llu info:%llu\n"),
+                "of missing fhinfo: node:%llu info:%llu\n"),
              restore_pathname.c_str(), node->fhnode, node->fhinfo);
       }
     }

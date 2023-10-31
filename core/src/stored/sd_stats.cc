@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,11 +177,9 @@ static inline void UpdateDeviceStatistics(const char* devname,
     }
   }
 
-  /*
-   * If we have statistics and the cached entry is filled it points
+  /* If we have statistics and the cached entry is filled it points
    * to the latest sampled statistics so we compare them with the current
-   * statistics and if nothing changed we just return.
-   */
+   * statistics and if nothing changed we just return. */
   if (found && dev_stats->cached) {
     dev_stat = dev_stats->cached;
 
@@ -262,11 +260,9 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
     }
   }
 
-  /*
-   * If we have statistics and the cached entry is filled it points
+  /* If we have statistics and the cached entry is filled it points
    * to the latest sampled statistics so we compare them with the current
-   * statistics and if nothing changed we just return.
-   */
+   * statistics and if nothing changed we just return. */
   if (found && job_stats->cached) {
     job_stat = job_stats->cached;
 
@@ -377,17 +373,13 @@ extern "C" void* statistics_thread_runner(void*)
 
     if (me->collect_job_stats) {
       // Loop over all running Jobs in the Storage Daemon.
-      foreach_jcr (jcr) {
-        UpdateJobStatistics(jcr, now);
-      }
+      foreach_jcr (jcr) { UpdateJobStatistics(jcr, now); }
       endeach_jcr(jcr);
     }
 
-    /*
-     * Wait for a next run. Normally this waits exactly
+    /* Wait for a next run. Normally this waits exactly
      * me->stats_collect_interval seconds. It can be interrupted when signaled
-     * by the StopStatisticsThread() function.
-     */
+     * by the StopStatisticsThread() function. */
     gettimeofday(&tv, &tz);
     timeout.tv_nsec = tv.tv_usec * 1000;
     timeout.tv_sec = tv.tv_sec + me->stats_collect_interval;
@@ -413,10 +405,8 @@ bool StartStatisticsThread(void)
     return false;
   }
 
-  /*
-   * See if only device stats collection is enabled that there is a least
-   * one device of which stats are collected.
-   */
+  /* See if only device stats collection is enabled that there is a least
+   * one device of which stats are collected. */
   if (me->collect_dev_stats && !me->collect_job_stats) {
     DeviceResource* device_resource = nullptr;
     int cnt = 0;

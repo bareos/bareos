@@ -305,7 +305,8 @@ static Bpipe* open_mail_pipe(JobControlRecord* jcr,
     }
   } else {
     BErrNo be;
-    DeliveryError(T_("open mail pipe %s failed: ERR=%s\n"), cmd, be.bstrerror());
+    DeliveryError(T_("open mail pipe %s failed: ERR=%s\n"), cmd,
+                  be.bstrerror());
   }
 
   return bpipe;
@@ -422,8 +423,8 @@ void CloseMsg(JobControlRecord* jcr)
             be.SetErrno(status);
             Dmsg1(850, "Calling emsg. CMD=%s\n", cmd);
             DeliveryError(T_("Mail program terminated in error.\n"
-                            "CMD=%s\n"
-                            "ERR=%s\n"),
+                             "CMD=%s\n"
+                             "ERR=%s\n"),
                           cmd, be.bstrerror());
           }
           FreeMemory(line);
@@ -684,8 +685,8 @@ void DispatchMessage(JobControlRecord* jcr,
 
           if (SendToDbLog) {
             if (!SendToDbLog(jcr, mtime, msg)) {
-              DeliveryError(
-                  T_("Msg delivery error: Unable to store data in database.\n"));
+              DeliveryError(T_(
+                  "Msg delivery error: Unable to store data in database.\n"));
             }
           }
           break;
@@ -739,8 +740,8 @@ void DispatchMessage(JobControlRecord* jcr,
               BErrNo be;
               be.SetErrno(status);
               DeliveryError(T_("Msg delivery error: Operator mail program "
-                              "terminated in error.\n"
-                              "CMD=%s\nERR=%s\n"),
+                               "terminated in error.\n"
+                               "CMD=%s\nERR=%s\n"),
                             mcmd, be.bstrerror());
             }
           }

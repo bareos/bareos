@@ -615,7 +615,8 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       char ed1[30];
-      Mmsg1(errmsg, T_("More than one Pool!: %s\n"), edit_uint64(num_rows, ed1));
+      Mmsg1(errmsg, T_("More than one Pool!: %s\n"),
+            edit_uint64(num_rows, ed1));
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     } else if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {

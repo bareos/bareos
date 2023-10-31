@@ -172,9 +172,10 @@ int CreateFile(JobControlRecord* jcr,
         if (SecureErase(jcr, attr->ofname) == -1) {
           BErrNo be;
 
-          Qmsg(jcr, M_ERROR, 0,
-               T_("File %s already exists and could not be replaced. ERR=%s.\n"),
-               attr->ofname, be.bstrerror());
+          Qmsg(
+              jcr, M_ERROR, 0,
+              T_("File %s already exists and could not be replaced. ERR=%s.\n"),
+              attr->ofname, be.bstrerror());
           /* Continue despite error */
         }
       }
@@ -340,10 +341,10 @@ int CreateFile(JobControlRecord* jcr,
                 if (link(attr->olname, attr->ofname) != 0) {
                   // Restore original file flags even when linking failed
                   if (chflags(attr->olname, s.st_flags) < 0) {
-                    Qmsg2(
-                        jcr, M_ERROR, 0,
-                        T_("Could not restore file flags for file %s: ERR=%s\n"),
-                        attr->olname, be.bstrerror());
+                    Qmsg2(jcr, M_ERROR, 0,
+                          T_("Could not restore file flags for file %s: "
+                             "ERR=%s\n"),
+                          attr->olname, be.bstrerror());
                   }
 #  endif /* HAVE_CHFLAGS */
                   Qmsg3(jcr, M_ERROR, 0,
@@ -356,9 +357,10 @@ int CreateFile(JobControlRecord* jcr,
                 }
                 // Finally restore original file flags
                 if (chflags(attr->olname, s.st_flags) < 0) {
-                  Qmsg2(jcr, M_ERROR, 0,
-                        T_("Could not restore file flags for file %s: ERR=%s\n"),
-                        attr->olname, be.bstrerror());
+                  Qmsg2(
+                      jcr, M_ERROR, 0,
+                      T_("Could not restore file flags for file %s: ERR=%s\n"),
+                      attr->olname, be.bstrerror());
                 }
               } else {
                 Qmsg2(jcr, M_ERROR, 0,
@@ -444,8 +446,8 @@ int CreateFile(JobControlRecord* jcr,
             return CF_SKIP;
           }
 #endif
-          Qmsg2(jcr, M_ERROR, 0, T_("Could not open %s: ERR=%s\n"), attr->ofname,
-                be.bstrerror());
+          Qmsg2(jcr, M_ERROR, 0, T_("Could not open %s: ERR=%s\n"),
+                attr->ofname, be.bstrerror());
           return CF_ERROR;
         }
         return CF_EXTRACT;

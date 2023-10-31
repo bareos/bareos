@@ -80,7 +80,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
   if ((collapse == CollapseMode::Collapse) && (SqlNumRows() > 1)) {
     Mmsg(errmsg,
          T_("Query returned %d rows. In collapsed mode, only one row is "
-           "accepted.\n"),
+            "accepted.\n"),
          SqlNumRows());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;

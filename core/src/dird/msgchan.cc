@@ -187,13 +187,13 @@ bool ReserveReadDevice(JobControlRecord* jcr,
     if (jcr->store_bsock->msg[0]) {
       Jmsg(jcr, M_FATAL, 0,
            T_("\n"
-             "     Storage daemon didn't accept Device \"%s\" because:\n     "
-             "%s\n"),
+              "     Storage daemon didn't accept Device \"%s\" because:\n     "
+              "%s\n"),
            device_name.c_str(), jcr->store_bsock->msg);
     } else {
       Jmsg(jcr, M_FATAL, 0,
            T_("\n"
-             "     Storage daemon didn't accept Device \"%s\" command.\n"),
+              "     Storage daemon didn't accept Device \"%s\" command.\n"),
            device_name.c_str());
     }
   }
@@ -263,13 +263,13 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
     if (jcr->store_bsock->msg[0]) {
       Jmsg(jcr, M_FATAL, 0,
            T_("\n"
-             "     Storage daemon didn't accept Device \"%s\" because:\n     "
-             "%s\n"),
+              "     Storage daemon didn't accept Device \"%s\" because:\n     "
+              "%s\n"),
            device_name.c_str(), jcr->store_bsock->msg);
     } else {
       Jmsg(jcr, M_FATAL, 0,
            T_("\n"
-             "     Storage daemon didn't accept Device \"%s\" command.\n"),
+              "     Storage daemon didn't accept Device \"%s\" command.\n"),
            device_name.c_str());
     }
   }

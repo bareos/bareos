@@ -72,7 +72,8 @@ int SaferUnlink(const char* pathname, const char* regx)
   rc = regcomp(&preg1, regx, REG_EXTENDED);
   if (rc != 0) {
     regerror(rc, &preg1, prbuf, sizeof(prbuf));
-    Pmsg2(000, T_("safe_unlink could not compile regex pattern \"%s\" ERR=%s\n"),
+    Pmsg2(000,
+          T_("safe_unlink could not compile regex pattern \"%s\" ERR=%s\n"),
           regx, prbuf);
     return ENOENT;
   }
@@ -480,8 +481,8 @@ int CreatePidFile(const char* progname, const char* pidfile_path)
   pidfd = open(pidfile_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   if (pidfd == -1) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, T_("Cannot open pid file. %s ERR=%s\n"), pidfile_path,
-          be.bstrerror());
+    Emsg2(M_ERROR_TERM, 0, T_("Cannot open pid file. %s ERR=%s\n"),
+          pidfile_path, be.bstrerror());
   }
 
   int flags;
@@ -496,16 +497,18 @@ int CreatePidFile(const char* progname, const char* pidfile_path)
     flags = fcntl(pidfd, F_GETFD); /* Fetch flags */
     if (flags == -1) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, T_("Could not get flags for PID file %s. ERR=%s\n"),
-            pidfile_path, be.bstrerror());
+      Emsg2(M_ERROR_TERM, 0,
+            T_("Could not get flags for PID file %s. ERR=%s\n"), pidfile_path,
+            be.bstrerror());
     }
 
     flags |= FD_CLOEXEC; /* Turn on FD_CLOEXEC */
 
     if (fcntl(pidfd, F_SETFD, flags) == -1) /* Update flags */ {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, T_("Could not get flags for PID file %s. ERR=%s\n"),
-            pidfile_path, be.bstrerror());
+      Emsg2(M_ERROR_TERM, 0,
+            T_("Could not get flags for PID file %s. ERR=%s\n"), pidfile_path,
+            be.bstrerror());
     }
   }
 

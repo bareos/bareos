@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,10 +104,8 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
   pv.value = filesystem;
   ndma_store_env_list(&job->env_tab, &pv);
 
-  /*
-   * Loop over each option block for this fileset and append any
-   * INCLUDE/EXCLUDE and/or META tags to the env_tab of the NDMP backup.
-   */
+  /* Loop over each option block for this fileset and append any
+   * INCLUDE/EXCLUDE and/or META tags to the env_tab of the NDMP backup. */
   for (i = 0; i < ie->file_options_list.size(); i++) {
     fo = ie->file_options_list[i];
 
@@ -156,14 +154,12 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * If we have a paired storage definition we put the
+  /* If we have a paired storage definition we put the
    * - Storage Daemon Auth Key
    * - Filesystem
    * - Dumplevel
    * into the tape device name of the  NDMP session. This way the storage
-   * daemon can link the NDMP data and the normal save session together.
-   */
+   * daemon can link the NDMP data and the normal save session together. */
   if (jcr->store_bsock) {
     if (nbf_options && nbf_options->uses_level) {
       Mmsg(tape_device, "%s@%s%%%d", jcr->sd_auth_key, filesystem,
@@ -207,7 +203,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
   if (level < 0 || level > 9) {
     Jmsg(jcr, M_FATAL, 0,
          T_("NDMP dump format doesn't support more than 8 "
-           "incrementals, please run a Differential or a Full Backup\n"));
+            "incrementals, please run a Differential or a Full Backup\n"));
     level = -1;
   }
 

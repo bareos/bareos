@@ -293,7 +293,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   // See if a client was selected.
   if (!client) {
     if (!GetYesno(ua, T_("No client restriction given really remove "
-                        "directory for all clients (yes/no): "))
+                         "directory for all clients (yes/no): "))
         || !ua->pint32_val) {
       if (!(client = get_client_resource(ua))) { return false; }
     }
@@ -549,8 +549,8 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
   PurgeFilesFromJobList(ua, prune_list);
 
   edit_uint64_with_commas(prune_list.size(), ed1);
-  ua->InfoMsg(T_("Pruned Files from %s Jobs for client %s from catalog.\n"), ed1,
-              client->resource_name_);
+  ua->InfoMsg(T_("Pruned Files from %s Jobs for client %s from catalog.\n"),
+              ed1, client->resource_name_);
 
   return true;
 }
@@ -765,9 +765,10 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   PurgeJobListFromCatalog(ua, prune_list);
 
   if (prune_list.size() > 0) {
-    ua->InfoMsg(
-        T_("Pruned %d %s for client %s from catalog.\n"), prune_list.size(),
-        prune_list.size() == 1 ? T_("Job") : T_("Jobs"), client->resource_name_);
+    ua->InfoMsg(T_("Pruned %d %s for client %s from catalog.\n"),
+                prune_list.size(),
+                prune_list.size() == 1 ? T_("Job") : T_("Jobs"),
+                client->resource_name_);
   }
 
   DropTempTables(ua);
@@ -809,8 +810,8 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
   } else {
     ua->SendMsg(
         T_("Pruning volume %s: cannot prune as Volstatus is %s but needs to "
-          "be "
-          "Full or Used.\n"),
+           "be "
+           "Full or Used.\n"),
         mr->VolumeName, mr->VolStatus);
   }
 
@@ -873,7 +874,7 @@ int GetPruneListForVolume(UaContext* ua,
   if (NumJobsToBePruned > 0) {
     ua->SendMsg(
         T_("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs "
-          "that will be pruned\n"),
+           "that will be pruned\n"),
         mr->VolumeName, VolRetention, NumJobsToBePruned);
   }
   return NumJobsToBePruned;

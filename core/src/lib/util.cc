@@ -966,9 +966,10 @@ void SetWorkingDirectory(const char* wd)
           T_("Working Directory: \"%s\" not found. Cannot continue.\n"), wd);
   }
   if (!S_ISDIR(stat_buf.st_mode)) {
-    Emsg1(M_ERROR_TERM, 0,
-          T_("Working Directory: \"%s\" is not a directory. Cannot continue.\n"),
-          wd);
+    Emsg1(
+        M_ERROR_TERM, 0,
+        T_("Working Directory: \"%s\" is not a directory. Cannot continue.\n"),
+        wd);
   }
   working_directory = wd; /* set global */
 }

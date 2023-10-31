@@ -94,8 +94,9 @@ static bool response(JobControlRecord* jcr,
           T_("Comm error with SD. bad response to %s. ERR=%s\n"), cmd,
           BnetStrerror(sd));
   } else {
-    Jmsg3(jcr, M_FATAL, 0, T_("Bad response to %s command. Wanted %s, got %s\n"),
-          cmd, resp, sd->msg);
+    Jmsg3(jcr, M_FATAL, 0,
+          T_("Bad response to %s command. Wanted %s, got %s\n"), cmd, resp,
+          sd->msg);
   }
   return false;
 }
@@ -638,7 +639,8 @@ bail_out:
         // Print only if ok and not cancelled to avoid spurious messages
 
         if (ok && !jcr->IsJobCanceled()) {
-          Jmsg1(jcr, M_FATAL, 0, T_("Error writing end session label. ERR=%s\n"),
+          Jmsg1(jcr, M_FATAL, 0,
+                T_("Error writing end session label. ERR=%s\n"),
                 dev->bstrerror());
         }
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);

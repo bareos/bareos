@@ -459,16 +459,16 @@ bool ConfigureCmd(UaContext* ua, const char*)
   if (!(my_config->IsUsingConfigIncludeDir())) {
     ua->WarningMsg(
         T_("It seems that the configuration is not adapted to the include "
-          "directory structure. "
-          "This means, that the configure command may not work as expected. "
-          "Your configuration changes may not survive a reload/restart. "));
+           "directory structure. "
+           "This means, that the configure command may not work as expected. "
+           "Your configuration changes may not survive a reload/restart. "));
   }
 
   if (ua->argc < 3) {
     ua->ErrorMsg(
         T_("usage:\n"
-          "  configure add <resourcetype> <key1>=<value1> ...\n"
-          "  configure export client=<clientname>\n"));
+           "  configure add <resourcetype> <key1>=<value1> ...\n"
+           "  configure export client=<clientname>\n"));
     return false;
   }
 

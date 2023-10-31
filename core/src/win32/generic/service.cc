@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -234,7 +234,7 @@ int installService(const char* cmdOpts)
       LogErrorMessage("Open Service Manager failed");
       MessageBox(NULL,
                  T_("The Service Control Manager could not be contacted - the "
-                   "service was not installed"),
+                    "service was not installed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 0;
     }
@@ -275,7 +275,7 @@ int installService(const char* cmdOpts)
       LogErrorMessage(T_("Cannot write System Registry for " APP_DESC));
       MessageBox(NULL,
                  T_("The System Registry could not be updated - the Bareos "
-                   "service was not installed"),
+                    "service was not installed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 0;
     }
@@ -298,9 +298,9 @@ int installService(const char* cmdOpts)
   if (opt_debug) {
     MessageBox(NULL,
                T_("The " APP_DESC "was successfully installed.\n"
-                 "The service may be started by double clicking on the\n"
-                 "Bareos \"Start\" icon and will be automatically\n"
-                 "be run the next time this machine is rebooted. "),
+                  "The service may be started by double clicking on the\n"
+                  "Bareos \"Start\" icon and will be automatically\n"
+                  "be run the next time this machine is rebooted. "),
                APP_DESC, MB_ICONINFORMATION | MB_OK);
   }
   return 0;
@@ -349,9 +349,9 @@ int removeService()
                        APP_DESC, MB_ICONINFORMATION | MB_OK);
           }
         } else {
-          MessageBox(NULL,
-                     T_("The Bareos service: " APP_NAME " could not be removed"),
-                     APP_DESC, MB_ICONEXCLAMATION | MB_OK);
+          MessageBox(
+              NULL, T_("The Bareos service: " APP_NAME " could not be removed"),
+              APP_DESC, MB_ICONEXCLAMATION | MB_OK);
           stat = 1; /* error */
         }
         CloseServiceHandle(bareosService);
@@ -360,8 +360,8 @@ int removeService()
         if (opt_debug) {
           MessageBox(NULL,
                      T_("An existing Bareos service: " APP_NAME
-                       " could not be found for "
-                       "removal. This is not normally an error."),
+                        " could not be found for "
+                        "removal. This is not normally an error."),
                      APP_DESC, MB_ICONEXCLAMATION | MB_OK);
         }
       }
@@ -371,7 +371,7 @@ int removeService()
     } else {
       MessageBox(NULL,
                  T_("The service Manager could not be contacted - the Bareos "
-                   "service was not removed"),
+                    "service was not removed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 1; /* error */
     }
@@ -386,7 +386,7 @@ int removeService()
       if (opt_debug) {
         MessageBox(NULL,
                    T_("Could not find registry entry.\nService probably not "
-                     "registerd - the Bareos service was not removed"),
+                      "registerd - the Bareos service was not removed"),
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
     } else {
@@ -395,7 +395,7 @@ int removeService()
         RegCloseKey(runservices);
         MessageBox(NULL,
                    T_("Could not delete Registry key for " APP_NAME ".\n"
-                     "The Bareos service could not be removed"),
+                      "The Bareos service could not be removed"),
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
       RegCloseKey(runservices);

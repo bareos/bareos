@@ -1017,7 +1017,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
   // If since time was given on command line use it
   if (jcr->starttime_string && jcr->starttime_string[0]) {
-    bstrncpy(jcr->dir_impl->since, T_(", since="), sizeof(jcr->dir_impl->since));
+    bstrncpy(jcr->dir_impl->since, T_(", since="),
+             sizeof(jcr->dir_impl->since));
     bstrncat(jcr->dir_impl->since, jcr->starttime_string,
              sizeof(jcr->dir_impl->since));
     Jmsg(jcr, M_INFO, 0, "Using since time from command line %s (%s)",
@@ -1104,7 +1105,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              T_("No prior or suitable Full backup found in catalog. Doing FULL "
-               "backup.\n"));
+                "backup.\n"));
         Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                   T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_FULL);
@@ -1115,7 +1116,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              T_("No prior or suitable Full backup found in catalog. Doing "
-               "Virtual FULL backup.\n"));
+                "Virtual FULL backup.\n"));
         Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                   T_(" (upgraded from %s)"),
                   JobLevelToString(jcr->getJobLevel()));
@@ -1132,7 +1133,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         // No recent diff job found, so upgrade this one to Diff
         Jmsg(jcr, M_INFO, 0,
              T_("No prior or suitable Differential backup found in catalog. "
-               "Doing Differential backup.\n"));
+                "Doing Differential backup.\n"));
         Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                   T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_DIFFERENTIAL);
@@ -1246,12 +1247,14 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
           jcr->dir_impl->res.pool = jcr->dir_impl->res.inc_pool;
           pool_override = true;
           if (jcr->dir_impl->res.run_inc_pool_override) {
-            PmStrcpy(jcr->dir_impl->res.pool_source, T_("Run IncPool override"));
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     T_("Run IncPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
                   jcr->dir_impl->res.inc_pool->resource_name_,
                   "Run IncPool override\n");
           } else {
-            PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job IncPool override"));
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     T_("Job IncPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
                   jcr->dir_impl->res.inc_pool->resource_name_,
                   "Job IncPool override\n");

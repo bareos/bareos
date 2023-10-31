@@ -413,7 +413,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
         if (wanted_data_length < rec->data_len) {
           Jmsg0(jcr, M_FATAL, 0,
                 T_("Data read from volume bigger than NDMP databuffer, please "
-                  "increase the NDMP blocksize.\n"));
+                   "increase the NDMP blocksize.\n"));
           return false;
         }
         memcpy(data, rec->data, rec->data_len);
@@ -423,11 +423,12 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
         *data_length = 0;
         return true;
       case STREAM_COMPRESSED_DATA:  // Got compressed data ndmp cannot handle
-        Jmsg0(jcr, M_FATAL, 0,
-              T_("Encountered STREAM_COMPRESSED_DATA which cannot be handled by "
-                "NDMP. Make sure read device device will inflate and not "
-                "deflate when reading. "
-                "(IN:[DEV->inflate=yes->deflate=no->SD])\n"));
+        Jmsg0(
+            jcr, M_FATAL, 0,
+            T_("Encountered STREAM_COMPRESSED_DATA which cannot be handled by "
+               "NDMP. Make sure read device device will inflate and not "
+               "deflate when reading. "
+               "(IN:[DEV->inflate=yes->deflate=no->SD])\n"));
         return false;
       default:  // corrupted stream of records, give an EOF
         Jmsg1(jcr, M_ERROR, 0, T_("Encountered an unknown stream type %d\n"),
@@ -531,7 +532,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   *filesystem++ = '\0';
   if (!(jcr = get_jcr_by_security_key(drive_name))) {
     Jmsg1(NULL, M_FATAL, 0,
-          T_("NDMP tape open failed: Security Key not found: %s\n"), drive_name);
+          T_("NDMP tape open failed: Security Key not found: %s\n"),
+          drive_name);
     return NDMP9_NO_DEVICE_ERR;
   }
 
@@ -945,7 +947,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid
          * spurious messages */
         if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
-          Jmsg1(jcr, M_FATAL, 0, T_("Error writing end session label. ERR=%s\n"),
+          Jmsg1(jcr, M_FATAL, 0,
+                T_("Error writing end session label. ERR=%s\n"),
                 dcr->dev->bstrerror());
         }
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -958,7 +961,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid
          * spurious messages */
         if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
-          Jmsg2(jcr, M_FATAL, 0, T_("Fatal append error on device %s: ERR=%s\n"),
+          Jmsg2(jcr, M_FATAL, 0,
+                T_("Fatal append error on device %s: ERR=%s\n"),
                 dcr->dev->print_name(), dcr->dev->bstrerror());
         }
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -1011,7 +1015,7 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser*, void* arg)
   if (!handle) {
     Emsg0(M_ABORT, 0,
           T_("Illegal call to HandleNdmpConnectionRequest with NULL session "
-            "handle\n"));
+             "handle\n"));
     return NULL;
   }
 

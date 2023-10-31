@@ -126,7 +126,7 @@ static void ListStatusHeader(StatusPacket* sp)
 
   len = Mmsg(msg,
              T_(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
-               "bwlimit=%skB/s\n"),
+                "bwlimit=%skB/s\n"),
              sizeof(boffset_t), sizeof(size_t), debug_level, GetTrace(),
              edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
   sp->send(msg, len);
@@ -195,7 +195,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
     bps = (int)(njcr->JobBytes / sec);
     len = Mmsg(msg,
                T_("    Files=%s Bytes=%s Bytes/sec=%s Errors=%d\n"
-                 "    Bwlimit=%s\n"),
+                  "    Bwlimit=%s\n"),
                edit_uint64_with_commas(njcr->JobFiles, b1),
                edit_uint64_with_commas(njcr->JobBytes, b2),
                edit_uint64_with_commas(bps, b3), njcr->JobErrors,
@@ -387,8 +387,8 @@ static void ListTerminatedJobs(StatusPacket* sp)
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     } else {
-      len = Mmsg(msg, T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
-                 edit_uint64_with_commas(je.JobFiles, b1),
+      len = Mmsg(msg, T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId,
+                 level, edit_uint64_with_commas(je.JobFiles, b1),
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     }

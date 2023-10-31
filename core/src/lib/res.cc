@@ -67,8 +67,8 @@ void ConfigurationParser::b_LockRes(const char* file, int line) const
 #endif
 
   if ((errstat = RwlWritelock(&res_lock_)) != 0) {
-    Emsg3(M_ABORT, 0, T_("RwlWritelock failure at %s:%d:  ERR=%s\n"), file, line,
-          strerror(errstat));
+    Emsg3(M_ABORT, 0, T_("RwlWritelock failure at %s:%d:  ERR=%s\n"), file,
+          line, strerror(errstat));
   }
 
   res_locked++;
@@ -417,7 +417,8 @@ void ConfigurationParser::StoreName(LEX* lc, ResourceItem* item, int index, int)
   char** p = GetItemVariablePointer<char**>(*item);
 
   if (*p) {
-    scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p, lc->str);
+    scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
+              lc->str);
     return;
   }
   *p = strdup(lc->str);
@@ -660,7 +661,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
       if (res == NULL) {
         scan_err3(lc,
                   T_("Could not find config Resource \"%s\" referenced on line "
-                    "%d : %s\n"),
+                     "%d : %s\n"),
                   item->name, lc->line_no, lc->line);
         return;
       }
@@ -1192,7 +1193,9 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
     scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str);
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token == BCT_EOB) { scan_err0(lc, T_("Empty addr block is not allowed")); }
+  if (token == BCT_EOB) {
+    scan_err0(lc, T_("Empty addr block is not allowed"));
+  }
   do {
     if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
       scan_err1(lc, T_("Expected a string, got: %s"), lc->str);
@@ -1217,7 +1220,8 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
     port_str[0] = hostname_str[0] = '\0';
     do {
       if (token != BCT_IDENTIFIER) {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"), lc->str);
+        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
+                  lc->str);
       }
       if (Bstrcasecmp("port", lc->str)) {
         next_line = PORTLINE;
@@ -1232,7 +1236,8 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
         }
         exist |= ADDRLINE;
       } else {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"), lc->str);
+        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
+                  lc->str);
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
       if (token != BCT_EQUALS) {
@@ -1243,7 +1248,8 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
         case PORTLINE:
           if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
                 || token == BCT_IDENTIFIER)) {
-            scan_err1(lc, T_("Expected a number or a string, got: %s"), lc->str);
+            scan_err1(lc, T_("Expected a number or a string, got: %s"),
+                      lc->str);
           }
           bstrncpy(port_str, lc->str, sizeof(port_str));
           break;

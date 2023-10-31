@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2011-2011 Bacula Systems(R) SA
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -226,7 +226,7 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   if (ini->jcr) { /* called from core */
     Jmsg(ini->jcr, M_ERROR, 0,
          T_("Config file error: %s\n"
-           "            : Line %d, col %d of file %s\n%s\n"),
+            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
     //   } else if (ini->ctx) {       /* called from plugin */
@@ -240,7 +240,7 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   } else { /* called from ??? */
     e_msg(file, line, M_ERROR, 0,
           T_("Config file error: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
+             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
 }
@@ -271,7 +271,7 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   if (ini->jcr) { /* called from core */
     Jmsg(ini->jcr, M_WARNING, 0,
          T_("Config file warning: %s\n"
-           "            : Line %d, col %d of file %s\n%s\n"),
+            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
     //   } else if (ini->ctx) {       /* called from plugin */
@@ -285,7 +285,7 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   } else { /* called from ??? */
     p_msg(file, line, 0,
           T_("Config file warning: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
+             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
 }

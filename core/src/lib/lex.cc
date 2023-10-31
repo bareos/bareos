@@ -103,7 +103,7 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   if (lc->line_no > 0) {
     e_msg(file, line, lc->err_type, 0,
           T_("Config error: %s\n"
-            "            : line %d, col %d of file %s\n%s\n%s"),
+             "            : line %d, col %d of file %s\n%s\n%s"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
           more.c_str());
   } else {
@@ -143,7 +143,7 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   if (lc->line_no > 0) {
     p_msg(file, line, 0,
           T_("Config warning: %s\n"
-            "            : line %d, col %d of file %s\n%s\n%s"),
+             "            : line %d, col %d of file %s\n%s\n%s"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
           more.c_str());
   } else {
@@ -337,8 +337,8 @@ int LexGetChar(LEX* lf)
   if (lf->ch == L_EOF) {
     Emsg0(M_ABORT, 0,
           T_("get_char: called after EOF."
-            " You may have a open double quote without the closing double "
-            "quote.\n"));
+             " You may have a open double quote without the closing double "
+             "quote.\n"));
   }
 
   if (lf->ch == L_EOL) {
@@ -667,9 +667,10 @@ int LexGetToken(LEX* lf, int expect)
               } else if (ch == 0xFF) {
                 lf->state = lex_utf16_le_bom;
               } else {
-                scan_err0(lf, T_("This config file appears to be in an "
-                                "unsupported Unicode format (UTF-16be). Please "
-                                "resave as UTF-8\n"));
+                scan_err0(lf,
+                          T_("This config file appears to be in an "
+                             "unsupported Unicode format (UTF-16be). Please "
+                             "resave as UTF-8\n"));
                 return BCT_ERROR;
               }
             }
@@ -1017,8 +1018,8 @@ int LexGetToken(LEX* lf, int expect)
     case BCT_STRING:
       if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
           && token != BCT_QUOTED_STRING) {
-        scan_err2(lf, T_("expected a string, got %s: %s"), lex_tok_to_str(token),
-                  lf->str);
+        scan_err2(lf, T_("expected a string, got %s: %s"),
+                  lex_tok_to_str(token), lf->str);
         token = BCT_ERROR;
       } else {
         token = BCT_STRING;

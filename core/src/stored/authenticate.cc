@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -134,7 +134,7 @@ bool AuthenticateStoragedaemon(JobControlRecord* jcr)
                                          me)) {
     Jmsg1(jcr, M_FATAL, 0,
           T_("Authorization problem: Two way security handshake failed with "
-            "Storage daemon at %s\n"),
+             "Storage daemon at %s\n"),
           sd->who());
     return false;
   }
@@ -161,7 +161,7 @@ bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
           password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
           T_("Authorization problem: Two way security handshake failed with "
-            "Storage daemon at %s\n"),
+             "Storage daemon at %s\n"),
           sd->who());
     return false;
   }
@@ -186,7 +186,7 @@ bool AuthenticateFiledaemon(JobControlRecord* jcr)
                                          password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
           T_("Authorization problem: Two way security handshake failed with "
-            "File daemon at %s\n"),
+             "File daemon at %s\n"),
           fd->who());
     return false;
   }
@@ -211,7 +211,7 @@ bool AuthenticateWithFiledaemon(JobControlRecord* jcr)
                                           password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
           T_("Authorization problem: Two way security handshake failed with "
-            "File daemon at %s\n"),
+             "File daemon at %s\n"),
           fd->who());
     return false;
   }

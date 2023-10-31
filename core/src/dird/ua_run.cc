@@ -554,7 +554,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
       if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
           || (jcr->is_JobType(JT_BACKUP)
               && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
-        AddPrompt(ua, T_("NextPool"));                 /* 9 */
+        AddPrompt(ua, T_("NextPool"));                /* 9 */
         if (jcr->is_JobType(JT_BACKUP)) {
           AddPrompt(ua, T_("Plugin Options")); /* 10 */
         }
@@ -635,7 +635,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         break;
       case 6:
         /* When */
-        if (GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+        if (GetCmd(ua,
+                   T_("Please enter desired start time as YYYY-MM-DD "
                       "HH:MM:SS in the current timezone (return for now): "))) {
           if (ua->cmd[0] == 0) {
             jcr->sched_time = time(NULL);
@@ -718,7 +719,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
           goto try_again;
         } else if (jcr->is_JobType(JT_RESTORE)) { /* Where */
           if (GetCmd(ua, T_("Please enter the full path prefix for restore (/ "
-                           "for none): "))) {
+                            "for none): "))) {
             if (jcr->RegexWhere) { /* cannot use regexwhere and where */
               free(jcr->RegexWhere);
               jcr->RegexWhere = NULL;
@@ -777,9 +778,9 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         rc.jid = NULL; /* force reprompt */
         jcr->dir_impl->RestoreJobId = 0;
         if (jcr->RestoreBootstrap) {
-          ua->SendMsg(
-              T_("You must set the bootstrap file to NULL to be able to specify "
-                "a JobId.\n"));
+          ua->SendMsg(T_(
+              "You must set the bootstrap file to NULL to be able to specify "
+              "a JobId.\n"));
         }
         goto try_again;
       case 13:
@@ -923,7 +924,7 @@ static bool ResetRestoreContext(UaContext* ua,
       rc.since = NULL;
     } else {
       ua->SendMsg(T_("Since option expects string in format \"yyyy-mm-dd "
-                    "hh:mm:ss\", but is: %s\n"),
+                     "hh:mm:ss\", but is: %s\n"),
                   rc.since);
       return false;
     }
@@ -1035,7 +1036,8 @@ try_again_reg:
       goto try_again_reg;
     case 1:
       /* Add prefix */
-      if (GetCmd(ua, T_("Please enter the path prefix to add (/ for none): "))) {
+      if (GetCmd(ua,
+                 T_("Please enter the path prefix to add (/ for none): "))) {
         if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
           ua->cmd[0] = 0;
         }
@@ -1236,12 +1238,12 @@ static bool DisplayJobParameters(UaContext* ua,
             bstrftime(jcr->sched_time).c_str(), jcr->JobPriority);
       } else {
         ua->SendMsg(T_("Run Admin Job\n"
-                      "JobName:  %s\n"
-                      "FileSet:  %s\n"
-                      "Client:   %s\n"
-                      "Storage:  %s\n"
-                      "When:     %s\n"
-                      "Priority: %d\n"),
+                       "JobName:  %s\n"
+                       "FileSet:  %s\n"
+                       "Client:   %s\n"
+                       "Storage:  %s\n"
+                       "When:     %s\n"
+                       "Priority: %d\n"),
                     job->resource_name_,
                     jcr->dir_impl->res.fileset->resource_name_,
                     NPRT(jcr->dir_impl->res.client->resource_name_),
@@ -1272,12 +1274,12 @@ static bool DisplayJobParameters(UaContext* ua,
             bstrftime(jcr->sched_time).c_str(), jcr->JobPriority);
       } else {
         ua->SendMsg(T_("Run Archive Job\n"
-                      "JobName:  %s\n"
-                      "FileSet:  %s\n"
-                      "Client:   %s\n"
-                      "Storage:  %s\n"
-                      "When:     %s\n"
-                      "Priority: %d\n"),
+                       "JobName:  %s\n"
+                       "FileSet:  %s\n"
+                       "Client:   %s\n"
+                       "Storage:  %s\n"
+                       "When:     %s\n"
+                       "Priority: %d\n"),
                     job->resource_name_,
                     jcr->dir_impl->res.fileset->resource_name_,
                     NPRT(jcr->dir_impl->res.client->resource_name_),
@@ -1308,12 +1310,12 @@ static bool DisplayJobParameters(UaContext* ua,
             bstrftime(jcr->sched_time).c_str(), jcr->JobPriority);
       } else {
         ua->SendMsg(T_("Run Consolidate Job\n"
-                      "JobName:  %s\n"
-                      "FileSet:  %s\n"
-                      "Client:   %s\n"
-                      "Storage:  %s\n"
-                      "When:     %s\n"
-                      "Priority: %d\n"),
+                       "JobName:  %s\n"
+                       "FileSet:  %s\n"
+                       "Client:   %s\n"
+                       "Storage:  %s\n"
+                       "When:     %s\n"
+                       "Priority: %d\n"),
                     job->resource_name_,
                     jcr->dir_impl->res.fileset->resource_name_,
                     NPRT(jcr->dir_impl->res.client->resource_name_),
@@ -1367,17 +1369,17 @@ static bool DisplayJobParameters(UaContext* ua,
         } else {
           ua->SendMsg(
               T_("Run Backup job\n"
-                "JobName:  %s\n"
-                "Level:    %s\n"
-                "Client:   %s\n"
-                "Format:   %s\n"
-                "FileSet:  %s\n"
-                "Pool:     %s (From %s)\n"
-                "%s%s%s%s%s"
-                "Storage:  %s (From %s)\n"
-                "When:     %s\n"
-                "Priority: %d\n"
-                "%s%s%s"),
+                 "JobName:  %s\n"
+                 "Level:    %s\n"
+                 "Client:   %s\n"
+                 "Format:   %s\n"
+                 "FileSet:  %s\n"
+                 "Pool:     %s (From %s)\n"
+                 "%s%s%s%s%s"
+                 "Storage:  %s (From %s)\n"
+                 "When:     %s\n"
+                 "Priority: %d\n"
+                 "%s%s%s"),
               job->resource_name_, JobLevelToString(jcr->getJobLevel()),
               jcr->dir_impl->res.client->resource_name_,
               jcr->dir_impl->backup_format,
@@ -1447,16 +1449,16 @@ static bool DisplayJobParameters(UaContext* ua,
               bstrftime(jcr->sched_time).c_str(), jcr->JobPriority);
         } else {
           ua->SendMsg(T_("Run Verify Job\n"
-                        "JobName:     %s\n"
-                        "Level:       %s\n"
-                        "Client:      %s\n"
-                        "FileSet:     %s\n"
-                        "Pool:        %s (From %s)\n"
-                        "Storage:     %s (From %s)\n"
-                        "Verify Job:  %s\n"
-                        "Verify List: %s\n"
-                        "When:        %s\n"
-                        "Priority:    %d\n"),
+                         "JobName:     %s\n"
+                         "Level:       %s\n"
+                         "Client:      %s\n"
+                         "FileSet:     %s\n"
+                         "Pool:        %s (From %s)\n"
+                         "Storage:     %s (From %s)\n"
+                         "Verify Job:  %s\n"
+                         "Verify List: %s\n"
+                         "When:        %s\n"
+                         "Priority:    %d\n"),
                       job->resource_name_, JobLevelToString(jcr->getJobLevel()),
                       jcr->dir_impl->res.client->resource_name_,
                       jcr->dir_impl->res.fileset->resource_name_,
@@ -1520,19 +1522,19 @@ static bool DisplayJobParameters(UaContext* ua,
                 NPRT(jcr->dir_impl->plugin_options));
           } else {
             ua->SendMsg(T_("Run Restore job\n"
-                          "JobName:         %s\n"
-                          "Bootstrap:       %s\n"
-                          "RegexWhere:      %s\n"
-                          "Replace:         %s\n"
-                          "FileSet:         %s\n"
-                          "Backup Client:   %s\n"
-                          "Restore Client:  %s\n"
-                          "Format:          %s\n"
-                          "Storage:         %s\n"
-                          "When:            %s\n"
-                          "Catalog:         %s\n"
-                          "Priority:        %d\n"
-                          "Plugin Options:  %s\n"),
+                           "JobName:         %s\n"
+                           "Bootstrap:       %s\n"
+                           "RegexWhere:      %s\n"
+                           "Replace:         %s\n"
+                           "FileSet:         %s\n"
+                           "Backup Client:   %s\n"
+                           "Restore Client:  %s\n"
+                           "Format:          %s\n"
+                           "Storage:         %s\n"
+                           "When:            %s\n"
+                           "Catalog:         %s\n"
+                           "Priority:        %d\n"
+                           "Plugin Options:  %s\n"),
                         job->resource_name_, NPRT(jcr->RestoreBootstrap),
                         jcr->RegexWhere ? jcr->RegexWhere : job->RegexWhere,
                         rc.replace, jcr->dir_impl->res.fileset->resource_name_,
@@ -1574,19 +1576,19 @@ static bool DisplayJobParameters(UaContext* ua,
                 NPRT(jcr->dir_impl->plugin_options));
           } else {
             ua->SendMsg(T_("Run Restore job\n"
-                          "JobName:         %s\n"
-                          "Bootstrap:       %s\n"
-                          "Where:           %s\n"
-                          "Replace:         %s\n"
-                          "FileSet:         %s\n"
-                          "Backup Client:   %s\n"
-                          "Restore Client:  %s\n"
-                          "Format:          %s\n"
-                          "Storage:         %s\n"
-                          "When:            %s\n"
-                          "Catalog:         %s\n"
-                          "Priority:        %d\n"
-                          "Plugin Options:  %s\n"),
+                           "JobName:         %s\n"
+                           "Bootstrap:       %s\n"
+                           "Where:           %s\n"
+                           "Replace:         %s\n"
+                           "FileSet:         %s\n"
+                           "Backup Client:   %s\n"
+                           "Restore Client:  %s\n"
+                           "Format:          %s\n"
+                           "Storage:         %s\n"
+                           "When:            %s\n"
+                           "Catalog:         %s\n"
+                           "Priority:        %d\n"
+                           "Plugin Options:  %s\n"),
                         job->resource_name_, NPRT(jcr->RestoreBootstrap),
                         jcr->where ? jcr->where : NPRT(job->RestoreWhere),
                         rc.replace, jcr->dir_impl->res.fileset->resource_name_,
@@ -1603,8 +1605,8 @@ static bool DisplayJobParameters(UaContext* ua,
       } else {
         if (ua->api) ua->signal(BNET_RUN_CMD);
         ua->SendMsg(T_("Run Restore job\n"
-                      "JobName:    %s\n"
-                      "Bootstrap:  %s\n"),
+                       "JobName:    %s\n"
+                       "Bootstrap:  %s\n"),
                     job->resource_name_, NPRT(jcr->RestoreBootstrap));
 
         /* RegexWhere is take before RestoreWhere */
@@ -1617,14 +1619,14 @@ static bool DisplayJobParameters(UaContext* ua,
         }
 
         ua->SendMsg(T_("Replace:         %s\n"
-                      "Client:          %s\n"
-                      "Format:          %s\n"
-                      "Storage:         %s\n"
-                      "JobId:           %s\n"
-                      "When:            %s\n"
-                      "Catalog:         %s\n"
-                      "Priority:        %d\n"
-                      "Plugin Options:  %s\n"),
+                       "Client:          %s\n"
+                       "Format:          %s\n"
+                       "Storage:         %s\n"
+                       "JobId:           %s\n"
+                       "When:            %s\n"
+                       "Catalog:         %s\n"
+                       "Priority:        %d\n"
+                       "Plugin Options:  %s\n"),
                     rc.replace, jcr->dir_impl->res.client->resource_name_,
                     jcr->dir_impl->backup_format,
                     jcr->dir_impl->res.read_storage->resource_name_,
@@ -1683,16 +1685,16 @@ static bool DisplayJobParameters(UaContext* ua,
           prt_type = T_("Run Migration job\n");
         }
         ua->SendMsg(T_("%s"
-                      "JobName:       %s\n"
-                      "Bootstrap:     %s\n"
-                      "Read Storage:  %s (From %s)\n"
-                      "Pool:          %s (From %s)\n"
-                      "Write Storage: %s (From %s)\n"
-                      "NextPool:      %s (From %s)\n"
-                      "JobId:         %s\n"
-                      "When:          %s\n"
-                      "Catalog:       %s\n"
-                      "Priority:      %d\n"),
+                       "JobName:       %s\n"
+                       "Bootstrap:     %s\n"
+                       "Read Storage:  %s (From %s)\n"
+                       "Pool:          %s (From %s)\n"
+                       "Write Storage: %s (From %s)\n"
+                       "NextPool:      %s (From %s)\n"
+                       "JobId:         %s\n"
+                       "When:          %s\n"
+                       "Catalog:       %s\n"
+                       "Priority:      %d\n"),
                     prt_type, job->resource_name_, NPRT(jcr->RestoreBootstrap),
                     jcr->dir_impl->res.read_storage
                         ? jcr->dir_impl->res.read_storage->resource_name_
@@ -1997,8 +1999,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             }
             rc.plugin_options = ua->argv[i];
             if (!ua->AclAccessOk(PluginOptions_ACL, rc.plugin_options, true)) {
-              ua->SendMsg(
-                  T_("No authorization for \"PluginOptions\" specification.\n"));
+              ua->SendMsg(T_(
+                  "No authorization for \"PluginOptions\" specification.\n"));
               return false;
             }
             kw_ok = true;
@@ -2242,7 +2244,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   if (rc.previous_job_name) {
     rc.previous_job = ua->GetJobResWithName(rc.previous_job_name);
     if (!rc.previous_job) {
-      ua->SendMsg(T_("Migration Job \"%s\" not found.\n"), rc.previous_job_name);
+      ua->SendMsg(T_("Migration Job \"%s\" not found.\n"),
+                  rc.previous_job_name);
       rc.previous_job = select_job_resource(ua);
     }
   } else {
@@ -2258,7 +2261,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     }
     if (rc.consolidate_job && rc.consolidate_job->JobType != JT_CONSOLIDATE) {
       ua->ErrorMsg(T_("Invalid Consolidate Job \"%s\". Job type is \"%c\" but "
-                     "expected \"%c\".\n"),
+                      "expected \"%c\".\n"),
                    rc.consolidate_job->resource_name_,
                    rc.consolidate_job->JobType, JT_CONSOLIDATE);
       return false;

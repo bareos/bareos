@@ -188,7 +188,7 @@ int RunScripts(JobControlRecord* jcr,
               script->command.c_str());
         Jmsg(jcr, M_ERROR, 0,
              T_("Runscript: run %s \"%s\" could not execute, "
-               "not in one of the allowed scripts dirs\n"),
+                "not in one of the allowed scripts dirs\n"),
              label, script->command.c_str());
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;

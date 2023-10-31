@@ -471,7 +471,7 @@ static bRC handle_read_error(void* value)
           Mmsg5(
               dev->errmsg,
               T_("Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"
-                "Probably due to reading encrypted data from volume\n"),
+                 "Probably due to reading encrypted data from volume\n"),
               dev->fd, dev->file, dev->block_num, dev->print_name(),
               be.bstrerror());
         }

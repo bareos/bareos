@@ -202,7 +202,7 @@ int main(int margc, char* margv[])
   if (sizeof(boffset_t) < 8) {
     Pmsg1(-1,
           T_("\n\n!!!! Warning large disk addressing disabled. boffset_t=%d "
-            "should be 8 or more !!!!!\n\n\n"),
+             "should be 8 or more !!!!!\n\n\n"),
           sizeof(boffset_t));
   }
 
@@ -313,7 +313,7 @@ int main(int margc, char* margv[])
     if (!director) {
       Emsg2(M_ERROR_TERM, 0,
             T_("No Director resource named %s defined in %s. Cannot "
-              "continue.\n"),
+               "continue.\n"),
             DirectorName.c_str(), configfile);
     }
   }
@@ -715,9 +715,9 @@ static void rectestcmd()
 
   Pmsg0(0,
         T_("Test writing larger and larger records.\n"
-          "This is a torture test for records.\nI am going to write\n"
-          "larger and larger records. It will stop when the record size\n"
-          "plus the header exceeds the block size (by default about 64K)\n"));
+           "This is a torture test for records.\nI am going to write\n"
+           "larger and larger records. It will stop when the record size\n"
+           "plus the header exceeds the block size (by default about 64K)\n"));
 
 
   GetCmd(T_("Do you want to continue? (y/n): "));
@@ -763,16 +763,16 @@ static bool re_read_block_test()
 
   if (!dev->HasCap(CAP_BSR)) {
     Pmsg0(-1, T_("Skipping read backwards test because BootStrapRecord turned "
-                "off.\n"));
+                 "off.\n"));
     return true;
   }
 
   Pmsg0(-1, T_("\n=== Write, backup, and re-read test ===\n\n"
-              "I'm going to write three records and an EOF\n"
-              "then backup over the EOF and re-read the last record.\n"
-              "Bareos does this after writing the last block on the\n"
-              "tape to verify that the block was written correctly.\n\n"
-              "This is not an *essential* feature ...\n\n"));
+               "I'm going to write three records and an EOF\n"
+               "then backup over the EOF and re-read the last record.\n"
+               "Bareos does this after writing the last block on the\n"
+               "tape to verify that the block was written correctly.\n\n"
+               "This is not an *essential* feature ...\n\n"));
   rewindcmd();
   EmptyBlock(block);
   rec = new_record();
@@ -856,11 +856,11 @@ bail_out:
   FreeRecord(rec);
   if (!rc) {
     Pmsg0(0, T_("This is not terribly serious since Bareos only uses\n"
-               "this function to verify the last block written to the\n"
-               "tape. Bareos will skip the last block verification\n"
-               "if you add:\n\n"
-               "Backward Space Record = No\n\n"
-               "to your Storage daemon's Device resource definition.\n"));
+                "this function to verify the last block written to the\n"
+                "tape. Bareos will skip the last block verification\n"
+                "if you add:\n\n"
+                "Backward Space Record = No\n\n"
+                "to your Storage daemon's Device resource definition.\n"));
   }
   return rc;
 }
@@ -1017,7 +1017,7 @@ static void speed_test()
     dev->rewind(dcr);
     if (do_zero) {
       Pmsg0(0, T_("Test with zero data, should give the "
-                 "maximum throughput.\n"));
+                  "maximum throughput.\n"));
       if (file_size) {
         ok(SpeedTestRaw(FILL_ZERO, file_size, nb_file));
       } else {
@@ -1029,7 +1029,7 @@ static void speed_test()
 
     if (do_random) {
       Pmsg0(0, T_("Test with random data, should give the minimum "
-                 "throughput.\n"));
+                  "throughput.\n"));
       if (file_size) {
         ok(SpeedTestRaw(FILL_RANDOM, file_size, nb_file));
       } else {
@@ -1055,7 +1055,7 @@ static void speed_test()
 
     if (do_random) {
       Pmsg0(0, T_("Test with random data, should give the minimum "
-                 "throughput.\n"));
+                  "throughput.\n"));
       if (file_size) {
         ok(SpeedTestBareos(FILL_RANDOM, file_size, nb_file));
       } else {
@@ -1089,10 +1089,10 @@ static bool write_two_files()
 
   Pmsg2(-1,
         T_("\n=== Write, rewind, and re-read test ===\n\n"
-          "I'm going to write %d records and an EOF\n"
-          "then write %d records and an EOF, then rewind,\n"
-          "and re-read the data to verify that it is correct.\n\n"
-          "This is an *essential* feature ...\n\n"),
+           "I'm going to write %d records and an EOF\n"
+           "then write %d records and an EOF, then rewind,\n"
+           "and re-read the data to verify that it is correct.\n\n"
+           "This is an *essential* feature ...\n\n"),
         num_recs, num_recs);
 
   block = dcr->block;
@@ -1202,7 +1202,7 @@ static bool write_read_test()
       if (*p != i) {
         Pmsg3(0,
               T_("Bad data in record. Expected %d, got %d at byte %d. Test "
-                "failed!\n"),
+                 "failed!\n"),
               i, *p, j);
         goto bail_out;
       }
@@ -1313,22 +1313,23 @@ static bool position_test()
       Pmsg4(0, T_("Read block %d failed! file=%d blk=%d. ERR=%s\n\n"), recno,
             file, blk, be.bstrerror(dev->dev_errno));
       Pmsg0(0, T_("This may be because the tape drive block size is not\n"
-                 " set to variable blocking as normally used by Bareos.\n"
-                 " Please see the Tape Testing chapter in the manual and \n"
-                 " look for using mt with defblksize and setoptions\n"
-                 "If your tape drive block size is correct, then perhaps\n"
-                 " your SCSI driver is *really* stupid and does not\n"
-                 " correctly report the file:block after a FSF. In this\n"
-                 " case try setting:\n"
-                 "    Fast Forward Space File = no\n"
-                 " in your Device resource.\n"));
+                  " set to variable blocking as normally used by Bareos.\n"
+                  " Please see the Tape Testing chapter in the manual and \n"
+                  " look for using mt with defblksize and setoptions\n"
+                  "If your tape drive block size is correct, then perhaps\n"
+                  " your SCSI driver is *really* stupid and does not\n"
+                  " correctly report the file:block after a FSF. In this\n"
+                  " case try setting:\n"
+                  "    Fast Forward Space File = no\n"
+                  " in your Device resource.\n"));
 
       goto bail_out;
     }
     memset(rec->data, 0, rec->data_len);
     if (!ReadRecordFromBlock(dcr, rec)) {
       BErrNo be;
-      Pmsg1(0, T_("Read record failed! ERR=%s\n"), be.bstrerror(dev->dev_errno));
+      Pmsg1(0, T_("Read record failed! ERR=%s\n"),
+            be.bstrerror(dev->dev_errno));
       goto bail_out;
     }
     p = (int*)rec->data;
@@ -1336,7 +1337,7 @@ static bool position_test()
       if (p[j] != recno) {
         Pmsg3(0,
               T_("Bad data in record. Expected %d, got %d at byte %d. Test "
-                "failed!\n"),
+                 "failed!\n"),
               recno, p[j], j);
         goto bail_out;
       }
@@ -1362,10 +1363,10 @@ bail_out:
 static int append_test()
 {
   Pmsg0(-1, T_("\n\n=== Append files test ===\n\n"
-              "This test is essential to Bareos.\n\n"
-              "I'm going to write one record  in file 0,\n"
-              "                   two records in file 1,\n"
-              "             and three records in file 2\n\n"));
+               "This test is essential to Bareos.\n\n"
+               "I'm going to write one record  in file 0,\n"
+               "                   two records in file 1,\n"
+               "             and three records in file 2\n\n"));
   argc = 1;
   rewindcmd();
   wrcmd();
@@ -1383,13 +1384,14 @@ static int append_test()
   rewindcmd();
   Pmsg0(0, T_("Now moving to end of medium.\n"));
   eodcmd();
-  Pmsg2(-1, T_("We should be in file 3. I am at file %d. %s\n"), dev->file,
-        dev->file == 3 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
+  Pmsg2(
+      -1, T_("We should be in file 3. I am at file %d. %s\n"), dev->file,
+      dev->file == 3 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
 
   if (dev->file != 3) { return -1; }
 
   Pmsg0(-1, T_("\nNow the important part, I am going to attempt to append to "
-              "the tape.\n\n"));
+               "the tape.\n\n"));
   wrcmd();
   weofcmd();
   if (dev->HasCap(CAP_TWOEOF)) { weofcmd(); }
@@ -1398,8 +1400,9 @@ static int append_test()
   Pmsg0(-1, T_("Doing Bareos scan of blocks:\n"));
   scan_blocks();
   Pmsg0(-1, T_("End scanning the tape.\n"));
-  Pmsg2(-1, T_("We should be in file 4. I am at file %d. %s\n"), dev->file,
-        dev->file == 4 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
+  Pmsg2(
+      -1, T_("We should be in file 4. I am at file %d. %s\n"), dev->file,
+      dev->file == 4 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
 
   if (dev->file != 4) { return -2; }
   return 1;
@@ -1420,13 +1423,13 @@ static int autochanger_test()
   if (!(dcr->device_resource && dcr->device_resource->changer_name
         && dcr->device_resource->changer_command)) {
     Pmsg0(-1, T_("\nAutochanger enabled, but no name or no command device "
-                "specified.\n"));
+                 "specified.\n"));
     return 1;
   }
 
   Pmsg0(-1, T_("\nAh, I see you have an autochanger configured.\n"
-              "To test the autochanger you must have a blank tape\n"
-              " that I can write on in Slot 1.\n"));
+               "To test the autochanger you must have a blank tape\n"
+               " that I can write on in Slot 1.\n"));
   if (!GetCmd(
           T_("\nDo you wish to continue with the Autochanger test? (y/n): "))) {
     return 0;
@@ -1452,7 +1455,8 @@ try_again:
   } else {
     BErrNo be;
     Pmsg1(-1, T_("3991 Bad autochanger command: %s\n"), changer);
-    Pmsg2(-1, T_("3991 result=\"%s\": ERR=%s\n"), results, be.bstrerror(status));
+    Pmsg2(-1, T_("3991 result=\"%s\": ERR=%s\n"), results,
+          be.bstrerror(status));
     goto bail_out;
   }
   if (loaded) {
@@ -1465,8 +1469,8 @@ try_again:
     dcr->VolCatInfo.Slot = loaded;
     /* We are going to load a new tape, so close the device */
     dev->close(dcr);
-    Pmsg2(-1, T_("3302 Issuing autochanger \"unload %d %d\" command.\n"), loaded,
-          dev->drive);
+    Pmsg2(-1, T_("3302 Issuing autochanger \"unload %d %d\" command.\n"),
+          loaded, dev->drive);
     changer = edit_device_codes(
         dcr, changer, dcr->device_resource->changer_command, "unload");
     status = RunProgram(changer, timeout, results);
@@ -1497,7 +1501,8 @@ try_again:
   } else {
     BErrNo be;
     Pmsg1(-1, T_("3993 Bad autochanger command: %s\n"), changer);
-    Pmsg2(-1, T_("3993 result=\"%s\": ERR=%s\n"), results, be.bstrerror(status));
+    Pmsg2(-1, T_("3993 result=\"%s\": ERR=%s\n"), results,
+          be.bstrerror(status));
     goto bail_out;
   }
 
@@ -1509,8 +1514,8 @@ try_again:
     Pmsg1(0, T_("Bad status from rewind. ERR=%s\n"), dev->bstrerror());
     dev->clrerror(-1);
     Pmsg0(-1, T_("\nThe test failed, probably because you need to put\n"
-                "a longer sleep time in the mtx-script in the load) case.\n"
-                "Adding a 30 second sleep and trying again ...\n"));
+                 "a longer sleep time in the mtx-script in the load) case.\n"
+                 "Adding a 30 second sleep and trying again ...\n"));
     sleep_time += 30;
     goto try_again;
   } else {
@@ -1527,8 +1532,8 @@ try_again:
   if (sleep_time) {
     Pmsg1(-1,
           T_("\nThe test worked this time. Please add:\n\n"
-            "   sleep %d\n\n"
-            "to your mtx-changer script in the load) case.\n\n"),
+             "   sleep %d\n\n"
+             "to your mtx-changer script in the load) case.\n\n"),
           sleep_time);
   } else {
     Pmsg0(-1, T_("\nThe test autochanger worked!!\n\n"));
@@ -1559,8 +1564,8 @@ static bool fsf_test()
   bool set_off = false;
 
   Pmsg0(-1, T_("\n\n=== Forward space files test ===\n\n"
-              "This test is essential to Bareos.\n\n"
-              "I'm going to write five files then test forward spacing\n\n"));
+               "This test is essential to Bareos.\n\n"
+               "I'm going to write five files then test forward spacing\n\n"));
   argc = 1;
   rewindcmd();
   wrcmd();
@@ -1586,8 +1591,9 @@ test_again:
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
-  Pmsg2(-1, T_("We should be in file 1. I am at file %d. %s\n"), dev->file,
-        dev->file == 1 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
+  Pmsg2(
+      -1, T_("We should be in file 1. I am at file %d. %s\n"), dev->file,
+      dev->file == 1 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
 
   if (dev->file != 1) { goto bail_out; }
 
@@ -1596,8 +1602,9 @@ test_again:
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
-  Pmsg2(-1, T_("We should be in file 3. I am at file %d. %s\n"), dev->file,
-        dev->file == 3 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
+  Pmsg2(
+      -1, T_("We should be in file 3. I am at file %d. %s\n"), dev->file,
+      dev->file == 3 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
 
   if (dev->file != 3) { goto bail_out; }
 
@@ -1607,14 +1614,15 @@ test_again:
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
-  Pmsg2(-1, T_("We should be in file 4. I am at file %d. %s\n"), dev->file,
-        dev->file == 4 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
+  Pmsg2(
+      -1, T_("We should be in file 4. I am at file %d. %s\n"), dev->file,
+      dev->file == 4 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
 
   if (dev->file != 4) { goto bail_out; }
   if (set_off) {
     Pmsg0(-1, T_("The test worked this time. Please add:\n\n"
-                "   Fast Forward Space File = no\n\n"
-                "to your Device resource for this drive.\n"));
+                 "   Fast Forward Space File = no\n\n"
+                 "to your Device resource for this drive.\n"));
   }
 
   Pmsg0(-1, "\n");
@@ -1622,8 +1630,9 @@ test_again:
   if (!dev->fsf(1)) {
     Pmsg1(0, T_("Bad status from fsr. ERR=%s\n"), dev->bstrerror());
   }
-  Pmsg2(-1, T_("We should be in file 5. I am at file %d. %s\n"), dev->file,
-        dev->file == 5 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
+  Pmsg2(
+      -1, T_("We should be in file 5. I am at file %d. %s\n"), dev->file,
+      dev->file == 5 ? T_("This is correct!") : T_("This is NOT correct!!!!"));
   if (dev->file != 5) { goto bail_out; }
   Pmsg0(-1, T_("\n=== End Forward space files test ===\n\n"));
   return true;
@@ -1632,15 +1641,15 @@ bail_out:
   Pmsg0(-1, T_("\nThe forward space file test failed.\n"));
   if (dev->HasCap(CAP_FASTFSF)) {
     Pmsg0(-1, T_("You have Fast Forward Space File enabled.\n"
-                "I am turning it off then retrying the test.\n"));
+                 "I am turning it off then retrying the test.\n"));
     dev->ClearCap(CAP_FASTFSF);
     set_off = true;
     goto test_again;
   }
   Pmsg0(-1, T_("You must correct this error or Bareos will not work.\n"
-              "Some systems, e.g. OpenBSD, require you to set\n"
-              "   Use MTIOCGET= no\n"
-              "in your device resource. Use with caution.\n"));
+               "Some systems, e.g. OpenBSD, require you to set\n"
+               "   Use MTIOCGET= no\n"
+               "in your device resource. Use with caution.\n"));
   return false;
 }
 
@@ -1669,38 +1678,40 @@ static void testcmd()
   if (status == -1) { /* first test failed */
     if (dev->HasCap(CAP_EOM) || dev->HasCap(CAP_FASTFSF)) {
       Pmsg0(-1, T_("\nAppend test failed. Attempting again.\n"
-                  "Setting \"Hardware End of Medium = no\n"
-                  "    and \"Fast Forward Space File = no\n"
-                  "and retrying append test.\n\n"));
+                   "Setting \"Hardware End of Medium = no\n"
+                   "    and \"Fast Forward Space File = no\n"
+                   "and retrying append test.\n\n"));
       dev->ClearCap(CAP_EOM);     /* turn off eom */
       dev->ClearCap(CAP_FASTFSF); /* turn off fast fsf */
       status = append_test();
       if (status == 1) {
         Pmsg0(-1,
               T_("\n\nIt looks like the test worked this time, please add:\n\n"
-                "    Hardware End of Medium = No\n\n"
-                "    Fast Forward Space File = No\n"
-                "to your Device resource in the Storage conf file.\n"));
+                 "    Hardware End of Medium = No\n\n"
+                 "    Fast Forward Space File = No\n"
+                 "to your Device resource in the Storage conf file.\n"));
         goto all_done;
       }
       if (status == -1) {
-        Pmsg0(-1, T_("\n\nThat appears *NOT* to have corrected the problem.\n"));
+        Pmsg0(-1,
+              T_("\n\nThat appears *NOT* to have corrected the problem.\n"));
         goto failed;
       }
       /* Wrong count after append */
       if (status == -2) {
         Pmsg0(-1,
               T_("\n\nIt looks like the append failed. Attempting again.\n"
-                "Setting \"BSF at EOM = yes\" and retrying append test.\n"));
+                 "Setting \"BSF at EOM = yes\" and retrying append test.\n"));
         dev->SetCap(CAP_BSFATEOM); /* Backspace on eom */
         status = append_test();
         if (status == 1) {
-          Pmsg0(-1,
-                T_("\n\nIt looks like the test worked this time, please add:\n\n"
-                  "    Hardware End of Medium = No\n"
-                  "    Fast Forward Space File = No\n"
-                  "    BSF at EOM = yes\n\n"
-                  "to your Device resource in the Storage conf file.\n"));
+          Pmsg0(
+              -1,
+              T_("\n\nIt looks like the test worked this time, please add:\n\n"
+                 "    Hardware End of Medium = No\n"
+                 "    Fast Forward Space File = No\n"
+                 "    BSF at EOM = yes\n\n"
+                 "to your Device resource in the Storage conf file.\n"));
           goto all_done;
         }
       }
@@ -1708,45 +1719,45 @@ static void testcmd()
   failed:
     Pmsg0(-1,
           T_("\nAppend test failed.\n\n"
-            "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
-            "Unable to correct the problem. You MUST fix this\n"
-            "problem before Bareos can use your tape drive correctly\n"
-            "\nPerhaps running Bareos in fixed block mode will work.\n"
-            "Do so by setting:\n\n"
-            "Minimum Block Size = nnn\n"
-            "Maximum Block Size = nnn\n\n"
-            "in your Storage daemon's Device definition.\n"
-            "nnn must match your tape driver's block size, which\n"
-            "can be determined by reading your tape manufacturers\n"
-            "information, and the information on your kernel dirver.\n"
-            "Fixed block sizes, however, are not normally an ideal solution.\n"
-            "\n"
-            "Some systems, e.g. OpenBSD, require you to set\n"
-            "   Use MTIOCGET= no\n"
-            "in your device resource. Use with caution.\n"));
+             "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+             "Unable to correct the problem. You MUST fix this\n"
+             "problem before Bareos can use your tape drive correctly\n"
+             "\nPerhaps running Bareos in fixed block mode will work.\n"
+             "Do so by setting:\n\n"
+             "Minimum Block Size = nnn\n"
+             "Maximum Block Size = nnn\n\n"
+             "in your Storage daemon's Device definition.\n"
+             "nnn must match your tape driver's block size, which\n"
+             "can be determined by reading your tape manufacturers\n"
+             "information, and the information on your kernel dirver.\n"
+             "Fixed block sizes, however, are not normally an ideal solution.\n"
+             "\n"
+             "Some systems, e.g. OpenBSD, require you to set\n"
+             "   Use MTIOCGET= no\n"
+             "in your device resource. Use with caution.\n"));
     exit_code = 1;
     return;
   }
 
 all_done:
   Pmsg0(-1, T_("\nThe above Bareos scan should have output identical to what "
-              "follows.\n"
-              "Please double check it ...\n"
-              "=== Sample correct output ===\n"
-              "1 block of 64448 bytes in file 1\n"
-              "End of File mark.\n"
-              "2 blocks of 64448 bytes in file 2\n"
-              "End of File mark.\n"
-              "3 blocks of 64448 bytes in file 3\n"
-              "End of File mark.\n"
-              "1 block of 64448 bytes in file 4\n"
-              "End of File mark.\n"
-              "Total files=4, blocks=7, bytes = 451,136\n"
-              "=== End sample correct output ===\n\n"
-              "If the above scan output is not identical to the\n"
-              "sample output, you MUST correct the problem\n"
-              "or Bareos will not be able to write multiple Jobs to \n"
-              "the tape.\n\n"));
+               "follows.\n"
+               "Please double check it ...\n"
+               "=== Sample correct output ===\n"
+               "1 block of 64448 bytes in file 1\n"
+               "End of File mark.\n"
+               "2 blocks of 64448 bytes in file 2\n"
+               "End of File mark.\n"
+               "3 blocks of 64448 bytes in file 3\n"
+               "End of File mark.\n"
+               "1 block of 64448 bytes in file 4\n"
+               "End of File mark.\n"
+               "Total files=4, blocks=7, bytes = 451,136\n"
+               "=== End sample correct output ===\n\n"
+               "If the above scan output is not identical to the\n"
+               "sample output, you MUST correct the problem\n"
+               "or Bareos will not be able to write multiple Jobs to \n"
+               "the tape.\n\n"));
 
   if (status == 1) {
     if (!re_read_block_test()) { exit_code = 1; }
@@ -2032,7 +2043,7 @@ static void scan_blocks()
       ReadRecordFromBlock(dcr, rec);
       Pmsg9(-1,
             T_("Block=%u file,blk=%u,%u blen=%u First rec FI=%s SessId=%u "
-              "SessTim=%u Strm=%s rlen=%d\n"),
+               "SessTim=%u Strm=%s rlen=%d\n"),
             block->BlockNumber, dev->file, dev->block_num, block->block_len,
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
             rec->VolSessionTime,
@@ -2096,26 +2107,26 @@ static void fillcmd()
 
   Pmsg1(-1,
         T_("\n"
-          "This command simulates Bareos writing to a tape.\n"
-          "It requires either one or two blank tapes, which it\n"
-          "will label and write.\n\n"
-          "If you have an autochanger configured, it will use\n"
-          "the tapes that are in slots 1 and 2, otherwise, you will\n"
-          "be prompted to insert the tapes when necessary.\n\n"
-          "It will print a status approximately\n"
-          "every 322 MB, and write an EOF every %s.  If you have\n"
-          "selected the simple test option, after writing the first tape\n"
-          "it will rewind it and re-read the last block written.\n\n"
-          "If you have selected the multiple tape test, when the first tape\n"
-          "fills, it will ask for a second, and after writing a few more \n"
-          "blocks, it will stop.  Then it will begin re-reading the\n"
-          "two tapes.\n\n"
-          "This may take a long time -- hours! ...\n\n"),
+           "This command simulates Bareos writing to a tape.\n"
+           "It requires either one or two blank tapes, which it\n"
+           "will label and write.\n\n"
+           "If you have an autochanger configured, it will use\n"
+           "the tapes that are in slots 1 and 2, otherwise, you will\n"
+           "be prompted to insert the tapes when necessary.\n\n"
+           "It will print a status approximately\n"
+           "every 322 MB, and write an EOF every %s.  If you have\n"
+           "selected the simple test option, after writing the first tape\n"
+           "it will rewind it and re-read the last block written.\n\n"
+           "If you have selected the multiple tape test, when the first tape\n"
+           "fills, it will ask for a second, and after writing a few more \n"
+           "blocks, it will stop.  Then it will begin re-reading the\n"
+           "two tapes.\n\n"
+           "This may take a long time -- hours! ...\n\n"),
         edit_uint64_with_suffix(dev->max_file_size, buf1));
 
   GetCmd(
       T_("Do you want to run the simplified test (s) with one tape\n"
-        "or the complete multiple tape (m) test: (s/m) "));
+         "or the complete multiple tape (m) test: (s/m) "));
   if (cmd[0] == 's') {
     Pmsg0(-1, T_("Simple test (single tape) selected.\n"));
     simple = true;
@@ -2309,13 +2320,13 @@ static void fillcmd()
     if (simple) {
       Pmsg3(0,
             T_("\n\n%s Done filling tape at %d:%d. Now beginning re-read of "
-              "tape ...\n"),
+               "tape ...\n"),
             bstrftime().c_str(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     } else {
       Pmsg3(0,
             T_("\n\n%s Done filling tapes at %d:%d. Now beginning re-read of "
-              "first tape ...\n"),
+               "first tape ...\n"),
             bstrftime().c_str(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     }
@@ -2363,7 +2374,7 @@ static void unfillcmd()
     close(fd);
     if (state_level != btape_state_level) {
       Pmsg0(-1, T_("\nThe state file level has changed. You must redo\n"
-                  "the fill command.\n"));
+                   "the fill command.\n"));
       exit_code = 1;
       return;
     }
@@ -2371,7 +2382,7 @@ static void unfillcmd()
     BErrNo be;
     Pmsg2(-1,
           T_("\nCould not find the state file: %s ERR=%s\n"
-            "You must redo the fill command.\n"),
+             "You must redo the fill command.\n"),
           buf, be.bstrerror());
     exit_code = 1;
     return;
@@ -2472,7 +2483,8 @@ static bool do_unfill()
   }
   if (CompareBlocks(last_block, block)) {
     if (simple) {
-      Pmsg0(-1, T_("\nThe last block on the tape matches. Test succeeded.\n\n"));
+      Pmsg0(-1,
+            T_("\nThe last block on the tape matches. Test succeeded.\n\n"));
       rc = true;
     } else {
       Pmsg0(-1, T_("\nThe last block of the first tape matches.\n\n"));
@@ -2538,7 +2550,7 @@ static bool do_unfill()
   }
   if (CompareBlocks(last_block, block)) {
     Pmsg0(-1, T_("\nThe last block on the second tape matches. Test "
-                "succeeded.\n\n"));
+                 "succeeded.\n\n"));
     rc = true;
   }
 
@@ -2593,9 +2605,9 @@ static bool CompareBlocks(DeviceBlock* last_block, DeviceBlock* block)
     DumpBlock(block, T_("Block read back"));
     Pmsg1(-1, T_("\n\nThe blocks differ at byte %u\n"), p - last_block->buf);
     Pmsg0(-1, T_("\n\n!!!! The last block written and the block\n"
-                "that was read back differ. The test FAILED !!!!\n"
-                "This must be corrected before you use Bareos\n"
-                "to write multi-tape Volumes.!!!!\n"));
+                 "that was read back differ. The test FAILED !!!!\n"
+                 "This must be corrected before you use Bareos\n"
+                 "to write multi-tape Volumes.!!!!\n"));
     return false;
   }
   if (verbose) {
@@ -2807,7 +2819,8 @@ static struct cmdstruct commands[] = {
     {NT_("load"), loadcmd, T_("load a tape")},
     {NT_("quit"), QuitCmd, T_("quit btape")},
     {NT_("rawfill"), rawfill_cmd, T_("use write() to fill tape")},
-    {NT_("readlabel"), readlabelcmd, T_("read and print the Bareos tape label")},
+    {NT_("readlabel"), readlabelcmd,
+     T_("read and print the Bareos tape label")},
     {NT_("rectest"), rectestcmd, T_("test record handling functions")},
     {NT_("rewind"), rewindcmd, T_("rewind the tape")},
     {NT_("scan"), scancmd, T_("read() tape block by block to EOT and report")},
@@ -2815,8 +2828,8 @@ static struct cmdstruct commands[] = {
      T_("Bareos read block by block to EOT and report")},
     {NT_("speed"), speed_test,
      T_("[file_size=n(GB)|nb_file=3|skip_zero|skip_random|skip_raw|skip_block]"
-       " "
-       "report drive speed")},
+        " "
+        "report drive speed")},
     {NT_("status"), statcmd, T_("print tape status")},
     {NT_("test"), testcmd, T_("General test Bareos tape functions")},
     {NT_("weof"), weofcmd, T_("write an EOF on the tape")},
@@ -2918,13 +2931,15 @@ bool BTAPE_DCR::DirAskSysopToMountVolume(int)
   Pmsg1(-1, "%s", dev->errmsg); /* print reason */
 
   if (VolumeName[0] == 0 || bstrcmp(VolumeName, "TestVolume2")) {
-    fprintf(stderr,
-            T_("Mount second Volume on device %s and press return when ready: "),
-            dev->print_name());
+    fprintf(
+        stderr,
+        T_("Mount second Volume on device %s and press return when ready: "),
+        dev->print_name());
   } else {
-    fprintf(stderr,
-            T_("Mount Volume \"%s\" on device %s and press return when ready: "),
-            VolumeName, dev->print_name());
+    fprintf(
+        stderr,
+        T_("Mount Volume \"%s\" on device %s and press return when ready: "),
+        VolumeName, dev->print_name());
   }
 
   dev->close(this);

@@ -155,8 +155,9 @@ void AddFileToFileset(JobControlRecord* jcr,
       p++; /* skip over < */
       if ((ffd = fopen(p, "rb")) == NULL) {
         BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, T_("Cannot open FileSet input file: %s. ERR=%s\n"),
-             p, be.bstrerror());
+        Jmsg(jcr, M_FATAL, 0,
+             T_("Cannot open FileSet input file: %s. ERR=%s\n"), p,
+             be.bstrerror());
         return;
       }
       while (fgets(buf, sizeof(buf), ffd)) {

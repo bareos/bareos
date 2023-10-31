@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -79,9 +79,10 @@ TEST_F(PromptsFormatting, ReturnsSingleElementWhenOnlyOnePromptIsAvailable)
 
 TEST_F(PromptsFormatting, Formatting10Elements_StandardWidthNoThreshold)
 {
-  const char* list[] = {T_("bareos1"), T_("bareos2"),  T_("bareos3"), T_("bareos4"),
-                        T_("bareos5"), T_("bareos6"),  T_("bareos7"), T_("bareos8"),
-                        T_("bareos9"), T_("bareos10"), nullptr};
+  const char* list[]
+      = {T_("bareos1"), T_("bareos2"),  T_("bareos3"), T_("bareos4"),
+         T_("bareos5"), T_("bareos6"),  T_("bareos7"), T_("bareos8"),
+         T_("bareos9"), T_("bareos10"), nullptr};
 
   PopulateUaWithPrompts(ua, list);
 
@@ -99,12 +100,13 @@ TEST_F(PromptsFormatting, Formatting10Elements_StandardWidthNoThreshold)
 
 TEST_F(PromptsFormatting, Formatting15Elements_StandardWidthNoThreshold)
 {
-  const char* list[] = {
-      T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),  T_("bareos5"),
-      T_("bareos6"),  T_("bareos7"),  T_("bareos8"),  T_("bareos9"),  T_("bareos10"),
-      T_("bareos11"), T_("bareos12"), T_("bareos13"), T_("bareos14"), T_("bareos15"),
+  const char* list[]
+      = {T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),
+         T_("bareos5"),  T_("bareos6"),  T_("bareos7"),  T_("bareos8"),
+         T_("bareos9"),  T_("bareos10"), T_("bareos11"), T_("bareos12"),
+         T_("bareos13"), T_("bareos14"), T_("bareos15"),
 
-      nullptr};
+         nullptr};
 
   PopulateUaWithPrompts(ua, list);
 
@@ -121,11 +123,12 @@ TEST_F(PromptsFormatting, Formatting15Elements_StandardWidthNoThreshold)
 
 TEST_F(PromptsFormatting, Formatting16Elements_StandardWidthNoThreshold)
 {
-  const char* list[] = {
-      T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),  T_("bareos5"),
-      T_("bareos6"),  T_("bareos7"),  T_("bareos8"),  T_("bareos9"),  T_("bareos10"),
-      T_("bareos11"), T_("bareos12"), T_("bareos13"), T_("bareos14"), T_("bareos15"),
-      T_("bareos16"), nullptr};
+  const char* list[]
+      = {T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),
+         T_("bareos5"),  T_("bareos6"),  T_("bareos7"),  T_("bareos8"),
+         T_("bareos9"),  T_("bareos10"), T_("bareos11"), T_("bareos12"),
+         T_("bareos13"), T_("bareos14"), T_("bareos15"), T_("bareos16"),
+         nullptr};
 
   PopulateUaWithPrompts(ua, list);
 
@@ -143,12 +146,13 @@ TEST_F(PromptsFormatting, Formatting16Elements_StandardWidthNoThreshold)
 
 TEST_F(PromptsFormatting, Formatting21Elements_StandardWidthNoThreshold)
 {
-  const char* list[] = {
-      T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),  T_("bareos5"),
-      T_("bareos6"),  T_("bareos7"),  T_("bareos8"),  T_("bareos9"),  T_("bareos10"),
-      T_("bareos11"), T_("bareos12"), T_("bareos13"), T_("bareos14"), T_("bareos15"),
-      T_("bareos16"), T_("bareos17"), T_("bareos18"), T_("bareos19"), T_("bareos20"),
-      T_("bareos21"), nullptr};
+  const char* list[]
+      = {T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),
+         T_("bareos5"),  T_("bareos6"),  T_("bareos7"),  T_("bareos8"),
+         T_("bareos9"),  T_("bareos10"), T_("bareos11"), T_("bareos12"),
+         T_("bareos13"), T_("bareos14"), T_("bareos15"), T_("bareos16"),
+         T_("bareos17"), T_("bareos18"), T_("bareos19"), T_("bareos20"),
+         T_("bareos21"), nullptr};
 
   PopulateUaWithPrompts(ua, list);
 
@@ -184,21 +188,21 @@ TEST_F(PromptsFormatting,
 
 TEST_F(PromptsFormatting, FormatsForVeryLargeWidth)
 {
-  const char* list[]
-      = {T_("List last 20 Jobs run"),
-         T_("List Jobs where a given File is saved"),
-         T_("Enter list of comma separated JobIds to select"),
-         T_("Enter SQL list command"),
-         T_("Select the most recent backup for a client"),
-         T_("Select backup for a client before a specified time"),
-         T_("Enter a list of files to restore"),
-         T_("Enter a list of files to restore before a specified time"),
-         T_("Find the JobIds of the most recent backup for a client"),
-         T_("Find the JobIds for a backup for a client before a specified time"),
-         T_("Enter a list of directories to restore for found JobIds"),
-         T_("Select full restore to a specified Job date"),
-         T_("Cancel"),
-         nullptr};
+  const char* list[] = {
+      T_("List last 20 Jobs run"),
+      T_("List Jobs where a given File is saved"),
+      T_("Enter list of comma separated JobIds to select"),
+      T_("Enter SQL list command"),
+      T_("Select the most recent backup for a client"),
+      T_("Select backup for a client before a specified time"),
+      T_("Enter a list of files to restore"),
+      T_("Enter a list of files to restore before a specified time"),
+      T_("Find the JobIds of the most recent backup for a client"),
+      T_("Find the JobIds for a backup for a client before a specified time"),
+      T_("Enter a list of directories to restore for found JobIds"),
+      T_("Select full restore to a specified Job date"),
+      T_("Cancel"),
+      nullptr};
 
   PopulateUaWithPrompts(ua, list);
 
@@ -227,12 +231,13 @@ TEST_F(PromptsFormatting, FormatsForVeryLargeWidth)
 
 TEST_F(PromptsFormatting, Format15Elements_SmallWidth10LineThreshold)
 {
-  const char* list[] = {
-      T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),  T_("bareos5"),
-      T_("bareos6"),  T_("bareos7"),  T_("bareos8"),  T_("bareos9"),  T_("bareos10"),
-      T_("bareos11"), T_("bareos12"), T_("bareos13"), T_("bareos14"), T_("bareos15"),
+  const char* list[]
+      = {T_("bareos1"),  T_("bareos2"),  T_("bareos3"),  T_("bareos4"),
+         T_("bareos5"),  T_("bareos6"),  T_("bareos7"),  T_("bareos8"),
+         T_("bareos9"),  T_("bareos10"), T_("bareos11"), T_("bareos12"),
+         T_("bareos13"), T_("bareos14"), T_("bareos15"),
 
-      nullptr};
+         nullptr};
 
   PopulateUaWithPrompts(ua, list);
 

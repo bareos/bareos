@@ -94,8 +94,8 @@ bool DoVerifyInit(JobControlRecord* jcr)
     case L_VERIFY_DATA:
       break;
     default:
-      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented Verify level %d(%c)\n"), JobLevel,
-            JobLevel);
+      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented Verify level %d(%c)\n"),
+            JobLevel, JobLevel);
       return false;
   }
   return true;
@@ -159,8 +159,8 @@ bool DoVerify(JobControlRecord* jcr)
           if (JobLevel == L_VERIFY_CATALOG) {
             Jmsg(jcr, M_FATAL, 0,
                  T_("Unable to find JobId of previous InitCatalog Job.\n"
-                   "Please run a Verify with Level=InitCatalog before\n"
-                   "running the current Job.\n"));
+                    "Please run a Verify with Level=InitCatalog before\n"
+                    "running the current Job.\n"));
           } else {
             Jmsg(jcr, M_FATAL, 0,
                  T_("Unable to find JobId of previous Job for this client.\n"));
@@ -266,7 +266,7 @@ bool DoVerify(JobControlRecord* jcr)
       if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
         Jmsg(jcr, M_FATAL, 0,
              T_("Client \"%s\" doesn't support passive client mode. "
-               "Please upgrade your client or disable compat mode.\n"),
+                "Please upgrade your client or disable compat mode.\n"),
              jcr->dir_impl->res.client->resource_name_);
         goto bail_out;
       }
@@ -363,8 +363,8 @@ bool DoVerify(JobControlRecord* jcr)
       level = "disk_to_catalog";
       break;
     default:
-      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented Verify level %d(%c)\n"), JobLevel,
-            JobLevel);
+      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented Verify level %d(%c)\n"),
+            JobLevel, JobLevel);
       goto bail_out;
   }
 
@@ -497,24 +497,24 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
     case L_VERIFY_VOLUME_TO_CATALOG:
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
-             "  Build OS:               %s\n"
-             "  JobId:                  %d\n"
-             "  Job:                    %s\n"
-             "  FileSet:                %s\n"
-             "  Verify Level:           %s\n"
-             "  Client:                 %s\n"
-             "  Verify JobId:           %d\n"
-             "  Verify Job:             %s\n"
-             "  Start time:             %s\n"
-             "  End time:               %s\n"
-             "  Files Expected:         %s\n"
-             "  Files Examined:         %s\n"
-             "  Non-fatal FD errors:    %d\n"
-             "  FD termination status:  %s\n"
-             "  SD termination status:  %s\n"
-             "  Bareos binary info:     %s\n"
-             "  Job triggered by:       %s\n"
-             "  Termination:            %s\n\n"),
+              "  Build OS:               %s\n"
+              "  JobId:                  %d\n"
+              "  Job:                    %s\n"
+              "  FileSet:                %s\n"
+              "  Verify Level:           %s\n"
+              "  Client:                 %s\n"
+              "  Verify JobId:           %d\n"
+              "  Verify Job:             %s\n"
+              "  Start time:             %s\n"
+              "  End time:               %s\n"
+              "  Files Expected:         %s\n"
+              "  Files Examined:         %s\n"
+              "  Non-fatal FD errors:    %d\n"
+              "  FD termination status:  %s\n"
+              "  SD termination status:  %s\n"
+              "  Bareos binary info:     %s\n"
+              "  Job triggered by:       %s\n"
+              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
@@ -533,22 +533,22 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
     default:
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
-             "  Build:                  %s\n"
-             "  JobId:                  %d\n"
-             "  Job:                    %s\n"
-             "  FileSet:                %s\n"
-             "  Verify Level:           %s\n"
-             "  Client:                 %s\n"
-             "  Verify JobId:           %d\n"
-             "  Verify Job:             %s\n"
-             "  Start time:             %s\n"
-             "  End time:               %s\n"
-             "  Files Examined:         %s\n"
-             "  Non-fatal FD errors:    %d\n"
-             "  FD termination status:  %s\n"
-             "  Bareos binary info:     %s\n"
-             "  Job triggered by:       %s\n"
-             "  Termination:            %s\n\n"),
+              "  Build:                  %s\n"
+              "  JobId:                  %d\n"
+              "  Job:                    %s\n"
+              "  FileSet:                %s\n"
+              "  Verify Level:           %s\n"
+              "  Client:                 %s\n"
+              "  Verify JobId:           %d\n"
+              "  Verify Job:             %s\n"
+              "  Start time:             %s\n"
+              "  End time:               %s\n"
+              "  Files Examined:         %s\n"
+              "  Non-fatal FD errors:    %d\n"
+              "  FD termination status:  %s\n"
+              "  Bareos binary info:     %s\n"
+              "  Job triggered by:       %s\n"
+              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
@@ -607,7 +607,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         != 3) {
       Jmsg3(jcr, M_FATAL, 0,
             T_("dird<filed: bad attributes, expected 3 fields got %d\n"
-              " mslen=%d msg=%s\n"),
+               " mslen=%d msg=%s\n"),
             len, fd->message_length, fd->msg);
       goto bail_out;
     }

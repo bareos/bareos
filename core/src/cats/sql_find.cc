@@ -89,7 +89,8 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
        *  then we do a second look to find the most recent
        *  backup */
       if (!QUERY_DB(jcr, cmd)) {
-        Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
+        Mmsg2(errmsg,
+              T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
               sql_strerror(), cmd);
         return false;
       }

@@ -453,7 +453,7 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
     if (!fhdb_root) {
       Jmsg(nis->jcr, M_FATAL, 0,
            T_("NDMP protocol error, FHDB add_dir call before "
-             "add_dirnode_root.\n"));
+              "add_dirnode_root.\n"));
       return 1;
     }
 
@@ -602,7 +602,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
       if (!ProcessOutOfOrderMetadata(meta_data, fhdb_root)) {
         Jmsg(nis->jcr, M_FATAL, 0,
              T_("NDMP protocol error, FHDB unable to process out of order "
-               "metadata.\n"));
+                "metadata.\n"));
         delete meta_data;
         ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata = NULL;
         return 1;
@@ -616,7 +616,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
     if (!wanted_node) {
       Jmsg(nis->jcr, M_FATAL, 0,
            T_("NDMP protocol error, FHDB add_node request for unknown node "
-             "%llu.\n"),
+              "%llu.\n"),
            node);
       return 1;
     }
@@ -658,7 +658,7 @@ extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog* ixlog,
     if (fhdb_root) {
       Jmsg(nis->jcr, M_FATAL, 0,
            T_("NDMP protocol error, FHDB add_dirnode_root call more then "
-             "once.\n"));
+              "once.\n"));
       return 1;
     }
 

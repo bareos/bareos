@@ -345,7 +345,8 @@ retry:
       if (result == 0) {
         result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
         if (result != 0) {
-          Jmsg1(jcr_, M_FATAL, 0, T_("Unable to create write transaction: %s\n"),
+          Jmsg1(jcr_, M_FATAL, 0,
+                T_("Unable to create write transaction: %s\n"),
                 mdb_strerror(result));
         } else {
           retval = true;

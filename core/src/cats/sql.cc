@@ -158,9 +158,9 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
       && max_concurrent_jobs > context.nr_connections) {
     Mmsg(errmsg,
          T_("Potential performance problem:\n"
-           "max_connections=%d set for %s database \"%s\" should be larger "
-           "than Director's "
-           "MaxConcurrentJobs=%d\n"),
+            "max_connections=%d set for %s database \"%s\" should be larger "
+            "than Director's "
+            "MaxConcurrentJobs=%d\n"),
          context.nr_connections, GetType(), get_db_name(), max_concurrent_jobs);
     Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
     return false;

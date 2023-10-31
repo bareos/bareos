@@ -855,7 +855,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
         Mmsg(query, sql_job_bytes, mid.list);
         Dmsg1(dbglevel, "Jobbytes query: %s\n", query.c_str());
         if (!jcr->db->SqlQuery(query.c_str(), db_int64_handler, (void*)&ctx)) {
-          Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
+          Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"),
+               jcr->db->strerror());
           goto bail_out;
         }
         pool_bytes -= ctx.value;
@@ -1531,37 +1532,37 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
 
     Jmsg(jcr, msg_type, 0,
          T_("%s %s %s (%s):\n"
-           "  Build OS:               %s\n"
-           "  Prev Backup JobId:      %s\n"
-           "  Prev Backup Job:        %s\n"
-           "  New Backup JobId:       %s\n"
-           "  Current JobId:          %s\n"
-           "  Current Job:            %s\n"
-           "  Backup Level:           %s\n"
-           "  Client:                 %s\n"
-           "  FileSet:                \"%s\"\n"
-           "  Read Pool:              \"%s\" (From %s)\n"
-           "  Read Storage:           \"%s\" (From %s)\n"
-           "  Write Pool:             \"%s\" (From %s)\n"
-           "  Write Storage:          \"%s\" (From %s)\n"
-           "  Next Pool:              \"%s\" (From %s)\n"
-           "  Catalog:                \"%s\" (From %s)\n"
-           "  Start time:             %s\n"
-           "  End time:               %s\n"
-           "  Elapsed time:           %s\n"
-           "  Priority:               %d\n"
-           "  SD Files Written:       %s\n"
-           "  SD Bytes Written:       %s (%sB)\n"
-           "  Rate:                   %.1f KB/s\n"
-           "  Volume name(s):         %s\n"
-           "  Volume Session Id:      %d\n"
-           "  Volume Session Time:    %d\n"
-           "  Last Volume Bytes:      %s (%sB)\n"
-           "  SD Errors:              %d\n"
-           "  SD termination status:  %s\n"
-           "  Bareos binary info:     %s\n"
-           "  Job triggered by:       %s\n"
-           "  Termination:            %s\n\n"),
+            "  Build OS:               %s\n"
+            "  Prev Backup JobId:      %s\n"
+            "  Prev Backup Job:        %s\n"
+            "  New Backup JobId:       %s\n"
+            "  Current JobId:          %s\n"
+            "  Current Job:            %s\n"
+            "  Backup Level:           %s\n"
+            "  Client:                 %s\n"
+            "  FileSet:                \"%s\"\n"
+            "  Read Pool:              \"%s\" (From %s)\n"
+            "  Read Storage:           \"%s\" (From %s)\n"
+            "  Write Pool:             \"%s\" (From %s)\n"
+            "  Write Storage:          \"%s\" (From %s)\n"
+            "  Next Pool:              \"%s\" (From %s)\n"
+            "  Catalog:                \"%s\" (From %s)\n"
+            "  Start time:             %s\n"
+            "  End time:               %s\n"
+            "  Elapsed time:           %s\n"
+            "  Priority:               %d\n"
+            "  SD Files Written:       %s\n"
+            "  SD Bytes Written:       %s (%sB)\n"
+            "  Rate:                   %.1f KB/s\n"
+            "  Volume name(s):         %s\n"
+            "  Volume Session Id:      %d\n"
+            "  Volume Session Time:    %d\n"
+            "  Last Volume Bytes:      %s (%sB)\n"
+            "  SD Errors:              %d\n"
+            "  SD termination status:  %s\n"
+            "  Bareos binary info:     %s\n"
+            "  Job triggered by:       %s\n"
+            "  Termination:            %s\n\n"),
          BAREOS, my_name, kBareosVersionStrings.Full,
          kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
          edit_uint64(jcr->dir_impl->previous_jr.JobId, ec6),
@@ -1606,17 +1607,17 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
     // Copy/Migrate selection only Job.
     Jmsg(jcr, msg_type, 0,
          T_("%s %s %s (%s):\n"
-           "  Build OS:               %s\n"
-           "  Current JobId:          %s\n"
-           "  Current Job:            %s\n"
-           "  Catalog:                \"%s\" (From %s)\n"
-           "  Start time:             %s\n"
-           "  End time:               %s\n"
-           "  Elapsed time:           %s\n"
-           "  Priority:               %d\n"
-           "  Bareos binary info:     %s\n"
-           "  Job triggered by:       %s\n"
-           "  Termination:            %s\n\n"),
+            "  Build OS:               %s\n"
+            "  Current JobId:          %s\n"
+            "  Current Job:            %s\n"
+            "  Catalog:                \"%s\" (From %s)\n"
+            "  Start time:             %s\n"
+            "  End time:               %s\n"
+            "  Elapsed time:           %s\n"
+            "  Priority:               %d\n"
+            "  Bareos binary info:     %s\n"
+            "  Job triggered by:       %s\n"
+            "  Termination:            %s\n\n"),
          BAREOS, my_name, kBareosVersionStrings.Full,
          kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
          edit_uint64(jcr->dir_impl->jr.JobId, ec8), jcr->dir_impl->jr.Job,

@@ -321,7 +321,7 @@ static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
   if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
     scan_err2(lc,
               T_("Maximum Block Size configured value %u is greater than "
-                "allowed maximum: %u"),
+                 "allowed maximum: %u"),
               GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
   }
 }
@@ -495,13 +495,13 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
          * works. So we set it to this value. */
         Jmsg1(nullptr, M_WARNING, 0,
               T_("device %s is set to the default 'Maximum Concurrent Jobs' = "
-                "1.\n"),
+                 "1.\n"),
               d->archive_device_string);
         d->max_concurrent_jobs = 1;
       } else if (d->max_concurrent_jobs > 1) {
         Jmsg2(nullptr, M_ERROR_TERM, 0,
               T_("device %s is configured with 'Maximum Concurrent Jobs' = %d, "
-                "however only 1 is supported.\n"),
+                 "however only 1 is supported.\n"),
               d->archive_device_string, d->max_concurrent_jobs);
       }
     }
@@ -521,8 +521,8 @@ static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
         BErrNo be;
         Jmsg2(nullptr, M_ERROR_TERM, 0,
               T_("Unable to stat path '%s' for device %s: ERR=%s\n"
-                "Consider setting Device Type if device is not available when "
-                "daemon starts.\n"),
+                 "Consider setting Device Type if device is not available when "
+                 "daemon starts.\n"),
               d->archive_device_string, d->resource_name_, be.bstrerror());
         return;
       }
@@ -741,9 +741,10 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!items[i].IsPresent()) {
-        Emsg2(M_ERROR_TERM, 0,
-              T_("\"%s\" item is required in \"%s\" resource, but not found.\n"),
-              items[i].name, resources[type].name);
+        Emsg2(
+            M_ERROR_TERM, 0,
+            T_("\"%s\" item is required in \"%s\" resource, but not found.\n"),
+            items[i].name, resources[type].name);
       }
     }
 

@@ -684,7 +684,7 @@ static int RestoreObjectHandler(void* ctx, int, char** row)
   if (jcr->dir_impl->FDVersion < FD_VERSION_3) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Client \"%s\" may not be used to restore "
-           "this job. Please upgrade your client.\n"),
+            "this job. Please upgrade your client.\n"),
          jcr->dir_impl->res.client->resource_name_);
     return 1;
   }
@@ -866,7 +866,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
         != 3) {
       Jmsg(jcr, M_FATAL, 0,
            T_("<filed: bad attributes, expected 3 fields got %d\n"
-             "message_length=%d msg=%s\n"),
+              "message_length=%d msg=%s\n"),
            len, fd->message_length, fd->msg);
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       return 0;
@@ -997,8 +997,8 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 
   // Try to connect for 15 seconds
   if (!ua->api) {
-    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
-                client->address, client->FDport);
+    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+                client->resource_name_, client->address, client->FDport);
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
@@ -1040,8 +1040,8 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
 
   // Try to connect for 15 seconds
   if (!ua->api) {
-    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
-                client->address, client->FDport);
+    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+                client->resource_name_, client->address, client->FDport);
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {

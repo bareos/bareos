@@ -227,8 +227,8 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   if (PQstatus(db_handle_) != CONNECTION_OK) {
     Mmsg2(errmsg,
           T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-            "Possible causes: SQL server not running; password incorrect; "
-            "max_connections exceeded.\n(%s)\n"),
+             "Possible causes: SQL server not running; password incorrect; "
+             "max_connections exceeded.\n(%s)\n"),
           db_name_, db_user_, PQerrorMessage(db_handle_));
     goto bail_out;
   }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -155,8 +155,8 @@ ConfigParserStateMachine::ScanResource(int token)
         Dmsg1(900, "Keyword = %s\n", lexical_parser_->str);
         scan_err1(lexical_parser_,
                   T_("Keyword \"%s\" not permitted in this resource.\n"
-                    "Perhaps you left the trailing brace off of the "
-                    "previous resource."),
+                     "Perhaps you left the trailing brace off of the "
+                     "previous resource."),
                   lexical_parser_->str);
         return ParseInternalReturnCode::kError;
       }
@@ -206,7 +206,7 @@ ConfigParserStateMachine::ParserInitResource(int token)
     case BCT_UTF16_BOM:
       scan_err0(lexical_parser_,
                 T_("Currently we cannot handle UTF-16 source files. "
-                  "Please convert the conf file to UTF-8\n"));
+                   "Please convert the conf file to UTF-8\n"));
       return ParseInternalReturnCode::kError;
     default:
       if (token != BCT_IDENTIFIER) {

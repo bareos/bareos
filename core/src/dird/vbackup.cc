@@ -238,7 +238,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   if (!jcr->accurate) {
     Jmsg(jcr, M_WARNING, 0,
          T_("This Job is not an Accurate backup so is not equivalent to a Full "
-           "backup.\n"));
+            "backup.\n"));
   }
 
   std::string jobids = GetVfJobids(*jcr);
@@ -280,7 +280,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   Dmsg1(10, "Previous JobId=%s\n", jobid_list.front().c_str());
 
   if (!jcr->db->GetJobRecord(jcr, &tmp_jr)) {
-    Jmsg(jcr, M_FATAL, 0, T_("Error getting Job record for first Job: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Error getting Job record for first Job: ERR=%s\n"),
          jcr->db->strerror());
     return false;
   }

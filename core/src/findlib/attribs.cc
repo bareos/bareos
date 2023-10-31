@@ -380,7 +380,7 @@ bool SetAttributes(JobControlRecord* jcr,
         && fsize != (boffset_t)attr->statp.st_size) {
       Jmsg3(jcr, M_ERROR, 0,
             T_("File size of restored file %s not correct. Original %s, "
-              "restored %s.\n"),
+               "restored %s.\n"),
             attr->ofname, edit_uint64(attr->statp.st_size, ec1),
             edit_uint64(fsize, ec2));
     }
@@ -393,7 +393,7 @@ bool SetAttributes(JobControlRecord* jcr,
           && st.st_size != attr->statp.st_size) {
         Jmsg3(jcr, M_ERROR, 0,
               T_("File size of restored file %s not correct. Original %s, "
-                "restored %s.\n"),
+                 "restored %s.\n"),
               attr->ofname, edit_uint64(attr->statp.st_size, ec1),
               edit_uint64(st.st_size, ec2));
       }

@@ -560,7 +560,7 @@ static bool ListMedia(UaContext* ua,
           if (ua->AclHasRestrictions(Pool_ACL) && (llist != VERT_LIST)) {
             ua->ErrorMsg(
                 T_("Restricted permission. Use the commands 'list media' or "
-                  "'llist media all' instead\n"));
+                   "'llist media all' instead\n"));
             return false;
           }
           ua->send->ArrayStart("volumes");
@@ -799,7 +799,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
     // List FILES
@@ -809,7 +809,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("fileset"))) {
     int filesetid = 0;
@@ -832,7 +832,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db or missing filesetid\n"));
+             "client not found in db or missing filesetid\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("filesets"))) {
     // List FILESETs
@@ -850,7 +850,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
@@ -861,7 +861,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("log"))) {
     bool reverse;
@@ -1281,7 +1281,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
           job->resource_name_, pr.Name, JobLevelToString(run->level));
     } else {
       ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
-                    "Level=%s) will be %s\n"),
+                     "Level=%s) will be %s\n"),
                   job->resource_name_, pr.Name, JobLevelToString(run->level),
                   mr.VolumeName);
       found = true;

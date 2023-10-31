@@ -39,7 +39,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
     if (!CryptoKeypairLoadCert(me->pki_keypair, me->pki_keypair_file)) {
       Emsg2(M_FATAL, 0,
             T_("Failed to load public certificate for File"
-              " daemon \"%s\" in %s.\n"),
+               " daemon \"%s\" in %s.\n"),
             me->resource_name_, configfile.c_str());
       OK = false;
     }
@@ -48,7 +48,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
                               nullptr)) {
       Emsg2(M_FATAL, 0,
             T_("Failed to load private key for File"
-              " daemon \"%s\" in %s.\n"),
+               " daemon \"%s\" in %s.\n"),
             me->resource_name_, configfile.c_str());
       OK = false;
     }
@@ -78,7 +78,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
             if (!CryptoKeypairLoadKey(keypair, filepath, nullptr, nullptr)) {
               Emsg3(M_FATAL, 0,
                     T_("Failed to load private key from file %s for File"
-                      " daemon \"%s\" in %s.\n"),
+                       " daemon \"%s\" in %s.\n"),
                     filepath, me->resource_name_, configfile.c_str());
               OK = false;
             }
@@ -87,7 +87,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
         } else {
           Emsg3(M_FATAL, 0,
                 T_("Failed to load trusted signer certificate"
-                  " from file %s for File daemon \"%s\" in %s.\n"),
+                   " from file %s for File daemon \"%s\" in %s.\n"),
                 filepath, me->resource_name_, configfile.c_str());
           OK = false;
         }
@@ -118,7 +118,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
         } else {
           Emsg3(M_FATAL, 0,
                 T_("Failed to load master key certificate"
-                  " from file %s for File daemon \"%s\" in %s.\n"),
+                   " from file %s for File daemon \"%s\" in %s.\n"),
                 filepath, me->resource_name_, configfile.c_str());
           OK = false;
         }
@@ -146,7 +146,7 @@ bool CheckResources()
   if (!me) {
     Emsg1(M_FATAL, 0,
           T_("No File daemon resource defined in %s\n"
-            "Without that I don't know who I am :-(\n"),
+             "Without that I don't know who I am :-(\n"),
           configfile.c_str());
     OK = false;
   } else {
@@ -166,8 +166,9 @@ bool CheckResources()
     }
     if (me->pki_encrypt || me->pki_sign) {
 #ifndef HAVE_CRYPTO
-      Jmsg(nullptr, M_FATAL, 0,
-           T_("PKI encryption/signing enabled but not compiled into Bareos.\n"));
+      Jmsg(
+          nullptr, M_FATAL, 0,
+          T_("PKI encryption/signing enabled but not compiled into Bareos.\n"));
       OK = false;
 #endif
     }
@@ -178,8 +179,8 @@ bool CheckResources()
     if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
       Emsg2(M_FATAL, 0,
             T_("\"PKI Key Pair\" must be defined for File"
-              " daemon \"%s\" in %s if either \"PKI Sign\" or"
-              " \"PKI Encrypt\" are enabled.\n"),
+               " daemon \"%s\" in %s if either \"PKI Sign\" or"
+               " \"PKI Encrypt\" are enabled.\n"),
             me->resource_name_, configfile.c_str());
       OK = false;
     }

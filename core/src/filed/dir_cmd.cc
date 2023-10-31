@@ -273,7 +273,7 @@ static bool ValidateCommand(JobControlRecord* jcr,
   if (!allowed) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Illegal \"%s\" command not allowed by Allowed Job Cmds setting of "
-           "this filed.\n"),
+            "this filed.\n"),
          cmd);
   }
 
@@ -530,9 +530,9 @@ void* handle_director_connection(BareosSocket* dir)
 #endif
 
   if (AreMaxConcurrentJobsExceeded()) {
-    Emsg0(
-        M_ERROR, 0,
-        T_("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+    Emsg0(M_ERROR, 0,
+          T_("Number of Jobs exhausted, please increase "
+             "MaximumConcurrentJobs\n"));
     return nullptr;
   }
 
@@ -1043,7 +1043,8 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
         != 7) {
       Dmsg0(5, "Bad restore object command\n");
       PmStrcpy(jcr->errmsg, dir->msg);
-      Jmsg1(jcr, M_FATAL, 0, T_("Bad RestoreObject command: %s\n"), jcr->errmsg);
+      Jmsg1(jcr, M_FATAL, 0, T_("Bad RestoreObject command: %s\n"),
+            jcr->errmsg);
       goto bail_out;
     }
   }
@@ -1327,7 +1328,7 @@ static bool LevelCmd(JobControlRecord* jcr)
       }
       Jmsg(jcr, type, 0,
            T_("DIR and FD clocks differ by %lld seconds, FD automatically "
-             "compensating.\n"),
+              "compensating.\n"),
            adj);
     }
     dir->signal(BNET_EOD);
@@ -1649,8 +1650,9 @@ bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
           // See if pki_encrypt is already set for this Job.
           if (!jcr->fd_impl->crypto.pki_encrypt) {
             if (!me->pki_keypair_file) {
-              Jmsg(jcr, M_FATAL, 0,
-                   T_("Fileset contains cipher settings but PKI Key Pair is not "
+              Jmsg(
+                  jcr, M_FATAL, 0,
+                  T_("Fileset contains cipher settings but PKI Key Pair is not "
                      "configured\n"));
               return false;
             }
@@ -1697,7 +1699,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   if (restore_only_mode) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Filed in restore only mode, backups are not allowed, "
-           "aborting...\n"));
+            "aborting...\n"));
     goto cleanup;
   }
 
@@ -1725,19 +1727,20 @@ static bool BackupCmd(JobControlRecord* jcr)
   if (!have_acl) {
     ClearFlagInFileset(jcr, FO_ACL,
                        T_("ACL support requested in fileset but not available "
-                         "on this platform. Disabling ...\n"));
+                          "on this platform. Disabling ...\n"));
   }
 
   if (!have_xattr) {
-    ClearFlagInFileset(jcr, FO_XATTR,
-                       T_("XATTR support requested in fileset but not available "
-                         "on this platform. Disabling ...\n"));
+    ClearFlagInFileset(
+        jcr, FO_XATTR,
+        T_("XATTR support requested in fileset but not available "
+           "on this platform. Disabling ...\n"));
   }
 #endif
   if (!have_encryption) {
     ClearFlagInFileset(jcr, FO_ENCRYPT,
                        T_("Encryption support requested in fileset but not "
-                         "available on this platform. Disabling ...\n"));
+                          "available on this platform. Disabling ...\n"));
   }
 
   ClearCompressionFlagInFileset(jcr);
@@ -2100,7 +2103,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
   if (backup_only_mode) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Filed in backup only mode, restores are not allowed, "
-           "aborting...\n"));
+            "aborting...\n"));
     return false;
   }
 
@@ -2189,7 +2192,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
       BErrNo be;
       Jmsg(jcr, M_WARNING, 0,
            T_("VSS was not initialized properly. VSS support is disabled. "
-             "ERR=%s\n"),
+              "ERR=%s\n"),
            be.bstrerror());
     }
 
@@ -2308,7 +2311,8 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
     }
     Dmsg1(110, "filed: got Ticket=%d\n", jcr->fd_impl->Ticket);
   } else {
-    Jmsg(jcr, M_FATAL, 0, T_("Bad response from stored to read open command\n"));
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Bad response from stored to read open command\n"));
     return false;
   }
 
@@ -2397,8 +2401,9 @@ bool response(JobControlRecord* jcr,
           T_("Comm error with SD. bad response to %s. ERR=%s\n"), cmd,
           BnetStrerror(sd));
   } else {
-    Jmsg3(jcr, M_FATAL, 0, T_("Bad response to %s command. Wanted %s, got %s\n"),
-          cmd, resp, sd->msg);
+    Jmsg3(jcr, M_FATAL, 0,
+          T_("Bad response to %s command. Wanted %s, got %s\n"), cmd, resp,
+          sd->msg);
   }
   return false;
 }

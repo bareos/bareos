@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -139,12 +139,10 @@ static inline bool parse_gfapi_devicename(char* devicename,
     bp++;
     *servername = bp;
 
-    /*
-     * Parse any explicit server portnr.
+    /* Parse any explicit server portnr.
      * We search reverse in the string for a : what indicates
      * a port specification but in that string there may not contain a ']'
-     * because then we searching in a IPv6 string.
-     */
+     * because then we searching in a IPv6 string. */
     bp = strrchr(bp, ':');
     if (bp && !strchr(bp, ']')) {
       char* port;
@@ -353,7 +351,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     if (status < 0) {
       Mmsg3(errmsg,
             T_("Unable to initialize Gluster management server for transport "
-              "%s, servername %s, serverport %d\n"),
+               "%s, servername %s, serverport %d\n"),
             (transport_) ? transport_ : "tcp", servername_, serverport_);
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
@@ -409,10 +407,8 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     Mmsg(virtual_filename_, "%s", getVolCatName());
   }
 
-  /*
-   * See if the O_CREAT flag is set as glfs_open doesn't support that flag and
-   * you have to call glfs_creat then.
-   */
+  /* See if the O_CREAT flag is set as glfs_open doesn't support that flag and
+   * you have to call glfs_creat then. */
   if (flags & O_CREAT) {
     gfd_ = glfs_creat(glfs_, virtual_filename_, flags, mode);
   } else {
@@ -497,15 +493,13 @@ bool gfapi_device::d_truncate(DeviceControlRecord*)
       return false;
     }
 
-    /*
-     * Check for a successful glfs_truncate() and issue work-around when
+    /* Check for a successful glfs_truncate() and issue work-around when
      * truncation doesn't work.
      *
      * 1. close file
      * 2. delete file
      * 3. open new file with same mode
-     * 4. change ownership to original
-     */
+     * 4. change ownership to original */
     if (glfs_fstat(gfd_, &st) != 0) {
       BErrNo be;
 

@@ -193,7 +193,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (!rx.restore_jobs) {
     ua->ErrorMsg(
         T_("No Restore Job Resource found in %s.\n"
-          "You must create at least one before running this command.\n"),
+           "You must create at least one before running this command.\n"),
         my_config->get_base_config_path().c_str());
     goto bail_out;
   }
@@ -229,7 +229,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (job->Protocol == PT_NDMP_NATIVE) {
     ua->InfoMsg(
         T_("Skipping BootStrapRecord creation as we are doing NDMP_NATIVE "
-          "restore.\n"));
+           "restore.\n"));
 
   } else {
     if (rx.bsr->JobId) {
@@ -464,21 +464,21 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   JobId_t JobId;
   bool done = false;
   int i, j;
-  const char* list[]
-      = {T_("List last 20 Jobs run"),
-         T_("List Jobs where a given File is saved"),
-         T_("Enter list of comma separated JobIds to select"),
-         T_("Enter SQL list command"),
-         T_("Select the most recent backup for a client"),
-         T_("Select backup for a client before a specified time"),
-         T_("Enter a list of files to restore"),
-         T_("Enter a list of files to restore before a specified time"),
-         T_("Find the JobIds of the most recent backup for a client"),
-         T_("Find the JobIds for a backup for a client before a specified time"),
-         T_("Enter a list of directories to restore for found JobIds"),
-         T_("Select full restore to a specified Job date"),
-         T_("Cancel"),
-         NULL};
+  const char* list[] = {
+      T_("List last 20 Jobs run"),
+      T_("List Jobs where a given File is saved"),
+      T_("Enter list of comma separated JobIds to select"),
+      T_("Enter SQL list command"),
+      T_("Select the most recent backup for a client"),
+      T_("Select backup for a client before a specified time"),
+      T_("Enter a list of files to restore"),
+      T_("Enter a list of files to restore before a specified time"),
+      T_("Find the JobIds of the most recent backup for a client"),
+      T_("Find the JobIds for a backup for a client before a specified time"),
+      T_("Enter a list of directories to restore for found JobIds"),
+      T_("Select full restore to a specified Job date"),
+      T_("Cancel"),
+      NULL};
 
   const char* kw[] = {             // These keywords are handled in a for loop
                       "jobid",     /* 0 */
@@ -613,9 +613,9 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   if (!done) {
     ua->SendMsg(
         T_("\nFirst you select one or more JobIds that contain files\n"
-          "to be restored. You will be presented several methods\n"
-          "of specifying the JobIds. Then you will be allowed to\n"
-          "select which files from those JobIds are to be restored.\n\n"));
+           "to be restored. You will be presented several methods\n"
+           "of specifying the JobIds. Then you will be allowed to\n"
+           "select which files from those JobIds are to be restored.\n\n"));
   }
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
@@ -697,8 +697,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             T_("Enter file names with paths, or < to enter a filename\n"
-              "containing a list of file names with paths, and Terminate\n"
-              "them with a blank line.\n"));
+               "containing a list of file names with paths, and Terminate\n"
+               "them with a blank line.\n"));
         for (;;) {
           if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
@@ -713,8 +713,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             T_("Enter file names with paths, or < to enter a filename\n"
-              "containing a list of file names with paths, and Terminate\n"
-              "them with a blank line.\n"));
+               "containing a list of file names with paths, and Terminate\n"
+               "them with a blank line.\n"));
         for (;;) {
           if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
@@ -739,10 +739,12 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
       case 10: /* Enter directories */
         if (*rx->JobIds != 0) {
-          ua->SendMsg(T_("You have already selected the following JobIds: %s\n"),
-                      rx->JobIds);
-        } else if (GetCmd(ua,
-                          T_("Enter JobId(s), comma separated, to restore: "))) {
+          ua->SendMsg(
+              T_("You have already selected the following JobIds: %s\n"),
+              rx->JobIds);
+        } else if (GetCmd(
+                       ua,
+                       T_("Enter JobId(s), comma separated, to restore: "))) {
           if (*rx->JobIds != 0 && *ua->cmd) { PmStrcat(rx->JobIds, ","); }
           bstrncpy(rx->last_jobid, ua->cmd, sizeof(rx->last_jobid));
           PmStrcat(rx->JobIds, ua->cmd);
@@ -755,8 +757,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             T_("Enter full directory names or start the name\n"
-              "with a < to indicate it is a filename containing a list\n"
-              "of directories and Terminate them with a blank line.\n"));
+               "with a < to indicate it is a filename containing a list\n"
+               "of directories and Terminate them with a blank line.\n"));
         for (;;) {
           if (!GetCmd(ua, T_("Enter directory name: "))) { return 0; }
           len = strlen(ua->cmd);
@@ -849,10 +851,12 @@ static bool get_date(UaContext* ua, std::string& date)
 {
   ua->SendMsg(
       T_("The restored files will the most current backup\n"
-        "BEFORE the date you specify below.\n\n"));
+         "BEFORE the date you specify below.\n\n"));
   std::string cmpdate;
   for (;;) {
-    if (!GetCmd(ua, T_("Enter date as YYYY-MM-DD HH:MM:SS :"))) { return false; }
+    if (!GetCmd(ua, T_("Enter date as YYYY-MM-DD HH:MM:SS :"))) {
+      return false;
+    }
     cmpdate = CompensateShortDate(ua->cmd);
 
     if (StrToUtime(cmpdate.c_str()) != 0) { break; }
@@ -1101,8 +1105,8 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
   }
   ua->SendMsg(
       T_("\n\nFor one or more of the JobIds selected, no files were found,\n"
-        "so file selection is not possible.\n"
-        "Most likely your retention policy pruned the files.\n"));
+         "so file selection is not possible.\n"
+         "Most likely your retention policy pruned the files.\n"));
   if (GetYesno(ua, T_("\nDo you want to restore all the files? (yes|no): "))) {
     if (ua->pint32_val) { return true; }
 
@@ -1179,7 +1183,8 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  ua->InfoMsg(T_("\nBuilding directory tree for JobId(s) %s ...  "), rx->JobIds);
+  ua->InfoMsg(T_("\nBuilding directory tree for JobId(s) %s ...  "),
+              rx->JobIds);
 
   ua->LogAuditEventInfoMsg(T_("Building directory tree for JobId(s) %s"),
                            rx->JobIds);
@@ -1373,7 +1378,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                      ua->db->strerror());
       ua->SendMsg(
           T_("This probably means you modified the FileSet.\n"
-            "Continuing anyway.\n"));
+             "Continuing anyway.\n"));
     }
   }
 
@@ -1645,7 +1650,7 @@ void FindStorageResource(UaContext* ua,
                            store->resource_name_, MediaType);
           } else {
             ua->WarningMsg(T_("Storage \"%s\" not found, using Storage \"%s\" "
-                             "from MediaType \"%s\".\n"),
+                              "from MediaType \"%s\".\n"),
                            Storage, store->resource_name_, MediaType);
           }
         }
@@ -1653,7 +1658,7 @@ void FindStorageResource(UaContext* ua,
       }
     }
     ua->WarningMsg(T_("\nUnable to find Storage resource for\n"
-                     "MediaType \"%s\", needed by the Jobs you selected.\n"),
+                      "MediaType \"%s\", needed by the Jobs you selected.\n"),
                    MediaType);
   }
 

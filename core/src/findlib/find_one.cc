@@ -735,8 +735,8 @@ static inline int process_directory(JobControlRecord* jcr,
     /* Some filesystems violate against the rules and return filenames
      * longer than _PC_NAME_MAX. Log the error and continue. */
     if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
-      Jmsg2(jcr, M_ERROR, 0, T_("%s: File name too long [%d]\n"), result->d_name,
-            name_length);
+      Jmsg2(jcr, M_ERROR, 0, T_("%s: File name too long [%d]\n"),
+            result->d_name, name_length);
       continue;
     }
 

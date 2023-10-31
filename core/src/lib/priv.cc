@@ -129,13 +129,14 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
     }
     cap_free(caps);
 #  else
-    Emsg0(
-        M_ERROR_TERM, 0,
-        T_("Keep readall caps not implemented this OS or missing libraries.\n"));
+    Emsg0(M_ERROR_TERM, 0,
+          T_("Keep readall caps not implemented this OS or missing "
+             "libraries.\n"));
 #  endif
   } else if (setuid(uid)) {
     BErrNo be;
-    Emsg1(M_ERROR_TERM, 0, T_("Could not set specified userid: %s\n"), username);
+    Emsg1(M_ERROR_TERM, 0, T_("Could not set specified userid: %s\n"),
+          username);
   }
 }
 #else

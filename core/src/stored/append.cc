@@ -414,7 +414,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   ReleaseDevice(jcr->sd_impl->dcr);
 
   if (!DeleteNullJobmediaRecords(jcr)) {
-    Jmsg(jcr, M_WARNING, 0, T_("Could not delete placeholder media records.\n"));
+    Jmsg(jcr, M_WARNING, 0,
+         T_("Could not delete placeholder media records.\n"));
   }
 
   /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
