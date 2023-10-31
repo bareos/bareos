@@ -96,7 +96,7 @@ void InitVolListLock()
 
   if ((errstat = RwlInit(&vol_list_lock, PRIO_SD_VOL_LIST)) != 0) {
     BErrNo be;
-    Emsg1(M_ABORT, 0, _("Unable to initialize volume list lock. ERR=%s\n"),
+    Emsg1(M_ABORT, 0, T_("Unable to initialize volume list lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
 }
@@ -360,7 +360,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
   if (me->filedevice_concurrent_read && dcr->IsWriting()
       && find_read_volume(VolumeName)) {
     Mmsg(dcr->jcr->errmsg,
-         _("Could not reserve volume \"%s\" for append, because it is read by "
+         T_("Could not reserve volume \"%s\" for append, because it is read by "
            "another Job.\n"),
          dcr->dev->VolHdr.VolumeName);
     return NULL;

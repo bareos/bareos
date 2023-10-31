@@ -54,7 +54,7 @@ DBId_t dbid_list::get(int i) const
   if (i >= size()) {
     Emsg2(
         M_ERROR_TERM, 0,
-        _("Unable to access dbid_list entry %d. Only %d entries available.\n"),
+        T_("Unable to access dbid_list entry %d. Only %d entries available.\n"),
         i, size());
     return (DBId_t)0;
   }
@@ -157,7 +157,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   if (context.nr_connections && max_concurrent_jobs
       && max_concurrent_jobs > context.nr_connections) {
     Mmsg(errmsg,
-         _("Potential performance problem:\n"
+         T_("Potential performance problem:\n"
            "max_connections=%d set for %s database \"%s\" should be larger "
            "than Director's "
            "MaxConcurrentJobs=%d\n"),
@@ -206,7 +206,7 @@ bool BareosDb::QueryDB(const char* file,
   SqlFreeResult();
   Dmsg1(1000, "query: %s\n", select_cmd);
   if (!SqlQuery(select_cmd, QF_STORE_RESULT)) {
-    msg_(file, line, errmsg, _("query %s failed:\n%s\n"), select_cmd,
+    msg_(file, line, errmsg, T_("query %s failed:\n%s\n"), select_cmd,
          sql_strerror());
     j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
@@ -229,7 +229,7 @@ int BareosDb::InsertDB(const char* file,
   int num_rows;
 
   if (!SqlQuery(select_cmd)) {
-    msg_(file, line, errmsg, _("insert %s failed:\n%s\n"), select_cmd,
+    msg_(file, line, errmsg, T_("insert %s failed:\n%s\n"), select_cmd,
          sql_strerror());
     j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
@@ -238,7 +238,7 @@ int BareosDb::InsertDB(const char* file,
   num_rows = SqlAffectedRows();
   if (num_rows != 1) {
     char ed1[30];
-    msg_(file, line, errmsg, _("Insertion problem: affected_rows=%s\n"),
+    msg_(file, line, errmsg, T_("Insertion problem: affected_rows=%s\n"),
          edit_uint64(num_rows, ed1));
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
     return num_rows;
@@ -258,7 +258,7 @@ int BareosDb::UpdateDB(const char* file,
                        const char* UpdateCmd)
 {
   if (!SqlQuery(UpdateCmd)) {
-    msg_(file, line, errmsg, _("update %s failed:\n%s\n"), UpdateCmd,
+    msg_(file, line, errmsg, T_("update %s failed:\n%s\n"), UpdateCmd,
          sql_strerror());
     j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd); }
@@ -281,7 +281,7 @@ int BareosDb::DeleteDB(const char* file,
                        const char* DeleteCmd)
 {
   if (!SqlQuery(DeleteCmd)) {
-    msg_(file, line, errmsg, _("delete %s failed:\n%s\n"), DeleteCmd,
+    msg_(file, line, errmsg, T_("delete %s failed:\n%s\n"), DeleteCmd,
          sql_strerror());
     j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", DeleteCmd); }
@@ -305,14 +305,14 @@ int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
 
   if (QUERY_DB(jcr, cmd)) {
     if ((row = SqlFetchRow()) == NULL) {
-      Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+      Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
       retval = -1;
     } else {
       retval = str_to_int64(row[0]);
     }
     SqlFreeResult();
   } else {
-    Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+    Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
     retval = -1;
   }
   return retval;
@@ -365,7 +365,7 @@ void BareosDb::SplitPathAndFile(JobControlRecord* jcr, const char* filename)
     memcpy(path, filename, pnl);
     path[pnl] = 0;
   } else {
-    Mmsg1(errmsg, _("Path length is zero. File=%s\n"), fname);
+    Mmsg1(errmsg, T_("Path length is zero. File=%s\n"), fname);
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     path[0] = 0;
     pnl = 0;
@@ -630,7 +630,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
 
   Dmsg0(800, "ListResult starts\n");
   if (SqlNumRows() == 0) {
-    send->Decoration(_("No results to list.\n"));
+    send->Decoration(T_("No results to list.\n"));
     return 0;
   }
 
@@ -857,7 +857,7 @@ bool BareosDb::OpenBatchConnection(JobControlRecord* jcr)
   if (!jcr->db_batch) {
     jcr->db_batch = CloneDatabaseConnection(jcr, multi_db, multi_db);
     if (!jcr->db_batch) {
-      Mmsg0(errmsg, _("Could not init database batch connection\n"));
+      Mmsg0(errmsg, T_("Could not init database batch connection\n"));
       Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
       return false;
     }

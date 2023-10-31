@@ -126,7 +126,7 @@ class ConsoleAuthenticatorBefore_18_2 : public ConsoleAuthenticator {
     if (ua_) {
       std::string cipher = ua_->UA_sock->GetCipherMessageString();
       if (ua_->UA_sock) {
-        return ua_->UA_sock->fsend(_("1000 OK: %s Version: %s (%s) "
+        return ua_->UA_sock->fsend(T_("1000 OK: %s Version: %s (%s) "
                                      "-- %s\n"),
                                    my_name, kBareosVersionStrings.Full,
                                    kBareosVersionStrings.Date, cipher.c_str());
@@ -274,7 +274,7 @@ OptionResult ConsoleAuthenticatorFrom_18_2::AuthenticatePamUser()
   {
     if (optional_console_resource_
         && optional_console_resource_->use_pam_authentication_) {
-      Emsg0(M_ERROR, 0, _("PAM is not available on this director\n"));
+      Emsg0(M_ERROR, 0, T_("PAM is not available on this director\n"));
       auth_success_ = false;
       return OptionResult::Completed;
     } else {
@@ -350,7 +350,7 @@ OptionResult ConsoleAuthenticatorFrom_18_2::AuthenticatePamUser()
 
 static void LogErrorMessage(std::string console_name, UaContext* ua)
 {
-  Emsg4(M_ERROR, 0, _("Unable to authenticate console \"%s\" at %s:%s:%d.\n"),
+  Emsg4(M_ERROR, 0, T_("Unable to authenticate console \"%s\" at %s:%s:%d.\n"),
         console_name.c_str(), ua->UA_sock->who(), ua->UA_sock->host(),
         ua->UA_sock->port());
 }
@@ -369,7 +369,7 @@ static bool GetConsoleNameAndVersion(BareosSocket* ua_sock,
     version_out = version;
     return true;
   } else {
-    Emsg4(M_ERROR, 0, _("UA Hello from %s:%s:%d is invalid. Got: %s\n"),
+    Emsg4(M_ERROR, 0, T_("UA Hello from %s:%s:%d is invalid. Got: %s\n"),
           ua_sock->who(), ua_sock->host(), ua_sock->port(), ua_sock->msg);
     return false;
   }
@@ -408,14 +408,14 @@ bool AuthenticateConsole(UaContext* ua)
     }
     if (num_leases > me->MaxConsoleConnections) {
       Emsg0(M_INFO, 0,
-            _("Number of console connections exceeded\n"
+            T_("Number of console connections exceeded\n"
               "Maximum: %u, Current: %zu\n"),
             me->MaxConsoleConnections, num_leases);
     }
   } else {
     if (num_leases > me->MaxConsoleConnections) {
       Emsg0(M_ERROR, 0,
-            _("Number of console connections exceeded "
+            T_("Number of console connections exceeded "
               "Maximum :%u, Current: %zu\n"),
             me->MaxConsoleConnections, num_leases);
       return false;

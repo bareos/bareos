@@ -273,7 +273,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     bool done;
 
     if (!dev_options) {
-      Mmsg0(errmsg, _("No device options configured\n"));
+      Mmsg0(errmsg, T_("No device options configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
     }
@@ -302,7 +302,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
                   = strtol(bp + device_options[i].compare_size, NULL, 10);
               break;
             default:
-              Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+              Mmsg1(errmsg, T_("Unable to parse device option: %s\n"), bp);
               Emsg0(M_FATAL, 0, errmsg);
               goto bail_out;
               break;
@@ -314,14 +314,14 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     }
 
     if (!gfapi_uri_) {
-      Mmsg0(errmsg, _("No GFAPI URI configured\n"));
+      Mmsg0(errmsg, T_("No GFAPI URI configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
     }
 
     if (!parse_gfapi_devicename(gfapi_uri_, &transport_, &servername_,
                                 &volumename_, &basedir_, &serverport_)) {
-      Mmsg1(errmsg, _("Unable to parse device URI %s.\n"), dev_options);
+      Mmsg1(errmsg, T_("Unable to parse device URI %s.\n"), dev_options);
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
     }
@@ -332,7 +332,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     glfs_ = glfs_new(volumename_);
     if (!glfs_) {
       Mmsg1(errmsg,
-            _("Unable to create new Gluster context for volumename %s.\n"),
+            T_("Unable to create new Gluster context for volumename %s.\n"),
             volumename_);
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
@@ -341,7 +341,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     if (gfapi_logfile_ != nullptr) {
       if (glfs_set_logging(glfs_, gfapi_logfile_, gfapi_loglevel_) < 0) {
         Mmsg3(errmsg,
-              _("Unable to initialize Gluster logging file=%s level=%d\n"),
+              T_("Unable to initialize Gluster logging file=%s level=%d\n"),
               gfapi_logfile_, gfapi_loglevel_);
         Emsg0(M_FATAL, 0, errmsg);
         goto bail_out;
@@ -352,7 +352,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
                                      servername_, serverport_);
     if (status < 0) {
       Mmsg3(errmsg,
-            _("Unable to initialize Gluster management server for transport "
+            T_("Unable to initialize Gluster management server for transport "
               "%s, servername %s, serverport %d\n"),
             (transport_) ? transport_ : "tcp", servername_, serverport_);
       Emsg0(M_FATAL, 0, errmsg);
@@ -361,7 +361,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
 
     status = glfs_init(glfs_);
     if (status < 0) {
-      Mmsg1(errmsg, _("Unable to initialize Gluster for volumename %s.\n"),
+      Mmsg1(errmsg, T_("Unable to initialize Gluster for volumename %s.\n"),
             volumename_);
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
@@ -385,7 +385,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
         case ENOENT:
           if (!GfapiMakedirs(glfs_, virtual_filename_)) {
             Mmsg1(errmsg,
-                  _("Specified glusterfs directory %s cannot be created.\n"),
+                  T_("Specified glusterfs directory %s cannot be created.\n"),
                   virtual_filename_);
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
@@ -397,7 +397,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     } else {
       if (!S_ISDIR(st.st_mode)) {
         Mmsg1(errmsg,
-              _("Specified glusterfs directory %s is not a directory.\n"),
+              T_("Specified glusterfs directory %s is not a directory.\n"),
               virtual_filename_);
         Emsg0(M_FATAL, 0, errmsg);
         goto bail_out;
@@ -491,7 +491,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord*)
     if (glfs_ftruncate(gfd_, 0) != 0) {
       BErrNo be;
 
-      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
+      Mmsg2(errmsg, T_("Unable to truncate device %s. ERR=%s\n"), prt_name,
             be.bstrerror());
       Emsg0(M_FATAL, 0, errmsg);
       return false;
@@ -509,7 +509,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord*)
     if (glfs_fstat(gfd_, &st) != 0) {
       BErrNo be;
 
-      Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name,
+      Mmsg2(errmsg, T_("Unable to stat device %s. ERR=%s\n"), prt_name,
             be.bstrerror());
       Dmsg1(100, "%s", errmsg);
       return false;
@@ -526,7 +526,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord*)
         BErrNo be;
 
         dev_errno = errno;
-        Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), virtual_filename_,
+        Mmsg2(errmsg, T_("Could not reopen: %s, ERR=%s\n"), virtual_filename_,
               be.bstrerror());
         Emsg0(M_FATAL, 0, errmsg);
 

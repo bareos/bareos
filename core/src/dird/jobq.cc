@@ -71,7 +71,7 @@ int JobqInit(jobq_t* jq, int max_workers, void* (*engine)(void* arg))
 
   if ((status = pthread_attr_init(&jq->attr)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ERROR, 0, _("pthread_attr_init: ERR=%s\n"),
+    Jmsg1(NULL, M_ERROR, 0, T_("pthread_attr_init: ERR=%s\n"),
           be.bstrerror(status));
     return status;
   }
@@ -82,14 +82,14 @@ int JobqInit(jobq_t* jq, int max_workers, void* (*engine)(void* arg))
   }
   if ((status = pthread_mutex_init(&jq->mutex, NULL)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ERROR, 0, _("pthread_mutex_init: ERR=%s\n"),
+    Jmsg1(NULL, M_ERROR, 0, T_("pthread_mutex_init: ERR=%s\n"),
           be.bstrerror(status));
     pthread_attr_destroy(&jq->attr);
     return status;
   }
   if ((status = pthread_cond_init(&jq->work, NULL)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_init: ERR=%s\n"),
+    Jmsg1(NULL, M_ERROR, 0, T_("pthread_cond_init: ERR=%s\n"),
           be.bstrerror(status));
     pthread_mutex_destroy(&jq->mutex);
     pthread_attr_destroy(&jq->attr);
@@ -129,7 +129,7 @@ int JobqDestroy(jobq_t* jq)
     while (jq->num_workers > 0) {
       if ((status = pthread_cond_wait(&jq->work, &jq->mutex)) != 0) {
         BErrNo be;
-        Jmsg1(NULL, M_ERROR, 0, _("pthread_cond_wait: ERR=%s\n"),
+        Jmsg1(NULL, M_ERROR, 0, T_("pthread_cond_wait: ERR=%s\n"),
               be.bstrerror(status));
         unlock_mutex(jq->mutex);
         return status;
@@ -172,7 +172,7 @@ extern "C" void* sched_wait(void* arg)
   // Wait until scheduled time arrives
   if (wtime > 0) {
     Jmsg(jcr, M_INFO, 0,
-         _("Job %s waiting %d seconds for scheduled start time.\n"), jcr->Job,
+         T_("Job %s waiting %d seconds for scheduled start time.\n"), jcr->Job,
          wtime);
   }
 
@@ -210,7 +210,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
     // Initialize termination condition variable
     if ((status = pthread_cond_init(&jcr->dir_impl->term_wait, NULL)) != 0) {
       BErrNo be;
-      Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Unable to init job cond variable: ERR=%s\n"),
             be.bstrerror(status));
       return status;
     }
@@ -234,7 +234,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
     status = pthread_create(&id, &jq->attr, sched_wait, (void*)sched_pkt);
     if (status != 0) { /* thread not created */
       BErrNo be;
-      Jmsg1(jcr, M_ERROR, 0, _("pthread_thread_create: ERR=%s\n"),
+      Jmsg1(jcr, M_ERROR, 0, T_("pthread_thread_create: ERR=%s\n"),
             be.bstrerror(status));
     }
     return status;
@@ -337,7 +337,7 @@ static int StartServer(jobq_t* jq)
     if ((status = pthread_create(&id, &jq->attr, jobq_server, (void*)jq))
         != 0) {
       BErrNo be;
-      Jmsg1(NULL, M_ERROR, 0, _("pthread_create: ERR=%s\n"),
+      Jmsg1(NULL, M_ERROR, 0, T_("pthread_create: ERR=%s\n"),
             be.bstrerror(status));
       return status;
     }
@@ -608,7 +608,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
           jcr->Job, (int)jcr->dir_impl->res.job->RescheduleInterval, now,
           jcr->sched_time);
     Jmsg(jcr, M_INFO, 0,
-         _("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
+         T_("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
          jcr->Job, bstrftime(now).c_str(),
          (int)jcr->dir_impl->res.job->RescheduleInterval,
          bstrftime(jcr->sched_time).c_str());
@@ -664,13 +664,13 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
       njcr->setJobStatusWithPriorityCheck(jcr->getJobStatus());
       if (jcr->dir_impl->res.read_storage) {
         CopyRstorage(njcr, jcr->dir_impl->res.read_storage_list,
-                     _("previous Job"));
+                     T_("previous Job"));
       } else {
         FreeRstorage(njcr);
       }
       if (jcr->dir_impl->res.write_storage) {
         CopyWstorage(njcr, jcr->dir_impl->res.write_storage_list,
-                     _("previous Job"));
+                     T_("previous Job"));
       } else {
         FreeWstorage(njcr);
       }
@@ -880,7 +880,7 @@ void DecReadStore(JobControlRecord* jcr)
     if (jcr->dir_impl->res.read_storage->runtime_storage_status
             ->NumConcurrentReadJobs
         < 0) {
-      Jmsg(jcr, M_FATAL, 0, _("NumConcurrentReadJobs Dec Rstore=%s rncj=%d\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("NumConcurrentReadJobs Dec Rstore=%s rncj=%d\n"),
            jcr->dir_impl->res.read_storage->resource_name_,
            jcr->dir_impl->res.read_storage->runtime_storage_status
                ->NumConcurrentReadJobs);
@@ -889,7 +889,7 @@ void DecReadStore(JobControlRecord* jcr)
     if (jcr->dir_impl->res.read_storage->runtime_storage_status
             ->NumConcurrentJobs
         < 0) {
-      Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Rstore=%s rncj=%d\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("NumConcurrentJobs Dec Rstore=%s rncj=%d\n"),
            jcr->dir_impl->res.read_storage->resource_name_,
            jcr->dir_impl->res.read_storage->runtime_storage_status
                ->NumConcurrentJobs);
@@ -941,7 +941,7 @@ static void DecWriteStore(JobControlRecord* jcr)
     if (jcr->dir_impl->res.write_storage->runtime_storage_status
             ->NumConcurrentJobs
         < 0) {
-      Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Wstore=%s wncj=%d\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("NumConcurrentJobs Dec Wstore=%s wncj=%d\n"),
            jcr->dir_impl->res.write_storage->resource_name_,
            jcr->dir_impl->res.write_storage->runtime_storage_status
                ->NumConcurrentJobs);

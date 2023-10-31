@@ -94,7 +94,7 @@ bool DoVerifyInit(JobControlRecord* jcr)
     case L_VERIFY_DATA:
       break;
     default:
-      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented Verify level %d(%c)\n"), JobLevel,
+      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented Verify level %d(%c)\n"), JobLevel,
             JobLevel);
       return false;
   }
@@ -158,12 +158,12 @@ bool DoVerify(JobControlRecord* jcr)
         if (!jcr->db->FindLastJobid(jcr, Name, &jr)) {
           if (JobLevel == L_VERIFY_CATALOG) {
             Jmsg(jcr, M_FATAL, 0,
-                 _("Unable to find JobId of previous InitCatalog Job.\n"
+                 T_("Unable to find JobId of previous InitCatalog Job.\n"
                    "Please run a Verify with Level=InitCatalog before\n"
                    "running the current Job.\n"));
           } else {
             Jmsg(jcr, M_FATAL, 0,
-                 _("Unable to find JobId of previous Job for this client.\n"));
+                 T_("Unable to find JobId of previous Job for this client.\n"));
           }
           return false;
         }
@@ -176,18 +176,18 @@ bool DoVerify(JobControlRecord* jcr)
       jcr->dir_impl->previous_jr.JobId = verify_jobid;
       if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
         Jmsg(jcr, M_FATAL, 0,
-             _("Could not get job record for previous Job. ERR=%s\n"),
+             T_("Could not get job record for previous Job. ERR=%s\n"),
              jcr->db->strerror());
         return false;
       }
       if (!(jcr->dir_impl->previous_jr.JobStatus == JS_Terminated
             || jcr->dir_impl->previous_jr.JobStatus == JS_Warnings)) {
         Jmsg(jcr, M_FATAL, 0,
-             _("Last Job %d did not Terminate normally. JobStatus=%c\n"),
+             T_("Last Job %d did not Terminate normally. JobStatus=%c\n"),
              verify_jobid, jcr->dir_impl->previous_jr.JobStatus);
         return false;
       }
-      Jmsg(jcr, M_INFO, 0, _("Verifying against JobId=%d Job=%s\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Verifying against JobId=%d Job=%s\n"),
            jcr->dir_impl->previous_jr.JobId, jcr->dir_impl->previous_jr.Job);
   }
 
@@ -226,7 +226,7 @@ bool DoVerify(JobControlRecord* jcr)
   }
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start Verify JobId=%s Level=%s Job=%s\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Start Verify JobId=%s Level=%s Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), JobLevelToString(JobLevel), jcr->Job);
 
   switch (JobLevel) {
@@ -265,7 +265,7 @@ bool DoVerify(JobControlRecord* jcr)
       // Check if the file daemon supports passive client mode.
       if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
         Jmsg(jcr, M_FATAL, 0,
-             _("Client \"%s\" doesn't support passive client mode. "
+             T_("Client \"%s\" doesn't support passive client mode. "
                "Please upgrade your client or disable compat mode.\n"),
              jcr->dir_impl->res.client->resource_name_);
         goto bail_out;
@@ -298,7 +298,7 @@ bool DoVerify(JobControlRecord* jcr)
       break;
     case L_VERIFY_VOLUME_TO_CATALOG:
       if (!jcr->RestoreBootstrap) {
-        Jmsg0(jcr, M_FATAL, 0, _("Deprecated feature ... use bootstrap.\n"));
+        Jmsg0(jcr, M_FATAL, 0, T_("Deprecated feature ... use bootstrap.\n"));
         goto bail_out;
       }
 
@@ -363,7 +363,7 @@ bool DoVerify(JobControlRecord* jcr)
       level = "disk_to_catalog";
       break;
     default:
-      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented Verify level %d(%c)\n"), JobLevel,
+      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented Verify level %d(%c)\n"), JobLevel,
             JobLevel);
       goto bail_out;
   }
@@ -410,7 +410,7 @@ bool DoVerify(JobControlRecord* jcr)
       jcr->db_batch->WriteBatchFileRecords(jcr);
       break;
     default:
-      Jmsg1(jcr, M_FATAL, 0, _("Unimplemented verify level %d\n"), JobLevel);
+      Jmsg1(jcr, M_FATAL, 0, T_("Unimplemented verify level %d\n"), JobLevel);
       goto bail_out;
   }
 
@@ -461,26 +461,26 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
   msg_type = M_INFO; /* By default INFO message */
   switch (TermCode) {
     case JS_Terminated:
-      TermMsg = _("Verify OK");
+      TermMsg = T_("Verify OK");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Verify Error ***");
+      TermMsg = T_("*** Verify Error ***");
       msg_type = M_ERROR; /* Generate error message */
       break;
     case JS_Error:
-      TermMsg = _("Verify warnings");
+      TermMsg = T_("Verify warnings");
       break;
     case JS_Canceled:
-      TermMsg = _("Verify Canceled");
+      TermMsg = T_("Verify Canceled");
       break;
     case JS_Differences:
-      TermMsg = _("Verify Differences");
+      TermMsg = T_("Verify Differences");
       break;
     default:
       TermMsg = term_code;
       Bsnprintf(term_code, sizeof(term_code),
-                _("Inappropriate term code: %d %c\n"), TermCode, TermCode);
+                T_("Inappropriate term code: %d %c\n"), TermCode, TermCode);
       break;
   }
 
@@ -496,7 +496,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
       Jmsg(jcr, msg_type, 0,
-           _("%s %s %s (%s):\n"
+           T_("%s %s %s (%s):\n"
              "  Build OS:               %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
@@ -532,7 +532,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       Jmsg(jcr, msg_type, 0,
-           _("%s %s %s (%s):\n"
+           T_("%s %s %s (%s):\n"
              "  Build:                  %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
@@ -606,7 +606,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
     if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname))
         != 3) {
       Jmsg3(jcr, M_FATAL, 0,
-            _("dird<filed: bad attributes, expected 3 fields got %d\n"
+            T_("dird<filed: bad attributes, expected 3 fields got %d\n"
               " mslen=%d msg=%s\n"),
             len, fd->message_length, fd->msg);
       goto bail_out;
@@ -651,8 +651,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         if (!jcr->db->GetFileAttributesRecord(jcr, jcr->dir_impl->fname,
                                               &jcr->dir_impl->previous_jr,
                                               &fdbr)) {
-          Jmsg(jcr, M_INFO, 0, _("New file: %s\n"), jcr->dir_impl->fname);
-          Dmsg1(020, _("File not in catalog: %s\n"), jcr->dir_impl->fname);
+          Jmsg(jcr, M_INFO, 0, T_("New file: %s\n"), jcr->dir_impl->fname);
+          Dmsg1(020, T_("File not in catalog: %s\n"), jcr->dir_impl->fname);
           jcr->setJobStatusWithPriorityCheck(JS_Differences);
           continue;
         } else {
@@ -674,7 +674,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               if (statc.st_ino != statf.st_ino) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     _("      st_ino   differ. Cat: %s File: %s\n"),
+                     T_("      st_ino   differ. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_ino, ed1),
                      edit_uint64((uint64_t)statf.st_ino, ed2));
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
@@ -684,7 +684,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               if (statc.st_mode != statf.st_mode) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     _("      st_mode  differ. Cat: %x File: %x\n"),
+                     T_("      st_mode  differ. Cat: %x File: %x\n"),
                      (uint32_t)statc.st_mode, (uint32_t)statf.st_mode);
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
@@ -693,7 +693,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               if (statc.st_nlink != statf.st_nlink) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     _("      st_nlink differ. Cat: %d File: %d\n"),
+                     T_("      st_nlink differ. Cat: %d File: %d\n"),
                      (uint32_t)statc.st_nlink, (uint32_t)statf.st_nlink);
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
@@ -702,7 +702,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               if (statc.st_uid != statf.st_uid) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     _("      st_uid   differ. Cat: %u File: %u\n"),
+                     T_("      st_uid   differ. Cat: %u File: %u\n"),
                      (uint32_t)statc.st_uid, (uint32_t)statf.st_uid);
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
@@ -711,7 +711,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               if (statc.st_gid != statf.st_gid) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     _("      st_gid   differ. Cat: %u File: %u\n"),
+                     T_("      st_gid   differ. Cat: %u File: %u\n"),
                      (uint32_t)statc.st_gid, (uint32_t)statf.st_gid);
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
@@ -720,7 +720,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               if (statc.st_size != statf.st_size) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     _("      st_size  differ. Cat: %s File: %s\n"),
+                     T_("      st_size  differ. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_size, ed1),
                      edit_uint64((uint64_t)statf.st_size, ed2));
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
@@ -729,21 +729,21 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
             case 'a': /* access time */
               if (statc.st_atime != statf.st_atime) {
                 PrtFname(jcr);
-                Jmsg(jcr, M_INFO, 0, _("      st_atime differs\n"));
+                Jmsg(jcr, M_INFO, 0, T_("      st_atime differs\n"));
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'm':
               if (statc.st_mtime != statf.st_mtime) {
                 PrtFname(jcr);
-                Jmsg(jcr, M_INFO, 0, _("      st_mtime differs\n"));
+                Jmsg(jcr, M_INFO, 0, T_("      st_mtime differs\n"));
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'c': /* ctime */
               if (statc.st_ctime != statf.st_ctime) {
                 PrtFname(jcr);
-                Jmsg(jcr, M_INFO, 0, _("      st_ctime differs\n"));
+                Jmsg(jcr, M_INFO, 0, T_("      st_ctime differs\n"));
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
@@ -751,7 +751,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               if (statc.st_size > statf.st_size) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0,
-                     _("      st_size  decrease. Cat: %s File: %s\n"),
+                     T_("      st_size  decrease. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_size, ed1),
                      edit_uint64((uint64_t)statf.st_size, ed2));
                 jcr->setJobStatusWithPriorityCheck(JS_Differences);
@@ -786,7 +786,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
            * preceded by an attributes record, which sets attr_file_index */
           if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
             Jmsg2(jcr, M_FATAL, 0,
-                  _("MD5/SHA1 index %d not same as attributes %d\n"),
+                  T_("MD5/SHA1 index %d not same as attributes %d\n"),
                   file_index, jcr->dir_impl->FileIndex);
             goto bail_out;
           }
@@ -795,7 +795,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                                   strlen(Opts_Digest.c_str()));
             if (!bstrcmp(buf.c_str(), fdbr.Digest)) {
               PrtFname(jcr);
-              Jmsg(jcr, M_INFO, 0, _("      %s differs. File=%s Cat=%s\n"),
+              Jmsg(jcr, M_INFO, 0, T_("      %s differs. File=%s Cat=%s\n"),
                    stream_to_ascii(stream), buf.c_str(), fdbr.Digest);
               jcr->setJobStatusWithPriorityCheck(JS_Differences);
             }
@@ -810,7 +810,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
   if (IsBnetError(fd)) {
     BErrNo be;
     Jmsg2(jcr, M_FATAL, 0,
-          _("dir<filed: bad attributes from filed n=%d : %s\n"), n,
+          T_("dir<filed: bad attributes from filed n=%d : %s\n"), n,
           be.bstrerror());
     goto bail_out;
   }
@@ -847,7 +847,7 @@ static int MissingHandler(void* ctx, int, char** row)
   if (jcr->IsJobCanceled()) { return 1; }
   if (!jcr->dir_impl->fn_printed) {
     Qmsg(jcr, M_WARNING, 0,
-         _("The following files are in the Catalog but not on %s:\n"),
+         T_("The following files are in the Catalog but not on %s:\n"),
          jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG ? "the Volume(s)"
                                                           : "disk");
     jcr->dir_impl->fn_printed = true;
@@ -861,7 +861,7 @@ static int MissingHandler(void* ctx, int, char** row)
 static void PrtFname(JobControlRecord* jcr)
 {
   if (!jcr->dir_impl->fn_printed) {
-    Jmsg(jcr, M_INFO, 0, _("File: %s\n"), jcr->dir_impl->fname);
+    Jmsg(jcr, M_INFO, 0, T_("File: %s\n"), jcr->dir_impl->fname);
     jcr->dir_impl->fn_printed = true;
   }
 }

@@ -86,7 +86,7 @@ bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord*)
   return true;
 
 bail_out:
-  Mmsg1(errmsg, _("error starting batch mode: %s"), PQerrorMessage(db_handle_));
+  Mmsg1(errmsg, T_("error starting batch mode: %s"), PQerrorMessage(db_handle_));
   status_ = 0;
   PQclear(result_);
   result_ = NULL;
@@ -115,13 +115,13 @@ bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord*,
   if (res <= 0) {
     Dmsg0(500, "we failed\n");
     status_ = 0;
-    Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
     Dmsg1(500, "failure %s\n", errmsg);
   }
 
   pg_result = PQgetResult(db_handle_);
   if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
-    Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
     status_ = 0;
   }
 
@@ -230,7 +230,7 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   if (res <= 0) {
     Dmsg0(500, "we failed\n");
     status_ = 0;
-    Mmsg1(errmsg, _("error copying in batch mode: %s"),
+    Mmsg1(errmsg, T_("error copying in batch mode: %s"),
           PQerrorMessage(db_handle_));
     Dmsg1(500, "failure %s\n", errmsg);
   }
@@ -292,20 +292,20 @@ bool BareosDbPostgresql::SqlCopyStart(
 
   result_ = PQexec(db_handle_, query.c_str());
   if (!result_) {
-    Mmsg1(errmsg, _("error copying in batch mode: %s"),
+    Mmsg1(errmsg, T_("error copying in batch mode: %s"),
           PQerrorMessage(db_handle_));
     return false;
   }
 
   status_ = PQresultStatus(result_);
   if (status_ != PGRES_COPY_IN) {
-    Mmsg1(errmsg, _("Result status failed: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("Result status failed: %s"), PQerrorMessage(db_handle_));
     return false;
   }
 
   std::size_t n = (int)PQnfields(result_);
   if (n != column_names.size()) {
-    Mmsg1(errmsg, _("wrong number of rows: %d"), n);
+    Mmsg1(errmsg, T_("wrong number of rows: %d"), n);
     return false;
   }
 
@@ -346,7 +346,7 @@ bool BareosDbPostgresql::SqlCopyInsert(
 
   if (res <= 0) {
     status_ = 0;
-    Mmsg1(errmsg, _("error copying in batch mode: %s"),
+    Mmsg1(errmsg, T_("error copying in batch mode: %s"),
           PQerrorMessage(db_handle_));
   }
   return true;
@@ -364,7 +364,7 @@ bool BareosDbPostgresql::SqlCopyEnd()
   } while (res == 0 && --count > 0);
 
   if (res <= 0) {
-    Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
     return false;
   }
 
@@ -372,7 +372,7 @@ bool BareosDbPostgresql::SqlCopyEnd()
 
   result_ = PQgetResult(db_handle_);
   if (PQresultStatus(result_) != PGRES_COMMAND_OK) {
-    Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
     return false;
   }
 

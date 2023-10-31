@@ -61,7 +61,7 @@ static int CountFiles(JobControlRecord* jcr,
 static void usage()
 {
   fprintf(stderr,
-          _("\n"
+          T_("\n"
             "Usage: btestls [-d debug_level] [-] [pattern1 ...]\n"
             "       -a          print extended attributes (Win32 debug)\n"
             "       -d <nn>     set debug level to <nn>\n"
@@ -154,7 +154,7 @@ int main(int argc, char* const* argv)
   if (inc) {
     fd = fopen(inc, "rb");
     if (!fd) {
-      printf(_("Could not open include file: %s\n"), inc);
+      printf(T_("Could not open include file: %s\n"), inc);
       exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
@@ -167,7 +167,7 @@ int main(int argc, char* const* argv)
   if (exc) {
     fd = fopen(exc, "rb");
     if (!fd) {
-      printf(_("Could not open exclude file: %s\n"), exc);
+      printf(T_("Could not open exclude file: %s\n"), exc);
       exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
@@ -181,7 +181,7 @@ int main(int argc, char* const* argv)
   } else {
     MatchFiles(jcr, ff, PrintFile);
   }
-  printf(_("Files seen = %d\n"), num_files);
+  printf(T_("Files seen = %d\n"), num_files);
   TermIncludeExcludeFiles(ff);
   TermFindFiles(ff);
 
@@ -211,35 +211,35 @@ static int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
     case FT_DIRBEGIN:
       break;
     case FT_NOACCESS:
-      printf(_("Err: Could not access %s: %s\n"), ff->fname, strerror(errno));
+      printf(T_("Err: Could not access %s: %s\n"), ff->fname, strerror(errno));
       break;
     case FT_NOFOLLOW:
-      printf(_("Err: Could not follow ff->link %s: %s\n"), ff->fname,
+      printf(T_("Err: Could not follow ff->link %s: %s\n"), ff->fname,
              strerror(errno));
       break;
     case FT_NOSTAT:
-      printf(_("Err: Could not stat %s: %s\n"), ff->fname, strerror(errno));
+      printf(T_("Err: Could not stat %s: %s\n"), ff->fname, strerror(errno));
       break;
     case FT_NOCHG:
-      printf(_("Skip: File not saved. No change. %s\n"), ff->fname);
+      printf(T_("Skip: File not saved. No change. %s\n"), ff->fname);
       break;
     case FT_ISARCH:
-      printf(_("Err: Attempt to backup archive. Not saved. %s\n"), ff->fname);
+      printf(T_("Err: Attempt to backup archive. Not saved. %s\n"), ff->fname);
       break;
     case FT_NORECURSE:
-      printf(_("Recursion turned off. Directory not entered. %s\n"), ff->fname);
+      printf(T_("Recursion turned off. Directory not entered. %s\n"), ff->fname);
       break;
     case FT_NOFSCHG:
       printf(
-          _("Skip: File system change prohibited. Directory not entered. %s\n"),
+          T_("Skip: File system change prohibited. Directory not entered. %s\n"),
           ff->fname);
       break;
     case FT_NOOPEN:
-      printf(_("Err: Could not open directory %s: %s\n"), ff->fname,
+      printf(T_("Err: Could not open directory %s: %s\n"), ff->fname,
              strerror(errno));
       break;
     default:
-      printf(_("Err: Unknown file ff->type %d: %s\n"), ff->type, ff->fname);
+      printf(T_("Err: Unknown file ff->type %d: %s\n"), ff->type, ff->fname);
       break;
   }
   num_files++;

@@ -486,35 +486,35 @@ int CryptoKeypairLoadCert(X509_KEYPAIR* keypair, const char* file)
 
   /* Open the file */
   if (!(bio = BIO_new_file(file, "r"))) {
-    OpensslPostErrors(M_ERROR, _("Unable to open certificate file"));
+    OpensslPostErrors(M_ERROR, T_("Unable to open certificate file"));
     return false;
   }
 
   cert = PEM_read_bio_X509(bio, NULL, NULL, NULL);
   BIO_free(bio);
   if (!cert) {
-    OpensslPostErrors(M_ERROR, _("Unable to read certificate from file"));
+    OpensslPostErrors(M_ERROR, T_("Unable to read certificate from file"));
     return false;
   }
 
   /* Extract the public key */
   if (!(keypair->pubkey = X509_get_pubkey(cert))) {
     OpensslPostErrors(M_ERROR,
-                      _("Unable to extract public key from certificate"));
+                      T_("Unable to extract public key from certificate"));
     goto err;
   }
 
   /* Extract the subjectKeyIdentifier extension field */
   if ((keypair->keyid = openssl_cert_keyid(cert)) == NULL) {
     Jmsg0(NULL, M_ERROR, 0,
-          _("Provided certificate does not include the required "
+          T_("Provided certificate does not include the required "
             "subjectKeyIdentifier extension."));
     goto err;
   }
 
   /* Validate the public key type (only RSA is supported) */
   if (EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) != EVP_PKEY_RSA) {
-    Jmsg1(NULL, M_ERROR, 0, _("Unsupported key type provided: %d\n"),
+    Jmsg1(NULL, M_ERROR, 0, T_("Unsupported key type provided: %d\n"),
           EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)));
     goto err;
   }
@@ -551,7 +551,7 @@ bool CryptoKeypairHasKey(const char* file)
   long len;
 
   if (!(bio = BIO_new_file(file, "r"))) {
-    OpensslPostErrors(M_ERROR, _("Unable to open private key file"));
+    OpensslPostErrors(M_ERROR, T_("Unable to open private key file"));
     return false;
   }
 
@@ -578,7 +578,7 @@ bool CryptoKeypairHasKey(const char* file)
   BIO_free(bio);
 
   /* Post PEM-decoding error messages, if any */
-  OpensslPostErrors(M_ERROR, _("Unable to read private key from file"));
+  OpensslPostErrors(M_ERROR, T_("Unable to read private key from file"));
   return retval;
 }
 
@@ -597,7 +597,7 @@ int CryptoKeypairLoadKey(X509_KEYPAIR* keypair,
 
   /* Open the file */
   if (!(bio = BIO_new_file(file, "r"))) {
-    OpensslPostErrors(M_ERROR, _("Unable to open private key file"));
+    OpensslPostErrors(M_ERROR, T_("Unable to open private key file"));
     return false;
   }
 
@@ -614,7 +614,7 @@ int CryptoKeypairLoadKey(X509_KEYPAIR* keypair,
       = PEM_read_bio_PrivateKey(bio, NULL, CryptoPemCallbackDispatch, &ctx);
   BIO_free(bio);
   if (!keypair->privkey) {
-    OpensslPostErrors(M_ERROR, _("Unable to read private key from file"));
+    OpensslPostErrors(M_ERROR, T_("Unable to read private key from file"));
     return false;
   }
 
@@ -656,12 +656,12 @@ DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type)
         return new EvpDigest(jcr, type, EVP_sha512());
 #    endif
       default:
-        Jmsg1(jcr, M_ERROR, 0, _("Unsupported digest type: %d\n"), type);
+        Jmsg1(jcr, M_ERROR, 0, T_("Unsupported digest type: %d\n"), type);
         throw DigestInitException{};
     }
   } catch (const DigestInitException& e) {
     Dmsg0(150, "Digest init failed.\n");
-    OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest initialization failed"));
+    OpensslPostErrors(jcr, M_ERROR, T_("OpenSSL digest initialization failed"));
     return NULL;
   }
 }
@@ -675,7 +675,7 @@ bool EvpDigest::Update(const uint8_t* data, uint32_t length)
 {
   if (EVP_DigestUpdate(&get_ctx(), data, length) == 0) {
     Dmsg0(150, "digest update failed\n");
-    OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest update failed"));
+    OpensslPostErrors(jcr, M_ERROR, T_("OpenSSL digest update failed"));
     return false;
   } else {
     return true;
@@ -693,7 +693,7 @@ bool EvpDigest::Finalize(uint8_t* dest, uint32_t* length)
 {
   if (!EVP_DigestFinal(&get_ctx(), dest, (unsigned int*)length)) {
     Dmsg0(150, "digest finalize failed\n");
-    OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest finalize failed"));
+    OpensslPostErrors(jcr, M_ERROR, T_("OpenSSL digest finalize failed"));
     return false;
   } else {
     return true;
@@ -786,13 +786,13 @@ crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
 
       /* Shouldn't happen */
       if (*digest == NULL) {
-        OpensslPostErrors(sig->jcr, M_ERROR, _("OpenSSL digest_new failed"));
+        OpensslPostErrors(sig->jcr, M_ERROR, T_("OpenSSL digest_new failed"));
         return CRYPTO_ERROR_INVALID_DIGEST;
       } else {
         return CRYPTO_ERROR_NONE;
       }
     } else {
-      OpensslPostErrors(sig->jcr, M_ERROR, _("OpenSSL sign get digest failed"));
+      OpensslPostErrors(sig->jcr, M_ERROR, T_("OpenSSL sign get digest failed"));
     }
   }
 
@@ -835,17 +835,17 @@ crypto_error_t CryptoSignVerify(SIGNATURE* sig,
         return CRYPTO_ERROR_NONE;
       } else if (ok == 0) {
         OpensslPostErrors(sig->jcr, M_ERROR,
-                          _("OpenSSL digest Verify final failed"));
+                          T_("OpenSSL digest Verify final failed"));
         return CRYPTO_ERROR_BAD_SIGNATURE;
       } else if (ok < 0) {
         /* Shouldn't happen */
         OpensslPostErrors(sig->jcr, M_ERROR,
-                          _("OpenSSL digest Verify final failed"));
+                          T_("OpenSSL digest Verify final failed"));
         return CRYPTO_ERROR_INTERNAL;
       }
     }
   }
-  Jmsg(sig->jcr, M_ERROR, 0, _("No signers found for crypto verify.\n"));
+  Jmsg(sig->jcr, M_ERROR, 0, T_("No signers found for crypto verify.\n"));
   /* Signer wasn't found. */
   return CRYPTO_ERROR_NOSIGNER;
 }
@@ -910,7 +910,7 @@ int CryptoSignAddSigner(SIGNATURE* sig, DIGEST* digest, X509_KEYPAIR* keypair)
     len = EVP_PKEY_size(keypair->privkey);
     buf = (unsigned char*)malloc(len);
     if (!EVP_SignFinal(digest_ctx, buf, &len, keypair->privkey)) {
-      OpensslPostErrors(M_ERROR, _("Signature creation failed"));
+      OpensslPostErrors(M_ERROR, T_("Signature creation failed"));
       goto err;
     }
   }
@@ -985,7 +985,7 @@ SIGNATURE* crypto_sign_decode(JobControlRecord* jcr,
 
   if (!sig->sigData) {
     /* Allocation / Decoding failed in OpenSSL */
-    OpensslPostErrors(jcr, M_ERROR, _("Signature decoding failed"));
+    OpensslPostErrors(jcr, M_ERROR, T_("Signature decoding failed"));
     free(sig);
     return NULL;
   }
@@ -1115,7 +1115,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
 #      endif
 #    endif /* !OPENSSL_NO_SHA && !OPENSSL_NO_SHA1 */
     default:
-      Jmsg0(NULL, M_ERROR, 0, _("Unsupported cipher type specified\n"));
+      Jmsg0(NULL, M_ERROR, 0, T_("Unsupported cipher type specified\n"));
       CryptoSessionFree(cs);
       return NULL;
   }
@@ -1267,7 +1267,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
 
   if (!cs->cryptoData) {
     /* Allocation / Decoding failed in OpenSSL */
-    OpensslPostErrors(M_ERROR, _("CryptoData decoding failed"));
+    OpensslPostErrors(M_ERROR, T_("CryptoData decoding failed"));
     retval = CRYPTO_ERROR_INTERNAL;
     goto err;
   }
@@ -1310,7 +1310,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
                 cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
                 M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);)
         if (cs->session_key_len <= 0) {
-          OpensslPostErrors(M_ERROR, _("Failure decrypting the session key"));
+          OpensslPostErrors(M_ERROR, T_("Failure decrypting the session key"));
           retval = CRYPTO_ERROR_DECRYPTION;
           goto err;
         }
@@ -1354,7 +1354,7 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
   // Acquire a cipher instance for the given ASN.1 cipher NID
   if ((ec = EVP_get_cipherbyobj(cs->cryptoData->contentEncryptionAlgorithm))
       == NULL) {
-    Jmsg1(NULL, M_ERROR, 0, _("Unsupported contentEncryptionAlgorithm: %d\n"),
+    Jmsg1(NULL, M_ERROR, 0, T_("Unsupported contentEncryptionAlgorithm: %d\n"),
           OBJ_obj2nid(cs->cryptoData->contentEncryptionAlgorithm));
     delete cipher_ctx;
     return NULL;
@@ -1364,14 +1364,14 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
     /* Initialize for encryption */
     if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 1)) {
       OpensslPostErrors(M_ERROR,
-                        _("OpenSSL cipher context initialization failed"));
+                        T_("OpenSSL cipher context initialization failed"));
       goto err;
     }
   } else {
     /* Initialize for decryption */
     if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 0)) {
       OpensslPostErrors(M_ERROR,
-                        _("OpenSSL cipher context initialization failed"));
+                        T_("OpenSSL cipher context initialization failed"));
       goto err;
     }
   }
@@ -1379,13 +1379,13 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
   /* Set the key size */
   if (!EVP_CIPHER_CTX_set_key_length(cipher_ctx->ctx, cs->session_key_len)) {
     OpensslPostErrors(
-        M_ERROR, _("Encryption session provided an invalid symmetric key"));
+        M_ERROR, T_("Encryption session provided an invalid symmetric key"));
     goto err;
   }
 
   /* Validate the IV length */
   if (EVP_CIPHER_iv_length(ec) != M_ASN1_STRING_length(cs->cryptoData->iv)) {
-    OpensslPostErrors(M_ERROR, _("Encryption session provided an invalid IV"));
+    OpensslPostErrors(M_ERROR, T_("Encryption session provided an invalid IV"));
     goto err;
   }
 
@@ -1393,7 +1393,7 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
   if (!EVP_CipherInit_ex(cipher_ctx->ctx, NULL, NULL, cs->session_key,
                          M_ASN1_STRING_data(cs->cryptoData->iv), -1)) {
     OpensslPostErrors(M_ERROR,
-                      _("OpenSSL cipher context key/IV initialization failed"));
+                      T_("OpenSSL cipher context key/IV initialization failed"));
     goto err;
   }
 
@@ -1496,7 +1496,7 @@ int InitCrypto(void)
 
   if ((status = OpensslInitThreads()) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ABORT, 0, _("Unable to init OpenSSL threading: ERR=%s\n"),
+    Jmsg1(NULL, M_ABORT, 0, T_("Unable to init OpenSSL threading: ERR=%s\n"),
           be.bstrerror(status));
   }
 
@@ -1632,7 +1632,7 @@ openssl_create_dynamic_mutex(const char*, int)
 
   if ((status = pthread_mutex_init(&dynlock->mutex, NULL)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ABORT, 0, _("Unable to init mutex: ERR=%s\n"),
+    Jmsg1(NULL, M_ABORT, 0, T_("Unable to init mutex: ERR=%s\n"),
           be.bstrerror(status));
   }
 
@@ -1661,7 +1661,7 @@ openssl_create_dynamic_mutex(const char*, int)
 
   if ((status = pthread_mutex_destroy(&dynlock->mutex)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ABORT, 0, _("Unable to destroy mutex: ERR=%s\n"),
+    Jmsg1(NULL, M_ABORT, 0, T_("Unable to destroy mutex: ERR=%s\n"),
           be.bstrerror(status));
   }
 
@@ -1702,7 +1702,7 @@ int OpensslInitThreads(void)
   for (i = 0; i < numlocks; i++) {
     if ((status = pthread_mutex_init(&mutexes[i], NULL)) != 0) {
       BErrNo be;
-      Jmsg1(NULL, M_FATAL, 0, _("Unable to init mutex: ERR=%s\n"),
+      Jmsg1(NULL, M_FATAL, 0, T_("Unable to init mutex: ERR=%s\n"),
             be.bstrerror(status));
       return status;
     }
@@ -1741,7 +1741,7 @@ void OpensslCleanupThreads(void)
         default:
           /* We don't halt execution, reporting the error should be sufficient
            */
-          Jmsg2(NULL, M_ERROR, 0, _("Unable to destroy mutex: %d ERR=%s\n"),
+          Jmsg2(NULL, M_ERROR, 0, T_("Unable to destroy mutex: %d ERR=%s\n"),
                 status, be.bstrerror(status));
           break;
       }

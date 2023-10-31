@@ -429,7 +429,7 @@ dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
   vol_list_t* vl = NULL;
   dlist<vol_list_t>* vol_list = NULL;
 
-  ua->WarningMsg(_("get ndmp_vol_list...\n"));
+  ua->WarningMsg(T_("get ndmp_vol_list...\n"));
   if (!GetRobotElementStatus(ua->jcr, store, &ndmp_sess)) {
     return (dlist<vol_list_t>*)NULL;
   }
@@ -688,7 +688,7 @@ bool NdmpTransferVolume(UaContext* ua,
   ndmp_job.to_addr = to_addr;
   ndmp_job.to_addr_given = 1;
 
-  ua->WarningMsg(_("transferring form slot %hd to slot %hd...\n"), src_slot,
+  ua->WarningMsg(T_("transferring form slot %hd to slot %hd...\n"), src_slot,
                  dst_slot);
 
   /*
@@ -745,12 +745,12 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
         devinfo->JobIdUsingDevice = jobid;
         returnvalue = devinfo->device;
         Jmsg(jcr, M_INFO, 0,
-             _("successfully reserved NDMP Tape Device %s for job %d\n"),
+             T_("successfully reserved NDMP Tape Device %s for job %d\n"),
              returnvalue.c_str(), jobid);
         break;
       } else {
         Jmsg(jcr, M_INFO, 0,
-             _("NDMP Tape Device %s is already reserved for for job %d\n"),
+             T_("NDMP Tape Device %s is already reserved for for job %d\n"),
              devinfo->device.c_str(), devinfo->JobIdUsingDevice);
       }
     }
@@ -775,7 +775,7 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
         devinfo->JobIdUsingDevice = 0;
         retval = true;
         Jmsg(jcr, M_INFO, 0,
-             _("removed reservation of NDMP Tape Device %s for job %d\n"),
+             T_("removed reservation of NDMP Tape Device %s for job %d\n"),
              devinfo->device.c_str(), jobid);
         break;
       }
@@ -840,7 +840,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
         "NdmpAutochangerVolumeOperation: operation %s, drive %hd, slot %hd\n",
         operation, drive, slot);
   ua->WarningMsg(
-      _("NdmpAutochangerVolumeOperation: operation %s, drive %hd, slot %hd\n"),
+      T_("NdmpAutochangerVolumeOperation: operation %s, drive %hd, slot %hd\n"),
       operation, drive, slot);
   // See if this is an autochanger.
   if (!store->autochanger || !store->ndmp_changer_device) { return retval; }
@@ -1034,7 +1034,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   bool retval = false;
   if (!ndmp_native_update_runtime_storage_status(jcr, store)) {
     Jmsg(jcr, M_ERROR, 0,
-         _("Failed getting updating runtime storage status\n"));
+         T_("Failed getting updating runtime storage status\n"));
     return retval;
   }
 
@@ -1053,7 +1053,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   int driveindex = lookup_ndmp_driveindex_by_name(store, ndmp_job.tape_device);
 
   if (driveindex == -1) {
-    Jmsg(jcr, M_ERROR, 0, _("Could not find driveindex of drive %s\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Could not find driveindex of drive %s\n"),
          ndmp_job.tape_device);
     return retval;
   }
@@ -1063,7 +1063,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
       slot_type_t::kSlotTypeDrive, driveindex);
   if (driveaddress == kInvalidSlotNumber) {
     Jmsg(jcr, M_ERROR, 0,
-         _("Could not lookup driveaddress for driveindex %d\n"), driveaddress);
+         T_("Could not lookup driveaddress for driveindex %d\n"), driveaddress);
     return retval;
   }
   ndmp_job.drive_addr = driveaddress;
@@ -1074,13 +1074,13 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   ndmp_job.auto_remedy = 1;
   ndmp_job.record_size = jcr->dir_impl->res.client->ndmp_blocksize;
 
-  Jmsg(jcr, M_INFO, 0, _("Using Data  host %s\n"), ndmp_job.data_agent.host);
-  Jmsg(jcr, M_INFO, 0, _("Using Tape  host:device:address  %s:%s:@%d\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Using Data  host %s\n"), ndmp_job.data_agent.host);
+  Jmsg(jcr, M_INFO, 0, T_("Using Tape  host:device:address  %s:%s:@%d\n"),
        ndmp_job.tape_agent.host, ndmp_job.tape_device, ndmp_job.drive_addr);
-  Jmsg(jcr, M_INFO, 0, _("Using Robot host:device(ident)  %s:%s(%s)\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Using Robot host:device(ident)  %s:%s(%s)\n"),
        ndmp_job.robot_agent.host, ndmp_job.robot_target,
        store->runtime_storage_status->smc_ident);
-  Jmsg(jcr, M_INFO, 0, _("Using Tape record size %d\n"), ndmp_job.record_size);
+  Jmsg(jcr, M_INFO, 0, T_("Using Tape record size %d\n"), ndmp_job.record_size);
 
   return true;
 }
@@ -1090,7 +1090,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
 // Dummy entry points when NDMP not enabled.
 void DoNdmpStorageStatus(UaContext* ua, StorageResource*, char*)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
 }
 
 dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
@@ -1098,19 +1098,19 @@ dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
                                      bool,
                                      bool)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return (dlist<vol_list_t>*)NULL;
 }
 
 slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource*)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return 0;
 }
 
 drive_number_t NdmpGetNumDrives(UaContext* ua, StorageResource*)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return 0;
 }
 
@@ -1119,7 +1119,7 @@ bool NdmpTransferVolume(UaContext* ua,
                         slot_number_t,
                         slot_number_t)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 
@@ -1129,7 +1129,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
                                     drive_number_t,
                                     slot_number_t)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 
@@ -1142,7 +1142,7 @@ bool NdmpSendLabelRequest(UaContext* ua,
                           drive_number_t,
                           slot_number_t)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 

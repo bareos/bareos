@@ -119,7 +119,7 @@ static inline void validate_slot_list(UaContext* ua,
               Dmsg1(100, "Deselecting slot %hd doesn't have wanted status.\n",
                     vl->bareos_slot_number);
               ua->WarningMsg(
-                  _("Deselecting slot %hd doesn't have wanted status.\n"),
+                  T_("Deselecting slot %hd doesn't have wanted status.\n"),
                   vl->bareos_slot_number);
               ClearBit(vl->bareos_slot_number - 1, slot_list);
               break;
@@ -141,7 +141,7 @@ static inline void validate_slot_list(UaContext* ua,
               Dmsg1(100, "Deselecting slot %hd doesn't have wanted status.\n",
                     vl->bareos_slot_number);
               ua->WarningMsg(
-                  _("Deselecting slot %hd doesn't have wanted status.\n"),
+                  T_("Deselecting slot %hd doesn't have wanted status.\n"),
                   vl->bareos_slot_number);
               ClearBit(vl->bareos_slot_number - 1, slot_list);
               break;
@@ -494,12 +494,12 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
       Dmsg1(100, "No volume named %s in changer or in selected source slots.\n",
             volumename);
       ua->WarningMsg(
-          _("No volume named %s in changer or in selected source slots.\n"),
+          T_("No volume named %s in changer or in selected source slots.\n"),
           volumename);
     }
   } else {
     Dmsg1(100, "Skipping illegal volumename %s.\n", volumename);
-    ua->WarningMsg(_("Skipping illegal volumename %s.\n"), volumename);
+    ua->WarningMsg(T_("Skipping illegal volumename %s.\n"), volumename);
   }
 
   return found;
@@ -826,7 +826,7 @@ static char* move_volumes_in_autochanger(UaContext* ua,
   nr_enabled_src_slots = count_enabled_slots(src_slot_list, max_slots);
   nr_enabled_dst_slots = count_enabled_slots(dst_slot_list, max_slots);
   if (nr_enabled_src_slots == 0 || nr_enabled_dst_slots == 0) {
-    ua->WarningMsg(_("Nothing to do\n"));
+    ua->WarningMsg(T_("Nothing to do\n"));
     return NULL;
   }
 
@@ -866,7 +866,7 @@ static char* move_volumes_in_autochanger(UaContext* ua,
       if (transfer_to > max_slots) {
         Dmsg0(100, "Failed to find suitable destination slot in slot range.\n");
         ua->WarningMsg(
-            _("Failed to find suitable destination slot in slot range.\n"));
+            T_("Failed to find suitable destination slot in slot range.\n"));
         break;
       }
 
@@ -883,7 +883,7 @@ static char* move_volumes_in_autochanger(UaContext* ua,
                                        vol_list)) {
               Dmsg1(100, "Failed to release volume in drive %hd\n",
                     vl->bareos_slot_number);
-              ua->WarningMsg(_("Failed to release volume in drive %hd\n"),
+              ua->WarningMsg(T_("Failed to release volume in drive %hd\n"),
                              vl->bareos_slot_number);
               continue;
             }
@@ -907,7 +907,7 @@ static char* move_volumes_in_autochanger(UaContext* ua,
               "Failed to move volume from source slot %hd to destination slot "
               "%hd\n",
               transfer_from, transfer_to);
-        ua->WarningMsg(_("Failed to move volume from source slot %hd to "
+        ua->WarningMsg(T_("Failed to move volume from source slot %hd to "
                          "destination slot %hd\n"),
                        transfer_from, transfer_to);
         switch (operation) {
@@ -952,7 +952,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   store.store = get_storage_resource(ua, false, true);
   if (!store.store) { return retval; }
 
-  PmStrcpy(store.store_source, _("command line"));
+  PmStrcpy(store.store_source, T_("command line"));
   SetWstorage(ua->jcr, &store);
 
   /*
@@ -969,7 +969,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
    */
   max_slots = GetNumSlots(ua, store.store);
   if (max_slots <= 0) {
-    ua->WarningMsg(_("No slots in changer.\n"));
+    ua->WarningMsg(T_("No slots in changer.\n"));
     return retval;
   }
 
@@ -980,7 +980,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   vol_list = get_vol_list_from_storage(ua, store.store, true /* listall */,
                                        true /* want to see all slots */);
   if (!vol_list) {
-    ua->WarningMsg(_("No Volumes found, or no barcodes.\n"));
+    ua->WarningMsg(T_("No Volumes found, or no barcodes.\n"));
     goto bail_out;
   }
 
@@ -1087,7 +1087,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   if (nr_enabled_src_slots && nr_enabled_dst_slots
       && nr_enabled_src_slots > nr_enabled_dst_slots) {
     ua->WarningMsg(
-        _("Source slot selection doesn't fit into destination slot "
+        T_("Source slot selection doesn't fit into destination slot "
           "selection.\n"));
     goto bail_out;
   }
@@ -1096,7 +1096,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   if (nr_enabled_src_slots && nr_enabled_dst_slots
       && slot_lists_overlap(src_slot_list, dst_slot_list, max_slots)) {
     ua->WarningMsg(
-        _("Source slot selection and destination slot selection overlap.\n"));
+        T_("Source slot selection and destination slot selection overlap.\n"));
     goto bail_out;
   }
 
@@ -1105,7 +1105,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
     case VOLUME_EXPORT:
       if (nr_enabled_src_slots == 0) {
         ua->WarningMsg(
-            _("Cannot perform an export operation without source slot "
+            T_("Cannot perform an export operation without source slot "
               "selection\n"));
         goto bail_out;
       }
@@ -1113,7 +1113,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
     case VOLUME_MOVE:
       if (nr_enabled_src_slots == 0 || nr_enabled_dst_slots == 0) {
         ua->WarningMsg(
-            _("Cannot perform a move operation without source and/or "
+            T_("Cannot perform a move operation without source and/or "
               "destination selection\n"));
         goto bail_out;
       }
@@ -1140,7 +1140,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
                               slot_type_t::kSlotTypeImport,
                               slot_status_t::kSlotStatusFull)) {
           ua->WarningMsg(
-              _("Not all slots in source selection are import slots and "
+              T_("Not all slots in source selection are import slots and "
                 "filled.\n"));
           goto bail_out;
         }
@@ -1154,7 +1154,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
             slot_status_t::kSlotStatusEmpty);
         if (nr_enabled_src_slots > nr_enabled_dst_slots) {
           ua->WarningMsg(
-              _("Not enough free slots available to import %hd volumes\n"),
+              T_("Not enough free slots available to import %hd volumes\n"),
               nr_enabled_src_slots);
           goto bail_out;
         }
@@ -1167,7 +1167,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
                               slot_type_t::kSlotTypeStorage,
                               slot_status_t::kSlotStatusEmpty)) {
           ua->WarningMsg(
-              _("Not all slots in destination selection are normal slots and "
+              T_("Not all slots in destination selection are normal slots and "
                 "empty.\n"));
           goto bail_out;
         }
@@ -1182,7 +1182,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
                             slot_type_t::kSlotTypeStorage,
                             slot_status_t::kSlotStatusFull)) {
         ua->WarningMsg(
-            _("Not all slots in source selection are normal slots and "
+            T_("Not all slots in source selection are normal slots and "
               "filled.\n"));
         goto bail_out;
       }
@@ -1194,7 +1194,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
             store.store, vol_list, dst_slot_list, slot_type_t::kSlotTypeImport,
             slot_status_t::kSlotStatusEmpty);
         if (nr_enabled_src_slots > nr_enabled_dst_slots) {
-          ua->WarningMsg(_("Not enough free export slots available to export "
+          ua->WarningMsg(T_("Not enough free export slots available to export "
                            "%hd volume%s\n"),
                          nr_enabled_src_slots,
                          nr_enabled_src_slots > 1 ? "s" : "");
@@ -1209,7 +1209,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
                               slot_type_t::kSlotTypeImport,
                               slot_status_t::kSlotStatusEmpty)) {
           ua->WarningMsg(
-              _("Not all slots in destination selection are export slots and "
+              T_("Not all slots in destination selection are export slots and "
                 "empty.\n"));
           goto bail_out;
         }

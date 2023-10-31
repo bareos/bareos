@@ -44,7 +44,7 @@ bool CheckResources()
   my_config->own_resource_ = me;
   if (!me) {
     Jmsg(nullptr, M_FATAL, 0,
-         _("No Director resource defined in %s\n"
+         T_("No Director resource defined in %s\n"
            "Without that I don't know who I am :-(\n"),
          configfile.c_str());
     return false;
@@ -56,7 +56,7 @@ bool CheckResources()
     if (!me->messages) {
       me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, nullptr);
       if (!me->messages) {
-        Jmsg(nullptr, M_FATAL, 0, _("No Messages resource defined in %s\n"),
+        Jmsg(nullptr, M_FATAL, 0, T_("No Messages resource defined in %s\n"),
              configfile.c_str());
         return false;
       }
@@ -67,14 +67,14 @@ bool CheckResources()
       me->optimize_for_size = true;
     } else if (me->optimize_for_size && me->optimize_for_speed) {
       Jmsg(nullptr, M_FATAL, 0,
-           _("Cannot optimize for speed and size define only one in %s\n"),
+           T_("Cannot optimize for speed and size define only one in %s\n"),
            configfile.c_str());
       return false;
     }
 
     if (my_config->GetNextRes(R_DIRECTOR, (BareosResource*)me) != nullptr) {
       Jmsg(nullptr, M_FATAL, 0,
-           _("Only one Director resource permitted in %s\n"),
+           T_("Only one Director resource permitted in %s\n"),
            configfile.c_str());
       return false;
     }
@@ -82,14 +82,14 @@ bool CheckResources()
     if (me->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0,
-             _("TLS required but not compiled into BAREOS.\n"));
+             T_("TLS required but not compiled into BAREOS.\n"));
         return false;
       }
     }
   }
 
   if (!job) {
-    Jmsg(nullptr, M_FATAL, 0, _("No Job records defined in %s\n"),
+    Jmsg(nullptr, M_FATAL, 0, T_("No Job records defined in %s\n"),
          configfile.c_str());
     return false;
   }
@@ -100,7 +100,7 @@ bool CheckResources()
   foreach_res (job, R_JOB) {
     if (job->MaxFullConsolidations && job->JobType != JT_CONSOLIDATE) {
       Jmsg(nullptr, M_FATAL, 0,
-           _("MaxFullConsolidations configured in job %s which is not of job "
+           T_("MaxFullConsolidations configured in job %s which is not of job "
              "type \"consolidate\" in file %s\n"),
            job->resource_name_, configfile.c_str());
       return false;
@@ -111,7 +111,7 @@ bool CheckResources()
             || job->AlwaysIncrementalKeepNumber
             || job->AlwaysIncrementalMaxFullAge)) {
       Jmsg(nullptr, M_FATAL, 0,
-           _("AlwaysIncremental configured in job %s which is not of job type "
+           T_("AlwaysIncremental configured in job %s which is not of job type "
              "\"backup\" in file %s\n"),
            job->resource_name_, configfile.c_str());
       return false;
@@ -123,7 +123,7 @@ bool CheckResources()
     if (cons->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0,
-             _("TLS required but not configured in BAREOS.\n"));
+             T_("TLS required but not configured in BAREOS.\n"));
         ;
         return false;
       }
@@ -134,7 +134,7 @@ bool CheckResources()
   foreach_res (client, R_CLIENT) {
     if (client->IsTlsConfigured()) {
       if (!have_tls) {
-        Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
+        Jmsg(nullptr, M_FATAL, 0, T_("TLS required but not configured.\n"));
         return false;
       }
     }
@@ -144,7 +144,7 @@ bool CheckResources()
   foreach_res (store, R_STORAGE) {
     if (store->IsTlsConfigured()) {
       if (!have_tls) {
-        Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
+        Jmsg(nullptr, M_FATAL, 0, T_("TLS required but not configured.\n"));
         return false;
       }
     }
@@ -159,7 +159,7 @@ bool CheckResources()
         if (IsSameStorageDaemon(store, nstore) && nstore->collectstats) {
           nstore->collectstats = false;
           Dmsg1(200,
-                _("Disabling collectstats for storage \"%s\""
+                T_("Disabling collectstats for storage \"%s\""
                   " as other storage already collects from this SD.\n"),
                 nstore->resource_name_);
         }
@@ -208,7 +208,7 @@ bool InitializeSqlPooling(void)
             catalog->pooling_increment_connections,
             catalog->pooling_idle_timeout, catalog->pooling_validate_timeout)) {
       Jmsg(nullptr, M_FATAL, 0,
-           _("Could not setup sql pooling for Catalog \"%s\", database "
+           T_("Could not setup sql pooling for Catalog \"%s\", database "
              "\"%s\".\n"),
            catalog->resource_name_, catalog->db_name);
       retval = false;
@@ -229,7 +229,7 @@ bool DoReloadConfig()
   if (is_reloading) {
     /* Note: don't use Jmsg here, as it could produce a race condition
      * on multiple parallel reloads */
-    Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+    Qmsg(nullptr, M_ERROR, 0, T_("Already reloading. Request ignored.\n"));
     return false;
   }
   is_reloading = true;
@@ -256,9 +256,9 @@ bool DoReloadConfig()
     reloaded = true;
     Dmsg0(10, "Director's configuration file reread successfully.\n");
   } else {  // parse config failed
-    Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
+    Jmsg(nullptr, M_ERROR, 0, T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
+    Jmsg(nullptr, M_ERROR, 0, T_("Resetting to previous configuration.\n"));
     my_config->RestoreResourcesContainer(std::move(backup_container));
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);

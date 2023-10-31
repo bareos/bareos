@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
     }
     if (!director) {
       Emsg2(M_ERROR_TERM, 0,
-            _("No Director resource named %s defined in %s. Cannot "
+            T_("No Director resource named %s defined in %s. Cannot "
               "continue.\n"),
             DirectorName.c_str(), configfile);
     }
@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
     working_directory = work_dir.c_str();
   } else if (!me->working_directory) {
     Emsg1(M_ERROR_TERM, 0,
-          _("No Working Directory defined in %s. Cannot continue.\n"),
+          T_("No Working Directory defined in %s. Cannot continue.\n"),
           configfile);
   } else {
     working_directory = me->working_directory;
@@ -278,12 +278,12 @@ int main(int argc, char* argv[])
   struct stat stat_buf;
   if (stat(working_directory, &stat_buf) != 0) {
     Emsg1(M_ERROR_TERM, 0,
-          _("Working Directory: %s not found. Cannot continue.\n"),
+          T_("Working Directory: %s not found. Cannot continue.\n"),
           working_directory);
   }
   if (!S_ISDIR(stat_buf.st_mode)) {
     Emsg1(M_ERROR_TERM, 0,
-          _("Working Directory: %s is not a directory. Cannot continue.\n"),
+          T_("Working Directory: %s is not a directory. Cannot continue.\n"),
           working_directory);
   }
 
@@ -296,7 +296,7 @@ int main(int argc, char* argv[])
   // Let SD plugins setup the record translation
   if (GeneratePluginEvent(bjcr, bSdEventSetupRecordTranslation, dcr)
       != bRC_OK) {
-    Jmsg(bjcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call failed!\n"));
+    Jmsg(bjcr, M_FATAL, 0, T_("bSdEventSetupRecordTranslation call failed!\n"));
   }
 
 
@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
     struct stat sb;
     fstat(dev->fd, &sb);
     currentVolumeSize = sb.st_size;
-    Pmsg1(000, _("First Volume Size = %s\n"),
+    Pmsg1(000, T_("First Volume Size = %s\n"),
           edit_uint64(currentVolumeSize, ed1));
   }
 
@@ -314,12 +314,12 @@ int main(int argc, char* argv[])
                         db_user.c_str(), db_password.c_str(), db_host.c_str(),
                         db_port, nullptr, false, false, false, false);
   if (db == nullptr) {
-    Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("Could not init Bareos database\n"));
   }
   if (!db->OpenDatabase(nullptr)) { Emsg0(M_ERROR_TERM, 0, db->strerror()); }
   Dmsg0(200, "Database opened\n");
   if (verbose) {
-    Pmsg2(000, _("Using Database: %s, User: %s\n"), db_name.c_str(),
+    Pmsg2(000, T_("Using Database: %s, User: %s\n"), db_name.c_str(),
           db_user.c_str());
   }
 
@@ -362,7 +362,7 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
     JobControlRecord* mjcr = mdcr->jcr;
     Dmsg1(000, "========== JobId=%u ========\n", mjcr->JobId);
     if (mjcr->JobId == 0) { continue; }
-    if (verbose) { Pmsg1(000, _("Create JobMedia for Job %s\n"), mjcr->Job); }
+    if (verbose) { Pmsg1(000, T_("Create JobMedia for Job %s\n"), mjcr->Job); }
     mdcr->StartBlock = dcr->StartBlock;
     mdcr->StartFile = dcr->StartFile;
     mdcr->EndBlock = dcr->EndBlock;
@@ -371,7 +371,7 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
     mjcr->sd_impl->read_dcr->VolLastIndex = dcr->VolLastIndex;
     if (mjcr->sd_impl->insert_jobmedia_records) {
       if (!CreateJobmediaRecord(db, mjcr)) {
-        Pmsg2(000, _("Could not create JobMedia record for Volume=%s Job=%s\n"),
+        Pmsg2(000, T_("Could not create JobMedia record for Volume=%s Job=%s\n"),
               dev->getVolCatName(), mjcr->Job);
       }
     }
@@ -389,7 +389,7 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
     struct stat sb;
     fstat(dev->fd, &sb);
     currentVolumeSize = sb.st_size;
-    Pmsg1(000, _("First Volume Size = %s\n"),
+    Pmsg1(000, T_("First Volume Size = %s\n"),
           edit_uint64(currentVolumeSize, ed1));
   }
   return status;
@@ -482,7 +482,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     if (showProgress && currentVolumeSize > 0) {
       int pct = (mr.VolBytes * 100) / currentVolumeSize;
       if (pct != last_pct) {
-        fprintf(stdout, _("done: %d%%\n"), pct);
+        fprintf(stdout, T_("done: %d%%\n"), pct);
         fflush(stdout);
         last_pct = pct;
       }
@@ -491,7 +491,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   if (list_records) {
     Pmsg5(000,
-          _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
+          T_("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
           rec->VolSessionId, rec->VolSessionTime, rec->FileIndex, rec->Stream,
           rec->data_len);
   }
@@ -503,7 +503,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     if (verbose > 1) { DumpLabelRecord(dev, rec, true); }
     switch (rec->FileIndex) {
       case PRE_LABEL:
-        Pmsg0(000, _("Volume is prelabeled. This tape cannot be scanned.\n"));
+        Pmsg0(000, T_("Volume is prelabeled. This tape cannot be scanned.\n"));
         return false;
         break;
 
@@ -515,21 +515,21 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         num_pools++;
         if (db->GetPoolRecord(bjcr, &pr)) {
           if (verbose) {
-            Pmsg1(000, _("Pool record for %s found in DB.\n"), pr.Name);
+            Pmsg1(000, T_("Pool record for %s found in DB.\n"), pr.Name);
           }
         } else {
           if (!update_db) {
-            Pmsg1(000, _("VOL_LABEL: Pool record not found for Pool: %s\n"),
+            Pmsg1(000, T_("VOL_LABEL: Pool record not found for Pool: %s\n"),
                   pr.Name);
           }
           CreatePoolRecord(db, &pr);
         }
         if (!bstrcmp(pr.PoolType, dev->VolHdr.PoolType)) {
-          Pmsg2(000, _("VOL_LABEL: PoolType mismatch. DB=%s Vol=%s\n"),
+          Pmsg2(000, T_("VOL_LABEL: PoolType mismatch. DB=%s Vol=%s\n"),
                 pr.PoolType, dev->VolHdr.PoolType);
           return true;
         } else if (verbose) {
-          Pmsg1(000, _("Pool type \"%s\" is OK.\n"), pr.PoolType);
+          Pmsg1(000, T_("Pool type \"%s\" is OK.\n"), pr.PoolType);
         }
 
         // Check Media Info
@@ -539,25 +539,25 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         num_media++;
         if (db->GetMediaRecord(bjcr, &mr)) {
           if (verbose) {
-            Pmsg1(000, _("Media record for %s found in DB.\n"), mr.VolumeName);
+            Pmsg1(000, T_("Media record for %s found in DB.\n"), mr.VolumeName);
           }
           // Clear out some volume statistics that will be updated
           mr.VolJobs = mr.VolFiles = mr.VolBlocks = 0;
           mr.VolBytes = rec->data_len + 20;
         } else {
           if (!update_db) {
-            Pmsg1(000, _("VOL_LABEL: Media record not found for Volume: %s\n"),
+            Pmsg1(000, T_("VOL_LABEL: Media record not found for Volume: %s\n"),
                   mr.VolumeName);
           }
           bstrncpy(mr.MediaType, dev->VolHdr.MediaType, sizeof(mr.MediaType));
           CreateMediaRecord(db, &mr, &dev->VolHdr);
         }
         if (!bstrcmp(mr.MediaType, dev->VolHdr.MediaType)) {
-          Pmsg2(000, _("VOL_LABEL: MediaType mismatch. DB=%s Vol=%s\n"),
+          Pmsg2(000, T_("VOL_LABEL: MediaType mismatch. DB=%s Vol=%s\n"),
                 mr.MediaType, dev->VolHdr.MediaType);
           return true; /* ignore error */
         } else if (verbose) {
-          Pmsg1(000, _("Media type \"%s\" is OK.\n"), mr.MediaType);
+          Pmsg1(000, T_("Media type \"%s\" is OK.\n"), mr.MediaType);
         }
 
         // Reset some DeviceControlRecord variables
@@ -568,20 +568,20 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           dcr->VolMediaId = 0;
         }
 
-        Pmsg1(000, _("VOL_LABEL: OK for Volume: %s\n"), mr.VolumeName);
+        Pmsg1(000, T_("VOL_LABEL: OK for Volume: %s\n"), mr.VolumeName);
         break;
 
       case SOS_LABEL:
         if (bsr && rec->match_stat < 1) {
           // Skipping record, because does not match BootStrapRecord filter
-          Dmsg0(200, _("SOS_LABEL skipped. Record does not match "
+          Dmsg0(200, T_("SOS_LABEL skipped. Record does not match "
                        "BootStrapRecord filter.\n"));
         } else {
           mr.VolJobs++;
           num_jobs++;
           if (ignored_msgs > 0) {
             Pmsg1(000,
-                  _("%d \"errors\" ignored before first Start of Session "
+                  T_("%d \"errors\" ignored before first Start of Session "
                     "record.\n"),
                   ignored_msgs);
             ignored_msgs = 0;
@@ -593,13 +593,13 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             // Job record already exists in DB
             update_db = false; /* don't change db in CreateJobRecord */
             if (verbose) {
-              Pmsg1(000, _("SOS_LABEL: Found Job record for JobId: %d\n"),
+              Pmsg1(000, T_("SOS_LABEL: Found Job record for JobId: %d\n"),
                     jr.JobId);
             }
           } else {
             // Must create a Job record in DB
             if (!update_db) {
-              Pmsg1(000, _("SOS_LABEL: Job record not found for JobId: %d\n"),
+              Pmsg1(000, T_("SOS_LABEL: Job record not found for JobId: %d\n"),
                     jr.JobId);
             }
           }
@@ -641,20 +641,20 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           if (rec->VolSessionId != jr.VolSessionId) {
             Pmsg3(
                 000,
-                _("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%d Vol=%d\n"),
+                T_("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%d Vol=%d\n"),
                 jr.JobId, jr.VolSessionId, rec->VolSessionId);
             return true; /* ignore error */
           }
           if (rec->VolSessionTime != jr.VolSessionTime) {
             Pmsg3(000,
-                  _("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%d "
+                  T_("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%d "
                     "Vol=%d\n"),
                   jr.JobId, jr.VolSessionTime, rec->VolSessionTime);
             return true; /* ignore error */
           }
           if (jr.PoolId != pr.PoolId) {
             Pmsg3(000,
-                  _("SOS_LABEL: PoolId mismatch for JobId=%u. DB=%d Vol=%d\n"),
+                  T_("SOS_LABEL: PoolId mismatch for JobId=%u. DB=%d Vol=%d\n"),
                   jr.JobId, jr.PoolId, pr.PoolId);
             return true; /* ignore error */
           }
@@ -664,7 +664,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       case EOS_LABEL:
         if (bsr && rec->match_stat < 1) {
           // Skipping record, because does not match BootStrapRecord filter
-          Dmsg0(200, _("EOS_LABEL skipped. Record does not match "
+          Dmsg0(200, T_("EOS_LABEL skipped. Record does not match "
                        "BootStrapRecord filter.\n"));
         } else {
           UnserSessionLabel(&elabel, rec);
@@ -678,7 +678,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
           if (!mjcr) {
             Pmsg2(000,
-                  _("Could not find SessId=%d SessTime=%d for EOS record.\n"),
+                  T_("Could not find SessId=%d SessTime=%d for EOS record.\n"),
                   rec->VolSessionId, rec->VolSessionTime);
             break;
           }
@@ -717,7 +717,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             jr.JobTDate = (utime_t)mjcr->start_time;
             jr.ClientId = mjcr->ClientId;
             if (!db->UpdateJobEndRecord(bjcr, &jr)) {
-              Pmsg1(0, _("Could not update job record. ERR=%s\n"),
+              Pmsg1(0, T_("Could not update job record. ERR=%s\n"),
                     db->strerror());
             }
           }
@@ -728,7 +728,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         mr.VolMounts++;
         UpdateMediaRecord(db, &mr);
         Pmsg3(0,
-              _("End of all Volumes. VolFiles=%u VolBlocks=%u VolBytes=%s\n"),
+              T_("End of all Volumes. VolFiles=%u VolBlocks=%u VolBytes=%s\n"),
               mr.VolFiles, mr.VolBlocks,
               edit_uint64_with_commas(mr.VolBytes, ec1));
         break;
@@ -741,7 +741,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
   if (!mjcr) {
     if (mr.VolJobs > 0) {
-      Pmsg2(000, _("Could not find Job for SessId=%d SessTime=%d record.\n"),
+      Pmsg2(000, T_("Could not find Job for SessId=%d SessTime=%d record.\n"),
             rec->VolSessionId, rec->VolSessionTime);
     } else {
       ignored_msgs++;
@@ -757,7 +757,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_UNIX_ATTRIBUTES_EX:
       if (!UnpackAttributesRecord(bjcr, rec->Stream, rec->data, rec->data_len,
                                   attr)) {
-        Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
+        Emsg0(M_ERROR_TERM, 0, T_("Cannot continue.\n"));
       }
 
       if (verbose > 1) {
@@ -771,7 +771,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       num_files++;
       if (verbose && (num_files & 0x7FFF) == 0) {
         char ed1[30], ed2[30], ed3[30], ed4[30];
-        Pmsg4(000, _("%s file records. At file:blk=%s:%s bytes=%s\n"),
+        Pmsg4(000, T_("%s file records. At file:blk=%s:%s bytes=%s\n"),
               edit_uint64_with_commas(num_files, ed1),
               edit_uint64_with_commas(rec->File, ed2),
               edit_uint64_with_commas(rec->Block, ed3),
@@ -785,7 +785,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_RESTORE_OBJECT:
       if (!UnpackRestoreObject(bjcr, rec->Stream, rec->data, rec->data_len,
                                &rop)) {
-        Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
+        Emsg0(M_ERROR_TERM, 0, T_("Cannot continue.\n"));
       }
       rop.FileIndex = mjcr->FileId;
       rop.JobId = mjcr->JobId;
@@ -846,54 +846,54 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_MD5_DIGEST:
       BinToBase64(digest, sizeof(digest), (char*)rec->data,
                   CRYPTO_DIGEST_MD5_SIZE, true);
-      if (verbose > 1) { Pmsg1(000, _("Got MD5 record: %s\n"), digest); }
+      if (verbose > 1) { Pmsg1(000, T_("Got MD5 record: %s\n"), digest); }
       UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_MD5);
       break;
 
     case STREAM_SHA1_DIGEST:
       BinToBase64(digest, sizeof(digest), (char*)rec->data,
                   CRYPTO_DIGEST_SHA1_SIZE, true);
-      if (verbose > 1) { Pmsg1(000, _("Got SHA1 record: %s\n"), digest); }
+      if (verbose > 1) { Pmsg1(000, T_("Got SHA1 record: %s\n"), digest); }
       UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA1);
       break;
 
     case STREAM_SHA256_DIGEST:
       BinToBase64(digest, sizeof(digest), (char*)rec->data,
                   CRYPTO_DIGEST_SHA256_SIZE, true);
-      if (verbose > 1) { Pmsg1(000, _("Got SHA256 record: %s\n"), digest); }
+      if (verbose > 1) { Pmsg1(000, T_("Got SHA256 record: %s\n"), digest); }
       UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA256);
       break;
 
     case STREAM_SHA512_DIGEST:
       BinToBase64(digest, sizeof(digest), (char*)rec->data,
                   CRYPTO_DIGEST_SHA512_SIZE, true);
-      if (verbose > 1) { Pmsg1(000, _("Got SHA512 record: %s\n"), digest); }
+      if (verbose > 1) { Pmsg1(000, T_("Got SHA512 record: %s\n"), digest); }
       UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA512);
       break;
 
     case STREAM_XXH128_DIGEST:
       BinToBase64(digest, sizeof(digest), (char*)rec->data,
                   CRYPTO_DIGEST_XXH128_SIZE, true);
-      if (verbose > 1) { Pmsg1(000, _("Got XXH128 record: %s\n"), digest); }
+      if (verbose > 1) { Pmsg1(000, T_("Got XXH128 record: %s\n"), digest); }
       UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_XXH128);
       break;
 
     case STREAM_ENCRYPTED_SESSION_DATA:
       // TODO landonf: Investigate crypto support in bscan
-      if (verbose > 1) { Pmsg0(000, _("Got signed digest record\n")); }
+      if (verbose > 1) { Pmsg0(000, T_("Got signed digest record\n")); }
       break;
 
     case STREAM_SIGNED_DIGEST:
       // TODO landonf: Investigate crypto support in bscan
-      if (verbose > 1) { Pmsg0(000, _("Got signed digest record\n")); }
+      if (verbose > 1) { Pmsg0(000, T_("Got signed digest record\n")); }
       break;
 
     case STREAM_PROGRAM_NAMES:
-      if (verbose) { Pmsg1(000, _("Got Prog Names Stream: %s\n"), rec->data); }
+      if (verbose) { Pmsg1(000, T_("Got Prog Names Stream: %s\n"), rec->data); }
       break;
 
     case STREAM_PROGRAM_DATA:
-      if (verbose > 1) { Pmsg0(000, _("Got Prog Data Stream record.\n")); }
+      if (verbose > 1) { Pmsg0(000, T_("Got Prog Data Stream record.\n")); }
       break;
 
     case STREAM_HFSPLUS_ATTRIBUTES:
@@ -953,7 +953,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       break;
 
     default:
-      Pmsg2(0, _("Unknown stream type!!! stream=%d len=%i\n"), rec->Stream,
+      Pmsg2(0, T_("Unknown stream type!!! stream=%d len=%i\n"), rec->Stream,
             rec->data_len);
       break;
   }
@@ -1035,13 +1035,13 @@ static bool CreateFileAttributesRecord(BareosDb* db,
   if (!update_db) { return true; }
 
   if (!db->CreateFileAttributesRecord(bjcr, &ar)) {
-    Pmsg1(0, _("Could not create File Attributes record. ERR=%s\n"),
+    Pmsg1(0, T_("Could not create File Attributes record. ERR=%s\n"),
           db->strerror());
     return false;
   }
   mjcr->FileId = ar.FileId;
 
-  if (verbose > 1) { Pmsg1(000, _("Created File record: %s\n"), fname); }
+  if (verbose > 1) { Pmsg1(000, T_("Created File record: %s\n"), fname); }
 
   return true;
 }
@@ -1067,15 +1067,15 @@ static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, Volume_Label* vl)
   if (!update_db) { return true; }
 
   if (!db->CreateMediaRecord(bjcr, mr)) {
-    Pmsg1(000, _("Could not create media record. ERR=%s\n"), db->strerror());
+    Pmsg1(000, T_("Could not create media record. ERR=%s\n"), db->strerror());
     return false;
   }
   if (!db->UpdateMediaRecord(bjcr, mr)) {
-    Pmsg1(000, _("Could not update media record. ERR=%s\n"), db->strerror());
+    Pmsg1(000, T_("Could not update media record. ERR=%s\n"), db->strerror());
     return false;
   }
   if (verbose) {
-    Pmsg1(000, _("Created Media record for Volume: %s\n"), mr->VolumeName);
+    Pmsg1(000, T_("Created Media record for Volume: %s\n"), mr->VolumeName);
   }
 
   return true;
@@ -1088,12 +1088,12 @@ static bool UpdateMediaRecord(BareosDb* db, MediaDbRecord* mr)
 
   mr->LastWritten = lasttime;
   if (!db->UpdateMediaRecord(bjcr, mr)) {
-    Pmsg1(000, _("Could not update media record. ERR=%s\n"), db->strerror());
+    Pmsg1(000, T_("Could not update media record. ERR=%s\n"), db->strerror());
     return false;
   }
 
   if (verbose) {
-    Pmsg1(000, _("Updated Media record at end of Volume: %s\n"),
+    Pmsg1(000, T_("Updated Media record at end of Volume: %s\n"),
           mr->VolumeName);
   }
 
@@ -1109,12 +1109,12 @@ static bool CreatePoolRecord(BareosDb* db, PoolDbRecord* pr)
   if (!update_db) { return true; }
 
   if (!db->CreatePoolRecord(bjcr, pr)) {
-    Pmsg1(000, _("Could not create pool record. ERR=%s\n"), db->strerror());
+    Pmsg1(000, T_("Could not create pool record. ERR=%s\n"), db->strerror());
     return false;
   }
 
   if (verbose) {
-    Pmsg1(000, _("Created Pool record for Pool: %s\n"), pr->Name);
+    Pmsg1(000, T_("Created Pool record for Pool: %s\n"), pr->Name);
   }
 
   return true;
@@ -1128,7 +1128,7 @@ static bool CreateClientRecord(BareosDb* db, ClientDbRecord* cr)
   if (!update_db) {
     cr->ClientId = 0;
     if (!db->GetClientRecord(bjcr, cr)) {
-      Pmsg1(0, _("Could not get Client record. ERR=%s\n"), db->strerror());
+      Pmsg1(0, T_("Could not get Client record. ERR=%s\n"), db->strerror());
       return false;
     }
 
@@ -1136,12 +1136,12 @@ static bool CreateClientRecord(BareosDb* db, ClientDbRecord* cr)
   }
 
   if (!db->CreateClientRecord(bjcr, cr)) {
-    Pmsg1(000, _("Could not create Client record. ERR=%s\n"), db->strerror());
+    Pmsg1(000, T_("Could not create Client record. ERR=%s\n"), db->strerror());
     return false;
   }
 
   if (verbose) {
-    Pmsg1(000, _("Created Client record for Client: %s\n"), cr->Name);
+    Pmsg1(000, T_("Created Client record for Client: %s\n"), cr->Name);
   }
 
   return true;
@@ -1159,17 +1159,17 @@ static bool CreateFilesetRecord(BareosDb* db, FileSetDbRecord* fsr)
 
   if (db->GetFilesetRecord(bjcr, fsr)) {
     if (verbose) {
-      Pmsg1(000, _("Fileset \"%s\" already exists.\n"), fsr->FileSet);
+      Pmsg1(000, T_("Fileset \"%s\" already exists.\n"), fsr->FileSet);
     }
   } else {
     if (!db->CreateFilesetRecord(bjcr, fsr)) {
-      Pmsg2(000, _("Could not create FileSet record \"%s\". ERR=%s\n"),
+      Pmsg2(000, T_("Could not create FileSet record \"%s\". ERR=%s\n"),
             fsr->FileSet, db->strerror());
       return false;
     }
 
     if (verbose) {
-      Pmsg1(000, _("Created FileSet record \"%s\"\n"), fsr->FileSet);
+      Pmsg1(000, T_("Created FileSet record \"%s\"\n"), fsr->FileSet);
     }
   }
 
@@ -1208,17 +1208,17 @@ static JobControlRecord* CreateJobRecord(BareosDb* db,
 
   // This creates the bare essentials
   if (!db->CreateJobRecord(bjcr, jr)) {
-    Pmsg1(0, _("Could not create JobId record. ERR=%s\n"), db->strerror());
+    Pmsg1(0, T_("Could not create JobId record. ERR=%s\n"), db->strerror());
     return mjcr;
   }
 
   // This adds the client, StartTime, JobTDate, ...
   if (!db->UpdateJobStartRecord(bjcr, jr)) {
-    Pmsg1(0, _("Could not update job start record. ERR=%s\n"), db->strerror());
+    Pmsg1(0, T_("Could not update job start record. ERR=%s\n"), db->strerror());
     return mjcr;
   }
 
-  Pmsg2(000, _("Created new JobId=%u record for original JobId=%u\n"),
+  Pmsg2(000, T_("Created new JobId=%u record for original JobId=%u\n"),
         jr->JobId, label->JobId);
   mjcr->JobId = jr->JobId; /* set new JobId */
 
@@ -1235,7 +1235,7 @@ static bool UpdateJobRecord(BareosDb* db,
 
   mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
   if (!mjcr) {
-    Pmsg2(000, _("Could not find SessId=%d SessTime=%d for EOS record.\n"),
+    Pmsg2(000, T_("Could not find SessId=%d SessTime=%d for EOS record.\n"),
           rec->VolSessionId, rec->VolSessionTime);
     return false;
   }
@@ -1266,7 +1266,7 @@ static bool UpdateJobRecord(BareosDb* db,
   }
 
   if (!db->UpdateJobEndRecord(bjcr, jr)) {
-    Pmsg2(0, _("Could not update JobId=%u record. ERR=%s\n"), jr->JobId,
+    Pmsg2(0, T_("Could not update JobId=%u record. ERR=%s\n"), jr->JobId,
           db->strerror());
     FreeJcr(mjcr);
     return false;
@@ -1275,7 +1275,7 @@ static bool UpdateJobRecord(BareosDb* db,
   if (verbose) {
     Pmsg3(
         000,
-        _("Updated Job termination record for JobId=%u Level=%s TermStat=%c\n"),
+        T_("Updated Job termination record for JobId=%u Level=%s TermStat=%c\n"),
         jr->JobId, job_level_to_str(mjcr->getJobLevel()), jr->JobStatus);
   }
 
@@ -1286,25 +1286,25 @@ static bool UpdateJobRecord(BareosDb* db,
 
     switch (mjcr->getJobStatus()) {
       case JS_Terminated:
-        TermMsg = _("Backup OK");
+        TermMsg = T_("Backup OK");
         break;
       case JS_Warnings:
-        TermMsg = _("Backup OK -- with warnings");
+        TermMsg = T_("Backup OK -- with warnings");
         break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-        TermMsg = _("*** Backup Error ***");
+        TermMsg = T_("*** Backup Error ***");
         break;
       case JS_Canceled:
-        TermMsg = _("Backup Canceled");
+        TermMsg = T_("Backup Canceled");
         break;
       default:
         TermMsg = term_code;
-        sprintf(term_code, _("Job Termination code: %d"), mjcr->getJobStatus());
+        sprintf(term_code, T_("Job Termination code: %d"), mjcr->getJobStatus());
         break;
     }
     Pmsg15(000,
-           _("%s\n"
+           T_("%s\n"
              "JobId:                  %d\n"
              "Job:                    %s\n"
              "FileSet:                %s\n"
@@ -1354,11 +1354,11 @@ static bool CreateJobmediaRecord(BareosDb* db, JobControlRecord* mjcr)
   if (!update_db) { return true; }
 
   if (!db->CreateJobmediaRecord(bjcr, &jmr)) {
-    Pmsg1(0, _("Could not create JobMedia record. ERR=%s\n"), db->strerror());
+    Pmsg1(0, T_("Could not create JobMedia record. ERR=%s\n"), db->strerror());
     return false;
   }
   if (verbose) {
-    Pmsg2(000, _("Created JobMedia record JobId %d, MediaId %d\n"), jmr.JobId,
+    Pmsg2(000, T_("Created JobMedia record JobId %d, MediaId %d\n"), jmr.JobId,
           jmr.MediaId);
   }
 
@@ -1377,7 +1377,7 @@ static bool UpdateDigestRecord(BareosDb* db,
   if (!mjcr) {
     if (mr.VolJobs > 0) {
       Pmsg2(000,
-            _("Could not find SessId=%d SessTime=%d for MD5/SHA1 record.\n"),
+            T_("Could not find SessId=%d SessTime=%d for MD5/SHA1 record.\n"),
             rec->VolSessionId, rec->VolSessionTime);
     } else {
       ignored_msgs++;
@@ -1391,13 +1391,13 @@ static bool UpdateDigestRecord(BareosDb* db,
   }
 
   if (!db->AddDigestToFileRecord(bjcr, mjcr->FileId, digest, type)) {
-    Pmsg1(0, _("Could not add MD5/SHA1 to File record. ERR=%s\n"),
+    Pmsg1(0, T_("Could not add MD5/SHA1 to File record. ERR=%s\n"),
           db->strerror());
     FreeJcr(mjcr);
     return false;
   }
 
-  if (verbose > 1) { Pmsg0(000, _("Updated MD5/SHA1 record\n")); }
+  if (verbose > 1) { Pmsg0(000, T_("Updated MD5/SHA1 record\n")); }
   FreeJcr(mjcr);
 
   return true;

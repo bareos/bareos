@@ -81,7 +81,7 @@ void daemon_start(const char* progname,
       break;
     case -1: {
       BErrNo be;
-      Emsg1(M_ABORT, 0, _("Cannot fork to become daemon: ERR=%s\n"),
+      Emsg1(M_ABORT, 0, T_("Cannot fork to become daemon: ERR=%s\n"),
             be.bstrerror());
       break;
     }

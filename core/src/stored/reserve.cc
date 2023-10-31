@@ -96,7 +96,7 @@ void InitReservationsLock()
   int errstat;
   if ((errstat = RwlInit(&reservation_lock)) != 0) {
     BErrNo be;
-    Emsg1(M_ABORT, 0, _("Unable to initialize reservation lock. ERR=%s\n"),
+    Emsg1(M_ABORT, 0, T_("Unable to initialize reservation lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
 
@@ -165,7 +165,7 @@ void DeviceControlRecord::UnreserveDevice()
     if (dev->CanRead()) { dev->ClearRead(); }
 
     if (dev->num_writers < 0) {
-      Jmsg1(jcr, M_ERROR, 0, _("Hey! num_writers=%d!!!!\n"), dev->num_writers);
+      Jmsg1(jcr, M_ERROR, 0, T_("Hey! num_writers=%d!!!!\n"), dev->num_writers);
       dev->num_writers = 0;
     }
 
@@ -245,7 +245,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
 
   if (!jcr->sd_impl->dcr) {
     BareosSocket* dir = jcr->dir_bsock;
-    dir->fsend(_("3939 Could not get dcr\n"));
+    dir->fsend(T_("3939 Could not get dcr\n"));
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
     ok = false;
   }
@@ -340,7 +340,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
        * with another Volume, we will not come here. */
       UnbashSpaces(dir->msg);
       PmStrcpy(jcr->errmsg, dir->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Device reservation failed for JobId=%d: %s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Device reservation failed for JobId=%d: %s\n"),
            jcr->JobId, jcr->errmsg);
       dir->fsend(NO_device, dev_name.c_str());
 
@@ -349,7 +349,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
   } else {
     UnbashSpaces(dir->msg);
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Failed command: %s\n"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, T_("Failed command: %s\n"), jcr->errmsg);
     dir->fsend(BAD_use, jcr->errmsg);
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
   }
@@ -664,13 +664,13 @@ static int ReserveDevice(ReserveContext& rctx)
   if (!rctx.device_resource->dev) {
     if (rctx.device_resource->changer_res) {
       Jmsg(rctx.jcr, M_WARNING, 0,
-           _("\n"
+           T_("\n"
              "     Device \"%s\" in changer \"%s\" requested by DIR could not "
              "be opened or does not exist.\n"),
            rctx.device_resource->resource_name_, rctx.device_name);
     } else {
       Jmsg(rctx.jcr, M_WARNING, 0,
-           _("\n"
+           T_("\n"
              "     Device \"%s\" requested by DIR could not be opened or does "
              "not exist.\n"),
            rctx.device_name);
@@ -694,7 +694,7 @@ static int ReserveDevice(ReserveContext& rctx)
   if (!dcr) {
     BareosSocket* dir = rctx.jcr->dir_bsock;
 
-    dir->fsend(_("3926 Could not get dcr for device: %s\n"), rctx.device_name);
+    dir->fsend(T_("3926 Could not get dcr for device: %s\n"), rctx.device_name);
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
     return -1;
   }
@@ -814,7 +814,7 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
     Dmsg1(debuglevel, "Device %s is BLOCKED due to user unmount.\n",
           dev->print_name());
     Mmsg(jcr->errmsg,
-         _("3601 JobId=%u device %s is BLOCKED due to user unmount.\n"),
+         T_("3601 JobId=%u device %s is BLOCKED due to user unmount.\n"),
          jcr->JobId, dev->print_name());
     QueueReserveMessage(jcr);
     goto bail_out;
@@ -826,7 +826,7 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
           dev->print_name(), BitIsSet(ST_READREADY, dev->state) ? 1 : 0,
           dev->num_writers, dev->NumReserved());
     Mmsg(jcr->errmsg,
-         _("3602 JobId=%u device %s is busy (already reading/writing).\n"),
+         T_("3602 JobId=%u device %s is busy (already reading/writing).\n"),
          jcr->JobId, dev->print_name());
     QueueReserveMessage(jcr);
     goto bail_out;
@@ -876,7 +876,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
 
   // If device is being read, we cannot write it
   if (dev->CanRead()) {
-    Mmsg(jcr->errmsg, _("3603 JobId=%u device %s is busy reading.\n"),
+    Mmsg(jcr->errmsg, T_("3603 JobId=%u device %s is busy reading.\n"),
          jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
@@ -886,7 +886,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
   // If device is unmounted, we are out of luck
   if (dev->IsDeviceUnmounted()) {
     Mmsg(jcr->errmsg,
-         _("3604 JobId=%u device %s is BLOCKED due to user unmount.\n"),
+         T_("3604 JobId=%u device %s is BLOCKED due to user unmount.\n"),
          jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
@@ -929,7 +929,7 @@ static int IsPoolOk(DeviceControlRecord* dcr)
   } else {
     /* Drive Pool not suitable for us */
     Mmsg(jcr->errmsg,
-         _("3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d "
+         T_("3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d "
            "on drive %s.\n"),
          (uint32_t)jcr->JobId, dcr->pool_name, dev->pool_name,
          dev->NumReserved(), dev->print_name());
@@ -954,7 +954,7 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
              <= (uint32_t)(dev->num_writers + dev->NumReserved())) {
     // Max Concurrent Jobs depassed or already reserved
     Mmsg(jcr->errmsg,
-         _("3609 JobId=%u Max concurrent jobs exceeded on drive %s.\n"),
+         T_("3609 JobId=%u Max concurrent jobs exceeded on drive %s.\n"),
          (uint32_t)jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
@@ -966,7 +966,7 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
              <= (dcr->VolCatInfo.VolCatJobs + dev->NumReserved())) {
     // Max Job Vols depassed or already reserved
     Mmsg(jcr->errmsg,
-         _("3610 JobId=%u Volume max jobs exceeded on drive %s.\n"),
+         T_("3610 JobId=%u Volume max jobs exceeded on drive %s.\n"),
          (uint32_t)jcr->JobId, dev->print_name());
     Dmsg1(debuglevel, "reserve dev failed: %s", jcr->errmsg);
     QueueReserveMessage(jcr);
@@ -1017,7 +1017,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
               dev->num_writers + dev->NumReserved());
       }
       Mmsg(jcr->errmsg,
-           _("3605 JobId=%u wants free drive but device %s is busy.\n"),
+           T_("3605 JobId=%u wants free drive but device %s is busy.\n"),
            jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
       QueueReserveMessage(jcr);
@@ -1027,7 +1027,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
     // Check for prefer mounted volumes
     if (rctx.PreferMountedVols && !dev->vol && dev->IsTape()) {
       Mmsg(jcr->errmsg,
-           _("3606 JobId=%u prefers mounted drives, but drive %s has no "
+           T_("3606 JobId=%u prefers mounted drives, but drive %s has no "
              "Volume.\n"),
            jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
@@ -1051,7 +1051,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
            || (dev->vol && bstrcmp(dev->vol->vol_name, rctx.VolumeName));
       if (!ok) {
         Mmsg(jcr->errmsg,
-             _("3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive "
+             T_("3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive "
                "%s.\n"),
              jcr->JobId, rctx.VolumeName, dev->VolHdr.VolumeName,
              dev->print_name());
@@ -1107,13 +1107,13 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
   if (dev->CanAppend() || dev->num_writers > 0) {
     return IsPoolOk(dcr);
   } else {
-    Pmsg1(000, _("Logic error!!!! JobId=%u Should not get here.\n"),
+    Pmsg1(000, T_("Logic error!!!! JobId=%u Should not get here.\n"),
           (int)jcr->JobId);
     Mmsg(jcr->errmsg,
-         _("3910 JobId=%u Logic error!!!! drive %s Should not get here.\n"),
+         T_("3910 JobId=%u Logic error!!!! drive %s Should not get here.\n"),
          jcr->JobId, dev->print_name());
     QueueReserveMessage(jcr);
-    Jmsg0(jcr, M_FATAL, 0, _("Logic error!!!! Should not get here.\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("Logic error!!!! Should not get here.\n"));
 
     return -1; /* error, should not get here */
   }

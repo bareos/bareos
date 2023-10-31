@@ -84,8 +84,8 @@ void WINAPI serviceStartCallback(DWORD, char**)
   // Register our service
   service_handle = RegisterServiceCtrlHandler(APP_NAME, serviceControlCallback);
   if (!service_handle) {
-    LogErrorMessage(_("RegisterServiceCtlHandler failed"));
-    MessageBox(NULL, _("Failure contacting the Service Handler"), APP_DESC,
+    LogErrorMessage(T_("RegisterServiceCtlHandler failed"));
+    MessageBox(NULL, T_("Failure contacting the Service Handler"), APP_DESC,
                MB_OK);
     return;
   }
@@ -96,7 +96,7 @@ void WINAPI serviceStartCallback(DWORD, char**)
   // Report status
   if (!ReportStatus(SERVICE_START_PENDING, NO_ERROR, 45000)) {
     ReportStatus(SERVICE_STOPPED, service_error, 0);
-    LogErrorMessage(_("Service start report failed"));
+    LogErrorMessage(T_("Service start report failed"));
     return;
   }
 
@@ -144,13 +144,13 @@ int bareosServiceMain()
 
     // Start the service control dispatcher
     if (!StartServiceCtrlDispatcher(dispatchTable)) {
-      LogErrorMessage(_("StartServiceCtrlDispatcher failed."));
+      LogErrorMessage(T_("StartServiceCtrlDispatcher failed."));
     }
     // Note, this thread continues in the ServiceCallback routine
   } else { /* old style Win95/98/Me */
     HINSTANCE kerneldll = LoadLibrary("KERNEL32.DLL");
     if (kerneldll == NULL) {
-      MessageBox(NULL, _("KERNEL32.DLL not found: Bareos service not started"),
+      MessageBox(NULL, T_("KERNEL32.DLL not found: Bareos service not started"),
                  APP_DESC, MB_OK);
       return 1;
     }
@@ -160,9 +160,9 @@ int bareosServiceMain()
     if (!BareosFillProcAddress(RegisterService, kerneldll,
                                "RegisterServiceProcess")) {
       MessageBox(NULL,
-                 _("Registry service not found: Bareos service not started"),
+                 T_("Registry service not found: Bareos service not started"),
                  APP_DESC, MB_OK);
-      LogErrorMessage(_("Registry service entry point not found"));
+      LogErrorMessage(T_("Registry service entry point not found"));
       FreeLibrary(kerneldll); /* free up kernel dll */
       return 1;
     }
@@ -181,7 +181,7 @@ DWORD WINAPI bareosWorkerThread(LPVOID)
   service_thread_id = GetCurrentThreadId();
 
   if (!ReportStatus(SERVICE_RUNNING, NO_ERROR, 0)) {
-    MessageBox(NULL, _("Report Service failure"), APP_DESC, MB_OK);
+    MessageBox(NULL, T_("Report Service failure"), APP_DESC, MB_OK);
     LogErrorMessage("ReportStatus RUNNING failed");
     return 0;
   }
@@ -209,7 +209,7 @@ int installService(const char* cmdOpts)
 
   // Get our filename
   if (GetModuleFileName(NULL, path, maxlen - 11) == 0) {
-    MessageBox(NULL, _("Unable to install the service"), APP_DESC,
+    MessageBox(NULL, T_("Unable to install the service"), APP_DESC,
                MB_ICONEXCLAMATION | MB_OK);
     return 0;
   }
@@ -218,9 +218,9 @@ int installService(const char* cmdOpts)
   if ((int)strlen(path) + (int)strlen(cmdOpts) + 30 < maxlen) {
     Bsnprintf(svcmd, sizeof(svcmd), "\"%s\" /service %s", path, cmdOpts);
   } else {
-    LogErrorMessage(_("Service command length too long"));
+    LogErrorMessage(T_("Service command length too long"));
     MessageBox(NULL,
-               _("Service command length too long. Service not registered."),
+               T_("Service command length too long. Service not registered."),
                APP_DESC, MB_ICONEXCLAMATION | MB_OK);
     return 0;
   }
@@ -233,7 +233,7 @@ int installService(const char* cmdOpts)
     if (!serviceManager) {
       LogErrorMessage("Open Service Manager failed");
       MessageBox(NULL,
-                 _("The Service Control Manager could not be contacted - the "
+                 T_("The Service Control Manager could not be contacted - the "
                    "service was not installed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 0;
@@ -252,14 +252,14 @@ int installService(const char* cmdOpts)
       CloseServiceHandle(serviceManager);
       LogErrorMessage("CreateService failed for " APP_DESC);
       MessageBox(NULL,
-                 _("The Bareos service: " APP_NAME " could not be installed"),
+                 T_("The Bareos service: " APP_NAME " could not be installed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 0;
     }
 
     // Set a text description in the service manager's control panel
     SetServiceDescription(serviceManager, bareosService,
-                          (char*)_(SERVICE_DESC));
+                          (char*)T_(SERVICE_DESC));
 
     CloseServiceHandle(serviceManager);
     CloseServiceHandle(bareosService);
@@ -272,9 +272,9 @@ int installService(const char* cmdOpts)
             "Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
             &runservices)
         != ERROR_SUCCESS) {
-      LogErrorMessage(_("Cannot write System Registry for " APP_DESC));
+      LogErrorMessage(T_("Cannot write System Registry for " APP_DESC));
       MessageBox(NULL,
-                 _("The System Registry could not be updated - the Bareos "
+                 T_("The System Registry could not be updated - the Bareos "
                    "service was not installed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 0;
@@ -285,9 +285,9 @@ int installService(const char* cmdOpts)
                       strlen(svcmd) + 1)
         != ERROR_SUCCESS) {
       RegCloseKey(runservices);
-      LogErrorMessage(_("Cannot add Bareos key to System Registry"));
+      LogErrorMessage(T_("Cannot add Bareos key to System Registry"));
       MessageBox(NULL,
-                 _("The Bareos service: " APP_NAME " could not be installed"),
+                 T_("The Bareos service: " APP_NAME " could not be installed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 0;
     }
@@ -297,7 +297,7 @@ int installService(const char* cmdOpts)
   // At this point the service is installed
   if (opt_debug) {
     MessageBox(NULL,
-               _("The " APP_DESC "was successfully installed.\n"
+               T_("The " APP_DESC "was successfully installed.\n"
                  "The service may be started by double clicking on the\n"
                  "Bareos \"Start\" icon and will be automatically\n"
                  "be run the next time this machine is rebooted. "),
@@ -336,7 +336,7 @@ int removeService()
             if (opt_debug) {
               MessageBox(
                   NULL,
-                  _("The Bareos service: " APP_NAME " could not be stopped"),
+                  T_("The Bareos service: " APP_NAME " could not be stopped"),
                   APP_DESC, MB_ICONEXCLAMATION | MB_OK);
             }
           }
@@ -345,12 +345,12 @@ int removeService()
         if (DeleteService(bareosService)) {
           if (opt_debug) {
             MessageBox(NULL,
-                       _("The Bareos service: " APP_NAME " has been removed"),
+                       T_("The Bareos service: " APP_NAME " has been removed"),
                        APP_DESC, MB_ICONINFORMATION | MB_OK);
           }
         } else {
           MessageBox(NULL,
-                     _("The Bareos service: " APP_NAME " could not be removed"),
+                     T_("The Bareos service: " APP_NAME " could not be removed"),
                      APP_DESC, MB_ICONEXCLAMATION | MB_OK);
           stat = 1; /* error */
         }
@@ -359,7 +359,7 @@ int removeService()
       } else {
         if (opt_debug) {
           MessageBox(NULL,
-                     _("An existing Bareos service: " APP_NAME
+                     T_("An existing Bareos service: " APP_NAME
                        " could not be found for "
                        "removal. This is not normally an error."),
                      APP_DESC, MB_ICONEXCLAMATION | MB_OK);
@@ -370,7 +370,7 @@ int removeService()
 
     } else {
       MessageBox(NULL,
-                 _("The service Manager could not be contacted - the Bareos "
+                 T_("The service Manager could not be contacted - the Bareos "
                    "service was not removed"),
                  APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       return 1; /* error */
@@ -385,7 +385,7 @@ int removeService()
         != ERROR_SUCCESS) {
       if (opt_debug) {
         MessageBox(NULL,
-                   _("Could not find registry entry.\nService probably not "
+                   T_("Could not find registry entry.\nService probably not "
                      "registerd - the Bareos service was not removed"),
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
@@ -394,7 +394,7 @@ int removeService()
       if (RegDeleteValue(runservices, APP_NAME) != ERROR_SUCCESS) {
         RegCloseKey(runservices);
         MessageBox(NULL,
-                   _("Could not delete Registry key for " APP_NAME ".\n"
+                   T_("Could not delete Registry key for " APP_NAME ".\n"
                      "The Bareos service could not be removed"),
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
@@ -406,7 +406,7 @@ int removeService()
     if (!stopRunningBareos()) {
       if (opt_debug) {
         MessageBox(NULL,
-                   _("Bareos could not be contacted, probably not running"),
+                   T_("Bareos could not be contacted, probably not running"),
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
       return 0; /* not really an error */
@@ -414,7 +414,7 @@ int removeService()
 
     // At this point, the service has been removed
     if (opt_debug) {
-      MessageBox(NULL, _("The Bareos service has been removed"), APP_DESC,
+      MessageBox(NULL, T_("The Bareos service has been removed"), APP_DESC,
                  MB_ICONINFORMATION | MB_OK);
     }
   }
@@ -452,7 +452,7 @@ BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint)
 
   // Send our new status
   result = SetServiceStatus(service_handle, &service_status);
-  if (!result) { LogErrorMessage(_("SetServiceStatus failed")); }
+  if (!result) { LogErrorMessage(T_("SetServiceStatus failed")); }
 
   return result;
 }
@@ -472,7 +472,7 @@ void LogLastErrorMsg(const char* message, const char* fname, int lineno)
   // Use the OS event logging to log the error
   eventHandler = RegisterEventSource(NULL, APP_NAME);
 
-  Bsnprintf(msgbuf, sizeof(msgbuf), _("\n\n%s error: %ld at %s:%d"), APP_NAME,
+  Bsnprintf(msgbuf, sizeof(msgbuf), T_("\n\n%s error: %ld at %s:%d"), APP_NAME,
             service_error, fname, lineno);
 
   strings[0] = msgbuf;
@@ -542,14 +542,14 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
     }
 
     if (lpqslsBuf->fIsLocked) {
-      printf(_("Locked by: %s, duration: %ld seconds\n"),
+      printf(T_("Locked by: %s, duration: %ld seconds\n"),
              lpqslsBuf->lpLockOwner, lpqslsBuf->dwLockDuration);
     } else {
-      printf(_("No longer locked\n"));
+      printf(T_("No longer locked\n"));
     }
 
     LocalFree(lpqslsBuf);
-    LogErrorMessage(_("Could not lock database"));
+    LogErrorMessage(T_("Could not lock database"));
     return;
   }
 

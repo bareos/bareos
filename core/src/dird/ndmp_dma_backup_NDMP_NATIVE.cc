@@ -97,7 +97,7 @@ int NdmpLoadNext(struct ndm_session* sess)
 
   if (FindNextVolumeForAppend(jcr, &mr, index, unwanted_volumes, create,
                               prune)) {
-    Jmsg(jcr, M_INFO, 0, _("Found volume for append: %s\n"), mr.VolumeName);
+    Jmsg(jcr, M_INFO, 0, T_("Found volume for append: %s\n"), mr.VolumeName);
 
     // reserve medium so that it cannot be used by other job while we use it
     bstrncpy(mr.VolStatus, NT_("Used"), sizeof(mr.VolStatus));
@@ -107,7 +107,7 @@ int NdmpLoadNext(struct ndm_session* sess)
     mr.FirstWritten = (utime_t)time(NULL);
 
     if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record. %s"),
+      Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating Media record. %s"),
            jcr->db->strerror());
       goto bail_out;
     }
@@ -126,7 +126,7 @@ int NdmpLoadNext(struct ndm_session* sess)
     media->slot_addr = mr.Slot;
 
     if (!NdmpUpdateStorageMappings(jcr, store)) {
-      Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpUpdateStorageMappings\n"));
+      Jmsg(jcr, M_ERROR, 0, T_("ERROR in NdmpUpdateStorageMappings\n"));
       goto bail_out;
     }
 
@@ -135,7 +135,7 @@ int NdmpLoadNext(struct ndm_session* sess)
         slot_type_t::kSlotTypeStorage, mr.Slot);
     /* check for success */
     if (!IsSlotNumberValid(slotnumber)) {
-      Jmsg(jcr, M_FATAL, 0, _("GetElementAddressByBareosSlotNumber failed\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("GetElementAddressByBareosSlotNumber failed\n"));
       goto bail_out;
     }
 
@@ -148,7 +148,7 @@ int NdmpLoadNext(struct ndm_session* sess)
 
   } else {
   bail_out:
-    Jmsg(jcr, M_INFO, 0, _("Error finding volume for append\n"));
+    Jmsg(jcr, M_INFO, 0, T_("Error finding volume for append\n"));
     return -1;
   }
 }
@@ -183,7 +183,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -211,7 +211,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   if (!ndmp_native_setup_robot_and_tape_for_native_backup_job(jcr, store,
                                                               ndmp_job)) {
     Jmsg(jcr, M_ERROR, 0,
-         _("ndmp_native_setup_robot_and_tape_for_native_backup_job failed\n"));
+         T_("ndmp_native_setup_robot_and_tape_for_native_backup_job failed\n"));
     goto bail_out;
   }
 
@@ -422,11 +422,11 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
   }
 
   // If pool storage specified, use it instead of job storage
-  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, _("Pool resource"));
+  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, T_("Pool resource"));
 
   if (!jcr->dir_impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
-         _("No Storage specification found in Job or Pool.\n"));
+         T_("No Storage specification found in Job or Pool.\n"));
     return false;
   }
 
@@ -466,20 +466,20 @@ static inline bool extract_post_backup_stats_ndmp_native(
              ->storage_mapping,
         slot_type_t::kSlotTypeStorage, media->slot_addr);
 #  if 0
-      Jmsg(jcr, M_INFO, 0, _("Physical Slot is %d\n"), media->slot_addr);
-      Jmsg(jcr, M_INFO, 0, _("Logical slot is : %d\n"), media->slot_addr);
-      Jmsg(jcr, M_INFO, 0, _("label           : %s\n"), media->label);
-      Jmsg(jcr, M_INFO, 0, _("index           : %d\n"), media->index);
-      Jmsg(jcr, M_INFO, 0, _("n_bytes         : %lld\n"), media->n_bytes);
-      Jmsg(jcr, M_INFO, 0, _("begin_offset    : %u\n"), media->begin_offset);
-      Jmsg(jcr, M_INFO, 0, _("end_offset      : %u\n"), media->end_offset);
+      Jmsg(jcr, M_INFO, 0, T_("Physical Slot is %d\n"), media->slot_addr);
+      Jmsg(jcr, M_INFO, 0, T_("Logical slot is : %d\n"), media->slot_addr);
+      Jmsg(jcr, M_INFO, 0, T_("label           : %s\n"), media->label);
+      Jmsg(jcr, M_INFO, 0, T_("index           : %d\n"), media->index);
+      Jmsg(jcr, M_INFO, 0, T_("n_bytes         : %lld\n"), media->n_bytes);
+      Jmsg(jcr, M_INFO, 0, T_("begin_offset    : %u\n"), media->begin_offset);
+      Jmsg(jcr, M_INFO, 0, T_("end_offset      : %u\n"), media->end_offset);
 #  endif
 
     StoreNdmmediaInfoInDatabase(media, jcr);
 
     ndmmedia_to_str(media, mediabuf);
 
-    Jmsg(jcr, M_INFO, 0, _("Media: %s\n"), mediabuf);
+    Jmsg(jcr, M_INFO, 0, T_("Media: %s\n"), mediabuf);
 
     // See if there is any media error.
     if (media->media_open_error || media->media_io_error
@@ -523,13 +523,13 @@ static inline bool extract_post_backup_stats_ndmp_native(
 
 bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 
 bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 

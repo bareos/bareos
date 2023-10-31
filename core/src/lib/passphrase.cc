@@ -61,7 +61,7 @@ char* generate_crypto_passphrase(uint16_t length)
 
     error = ERR_get_error();
     Emsg1(M_ERROR, 0,
-          _("Failed to get random bytes from RAND_bytes for passphrase: "
+          T_("Failed to get random bytes from RAND_bytes for passphrase: "
             "ERR=%s\n"),
           ERR_lib_error_string(error));
 

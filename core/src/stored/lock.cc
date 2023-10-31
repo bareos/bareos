@@ -228,7 +228,7 @@ void Device::rLock(bool locked)
       if ((status = pthread_cond_wait(&wait, &mutex_)) != 0) {
         BErrNo be;
         this->Unlock();
-        Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),
+        Emsg1(M_ABORT, 0, T_("pthread_cond_wait failure. ERR=%s\n"),
               be.bstrerror(status));
       }
     }
@@ -335,7 +335,7 @@ const char* Device::print_blocked() const
     case BST_RELEASING:
       return "BST_RELEASING";
     default:
-      return _("unknown blocked code");
+      return T_("unknown blocked code");
   }
 }
 

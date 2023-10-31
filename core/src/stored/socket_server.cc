@@ -75,7 +75,7 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   }
 
   if (bs->recv() <= 0) {
-    Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"), bs->who());
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
     bs->close();
@@ -85,7 +85,7 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   // Do a sanity check on the message received
   if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
     Dmsg1(000, "<filed: %s", bs->msg);
-    Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(),
+    Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
           bs->message_length);
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);

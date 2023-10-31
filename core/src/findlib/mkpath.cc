@@ -63,11 +63,11 @@ static bool makedir(JobControlRecord* jcr,
     BErrNo be;
     *created = false;
     if (stat(path, &statp) != 0) {
-      Jmsg2(jcr, M_ERROR, 0, _("Cannot create directory %s: ERR=%s\n"), path,
+      Jmsg2(jcr, M_ERROR, 0, T_("Cannot create directory %s: ERR=%s\n"), path,
             be.bstrerror());
       return false;
     } else if (!S_ISDIR(statp.st_mode)) {
-      Jmsg1(jcr, M_ERROR, 0, _("%s exists but is not a directory.\n"), path);
+      Jmsg1(jcr, M_ERROR, 0, T_("%s exists but is not a directory.\n"), path);
       return false;
     }
     return true; /* directory exists */
@@ -93,7 +93,7 @@ static void SetOwnMod(Attributes* attr,
   if (lchown(path, owner, group) != 0 && attr->uid == 0) {
     BErrNo be;
     Jmsg2(attr->jcr, M_WARNING, 0,
-          _("Cannot change owner and/or group of %s: ERR=%s\n"), path,
+          T_("Cannot change owner and/or group of %s: ERR=%s\n"), path,
           be.bstrerror());
   }
 #if defined(HAVE_WIN32)
@@ -103,7 +103,7 @@ static void SetOwnMod(Attributes* attr,
 #endif
     BErrNo be;
     Jmsg2(attr->jcr, M_WARNING, 0,
-          _("Cannot change permissions of %s: ERR=%s\n"), path, be.bstrerror());
+          T_("Cannot change permissions of %s: ERR=%s\n"), path, be.bstrerror());
   }
 }
 
@@ -136,7 +136,7 @@ bool makepath(Attributes* attr,
 
   if (stat(path, &statp) == 0) { /* Does dir exist? */
     if (!S_ISDIR(statp.st_mode)) {
-      Jmsg1(jcr, M_ERROR, 0, _("%s exists but is not a directory.\n"), path);
+      Jmsg1(jcr, M_ERROR, 0, T_("%s exists but is not a directory.\n"), path);
       return false;
     }
     /* Full path exists */
@@ -169,7 +169,7 @@ bool makepath(Attributes* attr,
     UINT drive_type = GetDriveType(drive);
 
     if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
-      Jmsg1(jcr, M_ERROR, 0, _("%c: is not a valid drive.\n"), path[0]);
+      Jmsg1(jcr, M_ERROR, 0, T_("%c: is not a valid drive.\n"), path[0]);
       goto bail_out;
     }
 
@@ -205,7 +205,7 @@ bool makepath(Attributes* attr,
   if (ndir < max_dirs) { new_dir[ndir++] = created; }
   if (ndir >= max_dirs) {
     Jmsg0(jcr, M_WARNING, 0,
-          _("Too many subdirectories. Some permissions not reset.\n"));
+          T_("Too many subdirectories. Some permissions not reset.\n"));
   }
 
   // Now set the proper owner and modes

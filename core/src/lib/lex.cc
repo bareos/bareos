@@ -95,19 +95,19 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   }
 
   if (lc->line_no > lc->begin_line_no) {
-    Mmsg(more, _("Problem probably begins at line %d.\n"), lc->begin_line_no);
+    Mmsg(more, T_("Problem probably begins at line %d.\n"), lc->begin_line_no);
   } else {
     PmStrcpy(more, "");
   }
 
   if (lc->line_no > 0) {
     e_msg(file, line, lc->err_type, 0,
-          _("Config error: %s\n"
+          T_("Config error: %s\n"
             "            : line %d, col %d of file %s\n%s\n%s"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
           more.c_str());
   } else {
-    e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"), buf.c_str());
+    e_msg(file, line, lc->err_type, 0, T_("Config error: %s\n"), buf.c_str());
   }
 
   lc->error_counter++;
@@ -135,19 +135,19 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   }
 
   if (lc->line_no > lc->begin_line_no) {
-    Mmsg(more, _("Problem probably begins at line %d.\n"), lc->begin_line_no);
+    Mmsg(more, T_("Problem probably begins at line %d.\n"), lc->begin_line_no);
   } else {
     PmStrcpy(more, "");
   }
 
   if (lc->line_no > 0) {
     p_msg(file, line, 0,
-          _("Config warning: %s\n"
+          T_("Config warning: %s\n"
             "            : line %d, col %d of file %s\n%s\n%s"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
           more.c_str());
   } else {
-    p_msg(file, line, 0, _("Config warning: %s\n"), buf.c_str());
+    p_msg(file, line, 0, T_("Config warning: %s\n"), buf.c_str());
   }
 }
 
@@ -173,7 +173,7 @@ LEX* LexCloseFile(LEX* lf)
 {
   LEX* of;
 
-  if (lf == NULL) { Emsg0(M_ABORT, 0, _("Close of NULL file\n")); }
+  if (lf == NULL) { Emsg0(M_ABORT, 0, T_("Close of NULL file\n")); }
   Dmsg1(debuglevel, "Close lex file: %s\n", lf->fname);
 
   of = lf->next;
@@ -336,7 +336,7 @@ int LexGetChar(LEX* lf)
 {
   if (lf->ch == L_EOF) {
     Emsg0(M_ABORT, 0,
-          _("get_char: called after EOF."
+          T_("get_char: called after EOF."
             " You may have a open double quote without the closing double "
             "quote.\n"));
   }
@@ -405,27 +405,27 @@ static const char* lex_state_to_str(int state)
 {
   switch (state) {
     case lex_none:
-      return _("none");
+      return T_("none");
     case lex_comment:
-      return _("comment");
+      return T_("comment");
     case lex_number:
-      return _("number");
+      return T_("number");
     case lex_ip_addr:
-      return _("ip_addr");
+      return T_("ip_addr");
     case lex_identifier:
-      return _("identifier");
+      return T_("identifier");
     case lex_string:
-      return _("string");
+      return T_("string");
     case lex_quoted_string:
-      return _("quoted_string");
+      return T_("quoted_string");
     case lex_include:
-      return _("include");
+      return T_("include");
     case lex_include_quoted_string:
-      return _("include_quoted_string");
+      return T_("include_quoted_string");
     case lex_utf8_bom:
-      return _("UTF-8 Byte Order Mark");
+      return T_("UTF-8 Byte Order Mark");
     case lex_utf16_le_bom:
-      return _("UTF-16le Byte Order Mark");
+      return T_("UTF-16le Byte Order Mark");
     default:
       return "??????";
   }
@@ -482,12 +482,12 @@ static uint32_t scan_pint(LEX* lf, char* str)
   int64_t val = 0;
 
   if (!Is_a_number(str)) {
-    scan_err1(lf, _("expected a positive integer number, got: %s"), str);
+    scan_err1(lf, T_("expected a positive integer number, got: %s"), str);
   } else {
     errno = 0;
     val = str_to_int64(str);
     if (errno != 0 || val < 0) {
-      scan_err1(lf, _("expected a positive integer number, got: %s"), str);
+      scan_err1(lf, T_("expected a positive integer number, got: %s"), str);
     }
   }
 
@@ -499,12 +499,12 @@ static uint64_t scan_pint64(LEX* lf, char* str)
   uint64_t val = 0;
 
   if (!Is_a_number(str)) {
-    scan_err1(lf, _("expected a positive integer number, got: %s"), str);
+    scan_err1(lf, T_("expected a positive integer number, got: %s"), str);
   } else {
     errno = 0;
     val = str_to_uint64(str);
     if (errno != 0) {
-      scan_err1(lf, _("expected a positive integer number, got: %s"), str);
+      scan_err1(lf, T_("expected a positive integer number, got: %s"), str);
     }
   }
 
@@ -667,7 +667,7 @@ int LexGetToken(LEX* lf, int expect)
               } else if (ch == 0xFF) {
                 lf->state = lex_utf16_le_bom;
               } else {
-                scan_err0(lf, _("This config file appears to be in an "
+                scan_err0(lf, T_("This config file appears to be in an "
                                 "unsupported Unicode format (UTF-16be). Please "
                                 "resave as UTF-8\n"));
                 return BCT_ERROR;
@@ -821,7 +821,7 @@ int LexGetToken(LEX* lf, int expect)
           lf = lex_open_file(lf, lf->str, lf->ScanError, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
-            scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
+            scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
                       lfori->str, be.bstrerror());
             return BCT_ERROR;
           }
@@ -850,7 +850,7 @@ int LexGetToken(LEX* lf, int expect)
           lf = lex_open_file(lf, lf->str, lf->ScanError, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
-            scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
+            scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
                       lfori->str, be.bstrerror());
             return BCT_ERROR;
           }
@@ -914,7 +914,7 @@ int LexGetToken(LEX* lf, int expect)
       } else {
         char* p = strchr(lf->str, '-');
         if (!p) {
-          scan_err2(lf, _("expected an integer or a range, got %s: %s"),
+          scan_err2(lf, T_("expected an integer or a range, got %s: %s"),
                     lex_tok_to_str(token), lf->str);
           token = BCT_ERROR;
           break;
@@ -928,7 +928,7 @@ int LexGetToken(LEX* lf, int expect)
 
     case BCT_INT16:
       if (token != BCT_NUMBER || !Is_a_number(lf->str)) {
-        scan_err2(lf, _("expected an integer number, got %s: %s"),
+        scan_err2(lf, T_("expected an integer number, got %s: %s"),
                   lex_tok_to_str(token), lf->str);
         token = BCT_ERROR;
         break;
@@ -936,7 +936,7 @@ int LexGetToken(LEX* lf, int expect)
       errno = 0;
       lf->u.int16_val = (int16_t)str_to_int64(lf->str);
       if (errno != 0) {
-        scan_err2(lf, _("expected an integer number, got %s: %s"),
+        scan_err2(lf, T_("expected an integer number, got %s: %s"),
                   lex_tok_to_str(token), lf->str);
         token = BCT_ERROR;
       } else {
@@ -946,7 +946,7 @@ int LexGetToken(LEX* lf, int expect)
 
     case BCT_INT32:
       if (token != BCT_NUMBER || !Is_a_number(lf->str)) {
-        scan_err2(lf, _("expected an integer number, got %s: %s"),
+        scan_err2(lf, T_("expected an integer number, got %s: %s"),
                   lex_tok_to_str(token), lf->str);
         token = BCT_ERROR;
         break;
@@ -954,7 +954,7 @@ int LexGetToken(LEX* lf, int expect)
       errno = 0;
       lf->u.int32_val = (int32_t)str_to_int64(lf->str);
       if (errno != 0) {
-        scan_err2(lf, _("expected an integer number, got %s: %s"),
+        scan_err2(lf, T_("expected an integer number, got %s: %s"),
                   lex_tok_to_str(token), lf->str);
         token = BCT_ERROR;
       } else {
@@ -965,7 +965,7 @@ int LexGetToken(LEX* lf, int expect)
     case BCT_INT64:
       Dmsg2(debuglevel, "int64=:%s: %f\n", lf->str, strtod(lf->str, NULL));
       if (token != BCT_NUMBER || !Is_a_number(lf->str)) {
-        scan_err2(lf, _("expected an integer number, got %s: %s"),
+        scan_err2(lf, T_("expected an integer number, got %s: %s"),
                   lex_tok_to_str(token), lf->str);
         token = BCT_ERROR;
         break;
@@ -973,7 +973,7 @@ int LexGetToken(LEX* lf, int expect)
       errno = 0;
       lf->u.int64_val = str_to_int64(lf->str);
       if (errno != 0) {
-        scan_err2(lf, _("expected an integer number, got %s: %s"),
+        scan_err2(lf, T_("expected an integer number, got %s: %s"),
                   lex_tok_to_str(token), lf->str);
         token = BCT_ERROR;
       } else {
@@ -989,7 +989,7 @@ int LexGetToken(LEX* lf, int expect)
       } else {
         char* p = strchr(lf->str, '-');
         if (!p) {
-          scan_err2(lf, _("expected an integer or a range, got %s: %s"),
+          scan_err2(lf, T_("expected an integer or a range, got %s: %s"),
                     lex_tok_to_str(token), lf->str);
           token = BCT_ERROR;
           break;
@@ -1004,11 +1004,11 @@ int LexGetToken(LEX* lf, int expect)
     case BCT_NAME:
       if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
           && token != BCT_QUOTED_STRING) {
-        scan_err2(lf, _("expected a name, got %s: %s"), lex_tok_to_str(token),
+        scan_err2(lf, T_("expected a name, got %s: %s"), lex_tok_to_str(token),
                   lf->str);
         token = BCT_ERROR;
       } else if (lf->str_len > MAX_RES_NAME_LENGTH) {
-        scan_err3(lf, _("name %s length %d too long, max is %d\n"), lf->str,
+        scan_err3(lf, T_("name %s length %d too long, max is %d\n"), lf->str,
                   lf->str_len, MAX_RES_NAME_LENGTH);
         token = BCT_ERROR;
       }
@@ -1017,7 +1017,7 @@ int LexGetToken(LEX* lf, int expect)
     case BCT_STRING:
       if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
           && token != BCT_QUOTED_STRING) {
-        scan_err2(lf, _("expected a string, got %s: %s"), lex_tok_to_str(token),
+        scan_err2(lf, T_("expected a string, got %s: %s"), lex_tok_to_str(token),
                   lf->str);
         token = BCT_ERROR;
       } else {

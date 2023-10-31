@@ -134,11 +134,11 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
   }
 
   // If pool storage specified, use it instead of job storage
-  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, _("Pool resource"));
+  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, T_("Pool resource"));
 
   if (!jcr->dir_impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
-         _("No Storage specification found in Job or Pool.\n"));
+         T_("No Storage specification found in Job or Pool.\n"));
     return false;
   }
 
@@ -153,7 +153,7 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
    */
   if (!HasPairedStorage(jcr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Write storage doesn't point to storage definition with paired "
+         T_("Write storage doesn't point to storage definition with paired "
            "storage option.\n"));
     return false;
   }
@@ -181,7 +181,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       = std::max(jcr->dir_impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -470,13 +470,13 @@ ok_out:
 #else
 bool DoNdmpBackupInit(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 
 bool DoNdmpBackup(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 

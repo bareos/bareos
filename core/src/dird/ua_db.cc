@@ -71,7 +71,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
       catalog = client->catalog;
       if (ua->catalog && ua->catalog != catalog) { CloseDb(ua); }
       if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_, true)) {
-        ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"),
+        ua->ErrorMsg(T_("No authorization for Catalog \"%s\"\n"),
                      catalog->resource_name_);
         return false;
       }
@@ -88,7 +88,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
       catalog = job->client->catalog;
       if (ua->catalog && ua->catalog != catalog) { CloseDb(ua); }
       if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_, true)) {
-        ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"),
+        ua->ErrorMsg(T_("No authorization for Catalog \"%s\"\n"),
                      catalog->resource_name_);
         return false;
       }
@@ -123,7 +123,7 @@ bool OpenDb(UaContext* ua, bool use_private)
   if (!ua->catalog) {
     ua->catalog = get_catalog_resource(ua);
     if (!ua->catalog) {
-      ua->ErrorMsg(_("Could not find a Catalog resource\n"));
+      ua->ErrorMsg(T_("Could not find a Catalog resource\n"));
       return false;
     }
   }
@@ -141,7 +141,7 @@ bool OpenDb(UaContext* ua, bool use_private)
       mult_db_conn, ua->catalog->disable_batch_insert,
       ua->catalog->try_reconnect, ua->catalog->exit_on_fatal, use_private);
   if (ua->db == NULL) {
-    ua->ErrorMsg(_("Could not open catalog database \"%s\".\n"),
+    ua->ErrorMsg(T_("Could not open catalog database \"%s\".\n"),
                  ua->catalog->db_name);
     return false;
   }
@@ -158,7 +158,7 @@ bool OpenDb(UaContext* ua, bool use_private)
   }
 
   if (!ua->api && !ua->runscript) {
-    ua->SendMsg(_("Using Catalog \"%s\"\n"), ua->catalog->resource_name_);
+    ua->SendMsg(T_("Using Catalog \"%s\"\n"), ua->catalog->resource_name_);
   }
 
   Dmsg1(150, "DB %s opened\n", ua->catalog->db_name);
@@ -254,7 +254,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
       pr->RecyclePoolId = rpool.PoolId;
     } else {
       Jmsg(jcr, M_WARNING, 0,
-           _("Can't set %s RecyclePool to %s, %s is not in database.\n"
+           T_("Can't set %s RecyclePool to %s, %s is not in database.\n"
              "Try to update it with 'update pool=%s'\n"),
            pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
 
@@ -272,7 +272,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
       pr->ScratchPoolId = rpool.PoolId;
     } else {
       Jmsg(jcr, M_WARNING, 0,
-           _("Can't set %s ScratchPool to %s, %s is not in database.\n"
+           T_("Can't set %s ScratchPool to %s, %s is not in database.\n"
              "Try to update it with 'update pool=%s'\n"),
            pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
       ret = false;

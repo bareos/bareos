@@ -433,7 +433,7 @@ bool StartStatisticsThread(void)
       != 0) {
     BErrNo be;
     Emsg1(M_ERROR_TERM, 0,
-          _("Director Statistics Thread could not be started. ERR=%s\n"),
+          T_("Director Statistics Thread could not be started. ERR=%s\n"),
           be.bstrerror());
   }
 

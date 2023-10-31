@@ -51,14 +51,14 @@ static inline bool check_include_pattern_shadowing(JobControlRecord* jcr,
    */
   if (lstat(pattern1, &st1) != 0) {
     BErrNo be;
-    Jmsg(jcr, M_WARNING, 0, _("Cannot stat file %s: ERR=%s\n"), pattern1,
+    Jmsg(jcr, M_WARNING, 0, T_("Cannot stat file %s: ERR=%s\n"), pattern1,
          be.bstrerror());
     goto bail_out;
   }
 
   if (lstat(pattern2, &st2) != 0) {
     BErrNo be;
-    Jmsg(jcr, M_WARNING, 0, _("Cannot stat file %s: ERR=%s\n"), pattern2,
+    Jmsg(jcr, M_WARNING, 0, T_("Cannot stat file %s: ERR=%s\n"), pattern2,
          be.bstrerror());
     goto bail_out;
   }
@@ -209,7 +209,7 @@ static void check_local_fileset_shadowing(JobControlRecord* jcr,
              * remove the entry from the list and continue.
              */
             Jmsg(jcr, M_WARNING, 0,
-                 _("Fileset include block entry %s shadows %s removing it from "
+                 T_("Fileset include block entry %s shadows %s removing it from "
                    "fileset\n"),
                  str2->c_str(), str1->c_str());
             next = (dlistString*)incexe->name_list.next(str2);
@@ -218,7 +218,7 @@ static void check_local_fileset_shadowing(JobControlRecord* jcr,
             continue;
           } else {
             Jmsg(jcr, M_WARNING, 0,
-                 _("Fileset include block entry %s shadows %s\n"),
+                 T_("Fileset include block entry %s shadows %s\n"),
                  str2->c_str(), str1->c_str());
           }
         } else {
@@ -232,7 +232,7 @@ static void check_local_fileset_shadowing(JobControlRecord* jcr,
              * dlist again.
              */
             Jmsg(jcr, M_WARNING, 0,
-                 _("Fileset include block entry %s shadows %s removing it from "
+                 T_("Fileset include block entry %s shadows %s removing it from "
                    "fileset\n"),
                  str1->c_str(), str2->c_str());
             incexe->name_list.remove(str1);
@@ -240,7 +240,7 @@ static void check_local_fileset_shadowing(JobControlRecord* jcr,
             continue;
           } else {
             Jmsg(jcr, M_WARNING, 0,
-                 _("Fileset include block entry %s shadows %s\n"),
+                 T_("Fileset include block entry %s shadows %s\n"),
                  str1->c_str(), str2->c_str());
           }
         }
@@ -331,7 +331,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord* jcr,
                  * where we just remove the entry from the list and continue.
                  */
                 Jmsg(jcr, M_WARNING, 0,
-                     _("Fileset include block entry %s shadows %s removing it "
+                     T_("Fileset include block entry %s shadows %s removing it "
                        "from fileset\n"),
                      str2->c_str(), str1->c_str());
                 next = (dlistString*)compare_against->name_list.next(str2);
@@ -340,7 +340,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord* jcr,
                 continue;
               } else {
                 Jmsg(jcr, M_WARNING, 0,
-                     _("Fileset include block entry %s shadows %s\n"),
+                     T_("Fileset include block entry %s shadows %s\n"),
                      str2->c_str(), str1->c_str());
               }
             } else {
@@ -354,7 +354,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord* jcr,
                  * first entry of the dlist again.
                  */
                 Jmsg(jcr, M_WARNING, 0,
-                     _("Fileset include block entry %s shadows %s removing it "
+                     T_("Fileset include block entry %s shadows %s removing it "
                        "from fileset\n"),
                      str1->c_str(), str2->c_str());
                 current->name_list.remove(str1);
@@ -362,7 +362,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord* jcr,
                 continue;
               } else {
                 Jmsg(jcr, M_WARNING, 0,
-                     _("Fileset include block entry %s shadows %s\n"),
+                     T_("Fileset include block entry %s shadows %s\n"),
                      str1->c_str(), str2->c_str());
               }
             }

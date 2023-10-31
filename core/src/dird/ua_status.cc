@@ -224,14 +224,14 @@ bool StatusCmd(UaContext* ua, const char* cmd)
   if (ua->argc == 1) {
     char prmt[MAX_NAME_LENGTH];
 
-    StartPrompt(ua, _("Status available for:\n"));
+    StartPrompt(ua, T_("Status available for:\n"));
     AddPrompt(ua, NT_("Director"));
     AddPrompt(ua, NT_("Storage"));
     AddPrompt(ua, NT_("Client"));
     AddPrompt(ua, NT_("Scheduler"));
     AddPrompt(ua, NT_("All"));
     Dmsg0(20, "DoPrompt: select daemon\n");
-    if ((item = DoPrompt(ua, "", _("Select daemon type for status"), prmt,
+    if ((item = DoPrompt(ua, "", T_("Select daemon type for status"), prmt,
                          sizeof(prmt)))
         < 0) {
       return true;
@@ -343,16 +343,16 @@ void ListDirStatusHeader(UaContext* ua)
   int len;
   PoolMem msg(PM_FNAME);
 
-  ua->SendMsg(_("%s Version: %s (%s) %s\n"), my_name,
+  ua->SendMsg(T_("%s Version: %s (%s) %s\n"), my_name,
               kBareosVersionStrings.Full, kBareosVersionStrings.Date,
               kBareosVersionStrings.GetOsInfo());
-  ua->SendMsg(_("Daemon started %s. Jobs: run=%d, running=%d db:postgresql, %s "
+  ua->SendMsg(T_("Daemon started %s. Jobs: run=%d, running=%d db:postgresql, %s "
                 "binary\n"),
               bstrftime(daemon_start_time).c_str(), num_jobs_run, JobCount(),
               kBareosVersionStrings.BinaryInfo);
 
   if (me->secure_erase_cmdline) {
-    ua->SendMsg(_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
+    ua->SendMsg(T_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
   }
 
   len = ListDirPlugins(msg);
@@ -360,7 +360,7 @@ void ListDirStatusHeader(UaContext* ua)
 
   if (my_config->HasWarnings()) {
     ua->SendMsg(
-        _("\n"
+        T_("\n"
           "There are WARNINGS for the director configuration!\n"
           "See 'status configuration' for details.\n"
           "\n"));
@@ -498,7 +498,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
 {
   if (ua->AclHasRestrictions(Client_ACL) || ua->AclHasRestrictions(Job_ACL)
       || ua->AclHasRestrictions(FileSet_ACL)) {
-    ua->ErrorMsg(_("%s %s: needs access to all client, job"
+    ua->ErrorMsg(T_("%s %s: needs access to all client, job"
                    " and fileset resources.\n"),
                  ua->argk[0], ua->argk[1]);
     return false;
@@ -535,14 +535,14 @@ static bool DoSubscriptionStatus(UaContext* ua)
                              "Binary info: ", kBareosVersionStrings.BinaryInfo,
                              "%s\n");
     ua->send->ObjectKeyValue("report-time", "Report time: ", now, "%s\n");
-    ua->SendMsg(_("\nDetailed backup unit report:\n"));
+    ua->SendMsg(T_("\nDetailed backup unit report:\n"));
     ua->db->ListSqlQuery(
         ua->jcr,
         BareosDb::SQL_QUERY::subscription_select_backup_unit_overview_0,
         ua->send, HORZ_LIST, "unit-detail", true);
   }
   if (kw_all || kw_detail || !kw_unknown) {
-    ua->SendMsg(_("\nBackup unit totals:\n"));
+    ua->SendMsg(T_("\nBackup unit totals:\n"));
     PoolMem query(PM_MESSAGE);
     ua->db->FillQuery(
         query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_1,
@@ -560,7 +560,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
   if (kw_all || kw_unknown) {
     ua->SendMsg(
-        _("\nClients/Filesets that cannot be categorized for backup units "
+        T_("\nClients/Filesets that cannot be categorized for backup units "
           "yet:\n"));
     ua->db->ListSqlQuery(
         ua->jcr,
@@ -568,7 +568,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
         ua->send, HORZ_LIST, "filesets-not-catogorized", true);
 
     ua->SendMsg(
-        _("\nAmount of data that cannot be categorized for backup units "
+        T_("\nAmount of data that cannot be categorized for backup units "
           "yet:\n"));
     ua->db->ListSqlQuery(
         ua->jcr,
@@ -577,7 +577,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
         BareosDb::CollapseMode::Collapse);
   }
   ua->SendMsg(
-      _("\nEstimate only. Contact Bareos for actual quote"
+      T_("\nEstimate only. Contact Bareos for actual quote"
         " https://www.bareos.com/contact/\n"));
   return true;
 }
@@ -585,17 +585,17 @@ static bool DoSubscriptionStatus(UaContext* ua)
 static void DoConfigurationStatus(UaContext* ua)
 {
   if (!ua->AclAccessOk(Command_ACL, "configure")) {
-    ua->ErrorMsg(_("%s %s: is an invalid command or needs access right to the"
+    ua->ErrorMsg(T_("%s %s: is an invalid command or needs access right to the"
                    " \"configure\" command.\n"),
                  ua->argk[0], ua->argk[1]);
   } else {
     if (my_config->HasWarnings()) {
-      ua->SendMsg(_("Deprecated configuration settings detected:\n"));
+      ua->SendMsg(T_("Deprecated configuration settings detected:\n"));
       for (auto& warning : my_config->GetWarnings()) {
         ua->SendMsg(" * %s\n", warning.c_str());
       }
     } else {
-      ua->SendMsg(_("No deprecated configuration settings detected.\n"));
+      ua->SendMsg(T_("No deprecated configuration settings detected.\n"));
     }
   }
 }
@@ -622,7 +622,7 @@ static void DoSchedulerStatus(UaContext* ua)
   if (i >= 0) {
     days = atoi(ua->argv[i]);
     if (((days < -366) || (days > 366)) && !ua->api) {
-      ua->SendMsg(_(
+      ua->SendMsg(T_(
           "Ignoring invalid value for days. Allowed is -366 < days < 366.\n"));
       days = DEFAULT_STATUS_SCHED_DAYS;
     }
@@ -765,8 +765,8 @@ start_again:
 
   ua->SendMsg("====\n\n");
   ua->SendMsg("Scheduler Preview for %d days:\n\n", days);
-  ua->SendMsg("%-*s  %-22s  %s\n", max_date_len, _("Date"), _("Schedule"),
-              _("Overrides"));
+  ua->SendMsg("%-*s  %-22s  %s\n", max_date_len, T_("Date"), T_("Schedule"),
+              T_("Overrides"));
   ua->SendMsg(
       "==============================================================\n");
   ua->SendMsg(overview.c_str());
@@ -786,12 +786,12 @@ static void DoDirectorStatus(UaContext* ua)
 static void PrtRunhdr(UaContext* ua)
 {
   if (!ua->api) {
-    ua->SendMsg(_("\nScheduled Jobs:\n"));
+    ua->SendMsg(T_("\nScheduled Jobs:\n"));
     ua->SendMsg(
-        _("Level          Type     Pri  Scheduled          Name               "
+        T_("Level          Type     Pri  Scheduled          Name               "
           "Volume\n"));
     ua->SendMsg(
-        _("===================================================================="
+        T_("===================================================================="
           "===============\n"));
   }
 }
@@ -844,12 +844,12 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
       break;
   }
   if (ua->api) {
-    ua->SendMsg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
+    ua->SendMsg(T_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
                 bstrftime(sp->runtime).c_str(), sp->job->resource_name_,
                 mr.VolumeName);
   } else {
-    ua->SendMsg(_("%-14s %-8s %3d  %-18s %-18s %s\n"), level_ptr,
+    ua->SendMsg(T_("%-14s %-8s %3d  %-18s %-18s %s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
                 bstrftime(sp->runtime).c_str(), sp->job->resource_name_,
                 mr.VolumeName);
@@ -897,7 +897,7 @@ static void ListScheduledJobs(UaContext* ua)
   if (i >= 0) {
     days = atoi(ua->argv[i]);
     if (((days < 0) || (days > 500)) && !ua->api) {
-      ua->SendMsg(_("Ignoring invalid value for days. Max is 500.\n"));
+      ua->SendMsg(T_("Ignoring invalid value for days. Max is 500.\n"));
       days = 1;
     }
   }
@@ -938,7 +938,7 @@ static void ListScheduledJobs(UaContext* ua)
   } /* end for loop over resources */
 
   foreach_dlist (sp, sched) { PrtRuntime(ua, sp); }
-  if (num_jobs == 0 && !ua->api) { ua->SendMsg(_("No Scheduled Jobs.\n")); }
+  if (num_jobs == 0 && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
 }
@@ -953,14 +953,14 @@ static void ListRunningJobs(UaContext* ua)
   bool pool_mem = false;
 
   Dmsg0(200, "enter list_run_jobs()\n");
-  if (!ua->api) ua->SendMsg(_("\nRunning Jobs:\n"));
+  if (!ua->api) ua->SendMsg(T_("\nRunning Jobs:\n"));
   foreach_jcr (jcr) {
     if (jcr->JobId == 0) { /* this is us */
       /* this is a console or other control job. We only show console
        * jobs in the status output.
        */
       if (jcr->is_JobType(JT_CONSOLE) && !ua->api) {
-        ua->SendMsg(_("Console connected at %s\n"),
+        ua->SendMsg(T_("Console connected at %s\n"),
                     bstrftime(jcr->start_time).c_str());
       }
       continue;
@@ -971,15 +971,15 @@ static void ListRunningJobs(UaContext* ua)
 
   if (njobs == 0) {
     // Note the following message is used by external programs -- don't change
-    if (!ua->api) ua->SendMsg(_("No Jobs running.\n====\n"));
+    if (!ua->api) ua->SendMsg(T_("No Jobs running.\n====\n"));
     Dmsg0(200, "leave list_run_jobs()\n");
     return;
   }
   njobs = 0;
   if (!ua->api) {
-    ua->SendMsg(_(" JobId Level   Name                       Status\n"));
+    ua->SendMsg(T_(" JobId Level   Name                       Status\n"));
     ua->SendMsg(
-        _("===================================================================="
+        T_("===================================================================="
           "==\n"));
   }
   foreach_jcr (jcr) {
@@ -990,41 +990,41 @@ static void ListRunningJobs(UaContext* ua)
     njobs++;
     switch (jcr->getJobStatus()) {
       case JS_Created:
-        msg = _("is waiting execution");
+        msg = T_("is waiting execution");
         break;
       case JS_Running:
-        msg = _("is running");
+        msg = T_("is running");
         break;
       case JS_Blocked:
-        msg = _("is blocked");
+        msg = T_("is blocked");
         break;
       case JS_Terminated:
-        msg = _("has terminated");
+        msg = T_("has terminated");
         break;
       case JS_Warnings:
-        msg = _("has terminated with warnings");
+        msg = T_("has terminated with warnings");
         break;
       case JS_ErrorTerminated:
-        msg = _("has erred");
+        msg = T_("has erred");
         break;
       case JS_Error:
-        msg = _("has errors");
+        msg = T_("has errors");
         break;
       case JS_FatalError:
-        msg = _("has a fatal error");
+        msg = T_("has a fatal error");
         break;
       case JS_Differences:
-        msg = _("has verify differences");
+        msg = T_("has verify differences");
         break;
       case JS_Canceled:
-        msg = _("has been canceled");
+        msg = T_("has been canceled");
         break;
       case JS_WaitFD:
         emsg = (char*)GetPoolMemory(PM_FNAME);
         if (!jcr->dir_impl->res.client) {
-          Mmsg(emsg, _("is waiting on Client"));
+          Mmsg(emsg, T_("is waiting on Client"));
         } else {
-          Mmsg(emsg, _("is waiting on Client %s"),
+          Mmsg(emsg, T_("is waiting on Client %s"),
                jcr->dir_impl->res.client->resource_name_);
         }
         pool_mem = true;
@@ -1033,59 +1033,59 @@ static void ListRunningJobs(UaContext* ua)
       case JS_WaitSD:
         emsg = (char*)GetPoolMemory(PM_FNAME);
         if (jcr->dir_impl->res.write_storage) {
-          Mmsg(emsg, _("is waiting on Storage \"%s\""),
+          Mmsg(emsg, T_("is waiting on Storage \"%s\""),
                jcr->dir_impl->res.write_storage->resource_name_);
         } else if (jcr->dir_impl->res.read_storage) {
-          Mmsg(emsg, _("is waiting on Storage \"%s\""),
+          Mmsg(emsg, T_("is waiting on Storage \"%s\""),
                jcr->dir_impl->res.read_storage->resource_name_);
         } else {
-          Mmsg(emsg, _("is waiting on Storage"));
+          Mmsg(emsg, T_("is waiting on Storage"));
         }
         pool_mem = true;
         msg = emsg;
         break;
       case JS_WaitStoreRes:
-        msg = _("is waiting on max Storage jobs");
+        msg = T_("is waiting on max Storage jobs");
         break;
       case JS_WaitClientRes:
-        msg = _("is waiting on max Client jobs");
+        msg = T_("is waiting on max Client jobs");
         break;
       case JS_WaitJobRes:
-        msg = _("is waiting on max Job jobs");
+        msg = T_("is waiting on max Job jobs");
         break;
       case JS_WaitMaxJobs:
-        msg = _("is waiting on max total jobs");
+        msg = T_("is waiting on max total jobs");
         break;
       case JS_WaitStartTime:
         emsg = (char*)GetPoolMemory(PM_FNAME);
         if (jcr->sched_time) {
-          Mmsg(emsg, _("is waiting for its start time at %s"),
+          Mmsg(emsg, T_("is waiting for its start time at %s"),
                bstrftime(jcr->sched_time).c_str());
         } else {
-          Mmsg(emsg, _("is waiting for its start time"));
+          Mmsg(emsg, T_("is waiting for its start time"));
         }
         pool_mem = true;
         msg = emsg;
         break;
       case JS_WaitPriority:
-        msg = _("is waiting for higher priority jobs to finish");
+        msg = T_("is waiting for higher priority jobs to finish");
         break;
       case JS_DataCommitting:
-        msg = _("SD committing Data");
+        msg = T_("SD committing Data");
         break;
       case JS_DataDespooling:
-        msg = _("SD despooling Data");
+        msg = T_("SD despooling Data");
         break;
       case JS_AttrDespooling:
-        msg = _("SD despooling Attributes");
+        msg = T_("SD despooling Attributes");
         break;
       case JS_AttrInserting:
-        msg = _("Dir inserting Attributes");
+        msg = T_("Dir inserting Attributes");
         break;
 
       default:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        Mmsg(emsg, _("is in unknown state %c"), jcr->getJobStatus());
+        Mmsg(emsg, T_("is in unknown state %c"), jcr->getJobStatus());
         pool_mem = true;
         msg = emsg;
         break;
@@ -1097,14 +1097,14 @@ static void ListRunningJobs(UaContext* ua)
           FreePoolMemory(emsg);
           pool_mem = false;
         }
-        msg = _("is waiting for a mount request");
+        msg = T_("is waiting for a mount request");
         break;
       case JS_WaitMedia:
         if (pool_mem) {
           FreePoolMemory(emsg);
           pool_mem = false;
         }
-        msg = _("is waiting for an appendable Volume");
+        msg = T_("is waiting for an appendable Volume");
         break;
       case JS_WaitFD:
         if (!pool_mem) {
@@ -1113,29 +1113,29 @@ static void ListRunningJobs(UaContext* ua)
         }
         if (!jcr->file_bsock) {
           // client initiated connection
-          Mmsg(emsg, _("is waiting for Client to connect (Client Initiated "
+          Mmsg(emsg, T_("is waiting for Client to connect (Client Initiated "
                        "Connection)"));
         } else if (!jcr->dir_impl->res.client
                    || !jcr->dir_impl->res.write_storage) {
-          Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
+          Mmsg(emsg, T_("is waiting for Client to connect to Storage daemon"));
         } else {
-          Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
+          Mmsg(emsg, T_("is waiting for Client %s to connect to Storage %s"),
                jcr->dir_impl->res.client->resource_name_,
                jcr->dir_impl->res.write_storage->resource_name_);
         }
         msg = emsg;
         break;
       case JS_DataCommitting:
-        msg = _("SD committing Data");
+        msg = T_("SD committing Data");
         break;
       case JS_DataDespooling:
-        msg = _("SD despooling Data");
+        msg = T_("SD despooling Data");
         break;
       case JS_AttrDespooling:
-        msg = _("SD despooling Attributes");
+        msg = T_("SD despooling Attributes");
         break;
       case JS_AttrInserting:
-        msg = _("Dir inserting Attributes");
+        msg = T_("Dir inserting Attributes");
         break;
     }
     switch (jcr->getJobType()) {
@@ -1152,14 +1152,14 @@ static void ListRunningJobs(UaContext* ua)
 
     if (ua->api) {
       BashSpaces(jcr->comment);
-      ua->SendMsg(_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
+      ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
                   msg, jcr->comment);
       UnbashSpaces(jcr->comment);
     } else {
-      ua->SendMsg(_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job, msg);
+      ua->SendMsg(T_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job, msg);
       /* Display comments if any */
       if (*jcr->comment) {
-        ua->SendMsg(_("               %-30s\n"), jcr->comment);
+        ua->SendMsg(T_("               %-30s\n"), jcr->comment);
       }
     }
 
@@ -1179,17 +1179,17 @@ static void ListTerminatedJobs(UaContext* ua)
   char level[10];
 
   if (RecentJobResultsList::IsEmpty()) {
-    if (!ua->api) ua->SendMsg(_("No Terminated Jobs.\n"));
+    if (!ua->api) ua->SendMsg(T_("No Terminated Jobs.\n"));
     return;
   }
   if (!ua->api) {
-    ua->SendMsg(_("\nTerminated Jobs:\n"));
+    ua->SendMsg(T_("\nTerminated Jobs:\n"));
     ua->SendMsg(
-        _(" JobId  Level    Files      Bytes   Status   Finished              "
+        T_(" JobId  Level    Files      Bytes   Status   Finished              "
            "   Name "
            "\n"));
     ua->SendMsg(
-        _("==================================================================="
+        T_("==================================================================="
            "=========="
            "\n"));
   }
@@ -1221,42 +1221,42 @@ static void ListTerminatedJobs(UaContext* ua)
     }
     switch (je.JobStatus) {
       case JS_Created:
-        termstat = _("Created");
+        termstat = T_("Created");
         break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-        termstat = _("Error");
+        termstat = T_("Error");
         break;
       case JS_Differences:
-        termstat = _("Diffs");
+        termstat = T_("Diffs");
         break;
       case JS_Canceled:
-        termstat = _("Cancel");
+        termstat = T_("Cancel");
         break;
       case JS_Terminated:
-        termstat = _("OK");
+        termstat = T_("OK");
         break;
       case JS_Warnings:
-        termstat = _("OK -- with warnings");
+        termstat = T_("OK -- with warnings");
         break;
       default:
-        termstat = _("Other");
+        termstat = T_("Other");
         break;
     }
 
     if (ua->api) {
-      ua->SendMsg(_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
+      ua->SendMsg(T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
                   edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat,
                   bstrftime(je.end_time).c_str(), JobName);
     } else {
-      ua->SendMsg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
+      ua->SendMsg(T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
                   edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat,
                   bstrftime(je.end_time).c_str(), JobName);
     }
   }
-  if (!ua->api) ua->SendMsg(_("\n"));
+  if (!ua->api) ua->SendMsg(T_("\n"));
 }
 
 
@@ -1404,7 +1404,7 @@ static void StatusContentApi(UaContext* ua, StorageResource* store)
   vol_list = get_vol_list_from_storage(ua, store, true /* listall */,
                                        true /* want to see all slots */);
   if (!vol_list) {
-    ua->WarningMsg(_("No Volumes found, or no barcodes.\n"));
+    ua->WarningMsg(T_("No Volumes found, or no barcodes.\n"));
     goto bail_out;
   }
 
@@ -1502,7 +1502,7 @@ static void StatusContentJson(UaContext* ua, StorageResource* store)
   vol_list = get_vol_list_from_storage(ua, store, true /* listall */,
                                        true /* want to see all slots */);
   if (!vol_list) {
-    ua->WarningMsg(_("No Volumes found, or no barcodes.\n"));
+    ua->WarningMsg(T_("No Volumes found, or no barcodes.\n"));
     goto bail_out;
   }
 
@@ -1622,7 +1622,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
 
   max_slots = GetNumSlots(ua, store);
   if (max_slots <= 0) {
-    ua->WarningMsg(_("No slots in changer to scan.\n"));
+    ua->WarningMsg(T_("No slots in changer to scan.\n"));
     return;
   }
 
@@ -1636,14 +1636,14 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
   vol_list = get_vol_list_from_storage(ua, store, true /* listall */,
                                        true /* want to see all slots */);
   if (!vol_list) {
-    ua->WarningMsg(_("No Volumes found, or no barcodes.\n"));
+    ua->WarningMsg(T_("No Volumes found, or no barcodes.\n"));
     goto bail_out;
   }
   ua->SendMsg(
-      _(" Slot |   Volume Name    |   Status  |  Media Type    |         Pool  "
+      T_(" Slot |   Volume Name    |   Status  |  Media Type    |         Pool  "
         "           |\n"));
   ua->SendMsg(
-      _("------+------------------+-----------+----------------+---------------"
+      T_("------+------------------+-----------+----------------+---------------"
         "-----------|\n"));
 
   /* Walk through the list getting the media records
@@ -1657,7 +1657,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
       case slot_type_t::kSlotTypeStorage:
       case slot_type_t::kSlotTypeImport:
         if (vl1->bareos_slot_number > max_slots) {
-          ua->WarningMsg(_("Slot %hd greater than max %hd ignored.\n"),
+          ua->WarningMsg(T_("Slot %hd greater than max %hd ignored.\n"),
                          vl1->bareos_slot_number, max_slots);
           continue;
         }

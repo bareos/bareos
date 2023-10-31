@@ -199,8 +199,8 @@ static var_rc_t lookup_built_in_var(var_t*,
   JobControlRecord* jcr = (JobControlRecord*)my_ctx;
   int status, i;
 
-  for (i = 0; _(built_in_vars[i].var_name); i++) {
-    if (bstrncmp(_(built_in_vars[i].var_name), var_ptr, var_len)) {
+  for (i = 0; T_(built_in_vars[i].var_name); i++) {
+    if (bstrncmp(T_(built_in_vars[i].var_name), var_ptr, var_len)) {
       status = (*built_in_vars[i].func)(jcr, built_in_vars[i].code, val_ptr,
                                         val_len, val_size);
       if (status) { return VAR_OK; }
@@ -270,7 +270,7 @@ static var_rc_t lookup_counter_var(var_t*,
             cr.WrapCounter[0] = 0;
           }
           if (!jcr->db->UpdateCounterRecord(jcr, &cr)) {
-            Jmsg(jcr, M_ERROR, 0, _("Count not update counter %s: ERR=%s\n"),
+            Jmsg(jcr, M_ERROR, 0, T_("Count not update counter %s: ERR=%s\n"),
                  counter->resource_name_, jcr->db->strerror());
           }
         }
@@ -457,7 +457,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
 
   // Create context
   if ((status = var_create(&var_ctx)) != VAR_OK) {
-    Jmsg(jcr, M_ERROR, 0, _("Cannot create var context: ERR=%s\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Cannot create var context: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
   }
@@ -466,7 +466,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_VALUE,
                            lookup_var, (void*)jcr))
       != VAR_OK) {
-    Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Cannot set var callback: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
   }
@@ -475,7 +475,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_OPERATION,
                            operate_var, (void*)jcr))
       != VAR_OK) {
-    Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Cannot set var operate: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
   }
@@ -483,7 +483,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   // Unescape in place
   if ((status = var_unescape(var_ctx, inp, in_len, inp, in_len + 1, 0))
       != VAR_OK) {
-    Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Cannot unescape string: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
   }
@@ -493,7 +493,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   // Expand variables
   if ((status = var_expand(var_ctx, inp, in_len, &outp, &out_len, 0))
       != VAR_OK) {
-    Jmsg(jcr, M_ERROR, 0, _("Cannot expand expression \"%s\": ERR=%s\n"), inp,
+    Jmsg(jcr, M_ERROR, 0, T_("Cannot expand expression \"%s\": ERR=%s\n"), inp,
          var_strerror(var_ctx, status));
     goto bail_out;
   }
@@ -501,7 +501,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   // Unescape once more in place
   if ((status = var_unescape(var_ctx, outp, out_len, outp, out_len + 1, 1))
       != VAR_OK) {
-    Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Cannot unescape string: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
   }
@@ -513,7 +513,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
 bail_out:
   // Destroy expansion context
   if ((status = var_destroy(var_ctx)) != VAR_OK) {
-    Jmsg(jcr, M_ERROR, 0, _("Cannot destroy var context: ERR=%s\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Cannot destroy var context: ERR=%s\n"),
          var_strerror(var_ctx, status));
   }
 

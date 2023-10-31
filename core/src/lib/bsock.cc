@@ -216,7 +216,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
   JobControlRecord* jcr = get_jcr();
 
   if (lseek(spool_fd_, 0, SEEK_SET) == -1) {
-    Qmsg(jcr, M_FATAL, 0, _("attr spool I/O error.\n"));
+    Qmsg(jcr, M_FATAL, 0, T_("attr spool I/O error.\n"));
     return false;
   }
 
@@ -237,7 +237,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
       if (nbytes != (size_t)message_length) {
         BErrNo be;
         Dmsg2(400, "nbytes=%d message_length=%d\n", nbytes, message_length);
-        Qmsg1(get_jcr(), M_FATAL, 0, _("read attr spool error. ERR=%s\n"),
+        Qmsg1(get_jcr(), M_FATAL, 0, T_("read attr spool error. ERR=%s\n"),
               be.bstrerror());
         UpdateAttrSpoolSize(tsize - last);
         return false;
@@ -391,12 +391,12 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
   if (jcr && jcr->IsJobCanceled()) {
     const char* fmt
-        = _("TwoWayAuthenticate failed, because job was canceled.\n");
+        = T_("TwoWayAuthenticate failed, because job was canceled.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
     Dmsg0(debuglevel, fmt);
   } else if (password.encoding != p_encoding_md5) {
     const char* fmt
-        = _("Password encoding is not MD5. You are probably restoring a NDMP "
+        = T_("Password encoding is not MD5. You are probably restoring a NDMP "
             "Backup "
             "with a restore job not configured for NDMP protocol.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
@@ -411,7 +411,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
     if (ConnectionReceivedTerminateSignal()) {
       if (tid) { StopBsockTimer(tid); }
       const char* fmt
-          = _("TwoWayAuthenticate failed, because connection was reset by "
+          = T_("TwoWayAuthenticate failed, because connection was reset by "
               "destination peer.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);
       Dmsg0(debuglevel, fmt);
@@ -435,31 +435,31 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
           break;
         }
         case CramMd5Handshake::HandshakeResult::NETWORK_ERROR:
-          Jmsg(jcr, M_FATAL, 0, _("Network error during CRAM MD5 with %s\n"),
+          Jmsg(jcr, M_FATAL, 0, T_("Network error during CRAM MD5 with %s\n"),
                ipaddr_str);
           break;
         case CramMd5Handshake::HandshakeResult::WRONG_HASH:
-          Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s.\n"),
+          Jmsg(jcr, M_FATAL, 0, T_("Authorization key rejected by %s.\n"),
                ipaddr_str);
           break;
         case CramMd5Handshake::HandshakeResult::FORMAT_MISMATCH:
           Jmsg(jcr, M_FATAL, 0,
-               _("Wrong format of the CRAM challenge with %s.\n"), ipaddr_str);
+               T_("Wrong format of the CRAM challenge with %s.\n"), ipaddr_str);
         default:
           break;
       }
-      fsend(_("1999 Authorization failed.\n"));
+      fsend(T_("1999 Authorization failed.\n"));
       Bmicrosleep(sleep_time_after_authentication_error, 0);
     } else if (jcr && jcr->IsJobCanceled()) {
       const char* fmt
-          = _("TwoWayAuthenticate failed, because job was canceled.\n");
+          = T_("TwoWayAuthenticate failed, because job was canceled.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);
       Dmsg0(debuglevel, fmt);
       auth_success = false;
     } else if (!DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
                                tls_resource, initiated_by_remote, identity,
                                password.value, jcr)) {
-      const char* fmt = _("Tls handshake failed.\n");
+      const char* fmt = T_("Tls handshake failed.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);
       Dmsg0(debuglevel, fmt);
       auth_success = false;
@@ -521,7 +521,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
       Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn_init) {
     Qmsg0(BareosSocket::jcr(), M_FATAL, 0,
-          _("TLS connection initialization failed.\n"));
+          T_("TLS connection initialization failed.\n"));
     return false;
   }
 
@@ -588,7 +588,7 @@ bool BareosSocket::DoTlsHandshake(TlsPolicy remote_tls_policy,
     if (tls_conn) {
       tls_conn->TlsLogConninfo(jcr, host(), port(), who());
     } else {
-      Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: None\n"),
+      Qmsg(jcr, M_INFO, 0, T_("Connected %s at %s:%d, encryption: None\n"),
            who(), host(), port());
     }
   }
@@ -604,7 +604,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource* tls_resource,
       Tls::CreateNewTlsContext(Tls::TlsImplementationType::kTlsOpenSsl));
   if (!tls_conn_init) {
     Qmsg0(BareosSocket::jcr(), M_FATAL, 0,
-          _("TLS connection initialization failed.\n"));
+          T_("TLS connection initialization failed.\n"));
     return false;
   }
 
@@ -640,7 +640,7 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigCert* local_tls_cert,
   }
   if (BnetTlsServer(this, verify_list)) { return true; }
   if (jcr && jcr->JobId != 0) {
-    Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("TLS negotiation failed.\n"));
   }
   Dmsg0(debuglevel, "TLS negotiation failed.\n");
   return false;
@@ -662,10 +662,10 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
   if (jcr && jcr->is_passive_client_connection_probing) {
     /* connection try */
     message_type = M_INFO;
-    message = _("TLS negotiation failed (while probing client protocol)\n");
+    message = T_("TLS negotiation failed (while probing client protocol)\n");
   } else {
     message_type = M_FATAL;
-    message = _("TLS negotiation failed\n");
+    message = T_("TLS negotiation failed\n");
   }
 
   if (jcr && jcr->JobId != 0) { Jmsg(jcr, message_type, 0, message.c_str()); }

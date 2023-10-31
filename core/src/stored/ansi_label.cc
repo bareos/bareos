@@ -82,7 +82,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
       BErrNo be;
       dev->clrerror(-1);
       Dmsg1(100, "Read device got: ERR=%s\n", be.bstrerror());
-      Mmsg2(jcr->errmsg, _("Read error on device %s in ANSI label. ERR=%s\n"),
+      Mmsg2(jcr->errmsg, T_("Read error on device %s in ANSI label. ERR=%s\n"),
             dev->archive_device_string, be.bstrerror());
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       dev->VolCatInfo.VolCatErrors++;
@@ -94,7 +94,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
         dev->SetEot(); /* second eof, set eot bit */
         Dmsg0(100, "EOM on ANSI label\n");
         Mmsg0(jcr->errmsg,
-              _("Insane! End of tape while reading ANSI label.\n"));
+              T_("Insane! End of tape while reading ANSI label.\n"));
         return VOL_LABEL_ERROR; /* at EOM this shouldn't happen */
       } else {
         dev->SetAteof(); /* set eof state */
@@ -124,7 +124,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
         if (!ok) {
           Dmsg0(100, "No VOL1 label\n");
           Mmsg0(jcr->errmsg,
-                _("No VOL1 label while reading ANSI/IBM label.\n"));
+                T_("No VOL1 label while reading ANSI/IBM label.\n"));
           return VOL_NO_LABEL; /* No ANSI label */
         }
 
@@ -146,7 +146,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
             dev = dcr->dev; /* may have changed in reserve_volume */
             Dmsg2(100, "Wanted ANSI Vol %s got %6s\n", VolName,
                   dev->VolHdr.VolumeName);
-            Mmsg2(jcr->errmsg, _("Wanted ANSI Volume \"%s\" got \"%s\"\n"),
+            Mmsg2(jcr->errmsg, T_("Wanted ANSI Volume \"%s\" got \"%s\"\n"),
                   VolName, dev->VolHdr.VolumeName);
             return VOL_NAME_ERROR;
           }
@@ -159,7 +159,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
 
         if (status != 80 || !bstrncmp("HDR1", label, 4)) {
           Dmsg0(100, "No HDR1 label\n");
-          Mmsg0(jcr->errmsg, _("No HDR1 label while reading ANSI label.\n"));
+          Mmsg0(jcr->errmsg, T_("No HDR1 label while reading ANSI label.\n"));
           return VOL_LABEL_ERROR;
         }
 
@@ -167,7 +167,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
           Dmsg1(100, "HD1 not Bareos label. Wanted BAREOS.DATA got %11s\n",
                 &label[4]);
           Mmsg1(jcr->errmsg,
-                _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
+                T_("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
                 dcr->dev->VolHdr.VolumeName);
           return VOL_NAME_ERROR; /* Not a Bareos label */
         }
@@ -181,7 +181,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
         if (status != 80 || !bstrncmp("HDR2", label, 4)) {
           Dmsg0(100, "No HDR2 label\n");
           Mmsg0(jcr->errmsg,
-                _("No HDR2 label while reading ANSI/IBM label.\n"));
+                T_("No HDR2 label while reading ANSI/IBM label.\n"));
           return VOL_LABEL_ERROR;
         }
         Dmsg0(100, "Got ANSI HDR2 label\n");
@@ -198,7 +198,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
 
         if (status != 80 || !bstrncmp("HDR", label, 3)) {
           Dmsg0(100, "Unknown or bad ANSI/IBM label record.\n");
-          Mmsg0(jcr->errmsg, _("Unknown or bad ANSI/IBM label record.\n"));
+          Mmsg0(jcr->errmsg, T_("Unknown or bad ANSI/IBM label record.\n"));
           return VOL_LABEL_ERROR;
         }
 
@@ -207,7 +207,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
     }
   }
   Dmsg0(100, "Too many records in ANSI/IBM label.\n");
-  Mmsg0(jcr->errmsg, _("Too many records in while reading ANSI/IBM label.\n"));
+  Mmsg0(jcr->errmsg, T_("Too many records in while reading ANSI/IBM label.\n"));
   return VOL_LABEL_ERROR;
 }
 
@@ -303,7 +303,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
       len = strlen(VolName);
       if (len > 6) {
         Jmsg1(jcr, M_FATAL, 0,
-              _("ANSI Volume label name \"%s\" longer than 6 chars.\n"),
+              T_("ANSI Volume label name \"%s\" longer than 6 chars.\n"),
               VolName);
         return false;
       }
@@ -330,7 +330,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
         if (status != sizeof(label)) {
           BErrNo be;
           Jmsg3(jcr, M_FATAL, 0,
-                _("Could not write ANSI VOL1 label. Wanted size=%d got=%d "
+                T_("Could not write ANSI VOL1 label. Wanted size=%d got=%d "
                   "ERR=%s\n"),
                 sizeof(label), status, be.bstrerror());
           return false;
@@ -370,12 +370,12 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
           }
           if (dev->dev_errno != ENOSPC) {
             Jmsg1(jcr, M_FATAL, 0,
-                  _("Could not write ANSI HDR1 label. ERR=%s\n"),
+                  T_("Could not write ANSI HDR1 label. ERR=%s\n"),
                   be.bstrerror());
             return false;
           }
         } else {
-          Jmsg(jcr, M_FATAL, 0, _("Could not write ANSI HDR1 label.\n"));
+          Jmsg(jcr, M_FATAL, 0, T_("Could not write ANSI HDR1 label.\n"));
           return false;
         }
       }
@@ -401,26 +401,26 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
           }
           if (dev->dev_errno != ENOSPC) {
             Jmsg1(jcr, M_FATAL, 0,
-                  _("Could not write ANSI HDR1 label. ERR=%s\n"),
+                  T_("Could not write ANSI HDR1 label. ERR=%s\n"),
                   be.bstrerror());
             return false;
           }
           dev->weof(1);
           return true;
         } else {
-          Jmsg(jcr, M_FATAL, 0, _("Could not write ANSI HDR1 label.\n"));
+          Jmsg(jcr, M_FATAL, 0, T_("Could not write ANSI HDR1 label.\n"));
           return false;
         }
       }
       if (!dev->weof(1)) {
-        Jmsg(jcr, M_FATAL, 0, _("Error writing EOF to tape. ERR=%s\n"),
+        Jmsg(jcr, M_FATAL, 0, T_("Error writing EOF to tape. ERR=%s\n"),
              dev->errmsg);
         return false;
       }
       return true;
     default:
       Jmsg0(jcr, M_ABORT, 0,
-            _("write_ansi_ibm_label called for non-ANSI/IBM type\n"));
+            T_("write_ansi_ibm_label called for non-ANSI/IBM type\n"));
       return false; /* should not get here */
   }
 }

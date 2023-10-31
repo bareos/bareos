@@ -101,7 +101,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
   bs = fopen(jcr->RestoreBootstrap, "rb");
   if (!bs) {
     BErrNo be;
-    Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Could not open bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
@@ -178,7 +178,7 @@ bool ReserveReadDevice(JobControlRecord* jcr,
       ok = false;
     }
     if (ok) {
-      Jmsg(jcr, M_INFO, 0, _("Using Device \"%s\" to read.\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Using Device \"%s\" to read.\n"),
            device_name.c_str());
     }
   }
@@ -186,13 +186,13 @@ bool ReserveReadDevice(JobControlRecord* jcr,
   if (!ok) {
     if (jcr->store_bsock->msg[0]) {
       Jmsg(jcr, M_FATAL, 0,
-           _("\n"
+           T_("\n"
              "     Storage daemon didn't accept Device \"%s\" because:\n     "
              "%s\n"),
            device_name.c_str(), jcr->store_bsock->msg);
     } else {
       Jmsg(jcr, M_FATAL, 0,
-           _("\n"
+           T_("\n"
              "     Storage daemon didn't accept Device \"%s\" command.\n"),
            device_name.c_str());
     }
@@ -255,20 +255,20 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
       ok = false;
     }
     if (ok) {
-      Jmsg(jcr, M_INFO, 0, _("Using Device \"%s\" to write.\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Using Device \"%s\" to write.\n"),
            device_name.c_str());
     }
   }
   if (!ok) {
     if (jcr->store_bsock->msg[0]) {
       Jmsg(jcr, M_FATAL, 0,
-           _("\n"
+           T_("\n"
              "     Storage daemon didn't accept Device \"%s\" because:\n     "
              "%s\n"),
            device_name.c_str(), jcr->store_bsock->msg);
     } else {
       Jmsg(jcr, M_FATAL, 0,
-           _("\n"
+           T_("\n"
              "     Storage daemon didn't accept Device \"%s\" command.\n"),
            device_name.c_str());
     }
@@ -297,7 +297,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
    * plugin options for this Job. */
   if (!SendStoragePluginOptions(jcr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Storage daemon rejected Plugin Options command: %s\n"),
+         T_("Storage daemon rejected Plugin Options command: %s\n"),
          sd_socket->msg);
     return false;
   }
@@ -374,7 +374,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
                &auth_key)
         != 3) {
       Dmsg1(100, "BadJob=%s\n", sd_socket->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Job command: %s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Storage daemon rejected Job command: %s\n"),
            sd_socket->msg);
       return false;
     } else {
@@ -383,7 +383,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
       Dmsg1(150, "sd_auth_key=%s\n", jcr->sd_auth_key);
     }
   } else {
-    Jmsg(jcr, M_FATAL, 0, _("<stored: bad response to Job command: %s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("<stored: bad response to Job command: %s\n"),
          sd_socket->bstrerror());
     return false;
   }
@@ -417,7 +417,7 @@ bool StartStorageDaemonMessageThread(JobControlRecord* jcr)
   Dmsg0(100, "Start SD msg_thread.\n");
   if ((status = pthread_create(&thid, NULL, msg_thread, (void*)jcr)) != 0) {
     BErrNo be;
-    Jmsg1(jcr, M_ABORT, 0, _("Cannot create message thread: %s\n"),
+    Jmsg1(jcr, M_ABORT, 0, T_("Cannot create message thread: %s\n"),
           be.bstrerror(status));
   }
   /* Wait for thread to start */
@@ -508,7 +508,7 @@ extern "C" void* msg_thread(void* arg)
      * This is required, as otherwise
      * the job could failed to write data
      * but still end as JS_Warnings (OK -- with warnings). */
-    Qmsg(jcr, M_FATAL, 0, _("Director's comm line to SD dropped.\n"));
+    Qmsg(jcr, M_FATAL, 0, T_("Director's comm line to SD dropped.\n"));
   }
   if (IsBnetError(sd)) { jcr->dir_impl->SDJobStatus = JS_ErrorTerminated; }
   pthread_cleanup_pop(1); /* remove and execute the handler */

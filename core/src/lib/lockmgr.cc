@@ -30,7 +30,7 @@ void lock_mutex_impl(pthread_mutex_t& m, const char* file, std::size_t line)
   int errstat;
   if ((errstat = pthread_mutex_lock(&m))) {
     BErrNo be;
-    e_msg(file, line, M_ABORT, 0, _("Mutex lock failure. ERR=%s\n"),
+    e_msg(file, line, M_ABORT, 0, T_("Mutex lock failure. ERR=%s\n"),
           be.bstrerror(errstat));
   }
 }
@@ -40,7 +40,7 @@ void unlock_mutex_impl(pthread_mutex_t& m, const char* file, std::size_t line)
   int errstat;
   if ((errstat = pthread_mutex_unlock(&m))) {
     BErrNo be;
-    e_msg(file, line, M_ABORT, 0, _("Mutex unlock failure. ERR=%s\n"),
+    e_msg(file, line, M_ABORT, 0, T_("Mutex unlock failure. ERR=%s\n"),
           be.bstrerror(errstat));
   }
 }

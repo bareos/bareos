@@ -63,13 +63,13 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
   if (uname) {
     if ((passw = getpwnam(uname)) == NULL) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not find userid=%s: ERR=%s\n"), uname,
+      Emsg2(M_ERROR_TERM, 0, T_("Could not find userid=%s: ERR=%s\n"), uname,
             be.bstrerror());
     }
   } else {
     if ((passw = getpwuid(getuid())) == NULL) {
       BErrNo be;
-      Emsg1(M_ERROR_TERM, 0, _("Could not find password entry. ERR=%s\n"),
+      Emsg1(M_ERROR_TERM, 0, T_("Could not find password entry. ERR=%s\n"),
             be.bstrerror());
     } else {
       uname = passw->pw_name;
@@ -82,7 +82,7 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
   if (gname) {
     if ((group = getgrnam(gname)) == NULL) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not find group=%s: ERR=%s\n"), gname,
+      Emsg2(M_ERROR_TERM, 0, T_("Could not find group=%s: ERR=%s\n"), gname,
             be.bstrerror());
     }
     gid = group->gr_gid;
@@ -91,17 +91,17 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
     BErrNo be;
     if (gname) {
       Emsg3(M_ERROR_TERM, 0,
-            _("Could not initgroups for group=%s, userid=%s: ERR=%s\n"), gname,
+            T_("Could not initgroups for group=%s, userid=%s: ERR=%s\n"), gname,
             username, be.bstrerror());
     } else {
-      Emsg2(M_ERROR_TERM, 0, _("Could not initgroups for userid=%s: ERR=%s\n"),
+      Emsg2(M_ERROR_TERM, 0, T_("Could not initgroups for userid=%s: ERR=%s\n"),
             username, be.bstrerror());
     }
   }
   if (gname) {
     if (setgid(gid)) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not set group=%s: ERR=%s\n"), gname,
+      Emsg2(M_ERROR_TERM, 0, T_("Could not set group=%s: ERR=%s\n"), gname,
             be.bstrerror());
     }
   }
@@ -111,31 +111,31 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
 
     if (prctl(PR_SET_KEEPCAPS, 1)) {
       BErrNo be;
-      Emsg1(M_ERROR_TERM, 0, _("prctl failed: ERR=%s\n"), be.bstrerror());
+      Emsg1(M_ERROR_TERM, 0, T_("prctl failed: ERR=%s\n"), be.bstrerror());
     }
     if (setreuid(uid, uid)) {
       BErrNo be;
-      Emsg1(M_ERROR_TERM, 0, _("setreuid failed: ERR=%s\n"), be.bstrerror());
+      Emsg1(M_ERROR_TERM, 0, T_("setreuid failed: ERR=%s\n"), be.bstrerror());
     }
     if (!(caps = cap_from_text("cap_dac_read_search=ep"))) {
       BErrNo be;
-      Emsg1(M_ERROR_TERM, 0, _("cap_from_text failed: ERR=%s\n"),
+      Emsg1(M_ERROR_TERM, 0, T_("cap_from_text failed: ERR=%s\n"),
             be.bstrerror());
     }
     if (cap_set_proc(caps) < 0) {
       BErrNo be;
-      Emsg1(M_ERROR_TERM, 0, _("cap_set_proc failed: ERR=%s\n"),
+      Emsg1(M_ERROR_TERM, 0, T_("cap_set_proc failed: ERR=%s\n"),
             be.bstrerror());
     }
     cap_free(caps);
 #  else
     Emsg0(
         M_ERROR_TERM, 0,
-        _("Keep readall caps not implemented this OS or missing libraries.\n"));
+        T_("Keep readall caps not implemented this OS or missing libraries.\n"));
 #  endif
   } else if (setuid(uid)) {
     BErrNo be;
-    Emsg1(M_ERROR_TERM, 0, _("Could not set specified userid: %s\n"), username);
+    Emsg1(M_ERROR_TERM, 0, T_("Could not set specified userid: %s\n"), username);
   }
 }
 #else

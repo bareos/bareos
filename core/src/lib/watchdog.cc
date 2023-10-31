@@ -88,7 +88,7 @@ int StartWatchdog(void)
 
   if ((errstat = RwlInit(&lock)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize watchdog lock. ERR=%s\n"),
+    Jmsg1(NULL, M_ABORT, 0, T_("Unable to initialize watchdog lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
   wd_queue = new dlist<watchdog_t>();
@@ -176,13 +176,13 @@ bool RegisterWatchdog(watchdog_t* wd)
 {
   if (!wd_is_init) {
     Jmsg0(NULL, M_ABORT, 0,
-          _("BUG! RegisterWatchdog called before StartWatchdog\n"));
+          T_("BUG! RegisterWatchdog called before StartWatchdog\n"));
   }
   if (wd->callback == NULL) {
-    Jmsg1(NULL, M_ABORT, 0, _("BUG! Watchdog %p has NULL callback\n"), wd);
+    Jmsg1(NULL, M_ABORT, 0, T_("BUG! Watchdog %p has NULL callback\n"), wd);
   }
   if (wd->interval == 0) {
-    Jmsg1(NULL, M_ABORT, 0, _("BUG! Watchdog %p has zero interval\n"), wd);
+    Jmsg1(NULL, M_ABORT, 0, T_("BUG! Watchdog %p has zero interval\n"), wd);
   }
 
   wd_lock();
@@ -203,7 +203,7 @@ bool UnregisterWatchdog(watchdog_t* wd)
 
   if (!wd_is_init) {
     Jmsg0(NULL, M_ABORT, 0,
-          _("BUG! unregister_watchdog_unlocked called before StartWatchdog\n"));
+          T_("BUG! unregister_watchdog_unlocked called before StartWatchdog\n"));
   }
 
   wd_lock();
@@ -319,7 +319,7 @@ static void wd_lock()
   int errstat;
   if ((errstat = RwlWritelock(&lock)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ABORT, 0, _("RwlWritelock failure. ERR=%s\n"),
+    Jmsg1(NULL, M_ABORT, 0, T_("RwlWritelock failure. ERR=%s\n"),
           be.bstrerror(errstat));
   }
 }
@@ -334,7 +334,7 @@ static void wd_unlock()
   int errstat;
   if ((errstat = RwlWriteunlock(&lock)) != 0) {
     BErrNo be;
-    Jmsg1(NULL, M_ABORT, 0, _("RwlWriteunlock failure. ERR=%s\n"),
+    Jmsg1(NULL, M_ABORT, 0, T_("RwlWriteunlock failure. ERR=%s\n"),
           be.bstrerror(errstat));
   }
 }

@@ -100,13 +100,13 @@ bool UpdateCmd(UaContext* ua, const char*)
       break;
   }
 
-  StartPrompt(ua, _("Update choice:\n"));
-  AddPrompt(ua, _("Volume parameters"));
-  AddPrompt(ua, _("Pool from resource"));
-  AddPrompt(ua, _("Slots from autochanger"));
-  AddPrompt(ua, _("Long term statistics"));
+  StartPrompt(ua, T_("Update choice:\n"));
+  AddPrompt(ua, T_("Volume parameters"));
+  AddPrompt(ua, T_("Pool from resource"));
+  AddPrompt(ua, T_("Slots from autochanger"));
+  AddPrompt(ua, T_("Long term statistics"));
   switch (
-      DoPrompt(ua, _("item"), _("Choose catalog item to update"), NULL, 0)) {
+      DoPrompt(ua, T_("item"), T_("Choose catalog item to update"), NULL, 0)) {
     case 0:
       UpdateVolume(ua);
       break;
@@ -143,7 +143,7 @@ static void UpdateVolstatus(UaContext* ua, const char* val, MediaDbRecord* mr)
     }
   }
   if (!found) {
-    ua->ErrorMsg(_("Invalid VolStatus specified: %s\n"), val);
+    ua->ErrorMsg(T_("Invalid VolStatus specified: %s\n"), val);
   } else {
     char ed1[50];
     bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
@@ -152,7 +152,7 @@ static void UpdateVolstatus(UaContext* ua, const char* val, MediaDbRecord* mr)
     if (!ua->db->SqlQuery(query.c_str())) {
       ua->ErrorMsg("%s", ua->db->strerror());
     } else {
-      ua->InfoMsg(_("New Volume status is: %s\n"), mr->VolStatus);
+      ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
     }
   }
 }
@@ -163,7 +163,7 @@ static void UpdateVolretention(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
 
   if (!DurationToUtime(val, &mr->VolRetention)) {
-    ua->ErrorMsg(_("Invalid retention period specified: %s\n"), val);
+    ua->ErrorMsg(T_("Invalid retention period specified: %s\n"), val);
     return;
   }
   Mmsg(query, "UPDATE Media SET VolRetention=%s WHERE MediaId=%s",
@@ -171,7 +171,7 @@ static void UpdateVolretention(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New retention period is: %s\n"),
+    ua->InfoMsg(T_("New retention period is: %s\n"),
                 edit_utime(mr->VolRetention, ed1, sizeof(ed1)));
   }
 }
@@ -182,7 +182,7 @@ static void UpdateVoluseduration(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
 
   if (!DurationToUtime(val, &mr->VolUseDuration)) {
-    ua->ErrorMsg(_("Invalid use duration specified: %s\n"), val);
+    ua->ErrorMsg(T_("Invalid use duration specified: %s\n"), val);
     return;
   }
   Mmsg(query, "UPDATE Media SET VolUseDuration=%s WHERE MediaId=%s",
@@ -190,7 +190,7 @@ static void UpdateVoluseduration(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New use duration is: %s\n"),
+    ua->InfoMsg(T_("New use duration is: %s\n"),
                 edit_utime(mr->VolUseDuration, ed1, sizeof(ed1)));
   }
 }
@@ -205,7 +205,7 @@ static void UpdateVolmaxjobs(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New max jobs is: %s\n"), val);
+    ua->InfoMsg(T_("New max jobs is: %s\n"), val);
   }
 }
 
@@ -219,7 +219,7 @@ static void UpdateVolmaxfiles(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New max files is: %s\n"), val);
+    ua->InfoMsg(T_("New max files is: %s\n"), val);
   }
 }
 
@@ -230,7 +230,7 @@ static void UpdateVolmaxbytes(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
 
   if (!size_to_uint64(val, &maxbytes)) {
-    ua->ErrorMsg(_("Invalid max. bytes specification: %s\n"), val);
+    ua->ErrorMsg(T_("Invalid max. bytes specification: %s\n"), val);
     return;
   }
   Mmsg(query, "UPDATE Media SET MaxVolBytes=%s WHERE MediaId=%s",
@@ -238,7 +238,7 @@ static void UpdateVolmaxbytes(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New Max bytes is: %s\n"), edit_uint64(maxbytes, ed1));
+    ua->InfoMsg(T_("New Max bytes is: %s\n"), edit_uint64(maxbytes, ed1));
   }
 }
 
@@ -249,7 +249,7 @@ static void UpdateVolrecycle(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
 
   if (!IsYesno(val, &recycle)) {
-    ua->ErrorMsg(_("Invalid value. It must be yes or no.\n"));
+    ua->ErrorMsg(T_("Invalid value. It must be yes or no.\n"));
     return;
   }
 
@@ -259,7 +259,7 @@ static void UpdateVolrecycle(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New Recycle flag is: %s\n"), recycle ? _("yes") : _("no"));
+    ua->InfoMsg(T_("New Recycle flag is: %s\n"), recycle ? T_("yes") : T_("no"));
   }
 }
 
@@ -270,7 +270,7 @@ static void UpdateVolinchanger(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
 
   if (!IsYesno(val, &InChanger)) {
-    ua->ErrorMsg(_("Invalid value. It must be yes or no.\n"));
+    ua->ErrorMsg(T_("Invalid value. It must be yes or no.\n"));
     return;
   }
 
@@ -280,8 +280,8 @@ static void UpdateVolinchanger(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New InChanger flag is: %s\n"),
-                InChanger ? _("yes") : _("no"));
+    ua->InfoMsg(T_("New InChanger flag is: %s\n"),
+                InChanger ? T_("yes") : T_("no"));
   }
 }
 
@@ -296,7 +296,7 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   }
   mr->Slot = atoi(val);
   if (pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) {
-    ua->ErrorMsg(_("Invalid slot, it must be between 0 and MaxVols=%d\n"),
+    ua->ErrorMsg(T_("Invalid slot, it must be between 0 and MaxVols=%d\n"),
                  pr.MaxVols);
     return;
   }
@@ -304,10 +304,10 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
    * so that any Slot is handled correctly. */
   SetStorageidInMr(NULL, mr);
   if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
-    ua->ErrorMsg(_("Error updating media record Slot: ERR=%s"),
+    ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                  ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New Slot is: %d\n"), mr->Slot);
+    ua->InfoMsg(T_("New Slot is: %d\n"), mr->Slot);
   }
 }
 
@@ -331,7 +331,7 @@ void UpdateVolPool(UaContext* ua,
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New Pool is: %s\n"), pr.Name);
+    ua->InfoMsg(T_("New Pool is: %s\n"), pr.Name);
     opr->NumVols--;
     if (!ua->db->UpdatePoolRecord(ua->jcr, opr)) {
       ua->ErrorMsg("%s", ua->db->strerror());
@@ -360,7 +360,7 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
   } else { /* update volume recyclepool="" */
     // If no pool name is given, set the PoolId to 0 (the default)
     mr->RecyclePoolId = 0;
-    poolname = _("*None*");
+    poolname = T_("*None*");
   }
 
   DbLocker _{ua->db};
@@ -369,7 +369,7 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New RecyclePool is: %s\n"), poolname);
+    ua->InfoMsg(T_("New RecyclePool is: %s\n"), poolname);
   }
 }
 
@@ -404,9 +404,9 @@ static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
   }
   SetPoolDbrDefaultsInMediaDbr(mr, &pr);
   if (!ua->db->UpdateMediaDefaults(ua->jcr, mr)) {
-    ua->ErrorMsg(_("Error updating Volume record: ERR=%s"), ua->db->strerror());
+    ua->ErrorMsg(T_("Error updating Volume record: ERR=%s"), ua->db->strerror());
   } else {
-    ua->InfoMsg(_("Volume defaults updated from \"%s\" Pool record.\n"),
+    ua->InfoMsg(T_("Volume defaults updated from \"%s\" Pool record.\n"),
                 pr.Name);
   }
 }
@@ -422,10 +422,10 @@ static void UpdateAllVolsFromPool(UaContext* ua, const char* pool_name)
   SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
   mr.PoolId = pr.PoolId;
   if (!ua->db->UpdateMediaDefaults(ua->jcr, &mr)) {
-    ua->ErrorMsg(_("Error updating Volume records: ERR=%s"),
+    ua->ErrorMsg(T_("Error updating Volume records: ERR=%s"),
                  ua->db->strerror());
   } else {
-    ua->InfoMsg(_("All Volume defaults updated from \"%s\" Pool record.\n"),
+    ua->InfoMsg(T_("All Volume defaults updated from \"%s\" Pool record.\n"),
                 pr.Name);
   }
 }
@@ -438,14 +438,14 @@ static void UpdateAllVols(UaContext* ua)
   MediaDbRecord mr;
 
   if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
-    ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
+    ua->ErrorMsg(T_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
     return;
   }
 
   for (i = 0; i < num_pools; i++) {
     pr.PoolId = ids[i];
     if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
-      ua->WarningMsg(_("Updating all pools, but skipped PoolId=%d. ERR=%s\n"),
+      ua->WarningMsg(T_("Updating all pools, but skipped PoolId=%d. ERR=%s\n"),
                      ua->db->strerror());
       continue;
     }
@@ -457,10 +457,10 @@ static void UpdateAllVols(UaContext* ua)
     mr.PoolId = pr.PoolId;
 
     if (!ua->db->UpdateMediaDefaults(ua->jcr, &mr)) {
-      ua->ErrorMsg(_("Error updating Volume records: ERR=%s"),
+      ua->ErrorMsg(T_("Error updating Volume records: ERR=%s"),
                    ua->db->strerror());
     } else {
-      ua->InfoMsg(_("All Volume defaults updated from \"%s\" Pool record.\n"),
+      ua->InfoMsg(T_("All Volume defaults updated from \"%s\" Pool record.\n"),
                   pr.Name);
     }
   }
@@ -474,10 +474,10 @@ static void UpdateVolenabled(UaContext* ua, char* val, MediaDbRecord* mr)
   if (mr->Enabled < 0) { return; }
   SetStorageidInMr(NULL, mr);
   if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
-    ua->ErrorMsg(_("Error updating media record Enabled: ERR=%s"),
+    ua->ErrorMsg(T_("Error updating media record Enabled: ERR=%s"),
                  ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New Enabled is: %d\n"), mr->Enabled);
+    ua->InfoMsg(T_("New Enabled is: %d\n"), mr->Enabled);
   }
 }
 
@@ -492,10 +492,10 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
 
   SetStorageidInMr(NULL, mr);
   if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
-    ua->ErrorMsg(_("Error updating media record ActionOnPurge: ERR=%s"),
+    ua->ErrorMsg(T_("Error updating media record ActionOnPurge: ERR=%s"),
                  ua->db->strerror());
   } else {
-    ua->InfoMsg(_("New ActionOnPurge is: %s\n"),
+    ua->InfoMsg(T_("New ActionOnPurge is: %s\n"),
                 action_on_purge_to_string(mr->ActionOnPurge, ret));
   }
 }
@@ -613,27 +613,27 @@ static bool UpdateVolume(UaContext* ua)
     MediaDbRecord mr;
     StorageDbRecord sr;
 
-    StartPrompt(ua, _("Parameters to modify:\n"));
-    AddPrompt(ua, _("Volume Status"));              /* 0 */
-    AddPrompt(ua, _("Volume Retention Period"));    /* 1 */
-    AddPrompt(ua, _("Volume Use Duration"));        /* 2 */
-    AddPrompt(ua, _("Maximum Volume Jobs"));        /* 3 */
-    AddPrompt(ua, _("Maximum Volume Files"));       /* 4 */
-    AddPrompt(ua, _("Maximum Volume Bytes"));       /* 5 */
-    AddPrompt(ua, _("Recycle Flag"));               /* 6 */
-    AddPrompt(ua, _("Slot"));                       /* 7 */
-    AddPrompt(ua, _("InChanger Flag"));             /* 8 */
-    AddPrompt(ua, _("Volume Files"));               /* 9 */
-    AddPrompt(ua, _("Pool"));                       /* 10 */
-    AddPrompt(ua, _("Volume from Pool"));           /* 11 */
-    AddPrompt(ua, _("All Volumes from Pool"));      /* 12 */
-    AddPrompt(ua, _("All Volumes from all Pools")); /* 13 */
-    AddPrompt(ua, _("Enabled")),                    /* 14 */
-        AddPrompt(ua, _("RecyclePool")),            /* 15 */
-        AddPrompt(ua, _("Action On Purge")),        /* 16 */
-        AddPrompt(ua, _("Storage")),                /* 17 */
-        AddPrompt(ua, _("Done"));                   /* 18 */
-    i = DoPrompt(ua, "", _("Select parameter to modify"), NULL, 0);
+    StartPrompt(ua, T_("Parameters to modify:\n"));
+    AddPrompt(ua, T_("Volume Status"));              /* 0 */
+    AddPrompt(ua, T_("Volume Retention Period"));    /* 1 */
+    AddPrompt(ua, T_("Volume Use Duration"));        /* 2 */
+    AddPrompt(ua, T_("Maximum Volume Jobs"));        /* 3 */
+    AddPrompt(ua, T_("Maximum Volume Files"));       /* 4 */
+    AddPrompt(ua, T_("Maximum Volume Bytes"));       /* 5 */
+    AddPrompt(ua, T_("Recycle Flag"));               /* 6 */
+    AddPrompt(ua, T_("Slot"));                       /* 7 */
+    AddPrompt(ua, T_("InChanger Flag"));             /* 8 */
+    AddPrompt(ua, T_("Volume Files"));               /* 9 */
+    AddPrompt(ua, T_("Pool"));                       /* 10 */
+    AddPrompt(ua, T_("Volume from Pool"));           /* 11 */
+    AddPrompt(ua, T_("All Volumes from Pool"));      /* 12 */
+    AddPrompt(ua, T_("All Volumes from all Pools")); /* 13 */
+    AddPrompt(ua, T_("Enabled")),                    /* 14 */
+        AddPrompt(ua, T_("RecyclePool")),            /* 15 */
+        AddPrompt(ua, T_("Action On Purge")),        /* 16 */
+        AddPrompt(ua, T_("Storage")),                /* 17 */
+        AddPrompt(ua, T_("Done"));                   /* 18 */
+    i = DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0);
 
     /* For All Volumes, All Volumes from Pool, and Done, we don't need
      * a Volume record */
@@ -641,13 +641,13 @@ static bool UpdateVolume(UaContext* ua)
       if (!SelectMediaDbr(ua, &mr)) { /* Get Volume record */
         return false;
       }
-      ua->InfoMsg(_("Updating Volume \"%s\"\n"), mr.VolumeName);
+      ua->InfoMsg(T_("Updating Volume \"%s\"\n"), mr.VolumeName);
     }
     switch (i) {
       case 0: /* Volume Status */
         /* Modify Volume Status */
-        ua->InfoMsg(_("Current Volume status is: %s\n"), mr.VolStatus);
-        StartPrompt(ua, _("Possible Values are:\n"));
+        ua->InfoMsg(T_("Current Volume status is: %s\n"), mr.VolStatus);
+        StartPrompt(ua, T_("Possible Values are:\n"));
         AddPrompt(ua, NT_("Append"));
         AddPrompt(ua, NT_("Archive"));
         AddPrompt(ua, NT_("Disabled"));
@@ -658,7 +658,7 @@ static bool UpdateVolume(UaContext* ua)
           AddPrompt(ua, NT_("Recycle"));
         }
         AddPrompt(ua, NT_("Read-Only"));
-        if (DoPrompt(ua, "", _("Choose new Volume Status"), ua->cmd,
+        if (DoPrompt(ua, "", T_("Choose new Volume Status"), ua->cmd,
                      sizeof(mr.VolStatus))
             < 0) {
           return true;
@@ -666,56 +666,56 @@ static bool UpdateVolume(UaContext* ua)
         UpdateVolstatus(ua, ua->cmd, &mr);
         break;
       case 1: /* Retention */
-        ua->InfoMsg(_("Current retention period is: %s\n"),
+        ua->InfoMsg(T_("Current retention period is: %s\n"),
                     edit_utime(mr.VolRetention, ed1, sizeof(ed1)));
-        if (!GetCmd(ua, _("Enter Volume Retention period: "))) { return false; }
+        if (!GetCmd(ua, T_("Enter Volume Retention period: "))) { return false; }
         UpdateVolretention(ua, ua->cmd, &mr);
         break;
 
       case 2: /* Use Duration */
-        ua->InfoMsg(_("Current use duration is: %s\n"),
+        ua->InfoMsg(T_("Current use duration is: %s\n"),
                     edit_utime(mr.VolUseDuration, ed1, sizeof(ed1)));
-        if (!GetCmd(ua, _("Enter Volume Use Duration: "))) { return false; }
+        if (!GetCmd(ua, T_("Enter Volume Use Duration: "))) { return false; }
         UpdateVoluseduration(ua, ua->cmd, &mr);
         break;
 
       case 3: /* Max Jobs */
-        ua->InfoMsg(_("Current max jobs is: %u\n"), mr.MaxVolJobs);
-        if (!GetPint(ua, _("Enter new Maximum Jobs: "))) { return false; }
+        ua->InfoMsg(T_("Current max jobs is: %u\n"), mr.MaxVolJobs);
+        if (!GetPint(ua, T_("Enter new Maximum Jobs: "))) { return false; }
         UpdateVolmaxjobs(ua, ua->cmd, &mr);
         break;
 
       case 4: /* Max Files */
-        ua->InfoMsg(_("Current max files is: %u\n"), mr.MaxVolFiles);
-        if (!GetPint(ua, _("Enter new Maximum Files: "))) { return false; }
+        ua->InfoMsg(T_("Current max files is: %u\n"), mr.MaxVolFiles);
+        if (!GetPint(ua, T_("Enter new Maximum Files: "))) { return false; }
         UpdateVolmaxfiles(ua, ua->cmd, &mr);
         break;
 
       case 5: /* Max Bytes */
-        ua->InfoMsg(_("Current value is: %s\n"),
+        ua->InfoMsg(T_("Current value is: %s\n"),
                     edit_uint64(mr.MaxVolBytes, ed1));
-        if (!GetCmd(ua, _("Enter new Maximum Bytes: "))) { return false; }
+        if (!GetCmd(ua, T_("Enter new Maximum Bytes: "))) { return false; }
         UpdateVolmaxbytes(ua, ua->cmd, &mr);
         break;
 
 
       case 6: /* Recycle */
-        ua->InfoMsg(_("Current recycle flag is: %s\n"),
-                    (mr.Recycle == 1) ? _("yes") : _("no"));
-        if (!GetYesno(ua, _("Enter new Recycle status: "))) { return false; }
+        ua->InfoMsg(T_("Current recycle flag is: %s\n"),
+                    (mr.Recycle == 1) ? T_("yes") : T_("no"));
+        if (!GetYesno(ua, T_("Enter new Recycle status: "))) { return false; }
         UpdateVolrecycle(ua, ua->cmd, &mr);
         break;
 
       case 7: /* Slot */
-        ua->InfoMsg(_("Current Slot is: %d\n"), mr.Slot);
-        if (!GetPint(ua, _("Enter new Slot: "))) { return false; }
+        ua->InfoMsg(T_("Current Slot is: %d\n"), mr.Slot);
+        if (!GetPint(ua, T_("Enter new Slot: "))) { return false; }
         UpdateVolslot(ua, ua->cmd, &mr);
         break;
 
       case 8: /* InChanger */
-        ua->InfoMsg(_("Current InChanger flag is: %d\n"), mr.InChanger);
+        ua->InfoMsg(T_("Current InChanger flag is: %d\n"), mr.InChanger);
         Bsnprintf(buf, sizeof(buf),
-                  _("Set InChanger flag for Volume \"%s\": yes/no: "),
+                  T_("Set InChanger flag for Volume \"%s\": yes/no: "),
                   mr.VolumeName);
         if (!GetYesno(ua, buf)) { return false; }
         mr.InChanger = ua->pint32_val;
@@ -723,10 +723,10 @@ static bool UpdateVolume(UaContext* ua)
          *   so that any Slot is handled correctly. */
         SetStorageidInMr(NULL, &mr);
         if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
-          ua->ErrorMsg(_("Error updating media record Slot: ERR=%s"),
+          ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                        ua->db->strerror());
         } else {
-          ua->InfoMsg(_("New InChanger flag is: %d\n"), mr.InChanger);
+          ua->InfoMsg(T_("New InChanger flag is: %d\n"), mr.InChanger);
         }
         break;
 
@@ -734,17 +734,17 @@ static bool UpdateVolume(UaContext* ua)
       case 9: /* Volume Files */
         int32_t VolFiles;
         ua->WarningMsg(
-            _("Warning changing Volume Files can result\n"
+            T_("Warning changing Volume Files can result\n"
               "in loss of data on your Volume\n\n"));
-        ua->InfoMsg(_("Current Volume Files is: %u\n"), mr.VolFiles);
-        if (!GetPint(ua, _("Enter new number of Files for Volume: "))) {
+        ua->InfoMsg(T_("Current Volume Files is: %u\n"), mr.VolFiles);
+        if (!GetPint(ua, T_("Enter new number of Files for Volume: "))) {
           return false;
         }
         VolFiles = ua->pint32_val;
         if (VolFiles != (int)(mr.VolFiles + 1)) {
           ua->WarningMsg(
-              _("Normally, you should only increase Volume Files by one!\n"));
-          if (!GetYesno(ua, _("Increase Volume Files? (yes/no): "))
+              T_("Normally, you should only increase Volume Files by one!\n"));
+          if (!GetYesno(ua, T_("Increase Volume Files? (yes/no): "))
               || !ua->pint32_val) {
             break;
           }
@@ -755,7 +755,7 @@ static bool UpdateVolume(UaContext* ua)
         if (!ua->db->SqlQuery(query)) {
           ua->ErrorMsg("%s", ua->db->strerror());
         } else {
-          ua->InfoMsg(_("New Volume Files is: %u\n"), VolFiles);
+          ua->InfoMsg(T_("New Volume Files is: %u\n"), VolFiles);
         }
         FreePoolMemory(query);
         break;
@@ -766,8 +766,8 @@ static bool UpdateVolume(UaContext* ua)
           ua->ErrorMsg("%s", ua->db->strerror());
           return false;
         }
-        ua->InfoMsg(_("Current Pool is: %s\n"), pr.Name);
-        if (!GetCmd(ua, _("Enter new Pool name: "))) { return false; }
+        ua->InfoMsg(T_("Current Pool is: %s\n"), pr.Name);
+        if (!GetCmd(ua, T_("Enter new Pool name: "))) { return false; }
         UpdateVolPool(ua, ua->cmd, &mr, &pr);
         return true;
 
@@ -784,8 +784,8 @@ static bool UpdateVolume(UaContext* ua)
         return true;
 
       case 14:
-        ua->InfoMsg(_("Current Enabled is: %d\n"), mr.Enabled);
-        if (!GetCmd(ua, _("Enter new Enabled: "))) { return false; }
+        ua->InfoMsg(T_("Current Enabled is: %d\n"), mr.Enabled);
+        if (!GetCmd(ua, T_("Enter new Enabled: "))) { return false; }
 
         UpdateVolenabled(ua, ua->cmd, &mr);
         break;
@@ -793,9 +793,9 @@ static bool UpdateVolume(UaContext* ua)
       case 15:
         pr.PoolId = mr.RecyclePoolId;
         if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
-          ua->InfoMsg(_("Current RecyclePool is: %s\n"), pr.Name);
+          ua->InfoMsg(T_("Current RecyclePool is: %s\n"), pr.Name);
         } else {
-          ua->InfoMsg(_("No current RecyclePool\n"));
+          ua->InfoMsg(T_("No current RecyclePool\n"));
         }
         if (!SelectPoolDbr(ua, &pr, NT_("recyclepool"))) { return false; }
         UpdateVolRecyclepool(ua, pr.Name, &mr);
@@ -803,10 +803,10 @@ static bool UpdateVolume(UaContext* ua)
 
       case 16:
         PmStrcpy(ret, "");
-        ua->InfoMsg(_("Current ActionOnPurge is: %s\n"),
+        ua->InfoMsg(T_("Current ActionOnPurge is: %s\n"),
                     action_on_purge_to_string(mr.ActionOnPurge, ret));
         if (!GetCmd(ua,
-                    _("Enter new ActionOnPurge (one of: Truncate, None): "))) {
+                    T_("Enter new ActionOnPurge (one of: Truncate, None): "))) {
           return false;
         }
 
@@ -816,17 +816,17 @@ static bool UpdateVolume(UaContext* ua)
       case 17:
         sr.StorageId = mr.StorageId;
         if (ua->db->GetStorageRecord(ua->jcr, &sr)) {
-          ua->InfoMsg(_("Current Storage is: %s\n"), sr.Name);
+          ua->InfoMsg(T_("Current Storage is: %s\n"), sr.Name);
         } else {
-          ua->InfoMsg(_("Warning, could not find current Storage\n"));
+          ua->InfoMsg(T_("Warning, could not find current Storage\n"));
         }
         if (!SelectStorageDbr(ua, &sr, NT_("storage"))) { return false; }
         UpdateVolStorage(ua, sr.Name, &mr);
-        ua->InfoMsg(_("New Storage is: %s\n"), sr.Name);
+        ua->InfoMsg(T_("New Storage is: %s\n"), sr.Name);
         return true;
 
       default: /* Done or error */
-        ua->InfoMsg(_("Selection terminated.\n"));
+        ua->InfoMsg(T_("Selection terminated.\n"));
         return true;
     }
   }
@@ -842,7 +842,7 @@ static bool UpdateStats(UaContext* ua)
   if (i >= 0) { since = ((int64_t)atoi(ua->argv[i]) * 24 * 60 * 60); }
 
   int nb = ua->db->UpdateStats(ua->jcr, since);
-  ua->InfoMsg(_("Updating %i job(s).\n"), nb);
+  ua->InfoMsg(T_("Updating %i job(s).\n"), nb);
 
   return true;
 }
@@ -867,13 +867,13 @@ static bool UpdatePool(UaContext* ua)
 
   id = ua->db->UpdatePoolRecord(ua->jcr, &pr);
   if (id <= 0) {
-    ua->ErrorMsg(_("UpdatePoolRecord returned %d. ERR=%s\n"), id,
+    ua->ErrorMsg(T_("UpdatePoolRecord returned %d. ERR=%s\n"), id,
                  ua->db->strerror());
   }
   ua->db->FillQuery(query, BareosDb::SQL_QUERY::list_pool,
                     edit_int64(pr.PoolId, ed1));
   ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
-  ua->InfoMsg(_("Pool DB record updated from resource.\n"));
+  ua->InfoMsg(T_("Pool DB record updated from resource.\n"));
 
   return true;
 }
@@ -902,7 +902,7 @@ static bool UpdateJob(UaContext* ua)
   Dmsg1(200, "cmd=%s\n", ua->cmd);
   i = FindArgWithValue(ua, NT_("jobid"));
   if (i < 0) {
-    ua->ErrorMsg(_("Expect JobId keyword, not found.\n"));
+    ua->ErrorMsg(T_("Expect JobId keyword, not found.\n"));
     return false;
   }
   jr.JobId = str_to_int64(ua->argv[i]);
@@ -934,7 +934,7 @@ static bool UpdateJob(UaContext* ua)
     }
   }
   if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
-    ua->ErrorMsg(_(
+    ua->ErrorMsg(T_(
         "Neither Client, StartTime, Filesetid, JobType nor Name specified.\n"));
     return false;
   }
@@ -950,7 +950,7 @@ static bool UpdateJob(UaContext* ua)
 
     StartTime = StrToUtime(start_time);
     if (StartTime == 0) {
-      ua->ErrorMsg(_("Improper date format: %s\n"), ua->argv[i]);
+      ua->ErrorMsg(T_("Improper date format: %s\n"), ua->argv[i]);
       return false;
     }
     delta_start = StartTime - jr.StartTime;
@@ -1003,7 +1003,7 @@ static void UpdateSlots(UaContext* ua)
   if (!OpenClientDb(ua)) { return; }
   store.store = get_storage_resource(ua, true, true);
   if (!store.store) { return; }
-  PmStrcpy(store.store_source, _("command line"));
+  PmStrcpy(store.store_source, T_("command line"));
   SetWstorage(ua->jcr, &store);
 
   scan = FindArg(ua, NT_("scan")) >= 0;
@@ -1019,7 +1019,7 @@ static void UpdateSlots(UaContext* ua)
   max_slots = GetNumSlots(ua, ua->jcr->dir_impl->res.write_storage);
   Dmsg1(100, "max_slots=%d\n", max_slots);
   if (max_slots <= 0) {
-    ua->WarningMsg(_("No slots in changer to scan.\n"));
+    ua->WarningMsg(T_("No slots in changer to scan.\n"));
     return;
   }
 
@@ -1032,7 +1032,7 @@ static void UpdateSlots(UaContext* ua)
 
   vol_list = get_vol_list_from_storage(ua, store.store, false, scan, false);
   if (!vol_list) {
-    ua->WarningMsg(_("No Volumes found to update, or no barcodes.\n"));
+    ua->WarningMsg(T_("No Volumes found to update, or no barcodes.\n"));
     goto bail_out;
   }
 
@@ -1042,7 +1042,7 @@ static void UpdateSlots(UaContext* ua)
   // Walk through the list updating the media records
   foreach_dlist (vl, vol_list->contents) {
     if (vl->bareos_slot_number > max_slots) {
-      ua->WarningMsg(_("Slot %d greater than max %d ignored.\n"),
+      ua->WarningMsg(T_("Slot %d greater than max %d ignored.\n"),
                      vl->bareos_slot_number, max_slots);
       continue;
     }
@@ -1086,7 +1086,7 @@ static void UpdateSlots(UaContext* ua)
     if (!vl->VolName) {
       Dmsg1(100, "No VolName for Slot=%d setting InChanger to zero.\n",
             vl->bareos_slot_number);
-      ua->InfoMsg(_("No VolName for Slot=%d InChanger set to zero.\n"),
+      ua->InfoMsg(T_("No VolName for Slot=%d InChanger set to zero.\n"),
                   vl->bareos_slot_number);
       continue;
     }
@@ -1110,17 +1110,17 @@ static void UpdateSlots(UaContext* ua)
             ua->ErrorMsg("%s", ua->db->strerror());
           } else {
             ua->InfoMsg(
-                _("Catalog record for Volume \"%s\" updated to reference "
+                T_("Catalog record for Volume \"%s\" updated to reference "
                   "slot %d.\n"),
                 mr.VolumeName, mr.Slot);
           }
         } else {
-          ua->InfoMsg(_("Catalog record for Volume \"%s\" is up to date.\n"),
+          ua->InfoMsg(T_("Catalog record for Volume \"%s\" is up to date.\n"),
                       mr.VolumeName);
         }
       } else {
         ua->WarningMsg(
-            _("Volume \"%s\" not found in catalog. Slot=%d InChanger "
+            T_("Volume \"%s\" not found in catalog. Slot=%d InChanger "
               "set to zero.\n"),
             mr.VolumeName, vl->bareos_slot_number);
       }
@@ -1242,7 +1242,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
         }
       } else {
         ua->WarningMsg(
-            _("Volume \"%s\" not found in catalog. Slot=%d InChanger "
+            T_("Volume \"%s\" not found in catalog. Slot=%d InChanger "
               "set to zero.\n"),
             mr.VolumeName, vl->bareos_slot_number);
       }

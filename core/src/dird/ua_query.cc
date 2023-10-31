@@ -69,18 +69,18 @@ bool QueryCmd(UaContext* ua, const char*)
   if (!OpenClientDb(ua, true)) { goto bail_out; }
   if ((fd = fopen(query_file, "rb")) == NULL) {
     BErrNo be;
-    ua->ErrorMsg(_("Could not open %s: ERR=%s\n"), query_file, be.bstrerror());
+    ua->ErrorMsg(T_("Could not open %s: ERR=%s\n"), query_file, be.bstrerror());
     goto bail_out;
   }
 
-  StartPrompt(ua, _("Available queries:\n"));
+  StartPrompt(ua, T_("Available queries:\n"));
   while (fgets(line, sizeof(line), fd) != NULL) {
     if (line[0] == ':') {
       StripTrailingJunk(line);
       AddPrompt(ua, line + 1);
     }
   }
-  if ((item = DoPrompt(ua, "", _("Choose a query"), NULL, 0)) < 0) {
+  if ((item = DoPrompt(ua, "", T_("Choose a query"), NULL, 0)) < 0) {
     goto bail_out;
   }
   rewind(fd);
@@ -90,7 +90,7 @@ bool QueryCmd(UaContext* ua, const char*)
     if (i == item) { break; }
   }
   if (i != item) {
-    ua->ErrorMsg(_("Could not find query.\n"));
+    ua->ErrorMsg(T_("Could not find query.\n"));
     goto bail_out;
   }
   query[0] = 0;
@@ -102,7 +102,7 @@ bool QueryCmd(UaContext* ua, const char*)
     len = strlen(line);
     if (line[0] == '*') { /* prompt */
       if (nprompt >= 9) {
-        ua->ErrorMsg(_("Too many prompts in query, max is 9.\n"));
+        ua->ErrorMsg(T_("Too many prompts in query, max is 9.\n"));
       } else {
         line[len++] = ' ';
         line[len] = 0;
@@ -197,7 +197,7 @@ static POOLMEM* substitute_prompts(UaContext* ua,
             o = new_query + olen;
             while (*p) { *o++ = *p++; }
           } else {
-            ua->ErrorMsg(_("Warning prompt %d missing.\n"), n + 1);
+            ua->ErrorMsg(T_("Warning prompt %d missing.\n"), n + 1);
           }
           q += 2;
           break;
@@ -235,10 +235,10 @@ bool SqlqueryCmd(UaContext* ua, const char*)
   *query.c_str() = 0;
 
   ua->SendMsg(
-      _("Entering SQL query mode.\n"
+      T_("Entering SQL query mode.\n"
         "Terminate each query with a semicolon.\n"
         "Terminate query mode with a blank line.\n"));
-  msg = _("Enter SQL query: ");
+  msg = T_("Enter SQL query: ");
   while (GetCmd(ua, msg)) {
     len = strlen(ua->cmd);
     Dmsg2(400, "len=%d cmd=%s:\n", len, ua->cmd);
@@ -250,12 +250,12 @@ bool SqlqueryCmd(UaContext* ua, const char*)
       // Submit query
       ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
       *query.c_str() = 0; /* start new query */
-      msg = _("Enter SQL query: ");
+      msg = T_("Enter SQL query: ");
     } else {
-      msg = _("Add to SQL query: ");
+      msg = T_("Add to SQL query: ");
     }
   }
-  ua->SendMsg(_("End query mode.\n"));
+  ua->SendMsg(T_("End query mode.\n"));
   return true;
 }
 } /* namespace directordaemon */

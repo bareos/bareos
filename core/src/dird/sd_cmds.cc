@@ -118,7 +118,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
   if (!sd) { return false; }
   sd->SetSourceAddress(me->DIRsrc_addr);
   if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat,
-                   _("Storage daemon"), store->address, nullptr, store->SDport,
+                   T_("Storage daemon"), store->address, nullptr, store->SDport,
                    verbose)) {
     return false;
   }
@@ -166,11 +166,11 @@ BareosSocket* open_sd_bsock(UaContext* ua)
   }
 
   if (!ua->jcr->store_bsock) {
-    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d ...\n"),
                 store->resource_name_, store->address, store->SDport);
     /* the next call will set ua->jcr->store_bsock */
     if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
-      ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+      ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
       return nullptr;
     }
   }
@@ -194,7 +194,7 @@ char* get_volume_name_from_SD(UaContext* ua,
 
   ua->jcr->dir_impl->res.write_storage = store;
   if (!(sd = open_sd_bsock(ua))) {
-    ua->ErrorMsg(_("Could not open SD socket.\n"));
+    ua->ErrorMsg(T_("Could not open SD socket.\n"));
     return nullptr;
   }
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
@@ -365,7 +365,7 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
       // Scanning -- require only valid slot
       vl->bareos_slot_number = atoi(field1);
       if (vl->bareos_slot_number <= 0) {
-        ua->ErrorMsg(_("Invalid Slot number: %s\n"), sd->msg);
+        ua->ErrorMsg(T_("Invalid Slot number: %s\n"), sd->msg);
         free(vl);
         continue;
       }
@@ -387,13 +387,13 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
 
       if (!IsAnInteger(field1)
           || (vl->bareos_slot_number = atoi(field1)) <= 0) {
-        ua->ErrorMsg(_("Invalid Slot number: %s\n"), field1);
+        ua->ErrorMsg(T_("Invalid Slot number: %s\n"), field1);
         free(vl);
         continue;
       }
 
       if (!IsVolumeNameLegal(ua, field2)) {
-        ua->ErrorMsg(_("Invalid Volume name: %s\n"), field2);
+        ua->ErrorMsg(T_("Invalid Volume name: %s\n"), field2);
         free(vl);
         continue;
       }
@@ -432,13 +432,13 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
               || (vl->bareos_slot_number
                   = static_cast<slot_number_t>(atoi(field2)))
                      == kInvalidSlotNumber) {
-            ua->ErrorMsg(_("Invalid Drive number: %s\n"), field2);
+            ua->ErrorMsg(T_("Invalid Drive number: %s\n"), field2);
             free(vl);
             continue;
           }
           vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
           if (vl->element_address >= INDEX_MAX_DRIVES) {
-            ua->ErrorMsg(_("Drive number %hd greater then "
+            ua->ErrorMsg(T_("Drive number %hd greater then "
                            "INDEX_MAX_DRIVES(%hd) please increase define\n"),
                          vl->bareos_slot_number, INDEX_MAX_DRIVES);
             free(vl);
@@ -448,7 +448,7 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
         default:
           if (!IsAnInteger(field2)
               || (vl->bareos_slot_number = atoi(field2)) <= 0) {
-            ua->ErrorMsg(_("Invalid Slot number: %s\n"), field2);
+            ua->ErrorMsg(T_("Invalid Slot number: %s\n"), field2);
             free(vl);
             continue;
           }
@@ -512,8 +512,8 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
       *bp = ':';
       nr_fields--;
     }
-    ua->ErrorMsg(_("Illegal output from autochanger %s: %s\n"),
-                 (listall) ? _("listall") : _("list"), sd->msg);
+    ua->ErrorMsg(T_("Illegal output from autochanger %s: %s\n"),
+                 (listall) ? T_("listall") : T_("list"), sd->msg);
     free(vl);
     continue;
   }
@@ -551,7 +551,7 @@ slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
     }
   }
   CloseSdBsock(ua);
-  ua->SendMsg(_("Device \"%s\" has %hd slots.\n"), store->dev_name(), slots);
+  ua->SendMsg(T_("Device \"%s\" has %hd slots.\n"), store->dev_name(), slots);
 
   return slots;
 }
@@ -599,7 +599,7 @@ bool CancelStorageDaemonJob(UaContext* ua, StorageResource* store, char* JobId)
 
   /* the next call will set control_jcr->store_bsock */
   if (!ConnectToStorageDaemon(control_jcr, 10, me->SDConnectTimeout, true)) {
-    ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return false;
   }
 
@@ -626,10 +626,10 @@ bool CancelStorageDaemonJob(UaContext* ua,
   if (!ua->jcr->dir_impl->res.write_storage_list) {
     if (jcr->dir_impl->res.read_storage_list) {
       CopyWstorage(ua->jcr, jcr->dir_impl->res.read_storage_list,
-                   _("Job resource"));
+                   T_("Job resource"));
     } else {
       CopyWstorage(ua->jcr, jcr->dir_impl->res.write_storage_list,
-                   _("Job resource"));
+                   T_("Job resource"));
     }
   } else {
     UnifiedStorageResource store;
@@ -648,7 +648,7 @@ bool CancelStorageDaemonJob(UaContext* ua,
   /* the next call will set ua->jcr->store_bsock */
   if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
     if (interactive) {
-      ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+      ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     }
     return false;
   }
@@ -696,17 +696,17 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   UnifiedStorageResource lstore;
 
   lstore.store = store;
-  PmStrcpy(lstore.store_source, _("unknown source"));
+  PmStrcpy(lstore.store_source, T_("unknown source"));
   SetWstorage(ua->jcr, &lstore);
 
   if (!ua->api) {
-    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+    ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
                 store->resource_name_, store->address, store->SDport);
   }
 
   /* the next call will set ua->jcr->store_bsock */
   if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
-    ua->SendMsg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
+    ua->SendMsg(T_("\nFailed to connect to Storage daemon %s.\n====\n"),
                 store->resource_name_);
     return;
   }
@@ -717,7 +717,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
     ua->SendMsg(cipher_string.c_str());
   }
 
-  Dmsg0(20, _("Connected to storage daemon\n"));
+  Dmsg0(20, T_("Connected to storage daemon\n"));
 
   if (cmd) {
     ua->jcr->store_bsock->fsend(dotstatuscmd, cmd);
@@ -854,7 +854,7 @@ bool SendSecureEraseReqToSd(JobControlRecord* jcr)
             jcr->dir_impl->SDSecureEraseCmd);
       break;
     } else {
-      Jmsg(jcr, M_WARNING, 0, _("Unexpected SD Secure Erase Cmd: %s\n"),
+      Jmsg(jcr, M_WARNING, 0, T_("Unexpected SD Secure Erase Cmd: %s\n"),
            sd->msg);
       PmStrcpy(jcr->dir_impl->SDSecureEraseCmd, "*None*");
       return false;
@@ -883,7 +883,7 @@ bool DoStorageResolve(UaContext* ua, StorageResource* store)
   UnifiedStorageResource lstore;
 
   lstore.store = store;
-  PmStrcpy(lstore.store_source, _("unknown source"));
+  PmStrcpy(lstore.store_source, T_("unknown source"));
   SetWstorage(ua->jcr, &lstore);
 
   ua->jcr->dir_impl->res.write_storage = store;

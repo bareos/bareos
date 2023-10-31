@@ -45,7 +45,7 @@ static void CheckIfItemDefaultBitIsSet(ResourceItem* item)
    */
   if (item->default_value != nullptr && !(item->flags & CFG_ITEM_DEFAULT)) {
     Pmsg1(000,
-          _("Found config item %s which has default value but no "
+          T_("Found config item %s which has default value but no "
             "CFG_ITEM_DEFAULT flag set\n"),
           item->name);
     item->flags |= CFG_ITEM_DEFAULT;
@@ -208,7 +208,7 @@ void ConfigurationParser::SetAllResourceDefaultsIterateOverItems(
     res_item_index++;
 
     if (res_item_index >= MAX_RES_ITEMS) {
-      Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"),
+      Emsg1(M_ERROR_TERM, 0, T_("Too many items in %s resource\n"),
             resource_definitions_[rcode].name);
     }
   }

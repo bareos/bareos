@@ -243,7 +243,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   if (AreMaxConcurrentJobsExceeded()) {
     Emsg0(
         M_ERROR, 0,
-        _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+        T_("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
     dir->signal(BNET_TERMINATE);
     return NULL;
   }
@@ -259,7 +259,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0,
-          _("Unable to init job start cond variable: ERR=%s\n"),
+          T_("Unable to init job start cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
     goto bail_out;
   }
@@ -268,7 +268,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
   errstat = pthread_cond_init(&jcr->sd_impl->job_end_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
-    Jmsg1(jcr, M_FATAL, 0, _("Unable to init job end cond variable: ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Unable to init job end cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
     goto bail_out;
   }
@@ -279,7 +279,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
 
   // Authenticate the Director
   if (!AuthenticateDirector(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Director\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Director\n"));
     goto bail_out;
   }
 
@@ -359,13 +359,13 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
   *Job = 0;
   if (sscanf(dir->msg, setbandwidth, &bw, Job) != 2 || bw < 0) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    dir->fsend(_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
     return false;
   }
 
   if (*Job) {
     if (!(cjcr = get_jcr_by_full_name(Job))) {
-      dir->fsend(_("2901 Job %s not found.\n"), Job);
+      dir->fsend(T_("2901 Job %s not found.\n"), Job);
     } else {
       cjcr->max_bandwidth = bw;
       if (cjcr->store_bsock) {
@@ -469,7 +469,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
     status = JS_Canceled;
     reason = "canceled";
   } else {
-    dir->fsend(_("3903 Error scanning cancel command.\n"));
+    dir->fsend(T_("3903 Error scanning cancel command.\n"));
     goto bail_out;
   }
 
@@ -477,12 +477,12 @@ static bool CancelCmd(JobControlRecord* cjcr)
   if (Is_a_number(Job)) {
     JobId = str_to_int64(Job);
     if (!(jcr = get_jcr_by_id(JobId))) {
-      dir->fsend(_("3904 Job %s not found.\n"), Job);
+      dir->fsend(T_("3904 Job %s not found.\n"), Job);
       goto bail_out;
     }
   } else {
     if (!(jcr = get_jcr_by_full_name(Job))) {
-      dir->fsend(_("3904 Job %s not found.\n"), Job);
+      dir->fsend(T_("3904 Job %s not found.\n"), Job);
       goto bail_out;
     }
   }
@@ -545,7 +545,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   pthread_cond_signal(&jcr->sd_impl->job_end_wait); /* wake waiting job */
   jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
 
-  dir->fsend(_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId,
+  dir->fsend(T_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId,
              jcr->Job, reason);
   FreeJcr(jcr);
 
@@ -566,12 +566,12 @@ static bool ResolveCmd(JobControlRecord* jcr)
   sscanf(dir->msg, resolvecmd, &hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
-    dir->fsend(_("%s: Failed to resolve %s\n"), my_name, hostname);
+    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
     goto bail_out;
   }
 
   dir->fsend(
-      _("%s resolves %s to %s\n"), my_name, hostname,
+      T_("%s resolves %s to %s\n"), my_name, hostname,
       BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
   FreeAddresses(addr_list);
 
@@ -666,12 +666,12 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
       dev->Unlock();
       FreeDeviceControlRecord(dcr);
     } else {
-      dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"),
+      dir->fsend(T_("3999 Device \"%s\" not found or could not be opened.\n"),
                  dev_name.c_str());
     }
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
-    dir->fsend(_("3903 Error scanning label command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("3903 Error scanning label command: %s\n"), jcr->errmsg);
   }
   FreeMemory(oldname);
   FreeMemory(newname);
@@ -732,7 +732,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
   dcr->setVolCatName(volname);
 
   if (!dev->open(dcr, mode)) {
-    dir->fsend(_("3910 Unable to open device \"%s\": ERR=%s\n"),
+    dir->fsend(T_("3910 Unable to open device \"%s\": ERR=%s\n"),
                dev->print_name(), dev->bstrerror());
     goto cleanup;
   }
@@ -748,7 +748,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
     case VOL_LABEL_ERROR:
     case VOL_OK:
       if (!relabel) {
-        dir->fsend(_("3920 Cannot label Volume because it is already labeled: "
+        dir->fsend(T_("3920 Cannot label Volume because it is already labeled: "
                      "\"%s\"\n"),
                    dev->VolHdr.VolumeName);
         goto cleanup;
@@ -756,19 +756,19 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
 
       // Relabel request. If oldname matches, continue
       if (!bstrcmp(oldname, dev->VolHdr.VolumeName)) {
-        dir->fsend(_("3921 Wrong volume mounted.\n"));
+        dir->fsend(T_("3921 Wrong volume mounted.\n"));
         goto cleanup;
       }
 
       if (dev->label_type != B_BAREOS_LABEL) {
-        dir->fsend(_("3922 Cannot relabel an ANSI/IBM labeled Volume.\n"));
+        dir->fsend(T_("3922 Cannot relabel an ANSI/IBM labeled Volume.\n"));
         goto cleanup;
       }
       [[fallthrough]];
     case VOL_IO_ERROR:
     case VOL_NO_LABEL:
       if (!WriteNewVolumeLabelToDev(dcr, newname, poolname, relabel)) {
-        dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"),
+        dir->fsend(T_("3912 Failed to label Volume: ERR=%s\n"),
                    dev->bstrerror());
         goto cleanup;
       }
@@ -780,11 +780,11 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
                  dev->print_name());
       break;
     case VOL_NO_MEDIA:
-      dir->fsend(_("3914 Failed to label Volume (no media): ERR=%s\n"),
+      dir->fsend(T_("3914 Failed to label Volume (no media): ERR=%s\n"),
                  dev->bstrerror());
       break;
     default:
-      dir->fsend(_("3913 Cannot label Volume. "
+      dir->fsend(T_("3913 Cannot label Volume. "
                    "Unknown status %d from ReadVolumeLabel()\n"),
                  label_status);
       break;
@@ -820,12 +820,12 @@ static bool ReadLabel(DeviceControlRecord* dcr)
   dev->ClearLabeled(); /* force read of label */
   switch (ReadDevVolumeLabel(dcr)) {
     case VOL_OK:
-      dir->fsend(_("3001 Mounted Volume: %s\n"), dev->VolHdr.VolumeName);
+      dir->fsend(T_("3001 Mounted Volume: %s\n"), dev->VolHdr.VolumeName);
       ok = true;
       break;
     default:
       dir->fsend(
-          _("3902 Cannot mount Volume on Storage Device \"%s\" because:\n%s"),
+          T_("3902 Cannot mount Volume on Storage Device \"%s\" because:\n%s"),
           dev->print_name(), jcr->errmsg);
       ok = false;
       break;
@@ -855,7 +855,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
       }
       if (!device_resource->dev) {
         Jmsg(jcr, M_WARNING, 0,
-             _("\n"
+             T_("\n"
                "     Device \"%s\" requested by DIR could not be opened or "
                "does not exist.\n"),
              devname.c_str());
@@ -882,7 +882,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
             Dmsg1(100, "Device %s could not be opened. Skipped\n",
                   devname.c_str());
             Jmsg(jcr, M_WARNING, 0,
-                 _("\n"
+                 T_("\n"
                    "     Device \"%s\" in changer \"%s\" requested by DIR "
                    "could not be opened or does not exist.\n"),
                  device_resource->resource_name_, devname.c_str());
@@ -901,7 +901,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
           if (changer->device_resources->current()
               == changer->device_resources->size()) {
             Jmsg(jcr, M_ERROR, 0,
-                 _("Drive number \"%d\" for device \"%s\" not found.\n"), drive,
+                 T_("Drive number \"%d\" for device \"%s\" not found.\n"), drive,
                  devname.c_str());
           }
         }
@@ -952,7 +952,7 @@ static bool MountCmd(JobControlRecord* jcr)
           Dmsg0(100, "Waiting for mount. Attempting to wake thread\n");
           dev->SetBlocked(BST_MOUNT);
           dir->fsend("3001 OK mount requested. %sDevice=%s\n",
-                     (slot > 0) ? _("Specified slot ignored. ") : "",
+                     (slot > 0) ? T_("Specified slot ignored. ") : "",
                      dev->print_name());
           pthread_cond_broadcast(&dev->wait_next_vol);
           Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
@@ -970,7 +970,7 @@ static bool MountCmd(JobControlRecord* jcr)
           }
           /* We freed the device, so reopen it and wake any waiting threads */
           if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
-            dir->fsend(_("3901 Unable to open device %s: ERR=%s\n"),
+            dir->fsend(T_("3901 Unable to open device %s: ERR=%s\n"),
                        dev->print_name(), dev->bstrerror());
             if (dev->blocked() == BST_UNMOUNTED) {
               /* We blocked the device, so unblock it */
@@ -991,11 +991,11 @@ static bool MountCmd(JobControlRecord* jcr)
             dev->SetBlocked(BST_MOUNT);
           }
           if (dev->IsLabeled()) {
-            dir->fsend(_("3001 Device %s is mounted with Volume \"%s\"\n"),
+            dir->fsend(T_("3001 Device %s is mounted with Volume \"%s\"\n"),
                        dev->print_name(), dev->VolHdr.VolumeName);
           } else {
             dir->fsend(
-                _("3905 Device %s open but no Bareos volume is mounted.\n"
+                T_("3905 Device %s open but no Bareos volume is mounted.\n"
                   "If this is not a blank tape, try unmounting and remounting "
                   "the Volume.\n"),
                 dev->print_name());
@@ -1007,12 +1007,12 @@ static bool MountCmd(JobControlRecord* jcr)
           break;
 
         case BST_DOING_ACQUIRE:
-          dir->fsend(_("3001 Device %s is doing acquire.\n"),
+          dir->fsend(T_("3001 Device %s is doing acquire.\n"),
                      dev->print_name());
           break;
 
         case BST_WRITING_LABEL:
-          dir->fsend(_("3903 Device %s is being labeled.\n"),
+          dir->fsend(T_("3903 Device %s is being labeled.\n"),
                      dev->print_name());
           break;
 
@@ -1024,29 +1024,29 @@ static bool MountCmd(JobControlRecord* jcr)
           }
           if (dev->IsOpen()) {
             if (dev->IsLabeled()) {
-              dir->fsend(_("3001 Device %s is mounted with Volume \"%s\"\n"),
+              dir->fsend(T_("3001 Device %s is mounted with Volume \"%s\"\n"),
                          dev->print_name(), dev->VolHdr.VolumeName);
             } else {
               dir->fsend(
-                  _("3905 Device %s open but no Bareos volume is mounted.\n"
+                  T_("3905 Device %s open but no Bareos volume is mounted.\n"
                     "If this is not a blank tape, try unmounting and "
                     "remounting the Volume.\n"),
                   dev->print_name());
             }
           } else if (dev->IsTape()) {
             if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
-              dir->fsend(_("3901 Unable to open device %s: ERR=%s\n"),
+              dir->fsend(T_("3901 Unable to open device %s: ERR=%s\n"),
                          dev->print_name(), dev->bstrerror());
               break;
             }
             ReadLabel(dcr);
             if (dev->IsLabeled()) {
               dir->fsend(
-                  _("3001 Device %s is already mounted with Volume \"%s\"\n"),
+                  T_("3001 Device %s is already mounted with Volume \"%s\"\n"),
                   dev->print_name(), dev->VolHdr.VolumeName);
             } else {
               dir->fsend(
-                  _("3905 Device %s open but no Bareos volume is mounted.\n"
+                  T_("3905 Device %s open but no Bareos volume is mounted.\n"
                     "If this is not a blank tape, try unmounting and "
                     "remounting the Volume.\n"),
                   dev->print_name());
@@ -1056,12 +1056,12 @@ static bool MountCmd(JobControlRecord* jcr)
             }
           } else if (dev->IsUnmountable()) {
             if (dev->mount(dcr, 1)) {
-              dir->fsend(_("3002 Device %s is mounted.\n"), dev->print_name());
+              dir->fsend(T_("3002 Device %s is mounted.\n"), dev->print_name());
             } else {
-              dir->fsend(_("3907 %s"), dev->bstrerror());
+              dir->fsend(T_("3907 %s"), dev->bstrerror());
             }
           } else { /* must be file */
-            dir->fsend(_("3906 File device %s is always mounted.\n"),
+            dir->fsend(T_("3906 File device %s is always mounted.\n"),
                        dev->print_name());
             pthread_cond_broadcast(&dev->wait_next_vol);
             Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
@@ -1071,23 +1071,23 @@ static bool MountCmd(JobControlRecord* jcr)
           break;
 
         case BST_RELEASING:
-          dir->fsend(_("3930 Device %s is being released.\n"),
+          dir->fsend(T_("3930 Device %s is being released.\n"),
                      dev->print_name());
           break;
 
         default:
-          dir->fsend(_("3905 Unknown wait state %d\n"), dev->blocked());
+          dir->fsend(T_("3905 Unknown wait state %d\n"), dev->blocked());
           break;
       }
       dev->Unlock();
       FreeDeviceControlRecord(dcr);
     } else {
-      dir->fsend(_("3999 Device %s not found or could not be opened.\n"),
+      dir->fsend(T_("3999 Device %s not found or could not be opened.\n"),
                  devname.c_str());
     }
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
-    dir->fsend(_("3909 Error scanning mount command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("3909 Error scanning mount command: %s\n"), jcr->errmsg);
   }
   dir->signal(BNET_EOD);
   return true;
@@ -1112,13 +1112,13 @@ static bool UnmountCmd(JobControlRecord* jcr)
         if (!dev->IsBusy()) { UnloadAutochanger(dcr, kInvalidSlotNumber); }
         if (dev->IsUnmountable()) {
           if (dev->unmount(dcr, 0)) {
-            dir->fsend(_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
+            dir->fsend(T_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
           } else {
-            dir->fsend(_("3907 %s"), dev->bstrerror());
+            dir->fsend(T_("3907 %s"), dev->bstrerror());
           }
         } else {
           Dmsg0(90, "Device already unmounted\n");
-          dir->fsend(_("3901 Device \"%s\" is already unmounted.\n"),
+          dir->fsend(T_("3901 Device \"%s\" is already unmounted.\n"),
                      dev->print_name());
         }
       } else if (dev->blocked() == BST_WAITING_FOR_SYSOP) {
@@ -1130,18 +1130,18 @@ static bool UnmountCmd(JobControlRecord* jcr)
           FreeVolume(dev);
         }
         if (dev->IsUnmountable() && !dev->unmount(dcr, 0)) {
-          dir->fsend(_("3907 %s"), dev->bstrerror());
+          dir->fsend(T_("3907 %s"), dev->bstrerror());
         } else {
           dev->SetBlocked(BST_UNMOUNTED_WAITING_FOR_SYSOP);
-          dir->fsend(_("3001 Device \"%s\" unmounted.\n"), dev->print_name());
+          dir->fsend(T_("3001 Device \"%s\" unmounted.\n"), dev->print_name());
         }
 
       } else if (dev->blocked() == BST_DOING_ACQUIRE) {
-        dir->fsend(_("3902 Device \"%s\" is busy in acquire.\n"),
+        dir->fsend(T_("3902 Device \"%s\" is busy in acquire.\n"),
                    dev->print_name());
 
       } else if (dev->blocked() == BST_WRITING_LABEL) {
-        dir->fsend(_("3903 Device \"%s\" is being labeled.\n"),
+        dir->fsend(T_("3903 Device \"%s\" is being labeled.\n"),
                    dev->print_name());
 
       } else if (dev->IsBusy()) {
@@ -1161,20 +1161,20 @@ static bool UnmountCmd(JobControlRecord* jcr)
           FreeVolume(dev);
         }
         if (dev->IsUnmountable() && !dev->unmount(dcr, 0)) {
-          dir->fsend(_("3907 %s"), dev->bstrerror());
+          dir->fsend(T_("3907 %s"), dev->bstrerror());
         } else {
-          dir->fsend(_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
+          dir->fsend(T_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
         }
       }
       dev->Unlock();
       FreeDeviceControlRecord(dcr);
     } else {
-      dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"),
+      dir->fsend(T_("3999 Device \"%s\" not found or could not be opened.\n"),
                  devname.c_str());
     }
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
-    dir->fsend(_("3907 Error scanning unmount command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("3907 Error scanning unmount command: %s\n"), jcr->errmsg);
   }
   dir->signal(BNET_EOD);
   return true;
@@ -1204,28 +1204,28 @@ static bool ReleaseCmd(JobControlRecord* jcr)
       if (!dev->IsOpen()) {
         if (!dev->IsBusy()) { UnloadAutochanger(dcr, kInvalidSlotNumber); }
         Dmsg0(90, "Device already released\n");
-        dir->fsend(_("3921 Device \"%s\" already released.\n"),
+        dir->fsend(T_("3921 Device \"%s\" already released.\n"),
                    dev->print_name());
 
       } else if (dev->blocked() == BST_WAITING_FOR_SYSOP) {
         Dmsg2(90, "%d waiter dev_block=%d.\n", dev->num_waiting,
               dev->blocked());
         UnloadAutochanger(dcr, kInvalidSlotNumber);
-        dir->fsend(_("3922 Device \"%s\" waiting for sysop.\n"),
+        dir->fsend(T_("3922 Device \"%s\" waiting for sysop.\n"),
                    dev->print_name());
 
       } else if (dev->blocked() == BST_UNMOUNTED_WAITING_FOR_SYSOP) {
         Dmsg2(90, "%d waiter dev_block=%d. doing unmount\n", dev->num_waiting,
               dev->blocked());
-        dir->fsend(_("3922 Device \"%s\" waiting for mount.\n"),
+        dir->fsend(T_("3922 Device \"%s\" waiting for mount.\n"),
                    dev->print_name());
 
       } else if (dev->blocked() == BST_DOING_ACQUIRE) {
-        dir->fsend(_("3923 Device \"%s\" is busy in acquire.\n"),
+        dir->fsend(T_("3923 Device \"%s\" is busy in acquire.\n"),
                    dev->print_name());
 
       } else if (dev->blocked() == BST_WRITING_LABEL) {
-        dir->fsend(_("3914 Device \"%s\" is being labeled.\n"),
+        dir->fsend(T_("3914 Device \"%s\" is being labeled.\n"),
                    dev->print_name());
 
       } else if (dev->IsBusy()) {
@@ -1233,17 +1233,17 @@ static bool ReleaseCmd(JobControlRecord* jcr)
       } else { /* device not being used */
         Dmsg0(90, "Device not in use, releasing\n");
         dcr->ReleaseVolume();
-        dir->fsend(_("3022 Device \"%s\" released.\n"), dev->print_name());
+        dir->fsend(T_("3022 Device \"%s\" released.\n"), dev->print_name());
       }
       dev->Unlock();
       FreeDeviceControlRecord(dcr);
     } else {
-      dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"),
+      dir->fsend(T_("3999 Device \"%s\" not found or could not be opened.\n"),
                  devname.c_str());
     }
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
-    dir->fsend(_("3927 Error scanning release command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("3927 Error scanning release command: %s\n"), jcr->errmsg);
   }
   dir->signal(BNET_EOD);
   return true;
@@ -1272,7 +1272,7 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   bs = fopen(fname, "a+b"); /* create file */
   if (!bs) {
     BErrNo be;
-    Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file %s: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Could not create bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
     goto bail_out;
   }
@@ -1286,7 +1286,7 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   jcr->sd_impl->read_session.bsr
       = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
   if (!jcr->sd_impl->read_session.bsr) {
-    Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Error parsing bootstrap file.\n"));
     goto bail_out;
   }
   if (debug_level >= 10) {
@@ -1354,7 +1354,7 @@ static bool ChangerCmd(JobControlRecord* jcr)
       dev = dcr->dev;
       dev->Lock(); /* Use P to avoid indefinite block */
       if (!dev->device_resource->changer_res) {
-        dir->fsend(_("3998 Device \"%s\" is not an autochanger.\n"),
+        dir->fsend(T_("3998 Device \"%s\" is not an autochanger.\n"),
                    dev->print_name());
         /* Under certain "safe" conditions, we can steal the lock */
       } else if (safe_cmd || !dev->IsOpen() || dev->CanStealLock()) {
@@ -1375,13 +1375,13 @@ static bool ChangerCmd(JobControlRecord* jcr)
       dev->Unlock();
       FreeDeviceControlRecord(dcr);
     } else {
-      dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"),
+      dir->fsend(T_("3999 Device \"%s\" not found or could not be opened.\n"),
                  devname.c_str());
     }
   } else { /* error on scanf */
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(
-        _("3908 Error scanning autochanger drives/list/slots command: %s\n"),
+        T_("3908 Error scanning autochanger drives/list/slots command: %s\n"),
         jcr->errmsg);
   }
   dir->signal(BNET_EOD);
@@ -1419,12 +1419,12 @@ static bool ReadlabelCmd(JobControlRecord* jcr)
       dev->Unlock();
       FreeDeviceControlRecord(dcr);
     } else {
-      dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"),
+      dir->fsend(T_("3999 Device \"%s\" not found or could not be opened.\n"),
                  devname.c_str());
     }
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
-    dir->fsend(_("3909 Error scanning readlabel command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("3909 Error scanning readlabel command: %s\n"), jcr->errmsg);
   }
   dir->signal(BNET_EOD);
   return true;
@@ -1459,12 +1459,12 @@ static void ReadVolumeLabel(JobControlRecord* jcr,
   switch (ReadDevVolumeLabel(dcr)) {
     case VOL_OK:
       /* DO NOT add quotes around the Volume name. It is scanned in the DIR */
-      dir->fsend(_("3001 Volume=%s Slot=%hd\n"), dev->VolHdr.VolumeName, Slot);
+      dir->fsend(T_("3001 Volume=%s Slot=%hd\n"), dev->VolHdr.VolumeName, Slot);
       Dmsg1(100, "Volume: %s\n", dev->VolHdr.VolumeName);
       break;
     default:
       dir->fsend(
-          _("3902 Cannot mount Volume on Storage Device \"%s\" because:\n%s"),
+          T_("3902 Cannot mount Volume on Storage Device \"%s\" because:\n%s"),
           dev->print_name(), jcr->errmsg);
       break;
   }
@@ -1502,35 +1502,35 @@ static void SendDirBusyMessage(BareosSocket* dir, Device* dev)
   if (dev->IsBlocked()) {
     switch (dev->blocked()) {
       case BST_UNMOUNTED:
-        dir->fsend(_("3931 Device \"%s\" is BLOCKED. user unmounted.\n"),
+        dir->fsend(T_("3931 Device \"%s\" is BLOCKED. user unmounted.\n"),
                    dev->print_name());
         break;
       case BST_UNMOUNTED_WAITING_FOR_SYSOP:
-        dir->fsend(_("3932 Device \"%s\" is BLOCKED. user unmounted during "
+        dir->fsend(T_("3932 Device \"%s\" is BLOCKED. user unmounted during "
                      "wait for media/mount.\n"),
                    dev->print_name());
         break;
       case BST_WAITING_FOR_SYSOP:
-        dir->fsend(_("3933 Device \"%s\" is BLOCKED waiting for media.\n"),
+        dir->fsend(T_("3933 Device \"%s\" is BLOCKED waiting for media.\n"),
                    dev->print_name());
         break;
       case BST_DOING_ACQUIRE:
-        dir->fsend(_("3934 Device \"%s\" is being initialized.\n"),
+        dir->fsend(T_("3934 Device \"%s\" is being initialized.\n"),
                    dev->print_name());
         break;
       case BST_WRITING_LABEL:
-        dir->fsend(_("3935 Device \"%s\" is blocked labeling a Volume.\n"),
+        dir->fsend(T_("3935 Device \"%s\" is blocked labeling a Volume.\n"),
                    dev->print_name());
         break;
       default:
-        dir->fsend(_("3935 Device \"%s\" is blocked for unknown reason.\n"),
+        dir->fsend(T_("3935 Device \"%s\" is blocked for unknown reason.\n"),
                    dev->print_name());
         break;
     }
   } else if (dev->CanRead()) {
-    dir->fsend(_("3936 Device \"%s\" is busy reading.\n"), dev->print_name());
+    dir->fsend(T_("3936 Device \"%s\" is busy reading.\n"), dev->print_name());
   } else {
-    dir->fsend(_("3937 Device \"%s\" is busy with writers=%d reserved=%d.\n"),
+    dir->fsend(T_("3937 Device \"%s\" is busy with writers=%d reserved=%d.\n"),
                dev->print_name(), dev->num_writers, dev->NumReserved());
   }
 }
@@ -1630,8 +1630,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   if (!storage_daemon_socket->connect(
           jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
-          _("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
-    Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
+          T_("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
+    Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to Storage daemon: %s:%d\n"),
          stored_addr, stored_port);
     Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n", stored_addr,
           stored_port);
@@ -1665,7 +1665,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   storage_daemon_socket->fsend("Hello Start Storage Job %s\n", JobName);
 
   if (!AuthenticateWithStoragedaemon(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
     connect_state(ReplicateCmdState::kError);
     return false;
   } else {
@@ -1704,7 +1704,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, T_("Bad passiveclientcmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
 
@@ -1718,13 +1718,13 @@ static bool PassiveCmd(JobControlRecord* jcr)
 
   // Open command communications with passive filedaemon
   if (!fd->connect(jcr, 10, (int)me->FDConnectTimeout, me->heartbeat_interval,
-                   _("File Daemon"), filed_addr, NULL, filed_port, 1)) {
+                   T_("File Daemon"), filed_addr, NULL, filed_port, 1)) {
     delete fd;
     fd = NULL;
   }
 
   if (fd == NULL) {
-    Jmsg(jcr, M_FATAL, 0, _("Failed to connect to File daemon: %s:%d\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to File daemon: %s:%d\n"),
          filed_addr, filed_port);
     Dmsg2(100, "Failed to connect to File daemon: %s:%d\n", filed_addr,
           filed_port);
@@ -1750,7 +1750,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   fd->fsend("Hello Storage calling Start Job %s\n", jcr->Job);
   if (!AuthenticateWithFiledaemon(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate File daemon.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate File daemon.\n"));
     delete fd;
     jcr->file_bsock = NULL;
     goto bail_out;
@@ -1780,7 +1780,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   Dmsg1(100, "PluginOptionsCmd: %s", dir->msg);
   if (sscanf(dir->msg, pluginoptionscmd, plugin_options) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad pluginoptionscmd command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
 

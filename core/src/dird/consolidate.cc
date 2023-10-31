@@ -79,10 +79,10 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
 
   jobid = DoRunCmd(ua, ua->cmd);
   if (jobid == 0) {
-    Jmsg(jcr, M_ERROR, 0, _("Could not start %s job.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("Could not start %s job.\n"),
          jcr->get_OperationName());
   } else {
-    Jmsg(jcr, M_INFO, 0, _("%s JobId %d started.\n"), jcr->get_OperationName(),
+    Jmsg(jcr, M_INFO, 0, T_("%s JobId %d started.\n"), jcr->get_OperationName(),
          (int)jobid);
   }
 
@@ -99,7 +99,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
   time_t now = time(NULL);
   foreach_res (job, R_JOB) {
     if (job->AlwaysIncremental) {
-      Jmsg(jcr, M_INFO, 0, _("Looking at always incremental job %s\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Looking at always incremental job %s\n"),
            job->resource_name_);
 
       // Fake always incremental job as job of current jcr.
@@ -111,12 +111,12 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
       jcr->dir_impl->jr.StartTime = 0;
 
       if (!GetOrCreateFilesetRecord(jcr)) {
-        Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
+        Jmsg(jcr, M_FATAL, 0, T_("JobId=%d no FileSet\n"), (int)jcr->JobId);
         return false;
       }
 
       if (!GetOrCreateClientRecord(jcr)) {
-        Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
+        Jmsg(jcr, M_FATAL, 0, T_("JobId=%d no ClientId\n"), (int)jcr->JobId);
         return false;
       }
 
@@ -132,11 +132,11 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
       if (job->AlwaysIncrementalJobRetention) {
         jcr->dir_impl->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
         Jmsg(jcr, M_INFO, 0,
-             _("%s: considering jobs older than %s for consolidation.\n"),
+             T_("%s: considering jobs older than %s for consolidation.\n"),
              job->resource_name_,
              bstrftime(jcr->dir_impl->jr.StartTime).c_str());
         Dmsg4(10,
-              _("%s: considering jobs with ClientId %d and FilesetId %d older "
+              T_("%s: considering jobs with ClientId %d and FilesetId %d older "
                 "than %s for consolidation.\n"),
               job->resource_name_, jcr->dir_impl->jr.ClientId,
               jcr->dir_impl->jr.FileSetId,
@@ -163,7 +163,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
        * like it is */
       if (incrementals_total < 1) {
         Jmsg(jcr, M_INFO, 0,
-             _("%s: less than two jobs to consolidate found, doing "
+             T_("%s: less than two jobs to consolidate found, doing "
                "nothing.\n"),
              job->resource_name_);
         continue;
@@ -176,7 +176,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
             job->AlwaysIncrementalKeepNumber);
       if (incrementals_total <= job->AlwaysIncrementalKeepNumber) {
         Jmsg(jcr, M_INFO, 0,
-             _("%s: less incrementals than required, not consolidating\n"),
+             T_("%s: less incrementals than required, not consolidating\n"),
              job->resource_name_);
         continue;
       }
@@ -195,7 +195,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
             jobids_ctx.GetAsString().c_str());
       if (incrementals_to_consolidate < 1) {
         Jmsg(jcr, M_INFO, 0,
-             _("%s: After limited query: less incrementals than required, "
+             T_("%s: After limited query: less incrementals than required, "
                "not consolidating\n"),
              job->resource_name_);
         continue;
@@ -207,12 +207,12 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         if (incrementals_to_consolidate < 2) {
           Jmsg(jcr, M_INFO, 0,
-               _("%s: less incrementals than required to consolidate without "
+               T_("%s: less incrementals than required to consolidate without "
                  "full, not consolidating\n"),
                job->resource_name_);
           continue;
         }
-        Jmsg(jcr, M_INFO, 0, _("before ConsolidateFull: jobids: %s\n"),
+        Jmsg(jcr, M_INFO, 0, T_("before ConsolidateFull: jobids: %s\n"),
              jobids_ctx.GetAsString().c_str());
 
         std::string oldestjobid = jobids_ctx.front();
@@ -224,7 +224,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
           Jmsg(jcr, M_FATAL, 0,
-               _("Error getting Job record for first Job: ERR=%s\n"),
+               T_("Error getting Job record for first Job: ERR=%s\n"),
                jcr->db->strerror());
           return true;
         }
@@ -233,12 +233,12 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         oldest_allowed_starttime = now - job->AlwaysIncrementalMaxFullAge;
 
         // Check if job is older than AlwaysIncrementalMaxFullAge
-        Jmsg(jcr, M_INFO, 0, _("check full age: full is %s, allowed is %s\n"),
+        Jmsg(jcr, M_INFO, 0, T_("check full age: full is %s, allowed is %s\n"),
              bstrftime(starttime).c_str(),
              bstrftime(oldest_allowed_starttime).c_str());
         if (starttime > oldest_allowed_starttime) {
           Jmsg(jcr, M_INFO, 0,
-               _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
+               T_("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
                  "first jobid %s because of age\n"),
                oldestjobid.c_str());
 
@@ -247,7 +247,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         } else if (max_full_consolidations
                    && fullconsolidations_started >= max_full_consolidations) {
           Jmsg(jcr, M_INFO, 0,
-               _("%d AlwaysIncrementalFullConsolidations reached -> skipping "
+               T_("%d AlwaysIncrementalFullConsolidations reached -> skipping "
                  "first jobid %s independent of age\n"),
                max_full_consolidations, oldestjobid.c_str());
 
@@ -255,12 +255,12 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         } else {
           Jmsg(jcr, M_INFO, 0,
-               _("Full is older than AlwaysIncrementalMaxFullAge -> also "
+               T_("Full is older than AlwaysIncrementalMaxFullAge -> also "
                  "consolidating Full jobid %s\n"),
                oldestjobid.c_str());
           fullconsolidations_started++;
         }
-        Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"),
+        Jmsg(jcr, M_INFO, 0, T_("after ConsolidateFull: jobids: %s\n"),
              jobids_ctx.GetAsString().c_str());
       }
 
@@ -270,7 +270,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
       }
       PmStrcpy(jcr->dir_impl->vf_jobids, jobids_ctx.GetAsString().c_str());
 
-      Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"),
+      Jmsg(jcr, M_INFO, 0, T_("%s: Start new consolidation\n"),
            job->resource_name_);
       StartNewConsolidationJob(consolidate_job, jcr, job->resource_name_);
     }
@@ -293,7 +293,7 @@ bool DoConsolidate(JobControlRecord* jcr)
   jcr->dir_impl->IgnoreDuplicateJobChecking = true;
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
+  Jmsg(jcr, M_INFO, 0, T_("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -321,7 +321,7 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s\n"),
+         T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -329,25 +329,25 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
   msg_type = M_INFO; /* by default INFO message */
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
-      TermMsg = _("Consolidate OK");
+      TermMsg = T_("Consolidate OK");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Consolidate Error ***");
+      TermMsg = T_("*** Consolidate Error ***");
       msg_type = M_ERROR; /* Generate error message */
       break;
     case JS_Canceled:
-      TermMsg = _("Consolidate Canceled");
+      TermMsg = T_("Consolidate Canceled");
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"),
+      sprintf(term_code, T_("Inappropriate term code: %c\n"),
               jcr->getJobStatus());
       break;
   }
 
   Jmsg(jcr, msg_type, 0,
-       _("BAREOS %s (%s): %s\n"
+       T_("BAREOS %s (%s): %s\n"
          "  JobId:                  %d\n"
          "  Job:                    %s\n"
          "  Scheduled time:         %s\n"

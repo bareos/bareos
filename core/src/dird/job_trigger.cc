@@ -26,13 +26,13 @@ std::string JobTriggerToString(JobTrigger trig)
 {
   switch (trig) {
     case JobTrigger::kScheduler:
-      return _("Scheduler");
+      return T_("Scheduler");
     case JobTrigger::kClient:
-      return _("Client");
+      return T_("Client");
     case JobTrigger::kUser:
-      return _("User");
+      return T_("User");
     default:
     case JobTrigger::kUndefined:
-      return _("Unknown");
+      return T_("Unknown");
   }
 }

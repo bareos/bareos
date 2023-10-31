@@ -234,7 +234,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
    * we do not create excludes for the NotForBackup RegKey */
   if (CountIncludeListFileEntries(ff) == 0) {
     Qmsg(jcr, M_INFO, 1,
-         _("Fileset has no \"File=\" directives, ignoring FilesNotToBackup "
+         T_("Fileset has no \"File=\" directives, ignoring FilesNotToBackup "
            "Registry key\n"));
     return true;
   }
@@ -250,7 +250,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
 
       if (BitIsSet(FO_NO_AUTOEXCL, fo->flags)) {
         Qmsg(jcr, M_INFO, 1,
-             _("Fileset has autoexclude disabled, ignoring FilesNotToBackup "
+             T_("Fileset has autoexclude disabled, ignoring FilesNotToBackup "
                "Registry key\n"));
         return true;
       }
@@ -398,12 +398,12 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
     }
 
     Qmsg(jcr, M_INFO, 0,
-         _("Created %d wildcard excludes from FilesNotToBackup Registry key\n"),
+         T_("Created %d wildcard excludes from FilesNotToBackup Registry key\n"),
          wild_count);
     RegCloseKey(hKey);
     retval = true;
   } else {
-    Qmsg(jcr, M_ERROR, 0, _("Failed to open FilesNotToBackup Registry Key\n"));
+    Qmsg(jcr, M_ERROR, 0, T_("Failed to open FilesNotToBackup Registry Key\n"));
   }
 
   return retval;
@@ -561,14 +561,14 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
 
   if (!p_WriteEncryptedFileRaw) {
     Jmsg0(jcr, M_FATAL, 0,
-          _("Encrypted file restore but no EFS support functions\n"));
+          T_("Encrypted file restore but no EFS support functions\n"));
   }
 
   // If no copy thread started do it now.
   if (!jcr->cp_thread) {
     if (!SetupCopyThread(jcr, bfd)) {
       Jmsg0(jcr, M_FATAL, 0,
-            _("Failed to start encrypted data restore copy thread\n"));
+            T_("Failed to start encrypted data restore copy thread\n"));
       return -1;
     }
   }

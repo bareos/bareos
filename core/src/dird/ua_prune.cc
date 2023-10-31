@@ -103,7 +103,7 @@ static bool PruneAllVolumes(UaContext* ua,
     }
 
     if (mr.Enabled == VOL_ARCHIVED) {
-      ua->ErrorMsg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
+      ua->ErrorMsg(T_("Cannot prune Volume \"%s\" because it is archived.\n"),
                    mr.VolumeName);
       result = false;
       continue;
@@ -132,7 +132,7 @@ bool PruneCmd(UaContext* ua, const char*)
   utime_t retention;
   int kw;
   const char* permission_denied_message
-      = _("Permission denied: need full %s permission.\n");
+      = T_("Permission denied: need full %s permission.\n");
   static const char* keywords[]
       = {NT_("Files"), NT_("Jobs"),      NT_("Volume"),
          NT_("Stats"), NT_("Directory"), NULL};
@@ -165,7 +165,7 @@ bool PruneCmd(UaContext* ua, const char*)
 
     if (kw < 0 || kw > 4) {
       // still nothing? ask user
-      kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
+      kw = DoKeywordPrompt(ua, T_("Choose item to prune"), keywords);
     }
   }
 
@@ -231,7 +231,7 @@ bool PruneCmd(UaContext* ua, const char*)
 
         if (mr.Enabled == VOL_ARCHIVED) {
           ua->ErrorMsg(
-              _("Cannot prune Volume \"%s\" because it is archived.\n"),
+              T_("Cannot prune Volume \"%s\" because it is archived.\n"),
               mr.VolumeName);
           return false;
         }
@@ -292,7 +292,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
 
   // See if a client was selected.
   if (!client) {
-    if (!GetYesno(ua, _("No client restriction given really remove "
+    if (!GetYesno(ua, T_("No client restriction given really remove "
                         "directory for all clients (yes/no): "))
         || !ua->pint32_val) {
       if (!(client = get_client_resource(ua))) { return false; }
@@ -309,12 +309,12 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     PmStrcpy(temp, ua->argv[i]);
   } else {
     if (recursive) {
-      if (!GetCmd(ua, _("Please enter the full path prefix to remove: "),
+      if (!GetCmd(ua, T_("Please enter the full path prefix to remove: "),
                   false)) {
         return false;
       }
     } else {
-      if (!GetCmd(ua, _("Please enter the full path to remove: "), false)) {
+      if (!GetCmd(ua, T_("Please enter the full path to remove: "), false)) {
         return false;
       }
     }
@@ -375,7 +375,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
    * certain client we created orphaned path entries as no one is referencing
    * them anymore. */
   if (!client) {
-    if (!GetYesno(ua, _("Cleanup orphaned path records (yes/no):"))
+    if (!GetYesno(ua, T_("Cleanup orphaned path records (yes/no):"))
         || !ua->pint32_val) {
       if (prune_topdir) { free(prune_topdir); }
       return true;
@@ -416,7 +416,7 @@ static bool PruneStats(UaContext* ua, utime_t retention)
     ua->db->SqlQuery(query.c_str());
   }
 
-  ua->InfoMsg(_("Pruned Jobs from JobHisto in catalog.\n"));
+  ua->InfoMsg(T_("Pruned Jobs from JobHisto in catalog.\n"));
 
   {
     DbLocker _{ua->db};
@@ -425,7 +425,7 @@ static bool PruneStats(UaContext* ua, utime_t retention)
     ua->db->SqlQuery(query.c_str());
   }
 
-  ua->InfoMsg(_("Pruned Statistics from DeviceStats in catalog.\n"));
+  ua->InfoMsg(T_("Pruned Statistics from DeviceStats in catalog.\n"));
   {
     DbLocker _{ua->db};
     Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'",
@@ -433,7 +433,7 @@ static bool PruneStats(UaContext* ua, utime_t retention)
     ua->db->SqlQuery(query.c_str());
   }
 
-  ua->InfoMsg(_("Pruned Statistics from JobStats in catalog.\n"));
+  ua->InfoMsg(T_("Pruned Statistics from JobStats in catalog.\n"));
 
   return true;
 }
@@ -516,7 +516,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
     return true;
   }
 
-  ua->SendMsg(_("Begin pruning Files.\n"));
+  ua->SendMsg(T_("Begin pruning Files.\n"));
   /* Select Jobs -- for counting */
   PoolMem query(PM_MESSAGE);
   Mmsg(query, "SELECT COUNT(1) FROM Job %s WHERE PurgedFiles=0 %s",
@@ -533,7 +533,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
   }
 
   if (cnt.count == 0) {
-    if (ua->verbose) { ua->WarningMsg(_("No Files found to prune.\n")); }
+    if (ua->verbose) { ua->WarningMsg(T_("No Files found to prune.\n")); }
     return true;
   }
 
@@ -549,7 +549,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
   PurgeFilesFromJobList(ua, prune_list);
 
   edit_uint64_with_commas(prune_list.size(), ed1);
-  ua->InfoMsg(_("Pruned Files from %s Jobs for client %s from catalog.\n"), ed1,
+  ua->InfoMsg(T_("Pruned Files from %s Jobs for client %s from catalog.\n"), ed1,
               client->resource_name_);
 
   return true;
@@ -651,7 +651,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   char ed1[50];
   edit_utime(period, ed1, sizeof(ed1));
-  ua->SendMsg(_("Begin pruning Jobs older than %s.\n"), ed1);
+  ua->SendMsg(T_("Begin pruning Jobs older than %s.\n"), ed1);
 
   /* Select all files that are older than the JobRetention period
    * and add them into the "DeletionCandidates" table. */
@@ -766,8 +766,8 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   if (prune_list.size() > 0) {
     ua->InfoMsg(
-        _("Pruned %d %s for client %s from catalog.\n"), prune_list.size(),
-        prune_list.size() == 1 ? _("Job") : _("Jobs"), client->resource_name_);
+        T_("Pruned %d %s for client %s from catalog.\n"), prune_list.size(),
+        prune_list.size() == 1 ? T_("Job") : T_("Jobs"), client->resource_name_);
   }
 
   DropTempTables(ua);
@@ -793,22 +793,22 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
     std::vector<JobId_t> prune_list;
     int NumJobsToBePruned = GetPruneListForVolume(ua, mr, prune_list);
     ua->SendMsg(
-        _("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
+        T_("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
         mr->VolumeName, NumJobsToBePruned);
     Dmsg1(050, "Num pruned = %d\n", NumJobsToBePruned);
     if (NumJobsToBePruned != 0) { PurgeJobListFromCatalog(ua, prune_list); }
     VolumeIsNowEmtpy = IsVolumePurged(ua, mr);
 
     if (!VolumeIsNowEmtpy) {
-      ua->SendMsg(_("Volume \"%s\" still contains jobs after pruning.\n"),
+      ua->SendMsg(T_("Volume \"%s\" still contains jobs after pruning.\n"),
                   mr->VolumeName);
     } else {
-      ua->SendMsg(_("Volume \"%s\" contains no jobs after pruning.\n"),
+      ua->SendMsg(T_("Volume \"%s\" contains no jobs after pruning.\n"),
                   mr->VolumeName);
     }
   } else {
     ua->SendMsg(
-        _("Pruning volume %s: cannot prune as Volstatus is %s but needs to "
+        T_("Pruning volume %s: cannot prune as Volstatus is %s but needs to "
           "be "
           "Full or Used.\n"),
         mr->VolumeName, mr->VolStatus);
@@ -872,7 +872,7 @@ int GetPruneListForVolume(UaContext* ua,
   int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
   if (NumJobsToBePruned > 0) {
     ua->SendMsg(
-        _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs "
+        T_("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs "
           "that will be pruned\n"),
         mr->VolumeName, VolRetention, NumJobsToBePruned);
   }

@@ -96,7 +96,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 
   if (!IsOpen()) {
     BErrNo be;
-    Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"), prt_name,
+    Mmsg2(errmsg, T_("Unable to open device %s: ERR=%s\n"), prt_name,
           be.bstrerror(dev_errno));
     Dmsg1(100, "%s", errmsg);
   }
@@ -114,7 +114,7 @@ bool win32_fifo_device::eod(DeviceControlRecord*)
 {
   if (fd < 0) {
     dev_errno = EBADF;
-    Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), prt_name);
+    Mmsg1(errmsg, T_("Bad call to eod. Device %s not open\n"), prt_name);
     return false;
   }
 
@@ -185,7 +185,7 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
     Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n",
           print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"), print_name(),
+    Mmsg(errmsg, T_("Device %s cannot be %smounted. ERR=%s\n"), print_name(),
          (mount ? "" : "un"), be.bstrerror(status));
 
     // Now, just to be sure it is not mounted, try to read the filesystem.

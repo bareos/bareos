@@ -72,7 +72,7 @@ int SaferUnlink(const char* pathname, const char* regx)
   rc = regcomp(&preg1, regx, REG_EXTENDED);
   if (rc != 0) {
     regerror(rc, &preg1, prbuf, sizeof(prbuf));
-    Pmsg2(000, _("safe_unlink could not compile regex pattern \"%s\" ERR=%s\n"),
+    Pmsg2(000, T_("safe_unlink could not compile regex pattern \"%s\" ERR=%s\n"),
           regx, prbuf);
     return ENOENT;
   }
@@ -102,7 +102,7 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
 
     Mmsg(cmdline, "%s \"%s\"", secure_erase_cmdline, pathname);
     if (jcr) {
-      Jmsg(jcr, M_INFO, 0, _("SecureErase: executing %s\n"), cmdline.c_str());
+      Jmsg(jcr, M_INFO, 0, T_("SecureErase: executing %s\n"), cmdline.c_str());
     }
 
     bpipe = OpenBpipe(cmdline.c_str(), 0, "r");
@@ -110,7 +110,7 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
       BErrNo be;
 
       if (jcr) {
-        Jmsg(jcr, M_FATAL, 0, _("SecureErase: %s could not execute. ERR=%s\n"),
+        Jmsg(jcr, M_FATAL, 0, T_("SecureErase: %s could not execute. ERR=%s\n"),
              secure_erase_cmdline, be.bstrerror());
       }
       goto bail_out;
@@ -118,7 +118,7 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
 
     while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
       StripTrailingJunk(line.c_str());
-      if (jcr) { Jmsg(jcr, M_INFO, 0, _("SecureErase: %s\n"), line.c_str()); }
+      if (jcr) { Jmsg(jcr, M_INFO, 0, T_("SecureErase: %s\n"), line.c_str()); }
     }
 
     status = CloseBpipe(bpipe);
@@ -127,7 +127,7 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
 
       if (jcr) {
         Jmsg(jcr, M_FATAL, 0,
-             _("SecureErase: %s returned non-zero status=%d. ERR=%s\n"),
+             T_("SecureErase: %s returned non-zero status=%d. ERR=%s\n"),
              secure_erase_cmdline, be.code(status), be.bstrerror(status));
       }
       goto bail_out;
@@ -409,7 +409,7 @@ int b_strerror(int errnum, char* buf, size_t bufsiz)
 
   msg = strerror(errnum);
   if (!msg) {
-    msg = _("Bad errno");
+    msg = T_("Bad errno");
     status = -1;
   }
   bstrncpy(buf, msg, bufsiz);
@@ -433,12 +433,12 @@ static void LockPidFile(const char* progname,
     if (errno == EAGAIN || errno == EACCES) {
       BErrNo be;
       Emsg2(M_ERROR_TERM, 0,
-            _("PID file '%s' is locked; probably '%s' is already running. "),
+            T_("PID file '%s' is locked; probably '%s' is already running. "),
             pidfile_path, progname);
 
     } else {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Unable to lock PID file '%s'. ERR=%s\n"),
+      Emsg2(M_ERROR_TERM, 0, T_("Unable to lock PID file '%s'. ERR=%s\n"),
             pidfile_path, be.bstrerror());
     }
   }
@@ -455,7 +455,7 @@ static void UnlockPidFile(int pidfile_fd, const char* pidfile_path)
 
   if (fcntl(pidfile_fd, F_SETLK, &fl)) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Unable to unlock PID file '%s'. ERR=%s\n"),
+    Emsg2(M_ERROR_TERM, 0, T_("Unable to unlock PID file '%s'. ERR=%s\n"),
           pidfile_path, be.bstrerror());
   }
 }
@@ -480,7 +480,7 @@ int CreatePidFile(const char* progname, const char* pidfile_path)
   pidfd = open(pidfile_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   if (pidfd == -1) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), pidfile_path,
+    Emsg2(M_ERROR_TERM, 0, T_("Cannot open pid file. %s ERR=%s\n"), pidfile_path,
           be.bstrerror());
   }
 
@@ -496,7 +496,7 @@ int CreatePidFile(const char* progname, const char* pidfile_path)
     flags = fcntl(pidfd, F_GETFD); /* Fetch flags */
     if (flags == -1) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not get flags for PID file %s. ERR=%s\n"),
+      Emsg2(M_ERROR_TERM, 0, T_("Could not get flags for PID file %s. ERR=%s\n"),
             pidfile_path, be.bstrerror());
     }
 
@@ -504,7 +504,7 @@ int CreatePidFile(const char* progname, const char* pidfile_path)
 
     if (fcntl(pidfd, F_SETFD, flags) == -1) /* Update flags */ {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not get flags for PID file %s. ERR=%s\n"),
+      Emsg2(M_ERROR_TERM, 0, T_("Could not get flags for PID file %s. ERR=%s\n"),
             pidfile_path, be.bstrerror());
     }
   }
@@ -538,7 +538,7 @@ void WritePidFile(int pidfile_fd,
 
   if (ftruncate(pidfile_fd, 0) == -1) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Could not truncate PID file '%s'. ERR=%s\n"),
+    Emsg2(M_ERROR_TERM, 0, T_("Could not truncate PID file '%s'. ERR=%s\n"),
           pidfile_path, be.bstrerror());
   }
 
@@ -546,7 +546,7 @@ void WritePidFile(int pidfile_fd,
   if (write(pidfile_fd, buf, strlen(buf))
       != static_cast<ssize_t>(strlen(buf))) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Writing to PID file '%s'. ERR=%s\n"),
+    Emsg2(M_ERROR_TERM, 0, T_("Writing to PID file '%s'. ERR=%s\n"),
           pidfile_path, be.bstrerror());
   }
 }

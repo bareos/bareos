@@ -90,11 +90,11 @@ int BgetMsg(BareosSocket* sock)
       case BNET_STATUS:
         /* *****FIXME***** Implement BNET_STATUS */
         Dmsg0(messagelevel, "Got BNET_STATUS\n");
-        sock->fsend(_("Status OK\n"));
+        sock->fsend(T_("Status OK\n"));
         sock->signal(BNET_EOD);
         break;
       default:
-        Emsg1(M_ERROR, 0, _("BgetMsg: unknown signal %d\n"),
+        Emsg1(M_ERROR, 0, T_("BgetMsg: unknown signal %d\n"),
               sock->message_length);
         break;
     }
