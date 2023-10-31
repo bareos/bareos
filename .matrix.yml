@@ -103,10 +103,8 @@ OS:
     cross:
       TYPE: win
       STAGES:
-        - win-32-release
         - win-64-release
       ARCH:
        - x86_64
       WINVERSIONS:
-         - windows-10-32
          - windows-10-64
