@@ -94,6 +94,14 @@ class DirectorConsole(LowLevel):
         )
 
         argparser.add_argument(
+            "--timeout",
+            default=0,
+            type=int,
+            help="Timeout for the connection to the Bareos Director.",
+            dest="BAREOS_timeout"
+        )
+
+        argparser.add_argument(
             "--protocolversion",
             default=ProtocolVersions.last,
             type=int,
@@ -128,6 +136,7 @@ class DirectorConsole(LowLevel):
         self,
         address="localhost",
         port=9101,
+        timeout=None,
         dirname=None,
         name="*UserAgent*",
         password=None,
@@ -144,6 +153,9 @@ class DirectorConsole(LowLevel):
            address (str): Address of the Bareos Director (hostname or IP).
 
            port (int): Port number of the Bareos Director.
+
+           timeout (int, optional):
+              Timeout for the connection to the director. Default: OS dependent
 
            dirname (str, optional):
               Name of the Bareos Director. Deprecated, normally not required.
@@ -177,13 +189,14 @@ class DirectorConsole(LowLevel):
         self.pam_password = pam_password
         self.tls_psk_enable = tls_psk_enable
         self.tls_psk_require = tls_psk_require
+        self.timeout = timeout
         if tls_version is not None:
             self.tls_version = tls_version
         self.identity_prefix = u"R_CONSOLE"
         if protocolversion is not None:
             self.requested_protocol_version = int(protocolversion)
             self.protocol_messages.set_version(self.requested_protocol_version)
-        self.connect(address, port, dirname, ConnectionType.DIRECTOR, name, password)
+        self.connect(address, port, dirname, ConnectionType.DIRECTOR, name, password, timeout)
         self._init_connection()
         self.max_reconnects = 1
 

@@ -92,6 +92,7 @@ class LowLevel(object):
         self.logger.debug("init")
         self.status = None
         self.address = None
+        self.timeout = None
         self.password = None
         self.pam_username = None
         self.pam_password = None
@@ -117,7 +118,7 @@ class LowLevel(object):
         self.close()
 
     def connect(
-        self, address, port, dirname, connection_type, name=None, password=None
+        self, address, port, dirname, connection_type, name=None, password=None, timeout=None
     ):
         """Establish a network connection and authenticate.
 
@@ -137,6 +138,9 @@ class LowLevel(object):
            password  (str, bareos.util.Password):
               Credential password, in cleartext or as Password object.
 
+           timeout (int, optional):
+              Connection timeout in seconds. Default OS specific.
+
         Returns:
            bool: True, if the authentication succeeds. In earlier versions, authentication failures returned False. However, now an authentication failure raises an exception.
 
@@ -151,6 +155,7 @@ class LowLevel(object):
             self.dirname = dirname
         else:
             self.dirname = address
+        self.timeout = timeout
         self.connection_type = connection_type
         self.name = name
         if password is None:
@@ -229,6 +234,8 @@ class LowLevel(object):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # initialize
         try:
+            if self.timeout:
+                self.socket.settimeout(self.timeout)
             self.socket.connect((self.address, self.port))
         except (socket.error, socket.gaierror) as e:
             self._handleSocketError(e)
