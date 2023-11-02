@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -55,7 +55,7 @@ try:
     import sslpsk
 except ImportError:
     warnings.warn(
-        u"Connection encryption via TLS-PSK is not available, as the module sslpsk is not installed."
+        "Connection encryption via TLS-PSK is not available, as the module sslpsk is not installed."
     )
 
 
@@ -92,6 +92,7 @@ class LowLevel(object):
         self.logger.debug("init")
         self.status = None
         self.address = None
+        self.timeout = None
         self.password = None
         self.pam_username = None
         self.pam_password = None
@@ -110,14 +111,21 @@ class LowLevel(object):
         self.requested_protocol_version = None
         self.protocol_messages = ProtocolMessages()
         # identity_prefix have to be set in each class
-        self.identity_prefix = u"R_NONE"
+        self.identity_prefix = "R_NONE"
         self.receive_buffer = b""
 
     def __del__(self):
         self.close()
 
     def connect(
-        self, address, port, dirname, connection_type, name=None, password=None
+        self,
+        address,
+        port,
+        dirname,
+        connection_type,
+        name=None,
+        password=None,
+        timeout=None,
     ):
         """Establish a network connection and authenticate.
 
@@ -137,6 +145,9 @@ class LowLevel(object):
            password  (str, bareos.util.Password):
               Credential password, in cleartext or as Password object.
 
+           timeout (int, optional):
+              Connection timeout in seconds. Default OS specific.
+
         Returns:
            bool: True, if the authentication succeeds. In earlier versions, authentication failures returned False. However, now an authentication failure raises an exception.
 
@@ -151,12 +162,11 @@ class LowLevel(object):
             self.dirname = dirname
         else:
             self.dirname = address
+        self.timeout = timeout
         self.connection_type = connection_type
         self.name = name
         if password is None:
-            raise bareos.exceptions.ConnectionError(
-                u"Parameter 'password' is required."
-            )
+            raise bareos.exceptions.ConnectionError("Parameter 'password' is required.")
         if isinstance(password, Password):
             self.password = password
         else:
@@ -171,11 +181,11 @@ class LowLevel(object):
         if self.tls_psk_require:
             if not self.is_tls_psk_available():
                 raise bareos.exceptions.ConnectionError(
-                    u"TLS-PSK is required, but sslpsk module not loaded/available."
+                    "TLS-PSK is required, but sslpsk module not loaded/available."
                 )
             if not self.tls_psk_enable:
                 raise bareos.exceptions.ConnectionError(
-                    u"TLS-PSK is required, but not enabled."
+                    "TLS-PSK is required, but not enabled."
                 )
 
         if self.tls_psk_enable and self.is_tls_psk_available():
@@ -187,7 +197,7 @@ class LowLevel(object):
                     raise
                 else:
                     self.logger.warning(
-                        u"Failed to connect via TLS-PSK. Trying plain connection."
+                        "Failed to connect via TLS-PSK. Trying plain connection."
                     )
             else:
                 connected = True
@@ -229,6 +239,8 @@ class LowLevel(object):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # initialize
         try:
+            if self.timeout:
+                self.socket.settimeout(self.timeout)
             self.socket.connect((self.address, self.port))
         except (socket.error, socket.gaierror) as e:
             self._handleSocketError(e)
@@ -253,7 +265,7 @@ class LowLevel(object):
         if isinstance(self.password, Password):
             password = self.password.md5()
         else:
-            raise bareos.exceptions.ConnectionError(u"No password provided.")
+            raise bareos.exceptions.ConnectionError("No password provided.")
         self.logger.debug("identity = {0}, password = {1}".format(identity, password))
         try:
             self.socket = sslpsk.wrap_socket(
@@ -275,7 +287,7 @@ class LowLevel(object):
         name = str(self.name)
         if isinstance(self.name, bytes):
             name = self.name.decode("utf-8")
-        result = u"{0}{1}{2}".format(
+        result = "{0}{1}{2}".format(
             self.identity_prefix, Constants.record_separator, name
         )
         return bytes(bytearray(result, "utf-8"))
@@ -478,7 +490,7 @@ class LowLevel(object):
             self.logger.debug("expecting {0} bytes.".format(length))
             submsg = self.socket.recv(length)
             if len(submsg) == 0:
-                errormsg = u"Failed to retrieve data. Assuming the connection is lost."
+                errormsg = "Failed to retrieve data. Assuming the connection is lost."
                 self._handleSocketError(errormsg)
                 raise bareos.exceptions.ConnectionLostError(errormsg)
             length -= len(submsg)
@@ -600,7 +612,7 @@ class LowLevel(object):
         """
         msg = self.recv_bytes(length)
         if type(msg) is str:
-            msg = bytearray(msg.decode("utf-8", 'replace'), "utf-8")
+            msg = bytearray(msg.decode("utf-8", "replace"), "utf-8")
         if type(msg) is bytes:
             msg = bytearray(msg)
         self.logger.debug(str(msg))
@@ -642,7 +654,7 @@ class LowLevel(object):
 
     def _show_result(self, msg):
         # print(msg.decode('utf-8'))
-        sys.stdout.write(msg.decode("utf-8", 'replace'))
+        sys.stdout.write(msg.decode("utf-8", "replace"))
         # add a linefeed, if there isn't one already
         if len(msg) >= 2:
             if msg[-2] != ord(b"\n"):
