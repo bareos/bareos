@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -98,14 +98,14 @@ class DirectorConsole(LowLevel):
             default=0,
             type=int,
             help="Timeout for the connection to the Bareos Director.",
-            dest="BAREOS_timeout"
+            dest="BAREOS_timeout",
         )
 
         argparser.add_argument(
             "--protocolversion",
             default=ProtocolVersions.last,
             type=int,
-            help=u"Specify the Bareos console protocol version. Default: {0} (current).".format(
+            help="Specify the Bareos console protocol version. Default: {0} (current).".format(
                 ProtocolVersions.last
             ),
             dest="BAREOS_protocolversion",
@@ -192,18 +192,20 @@ class DirectorConsole(LowLevel):
         self.timeout = timeout
         if tls_version is not None:
             self.tls_version = tls_version
-        self.identity_prefix = u"R_CONSOLE"
+        self.identity_prefix = "R_CONSOLE"
         if protocolversion is not None:
             self.requested_protocol_version = int(protocolversion)
             self.protocol_messages.set_version(self.requested_protocol_version)
-        self.connect(address, port, dirname, ConnectionType.DIRECTOR, name, password, timeout)
+        self.connect(
+            address, port, dirname, ConnectionType.DIRECTOR, name, password, timeout
+        )
         self._init_connection()
         self.max_reconnects = 1
 
     def _finalize_authentication(self):
         code, text = self.receive_and_evaluate_response_message()
 
-        self.logger.debug(u"code: {0}".format(code))
+        self.logger.debug("code: {0}".format(code))
 
         #
         # Test if PAM is requested.
@@ -214,7 +216,7 @@ class DirectorConsole(LowLevel):
         # it will be evaluated with all protocol versions.
         #
         if code == ProtocolMessageIds.PamRequired:
-            self.logger.debug(u"PAM request: {0}".format(text))
+            self.logger.debug("PAM request: {0}".format(text))
             if (not self.pam_username) or (not self.pam_password):
                 raise bareos.exceptions.PamAuthenticationError(
                     "PAM authentication is requested, but no PAM credentials given. Giving up.\n"
@@ -228,7 +230,7 @@ class DirectorConsole(LowLevel):
                 code, text = self.receive_and_evaluate_response_message()
             except bareos.exceptions.ConnectionLostError as e:
                 raise bareos.exceptions.PamAuthenticationError(
-                    u"PAM authentication failed."
+                    "PAM authentication failed."
                 )
         else:
             if (self.pam_username) or (self.pam_password):
@@ -240,7 +242,7 @@ class DirectorConsole(LowLevel):
         # Test if authentication has been accepted.
         #
         if code == ProtocolMessageIds.Ok:
-            self.logger.info(u"Authentication: {0}".format(text))
+            self.logger.info("Authentication: {0}".format(text))
             self.auth_credentials_valid = True
         else:
             raise bareos.exceptions.AuthenticationError(
@@ -255,7 +257,7 @@ class DirectorConsole(LowLevel):
             #
             code, text = self.receive_and_evaluate_response_message()
             if code == ProtocolMessageIds.InfoMessage:
-                self.logger.debug(u"Info: {0}".format(text))
+                self.logger.debug("Info: {0}".format(text))
             else:
                 raise bareos.exceptions.AuthenticationError(
                     "Received unexcepted message: {0} {1} (expecting info message)".format(
