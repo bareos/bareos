@@ -95,9 +95,8 @@ class DirectorConsole(LowLevel):
 
         argparser.add_argument(
             "--timeout",
-            default=0,
             type=int,
-            help="Timeout for the connection to the Bareos Director.",
+            help="Timeout (in seconds) for the connection to the Bareos Director.",
             dest="BAREOS_timeout",
         )
 
