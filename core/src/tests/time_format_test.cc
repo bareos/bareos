@@ -74,10 +74,19 @@ TEST(time_format, correct_time_and_date_format)
 
 #if !defined(HAVE_WIN32)
 
+  const char* orig_tz = getenv("TZ");
+
   setenv("TZ", "/usr/share/zoneinfo/Europe/Berlin", 1);
   tzset();
   EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "+0100"s);
   EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "+0200"s);
+
+  const std::string january_str_space{"2014-01-24 04:00:00"};
+  const std::string january_str_t{"2014-01-24T04:00:00"};
+  const std::string august_str_space{"2012-08-08 12:00:00"};
+  const std::string august_str_t{"2012-08-08T12:00:00"};
+  EXPECT_EQ(bstrftime(StrToUtime(january_str_space.c_str())), january_str_t + "+0100");
+  EXPECT_EQ(bstrftime(StrToUtime(august_str_space.c_str())), august_str_t + "+0200");
 
   setenv("TZ", "/usr/share/zoneinfo/America/Los_Angeles", 1);
   tzset();
@@ -104,6 +113,12 @@ TEST(time_format, correct_time_and_date_format)
   EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "+1100"s);
   EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "+1000"s);
 
+  if (orig_tz) {
+    setenv("TZ", orig_tz, 1);
+  } else {
+    unsetenv("TZ");
+  }
+  tzset();
 #endif
 
   // iso date with timezone
@@ -116,13 +131,18 @@ TEST(time_format, correct_time_and_date_format)
 
   // bareos format without timezone
   EXPECT_NE(StrToUtime("2001-09-09 01:46:40"), 0);
+  EXPECT_NE(StrToUtime("2001-09-09T01:46:40"), 0);
 
   EXPECT_NE(StrToUtime("1999-01-02 22:22:22"), 0);
+  EXPECT_NE(StrToUtime("1999-01-02T22:22:22"), 0);
   EXPECT_NE(StrToUtime("2020-11-22 1:5:7"), 0);
+  EXPECT_NE(StrToUtime("2020-11-22T1:5:7"), 0);
   EXPECT_NE(StrToUtime("1999-01-02 22:22:22"), 0);
+  EXPECT_NE(StrToUtime("1999-01-02T22:22:22"), 0);
 
   // Former wrong but now accepted
   EXPECT_NE(StrToUtime("199-01-02 22:22:22"), 0);
+  EXPECT_NE(StrToUtime("199-01-02T22:22:22"), 0);
 
   // day 31 in long months
   EXPECT_NE(StrToUtime("2021-01-31 22:22:22"), 0);
@@ -179,6 +199,7 @@ TEST(time_format, correct_time_and_date_format)
                        "22:22:22adfddfkjlsdjklf;asfdkslfkjasflsdfdkslfjdsfklds;"
                        "lfkjdskkjajkvnkashuiadfvmnknkajnsfkljdnafkljdnafklja"),
             0);
+
 }
 
 TEST(time_format, short_formats_compensation)

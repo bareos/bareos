@@ -54,27 +54,6 @@
 #include <ctime>
 
 
-static date::sys_time<std::chrono::milliseconds> parse8601(std::istream&& is,
-                                                           const char* pattern)
-{
-  std::string save(std::istreambuf_iterator<char>(is), {});
-  std::istringstream in{save};
-  date::sys_time<std::chrono::milliseconds> tp;
-#pragma GCC diagnostic push
-#if defined(__has_warning)
-#  if __has_warning("-Wmaybe-uninitialized")
-#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#  endif
-#elif defined(__GNUC__)
-#  if __GNUC__ >= 12
-#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#  endif
-#endif
-  in >> date::parse(pattern, tp);
-#pragma GCC diagnostic pop
-  return tp;
-}
-
 #if HAVE_WIN32
 #  define timegm _mkgmtime
 #endif
@@ -99,6 +78,26 @@ void Blocaltime(const time_t* time, struct tm* tm)
 }
 
 namespace {
+static utime_t parse8601(const std::string& is, const char* pattern)
+{
+  std::istringstream in{is};
+  date::sys_time<std::chrono::milliseconds> tp;
+#pragma GCC diagnostic push
+#if defined(__has_warning)
+#  if __has_warning("-Wmaybe-uninitialized")
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#  endif
+#elif defined(__GNUC__)
+#  if __GNUC__ >= 12
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#  endif
+#endif
+  in >> date::parse(pattern, tp);
+#pragma GCC diagnostic pop
+  return std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch())
+      .count();
+}
+
 static std::string bstrftime_notz(utime_t utime, const char* fmt)
 {
   const std::time_t t = static_cast<std::time_t>(utime);
@@ -113,6 +112,25 @@ static std::string bstrftime_notz(utime_t utime, const char* fmt)
 static std::string bstrftime_internal(utime_t utime, const char* fmt)
 {
   return bstrftime_notz(utime, fmt) + GetCurrentTimezoneOffset(utime);
+}
+
+/*
+ * Turn a timestamp in localtime into a utc timestamp.
+ *
+ * This is not straight-forward, because time_t should always contain UTC.
+ * Using mktime() you can convert a (localtime) time structure into a time_t.
+ * To get the proper time structure to feed to mktime() we use gmtime_r() to
+ * pretend that we have a UTC timestamp so no timezone offsets are applied.
+ * Then we clear the DST information from the time structure, so mktime() will
+ * derive the correct offset itself. Finally we call mktime().
+ */
+static utime_t local2utc(utime_t ulocal)
+{
+  const std::time_t local = static_cast<std::time_t>(ulocal);
+  struct tm tm;
+  gmtime_r(&local, &tm);  // time_t -> struct tm without tz offset
+  tm.tm_isdst = -1;       // we don't know if DST or not
+  return mktime(&tm);     // struct tm -> time_t with tz offset
 }
 
 }  // namespace
@@ -153,22 +171,19 @@ std::string bstrftime_debug()
 
 utime_t StrToUtime(const char* str)
 {
-  date::sys_time<std::chrono::milliseconds> tp;
-  tp = parse8601(std::istringstream{str}, "%FT%TZ");
-  if (tp.time_since_epoch().count() == 0) {
-    tp = parse8601(std::istringstream{str}, "%FT%T%z");
+  using namespace std::literals;
+  if (utime_t ts = parse8601(str, "%FT%TZ"); ts != 0) { return ts; }
+  if (utime_t ts = parse8601(str, "%FT%T%z"); ts != 0) { return ts; }
+
+  // if we have a timestring without timezone, tell the parser it is UTC and
+  // then convert the result.
+  if (utime_t ts = parse8601(str + "Z"s, "%FT%TZ"); ts != 0) {
+    return local2utc(ts);
   }
-  if (tp.time_since_epoch().count() == 0) {
-    // if we only have a "bareos" timestring without timezone,
-    // assume the current timezone is meant and add this to the string
-    auto current_timezone_offset = GetCurrentTimezoneOffset(time(0));
-    tp = parse8601(std::istringstream{str + current_timezone_offset},
-                   "%F %T%z");
+  if (utime_t ts = parse8601(str + "Z"s, "%F %TZ"); ts != 0) {
+    return local2utc(ts);
   }
-  auto retval
-      = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch())
-            .count();
-  return retval;
+  return 0;
 }
 
 
