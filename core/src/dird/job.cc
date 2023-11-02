@@ -1040,7 +1040,6 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
   switch (JobLevel) {
     case L_DIFFERENTIAL:
     case L_INCREMENTAL:
-      POOLMEM* start_time = GetPoolMemory(PM_MESSAGE);
 
       // Look up start time of last Full job
       now = (utime_t)time(NULL);
@@ -1048,57 +1047,60 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
       /* This is probably redundant, but some of the code below
        * uses jcr->starttime_string, so don't remove unless you are sure. */
-      if (!jcr->db->FindJobStartTime(jcr, &jcr->dir_impl->jr,
-                                     jcr->starttime_string,
-                                     jcr->dir_impl->PrevJob)) {
+      if (utime_t stime; jcr->db->FindJobStartTime(
+              jcr, &jcr->dir_impl->jr, stime, jcr->dir_impl->PrevJob)) {
+        PmStrcpy(jcr->starttime_string, bstrftime(stime).c_str());
+      } else {
         do_full = true;
       }
+      {
+        utime_t start_time;
 
-      have_full = jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr,
-                                                start_time, prev_job, L_FULL);
-      if (have_full) {
-        last_full_time = StrToUtime(start_time);
-      } else {
-        do_full = true; /* No full, upgrade to one */
-      }
-
-      Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full,
-            do_full, now, last_full_time);
-
-      // Make sure the last diff is recent enough
-      if (have_full && JobLevel == L_INCREMENTAL
-          && jcr->dir_impl->res.job->MaxDiffInterval > 0) {
-        // Lookup last diff job
-        if (jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr, start_time,
-                                          prev_job, L_DIFFERENTIAL)) {
-          last_diff_time = StrToUtime(start_time);
-          // If no Diff since Full, use Full time
-          if (last_diff_time < last_full_time) {
-            last_diff_time = last_full_time;
-          }
-          Dmsg2(50, "last_diff_time=%lld last_full_time=%lld\n", last_diff_time,
-                last_full_time);
+        have_full = jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr,
+                                                  start_time, prev_job, L_FULL);
+        if (have_full) {
+          last_full_time = start_time;
         } else {
-          // No last differential, so use last full time
-          last_diff_time = last_full_time;
-          Dmsg1(50, "No last_diff_time setting to full_time=%lld\n",
-                last_full_time);
+          do_full = true; /* No full, upgrade to one */
         }
-        do_diff = ((now - last_diff_time)
-                   >= jcr->dir_impl->res.job->MaxDiffInterval);
-        Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff,
-              jcr->dir_impl->res.job->MaxDiffInterval);
-      }
 
-      // Note, do_full takes precedence over do_vfull and do_diff
-      if (have_full && jcr->dir_impl->res.job->MaxFullInterval > 0) {
-        do_full = ((now - last_full_time)
-                   >= jcr->dir_impl->res.job->MaxFullInterval);
-      } else if (have_full && jcr->dir_impl->res.job->MaxVFullInterval > 0) {
-        do_vfull = ((now - last_full_time)
-                    >= jcr->dir_impl->res.job->MaxVFullInterval);
+        Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n",
+              have_full, do_full, now, last_full_time);
+
+        // Make sure the last diff is recent enough
+        if (have_full && JobLevel == L_INCREMENTAL
+            && jcr->dir_impl->res.job->MaxDiffInterval > 0) {
+          // Lookup last diff job
+          if (jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr, start_time,
+                                            prev_job, L_DIFFERENTIAL)) {
+            last_diff_time = start_time;
+            // If no Diff since Full, use Full time
+            if (last_diff_time < last_full_time) {
+              last_diff_time = last_full_time;
+            }
+            Dmsg2(50, "last_diff_time=%lld last_full_time=%lld\n",
+                  last_diff_time, last_full_time);
+          } else {
+            // No last differential, so use last full time
+            last_diff_time = last_full_time;
+            Dmsg1(50, "No last_diff_time setting to full_time=%lld\n",
+                  last_full_time);
+          }
+          do_diff = ((now - last_diff_time)
+                     >= jcr->dir_impl->res.job->MaxDiffInterval);
+          Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff,
+                jcr->dir_impl->res.job->MaxDiffInterval);
+        }
+
+        // Note, do_full takes precedence over do_vfull and do_diff
+        if (have_full && jcr->dir_impl->res.job->MaxFullInterval > 0) {
+          do_full = ((now - last_full_time)
+                     >= jcr->dir_impl->res.job->MaxFullInterval);
+        } else if (have_full && jcr->dir_impl->res.job->MaxVFullInterval > 0) {
+          do_vfull = ((now - last_full_time)
+                      >= jcr->dir_impl->res.job->MaxVFullInterval);
+        }
       }
-      FreePoolMemory(start_time);
 
       if (do_full) {
         // No recent Full job found, so upgrade this one to Full

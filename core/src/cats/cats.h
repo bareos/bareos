@@ -660,12 +660,12 @@ class BareosDb : public BareosDbQueryEnum {
 
   bool FindLastJobStartTime(JobControlRecord* jcr,
                             JobDbRecord* jr,
-                            POOLMEM*& stime,
+                            utime_t& stime,
                             char* job,
                             int JobLevel);
   bool FindJobStartTime(JobControlRecord* jcr,
                         JobDbRecord* jr,
-                        POOLMEM*& stime,
+                        utime_t& stime,
                         char* job);
   bool FindLastJobid(JobControlRecord* jcr, const char* Name, JobDbRecord* jr);
   bool FindJobById(JobControlRecord* jcr, const std::string id);

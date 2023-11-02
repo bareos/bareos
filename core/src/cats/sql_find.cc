@@ -56,7 +56,7 @@
  */
 bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
                                 JobDbRecord* jr,
-                                POOLMEM*& stime,
+                                utime_t& stime,
                                 char* job)
 {
   SQL_ROW row;
@@ -65,17 +65,16 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
 
   DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
-  PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
+  stime = 0; /* default */
   job[0] = 0;
 
   /* If no Id given, we must find corresponding job */
   if (jr->JobId == 0) {
     /* Differential is since last Full backup */
     Mmsg(cmd,
-         "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
-         "Type='%c' AND "
-         "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
-         "ORDER BY StartTime DESC LIMIT 1",
+         "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+         "JobStatus IN ('T','W') AND Type='%c' AND Level='%c' AND Name='%s' "
+         "AND ClientId=%s AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
          jr->JobType, L_FULL, esc_jobname, edit_int64(jr->ClientId, ed1),
          edit_int64(jr->FileSetId, ed2));
 
@@ -102,10 +101,10 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
       SqlFreeResult();
       /* Now edit SQL command for Incremental Job */
       Mmsg(cmd,
-           "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
-           "Type='%c' AND "
-           "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%s "
-           "AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
+           "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+           "JobStatus IN ('T','W') AND Type='%c' AND Level IN ('%c','%c','%c') "
+           "AND Name='%s' AND ClientId=%s AND FileSetId=%s ORDER BY StartTime "
+           "DESC LIMIT 1",
            jr->JobType, L_INCREMENTAL, L_DIFFERENTIAL, L_FULL, esc_jobname,
            edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
     } else {
@@ -114,12 +113,13 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
     }
   } else {
     Dmsg1(100, "Submitting: %s\n", cmd);
-    Mmsg(cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%s",
+    Mmsg(cmd,
+         "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+         "Job.JobId=%s",
          edit_int64(jr->JobId, ed1));
   }
 
   if (!QUERY_DB(jcr, cmd)) {
-    PmStrcpy(stime, ""); /* set EOS */
     Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return false;
@@ -132,7 +132,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
     return false;
   }
   Dmsg2(100, "Got start time: %s, job: %s\n", row[0], row[1]);
-  PmStrcpy(stime, row[0]);
+  stime = str_to_int64(row[0]);
   bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
   SqlFreeResult();
@@ -223,7 +223,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
  */
 bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
                                     JobDbRecord* jr,
-                                    POOLMEM*& stime,
+                                    utime_t& stime,
                                     char* job,
                                     int JobLevel)
 {
@@ -233,14 +233,13 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
 
   DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
-  PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
+  stime = 0; /* default */
   job[0] = 0;
 
   Mmsg(cmd,
-       "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
-       "Type='%c' AND "
-       "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
-       "ORDER BY StartTime DESC LIMIT 1",
+       "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+       "JobStatus IN ('T','W') AND Type='%c' AND Level='%c' AND Name='%s' AND "
+       "ClientId=%s AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
        jr->JobType, JobLevel, esc_jobname, edit_int64(jr->ClientId, ed1),
        edit_int64(jr->FileSetId, ed2));
   if (!QUERY_DB(jcr, cmd)) {
@@ -254,7 +253,7 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
     return false;
   }
   Dmsg1(100, "Got start time: %s\n", row[0]);
-  PmStrcpy(stime, row[0]);
+  stime = str_to_int64(row[0]);
   bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
   SqlFreeResult();
