@@ -32,8 +32,11 @@ def get_version():
             # read version
             # and adapt it according to
             # https://www.python.org/dev/peps/pep-0440/.
+            # Local version identifiers
+            # <public version identifier>[+<local version label>]
+            # are not supported by PyPI and therefore not included.
             fullversion = version_file.read().strip()
-            __version__ = re.sub(r"~pre([0-9]+\.)", r".dev+\1", fullversion)
+            __version__ = re.sub(r"~pre([0-9]+)\..*", r".dev\1", fullversion)
     except IOError:
         # Fallback version.
         # First protocol implemented

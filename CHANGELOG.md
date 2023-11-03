@@ -117,6 +117,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tls: add tls v1.3 configuration option [PR #1577]
 - bareos-fd-plugin: new python PostgreSQL [PR #1541]
 - python-bareos: add timeout setting when connecting to the director. [PR #1583]
+- github actions: update/fix publish to PyPI workflows [PR #1572]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -289,6 +290,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1556]: https://github.com/bareos/bareos/pull/1556
 [PR #1563]: https://github.com/bareos/bareos/pull/1563
 [PR #1565]: https://github.com/bareos/bareos/pull/1565
+[PR #1572]: https://github.com/bareos/bareos/pull/1572
 [PR #1573]: https://github.com/bareos/bareos/pull/1573
 [PR #1577]: https://github.com/bareos/bareos/pull/1577
 [PR #1578]: https://github.com/bareos/bareos/pull/1578
