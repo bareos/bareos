@@ -153,6 +153,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: fix possible data-loss when excluding hardlinks [PR #1506]
 - cats: fix for integer overflow issue when using `offset` in `llist` [PR #1547]
 - VMware Plugin: Fix backup and recreating VMs with PCI passthrough for GPU [PR #1565]
+- catreq.cc: suppress missing batch con warning [PR #1578]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -290,6 +291,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1565]: https://github.com/bareos/bareos/pull/1565
 [PR #1573]: https://github.com/bareos/bareos/pull/1573
 [PR #1577]: https://github.com/bareos/bareos/pull/1577
+[PR #1578]: https://github.com/bareos/bareos/pull/1578
 [PR #1582]: https://github.com/bareos/bareos/pull/1582
 [PR #1583]: https://github.com/bareos/bareos/pull/1583
 [unreleased]: https://github.com/bareos/bareos/tree/master
