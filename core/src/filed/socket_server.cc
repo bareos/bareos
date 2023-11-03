@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,7 +71,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   }
 
   if (bs->recv() <= 0) {
-    Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"), bs->who());
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
     bs->close();
@@ -82,21 +82,18 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   Dmsg1(110, "Conn: %s\n", bs->msg);
 
   // See if its a director making a connection.
-  char tbuf[100];
   if (bstrncmp(bs->msg, "Hello Director", 14)) {
-    Dmsg1(110, "Got a DIR connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a DIR connection at %s\n", bstrftime().c_str());
     return handle_director_connection(bs);
   }
 
   // See if its a storage daemon making a connection.
   if (bstrncmp(bs->msg, "Hello Storage", 13)) {
-    Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a SD connection at %s\n", bstrftime().c_str());
     return handle_stored_connection(bs);
   }
 
-  Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(),
+  Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
         bs->message_length);
 
   return nullptr;
@@ -132,10 +129,8 @@ void StopSocketServer(bool wait)
   Dmsg0(100, "StopSocketServer\n");
   if (sock_fds) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    /*
-     * before thread_servers terminates,
-     * it calls cleanup_bnet_thread_server_tcp
-     */
+    /* before thread_servers terminates,
+     * it calls cleanup_bnet_thread_server_tcp */
     if (wait) {
       pthread_join(tcp_server_tid, NULL);
       delete (sock_fds);

@@ -132,7 +132,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
       = GetOrCreatePoolRecord(jcr, jcr->dir_impl->res.pool->resource_name_);
   if (jcr->dir_impl->jr.PoolId == 0) {
     Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
-    Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Could not get or create a Pool record.\n"));
     return false;
   }
 
@@ -144,7 +144,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   PmStrcpy(jcr->dir_impl->res.rpool_source, jcr->dir_impl->res.pool_source);
 
   // If pool storage specified, use it for restore
-  CopyRstorage(jcr, jcr->dir_impl->res.pool->storage, _("Pool resource"));
+  CopyRstorage(jcr, jcr->dir_impl->res.pool->storage, T_("Pool resource"));
 
   Dmsg2(dbglevel, "Read pool=%s (From %s)\n",
         jcr->dir_impl->res.rpool->resource_name_,
@@ -158,24 +158,24 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   // See if there is a next pool override.
   if (jcr->dir_impl->res.run_next_pool_override) {
-    PmStrcpy(jcr->dir_impl->res.npool_source, _("Run NextPool override"));
-    PmStrcpy(jcr->dir_impl->res.pool_source, _("Run NextPool override"));
-    storage_source = _("Storage from Run NextPool override");
+    PmStrcpy(jcr->dir_impl->res.npool_source, T_("Run NextPool override"));
+    PmStrcpy(jcr->dir_impl->res.pool_source, T_("Run NextPool override"));
+    storage_source = T_("Storage from Run NextPool override");
   } else {
     // See if there is a next pool override in the Job definition.
     if (jcr->dir_impl->res.job->next_pool) {
       jcr->dir_impl->res.next_pool = jcr->dir_impl->res.job->next_pool;
-      PmStrcpy(jcr->dir_impl->res.npool_source, _("Job's NextPool resource"));
-      PmStrcpy(jcr->dir_impl->res.pool_source, _("Job's NextPool resource"));
-      storage_source = _("Storage from Job's NextPool resource");
+      PmStrcpy(jcr->dir_impl->res.npool_source, T_("Job's NextPool resource"));
+      PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job's NextPool resource"));
+      storage_source = T_("Storage from Job's NextPool resource");
     } else {
       // Fall back to the pool's NextPool definition.
       jcr->dir_impl->res.next_pool = jcr->dir_impl->res.pool->NextPool;
       PmStrcpy(jcr->dir_impl->res.npool_source,
-               _("Job Pool's NextPool resource"));
+               T_("Job Pool's NextPool resource"));
       PmStrcpy(jcr->dir_impl->res.pool_source,
-               _("Job Pool's NextPool resource"));
-      storage_source = _("Storage from Pool's NextPool resource");
+               T_("Job Pool's NextPool resource"));
+      storage_source = T_("Storage from Pool's NextPool resource");
     }
   }
 
@@ -214,12 +214,12 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 bool DoNativeVbackup(JobControlRecord* jcr)
 {
   if (!jcr->dir_impl->res.read_storage_list) {
-    Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("No storage for reading given.\n"));
     return false;
   }
 
   if (!jcr->dir_impl->res.write_storage_list) {
-    Jmsg(jcr, M_FATAL, 0, _("No storage for writing given.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("No storage for writing given.\n"));
     return false;
   }
 
@@ -232,19 +232,19 @@ bool DoNativeVbackup(JobControlRecord* jcr)
         ((StorageResource*)jcr->dir_impl->res.write_storage_list->first())
             ->resource_name_);
 
-  Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %lu, Job=%s\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Start Virtual Backup JobId %lu, Job=%s\n"),
        jcr->JobId, jcr->Job);
 
   if (!jcr->accurate) {
     Jmsg(jcr, M_WARNING, 0,
-         _("This Job is not an Accurate backup so is not equivalent to a Full "
-           "backup.\n"));
+         T_("This Job is not an Accurate backup so is not equivalent to a Full "
+            "backup.\n"));
   }
 
   std::string jobids = GetVfJobids(*jcr);
   std::vector<std::string> jobid_list = split_string(jobids, ',');
   if (jobid_list.empty()) {
-    Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("No previous Jobs found.\n"));
     return false;
   }
 
@@ -280,7 +280,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   Dmsg1(10, "Previous JobId=%s\n", jobid_list.front().c_str());
 
   if (!jcr->db->GetJobRecord(jcr, &tmp_jr)) {
-    Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Error getting Job record for first Job: ERR=%s\n"),
          jcr->db->strerror());
     return false;
   }
@@ -299,17 +300,17 @@ bool DoNativeVbackup(JobControlRecord* jcr)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Error getting Job record for previous Job: ERR=%s\n"),
+         T_("Error getting Job record for previous Job: ERR=%s\n"),
          jcr->db->strerror());
     return false;
   }
 
   if (!CreateBootstrapFile(*jcr, jobids)) {
-    Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Could not create bootstrap file\n"));
     return false;
   }
 
-  Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s containing %d files\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Consolidating JobIds %s containing %d files\n"),
        jobids.c_str(), jcr->dir_impl->ExpectedFiles);
 
   /* Open a message channel connection with the Storage
@@ -379,7 +380,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     ua = new_ua_context(jcr);
     PurgeJobsFromCatalog(ua, jobids.c_str());
     Jmsg(jcr, M_INFO, 0,
-         _("purged JobIds %s as they were consolidated into Job %lu\n"),
+         T_("purged JobIds %s as they were consolidated into Job %lu\n"),
          jobids.c_str(), jcr->JobId);
     FreeUaContext(ua);
   }
@@ -404,7 +405,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
       jcr->dir_impl->jr.JobLevel = JobLevel; /* We want this to appear as what
                                       the first consolidated job was */
       Jmsg(jcr, M_INFO, 0,
-           _("Joblevel was set to joblevel of first consolidated job: %s\n"),
+           T_("Joblevel was set to joblevel of first consolidated job: %s\n"),
            job_level_to_str(JobLevel));
       break;
     default:
@@ -434,7 +435,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   // Get the fully updated job record
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s\n"),
+         T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -463,7 +464,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Client record for Job report: ERR=%s\n"),
+         T_("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());
   }
 
@@ -471,14 +472,14 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
 
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
-      TermMsg = _("Backup OK");
+      TermMsg = T_("Backup OK");
       break;
     case JS_Warnings:
-      TermMsg = _("Backup OK -- with warnings");
+      TermMsg = T_("Backup OK -- with warnings");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Backup Error ***");
+      TermMsg = T_("*** Backup Error ***");
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
@@ -488,7 +489,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
       }
       break;
     case JS_Canceled:
-      TermMsg = _("Backup Canceled");
+      TermMsg = T_("Backup Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
         if (jcr->dir_impl->SD_msg_chan_started) {
@@ -498,7 +499,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"),
+      sprintf(term_code, T_("Inappropriate term code: %c\n"),
               jcr->getJobStatus());
       break;
   }

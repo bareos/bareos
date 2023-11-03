@@ -87,7 +87,6 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   DeviceBlock* block;
   char b1[30], b2[30];
   time_t wait_time;
-  char dt[MAX_TIME_LENGTH];
   JobControlRecord* jcr = dcr->jcr;
   Device* dev = dcr->dev;
   int blocked = dev->blocked(); /* save any previous blocked status */
@@ -114,10 +113,10 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
 
   /* Inform User about end of medium */
   Jmsg(jcr, M_INFO, 0,
-       _("End of medium on Volume \"%s\" Bytes=%s Blocks=%s at %s.\n"),
+       T_("End of medium on Volume \"%s\" Bytes=%s Blocks=%s at %s.\n"),
        PrevVolName, edit_uint64_with_commas(dev->VolCatInfo.VolCatBytes, b1),
        edit_uint64_with_commas(dev->VolCatInfo.VolCatBlocks, b2),
-       bstrftime(dt, sizeof(dt), time(NULL)));
+       bstrftime().c_str());
 
   Dmsg1(050, "SetUnload dev=%s\n", dev->print_name());
   dev->SetUnload();
@@ -134,9 +133,8 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   dcr->DirUpdateVolumeInfo(
       is_labeloperation::False); /* send Volume info to Director */
 
-  Jmsg(jcr, M_INFO, 0, _("New volume \"%s\" mounted on device %s at %s.\n"),
-       dcr->VolumeName, dev->print_name(),
-       bstrftime(dt, sizeof(dt), time(NULL)));
+  Jmsg(jcr, M_INFO, 0, T_("New volume \"%s\" mounted on device %s at %s.\n"),
+       dcr->VolumeName, dev->print_name(), bstrftime().c_str());
 
   /* If this is a new tape, the label_blk will contain the
    *  label, so write it now. If this is a previously
@@ -145,7 +143,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   Dmsg0(190, "write label block to dev\n");
   if (!dcr->WriteBlockToDev()) {
     BErrNo be;
-    Pmsg1(0, _("WriteBlockToDevice Volume label failed. ERR=%s"),
+    Pmsg1(0, T_("WriteBlockToDevice Volume label failed. ERR=%s"),
           be.bstrerror(dev->dev_errno));
     FreeBlock(dcr->block);
     dcr->block = block;
@@ -175,13 +173,13 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   Dmsg0(190, "Write overflow block to dev\n");
   if (!dcr->WriteBlockToDev()) {
     BErrNo be;
-    Dmsg1(0, _("WriteBlockToDevice overflow block failed. ERR=%s\n"),
+    Dmsg1(0, T_("WriteBlockToDevice overflow block failed. ERR=%s\n"),
           be.bstrerror(dev->dev_errno));
     /* Note: recursive call */
     if (retries-- <= 0 || !FixupDeviceBlockWriteError(dcr, retries)) {
       Jmsg2(jcr, M_FATAL, 0,
-            _("Catastrophic error. Cannot write overflow block to device %s. "
-              "ERR=%s\n"),
+            T_("Catastrophic error. Cannot write overflow block to device %s. "
+               "ERR=%s\n"),
             dev->print_name(), be.bstrerror(dev->dev_errno));
       goto bail_out;
     }
@@ -280,7 +278,7 @@ bool FirstOpenDevice(DeviceControlRecord* dcr)
   }
   Dmsg0(129, "Opening device.\n");
   if (!dev->open(dcr, mode)) {
-    Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), dev->errmsg);
+    Emsg1(M_FATAL, 0, T_("dev open failed: %s\n"), dev->errmsg);
     ok = false;
     goto bail_out;
   }
@@ -305,7 +303,7 @@ BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
     bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, dev);
     if (GetBsrStartAddr(bsr, &file, &block) > 0) {
       Jmsg(jcr, M_INFO, 0,
-           _("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
+           T_("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
            dev->VolHdr.VolumeName, file, block);
       dev->Reposition(dcr, file, block);
     }

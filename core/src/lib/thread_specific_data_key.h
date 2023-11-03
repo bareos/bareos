@@ -47,7 +47,7 @@ class ThreadSpecificDataKey {
       std::call_once(once_flag, CreateKey);
     } catch (const std::system_error& e) {
       Jmsg1(nullptr, M_ABORT, 0,
-            _("Could not call CreateThreadSpecificDataKey: %s\n"), e.what());
+            T_("Could not call CreateThreadSpecificDataKey: %s\n"), e.what());
     }
   }
 
@@ -56,7 +56,7 @@ class ThreadSpecificDataKey {
     int status = pthread_key_create(&key_, nullptr);
     if (status != 0) {
       BErrNo be;
-      Jmsg1(nullptr, M_ABORT, 0, _("pthread key create failed: ERR=%s\n"),
+      Jmsg1(nullptr, M_ABORT, 0, T_("pthread key create failed: ERR=%s\n"),
             be.bstrerror(status));
     }
   }

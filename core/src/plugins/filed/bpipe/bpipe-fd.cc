@@ -779,19 +779,19 @@ static bRC plugin_has_all_arguments(PluginContext* ctx)
   if (!p_ctx) { retval = bRC_Error; }
 
   if (!p_ctx->fname) {
-    Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin File argument not specified.\n"));
+    Jmsg(ctx, M_FATAL, T_("bpipe-fd: Plugin File argument not specified.\n"));
     Dmsg(ctx, debuglevel, "bpipe-fd: Plugin File argument not specified.\n");
     retval = bRC_Error;
   }
 
   if (!p_ctx->reader) {
-    Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin Reader argument not specified.\n"));
+    Jmsg(ctx, M_FATAL, T_("bpipe-fd: Plugin Reader argument not specified.\n"));
     Dmsg(ctx, debuglevel, "bpipe-fd: Plugin Reader argument not specified.\n");
     retval = bRC_Error;
   }
 
   if (!p_ctx->writer) {
-    Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin Writer argument not specified.\n"));
+    Jmsg(ctx, M_FATAL, T_("bpipe-fd: Plugin Writer argument not specified.\n"));
     Dmsg(ctx, debuglevel, "bpipe-fd: Plugin Writer argument not specified.\n");
     retval = bRC_Error;
   }

@@ -149,7 +149,7 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
   }
 
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg1(errmsg, _("error fetching row: %s\n"), errmsg);
+    Mmsg1(errmsg, T_("error fetching row: %s\n"), errmsg);
     Jmsg(jcr, M_ERROR, 0, "Can't check database encoding %s", errmsg);
   } else {
     retval = bstrcmp(row[0], "SQL_ASCII");
@@ -161,7 +161,7 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
     } else {
       // Something is wrong with database encoding
       Mmsg(errmsg,
-           _("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"),
+           T_("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"),
            get_db_name(), row[0]);
       Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
       Dmsg1(50, "%s", errmsg);
@@ -191,7 +191,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
 
   if ((errstat = RwlInit(&lock_)) != 0) {
     BErrNo be;
-    Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"),
+    Mmsg1(errmsg, T_("Unable to initialize DB lock. ERR=%s\n"),
           be.bstrerror(errstat));
     goto bail_out;
   }
@@ -226,9 +226,9 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
 
   if (PQstatus(db_handle_) != CONNECTION_OK) {
     Mmsg2(errmsg,
-          _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-            "Possible causes: SQL server not running; password incorrect; "
-            "max_connections exceeded.\n(%s)\n"),
+          T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
+             "Possible causes: SQL server not running; password incorrect; "
+             "max_connections exceeded.\n(%s)\n"),
           db_name_, db_user_, PQerrorMessage(db_handle_));
     goto bail_out;
   }
@@ -326,7 +326,7 @@ void BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
 
   PQescapeStringConn(db_handle_, snew, old, len, &error);
   if (error) {
-    Jmsg(jcr, M_FATAL, 0, _("PQescapeStringConn returned non-zero.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("PQescapeStringConn returned non-zero.\n"));
     /* error on encoding, probably invalid multibyte encoding in the source
       string see PQescapeStringConn documentation for details. */
     Dmsg0(500, "PQescapeStringConn failed\n");
@@ -346,7 +346,7 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
 
   obj = PQescapeByteaConn(db_handle_, (unsigned const char*)old, len, &new_len);
   if (!obj) {
-    Jmsg(jcr, M_FATAL, 0, _("PQescapeByteaConn returned NULL.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("PQescapeByteaConn returned NULL.\n"));
     return nullptr;
   }
 
@@ -358,7 +358,7 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
     }
   }
 
-  if (!esc_obj) { Jmsg(jcr, M_FATAL, 0, _("esc_obj is NULL.\n")); }
+  if (!esc_obj) { Jmsg(jcr, M_FATAL, 0, T_("esc_obj is NULL.\n")); }
 
   PQfreemem(obj);
 
@@ -402,7 +402,7 @@ void BareosDbPostgresql::UnescapeObject(JobControlRecord* jcr,
   obj = PQunescapeBytea((unsigned const char*)from, &new_len);
 
   if (!obj) {
-    Jmsg(jcr, M_FATAL, 0, _("PQunescapeByteaConn returned NULL.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("PQunescapeByteaConn returned NULL.\n"));
     return;
   }
 
@@ -449,7 +449,7 @@ void BareosDbPostgresql::EndTransaction(JobControlRecord* jcr)
   if (jcr && jcr->cached_attribute) {
     Dmsg0(400, "Flush last cached attribute.\n");
     if (!CreateAttributesRecord(jcr, jcr->ar)) {
-      Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
+      Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error. %s"), strerror());
     }
     jcr->cached_attribute = false;
   }
@@ -497,7 +497,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
   Mmsg(buf_, "DECLARE _bac_cursor CURSOR FOR %s", query);
 
   if (!SqlQueryWithoutHandler(buf_)) {
-    Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), buf_, sql_strerror());
+    Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), buf_, sql_strerror());
     Dmsg0(50, "SqlQueryWithoutHandler failed\n");
     goto bail_out;
   }
@@ -543,7 +543,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
 
   DbLocker _{this};
   if (!SqlQueryWithoutHandler(query, QF_STORE_RESULT)) {
-    Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
+    Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), query, sql_strerror());
     Dmsg0(500, "SqlQueryWithHandler failed\n");
     return false;
   }
@@ -806,7 +806,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
           id);
   } else {
     Dmsg1(50, "Result status failed: %s\n", getkeyval_query);
-    Mmsg1(errmsg, _("error fetching currval: %s\n"),
+    Mmsg1(errmsg, T_("error fetching currval: %s\n"),
           PQerrorMessage(db_handle_));
   }
 
@@ -912,7 +912,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
   BareosDbPostgresql* mdb = NULL;
 
   if (!db_user) {
-    Jmsg(jcr, M_FATAL, 0, _("A user name for PostgreSQL must be supplied.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("A user name for PostgreSQL must be supplied.\n"));
     return NULL;
   }
   lock_mutex(mutex); /* lock DB queue */

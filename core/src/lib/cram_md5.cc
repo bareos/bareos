@@ -146,7 +146,7 @@ bool CramMd5Handshake::CramMd5Challenge()
     bs_->fsend("1000 OK auth\n");
   } else {
     result = HandshakeResult::WRONG_HASH;
-    bs_->fsend(_("1999 Authorization failed.\n"));
+    bs_->fsend(T_("1999 Authorization failed.\n"));
     Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
   }
   return ok;
@@ -179,7 +179,7 @@ bool CramMd5Handshake::CramMd5Response()
                < 2) {  // minimum 2
       if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
         Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
-        bs_->fsend(_("1999 Authorization failed.\n"));
+        bs_->fsend(T_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
         result = HandshakeResult::FORMAT_MISMATCH;
         return false;
@@ -196,7 +196,7 @@ bool CramMd5Handshake::CramMd5Response()
                != 2) {
       if (sscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
         Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
-        bs_->fsend(_("1999 Authorization failed.\n"));
+        bs_->fsend(T_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
         result = HandshakeResult::FORMAT_MISMATCH;
         return false;

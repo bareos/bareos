@@ -66,7 +66,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
 
   sd = jcr->store_bsock;
   if (!sd) {
-    Jmsg(jcr, M_FATAL, 0, _("Storage command not issued before Verify.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Storage command not issued before Verify.\n"));
     jcr->setJobStatusWithPriorityCheck(JS_FatalError);
     return;
   }
@@ -99,19 +99,19 @@ void DoVerifyVolume(JobControlRecord* jcr)
     if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
                &stream, &size)
         != 5) {
-      Jmsg1(jcr, M_FATAL, 0, _("Record header scan error: %s\n"), sd->msg);
+      Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
     }
     Dmsg2(30, "Got hdr: FilInx=%d Stream=%d.\n", file_index, stream);
 
     // Now we expect the Stream Data
     if (BgetMsg(sd) < 0) {
-      Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Data record error. ERR=%s\n"),
             BnetStrerror(sd));
       goto bail_out;
     }
     if (size != ((uint32_t)sd->message_length)) {
-      Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"),
+      Jmsg2(jcr, M_FATAL, 0, T_("Actual data size %d not same as header %d\n"),
             sd->message_length, size);
       goto bail_out;
     }
@@ -143,7 +143,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
          *    Link name (if file linked i.e. FT_LNK)
          *    Extended Attributes (if Win32) */
         if (sscanf(sd->msg, "%d %d", &record_file_index, &type) != 2) {
-          Jmsg(jcr, M_FATAL, 0, _("Error scanning record header: %s\n"),
+          Jmsg(jcr, M_FATAL, 0, T_("Error scanning record header: %s\n"),
                sd->msg);
           Dmsg0(0, "\nError scanning header\n");
           goto bail_out;
@@ -202,7 +202,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
               dir->msg);
         if (!status) {
           Jmsg(jcr, M_FATAL, 0,
-               _("Network error in send to Director: ERR=%s\n"),
+               T_("Network error in send to Director: ERR=%s\n"),
                BnetStrerror(dir));
           goto bail_out;
         }

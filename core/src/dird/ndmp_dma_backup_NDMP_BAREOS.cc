@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,10 +90,8 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
   // Update the Job statistics from the NDMP statistics.
   jcr->JobBytes += sess->control_acb->job.bytes_written;
 
-  /*
-   * After a successful backup we need to store all NDMP ENV variables
-   * for doing a successful restore operation.
-   */
+  /* After a successful backup we need to store all NDMP ENV variables
+   * for doing a successful restore operation. */
   ndm_ee = sess->control_acb->job.result_env_tab.head;
   while (ndm_ee) {
     if (!jcr->db->CreateNdmpEnvironmentString(
@@ -103,10 +101,8 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
     ndm_ee = ndm_ee->next;
   }
 
-  /*
-   * If we are doing a backup type that uses dumplevels save the last used dump
-   * level.
-   */
+  /* If we are doing a backup type that uses dumplevels save the last used dump
+   * level. */
   if (nbf_options && nbf_options->uses_level) {
     jcr->db->UpdateNdmpLevelMapping(jcr, &jcr->dir_impl->jr, filesystem,
                                     sess->control_acb->job.bu_level);
@@ -134,11 +130,11 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
   }
 
   // If pool storage specified, use it instead of job storage
-  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, _("Pool resource"));
+  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, T_("Pool resource"));
 
   if (!jcr->dir_impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
-         _("No Storage specification found in Job or Pool.\n"));
+         T_("No Storage specification found in Job or Pool.\n"));
     return false;
   }
 
@@ -147,14 +143,12 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
 
   if (!NdmpValidateStorage(jcr)) { return false; }
 
-  /*
-   * For now we only allow NDMP backups to bareos SD's
-   * so we need a paired storage definition.
-   */
+  /* For now we only allow NDMP backups to bareos SD's
+   * so we need a paired storage definition. */
   if (!HasPairedStorage(jcr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Write storage doesn't point to storage definition with paired "
-           "storage option.\n"));
+         T_("Write storage doesn't point to storage definition with paired "
+            "storage option.\n"));
     return false;
   }
 
@@ -181,7 +175,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       = std::max(jcr->dir_impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -204,14 +198,12 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * If we have a paired storage definition create a native connection
+  /* If we have a paired storage definition create a native connection
    * to a Storage daemon and make it ready to receive a backup.
    * The setup is more or less the same as for a normal non NDMP backup
    * only the data doesn't come in from a FileDaemon but from a NDMP
    * data mover which moves the data from the NDMP DATA AGENT to the NDMP
-   * TAPE AGENT.
-   */
+   * TAPE AGENT. */
   if (jcr->dir_impl->res.write_storage->paired_storage) {
     SetPairedStorage(jcr);
 
@@ -226,26 +218,21 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       return false;
     }
 
-    /*
-     * Start the job prior to starting the message thread below
+    /* Start the job prior to starting the message thread below
      * to avoid two threads from using the BareosSocket structure at
-     * the same time.
-     */
+     * the same time. */
     if (!jcr->store_bsock->fsend("run")) { return false; }
 
-    /*
-     * Now start a Storage daemon message thread.  Note,
+    /* Now start a Storage daemon message thread.  Note,
      *   this thread is used to provide the catalog services
-     *   for the backup job.
-     */
+     *   for the backup job. */
     if (!StartStorageDaemonMessageThread(jcr)) { return false; }
     Dmsg0(150, "Storage daemon connection OK\n");
   }
 
   status = 0;
 
-  /*
-   * Initialize the ndmp backup job. We build the generic job only once
+  /* Initialize the ndmp backup job. We build the generic job only once
    * and reuse the job definition for each separate sub-backup we perform as
    * part of the whole job. We only free the env_table between every sub-backup.
    */
@@ -258,10 +245,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   nis = (NIS*)malloc(sizeof(NIS));
   memset(nis, 0, sizeof(NIS));
 
-  /*
-   * Loop over each include set of the fileset and fire off a NDMP backup of the
-   * included fileset.
-   */
+  /* Loop over each include set of the fileset and fire off a NDMP backup of the
+   * included fileset. */
   cnt = 0;
   fileset = jcr->dir_impl->res.fileset;
 
@@ -276,13 +261,11 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     for (j = 0; j < ie->name_list.size(); j++) {
       item = (char*)ie->name_list.get(j);
 
-      /*
-       * See if this is the first Backup run or not. For NDMP we can have
+      /* See if this is the first Backup run or not. For NDMP we can have
        * multiple Backup runs as part of the same Job. When we are saving data
        * to a Native Storage Daemon we let it know to expect a new backup
        * session. It will generate a new authorization key so we wait for the
-       * nextrun_ready conditional variable to be raised by the msg_thread.
-       */
+       * nextrun_ready conditional variable to be raised by the msg_thread. */
       if (jcr->store_bsock && cnt > 0) {
         jcr->store_bsock->fsend("nextrun");
         lock_mutex(mutex);
@@ -290,10 +273,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
         unlock_mutex(mutex);
       }
 
-      /*
-       * Perform the actual NDMP job.
-       * Initialize a new NDMP session
-       */
+      /* Perform the actual NDMP job.
+       * Initialize a new NDMP session */
       memset(&ndmp_sess, 0, sizeof(ndmp_sess));
       ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
       ndmp_sess.control_agent_enabled = 1;
@@ -321,12 +302,10 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       memcpy(&ndmp_sess.control_acb->job, &ndmp_job,
              sizeof(struct ndm_job_param));
 
-      /*
-       * We can use the same private pointer used in the logging with the
+      /* We can use the same private pointer used in the logging with the
        * JobControlRecord in the file index generation. We don't setup a
        * index_log.deliver function as we catch the index information via
-       * callbacks.
-       */
+       * callbacks. */
       ndmp_sess.control_acb->job.index_log.ctx = ndmp_sess.param->log.ctx;
 
       if (!FillBackupEnvironment(jcr, ie, nis->filesystem,
@@ -334,11 +313,9 @@ bool DoNdmpBackup(JobControlRecord* jcr)
         goto cleanup;
       }
 
-      /*
-       * The full ndmp archive has a virtual filename, we need it to hardlink
+      /* The full ndmp archive has a virtual filename, we need it to hardlink
        * the individual file records to it. So we allocate it here once so its
-       * available during the whole NDMP session.
-       */
+       * available during the whole NDMP session. */
       if (Bstrcasecmp(jcr->dir_impl->backup_format, "dump")) {
         Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem,
              jcr->dir_impl->DumpLevel);
@@ -412,12 +389,10 @@ bool DoNdmpBackup(JobControlRecord* jcr)
         jcr); /* used by bulk batch file insert */
   }
 
-  /*
-   * If we do incremental backups it can happen that the backup is empty if
+  /* If we do incremental backups it can happen that the backup is empty if
    * nothing changed but we always write a filestream. So we use the counter
    * which counts the number of actual NDMP backup sessions we run to
-   * completion.
-   */
+   * completion. */
   if (jcr->JobFiles < cnt) { jcr->JobFiles = cnt; }
 
   // Jump to the generic cleanup done for every Job.
@@ -470,13 +445,13 @@ ok_out:
 #else
 bool DoNdmpBackupInit(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 
 bool DoNdmpBackup(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 

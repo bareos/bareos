@@ -4,10 +4,10 @@ SELECT * FROM (
   ORDER BY client, fileset
 ) subq_a
 UNION ALL
-SELECT 'TOTAL' as client,
-       NULL as fileset,
-       SUM(db_units) as db_units,
-       SUM(vm_units) as vm_units,
-       SUM(filer_units) as filer_units,
-       SUM(normal_units) as normal_units
+SELECT 'TOTAL' AS client,
+       NULL AS fileset,
+       SUM(db_units) AS db_units,
+       SUM(vm_units) AS vm_units,
+       SUM(filer_units) AS filer_units,
+       SUM(normal_units) AS normal_units
 FROM backup_unit_overview;

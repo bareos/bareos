@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -74,17 +74,16 @@ static void OutputStatus(StatusPacket* sp)
 static void ListStatusHeader(StatusPacket* sp)
 {
   int len;
-  char dt[MAX_TIME_LENGTH];
   PoolMem msg(PM_MESSAGE);
   char b1[32];
 
-  len = Mmsg(msg, _("%s Version: %s (%s) %s %s\n"), my_name,
+  len = Mmsg(msg, T_("%s Version: %s (%s) %s %s\n"), my_name,
              kBareosVersionStrings.Full, kBareosVersionStrings.Date, VSS,
              kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
-  bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),
-             dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
+  len = Mmsg(msg, T_("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),
+             bstrftime(daemon_start_time).c_str(), num_jobs_run, JobCount(),
+             kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
@@ -126,14 +125,14 @@ static void ListStatusHeader(StatusPacket* sp)
 #endif
 
   len = Mmsg(msg,
-             _(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
-               "bwlimit=%skB/s\n"),
+             T_(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
+                "bwlimit=%skB/s\n"),
              sizeof(boffset_t), sizeof(size_t), debug_level, GetTrace(),
              edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
   sp->send(msg, len);
 
   if (me->secure_erase_cmdline) {
-    len = Mmsg(msg, _(" secure erase command='%s'\n"),
+    len = Mmsg(msg, T_(" secure erase command='%s'\n"),
                me->secure_erase_cmdline);
     sp->send(msg, len);
   }
@@ -155,21 +154,21 @@ static void ListRunningJobsPlain(StatusPacket* sp)
   int len, sec, bps;
   bool found = false;
   PoolMem msg(PM_MESSAGE);
-  char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
+  char b1[32], b2[32], b3[32], b4[32];
+  std::string dt;
 
   // List running jobs
   Dmsg0(1000, "Begin status jcr loop.\n");
-  len = Mmsg(msg, _("\nRunning Jobs:\n"));
+  len = Mmsg(msg, T_("\nRunning Jobs:\n"));
   sp->send(msg, len);
-
   foreach_jcr (njcr) {
-    bstrftime_nc(dt, sizeof(dt), njcr->start_time);
+    dt = bstrftime(njcr->start_time);
     if (njcr->JobId > 0) {
-      len = Mmsg(msg, _("JobId %d Job %s is running.\n"), njcr->JobId,
+      len = Mmsg(msg, T_("JobId %d Job %s is running.\n"), njcr->JobId,
                  njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
-      len = Mmsg(msg, _("    %s%s %s Job started: %s\n"),
+      len = Mmsg(msg, T_("    %s%s %s Job started: %s\n"),
                  (njcr->fd_impl->pVSSClient
                   && njcr->fd_impl->pVSSClient->IsInitialized())
                      ? "VSS "
@@ -177,19 +176,17 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                  JobLevelToString(njcr->getJobLevel()),
                  job_type_to_str(njcr->getJobType()), dt);
 #else
-      len = Mmsg(msg, _("    %s %s Job started: %s\n"),
+      len = Mmsg(msg, T_("    %s %s Job started: %s\n"),
                  JobLevelToString(njcr->getJobLevel()),
-                 job_type_to_str(njcr->getJobType()), dt);
+                 job_type_to_str(njcr->getJobType()), dt.c_str());
 #endif
     } else if ((njcr->JobId == 0) && (njcr->fd_impl->director)) {
-      len = Mmsg(msg, _("%s (director) connected at: %s\n"),
-                 njcr->fd_impl->director->resource_name_, dt);
+      len = Mmsg(msg, T_("%s (director) connected at: %s\n"),
+                 njcr->fd_impl->director->resource_name_, dt.c_str());
     } else {
-      /*
-       * This should only occur shortly, until the JobControlRecord values are
-       * set.
-       */
-      len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt);
+      /* This should only occur shortly, until the JobControlRecord values are
+       * set. */
+      len = Mmsg(msg, T_("Unknown connection, started at: %s\n"), dt.c_str());
     }
     sp->send(msg, len);
     if (njcr->JobId == 0) { continue; }
@@ -197,19 +194,19 @@ static void ListRunningJobsPlain(StatusPacket* sp)
     if (sec <= 0) { sec = 1; }
     bps = (int)(njcr->JobBytes / sec);
     len = Mmsg(msg,
-               _("    Files=%s Bytes=%s Bytes/sec=%s Errors=%d\n"
-                 "    Bwlimit=%s\n"),
+               T_("    Files=%s Bytes=%s Bytes/sec=%s Errors=%d\n"
+                  "    Bwlimit=%s\n"),
                edit_uint64_with_commas(njcr->JobFiles, b1),
                edit_uint64_with_commas(njcr->JobBytes, b2),
                edit_uint64_with_commas(bps, b3), njcr->JobErrors,
                edit_uint64_with_commas(njcr->max_bandwidth, b4));
     sp->send(msg, len);
-    len = Mmsg(msg, _("    Files Examined=%s\n"),
+    len = Mmsg(msg, T_("    Files Examined=%s\n"),
                edit_uint64_with_commas(njcr->fd_impl->num_files_examined, b1));
     sp->send(msg, len);
     if (njcr->JobFiles > 0) {
       njcr->lock();
-      len = Mmsg(msg, _("    Processing file: %s\n"),
+      len = Mmsg(msg, T_("    Processing file: %s\n"),
                  njcr->fd_impl->last_fname);
       njcr->unlock();
       sp->send(msg, len);
@@ -221,18 +218,18 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {
-      len = Mmsg(msg, _("    SDSocket closed.\n"));
+      len = Mmsg(msg, T_("    SDSocket closed.\n"));
       sp->send(msg, len);
     }
   }
   endeach_jcr(njcr);
 
   if (!found) {
-    len = Mmsg(msg, _("No Jobs running.\n"));
+    len = Mmsg(msg, T_("No Jobs running.\n"));
     sp->send(msg, len);
   }
 
-  len = PmStrcpy(msg, _("====\n"));
+  len = PmStrcpy(msg, T_("====\n"));
   sp->send(msg, len);
 }
 
@@ -241,13 +238,14 @@ static void ListRunningJobsApi(StatusPacket* sp)
   JobControlRecord* njcr;
   int len, sec, bps;
   PoolMem msg(PM_MESSAGE);
-  char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
+  char b1[32], b2[32], b3[32], b4[32];
+  std::string dt;
 
   // List running jobs for Bat/Bweb (sfd_imple to parse)
   foreach_jcr (njcr) {
-    bstrutime(dt, sizeof(dt), njcr->start_time);
+    dt = bstrftime(njcr->start_time);
     if (njcr->JobId == 0) {
-      len = Mmsg(msg, "DirectorConnected=%s\n", dt);
+      len = Mmsg(msg, "DirectorConnected=%s\n", dt.c_str());
     } else {
       len = Mmsg(msg, "JobId=%d\n Job=%s\n", njcr->JobId, njcr->Job);
       sp->send(msg, len);
@@ -260,7 +258,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
                  njcr->getJobLevel(), njcr->getJobType(), dt);
 #else
       len = Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n", 0,
-                 njcr->getJobLevel(), njcr->getJobType(), dt);
+                 njcr->getJobLevel(), njcr->getJobType(), dt.c_str());
 #endif
     }
     sp->send(msg, len);
@@ -290,7 +288,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {
-      len = Mmsg(msg, _(" SDSocket=closed\n"));
+      len = Mmsg(msg, T_(" SDSocket=closed\n"));
       sp->send(msg, len);
     }
   }
@@ -310,27 +308,29 @@ static void ListTerminatedJobs(StatusPacket* sp)
 {
   int len;
   PoolMem msg(PM_MESSAGE);
-  char level[10], dt[MAX_TIME_LENGTH], b1[30], b2[30];
+  char level[10], b1[30], b2[30];
+  std::string dt;
 
   if (!sp->api) {
-    len = PmStrcpy(msg, _("\nTerminated Jobs:\n"));
+    len = PmStrcpy(msg, T_("\nTerminated Jobs:\n"));
     sp->send(msg, len);
   }
 
   if (RecentJobResultsList::Count() == 0) {
     if (!sp->api) {
-      len = PmStrcpy(msg, _("====\n"));
+      len = PmStrcpy(msg, T_("====\n"));
       sp->send(msg, len);
     }
     return;
   }
 
   if (!sp->api) {
-    len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   "
-                          "Finished        Name \n"));
+    len = PmStrcpy(msg, T_(" JobId  Level    Files      Bytes   Status   "
+                           "Finished                 Name \n"));
     sp->send(msg, len);
-    len = PmStrcpy(msg, _("===================================================="
-                          "==================\n"));
+    len = PmStrcpy(msg,
+                   T_("===================================================="
+                      "===========================\n"));
     sp->send(msg, len);
   }
 
@@ -340,7 +340,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
-    bstrftime_nc(dt, sizeof(dt), je.end_time);
+    dt = bstrftime(je.end_time);
 
     switch (je.JobType) {
       case JT_ADMIN:
@@ -355,23 +355,23 @@ static void ListTerminatedJobs(StatusPacket* sp)
 
     switch (je.JobStatus) {
       case JS_Created:
-        termstat = _("Created");
+        termstat = T_("Created");
         break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-        termstat = _("Error");
+        termstat = T_("Error");
         break;
       case JS_Differences:
-        termstat = _("Diffs");
+        termstat = T_("Diffs");
         break;
       case JS_Canceled:
-        termstat = _("Cancel");
+        termstat = T_("Cancel");
         break;
       case JS_Terminated:
-        termstat = _("OK");
+        termstat = T_("OK");
         break;
       default:
-        termstat = _("Other");
+        termstat = T_("Other");
         break;
     }
     bstrncpy(JobName, je.Job, sizeof(JobName));
@@ -382,21 +382,21 @@ static void ListTerminatedJobs(StatusPacket* sp)
     }
 
     if (sp->api) {
-      len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+      len = Mmsg(msg, T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     } else {
-      len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
-                 edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+      len = Mmsg(msg, T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId,
+                 level, edit_uint64_with_commas(je.JobFiles, b1),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     }
     sp->send(msg, len);
   }
 
   if (!sp->api) {
-    len = PmStrcpy(msg, _("====\n"));
+    len = PmStrcpy(msg, T_("====\n"));
     sp->send(msg, len);
   }
 }
@@ -429,8 +429,8 @@ bool QstatusCmd(JobControlRecord* jcr)
 
   if (sscanf(dir->msg, qstatus, cmd) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);
-    dir->fsend(_("2900 Bad .status command, missing argument.\n"));
+    Jmsg1(jcr, M_FATAL, 0, T_("Bad .status command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("2900 Bad .status command, missing argument.\n"));
     dir->signal(BNET_EOD);
     FreeMemory(cmd);
     return false;
@@ -464,8 +464,8 @@ bool QstatusCmd(JobControlRecord* jcr)
     ListTerminatedJobs(&sp);
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);
-    dir->fsend(_("2900 Bad .status command, wrong argument.\n"));
+    Jmsg1(jcr, M_FATAL, 0, T_("Bad .status command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("2900 Bad .status command, wrong argument.\n"));
     dir->signal(BNET_EOD);
     FreeMemory(cmd);
     return false;
@@ -483,40 +483,40 @@ static const char* JobLevelToString(int level)
 
   switch (level) {
     case L_BASE:
-      str = _("Base");
+      str = T_("Base");
       break;
     case L_FULL:
-      str = _("Full");
+      str = T_("Full");
       break;
     case L_INCREMENTAL:
-      str = _("Incremental");
+      str = T_("Incremental");
       break;
     case L_DIFFERENTIAL:
-      str = _("Differential");
+      str = T_("Differential");
       break;
     case L_SINCE:
-      str = _("Since");
+      str = T_("Since");
       break;
     case L_VERIFY_CATALOG:
-      str = _("Verify Catalog");
+      str = T_("Verify Catalog");
       break;
     case L_VERIFY_INIT:
-      str = _("Init Catalog");
+      str = T_("Init Catalog");
       break;
     case L_VERIFY_VOLUME_TO_CATALOG:
-      str = _("Volume to Catalog");
+      str = T_("Volume to Catalog");
       break;
     case L_VERIFY_DISK_TO_CATALOG:
-      str = _("Disk to Catalog");
+      str = T_("Disk to Catalog");
       break;
     case L_VERIFY_DATA:
-      str = _("Data");
+      str = T_("Data");
       break;
     case L_NONE:
       str = " ";
       break;
     default:
-      str = _("Unknown Job Level");
+      str = T_("Unknown Job Level");
       break;
   }
   return str;

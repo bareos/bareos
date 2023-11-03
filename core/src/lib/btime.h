@@ -23,20 +23,27 @@
 #ifndef BAREOS_LIB_BTIME_H_
 #define BAREOS_LIB_BTIME_H_
 
+#include "include/bc_types.h"
+#include <string>
+#include <ctime>
+
 /* New btime definition -- use this */
 btime_t GetCurrentBtime(void);
-time_t BtimeToUnix(btime_t bt);   /* bareos time to epoch time */
-utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
+std::time_t BtimeToUnix(btime_t bt); /* bareos time to epoch time */
+utime_t BtimeToUtime(btime_t bt);    /* bareos time to utime_t */
 
-int TmWoy(time_t stime);
+int TmWoy(std::time_t stime);
 
-void Blocaltime(const time_t* time, struct tm* tm);
-char* bstrutime(char* dt, int maxlen, utime_t tim);
-char* bstrftime(char* dt, int maxlen, utime_t tim, const char* fmt = NULL);
-char* bstrftimes(char* dt, int maxlen, utime_t tim);
-char* bstrftime_nc(char* dt, int maxlen, utime_t tim);
-char* bstrftime_wd(char* dt, int maxlen, utime_t tim);
+void Blocaltime(const std::time_t* time, struct tm* tm);
+
+std::string bstrftime(utime_t tim = time(0));
+std::string bstrftime_scheduler_preview(utime_t tim);
+std::string bstrftime_filename(utime_t tim);
+std::string bstrftime_debug();
+
 utime_t StrToUtime(const char* str);
+
+std::string GetCurrentTimezoneOffset(utime_t tim);
 
 struct month {
   enum : int

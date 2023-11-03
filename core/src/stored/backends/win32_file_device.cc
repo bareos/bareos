@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -89,7 +89,7 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
     Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n",
           dcr->dev->print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
+    Mmsg(dcr->dev->errmsg, T_("Device %s cannot be %smounted. ERR=%s\n"),
          dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
     // Now, just to be sure it is not mounted, try to read the filesystem.
@@ -234,24 +234,22 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
   if (ftruncate(fd, 0) != 0) {
     BErrNo be;
 
-    Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), print_name(),
+    Mmsg2(errmsg, T_("Unable to truncate device %s. ERR=%s\n"), print_name(),
           be.bstrerror());
     return false;
   }
 
-  /*
-   * Check for a successful ftruncate() and issue a work-around for devices
+  /* Check for a successful ftruncate() and issue a work-around for devices
    * (mostly cheap NAS) that don't support truncation.
    * Workaround supplied by Martin Schmid as a solution to bug #1011.
    * 1. close file
    * 2. delete file
    * 3. open new file with same mode
-   * 4. change ownership to original
-   */
+   * 4. change ownership to original */
   if (fstat(fd, &st) != 0) {
     BErrNo be;
 
-    Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), print_name(),
+    Mmsg2(errmsg, T_("Unable to stat device %s. ERR=%s\n"), print_name(),
           be.bstrerror());
     return false;
   }
@@ -267,7 +265,7 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
     PmStrcat(archive_name, dcr->VolumeName);
 
     Mmsg2(errmsg,
-          _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
+          T_("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
           print_name(), archive_name.c_str());
 
     // Close file and blow it away
@@ -280,7 +278,7 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
       BErrNo be;
 
       dev_errno = errno;
-      Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(),
+      Mmsg2(errmsg, T_("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(),
             be.bstrerror());
       Emsg0(M_FATAL, 0, errmsg);
 

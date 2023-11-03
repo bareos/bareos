@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -70,7 +70,7 @@ bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
     Dmsg1(20, "Find_next_vol MediaId=%u\n", mr->MediaId);
     SetStorageidInMr(store, mr);
     if (RecycleVolume(jcr, mr)) {
-      Jmsg(jcr, M_INFO, 0, _("Recycled volume \"%s\"\n"), mr->VolumeName);
+      Jmsg(jcr, M_INFO, 0, T_("Recycled volume \"%s\"\n"), mr->VolumeName);
       Dmsg1(100, "return 1  RecycleOldestPurgedVolume Vol=%s\n",
             mr->VolumeName);
 

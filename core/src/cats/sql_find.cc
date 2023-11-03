@@ -56,7 +56,7 @@
  */
 bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
                                 JobDbRecord* jr,
-                                POOLMEM*& stime,
+                                utime_t& stime,
                                 char* job)
 {
   SQL_ROW row;
@@ -65,17 +65,16 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
 
   DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
-  PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
+  stime = 0; /* default */
   job[0] = 0;
 
   /* If no Id given, we must find corresponding job */
   if (jr->JobId == 0) {
     /* Differential is since last Full backup */
     Mmsg(cmd,
-         "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
-         "Type='%c' AND "
-         "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
-         "ORDER BY StartTime DESC LIMIT 1",
+         "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+         "JobStatus IN ('T','W') AND Type='%c' AND Level='%c' AND Name='%s' "
+         "AND ClientId=%s AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
          jr->JobType, L_FULL, esc_jobname, edit_int64(jr->ClientId, ed1),
          edit_int64(jr->FileSetId, ed2));
 
@@ -89,49 +88,51 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
        *  then we do a second look to find the most recent
        *  backup */
       if (!QUERY_DB(jcr, cmd)) {
-        Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+        Mmsg2(errmsg,
+              T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
               sql_strerror(), cmd);
         return false;
       }
       if ((row = SqlFetchRow()) == NULL) {
         SqlFreeResult();
-        Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
+        Mmsg(errmsg, T_("No prior Full backup Job record found.\n"));
         return false;
       }
       SqlFreeResult();
       /* Now edit SQL command for Incremental Job */
       Mmsg(cmd,
-           "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
-           "Type='%c' AND "
-           "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%s "
-           "AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
+           "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+           "JobStatus IN ('T','W') AND Type='%c' AND Level IN ('%c','%c','%c') "
+           "AND Name='%s' AND ClientId=%s AND FileSetId=%s ORDER BY StartTime "
+           "DESC LIMIT 1",
            jr->JobType, L_INCREMENTAL, L_DIFFERENTIAL, L_FULL, esc_jobname,
            edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
     } else {
-      Mmsg1(errmsg, _("Unknown level=%d\n"), jr->JobLevel);
+      Mmsg1(errmsg, T_("Unknown level=%d\n"), jr->JobLevel);
       return false;
     }
   } else {
     Dmsg1(100, "Submitting: %s\n", cmd);
-    Mmsg(cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%s",
+    Mmsg(cmd,
+         "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+         "Job.JobId=%s",
          edit_int64(jr->JobId, ed1));
   }
 
   if (!QUERY_DB(jcr, cmd)) {
-    PmStrcpy(stime, ""); /* set EOS */
-    Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+    Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return false;
   }
 
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
+    Mmsg2(errmsg, T_("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
           cmd);
     SqlFreeResult();
     return false;
   }
   Dmsg2(100, "Got start time: %s, job: %s\n", row[0], row[1]);
-  PmStrcpy(stime, row[0]);
+  stime = str_to_int64(row[0]);
   bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
   SqlFreeResult();
@@ -185,14 +186,14 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
        esc_jobname.data(), esc_clientname.data());
 
   if (!QUERY_DB(jcr, cmd)) {
-    Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+    Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return SqlFindResult::kError;
   }
 
   SQL_ROW row;
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
+    Mmsg2(errmsg, T_("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
           cmd);
     SqlFreeResult();
     return SqlFindResult::kEmptyResultSet;
@@ -222,7 +223,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
  */
 bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
                                     JobDbRecord* jr,
-                                    POOLMEM*& stime,
+                                    utime_t& stime,
                                     char* job,
                                     int JobLevel)
 {
@@ -232,28 +233,27 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
 
   DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
-  PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
+  stime = 0; /* default */
   job[0] = 0;
 
   Mmsg(cmd,
-       "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
-       "Type='%c' AND "
-       "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
-       "ORDER BY StartTime DESC LIMIT 1",
+       "SELECT EXTRACT(EPOCH FROM StartTime) AS stime, Job FROM Job WHERE "
+       "JobStatus IN ('T','W') AND Type='%c' AND Level='%c' AND Name='%s' AND "
+       "ClientId=%s AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
        jr->JobType, JobLevel, esc_jobname, edit_int64(jr->ClientId, ed1),
        edit_int64(jr->FileSetId, ed2));
   if (!QUERY_DB(jcr, cmd)) {
-    Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+    Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return false;
   }
   if ((row = SqlFetchRow()) == NULL) {
     SqlFreeResult();
-    Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
+    Mmsg(errmsg, T_("No prior Full backup Job record found.\n"));
     return false;
   }
   Dmsg1(100, "Got start time: %s\n", row[0]);
-  PmStrcpy(stime, row[0]);
+  stime = str_to_int64(row[0]);
   bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
   SqlFreeResult();
@@ -346,13 +346,13 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
           edit_int64(jr->ClientId, ed1));
     }
   } else {
-    Mmsg1(errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
+    Mmsg1(errmsg, T_("Unknown Job level=%d\n"), jr->JobLevel);
     return false;
   }
   Dmsg1(100, "Query: %s\n", cmd);
   if (!QUERY_DB(jcr, cmd)) { return false; }
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg1(errmsg, _("No Job found for: %s.\n"), cmd);
+    Mmsg1(errmsg, T_("No Job found for: %s.\n"), cmd);
     SqlFreeResult();
     return false;
   }
@@ -362,7 +362,7 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
 
   Dmsg1(100, "db_get_last_jobid: got JobId=%d\n", jr->JobId);
   if (jr->JobId <= 0) {
-    Mmsg1(errmsg, _("No Job found for: %s\n"), cmd);
+    Mmsg1(errmsg, T_("No Job found for: %s\n"), cmd);
     return false;
   }
 
@@ -381,7 +381,7 @@ bool BareosDb::FindJobById(JobControlRecord* jcr, std::string id)
   Dmsg1(100, "Query: %s\n", query.c_str());
   if (!QUERY_DB(jcr, query.c_str())) { return false; }
   if (SqlFetchRow() == NULL) {
-    Mmsg1(errmsg, _("No Job found with id: %d.\n"), id.c_str());
+    Mmsg1(errmsg, T_("No Job found with id: %d.\n"), id.c_str());
     SqlFreeResult();
     return false;
   } else {
@@ -457,12 +457,16 @@ retry_fetch:
          "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
-         "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
-         "Enabled,LocationId,RecycleCount,InitialWrite,"
+         "MaxVolFiles,Recycle,Slot,"
+         "EXTRACT('EPOCH' FROM FirstWritten) AS FirstWritten,"
+         "EXTRACT('EPOCH' FROM LastWritten) AS LastWritten,"
+         "InChanger,EndFile,EndBlock,LabelType,"
+         "EXTRACT('EPOCH' FROM LabelDate) AS LabelDate,"
+         "StorageId,Enabled,LocationId,RecycleCount,"
+         "EXTRACT('EPOCH' FROM InitialWrite) AS InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
-         "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize"
+         " FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN "
          "('Full',"
          "'Recycle','Purged','Used','Append') AND Enabled=1 "
          "ORDER BY LastWritten LIMIT %d",
@@ -494,12 +498,16 @@ retry_fetch:
          "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
-         "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
-         "Enabled,LocationId,RecycleCount,InitialWrite,"
+         "MaxVolFiles,Recycle,Slot,"
+         "EXTRACT('EPOCH' FROM FirstWritten) AS FirstWritten,"
+         "EXTRACT('EPOCH' FROM LastWritten) AS LastWritten,"
+         "InChanger,EndFile,EndBlock,LabelType,"
+         "EXTRACT('EPOCH' FROM LabelDate) AS LabelDate,"
+         "StorageId,Enabled,LocationId,RecycleCount,"
+         "EXTRACT('EPOCH' FROM InitialWrite) AS InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
-         "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize"
+         " FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
          "AND VolStatus='%s' "
          "%s "
          "%s LIMIT %d",
@@ -517,7 +525,7 @@ retry_fetch:
   if (item > num_rows || item < 1) {
     Dmsg2(050, "item=%d got=%d\n", item, num_rows);
     Mmsg2(errmsg,
-          _("Request for Volume item %d greater than max %d or less than 1\n"),
+          T_("Request for Volume item %d greater than max %d or less than 1\n"),
           item, num_rows);
     num_rows = 0;
     Dmsg1(050, "Rtn numrows=%d\n", num_rows);
@@ -527,7 +535,7 @@ retry_fetch:
   for (int i = 0; i < item; i++) {
     if ((row = SqlFetchRow()) == NULL) {
       Dmsg1(050, "Fail fetch item=%d\n", i);
-      Mmsg1(errmsg, _("No Volume record found for item %d.\n"), i);
+      Mmsg1(errmsg, T_("No Volume record found for item %d.\n"), i);
       SqlFreeResult();
       num_rows = 0;
       Dmsg1(050, "Rtn numrows=%d\n", num_rows);
@@ -574,26 +582,24 @@ retry_fetch:
     mr->MaxVolFiles = str_to_int64(row[17]);
     mr->Recycle = str_to_int64(row[18]);
     mr->Slot = str_to_int64(row[19]);
-    bstrncpy(mr->cFirstWritten, (row[20] != NULL) ? row[20] : "",
-             sizeof(mr->cFirstWritten));
-    mr->FirstWritten = (time_t)StrToUtime(mr->cFirstWritten);
-    bstrncpy(mr->cLastWritten, (row[21] != NULL) ? row[21] : "",
-             sizeof(mr->cLastWritten));
-    mr->LastWritten = (time_t)StrToUtime(mr->cLastWritten);
+
+    mr->FirstWritten = str_to_uint64(row[20] != NULL ? row[20] : "");
+    mr->LastWritten = str_to_uint64(row[21] != NULL ? row[21] : "");
+
     mr->InChanger = str_to_uint64(row[22]);
     mr->EndFile = str_to_uint64(row[23]);
     mr->EndBlock = str_to_uint64(row[24]);
     mr->LabelType = str_to_int64(row[25]);
-    bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "",
-             sizeof(mr->cLabelDate));
-    mr->LabelDate = (time_t)StrToUtime(mr->cLabelDate);
+
+    mr->LabelDate = str_to_uint64(row[26] != NULL ? row[26] : "");
+
     mr->StorageId = str_to_int64(row[27]);
     mr->Enabled = str_to_int64(row[28]);
     mr->LocationId = str_to_int64(row[29]);
     mr->RecycleCount = str_to_int64(row[30]);
-    bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "",
-             sizeof(mr->cInitialWrite));
-    mr->InitialWrite = (time_t)StrToUtime(mr->cInitialWrite);
+
+    mr->InitialWrite = str_to_uint64(row[31] != NULL ? row[31] : "");
+
     mr->ScratchPoolId = str_to_int64(row[32]);
     mr->RecyclePoolId = str_to_int64(row[33]);
     mr->VolReadTime = str_to_int64(row[34]);

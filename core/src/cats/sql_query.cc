@@ -133,7 +133,7 @@ bool BareosDb::SqlQuery(const char* query, int flags)
   DbLocker _{this};
   retval = SqlQueryWithoutHandler(query, flags);
   if (!retval) {
-    Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
+    Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), query, sql_strerror());
   }
 
   return retval;
@@ -150,7 +150,7 @@ bool BareosDb::SqlQuery(const char* query,
   DbLocker _{this};
   retval = SqlQueryWithHandler(query, ResultHandler, ctx);
   if (!retval) {
-    Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
+    Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), query, sql_strerror());
   }
 
   return retval;

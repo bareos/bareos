@@ -166,20 +166,20 @@ int main(int argc, char* const* argv)
 
   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
       && !reset_cache && argc < 1) {
-    fprintf(stderr, _("Missing device_name argument for this option\n"));
+    fprintf(stderr, T_("Missing device_name argument for this option\n"));
     usage();
     retval = 1;
     goto bail_out;
   }
 
   if (generate_passphrase && show_keydata) {
-    fprintf(stderr, _("Either use -g or -k not both\n"));
+    fprintf(stderr, T_("Either use -g or -k not both\n"));
     retval = 1;
     goto bail_out;
   }
 
   if (clear_encryption && set_encryption) {
-    fprintf(stderr, _("Either use -c or -s not both\n"));
+    fprintf(stderr, T_("Either use -c or -s not both\n"));
     retval = 1;
     goto bail_out;
   }
@@ -188,7 +188,7 @@ int main(int argc, char* const* argv)
       && (drive_encryption_status || volume_encryption_status)) {
     fprintf(
         stderr,
-        _("Either set or clear the crypto key or ask for status not both\n"));
+        T_("Either set or clear the crypto key or ask for status not both\n"));
     retval = 1;
     goto bail_out;
   }
@@ -197,8 +197,8 @@ int main(int argc, char* const* argv)
        || volume_encryption_status)
       && (generate_passphrase || show_keydata || dump_cache || populate_cache
           || reset_cache)) {
-    fprintf(stderr, _("Don't mix operations which are incompatible "
-                      "e.g. generate/show vs set/clear etc.\n"));
+    fprintf(stderr, T_("Don't mix operations which are incompatible "
+                       "e.g. generate/show vs set/clear etc.\n"));
     retval = 1;
     goto bail_out;
   }
@@ -225,7 +225,7 @@ int main(int argc, char* const* argv)
 
     /* Read new entries from stdin and parse them to update
      * the cache. */
-    fprintf(stdout, _("Enter cache entrie(s) (close with ^D): "));
+    fprintf(stdout, T_("Enter cache entrie(s) (close with ^D): "));
     fflush(stdout);
 
     memset(new_cache_entry, 0, sizeof(new_cache_entry));
@@ -271,18 +271,18 @@ int main(int argc, char* const* argv)
      * - == stdin */
     if (bstrcmp(wrap_keyfile, "-")) {
       kfd = 0;
-      fprintf(stdout, _("Enter Key Encryption Key: "));
+      fprintf(stdout, T_("Enter Key Encryption Key: "));
       fflush(stdout);
     } else {
       kfd = open(wrap_keyfile, O_RDONLY);
       if (kfd < 0) {
-        fprintf(stderr, _("Cannot open keyfile %s\n"), wrap_keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), wrap_keyfile);
         retval = 1;
         goto bail_out;
       }
     }
     if (read(kfd, wrapdata, sizeof(wrapdata))) {
-      fprintf(stderr, _("Cannot read from keyfile %s\n"), wrap_keyfile);
+      fprintf(stderr, T_("Cannot read from keyfile %s\n"), wrap_keyfile);
       retval = 1;
       goto bail_out;
     }
@@ -328,7 +328,7 @@ int main(int argc, char* const* argv)
     } else {
       kfd = open(keyfile, O_WRONLY | O_CREAT, 0644);
       if (kfd < 0) {
-        fprintf(stderr, _("Cannot open keyfile %s\n"), keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
         free(passphrase);
         retval = 1;
         goto bail_out;
@@ -338,13 +338,13 @@ int main(int argc, char* const* argv)
     if (base64_transform || wrapped_keys) {
       cnt = BinToBase64(keydata, sizeof(keydata), passphrase, length, true);
       if (write(kfd, keydata, cnt) != cnt) {
-        fprintf(stderr, _("Failed to write %d bytes to keyfile %s\n"), cnt,
+        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
                 keyfile);
       }
     } else {
       cnt = DEFAULT_PASSPHRASE_LENGTH;
       if (write(kfd, passphrase, cnt) != cnt) {
-        fprintf(stderr, _("Failed to write %d bytes to keyfile %s\n"), cnt,
+        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
                 keyfile);
       }
     }
@@ -370,18 +370,18 @@ int main(int argc, char* const* argv)
      * - == stdin */
     if (bstrcmp(keyfile, "-")) {
       kfd = 0;
-      fprintf(stdout, _("Enter Encryption Key: "));
+      fprintf(stdout, T_("Enter Encryption Key: "));
       fflush(stdout);
     } else {
       kfd = open(keyfile, O_RDONLY);
       if (kfd < 0) {
-        fprintf(stderr, _("Cannot open keyfile %s\n"), keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
         retval = 1;
         goto bail_out;
       }
     }
     if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, _("Cannot read from keyfile %s\n"), keyfile);
+      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile);
       retval = 1;
       goto bail_out;
     }
@@ -403,8 +403,8 @@ int main(int argc, char* const* argv)
       if (Base64ToBin(wrapped_passphrase, length, keydata, strlen(keydata))
           == 0) {
         fprintf(stderr,
-                _("Failed to base64 decode the keydata read from %s, "
-                  "aborting...\n"),
+                T_("Failed to base64 decode the keydata read from %s, "
+                   "aborting...\n"),
                 keyfile);
         free(wrapped_passphrase);
         goto bail_out;
@@ -419,8 +419,8 @@ int main(int argc, char* const* argv)
                     (unsigned char*)passphrase)
           == -1) {
         fprintf(stderr,
-                _("Failed to aes unwrap the keydata read from %s using the "
-                  "wrap data from %s, aborting...\n"),
+                T_("Failed to aes unwrap the keydata read from %s using the "
+                   "wrap data from %s, aborting...\n"),
                 keyfile, wrap_keyfile);
         free(wrapped_passphrase);
         goto bail_out;
@@ -482,18 +482,18 @@ int main(int argc, char* const* argv)
      * - == stdin */
     if (bstrcmp(keyfile, "-")) {
       kfd = 0;
-      fprintf(stdout, _("Enter Encryption Key (close with ^D): "));
+      fprintf(stdout, T_("Enter Encryption Key (close with ^D): "));
       fflush(stdout);
     } else {
       kfd = open(keyfile, O_RDONLY);
       if (kfd < 0) {
-        fprintf(stderr, _("Cannot open keyfile %s\n"), keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
         retval = 1;
         goto bail_out;
       }
     }
     if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, _("Cannot read from keyfile %s\n"), keyfile);
+      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile);
       retval = 1;
       goto bail_out;
     }

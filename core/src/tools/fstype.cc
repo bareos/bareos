@@ -35,15 +35,15 @@
 static void usage(int exit_status)
 {
   fprintf(stderr,
-          _("\n"
-            "Usage: fstype [-v] path ...\n"
-            "\n"
-            "       Print the file system type a given file/directory is on.\n"
-            "       The following options are supported:\n"
-            "\n"
-            "       -v     print both path and file system type.\n"
-            "       -?     print this message.\n"
-            "\n"));
+          T_("\n"
+             "Usage: fstype [-v] path ...\n"
+             "\n"
+             "       Print the file system type a given file/directory is on.\n"
+             "       The following options are supported:\n"
+             "\n"
+             "       -v     print both path and file system type.\n"
+             "       -?     print this message.\n"
+             "\n"));
 
   exit(exit_status);
 }
@@ -88,7 +88,7 @@ int main(int argc, char* const* argv)
         puts(fs);
       }
     } else {
-      fprintf(stderr, _("%s: unknown\n"), *argv);
+      fprintf(stderr, T_("%s: unknown\n"), *argv);
       exit_status = BEXIT_FAILURE;
     }
   }

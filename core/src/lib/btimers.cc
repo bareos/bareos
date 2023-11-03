@@ -245,7 +245,7 @@ static btimer_t* btimer_start_common()
 static void StopBtimer(btimer_t* wid)
 {
   if (wid == NULL) {
-    Emsg0(M_INFO, 0, _("StopBtimer called with NULL btimer_id\n"));
+    Emsg0(M_INFO, 0, T_("StopBtimer called with NULL btimer_id\n"));
     return;
   }
   if (wid->wd) {

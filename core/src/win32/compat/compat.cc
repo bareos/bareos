@@ -1462,8 +1462,8 @@ static int stat2(const char* filename, struct stat* sb)
 
   } else {
     Emsg0(M_FATAL, 0,
-          _("p_GetFileAttributesW and p_GetFileAttributesA undefined. "
-            "probably missing OSDependentInit() call\n"));
+          T_("p_GetFileAttributesW and p_GetFileAttributesA undefined. "
+             "probably missing OSDependentInit() call\n"));
   }
 
   if (attr == (DWORD)-1) {
@@ -1530,8 +1530,8 @@ int stat(const char* filename, struct stat* sb)
     }
   } else {
     Emsg0(M_FATAL, 0,
-          _("p_GetFileAttributesExW and p_GetFileAttributesExA undefined. "
-            "probably missing OSDependentInit() call\n"));
+          T_("p_GetFileAttributesExW and p_GetFileAttributesExA undefined. "
+             "probably missing OSDependentInit() call\n"));
     goto bail_out;
   }
 
@@ -3005,7 +3005,7 @@ void LogErrorMsg(const char* message)
   const char* strings[2];
 
   // Use the OS event logging to log the error
-  strings[0] = _("\n\nBareos ERROR: ");
+  strings[0] = T_("\n\nBareos ERROR: ");
   strings[1] = message;
 
   eventHandler = RegisterEventSource(NULL, "Bareos");

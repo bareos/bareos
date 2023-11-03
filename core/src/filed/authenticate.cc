@@ -97,7 +97,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   if (dir->message_length < 25 || dir->message_length > 500) {
     char addr[64];
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
-    errormsg.bsprintf(_("Bad Hello command from Director at %s. Len=%d.\n"),
+    errormsg.bsprintf(T_("Bad Hello command from Director at %s. Len=%d.\n"),
                       who, dir->message_length);
     AuthenticateFailed(jcr, errormsg);
     return false;
@@ -109,7 +109,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     char addr[64];
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
     dir->msg[100] = 0;
-    errormsg.bsprintf(_("Bad Hello command from Director at %s: %s\n"), who,
+    errormsg.bsprintf(T_("Bad Hello command from Director at %s: %s\n"), who,
                       dir->msg);
     AuthenticateFailed(jcr, errormsg);
     return false;
@@ -123,14 +123,14 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     char addr[64];
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
     errormsg.bsprintf(
-        _("Connection from unknown Director %s at %s rejected.\n"),
+        T_("Connection from unknown Director %s at %s rejected.\n"),
         dirname.c_str(), who);
     AuthenticateFailed(jcr, errormsg);
     return false;
   }
 
   if (!director->conn_from_dir_to_fd) {
-    errormsg.bsprintf(_("Connection from Director %s rejected.\n"),
+    errormsg.bsprintf(T_("Connection from Director %s rejected.\n"),
                       dirname.c_str());
     AuthenticateFailed(jcr, errormsg);
     return false;
@@ -139,7 +139,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   if (!dir->AuthenticateInboundConnection(jcr, my_config, dirname.c_str(),
                                           director->password_, director)) {
     dir->fsend("%s", Dir_sorry);
-    errormsg.bsprintf(_("Unable to authenticate Director %s.\n"),
+    errormsg.bsprintf(T_("Unable to authenticate Director %s.\n"),
                       dirname.c_str());
     AuthenticateFailed(jcr, errormsg);
     return false;

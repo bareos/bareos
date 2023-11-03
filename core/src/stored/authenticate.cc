@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     Dmsg2(debuglevel, "Bad Hello command from Director at %s. Len=%d.\n",
           dir->who(), dir->message_length);
     Jmsg2(jcr, M_FATAL, 0,
-          _("Bad Hello command from Director at %s. Len=%d.\n"), dir->who(),
+          T_("Bad Hello command from Director at %s. Len=%d.\n"), dir->who(),
           dir->message_length);
     return false;
   }
@@ -77,7 +77,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     dir->msg[100] = 0;
     Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", dir->who(),
           dir->msg);
-    Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
+    Jmsg2(jcr, M_FATAL, 0, T_("Bad Hello command from Director at %s: %s\n"),
           dir->who(), dir->msg);
     FreePoolMemory(dirname);
     return false;
@@ -91,7 +91,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     Dmsg2(debuglevel, "Connection from unknown Director %s at %s rejected.\n",
           dirname, dir->who());
     Jmsg(jcr, M_FATAL, 0,
-         _("Connection from unknown Director %s at %s rejected.\n"), dirname,
+         T_("Connection from unknown Director %s at %s rejected.\n"), dirname,
          dir->who());
     FreePoolMemory(dirname);
     return false;
@@ -103,7 +103,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     dir->fsend("%s", Dir_sorry);
     Dmsg2(debuglevel, "Unable to authenticate Director \"%s\" at %s.\n",
           director->resource_name_, dir->who());
-    Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"),
+    Jmsg1(jcr, M_ERROR, 0, T_("Unable to authenticate Director at %s.\n"),
           dir->who());
     Bmicrosleep(5, 0);
     FreePoolMemory(dirname);
@@ -133,8 +133,8 @@ bool AuthenticateStoragedaemon(JobControlRecord* jcr)
   if (!sd->AuthenticateInboundConnection(jcr, my_config, identity, password,
                                          me)) {
     Jmsg1(jcr, M_FATAL, 0,
-          _("Authorization problem: Two way security handshake failed with "
-            "Storage daemon at %s\n"),
+          T_("Authorization problem: Two way security handshake failed with "
+             "Storage daemon at %s\n"),
           sd->who());
     return false;
   }
@@ -160,8 +160,8 @@ bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
           jcr, my_config->CreateOwnQualifiedNameForNetworkDump(), identity,
           password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
-          _("Authorization problem: Two way security handshake failed with "
-            "Storage daemon at %s\n"),
+          T_("Authorization problem: Two way security handshake failed with "
+             "Storage daemon at %s\n"),
           sd->who());
     return false;
   }
@@ -185,8 +185,8 @@ bool AuthenticateFiledaemon(JobControlRecord* jcr)
   if (!fd->AuthenticateInboundConnection(jcr, my_config, jcr->client_name,
                                          password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
-          _("Authorization problem: Two way security handshake failed with "
-            "File daemon at %s\n"),
+          T_("Authorization problem: Two way security handshake failed with "
+             "File daemon at %s\n"),
           fd->who());
     return false;
   }
@@ -210,8 +210,8 @@ bool AuthenticateWithFiledaemon(JobControlRecord* jcr)
   if (!fd->AuthenticateOutboundConnection(jcr, "File daemon", jcr->client_name,
                                           password, me)) {
     Jmsg1(jcr, M_FATAL, 0,
-          _("Authorization problem: Two way security handshake failed with "
-            "File daemon at %s\n"),
+          T_("Authorization problem: Two way security handshake failed with "
+             "File daemon at %s\n"),
           fd->who());
     return false;
   }

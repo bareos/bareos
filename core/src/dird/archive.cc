@@ -56,7 +56,7 @@ bool DoArchive(JobControlRecord* jcr)
 
   jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
-  Jmsg(jcr, M_INFO, 0, _("Start Archive JobId %d, Job=%s\n"), jcr->JobId,
+  Jmsg(jcr, M_INFO, 0, T_("Start Archive JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -67,7 +67,6 @@ bool DoArchive(JobControlRecord* jcr)
 
 void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
 {
-  char sdt[50], edt[50], schedt[50];
   char term_code[100];
   const char* TermMsg;
   int msg_type;
@@ -78,7 +77,7 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s\n"),
+         T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -86,39 +85,38 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
   msg_type = M_INFO; /* by default INFO message */
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
-      TermMsg = _("Archive OK");
+      TermMsg = T_("Archive OK");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Archive Error ***");
+      TermMsg = T_("*** Archive Error ***");
       msg_type = M_ERROR; /* Generate error message */
       break;
     case JS_Canceled:
-      TermMsg = _("Archive Canceled");
+      TermMsg = T_("Archive Canceled");
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"),
+      sprintf(term_code, T_("Inappropriate term code: %c\n"),
               jcr->getJobStatus());
       break;
   }
 
-  bstrftimes(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
-  bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
-
   Jmsg(jcr, msg_type, 0,
-       _("BAREOS %s (%s): %s\n"
-         "  JobId:                  %d\n"
-         "  Job:                    %s\n"
-         "  Scheduled time:         %s\n"
-         "  Start time:             %s\n"
-         "  End time:               %s\n"
-         "  Bareos binary info:     %s\n"
-         "  Job triggered by:       %s\n"
-         "  Termination:            %s\n\n"),
-       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
-       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt, sdt, edt,
+       T_("BAREOS %s (%s): %s\n"
+          "  JobId:                  %d\n"
+          "  Job:                    %s\n"
+          "  Scheduled time:         %s\n"
+          "  Start time:             %s\n"
+          "  End time:               %s\n"
+          "  Bareos binary info:     %s\n"
+          "  Job triggered by:       %s\n"
+          "  Termination:            %s\n\n"),
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate,
+       bstrftime(jcr->dir_impl->jr.EndTime).c_str(), jcr->dir_impl->jr.JobId,
+       jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).c_str(),
+       bstrftime(jcr->dir_impl->jr.StartTime).c_str(),
+       bstrftime(jcr->dir_impl->jr.EndTime).c_str(),
        kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 

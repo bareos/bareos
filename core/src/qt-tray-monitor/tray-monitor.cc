@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
   }
 
   if (InitCrypto() != 0) {
-    Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("Cryptography library initialization failed.\n"));
   }
 
   if (cl.do_connection_test_only_) {

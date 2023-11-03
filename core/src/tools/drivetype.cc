@@ -34,17 +34,17 @@
 static void usage(int exit_code)
 {
   fprintf(stderr,
-          _("\n"
-            "Usage: Drivetype [-v] path ...\n"
-            "\n"
-            "       Print the drive type a given file/directory is on.\n"
-            "       The following options are supported:\n"
-            "\n"
-            "       -l     print local fixed hard drive\n"
-            "       -a     display information on all drives\n"
-            "       -v     print both path and file system type.\n"
-            "       -?     print this message.\n"
-            "\n"));
+          T_("\n"
+             "Usage: Drivetype [-v] path ...\n"
+             "\n"
+             "       Print the drive type a given file/directory is on.\n"
+             "       The following options are supported:\n"
+             "\n"
+             "       -l     print local fixed hard drive\n"
+             "       -a     display information on all drives\n"
+             "       -v     print both path and file system type.\n"
+             "       -?     print this message.\n"
+             "\n"));
 
   exit(exit_code);
 }
@@ -63,7 +63,7 @@ int DisplayDrive(char* drive, bool display_local, int verbose)
       puts(dt);
     }
   } else if (!display_local) { /* local mode is used by FileSet scripts */
-    fprintf(stderr, _("%s: unknown\n"), drive);
+    fprintf(stderr, T_("%s: unknown\n"), drive);
     status = BEXIT_FAILURE;
   }
   return status;

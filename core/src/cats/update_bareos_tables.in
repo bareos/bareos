@@ -109,6 +109,16 @@ do
       error "Failed to upgrade database schema from version ${start_version} to ${end_version}"
       exit ${retval}
    fi
+   #
+   # return value of psql is does says OK when transaction was rolled back.
+   # So we verify that the version was set to what we expect.
+   #
+   DBVERSION_AFTER=$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;")
+   if [ "${DBVERSION_AFTER}" -ne "${end_version}" ]; then
+      error "Failed to upgrade database schema from version ${DBVERSION} to ${end_version}, is still on ${DBVERSION_AFTER}"
+      exit 1
+   fi
+
 done
 
 exit ${retval}

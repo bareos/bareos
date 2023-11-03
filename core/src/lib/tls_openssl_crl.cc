@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,18 +53,18 @@ bool SetCertificateRevocationList(const std::string& crlfile_,
 
   store = SSL_CTX_get_cert_store(openssl_ctx);
   if (!store) {
-    OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
+    OpensslPostErrors(M_FATAL, T_("Error loading revocation list file"));
     return false;
   }
 
   lookup = X509_STORE_add_lookup(store, X509_LOOKUP_crl_reloader());
   if (!lookup) {
-    OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
+    OpensslPostErrors(M_FATAL, T_("Error loading revocation list file"));
     return false;
   }
 
   if (!LoadNewCrlFile(lookup, (char*)crlfile_.c_str())) {
-    OpensslPostErrors(M_FATAL, _("Error loading revocation list file"));
+    OpensslPostErrors(M_FATAL, T_("Error loading revocation list file"));
     return false;
   }
 

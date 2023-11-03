@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,11 +90,11 @@ int BgetMsg(BareosSocket* sock)
       case BNET_STATUS:
         /* *****FIXME***** Implement BNET_STATUS */
         Dmsg0(messagelevel, "Got BNET_STATUS\n");
-        sock->fsend(_("Status OK\n"));
+        sock->fsend(T_("Status OK\n"));
         sock->signal(BNET_EOD);
         break;
       default:
-        Emsg1(M_ERROR, 0, _("BgetMsg: unknown signal %d\n"),
+        Emsg1(M_ERROR, 0, T_("BgetMsg: unknown signal %d\n"),
               sock->message_length);
         break;
     }

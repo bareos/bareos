@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
           [&line, &fd](std::vector<std::string> val) {
             if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
-              Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
+              Pmsg2(0, T_("Could not open exclude file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
               exit(BEXIT_FAILURE);
             }
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
           [&line, &fd, &got_inc](std::vector<std::string> val) {
             if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
-              Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
+              Pmsg2(0, T_("Could not open include file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
               exit(BEXIT_FAILURE);
             }
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
     if (!director) {
       Emsg2(
           M_ERROR_TERM, 0,
-          _("No Director resource named %s defined in %s. Cannot continue.\n"),
+          T_("No Director resource named %s defined in %s. Cannot continue.\n"),
           DirectorName.c_str(), configfile);
     }
   }
@@ -253,11 +253,12 @@ int main(int argc, char* argv[])
   if (bsr) { libbareos::FreeBsr(bsr); }
   if (prog_name_msg) {
     Pmsg1(000,
-          _("%d Program Name and/or Program Data Stream records ignored.\n"),
+          T_("%d Program Name and/or Program Data Stream records ignored.\n"),
           prog_name_msg);
   }
   if (win32_data_msg) {
-    Pmsg1(000, _("%d Win32 data or Win32 gzip data stream records. Ignored.\n"),
+    Pmsg1(000,
+          T_("%d Win32 data or Win32 gzip data stream records. Ignored.\n"),
           win32_data_msg);
   }
   TermIncludeExcludeFiles(ff);
@@ -364,7 +365,7 @@ static inline void PopDelayedDataStreams()
         break;
       default:
         Jmsg(jcr, M_WARNING, 0,
-             _("Unknown stream=%d ignored. This shouldn't happen!\n"),
+             T_("Unknown stream=%d ignored. This shouldn't happen!\n"),
              dds->stream);
         break;
     }
@@ -405,17 +406,17 @@ static void DoExtract(char* devname,
 
   // Let SD plugins setup the record translation
   if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
-    Jmsg(jcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call failed!\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("bSdEventSetupRecordTranslation call failed!\n"));
   }
 
   // Make sure where directory exists and that it is a directory
   if (stat(where, &statp) < 0) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Cannot stat %s. It must exist. ERR=%s\n"), where,
+    Emsg2(M_ERROR_TERM, 0, T_("Cannot stat %s. It must exist. ERR=%s\n"), where,
           be.bstrerror());
   }
   if (!S_ISDIR(statp.st_mode)) {
-    Emsg1(M_ERROR_TERM, 0, _("%s must be a directory.\n"), where);
+    Emsg1(M_ERROR_TERM, 0, T_("%s must be a directory.\n"), where);
   }
 
   free(jcr->where);
@@ -473,7 +474,7 @@ static void DoExtract(char* devname,
   UnloadSdPlugins();
 
 
-  printf(_("%u files restored.\n"), num_files);
+  printf(T_("%u files restored.\n"), num_files);
 
   return;
 }
@@ -484,13 +485,13 @@ static bool StoreData(BareosFilePacket* bfd, char* data, const int32_t length)
     SetPortableBackup(bfd);
     if (!processWin32BackupAPIBlock(bfd, data, length)) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Write error on %s: %s\n"), attr->ofname,
+      Emsg2(M_ERROR_TERM, 0, T_("Write error on %s: %s\n"), attr->ofname,
             be.bstrerror());
       return false;
     }
   } else if (bwrite(bfd, data, length) != (ssize_t)length) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Write error on %s: %s\n"), attr->ofname,
+    Emsg2(M_ERROR_TERM, 0, T_("Write error on %s: %s\n"), attr->ofname,
           be.bstrerror());
     return false;
   }
@@ -518,7 +519,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       if (extract) {
         if (!IsBopen(&bfd)) {
           Emsg0(M_ERROR, 0,
-                _("Logic error output file should be open but is not.\n"));
+                T_("Logic error output file should be open but is not.\n"));
         }
         ClosePreviousStream();
         extract = false;
@@ -526,7 +527,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
       if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
                                   attr)) {
-        Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
+        Emsg0(M_ERROR_TERM, 0, T_("Cannot continue.\n"));
       }
 
       if (FileIsIncluded(ff, attr->fname) && !FileIsExcluded(ff, attr->fname)) {
@@ -535,7 +536,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         if (!IsRestoreStreamSupported(attr->data_stream)) {
           if (!non_support_data++) {
             Jmsg(jcr, M_ERROR, 0,
-                 _("%s stream not supported on this Client.\n"),
+                 T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
           }
           extract = false;
@@ -546,7 +547,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         if (attr->type
             == FT_DELETED) { /* TODO: choose the right fname/ofname */
-          Jmsg(jcr, M_INFO, 0, _("%s was deleted.\n"), attr->fname);
+          Jmsg(jcr, M_INFO, 0, T_("%s was deleted.\n"), attr->fname);
           extract = false;
           return true;
         }
@@ -594,7 +595,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             fileAddr = faddr;
             if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
               BErrNo be;
-              Emsg2(M_ERROR_TERM, 0, _("Seek error on %s: %s\n"), attr->ofname,
+              Emsg2(M_ERROR_TERM, 0, T_("Seek error on %s: %s\n"), attr->ofname,
                     be.bstrerror());
             }
           }
@@ -634,7 +635,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
               BErrNo be;
 
-              Emsg3(M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
+              Emsg3(M_ERROR, 0, T_("Seek to %s error on %s: ERR=%s\n"),
                     edit_uint64(fileAddr, ec1), attr->ofname, be.bstrerror());
               extract = false;
               return true;
@@ -675,7 +676,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_PROGRAM_NAMES:
     case STREAM_PROGRAM_DATA:
       if (!prog_name_msg) {
-        Pmsg0(000, _("Got Program Name or Data Stream. Ignored.\n"));
+        Pmsg0(000, T_("Got Program Name or Data Stream. Ignored.\n"));
         prog_name_msg++;
       }
       break;
@@ -735,13 +736,13 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       if (extract) {
         if (!IsBopen(&bfd)) {
           Emsg0(M_ERROR, 0,
-                _("Logic error output file should be open but is not.\n"));
+                T_("Logic error output file should be open but is not.\n"));
         }
         ClosePreviousStream();
         extract = false;
       }
       Jmsg(jcr, M_ERROR, 0,
-           _("Unknown stream=%d ignored. This shouldn't happen!\n"),
+           T_("Unknown stream=%d ignored. This shouldn't happen!\n"),
            rec->Stream);
       break;
 

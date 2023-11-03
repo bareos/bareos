@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,7 +68,7 @@ bool DoReadData(JobControlRecord* jcr)
   }
 
   if (jcr->sd_impl->NumReadVolumes == 0) {
-    Jmsg(jcr, M_FATAL, 0, _("No Volume names found for restore.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("No Volume names found for restore.\n"));
     fd->fsend(FD_error);
     return false;
   }
@@ -126,8 +126,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   // Send record header to File daemon
   if (!fd->fsend(rec_header, rec->VolSessionId, rec->VolSessionTime,
                  rec->FileIndex, rec->Stream, rec->data_len)) {
-    Pmsg1(000, _(">filed: Error Hdr=%s"), fd->msg);
-    Jmsg1(jcr, M_FATAL, 0, _("Error sending to File daemon. ERR=%s\n"),
+    Pmsg1(000, T_(">filed: Error Hdr=%s"), fd->msg);
+    Jmsg1(jcr, M_FATAL, 0, T_("Error sending to File daemon. ERR=%s\n"),
           fd->bstrerror());
     return false;
   } else {
@@ -141,8 +141,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   Dmsg1(400, ">filed: send %d bytes data.\n", fd->message_length);
   if (!fd->send()) {
-    Pmsg1(000, _("Error sending to FD. ERR=%s\n"), fd->bstrerror());
-    Jmsg1(jcr, M_FATAL, 0, _("Error sending to File daemon. ERR=%s\n"),
+    Pmsg1(000, T_("Error sending to FD. ERR=%s\n"), fd->bstrerror());
+    Jmsg1(jcr, M_FATAL, 0, T_("Error sending to File daemon. ERR=%s\n"),
           fd->bstrerror());
 
     ok = false;

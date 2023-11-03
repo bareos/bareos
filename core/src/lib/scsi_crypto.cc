@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,19 +65,15 @@ static inline void set_4_byte_value(unsigned char* field, int value)
  */
 bool ClearScsiEncryptionKey(int fd, const char* device_name)
 {
-  /*
-   * Create a SPOUT Set Encryption Key CDB and
-   *        a SPOUT Clear Encryption Mode Page
-   */
+  /* Create a SPOUT Set Encryption Key CDB and
+   *        a SPOUT Clear Encryption Mode Page */
   SPP_SCSI_CDB cdb;
   SPP_PAGE_BUFFER cmd_page;
   SPP_PAGE_SDE* sps;
   int cmd_page_len, cdb_len;
 
-  /*
-   * Put a SPOUT Set Data Encryption page into the start of
-   * the generic cmd_page structure.
-   */
+  /* Put a SPOUT Set Data Encryption page into the start of
+   * the generic cmd_page structure. */
   memset(&cmd_page, 0, sizeof(cmd_page));
   sps = (SPP_PAGE_SDE*)&cmd_page;
   set_2_byte_value(sps->pageCode, SPOUT_SET_DATA_ENCRYPTION_PAGE);
@@ -91,10 +87,8 @@ bool ClearScsiEncryptionKey(int fd, const char* device_name)
   // Set the length to the size of the SPP_PAGE_SDE we just filled.
   cmd_page_len = sizeof(SPP_PAGE_SDE);
 
-  /*
-   * Set the actual size of the cmd_page - 4 into the cmd_page length field
-   * (without the pageCode and pageLength)
-   */
+  /* Set the actual size of the cmd_page - 4 into the cmd_page length field
+   * (without the pageCode and pageLength) */
   set_2_byte_value(cmd_page.length, cmd_page_len - 4);
 
   // Fill the SCSI CDB.
@@ -123,19 +117,15 @@ bool ClearScsiEncryptionKey(int fd, const char* device_name)
  */
 bool SetScsiEncryptionKey(int fd, const char* device_name, char* encryption_key)
 {
-  /*
-   * Create a SPOUT Set Encryption Key CDB and
-   *        a SPOUT Send Encryption Key Page
-   */
+  /* Create a SPOUT Set Encryption Key CDB and
+   *        a SPOUT Send Encryption Key Page */
   SPP_SCSI_CDB cdb;
   SPP_PAGE_BUFFER cmd_page;
   SPP_PAGE_SDE* sps;
   int cmd_page_len, cdb_len;
 
-  /*
-   * Put a SPOUT Set Data Encryption page into the start of
-   * the generic cmd_page structure.
-   */
+  /* Put a SPOUT Set Data Encryption page into the start of
+   * the generic cmd_page structure. */
   memset(&cmd_page, 0, sizeof(cmd_page));
   sps = (SPP_PAGE_SDE*)&cmd_page;
   set_2_byte_value(sps->pageCode, SPOUT_SET_DATA_ENCRYPTION_PAGE);
@@ -150,10 +140,8 @@ bool SetScsiEncryptionKey(int fd, const char* device_name, char* encryption_key)
   // Set the length to the size of the SPP_PAGE_SDE we just filled.
   cmd_page_len = sizeof(SPP_PAGE_SDE);
 
-  /*
-   * Set the actual size of the cmd_page - 4 into the cmd_page length field
-   * (without the pageCode and pageLength)
-   */
+  /* Set the actual size of the cmd_page - 4 into the cmd_page length field
+   * (without the pageCode and pageLength) */
   set_2_byte_value(cmd_page.length, cmd_page_len - 4);
 
   // Fill the SCSI CDB.
@@ -206,26 +194,24 @@ int GetScsiDriveEncryptionStatus(int fd,
     return 0;
   }
 
-  /*
-   * We got a response which should contain a SPP_PAGE_DES.
+  /* We got a response which should contain a SPP_PAGE_DES.
    * Create a pointer to the beginning of the generic
-   * cmd_page structure.
-   */
+   * cmd_page structure. */
   spd = (SPP_PAGE_DES*)&cmd_page;
 
   PmStrcpy(status, "");
-  IndentStatusMsg(status, _("Drive encryption status:\n"), indent);
+  IndentStatusMsg(status, T_("Drive encryption status:\n"), indent);
 
   // See what encrption mode is enabled.
   switch (spd->encryptionMode) {
     case SPP_ENCR_MODE_DISABLE:
-      IndentStatusMsg(status, _("Encryption Mode: Disabled\n"), indent + 3);
+      IndentStatusMsg(status, T_("Encryption Mode: Disabled\n"), indent + 3);
       break;
     case SPP_ENCR_MODE_EXTERNAL:
-      IndentStatusMsg(status, _("Encryption Mode: External\n"), indent + 3);
+      IndentStatusMsg(status, T_("Encryption Mode: External\n"), indent + 3);
       break;
     case SPP_ENCR_MODE_ENCRYPT:
-      IndentStatusMsg(status, _("Encryption Mode: Encrypt\n"), indent + 3);
+      IndentStatusMsg(status, T_("Encryption Mode: Encrypt\n"), indent + 3);
       break;
     default:
       break;
@@ -234,16 +220,16 @@ int GetScsiDriveEncryptionStatus(int fd,
   // See what decryption mode is enabled.
   switch (spd->decryptionMode) {
     case SPP_DECR_MODE_DISABLE:
-      IndentStatusMsg(status, _("Decryption Mode: Disabled\n"), indent + 3);
+      IndentStatusMsg(status, T_("Decryption Mode: Disabled\n"), indent + 3);
       break;
     case SPP_DECR_MODE_RAW:
-      IndentStatusMsg(status, _("Decryption Mode: Raw\n"), indent + 3);
+      IndentStatusMsg(status, T_("Decryption Mode: Raw\n"), indent + 3);
       break;
     case SPP_DECR_MODE_DECRYPT:
-      IndentStatusMsg(status, _("Decryption Mode: Decrypt\n"), indent + 3);
+      IndentStatusMsg(status, T_("Decryption Mode: Decrypt\n"), indent + 3);
       break;
     case SPP_DECR_MODE_MIXED:
-      IndentStatusMsg(status, _("Decryption Mode: Mixed\n"), indent + 3);
+      IndentStatusMsg(status, T_("Decryption Mode: Mixed\n"), indent + 3);
       break;
     default:
       break;
@@ -251,31 +237,32 @@ int GetScsiDriveEncryptionStatus(int fd,
 
   // See if RDMD is enabled.
   if (spd->RDMD) {
-    IndentStatusMsg(status, _("Raw Decryption Mode Disabled (RDMD): Enabled\n"),
+    IndentStatusMsg(status,
+                    T_("Raw Decryption Mode Disabled (RDMD): Enabled\n"),
                     indent + 3);
   } else {
     IndentStatusMsg(status,
-                    _("Raw Decryption Mode Disabled (RDMD): Disabled\n"),
+                    T_("Raw Decryption Mode Disabled (RDMD): Disabled\n"),
                     indent + 3);
   }
 
   // See what Check External Encryption Mode Status is set.
   switch (spd->CEEMS) {
     case SPP_CEEM_NO_ENCR_CHECK:
-      IndentStatusMsg(status,
-                      _("Check External Encryption Mode Status (CEEMS) : No\n"),
-                      indent + 3);
+      IndentStatusMsg(
+          status, T_("Check External Encryption Mode Status (CEEMS) : No\n"),
+          indent + 3);
       break;
     case SPP_CEEM_CHECK_EXTERNAL:
       IndentStatusMsg(
           status,
-          _("Check External Encryption Mode Status (CEEMS) : External\n"),
+          T_("Check External Encryption Mode Status (CEEMS) : External\n"),
           indent + 3);
       break;
     case SPP_CEEM_CHECK_ENCR:
       IndentStatusMsg(
           status,
-          _("Check External Encryption Mode Status (CEEMS) : Encrypt\n"),
+          T_("Check External Encryption Mode Status (CEEMS) : Encrypt\n"),
           indent + 3);
       break;
     default:
@@ -286,12 +273,12 @@ int GetScsiDriveEncryptionStatus(int fd,
   if (spd->VCELB) {
     IndentStatusMsg(
         status,
-        _("Volume Contains Encrypted Logical Blocks (VCELB): Enabled\n"),
+        T_("Volume Contains Encrypted Logical Blocks (VCELB): Enabled\n"),
         indent + 3);
   } else {
     IndentStatusMsg(
         status,
-        _("Volume Contains Encrypted Logical Blocks (VCELB): Disabled\n"),
+        T_("Volume Contains Encrypted Logical Blocks (VCELB): Disabled\n"),
         indent + 3);
   }
 
@@ -299,63 +286,61 @@ int GetScsiDriveEncryptionStatus(int fd,
   switch (spd->parametersControl) {
     case SPP_PARM_LOG_BLOCK_ENCR_NONE:
       IndentStatusMsg(status,
-                      _("Logical Block encryption parameters: No report\n"),
+                      T_("Logical Block encryption parameters: No report\n"),
                       indent + 3);
       break;
     case SPP_PARM_LOG_BLOCK_ENCR_AME:
       IndentStatusMsg(
           status,
-          _("Logical Block encryption parameters: Application Managed\n"),
+          T_("Logical Block encryption parameters: Application Managed\n"),
           indent + 3);
       break;
     case SPP_PARM_LOG_BLOCK_ENCR_DRIVE:
-      IndentStatusMsg(status,
-                      _("Logical Block encryption parameters: Drive Managed\n"),
-                      indent + 3);
+      IndentStatusMsg(
+          status, T_("Logical Block encryption parameters: Drive Managed\n"),
+          indent + 3);
       break;
     case SPP_PARM_LOG_BLOCK_LME_ADC:
       IndentStatusMsg(status,
-                      _("Logical Block encryption parameters: Library/Key "
-                        "Management Appliance Managed\n"),
+                      T_("Logical Block encryption parameters: Library/Key "
+                         "Management Appliance Managed\n"),
                       indent + 3);
       break;
     case SPP_PARM_LOG_BLOCK_UNSUP:
       IndentStatusMsg(status,
-                      _("Logical Block encryption parameters: Unsupported\n"),
+                      T_("Logical Block encryption parameters: Unsupported\n"),
                       indent + 3);
       break;
     default:
       break;
   }
 
-  /*
-   * Only when both encryption and decryption are disabled skip the KAD Format
-   * field.
-   */
+  /* Only when both encryption and decryption are disabled skip the KAD Format
+   * field. */
   if (spd->encryptionMode != SPP_ENCR_MODE_DISABLE
       && spd->decryptionMode != SPP_DECR_MODE_DISABLE) {
     switch (spd->kadFormat) {
       case SPP_KAD_KEY_FORMAT_NORMAL:
-        IndentStatusMsg(status,
-                        _("Key Associated Data (KAD) Descriptor: Normal key\n"),
-                        indent + 3);
+        IndentStatusMsg(
+            status, T_("Key Associated Data (KAD) Descriptor: Normal key\n"),
+            indent + 3);
         break;
       case SPP_KAD_KEY_FORMAT_REFERENCE:
         IndentStatusMsg(status,
-                        _("Key Associated Data (KAD) Descriptor: "
-                          "Vendor-specific reference\n"),
+                        T_("Key Associated Data (KAD) Descriptor: "
+                           "Vendor-specific reference\n"),
                         indent + 3);
         break;
       case SPP_KAD_KEY_FORMAT_WRAPPED:
         IndentStatusMsg(
             status,
-            _("Key Associated Data (KAD) Descriptor: Wrapped public key\n"),
+            T_("Key Associated Data (KAD) Descriptor: Wrapped public key\n"),
             indent + 3);
         break;
       case SPP_KAD_KEY_FORMAT_ESP_SCSI:
         IndentStatusMsg(
             status,
-            _("Key Associated Data (KAD) Descriptor: Key using ESP-SCSI\n"),
+            T_("Key Associated Data (KAD) Descriptor: Key using ESP-SCSI\n"),
             indent + 3);
         break;
       default:
@@ -403,34 +388,32 @@ int GetScsiVolumeEncryptionStatus(int fd,
     return 0;
   }
 
-  /*
-   * We got a response which should contain a SPP_PAGE_NBES.
+  /* We got a response which should contain a SPP_PAGE_NBES.
    * Create a pointer to the beginning of the generic
-   * cmd_page structure.
-   */
+   * cmd_page structure. */
   spnb = (SPP_PAGE_NBES*)&cmd_page;
 
   PmStrcpy(status, "");
-  IndentStatusMsg(status, _("Volume encryption status:\n"), indent);
+  IndentStatusMsg(status, T_("Volume encryption status:\n"), indent);
 
   switch (spnb->compressionStatus) {
     case SPP_COMP_STATUS_UNKNOWN:
-      IndentStatusMsg(status, _("Compression Status: Unknown\n"), indent + 3);
+      IndentStatusMsg(status, T_("Compression Status: Unknown\n"), indent + 3);
       break;
     case SPP_COMP_STATUS_UNAVAIL:
-      IndentStatusMsg(status, _("Compression Status: Unavailable\n"),
+      IndentStatusMsg(status, T_("Compression Status: Unavailable\n"),
                       indent + 3);
       break;
     case SPP_COMP_STATUS_ILLEGAL:
-      IndentStatusMsg(status, _("Compression Status: Illegal logical block\n"),
+      IndentStatusMsg(status, T_("Compression Status: Illegal logical block\n"),
                       indent + 3);
       break;
     case SPP_COMP_STATUS_UNCOMPRESSED:
-      IndentStatusMsg(status, _("Compression Status: Compression Disabled\n"),
+      IndentStatusMsg(status, T_("Compression Status: Compression Disabled\n"),
                       indent + 3);
       break;
     case SPP_COMP_STATUS_COMPRESSED:
-      IndentStatusMsg(status, _("Compression Status: Compression Enabled\n"),
+      IndentStatusMsg(status, T_("Compression Status: Compression Enabled\n"),
                       indent + 3);
       break;
     default:
@@ -439,34 +422,34 @@ int GetScsiVolumeEncryptionStatus(int fd,
 
   switch (spnb->encryptionStatus) {
     case SPP_ENCR_STATUS_UNKNOWN:
-      IndentStatusMsg(status, _("Encryption Status: Unknown\n"), indent + 3);
+      IndentStatusMsg(status, T_("Encryption Status: Unknown\n"), indent + 3);
       break;
     case SPP_ENCR_STATUS_UNAVAIL:
-      IndentStatusMsg(status, _("Encryption Status: Unavailable\n"),
+      IndentStatusMsg(status, T_("Encryption Status: Unavailable\n"),
                       indent + 3);
       break;
     case SPP_ENCR_STATUS_ILLEGAL:
-      IndentStatusMsg(status, _("Encryption Status: Illegal logical block\n"),
+      IndentStatusMsg(status, T_("Encryption Status: Illegal logical block\n"),
                       indent + 3);
       break;
     case SPP_ENCR_STATUS_NOT_ENCRYPTED:
-      IndentStatusMsg(status, _("Encryption Status: Encryption Disabled\n"),
+      IndentStatusMsg(status, T_("Encryption Status: Encryption Disabled\n"),
                       indent + 3);
       break;
     case SPP_ENCR_STATUS_ENCR_ALG_NOT_SUPP:
       IndentStatusMsg(status,
-                      _("Encryption Status: Encryption Enabled but with non "
-                        "supported algorithm\n"),
+                      T_("Encryption Status: Encryption Enabled but with non "
+                         "supported algorithm\n"),
                       indent + 3);
       break;
     case SPP_ENCR_STATUS_ENCRYPTED:
-      IndentStatusMsg(status, _("Encryption Status: Encryption Enabled\n"),
+      IndentStatusMsg(status, T_("Encryption Status: Encryption Enabled\n"),
                       indent + 3);
       break;
     case SPP_ENCR_STATUS_ENCR_NOT_AVAIL:
       IndentStatusMsg(status,
-                      _("Encryption Status: Encryption Enabled but no valid "
-                        "key available for decryption\n"),
+                      T_("Encryption Status: Encryption Enabled but no valid "
+                         "key available for decryption\n"),
                       indent + 3);
       break;
     default:
@@ -474,53 +457,51 @@ int GetScsiVolumeEncryptionStatus(int fd,
   }
 
   if (spnb->RDMDS) {
-    IndentStatusMsg(status,
-                    _("Raw Decryption Mode Disabled Status (RDMDS): Enabled\n"),
-                    indent + 3);
+    IndentStatusMsg(
+        status, T_("Raw Decryption Mode Disabled Status (RDMDS): Enabled\n"),
+        indent + 3);
   } else {
     IndentStatusMsg(
-        status, _("Raw Decryption Mode Disabled Status (RDMDS): Disabled\n"),
+        status, T_("Raw Decryption Mode Disabled Status (RDMDS): Disabled\n"),
         indent + 3);
   }
 
   if (spnb->EMES) {
     IndentStatusMsg(status,
-                    _("Encryption Mode External Status (EMES): Enabled\n"),
+                    T_("Encryption Mode External Status (EMES): Enabled\n"),
                     indent + 3);
   } else {
     IndentStatusMsg(status,
-                    _("Encryption Mode External Status (EMES): Disabled\n"),
+                    T_("Encryption Mode External Status (EMES): Disabled\n"),
                     indent + 3);
   }
 
-  /*
-   * Only when the encryption status is set to SPP_ENCR_STATUS_ENCRYPTED we
-   * can use the nextBlockKADFormat otherwise that value is bogus.
-   */
+  /* Only when the encryption status is set to SPP_ENCR_STATUS_ENCRYPTED we
+   * can use the nextBlockKADFormat otherwise that value is bogus. */
   if (spnb->encryptionStatus == SPP_ENCR_STATUS_ENCRYPTED) {
     switch (spnb->nextBlockKADFormat) {
       case SPP_KAD_KEY_FORMAT_NORMAL:
         IndentStatusMsg(
             status,
-            _("Next Block Key Associated Data (KAD) Descriptor: Normal key\n"),
+            T_("Next Block Key Associated Data (KAD) Descriptor: Normal key\n"),
             indent + 3);
         break;
       case SPP_KAD_KEY_FORMAT_REFERENCE:
         IndentStatusMsg(status,
-                        _("Next Block Key Associated Data (KAD) Descriptor: "
-                          "Vendor-specific reference\n"),
+                        T_("Next Block Key Associated Data (KAD) Descriptor: "
+                           "Vendor-specific reference\n"),
                         indent + 3);
         break;
       case SPP_KAD_KEY_FORMAT_WRAPPED:
         IndentStatusMsg(status,
-                        _("Next Block Key Associated Data (KAD) Descriptor: "
-                          "Wrapped public key\n"),
+                        T_("Next Block Key Associated Data (KAD) Descriptor: "
+                           "Wrapped public key\n"),
                         indent + 3);
         break;
       case SPP_KAD_KEY_FORMAT_ESP_SCSI:
         IndentStatusMsg(status,
-                        _("Next Block Key Associated Data (KAD) Descriptor: "
-                          "Key using ESP-SCSI\n"),
+                        T_("Next Block Key Associated Data (KAD) Descriptor: "
+                           "Key using ESP-SCSI\n"),
                         indent + 3);
         break;
       default:
@@ -569,30 +550,22 @@ bool NeedScsiCryptoKey(int fd, const char* device_name, bool use_drive_status)
   }
 
   if (use_drive_status) {
-    /*
-     * We got a response which should contain a SPP_PAGE_DES.
+    /* We got a response which should contain a SPP_PAGE_DES.
      * Create a pointer to the beginning of the generic
-     * cmd_page structure.
-     */
+     * cmd_page structure. */
     spd = (SPP_PAGE_DES*)&cmd_page;
 
-    /*
-     * Return the status of the Volume Contains Encrypted Logical Blocks (VCELB)
-     * field.
-     */
+    /* Return the status of the Volume Contains Encrypted Logical Blocks (VCELB)
+     * field. */
     return (spd->VCELB) ? true : false;
   } else {
-    /*
-     * We got a response which should contain a SPP_PAGE_NBES.
+    /* We got a response which should contain a SPP_PAGE_NBES.
      * Create a pointer to the beginning of the generic
-     * cmd_page structure.
-     */
+     * cmd_page structure. */
     spnb = (SPP_PAGE_NBES*)&cmd_page;
 
-    /*
-     * If the encryptionStatus is set to encrypted or encrypted but valid key
-     * not available we know we need to load a key to decrypt the data.
-     */
+    /* If the encryptionStatus is set to encrypted or encrypted but valid key
+     * not available we know we need to load a key to decrypt the data. */
     switch (spnb->encryptionStatus) {
       case SPP_ENCR_STATUS_ENCRYPTED:
       case SPP_ENCR_STATUS_ENCR_NOT_AVAIL:
@@ -636,17 +609,13 @@ bool IsScsiEncryptionEnabled(int fd, const char* device_name)
     return false;
   }
 
-  /*
-   * We got a response which should contain a SPP_PAGE_DES.
+  /* We got a response which should contain a SPP_PAGE_DES.
    * Create a pointer to the beginning of the generic
-   * cmd_page structure.
-   */
+   * cmd_page structure. */
   spd = (SPP_PAGE_DES*)&cmd_page;
 
-  /*
-   * When either encryptionMode or decryptionMode are not disabled we return
-   * true
-   */
+  /* When either encryptionMode or decryptionMode are not disabled we return
+   * true */
   return (spd->encryptionMode != SPP_ENCR_MODE_DISABLE)
          || (spd->decryptionMode != SPP_DECR_MODE_DISABLE);
 }
@@ -660,7 +629,7 @@ bool SetScsiEncryptionKey(int, const char*, char*) { return false; }
 int GetScsiDriveEncryptionStatus(int, const char*, POOLMEM*& status, int indent)
 {
   PmStrcpy(status, "");
-  IndentStatusMsg(status, _("Drive encryption status: Unknown\n"), indent);
+  IndentStatusMsg(status, T_("Drive encryption status: Unknown\n"), indent);
   return strlen(status);
 }
 
@@ -670,7 +639,7 @@ int GetScsiVolumeEncryptionStatus(int,
                                   int indent)
 {
   PmStrcpy(status, "");
-  IndentStatusMsg(status, _("Volume encryption status: Unknown\n"), indent);
+  IndentStatusMsg(status, T_("Volume encryption status: Unknown\n"), indent);
   return strlen(status);
 }
 

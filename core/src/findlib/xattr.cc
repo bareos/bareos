@@ -65,8 +65,8 @@
 #include "lib/serial.h"
 
 static std::string error_message_disabling_xattributes{
-    _("Disabling restore of XATTRs on this filesystem, "
-      "not supported. Current file: \"%s\"\n")};
+    T_("Disabling restore of XATTRs on this filesystem, "
+       "not supported. Current file: \"%s\"\n")};
 
 #if !defined(HAVE_XATTR)
 /**
@@ -107,7 +107,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
 
   // Send header
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
-    Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;
   }
@@ -120,7 +120,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   if (!sd->send()) {
     sd->msg = msgsave;
     sd->message_length = 0;
-    Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;
   }
@@ -128,7 +128,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   jcr->JobBytes += sd->message_length;
   sd->msg = msgsave;
   if (!sd->signal(BNET_EOD)) {
-    Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;
   }
@@ -237,7 +237,7 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
     unser_uint32(current_xattr->magic);
     if (current_xattr->magic != XATTR_MAGIC) {
       Mmsg1(jcr->errmsg,
-            _("Illegal xattr stream, no XATTR_MAGIC on file \"%s\"\n"),
+            T_("Illegal xattr stream, no XATTR_MAGIC on file \"%s\"\n"),
             xattr_data->last_fname);
       Dmsg1(100, "Illegal xattr stream, no XATTR_MAGIC on file \"%s\"\n",
             xattr_data->last_fname);
@@ -249,7 +249,7 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
     unser_uint32(current_xattr->name_length);
     if (current_xattr->name_length == 0) {
       Mmsg1(jcr->errmsg,
-            _("Illegal xattr stream, xattr name length <= 0 on file \"%s\"\n"),
+            T_("Illegal xattr stream, xattr name length <= 0 on file \"%s\"\n"),
             xattr_data->last_fname);
       Dmsg1(100,
             "Illegal xattr stream, xattr name length <= 0 on file \"%s\"\n",
@@ -357,7 +357,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
                 xattr_data->last_fname);
           goto bail_out;
         default:
-          Mmsg2(jcr->errmsg, _("llistea error on file \"%s\": ERR=%s\n"),
+          Mmsg2(jcr->errmsg, T_("llistea error on file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "llistea error file=%s ERR=%s\n", xattr_data->last_fname,
                 be.bstrerror());
@@ -388,7 +388,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
           retval = BxattrExitCode::kSuccess;
           goto bail_out;
         default:
-          Mmsg2(jcr->errmsg, _("llistea error on file \"%s\": ERR=%s\n"),
+          Mmsg2(jcr->errmsg, T_("llistea error on file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "llistea error file=%s ERR=%s\n", xattr_data->last_fname,
                 be.bstrerror());
@@ -428,7 +428,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
             retval = BxattrExitCode::kSuccess;
             goto bail_out;
           default:
-            Mmsg2(jcr->errmsg, _("lgetea error on file \"%s\": ERR=%s\n"),
+            Mmsg2(jcr->errmsg, T_("lgetea error on file \"%s\": ERR=%s\n"),
                   xattr_data->last_fname, be.bstrerror());
             Dmsg2(100, "lgetea error file=%s ERR=%s\n", xattr_data->last_fname,
                   be.bstrerror());
@@ -475,7 +475,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
               retval = BxattrExitCode::kSuccess;
               break;
             default:
-              Mmsg2(jcr->errmsg, _("lgetea error on file \"%s\": ERR=%s\n"),
+              Mmsg2(jcr->errmsg, T_("lgetea error on file \"%s\": ERR=%s\n"),
                     xattr_data->last_fname, be.bstrerror());
               Dmsg2(100, "lgetea error file=%s ERR=%s\n",
                     xattr_data->last_fname, be.bstrerror());
@@ -505,9 +505,10 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
 
     // Protect ourself against things getting out of hand.
     if (expected_serialize_len >= MAX_XATTR_STREAM) {
-      Mmsg2(jcr->errmsg,
-            _("Xattr stream on file \"%s\" exceeds maximum size of %d bytes\n"),
-            xattr_data->last_fname, MAX_XATTR_STREAM);
+      Mmsg2(
+          jcr->errmsg,
+          T_("Xattr stream on file \"%s\" exceeds maximum size of %d bytes\n"),
+          xattr_data->last_fname, MAX_XATTR_STREAM);
       goto bail_out;
     }
   }
@@ -522,7 +523,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
                              xattr_value_list)
         < expected_serialize_len) {
       Mmsg1(jcr->errmsg,
-            _("Failed to Serialize extended attributes on file \"%s\"\n"),
+            T_("Failed to Serialize extended attributes on file \"%s\"\n"),
             xattr_data->last_fname);
       Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
             xattr_data->last_fname);
@@ -584,7 +585,7 @@ static BxattrExitCode aix_parse_xattr_streams(JobControlRecord* jcr,
                 xattr_data->last_fname);
           goto bail_out;
         default:
-          Mmsg2(jcr->errmsg, _("lsetea error on file \"%s\": ERR=%s\n"),
+          Mmsg2(jcr->errmsg, T_("lsetea error on file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "lsetea error file=%s ERR=%s\n", xattr_data->last_fname,
                 be.bstrerror());
@@ -708,7 +709,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
                 xattr_data->last_fname);
           goto bail_out;
         default:
-          Mmsg2(jcr->errmsg, _("llistxattr error on file \"%s\": ERR=%s\n"),
+          Mmsg2(jcr->errmsg, T_("llistxattr error on file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "llistxattr error file=%s ERR=%s\n",
                 xattr_data->last_fname, be.bstrerror());
@@ -739,7 +740,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
           retval = BxattrExitCode::kSuccess;
           goto bail_out;
         default:
-          Mmsg2(jcr->errmsg, _("llistxattr error on file \"%s\": ERR=%s\n"),
+          Mmsg2(jcr->errmsg, T_("llistxattr error on file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "llistxattr error file=%s ERR=%s\n",
                 xattr_data->last_fname, be.bstrerror());
@@ -798,7 +799,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
             retval = BxattrExitCode::kSuccess;
             goto bail_out;
           default:
-            Mmsg2(jcr->errmsg, _("lgetxattr error on file \"%s\": ERR=%s\n"),
+            Mmsg2(jcr->errmsg, T_("lgetxattr error on file \"%s\": ERR=%s\n"),
                   xattr_data->last_fname, be.bstrerror());
             Dmsg2(100, "lgetxattr error file=%s ERR=%s\n",
                   xattr_data->last_fname, be.bstrerror());
@@ -845,7 +846,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
               retval = BxattrExitCode::kSuccess;
               break;
             default:
-              Mmsg2(jcr->errmsg, _("lgetxattr error on file \"%s\": ERR=%s\n"),
+              Mmsg2(jcr->errmsg, T_("lgetxattr error on file \"%s\": ERR=%s\n"),
                     xattr_data->last_fname, be.bstrerror());
               Dmsg2(100, "lgetxattr error file=%s ERR=%s\n",
                     xattr_data->last_fname, be.bstrerror());
@@ -874,9 +875,10 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
 
     // Protect ourself against things getting out of hand.
     if (expected_serialize_len >= MAX_XATTR_STREAM) {
-      Mmsg2(jcr->errmsg,
-            _("Xattr stream on file \"%s\" exceeds maximum size of %d bytes\n"),
-            xattr_data->last_fname, MAX_XATTR_STREAM);
+      Mmsg2(
+          jcr->errmsg,
+          T_("Xattr stream on file \"%s\" exceeds maximum size of %d bytes\n"),
+          xattr_data->last_fname, MAX_XATTR_STREAM);
       goto bail_out;
     }
   }
@@ -891,7 +893,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
                              xattr_value_list)
         < expected_serialize_len) {
       Mmsg1(jcr->errmsg,
-            _("Failed to Serialize extended attributes on file \"%s\"\n"),
+            T_("Failed to Serialize extended attributes on file \"%s\"\n"),
             xattr_data->last_fname);
       Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
             xattr_data->last_fname);
@@ -952,7 +954,7 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
                 xattr_data->last_fname);
           goto bail_out;
         default:
-          Mmsg2(jcr->errmsg, _("lsetxattr error on file \"%s\": ERR=%s\n"),
+          Mmsg2(jcr->errmsg, T_("lsetxattr error on file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "lsetxattr error file=%s ERR=%s\n", xattr_data->last_fname,
                 be.bstrerror());
@@ -1069,7 +1071,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
             // FALLTHROUGH
           default:
             Mmsg2(jcr->errmsg,
-                  _("extattr_list_link error on file \"%s\": ERR=%s\n"),
+                  T_("extattr_list_link error on file \"%s\": ERR=%s\n"),
                   xattr_data->last_fname, be.bstrerror());
             Dmsg2(100, "extattr_list_link error file=%s ERR=%s\n",
                   xattr_data->last_fname, be.bstrerror());
@@ -1100,7 +1102,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
             goto bail_out;
           default:
             Mmsg2(jcr->errmsg,
-                  _("extattr_list_link error on file \"%s\": ERR=%s\n"),
+                  T_("extattr_list_link error on file \"%s\": ERR=%s\n"),
                   xattr_data->last_fname, be.bstrerror());
             Dmsg2(100, "extattr_list_link error file=%s ERR=%s\n",
                   xattr_data->last_fname, be.bstrerror());
@@ -1119,7 +1121,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
     if (extattr_namespace_to_string(attrnamespace, &current_attrnamespace)
         != 0) {
       Mmsg2(jcr->errmsg,
-            _("Failed to convert %d into namespace on file \"%s\"\n"),
+            T_("Failed to convert %d into namespace on file \"%s\"\n"),
             attrnamespace, xattr_data->last_fname);
       Dmsg2(100, "Failed to convert %d into namespace on file \"%s\"\n",
             attrnamespace, xattr_data->last_fname);
@@ -1187,7 +1189,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
               goto bail_out;
             default:
               Mmsg2(jcr->errmsg,
-                    _("extattr_get_link error on file \"%s\": ERR=%s\n"),
+                    T_("extattr_get_link error on file \"%s\": ERR=%s\n"),
                     xattr_data->last_fname, be.bstrerror());
               Dmsg2(100, "extattr_get_link error file=%s ERR=%s\n",
                     xattr_data->last_fname, be.bstrerror());
@@ -1237,7 +1239,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
                 break;
               default:
                 Mmsg2(jcr->errmsg,
-                      _("extattr_get_link error on file \"%s\": ERR=%s\n"),
+                      T_("extattr_get_link error on file \"%s\": ERR=%s\n"),
                       xattr_data->last_fname, be.bstrerror());
                 Dmsg2(100, "extattr_get_link error file=%s ERR=%s\n",
                       xattr_data->last_fname, be.bstrerror());
@@ -1267,10 +1269,10 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
 
       // Protect ourself against things getting out of hand.
       if (expected_serialize_len >= MAX_XATTR_STREAM) {
-        Mmsg2(
-            jcr->errmsg,
-            _("Xattr stream on file \"%s\" exceeds maximum size of %d bytes\n"),
-            xattr_data->last_fname, MAX_XATTR_STREAM);
+        Mmsg2(jcr->errmsg,
+              T_("Xattr stream on file \"%s\" exceeds maximum size of %d "
+                 "bytes\n"),
+              xattr_data->last_fname, MAX_XATTR_STREAM);
         goto bail_out;
       }
     }
@@ -1291,7 +1293,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
                              xattr_value_list)
         < expected_serialize_len) {
       Mmsg1(jcr->errmsg,
-            _("Failed to Serialize extended attributes on file \"%s\"\n"),
+            T_("Failed to Serialize extended attributes on file \"%s\"\n"),
             xattr_data->last_fname);
       Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
             xattr_data->last_fname);
@@ -1337,10 +1339,10 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
      * The splitting character is a . */
     attrnamespace = current_xattr->name;
     if ((attrname = strchr(attrnamespace, '.')) == (char*)NULL) {
-      Mmsg2(
-          jcr->errmsg,
-          _("Failed to split %s into namespace and name part on file \"%s\"\n"),
-          current_xattr->name, xattr_data->last_fname);
+      Mmsg2(jcr->errmsg,
+            T_("Failed to split %s into namespace and name part on file "
+               "\"%s\"\n"),
+            current_xattr->name, xattr_data->last_fname);
       Dmsg2(100,
             "Failed to split %s into namespace and name part on file \"%s\"\n",
             current_xattr->name, xattr_data->last_fname);
@@ -1352,7 +1354,7 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
     if (extattr_string_to_namespace(attrnamespace, &current_attrnamespace)
         != 0) {
       Mmsg2(jcr->errmsg,
-            _("Failed to convert %s into namespace on file \"%s\"\n"),
+            T_("Failed to convert %s into namespace on file \"%s\"\n"),
             attrnamespace, xattr_data->last_fname);
       Dmsg2(100, "Failed to convert %s into namespace on file \"%s\"\n",
             attrnamespace, xattr_data->last_fname);
@@ -1372,7 +1374,7 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
           break;
         default:
           Mmsg2(jcr->errmsg,
-                _("extattr_set_link error on file \"%s\": ERR=%s\n"),
+                T_("extattr_set_link error on file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "extattr_set_link error file=%s ERR=%s\n",
                 xattr_data->last_fname, be.bstrerror());
@@ -1674,7 +1676,7 @@ static BxattrExitCode solaris_save_xattr_acl(JobControlRecord* jcr,
           goto bail_out;
         default:
           Mmsg3(jcr->errmsg,
-                _("Unable to get acl on xattr %s on file \"%s\": ERR=%s\n"),
+                T_("Unable to get acl on xattr %s on file \"%s\": ERR=%s\n"),
                 attrname, xattr_data->last_fname, be.bstrerror());
           Dmsg3(100, "facl_get/acl_get of xattr %s on \"%s\" failed: ERR=%s\n",
                 attrname, xattr_data->last_fname, be.bstrerror());
@@ -1723,7 +1725,7 @@ static BxattrExitCode solaris_save_xattr_acl(JobControlRecord* jcr,
           goto bail_out;
         default:
           Mmsg3(jcr->errmsg,
-                _("Unable to get acl on xattr %s on file \"%s\": ERR=%s\n"),
+                T_("Unable to get acl on xattr %s on file \"%s\": ERR=%s\n"),
                 attrname, xattr_data->last_fname, be.bstrerror());
           Dmsg3(100, "facl/acl of xattr %s on \"%s\" failed: ERR=%s\n",
                 attrname, xattr_data->last_fname, be.bstrerror());
@@ -1738,7 +1740,7 @@ static BxattrExitCode solaris_save_xattr_acl(JobControlRecord* jcr,
         BErrNo be;
 
         Mmsg3(jcr->errmsg,
-              _("Unable to get acl text on xattr %s on file \"%s\": ERR=%s\n"),
+              T_("Unable to get acl text on xattr %s on file \"%s\": ERR=%s\n"),
               attrname, xattr_data->last_fname, be.bstrerror());
         Dmsg3(100, "acltotext of xattr %s on \"%s\" failed: ERR=%s\n", attrname,
               xattr_data->last_fname, be.bstrerror());
@@ -1817,7 +1819,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         goto bail_out;
       default:
         Mmsg3(jcr->errmsg,
-              _("Unable to get status on xattr %s on file \"%s\": ERR=%s\n"),
+              T_("Unable to get status on xattr %s on file \"%s\": ERR=%s\n"),
               target_attrname, xattr_data->last_fname, be.bstrerror());
         Dmsg3(100, "fstatat of xattr %s on \"%s\" failed: ERR=%s\n",
               target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -1917,7 +1919,8 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
             retval = BxattrExitCode::kSuccess;
             goto bail_out;
           default:
-            Mmsg3(jcr->errmsg, _("Unable to open xattr %s on \"%s\": ERR=%s\n"),
+            Mmsg3(jcr->errmsg,
+                  T_("Unable to open xattr %s on \"%s\": ERR=%s\n"),
                   target_attrname, xattr_data->last_fname, be.bstrerror());
             Dmsg3(100, "openat of xattr %s on \"%s\" failed: ERR=%s\n",
                   target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -1938,7 +1941,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
             goto bail_out;
           default:
             Mmsg3(jcr->errmsg,
-                  _("Unable to read symlin %s on \"%s\": ERR=%s\n"),
+                  T_("Unable to read symlin %s on \"%s\": ERR=%s\n"),
                   target_attrname, xattr_data->last_fname, be.bstrerror());
             Dmsg3(100, "readlink of xattr %s on \"%s\" failed: ERR=%s\n",
                   target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -1985,8 +1988,8 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         // Protect ourself against things getting out of hand.
         if (st.st_size >= MAX_XATTR_STREAM) {
           Mmsg2(jcr->errmsg,
-                _("Xattr stream on file \"%s\" exceeds maximum size of %d "
-                  "bytes\n"),
+                T_("Xattr stream on file \"%s\" exceeds maximum size of %d "
+                   "bytes\n"),
                 xattr_data->last_fname, MAX_XATTR_STREAM);
           goto bail_out;
         }
@@ -2003,7 +2006,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
 
         if (cnt < 0) {
           Mmsg2(jcr->errmsg,
-                _("Unable to read content of xattr %s on file \"%s\"\n"),
+                T_("Unable to read content of xattr %s on file \"%s\"\n"),
                 target_attrname, xattr_data->last_fname);
           Dmsg2(100, "read of data from xattr %s on \"%s\" failed\n",
                 target_attrname, xattr_data->last_fname);
@@ -2036,7 +2039,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         goto bail_out;
       default:
         Mmsg2(jcr->errmsg,
-              _("Unable to chdir to xattr space of file \"%s\": ERR=%s\n"),
+              T_("Unable to chdir to xattr space of file \"%s\": ERR=%s\n"),
               xattr_data->last_fname, be.bstrerror());
         Dmsg3(100,
               "Unable to fchdir to xattr space of file \"%s\" using fd %d: "
@@ -2089,7 +2092,7 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
         retval = BxattrExitCode::kSuccess;
         goto bail_out;
       default:
-        Mmsg2(jcr->errmsg, _("Unable to open file \"%s\": ERR=%s\n"),
+        Mmsg2(jcr->errmsg, T_("Unable to open file \"%s\": ERR=%s\n"),
               xattr_data->last_fname, be.bstrerror());
         Dmsg2(100, "Unable to open file \"%s\": ERR=%s\n",
               xattr_data->last_fname, be.bstrerror());
@@ -2113,8 +2116,8 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
         goto bail_out;
       default:
         Mmsg3(jcr->errmsg,
-              _("Unable to open xattr space %s on file \"%s\": ERR=%s\n"), name,
-              xattr_data->last_fname, be.bstrerror());
+              T_("Unable to open xattr space %s on file \"%s\": ERR=%s\n"),
+              name, xattr_data->last_fname, be.bstrerror());
         Dmsg3(100, "Unable to open xattr space %s on file \"%s\": ERR=%s\n",
               name, xattr_data->last_fname, be.bstrerror());
         goto bail_out;
@@ -2127,7 +2130,7 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
     BErrNo be;
 
     Mmsg2(jcr->errmsg,
-          _("Unable to chdir to xattr space on file \"%s\": ERR=%s\n"),
+          T_("Unable to chdir to xattr space on file \"%s\": ERR=%s\n"),
           xattr_data->last_fname, be.bstrerror());
     Dmsg3(
         100,
@@ -2148,7 +2151,7 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
     BErrNo be;
 
     Mmsg2(jcr->errmsg,
-          _("Unable to list the xattr space on file \"%s\": ERR=%s\n"),
+          T_("Unable to list the xattr space on file \"%s\": ERR=%s\n"),
           xattr_data->last_fname, be.bstrerror());
     Dmsg3(
         100,
@@ -2224,7 +2227,7 @@ static BxattrExitCode solaris_restore_xattr_acl(JobControlRecord* jcr,
   acl_t* aclp = NULL;
 
   if ((error = acl_fromtext(acl_text, &aclp)) != 0) {
-    Mmsg1(jcr->errmsg, _("Unable to convert acl from text on file \"%s\"\n"),
+    Mmsg1(jcr->errmsg, T_("Unable to convert acl from text on file \"%s\"\n"),
           xattr_data->last_fname);
     return BxattrExitCode::kError;
   }
@@ -2233,7 +2236,7 @@ static BxattrExitCode solaris_restore_xattr_acl(JobControlRecord* jcr,
     BErrNo be;
 
     Mmsg3(jcr->errmsg,
-          _("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"),
+          T_("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"),
           attrname, xattr_data->last_fname, be.bstrerror());
     Dmsg3(100, "Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n",
           attrname, xattr_data->last_fname, be.bstrerror());
@@ -2254,7 +2257,7 @@ static BxattrExitCode solaris_restore_xattr_acl(JobControlRecord* jcr,
       BErrNo be;
 
       Mmsg3(jcr->errmsg,
-            _("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"),
+            T_("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"),
             attrname, xattr_data->last_fname, be.bstrerror());
       Dmsg3(100, "Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n",
             attrname, xattr_data->last_fname, be.bstrerror());
@@ -2304,7 +2307,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
   if ((filefd = open(xattr_data->last_fname, O_RDONLY | O_NONBLOCK)) < 0) {
     BErrNo be;
 
-    Mmsg2(jcr->errmsg, _("Unable to open file \"%s\": ERR=%s\n"),
+    Mmsg2(jcr->errmsg, T_("Unable to open file \"%s\": ERR=%s\n"),
           xattr_data->last_fname, be.bstrerror());
     Dmsg2(100, "Unable to open file \"%s\": ERR=%s\n", xattr_data->last_fname,
           be.bstrerror());
@@ -2315,7 +2318,8 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
   if ((attrdirfd = openat(filefd, ".", O_RDONLY | O_XATTR)) < 0) {
     BErrNo be;
 
-    Mmsg2(jcr->errmsg, _("Unable to open xattr space on file \"%s\": ERR=%s\n"),
+    Mmsg2(jcr->errmsg,
+          T_("Unable to open xattr space on file \"%s\": ERR=%s\n"),
           xattr_data->last_fname, be.bstrerror());
     Dmsg2(100, "Unable to open xattr space on file \"%s\": ERR=%s\n",
           xattr_data->last_fname, be.bstrerror());
@@ -2326,7 +2330,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
     BErrNo be;
 
     Mmsg2(jcr->errmsg,
-          _("Unable to chdir to xattr space on file \"%s\": ERR=%s\n"),
+          T_("Unable to chdir to xattr space on file \"%s\": ERR=%s\n"),
           xattr_data->last_fname, be.bstrerror());
     Dmsg3(
         100,
@@ -2344,7 +2348,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
     if ((fd = open(target_attrname, O_RDONLY | O_NONBLOCK)) < 0) {
       BErrNo be;
 
-      Mmsg3(jcr->errmsg, _("Unable to open xattr %s on file \"%s\": ERR=%s\n"),
+      Mmsg3(jcr->errmsg, T_("Unable to open xattr %s on file \"%s\": ERR=%s\n"),
             target_attrname, xattr_data->last_fname, be.bstrerror());
       Dmsg3(100, "Unable to open xattr %s on file \"%s\": ERR=%s\n",
             target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2359,7 +2363,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
       BErrNo be;
 
       Mmsg3(jcr->errmsg,
-            _("Unable to open xattr space %s on file \"%s\": ERR=%s\n"),
+            T_("Unable to open xattr space %s on file \"%s\": ERR=%s\n"),
             target_attrname, xattr_data->last_fname, be.bstrerror());
       Dmsg3(100, "Unable to open xattr space %s on file \"%s\": ERR=%s\n",
             target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2374,7 +2378,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
       BErrNo be;
 
       Mmsg3(jcr->errmsg,
-            _("Unable to chdir to xattr space %s on file \"%s\": ERR=%s\n"),
+            T_("Unable to chdir to xattr space %s on file \"%s\": ERR=%s\n"),
             target_attrname, xattr_data->last_fname, be.bstrerror());
       Dmsg4(100,
             "Unable to fchdir to xattr space %s on file \"%s\" using fd %d: "
@@ -2408,7 +2412,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
         BErrNo be;
 
         Mmsg3(jcr->errmsg,
-              _("Unable to mkfifo xattr %s on file \"%s\": ERR=%s\n"),
+              T_("Unable to mkfifo xattr %s on file \"%s\": ERR=%s\n"),
               target_attrname, xattr_data->last_fname, be.bstrerror());
         Dmsg3(100, "Unable to mkfifo xattr %s on file \"%s\": ERR=%s\n",
               target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2424,7 +2428,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
         BErrNo be;
 
         Mmsg3(jcr->errmsg,
-              _("Unable to mknod xattr %s on file \"%s\": ERR=%s\n"),
+              T_("Unable to mknod xattr %s on file \"%s\": ERR=%s\n"),
               target_attrname, xattr_data->last_fname, be.bstrerror());
         Dmsg3(100, "Unable to mknod xattr %s on file \"%s\": ERR=%s\n",
               target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2441,7 +2445,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
           BErrNo be;
 
           Jmsg3(jcr, M_WARNING, 0,
-                _("Unable to mkdir xattr %s on file \"%s\": ERR=%s\n"),
+                T_("Unable to mkdir xattr %s on file \"%s\": ERR=%s\n"),
                 target_attrname, xattr_data->last_fname, be.bstrerror());
           Dmsg3(100, "Unable to mkdir xattr %s on file \"%s\": ERR=%s\n",
                 target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2459,7 +2463,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
           BErrNo be;
 
           Mmsg4(jcr->errmsg,
-                _("Unable to link xattr %s to %s on file \"%s\": ERR=%s\n"),
+                T_("Unable to link xattr %s to %s on file \"%s\": ERR=%s\n"),
                 target_attrname, linked_target, xattr_data->last_fname,
                 be.bstrerror());
           Dmsg4(100, "Unable to link xattr %s to %s on file \"%s\": ERR=%s\n",
@@ -2488,7 +2492,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
           BErrNo be;
 
           Mmsg3(jcr->errmsg,
-                _("Unable to open xattr %s on file \"%s\": ERR=%s\n"),
+                T_("Unable to open xattr %s on file \"%s\": ERR=%s\n"),
                 target_attrname, xattr_data->last_fname, be.bstrerror());
           Dmsg3(100, "Unable to open xattr %s on file \"%s\": ERR=%s\n",
                 target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2505,8 +2509,8 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
          * bytes we have available as data of the stream. */
         if (cnt != st.st_size) {
           Mmsg2(jcr->errmsg,
-                _("Unable to restore data of xattr %s on file \"%s\": Not all "
-                  "data available in xattr stream\n"),
+                T_("Unable to restore data of xattr %s on file \"%s\": Not all "
+                   "data available in xattr stream\n"),
                 target_attrname, xattr_data->last_fname);
           Dmsg2(100,
                 "Unable to restore data of xattr %s on file \"%s\": Not all "
@@ -2521,8 +2525,8 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
             BErrNo be;
 
             Mmsg3(jcr->errmsg,
-                  _("Unable to restore data of xattr %s on file \"%s\": "
-                    "ERR=%s\n"),
+                  T_("Unable to restore data of xattr %s on file \"%s\": "
+                     "ERR=%s\n"),
                   target_attrname, xattr_data->last_fname, be.bstrerror());
             Dmsg3(100,
                   "Unable to restore data of xattr %s on file \"%s\": ERR=%s\n",
@@ -2545,7 +2549,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
         BErrNo be;
 
         Mmsg4(jcr->errmsg,
-              _("Unable to symlink xattr %s to %s on file \"%s\": ERR=%s\n"),
+              T_("Unable to symlink xattr %s to %s on file \"%s\": ERR=%s\n"),
               target_attrname, linked_target, xattr_data->last_fname,
               be.bstrerror());
         Dmsg4(100, "Unable to symlink xattr %s to %s on file \"%s\": ERR=%s\n",
@@ -2579,10 +2583,10 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
           retval = BxattrExitCode::kSuccess;
           break;
         default:
-          Mmsg3(
-              jcr->errmsg,
-              _("Unable to restore owner of xattr %s on file \"%s\": ERR=%s\n"),
-              target_attrname, xattr_data->last_fname, be.bstrerror());
+          Mmsg3(jcr->errmsg,
+                T_("Unable to restore owner of xattr %s on file \"%s\": "
+                   "ERR=%s\n"),
+                target_attrname, xattr_data->last_fname, be.bstrerror());
           Dmsg3(100,
                 "Unable to restore owner of xattr %s on file \"%s\": ERR=%s\n",
                 target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2610,10 +2614,10 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
     if (futimesat(attrdirfd, target_attrname, times) < 0) {
       BErrNo be;
 
-      Mmsg3(
-          jcr->errmsg,
-          _("Unable to restore filetimes of xattr %s on file \"%s\": ERR=%s\n"),
-          target_attrname, xattr_data->last_fname, be.bstrerror());
+      Mmsg3(jcr->errmsg,
+            T_("Unable to restore filetimes of xattr %s on file \"%s\": "
+               "ERR=%s\n"),
+            target_attrname, xattr_data->last_fname, be.bstrerror());
       Dmsg3(100,
             "Unable to restore filetimes of xattr %s on file \"%s\": ERR=%s\n",
             target_attrname, xattr_data->last_fname, be.bstrerror());
@@ -2628,7 +2632,7 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
 parse_error:
   Mmsg1(
       jcr->errmsg,
-      _("Illegal xattr stream, failed to parse xattr stream on file \"%s\"\n"),
+      T_("Illegal xattr stream, failed to parse xattr stream on file \"%s\"\n"),
       xattr_data->last_fname);
   Dmsg1(100,
         "Illegal xattr stream, failed to parse xattr stream on file \"%s\"\n",
@@ -2679,7 +2683,7 @@ static BxattrExitCode solaris_parse_xattr_streams(JobControlRecord* jcr,
     case STREAM_XATTR_SOLARIS_SYS:
       if (pathconf(xattr_data->last_fname, _PC_SATTR_ENABLED) <= 0) {
         Mmsg1(jcr->errmsg,
-              _("Failed to restore extensible attributes on file \"%s\"\n"),
+              T_("Failed to restore extensible attributes on file \"%s\"\n"),
               xattr_data->last_fname);
         Dmsg1(100,
               "Unable to restore extensible attributes on file \"%s\", "
@@ -2694,7 +2698,7 @@ static BxattrExitCode solaris_parse_xattr_streams(JobControlRecord* jcr,
     case STREAM_XATTR_SOLARIS:
       if (pathconf(xattr_data->last_fname, _PC_XATTR_ENABLED) <= 0) {
         Mmsg1(jcr->errmsg,
-              _("Failed to restore extended attributes on file \"%s\"\n"),
+              T_("Failed to restore extended attributes on file \"%s\"\n"),
               xattr_data->last_fname);
         Dmsg1(100,
               "Unable to restore extended attributes on file \"%s\", "
@@ -2783,7 +2787,7 @@ BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
           retval = BxattrExitCode::kSuccess;
           goto bail_out;
         default:
-          Mmsg2(jcr->errmsg, _("Unable to stat file \"%s\": ERR=%s\n"),
+          Mmsg2(jcr->errmsg, T_("Unable to stat file \"%s\": ERR=%s\n"),
                 xattr_data->last_fname, be.bstrerror());
           Dmsg2(100, "Unable to stat file \"%s\": ERR=%s\n",
                 xattr_data->last_fname, be.bstrerror());
@@ -2820,10 +2824,11 @@ BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
   }
 
   // Issue a warning and discard the message. But pretend the restore was ok.
-  Jmsg2(jcr, M_WARNING, 0,
-        _("Can't restore Extended Attributes of %s - incompatible xattr stream "
-          "encountered - %d\n"),
-        xattr_data->last_fname, stream);
+  Jmsg2(
+      jcr, M_WARNING, 0,
+      T_("Can't restore Extended Attributes of %s - incompatible xattr stream "
+         "encountered - %d\n"),
+      xattr_data->last_fname, stream);
 
 bail_out:
   return retval;

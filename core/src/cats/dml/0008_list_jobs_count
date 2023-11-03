@@ -3,7 +3,7 @@
 #                   (all filters starts with "AND ...")
 # JOIN with Media is required for filter to Media.Volumename.
 
-SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
+SELECT DISTINCT COUNT(DISTINCT Job.JobId) AS count
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId

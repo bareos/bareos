@@ -140,7 +140,7 @@ bool SetupCompressionContext(b_ctx& bctx)
                                      Z_DEFAULT_STRATEGY))
               != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
-                 _("Compression deflateParams error: %d\n"), zstat);
+                 T_("Compression deflateParams error: %d\n"), zstat);
             bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
             goto bail_out;
           }
@@ -175,7 +175,7 @@ bool SetupCompressionContext(b_ctx& bctx)
           if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor))
               != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
-                 _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+                 T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
             bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
             goto bail_out;
           }

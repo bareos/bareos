@@ -422,7 +422,7 @@ bool DotBvfsRestoreCmd(UaContext* ua, const char*)
   }
 
   if (!BvfsValidateJobids(ua, jobid, filtered_jobids, true)) {
-    ua->ErrorMsg(_("Unauthorized command from this console.\n"));
+    ua->ErrorMsg(T_("Unauthorized command from this console.\n"));
     return false;
   }
 
@@ -461,7 +461,7 @@ bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
   }
 
   if (!BvfsValidateJobids(ua, jobid, filtered_jobids, true)) {
-    ua->ErrorMsg(_("Unauthorized command from this console.\n"));
+    ua->ErrorMsg(T_("Unauthorized command from this console.\n"));
     return false;
   }
 
@@ -507,7 +507,7 @@ bool DotBvfsLsdirsCmd(UaContext* ua, const char*)
   }
 
   if (!BvfsValidateJobids(ua, jobid, filtered_jobids, true)) {
-    ua->ErrorMsg(_("Unauthorized command from this console.\n"));
+    ua->ErrorMsg(T_("Unauthorized command from this console.\n"));
     return false;
   }
 
@@ -561,7 +561,7 @@ bool DotBvfsVersionsCmd(UaContext* ua, const char*)
   }
 
   if (!ua->AclAccessOk(Client_ACL, client)) {
-    ua->ErrorMsg(_("Unauthorized command from this console.\n"));
+    ua->ErrorMsg(T_("Unauthorized command from this console.\n"));
     return false;
   }
 
@@ -609,12 +609,12 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char*)
   } else if ((pos = FindArgWithValue(ua, "jobid")) >= 0) {
     jr.JobId = str_to_int64(ua->argv[pos]);
   } else {
-    ua->ErrorMsg(_("Can't find ujobid or jobid argument\n"));
+    ua->ErrorMsg(T_("Can't find ujobid or jobid argument\n"));
     return false;
   }
 
   if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-    ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+    ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
                  ua->argv[pos], ua->db->strerror());
     return false;
   }
@@ -752,7 +752,7 @@ bool DotJobstatusCmd(UaContext* ua, const char*)
       Mmsg(where, "WHERE JobStatus = '%c' ", ua->argv[0][0]);
     } else {
       ua->ErrorMsg(
-          _("Unknown JobStatus '%s'. JobStatus must be a single character.\n"),
+          T_("Unknown JobStatus '%s'. JobStatus must be a single character.\n"),
           ua->argv[0]);
       return false;
     }
@@ -1048,7 +1048,7 @@ bool DotSqlCmd(UaContext* ua, const char*)
 
   pos = FindArgWithValue(ua, "query");
   if (pos < 0) {
-    ua->ErrorMsg(_("query keyword not found.\n"));
+    ua->ErrorMsg(T_("query keyword not found.\n"));
     return false;
   }
 
@@ -1066,7 +1066,7 @@ bool DotSqlCmd(UaContext* ua, const char*)
 
   if (!retval) {
     Dmsg1(100, "Query failed: ERR=%s", ua->db->strerror());
-    ua->ErrorMsg(_("Query failed: %s. ERR=%s"), ua->cmd, ua->db->strerror());
+    ua->ErrorMsg(T_("Query failed: %s. ERR=%s"), ua->cmd, ua->db->strerror());
   }
 
   return retval;
@@ -1091,7 +1091,7 @@ bool DotMediatypesCmd(UaContext* ua, const char*)
   if (!ua->db->SqlQuery(
           "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
           OneHandler, (void*)ua)) {
-    ua->ErrorMsg(_("List MediaType failed: ERR=%s\n"), ua->db->strerror());
+    ua->ErrorMsg(T_("List MediaType failed: ERR=%s\n"), ua->db->strerror());
   }
   ua->send->ArrayEnd("mediatypes");
 
@@ -1106,7 +1106,7 @@ bool DotMediaCmd(UaContext* ua, const char*)
   if (!ua->db->SqlQuery(
           "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
           OneHandler, (void*)ua)) {
-    ua->ErrorMsg(_("List Media failed: ERR=%s\n"), ua->db->strerror());
+    ua->ErrorMsg(T_("List Media failed: ERR=%s\n"), ua->db->strerror());
   }
   ua->send->ArrayEnd("media");
 
@@ -1147,7 +1147,7 @@ bool DotLocationsCmd(UaContext* ua, const char*)
   if (!ua->db->SqlQuery(
           "SELECT DISTINCT Location FROM Location ORDER BY Location",
           OneHandler, (void*)ua)) {
-    ua->ErrorMsg(_("List Location failed: ERR=%s\n"), ua->db->strerror());
+    ua->ErrorMsg(T_("List Location failed: ERR=%s\n"), ua->db->strerror());
   }
   ua->send->ArrayEnd("locations");
 
@@ -1236,7 +1236,7 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "client",
-          "%s=", ((job->client) ? job->client->resource_name_ : _("*None*")),
+          "%s=", ((job->client) ? job->client->resource_name_ : T_("*None*")),
           "%s\n");
       ua->send->SendBuffer();
       GetJobStorage(&store, job, NULL);
@@ -1260,14 +1260,14 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "fileset",
-          "%s=", ((job->fileset) ? job->fileset->resource_name_ : _("*None*")),
+          "%s=", ((job->fileset) ? job->fileset->resource_name_ : T_("*None*")),
           "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue("enabled", "%s=", job->enabled, "%d\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue(
           "catalog", "%s=",
-          ((job->client) ? job->client->catalog->resource_name_ : _("*None*")),
+          ((job->client) ? job->client->catalog->resource_name_ : T_("*None*")),
           "%s\n");
       ua->send->SendBuffer();
     }

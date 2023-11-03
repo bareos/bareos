@@ -72,8 +72,8 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
         = crypto_session_new(cipher, jcr->fd_impl->crypto.pki_recipients);
     if (!jcr->fd_impl->crypto.pki_session) {
       Jmsg(jcr, M_FATAL, 0,
-           _("Cannot create a new crypto session probably unsupported cipher "
-             "configured.\n"));
+           T_("Cannot create a new crypto session probably unsupported cipher "
+              "configured.\n"));
       return false;
     }
 
@@ -81,7 +81,7 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
     if (!CryptoSessionEncode(jcr->fd_impl->crypto.pki_session, (uint8_t*)0,
                              &size)) {
       Jmsg(jcr, M_FATAL, 0,
-           _("An error occurred while encrypting the stream.\n"));
+           T_("An error occurred while encrypting the stream.\n"));
       return false;
     }
 
@@ -93,7 +93,7 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
                              (uint8_t*)jcr->fd_impl->crypto.pki_session_encoded,
                              &size)) {
       Jmsg(jcr, M_FATAL, 0,
-           _("An error occurred while encrypting the stream.\n"));
+           T_("An error occurred while encrypting the stream.\n"));
       return false;
     }
 
@@ -167,7 +167,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   }
   if (!sig) {
     if (rctx.type == FT_REGE || rctx.type == FT_REG || rctx.type == FT_RAW) {
-      Jmsg1(jcr, M_ERROR, 0, _("Missing cryptographic signature for %s\n"),
+      Jmsg1(jcr, M_ERROR, 0, T_("Missing cryptographic signature for %s\n"),
             jcr->fd_impl->last_fname);
       goto bail_out;
     }
@@ -198,7 +198,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
               != CRYPTO_ERROR_NONE) {
             Dmsg1(50, "Bad signature on %s\n", jcr->fd_impl->last_fname);
             Jmsg2(jcr, M_ERROR, 0,
-                  _("Signature validation failed for file %s: ERR=%s\n"),
+                  T_("Signature validation failed for file %s: ERR=%s\n"),
                   jcr->fd_impl->last_fname, crypto_strerror(err));
             goto bail_out;
           }
@@ -213,7 +213,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
           if (FindOneFile(jcr, jcr->fd_impl->ff, DoFileDigest,
                           jcr->fd_impl->last_fname, (dev_t)-1, 1)
               != 0) {
-            Jmsg(jcr, M_ERROR, 0, _("Digest one file failed for file: %s\n"),
+            Jmsg(jcr, M_ERROR, 0, T_("Digest one file failed for file: %s\n"),
                  jcr->fd_impl->last_fname);
             jcr->JobBytes = saved_bytes;
             goto bail_out;
@@ -225,7 +225,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
               != CRYPTO_ERROR_NONE) {
             Dmsg1(50, "Bad signature on %s\n", jcr->fd_impl->last_fname);
             Jmsg2(jcr, M_ERROR, 0,
-                  _("Signature validation failed for file %s: ERR=%s\n"),
+                  T_("Signature validation failed for file %s: ERR=%s\n"),
                   jcr->fd_impl->last_fname, crypto_strerror(err));
             goto bail_out;
           }
@@ -246,7 +246,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
         continue;
       default:
         // Something strange happened (that shouldn't happen!)...
-        Qmsg2(jcr, M_ERROR, 0, _("Signature validation failed for %s: %s\n"),
+        Qmsg2(jcr, M_ERROR, 0, T_("Signature validation failed for %s: %s\n"),
               jcr->fd_impl->last_fname, crypto_strerror(err));
         goto bail_out;
     }
@@ -289,7 +289,7 @@ again:
                             &decrypted_len)) {
     // Writing out the final, buffered block failed. Shouldn't happen.
     Jmsg3(jcr, M_ERROR, 0,
-          _("Decryption error. buf_len=%d decrypt_len=%d on file %s\n"),
+          T_("Decryption error. buf_len=%d decrypt_len=%d on file %s\n"),
           cipher_ctx->buf_len, decrypted_len, jcr->fd_impl->last_fname);
   }
 
@@ -386,7 +386,7 @@ bool SetupEncryptionContext(b_ctx& bctx)
     if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
         || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
       Jmsg0(bctx.jcr, M_FATAL, 0,
-            _("Encrypting sparse or offset data not supported.\n"));
+            T_("Encrypting sparse or offset data not supported.\n"));
       goto bail_out;
     }
     // Allocate the cipher context
@@ -395,7 +395,7 @@ bool SetupEncryptionContext(b_ctx& bctx)
         == NULL) {
       // Shouldn't happen!
       Jmsg0(bctx.jcr, M_FATAL, 0,
-            _("Failed to initialize encryption context.\n"));
+            T_("Failed to initialize encryption context.\n"));
       goto bail_out;
     }
 
@@ -427,7 +427,7 @@ bool SetupDecryptionContext(r_ctx& rctx, RestoreCipherContext& rcctx)
 {
   if (!rctx.cs) {
     Jmsg1(rctx.jcr, M_ERROR, 0,
-          _("Missing encryption session data stream for %s\n"),
+          T_("Missing encryption session data stream for %s\n"),
           rctx.jcr->fd_impl->last_fname);
     return false;
   }
@@ -435,7 +435,7 @@ bool SetupDecryptionContext(r_ctx& rctx, RestoreCipherContext& rcctx)
   if ((rcctx.cipher = crypto_cipher_new(rctx.cs, false, &rcctx.block_size))
       == NULL) {
     Jmsg1(rctx.jcr, M_ERROR, 0,
-          _("Failed to initialize decryption context for %s\n"),
+          T_("Failed to initialize decryption context for %s\n"),
           rctx.jcr->fd_impl->last_fname);
     FreeSession(rctx);
     return false;
@@ -478,7 +478,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
                           (uint8_t*)bctx->jcr->fd_impl->crypto.crypto_buf,
                           &initial_len)) {
     // Encryption failed. Shouldn't happen.
-    Jmsg(bctx->jcr, M_FATAL, 0, _("Encryption error\n"));
+    Jmsg(bctx->jcr, M_FATAL, 0, T_("Encryption error\n"));
     goto bail_out;
   }
 
@@ -500,7 +500,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
         = initial_len + bctx->encrypted_len; /* set encrypted length */
   } else {
     // Encryption failed. Shouldn't happen.
-    Jmsg(bctx->jcr, M_FATAL, 0, _("Encryption error\n"));
+    Jmsg(bctx->jcr, M_FATAL, 0, T_("Encryption error\n"));
     goto bail_out;
   }
 
@@ -533,7 +533,7 @@ bool DecryptData(JobControlRecord* jcr,
                           (uint8_t*)&cipher_ctx->buf[cipher_ctx->buf_len],
                           &decrypted_len)) {
     // Decryption failed. Shouldn't happen.
-    Jmsg(jcr, M_FATAL, 0, _("Decryption error\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Decryption error\n"));
     goto bail_out;
   }
 

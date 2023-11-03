@@ -243,9 +243,6 @@ $$ language 'plpgsql' immutable;
 
 update Version set VersionId = 2230;
 
-commit;
-
-begin;
 create or replace function pg_temp.exec(raw_query text) returns boolean as $$
 begin
   execute raw_query;
@@ -273,6 +270,40 @@ select
         false
     end as frombase64_parallel
 ;
+
+
+
+-- change all TIMESTAMPS to "TIMESTAMP WITH TIME ZONE"
+-- IMPORTANT! The PostgreSQL timezone setting needs to be set right!
+-- This makes sure existing timestamps are correctly updated.
+-- Example:
+-- Existing  TIME STAMP WITHOUT TIME ZONE "2023-09-20 11:52:25" will
+-- be updated to TIME STAMP WITH TIMEZONE "2023-09-20 11:52:25+02"
+-- I.e. The time value stays the same, the timezone offset is appended.
+
+ALTER TABLE Job ALTER COLUMN SchedTime TYPE TIMESTAMP WITH TIME ZONE;
+ALTER TABLE Job ALTER COLUMN StartTime TYPE TIMESTAMP WITH TIME ZONE;
+ALTER TABLE Job ALTER COLUMN EndTime TYPE TIMESTAMP WITH TIME ZONE;
+ALTER TABLE Job ALTER COLUMN RealEndTime TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE Fileset ALTER COLUMN CreateTime TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE Media ALTER COLUMN FirstWritten TYPE TIMESTAMP WITH TIME ZONE;
+ALTER TABLE Media ALTER COLUMN LastWritten TYPE TIMESTAMP WITH TIME ZONE;
+ALTER TABLE Media ALTER COLUMN LabelDate TYPE TIMESTAMP WITH TIME ZONE;
+ALTER TABLE Media ALTER COLUMN InitialWrite TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE Device ALTER COLUMN CleaningDate TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE Log ALTER COLUMN Time TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE LocationLog ALTER COLUMN Date TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE DeviceStats ALTER COLUMN SampleTime TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE JobStats ALTER COLUMN SampleTime TYPE TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE TapeAlerts ALTER COLUMN SampleTime TYPE TIMESTAMP WITH TIME ZONE;
 
 commit;
 set client_min_messages = warning;

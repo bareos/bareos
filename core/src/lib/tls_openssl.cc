@@ -106,11 +106,11 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord* jcr,
                                 const char* who) const
 {
   if (!d_->openssl_) {
-    Qmsg(jcr, M_INFO, 0, _("No openssl to %s at %s:%d established\n"), who,
+    Qmsg(jcr, M_INFO, 0, T_("No openssl to %s at %s:%d established\n"), who,
          host, port);
   } else {
     std::string cipher_name = TlsCipherGetName();
-    Qmsg(jcr, M_INFO, 0, _("Connected %s at %s:%d, encryption: %s\n"), who,
+    Qmsg(jcr, M_INFO, 0, T_("Connected %s at %s:%d, encryption: %s\n"), who,
          host, port, cipher_name.empty() ? "Unknown" : cipher_name.c_str());
   }
 }
@@ -131,7 +131,7 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
   bool auth_success = false;
 
   if (!(cert = SSL_get_peer_certificate(d_->openssl_))) {
-    Qmsg0(jcr, M_ERROR, 0, _("Peer failed to present a TLS certificate\n"));
+    Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
     return false;
   }
 
@@ -173,7 +173,7 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
   bool auth_success = false;
 
   if (!(cert = SSL_get_peer_certificate(d_->openssl_))) {
-    Qmsg1(jcr, M_ERROR, 0, _("Peer %s failed to present a TLS certificate\n"),
+    Qmsg1(jcr, M_ERROR, 0, T_("Peer %s failed to present a TLS certificate\n"),
           host);
     return false;
   }
@@ -317,7 +317,7 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 
   if (jcr && jcr->is_passive_client_connection_probing) { return; }
 
-  std::string message{_("TLS shutdown failure.")};
+  std::string message{T_("TLS shutdown failure.")};
 
   switch (ssl_error) {
     case SSL_ERROR_NONE:

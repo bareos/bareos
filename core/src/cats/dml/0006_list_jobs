@@ -4,12 +4,12 @@
 #                   (all filters starts with "AND ...")
 # JOIN with Media is required for filter to Media.Volumename.
 #
-SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
-Job.StartTime,
+SELECT DISTINCT Job.JobId,Job.Name, Client.Name AS Client,
+TO_CHAR(Job.StartTime, '%s') AS StartTime,
 CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
     ELSE CURRENT_TIMESTAMP(0) - Job.starttime
-    END as Duration,
+    END AS Duration,
 Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId

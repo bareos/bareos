@@ -352,7 +352,7 @@ int RunProgram(char* prog, int wait, POOLMEM*& results)
        * by the watchdog. */
       if (bpipe->timer_id->killed) {
         stat1 = ETIME;
-        PmStrcpy(results, _("Program killed by BAREOS (timeout)\n"));
+        PmStrcpy(results, T_("Program killed by BAREOS (timeout)\n"));
       }
     }
   }
@@ -432,7 +432,7 @@ int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results)
    * just as the timer kills it. */
   if (bpipe->timer_id && bpipe->timer_id->killed) {
     Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
-    PmStrcpy(tmp, _("Program killed by BAREOS (timeout)\n"));
+    PmStrcpy(tmp, T_("Program killed by BAREOS (timeout)\n"));
     stat1 = ETIME;
   }
 

@@ -240,12 +240,12 @@ int RwlWriteunlock(brwlock_t* rwl)
   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
   if (rwl->w_active <= 0) {
     pthread_mutex_unlock(&rwl->mutex);
-    Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock called too many times.\n"));
+    Jmsg0(NULL, M_ABORT, 0, T_("RwlWriteunlock called too many times.\n"));
   }
   rwl->w_active--;
   if (!pthread_equal(pthread_self(), rwl->writer_id)) {
     pthread_mutex_unlock(&rwl->mutex);
-    Jmsg0(NULL, M_ABORT, 0, _("RwlWriteunlock by non-owner.\n"));
+    Jmsg0(NULL, M_ABORT, 0, T_("RwlWriteunlock by non-owner.\n"));
   }
   if (rwl->w_active > 0) {
     status = 0; /* writers still active */

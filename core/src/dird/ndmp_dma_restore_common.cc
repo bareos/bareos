@@ -189,17 +189,17 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
   switch (TermCode) {
     case JS_Terminated:
       if (jcr->dir_impl->ExpectedFiles > jcr->dir_impl->jr.JobFiles) {
-        TermMsg = _("Restore OK -- warning file count mismatch");
+        TermMsg = T_("Restore OK -- warning file count mismatch");
       } else {
-        TermMsg = _("Restore OK");
+        TermMsg = T_("Restore OK");
       }
       break;
     case JS_Warnings:
-      TermMsg = _("Restore OK -- with warnings");
+      TermMsg = T_("Restore OK -- with warnings");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Restore Error ***");
+      TermMsg = T_("*** Restore Error ***");
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
@@ -209,7 +209,7 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
       }
       break;
     case JS_Canceled:
-      TermMsg = _("Restore Canceled");
+      TermMsg = T_("Restore Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
         if (jcr->dir_impl->SD_msg_chan_started) {
@@ -219,7 +219,7 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
+      sprintf(term_code, T_("Inappropriate term code: %c\n"), TermCode);
       break;
   }
 
@@ -232,7 +232,7 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
 
 void NdmpRestoreCleanup(JobControlRecord* jcr, int)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
 }
 
 #endif /* HAVE_NDMP */

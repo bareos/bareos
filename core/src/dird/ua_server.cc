@@ -118,7 +118,7 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
             if (ua->api) {
               user_agent_socket->signal(BNET_MSGS_PENDING);
             } else {
-              bsendmsg(ua, _("You have messages.\n"));
+              bsendmsg(ua, T_("You have messages.\n"));
             }
             ua->user_notified_msg_pending = true;
           }

@@ -179,24 +179,24 @@ const char* crypto_strerror(crypto_error_t error)
 {
   switch (error) {
     case CRYPTO_ERROR_NONE:
-      return _("No error");
+      return T_("No error");
     case CRYPTO_ERROR_NOSIGNER:
-      return _("Signer not found");
+      return T_("Signer not found");
     case CRYPTO_ERROR_NORECIPIENT:
-      return _("Recipient not found");
+      return T_("Recipient not found");
     case CRYPTO_ERROR_INVALID_DIGEST:
-      return _("Unsupported digest algorithm");
+      return T_("Unsupported digest algorithm");
     case CRYPTO_ERROR_INVALID_CRYPTO:
-      return _("Unsupported encryption algorithm");
+      return T_("Unsupported encryption algorithm");
     case CRYPTO_ERROR_BAD_SIGNATURE:
-      return _("Signature is invalid");
+      return T_("Signature is invalid");
     case CRYPTO_ERROR_DECRYPTION:
-      return _("Decryption error");
+      return T_("Decryption error");
     case CRYPTO_ERROR_INTERNAL:
       /* This shouldn't happen */
-      return _("Internal error");
+      return T_("Internal error");
     default:
-      return _("Unknown error");
+      return T_("Unknown error");
   }
 }
 
@@ -211,7 +211,7 @@ DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type)
     case CRYPTO_DIGEST_XXH128:
       return XxhashDigestNew(jcr, type);
     case CRYPTO_DIGEST_NONE:
-      Jmsg1(jcr, M_ERROR, 0, _("Unsupported digest type: %d\n"), type);
+      Jmsg1(jcr, M_ERROR, 0, T_("Unsupported digest type: %d\n"), type);
       return nullptr;
   }
   return nullptr;  // never reached, but makes compiler happy

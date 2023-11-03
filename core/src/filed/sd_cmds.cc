@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ void* handle_stored_connection(BareosSocket* sd)
   // Do a sanity check on the message received
   if (sd->message_length < 25 || sd->message_length > 256) {
     Dmsg1(000, "<filed: %s", sd->msg);
-    Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), sd->who(),
+    Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), sd->who(),
           sd->message_length);
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     sd->close();
@@ -59,7 +59,7 @@ void* handle_stored_connection(BareosSocket* sd)
     sd->msg[100] = 0;
     Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", sd->who(),
           sd->msg);
-    Jmsg2(NULL, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
+    Jmsg2(NULL, M_FATAL, 0, T_("Bad Hello command from Director at %s: %s\n"),
           who, sd->msg);
     sd->close();
     delete sd;
@@ -67,7 +67,7 @@ void* handle_stored_connection(BareosSocket* sd)
   }
 
   if (!(jcr = get_jcr_by_full_name(job_name))) {
-    Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"),
+    Jmsg1(NULL, M_FATAL, 0, T_("SD connect failed: Job name not found: %s\n"),
           job_name);
     Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
     sd->close();
@@ -83,7 +83,7 @@ void* handle_stored_connection(BareosSocket* sd)
   // Authenticate the Storage Daemon.
   if (!AuthenticateStoragedaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-    Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,

@@ -306,10 +306,11 @@ bool nextRunCmd(JobControlRecord* jcr)
       return true;
     default:
       Dmsg1(200, "NextRunCmd: %s", jcr->dir_bsock->msg);
-      Jmsg2(jcr, M_FATAL, 0,
-            _("Hey!!!! JobId %u Job %s tries to use nextrun cmd while not part "
-              "of protocol.\n"),
-            (uint32_t)jcr->JobId, jcr->Job);
+      Jmsg2(
+          jcr, M_FATAL, 0,
+          T_("Hey!!!! JobId %u Job %s tries to use nextrun cmd while not part "
+             "of protocol.\n"),
+          (uint32_t)jcr->JobId, jcr->Job);
       return false;
   }
 }
@@ -354,8 +355,8 @@ bool FinishCmd(JobControlRecord* jcr)
     default:
       Dmsg1(200, "Finish_cmd: %s", jcr->dir_bsock->msg);
       Jmsg2(jcr, M_FATAL, 0,
-            _("Hey!!!! JobId %u Job %s tries to use finish cmd while not part "
-              "of protocol.\n"),
+            T_("Hey!!!! JobId %u Job %s tries to use finish cmd while not part "
+               "of protocol.\n"),
             (uint32_t)jcr->JobId, jcr->Job);
       return false; /* Continue DIR session ? */
   }
@@ -424,7 +425,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
   }
 
   if (jcr->sd_impl->next_dev || jcr->sd_impl->prev_dev) {
-    Emsg0(M_FATAL, 0, _("In FreeJcr(), but still attached to device!!!!\n"));
+    Emsg0(M_FATAL, 0, T_("In FreeJcr(), but still attached to device!!!!\n"));
   }
 
   pthread_cond_destroy(&jcr->sd_impl->job_start_wait);

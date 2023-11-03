@@ -124,10 +124,10 @@ static void start_bareos_server(std::promise<bool>* promise,
 
   bool success = false;
   if (bs->recv() <= 0) {
-    Dmsg1(10, _("Connection request from %s failed.\n"), bs->who());
+    Dmsg1(10, T_("Connection request from %s failed.\n"), bs->who());
   } else if (bs->message_length < MIN_MSG_LEN
              || bs->message_length > MAX_MSG_LEN) {
-    Dmsg2(10, _("Invalid connection from %s. Len=%d\n"), bs->who(),
+    Dmsg2(10, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
           bs->message_length);
   } else {
     Dmsg1(10, "Cons->Dir: %s", bs->msg);
@@ -135,7 +135,7 @@ static void start_bareos_server(std::promise<bool>* promise,
                                            dir_cons_config.get())) {
       Dmsg0(10, "Server: inbound auth failed\n");
     } else {
-      bs->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name,
+      bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
                 kBareosVersionStrings.Full, kBareosVersionStrings.Date);
       Dmsg0(10, "Server: inbound auth successful\n");
       std::string cipher;

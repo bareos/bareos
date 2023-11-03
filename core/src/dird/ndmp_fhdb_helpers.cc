@@ -73,7 +73,7 @@ void NdmpStoreAttributeRecord(JobControlRecord* jcr,
   if (jcr->cached_attribute) {
     Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
     if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
-      Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
             jcr->db->strerror());
       return;
     }
@@ -105,7 +105,7 @@ void NdmpStoreAttributeRecord(JobControlRecord* jcr,
   }
 
   if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
-    Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
           jcr->db->strerror());
     return;
   }

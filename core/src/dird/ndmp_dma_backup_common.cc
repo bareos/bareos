@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,10 +104,8 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
   pv.value = filesystem;
   ndma_store_env_list(&job->env_tab, &pv);
 
-  /*
-   * Loop over each option block for this fileset and append any
-   * INCLUDE/EXCLUDE and/or META tags to the env_tab of the NDMP backup.
-   */
+  /* Loop over each option block for this fileset and append any
+   * INCLUDE/EXCLUDE and/or META tags to the env_tab of the NDMP backup. */
   for (i = 0; i < ie->file_options_list.size(); i++) {
     fo = ie->file_options_list[i];
 
@@ -156,14 +154,12 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * If we have a paired storage definition we put the
+  /* If we have a paired storage definition we put the
    * - Storage Daemon Auth Key
    * - Filesystem
    * - Dumplevel
    * into the tape device name of the  NDMP session. This way the storage
-   * daemon can link the NDMP data and the normal save session together.
-   */
+   * daemon can link the NDMP data and the normal save session together. */
   if (jcr->store_bsock) {
     if (nbf_options && nbf_options->uses_level) {
       Mmsg(tape_device, "%s@%s%%%d", jcr->sd_auth_key, filesystem,
@@ -198,7 +194,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
       level = jcr->db->GetNdmpLevelMapping(jcr, &jcr->dir_impl->jr, filesystem);
       break;
     default:
-      Jmsg(jcr, M_FATAL, 0, _("Illegal Job Level %c for NDMP Job\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Illegal Job Level %c for NDMP Job\n"),
            jcr->getJobLevel());
       break;
   }
@@ -206,8 +202,8 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
   // Dump level can be from 0 - 9
   if (level < 0 || level > 9) {
     Jmsg(jcr, M_FATAL, 0,
-         _("NDMP dump format doesn't support more than 8 "
-           "incrementals, please run a Differential or a Full Backup\n"));
+         T_("NDMP dump format doesn't support more than 8 "
+            "incrementals, please run a Differential or a Full Backup\n"));
     level = -1;
   }
 
@@ -279,7 +275,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s"),
+         T_("Error getting Job record for Job report: ERR=%s"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -287,7 +283,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Client record for Job report: ERR=%s"),
+         T_("Error getting Client record for Job report: ERR=%s"),
          jcr->db->strerror());
   }
 
@@ -295,14 +291,14 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
-      TermMsg = _("Backup OK");
+      TermMsg = T_("Backup OK");
       break;
     case JS_Warnings:
-      TermMsg = _("Backup OK -- with warnings");
+      TermMsg = T_("Backup OK -- with warnings");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Backup Error ***");
+      TermMsg = T_("*** Backup Error ***");
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
@@ -312,7 +308,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
       }
       break;
     case JS_Canceled:
-      TermMsg = _("Backup Canceled");
+      TermMsg = T_("Backup Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
         if (jcr->dir_impl->SD_msg_chan_started) {
@@ -322,7 +318,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"),
+      sprintf(term_code, T_("Inappropriate term code: %c\n"),
               jcr->getJobStatus());
       break;
   }
@@ -336,7 +332,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 
 void NdmpBackupCleanup(JobControlRecord* jcr, int)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
 }
 
 #endif /* HAVE_NDMP */

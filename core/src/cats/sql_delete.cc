@@ -65,16 +65,16 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 0) {
-      Mmsg(errmsg, _("No pool record %s exists\n"), pr->Name);
+      Mmsg(errmsg, T_("No pool record %s exists\n"), pr->Name);
       SqlFreeResult();
       return false;
     } else if (num_rows != 1) {
-      Mmsg(errmsg, _("Expecting one pool record, got %d\n"), num_rows);
+      Mmsg(errmsg, T_("Expecting one pool record, got %d\n"), num_rows);
       SqlFreeResult();
       return false;
     }
     if ((row = SqlFetchRow()) == NULL) {
-      Mmsg1(errmsg, _("Error fetching row %s\n"), sql_strerror());
+      Mmsg1(errmsg, T_("Error fetching row %s\n"), sql_strerror());
       return false;
     }
     pr->PoolId = str_to_int64(row[0]);

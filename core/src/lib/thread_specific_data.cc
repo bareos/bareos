@@ -38,7 +38,7 @@ void SetJcrInThreadSpecificData(JobControlRecord* jcr)
   int status = pthread_setspecific(ThreadSpecificDataKey::Key(), jcr);
   if (status != 0) {
     BErrNo be;
-    Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
+    Jmsg1(jcr, M_ABORT, 0, T_("pthread_setspecific failed: ERR=%s\n"),
           be.bstrerror(status));
   }
 }

@@ -501,6 +501,12 @@ void OutputFormatter::ObjectKeyValue(const char* key,
       }
       if (value_fmt) {
         string.bsprintf(value_fmt, wvalue.c_str());
+
+        // chop trailing space
+        if (string.c_str()[string.strlen() - 1] == ' ') {
+          string.c_str()[string.strlen() - 1] = '\0';
+        }
+
         result_message_plain->strcat(string);
       }
       Dmsg2(800, "obj: %s:%s\n", key, wvalue.c_str());

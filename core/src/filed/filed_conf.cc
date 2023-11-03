@@ -51,7 +51,6 @@
 #include "lib/address_conf.h"
 #include "lib/output_formatter_resource.h"
 #include "lib/tls_resource_items.h"
-
 #include <cassert>
 
 namespace filedaemon {
@@ -116,7 +115,7 @@ static ResourceItem cli_items[] = {
   {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client, lmdb_threshold), 0, 0, NULL, NULL, NULL},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
-  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL},
+  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format_remove_in_24), 0, CFG_ITEM_DEFAULT|CFG_ITEM_DEPRECATED, "", "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -186,7 +185,7 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int)
     }
   }
   if (i != 0) {
-    scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -394,7 +393,9 @@ static void FreeResource(BareosResource* res, int type)
       if (p->allowed_script_dirs) { delete p->allowed_script_dirs; }
       if (p->allowed_job_cmds) { delete p->allowed_job_cmds; }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
-      if (p->log_timestamp_format) { free(p->log_timestamp_format); }
+      if (p->log_timestamp_format_remove_in_24) {
+        free(p->log_timestamp_format_remove_in_24);
+      }
       delete p;
       break;
     }
@@ -405,7 +406,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     default:
-      printf(_("Unknown resource type %d\n"), type);
+      printf(T_("Unknown resource type %d\n"), type);
       break;
   }
   if (next_resource) { FreeResource(next_resource, type); }
@@ -426,7 +427,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!items[i].IsPresent()) {
         Emsg2(M_ABORT, 0,
-              _("%s item is required in %s resource, but not found.\n"),
+              T_("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[type].name);
       }
     }
@@ -442,7 +443,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         DirectorResource* p = dynamic_cast<DirectorResource*>(
             my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
         if (!p) {
-          Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
+          Emsg1(M_ABORT, 0, T_("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_
@@ -456,7 +457,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         ClientResource* p = dynamic_cast<ClientResource*>(
             my_config->GetResWithName(R_CLIENT, res_client->resource_name_));
         if (!p) {
-          Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"),
+          Emsg1(M_ABORT, 0, T_("Cannot find Client resource %s\n"),
                 res_client->resource_name_);
         } else {
           p->plugin_names = res_client->plugin_names;
@@ -473,7 +474,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       }
       default:
-        Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
+        Emsg1(M_ERROR, 0, T_("Unknown resource type %d\n"), type);
         error = 1;
         break;
     }

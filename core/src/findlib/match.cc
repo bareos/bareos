@@ -356,11 +356,11 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
                 = (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
           }
           if (!ParseSizeMatch(size, inc->size_match)) {
-            Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
+            Emsg1(M_ERROR, 0, T_("Unparseable size option: %s\n"), size);
           }
           break;
         default:
-          Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *rp);
+          Emsg1(M_ERROR, 0, T_("Unknown include/exclude option: %c\n"), *rp);
           break;
       }
     }

@@ -87,23 +87,23 @@ const char* JobControlRecord::get_OperationName()
 {
   switch (JobType_) {
     case JT_BACKUP:
-      return _("Backup");
+      return T_("Backup");
     case JT_VERIFY:
-      return _("Verifying");
+      return T_("Verifying");
     case JT_RESTORE:
-      return _("Restoring");
+      return T_("Restoring");
     case JT_ARCHIVE:
-      return _("Archiving");
+      return T_("Archiving");
     case JT_COPY:
-      return _("Copying");
+      return T_("Copying");
     case JT_MIGRATE:
-      return _("Migration");
+      return T_("Migration");
     case JT_SCAN:
-      return _("Scanning");
+      return T_("Scanning");
     case JT_CONSOLIDATE:
-      return _("Consolidating");
+      return T_("Consolidating");
     default:
-      return _("Unknown operation");
+      return T_("Unknown operation");
   }
 }
 
@@ -115,23 +115,23 @@ const char* JobControlRecord::get_ActionName(bool past)
 {
   switch (JobType_) {
     case JT_BACKUP:
-      return _("backup");
+      return T_("backup");
     case JT_VERIFY:
-      return (past) ? _("verified") : _("verify");
+      return (past) ? T_("verified") : T_("verify");
     case JT_RESTORE:
-      return (past) ? _("restored") : _("restore");
+      return (past) ? T_("restored") : T_("restore");
     case JT_ARCHIVE:
-      return (past) ? _("archived") : _("archive");
+      return (past) ? T_("archived") : T_("archive");
     case JT_COPY:
-      return (past) ? _("copied") : _("copy");
+      return (past) ? T_("copied") : T_("copy");
     case JT_MIGRATE:
-      return (past) ? _("migrated") : _("migrate");
+      return (past) ? T_("migrated") : T_("migrate");
     case JT_SCAN:
-      return (past) ? _("scanned") : _("scan");
+      return (past) ? T_("scanned") : T_("scan");
     case JT_CONSOLIDATE:
-      return (past) ? _("consolidated") : _("consolidate");
+      return (past) ? T_("consolidated") : T_("consolidate");
     default:
-      return _("unknown action");
+      return T_("unknown action");
   }
 }
 
@@ -181,7 +181,7 @@ JobControlRecord::JobControlRecord()
   int status;
   if ((status = pthread_mutex_init(&msg_queue_mutex, nullptr)) != 0) {
     BErrNo be;
-    Jmsg(nullptr, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"),
+    Jmsg(nullptr, M_ABORT, 0, T_("Could not init msg_queue mutex. ERR=%s\n"),
          be.bstrerror(status));
   }
 
@@ -246,7 +246,7 @@ void InitJcr(std::shared_ptr<JobControlRecord> jcr,
 static void RemoveJcr(JobControlRecord* jcr)
 {
   Dmsg0(debuglevel, "Enter RemoveJcr\n");
-  if (!jcr) { Emsg0(M_ABORT, 0, _("nullptr jcr.\n")); }
+  if (!jcr) { Emsg0(M_ABORT, 0, T_("nullptr jcr.\n")); }
   job_control_record_chain->remove(jcr);
   Dmsg0(debuglevel, "Leave RemoveJcr\n");
 }
@@ -378,7 +378,7 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
   LockJcrChain();
   jcr->DecUseCount(); /* decrement use count */
   if (jcr->UseCount() < 0) {
-    Jmsg2(jcr, M_ERROR, 0, _("JobControlRecord UseCount=%d JobId=%d\n"),
+    Jmsg2(jcr, M_ERROR, 0, T_("JobControlRecord UseCount=%d JobId=%d\n"),
           jcr->UseCount(), jcr->JobId);
   }
   if (jcr->JobId > 0) {
@@ -928,8 +928,8 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
         bs->timer_start = 0; /* turn off timer */
         bs->SetTimedOut();
         Qmsg(jcr, M_ERROR, 0,
-             _("Watchdog sending kill after %d secs to thread stalled reading "
-               "Storage daemon.\n"),
+             T_("Watchdog sending kill after %d secs to thread stalled reading "
+                "Storage daemon.\n"),
              watchdog_time - timer_start);
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       }
@@ -941,8 +941,8 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
         bs->timer_start = 0; /* turn off timer */
         bs->SetTimedOut();
         Qmsg(jcr, M_ERROR, 0,
-             _("Watchdog sending kill after %d secs to thread stalled reading "
-               "File daemon.\n"),
+             T_("Watchdog sending kill after %d secs to thread stalled reading "
+                "File daemon.\n"),
              watchdog_time - timer_start);
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       }
@@ -954,8 +954,8 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
         bs->timer_start = 0; /* turn off timer */
         bs->SetTimedOut();
         Qmsg(jcr, M_ERROR, 0,
-             _("Watchdog sending kill after %d secs to thread stalled reading "
-               "Director.\n"),
+             T_("Watchdog sending kill after %d secs to thread stalled reading "
+                "Director.\n"),
              watchdog_time - timer_start);
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       }
@@ -1024,7 +1024,7 @@ void DbgJcrAddHook(dbg_jcr_hook_t* hook)
  */
 void DbgPrintJcr(FILE* fp)
 {
-  char ed1[50], buf1[128], buf2[128], buf3[128], buf4[128];
+  char ed1[50];
   if (!job_control_record_chain) { return; }
 
   fprintf(fp, "Attempt to dump current JCRs. njcrs=%d\n",
@@ -1041,12 +1041,11 @@ void DbgPrintJcr(FILE* fp)
     fprintf(fp, "\tUseCount=%i\n", jcr->UseCount());
     fprintf(fp, "\tJobType=%c JobLevel=%c\n", jcr->getJobType(),
             jcr->getJobLevel());
-    bstrftime(buf1, sizeof(buf1), jcr->sched_time);
-    bstrftime(buf2, sizeof(buf2), jcr->start_time);
-    bstrftime(buf3, sizeof(buf3), jcr->end_time);
-    bstrftime(buf4, sizeof(buf4), jcr->wait_time);
-    fprintf(fp, "\tsched_time=%s start_time=%s\n\tend_time=%s wait_time=%s\n",
-            buf1, buf2, buf3, buf4);
+
+    fprintf(
+        fp, "\tsched_time=%s start_time=%s\n\tend_time=%s wait_time=%s\n",
+        bstrftime(jcr->sched_time).c_str(), bstrftime(jcr->start_time).c_str(),
+        bstrftime(jcr->end_time).c_str(), bstrftime(jcr->wait_time).c_str());
     fprintf(fp, "\tdb=%p db_batch=%p batch_started=%i\n", jcr->db,
             jcr->db_batch, jcr->batch_started);
 

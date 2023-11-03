@@ -203,7 +203,7 @@ int WINAPI WinMain(HINSTANCE Instance,
       return 0;
     }
 
-    MessageBox(NULL, cmdLine, _("Bad Command Line Option"), MB_OK);
+    MessageBox(NULL, cmdLine, T_("Bad Command Line Option"), MB_OK);
 
     /* Show the usage dialog */
     MessageBox(NULL, usage, APP_DESC, MB_OK | MB_ICONINFORMATION);

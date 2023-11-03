@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,6 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
   char name[MAX_NAME_LENGTH];
-  char tbuf[MAX_TIME_LENGTH];
 
   if (!TryTlsHandshakeAsAServer(bs, config)) {
     bs->signal(BNET_TERMINATE);
@@ -76,7 +75,7 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   }
 
   if (bs->recv() <= 0) {
-    Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"), bs->who());
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
     bs->close();
@@ -86,7 +85,7 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   // Do a sanity check on the message received
   if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
     Dmsg1(000, "<filed: %s", bs->msg);
-    Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(),
+    Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
           bs->message_length);
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
@@ -98,20 +97,17 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   // See if this is a File daemon connection. If so call FD handler.
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-    Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a FD connection at %s\n", bstrftime().c_str());
     return HandleFiledConnection(bs, name);
   }
 
   // See if this is a Storage daemon connection. If so call SD handler.
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
-    Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a SD connection at %s\n", bstrftime().c_str());
     return handle_stored_connection(bs, name);
   }
 
-  Dmsg1(110, "Got a DIR connection at %s\n",
-        bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+  Dmsg1(110, "Got a DIR connection at %s\n", bstrftime().c_str());
 
   return HandleDirectorConnection(bs);
 }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,7 +71,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
       catalog = client->catalog;
       if (ua->catalog && ua->catalog != catalog) { CloseDb(ua); }
       if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_, true)) {
-        ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"),
+        ua->ErrorMsg(T_("No authorization for Catalog \"%s\"\n"),
                      catalog->resource_name_);
         return false;
       }
@@ -88,7 +88,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
       catalog = job->client->catalog;
       if (ua->catalog && ua->catalog != catalog) { CloseDb(ua); }
       if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_, true)) {
-        ua->ErrorMsg(_("No authorization for Catalog \"%s\"\n"),
+        ua->ErrorMsg(T_("No authorization for Catalog \"%s\"\n"),
                      catalog->resource_name_);
         return false;
       }
@@ -105,8 +105,7 @@ bool OpenDb(UaContext* ua, bool use_private)
 {
   bool mult_db_conn;
 
-  /*
-   * See if we need to do any work at all.
+  /* See if we need to do any work at all.
    * Point the current used db e.g. ua->db to the correct database connection.
    */
   if (use_private) {
@@ -123,7 +122,7 @@ bool OpenDb(UaContext* ua, bool use_private)
   if (!ua->catalog) {
     ua->catalog = get_catalog_resource(ua);
     if (!ua->catalog) {
-      ua->ErrorMsg(_("Could not find a Catalog resource\n"));
+      ua->ErrorMsg(T_("Could not find a Catalog resource\n"));
       return false;
     }
   }
@@ -141,16 +140,14 @@ bool OpenDb(UaContext* ua, bool use_private)
       mult_db_conn, ua->catalog->disable_batch_insert,
       ua->catalog->try_reconnect, ua->catalog->exit_on_fatal, use_private);
   if (ua->db == NULL) {
-    ua->ErrorMsg(_("Could not open catalog database \"%s\".\n"),
+    ua->ErrorMsg(T_("Could not open catalog database \"%s\".\n"),
                  ua->catalog->db_name);
     return false;
   }
   ua->jcr->db = ua->db;
 
-  /*
-   * Save the new database connection under the right label e.g. shared or
-   * private.
-   */
+  /* Save the new database connection under the right label e.g. shared or
+   * private. */
   if (use_private) {
     ua->private_db = ua->db;
   } else {
@@ -158,7 +155,7 @@ bool OpenDb(UaContext* ua, bool use_private)
   }
 
   if (!ua->api && !ua->runscript) {
-    ua->SendMsg(_("Using Catalog \"%s\"\n"), ua->catalog->resource_name_);
+    ua->SendMsg(T_("Using Catalog \"%s\"\n"), ua->catalog->resource_name_);
   }
 
   Dmsg1(150, "DB %s opened\n", ua->catalog->db_name);
@@ -254,8 +251,8 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
       pr->RecyclePoolId = rpool.PoolId;
     } else {
       Jmsg(jcr, M_WARNING, 0,
-           _("Can't set %s RecyclePool to %s, %s is not in database.\n"
-             "Try to update it with 'update pool=%s'\n"),
+           T_("Can't set %s RecyclePool to %s, %s is not in database.\n"
+              "Try to update it with 'update pool=%s'\n"),
            pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
 
       ret = false;
@@ -272,8 +269,8 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
       pr->ScratchPoolId = rpool.PoolId;
     } else {
       Jmsg(jcr, M_WARNING, 0,
-           _("Can't set %s ScratchPool to %s, %s is not in database.\n"
-             "Try to update it with 'update pool=%s'\n"),
+           T_("Can't set %s ScratchPool to %s, %s is not in database.\n"
+              "Try to update it with 'update pool=%s'\n"),
            pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
       ret = false;
     }

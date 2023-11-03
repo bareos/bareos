@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/timestamp_format.h"
 
 #if HAVE_POSTGRESQL
 
@@ -71,15 +72,15 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
   DbLocker _{this};
 
   if (!SqlQuery(query, QF_STORE_RESULT)) {
-    Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
+    Mmsg(errmsg, T_("Query failed: %s\n"), sql_strerror());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;
   }
 
   if ((collapse == CollapseMode::Collapse) && (SqlNumRows() > 1)) {
     Mmsg(errmsg,
-         _("Query returned %d rows. In collapsed mode, only one row is "
-           "accepted.\n"),
+         T_("Query returned %d rows. In collapsed mode, only one row is "
+            "accepted.\n"),
          SqlNumRows());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;
@@ -228,9 +229,12 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(select, SQL_QUERY::list_volumes_select_long_0);
+      FillQuery(select, SQL_QUERY::list_volumes_select_long_0,
+                TimestampFormat::Database, TimestampFormat::Database,
+                TimestampFormat::Database, TimestampFormat::Database);
     } else {
-      FillQuery(select, SQL_QUERY::list_volumes_select_0);
+      FillQuery(select, SQL_QUERY::list_volumes_select_0,
+                TimestampFormat::Database);
     }
 
     if (mdbr->VolumeName[0] != 0) {
@@ -364,9 +368,9 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
 
   if (SqlNumRows()) {
     if (JobIds && JobIds[0]) {
-      send->Decoration(_("These JobIds have copies as follows:\n"));
+      send->Decoration(T_("These JobIds have copies as follows:\n"));
     } else {
-      send->Decoration(_("The catalog contains copies as follows:\n"));
+      send->Decoration(T_("The catalog contains copies as follows:\n"));
     }
 
     send->ArrayStart("copies");
@@ -392,7 +396,8 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
 
   if (reverse) {
     Mmsg(cmd,
-         "SELECT LogId, Job.Name AS JobName, Client.Name AS ClientName, Time, "
+         "SELECT LogId, Job.Name AS JobName, Client.Name AS ClientName, "
+         "TO_CHAR(Time, '%s') AS Time, "
          "LogText "
          "FROM Log "
          "JOIN Job USING (JobId) "
@@ -400,10 +405,12 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
          "WHERE Job.Type != 'C' "
          "%s"
          "ORDER BY Log.LogId DESC %s",
-         client_filter.c_str(), range);
+         TimestampFormat::Database, client_filter.c_str(), range);
   } else {
     Mmsg(cmd,
-         "SELECT LogId, JobName, ClientName, Time, LogText FROM ("
+         "SELECT LogId, JobName, ClientName, "
+         "TO_CHAR(Time, '%s') AS Time, "
+         "LogText FROM ("
          "SELECT LogId, Job.Name AS JobName, Client.Name As ClientName, Time, "
          "LogText "
          "FROM Log "
@@ -413,7 +420,7 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
          "%s"
          "ORDER BY Log.LogId DESC %s"
          ") AS sub ORDER BY LogId ASC",
-         client_filter.c_str(), range);
+         TimestampFormat::Database, client_filter.c_str(), range);
   }
 
   if (type != VERT_LIST) {
@@ -451,12 +458,14 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   if (count) {
     FillQuery(SQL_QUERY::list_joblog_count_1, edit_int64(JobId, ed1));
   } else {
-    FillQuery(SQL_QUERY::list_joblog_2, edit_int64(JobId, ed1), range);
+    FillQuery(SQL_QUERY::list_joblog_2, TimestampFormat::Database,
+              edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
-      /* When something else then a vertical list is requested set the list type
-       * to RAW_LIST e.g. non formated raw data as that makes the only sense for
-       * the logtext output. The logtext already has things like \n etc in it
-       * so we should just dump the raw content out for the best visible output.
+      /* When something else than a vertical list is requested set the list type
+       * to RAW_LIST e.g. non formatted raw data as that makes the only sense
+       * for the logtext output. The logtext already has things like \n etc in
+       * it so we should just dump the raw content out for the best visible
+       * output.
        */
       type = RAW_LIST;
     }
@@ -485,11 +494,13 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
   if (JobId <= 0) { return; }
   DbLocker _{this};
   Mmsg(cmd,
-       "SELECT DeviceId, SampleTime, JobId, JobFiles, JobBytes "
+       "SELECT DeviceId, "
+       "TO_CHAR(SampleTime, '%s') AS SampleTime, "
+       "JobId, JobFiles, JobBytes "
        "FROM JobStats "
        "WHERE JobStats.JobId=%s "
        "ORDER BY JobStats.SampleTime ",
-       edit_int64(JobId, ed1));
+       TimestampFormat::Database, edit_int64(JobId, ed1));
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobstats");
@@ -515,7 +526,6 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               e_list_type type)
 {
   char ed1[50];
-  char dt[MAX_TIME_LENGTH];
   char esc[MAX_ESCAPE_NAME_LENGTH];
   PoolMem temp(PM_MESSAGE), selection(PM_MESSAGE), criteria(PM_MESSAGE);
 
@@ -567,8 +577,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (since_time) {
-    bstrutime(dt, sizeof(dt), since_time);
-    temp.bsprintf("AND Job.SchedTime > '%s' ", dt);
+    temp.bsprintf("AND Job.SchedTime > '%s' ", bstrftime(since_time).c_str());
     PmStrcat(selection, temp.c_str());
   }
 
@@ -578,15 +587,21 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     FillQuery(SQL_QUERY::list_jobs_count, selection.c_str(), range);
   } else if (last) {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long_last, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long_last, TimestampFormat::Database,
+                TimestampFormat::Database, TimestampFormat::Database,
+                TimestampFormat::Database, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs_last, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_last, TimestampFormat::Database,
+                selection.c_str(), range);
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long, TimestampFormat::Database,
+                TimestampFormat::Database, TimestampFormat::Database,
+                TimestampFormat::Database, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs, TimestampFormat::Database,
+                selection.c_str(), range);
     }
   }
 
@@ -701,40 +716,46 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
     EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.Name='%s'%s",
-         esc, range);
+         TimestampFormat::Database, esc, range);
   } else if (jr->Job[0] != 0) {
     EscapeString(jcr, esc, jr->Job, strlen(jr->Job));
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.Name='%s'%s",
-         esc, range);
+         TimestampFormat::Database, esc, range);
   } else if (jr->JobId != 0) {
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.JobId='%s'%s",
-         edit_int64(jr->JobId, esc), range);
+         TimestampFormat::Database, edit_int64(jr->JobId, esc), range);
   } else if (jr->FileSetId != 0) {
     Mmsg(cmd,
-         "SELECT FileSetId, FileSet, MD5, CreateTime, FileSetText "
+         "SELECT FileSetId, FileSet, MD5, "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM FileSet "
          "WHERE  FileSetId=%s",
-         edit_int64(jr->FileSetId, esc));
+         TimestampFormat::Database, edit_int64(jr->FileSetId, esc));
   } else { /* all records */
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM FileSet ORDER BY FileSetId ASC%s",
-         range);
+         TimestampFormat::Database, range);
   }
 
   if (!QUERY_DB(jcr, cmd)) { return; }

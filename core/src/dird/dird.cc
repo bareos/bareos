@@ -109,7 +109,6 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
 {
   int length;
   char ed1[50];
-  char dt[MAX_TIME_LENGTH];
   PoolMem query(PM_MESSAGE), esc_msg(PM_MESSAGE);
 
   if (!jcr || !jcr->db || !jcr->db->IsConnected()) { return false; }
@@ -117,9 +116,8 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
   esc_msg.check_size(length * 2 + 1);
   jcr->db->EscapeString(jcr, esc_msg.c_str(), msg, length);
 
-  bstrutime(dt, sizeof(dt), mtime);
   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-       edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
+       edit_int64(jcr->JobId, ed1), bstrftime(mtime).c_str(), esc_msg.c_str());
 
   return jcr->db->SqlQuery(query.c_str());
 }
@@ -244,8 +242,8 @@ int main(int argc, char* argv[])
     drop(uid, gid, false);  // reduce privileges if requested
   } else if (uid || gid) {
     Emsg2(M_ERROR_TERM, 0,
-          _("The commandline options indicate to run as specified user/group, "
-            "but program was not started with required root privileges.\n"));
+          T_("The commandline options indicate to run as specified user/group, "
+             "but program was not started with required root privileges.\n"));
   }
 
   my_config = InitDirConfig(configfile, M_CONFIG_ERROR);
@@ -274,7 +272,7 @@ int main(int argc, char* argv[])
 
   if (!CheckResources()) {
     Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
-         _("Please correct the configuration in %s\n"),
+         T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
 
     TerminateDird(BEXIT_SUCCESS);
@@ -283,7 +281,7 @@ int main(int argc, char* argv[])
 
   if (my_config->HasWarnings()) {
     // messaging not initialized, so Jmsg with  M_WARNING doesn't work
-    fprintf(stderr, _("There are configuration warnings:\n"));
+    fprintf(stderr, T_("There are configuration warnings:\n"));
     for (auto& warning : my_config->GetWarnings()) {
       fprintf(stderr, " * %s\n", warning.c_str());
     }
@@ -296,7 +294,7 @@ int main(int argc, char* argv[])
 
   if (InitCrypto() != 0) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         _("Cryptography library initialization failed.\n"));
+         T_("Cryptography library initialization failed.\n"));
 
     TerminateDird(BEXIT_SUCCESS);
     return BEXIT_SUCCESS;
@@ -317,7 +315,7 @@ int main(int argc, char* argv[])
 
   if (!CheckCatalog(mode)) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         _("Please correct the configuration in %s\n"),
+         T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
 
     TerminateDird(BEXIT_SUCCESS);
@@ -328,7 +326,7 @@ int main(int argc, char* argv[])
 
   if (!InitializeSqlPooling()) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         _("Please correct the configuration in %s\n"),
+         T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
 
     TerminateDird(BEXIT_SUCCESS);
@@ -431,7 +429,7 @@ extern "C" void SighandlerReloadConfig(int, siginfo_t*, void*)
   if (is_reloading) {
     /* Note: don't use Jmsg here, as it could produce a race condition
      * on multiple parallel reloads */
-    Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+    Qmsg(nullptr, M_ERROR, 0, T_("Already reloading. Request ignored.\n"));
     return;
   }
   is_reloading = true;
@@ -491,7 +489,7 @@ static void CleanUpOldFiles()
   rc = regcomp(&preg1, pat1, REG_EXTENDED);
   if (rc != 0) {
     regerror(rc, &preg1, prbuf, sizeof(prbuf));
-    Pmsg2(000, _("Could not compile regex pattern \"%s\" ERR=%s\n"), pat1,
+    Pmsg2(000, T_("Could not compile regex pattern \"%s\" ERR=%s\n"), pat1,
           prbuf);
     goto get_out2;
   }

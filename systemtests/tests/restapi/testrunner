@@ -160,7 +160,7 @@ endpoint_check GET "control/pools" "pools" "" 1
 endpoint_check GET "control/pools/1" "poolid" "" 1
 endpoint_check GET "users/me/" "username" "" 1
 endpoint_check GET "control/directors/version" "bareos-dir" "" 1
-endpoint_check GET "control/directors/time" "year" "" 1
+endpoint_check GET "control/directors/time" "full" "" 1
 endpoint_check PUT "control/directors/reload" "success" "" 1
 
 api/restapi.sh stop

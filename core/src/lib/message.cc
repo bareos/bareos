@@ -54,7 +54,7 @@
 const char* working_directory = NULL; /* working directory path stored here */
 int verbose = 0;                      /* increase User messages */
 int debug_level = 0;                  /* debug level */
-bool dbg_timestamp = false;           /* print timestamp in debug output */
+bool dbg_timestamp = true;            /* print timestamp in debug output */
 bool prt_kaboom = false;              /* Print kaboom output */
 utime_t daemon_start_time = 0;        /* Daemon start time */
 char my_name[128] = {0};              /* daemon name is stored here */
@@ -72,7 +72,6 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
-static const char* log_timestamp_format = "%d-%b %H:%M";
 static void (*message_callback)(int type, const char* msg) = NULL;
 static FILE* trace_fd = NULL;
 #if defined(HAVE_WIN32)
@@ -106,14 +105,12 @@ static void DeliveryError(const char* fmt, ...)
   va_list ap;
   int i, len, maxlen;
   POOLMEM* pool_buf;
-  char dt[MAX_TIME_LENGTH];
 
   pool_buf = GetPoolMemory(PM_EMSG);
 
-  bstrftime(dt, sizeof(dt), time(NULL), log_timestamp_format);
-  bstrncat(dt, " ", sizeof(dt));
 
-  i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
+  i = Mmsg(pool_buf,
+           "%s Message delivery ERROR: ", (bstrftime() + " ").c_str());
 
   while (1) {
     maxlen = SizeofPoolMemory(pool_buf) - i - 1;
@@ -256,7 +253,7 @@ void InitConsoleMsg(const char* wd)
   if (fd == -1) {
     BErrNo be;
     Emsg2(M_ERROR_TERM, 0,
-          _("Could not open console message file %s: ERR=%s\n"), con_fname,
+          T_("Could not open console message file %s: ERR=%s\n"), con_fname,
           be.bstrerror());
   }
   if (lseek(fd, 0, SEEK_END) > 0) { console_msg_pending = 1; }
@@ -264,12 +261,12 @@ void InitConsoleMsg(const char* wd)
   con_fd = fopen(con_fname, "a+b");
   if (!con_fd) {
     BErrNo be;
-    Emsg2(M_ERROR, 0, _("Could not open console message file %s: ERR=%s\n"),
+    Emsg2(M_ERROR, 0, T_("Could not open console message file %s: ERR=%s\n"),
           con_fname, be.bstrerror());
   }
   if (RwlInit(&con_lock) != 0) {
     BErrNo be;
-    Emsg1(M_ERROR_TERM, 0, _("Could not get con mutex: ERR=%s\n"),
+    Emsg1(M_ERROR_TERM, 0, T_("Could not get con mutex: ERR=%s\n"),
           be.bstrerror());
   }
 }
@@ -304,11 +301,12 @@ static Bpipe* open_mail_pipe(JobControlRecord* jcr,
   if ((bpipe = OpenBpipe(cmd, 120, "rw"))) {
     // If we had to use sendmail, add subject
     if (d->mail_cmd_.empty()) {
-      fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", _("BAREOS Message"));
+      fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", T_("BAREOS Message"));
     }
   } else {
     BErrNo be;
-    DeliveryError(_("open mail pipe %s failed: ERR=%s\n"), cmd, be.bstrerror());
+    DeliveryError(T_("open mail pipe %s failed: ERR=%s\n"), cmd,
+                  be.bstrerror());
   }
 
   return bpipe;
@@ -393,7 +391,7 @@ void CloseMsg(JobControlRecord* jcr)
           }
 
           if (!(bpipe = open_mail_pipe(jcr, cmd, d))) {
-            Pmsg0(000, _("open mail pipe failed.\n"));
+            Pmsg0(000, T_("open mail pipe failed.\n"));
             goto rem_temp_file;
           }
 
@@ -406,7 +404,7 @@ void CloseMsg(JobControlRecord* jcr)
           }
           if (!CloseWpipe(bpipe)) { /* close write pipe sending mail */
             BErrNo be;
-            Pmsg1(000, _("close error: ERR=%s\n"), be.bstrerror());
+            Pmsg1(000, T_("close error: ERR=%s\n"), be.bstrerror());
           }
 
           /* Since we are closing all messages, before "recursing"
@@ -415,7 +413,7 @@ void CloseMsg(JobControlRecord* jcr)
           if (msgs != daemon_msgs) {
             // Read what mail prog returned -- should be nothing
             while (fgets(line, len, bpipe->rfd)) {
-              DeliveryError(_("Mail prog: %s"), line);
+              DeliveryError(T_("Mail prog: %s"), line);
             }
           }
 
@@ -424,9 +422,9 @@ void CloseMsg(JobControlRecord* jcr)
             BErrNo be;
             be.SetErrno(status);
             Dmsg1(850, "Calling emsg. CMD=%s\n", cmd);
-            DeliveryError(_("Mail program terminated in error.\n"
-                            "CMD=%s\n"
-                            "ERR=%s\n"),
+            DeliveryError(T_("Mail program terminated in error.\n"
+                             "CMD=%s\n"
+                             "ERR=%s\n"),
                           cmd, be.bstrerror());
           }
           FreeMemory(line);
@@ -503,7 +501,7 @@ static inline bool OpenDestFile(MessageDestinationInfo* d, const char* mode)
   d->file_pointer_ = fopen(d->where_.c_str(), mode);
   if (!d->file_pointer_) {
     BErrNo be;
-    DeliveryError(_("fopen %s failed: ERR=%s\n"), d->where_.c_str(),
+    DeliveryError(T_("fopen %s failed: ERR=%s\n"), d->where_.c_str(),
                   be.bstrerror());
     return false;
   }
@@ -601,9 +599,9 @@ void DispatchMessage(JobControlRecord* jcr,
                      utime_t mtime,
                      const char* msg)
 {
-  char dt[MAX_TIME_LENGTH];
+  std::string dt;
   POOLMEM* mcmd;
-  int len, dtlen;
+  int len;
   MessagesResource* msgs;
   Bpipe* bpipe;
   const char* mode;
@@ -615,12 +613,10 @@ void DispatchMessage(JobControlRecord* jcr,
    * zero, then we use the current time.  If mtime is 1 (special
    * kludge), we do not prefix the date and time. Otherwise,
    * we assume mtime is a utime_t and use it. */
-  if (mtime == 0) { mtime = time(NULL); }
+  if (mtime == 0) { mtime = time(0); }
 
-  *dt = 0;
-  dtlen = 0;
   if (mtime == 1) {
-    mtime = time(NULL); /* Get time for SQL log */
+    mtime = time(0); /* Get time for SQL log */
   } else {
     dt_conversion = true;
   }
@@ -633,7 +629,7 @@ void DispatchMessage(JobControlRecord* jcr,
 
   // For serious errors make sure message is printed or logged
   if (type == M_ABORT || type == M_ERROR_TERM || type == M_CONFIG_ERROR) {
-    fputs(dt, stdout);
+    fputs(dt.data(), stdout);
     fputs(msg, stdout);
     fflush(stdout);
     if (type == M_ABORT) { syslog(LOG_DAEMON | LOG_ERR, "%s", msg); }
@@ -667,11 +663,8 @@ void DispatchMessage(JobControlRecord* jcr,
 
   // If closing this message resource, print and send to syslog, then get out.
   if (msgs->IsClosing()) {
-    if (dt_conversion) {
-      bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
-      bstrncat(dt, " ", sizeof(dt));
-    }
-    fputs(dt, stdout);
+    if (dt_conversion) { dt = bstrftime(mtime) + " "; }
+    fputs(dt.data(), stdout);
     fputs(msg, stdout);
     fflush(stdout);
     syslog(LOG_DAEMON | LOG_ERR, "%s", msg);
@@ -683,13 +676,7 @@ void DispatchMessage(JobControlRecord* jcr,
       /* See if a specific timestamp format was specified for this log resource.
        * Otherwise apply the global setting in log_timestamp_format. */
       if (dt_conversion) {
-        if (!d->timestamp_format_.empty()) {
-          bstrftime(dt, sizeof(dt), mtime, d->timestamp_format_.c_str());
-        } else {
-          bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
-        }
-        bstrncat(dt, " ", sizeof(dt));
-        dtlen = strlen(dt);
+        if (!d->timestamp_format_.empty()) { dt = bstrftime(mtime) + " "; }
       }
 
       switch (d->dest_code_) {
@@ -698,8 +685,8 @@ void DispatchMessage(JobControlRecord* jcr,
 
           if (SendToDbLog) {
             if (!SendToDbLog(jcr, mtime, msg)) {
-              DeliveryError(
-                  _("Msg delivery error: Unable to store data in database.\n"));
+              DeliveryError(T_(
+                  "Msg delivery error: Unable to store data in database.\n"));
             }
           }
           break;
@@ -712,7 +699,9 @@ void DispatchMessage(JobControlRecord* jcr,
           if (con_fd) {
             Pw(con_lock); /* get write lock on console message file */
             errno = 0;
-            if (dtlen) { (void)fwrite(dt, dtlen, 1, con_fd); }
+            if (dt.length()) {
+              (void)fwrite(dt.c_str(), dt.length(), 1, con_fd);
+            }
             len = strlen(msg);
             if (len > 0) {
               (void)fwrite(msg, len, 1, con_fd);
@@ -743,16 +732,16 @@ void DispatchMessage(JobControlRecord* jcr,
           mcmd = GetPoolMemory(PM_MESSAGE);
           if ((bpipe = open_mail_pipe(jcr, mcmd, d))) {
             int status;
-            fputs(dt, bpipe->wfd);
+            fputs(dt.c_str(), bpipe->wfd);
             fputs(msg, bpipe->wfd);
             // Messages to the operator go one at a time
             status = CloseBpipe(bpipe);
             if (status != 0) {
               BErrNo be;
               be.SetErrno(status);
-              DeliveryError(_("Msg delivery error: Operator mail program "
-                              "terminated in error.\n"
-                              "CMD=%s\nERR=%s\n"),
+              DeliveryError(T_("Msg delivery error: Operator mail program "
+                               "terminated in error.\n"
+                               "CMD=%s\nERR=%s\n"),
                             mcmd, be.bstrerror());
             }
           }
@@ -770,7 +759,7 @@ void DispatchMessage(JobControlRecord* jcr,
             d->file_pointer_ = fopen(name, "w+b");
             if (!d->file_pointer_) {
               BErrNo be;
-              DeliveryError(_("Msg delivery error: fopen %s failed: ERR=%s\n"),
+              DeliveryError(T_("Msg delivery error: fopen %s failed: ERR=%s\n"),
                             name, be.bstrerror());
               FreePoolMemory(name);
               msgs->ClearInUse();
@@ -779,8 +768,8 @@ void DispatchMessage(JobControlRecord* jcr,
             d->mail_filename_ = name;
             FreePoolMemory(name);
           }
-          fputs(dt, d->file_pointer_);
-          len = strlen(msg) + dtlen;
+          fputs(dt.c_str(), d->file_pointer_);
+          len = strlen(msg) + dt.length();
           if (len > d->max_len_) {
             d->max_len_ = len; /* keep max line length */
           }
@@ -801,14 +790,14 @@ void DispatchMessage(JobControlRecord* jcr,
             msgs->ClearInUse();
             break;
           }
-          fputs(dt, d->file_pointer_);
+          fputs(dt.c_str(), d->file_pointer_);
           fputs(msg, d->file_pointer_);
           // On error, we close and reopen to handle log rotation
           if (ferror(d->file_pointer_)) {
             fclose(d->file_pointer_);
             d->file_pointer_ = NULL;
             if (OpenDestFile(d, mode)) {
-              fputs(dt, d->file_pointer_);
+              fputs(dt.c_str(), d->file_pointer_);
               fputs(msg, d->file_pointer_);
             }
           }
@@ -828,14 +817,14 @@ void DispatchMessage(JobControlRecord* jcr,
           Dmsg1(850, "STDOUT for following msg: %s", msg);
           if (type != M_ABORT && type != M_ERROR_TERM
               && type != M_CONFIG_ERROR) { /* already printed */
-            fputs(dt, stdout);
+            fputs(dt.c_str(), stdout);
             fputs(msg, stdout);
             fflush(stdout);
           }
           break;
         case MessageDestinationCode::kStderr:
           Dmsg1(850, "STDERR for following msg: %s", msg);
-          fputs(dt, stderr);
+          fputs(dt.c_str(), stderr);
           fputs(msg, stderr);
           fflush(stdout);
           break;
@@ -904,10 +893,7 @@ static void pt_out(char* buf)
 void d_msg(const char* file, int line, int level, const char* fmt, ...)
 {
   va_list ap;
-  char ed1[50];
   int len, maxlen;
-  btime_t mtime;
-  uint32_t usecs;
   bool details = true;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
@@ -918,10 +904,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
 
   if (level <= debug_level) {
     if (dbg_timestamp) {
-      mtime = GetCurrentBtime();
-      usecs = mtime % 1000000;
-      Mmsg(buf, "%s.%06d ", bstrftimes(ed1, sizeof(ed1), BtimeToUtime(mtime)),
-           usecs);
+      Mmsg(buf, "%s ", bstrftime_debug().c_str());
       pt_out(buf.c_str());
     }
 
@@ -1125,41 +1108,41 @@ void e_msg(const char* file,
   switch (type) {
     case M_ABORT:
       Mmsg(typestr, "ABORT");
-      Mmsg(buf, _("%s: ABORTING due to ERROR in %s:%d\n"), my_name,
+      Mmsg(buf, T_("%s: ABORTING due to ERROR in %s:%d\n"), my_name,
            get_basename(file), line);
       break;
     case M_ERROR_TERM:
       Mmsg(typestr, "ERROR TERMINATION");
-      Mmsg(buf, _("%s: ERROR TERMINATION at %s:%d\n"), my_name,
+      Mmsg(buf, T_("%s: ERROR TERMINATION at %s:%d\n"), my_name,
            get_basename(file), line);
       break;
     case M_CONFIG_ERROR:
       Mmsg(typestr, "CONFIG ERROR");
-      Mmsg(buf, _("%s: CONFIG ERROR at %s:%d\n"), my_name, get_basename(file),
+      Mmsg(buf, T_("%s: CONFIG ERROR at %s:%d\n"), my_name, get_basename(file),
            line);
       break;
     case M_FATAL:
       Mmsg(typestr, "FATAL ERROR");
       if (level == -1) /* skip details */
-        Mmsg(buf, _("%s: Fatal Error because: "), my_name);
+        Mmsg(buf, T_("%s: Fatal Error because: "), my_name);
       else
-        Mmsg(buf, _("%s: Fatal Error at %s:%d because:\n"), my_name,
+        Mmsg(buf, T_("%s: Fatal Error at %s:%d because:\n"), my_name,
              get_basename(file), line);
       break;
     case M_ERROR:
       Mmsg(typestr, "ERROR");
       if (level == -1) /* skip details */
-        Mmsg(buf, _("%s: ERROR: "), my_name);
+        Mmsg(buf, T_("%s: ERROR: "), my_name);
       else
-        Mmsg(buf, _("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
+        Mmsg(buf, T_("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
       break;
     case M_WARNING:
       Mmsg(typestr, "WARNING");
-      Mmsg(buf, _("%s: Warning: "), my_name);
+      Mmsg(buf, T_("%s: Warning: "), my_name);
       break;
     case M_SECURITY:
       Mmsg(typestr, "Security violation");
-      Mmsg(buf, _("%s: Security violation: "), my_name);
+      Mmsg(buf, T_("%s: Security violation: "), my_name);
       break;
     default:
       Mmsg(buf, "%s: ", my_name);
@@ -1273,29 +1256,29 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   switch (type) {
     case M_ABORT:
-      Mmsg(buf, _("%s ABORTING due to ERROR\n"), my_name);
+      Mmsg(buf, T_("%s ABORTING due to ERROR\n"), my_name);
       break;
     case M_ERROR_TERM:
-      Mmsg(buf, _("%s ERROR TERMINATION\n"), my_name);
+      Mmsg(buf, T_("%s ERROR TERMINATION\n"), my_name);
       break;
     case M_CONFIG_ERROR:
-      Mmsg(buf, _("%s Configuration error\n"), my_name);
+      Mmsg(buf, T_("%s Configuration error\n"), my_name);
       break;
     case M_FATAL:
-      Mmsg(buf, _("%s JobId %u: Fatal error: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Fatal error: "), my_name, JobId);
       if (jcr) { jcr->setJobStatusWithPriorityCheck(JS_FatalError); }
       if (jcr && jcr->JobErrors == 0) { jcr->JobErrors = 1; }
       break;
     case M_ERROR:
-      Mmsg(buf, _("%s JobId %u: Error: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Error: "), my_name, JobId);
       if (jcr) { jcr->JobErrors++; }
       break;
     case M_WARNING:
-      Mmsg(buf, _("%s JobId %u: Warning: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Warning: "), my_name, JobId);
       if (jcr) { jcr->JobWarnings++; }
       break;
     case M_SECURITY:
-      Mmsg(buf, _("%s JobId %u: Security violation: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Security violation: "), my_name, JobId);
       break;
     default:
       Mmsg(buf, "%s JobId %u: ", my_name, JobId);
@@ -1639,10 +1622,4 @@ void q_msg(const char* file,
   PmStrcat(buf, more.c_str());
 
   Qmsg(jcr, type, mtime, "%s", buf.c_str());
-}
-
-// Set gobal date format used for log messages.
-void SetLogTimestampFormat(const char* format)
-{
-  log_timestamp_format = format;
 }

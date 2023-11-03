@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -239,7 +239,7 @@ bool DropletDevice::ForEachChunkInDirectoryRunCallback(
         if (callback_status == DPL_SUCCESS) {
           i++;
         } else {
-          Mmsg2(errmsg, _("Operation failed on chunk %s: ERR=%s."),
+          Mmsg2(errmsg, T_("Operation failed on chunk %s: ERR=%s."),
                 path.c_str(), dpl_status_str(callback_status));
           dev_errno = DropletErrnoToSystemErrno(callback_status);
           /* exit loop */
@@ -419,15 +419,13 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
   do {
     Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
 
-    /*
-     * Check on the remote backing store if the chunk already exists.
+    /* Check on the remote backing store if the chunk already exists.
      * We only upload this chunk if it is bigger then the chunk that exists
      * on the remote backing store. When using io-threads it could happen
      * that there are multiple flush requests for the same chunk when a
      * chunk is reused in a next backup job. We only want the chunk with
      * the biggest amount of valid data to persist as we only append to
-     * chunks.
-     */
+     * chunks. */
     sysmd = dpl_sysmd_dup(&sysmd_);
     status = dpl_getattr(ctx_,               /* context */
                          chunk_name.c_str(), /* locator */
@@ -455,10 +453,8 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
             break;
           case DPL_ENOENT:
           case DPL_FAILURE:
-            /*
-             * Make sure the chunk directory with the name of the volume
-             * exists.
-             */
+            /* Make sure the chunk directory with the name of the volume
+             * exists. */
             dpl_sysmd_free(sysmd);
             sysmd = dpl_sysmd_dup(&sysmd_);
             status = dpl_mkdir(ctx_,              /* context */
@@ -471,8 +467,8 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
                 break;
               default:
                 Mmsg2(errmsg,
-                      _("Failed to create directory %s using dpl_mkdir(): "
-                        "ERR=%s.\n"),
+                      T_("Failed to create directory %s using dpl_mkdir(): "
+                         "ERR=%s.\n"),
                       chunk_dir.c_str(), dpl_status_str(status));
                 dev_errno = DropletErrnoToSystemErrno(status);
                 Bmicrosleep(INFLIGT_RETRY_TIME, 0);
@@ -486,13 +482,11 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
         break;
     }
 
-    /*
-     * Create some options for libdroplet.
+    /* Create some options for libdroplet.
      *
      * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
      *                      no need to let the library allocate memory we
-     *                      need to free after copying the data.
-     */
+     *                      need to free after copying the data. */
     memset(&dpl_options, 0, sizeof(dpl_options));
     dpl_options.mask |= DPL_OPTION_NOALLOC;
 
@@ -513,7 +507,7 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
         success = true;
         goto bail_out;
       default:
-        Mmsg2(errmsg, _("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
+        Mmsg2(errmsg, T_("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
               chunk_name.c_str(), dpl_status_str(status));
         dev_errno = DropletErrnoToSystemErrno(status);
         Bmicrosleep(INFLIGT_RETRY_TIME, 0);
@@ -568,8 +562,8 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
       case DPL_SUCCESS:
         if (sysmd->size > request->wbuflen) {
           Mmsg3(errmsg,
-                _("Failed to read %s (%ld) to big to fit in chunksize of %ld "
-                  "bytes\n"),
+                T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
+                   "bytes\n"),
                 chunk_name.c_str(), sysmd->size, request->wbuflen);
           Dmsg1(100, "%s", errmsg);
           dev_errno = EINVAL;
@@ -581,13 +575,13 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         break;
       case DPL_ENOENT:
       case DPL_EINVAL:
-        Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"),
+        Mmsg1(errmsg, T_("Failed to open %s doesn't exist\n"),
               chunk_name.c_str());
         Dmsg1(100, "%s", errmsg);
         dev_errno = EIO;
         goto bail_out;
       default:
-        Mmsg2(errmsg, _("Failed to open %s (Droplet error: %d)\n"),
+        Mmsg2(errmsg, T_("Failed to open %s (Droplet error: %d)\n"),
               chunk_name.c_str(), status);
         Dmsg1(100, "%s", errmsg);
         dev_errno = EIO;
@@ -602,13 +596,11 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
     goto bail_out;
   }
 
-  /*
-   * Create some options for libdroplet.
+  /* Create some options for libdroplet.
    *
    * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
    *                      no need to let the library allocate memory we
-   *                      need to free after copying the data.
-   */
+   *                      need to free after copying the data. */
   tries = 0;
   success = false;
 
@@ -637,7 +629,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         dev_errno = 0;
         break;
       case DPL_ENOENT:
-        Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"),
+        Mmsg1(errmsg, T_("Failed to open %s doesn't exist\n"),
               chunk_name.c_str());
         Dmsg1(100, "%s", errmsg);
         dev_errno = EIO;
@@ -645,7 +637,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         ++tries;
         break;
       default:
-        Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
+        Mmsg2(errmsg, T_("Failed to read %s using dpl_fget(): ERR=%s.\n"),
               chunk_name.c_str(), dpl_status_str(status));
         Dmsg1(100, "%s", errmsg);
         dev_errno = DropletErrnoToSystemErrno(status);
@@ -721,7 +713,7 @@ bool DropletDevice::initialize()
     char *bp, *next_option;
 
     if (!dev_options) {
-      Mmsg0(errmsg, _("No device options configured\n"));
+      Mmsg0(errmsg, T_("No device options configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return -1;
     }
@@ -799,7 +791,7 @@ bool DropletDevice::initialize()
       }
 
       if (!done) {
-        Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+        Mmsg1(errmsg, T_("Unable to parse device option: %s\n"), bp);
         Emsg0(M_FATAL, 0, errmsg);
         goto bail_out;
       }
@@ -808,7 +800,7 @@ bool DropletDevice::initialize()
     }
 
     if (!profile_) {
-      Mmsg0(errmsg, _("No droplet profile configured\n"));
+      Mmsg0(errmsg, T_("No droplet profile configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
     }
@@ -826,7 +818,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
       sysmd_.location_constraint = dpl_location_constraint(temp.c_str());
       if (sysmd_.location_constraint == -1) {
-        Mmsg2(errmsg, _("Illegal location argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal location argument %s for device %s%s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -837,7 +829,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_CANNED_ACL;
       sysmd_.canned_acl = dpl_canned_acl(temp.c_str());
       if (sysmd_.canned_acl == -1) {
-        Mmsg2(errmsg, _("Illegal canned_acl argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal canned_acl argument %s for device %s%s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -848,7 +840,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_STORAGE_CLASS;
       sysmd_.storage_class = dpl_storage_class(temp.c_str());
       if (sysmd_.storage_class == -1) {
-        Mmsg2(errmsg, _("Illegal storage_class argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal storage_class argument %s for device %s%s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -873,7 +865,7 @@ bool DropletDevice::initialize()
 
     // If we failed to allocate a new context fail the open.
     if (!ctx_) {
-      Mmsg1(errmsg, _("Failed to create a new context using config %s\n"),
+      Mmsg1(errmsg, T_("Failed to create a new context using config %s\n"),
             dev_options);
       Dmsg1(100, "%s", errmsg);
       goto bail_out;
@@ -890,7 +882,7 @@ bool DropletDevice::initialize()
         break;
       default:
         Mmsg2(errmsg,
-              _("Failed to login for volume %s using dpl_login(): ERR=%s.\n"),
+              T_("Failed to login for volume %s using dpl_login(): ERR=%s.\n"),
               getVolCatName(), dpl_status_str(status));
         Dmsg1(100, "%s", errmsg);
         goto bail_out;
@@ -945,13 +937,11 @@ ssize_t DropletDevice::RemoteVolumeSize()
 
   Mmsg(chunk_dir, "/%s", getVolCatName());
 
-  /*
-   * FIXME: With the current version of libdroplet a dpl_getattr() on a
+  /* FIXME: With the current version of libdroplet a dpl_getattr() on a
    * directory fails with DPL_ENOENT even when the directory does exist. All
    * other operations succeed and as ForEachChunkInDirectoryRunCallback() does a
    * dpl_chdir() anyway that will fail if the directory doesn't exist for now we
-   * should be mostly fine.
-   */
+   * should be mostly fine. */
 
   Dmsg1(100, "get RemoteVolumeSize(%s)\n", getVolCatName());
   if (!ForEachChunkInDirectoryRunCallback(

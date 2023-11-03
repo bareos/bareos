@@ -30,7 +30,6 @@ Director {
   Auditing = Yes
   AuditEvents = "item11", "item12", ".*"
   # SecureEraseCommand =
-  # LogTimestampFormat = "%d-%b %H:%M"
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes

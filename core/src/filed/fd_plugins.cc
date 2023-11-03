@@ -724,8 +724,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
           case bRC_OK:
             if (sp.type == 0) {
               Jmsg1(jcr, M_FATAL, 0,
-                    _("Command plugin \"%s\": no type in startBackupFile "
-                      "packet.\n"),
+                    T_("Command plugin \"%s\": no type in startBackupFile "
+                       "packet.\n"),
                     cmd);
               goto bail_out;
             }
@@ -740,7 +740,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             continue;
           case bRC_Error:
             Jmsg1(jcr, M_FATAL, 0,
-                  _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
+                  T_("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
             goto bail_out;
           case PYTHON_UNDEFINED_RETURN_VALUE:
           case bRC_Cancel:
@@ -750,8 +750,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
           case bRC_Seen:
           case bRC_Term:
             Jmsg1(jcr, M_ERROR, 0,
-                  _("Command plugin \"%s\": unhandled returncode from "
-                    "startBackupFile.\n"),
+                  T_("Command plugin \"%s\": unhandled returncode from "
+                     "startBackupFile.\n"),
                   cmd);
 
             goto fun_end;
@@ -770,8 +770,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       if (IS_FT_OBJECT(sp.type)) {
         if (!sp.object_name) {
           Jmsg1(jcr, M_FATAL, 0,
-                _("Command plugin \"%s\": no object_name in startBackupFile "
-                  "packet.\n"),
+                T_("Command plugin \"%s\": no object_name in startBackupFile "
+                   "packet.\n"),
                 cmd);
           goto bail_out;
         }
@@ -784,8 +784,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       } else {
         if (!sp.fname) {
           Jmsg1(jcr, M_FATAL, 0,
-                _("Command plugin \"%s\": no fname in startBackupFile "
-                  "packet.\n"),
+                T_("Command plugin \"%s\": no fname in startBackupFile "
+                   "packet.\n"),
                 cmd);
           goto bail_out;
         }
@@ -961,7 +961,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       if (sp.type == 0) {
         Jmsg1(jcr, M_FATAL, 0,
-              _("Command plugin \"%s\": no type in startBackupFile packet.\n"),
+              T_("Command plugin \"%s\": no type in startBackupFile packet.\n"),
               cmd);
         goto bail_out;
       }
@@ -969,8 +969,8 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       if (!IS_FT_OBJECT(sp.type)) {
         if (!sp.fname) {
           Jmsg1(jcr, M_FATAL, 0,
-                _("Command plugin \"%s\": no fname in startBackupFile "
-                  "packet.\n"),
+                T_("Command plugin \"%s\": no fname in startBackupFile "
+                   "packet.\n"),
                 cmd);
           goto bail_out;
         }
@@ -1039,7 +1039,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
   save_pkt* sp = (save_pkt*)jcr->fd_impl->plugin_sp;
 
   if (!sp) {
-    Jmsg0(jcr, M_FATAL, 0, _("Plugin save packet not found.\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("Plugin save packet not found.\n"));
     return false;
   }
   if (jcr->IsJobCanceled()) { return false; }
@@ -1049,7 +1049,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 
   // Send stream header
   if (!sd->fsend("%ld %d 0", index, STREAM_PLUGIN_NAME)) {
-    Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return false;
   }
@@ -1063,7 +1063,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
     status = sd->fsend("%ld 0", jcr->JobFiles);
   }
   if (!status) {
-    Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return false;
   }
@@ -1184,7 +1184,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
       goto bail_out;
     }
   }
-  Jmsg1(jcr, M_WARNING, 0, _("Plugin=%s not found.\n"), cmd);
+  Jmsg1(jcr, M_WARNING, 0, T_("Plugin=%s not found.\n"), cmd);
 
 bail_out:
   return retval;
@@ -1252,7 +1252,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   retval = PlugFunc(plugin)->createFile(ctx, &rp);
   if (retval != bRC_OK) {
     Qmsg2(jcr, M_ERROR, 0,
-          _("Plugin createFile call failed. Stat=%d file=%s\n"), retval,
+          T_("Plugin createFile call failed. Stat=%d file=%s\n"), retval,
           attr->ofname);
     return CF_ERROR;
   }
@@ -1261,7 +1261,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   switch (rp.create_status) {
     case CF_ERROR:
       Qmsg1(jcr, M_ERROR, 0,
-            _("Plugin createFile call failed. Returned CF_ERROR file=%s\n"),
+            T_("Plugin createFile call failed. Returned CF_ERROR file=%s\n"),
             attr->ofname);
       [[fallthrough]];
     case CF_SKIP:
@@ -1283,7 +1283,7 @@ int PluginCreateFile(JobControlRecord* jcr,
     BErrNo be;
 
     be.SetErrno(bfd->BErrNo);
-    Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"), attr->ofname,
+    Qmsg2(jcr, M_ERROR, 0, T_("Could not create %s: ERR=%s\n"), attr->ofname,
           be.bstrerror());
     Dmsg2(debuglevel, "Could not bopen file %s: ERR=%s\n", attr->ofname,
           be.bstrerror());
@@ -1492,8 +1492,8 @@ BxattrExitCode PluginBuildXattrStreams(
         // Protect ourself against things getting out of hand.
         if (expected_serialize_len >= MAX_XATTR_STREAM) {
           Mmsg2(jcr->errmsg,
-                _("Xattr stream on file \"%s\" exceeds maximum size of %d "
-                  "bytes\n"),
+                T_("Xattr stream on file \"%s\" exceeds maximum size of %d "
+                   "bytes\n"),
                 xattr_data->last_fname, MAX_XATTR_STREAM);
           goto bail_out;
         }
@@ -1510,7 +1510,7 @@ BxattrExitCode PluginBuildXattrStreams(
                                xattr_value_list)
           < expected_serialize_len) {
         Mmsg1(jcr->errmsg,
-              _("Failed to Serialize extended attributes on file \"%s\"\n"),
+              T_("Failed to Serialize extended attributes on file \"%s\"\n"),
               xattr_data->last_fname);
         Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
               xattr_data->last_fname);
@@ -1679,7 +1679,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   if (debug_level >= 50) { DumpFdPlugin(plugin, stdin); }
   if (!bstrcmp(info->plugin_magic, FD_PLUGIN_MAGIC)) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"), plugin->file,
+         T_("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"), plugin->file,
          FD_PLUGIN_MAGIC, info->plugin_magic);
     Dmsg3(50, "Plugin magic wrong. Plugin=%s wanted=%s got=%s\n", plugin->file,
           FD_PLUGIN_MAGIC, info->plugin_magic);
@@ -1688,7 +1688,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->version != FD_PLUGIN_INTERFACE_VERSION) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin version incorrect. Plugin=%s wanted=%d got=%d\n"),
+         T_("Plugin version incorrect. Plugin=%s wanted=%d got=%d\n"),
          plugin->file, FD_PLUGIN_INTERFACE_VERSION, info->version);
     Dmsg3(50, "Plugin version incorrect. Plugin=%s wanted=%d got=%d\n",
           plugin->file, FD_PLUGIN_INTERFACE_VERSION, info->version);
@@ -1697,16 +1697,16 @@ static bool IsPluginCompatible(Plugin* plugin)
   if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
       && !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
-         info->plugin_license);
+         T_("Plugin license incompatible. Plugin=%s license=%s\n"),
+         plugin->file, info->plugin_license);
     Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
           plugin->file, info->plugin_license);
     return false;
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
-         sizeof(PluginInformation), info->size);
+         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }
 
@@ -2438,7 +2438,7 @@ static bRC bareosCheckChanges(PluginContext* ctx, save_pkt* sp)
   ff_pkt->type = sp->type;
   if (!sp->fname) {
     Jmsg0(jcr, M_FATAL, 0,
-          _("Command plugin: no fname in bareosCheckChanges packet.\n"));
+          T_("Command plugin: no fname in bareosCheckChanges packet.\n"));
     goto bail_out;
   }
 

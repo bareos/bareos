@@ -665,7 +665,7 @@ void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord* jcr)
 {
   if (VMPs) {
     Jmsg(jcr, M_INFO, 0,
-         _("Volume Mount Points found: %d, added to snapshotset: %d\n"), VMPs,
+         T_("Volume Mount Points found: %d, added to snapshotset: %d\n"), VMPs,
          VMP_snapshots);
   }
 }

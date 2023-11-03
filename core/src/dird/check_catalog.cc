@@ -58,13 +58,13 @@ bool CheckCatalog(cat_op mode)
                           catalog->exit_on_fatal);
 
     if (!db || !db->OpenDatabase(NULL)) {
-      Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
+      Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\".\n"),
             catalog->resource_name_, catalog->db_name);
       Jmsg(NULL, M_FATAL, 0,
-           _("Could not open Catalog \"%s\", database \"%s\".\n"),
+           T_("Could not open Catalog \"%s\", database \"%s\".\n"),
            catalog->resource_name_, catalog->db_name);
       if (db) {
-        Jmsg(NULL, M_FATAL, 0, _("%s"), db->strerror());
+        Jmsg(NULL, M_FATAL, 0, T_("%s"), db->strerror());
         Pmsg1(000, "%s", db->strerror());
         db->CloseDatabase(NULL);
       }
@@ -138,7 +138,7 @@ bool CheckCatalog(cat_op mode)
       bstrncpy(sr.Name, store->resource_name_, sizeof(sr.Name));
       sr.AutoChanger = store->autochanger;
       if (!db->CreateStorageRecord(NULL, &sr)) {
-        Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"),
+        Jmsg(NULL, M_FATAL, 0, T_("Could not create storage record for %s\n"),
              store->resource_name_);
         OK = false;
         goto bail_out;
@@ -147,7 +147,7 @@ bool CheckCatalog(cat_op mode)
       if (!sr.created) {               /* if not created, update it */
         sr.AutoChanger = store->autochanger;
         if (!db->UpdateStorageRecord(NULL, &sr)) {
-          Jmsg(NULL, M_FATAL, 0, _("Could not update storage record for %s\n"),
+          Jmsg(NULL, M_FATAL, 0, T_("Could not update storage record for %s\n"),
                store->resource_name_);
           OK = false;
           goto bail_out;
