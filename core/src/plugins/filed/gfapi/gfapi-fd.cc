@@ -1636,7 +1636,7 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
     switch (rp->replace) {
       case REPLACE_IFNEWER:
         if (rp->statp.st_mtime <= st.st_mtime) {
-          Jmsg(ctx, M_INFO, 0, _("gfapi-fd: File skipped. Not newer: %s\n"),
+          Jmsg(ctx, M_INFO, 0, T_("gfapi-fd: File skipped. Not newer: %s\n"),
                rp->ofname);
           rp->create_status = CF_SKIP;
           goto bail_out;
@@ -1644,7 +1644,7 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
         break;
       case REPLACE_IFOLDER:
         if (rp->statp.st_mtime >= st.st_mtime) {
-          Jmsg(ctx, M_INFO, 0, _("gfapi-fd: File skipped. Not older: %s\n"),
+          Jmsg(ctx, M_INFO, 0, T_("gfapi-fd: File skipped. Not older: %s\n"),
                rp->ofname);
           rp->create_status = CF_SKIP;
           goto bail_out;
@@ -1656,7 +1656,7 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
             && PathListLookup(p_ctx->path_list, rp->ofname)) {
           break;
         }
-        Jmsg(ctx, M_INFO, 0, _("gfapi-fd: File skipped. Already exists: %s\n"),
+        Jmsg(ctx, M_INFO, 0, T_("gfapi-fd: File skipped. Already exists: %s\n"),
              rp->ofname);
         rp->create_status = CF_SKIP;
         goto bail_out;
@@ -1679,7 +1679,7 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
           BErrNo be;
 
           Jmsg(ctx, M_ERROR, 0,
-               _("gfapi-fd: File %s already exists and could not be replaced. "
+               T_("gfapi-fd: File %s already exists and could not be replaced. "
                  "ERR=%s.\n"),
                rp->ofname, be.bstrerror());
           // Continue despite error
@@ -1756,13 +1756,13 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
       break;
     case FT_DELETED:
       Jmsg(ctx, M_INFO, 0,
-           _("gfapi-fd: Original file %s have been deleted: type=%d\n"),
+           T_("gfapi-fd: Original file %s have been deleted: type=%d\n"),
            rp->ofname, rp->type);
       rp->create_status = CF_SKIP;
       break;
     default:
       Jmsg(ctx, M_ERROR, 0,
-           _("gfapi-fd: Unknown file type %d; not restored: %s\n"), rp->type,
+           T_("gfapi-fd: Unknown file type %d; not restored: %s\n"), rp->type,
            rp->ofname);
       rp->create_status = CF_ERROR;
       break;

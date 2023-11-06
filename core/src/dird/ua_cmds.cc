@@ -171,138 +171,138 @@ bool quit_cmd(UaContext* ua, const char* cmd);
  * to prevent breakage of existing user scripts.
  */
 static struct ua_cmdstruct commands[] = {
-    {NT_("."), noop_cmd, _("no op"), NULL, true, false},
-    {NT_(".actiononpurge"), DotAopCmd, _("List possible actions on purge"),
+    {NT_("."), noop_cmd, T_("no op"), NULL, true, false},
+    {NT_(".actiononpurge"), DotAopCmd, T_("List possible actions on purge"),
      NULL, true, false},
-    {NT_(".api"), DotApiCmd, _("Switch between different api modes"),
+    {NT_(".api"), DotApiCmd, T_("Switch between different api modes"),
      NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false},
-    {NT_(".authorized"), DotAuthorizedCmd, _("Check for authorization"),
+    {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name | \n"
          "schedule=<schedule-name> | pool=<pool-name> | cmd=<command> | \n"
          "fileset=<fileset-name> | catalog=<catalog>"),
      false, false},
-    {NT_(".catalogs"), DotCatalogsCmd, _("List all catalog resources"), NULL,
+    {NT_(".catalogs"), DotCatalogsCmd, T_("List all catalog resources"), NULL,
      false, false},
-    {NT_(".clients"), DotClientsCmd, _("List all client resources"),
+    {NT_(".clients"), DotClientsCmd, T_("List all client resources"),
      NT_("[enabled | disabled]"), true, false},
-    {NT_(".consoles"), DotConsolesCmd, _("List all console resources"), NULL,
+    {NT_(".consoles"), DotConsolesCmd, T_("List all console resources"), NULL,
      true, false},
-    {NT_(".users"), DotUsersCmd, _("List all user resources"), NULL, true,
+    {NT_(".users"), DotUsersCmd, T_("List all user resources"), NULL, true,
      false},
-    {NT_(".defaults"), DotDefaultsCmd, _("Get default settings"),
+    {NT_(".defaults"), DotDefaultsCmd, T_("Get default settings"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name> | "
          "pool=<pool-name>"),
      false, false},
-    {NT_(".filesets"), DotFilesetsCmd, _("List all filesets"), NULL, false,
+    {NT_(".filesets"), DotFilesetsCmd, T_("List all filesets"), NULL, false,
      false},
-    {NT_(".help"), DotHelpCmd, _("Print parsable information about a command"),
+    {NT_(".help"), DotHelpCmd, T_("Print parsable information about a command"),
      NT_("[ all | item=cmd ]"), false, false},
-    {NT_(".jobdefs"), DotJobdefsCmd, _("List all job defaults resources"), NULL,
+    {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"), NULL,
      true, false},
-    {NT_(".jobs"), DotJobsCmd, _("List all job resources"),
+    {NT_(".jobs"), DotJobsCmd, T_("List all job resources"),
      NT_("[type=<jobtype>] | [enabled | disabled]"), true, false},
-    {NT_(".jobstatus"), DotJobstatusCmd, _("List jobstatus information"),
+    {NT_(".jobstatus"), DotJobstatusCmd, T_("List jobstatus information"),
      NT_("[ =<jobstatus> ]"), true, false},
-    {NT_(".levels"), DotLevelsCmd, _("List all backup levels"), NULL, false,
+    {NT_(".levels"), DotLevelsCmd, T_("List all backup levels"), NULL, false,
      false},
     {NT_(".locations"), DotLocationsCmd, NULL, NULL, true, false},
-    {NT_(".messages"), DotGetmsgsCmd, _("Display pending messages"), NULL,
+    {NT_(".messages"), DotGetmsgsCmd, T_("Display pending messages"), NULL,
      false, false},
-    {NT_(".media"), DotMediaCmd, _("List all medias"), NULL, true, false},
-    {NT_(".mediatypes"), DotMediatypesCmd, _("List all media types"), NULL,
+    {NT_(".media"), DotMediaCmd, T_("List all medias"), NULL, true, false},
+    {NT_(".mediatypes"), DotMediatypesCmd, T_("List all media types"), NULL,
      true, false},
-    {NT_(".msgs"), DotMsgsCmd, _("List all message resources"), NULL, false,
+    {NT_(".msgs"), DotMsgsCmd, T_("List all message resources"), NULL, false,
      false},
-    {NT_(".pools"), DotPoolsCmd, _("List all pool resources"),
+    {NT_(".pools"), DotPoolsCmd, T_("List all pool resources"),
      NT_("type=<pooltype>"), true, false},
-    {NT_(".profiles"), DotProfilesCmd, _("List all profile resources"), NULL,
+    {NT_(".profiles"), DotProfilesCmd, T_("List all profile resources"), NULL,
      true, false},
-    {NT_(".quit"), quit_cmd, _("Close connection"), NULL, false, false},
-    {NT_(".sql"), DotSqlCmd, _("Send an arbitrary SQL command"),
+    {NT_(".quit"), quit_cmd, T_("Close connection"), NULL, false, false},
+    {NT_(".sql"), DotSqlCmd, T_("Send an arbitrary SQL command"),
      NT_("query=<sqlquery>"), false, true},
-    {NT_(".schedule"), DotScheduleCmd, _("List all schedule resources"),
+    {NT_(".schedule"), DotScheduleCmd, T_("List all schedule resources"),
      NT_("[enabled | disabled]"), false, false},
-    {NT_(".status"), DotStatusCmd, _("Report status"),
+    {NT_(".status"), DotStatusCmd, T_("Report status"),
      NT_("dir ( current | last | header | scheduled | running | terminated ) "
          "|\n"
          "storage=<storage> [ header | waitreservation | devices | volumes | "
          "spooling | running | terminated ] |\n"
          "client=<client> [ header | terminated | running ]"),
      false, true},
-    {NT_(".storages"), DotStorageCmd, _("List all storage resources"),
+    {NT_(".storages"), DotStorageCmd, T_("List all storage resources"),
      NT_("[enabled | disabled]"), true, false},
-    {NT_(".types"), DotTypesCmd, _("List all job types"), NULL, false, false},
-    {NT_(".volstatus"), DotVolstatusCmd, _("List all volume status"), NULL,
+    {NT_(".types"), DotTypesCmd, T_("List all job types"), NULL, false, false},
+    {NT_(".volstatus"), DotVolstatusCmd, T_("List all volume status"), NULL,
      true, false},
-    {NT_(".bvfs_lsdirs"), DotBvfsLsdirsCmd, _("List directories using BVFS"),
+    {NT_(".bvfs_lsdirs"), DotBvfsLsdirsCmd, T_("List directories using BVFS"),
      NT_("jobid=<jobid> path=<path> | pathid=<pathid> [limit=<limit>] "
          "[offset=<offset>]"),
      true, true},
-    {NT_(".bvfs_lsfiles"), DotBvfsLsfilesCmd, _("List files using BVFS"),
+    {NT_(".bvfs_lsfiles"), DotBvfsLsfilesCmd, T_("List files using BVFS"),
      NT_("jobid=<jobid> path=<path> | pathid=<pathid> [limit=<limit>] "
          "[offset=<offset>]"),
      true, true},
-    {NT_(".bvfs_update"), DotBvfsUpdateCmd, _("Update BVFS cache"),
+    {NT_(".bvfs_update"), DotBvfsUpdateCmd, T_("Update BVFS cache"),
      NT_("[jobid=<jobid>]"), true, true},
     {NT_(".bvfs_get_jobids"), DotBvfsGetJobidsCmd,
-     _("Get jobids required for a restore"),
+     T_("Get jobids required for a restore"),
      NT_("jobid=<jobid> | ujobid=<unique-jobid> [all]"), true, true},
-    {NT_(".bvfs_versions"), DotBvfsVersionsCmd, _("List versions of a file"),
+    {NT_(".bvfs_versions"), DotBvfsVersionsCmd, T_("List versions of a file"),
      NT_("jobid=0 client=<client-name> pathid=<path-id> filename=<file-name> "
          "[copies] [versions]"),
      true, true},
     {NT_(".bvfs_restore"), DotBvfsRestoreCmd,
-     _("Mark BVFS files/directories for restore. Stored in handle."),
+     T_("Mark BVFS files/directories for restore. Stored in handle."),
      NT_("path=<handle> jobid=<jobid> [fileid=<file-id>] [dirid=<dirid>] "
          "[hardlink=<hardlink>]"),
      true, true},
     {NT_(".bvfs_cleanup"), DotBvfsCleanupCmd,
-     _("Cleanup BVFS cache for a certain handle"), NT_("path=<handle>"), true,
+     T_("Cleanup BVFS cache for a certain handle"), NT_("path=<handle>"), true,
      true},
-    {NT_(".bvfs_clear_cache"), DotBvfsClearCacheCmd, _("Clear BVFS cache"),
+    {NT_(".bvfs_clear_cache"), DotBvfsClearCacheCmd, T_("Clear BVFS cache"),
      NT_("yes"), false, true},
-    {NT_("add"), add_cmd, _("Add media to a pool"),
+    {NT_("add"), add_cmd, T_("Add media to a pool"),
      NT_("pool=<pool-name> storage=<storage-name> jobid=<jobid>"), false, true},
-    {NT_("autodisplay"), AutodisplayCmd, _("Autodisplay console messages"),
+    {NT_("autodisplay"), AutodisplayCmd, T_("Autodisplay console messages"),
      NT_("on | off"), false, false},
-    {NT_("automount"), AutomountCmd, _("Automount after label"),
+    {NT_("automount"), AutomountCmd, T_("Automount after label"),
      NT_("on | off"), false, true},
-    {NT_("cancel"), CancelCmd, _("Cancel a job"),
+    {NT_("cancel"), CancelCmd, T_("Cancel a job"),
      NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | "
          "ujobid=<unique-jobid> | state=<job_state> | all yes"),
      false, true},
-    {NT_("configure"), ConfigureCmd, _("Configure director resources"),
+    {NT_("configure"), ConfigureCmd, T_("Configure director resources"),
      NT_(GetUsageStringForConsoleConfigureCommand()), false, true},
-    {NT_("create"), CreateCmd, _("Create DB Pool from resource"),
+    {NT_("create"), CreateCmd, T_("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false, true},
-    {NT_("delete"), DeleteCmd, _("Delete volume, pool or job"),
+    {NT_("delete"), DeleteCmd, T_("Delete volume, pool or job"),
      NT_("[volume=<vol-name> [yes] | volume pool=<pool-name> [yes] | "
          "storage storage=<storage-name> | pool=<pool-name> | jobid=<jobid> | "
          "jobid=<jobid1,jobid2,...> | jobid=<jobid1-jobid9>]"),
      true, true},
-    {NT_("disable"), DisableCmd, _("Disable a job/client/schedule"),
+    {NT_("disable"), DisableCmd, T_("Disable a job/client/schedule"),
      NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true,
      true},
-    {NT_("enable"), EnableCmd, _("Enable a job/client/schedule"),
+    {NT_("enable"), EnableCmd, T_("Enable a job/client/schedule"),
      NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true,
      true},
     {NT_("estimate"), EstimateCmd,
-     _("Performs FileSet estimate, listing gives full listing"),
+     T_("Performs FileSet estimate, listing gives full listing"),
      NT_("fileset=<fileset-name> client=<client-name> level=<level> "
          "accurate=<yes/no> job=<job-name> listing"),
      true, true},
-    {NT_("exit"), quit_cmd, _("Terminate Bconsole session"), NT_(""), false,
+    {NT_("exit"), quit_cmd, T_("Terminate Bconsole session"), NT_(""), false,
      false},
     {NT_("export"), ExportCmd,
-     _("Export volumes from normal slots to import/export slots"),
+     T_("Export volumes from normal slots to import/export slots"),
      NT_("storage=<storage-name> srcslots=<slot-selection> [ "
          "dstslots=<slot-selection> volume=<volume-name> scan ]"),
      true, true},
     {NT_("gui"), gui_cmd,
-     _("Switch between interactive (gui off) and non-interactive (gui on) "
+     T_("Switch between interactive (gui off) and non-interactive (gui on) "
        "mode"),
      NT_("on | off"), false, false},
-    {NT_("help"), help_cmd, _("Print help on specific command"),
+    {NT_("help"), help_cmd, T_("Print help on specific command"),
      NT_("add autodisplay automount cancel configure create delete disable\n"
          "\tenable estimate exit gui label list llist\n"
          "\tmessages memory mount prune purge quit query\n"
@@ -312,15 +312,15 @@ static struct ua_cmdstruct commands[] = {
          "\tumount update use var version wait"),
      false, false},
     {NT_("import"), ImportCmd,
-     _("Import volumes from import/export slots to normal slots"),
+     T_("Import volumes from import/export slots to normal slots"),
      NT_("storage=<storage-name> [ srcslots=<slot-selection> "
          "dstslots=<slot-selection> volume=<volume-name> scan ]"),
      true, true},
-    {NT_("label"), LabelCmd, _("Label a tape"),
+    {NT_("label"), LabelCmd, T_("Label a tape"),
      NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> "
          "slot=<slot> [ drive = <drivenum>] [ barcodes ] [ encrypt ] [ yes ]"),
      false, true},
-    {NT_("list"), list_cmd, _("List objects from catalog"),
+    {NT_("list"), list_cmd, T_("List objects from catalog"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
          "backups client=<client-name> [fileset=<fileset-name>] "
          "[jobstatus=<status>] [level=<level>] [order=<asc|desc>] "
@@ -358,7 +358,7 @@ static struct ua_cmdstruct commands[] = {
          "[current] | [enabled | disabled] |\n"
          "[limit=<number> [offset=<number>]]"),
      true, true},
-    {NT_("llist"), LlistCmd, _("Full or long list like list command"),
+    {NT_("llist"), LlistCmd, T_("Full or long list like list command"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
          "backups client=<client-name> [fileset=<fileset-name>] "
          "[jobstatus=<status>] [level=<level>] [order=<asc|desc>] "
@@ -394,26 +394,26 @@ static struct ua_cmdstruct commands[] = {
          "[current] | [enabled | disabled] |\n"
          "[limit=<num> [offset=<number>]]"),
      true, true},
-    {NT_("messages"), MessagesCmd, _("Display pending messages"), NT_(""),
+    {NT_("messages"), MessagesCmd, T_("Display pending messages"), NT_(""),
      false, false},
-    {NT_("memory"), MemoryCmd, _("Print current memory usage"), NT_(""), true,
+    {NT_("memory"), MemoryCmd, T_("Print current memory usage"), NT_(""), true,
      false},
-    {NT_("mount"), MountCmd, _("Mount storage"),
+    {NT_("mount"), MountCmd, T_("Mount storage"),
      NT_("storage=<storage-name> slot=<num> drive=<drivenum>\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
      false, true},
-    {NT_("move"), move_cmd, _("Move slots in an autochanger"),
+    {NT_("move"), move_cmd, T_("Move slots in an autochanger"),
      NT_("storage=<storage-name> srcslots=<slot-selection> "
          "dstslots=<slot-selection>"),
      true, true},
-    {NT_("prune"), PruneCmd, _("Prune records from catalog"),
+    {NT_("prune"), PruneCmd, T_("Prune records from catalog"),
      NT_("files [client=<client>] [pool=<pool>] [yes] |\n"
          "jobs [client=<client>] [pool=<pool>] [yes] |\n"
          "volume [all] [=volume] [pool=<pool>] [yes] |\n"
          "stats [yes] |\n"
          "directory [=directory] [client=<client>] [recursive] [yes] |\n"),
      true, true},
-    {NT_("purge"), PurgeCmd, _("Purge records from catalog"),
+    {NT_("purge"), PurgeCmd, T_("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | "
          "volume=<volume>]] |\n"
          "[jobs [client=<client> | volume=<volume>] | pool=<pool>] "
@@ -422,10 +422,10 @@ static struct ua_cmdstruct commands[] = {
          "[devicetype=<type>] [drive=<drivenum>] [action=<action>]] |\n"
          "[quota [client=<client>]]"),
      true, true},
-    {NT_("quit"), quit_cmd, _("Terminate Bconsole session"), NT_(""), false,
+    {NT_("quit"), quit_cmd, T_("Terminate Bconsole session"), NT_(""), false,
      false},
-    {NT_("query"), QueryCmd, _("Query catalog"), NT_(""), false, true},
-    {NT_("restore"), RestoreCmd, _("Restore files"),
+    {NT_("query"), QueryCmd, T_("Query catalog"), NT_(""), false, true},
+    {NT_("restore"), RestoreCmd, T_("Restore files"),
      NT_("where=</path> client=<client-name> storage=<storage-name> "
          "bootstrap=<file>\n"
          "\trestorejob=<job-name> comment=<text> jobid=<jobid> "
@@ -439,22 +439,22 @@ static struct ua_cmdstruct commands[] = {
          "\tstrip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix>\n"
          "\tselect=<date> select before current copies done all"),
      false, true},
-    {NT_("relabel"), RelabelCmd, _("Relabel a tape"),
+    {NT_("relabel"), RelabelCmd, T_("Relabel a tape"),
      NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
          "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"),
      false, true},
-    {NT_("release"), ReleaseCmd, _("Release storage"),
+    {NT_("release"), ReleaseCmd, T_("Release storage"),
      NT_("storage=<storage-name> [ drive=<drivenum> ] [ alldrives ]"), true,
      true},
-    {NT_("reload"), ReloadCmd, _("Reload conf file"), NT_(""), true, true},
-    {NT_("rerun"), reRunCmd, _("Rerun a job"),
+    {NT_("reload"), ReloadCmd, T_("Reload conf file"), NT_(""), true, true},
+    {NT_("rerun"), reRunCmd, T_("Rerun a job"),
      NT_("jobid=<jobid> | since_jobid=<jobid> [ until_jobid=<jobid> ] | "
          "days=<nr_days> | hours=<nr_hours> | yes"),
      false, true},
-    {NT_("resolve"), ResolveCmd, _("Resolve a hostname"),
+    {NT_("resolve"), ResolveCmd, T_("Resolve a hostname"),
      NT_("client=<client-name> | storage=<storage-name> <host-name>"), false,
      true},
-    {NT_("run"), RunCmd, _("Run a job"),
+    {NT_("run"), RunCmd, T_("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> "
          "level=<level>\n"
          "\tstorage=<storage-name> where=<directory-prefix> "
@@ -469,27 +469,27 @@ static struct ua_cmdstruct commands[] = {
          "verifylist=<verify-list>\n"
          "\tmigrationjob=<complete_name> yes"),
      false, true},
-    {NT_("status"), StatusCmd, _("Report status"),
+    {NT_("status"), StatusCmd, T_("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | "
          "schedule=<schedule-name> | client=<client-name> |\n"
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> |\n"
          "subscriptions [detail] [unknown] [all] | configuration"),
      true, true},
-    {NT_("setbandwidth"), SetbwlimitCmd, _("Sets bandwidth"),
+    {NT_("setbandwidth"), SetbwlimitCmd, T_("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
          "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
          "\tlimit=<nn-kbs> [ yes ]"),
      true, true},
-    {NT_("setdebug"), SetdebugCmd, _("Sets debug level"),
+    {NT_("setdebug"), SetdebugCmd, T_("Sets debug level"),
      NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | "
          "storage=<storage-name> | all"),
      true, true},
-    {NT_("setdevice"), SetDeviceCommand::Cmd, _("Sets device parameter"),
+    {NT_("setdevice"), SetDeviceCommand::Cmd, T_("Sets device parameter"),
      NT_("storage=<storage-name> device=<device-name> autoselect=<bool>"), true,
      true},
-    {NT_("setip"), SetipCmd, _("Sets new client address -- if authorized"),
+    {NT_("setip"), SetipCmd, T_("Sets new client address -- if authorized"),
      NT_(""), false, true},
-    {NT_("show"), show_cmd, _("Show resource records"),
+    {NT_("show"), show_cmd, T_("Show resource records"),
      NT_("catalog=<catalog-name> | client=<client-name> | "
          "console=<console-name> | "
          "director=<director-name> | fileset=<fileset-name> | "
@@ -506,27 +506,27 @@ static struct ua_cmdstruct commands[] = {
          "|\n"
          "all [verbose]"),
      true, true},
-    {NT_("sqlquery"), SqlqueryCmd, _("Use SQL to query catalog"), NT_(""),
+    {NT_("sqlquery"), SqlqueryCmd, T_("Use SQL to query catalog"), NT_(""),
      false, true},
-    {NT_("time"), time_cmd, _("Print current time"), NT_(""), true, false},
-    {NT_("trace"), TraceCmd, _("Turn on/off trace to file"), NT_("on | off"),
+    {NT_("time"), time_cmd, T_("Print current time"), NT_(""), true, false},
+    {NT_("trace"), TraceCmd, T_("Turn on/off trace to file"), NT_("on | off"),
      true, true},
-    {NT_("truncate"), TruncateCmd, _("Truncate purged volumes"),
+    {NT_("truncate"), TruncateCmd, T_("Truncate purged volumes"),
      NT_("volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] "
          "[drive=<drivenum>] "
          "[yes]"),
      true, true},
-    {NT_("unmount"), UnmountCmd, _("Unmount storage"),
+    {NT_("unmount"), UnmountCmd, T_("Unmount storage"),
      NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
      false, true},
     {NT_("umount"), UnmountCmd,
-     _("Umount - for old-time Unix guys, see unmount"),
+     T_("Umount - for old-time Unix guys, see unmount"),
      NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
      false, true},
     {NT_("update"), UpdateCmd,
-     _("Update volume, pool, slots, job or statistics"),
+     T_("Update volume, pool, slots, job or statistics"),
      NT_("[volume=<volume-name> "
          "[volstatus=<status>] [volretention=<time-def>] "
          "actiononpurge=<action>] "
@@ -546,17 +546,17 @@ static struct ua_cmdstruct commands[] = {
          "[stats "
          "[days=<number>]]"),
      true, true},
-    {NT_("use"), use_cmd, _("Use specific catalog"), NT_("catalog=<catalog>"),
+    {NT_("use"), use_cmd, T_("Use specific catalog"), NT_("catalog=<catalog>"),
      false, true},
-    {NT_("var"), var_cmd, _("Does variable expansion"), NT_(""), false, true},
-    {NT_("version"), VersionCmd, _("Print Director version"), NT_(""), true,
+    {NT_("var"), var_cmd, T_("Does variable expansion"), NT_(""), false, true},
+    {NT_("version"), VersionCmd, T_("Print Director version"), NT_(""), true,
      false},
-    {NT_("wait"), wait_cmd, _("Wait until no jobs are running"),
+    {NT_("wait"), wait_cmd, T_("Wait until no jobs are running"),
      NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount "
          "[timeout=<number>]"),
      false, false},
     {NT_("whoami"), WhoAmICmd,
-     _("Print the user name associated with this console"), NT_(""), true,
+     T_("Print the user name associated with this console"), NT_(""), true,
      false}};
 
 #define comsize ((int)(sizeof(commands) / sizeof(struct ua_cmdstruct)))
@@ -596,7 +596,7 @@ bool Do_a_command(UaContext* ua)
 
       // Check if this command is authorized in RunScript
       if (ua->runscript && !commands[i].allowed_in_runscript) {
-        ua->ErrorMsg(_("Can't use %s command in a runscript"), ua->argk[0]);
+        ua->ErrorMsg(T_("Can't use %s command in a runscript"), ua->argk[0]);
         break;
       }
 
@@ -623,7 +623,7 @@ bool Do_a_command(UaContext* ua)
   }
 
   if (!found) {
-    ua->ErrorMsg(_("%s: is an invalid command.\n"), ua->argk[0]);
+    ua->ErrorMsg(T_("%s: is an invalid command.\n"), ua->argk[0]);
     ok = false;
   }
   ua->send->FinalizeResult(ok);
@@ -649,7 +649,7 @@ static bool add_cmd(UaContext* ua, const char*)
   int8_t InChanger = 0;
 
   ua->SendMsg(
-      _("You probably don't want to be using this command since it\n"
+      T_("You probably don't want to be using this command since it\n"
         "creates database records without labeling the Volumes.\n"
         "You probably want to use the \"label\" command.\n\n"));
 
@@ -661,8 +661,8 @@ static bool add_cmd(UaContext* ua, const char*)
         pr.PoolType);
 
   while (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
-    ua->WarningMsg(_("Pool already has maximum volumes=%d\n"), pr.MaxVols);
-    if (!GetPint(ua, _("Enter new maximum (zero for unlimited): "))) {
+    ua->WarningMsg(T_("Pool already has maximum volumes=%d\n"), pr.MaxVols);
+    if (!GetPint(ua, T_("Enter new maximum (zero for unlimited): "))) {
       return true;
     }
     pr.MaxVols = ua->pint32_val;
@@ -684,12 +684,12 @@ static bool add_cmd(UaContext* ua, const char*)
     char buf[100];
 
     Bsnprintf(buf, sizeof(buf),
-              _("Enter number of Volumes to create. 0=>fixed name. Max=%d: "),
+              T_("Enter number of Volumes to create. 0=>fixed name. Max=%d: "),
               max);
     if (!GetPint(ua, buf)) { return true; }
     num = ua->pint32_val;
     if (num < 0 || num > max) {
-      ua->WarningMsg(_("The number must be between 0 and %d\n"), max);
+      ua->WarningMsg(T_("The number must be between 0 and %d\n"), max);
       continue;
     }
     break;
@@ -697,19 +697,19 @@ static bool add_cmd(UaContext* ua, const char*)
 
   for (;;) {
     if (num == 0) {
-      if (!GetCmd(ua, _("Enter Volume name: "))) { return true; }
+      if (!GetCmd(ua, T_("Enter Volume name: "))) { return true; }
     } else {
-      if (!GetCmd(ua, _("Enter base volume name: "))) { return true; }
+      if (!GetCmd(ua, T_("Enter base volume name: "))) { return true; }
     }
 
     // Don't allow | in Volume name because it is the volume separator character
     if (!IsVolumeNameLegal(ua, ua->cmd)) { continue; }
     if (strlen(ua->cmd) >= MAX_NAME_LENGTH - 10) {
-      ua->WarningMsg(_("Volume name too long.\n"));
+      ua->WarningMsg(T_("Volume name too long.\n"));
       continue;
     }
     if (strlen(ua->cmd) == 0) {
-      ua->WarningMsg(_("Volume name must be at least one character long.\n"));
+      ua->WarningMsg(T_("Volume name must be at least one character long.\n"));
       continue;
     }
     break;
@@ -720,10 +720,10 @@ static bool add_cmd(UaContext* ua, const char*)
     bstrncat(name, "%04d", sizeof(name));
 
     for (;;) {
-      if (!GetPint(ua, _("Enter the starting number: "))) { return true; }
+      if (!GetPint(ua, T_("Enter the starting number: "))) { return true; }
       startnum = ua->pint32_val;
       if (startnum < 1) {
-        ua->WarningMsg(_("Start number must be greater than zero.\n"));
+        ua->WarningMsg(T_("Start number must be greater than zero.\n"));
         continue;
       }
       break;
@@ -734,9 +734,9 @@ static bool add_cmd(UaContext* ua, const char*)
   }
 
   if (store && store->autochanger) {
-    if (!GetPint(ua, _("Enter slot (0 for none): "))) { return true; }
+    if (!GetPint(ua, T_("Enter slot (0 for none): "))) { return true; }
     Slot = static_cast<slot_number_t>(ua->pint32_val);
-    if (!GetYesno(ua, _("InChanger? yes/no: "))) { return true; }
+    if (!GetYesno(ua, T_("InChanger? yes/no: "))) { return true; }
     InChanger = ua->pint32_val;
   }
 
@@ -759,7 +759,7 @@ static bool add_cmd(UaContext* ua, const char*)
     ua->WarningMsg("%s", ua->db->strerror());
     return true;
   }
-  ua->SendMsg(_("%d Volumes created in pool %s\n"), num, pr.Name);
+  ua->SendMsg(T_("%d Volumes created in pool %s\n"), num, pr.Name);
 
   return true;
 }
@@ -775,7 +775,7 @@ static bool AutomountCmd(UaContext* ua, const char*)
   char* onoff;
 
   if (ua->argc != 2) {
-    if (!GetCmd(ua, _("Turn on or off? "))) { return true; }
+    if (!GetCmd(ua, T_("Turn on or off? "))) { return true; }
     onoff = ua->cmd;
   } else {
     onoff = ua->argk[1];
@@ -796,12 +796,12 @@ static inline bool CancelStorageDaemonJob(UaContext* ua, const char*)
     i = FindArgWithValue(ua, NT_("jobid"));
     if (i >= 0) {
       if (!Is_a_number(ua->argv[i])) {
-        ua->WarningMsg(_("JobId %s not a number\n"), ua->argv[i]);
+        ua->WarningMsg(T_("JobId %s not a number\n"), ua->argv[i]);
       }
 
       CancelStorageDaemonJob(ua, store, ua->argv[i]);
     } else {
-      ua->WarningMsg(_("Missing jobid=JobId specification\n"));
+      ua->WarningMsg(T_("Missing jobid=JobId specification\n"));
     }
   }
 
@@ -859,7 +859,7 @@ static bool CreateCmd(UaContext* ua, const char*)
 
   switch (CreatePool(ua->jcr, ua->db, pool, POOL_OP_CREATE)) {
     case 0:
-      ua->ErrorMsg(_("Error: Pool %s already exists.\n"
+      ua->ErrorMsg(T_("Error: Pool %s already exists.\n"
                      "Use update to change it.\n"),
                    pool->resource_name_);
       break;
@@ -871,7 +871,7 @@ static bool CreateCmd(UaContext* ua, const char*)
     default:
       break;
   }
-  ua->SendMsg(_("Pool %s created.\n"), pool->resource_name_);
+  ua->SendMsg(T_("Pool %s created.\n"), pool->resource_name_);
   return true;
 }
 
@@ -885,19 +885,19 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   ua->jcr->max_bandwidth = limit;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
+  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
-    ua->ErrorMsg(_("Failed to connect to Client.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return true;
   }
 
   Dmsg0(120, "Connected to file daemon\n");
   if (!SendBwlimitToFd(ua->jcr, Job)) {
-    ua->ErrorMsg(_("Failed to set bandwidth limit on Client.\n"));
+    ua->ErrorMsg(T_("Failed to set bandwidth limit on Client.\n"));
   } else {
-    ua->InfoMsg(_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
+    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
   }
 
   ua->jcr->file_bsock->signal(BNET_TERMINATE);
@@ -921,7 +921,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
     case APT_NDMPV3:
     case APT_NDMPV4:
       ua->ErrorMsg(
-          _("Storage selected is NDMP storage which cannot have a bandwidth "
+          T_("Storage selected is NDMP storage which cannot have a bandwidth "
             "limit\n"));
       return true;
     default:
@@ -933,19 +933,19 @@ static inline bool setbwlimit_stored(UaContext* ua,
   ua->jcr->max_bandwidth = limit;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
-    ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return true;
   }
 
   Dmsg0(120, "Connected to Storage daemon\n");
   if (!SendBwlimitToFd(ua->jcr, Job)) {
-    ua->ErrorMsg(_("Failed to set bandwidth limit on Storage daemon.\n"));
+    ua->ErrorMsg(T_("Failed to set bandwidth limit on Storage daemon.\n"));
   } else {
-    ua->InfoMsg(_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
+    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024, Job);
   }
 
   ua->jcr->store_bsock->signal(BNET_TERMINATE);
@@ -971,7 +971,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
   if (i >= 0) { limit = ((int64_t)atoi(ua->argv[i]) * 1024); }
 
   if (limit < 0) {
-    if (!GetPint(ua, _("Enter new bandwidth limit kb/s: "))) { return true; }
+    if (!GetPint(ua, T_("Enter new bandwidth limit kb/s: "))) { return true; }
     limit = ((int64_t)ua->pint32_val * 1024); /* kb/s */
   }
 
@@ -1026,13 +1026,13 @@ static bool SetipCmd(UaContext* ua, const char*)
   char buf[1024];
 
   if ((!ua->user_acl) || (!ua->user_acl->corresponding_resource)) {
-    ua->ErrorMsg(_("No corresponding client found.\n"));
+    ua->ErrorMsg(T_("No corresponding client found.\n"));
     return false;
   }
   client = ua->GetClientResWithName(
       ua->user_acl->corresponding_resource->resource_name_);
   if (!client) {
-    ua->ErrorMsg(_("Client \"%s\" not found.\n"),
+    ua->ErrorMsg(T_("Client \"%s\" not found.\n"),
                  ua->user_acl->corresponding_resource->resource_name_);
     return false;
   }
@@ -1041,7 +1041,7 @@ static bool SetipCmd(UaContext* ua, const char*)
 
   SockaddrToAscii(&(ua->UA_sock->client_addr), buf, sizeof(buf));
   client->address = strdup(buf);
-  ua->SendMsg(_("Client \"%s\" address set to %s\n"), client->resource_name_,
+  ua->SendMsg(T_("Client \"%s\" address set to %s\n"), client->resource_name_,
               client->address);
 
   return true;
@@ -1065,7 +1065,7 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
     }
 
     if (!sched) {
-      ua->ErrorMsg(_("Schedule \"%s\" not found.\n"), ua->argv[i]);
+      ua->ErrorMsg(T_("Schedule \"%s\" not found.\n"), ua->argv[i]);
       return;
     }
   } else {
@@ -1080,7 +1080,7 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
       }
 
       if (!client) {
-        ua->ErrorMsg(_("Client \"%s\" not found.\n"), ua->argv[i]);
+        ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->argv[i]);
         return;
       }
     } else {
@@ -1093,7 +1093,7 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
       }
 
       if (!job) {
-        ua->ErrorMsg(_("Job \"%s\" not found.\n"), ua->argv[i]);
+        ua->ErrorMsg(T_("Job \"%s\" not found.\n"), ua->argv[i]);
         return;
       }
     }
@@ -1102,21 +1102,21 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
   ua->send->ObjectStart(action.c_str());
   if (sched) {
     sched->enabled = setting;
-    ua->SendMsg(_("Schedule \"%s\" %sd\n"), sched->resource_name_,
+    ua->SendMsg(T_("Schedule \"%s\" %sd\n"), sched->resource_name_,
                 action.c_str());
     ua->send->ArrayStart("schedules");
     ua->send->ArrayItem(sched->resource_name_);
     ua->send->ArrayEnd("schedules");
   } else if (client) {
     client->enabled = setting;
-    ua->SendMsg(_("Client \"%s\" %sd\n"), client->resource_name_,
+    ua->SendMsg(T_("Client \"%s\" %sd\n"), client->resource_name_,
                 action.c_str());
     ua->send->ArrayStart("clients");
     ua->send->ArrayItem(client->resource_name_);
     ua->send->ArrayEnd("clients");
   } else if (job) {
     job->enabled = setting;
-    ua->SendMsg(_("Job \"%s\" %sd\n"), job->resource_name_, action.c_str());
+    ua->SendMsg(T_("Job \"%s\" %sd\n"), job->resource_name_, action.c_str());
     ua->send->ArrayStart("jobs");
     ua->send->ArrayItem(job->resource_name_);
     ua->send->ArrayEnd("jobs");
@@ -1124,7 +1124,7 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
   ua->send->ObjectEnd(action.c_str());
 
   ua->WarningMsg(
-      _("%sabling is a temporary operation until the director reloads.\n"
+      T_("%sabling is a temporary operation until the director reloads.\n"
         "For a permanent setting, please set the value of the \"Enabled\"\n"
         "directive in the relevant configuration resource file.\n"),
       setting ? "En" : "Dis");
@@ -1162,19 +1162,19 @@ static void DoStorageSetdebug(UaContext* ua,
   }
 
   lstore.store = store;
-  PmStrcpy(lstore.store_source, _("unknown source"));
+  PmStrcpy(lstore.store_source, T_("unknown source"));
   SetWstorage(jcr, &lstore);
 
   // Try connecting for up to 15 seconds
-  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
-    ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return;
   }
 
-  Dmsg0(120, _("Connected to storage daemon\n"));
+  Dmsg0(120, T_("Connected to storage daemon\n"));
   sd = jcr->store_bsock;
   sd->fsend("setdebug=%d trace=%d timestamp=%d\n", level, trace_flag,
             timestamp_flag);
@@ -1220,11 +1220,11 @@ static void DoClientSetdebug(UaContext* ua,
   ua->jcr->dir_impl->res.client = client;
 
   // Try to connect for 15 seconds
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
+  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
-    ua->ErrorMsg(_("Failed to connect to Client.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return;
   }
 
@@ -1402,7 +1402,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   i = FindArgWithValue(ua, NT_("level"));
   if (i >= 0) { level = atoi(ua->argv[i]); }
   if (level < 0) {
-    if (!GetPint(ua, _("Enter new debug level: "))) { return true; }
+    if (!GetPint(ua, T_("Enter new debug level: "))) { return true; }
     level = ua->pint32_val;
   }
 
@@ -1478,7 +1478,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
           case APT_NDMPV2:
           case APT_NDMPV3:
           case APT_NDMPV4:
-            ua->WarningMsg(_("Storage has non-native protocol.\n"));
+            ua->WarningMsg(T_("Storage has non-native protocol.\n"));
             return true;
           default:
             break;
@@ -1491,14 +1491,14 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   }
 
   // We didn't find an appropriate keyword above, so prompt the user.
-  StartPrompt(ua, _("Available daemons are: \n"));
-  AddPrompt(ua, _("Director"));
-  AddPrompt(ua, _("Storage"));
-  AddPrompt(ua, _("Client"));
-  AddPrompt(ua, _("All"));
+  StartPrompt(ua, T_("Available daemons are: \n"));
+  AddPrompt(ua, T_("Director"));
+  AddPrompt(ua, T_("Storage"));
+  AddPrompt(ua, T_("Client"));
+  AddPrompt(ua, T_("All"));
 
   switch (
-      DoPrompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
+      DoPrompt(ua, "", T_("Select daemon type to set debug level"), NULL, 0)) {
     case 0:
       // Director
       DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
@@ -1510,7 +1510,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
           case APT_NDMPV2:
           case APT_NDMPV3:
           case APT_NDMPV4:
-            ua->WarningMsg(_("Storage has non-native protocol.\n"));
+            ua->WarningMsg(T_("Storage has non-native protocol.\n"));
             return true;
           default:
             break;
@@ -1586,19 +1586,19 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
 
   UnifiedStorageResource lstore;
   lstore.store = store;
-  PmStrcpy(lstore.store_source, _("unknown source"));
+  PmStrcpy(lstore.store_source, T_("unknown source"));
   SetWstorage(ua->jcr, &lstore);
 
   // Try connecting for up to 15 seconds
-  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
   if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
-    ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return false;
   }
 
-  Dmsg0(120, _("Connected to storage daemon\n"));
+  Dmsg0(120, T_("Connected to storage daemon\n"));
   ua->jcr->store_bsock->fsend("setdevice device=%s autoselect=%d",
                               arguments.at("device").c_str(),
                               std::stoi(arguments.at("autoselect")));
@@ -1637,7 +1637,7 @@ bool SetDeviceCommand::Cmd(UaContext* ua, const char*)
   StorageResource* sd = ua->GetStoreResWithName(arguments["storage"].c_str());
 
   if (sd == nullptr) {
-    ua->ErrorMsg(_("Storage \"%s\" not found.\n"),
+    ua->ErrorMsg(T_("Storage \"%s\" not found.\n"),
                  arguments["storage"].c_str());
     return false;
   }
@@ -1657,28 +1657,28 @@ static bool ResolveCmd(UaContext* ua, const char*)
       if (ua->argv[i]) {
         client = ua->GetClientResWithName(ua->argv[i]);
         if (!client) {
-          ua->ErrorMsg(_("Client \"%s\" not found.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->argv[i]);
           return true;
         }
 
         *ua->argk[i] = 0; /* zap keyword already visited */
         continue;
       } else {
-        ua->ErrorMsg(_("Client name missing.\n"));
+        ua->ErrorMsg(T_("Client name missing.\n"));
         return true;
       }
     } else if (Bstrcasecmp(ua->argk[i], NT_("storage"))) {
       if (ua->argv[i]) {
         storage = ua->GetStoreResWithName(ua->argv[i]);
         if (!storage) {
-          ua->ErrorMsg(_("Storage \"%s\" not found.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Storage \"%s\" not found.\n"), ua->argv[i]);
           return true;
         }
 
         *ua->argk[i] = 0; /* zap keyword already visited */
         continue;
       } else {
-        ua->ErrorMsg(_("Storage name missing.\n"));
+        ua->ErrorMsg(T_("Storage name missing.\n"));
         return true;
       }
     }
@@ -1697,11 +1697,11 @@ static bool ResolveCmd(UaContext* ua, const char*)
       if (!*ua->argk[i]) { continue; }
 
       if ((addr_list = BnetHost2IpAddrs(ua->argk[i], 0, &errstr)) == NULL) {
-        ua->ErrorMsg(_("%s Failed to resolve %s\n"), my_name, ua->argk[i]);
+        ua->ErrorMsg(T_("%s Failed to resolve %s\n"), my_name, ua->argk[i]);
         return false;
       }
       ua->SendMsg(
-          _("%s resolves %s to %s\n"), my_name, ua->argk[i],
+          T_("%s resolves %s to %s\n"), my_name, ua->argk[i],
           BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
       FreeAddresses(addr_list);
     }
@@ -1716,7 +1716,7 @@ static bool TraceCmd(UaContext* ua, const char*)
   char* onoff;
 
   if (ua->argc != 2) {
-    if (!GetCmd(ua, _("Turn on or off? "))) { return true; }
+    if (!GetCmd(ua, T_("Turn on or off? "))) { return true; }
     onoff = ua->cmd;
   } else {
     onoff = ua->argk[1];
@@ -1763,12 +1763,12 @@ static bool EstimateCmd(UaContext* ua, const char*)
       if (ua->argv[i]) {
         client = ua->GetClientResWithName(ua->argv[i]);
         if (!client) {
-          ua->ErrorMsg(_("Client \"%s\" not found.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->argv[i]);
           return false;
         }
         continue;
       } else {
-        ua->ErrorMsg(_("Client name missing.\n"));
+        ua->ErrorMsg(T_("Client name missing.\n"));
         return false;
       }
     }
@@ -1777,12 +1777,12 @@ static bool EstimateCmd(UaContext* ua, const char*)
       if (ua->argv[i]) {
         job = ua->GetJobResWithName(ua->argv[i]);
         if (!job) {
-          ua->ErrorMsg(_("Job \"%s\" not found.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Job \"%s\" not found.\n"), ua->argv[i]);
           return false;
         }
         continue;
       } else {
-        ua->ErrorMsg(_("Job name missing.\n"));
+        ua->ErrorMsg(T_("Job name missing.\n"));
         return false;
       }
     }
@@ -1791,12 +1791,12 @@ static bool EstimateCmd(UaContext* ua, const char*)
       if (ua->argv[i]) {
         fileset = ua->GetFileSetResWithName(ua->argv[i]);
         if (!fileset) {
-          ua->ErrorMsg(_("Fileset \"%s\" not found.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Fileset \"%s\" not found.\n"), ua->argv[i]);
           return false;
         }
         continue;
       } else {
-        ua->ErrorMsg(_("Fileset name missing.\n"));
+        ua->ErrorMsg(T_("Fileset name missing.\n"));
         return false;
       }
     }
@@ -1809,11 +1809,11 @@ static bool EstimateCmd(UaContext* ua, const char*)
     if (Bstrcasecmp(ua->argk[i], NT_("level"))) {
       if (ua->argv[i]) {
         if (!GetLevelFromName(jcr, ua->argv[i])) {
-          ua->ErrorMsg(_("Level \"%s\" not valid.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Level \"%s\" not valid.\n"), ua->argv[i]);
         }
         continue;
       } else {
-        ua->ErrorMsg(_("Level value missing.\n"));
+        ua->ErrorMsg(T_("Level value missing.\n"));
         return false;
       }
     }
@@ -1822,13 +1822,13 @@ static bool EstimateCmd(UaContext* ua, const char*)
       if (ua->argv[i]) {
         if (!IsYesno(ua->argv[i], &accurate)) {
           ua->ErrorMsg(
-              _("Invalid value for accurate. "
+              T_("Invalid value for accurate. "
                 "It must be yes or no.\n"));
         }
         accurate_set = true;
         continue;
       } else {
-        ua->ErrorMsg(_("Accurate value missing.\n"));
+        ua->ErrorMsg(T_("Accurate value missing.\n"));
         return false;
       }
     }
@@ -1841,7 +1841,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
   if (!job) {
     job = ua->GetJobResWithName(ua->argk[1]);
     if (!job) {
-      ua->ErrorMsg(_("No job specified.\n"));
+      ua->ErrorMsg(T_("No job specified.\n"));
       return false;
     }
   }
@@ -1850,7 +1850,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
     case JT_BACKUP:
       break;
     default:
-      ua->ErrorMsg(_("Wrong job specified of type %s.\n"),
+      ua->ErrorMsg(T_("Wrong job specified of type %s.\n"),
                    job_type_to_str(job->JobType));
       return false;
   }
@@ -1860,12 +1860,12 @@ static bool EstimateCmd(UaContext* ua, const char*)
   if (!fileset) { fileset = job->fileset; }
 
   if (!client) {
-    ua->ErrorMsg(_("No client specified or selected.\n"));
+    ua->ErrorMsg(T_("No client specified or selected.\n"));
     return false;
   }
 
   if (!fileset) {
-    ua->ErrorMsg(_("No fileset specified or selected.\n"));
+    ua->ErrorMsg(T_("No fileset specified or selected.\n"));
     return false;
   }
 
@@ -1877,7 +1877,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
     case APT_NATIVE:
       break;
     default:
-      ua->ErrorMsg(_("Estimate is only supported on native clients.\n"));
+      ua->ErrorMsg(T_("Estimate is only supported on native clients.\n"));
       return false;
   }
 
@@ -1900,17 +1900,17 @@ static bool EstimateCmd(UaContext* ua, const char*)
 
   GetLevelSinceTime(jcr);
 
-  ua->SendMsg(_("Connecting to Client %s at %s:%d\n"),
+  ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
               jcr->dir_impl->res.client->resource_name_,
               jcr->dir_impl->res.client->address,
               jcr->dir_impl->res.client->FDport);
   if (!ConnectToFileDaemon(jcr, 1, 15, false)) {
-    ua->ErrorMsg(_("Failed to connect to Client.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return false;
   }
 
   if (!SendJobInfoToFileDaemon(jcr)) {
-    ua->ErrorMsg(_("Failed to connect to Client.\n"));
+    ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return false;
   }
 
@@ -1924,7 +1924,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
   if (!SendLevelCommand(jcr)) { goto bail_out; }
 
   if (!SendIncludeExcludeLists(jcr)) {
-    ua->ErrorMsg(_("Error sending include and exclude lists.\n"));
+    ua->ErrorMsg(T_("Error sending include and exclude lists.\n"));
     goto bail_out;
   }
 
@@ -2018,18 +2018,18 @@ static bool TruncateCmd(UaContext* ua, const char*)
                                 (DEFAULT_BLOCK_SIZE) */
 
   if (!(ua->argc > 1)) {
-    ua->SendCmdUsage(_("missing parameter"));
+    ua->SendCmdUsage(T_("missing parameter"));
     return false;
   }
 
   /* arg: volstatus=Purged */
   i = FindArgWithValue(ua, "volstatus");
   if (i < 0) {
-    ua->SendCmdUsage(_("required parameter 'volstatus' missing"));
+    ua->SendCmdUsage(T_("required parameter 'volstatus' missing"));
     return false;
   }
   if (!(Bstrcasecmp(ua->argv[i], "Purged"))) {
-    ua->SendCmdUsage(_("Invalid parameter. 'volstatus' must be 'Purged'."));
+    ua->SendCmdUsage(T_("Invalid parameter. 'volstatus' must be 'Purged'."));
     return false;
   }
   parsed_args++;
@@ -2086,7 +2086,7 @@ static bool TruncateCmd(UaContext* ua, const char*)
   i = FindArgWithValue(ua, "drive");
   if (i >= 0) {
     if (!IsAnInteger(ua->argv[i])) {
-      ua->SendCmdUsage(_("Drive number must be integer but was : %s\n"),
+      ua->SendCmdUsage(T_("Drive number must be integer but was : %s\n"),
                        ua->argv[i]);
     } else {
       drive_number = atoi(ua->argv[i]);
@@ -2100,13 +2100,13 @@ static bool TruncateCmd(UaContext* ua, const char*)
   }
 
   if (parsed_args != ua->argc) {
-    ua->SendCmdUsage(_("Invalid parameter."));
+    ua->SendCmdUsage(T_("Invalid parameter."));
     goto bail_out;
   }
 
   /* create sql query string (in ua->db->cmd) */
   if (!ua->db->PrepareMediaSqlQuery(ua->jcr, &mr, &tmp, volumes)) {
-    ua->ErrorMsg(_("Invalid parameter (failed to create sql query).\n"));
+    ua->ErrorMsg(T_("Invalid parameter (failed to create sql query).\n"));
     goto bail_out;
   }
 
@@ -2141,12 +2141,12 @@ static bool TruncateCmd(UaContext* ua, const char*)
 
   if (ua->GetStoreResWithId(mr.StorageId)->Protocol != APT_NATIVE) {
     ua->WarningMsg(
-        _("Storage uses a non-native protocol. Truncate is only supported for "
+        T_("Storage uses a non-native protocol. Truncate is only supported for "
           "native protocols.\n"));
     goto bail_out;
   }
 
-  if (!GetConfirmation(ua, _("Truncate listed volumes (yes/no)? "))) {
+  if (!GetConfirmation(ua, T_("Truncate listed volumes (yes/no)? "))) {
     goto bail_out;
   }
 
@@ -2210,7 +2210,7 @@ static bool DoTruncate(UaContext* ua,
                        drive_number,
                        /* slot_number_t slot */
                        0)) {
-    ua->SendMsg(_("The volume '%s' has been truncated.\n"), mr.VolumeName);
+    ua->SendMsg(T_("The volume '%s' has been truncated.\n"), mr.VolumeName);
     retval = true;
   }
 
@@ -2255,10 +2255,10 @@ static bool DeleteCmd(UaContext* ua, const char*)
   int keyword = FindArgKeyword(ua, keywords);
   if (keyword < 0) {
     ua->WarningMsg(
-        _("In general it is not a good idea to delete either a\n"
+        T_("In general it is not a good idea to delete either a\n"
           "Pool or a Volume since they may contain data.\n\n"));
 
-    keyword = DoKeywordPrompt(ua, _("Choose catalog item to delete"), keywords);
+    keyword = DoKeywordPrompt(ua, T_("Choose catalog item to delete"), keywords);
   }
 
   switch (keyword) {
@@ -2275,7 +2275,7 @@ static bool DeleteCmd(UaContext* ua, const char*)
       DeleteStorage(ua);
       break;
     default:
-      ua->WarningMsg(_("Nothing done.\n"));
+      ua->WarningMsg(T_("Nothing done.\n"));
       break;
   }
   ua->send->ObjectEnd("deleted");
@@ -2286,7 +2286,7 @@ static void DeleteStorage(UaContext* ua)
 {
   std::string given_storagename;
   if (FindArgWithValue(ua, NT_("storage")) <= 0) {
-    if (GetCmd(ua, _("Enter storage to delete: "))) {
+    if (GetCmd(ua, T_("Enter storage to delete: "))) {
       given_storagename = ua->cmd;
     }
   } else {
@@ -2296,14 +2296,14 @@ static void DeleteStorage(UaContext* ua)
   std::vector<std::string> orphaned_storages
       = get_orphaned_storages_names(ua->db);
 
-  ua->SendMsg(_("Found %zu orphaned Storage records.\n"),
+  ua->SendMsg(T_("Found %zu orphaned Storage records.\n"),
               orphaned_storages.size());
 
   if (std::find(orphaned_storages.begin(), orphaned_storages.end(),
                 given_storagename)
       == orphaned_storages.end()) {
     ua->ErrorMsg(
-        _("The given storage '%s' either does not exist at all, or still "
+        T_("The given storage '%s' either does not exist at all, or still "
           "exists in the configuration. In order to remove a storage "
           "from the catalog, its configuration must be removed first.\n"),
         given_storagename.c_str());
@@ -2322,7 +2322,7 @@ static void DeleteStorage(UaContext* ua)
   }
 
   if (storages_to_be_deleted.size() > 0) {
-    ua->SendMsg(_("Deleting %zu orphaned storage record(s).\n"),
+    ua->SendMsg(T_("Deleting %zu orphaned storage record(s).\n"),
                 storages_to_be_deleted.size());
     delete_storages(ua->db, storages_to_be_deleted);
   }
@@ -2341,7 +2341,7 @@ static void DeleteJob(UaContext* ua)
   char *s, *sep, *tok;
 
   if (FindArgWithValue(ua, NT_("jobid")) <= 0) {
-    if (GetPint(ua, _("Enter JobId to delete: "))) {
+    if (GetPint(ua, T_("Enter JobId to delete: "))) {
       JobId = ua->int64_val;
       DoJobDelete(ua, JobId);
     }
@@ -2368,7 +2368,7 @@ static void DeleteJob(UaContext* ua)
             JobId = (JobId_t)str_to_uint64(tok);
             DoJobDelete(ua, JobId);
           } else {
-            ua->ErrorMsg(_("Illegal JobId %s ignored\n"), tok);
+            ua->ErrorMsg(T_("Illegal JobId %s ignored\n"), tok);
           }
         }
         tok = ++sep;
@@ -2381,7 +2381,7 @@ static void DeleteJob(UaContext* ua)
           JobId = (JobId_t)str_to_uint64(tok);
           DoJobDelete(ua, JobId);
         } else {
-          ua->ErrorMsg(_("Illegal JobId %s ignored\n"), tok);
+          ua->ErrorMsg(T_("Illegal JobId %s ignored\n"), tok);
         }
       }
 
@@ -2391,7 +2391,7 @@ static void DeleteJob(UaContext* ua)
         JobId = (JobId_t)str_to_uint64(ua->argv[i]);
         DoJobDelete(ua, JobId);
       } else {
-        ua->ErrorMsg(_("Illegal JobId %s ignored\n"), ua->argv[i]);
+        ua->ErrorMsg(T_("Illegal JobId %s ignored\n"), ua->argv[i]);
       }
     }
   }
@@ -2420,18 +2420,18 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
        * ask the user for confirmation. */
       if ((!ua->batch) && ((j2 - j1) > 25)) {
         Bsnprintf(buf, sizeof(buf),
-                  _("Are you sure you want to delete %d JobIds ? (yes/no): "),
+                  T_("Are you sure you want to delete %d JobIds ? (yes/no): "),
                   j2 - j1);
         if (!GetYesno(ua, buf) || !ua->pint32_val) { return true; }
       }
       for (j = j1; j <= j2; j++) { DoJobDelete(ua, j); }
     } else {
-      ua->ErrorMsg(_("Illegal JobId range %s - %s should define increasing "
+      ua->ErrorMsg(T_("Illegal JobId range %s - %s should define increasing "
                      "JobIds, ignored\n"),
                    tok, tok2);
     }
   } else {
-    ua->ErrorMsg(_("Illegal JobId range %s - %s, ignored\n"), tok, tok2);
+    ua->ErrorMsg(T_("Illegal JobId range %s - %s, ignored\n"), tok, tok2);
   }
 
   return true;
@@ -2445,7 +2445,7 @@ static void DoJobDelete(UaContext* ua, JobId_t JobId)
   edit_int64(JobId, ed1);
   PurgeJobsFromCatalog(ua, ed1);
   ua->send->ArrayItem(
-      ed1, _("Jobid %s and associated records deleted from the catalog.\n"));
+      ed1, T_("Jobid %s and associated records deleted from the catalog.\n"));
 }
 
 // Delete media records from database -- dangerous
@@ -2456,13 +2456,13 @@ static bool DeleteVolume(UaContext* ua)
   db_list_ctx lst;
 
   if (!SelectMediaDbr(ua, &mr)) { return true; }
-  ua->WarningMsg(_("\nThis command will delete volume %s\n"
+  ua->WarningMsg(T_("\nThis command will delete volume %s\n"
                    "and all Jobs saved on that volume from the Catalog\n"),
                  mr.VolumeName);
 
   if ((!ua->batch) && (FindArg(ua, "yes") < 0)) {
     Bsnprintf(buf, sizeof(buf),
-              _("Are you sure you want to delete Volume \"%s\"? (yes/no): "),
+              T_("Are you sure you want to delete Volume \"%s\"? (yes/no): "),
               mr.VolumeName);
     if (!GetYesno(ua, buf)) { return true; }
     if (!ua->pint32_val) { return true; }
@@ -2471,7 +2471,7 @@ static bool DeleteVolume(UaContext* ua)
   // If not purged, do it
   if (!bstrcmp(mr.VolStatus, "Purged")) {
     if (!ua->db->GetVolumeJobids(&mr, &lst)) {
-      ua->ErrorMsg(_("Can't list jobs on this volume\n"));
+      ua->ErrorMsg(T_("Can't list jobs on this volume\n"));
       return true;
     }
     if (!lst.empty()) {
@@ -2480,7 +2480,7 @@ static bool DeleteVolume(UaContext* ua)
       for (const std::string& item : lst) { ua->send->ArrayItem(item.c_str()); }
       ua->send->ArrayEnd("jobids");
       ua->InfoMsg(
-          _("Deleted %d jobs and associated records deleted from the catalog "
+          T_("Deleted %d jobs and associated records deleted from the catalog "
             "(jobids: %s).\n"),
           lst.size(), lst.GetAsString().c_str());
     }
@@ -2488,7 +2488,7 @@ static bool DeleteVolume(UaContext* ua)
 
   ua->db->DeleteMediaRecord(ua->jcr, &mr);
   ua->send->ArrayStart("volumes");
-  ua->send->ArrayItem(mr.VolumeName, _("Volume %s deleted.\n"));
+  ua->send->ArrayItem(mr.VolumeName, T_("Volume %s deleted.\n"));
   ua->send->ArrayEnd("volumes");
 
   return true;
@@ -2502,13 +2502,13 @@ static bool DeletePool(UaContext* ua)
 
   if (ua->batch) {
     ua->ErrorMsg(
-        _("Deleting pools from the catalog is not supported in batch mode.\n"));
+        T_("Deleting pools from the catalog is not supported in batch mode.\n"));
     return false;
   }
 
   if (!GetPoolDbr(ua, &pr)) { return true; }
   Bsnprintf(buf, sizeof(buf),
-            _("Are you sure you want to delete Pool \"%s\"? (yes/no): "),
+            T_("Are you sure you want to delete Pool \"%s\"? (yes/no): "),
             pr.Name);
   if (!GetYesno(ua, buf)) { return true; }
   if (ua->pint32_val) { ua->db->DeletePoolRecord(ua->jcr, &pr); }
@@ -2540,7 +2540,7 @@ static void DoMountCmd(UaContext* ua, const char* cmd)
   store.store = get_storage_resource(ua, true, false);
   if (!store.store) { return; }
 
-  PmStrcpy(store.store_source, _("unknown source"));
+  PmStrcpy(store.store_source, T_("unknown source"));
   SetWstorage(ua->jcr, &store);
   if (!do_alldrives) {
     drive = GetStorageDrive(ua, store.store);
@@ -2611,7 +2611,7 @@ static bool use_cmd(UaContext* ua, const char*)
     ua->catalog = catalog;
   }
   if (OpenDb(ua)) {
-    ua->SendMsg(_("Using Catalog name=%s DB=%s\n"), ua->catalog->resource_name_,
+    ua->SendMsg(T_("Using Catalog name=%s DB=%s\n"), ua->catalog->resource_name_,
                 ua->catalog->db_name);
   }
   return true;
@@ -2676,7 +2676,7 @@ static bool wait_cmd(UaContext* ua, const char*)
 
   // We have jobid, jobname or ujobid argument
   if (!OpenClientDb(ua)) {
-    ua->ErrorMsg(_("ERR: Can't open db\n"));
+    ua->ErrorMsg(T_("ERR: Can't open db\n"));
     return true;
   }
 
@@ -2716,7 +2716,7 @@ static bool wait_cmd(UaContext* ua, const char*)
         endeach_jcr(jcr);
         if (waiting) { break; }
         if (stop_time && (time(NULL) >= stop_time)) {
-          ua->WarningMsg(_("Wait on mount timed out\n"));
+          ua->WarningMsg(T_("Wait on mount timed out\n"));
           return true;
         }
         Bmicrosleep(1, 0);
@@ -2726,7 +2726,7 @@ static bool wait_cmd(UaContext* ua, const char*)
   }
 
   if (JobId == 0) {
-    ua->ErrorMsg(_("ERR: Job was not found\n"));
+    ua->ErrorMsg(T_("ERR: Job was not found\n"));
     return true;
   }
 
@@ -2792,7 +2792,7 @@ static bool help_cmd(UaContext* ua, const char*)
 {
   int i;
 
-  ua->send->Decoration("%s", _("  Command            Description\n  =======    "
+  ua->send->Decoration("%s", T_("  Command            Description\n  =======    "
                                "        ===========\n"));
   for (i = 0; i < comsize; i++) {
     if (ua->argc == 2) {
@@ -2820,10 +2820,10 @@ static bool help_cmd(UaContext* ua, const char*)
     }
   }
   if (i == comsize && ua->argc == 2) {
-    ua->SendMsg(_("\nCan't find %s command.\n\n"), ua->argk[1]);
+    ua->SendMsg(T_("\nCan't find %s command.\n\n"), ua->argk[1]);
   }
   ua->send->Decoration(
-      _("\nWhen at a prompt, entering a period (.) cancels the command.\n\n"));
+      T_("\nWhen at a prompt, entering a period (.) cancels the command.\n\n"));
 
   return true;
 }

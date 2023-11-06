@@ -122,14 +122,14 @@ bool BnetTlsServer(BareosSocket* bsock,
   }
 
   if (!bsock->tls_conn_init->TlsBsockAccept(bsock)) {
-    Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
+    Qmsg0(bsock->jcr(), M_FATAL, 0, T_("TLS Negotiation failed.\n"));
     goto err;
   }
 
   if (!verify_list.empty()) {
     if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
       Qmsg1(bsock->jcr(), M_FATAL, 0,
-            _("TLS certificate verification failed."
+            T_("TLS certificate verification failed."
               " Peer certificate did not match a required commonName\n"),
             bsock->host());
       goto err;
@@ -172,7 +172,7 @@ bool BnetTlsClient(BareosSocket* bsock,
     if (!verify_list.empty()) {
       if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
         Qmsg1(bsock->jcr(), M_FATAL, 0,
-              _("TLS certificate verification failed."
+              T_("TLS certificate verification failed."
                 " Peer certificate did not match a required commonName\n"),
               bsock->host());
         goto err;
@@ -180,7 +180,7 @@ bool BnetTlsClient(BareosSocket* bsock,
     } else {
       if (!bsock->tls_conn_init->TlsPostconnectVerifyHost(jcr, bsock->host())) {
         Qmsg1(bsock->jcr(), M_FATAL, 0,
-              _("TLS host certificate verification failed. Host name \"%s\" "
+              T_("TLS host certificate verification failed. Host name \"%s\" "
                 "did not match presented certificate\n"),
               bsock->host());
         goto err;
@@ -204,7 +204,7 @@ bool BnetTlsServer(std::shared_ptr<TlsImplementation> tls_implementation,
                    BareosSocket* bsock,
                    const std::vector<std::string>& verify_list)
 {
-  Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
+  Jmsg(bsock->jcr(), M_ABORT, 0, T_("TLS enabled but not configured.\n"));
   return false;
 }
 
@@ -213,7 +213,7 @@ bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation,
                    bool VerifyPeer,
                    const std::vector<std::string>& verify_list)
 {
-  Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
+  Jmsg(bsock->jcr(), M_ABORT, 0, T_("TLS enabled but not configured.\n"));
   return false;
 }
 #endif /* HAVE_TLS */
@@ -313,22 +313,22 @@ static const char* gethost_strerror()
       msg = be.bstrerror();
       break;
     case NETDB_SUCCESS:
-      msg = _("No problem.");
+      msg = T_("No problem.");
       break;
     case HOST_NOT_FOUND:
-      msg = _("Authoritative answer for host not found.");
+      msg = T_("Authoritative answer for host not found.");
       break;
     case TRY_AGAIN:
-      msg = _("Non-authoritative for host not found, or ServerFail.");
+      msg = T_("Non-authoritative for host not found, or ServerFail.");
       break;
     case NO_RECOVERY:
-      msg = _("Non-recoverable errors, FORMERR, REFUSED, or NOTIMP.");
+      msg = T_("Non-recoverable errors, FORMERR, REFUSED, or NOTIMP.");
       break;
     case NO_DATA:
-      msg = _("Valid name, no data record of resquested type.");
+      msg = T_("Valid name, no data record of resquested type.");
       break;
     default:
-      msg = _("Unknown error.");
+      msg = T_("Unknown error.");
   }
   return msg;
 }

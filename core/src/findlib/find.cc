@@ -185,7 +185,7 @@ int FindFiles(JobControlRecord* jcr,
         char* fname = node->c_str();
 
         if (!PluginSave) {
-          Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
+          Jmsg(jcr, M_FATAL, 0, T_("Plugin: \"%s\" not found.\n"), fname);
           return 0;
         }
         Dmsg1(debuglevel, "PluginCommand: %s\n", fname);

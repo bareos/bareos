@@ -76,7 +76,7 @@ static int enable_priv(JobControlRecord* jcr,
   if (lerror != ERROR_SUCCESS) {
     if (!ignore_errors) {
       char buf[200];
-      strcpy(buf, _("AdjustTokenPrivileges set "));
+      strcpy(buf, T_("AdjustTokenPrivileges set "));
       bstrncat(buf, name, sizeof(buf));
       WinError(jcr, buf, lerror);
     }

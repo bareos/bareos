@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
     if (!director) {
       Emsg2(
           M_ERROR_TERM, 0,
-          _("No Director resource named %s defined in %s. Cannot continue.\n"),
+          T_("No Director resource named %s defined in %s. Cannot continue.\n"),
           DirectorName.c_str(), configfile.c_str());
     }
   }
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
   if (GeneratePluginEvent(in_jcr, bSdEventSetupRecordTranslation, in_dcr)
       != bRC_OK) {
     Jmsg(in_jcr, M_FATAL, 0,
-         _("bSdEventSetupRecordTranslation call for input failed!\n"));
+         T_("bSdEventSetupRecordTranslation call for input failed!\n"));
   }
 
 
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
   if (GeneratePluginEvent(out_jcr, bSdEventSetupRecordTranslation, out_dcr)
       != bRC_OK) {
     Jmsg(in_jcr, M_FATAL, 0,
-         _("bSdEventSetupRecordTranslation call for output failed!\n"));
+         T_("bSdEventSetupRecordTranslation call for output failed!\n"));
   }
 
   Dmsg0(100, "About to acquire device for writing\n");
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
   // For we must now acquire the device for writing
   out_dev->rLock(false);
   if (!out_dev->open(out_jcr->sd_impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
-    Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
+    Emsg1(M_FATAL, 0, T_("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();
     exit(BEXIT_FAILURE);
   }
@@ -248,11 +248,11 @@ int main(int argc, char* argv[])
 
   if (ok || out_dev->CanWrite()) {
     if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
-      Pmsg0(000, _("Write of last block failed.\n"));
+      Pmsg0(000, T_("Write of last block failed.\n"));
     }
   }
 
-  Pmsg2(000, _("%u Jobs copied. %u records copied.\n"), jobs, records);
+  Pmsg2(000, T_("%u Jobs copied. %u records copied.\n"), jobs, records);
 
 
   CleanupCompression(in_jcr);
@@ -276,7 +276,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
 {
   if (list_records) {
     Pmsg5(000,
-          _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
+          T_("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
           rec->VolSessionId, rec->VolSessionTime, rec->FileIndex, rec->Stream,
           rec->data_len);
   }
@@ -287,16 +287,16 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
     if (verbose > 1) { DumpLabelRecord(in_dcr->dev, rec, true); }
     switch (rec->FileIndex) {
       case PRE_LABEL:
-        Pmsg0(000, _("Volume is prelabeled. This volume cannot be copied.\n"));
+        Pmsg0(000, T_("Volume is prelabeled. This volume cannot be copied.\n"));
         return false;
       case VOL_LABEL:
-        Pmsg0(000, _("Volume label not copied.\n"));
+        Pmsg0(000, T_("Volume label not copied.\n"));
         return true;
       case SOS_LABEL:
         if (bsr && rec->match_stat < 1) {
           /* Skipping record, because does not match BootStrapRecord filter */
           if (verbose) {
-            Pmsg0(-1, _("Copy skipped. Record does not match BootStrapRecord "
+            Pmsg0(-1, T_("Copy skipped. Record does not match BootStrapRecord "
                         "filter.\n"));
           }
         } else {
@@ -314,7 +314,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
             Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                   out_dev->print_name(), out_dev->bstrerror());
-            Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
+            Jmsg(out_jcr, M_FATAL, 0, T_("Cannot fixup device error. %s\n"),
                  out_dev->bstrerror());
             return false;
           }
@@ -322,16 +322,16 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
         if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
           Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                 out_dev->print_name(), out_dev->bstrerror());
-          Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
+          Jmsg(out_jcr, M_FATAL, 0, T_("Cannot fixup device error. %s\n"),
                out_dev->bstrerror());
           return false;
         }
         return true;
       case EOM_LABEL:
-        Pmsg0(000, _("EOM label not copied.\n"));
+        Pmsg0(000, T_("EOM label not copied.\n"));
         return true;
       case EOT_LABEL: /* end of all tapes */
-        Pmsg0(000, _("EOT label not copied.\n"));
+        Pmsg0(000, T_("EOT label not copied.\n"));
         return true;
       default:
         return true;
@@ -350,7 +350,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
     if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
       Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
             out_dev->print_name(), out_dev->bstrerror());
-      Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
+      Jmsg(out_jcr, M_FATAL, 0, T_("Cannot fixup device error. %s\n"),
            out_dev->bstrerror());
       return false;
     }
@@ -366,26 +366,26 @@ static void GetSessionRecord(Device* dev,
   *sessrec = Session_Label{};
   switch (rec->FileIndex) {
     case PRE_LABEL:
-      rtype = _("Fresh Volume Label");
+      rtype = T_("Fresh Volume Label");
       break;
     case VOL_LABEL:
-      rtype = _("Volume Label");
+      rtype = T_("Volume Label");
       UnserVolumeLabel(dev, rec);
       break;
     case SOS_LABEL:
-      rtype = _("Begin Job Session");
+      rtype = T_("Begin Job Session");
       UnserSessionLabel(sessrec, rec);
       break;
     case EOS_LABEL:
-      rtype = _("End Job Session");
+      rtype = T_("End Job Session");
       UnserSessionLabel(sessrec, rec);
       break;
     case 0:
     case EOM_LABEL:
-      rtype = _("End of Medium");
+      rtype = T_("End of Medium");
       break;
     default:
-      rtype = _("Unknown");
+      rtype = T_("Unknown");
       break;
   }
   Dmsg5(10,
@@ -395,7 +395,7 @@ static void GetSessionRecord(Device* dev,
   if (verbose) {
     Pmsg5(
         -1,
-        _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
+        T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
         rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
         rec->data_len);
   }

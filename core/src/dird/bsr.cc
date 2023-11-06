@@ -227,7 +227,7 @@ bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
     JobDbRecord jr;
     jr.JobId = bsr->JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-      ua->ErrorMsg(_("Unable to get Job record. ERR=%s\n"), ua->db->strerror());
+      ua->ErrorMsg(T_("Unable to get Job record. ERR=%s\n"), ua->db->strerror());
       return false;
     }
     bsr->VolSessionId = jr.VolSessionId;
@@ -239,7 +239,7 @@ bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
     if ((bsr->VolCount = ua->db->GetJobVolumeParameters(ua->jcr, bsr->JobId,
                                                         &(bsr->VolParams)))
         == 0) {
-      ua->ErrorMsg(_("Unable to get Job Volume Parameters. ERR=%s\n"),
+      ua->ErrorMsg(T_("Unable to get Job Volume Parameters. ERR=%s\n"),
                    ua->db->strerror());
       if (bsr->VolParams) {
         free(bsr->VolParams);
@@ -284,7 +284,7 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
   fd = fopen(fname.c_str(), "w+b");
   if (!fd) {
     BErrNo be;
-    ua->ErrorMsg(_("Unable to create bootstrap file %s. ERR=%s\n"),
+    ua->ErrorMsg(T_("Unable to create bootstrap file %s. ERR=%s\n"),
                  fname.c_str(), be.bstrerror());
     goto bail_out;
   }
@@ -296,16 +296,16 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
   err = ferror(fd);
   fclose(fd);
   if (count == 0) {
-    ua->InfoMsg(_("No files found to read. No bootstrap file written.\n"));
+    ua->InfoMsg(T_("No files found to read. No bootstrap file written.\n"));
     goto bail_out;
   }
   if (err) {
-    ua->ErrorMsg(_("Error writing bsr file.\n"));
+    ua->ErrorMsg(T_("Error writing bsr file.\n"));
     count = 0;
     goto bail_out;
   }
 
-  ua->SendMsg(_("Bootstrap records written to %s\n"), fname.c_str());
+  ua->SendMsg(T_("Bootstrap records written to %s\n"), fname.c_str());
 
   if (debug_level >= 10) { PrintBsr(ua, rx); }
 
@@ -351,7 +351,7 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
   // Tell the user what he will need to mount
   ua->SendMsg("\n");
   ua->SendMsg(
-      _("The job will require the following\n"
+      T_("The job will require the following\n"
         "   Volume(s)                 Storage(s)                SD Device(s)\n"
         "======================================================================"
         "=====\n"));
@@ -374,9 +374,9 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
   }
 
   if (ua->num_prompts == 0) {
-    ua->SendMsg(_("No Volumes found to restore.\n"));
+    ua->SendMsg(T_("No Volumes found to restore.\n"));
   } else {
-    ua->SendMsg(_("\nVolumes marked with \"*\" are online.\n"));
+    ua->SendMsg(T_("\nVolumes marked with \"*\" are online.\n"));
   }
 
   ua->num_prompts = 0;
@@ -610,7 +610,7 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
   bs = fopen(jcr->RestoreBootstrap, "rb");
   if (!bs) {
     BErrNo be;
-    Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Could not open bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
@@ -654,7 +654,7 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
 
   new_store = (StorageResource*)my_config->GetResWithName(R_STORAGE, new_one);
   if (!new_store) {
-    Jmsg(jcr, M_WARNING, 0, _("Could not get storage resource '%s'.\n"),
+    Jmsg(jcr, M_WARNING, 0, T_("Could not get storage resource '%s'.\n"),
          new_one);
     return true;
   }

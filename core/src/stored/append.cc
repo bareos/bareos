@@ -248,12 +248,12 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   char ec[50];
 
   if (!jcr->sd_impl->dcr) {
-    Jmsg0(jcr, M_FATAL, 0, _("DeviceControlRecord is NULL!!!\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("DeviceControlRecord is NULL!!!\n"));
     return false;
   }
   dev = jcr->sd_impl->dcr->dev;
   if (!dev) {
-    Jmsg0(jcr, M_FATAL, 0, _("Device is NULL!!!\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("Device is NULL!!!\n"));
     return false;
   }
 
@@ -262,7 +262,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   if (!bs->SetBufferSize(
           jcr->sd_impl->dcr->device_resource->max_network_buffer_size,
           BNET_SETBUF_WRITE)) {
-    Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("Unable to set network buffer size.\n"));
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
@@ -282,7 +282,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   jcr->sendJobStatus(JS_Running);
 
   if (dev->VolCatInfo.VolCatName[0] == 0) {
-    Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
+    Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
   }
   Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
@@ -299,24 +299,24 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   Dmsg0(100, "Just after AcquireDeviceForAppend\n");
   if (dev->VolCatInfo.VolCatName[0] == 0) {
-    Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
+    Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
   }
 
   // Write Begin Session Record
   if (!WriteSessionLabel(jcr->sd_impl->dcr, SOS_LABEL)) {
-    Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Write session label failed. ERR=%s\n"),
           dev->bstrerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     ok = false;
   }
   if (dev->VolCatInfo.VolCatName[0] == 0) {
-    Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
+    Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
   }
 
   // Tell daemon to send data
   if (!bs->fsend(OK_data)) {
     BErrNo be;
-    Jmsg2(jcr, M_FATAL, 0, _("Network send error to %s. ERR=%s\n"), what,
+    Jmsg2(jcr, M_FATAL, 0, T_("Network send error to %s. ERR=%s\n"), what,
           be.bstrerror(bs->b_errno));
     ok = false;
   }
@@ -360,7 +360,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      *               info is not currently used, so is read, but ignored! */
     auto msg = handler.get_msg();
     if (!msg) {
-      Jmsg2(jcr, M_FATAL, 0, _("Internal Error reading data header from %s.\n"),
+      Jmsg2(jcr, M_FATAL, 0, T_("Internal Error reading data header from %s.\n"),
             what);
       ok = false;
       break;
@@ -371,7 +371,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     using error_type = MessageHandler::error_type;
 
     if (auto* error = std::get_if<error_type>(&msg.value())) {
-      Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
+      Jmsg2(jcr, M_FATAL, 0, T_("Error reading data header from %s. ERR=%s\n"),
             what, error->msg.c_str());
       ok = false;
       break;
@@ -379,7 +379,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
     if (auto* signal = std::get_if<signal_type>(&msg.value())) {
       if (*signal != BNET_EOD) {
-        Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
+        Jmsg2(jcr, M_FATAL, 0, T_("Unexpected signal from %s: %d\n"), what,
               *signal);
         ok = false;
       }
@@ -390,7 +390,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     n = content.size;
 
     if (sscanf(content.data.c_str(), "%ld %ld", &file_index, &stream) != 2) {
-      Jmsg2(jcr, M_FATAL, 0, _("Malformed data header from %s: %s\n"), what,
+      Jmsg2(jcr, M_FATAL, 0, T_("Malformed data header from %s: %s\n"), what,
             content.data.c_str());
       ok = false;
       break;
@@ -410,7 +410,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
     if (!incomplete_job_rerun_fileindex_positive && !fileindex_is_sequential) {
       Jmsg3(jcr, M_FATAL, 0,
-            _("FileIndex=%d from %s not positive or sequential=%d\n"),
+            T_("FileIndex=%d from %s not positive or sequential=%d\n"),
             file_index, what, last_file_index);
       ok = false;
       break;
@@ -433,13 +433,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
       if (!msg) {
         Jmsg2(jcr, M_FATAL, 0,
-              _("Internal Error reading data header from %s.\n"), what);
+              T_("Internal Error reading data header from %s.\n"), what);
         ok = false;
         break;
       }
 
       if (auto* error = std::get_if<error_type>(&msg.value())) {
-        Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
+        Jmsg2(jcr, M_FATAL, 0, T_("Error reading data header from %s. ERR=%s\n"),
               what, error->msg.c_str());
         ok = false;
         break;
@@ -447,7 +447,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
       if (auto* signal = std::get_if<signal_type>(&msg.value())) {
         if (*signal != BNET_EOD) {
-          Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
+          Jmsg2(jcr, M_FATAL, 0, T_("Unexpected signal from %s: %d\n"), what,
                 *signal);
           ok = false;
         }
@@ -523,7 +523,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     if (auto* error = handler.error()) {
       if (!jcr->IsJobCanceled()) {
         Dmsg2(350, "Network read error from %s. ERR=%s\n", what, error);
-        Jmsg2(jcr, M_FATAL, 0, _("Network error reading from %s. ERR=%s\n"),
+        Jmsg2(jcr, M_FATAL, 0, T_("Network error reading from %s. ERR=%s\n"),
               what, error);
       }
 
@@ -558,7 +558,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
-        Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
+        Jmsg1(jcr, M_FATAL, 0, T_("Error writing end session label. ERR=%s\n"),
               dev->bstrerror());
       }
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -570,9 +570,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
-        Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
+        Jmsg2(jcr, M_FATAL, 0, T_("Fatal append error on device %s: ERR=%s\n"),
               dev->print_name(), dev->bstrerror());
-        Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
+        Dmsg0(100, T_("Set ok=FALSE after WriteBlockToDevice.\n"));
       }
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
@@ -596,7 +596,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   ReleaseDevice(jcr->sd_impl->dcr);
 
   if (!DeleteNullJobmediaRecords(jcr)) {
-    Jmsg(jcr, M_WARNING, 0, _("Could not delete placeholder media records.\n"));
+    Jmsg(jcr, M_WARNING, 0, T_("Could not delete placeholder media records.\n"));
   }
 
   /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
@@ -605,7 +605,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   if (job_elapsed <= 0) { job_elapsed = 1; }
 
   Jmsg(jcr, M_INFO, 0,
-       _("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
+       T_("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
        job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
        edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec));
 
@@ -629,7 +629,7 @@ bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
     if (AttributesAreSpooled(jcr)) { dir->SetSpooling(); }
     Dmsg0(850, "Send attributes to dir.\n");
     if (!jcr->sd_impl->dcr->DirUpdateFileAttributes(rec)) {
-      Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Error updating file attributes. ERR=%s\n"),
            dir->bstrerror());
       dir->ClearSpooling();
       return false;

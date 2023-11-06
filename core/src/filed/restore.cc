@@ -135,7 +135,7 @@ static int BcloseChksize(JobControlRecord* jcr,
   bclose(bfd);
   if (fsize > 0 && fsize != osize) {
     Qmsg3(jcr, M_WARNING, 0,
-          _("Size of data or stream of %s not correct. Original %s, restored "
+          T_("Size of data or stream of %s not correct. Original %s, restored "
             "%s.\n"),
           jcr->fd_impl->last_fname, edit_uint64(osize, ec1),
           edit_uint64(fsize, ec2));
@@ -159,12 +159,12 @@ static inline bool RestoreFinderinfo(JobControlRecord* jcr,
   SetBit(FO_HFSPLUS, jcr->fd_impl->ff->flags);
   if (buflen != 32) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Invalid length of Finder Info (got %d, not 32)\n"), buflen);
+         T_("Invalid length of Finder Info (got %d, not 32)\n"), buflen);
     return false;
   }
 
   if (setattrlist(jcr->fd_impl->last_fname, &attrList, buf, buflen, 0) != 0) {
-    Jmsg(jcr, M_WARNING, 0, _("Could not set Finder Info on %s\n"),
+    Jmsg(jcr, M_WARNING, 0, T_("Could not set Finder Info on %s\n"),
          jcr->fd_impl->last_fname);
     return false;
   }
@@ -366,7 +366,7 @@ static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
         break;
       default:
         Jmsg(jcr, M_WARNING, 0,
-             _("Unknown stream=%d ignored. This shouldn't happen!\n"),
+             T_("Unknown stream=%d ignored. This shouldn't happen!\n"),
              dds->stream);
         break;
     }
@@ -493,7 +493,7 @@ void DoRestore(JobControlRecord* jcr)
     if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
                &rctx.full_stream, &rctx.size)
         != 5) {
-      Jmsg1(jcr, M_FATAL, 0, _("Record header scan error: %s\n"), sd->msg);
+      Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
     }
     /* Strip off new stream high bits */
@@ -504,11 +504,11 @@ void DoRestore(JobControlRecord* jcr)
 
     // Now we expect the Stream Data
     if (BgetMsg(sd) < 0) {
-      Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
+      Jmsg1(jcr, M_FATAL, 0, T_("Data record error. ERR=%s\n"), sd->bstrerror());
       goto bail_out;
     }
     if (rctx.size != (uint32_t)sd->message_length) {
-      Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"),
+      Jmsg2(jcr, M_FATAL, 0, T_("Actual data size %d not same as header %d\n"),
             sd->message_length, rctx.size);
       Dmsg2(50, "Actual data size %d not same as header %d\n",
             sd->message_length, rctx.size);
@@ -560,7 +560,7 @@ void DoRestore(JobControlRecord* jcr)
         if (!IsRestoreStreamSupported(attr->data_stream)) {
           if (!non_support_data++) {
             Jmsg(jcr, M_WARNING, 0,
-                 _("%s stream not supported on this Client.\n"),
+                 T_("%s stream not supported on this Client.\n"),
                  stream_to_ascii(attr->data_stream));
           }
           continue;
@@ -634,7 +634,7 @@ void DoRestore(JobControlRecord* jcr)
           // Is this an unexpected session data entry?
           if (rctx.cs) {
             Jmsg0(jcr, M_ERROR, 0,
-                  _("Unexpected cryptographic session data stream.\n"));
+                  T_("Unexpected cryptographic session data stream.\n"));
             rctx.extract = false;
             bclose(&rctx.bfd);
             continue;
@@ -643,7 +643,7 @@ void DoRestore(JobControlRecord* jcr)
           // Do we have any keys at all?
           if (!jcr->fd_impl->crypto.pki_recipients) {
             Jmsg(jcr, M_ERROR, 0,
-                 _("No private decryption keys have been defined to decrypt "
+                 T_("No private decryption keys have been defined to decrypt "
                    "encrypted backup data.\n"));
             rctx.extract = false;
             bclose(&rctx.bfd);
@@ -656,7 +656,7 @@ void DoRestore(JobControlRecord* jcr)
           jcr->fd_impl->crypto.digest
               = crypto_digest_new(jcr, signing_algorithm);
           if (!jcr->fd_impl->crypto.digest) {
-            Jmsg0(jcr, M_FATAL, 0, _("Could not create digest.\n"));
+            Jmsg0(jcr, M_FATAL, 0, T_("Could not create digest.\n"));
             rctx.extract = false;
             bclose(&rctx.bfd);
             break;
@@ -672,16 +672,16 @@ void DoRestore(JobControlRecord* jcr)
               break;
             case CRYPTO_ERROR_NORECIPIENT:
               Jmsg(jcr, M_ERROR, 0,
-                   _("Missing private key required to decrypt encrypted backup "
+                   T_("Missing private key required to decrypt encrypted backup "
                      "data.\n"));
               break;
             case CRYPTO_ERROR_DECRYPTION:
-              Jmsg(jcr, M_ERROR, 0, _("Decrypt of the session key failed.\n"));
+              Jmsg(jcr, M_ERROR, 0, T_("Decrypt of the session key failed.\n"));
               break;
             default:
               // Shouldn't happen
               Jmsg1(jcr, M_ERROR, 0,
-                    _("An error occurred while decoding encrypted session data "
+                    T_("An error occurred while decoding encrypted session data "
                       "stream: %s\n"),
                     crypto_strerror(cryptoerr));
               break;
@@ -826,7 +826,7 @@ void DoRestore(JobControlRecord* jcr)
                             O_WRONLY | O_TRUNC | O_BINARY, 0)
                   < 0) {
                 Jmsg(jcr, M_WARNING, 0,
-                     _("Cannot open resource fork for %s.\n"),
+                     T_("Cannot open resource fork for %s.\n"),
                      jcr->fd_impl->last_fname);
                 rctx.extract = false;
                 continue;
@@ -964,7 +964,7 @@ void DoRestore(JobControlRecord* jcr)
         // Is this an unexpected signature?
         if (rctx.sig) {
           Jmsg0(jcr, M_ERROR, 0,
-                _("Unexpected cryptographic signature data stream.\n"));
+                T_("Unexpected cryptographic signature data stream.\n"));
           FreeSignature(rctx);
           continue;
         }
@@ -974,7 +974,7 @@ void DoRestore(JobControlRecord* jcr)
                                               (uint32_t)sd->message_length))
                    == NULL) {
           Jmsg1(jcr, M_ERROR, 0,
-                _("Failed to decode message signature for %s\n"),
+                T_("Failed to decode message signature for %s\n"),
                 jcr->fd_impl->last_fname);
         }
         break;
@@ -1006,7 +1006,7 @@ void DoRestore(JobControlRecord* jcr)
       default:
         if (!ClosePreviousStream(jcr, rctx)) { goto bail_out; }
         Jmsg(jcr, M_WARNING, 0,
-             _("Unknown stream=%d ignored. This shouldn't happen!\n"),
+             T_("Unknown stream=%d ignored. This shouldn't happen!\n"),
              rctx.stream);
         Dmsg2(0, "Unknown stream=%d data=%s\n", rctx.stream, sd->msg);
         break;
@@ -1037,38 +1037,38 @@ ok_out:
         edit_uint64(jcr->JobBytes, ec1));
   if (have_acl && jcr->fd_impl->acl_data->u.parse->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Encountered %ld acl errors while doing restore\n"),
+         T_("Encountered %ld acl errors while doing restore\n"),
          jcr->fd_impl->acl_data->u.parse->nr_errors);
   }
   if (have_xattr && jcr->fd_impl->xattr_data->u.parse->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Encountered %ld xattr errors while doing restore\n"),
+         T_("Encountered %ld xattr errors while doing restore\n"),
          jcr->fd_impl->xattr_data->u.parse->nr_errors);
   }
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
-         _("%d non-supported data streams and %d non-supported attrib streams "
+         T_("%d non-supported data streams and %d non-supported attrib streams "
            "ignored.\n"),
          non_support_data, non_support_attr);
   }
   if (non_support_rsrc) {
-    Jmsg(jcr, M_INFO, 0, _("%d non-supported resource fork streams ignored.\n"),
+    Jmsg(jcr, M_INFO, 0, T_("%d non-supported resource fork streams ignored.\n"),
          non_support_rsrc);
   }
   if (non_support_finfo) {
-    Jmsg(jcr, M_INFO, 0, _("%d non-supported Finder Info streams ignored.\n"),
+    Jmsg(jcr, M_INFO, 0, T_("%d non-supported Finder Info streams ignored.\n"),
          non_support_finfo);
   }
   if (non_support_acl) {
-    Jmsg(jcr, M_INFO, 0, _("%d non-supported acl streams ignored.\n"),
+    Jmsg(jcr, M_INFO, 0, T_("%d non-supported acl streams ignored.\n"),
          non_support_acl);
   }
   if (non_support_crypto) {
-    Jmsg(jcr, M_INFO, 0, _("%d non-supported crypto streams ignored.\n"),
+    Jmsg(jcr, M_INFO, 0, T_("%d non-supported crypto streams ignored.\n"),
          non_support_crypto);
   }
   if (non_support_xattr) {
-    Jmsg(jcr, M_INFO, 0, _("%d non-supported xattr streams ignored.\n"),
+    Jmsg(jcr, M_INFO, 0, T_("%d non-supported xattr streams ignored.\n"),
          non_support_xattr);
   }
 
@@ -1144,7 +1144,7 @@ bool SparseData(JobControlRecord* jcr,
     *addr = faddr;
     if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
       BErrNo be;
-      Jmsg3(jcr, M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
+      Jmsg3(jcr, M_ERROR, 0, T_("Seek to %s error on %s: ERR=%s\n"),
             edit_uint64(*addr, ec1), jcr->fd_impl->last_fname,
             be.bstrerror(bfd->BErrNo));
       return false;
@@ -1169,7 +1169,7 @@ bool StoreData(JobControlRecord* jcr,
     if (!processWin32BackupAPIBlock(bfd, data, length)) {
       BErrNo be;
       Jmsg2(jcr, M_ERROR, 0,
-            _("Write error in Win32 Block Decomposition on %s: %s\n"),
+            T_("Write error in Win32 Block Decomposition on %s: %s\n"),
             jcr->fd_impl->last_fname, be.bstrerror(bfd->BErrNo));
       return false;
     }
@@ -1179,14 +1179,14 @@ bool StoreData(JobControlRecord* jcr,
       if (win32_send_to_copy_thread(jcr, bfd, data, length)
           != (ssize_t)length) {
         BErrNo be;
-        Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+        Jmsg2(jcr, M_ERROR, 0, T_("Write error on %s: %s\n"),
               jcr->fd_impl->last_fname, be.bstrerror(bfd->BErrNo));
         return false;
       }
     } else {
       if (bwrite(bfd, data, length) != (ssize_t)length) {
         BErrNo be;
-        Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+        Jmsg2(jcr, M_ERROR, 0, T_("Write error on %s: %s\n"),
               jcr->fd_impl->last_fname, be.bstrerror(bfd->BErrNo));
       }
     }
@@ -1194,7 +1194,7 @@ bool StoreData(JobControlRecord* jcr,
 #else
   } else if (bwrite(bfd, data, length) != (ssize_t)length) {
     BErrNo be;
-    Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+    Jmsg2(jcr, M_ERROR, 0, T_("Write error on %s: %s\n"),
           jcr->fd_impl->last_fname, be.bstrerror(bfd->BErrNo));
     return false;
   }
@@ -1280,7 +1280,7 @@ static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
   if (rctx.extract) {
     if (rctx.size > 0 && !IsBopen(&rctx.bfd)) {
       Jmsg0(rctx.jcr, M_ERROR, 0,
-            _("Logic error: output file should be open\n"));
+            T_("Logic error: output file should be open\n"));
       Dmsg2(000, "=== logic error size=%d bopen=%d\n", rctx.size,
             IsBopen(&rctx.bfd));
     }
@@ -1315,7 +1315,7 @@ static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
     Dmsg0(130, "Stop extracting.\n");
   } else if (IsBopen(&rctx.bfd)) {
     Jmsg0(rctx.jcr, M_ERROR, 0,
-          _("Logic error: output file should not be open\n"));
+          T_("Logic error: output file should not be open\n"));
     Dmsg0(000, "=== logic error !open\n");
     bclose(&rctx.bfd);
   }

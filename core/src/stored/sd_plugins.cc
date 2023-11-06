@@ -434,7 +434,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   if (debug_level >= 50) { DumpSdPlugin(plugin, stdin); }
   if (!bstrcmp(info->plugin_magic, SD_PLUGIN_MAGIC)) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"), plugin->file,
+         T_("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"), plugin->file,
          SD_PLUGIN_MAGIC, info->plugin_magic);
     Dmsg3(50, "Plugin magic wrong. Plugin=%s wanted=%s got=%s\n", plugin->file,
           SD_PLUGIN_MAGIC, info->plugin_magic);
@@ -443,7 +443,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->version != SD_PLUGIN_INTERFACE_VERSION) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin version incorrect. Plugin=%s wanted=%d got=%d\n"),
+         T_("Plugin version incorrect. Plugin=%s wanted=%d got=%d\n"),
          plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
     Dmsg3(50, "Plugin version incorrect. Plugin=%s wanted=%d got=%d\n",
           plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
@@ -452,7 +452,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
       && !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
+         T_("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
          info->plugin_license);
     Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
           plugin->file, info->plugin_license);
@@ -460,7 +460,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
+         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
          sizeof(PluginInformation), info->size);
     return false;
   }
@@ -526,7 +526,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
       plugin_name = priv_plugin_options.c_str();
       if (!(bp = strchr(plugin_name, ':'))) {
         Jmsg(NULL, M_ERROR, 0,
-             _("Illegal SD plugin options encountered, %s skipping\n"),
+             T_("Illegal SD plugin options encountered, %s skipping\n"),
              priv_plugin_options.c_str());
         continue;
       }
@@ -549,7 +549,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 
       if (instance > HIGHEST_PLUGIN_INSTANCE) {
         Jmsg(NULL, M_ERROR, 0,
-             _("Illegal SD plugin options encountered, %s instance %d "
+             T_("Illegal SD plugin options encountered, %s instance %d "
                "skipping\n"),
              plugin_options, instance);
         continue;

@@ -170,13 +170,13 @@ bool ConfigurationParser::ParseConfig()
   if (parser_first_run_ && (errstat = RwlInit(&res_lock_)) != 0) {
     BErrNo be;
     Jmsg1(nullptr, M_ABORT, 0,
-          _("Unable to initialize resource lock. ERR=%s\n"),
+          T_("Unable to initialize resource lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
   parser_first_run_ = false;
 
   if (!FindConfigPath(config_path)) {
-    Jmsg0(nullptr, M_CONFIG_ERROR, 0, _("Failed to find config filename.\n"));
+    Jmsg0(nullptr, M_CONFIG_ERROR, 0, T_("Failed to find config filename.\n"));
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
@@ -211,7 +211,7 @@ void ConfigurationParser::lex_error(const char* cf,
 
   LexSetErrorHandlerErrorType(lexical_parser_, err_type_);
   BErrNo be;
-  scan_err2(lexical_parser_, _("Cannot open config file \"%s\": %s\n"), cf,
+  scan_err2(lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
             be.bstrerror());
   free(lexical_parser_);
 }
@@ -230,17 +230,17 @@ bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
     if (!state_machine.InitParserPass()) { return false; }
 
     if (!state_machine.ParseAllTokens()) {
-      scan_err0(state_machine.lexical_parser_, _("ParseAllTokens failed."));
+      scan_err0(state_machine.lexical_parser_, T_("ParseAllTokens failed."));
       return false;
     }
 
     switch (state_machine.GetParseError()) {
       case ConfigParserStateMachine::ParserError::kResourceIncomplete:
         scan_err0(state_machine.lexical_parser_,
-                  _("End of conf file reached with unclosed resource."));
+                  T_("End of conf file reached with unclosed resource."));
         return false;
       case ConfigParserStateMachine::ParserError::kParserError:
-        scan_err0(state_machine.lexical_parser_, _("Parser Error occurred."));
+        scan_err0(state_machine.lexical_parser_, T_("Parser Error occurred."));
         return false;
       case ConfigParserStateMachine::ParserError::kNoError:
         break;
@@ -261,7 +261,7 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
 
   if (!new_resource->resource_name_) {
     Emsg1(M_ERROR, 0,
-          _("Name item is required in %s resource, but not found.\n"),
+          T_("Name item is required in %s resource, but not found.\n"),
           resource_definitions_[rindex].name);
     return false;
   }
@@ -278,7 +278,7 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
     do {
       if (bstrcmp(current->resource_name_, new_resource->resource_name_)) {
         Emsg2(M_ERROR, 0,
-              _("Attempt to define second %s resource named \"%s\" is not "
+              T_("Attempt to define second %s resource named \"%s\" is not "
                 "permitted.\n"),
               resource_definitions_[rindex].name, new_resource->resource_name_);
         return false;
@@ -287,7 +287,7 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
       current = last->next_;
     } while (current);
     last->next_ = new_resource;
-    Dmsg3(900, _("Inserting %s res: %s index=%d\n"), ResToStr(rcode),
+    Dmsg3(900, T_("Inserting %s res: %s index=%d\n"), ResToStr(rcode),
           new_resource->resource_name_, rindex);
   }
   return true;
@@ -446,7 +446,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
     }
     if (!found) {
       Jmsg2(nullptr, M_ERROR, 0,
-            _("Failed to read config file at the default locations "
+            T_("Failed to read config file at the default locations "
               "\"%s\" (config file path) and \"%s\" (config include "
               "directory).\n"),
             config_path_file.c_str(), full_path.c_str());
@@ -462,7 +462,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
       }
       if (!found) {
         Jmsg3(nullptr, M_ERROR, 0,
-              _("Failed to find configuration files under directory \"%s\". "
+              T_("Failed to find configuration files under directory \"%s\". "
                 "Did look for \"%s\" (config file path) and \"%s\" (config "
                 "include directory).\n"),
               cf_.c_str(), config_path_file.c_str(), full_path.c_str());
@@ -480,11 +480,11 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
     found = GetConfigFile(full_path, GetDefaultConfigDir(), cf_.c_str());
     if (!found) {
       Jmsg2(nullptr, M_ERROR, 0,
-            _("Failed to find configuration files at \"%s\" and \"%s\".\n"),
+            T_("Failed to find configuration files at \"%s\" and \"%s\".\n"),
             cf_.c_str(), full_path.c_str());
     }
   } else {
-    Jmsg1(nullptr, M_ERROR, 0, _("Failed to read config file \"%s\"\n"),
+    Jmsg1(nullptr, M_ERROR, 0, T_("Failed to read config file \"%s\"\n"),
           cf_.c_str());
   }
 
@@ -533,12 +533,12 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
     if (bstrcmp(res->resource_name_, name)) {
       if (!last) {
         Dmsg2(900,
-              _("removing resource %s, name=%s (first resource in list)\n"),
+              T_("removing resource %s, name=%s (first resource in list)\n"),
               ResToStr(rcode), name);
         config_resources_container_->configuration_resources_[rindex]
             = res->next_;
       } else {
-        Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(rcode), name);
+        Dmsg2(900, T_("removing resource %s, name=%s\n"), ResToStr(rcode), name);
         last->next_ = res->next_;
       }
       res->next_ = nullptr;

@@ -85,7 +85,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
         // Found special characters, so try full substitution
         if (!PerformFullNameSubstitution(jcr, mr, &pr)) { return false; }
         if (!IsVolumeNameLegal(NULL, mr->VolumeName)) {
-          Jmsg(jcr, M_ERROR, 0, _("Illegal character in Volume name \"%s\"\n"),
+          Jmsg(jcr, M_ERROR, 0, T_("Illegal character in Volume name \"%s\"\n"),
                mr->VolumeName);
           return false;
         }
@@ -98,7 +98,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
     SetStorageidInMr(store, mr);
     if (jcr->db->CreateMediaRecord(jcr, mr)
         && jcr->db->UpdatePoolRecord(jcr, &pr)) {
-      Jmsg(jcr, M_INFO, 0, _("Created new Volume \"%s\" in catalog.\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Created new Volume \"%s\" in catalog.\n"),
            mr->VolumeName);
       Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);
       return true;
@@ -126,7 +126,7 @@ static bool CreateSimpleName(JobControlRecord* jcr,
   Mmsg(query, "SELECT MAX(MediaId) FROM Media,Pool WHERE Pool.PoolId=%s",
        edit_int64(pr->PoolId, ed1));
   if (!jcr->db->SqlQuery(query.c_str(), db_int64_handler, (void*)&ctx)) {
-    Jmsg(jcr, M_WARNING, 0, _("SQL failed, but ignored. ERR=%s\n"),
+    Jmsg(jcr, M_WARNING, 0, T_("SQL failed, but ignored. ERR=%s\n"),
          jcr->db->strerror());
     ctx.value = pr->NumVols + 1;
   }
@@ -138,7 +138,7 @@ static bool CreateSimpleName(JobControlRecord* jcr,
     bstrncat(tmr.VolumeName, num, sizeof(tmr.VolumeName));
     if (jcr->db->GetMediaRecord(jcr, &tmr)) {
       Jmsg(jcr, M_WARNING, 0,
-           _("Wanted to create Volume \"%s\", but it already exists. Trying "
+           T_("Wanted to create Volume \"%s\", but it already exists. Trying "
              "again.\n"),
            tmr.VolumeName);
       continue;
@@ -149,7 +149,7 @@ static bool CreateSimpleName(JobControlRecord* jcr,
   }
   if (mr->VolumeName[0] == 0) {
     Jmsg(jcr, M_ERROR, 0,
-         _("Too many failures. Giving up creating Volume name.\n"));
+         T_("Too many failures. Giving up creating Volume name.\n"));
     return false;
   }
   return true;

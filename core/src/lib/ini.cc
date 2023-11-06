@@ -193,7 +193,7 @@ static bool IniStoreBool(LEX* lc, ConfigFile* inifile, ini_items* item)
     item->val.boolval = false;
   } else {
     // YES and NO must not be translated
-    scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str);
+    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str);
     return false;
   }
   ScanToEol(lc);
@@ -225,21 +225,21 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   ini = (ConfigFile*)(lc->caller_ctx);
   if (ini->jcr) { /* called from core */
     Jmsg(ini->jcr, M_ERROR, 0,
-         _("Config file error: %s\n"
+         T_("Config file error: %s\n"
            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
     //   } else if (ini->ctx) {       /* called from plugin */
     //      ini->bareos_core_functions->JobMessage(ini->ctx, __FILE__, __LINE__,
     //      M_FATAL, 0,
-    //                    _("Config file error: %s\n"
+    //                    T_("Config file error: %s\n"
     //                      "            : Line %d, col %d of file %s\n%s\n"),
     //                            buf.c_str(), lc->line_no, lc->col_no,
     //                            lc->fname, lc->line);
     //
   } else { /* called from ??? */
     e_msg(file, line, M_ERROR, 0,
-          _("Config file error: %s\n"
+          T_("Config file error: %s\n"
             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
@@ -270,21 +270,21 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   ini = (ConfigFile*)(lc->caller_ctx);
   if (ini->jcr) { /* called from core */
     Jmsg(ini->jcr, M_WARNING, 0,
-         _("Config file warning: %s\n"
+         T_("Config file warning: %s\n"
            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
     //   } else if (ini->ctx) {       /* called from plugin */
     //      ini->bareos_core_functions->JobMessage(ini->ctx, __FILE__, __LINE__,
     //      M_WARNING, 0,
-    //                    _("Config file warning: %s\n"
+    //                    T_("Config file warning: %s\n"
     //                      "            : Line %d, col %d of file %s\n%s\n"),
     //                            buf.c_str(), lc->line_no, lc->col_no,
     //                            lc->fname, lc->line);
     //
   } else { /* called from ??? */
     p_msg(file, line, 0,
-          _("Config file warning: %s\n"
+          T_("Config file warning: %s\n"
             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
@@ -486,7 +486,7 @@ bool ConfigFile::parse(const char* fname)
 
   if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
     BErrNo be;
-    Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"), fname,
+    Emsg2(M_ERROR, 0, T_("Cannot open config file %s: %s\n"), fname,
           be.bstrerror());
     return false;
   }
@@ -585,7 +585,7 @@ bool ConfigFile::UnSerialize(const char* fname)
   // Parse the file and generate the items structure on the fly
   if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
     BErrNo be;
-    Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"), fname,
+    Emsg2(M_ERROR, 0, T_("Cannot open config file %s: %s\n"), fname,
           be.bstrerror());
     return false;
   }

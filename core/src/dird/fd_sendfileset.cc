@@ -48,7 +48,7 @@ static bool SendListItem(JobControlRecord* jcr,
       bpipe = OpenBpipe(fd->msg, 0, "r");
       if (!bpipe) {
         BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"), p,
+        Jmsg(jcr, M_FATAL, 0, T_("Cannot run program: %s. ERR=%s\n"), p,
              be.bstrerror());
         return false;
       }
@@ -59,13 +59,13 @@ static bool SendListItem(JobControlRecord* jcr,
         fd->message_length = Mmsg(fd->msg, "%s", buf);
         Dmsg2(500, "Inc/exc len=%d: %s", fd->message_length, fd->msg);
         if (!BnetSend(fd)) {
-          Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
+          Jmsg(jcr, M_FATAL, 0, T_(">filed: write error on socket\n"));
           return false;
         }
       }
       if ((status = CloseBpipe(bpipe)) != 0) {
         BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Error running program: %s. ERR=%s\n"), p,
+        Jmsg(jcr, M_FATAL, 0, T_("Error running program: %s. ERR=%s\n"), p,
              be.bstrerror(status));
         return false;
       }
@@ -74,7 +74,7 @@ static bool SendListItem(JobControlRecord* jcr,
       p++; /* skip over < */
       if ((ffd = fopen(p, "rb")) == NULL) {
         BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Cannot open included file: %s. ERR=%s\n"), p,
+        Jmsg(jcr, M_FATAL, 0, T_("Cannot open included file: %s. ERR=%s\n"), p,
              be.bstrerror());
         return false;
       }
@@ -84,7 +84,7 @@ static bool SendListItem(JobControlRecord* jcr,
       while (fgets(buf + optlen, sizeof(buf) - optlen, ffd)) {
         fd->message_length = Mmsg(fd->msg, "%s", buf);
         if (!BnetSend(fd)) {
-          Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
+          Jmsg(jcr, M_FATAL, 0, T_(">filed: write error on socket\n"));
           fclose(ffd);
           return false;
         }
@@ -99,7 +99,7 @@ static bool SendListItem(JobControlRecord* jcr,
       fd->message_length = PmStrcat(fd->msg, p);
       Dmsg1(500, "Inc/Exc name=%s\n", fd->msg);
       if (!fd->send()) {
-        Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
+        Jmsg(jcr, M_FATAL, 0, T_(">filed: write error on socket\n"));
         return false;
       }
       break;
@@ -143,7 +143,7 @@ static void SendFilesetOptions(JobControlRecord* jcr,
 
       if (done) {
         Jmsg(jcr, M_INFO, 0,
-             _("FD compression disabled for this Job because "
+             T_("FD compression disabled for this Job because "
                "AllowCompress=No in Storage resource.\n"));
       }
 

@@ -274,7 +274,7 @@ static bool ValidateCommand(JobControlRecord* jcr,
 
   if (!allowed) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Illegal \"%s\" command not allowed by Allowed Job Cmds setting of "
+         T_("Illegal \"%s\" command not allowed by Allowed Job Cmds setting of "
            "this filed.\n"),
          cmd);
   }
@@ -497,7 +497,7 @@ static bool StartProcessDirectorCommands(JobControlRecord* jcr)
                                (void*)jcr))
       != 0) {
     BErrNo be;
-    Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"),
+    Emsg1(M_ABORT, 0, T_("Cannot create Director connect thread: %s\n"),
           be.bstrerror(result));
   }
 
@@ -535,7 +535,7 @@ void* handle_director_connection(BareosSocket* dir)
   if (AreMaxConcurrentJobsExceeded()) {
     Emsg0(
         M_ERROR, 0,
-        _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+        T_("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
     return nullptr;
   }
 
@@ -595,7 +595,7 @@ static void* handle_connection_to_director(void* director_resource)
       if (!quit_client_initiate_connection) {
         if (data_available < 0) {
           Emsg1(M_ABORT, 0,
-                _("Failed while waiting for data from Director \"%s\"\n"),
+                T_("Failed while waiting for data from Director \"%s\"\n"),
                 dir_res->resource_name_);
         } else {
           // data is available
@@ -654,7 +654,7 @@ bool StartConnectToDirectorThreads()
           client_initiated_connection_threads->append(thread);
         } else {
           BErrNo be;
-          Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"),
+          Emsg1(M_ABORT, 0, T_("Cannot create Director connect thread: %s\n"),
                 be.bstrerror(pthread_create_result));
         }
       }
@@ -697,12 +697,12 @@ static bool ResolveCmd(JobControlRecord* jcr)
   sscanf(dir->msg, resolvecmd, &hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == nullptr) {
-    dir->fsend(_("%s: Failed to resolve %s\n"), my_name, hostname);
+    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
     goto bail_out;
   }
 
   dir->fsend(
-      _("%s resolves %s to %s\n"), my_name, hostname,
+      T_("%s resolves %s to %s\n"), my_name, hostname,
       BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
   FreeAddresses(addr_list);
 
@@ -730,7 +730,7 @@ static bool CancelCmd(JobControlRecord* jcr)
 
   if (sscanf(dir->msg, "cancel Job=%127s", Job) == 1) {
     if (!(cjcr = get_jcr_by_full_name(Job))) {
-      dir->fsend(_("2901 Job %s not found.\n"), Job);
+      dir->fsend(T_("2901 Job %s not found.\n"), Job);
     } else {
       GeneratePluginEvent(cjcr, bEventCancelCommand, nullptr);
       cjcr->setJobStatusWithPriorityCheck(JS_Canceled);
@@ -740,10 +740,10 @@ static bool CancelCmd(JobControlRecord* jcr)
       }
       cjcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       FreeJcr(cjcr);
-      dir->fsend(_("2001 Job %s marked to be canceled.\n"), Job);
+      dir->fsend(T_("2001 Job %s marked to be canceled.\n"), Job);
     }
   } else {
-    dir->fsend(_("2902 Error scanning cancel command.\n"));
+    dir->fsend(T_("2902 Error scanning cancel command.\n"));
   }
   dir->signal(BNET_EOD);
   return true;
@@ -778,13 +778,13 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
   *Job = 0;
   if (sscanf(dir->msg, setbandwidthcmd, &bw, Job) != 2 || bw < 0) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    dir->fsend(_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("2991 Bad setbandwidth command: %s\n"), jcr->errmsg);
     return false;
   }
 
   if (*Job) {
     if (!(cjcr = get_jcr_by_full_name(Job))) {
-      dir->fsend(_("2901 Job %s not found.\n"), Job);
+      dir->fsend(T_("2901 Job %s not found.\n"), Job);
     } else {
       cjcr->max_bandwidth = bw;
       if (cjcr->store_bsock) {
@@ -817,7 +817,7 @@ static bool SetdebugCmd(JobControlRecord* jcr)
     scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
     if (scan != 2) {
       PmStrcpy(jcr->errmsg, dir->msg);
-      dir->fsend(_("2991 Bad setdebug command: %s\n"), jcr->errmsg);
+      dir->fsend(T_("2991 Bad setdebug command: %s\n"), jcr->errmsg);
       return false;
     } else {
       hangup_flag = -1;
@@ -857,14 +857,14 @@ static bool EstimateCmd(JobControlRecord* jcr)
           (jcr->fd_impl->director && jcr->fd_impl->director->allowed_job_cmds)
               ? jcr->fd_impl->director->allowed_job_cmds
               : me->allowed_job_cmds)) {
-    dir->fsend(_("2992 Bad estimate command.\n"));
+    dir->fsend(T_("2992 Bad estimate command.\n"));
     return 0;
   }
 
   if (sscanf(dir->msg, Estimatecmd, &jcr->fd_impl->listing) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s\n"), jcr->errmsg);
-    dir->fsend(_("2992 Bad estimate command.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Bad estimate command: %s\n"), jcr->errmsg);
+    dir->fsend(T_("2992 Bad estimate command.\n"));
     return false;
   }
 
@@ -887,7 +887,7 @@ static bool job_cmd(JobControlRecord* jcr)
 
   if (!command.EvaluationSuccesful()) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad Job Command: %s\n"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, T_("Bad Job Command: %s\n"), jcr->errmsg);
     dir->fsend(BADjob);
     return false;
   }
@@ -967,7 +967,7 @@ static bool RunscriptCmd(JobControlRecord* jcr)
              &cmd->when, msg)
       != 5) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg1(jcr, M_FATAL, 0, _("Bad RunScript command: %s\n"), jcr->errmsg);
+    Jmsg1(jcr, M_FATAL, 0, T_("Bad RunScript command: %s\n"), jcr->errmsg);
     dir->fsend(FailedRunScript);
     FreeRunscript(cmd);
     FreeMemory(msg);
@@ -997,7 +997,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   msg = GetMemory(dir->message_length + 1);
   if (sscanf(dir->msg, pluginoptionscmd, msg) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg1(jcr, M_FATAL, 0, _("Bad Plugin Options command: %s\n"), jcr->errmsg);
+    Jmsg1(jcr, M_FATAL, 0, T_("Bad Plugin Options command: %s\n"), jcr->errmsg);
     dir->fsend(BadPluginOptions);
     FreeMemory(msg);
     return false;
@@ -1046,7 +1046,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
         != 7) {
       Dmsg0(5, "Bad restore object command\n");
       PmStrcpy(jcr->errmsg, dir->msg);
-      Jmsg1(jcr, M_FATAL, 0, _("Bad RestoreObject command: %s\n"), jcr->errmsg);
+      Jmsg1(jcr, M_FATAL, 0, T_("Bad RestoreObject command: %s\n"), jcr->errmsg);
       goto bail_out;
     }
   }
@@ -1129,7 +1129,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
   return true;
 
 bail_out:
-  dir->fsend(_("2909 Bad RestoreObject command.\n"));
+  dir->fsend(T_("2909 Bad RestoreObject command.\n"));
   return false;
 }
 
@@ -1220,7 +1220,7 @@ static bool BootstrapCmd(JobControlRecord* jcr)
   bs = fopen(fname, "a+b"); /* create file */
   if (!bs) {
     BErrNo be;
-    Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file %s: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Could not create bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
     /* Suck up what he is sending to us so that he will then
      *   read our error message. */
@@ -1329,7 +1329,7 @@ static bool LevelCmd(JobControlRecord* jcr)
         type = M_INFO;
       }
       Jmsg(jcr, type, 0,
-           _("DIR and FD clocks differ by %lld seconds, FD automatically "
+           T_("DIR and FD clocks differ by %lld seconds, FD automatically "
              "compensating.\n"),
            adj);
     }
@@ -1342,7 +1342,7 @@ static bool LevelCmd(JobControlRecord* jcr)
     GeneratePluginEvent(jcr, bEventSince,
                         (void*)(time_t)jcr->fd_impl->since_time);
   } else {
-    Jmsg1(jcr, M_FATAL, 0, _("Unknown backup level: %s\n"), level);
+    Jmsg1(jcr, M_FATAL, 0, T_("Unknown backup level: %s\n"), level);
     FreeMemory(level);
     return false;
   }
@@ -1356,7 +1356,7 @@ static bool LevelCmd(JobControlRecord* jcr)
 
 bail_out:
   PmStrcpy(jcr->errmsg, dir->msg);
-  Jmsg1(jcr, M_FATAL, 0, _("Bad level command: %s\n"), jcr->errmsg);
+  Jmsg1(jcr, M_FATAL, 0, T_("Bad level command: %s\n"), jcr->errmsg);
   FreeMemory(level);
   if (buf) { FreeMemory(buf); }
   return false;
@@ -1377,7 +1377,7 @@ static bool SessionCmd(JobControlRecord* jcr)
              &jcr->fd_impl->EndBlock)
       != 7) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad session command: %s\n"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, T_("Bad session command: %s\n"), jcr->errmsg);
     return false;
   }
 
@@ -1433,7 +1433,7 @@ static bool StorageCmd(JobControlRecord* jcr)
     if (sscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port, &tls_policy)
         != 3) {
       PmStrcpy(jcr->errmsg, dir->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s\n"), jcr->errmsg);
+      Jmsg(jcr, M_FATAL, 0, T_("Bad storage command: %s\n"), jcr->errmsg);
       goto bail_out;
     }
   }
@@ -1460,8 +1460,8 @@ static bool StorageCmd(JobControlRecord* jcr)
   // Open command communications with Storage daemon
   if (!storage_daemon_socket->connect(
           jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
-          _("Storage daemon"), stored_addr, nullptr, stored_port, 1)) {
-    Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
+          T_("Storage daemon"), stored_addr, nullptr, stored_port, 1)) {
+    Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to Storage daemon: %s:%d\n"),
          stored_addr, stored_port);
     Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n", stored_addr,
           stored_port);
@@ -1495,7 +1495,7 @@ static bool StorageCmd(JobControlRecord* jcr)
       my_config->CreateOwnQualifiedNameForNetworkDump());
   storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
   if (!AuthenticateWithStoragedaemon(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, _("Failed to authenticate Storage daemon.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
     goto bail_out;
   }
   Dmsg0(110, "Authenticated with SD.\n");
@@ -1645,7 +1645,7 @@ bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
           // Make sure we have not found a cipher definition before.
           if (wanted_cipher != CRYPTO_CIPHER_NONE) {
             Jmsg(jcr, M_FATAL, 0,
-                 _("Fileset contains multiple cipher settings\n"));
+                 T_("Fileset contains multiple cipher settings\n"));
             return false;
           }
 
@@ -1653,7 +1653,7 @@ bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
           if (!jcr->fd_impl->crypto.pki_encrypt) {
             if (!me->pki_keypair_file) {
               Jmsg(jcr, M_FATAL, 0,
-                   _("Fileset contains cipher settings but PKI Key Pair is not "
+                   T_("Fileset contains cipher settings but PKI Key Pair is not "
                      "configured\n"));
               return false;
             }
@@ -1676,7 +1676,7 @@ bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
    * filed. */
   if (force_encrypt && !jcr->fd_impl->crypto.pki_encrypt) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Fileset forces encryption but encryption is not configured\n"));
+         T_("Fileset forces encryption but encryption is not configured\n"));
     return false;
   }
 
@@ -1699,7 +1699,7 @@ static bool BackupCmd(JobControlRecord* jcr)
    * initiated. */
   if (restore_only_mode) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Filed in restore only mode, backups are not allowed, "
+         T_("Filed in restore only mode, backups are not allowed, "
            "aborting...\n"));
     goto cleanup;
   }
@@ -1727,19 +1727,19 @@ static bool BackupCmd(JobControlRecord* jcr)
 #ifndef HAVE_WIN32
   if (!have_acl) {
     ClearFlagInFileset(jcr, FO_ACL,
-                       _("ACL support requested in fileset but not available "
+                       T_("ACL support requested in fileset but not available "
                          "on this platform. Disabling ...\n"));
   }
 
   if (!have_xattr) {
     ClearFlagInFileset(jcr, FO_XATTR,
-                       _("XATTR support requested in fileset but not available "
+                       T_("XATTR support requested in fileset but not available "
                          "on this platform. Disabling ...\n"));
   }
 #endif
   if (!have_encryption) {
     ClearFlagInFileset(jcr, FO_ENCRYPT,
-                       _("Encryption support requested in fileset but not "
+                       T_("Encryption support requested in fileset but not "
                          "available on this platform. Disabling ...\n"));
   }
 
@@ -1759,7 +1759,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   Dmsg1(100, "begin backup ff=%p\n", jcr->fd_impl->ff);
 
   if (sd == nullptr) {
-    Jmsg(jcr, M_FATAL, 0, _("Cannot contact Storage daemon\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Cannot contact Storage daemon\n"));
     dir->fsend(BADcmd, "backup");
     goto cleanup;
   }
@@ -1775,12 +1775,12 @@ static bool BackupCmd(JobControlRecord* jcr)
   if (BgetMsg(sd) >= 0) {
     Dmsg1(110, "<stored: %s", sd->msg);
     if (sscanf(sd->msg, OK_open, &jcr->fd_impl->Ticket) != 1) {
-      Jmsg(jcr, M_FATAL, 0, _("Bad response to append open: %s\n"), sd->msg);
+      Jmsg(jcr, M_FATAL, 0, T_("Bad response to append open: %s\n"), sd->msg);
       goto cleanup;
     }
     Dmsg1(110, "Got Ticket=%d\n", jcr->fd_impl->Ticket);
   } else {
-    Jmsg(jcr, M_FATAL, 0, _("Bad response from stored to open command\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Bad response from stored to open command\n"));
     goto cleanup;
   }
 
@@ -1832,14 +1832,14 @@ static bool BackupCmd(JobControlRecord* jcr)
 
       volume_count = volumes.size();
       if (volume_count > 0) {
-        Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\"\n"),
+        Jmsg(jcr, M_INFO, 0, T_("Generate VSS snapshots. Driver=\"%s\"\n"),
              jcr->fd_impl->pVSSClient->GetDriverName());
 
         if (!jcr->fd_impl->pVSSClient->CreateSnapshots(volumes,
                                                        onefs_disabled)) {
           BErrNo be;
           Jmsg(jcr, M_FATAL, 0,
-               _("CreateSGenerate VSS snapshots failed. ERR=%s\n"),
+               T_("CreateSGenerate VSS snapshots failed. ERR=%s\n"),
                be.bstrerror());
         } else {
           GeneratePluginEvent(jcr, bEventVssCreateSnapshots);
@@ -1866,7 +1866,7 @@ static bool BackupCmd(JobControlRecord* jcr)
           for (size_t i = 0; i < jcr->fd_impl->pVSSClient->GetWriterCount();
                i++) {
             if (jcr->fd_impl->pVSSClient->GetWriterState(i) < 1) {
-              Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"),
+              Jmsg(jcr, M_INFO, 0, T_("VSS Writer (PrepareForBackup): %s\n"),
                    jcr->fd_impl->pVSSClient->GetWriterInfo(i));
             }
           }
@@ -1874,12 +1874,12 @@ static bool BackupCmd(JobControlRecord* jcr)
 
       } else {
         Jmsg(jcr, M_FATAL, 0,
-             _("No volumes found for generating VSS snapshots.\n"));
+             T_("No volumes found for generating VSS snapshots.\n"));
       }
     } else {
       BErrNo be;
 
-      Jmsg(jcr, M_FATAL, 0, _("VSS was not initialized properly. ERR=%s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("VSS was not initialized properly. ERR=%s\n"),
            be.bstrerror());
     }
 
@@ -1927,11 +1927,11 @@ static bool BackupCmd(JobControlRecord* jcr)
       }
     }
     if (!ok) {
-      Jmsg(jcr, M_FATAL, 0, _("Append Close with SD failed.\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("Append Close with SD failed.\n"));
       goto cleanup;
     }
     if (!(SDJobStatus == JS_Terminated || SDJobStatus == JS_Warnings)) {
-      Jmsg(jcr, M_FATAL, 0, _("Bad status %d returned from Storage Daemon.\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Bad status %d returned from Storage Daemon.\n"),
            SDJobStatus);
     }
   }
@@ -1963,13 +1963,13 @@ static bool VerifyCmd(JobControlRecord* jcr)
           (jcr->fd_impl->director && jcr->fd_impl->director->allowed_job_cmds)
               ? jcr->fd_impl->director->allowed_job_cmds
               : me->allowed_job_cmds)) {
-    dir->fsend(_("2994 Bad verify command: %s\n"), dir->msg);
+    dir->fsend(T_("2994 Bad verify command: %s\n"), dir->msg);
     return 0;
   }
 
   jcr->setJobType(JT_VERIFY);
   if (sscanf(dir->msg, verifycmd, level) != 1) {
-    dir->fsend(_("2994 Bad verify command: %s\n"), dir->msg);
+    dir->fsend(T_("2994 Bad verify command: %s\n"), dir->msg);
     return false;
   }
 
@@ -1984,7 +1984,7 @@ static bool VerifyCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(level, "disk_to_catalog")) {
     jcr->setJobLevel(L_VERIFY_DISK_TO_CATALOG);
   } else {
-    dir->fsend(_("2994 Bad verify level: %s\n"), dir->msg);
+    dir->fsend(T_("2994 Bad verify level: %s\n"), dir->msg);
     return false;
   }
 
@@ -2020,7 +2020,7 @@ static bool VerifyCmd(JobControlRecord* jcr)
       DoVerify(jcr);
       break;
     default:
-      dir->fsend(_("2994 Bad verify level: %s\n"), dir->msg);
+      dir->fsend(T_("2994 Bad verify level: %s\n"), dir->msg);
       return false;
   }
 
@@ -2102,7 +2102,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
    * initiated. */
   if (backup_only_mode) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Filed in backup only mode, restores are not allowed, "
+         T_("Filed in backup only mode, restores are not allowed, "
            "aborting...\n"));
     return false;
   }
@@ -2129,7 +2129,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
     if (sscanf(dir->msg, restorecmdR, &replace, &prefix_links, args) != 3) {
       if (sscanf(dir->msg, restorecmd1, &replace, &prefix_links) != 2) {
         PmStrcpy(jcr->errmsg, dir->msg);
-        Jmsg(jcr, M_FATAL, 0, _("Bad replace command. CMD=%s\n"), jcr->errmsg);
+        Jmsg(jcr, M_FATAL, 0, T_("Bad replace command. CMD=%s\n"), jcr->errmsg);
         FreePoolMemory(args);
         return false;
       }
@@ -2157,7 +2157,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
   if (use_regexwhere) {
     jcr->where_bregexp = get_bregexps(args);
     if (!jcr->where_bregexp) {
-      Jmsg(jcr, M_FATAL, 0, _("Bad where regexp. where=%s\n"), args);
+      Jmsg(jcr, M_FATAL, 0, T_("Bad where regexp. where=%s\n"), args);
       FreePoolMemory(args);
       return false;
     }
@@ -2191,7 +2191,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
     if (!jcr->fd_impl->pVSSClient->InitializeForRestore(jcr)) {
       BErrNo be;
       Jmsg(jcr, M_WARNING, 0,
-           _("VSS was not initialized properly. VSS support is disabled. "
+           T_("VSS was not initialized properly. VSS support is disabled. "
              "ERR=%s\n"),
            be.bstrerror());
     }
@@ -2243,7 +2243,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
           msg_type = M_WARNING;
           jcr->JobErrors++;
         }
-        Jmsg(jcr, msg_type, 0, _("VSS Writer (RestoreComplete): %s\n"),
+        Jmsg(jcr, msg_type, 0, T_("VSS Writer (RestoreComplete): %s\n"),
              jcr->fd_impl->pVSSClient->GetWriterInfo(i));
       }
     } else {
@@ -2290,7 +2290,7 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
 
   if (!sd) {
-    Jmsg(jcr, M_FATAL, 0, _("Improper calling sequence.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Improper calling sequence.\n"));
     return false;
   }
   Dmsg4(120, "VolSessId=%ld VolsessT=%ld SF=%ld EF=%ld\n", jcr->VolSessionId,
@@ -2306,12 +2306,12 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
   if (BgetMsg(sd) >= 0) {
     Dmsg1(110, "filed<stored: %s", sd->msg);
     if (sscanf(sd->msg, OK_open, &jcr->fd_impl->Ticket) != 1) {
-      Jmsg(jcr, M_FATAL, 0, _("Bad response to SD read open: %s\n"), sd->msg);
+      Jmsg(jcr, M_FATAL, 0, T_("Bad response to SD read open: %s\n"), sd->msg);
       return false;
     }
     Dmsg1(110, "filed: got Ticket=%d\n", jcr->fd_impl->Ticket);
   } else {
-    Jmsg(jcr, M_FATAL, 0, _("Bad response from stored to read open command\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Bad response from stored to read open command\n"));
     return false;
   }
 
@@ -2397,10 +2397,10 @@ bool response(JobControlRecord* jcr,
   }
   if (IsBnetError(sd)) {
     Jmsg2(jcr, M_FATAL, 0,
-          _("Comm error with SD. bad response to %s. ERR=%s\n"), cmd,
+          T_("Comm error with SD. bad response to %s. ERR=%s\n"), cmd,
           BnetStrerror(sd));
   } else {
-    Jmsg3(jcr, M_FATAL, 0, _("Bad response to %s command. Wanted %s, got %s\n"),
+    Jmsg3(jcr, M_FATAL, 0, T_("Bad response to %s command. Wanted %s, got %s\n"),
           cmd, resp, sd->msg);
   }
   return false;

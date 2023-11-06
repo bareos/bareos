@@ -187,7 +187,7 @@ int RunScripts(JobControlRecord* jcr,
               "allowed scripts dirs\n",
               script->command.c_str());
         Jmsg(jcr, M_ERROR, 0,
-             _("Runscript: run %s \"%s\" could not execute, "
+             T_("Runscript: run %s \"%s\" could not execute, "
                "not in one of the allowed scripts dirs\n"),
              label, script->command.c_str());
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -230,7 +230,7 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
   ecmd
       = edit_job_codes(jcr, ecmd, command.c_str(), "", this->job_code_callback);
   Dmsg1(100, "runscript: running '%s'...\n", ecmd);
-  Jmsg(jcr, M_INFO, 0, _("%s: run %s \"%s\"\n"),
+  Jmsg(jcr, M_INFO, 0, T_("%s: run %s \"%s\"\n"),
        cmd_type == SHELL_CMD ? "shell command" : "console command", name, ecmd);
 
   switch (cmd_type) {
@@ -240,14 +240,14 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
 
       if (bpipe == NULL) {
         BErrNo be;
-        Jmsg(jcr, M_ERROR, 0, _("Runscript: %s could not execute. ERR=%s\n"),
+        Jmsg(jcr, M_ERROR, 0, T_("Runscript: %s could not execute. ERR=%s\n"),
              name, be.bstrerror());
         goto bail_out;
       }
 
       while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
         StripTrailingJunk(line.c_str());
-        Jmsg(jcr, M_INFO, 0, _("%s: %s\n"), name, line.c_str());
+        Jmsg(jcr, M_INFO, 0, T_("%s: %s\n"), name, line.c_str());
       }
 
       status = CloseBpipe(bpipe);
@@ -255,7 +255,7 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
       if (status != 0) {
         BErrNo be;
         Jmsg(jcr, M_ERROR, 0,
-             _("Runscript: %s returned non-zero status=%d. ERR=%s\n"), name,
+             T_("Runscript: %s returned non-zero status=%d. ERR=%s\n"), name,
              be.code(status), be.bstrerror(status));
         goto bail_out;
       }
@@ -290,13 +290,13 @@ void FreeRunscripts(alist<RunScript*>* runscripts)
 void RunScript::Debug() const
 {
   Dmsg0(200, "runscript: debug\n");
-  Dmsg0(200, _(" --> RunScript\n"));
-  Dmsg1(200, _("  --> Command=%s\n"), NSTDPRNT(command));
-  Dmsg1(200, _("  --> Target=%s\n"), NSTDPRNT(target));
-  Dmsg1(200, _("  --> RunOnSuccess=%u\n"), on_success);
-  Dmsg1(200, _("  --> RunOnFailure=%u\n"), on_failure);
-  Dmsg1(200, _("  --> FailJobOnError=%u\n"), fail_on_error);
-  Dmsg1(200, _("  --> RunWhen=%u\n"), when);
+  Dmsg0(200, T_(" --> RunScript\n"));
+  Dmsg1(200, T_("  --> Command=%s\n"), NSTDPRNT(command));
+  Dmsg1(200, T_("  --> Target=%s\n"), NSTDPRNT(target));
+  Dmsg1(200, T_("  --> RunOnSuccess=%u\n"), on_success);
+  Dmsg1(200, T_("  --> RunOnFailure=%u\n"), on_failure);
+  Dmsg1(200, T_("  --> FailJobOnError=%u\n"), fail_on_error);
+  Dmsg1(200, T_("  --> RunWhen=%u\n"), when);
 }
 
 void RunScript::SetJobCodeCallback(job_code_callback_t arg_job_code_callback)

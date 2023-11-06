@@ -256,7 +256,7 @@ void InitConsoleMsg(const char* wd)
   if (fd == -1) {
     BErrNo be;
     Emsg2(M_ERROR_TERM, 0,
-          _("Could not open console message file %s: ERR=%s\n"), con_fname,
+          T_("Could not open console message file %s: ERR=%s\n"), con_fname,
           be.bstrerror());
   }
   if (lseek(fd, 0, SEEK_END) > 0) { console_msg_pending = 1; }
@@ -264,12 +264,12 @@ void InitConsoleMsg(const char* wd)
   con_fd = fopen(con_fname, "a+b");
   if (!con_fd) {
     BErrNo be;
-    Emsg2(M_ERROR, 0, _("Could not open console message file %s: ERR=%s\n"),
+    Emsg2(M_ERROR, 0, T_("Could not open console message file %s: ERR=%s\n"),
           con_fname, be.bstrerror());
   }
   if (RwlInit(&con_lock) != 0) {
     BErrNo be;
-    Emsg1(M_ERROR_TERM, 0, _("Could not get con mutex: ERR=%s\n"),
+    Emsg1(M_ERROR_TERM, 0, T_("Could not get con mutex: ERR=%s\n"),
           be.bstrerror());
   }
 }
@@ -304,11 +304,11 @@ static Bpipe* open_mail_pipe(JobControlRecord* jcr,
   if ((bpipe = OpenBpipe(cmd, 120, "rw"))) {
     // If we had to use sendmail, add subject
     if (d->mail_cmd_.empty()) {
-      fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", _("BAREOS Message"));
+      fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", T_("BAREOS Message"));
     }
   } else {
     BErrNo be;
-    DeliveryError(_("open mail pipe %s failed: ERR=%s\n"), cmd, be.bstrerror());
+    DeliveryError(T_("open mail pipe %s failed: ERR=%s\n"), cmd, be.bstrerror());
   }
 
   return bpipe;
@@ -393,7 +393,7 @@ void CloseMsg(JobControlRecord* jcr)
           }
 
           if (!(bpipe = open_mail_pipe(jcr, cmd, d))) {
-            Pmsg0(000, _("open mail pipe failed.\n"));
+            Pmsg0(000, T_("open mail pipe failed.\n"));
             goto rem_temp_file;
           }
 
@@ -406,7 +406,7 @@ void CloseMsg(JobControlRecord* jcr)
           }
           if (!CloseWpipe(bpipe)) { /* close write pipe sending mail */
             BErrNo be;
-            Pmsg1(000, _("close error: ERR=%s\n"), be.bstrerror());
+            Pmsg1(000, T_("close error: ERR=%s\n"), be.bstrerror());
           }
 
           /* Since we are closing all messages, before "recursing"
@@ -415,7 +415,7 @@ void CloseMsg(JobControlRecord* jcr)
           if (msgs != daemon_msgs) {
             // Read what mail prog returned -- should be nothing
             while (fgets(line, len, bpipe->rfd)) {
-              DeliveryError(_("Mail prog: %s"), line);
+              DeliveryError(T_("Mail prog: %s"), line);
             }
           }
 
@@ -424,7 +424,7 @@ void CloseMsg(JobControlRecord* jcr)
             BErrNo be;
             be.SetErrno(status);
             Dmsg1(850, "Calling emsg. CMD=%s\n", cmd);
-            DeliveryError(_("Mail program terminated in error.\n"
+            DeliveryError(T_("Mail program terminated in error.\n"
                             "CMD=%s\n"
                             "ERR=%s\n"),
                           cmd, be.bstrerror());
@@ -503,7 +503,7 @@ static inline bool OpenDestFile(MessageDestinationInfo* d, const char* mode)
   d->file_pointer_ = fopen(d->where_.c_str(), mode);
   if (!d->file_pointer_) {
     BErrNo be;
-    DeliveryError(_("fopen %s failed: ERR=%s\n"), d->where_.c_str(),
+    DeliveryError(T_("fopen %s failed: ERR=%s\n"), d->where_.c_str(),
                   be.bstrerror());
     return false;
   }
@@ -699,7 +699,7 @@ void DispatchMessage(JobControlRecord* jcr,
           if (SendToDbLog) {
             if (!SendToDbLog(jcr, mtime, msg)) {
               DeliveryError(
-                  _("Msg delivery error: Unable to store data in database.\n"));
+                  T_("Msg delivery error: Unable to store data in database.\n"));
             }
           }
           break;
@@ -750,7 +750,7 @@ void DispatchMessage(JobControlRecord* jcr,
             if (status != 0) {
               BErrNo be;
               be.SetErrno(status);
-              DeliveryError(_("Msg delivery error: Operator mail program "
+              DeliveryError(T_("Msg delivery error: Operator mail program "
                               "terminated in error.\n"
                               "CMD=%s\nERR=%s\n"),
                             mcmd, be.bstrerror());
@@ -770,7 +770,7 @@ void DispatchMessage(JobControlRecord* jcr,
             d->file_pointer_ = fopen(name, "w+b");
             if (!d->file_pointer_) {
               BErrNo be;
-              DeliveryError(_("Msg delivery error: fopen %s failed: ERR=%s\n"),
+              DeliveryError(T_("Msg delivery error: fopen %s failed: ERR=%s\n"),
                             name, be.bstrerror());
               FreePoolMemory(name);
               msgs->ClearInUse();
@@ -1125,41 +1125,41 @@ void e_msg(const char* file,
   switch (type) {
     case M_ABORT:
       Mmsg(typestr, "ABORT");
-      Mmsg(buf, _("%s: ABORTING due to ERROR in %s:%d\n"), my_name,
+      Mmsg(buf, T_("%s: ABORTING due to ERROR in %s:%d\n"), my_name,
            get_basename(file), line);
       break;
     case M_ERROR_TERM:
       Mmsg(typestr, "ERROR TERMINATION");
-      Mmsg(buf, _("%s: ERROR TERMINATION at %s:%d\n"), my_name,
+      Mmsg(buf, T_("%s: ERROR TERMINATION at %s:%d\n"), my_name,
            get_basename(file), line);
       break;
     case M_CONFIG_ERROR:
       Mmsg(typestr, "CONFIG ERROR");
-      Mmsg(buf, _("%s: CONFIG ERROR at %s:%d\n"), my_name, get_basename(file),
+      Mmsg(buf, T_("%s: CONFIG ERROR at %s:%d\n"), my_name, get_basename(file),
            line);
       break;
     case M_FATAL:
       Mmsg(typestr, "FATAL ERROR");
       if (level == -1) /* skip details */
-        Mmsg(buf, _("%s: Fatal Error because: "), my_name);
+        Mmsg(buf, T_("%s: Fatal Error because: "), my_name);
       else
-        Mmsg(buf, _("%s: Fatal Error at %s:%d because:\n"), my_name,
+        Mmsg(buf, T_("%s: Fatal Error at %s:%d because:\n"), my_name,
              get_basename(file), line);
       break;
     case M_ERROR:
       Mmsg(typestr, "ERROR");
       if (level == -1) /* skip details */
-        Mmsg(buf, _("%s: ERROR: "), my_name);
+        Mmsg(buf, T_("%s: ERROR: "), my_name);
       else
-        Mmsg(buf, _("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
+        Mmsg(buf, T_("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
       break;
     case M_WARNING:
       Mmsg(typestr, "WARNING");
-      Mmsg(buf, _("%s: Warning: "), my_name);
+      Mmsg(buf, T_("%s: Warning: "), my_name);
       break;
     case M_SECURITY:
       Mmsg(typestr, "Security violation");
-      Mmsg(buf, _("%s: Security violation: "), my_name);
+      Mmsg(buf, T_("%s: Security violation: "), my_name);
       break;
     default:
       Mmsg(buf, "%s: ", my_name);
@@ -1273,29 +1273,29 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   switch (type) {
     case M_ABORT:
-      Mmsg(buf, _("%s ABORTING due to ERROR\n"), my_name);
+      Mmsg(buf, T_("%s ABORTING due to ERROR\n"), my_name);
       break;
     case M_ERROR_TERM:
-      Mmsg(buf, _("%s ERROR TERMINATION\n"), my_name);
+      Mmsg(buf, T_("%s ERROR TERMINATION\n"), my_name);
       break;
     case M_CONFIG_ERROR:
-      Mmsg(buf, _("%s Configuration error\n"), my_name);
+      Mmsg(buf, T_("%s Configuration error\n"), my_name);
       break;
     case M_FATAL:
-      Mmsg(buf, _("%s JobId %u: Fatal error: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Fatal error: "), my_name, JobId);
       if (jcr) { jcr->setJobStatusWithPriorityCheck(JS_FatalError); }
       if (jcr && jcr->JobErrors == 0) { jcr->JobErrors = 1; }
       break;
     case M_ERROR:
-      Mmsg(buf, _("%s JobId %u: Error: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Error: "), my_name, JobId);
       if (jcr) { jcr->JobErrors++; }
       break;
     case M_WARNING:
-      Mmsg(buf, _("%s JobId %u: Warning: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Warning: "), my_name, JobId);
       if (jcr) { jcr->JobWarnings++; }
       break;
     case M_SECURITY:
-      Mmsg(buf, _("%s JobId %u: Security violation: "), my_name, JobId);
+      Mmsg(buf, T_("%s JobId %u: Security violation: "), my_name, JobId);
       break;
     default:
       Mmsg(buf, "%s JobId %u: ", my_name, JobId);

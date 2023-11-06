@@ -127,7 +127,7 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
   bstrncpy(mr.VolumeName, media->label, NDMMEDIA_LABEL_MAX);
   if (!jcr->db->GetMediaRecord(jcr, &mr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Catalog error getting Media record for Medium %s: %s"),
+         T_("Catalog error getting Media record for Medium %s: %s"),
          mr.VolumeName, jcr->db->strerror());
     return false;
   }
@@ -140,14 +140,14 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
   jm.MediaId = mr.MediaId;
   jm.JobId = jcr->JobId;
   if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
-    Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"),
+    Jmsg(jcr, M_FATAL, 0, T_("Catalog error creating JobMedia record. %s"),
          jcr->db->strerror());
     return false;
   }
 
   if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Catalog error updating Media record for Medium %s: %s"),
+         T_("Catalog error updating Media record for Medium %s: %s"),
          mr.VolumeName, jcr->db->strerror());
     return false;
   }
@@ -170,17 +170,17 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
 
   //  TODO: what happens with multiple IDs?
   if (!GetNextJobidFromList(&p, &restoreJobId)) {
-    Jmsg(jcr, M_FATAL, 0, _("Error getting next jobid from list\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Error getting next jobid from list\n"));
   }
   if (restoreJobId == 0) {
-    Jmsg(jcr, M_FATAL, 0, _("RestoreJobId is zero, cannot go on\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("RestoreJobId is zero, cannot go on\n"));
   }
   // Get Media for certain job
   VolCount = jcr->db->GetJobVolumeParameters(jcr, restoreJobId, &VolParams);
 
   if (!VolCount) {
     Jmsg(jcr, M_ERROR, 0,
-         _("Could not get Job Volume Parameters to "
+         T_("Could not get Job Volume Parameters to "
            "create ndmmedia list. ERR=%s\n"),
          jcr->db->strerror());
     goto bail_out;

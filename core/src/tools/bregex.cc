@@ -86,7 +86,7 @@ int main(int argc, char** argv)
     }
     fd = fopen(fname.c_str(), "r");
     if (!fd) {
-      printf(_("Could not open data file: %s\n"), fname.c_str());
+      printf(T_("Could not open data file: %s\n"), fname.c_str());
       exit(BEXIT_FAILURE);
     }
     lineno = 0;

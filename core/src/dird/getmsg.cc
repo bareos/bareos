@@ -167,7 +167,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
           bs->fsend("btime %s\n", edit_uint64(GetCurrentBtime(), ed1));
           break;
         default:
-          Jmsg1(jcr, M_WARNING, 0, _("BgetDirmsg: unknown bnet signal %d\n"),
+          Jmsg1(jcr, M_WARNING, 0, T_("BgetDirmsg: unknown bnet signal %d\n"),
                 bs->message_length);
           return n;
       }
@@ -192,14 +192,14 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       if (allow_any_message) {
         return n;
       } else {
-        Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
+        Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
         continue;
       }
     }
 
     // Skip past "Jmsg Job=nnn"
     if (!(msg = find_msg_start(bs->msg))) {
-      Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
+      Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
       continue;
     }
 
@@ -213,7 +213,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       if (sscanf(bs->msg, "Jmsg Job=%127s type=%d level=%lld", Job, &type,
                  &mtime)
           != 3) {
-        Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
+        Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
         continue;
       }
       Dmsg1(900, "Got msg: %s\n", bs->msg);
@@ -245,7 +245,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       char filename[256];
       if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s", Job, filename)
           != 2) {
-        Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
+        Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
         continue;
       }
       UnbashSpaces(filename);
@@ -262,7 +262,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       if (sscanf(bs->msg, Job_status, &Job, &JobStatus) == 2) {
         SetJcrSdJobStatus(jcr, JobStatus); /* current status */
       } else {
-        Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
+        Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);
       }
       continue;
     }
@@ -302,12 +302,12 @@ bool response(JobControlRecord* jcr,
     if (bstrcmp(bs->msg, resp)) { return true; }
     if (PrintMessage == DISPLAY_ERROR) {
       Jmsg(jcr, M_FATAL, 0,
-           _("Bad response to %s command: wanted %s, got %s\n"), cmd, resp,
+           T_("Bad response to %s command: wanted %s, got %s\n"), cmd, resp,
            bs->msg);
     }
     return false;
   }
-  Jmsg(jcr, M_FATAL, 0, _("Socket error on %s command: ERR=%s\n"), cmd,
+  Jmsg(jcr, M_FATAL, 0, T_("Socket error on %s command: ERR=%s\n"), cmd,
        BnetStrerror(bs));
   return false;
 }

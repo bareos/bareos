@@ -132,7 +132,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
 
     if (status == EINVAL) {
       BErrNo be;
-      Jmsg1(jcr, M_FATAL, 0, _("pthread timedwait error. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, T_("pthread timedwait error. ERR=%s\n"),
             be.bstrerror(status));
       status = W_ERROR; /* error */
       break;
@@ -227,7 +227,7 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
 
   if (++retries % 5 == 0) {
     /* Print message every 5 minutes */
-    Jmsg(jcr, M_MOUNT, 0, _("JobId=%s, Job %s waiting to reserve a device.\n"),
+    Jmsg(jcr, M_MOUNT, 0, T_("JobId=%s, Job %s waiting to reserve a device.\n"),
          edit_uint64(jcr->JobId, ed1), jcr->Job);
   }
 

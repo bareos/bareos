@@ -274,7 +274,7 @@ static bRC handleJobEnd(PluginContext* ctx)
     Dmsg(ctx, debuglevel, "autoxflate-sd: inflate ratio: %lld/%lld = %0.2f%%\n",
          p_ctx->inflate_bytes_out, p_ctx->inflate_bytes_in,
          (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
-    Jmsg(ctx, M_INFO, _("autoxflate-sd: inflate ratio: %0.2f%%\n"),
+    Jmsg(ctx, M_INFO, T_("autoxflate-sd: inflate ratio: %0.2f%%\n"),
          (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
   }
 
@@ -283,7 +283,7 @@ static bRC handleJobEnd(PluginContext* ctx)
          "autoxflate-sd: deflate ratio: %lld/%lld =  %0.2f%%\n",
          p_ctx->deflate_bytes_out, p_ctx->deflate_bytes_in,
          (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
-    Jmsg(ctx, M_INFO, _("autoxflate-sd: deflate ratio: %0.2f%%\n"),
+    Jmsg(ctx, M_INFO, T_("autoxflate-sd: deflate ratio: %0.2f%%\n"),
          (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
   }
 
@@ -313,7 +313,7 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
     dcr->autoinflate = IODirection::READ;
     dcr->autodeflate = IODirection::NONE;
     Jmsg(ctx, M_INFO,
-         _("autoxflate-sd: overriding settings on %s for NDMP restore\n"),
+         T_("autoxflate-sd: overriding settings on %s for NDMP restore\n"),
          dcr->dev_name);
   }
 
@@ -337,7 +337,7 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
     default:
       Jmsg(ctx, M_ERROR,
-           _("autoxflate-sd: Unexpected autodeflate setting on %s"),
+           T_("autoxflate-sd: Unexpected autodeflate setting on %s"),
            dcr->dev_name);
       break;
   }
@@ -361,7 +361,7 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
     default:
       Jmsg(ctx, M_ERROR,
-           _("autoxflate-sd: Unexpected autoinflate setting on %s"),
+           T_("autoxflate-sd: Unexpected autoinflate setting on %s"),
            dcr->dev_name);
       break;
   }
@@ -378,7 +378,7 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
 
   if (did_setup) {
     Jmsg(ctx, M_INFO,
-         _("autoxflate-sd: %s OUT:[SD->inflate=%s->deflate=%s->DEV] "
+         T_("autoxflate-sd: %s OUT:[SD->inflate=%s->deflate=%s->DEV] "
            "IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
          dcr->dev_name, inflate_out, deflate_out, inflate_in, deflate_in);
   }
@@ -471,7 +471,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
                            Z_DEFAULT_STRATEGY))
           != Z_OK) {
         Jmsg(ctx, M_FATAL,
-             _("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
+             T_("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
       }
@@ -505,7 +505,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
       pZfastStream = (zfast_stream*)jcr->compress.workset.pZFAST;
       if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
         Jmsg(ctx, M_FATAL,
-             _("autoxflate-sd: Compression fastlzlibSetCompressor error: "
+             T_("autoxflate-sd: Compression fastlzlibSetCompressor error: "
                "%d\n"),
              zstat);
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -517,7 +517,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
       break;
   }
 
-  Jmsg(ctx, M_INFO, _("autoxflate-sd: Compressor on device %s is %s\n"),
+  Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),
        dcr->dev_name, compressorname);
   retval = true;
 
@@ -591,7 +591,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (!dcr->jcr->compress.deflate_buffer) {
     Jmsg(ctx, M_FATAL,
-         _("autoxflate-sd: compress.deflate_buffer was not setup "
+         T_("autoxflate-sd: compress.deflate_buffer was not setup "
            "missing bSdEventSetupRecordTranslation call?\n"));
     goto bail_out;
   }
@@ -721,7 +721,7 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (!dcr->jcr->compress.inflate_buffer) {
     Jmsg(ctx, M_FATAL,
-         _("autoxflate-sd: compress.inflate_buffer was not setup "
+         T_("autoxflate-sd: compress.inflate_buffer was not setup "
            "missing bSdEventSetupRecordTranslation call?\n"));
     goto bail_out;
   }

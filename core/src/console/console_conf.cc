@@ -103,7 +103,7 @@ static void DumpResource(int type,
       = OutputFormatterResource(&output_formatter);
 
   if (!res) {
-    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
+    sendit(sock, T_("Warning: no \"%s\" resource (%d) defined.\n"),
            my_config->ResToStr(type), type);
     return;
   }
@@ -159,7 +159,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     default:
-      printf(_("Unknown resource type %d\n"), type);
+      printf(T_("Unknown resource type %d\n"), type);
       break;
   }
   if (next_resource) { FreeResource(next_resource, type); }
@@ -175,7 +175,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!items[i].IsPresent()) {
         Emsg2(M_ABORT, 0,
-              _("%s item is required in %s resource, but not found.\n"),
+              T_("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[type].name);
       }
     }
@@ -188,7 +188,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         ConsoleResource* p = dynamic_cast<ConsoleResource*>(
             my_config->GetResWithName(R_CONSOLE, res_cons->resource_name_));
         if (!p) {
-          Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"),
+          Emsg1(M_ABORT, 0, T_("Cannot find Console resource %s\n"),
                 res_cons->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_ = std::move(
@@ -200,7 +200,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         DirectorResource* p = dynamic_cast<DirectorResource*>(
             my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
         if (!p) {
-          Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
+          Emsg1(M_ABORT, 0, T_("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_
@@ -209,7 +209,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       }
       default:
-        Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
+        Emsg1(M_ERROR, 0, T_("Unknown resource type %d\n"), type);
         error = 1;
         break;
     }

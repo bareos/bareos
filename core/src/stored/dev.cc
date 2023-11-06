@@ -125,7 +125,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   if (!ImplementationFactory<Device>::IsRegistered(
           device_resource->device_type)) {
-    Jmsg2(jcr, M_ERROR, 0, _("%s has an unsupported Device Type %s\n"),
+    Jmsg2(jcr, M_ERROR, 0, T_("%s has an unsupported Device Type %s\n"),
           device_resource->archive_device_string,
           device_resource->device_type.c_str());
     return nullptr;
@@ -199,38 +199,38 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
         || stat(dev->device_resource->mount_point, &statp) < 0) {
       BErrNo be;
       dev->dev_errno = errno;
-      Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR_TERM, 0, T_("Unable to stat mount point %s: ERR=%s\n"),
             dev->device_resource->mount_point, be.bstrerror());
     }
 
     if (!dev->device_resource->mount_command
         || !dev->device_resource->unmount_command) {
       Jmsg0(jcr, M_ERROR_TERM, 0,
-            _("Mount and unmount commands must defined for a device which "
+            T_("Mount and unmount commands must defined for a device which "
               "requires mount.\n"));
     }
   }
 
   if (dev->min_block_size
       > (dev->max_block_size == 0 ? DEFAULT_BLOCK_SIZE : dev->max_block_size)) {
-    Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
+    Jmsg(jcr, M_ERROR_TERM, 0, T_("Min block size > max on device %s\n"),
          dev->print_name());
   }
   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
     Jmsg3(jcr, M_ERROR, 0,
-          _("Block size %u on device %s is too large, using default %u\n"),
+          T_("Block size %u on device %s is too large, using default %u\n"),
           dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
     dev->max_block_size = 0;
   }
   if (dev->max_block_size % TAPE_BSIZE != 0) {
     Jmsg3(jcr, M_WARNING, 0,
-          _("Max block size %u not multiple of device %s block size=%d.\n"),
+          T_("Max block size %u not multiple of device %s block size=%d.\n"),
           dev->max_block_size, dev->print_name(), TAPE_BSIZE);
   }
   if (dev->max_volume_size != 0
       && dev->max_volume_size < (dev->max_block_size << 4)) {
     Jmsg(jcr, M_ERROR_TERM, 0,
-         _("Max Vol Size < 8 * Max Block Size for device %s\n"),
+         T_("Max Vol Size < 8 * Max Block Size for device %s\n"),
          dev->print_name());
   }
 
@@ -242,7 +242,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   if ((errstat = dev->InitMutex()) != 0) {
     BErrNo be;
     dev->dev_errno = errstat;
-    Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"),
+    Mmsg1(dev->errmsg, T_("Unable to init mutex: ERR=%s\n"),
           be.bstrerror(errstat));
     Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
   }
@@ -250,7 +250,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   if ((errstat = pthread_cond_init(&dev->wait, NULL)) != 0) {
     BErrNo be;
     dev->dev_errno = errstat;
-    Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"),
+    Mmsg1(dev->errmsg, T_("Unable to init cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
     Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
   }
@@ -258,7 +258,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   if ((errstat = pthread_cond_init(&dev->wait_next_vol, NULL)) != 0) {
     BErrNo be;
     dev->dev_errno = errstat;
-    Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"),
+    Mmsg1(dev->errmsg, T_("Unable to init cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
     Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
   }
@@ -266,7 +266,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   if ((errstat = pthread_mutex_init(&dev->spool_mutex, NULL)) != 0) {
     BErrNo be;
     dev->dev_errno = errstat;
-    Mmsg1(dev->errmsg, _("Unable to init spool mutex: ERR=%s\n"),
+    Mmsg1(dev->errmsg, T_("Unable to init spool mutex: ERR=%s\n"),
           be.bstrerror(errstat));
     Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
   }
@@ -274,7 +274,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   if ((errstat = dev->InitAcquireMutex()) != 0) {
     BErrNo be;
     dev->dev_errno = errstat;
-    Mmsg1(dev->errmsg, _("Unable to init acquire mutex: ERR=%s\n"),
+    Mmsg1(dev->errmsg, T_("Unable to init acquire mutex: ERR=%s\n"),
           be.bstrerror(errstat));
     Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
   }
@@ -282,7 +282,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   if ((errstat = dev->InitReadAcquireMutex()) != 0) {
     BErrNo be;
     dev->dev_errno = errstat;
-    Mmsg1(dev->errmsg, _("Unable to init read acquire mutex: ERR=%s\n"),
+    Mmsg1(dev->errmsg, T_("Unable to init read acquire mutex: ERR=%s\n"),
           be.bstrerror(errstat));
     Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
   }
@@ -394,27 +394,27 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
   }
 
   if (dev->min_block_size > max_bs) {
-    Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
+    Jmsg(jcr, M_ERROR_TERM, 0, T_("Min block size > max on device %s\n"),
          dev->print_name());
   }
 
   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
     Jmsg3(jcr, M_ERROR, 0,
-          _("Block size %u on device %s is too large, using default %u\n"),
+          T_("Block size %u on device %s is too large, using default %u\n"),
           dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
     dev->max_block_size = 0;
   }
 
   if (dev->max_block_size % TAPE_BSIZE != 0) {
     Jmsg3(jcr, M_WARNING, 0,
-          _("Max block size %u not multiple of device %s block size=%d.\n"),
+          T_("Max block size %u not multiple of device %s block size=%d.\n"),
           dev->max_block_size, dev->print_name(), TAPE_BSIZE);
   }
 
   if (dev->max_volume_size != 0
       && dev->max_volume_size < (dev->max_block_size << 4)) {
     Jmsg(jcr, M_ERROR_TERM, 0,
-         _("Max Vol Size < 8 * Max Block Size for device %s\n"),
+         T_("Max Vol Size < 8 * Max Block Size for device %s\n"),
          dev->print_name());
   }
 
@@ -547,7 +547,7 @@ void Device::set_mode(DeviceMode mode)
       oflags = O_WRONLY | O_BINARY;
       break;
     default:
-      Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
+      Emsg0(M_ABORT, 0, T_("Illegal mode given to open dev.\n"));
   }
 }
 
@@ -567,7 +567,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   if (!device_resource->changer_res
       || device_resource->changer_command[0] == 0) {
     if (VolCatInfo.VolCatName[0] == 0) {
-      Mmsg(errmsg, _("Could not open file device %s. No Volume name given.\n"),
+      Mmsg(errmsg, T_("Could not open file device %s. No Volume name given.\n"),
            print_name());
       ClearOpened();
       return;
@@ -592,9 +592,9 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     BErrNo be;
     dev_errno = errno;
     if (dev_errno == 0) {
-      Mmsg2(errmsg, _("Could not open: %s\n"), archive_name.c_str());
+      Mmsg2(errmsg, T_("Could not open: %s\n"), archive_name.c_str());
     } else {
-      Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
+      Mmsg2(errmsg, T_("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
             be.bstrerror());
     }
     Dmsg1(100, "open failed: %s", errmsg);
@@ -638,7 +638,7 @@ bool Device::rewind(DeviceControlRecord* dcr)
       if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
         BErrNo be;
         dev_errno = errno;
-        Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(),
+        Mmsg2(errmsg, T_("lseek error on %s. ERR=%s"), print_name(),
               be.bstrerror());
         return false;
       }
@@ -686,7 +686,7 @@ bool Device::eod(DeviceControlRecord* dcr)
 
   if (fd < 0) {
     dev_errno = EBADF;
-    Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
+    Mmsg1(errmsg, T_("Bad call to eod. Device %s not open\n"), print_name());
     return false;
   }
 
@@ -710,7 +710,7 @@ bool Device::eod(DeviceControlRecord* dcr)
 
   dev_errno = errno;
   BErrNo be;
-  Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+  Mmsg2(errmsg, T_("lseek error on %s. ERR=%s.\n"), print_name(),
         be.bstrerror());
   Dmsg0(100, errmsg);
 
@@ -729,7 +729,7 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
 
   if (!IsOpen()) {
     dev_errno = EBADF;
-    Mmsg0(errmsg, _("Bad device call. Device not open\n"));
+    Mmsg0(errmsg, T_("Bad device call. Device not open\n"));
     Emsg1(M_FATAL, 0, "%s", errmsg);
     return false;
   }
@@ -745,8 +745,8 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
       if (pos < 0) {
         BErrNo be;
         dev_errno = errno;
-        Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
-        Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+        Pmsg1(000, T_("Seek error: ERR=%s\n"), be.bstrerror());
+        Mmsg2(errmsg, T_("lseek error on %s. ERR=%s.\n"), print_name(),
               be.bstrerror());
         return false;
       } else {
@@ -827,7 +827,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
 {
   if (!IsOpen()) {
     dev_errno = EBADF;
-    Mmsg0(errmsg, _("Bad call to Reposition. Device not open\n"));
+    Mmsg0(errmsg, T_("Bad call to Reposition. Device not open\n"));
     Emsg0(M_FATAL, 0, errmsg);
     return false;
   }
@@ -842,7 +842,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
       if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
         BErrNo be;
         dev_errno = errno;
-        Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+        Mmsg2(errmsg, T_("lseek error on %s. ERR=%s.\n"), print_name(),
               be.bstrerror());
         return false;
       }
@@ -898,7 +898,7 @@ bool Device::close(DeviceControlRecord* dcr)
   if (status < 0) {
     BErrNo be;
 
-    Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"), print_name(),
+    Mmsg2(errmsg, T_("Unable to close device %s. ERR=%s\n"), print_name(),
           be.bstrerror());
     dev_errno = errno;
     retval = false;

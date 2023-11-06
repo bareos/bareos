@@ -239,7 +239,7 @@ bool DropletDevice::ForEachChunkInDirectoryRunCallback(
         if (callback_status == DPL_SUCCESS) {
           i++;
         } else {
-          Mmsg2(errmsg, _("Operation failed on chunk %s: ERR=%s."),
+          Mmsg2(errmsg, T_("Operation failed on chunk %s: ERR=%s."),
                 path.c_str(), dpl_status_str(callback_status));
           dev_errno = DropletErrnoToSystemErrno(callback_status);
           /* exit loop */
@@ -471,7 +471,7 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
                 break;
               default:
                 Mmsg2(errmsg,
-                      _("Failed to create directory %s using dpl_mkdir(): "
+                      T_("Failed to create directory %s using dpl_mkdir(): "
                         "ERR=%s.\n"),
                       chunk_dir.c_str(), dpl_status_str(status));
                 dev_errno = DropletErrnoToSystemErrno(status);
@@ -513,7 +513,7 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
         success = true;
         goto bail_out;
       default:
-        Mmsg2(errmsg, _("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
+        Mmsg2(errmsg, T_("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
               chunk_name.c_str(), dpl_status_str(status));
         dev_errno = DropletErrnoToSystemErrno(status);
         Bmicrosleep(INFLIGT_RETRY_TIME, 0);
@@ -568,7 +568,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
       case DPL_SUCCESS:
         if (sysmd->size > request->wbuflen) {
           Mmsg3(errmsg,
-                _("Failed to read %s (%ld) to big to fit in chunksize of %ld "
+                T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
                   "bytes\n"),
                 chunk_name.c_str(), sysmd->size, request->wbuflen);
           Dmsg1(100, "%s", errmsg);
@@ -581,13 +581,13 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         break;
       case DPL_ENOENT:
       case DPL_EINVAL:
-        Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"),
+        Mmsg1(errmsg, T_("Failed to open %s doesn't exist\n"),
               chunk_name.c_str());
         Dmsg1(100, "%s", errmsg);
         dev_errno = EIO;
         goto bail_out;
       default:
-        Mmsg2(errmsg, _("Failed to open %s (Droplet error: %d)\n"),
+        Mmsg2(errmsg, T_("Failed to open %s (Droplet error: %d)\n"),
               chunk_name.c_str(), status);
         Dmsg1(100, "%s", errmsg);
         dev_errno = EIO;
@@ -637,7 +637,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         dev_errno = 0;
         break;
       case DPL_ENOENT:
-        Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"),
+        Mmsg1(errmsg, T_("Failed to open %s doesn't exist\n"),
               chunk_name.c_str());
         Dmsg1(100, "%s", errmsg);
         dev_errno = EIO;
@@ -645,7 +645,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         ++tries;
         break;
       default:
-        Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
+        Mmsg2(errmsg, T_("Failed to read %s using dpl_fget(): ERR=%s.\n"),
               chunk_name.c_str(), dpl_status_str(status));
         Dmsg1(100, "%s", errmsg);
         dev_errno = DropletErrnoToSystemErrno(status);
@@ -721,7 +721,7 @@ bool DropletDevice::initialize()
     char *bp, *next_option;
 
     if (!dev_options) {
-      Mmsg0(errmsg, _("No device options configured\n"));
+      Mmsg0(errmsg, T_("No device options configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       return -1;
     }
@@ -799,7 +799,7 @@ bool DropletDevice::initialize()
       }
 
       if (!done) {
-        Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+        Mmsg1(errmsg, T_("Unable to parse device option: %s\n"), bp);
         Emsg0(M_FATAL, 0, errmsg);
         goto bail_out;
       }
@@ -808,7 +808,7 @@ bool DropletDevice::initialize()
     }
 
     if (!profile_) {
-      Mmsg0(errmsg, _("No droplet profile configured\n"));
+      Mmsg0(errmsg, T_("No droplet profile configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
     }
@@ -826,7 +826,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
       sysmd_.location_constraint = dpl_location_constraint(temp.c_str());
       if (sysmd_.location_constraint == -1) {
-        Mmsg2(errmsg, _("Illegal location argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal location argument %s for device %s%s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -837,7 +837,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_CANNED_ACL;
       sysmd_.canned_acl = dpl_canned_acl(temp.c_str());
       if (sysmd_.canned_acl == -1) {
-        Mmsg2(errmsg, _("Illegal canned_acl argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal canned_acl argument %s for device %s%s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -848,7 +848,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_STORAGE_CLASS;
       sysmd_.storage_class = dpl_storage_class(temp.c_str());
       if (sysmd_.storage_class == -1) {
-        Mmsg2(errmsg, _("Illegal storage_class argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal storage_class argument %s for device %s%s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -873,7 +873,7 @@ bool DropletDevice::initialize()
 
     // If we failed to allocate a new context fail the open.
     if (!ctx_) {
-      Mmsg1(errmsg, _("Failed to create a new context using config %s\n"),
+      Mmsg1(errmsg, T_("Failed to create a new context using config %s\n"),
             dev_options);
       Dmsg1(100, "%s", errmsg);
       goto bail_out;
@@ -890,7 +890,7 @@ bool DropletDevice::initialize()
         break;
       default:
         Mmsg2(errmsg,
-              _("Failed to login for volume %s using dpl_login(): ERR=%s.\n"),
+              T_("Failed to login for volume %s using dpl_login(): ERR=%s.\n"),
               getVolCatName(), dpl_status_str(status));
         Dmsg1(100, "%s", errmsg);
         goto bail_out;

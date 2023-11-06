@@ -77,22 +77,22 @@ const char* cmprs_algo_to_text(uint32_t compression_algorithm)
 // Convert ZLIB error code into an ASCII message
 static const char* zlib_strerror(int stat)
 {
-  if (stat >= 0) { return _("None"); }
+  if (stat >= 0) { return T_("None"); }
   switch (stat) {
     case Z_ERRNO:
-      return _("Zlib errno");
+      return T_("Zlib errno");
     case Z_STREAM_ERROR:
-      return _("Zlib stream error");
+      return T_("Zlib stream error");
     case Z_DATA_ERROR:
-      return _("Zlib data error");
+      return T_("Zlib data error");
     case Z_MEM_ERROR:
-      return _("Zlib memory error");
+      return T_("Zlib memory error");
     case Z_BUF_ERROR:
-      return _("Zlib buffer error");
+      return T_("Zlib buffer error");
     case Z_VERSION_ERROR:
-      return _("Zlib version error");
+      return T_("Zlib version error");
     default:
-      return _("*None*");
+      return T_("*None*");
   }
 }
 #endif
@@ -100,7 +100,7 @@ static const char* zlib_strerror(int stat)
 static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
                                                uint32_t compression_algorithm)
 {
-  Jmsg(jcr, M_FATAL, 0, _("%s compression not supported on this platform\n"),
+  Jmsg(jcr, M_FATAL, 0, T_("%s compression not supported on this platform\n"),
        cmprs_algo_to_text(compression_algorithm));
 }
 
@@ -394,7 +394,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       if (deflateInit(pZlibStream, Z_DEFAULT_COMPRESSION) == Z_OK) {
         jcr->compress.workset.pZLIB = pZlibStream;
       } else {
-        Jmsg(jcr, M_FATAL, 0, _("Failed to initialize ZLIB compression\n"));
+        Jmsg(jcr, M_FATAL, 0, T_("Failed to initialize ZLIB compression\n"));
         free(pZlibStream);
         return false;
       }
@@ -427,7 +427,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       if (lzo_init() == LZO_E_OK) {
         jcr->compress.workset.pLZO = pLzoMem;
       } else {
-        Jmsg(jcr, M_FATAL, 0, _("Failed to initialize LZO compression\n"));
+        Jmsg(jcr, M_FATAL, 0, T_("Failed to initialize LZO compression\n"));
         free(pLzoMem);
         return false;
       }
@@ -472,7 +472,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       if ((zstat = fastlzlibCompressInit(pZfastStream, level)) == Z_OK) {
         jcr->compress.workset.pZFAST = pZfastStream;
       } else {
-        Jmsg(jcr, M_FATAL, 0, _("Failed to initialize FASTLZ compression\n"));
+        Jmsg(jcr, M_FATAL, 0, T_("Failed to initialize FASTLZ compression\n"));
         free(pZfastStream);
         return false;
       }
@@ -501,7 +501,7 @@ bool SetupDecompressionBuffers(JobControlRecord* jcr,
 
 #ifdef HAVE_LZO
   if (!jcr->compress.inflate_buffer && lzo_init() != LZO_E_OK) {
-    Jmsg(jcr, M_FATAL, 0, _("LZO init failed\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("LZO init failed\n"));
     return false;
   }
 #endif
@@ -529,7 +529,7 @@ static bool compress_with_zlib(JobControlRecord* jcr,
   pZlibStream->avail_out = max_compress_len;
 
   if ((zstat = deflate(pZlibStream, Z_FINISH)) != Z_STREAM_END) {
-    Jmsg(jcr, M_FATAL, 0, _("Compression deflate error: %d\n"), zstat);
+    Jmsg(jcr, M_FATAL, 0, T_("Compression deflate error: %d\n"), zstat);
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
@@ -538,7 +538,7 @@ static bool compress_with_zlib(JobControlRecord* jcr,
 
   // Reset zlib stream to be able to begin from scratch again
   if ((zstat = deflateReset(pZlibStream)) != Z_OK) {
-    Jmsg(jcr, M_FATAL, 0, _("Compression deflateReset error: %d\n"), zstat);
+    Jmsg(jcr, M_FATAL, 0, T_("Compression deflateReset error: %d\n"), zstat);
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
@@ -569,7 +569,7 @@ static bool compress_with_lzo(JobControlRecord* jcr,
 
   if (lzores != LZO_E_OK || *compress_len > max_compress_len) {
     // This should NEVER happen
-    Jmsg(jcr, M_FATAL, 0, _("Compression LZO error: %d\n"), lzores);
+    Jmsg(jcr, M_FATAL, 0, T_("Compression LZO error: %d\n"), lzores);
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
@@ -600,7 +600,7 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
   pZfastStream->avail_out = max_compress_len;
 
   if ((zstat = fastlzlibCompress(pZfastStream, Z_FINISH)) != Z_STREAM_END) {
-    Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibCompress error: %d\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Compression fastlzlibCompress error: %d\n"),
          zstat);
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
@@ -610,7 +610,7 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
 
   // Reset fastlz stream to be able to begin from scratch again
   if ((zstat = fastlzlibCompressReset(pZfastStream)) != Z_OK) {
-    Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibCompressReset error: %d\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Compression fastlzlibCompressReset error: %d\n"),
          zstat);
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
@@ -728,7 +728,7 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   }
 
   if (status != Z_OK) {
-    Qmsg(jcr, M_ERROR, 0, _("Uncompression error on file %s. ERR=%s\n"),
+    Qmsg(jcr, M_ERROR, 0, T_("Uncompression error on file %s. ERR=%s\n"),
          last_fname, zlib_strerror(status));
     return false;
   }
@@ -796,7 +796,7 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
   }
 
   if (status != LZO_E_OK) {
-    Qmsg(jcr, M_ERROR, 0, _("LZO uncompression error on file %s. ERR=%d\n"),
+    Qmsg(jcr, M_ERROR, 0, T_("LZO uncompression error on file %s. ERR=%d\n"),
          last_fname, status);
     return false;
   }
@@ -904,7 +904,7 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
   return true;
 
 cleanup:
-  Qmsg(jcr, M_ERROR, 0, _("Uncompression error on file %s. ERR=%s\n"),
+  Qmsg(jcr, M_ERROR, 0, T_("Uncompression error on file %s. ERR=%s\n"),
        last_fname, zlib_strerror(zstat));
   fastlzlibDecompressEnd(&stream);
 
@@ -944,7 +944,7 @@ bool DecompressData(JobControlRecord* jcr,
       // Version check
       if (comp_version != COMP_HEAD_VERSION) {
         Qmsg(jcr, M_ERROR, 0,
-             _("Compressed header version error. version=0x%x\n"),
+             T_("Compressed header version error. version=0x%x\n"),
              comp_version);
         return false;
       }
@@ -953,7 +953,7 @@ bool DecompressData(JobControlRecord* jcr,
       if (comp_len + sizeof(comp_stream_header) != *length) {
         Qmsg(
             jcr, M_ERROR, 0,
-            _("Compressed header size error. comp_len=%d, message_length=%d\n"),
+            T_("Compressed header size error. comp_len=%d, message_length=%d\n"),
             comp_len, *length);
         return false;
       }
@@ -997,7 +997,7 @@ bool DecompressData(JobControlRecord* jcr,
           }
         default:
           Qmsg(jcr, M_ERROR, 0,
-               _("Compression algorithm 0x%x found, but not supported!\n"),
+               T_("Compression algorithm 0x%x found, but not supported!\n"),
                comp_magic);
           return false;
       }
@@ -1015,7 +1015,7 @@ bool DecompressData(JobControlRecord* jcr,
       }
 #else
       Qmsg(jcr, M_ERROR, 0,
-           _("Compression algorithm GZIP found, but not supported!\n"));
+           T_("Compression algorithm GZIP found, but not supported!\n"));
       return false;
 #endif
   }

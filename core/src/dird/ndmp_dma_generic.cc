@@ -93,7 +93,7 @@ bool NdmpValidateClient(JobControlRecord* jcr)
     case APT_NDMPV4:
       if (jcr->dir_impl->res.client->password_.encoding != p_encoding_clear) {
         Jmsg(jcr, M_FATAL, 0,
-             _("Client %s, has incompatible password encoding for running NDMP "
+             T_("Client %s, has incompatible password encoding for running NDMP "
                "backup.\n"),
              jcr->dir_impl->res.client->resource_name_);
         return false;
@@ -101,7 +101,7 @@ bool NdmpValidateClient(JobControlRecord* jcr)
       break;
     default:
       Jmsg(jcr, M_FATAL, 0,
-           _("Client %s, with backup protocol %s  not compatible for running "
+           T_("Client %s, with backup protocol %s  not compatible for running "
              "NDMP backup.\n"),
            jcr->dir_impl->res.client->resource_name_,
            AuthenticationProtocolTypeToString(
@@ -121,7 +121,7 @@ static inline bool NdmpValidateStorage(JobControlRecord* jcr,
     case APT_NDMPV4:
       if (store->password_.encoding != p_encoding_clear) {
         Jmsg(jcr, M_FATAL, 0,
-             _("Storage %s, has incompatible password encoding for running "
+             T_("Storage %s, has incompatible password encoding for running "
                "NDMP backup.\n"),
              store->resource_name_);
         return false;
@@ -129,7 +129,7 @@ static inline bool NdmpValidateStorage(JobControlRecord* jcr,
       break;
     default:
       Jmsg(jcr, M_FATAL, 0,
-           _("Storage %s has illegal backup protocol %s for NDMP backup\n"),
+           T_("Storage %s has illegal backup protocol %s for NDMP backup\n"),
            store->resource_name_,
            AuthenticationProtocolTypeToString(store->Protocol));
       return false;
@@ -166,7 +166,7 @@ bool NdmpValidateJob(JobControlRecord* jcr, struct ndm_job_param* job)
   do {
     n_err = ndma_job_audit(job, audit_buffer, i);
     if (n_err) {
-      Jmsg(jcr, M_ERROR, 0, _("NDMP Job validation error = %s\n"),
+      Jmsg(jcr, M_ERROR, 0, T_("NDMP Job validation error = %s\n"),
            audit_buffer);
     }
     i++;
@@ -203,7 +203,7 @@ static inline bool fill_ndmp_agent_config(JobControlRecord* jcr,
       agent->protocol_version = 4;
       break;
     default:
-      Jmsg(jcr, M_FATAL, 0, _("Illegal protocol %d for NDMP Job\n"), protocol);
+      Jmsg(jcr, M_FATAL, 0, T_("Illegal protocol %d for NDMP Job\n"), protocol);
       return false;
   }
 
@@ -221,27 +221,27 @@ static inline bool fill_ndmp_agent_config(JobControlRecord* jcr,
       agent->auth_type = 'v';
       break;
     default:
-      Jmsg(jcr, M_FATAL, 0, _("Illegal authtype %d for NDMP Job\n"), authtype);
+      Jmsg(jcr, M_FATAL, 0, T_("Illegal authtype %d for NDMP Job\n"), authtype);
       return false;
   }
   //  sanity checks
   if (!address) {
-    Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: address is missing\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("fill_ndmp_agent_config: address is missing\n"));
     return false;
   }
 
   if (!username) {
-    Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: username is missing\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("fill_ndmp_agent_config: username is missing\n"));
     return false;
   }
 
   if (!password) {
-    Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: password is missing\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("fill_ndmp_agent_config: password is missing\n"));
     return false;
   }
 
   if (!port) {
-    Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: port is missing\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("fill_ndmp_agent_config: port is missing\n"));
     return false;
   }
 
@@ -316,7 +316,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
    * it is not supplied in the config definition.
    */
   if (!job->bu_type) {
-    Jmsg(jcr, M_FATAL, 0, _("No backup type specified in NDMP job\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("No backup type specified in NDMP job\n"));
     goto bail_out;
   }
 
@@ -341,7 +341,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
     if (jcr->dir_impl->res.client->ndmp_blocksize < SMTAPE_MIN_BLOCKSIZE
         || jcr->dir_impl->res.client->ndmp_blocksize > SMTAPE_MAX_BLOCKSIZE) {
       Jmsg(jcr, M_FATAL, 0,
-           _("For SMTAPE NDMP jobs the NDMP blocksize needs to be between %d "
+           T_("For SMTAPE NDMP jobs the NDMP blocksize needs to be between %d "
              "and %d, but is set to %d\n"),
            SMTAPE_MIN_BLOCKSIZE, SMTAPE_MAX_BLOCKSIZE,
            jcr->dir_impl->res.client->ndmp_blocksize);
@@ -352,7 +352,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
          % SMTAPE_BLOCKSIZE_INCREMENTS)
         != 0) {
       Jmsg(jcr, M_FATAL, 0,
-           _("For SMTAPE NDMP jobs the NDMP blocksize needs to be in "
+           T_("For SMTAPE NDMP jobs the NDMP blocksize needs to be in "
              "increments of %d bytes, but is set to %d\n"),
            SMTAPE_BLOCKSIZE_INCREMENTS,
            jcr->dir_impl->res.client->ndmp_blocksize);
@@ -682,7 +682,7 @@ void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char*)
 #else
 void DoNdmpClientStatus(UaContext* ua, ClientResource*, char*)
 {
-  Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
 }
 
 #endif /* HAVE_NDMP */

@@ -70,7 +70,7 @@ bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
     Dmsg1(20, "Find_next_vol MediaId=%u\n", mr->MediaId);
     SetStorageidInMr(store, mr);
     if (RecycleVolume(jcr, mr)) {
-      Jmsg(jcr, M_INFO, 0, _("Recycled volume \"%s\"\n"), mr->VolumeName);
+      Jmsg(jcr, M_INFO, 0, T_("Recycled volume \"%s\"\n"), mr->VolumeName);
       Dmsg1(100, "return 1  RecycleOldestPurgedVolume Vol=%s\n",
             mr->VolumeName);
 

@@ -133,7 +133,7 @@ extern "C" void* statistics_thread(void*)
       = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
   jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
-    Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Could not open database \"%s\".\n"),
          jcr->dir_impl->res.catalog->db_name);
     goto bail_out;
   }
@@ -231,7 +231,7 @@ extern "C" void* statistics_thread(void*)
 
               if (!jcr->db->CreateDeviceStatistics(jcr, &dsr)) { continue; }
             } else {
-              Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), sd->msg);
+              Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), sd->msg);
             }
           } else if (bstrncmp(sd->msg, "Tapealerts", 10)) {
             PoolMem DevName(PM_NAME);
@@ -252,7 +252,7 @@ extern "C" void* statistics_thread(void*)
 
               if (!jcr->db->CreateTapealertStatistics(jcr, &tsr)) { continue; }
             } else {
-              Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), sd->msg);
+              Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), sd->msg);
             }
           } else if (bstrncmp(sd->msg, "Jobstats", 8)) {
             PoolMem DevName(PM_NAME);
@@ -276,7 +276,7 @@ extern "C" void* statistics_thread(void*)
 
               if (!jcr->db->CreateJobStatistics(jcr, &jsr)) { continue; }
             } else {
-              Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), sd->msg);
+              Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), sd->msg);
             }
           }
         }
@@ -322,7 +322,7 @@ bool StartStatisticsThread(void)
       != 0) {
     BErrNo be;
     Emsg1(M_ERROR_TERM, 0,
-          _("Director Statistics Thread could not be started. ERR=%s\n"),
+          T_("Director Statistics Thread could not be started. ERR=%s\n"),
           be.bstrerror());
   }
 

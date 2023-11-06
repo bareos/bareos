@@ -128,14 +128,14 @@ int CreateFile(JobControlRecord* jcr,
     switch (replace) {
       case REPLACE_IFNEWER:
         if (attr->statp.st_mtime <= mstatp.st_mtime) {
-          Qmsg(jcr, M_INFO, 0, _("File skipped. Not newer: %s\n"),
+          Qmsg(jcr, M_INFO, 0, T_("File skipped. Not newer: %s\n"),
                attr->ofname);
           return CF_SKIP;
         }
         break;
       case REPLACE_IFOLDER:
         if (attr->statp.st_mtime >= mstatp.st_mtime) {
-          Qmsg(jcr, M_INFO, 0, _("File skipped. Not older: %s\n"),
+          Qmsg(jcr, M_INFO, 0, T_("File skipped. Not older: %s\n"),
                attr->ofname);
           return CF_SKIP;
         }
@@ -146,7 +146,7 @@ int CreateFile(JobControlRecord* jcr,
             && PathListLookup(jcr->path_list, attr->ofname)) {
           break;
         }
-        Qmsg(jcr, M_INFO, 0, _("File skipped. Already exists: %s\n"),
+        Qmsg(jcr, M_INFO, 0, T_("File skipped. Already exists: %s\n"),
              attr->ofname);
         return CF_SKIP;
       case REPLACE_ALWAYS:
@@ -173,7 +173,7 @@ int CreateFile(JobControlRecord* jcr,
           BErrNo be;
 
           Qmsg(jcr, M_ERROR, 0,
-               _("File %s already exists and could not be replaced. ERR=%s.\n"),
+               T_("File %s already exists and could not be replaced. ERR=%s.\n"),
                attr->ofname, be.bstrerror());
           /* Continue despite error */
         }
@@ -219,7 +219,7 @@ int CreateFile(JobControlRecord* jcr,
           }
 
           if (IsBopen(bfd)) {
-            Qmsg1(jcr, M_ERROR, 0, _("bpkt already open filedes=%d\n"),
+            Qmsg1(jcr, M_ERROR, 0, T_("bpkt already open filedes=%d\n"),
                   bfd->filedes);
             bclose(bfd);
           }
@@ -228,7 +228,7 @@ int CreateFile(JobControlRecord* jcr,
             BErrNo be;
 
             be.SetErrno(bfd->BErrNo);
-            Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"),
+            Qmsg2(jcr, M_ERROR, 0, T_("Could not create %s: ERR=%s\n"),
                   attr->ofname, be.bstrerror());
             Dmsg2(100, "Could not create %s: ERR=%s\n", attr->ofname,
                   be.bstrerror());
@@ -250,7 +250,7 @@ int CreateFile(JobControlRecord* jcr,
             if (mkfifo(attr->ofname, attr->statp.st_mode) != 0
                 && errno != EEXIST) {
               BErrNo be;
-              Qmsg2(jcr, M_ERROR, 0, _("Cannot make fifo %s: ERR=%s\n"),
+              Qmsg2(jcr, M_ERROR, 0, T_("Cannot make fifo %s: ERR=%s\n"),
                     attr->ofname, be.bstrerror());
               return CF_ERROR;
             }
@@ -271,7 +271,7 @@ int CreateFile(JobControlRecord* jcr,
             /* Fatal: Restoring a device on root-file system, but device node
              * does not exist. Should not create a dump file. */
             Qmsg1(jcr, M_ERROR, 0,
-                  _("Device restore on root failed, device %s missing.\n"),
+                  T_("Device restore on root failed, device %s missing.\n"),
                   attr->fname);
             return CF_ERROR;
           } else if (S_ISBLK(attr->statp.st_mode)
@@ -284,7 +284,7 @@ int CreateFile(JobControlRecord* jcr,
                     != 0
                 && errno != EEXIST) {
               BErrNo be;
-              Qmsg2(jcr, M_ERROR, 0, _("Cannot make node %s: ERR=%s\n"),
+              Qmsg2(jcr, M_ERROR, 0, T_("Cannot make node %s: ERR=%s\n"),
                     attr->ofname, be.bstrerror());
               return CF_ERROR;
             }
@@ -305,14 +305,14 @@ int CreateFile(JobControlRecord* jcr,
               tid = NULL;
             }
             if (IsBopen(bfd)) {
-              Qmsg1(jcr, M_ERROR, 0, _("bpkt already open filedes=%d\n"),
+              Qmsg1(jcr, M_ERROR, 0, T_("bpkt already open filedes=%d\n"),
                     bfd->filedes);
             }
             Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
             if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
               BErrNo be;
               be.SetErrno(bfd->BErrNo);
-              Qmsg2(jcr, M_ERROR, 0, _("Could not open %s: ERR=%s\n"),
+              Qmsg2(jcr, M_ERROR, 0, T_("Could not open %s: ERR=%s\n"),
                     attr->ofname, be.bstrerror());
               Dmsg2(400, "Could not open %s: ERR=%s\n", attr->ofname,
                     be.bstrerror());
@@ -342,12 +342,12 @@ int CreateFile(JobControlRecord* jcr,
                   if (chflags(attr->olname, s.st_flags) < 0) {
                     Qmsg2(
                         jcr, M_ERROR, 0,
-                        _("Could not restore file flags for file %s: ERR=%s\n"),
+                        T_("Could not restore file flags for file %s: ERR=%s\n"),
                         attr->olname, be.bstrerror());
                   }
 #  endif /* HAVE_CHFLAGS */
                   Qmsg3(jcr, M_ERROR, 0,
-                        _("Could not hard link %s -> %s: ERR=%s\n"),
+                        T_("Could not hard link %s -> %s: ERR=%s\n"),
                         attr->ofname, attr->olname, be.bstrerror());
                   Dmsg3(200, "Could not hard link %s -> %s: ERR=%s\n",
                         attr->ofname, attr->olname, be.bstrerror());
@@ -357,17 +357,17 @@ int CreateFile(JobControlRecord* jcr,
                 // Finally restore original file flags
                 if (chflags(attr->olname, s.st_flags) < 0) {
                   Qmsg2(jcr, M_ERROR, 0,
-                        _("Could not restore file flags for file %s: ERR=%s\n"),
+                        T_("Could not restore file flags for file %s: ERR=%s\n"),
                         attr->olname, be.bstrerror());
                 }
               } else {
                 Qmsg2(jcr, M_ERROR, 0,
-                      _("Could not reset file flags for file %s: ERR=%s\n"),
+                      T_("Could not reset file flags for file %s: ERR=%s\n"),
                       attr->olname, be.bstrerror());
               }
             } else {
               Qmsg3(jcr, M_ERROR, 0,
-                    _("Could not hard link %s -> %s: ERR=%s\n"), attr->ofname,
+                    T_("Could not hard link %s -> %s: ERR=%s\n"), attr->ofname,
                     attr->olname, be.bstrerror());
               return CF_ERROR;
             }
@@ -394,7 +394,7 @@ int CreateFile(JobControlRecord* jcr,
                   != 0
               && errno != EEXIST) {
             BErrNo be;
-            Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
+            Qmsg3(jcr, M_ERROR, 0, T_("Could not symlink %s -> %s: ERR=%s\n"),
                   attr->ofname, attr->olname, be.bstrerror());
             return CF_ERROR;
           }
@@ -406,7 +406,7 @@ int CreateFile(JobControlRecord* jcr,
                 attr->olname);
           if (symlink(attr->olname, attr->ofname) != 0 && errno != EEXIST) {
             BErrNo be;
-            Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
+            Qmsg3(jcr, M_ERROR, 0, T_("Could not symlink %s -> %s: ERR=%s\n"),
                   attr->ofname, attr->olname, be.bstrerror());
             return CF_ERROR;
           }
@@ -429,7 +429,7 @@ int CreateFile(JobControlRecord* jcr,
        * that the security info will be read and saved.  */
       if (!IsPortableBackup(bfd)) {
         if (IsBopen(bfd)) {
-          Qmsg1(jcr, M_ERROR, 0, _("bpkt already open filedes=%d\n"),
+          Qmsg1(jcr, M_ERROR, 0, T_("bpkt already open filedes=%d\n"),
                 bfd->filedes);
         }
         if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0,
@@ -444,7 +444,7 @@ int CreateFile(JobControlRecord* jcr,
             return CF_SKIP;
           }
 #endif
-          Qmsg2(jcr, M_ERROR, 0, _("Could not open %s: ERR=%s\n"), attr->ofname,
+          Qmsg2(jcr, M_ERROR, 0, T_("Could not open %s: ERR=%s\n"), attr->ofname,
                 be.bstrerror());
           return CF_ERROR;
         }
@@ -454,7 +454,7 @@ int CreateFile(JobControlRecord* jcr,
       }
 
     case FT_DELETED:
-      Qmsg2(jcr, M_INFO, 0, _("Original file %s have been deleted: type=%d\n"),
+      Qmsg2(jcr, M_INFO, 0, T_("Original file %s have been deleted: type=%d\n"),
             attr->fname, attr->type);
       break;
     // The following should not occur
@@ -467,11 +467,11 @@ int CreateFile(JobControlRecord* jcr,
     case FT_NORECURSE:
     case FT_NOFSCHG:
     case FT_NOOPEN:
-      Qmsg2(jcr, M_ERROR, 0, _("Original file %s not saved: type=%d\n"),
+      Qmsg2(jcr, M_ERROR, 0, T_("Original file %s not saved: type=%d\n"),
             attr->fname, attr->type);
       break;
     default:
-      Qmsg2(jcr, M_ERROR, 0, _("Unknown file type %d; not restored: %s\n"),
+      Qmsg2(jcr, M_ERROR, 0, T_("Unknown file type %d; not restored: %s\n"),
             attr->type, attr->fname);
       break;
   }
@@ -510,7 +510,7 @@ static int SeparatePathAndFile(JobControlRecord* jcr, char* fname, char* ofile)
     /* The filename length must not be zero here because we
      *  are dealing with a file (i.e. FT_REGE or FT_REG).
      */
-    Jmsg1(jcr, M_ERROR, 0, _("Zero length filename: %s\n"), fname);
+    Jmsg1(jcr, M_ERROR, 0, T_("Zero length filename: %s\n"), fname);
     return -1;
   }
   pnl = f - ofile - 1;

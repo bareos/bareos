@@ -78,7 +78,7 @@ static inline bool update_database(UaContext* ua,
     SetStorageidInMr(ua->jcr->dir_impl->res.write_storage, mr);
 
     if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
-      ua->InfoMsg(_("Catalog record for Volume \"%s\", Slot %hd successfully "
+      ua->InfoMsg(T_("Catalog record for Volume \"%s\", Slot %hd successfully "
                     "created.\n"),
                   mr->VolumeName, mr->Slot);
 
@@ -127,7 +127,7 @@ static inline bool native_send_label_request(UaContext* ua,
         mr->Slot, drive,
         // if relabeling, keep blocksize settings
         omr->MinBlocksize, omr->MaxBlocksize);
-    ua->SendMsg(_("Sending relabel command from \"%s\" to \"%s\" ...\n"),
+    ua->SendMsg(T_("Sending relabel command from \"%s\" to \"%s\" ...\n"),
                 omr->VolumeName, mr->VolumeName);
   } else {
     sd->fsend(
@@ -136,7 +136,7 @@ static inline bool native_send_label_request(UaContext* ua,
         dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive,
         // If labeling, use blocksize defined in pool
         pr->MinBlocksize, pr->MaxBlocksize);
-    ua->SendMsg(_("Sending label command for Volume \"%s\" Slot %hd ...\n"),
+    ua->SendMsg(T_("Sending label command for Volume \"%s\" Slot %hd ...\n"),
                 mr->VolumeName, mr->Slot);
     Dmsg8(100,
           "label %s VolumeName=%s PoolName=%s MediaType=%s "
@@ -196,7 +196,7 @@ static bool GenerateNewEncryptionKey(UaContext* ua, MediaDbRecord* mr)
   passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
   if (!passphrase) {
     ua->ErrorMsg(
-        _("Failed to generate new encryption passphrase for Volume %s.\n"),
+        T_("Failed to generate new encryption passphrase for Volume %s.\n"),
         mr->VolumeName);
     return false;
   }
@@ -254,7 +254,7 @@ bool SendLabelRequest(UaContext* ua,
   if (retval) {
     retval = update_database(ua, mr, pr, media_record_exists);
   } else {
-    ua->ErrorMsg(_("Label command failed for Volume %s.\n"), mr->VolumeName);
+    ua->ErrorMsg(T_("Label command failed for Volume %s.\n"), mr->VolumeName);
   }
 
   return retval;
@@ -273,7 +273,7 @@ static inline bool IsCleaningTape(UaContext* ua,
   // Find Pool resource
   ua->jcr->dir_impl->res.pool = ua->GetPoolResWithName(pr->Name, false);
   if (!ua->jcr->dir_impl->res.pool) {
-    ua->ErrorMsg(_("Pool \"%s\" resource not found for volume \"%s\"!\n"),
+    ua->ErrorMsg(T_("Pool \"%s\" resource not found for volume \"%s\"!\n"),
                  pr->Name, mr->VolumeName);
     return false;
   }
@@ -312,7 +312,7 @@ static void label_from_barcodes(UaContext* ua,
 
   max_slots = GetNumSlots(ua, ua->jcr->dir_impl->res.write_storage);
   if (max_slots <= 0) {
-    ua->WarningMsg(_("No slots in changer to scan.\n"));
+    ua->WarningMsg(T_("No slots in changer to scan.\n"));
     return;
   }
 
@@ -323,13 +323,13 @@ static void label_from_barcodes(UaContext* ua,
   vol_list = get_vol_list_from_storage(ua, store, false /* no listall */,
                                        false /* no scan */);
   if (!vol_list) {
-    ua->WarningMsg(_("No Volumes found to label, or no barcodes.\n"));
+    ua->WarningMsg(T_("No Volumes found to label, or no barcodes.\n"));
     goto bail_out;
   }
 
   // Display list of Volumes and ask if he really wants to proceed
   ua->SendMsg(
-      _("The following Volumes will be labeled:\n"
+      T_("The following Volumes will be labeled:\n"
         "Slot  Volume\n"
         "==============\n"));
   foreach_dlist (vl, vol_list->contents) {
@@ -340,7 +340,7 @@ static void label_from_barcodes(UaContext* ua,
   }
 
   if (!yes
-      && (!GetYesno(ua, _("Do you want to label these Volumes? (yes|no): "))
+      && (!GetYesno(ua, T_("Do you want to label these Volumes? (yes|no): "))
           || !ua->pint32_val)) {
     goto bail_out;
   }
@@ -359,13 +359,13 @@ static void label_from_barcodes(UaContext* ua,
     if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
       if (mr.VolBytes != 0) {
         ua->WarningMsg(
-            _("Media record for Slot %hd Volume \"%s\" already exists.\n"),
+            T_("Media record for Slot %hd Volume \"%s\" already exists.\n"),
             vl->bareos_slot_number, mr.VolumeName);
         mr.Slot = vl->bareos_slot_number;
         mr.InChanger = mr.Slot > 0; /* if slot give assume in changer */
         SetStorageidInMr(store, &mr);
         if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
-          ua->ErrorMsg(_("Error setting InChanger: ERR=%s"),
+          ua->ErrorMsg(T_("Error setting InChanger: ERR=%s"),
                        ua->db->strerror());
         }
         continue;
@@ -390,7 +390,7 @@ static void label_from_barcodes(UaContext* ua,
         }
       } else { /* create the media record */
         if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
-          ua->ErrorMsg(_("Maximum pool Volumes=%d reached.\n"), pr.MaxVols);
+          ua->ErrorMsg(T_("Maximum pool Volumes=%d reached.\n"), pr.MaxVols);
           goto bail_out;
         }
         SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
@@ -398,7 +398,7 @@ static void label_from_barcodes(UaContext* ua,
         mr.MediaType[0] = 0;
         SetStorageidInMr(store, &mr);
         if (ua->db->CreateMediaRecord(ua->jcr, &mr)) {
-          ua->SendMsg(_("Catalog record for cleaning tape \"%s\" successfully "
+          ua->SendMsg(T_("Catalog record for cleaning tape \"%s\" successfully "
                         "created.\n"),
                       mr.VolumeName);
           pr.NumVols++; /* this is a bit suspect */
@@ -406,7 +406,7 @@ static void label_from_barcodes(UaContext* ua,
             ua->ErrorMsg("%s", ua->db->strerror());
           }
         } else {
-          ua->ErrorMsg(_("Catalog error on cleaning tape: %s"),
+          ua->ErrorMsg(T_("Catalog error on cleaning tape: %s"),
                        ua->db->strerror());
         }
       }
@@ -489,7 +489,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
       break;
   }
 
-  PmStrcpy(store.store_source, _("command line"));
+  PmStrcpy(store.store_source, T_("command line"));
   SetWstorage(ua->jcr, &store);
   drive = GetStorageDrive(ua, store.store);
 
@@ -514,7 +514,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
   checkVol:
     if (!bstrcmp(omr.VolStatus, "Purged")
         && !bstrcmp(omr.VolStatus, "Recycle")) {
-      ua->ErrorMsg(_("Volume \"%s\" has VolStatus %s. It must be Purged or "
+      ua->ErrorMsg(T_("Volume \"%s\" has VolStatus %s. It must be Purged or "
                      "Recycled before relabeling.\n"),
                    omr.VolumeName, omr.VolStatus);
       return 1;
@@ -531,7 +531,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
   // Get a new Volume name
   for (;;) {
     media_record_exists = false;
-    if (!GetCmd(ua, _("Enter new Volume name: "))) { return 1; }
+    if (!GetCmd(ua, T_("Enter new Volume name: "))) { return 1; }
   checkName:
     if (!IsVolumeNameLegal(ua, ua->cmd)) { continue; }
 
@@ -542,7 +542,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     // If VolBytes are zero the Volume is not labeled
     if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
       if (mr.VolBytes != 0) {
-        ua->ErrorMsg(_("Media record for new Volume \"%s\" already exists.\n"),
+        ua->ErrorMsg(T_("Media record for new Volume \"%s\" already exists.\n"),
                      mr.VolumeName);
         continue;
       }
@@ -558,7 +558,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     if (mr.Slot < 0) { mr.Slot = 0; }
     mr.InChanger = mr.Slot > 0; /* if slot give assume in changer */
   } else if (store.store->autochanger) {
-    if (!GetPint(ua, _("Enter slot (0 or Enter for none): "))) { return 1; }
+    if (!GetPint(ua, T_("Enter slot (0 or Enter for none): "))) { return 1; }
     mr.Slot = (slot_number_t)ua->pint32_val;
     if (mr.Slot < 0) { mr.Slot = 0; }
     mr.InChanger = mr.Slot > 0; /* if slot give assume in changer */
@@ -575,7 +575,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
 
   // See if we need to generate a new passphrase for hardware encryption.
   if (label_encrypt) {
-    ua->InfoMsg(_("Generating new hardware encryption key\n"));
+    ua->InfoMsg(T_("Generating new hardware encryption key\n"));
     if (!GenerateNewEncryptionKey(ua, &mr)) { return 1; }
   }
 
@@ -586,10 +586,10 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     if (relabel) {
       // Delete the old media record
       if (!ua->db->DeleteMediaRecord(ua->jcr, &omr)) {
-        ua->ErrorMsg(_("Delete of Volume \"%s\" failed. ERR=%s"),
+        ua->ErrorMsg(T_("Delete of Volume \"%s\" failed. ERR=%s"),
                      omr.VolumeName, ua->db->strerror());
       } else {
-        ua->InfoMsg(_("Old volume \"%s\" deleted from catalog.\n"),
+        ua->InfoMsg(T_("Old volume \"%s\" deleted from catalog.\n"),
                     omr.VolumeName);
         // Update the number of Volumes in the pool
         pr.NumVols--;
@@ -600,7 +600,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     }
     if (ua->automount) {
       bstrncpy(dev_name, store.store->dev_name(), sizeof(dev_name));
-      ua->InfoMsg(_("Requesting to mount %s ...\n"), dev_name);
+      ua->InfoMsg(T_("Requesting to mount %s ...\n"), dev_name);
       BashSpaces(dev_name);
       sd->fsend("mount %s drive=%hd", dev_name, drive);
       UnbashSpaces(dev_name);
@@ -634,7 +634,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
   }
 
   if (print_reminder) {
-    ua->InfoMsg(_("Do not forget to mount the drive!!!\n"));
+    ua->InfoMsg(T_("Do not forget to mount the drive!!!\n"));
   }
 
   // close socket opened by native_send_label_request()
@@ -669,7 +669,7 @@ bool IsVolumeNameLegal(UaContext* ua, const char* name)
   const char* accept = ":.-_/";
 
   if (name[0] == '/') {
-    if (ua) { ua->ErrorMsg(_("Volume name can not start with \"/\".\n")); }
+    if (ua) { ua->ErrorMsg(T_("Volume name can not start with \"/\".\n")); }
     return 0;
   }
 
@@ -679,18 +679,18 @@ bool IsVolumeNameLegal(UaContext* ua, const char* name)
       continue;
     }
     if (ua) {
-      ua->ErrorMsg(_("Illegal character \"%c\" in a volume name.\n"), *p);
+      ua->ErrorMsg(T_("Illegal character \"%c\" in a volume name.\n"), *p);
     }
     return 0;
   }
   len = strlen(name);
   if (len >= MAX_NAME_LENGTH) {
-    if (ua) { ua->ErrorMsg(_("Volume name too long.\n")); }
+    if (ua) { ua->ErrorMsg(T_("Volume name too long.\n")); }
     return 0;
   }
   if (len == 0) {
     if (ua) {
-      ua->ErrorMsg(_("Volume name must be at least one character long.\n"));
+      ua->ErrorMsg(T_("Volume name must be at least one character long.\n"));
     }
     return 0;
   }

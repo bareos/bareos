@@ -74,9 +74,9 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
 
   sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   if (!sd->fsend(hello, dirname)) {
-    Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
+    Dmsg1(debuglevel, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
           BnetStrerror(sd));
-    Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
          BnetStrerror(sd));
     return false;
   }
@@ -90,7 +90,7 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
           "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
           sd->host(), sd->port());
     Jmsg(jcr, M_FATAL, 0,
-         _("Director unable to authenticate with Storage daemon at \"%s:%d\". "
+         T_("Director unable to authenticate with Storage daemon at \"%s:%d\". "
            "Possible causes:\n"
            "Passwords or names not the same or\n"
            "TLS negotiation problem or\n"
@@ -103,16 +103,16 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
   Dmsg1(116, ">stored: %s", sd->msg);
   if (sd->recv() <= 0) {
     Jmsg3(jcr, M_FATAL, 0,
-          _("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
+          T_("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
           sd->who(), sd->host(), sd->bstrerror());
     return false;
   }
 
   Dmsg1(110, "<stored: %s", sd->msg);
   if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))) {
-    Dmsg0(debuglevel, _("Storage daemon rejected Hello command\n"));
+    Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
     Jmsg2(jcr, M_FATAL, 0,
-          _("Storage daemon at \"%s:%d\" rejected Hello command\n"), sd->host(),
+          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"), sd->host(),
           sd->port());
     return false;
   }
@@ -153,7 +153,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
   if (!fd->fsend(hello, dirname)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
+         T_("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
     return false;
   }
@@ -167,7 +167,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   if (!auth_success) {
     std::array<char, 1024> msg;
     const char* fmt
-        = _("Unable to authenticate with File daemon at \"%s:%d\"\n");
+        = T_("Unable to authenticate with File daemon at \"%s:%d\"\n");
     snprintf(msg.data(), msg.size(), fmt, fd->host(), fd->port());
     Dmsg0(debuglevel, msg.data());
     Jmsg(jcr, M_FATAL, 0, msg.data());
@@ -177,10 +177,10 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   Dmsg1(116, ">filed: %s", fd->msg);
   if (fd->recv() <= 0) {
     Dmsg1(debuglevel,
-          _("Bad response from File daemon to Hello command: ERR=%s\n"),
+          T_("Bad response from File daemon to Hello command: ERR=%s\n"),
           BnetStrerror(fd));
     Jmsg(jcr, M_FATAL, 0,
-         _("Bad response from File daemon at \"%s:%d\" to Hello command: "
+         T_("Bad response from File daemon at \"%s:%d\" to Hello command: "
            "ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
     return false;
@@ -190,9 +190,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   jcr->dir_impl->FDVersion = 0;
   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello))
       && sscanf(fd->msg, FDOKnewHello, &jcr->dir_impl->FDVersion) != 1) {
-    Dmsg0(debuglevel, _("File daemon rejected Hello command\n"));
+    Dmsg0(debuglevel, T_("File daemon rejected Hello command\n"));
     Jmsg(jcr, M_FATAL, 0,
-         _("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(),
+         T_("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(),
          fd->port());
     return false;
   }
@@ -216,8 +216,8 @@ bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name)
 
   // Authorization Completed
   if (!auth_success) {
-    fd->fsend("%s", _(dir_not_authorized_message));
-    Emsg4(M_ERROR, 0, _("Unable to authenticate client \"%s\" at %s:%s:%d.\n"),
+    fd->fsend("%s", T_(dir_not_authorized_message));
+    Emsg4(M_ERROR, 0, T_("Unable to authenticate client \"%s\" at %s:%s:%d.\n"),
           client_name, fd->who(), fd->host(), fd->port());
     sleep(5);
     return false;

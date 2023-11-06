@@ -37,13 +37,13 @@ CheckpointHandler::CheckpointHandler(time_t interval)
 
 void CheckpointHandler::UpdateFileList(JobControlRecord* jcr)
 {
-  Dmsg0(100, _("... update file list\n"));
+  Dmsg0(100, T_("... update file list\n"));
   jcr->sd_impl->dcr->DirAskToUpdateFileList();
 }
 
 void CheckpointHandler::UpdateJobmediaRecord(JobControlRecord* jcr)
 {
-  Dmsg0(100, _("... create job media record\n"));
+  Dmsg0(100, T_("... create job media record\n"));
   jcr->sd_impl->dcr->DirCreateJobmediaRecord(false);
 
   jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex;
@@ -53,26 +53,26 @@ void CheckpointHandler::UpdateJobmediaRecord(JobControlRecord* jcr)
 
 void CheckpointHandler::UpdateJobrecord(JobControlRecord* jcr)
 {
-  Dmsg2(100, _("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
+  Dmsg2(100, T_("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
         jcr->JobFiles);
   jcr->sd_impl->dcr->DirAskToUpdateJobRecord();
 }
 
 void CheckpointHandler::DoBackupCheckpoint(JobControlRecord* jcr)
 {
-  Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
+  Dmsg0(100, T_("Checkpoint: Syncing current backup status to catalog\n"));
   UpdateJobrecord(jcr);
   UpdateFileList(jcr);
   UpdateJobmediaRecord(jcr);
 
   ClearReadyForCheckpoint();
 
-  Dmsg0(100, _("Checkpoint completed\n"));
+  Dmsg0(100, T_("Checkpoint completed\n"));
 }
 
 void CheckpointHandler::DoVolumeChangeBackupCheckpoint(JobControlRecord* jcr)
 {
-  Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
+  Jmsg0(jcr, M_INFO, 0, T_("Volume changed, doing checkpoint:\n"));
   DoBackupCheckpoint(jcr);
 }
 
@@ -85,7 +85,7 @@ void CheckpointHandler::DoTimedCheckpoint(JobControlRecord* jcr)
       next_checkpoint_time_ += checkpoint_interval_;
     }
     Jmsg(jcr, M_INFO, 0,
-         _("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
+         T_("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
          checkpoint_interval_);
     DoBackupCheckpoint(jcr);
   }

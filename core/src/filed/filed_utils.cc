@@ -33,12 +33,12 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
   /* Load our keypair */
   me->pki_keypair = crypto_keypair_new();
   if (!me->pki_keypair) {
-    Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
+    Emsg0(M_FATAL, 0, T_("Failed to allocate a new keypair object.\n"));
     OK = false;
   } else {
     if (!CryptoKeypairLoadCert(me->pki_keypair, me->pki_keypair_file)) {
       Emsg2(M_FATAL, 0,
-            _("Failed to load public certificate for File"
+            T_("Failed to load public certificate for File"
               " daemon \"%s\" in %s.\n"),
             me->resource_name_, configfile.c_str());
       OK = false;
@@ -47,7 +47,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
     if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file, nullptr,
                               nullptr)) {
       Emsg2(M_FATAL, 0,
-            _("Failed to load private key for File"
+            T_("Failed to load private key for File"
               " daemon \"%s\" in %s.\n"),
             me->resource_name_, configfile.c_str());
       OK = false;
@@ -67,7 +67,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
 
       keypair = crypto_keypair_new();
       if (!keypair) {
-        Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
+        Emsg0(M_FATAL, 0, T_("Failed to allocate a new keypair object.\n"));
         OK = false;
       } else {
         if (CryptoKeypairLoadCert(keypair, filepath)) {
@@ -77,7 +77,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
           if (CryptoKeypairHasKey(filepath)) {
             if (!CryptoKeypairLoadKey(keypair, filepath, nullptr, nullptr)) {
               Emsg3(M_FATAL, 0,
-                    _("Failed to load private key from file %s for File"
+                    T_("Failed to load private key from file %s for File"
                       " daemon \"%s\" in %s.\n"),
                     filepath, me->resource_name_, configfile.c_str());
               OK = false;
@@ -86,7 +86,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
 
         } else {
           Emsg3(M_FATAL, 0,
-                _("Failed to load trusted signer certificate"
+                T_("Failed to load trusted signer certificate"
                   " from file %s for File daemon \"%s\" in %s.\n"),
                 filepath, me->resource_name_, configfile.c_str());
           OK = false;
@@ -110,14 +110,14 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
 
       keypair = crypto_keypair_new();
       if (!keypair) {
-        Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
+        Emsg0(M_FATAL, 0, T_("Failed to allocate a new keypair object.\n"));
         OK = false;
       } else {
         if (CryptoKeypairLoadCert(keypair, filepath)) {
           me->pki_recipients->append(keypair);
         } else {
           Emsg3(M_FATAL, 0,
-                _("Failed to load master key certificate"
+                T_("Failed to load master key certificate"
                   " from file %s for File daemon \"%s\" in %s.\n"),
                 filepath, me->resource_name_, configfile.c_str());
           OK = false;
@@ -145,13 +145,13 @@ bool CheckResources()
   my_config->own_resource_ = me;
   if (!me) {
     Emsg1(M_FATAL, 0,
-          _("No File daemon resource defined in %s\n"
+          T_("No File daemon resource defined in %s\n"
             "Without that I don't know who I am :-(\n"),
           configfile.c_str());
     OK = false;
   } else {
     if (my_config->GetNextRes(R_CLIENT, (BareosResource*)me) != nullptr) {
-      Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
+      Emsg1(M_FATAL, 0, T_("Only one Client resource permitted in %s\n"),
             configfile.c_str());
       OK = false;
     }
@@ -159,7 +159,7 @@ bool CheckResources()
     if (!me->messages) {
       me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, nullptr);
       if (!me->messages) {
-        Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"),
+        Emsg1(M_FATAL, 0, T_("No Messages resource defined in %s\n"),
               configfile.c_str());
         OK = false;
       }
@@ -167,7 +167,7 @@ bool CheckResources()
     if (me->pki_encrypt || me->pki_sign) {
 #ifndef HAVE_CRYPTO
       Jmsg(nullptr, M_FATAL, 0,
-           _("PKI encryption/signing enabled but not compiled into Bareos.\n"));
+           T_("PKI encryption/signing enabled but not compiled into Bareos.\n"));
       OK = false;
 #endif
     }
@@ -177,7 +177,7 @@ bool CheckResources()
 
     if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
       Emsg2(M_FATAL, 0,
-            _("\"PKI Key Pair\" must be defined for File"
+            T_("\"PKI Key Pair\" must be defined for File"
               " daemon \"%s\" in %s if either \"PKI Sign\" or"
               " \"PKI Encrypt\" are enabled.\n"),
             me->resource_name_, configfile.c_str());
@@ -194,7 +194,7 @@ bool CheckResources()
   director = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
 
   if (!director) {
-    Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
+    Emsg1(M_FATAL, 0, T_("No Director resource defined in %s\n"),
           configfile.c_str());
     OK = false;
   }

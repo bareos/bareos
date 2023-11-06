@@ -103,7 +103,7 @@ static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
   if (run->storage != nullptr) {
     UnifiedStorageResource store;
     store.store = run->storage;
-    PmStrcpy(store.store_source, _("run override"));
+    PmStrcpy(store.store_source, T_("run override"));
     SetRwstorage(jcr, &store); /* override storage */
   }
 

@@ -40,35 +40,35 @@ int GetNameHandler(void* ctx, int, char** row)
 
 int PrintJobHandler(void*, int, char** row)
 {
-  printf(_("JobId=%s Name=\"%s\" StartTime=%s\n"), NPRT(row[0]), NPRT(row[1]),
+  printf(T_("JobId=%s Name=\"%s\" StartTime=%s\n"), NPRT(row[0]), NPRT(row[1]),
          NPRT(row[2]));
   return 0;
 }
 
 int PrintJobmediaHandler(void*, int, char** row)
 {
-  printf(_("Orphaned JobMediaId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
+  printf(T_("Orphaned JobMediaId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
 int PrintFileHandler(void*, int, char** row)
 {
-  printf(_("Orphaned FileId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
+  printf(T_("Orphaned FileId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
 int PrintFilesetHandler(void*, int, char** row)
 {
-  printf(_("Orphaned FileSetId=%s FileSet=\"%s\" MD5=%s\n"), NPRT(row[0]),
+  printf(T_("Orphaned FileSetId=%s FileSet=\"%s\" MD5=%s\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
 int PrintClientHandler(void*, int, char** row)
 {
-  printf(_("Orphaned ClientId=%s Name=\"%s\"\n"), NPRT(row[0]), NPRT(row[1]));
+  printf(T_("Orphaned ClientId=%s Name=\"%s\"\n"), NPRT(row[0]), NPRT(row[1]));
   return 0;
 }
 
@@ -189,7 +189,7 @@ std::vector<int> get_deletable_storageids(
       for (int volumename = 0; volumename < volume_names.num_ids;
            ++volumename) {
         Emsg3(M_WARNING, 0,
-              _("Orphaned storage '%s' is being used by volume '%s'. "
+              T_("Orphaned storage '%s' is being used by volume '%s'. "
                 "An orphaned storage will only be removed when it is "
                 "no longer referenced.\n"),
               orphaned_storage_names_list[orphaned_storage_id].c_str(),
@@ -210,7 +210,7 @@ std::vector<int> get_deletable_storageids(
       for (int devicename = 0; devicename < device_names.num_ids;
            ++devicename) {
         Emsg3(M_WARNING, 0,
-              _("Orphaned storage '%s' is being used by device '%s'. "
+              T_("Orphaned storage '%s' is being used by device '%s'. "
                 "An orphaned storage will only be removed when it is "
                 "no longer referenced.\n"),
               orphaned_storage_names_list[orphaned_storage_id].c_str(),

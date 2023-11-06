@@ -71,14 +71,14 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
 #endif
 
   if (!openssl_ctx_) {
-    OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
+    OpensslPostErrors(M_FATAL, T_("Error initializing SSL context"));
     return;
   }
 
   openssl_conf_ctx_ = SSL_CONF_CTX_new();
 
   if (!openssl_conf_ctx_) {
-    OpensslPostErrors(M_FATAL, _("Error initializing SSL conf context"));
+    OpensslPostErrors(M_FATAL, T_("Error initializing SSL conf context"));
     return;
   }
 
@@ -116,7 +116,7 @@ bool TlsOpenSslPrivate::init()
 {
   if (!openssl_ctx_) {
     OpensslPostErrors(M_FATAL,
-                      _("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
+                      T_("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
     return false;
   }
 
@@ -129,7 +129,7 @@ bool TlsOpenSslPrivate::init()
         = SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
 
     if (err) {
-      std::string err{_("Error setting OpenSSL Protocol options:\n")};
+      std::string err{T_("Error setting OpenSSL Protocol options:\n")};
       std::array<char, 256> buffer;
       ERR_error_string(ERR_get_error(), buffer.data());
       err += buffer.data();
@@ -181,12 +181,12 @@ bool TlsOpenSslPrivate::init()
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_load_verify_locations(openssl_ctx_, ca_certfile, ca_certdir)) {
       OpensslPostErrors(M_FATAL,
-                        _("Error loading certificate verification stores"));
+                        T_("Error loading certificate verification stores"));
       return false;
     }
   } else if (verify_peer_) {
     /* At least one CA is required for peer verification */
-    Dmsg0(100, _("Either a certificate file or a directory must be"
+    Dmsg0(100, T_("Either a certificate file or a directory must be"
                  " specified as a verification store\n"));
   }
 
@@ -201,7 +201,7 @@ bool TlsOpenSslPrivate::init()
   if (!certfile_.empty()) {
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_use_certificate_chain_file(openssl_ctx_, certfile_.c_str())) {
-      OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
+      OpensslPostErrors(M_FATAL, T_("Error loading certificate file"));
       return false;
     }
   }
@@ -210,7 +210,7 @@ bool TlsOpenSslPrivate::init()
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_use_PrivateKey_file(openssl_ctx_, keyfile_.c_str(),
                                      SSL_FILETYPE_PEM)) {
-      OpensslPostErrors(M_FATAL, _("Error loading private key"));
+      OpensslPostErrors(M_FATAL, T_("Error loading private key"));
       return false;
     }
   }
@@ -219,19 +219,19 @@ bool TlsOpenSslPrivate::init()
     BIO* bio;
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!(bio = BIO_new_file(dhfile_.c_str(), "r"))) {
-      OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
+      OpensslPostErrors(M_FATAL, T_("Unable to open DH parameters file"));
       return false;
     }
     ALLOW_DEPRECATED(DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL));
     BIO_free(bio);
     if (!dh) {
       OpensslPostErrors(M_FATAL,
-                        _("Unable to load DH parameters from specified file"));
+                        T_("Unable to load DH parameters from specified file"));
       return false;
     }
     if (!SSL_CTX_set_tmp_dh(openssl_ctx_, dh)) {
       OpensslPostErrors(M_FATAL,
-                        _("Failed to set TLS Diffie-Hellman parameters"));
+                        T_("Failed to set TLS Diffie-Hellman parameters"));
       ALLOW_DEPRECATED(DH_free(dh));
       return false;
     }
@@ -249,7 +249,7 @@ bool TlsOpenSslPrivate::init()
 
   openssl_ = SSL_new(openssl_ctx_);
   if (!openssl_) {
-    OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
+    OpensslPostErrors(M_FATAL, T_("Error creating new SSL object"));
     return false;
   }
 
@@ -259,7 +259,7 @@ bool TlsOpenSslPrivate::init()
 
   BIO* bio = BIO_new(BIO_s_socket());
   if (!bio) {
-    OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
+    OpensslPostErrors(M_FATAL, T_("Error creating file descriptor-based BIO"));
     return false;
   }
 
@@ -286,7 +286,7 @@ int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok,
     X509_NAME_oneline(X509_get_subject_name(cert), subject, 256);
 
     Jmsg5(NULL, M_ERROR, 0,
-          _("Error with certificate at depth: %d, issuer = %s,"
+          T_("Error with certificate at depth: %d, issuer = %s,"
             " subject = %s, ERR=%d:%s\n"),
           depth, issuer, subject, err, X509_verify_cert_error_string(err));
   }
@@ -335,7 +335,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
           }
         }
         OpensslPostErrors(bsock->get_jcr(), M_FATAL,
-                          _("TLS read/write failure."));
+                          T_("TLS read/write failure."));
         goto cleanup;
       case SSL_ERROR_WANT_READ:
         WaitForReadableFd(bsock->fd_, 10000, false);
@@ -349,7 +349,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
       default:
         /* Socket Error Occured */
         OpensslPostErrors(bsock->get_jcr(), M_FATAL,
-                          _("TLS read/write failure."));
+                          T_("TLS read/write failure."));
         goto cleanup;
     }
 
@@ -402,7 +402,7 @@ bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
         goto cleanup;
       case SSL_ERROR_ZERO_RETURN:
         /* TLS connection was cleanly shut down */
-        OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
+        OpensslPostErrors(bsock->get_jcr(), M_FATAL, T_("Connect failure"));
         status = false;
         goto cleanup;
       case SSL_ERROR_WANT_READ:
@@ -413,7 +413,7 @@ bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
         break;
       default:
         /* Socket Error Occurred */
-        OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
+        OpensslPostErrors(bsock->get_jcr(), M_FATAL, T_("Connect failure"));
         status = false;
         goto cleanup;
     }

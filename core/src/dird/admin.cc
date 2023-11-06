@@ -57,7 +57,7 @@ bool do_admin(JobControlRecord* jcr)
 
   jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
-  Jmsg(jcr, M_INFO, 0, _("Start Admin JobId %d, Job=%s\n"), jcr->JobId,
+  Jmsg(jcr, M_INFO, 0, T_("Start Admin JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -79,7 +79,7 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s\n"),
+         T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -87,19 +87,19 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
   msg_type = M_INFO; /* by default INFO message */
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
-      TermMsg = _("Admin OK");
+      TermMsg = T_("Admin OK");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Admin Error ***");
+      TermMsg = T_("*** Admin Error ***");
       msg_type = M_ERROR; /* Generate error message */
       break;
     case JS_Canceled:
-      TermMsg = _("Admin Canceled");
+      TermMsg = T_("Admin Canceled");
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"),
+      sprintf(term_code, T_("Inappropriate term code: %c\n"),
               jcr->getJobStatus());
       break;
   }
@@ -108,7 +108,7 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
   bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
-       _("BAREOS %s (%s): %s\n"
+       T_("BAREOS %s (%s): %s\n"
          "  JobId:                  %d\n"
          "  Job:                    %s\n"
          "  Scheduled time:         %s\n"

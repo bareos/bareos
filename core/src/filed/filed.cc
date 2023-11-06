@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
   ParseBareosApp(fd_app, argc, argv);
 
   if (user.empty() && keep_readall_caps) {
-    Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("-k option has no meaning without -u option.\n"));
   }
 
   int pidfile_fd = -1;
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
     drop(uid, gid, keep_readall_caps);
   } else if (uid || gid) {
     Emsg2(M_ERROR_TERM, 0,
-          _("The commandline options indicate to run as specified user/group, "
+          T_("The commandline options indicate to run as specified user/group, "
             "but program was not started with required root privileges.\n"));
   }
 
@@ -196,14 +196,14 @@ int main(int argc, char* argv[])
   }
 
   if (!CheckResources()) {
-    Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"),
+    Emsg1(M_ERROR, 0, T_("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
     TerminateFiled(BEXIT_CONFIG_ERROR);
   }
 
   if (my_config->HasWarnings()) {
     // messaging not initialized, so Jmsg with  M_WARNING doesn't work
-    fprintf(stderr, _("There are configuration warnings:\n"));
+    fprintf(stderr, T_("There are configuration warnings:\n"));
     for (auto& warning : my_config->GetWarnings()) {
       fprintf(stderr, " * %s\n", warning.c_str());
     }
@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
   }
 
   if (InitCrypto() != 0) {
-    Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
+    Emsg0(M_ERROR, 0, T_("Cryptography library initialization failed.\n"));
     TerminateFiled(1);
   }
 

@@ -69,7 +69,7 @@ void DoAutoprune(JobControlRecord* jcr)
     PruneFiles(ua, client, pool);
     pruned = true;
   }
-  if (pruned) { Jmsg(jcr, M_INFO, 0, _("End auto prune.\n\n")); }
+  if (pruned) { Jmsg(jcr, M_INFO, 0, T_("End auto prune.\n\n")); }
   FreeUaContext(ua);
   return;
 }
