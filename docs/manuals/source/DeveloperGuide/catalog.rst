@@ -9,14 +9,14 @@ services and as such is not targeted at end users but rather at
 developers and system administrators who want or need to know more of
 the working details of **Bareos**.
 
-We only support PostgreSQL. 
+We only support PostgreSQL.
 Support for SQLite or MySQL has been discontinued in :sinceVersion:`21.0.0:MySQL backend removed`. Remaining code has been deleted :sinceVersion:`23.0.0:MySql code removed`.
 PostgreSQL was chosen because it is a full-featured, very mature database.
 
 Filenames and Maximum Filename Length
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In general, PostgreSQL permit storing arbitrary long path names and file names in the catalog database. 
+In general, PostgreSQL permit storing arbitrary long path names and file names in the catalog database.
 However, PostgreSQL limits the maximum length of an index item to 2730, which will affect the length of a path (without the filename) that can be stored in the catalog database. Nevertheless, the 2730 is not a hard limit as PostgreSQL will apply some lossless compression to strings before adding them to its index.
 
 The guarantee is, that you will be able to store paths at least 2730 bytes long. You may or may not run into PostgreSQL index errors when using longer paths.
@@ -373,7 +373,7 @@ created for each of the NumVols specified in the Pool resource record.
 +------------------+-----------+-----------------------------------------+
 | VolumeName       | text      | Volume name                             |
 +------------------+-----------+-----------------------------------------+
-| Slot             | integer   | Autochanger Slot number or zero         |
+| Slot             | bigint    | Autochanger Slot number or zero         |
 +------------------+-----------+-----------------------------------------+
 | PoolId           | integer   | Link to Pool Record                     |
 +------------------+-----------+-----------------------------------------+
@@ -389,19 +389,19 @@ created for each of the NumVols specified in the Pool resource record.
 +------------------+-----------+-----------------------------------------+
 | LabelDate        | timestamp | Time/date when tape labeled             |
 +------------------+-----------+-----------------------------------------+
-| VolJobs          | integer   | Number of jobs written to this media    |
+| VolJobs          | bigint    | Number of jobs written to this media    |
 +------------------+-----------+-----------------------------------------+
-| VolFiles         | integer   | Number of files written to this media   |
+| VolFiles         | bigint    | Number of files written to this media   |
 +------------------+-----------+-----------------------------------------+
-| VolBlocks        | integer   | Number of blocks written to this media  |
+| VolBlocks        | bigint    | Number of blocks written to this media  |
 +------------------+-----------+-----------------------------------------+
-| VolMounts        | integer   | Number of time media mounted            |
+| VolMounts        | bigint    | Number of time media mounted            |
 +------------------+-----------+-----------------------------------------+
 | VolBytes         | bigint    | Number of bytes saved in Job            |
 +------------------+-----------+-----------------------------------------+
-| VolErrors        | integer   | Number of errors during Job             |
+| VolErrors        | bigint    | Number of errors during Job             |
 +------------------+-----------+-----------------------------------------+
-| VolWrites        | integer   | Number of writes to media               |
+| VolWrites        | bigint    | Number of writes to media               |
 +------------------+-----------+-----------------------------------------+
 | VolCapacityBytes | bigint    | Capacity estimate for this volume       |
 +------------------+-----------+-----------------------------------------+
@@ -421,9 +421,9 @@ created for each of the NumVols specified in the Pool resource record.
 +------------------+-----------+-----------------------------------------+
 | VolUseDureation  | bigint    | 64 bit seconds volume can be used       |
 +------------------+-----------+-----------------------------------------+
-| MaxVolJobs       | integer   | maximum jobs to put on Volume           |
+| MaxVolJobs       | bigint    | maximum jobs to put on Volume           |
 +------------------+-----------+-----------------------------------------+
-| MaxVolFiles      | integer   | maximume EOF marks to put on Volume     |
+| MaxVolFiles      | bigint    | maximume EOF marks to put on Volume     |
 +------------------+-----------+-----------------------------------------+
 | MaxVolBytes      | bigint    | Maximum bytes to put on this media      |
 +------------------+-----------+-----------------------------------------+
@@ -439,17 +439,17 @@ created for each of the NumVols specified in the Pool resource record.
 +------------------+-----------+-----------------------------------------+
 | VolWriteTime     | bigint    | Time Writing Volume                     |
 +------------------+-----------+-----------------------------------------+
-| EndFile          | integer   | End File number of Volume               |
+| EndFile          | bigint    | End File number of Volume               |
 +------------------+-----------+-----------------------------------------+
 | EndBlock         | bigint    | End block number of Volume              |
 +------------------+-----------+-----------------------------------------+
 | LocationId       | integer   | Location record ID                      |
 +------------------+-----------+-----------------------------------------+
-| RecycleCount     | integer   | Number of times recycled                |
+| RecycleCount     | bigint    | Number of times recycled                |
 +------------------+-----------+-----------------------------------------+
-| MinBlockSize     | integer   | Minimum block size on this media        |
+| MinBlockSize     | bigint    | Minimum block size on this media        |
 +------------------+-----------+-----------------------------------------+
-| MaxBlockSize     | integer   | Maximum block size on this media        |
+| MaxBlockSize     | bigint    | Maximum block size on this media        |
 +------------------+-----------+-----------------------------------------+
 | InitialWrite     | timestamp | When Volume first written               |
 +------------------+-----------+-----------------------------------------+

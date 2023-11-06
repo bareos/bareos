@@ -114,7 +114,7 @@
     **MediaId** : SERIAL
     --
     VolumeName : TEXT
-    Slot : INTEGER
+    Slot : BIGINT
     **PoolId** : INTEGER
     MediaType : TEXT
     **MediaTypeId** : INTEGER
@@ -122,13 +122,13 @@
     FirstWritten : TIMESTAMP
     LastWritten : TIMESTAMP
     LabelDate : TIMESTAMP
-    VolJobs : INTEGER
-    VolFiles : INTEGER
-    VolBlocks : INTEGER
-    VolMounts : INTEGER
+    VolJobs : BIGINT
+    VolFiles : BIGINT
+    VolBlocks : BIGINT
+    VolMounts : BIGINT
     VolBytes : BIGINT
-    VolErrors : INTEGER
-    VolWrites : INTEGER
+    VolErrors : BIGINT
+    VolWrites : BIGINT
     VolCapacityBytes : BIGINT
     VolStatus : TEXT
     Enabled : SMALLINT
@@ -136,8 +136,8 @@
     ActionOnPurge : SMALLINT
     VolRetention : BIGINT
     VolUseDuration : BIGINT
-    MaxVolJobs : INTEGER
-    MaxVolFiles : INTEGER
+    MaxVolJobs : BIGINT
+    MaxVolFiles : BIGINT
     MaxVolBytes : BIGINT
     InChanger : SMALLINT
     **StorageId** : INTEGER
@@ -145,12 +145,12 @@
     MediaAddressing : SMALLINT
     VolReadTime : BIGINT
     VolWriteTime : BIGINT
-    EndFile : INTEGER
+    EndFile : BIGINT
     EndBlock : BIGINT
     **LocationId** : INTEGER
-    RecycleCount : INTEGER
-    MinBlockSize : INTEGER
-    MaxBlockSize : INTEGER
+    RecycleCount : BIGINT
+    MinBlockSize : BIGINT
+    MaxBlockSize : BIGINT
     InitialWrite : TIMESTAMP
     **ScratchPoolId** : INTEGER
     **RecyclePoolId** : INTEGER
