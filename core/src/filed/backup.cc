@@ -1304,6 +1304,8 @@ static inline bool SendPlainData(b_ctx& bctx)
   static_assert(sizeof(header) == OFFSET_FADDR_SIZE);
   bool include_header = support_sparse || support_offsets;
 
+  bool read_error = false;
+
   // Read the file data
   for (;;) {
     data_message msg(max_buf_size);
@@ -1313,7 +1315,10 @@ static inline bool SendPlainData(b_ctx& bctx)
       // update offset _before_ sending the header
       offset = bfd.offset;
 
-      if (read_bytes <= 0) { goto end_read_loop; }
+      if (read_bytes <= 0) {
+        if (read_bytes < 0) { read_error = true; }
+        goto end_read_loop;
+      }
 
       msg.resize(read_bytes);
 
@@ -1406,6 +1411,13 @@ bail_out:
     bctx.jcr->ReadBytes += bytes_read; /* count bytes read */
   }
   sd->msg = bctx.msgsave; /* restore read buffer */
+
+  if (read_error) {
+    // the following code recognizes read errors by looking at
+    // the value inside sd->message_length; if its negative then a
+    // read error occured. Otherwise everything went fine.
+    sd->message_length = -1;
+  }
   return retval;
 }
 
