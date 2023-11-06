@@ -416,8 +416,9 @@ static void ListStatusHeader(StatusPacket* sp)
 
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
 
-  len = Mmsg(msg, _("Daemon started %s. Jobs: run=%zu, running=%d, %s binary\n"),
-             dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
+  len = Mmsg(msg,
+             _("Daemon started %s. Jobs: run=%zu, running=%d, %s binary\n"), dt,
+             NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)

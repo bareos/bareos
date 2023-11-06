@@ -51,8 +51,8 @@ constexpr T byteswap(T i)
         | ((u & 0x000000ff00000000) >> 8) | ((u & 0x0000ff0000000000) >> 24)
         | ((u & 0x00ff000000000000) >> 40) | ((u & 0xff00000000000000) >> 56);
   } else {
-    constexpr auto bad_integer = sizeof(T) != 1 && sizeof(T) != 2
-      && sizeof(T) != 4 && sizeof(T) != 8;
+    constexpr auto bad_integer
+        = sizeof(T) != 1 && sizeof(T) != 2 && sizeof(T) != 4 && sizeof(T) != 8;
     static_assert(bad_integer, "Unsupported integer-width");
   }
 

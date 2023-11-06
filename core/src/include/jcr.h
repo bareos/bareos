@@ -245,8 +245,7 @@ bool InitJcrSubsystem(int timeout);
 JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
 void register_jcr(JobControlRecord* jcr);
 JobControlRecord* get_jcr_by_id(uint32_t JobId);
-JobControlRecord* get_jcr_by_session(uint32_t SessionId,
-                                     uint32_t SessionTime);
+JobControlRecord* get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
 JobControlRecord* get_jcr_by_partial_name(char* Job);
 JobControlRecord* get_jcr_by_full_name(char* Job);
 const char* JcrGetAuthenticateKey(const char* unified_job_name);

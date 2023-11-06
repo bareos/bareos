@@ -66,7 +66,8 @@ static void JcrTimeoutCheck(watchdog_t* self);
 
 std::atomic<std::size_t> num_jobs_run;
 
-std::size_t NumJobsRun() {
+std::size_t NumJobsRun()
+{
   return num_jobs_run.load(std::memory_order_relaxed);
 }
 
