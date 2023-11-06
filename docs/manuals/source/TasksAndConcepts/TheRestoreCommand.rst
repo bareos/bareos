@@ -412,6 +412,8 @@ The full list of possible command line arguments are:
 
 -  regexwhere=!a.pdf!a.bkp.pdf! – do complex filename manipulation like with sed unix command. Will overwrite other filename manipulation. For details, see the :ref:`regexwhere <regexwhere>` section.
 
+-  fileregex=^/etc/passwd(.old)? - only restore files that match the specified regex. This is equivalent to :ref:`Bootstrap FileRegex <BootstrapChapter>`. For details, see :ref:`FileRegex option <FileRegex>`.
+
 -  restorejob=jobname – Pre-chooses a restore job. Bareos can be configured with multiple restore jobs ("Type = Restore" in the job definition). This allows the specification of different restore properties, including a set of RunScripts. When more than one job of this type is configured, during restore, Bareos will ask for a user selection interactively, or use the given restorejob.
 
 Using File Relocation
