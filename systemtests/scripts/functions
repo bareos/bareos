@@ -853,7 +853,7 @@ check_restore_files_diff()
    RESTORED_FILES="$(find "${tmp}/bareos-restores" -type f | sed "s%^${tmp}/bareos-restores%%")"
    # remove all files given as parameter from the list
    for i in "$@"; do
-     RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -v "$i")"
+     RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -v "$i")" || true
    done
    if [ "$RESTORED_FILES" ]; then
        print_debug "given files: $*"

@@ -95,6 +95,9 @@ static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
                                       char* table);
 static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
+static bool CheckAndSetFileregex(UaContext* ua,
+                                 RestoreContext* rx,
+                                 const char* regex);
 
 // Restore files
 bool RestoreCmd(UaContext* ua, const char*)
@@ -146,6 +149,14 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   i = FindArgWithValue(ua, "regexwhere");
   if (i >= 0) { rx.RegexWhere = ua->argv[i]; }
+
+  i = FindArgWithValue(ua, "fileregex");
+  if (i >= 0) {
+    if (!CheckAndSetFileregex(ua, &rx, ua->argv[i])) {
+      ua->ErrorMsg(T_("Invalid \"FileRegex\" value.\n"));
+      goto bail_out;
+    }
+  }
 
   i = FindArg(ua, "archive");
   if (i >= 0) {
@@ -519,6 +530,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "replace",       /* 23 */
                       "pluginoptions", /* 24 */
                       "archive",       /* 25 */
+                      "fileregex",     /* 26 */
                       NULL};
 
   rx->JobIds[0] = 0;
@@ -1104,10 +1116,36 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
 }
 
+static bool CheckAndSetFileregex(UaContext* ua,
+                                 RestoreContext* rx,
+                                 const char* regex)
+{
+  regex_t* fileregex_re{};
+  int rc;
+  char errmsg[500] = "";
+
+  fileregex_re = (regex_t*)malloc(sizeof(regex_t));
+  rc = regcomp(fileregex_re, regex, REG_EXTENDED | REG_NOSUB);
+  if (rc != 0) { regerror(rc, fileregex_re, errmsg, sizeof(errmsg)); }
+  regfree(fileregex_re);
+  free(fileregex_re);
+
+  if (*errmsg) {
+    ua->SendMsg(T_("Regex compile error: %s\n"), errmsg);
+    return false;
+  }
+
+  if (rx->bsr->fileregex) free(rx->bsr->fileregex);
+  rx->bsr->fileregex = strdup(regex);
+  return true;
+}
+
 static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
 {
-  if (FindArg(ua, NT_("all")) >= 0) { /* if user enters all on command line */
-    return true;                      /* select everything */
+  /* if user enters all on command line select everything */
+  if (FindArg(ua, NT_("all")) >= 0
+      || FindArgWithValue(ua, NT_("fileregex")) >= 0) {
+    return true;
   }
   ua->SendMsg(
       T_("\n\nFor one or more of the JobIds selected, no files were found,\n"
@@ -1120,22 +1158,8 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
         ua, T_("\nRegexp matching files to restore? (empty to abort): "))) {
       if (ua->cmd[0] == '\0') {
         break;
-      } else {
-        regex_t* fileregex_re{};
-        int rc;
-        char errmsg[500] = "";
-
-        fileregex_re = (regex_t*)malloc(sizeof(regex_t));
-        rc = regcomp(fileregex_re, ua->cmd, REG_EXTENDED | REG_NOSUB);
-        if (rc != 0) { regerror(rc, fileregex_re, errmsg, sizeof(errmsg)); }
-        regfree(fileregex_re);
-        free(fileregex_re);
-        if (*errmsg) {
-          ua->SendMsg(T_("Regex compile error: %s\n"), errmsg);
-        } else {
-          rx->bsr->fileregex = strdup(ua->cmd);
-          return true;
-        }
+      } else if (CheckAndSetFileregex(ua, rx, ua->cmd)) {
+        return true;
       }
     }
   }
