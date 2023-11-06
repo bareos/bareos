@@ -135,6 +135,7 @@ int main(int argc, char* const* argv)
   argv += optind;
 
   jcr = new_jcr(nullptr);
+  register_jcr(jcr);
 
   ff = init_find_files();
   if (argc == 0 && !inc) {

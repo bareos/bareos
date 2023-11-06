@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -83,8 +83,8 @@ static void ListStatusHeader(StatusPacket* sp)
              kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),
-             dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
+  len = Mmsg(msg, _("Daemon started %s. Jobs: run=%zu running=%d, %s binary\n"),
+             dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
@@ -185,10 +185,8 @@ static void ListRunningJobsPlain(StatusPacket* sp)
       len = Mmsg(msg, _("%s (director) connected at: %s\n"),
                  njcr->fd_impl->director->resource_name_, dt);
     } else {
-      /*
-       * This should only occur shortly, until the JobControlRecord values are
-       * set.
-       */
+      /* This should only occur shortly, until the JobControlRecord values are
+       * set. */
       len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt);
     }
     sp->send(msg, len);

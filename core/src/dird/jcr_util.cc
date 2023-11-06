@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@ JobControlRecord* NewDirectorJcr(JCR_free_HANDLER* DirdFreeJcr)
 {
   JobControlRecord* jcr = new_jcr(DirdFreeJcr);
   jcr->dir_impl = new DirectorJcrImpl(my_config->config_resources_container_);
+  register_jcr(jcr);
   Dmsg1(10, "NewDirectorJcr: configuration_resources_ is at %p %s\n",
         my_config->config_resources_container_->configuration_resources_,
         my_config->config_resources_container_->TimeStampAsString().c_str());

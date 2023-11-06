@@ -1414,6 +1414,7 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
    *   the JobId and the ClientId. */
   jobjcr = new_jcr(BscanFreeJcr);
   jobjcr->sd_impl = new StoredJcrImpl;
+  register_jcr(jobjcr);
   jobjcr->setJobType(jr->JobType);
   jobjcr->setJobLevel(jr->JobLevel);
   jobjcr->setJobStatus(jr->JobStatus);

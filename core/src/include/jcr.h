@@ -240,24 +240,24 @@ class JobControlRecord {
 /* clang-format on */
 
 // The following routines are found in lib/jcr.c
-extern int GetNextJobidFromList(const char** p, uint32_t* JobId);
-extern bool InitJcrSubsystem(int timeout);
-extern JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
-extern JobControlRecord* get_jcr_by_id(uint32_t JobId);
-extern JobControlRecord* get_jcr_by_session(uint32_t SessionId,
-                                            uint32_t SessionTime);
-extern JobControlRecord* get_jcr_by_partial_name(char* Job);
-extern JobControlRecord* get_jcr_by_full_name(char* Job);
-extern const char* JcrGetAuthenticateKey(const char* unified_job_name);
+int GetNextJobidFromList(const char** p, uint32_t* JobId);
+bool InitJcrSubsystem(int timeout);
+JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
+void register_jcr(JobControlRecord* jcr);
+JobControlRecord* get_jcr_by_id(uint32_t JobId);
+JobControlRecord* get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
+JobControlRecord* get_jcr_by_partial_name(char* Job);
+JobControlRecord* get_jcr_by_full_name(char* Job);
+const char* JcrGetAuthenticateKey(const char* unified_job_name);
 TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
-extern int num_jobs_run;
+std::size_t NumJobsRun();
 
-extern void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
+void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 
 // Used to display specific job information after a fatal signal
 typedef void(dbg_jcr_hook_t)(JobControlRecord* jcr, FILE* fp);
-extern void DbgJcrAddHook(dbg_jcr_hook_t* fct);
+void DbgJcrAddHook(dbg_jcr_hook_t* fct);
 
 /* new-2019 interface */
 void InitJcr(std::shared_ptr<JobControlRecord> jcr,

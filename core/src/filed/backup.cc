@@ -51,6 +51,11 @@
 #include "lib/serial.h"
 #include "lib/compression.h"
 
+#include "lib/channel.h"
+#include "lib/network_order.h"
+
+#include <cstring>
+
 namespace filedaemon {
 
 #ifdef HAVE_DARWIN_OS
@@ -1012,8 +1017,7 @@ bail_out:
 }
 #endif
 
-// Send the content of a file on anything but an EFS filesystem.
-static inline bool SendPlainData(b_ctx& bctx)
+static inline bool SendPlainDataSerially(b_ctx& bctx)
 {
   bool retval = false;
   BareosSocket* sd = bctx.jcr->store_bsock;
@@ -1027,6 +1031,393 @@ static inline bool SendPlainData(b_ctx& bctx)
   retval = true;
 
 bail_out:
+  return retval;
+}
+
+static result<std::size_t> SendData(BareosSocket* sd,
+                                    POOLMEM* data,
+                                    size_t size)
+{
+  sd->message_length = size;
+  sd->msg = data; /* set correct write buffer */
+
+  if (!sd->send()) {
+    PoolMem error;
+    Mmsg(error, "Network send error to SD. ERR=%s", sd->bstrerror());
+    return error;
+  }
+
+  Dmsg1(130, "Send data to SD len=%d\n", sd->message_length);
+  return size;
+}
+
+class data_message {
+  /* some data is prefixed by a OFFSET_FADDR_SIZE-byte number -- called header
+   * here, which basically contains the file position to which to write the
+   * following block of data.
+   * The difference between FADDR and OFFSET is that offset may be any value
+   * (given to the core by a plugin), whereas FADDR is computed by the core
+   * itself and is equal to the number of bytes already read from the file
+   * descriptor. */
+  static inline constexpr std::size_t header_size = OFFSET_FADDR_SIZE;
+  /* our bsocket functions assume that they are allowed to overwrite
+   * the four bytes directly preceding the given buffer
+   * To keep the message alignment to 8, we "allocate" full 8 bytes instead
+   * of the required 4. */
+  static inline constexpr std::size_t bnet_size = 8;
+  static inline constexpr std::size_t data_offset = header_size + bnet_size;
+
+  std::vector<char> buffer{};
+  bool has_header{false};
+
+ public:
+  data_message(std::size_t data_size)
+  {
+    buffer.resize(data_size + data_offset);
+  }
+  data_message() : data_message(0) {}
+  data_message(const data_message&) = delete;
+  data_message& operator=(const data_message&) = delete;
+  data_message(data_message&&) = default;
+  data_message& operator=(data_message&&) = default;
+
+  // creates a message with the same header -- if any
+  data_message derived() const
+  {
+    data_message derived;
+
+    if (has_header) {
+      derived.has_header = true;
+      std::memcpy(derived.header_ptr(), header_ptr(), header_size);
+    }
+
+    return derived;
+  }
+
+  void set_header(std::uint64_t h)
+  {
+    has_header = true;
+    auto* ptr = header_ptr();
+    network_order::network net{h};  // save in network order
+    std::memcpy(ptr, &net, header_size);
+  }
+
+  void resize(std::size_t new_size) { buffer.resize(data_offset + new_size); }
+
+  char* header_ptr() { return &buffer[bnet_size]; }
+  char* data_ptr() { return &buffer[data_offset]; }
+  const char* header_ptr() const { return &buffer[bnet_size]; }
+  const char* data_ptr() const { return &buffer[data_offset]; }
+
+  std::size_t data_size() const
+  {
+    ASSERT(buffer.size() >= data_offset);
+    return buffer.size() - data_offset;
+  }
+
+  /* important: this is not actually a POOLMEM*; do not pass it to POOLMEM*
+   *            functions, except to pass it to BareosSocket::SendData(). */
+  POOLMEM* as_socket_message()
+  {
+    if (has_header) {
+      return header_ptr();
+    } else {
+      return data_ptr();
+    }
+  }
+
+  std::size_t message_size() const
+  {
+    auto size_with_header = buffer.size() - bnet_size;
+    if (has_header) {
+      return size_with_header;
+    } else {
+      return size_with_header - header_size;
+    }
+  }
+};
+
+using shared_message = std::shared_ptr<data_message>;
+
+static std::future<result<std::size_t>> MakeSendThread(
+    thread_pool& pool,
+    BareosSocket* sd,
+    channel::output<std::future<result<shared_message>>> out)
+{
+  std::promise<result<std::size_t>> promise;
+  std::future fut = promise.get_future();
+
+  pool.borrow_thread(
+      [prom = std::move(promise), out = std::move(out), sd]() mutable {
+        std::size_t accumulated = 0;
+        for (;;) {
+          std::optional fut = out.get();
+          if (!fut) { break; }
+          result p = fut->get();
+          if (p.holds_error()) {
+            prom.set_value(std::move(p.error_unchecked()));
+            return;
+          }
+
+          auto& val = p.value_unchecked();
+          auto size = val->message_size();
+          POOLMEM* msg = val->as_socket_message();
+
+          // technically we are overwriting part of message here
+          // but its only the "size" field of the message, which is not
+          // read/written to otherwise after making it a shared_message.
+          result ret = SendData(sd, msg, size);
+          if (ret.holds_error()) {
+            prom.set_value(std::move(ret.error_unchecked()));
+            return;
+          }
+
+          accumulated += ret.value_unchecked();
+        }
+        prom.set_value(accumulated);
+      });
+  return fut;
+}
+
+struct compression_context {
+  comp_stream_header ch;
+  uint32_t algorithm;
+  int level;
+};
+
+static result<shared_message> DoCompressMessage(compression_context& compctx,
+                                                const data_message& input)
+{
+  auto data_size = RequiredCompressionOutputBufferSize(compctx.algorithm,
+                                                       input.data_size());
+
+  auto msg = input.derived();
+  msg.resize(data_size);
+  result comp_size = ThreadlocalCompress(
+      compctx.algorithm, compctx.level, input.data_ptr(), input.data_size(),
+      msg.data_ptr() + sizeof(comp_stream_header),
+      msg.data_size() - sizeof(comp_stream_header));
+
+  if (comp_size.holds_error()) {
+    return std::move(comp_size.error_unchecked());
+  }
+
+  auto csize = comp_size.value_unchecked();
+
+  if (csize > std::numeric_limits<std::uint32_t>::max()) {
+    PoolMem error;
+    Mmsg(error, "Compressed size to big (%llu > %llu)", csize,
+         std::numeric_limits<std::uint32_t>::max());
+    return error;
+  }
+
+  {
+    // Write compression header
+    ser_declare;
+    SerBegin(msg.data_ptr(), sizeof(comp_stream_header));
+    ser_uint32(compctx.ch.magic);
+    ser_uint32(csize);
+    ser_uint16(compctx.ch.level);
+    ser_uint16(compctx.ch.version);
+    SerEnd(msg.data_ptr(), sizeof(comp_stream_header));
+  }
+
+  auto total_size = csize + sizeof(comp_stream_header);
+  ASSERT(total_size <= msg.data_size());
+  msg.resize(total_size);
+
+  return shared_message{new data_message{std::move(msg)}};
+}
+
+// Send the content of a file on anything but an EFS filesystem.
+static inline bool SendPlainData(b_ctx& bctx)
+{
+  std::size_t max_buf_size = bctx.rsize;
+
+  auto file_type = bctx.ff_pkt->type;
+  auto file_size = bctx.ff_pkt->statp.st_size;
+  auto* flags = bctx.ff_pkt->flags;
+
+  const std::size_t num_workers = me->MaxWorkersPerJob;
+  // Currently we do not support encryption while doing
+  // parallel sending/checksumming/compression/etc.
+  // This is mostly because EncryptData() is weird!
+  if (BitIsSet(FO_ENCRYPT, flags)) { return SendPlainDataSerially(bctx); }
+
+  // Setting up the parallel pipeline is not worth it for small files.
+  if (static_cast<std::size_t>(file_size) < 2 * max_buf_size) {
+    return SendPlainDataSerially(bctx);
+  }
+
+  // setting maximum worker threads to 0 means that you do not want
+  // multithreading, so just use the serial code path for now.
+  if (num_workers == 0) { return SendPlainDataSerially(bctx); }
+
+  bool retval = false;
+  BareosSocket* sd = bctx.jcr->store_bsock;
+
+  auto& bfd = bctx.ff_pkt->bfd;
+
+  bool support_sparse = BitIsSet(FO_SPARSE, flags);
+  bool support_offsets = BitIsSet(FO_OFFSETS, flags);
+
+  std::optional<compression_context> compctx;
+  if (BitIsSet(FO_COMPRESS, flags)) {
+    compctx = compression_context{
+        .ch = bctx.ch,
+        .algorithm = bctx.ff_pkt->Compress_algo,
+        .level = bctx.ff_pkt->Compress_level,
+    };
+  }
+
+  auto& threadpool = bctx.jcr->fd_impl->threads;
+
+  work_group compute_group(num_workers * 3);
+
+  // FIXME(ssura): this should become a std::latch once C++20 arrives
+  std::condition_variable compute_fin;
+  synchronized<std::size_t> latch{num_workers};
+  threadpool.borrow_threads(num_workers,
+                            [&latch, &compute_group, &compute_fin] {
+                              compute_group.work_until_completion();
+
+                              *latch.lock() -= 1;
+                              compute_fin.notify_one();
+                            });
+
+  auto [in, out]
+      = channel::CreateBufferedChannel<std::future<result<shared_message>>>(
+          num_workers);
+
+  std::future bytes_send_fut = MakeSendThread(threadpool, sd, std::move(out));
+
+  DIGEST* checksum = bctx.digest;
+  DIGEST* signing = bctx.signing_digest;
+
+  std::optional<std::future<void>> update_digest;
+
+  std::uint64_t bytes_read{0};
+  std::uint64_t offset{0};
+
+  std::uint64_t& header = *(support_sparse ? &bytes_read : &offset);
+
+  static_assert(sizeof(header) == OFFSET_FADDR_SIZE);
+  bool include_header = support_sparse || support_offsets;
+
+  bool read_error = false;
+
+  // Read the file data
+  for (;;) {
+    data_message msg(max_buf_size);
+    for (bool skip_block = true; skip_block;) {
+      skip_block = false;
+      ssize_t read_bytes = bread(&bfd, msg.data_ptr(), msg.data_size());
+      // update offset _before_ sending the header
+      offset = bfd.offset;
+
+      if (read_bytes <= 0) {
+        if (read_bytes < 0) { read_error = true; }
+        goto end_read_loop;
+      }
+
+      msg.resize(read_bytes);
+
+      bool unsized_file
+          = (file_type == FT_RAW || file_type == FT_FIFO) && (file_size == 0);
+
+      /* This is looks weird but this is the idea:
+       * If we sparse is enabled and the block is just zero, we want to skip it;
+       * but we need to recover the file size on restore, so we need to
+       * at least always send the last block to the sd regardless of its
+       * contents (This is the `< file_size` check) For unsized raw/fifo files,
+       * we do not[1] recover the correct file size with sparse enabled on a
+       * restore, so we skip the test.
+       *
+       * [1] Not sure why this was decided on.  Maybe there was specific use
+       *     case in mind when this was decided;  I would have expected us to
+       *     disable SPARSE in that case and continue on as normal.
+       */
+      if (support_sparse
+          && ((msg.data_size() == max_buf_size
+               && (msg.data_size() + max_buf_size < (uint64_t)file_size))
+              || unsized_file)
+          // IsBufZero actually requires 8 bytes of alignment
+          && IsBufZero(msg.data_ptr(), msg.data_size())) {
+        skip_block = true;
+      } else if (include_header) {
+        msg.set_header(header);
+      }
+
+      // update bytes_read _after_ sending the header
+      bytes_read += read_bytes;
+    }
+    ASSERT(msg.data_size() > 0);
+
+    shared_message shared_msg{new data_message{std::move(msg)}};
+
+    if (update_digest) {
+      // updating the digest has to be done serially
+      // so we have to wait until the last task is finished
+      // before issuing a new one.
+      update_digest->get();
+    }
+
+    if (checksum || signing) {
+      update_digest.emplace(compute_group.submit([checksum, signing,
+                                                  shared_msg]() mutable {
+        auto* data = reinterpret_cast<const uint8_t*>(shared_msg->data_ptr());
+        auto size = shared_msg->data_size();
+        // Update checksum if requested
+        if (checksum) { CryptoDigestUpdate(checksum, data, size); }
+
+        // Update signing digest if requested
+        if (signing) { CryptoDigestUpdate(signing, data, size); }
+      }));
+    }
+
+    std::future<result<shared_message>> copy_fut;
+    if (compctx) {
+      copy_fut = compute_group.submit(
+          [cctx = compctx.value(), shared_msg]() mutable {
+            return DoCompressMessage(cctx, *shared_msg.get());
+          });
+    } else {
+      std::promise<result<shared_message>> prom;
+      prom.set_value(std::move(shared_msg));
+      copy_fut = prom.get_future();
+    }
+
+    // Send the buffer to the Storage daemon
+    if (!in.emplace(std::move(copy_fut))) { goto bail_out; }
+  }
+end_read_loop:
+  retval = true;
+
+bail_out:
+  compute_group.shutdown();
+  latch.lock().wait(compute_fin, [](int num) { return num == 0; });
+  in.close();
+  if (update_digest) { update_digest->get(); }
+  result sendres = bytes_send_fut.get();
+  if (auto* error = sendres.error()) {
+    if (!bctx.jcr->IsJobCanceled()) {
+      Jmsg1(bctx.jcr, M_FATAL, 0, "%s\n", error->c_str());
+    }
+    retval = false;
+  } else {
+    bctx.jcr->JobBytes
+        += sendres.value_unchecked();  /* count bytes saved possibly
+                                          compressed/encrypted */
+    bctx.jcr->ReadBytes += bytes_read; /* count bytes read */
+  }
+  sd->msg = bctx.msgsave; /* restore read buffer */
+
+  if (read_error) {
+    // the following code recognizes read errors by looking at
+    // the value inside sd->message_length; if its negative then a
+    // read error occured. Otherwise everything went fine.
+    sd->message_length = -1;
+  }
   return retval;
 }
 

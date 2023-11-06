@@ -118,6 +118,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos-fd-plugin: new python PostgreSQL [PR #1541]
 - python-bareos: add timeout setting when connecting to the director. [PR #1583]
 - github actions: update/fix publish to PyPI workflows [PR #1572]
+- filed: parallel compression/reading/sending [PR #1533]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -278,6 +279,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1530]: https://github.com/bareos/bareos/pull/1530
 [PR #1531]: https://github.com/bareos/bareos/pull/1531
 [PR #1532]: https://github.com/bareos/bareos/pull/1532
+[PR #1533]: https://github.com/bareos/bareos/pull/1533
 [PR #1541]: https://github.com/bareos/bareos/pull/1541
 [PR #1542]: https://github.com/bareos/bareos/pull/1542
 [PR #1543]: https://github.com/bareos/bareos/pull/1543

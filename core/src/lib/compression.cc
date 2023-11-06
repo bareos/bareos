@@ -35,6 +35,7 @@
 #include "include/streams.h"
 #include "lib/edit.h"
 #include "lib/serial.h"
+#include "lib/compression.h"
 
 #ifdef HAVE_LIBZ
 #  include <zlib.h>
@@ -101,6 +102,251 @@ static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
 {
   Jmsg(jcr, M_FATAL, 0, _("%s compression not supported on this platform\n"),
        cmprs_algo_to_text(compression_algorithm));
+}
+
+std::size_t RequiredCompressionOutputBufferSize(uint32_t algo,
+                                                std::size_t max_input_size)
+{
+  switch (algo) {
+#ifdef HAVE_LIBZ
+    case COMPRESS_GZIP: {
+      return compressBound(max_input_size) + 18 + sizeof(comp_stream_header);
+    }
+#endif
+#ifdef HAVE_LZO
+    case COMPRESS_LZO1X:
+      return max_input_size + (max_input_size / 16) + 64 + 3
+             + sizeof(comp_stream_header);
+      break;
+#endif
+    case COMPRESS_FZFZ:
+    case COMPRESS_FZ4L:
+    case COMPRESS_FZ4H:
+      return max_input_size + (max_input_size / 10 + 16 * 2)
+             + sizeof(comp_stream_header);
+      break;
+  }
+
+  return max_input_size + sizeof(comp_stream_header);
+}
+
+class z4_compressor {
+  zfast_stream pZfastStream{};
+  bool init_error{false};
+  std::optional<PoolMem> error{};
+
+ public:
+  z4_compressor(int type, zfast_stream_compressor compressor)
+  {
+    pZfastStream.zalloc = Z_NULL;
+    pZfastStream.zfree = Z_NULL;
+    pZfastStream.opaque = Z_NULL;
+    pZfastStream.state = Z_NULL;
+
+    if (auto zstat = fastlzlibCompressInit(&pZfastStream, type);
+        zstat != Z_OK) {
+      init_error = true;
+      error.emplace("Failed to initialize FASTLZ compression");
+    }
+
+    if (auto zstat = fastlzlibSetCompressor(&pZfastStream, compressor);
+        zstat != Z_OK) {
+      error.emplace("Failed to set FASTLZ compressor");
+    }
+  }
+
+  result<std::size_t> compress(char const* input,
+                               std::size_t size,
+                               char* output,
+                               std::size_t capacity)
+  {
+    if (error) { return PoolMem{error->c_str()}; }
+
+    pZfastStream.next_in = (Bytef*)input;
+    pZfastStream.avail_in = size;
+    pZfastStream.next_out = (Bytef*)output;
+    pZfastStream.avail_out = capacity;
+
+    if (auto zstat = fastlzlibCompress(&pZfastStream, Z_FINISH);
+        zstat != Z_STREAM_END) {
+      PoolMem errmsg;
+      Mmsg(errmsg, "Compression fastlzlibCompress error: %d\n", zstat);
+      return errmsg;
+    }
+
+    std::size_t out = pZfastStream.total_out;
+    if (fastlzlibCompressReset(&pZfastStream)) {
+      error.emplace("Failed to reset fastzlib");
+    }
+
+    ASSERT(out <= capacity);
+    return out;
+  }
+
+  ~z4_compressor()
+  {
+    if (!init_error && fastlzlibCompressEnd(&pZfastStream) != Z_OK) {
+      Dmsg0(100, "Could not properly destroy compress stream.\n");
+    }
+  }
+};
+
+#ifdef HAVE_LIBZ
+class gzip_compressor {
+  z_stream zlibStream{};
+  bool init_error{false};
+  std::optional<PoolMem> error{};
+
+ public:
+  gzip_compressor()
+  {
+    zlibStream.zalloc = Z_NULL;
+    zlibStream.zfree = Z_NULL;
+    zlibStream.opaque = Z_NULL;
+    zlibStream.state = Z_NULL;
+
+    if (deflateInit(&zlibStream, Z_DEFAULT_COMPRESSION) != Z_OK) {
+      init_error = true;
+      error.emplace("Failed to initialize zlib.");
+    }
+  }
+
+  bool set_level(int level)
+  {
+    if (error) return false;
+
+    if (auto zstat = deflateParams(&zlibStream, level, Z_DEFAULT_STRATEGY);
+        zstat != Z_OK) {
+      error.emplace("Failed to set zlib params.");
+    }
+
+    return !error;
+  }
+
+  result<std::size_t> compress(char const* input,
+                               std::size_t size,
+                               char* output,
+                               std::size_t capacity)
+  {
+    zlibStream.next_in = (Bytef*)input;
+    zlibStream.avail_in = size;
+    zlibStream.next_out = (Bytef*)output;
+    zlibStream.avail_out = capacity;
+
+    if (auto zstat = deflate(&zlibStream, Z_FINISH); zstat != Z_STREAM_END) {
+      Mmsg(error.emplace(), "Compression deflate error: %d\n", zstat);
+      return PoolMem{error->c_str()};
+    }
+
+    std::size_t compress_len = zlibStream.total_out;
+
+    // Reset zlib stream to be able to begin from scratch again
+    if (auto zstat = deflateReset(&zlibStream); zstat != Z_OK) {
+      Mmsg(error.emplace(), "Compression deflateReset error: %d\n", zstat);
+      return PoolMem{error->c_str()};
+    }
+
+    Dmsg2(400, "GZIP compressed len=%d uncompressed len=%d\n", compress_len,
+          size);
+
+    return compress_len;
+  }
+
+  ~gzip_compressor()
+  {
+    if (!init_error) { deflateEnd(&zlibStream); }
+  }
+};
+#endif
+
+#ifdef HAVE_LZO
+class lzo_compressor {
+  lzo_voidp lzoMem{nullptr};
+  bool init_error{false};
+  std::optional<PoolMem> error{};
+
+ public:
+  lzo_compressor()
+  {
+    if (lzo_init() != LZO_E_OK) {
+      init_error = true;
+      error.emplace("Failed to init lzo.");
+    } else {
+      lzoMem = static_cast<lzo_voidp>(malloc(LZO1X_1_MEM_COMPRESS));
+    }
+  }
+
+  result<std::size_t> compress(char const* input,
+                               std::size_t size,
+                               char* output,
+                               std::size_t capacity)
+  {
+    if (error) return PoolMem{error->c_str()};
+    memset(lzoMem, 0, LZO1X_1_MEM_COMPRESS);
+    lzo_uint len = 0;
+
+    Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", output, input, size);
+
+    int lzores = lzo1x_1_compress(
+        reinterpret_cast<const unsigned char*>(input), size,
+        reinterpret_cast<unsigned char*>(output), &len, lzoMem);
+
+    if (lzores != LZO_E_OK || len > capacity) {
+      // This should NEVER happen
+      Mmsg(error.emplace(), "Compression LZO error: %d\n", lzores);
+      return PoolMem{error->c_str()};
+    }
+
+    Dmsg2(400, "LZO compressed len=%d uncompressed len=%d\n", len, size);
+
+    return len;
+  }
+
+  ~lzo_compressor()
+  {
+    if (!init_error) { free(lzoMem); }
+  }
+};
+#endif
+
+result<std::size_t> ThreadlocalCompress(uint32_t algo,
+                                        uint32_t level,
+                                        char const* input,
+                                        std::size_t size,
+                                        char* output,
+                                        std::size_t capacity)
+{
+  switch (algo) {
+#ifdef HAVE_LIBZ
+    case COMPRESS_GZIP: {
+      thread_local gzip_compressor comp{};
+      comp.set_level(level);
+      return comp.compress(input, size, output, capacity);
+    } break;
+#endif
+#ifdef HAVE_LZO
+    case COMPRESS_LZO1X: {
+      thread_local lzo_compressor comp{};
+      return comp.compress(input, size, output, capacity);
+    } break;
+#endif
+    case COMPRESS_FZFZ: {
+      thread_local z4_compressor comp(Z_BEST_SPEED, COMPRESSOR_FASTLZ);
+      return comp.compress(input, size, output, capacity);
+    }
+    case COMPRESS_FZ4L: {
+      thread_local z4_compressor comp(Z_BEST_SPEED, COMPRESSOR_LZ4);
+      return comp.compress(input, size, output, capacity);
+    }
+    case COMPRESS_FZ4H: {
+      thread_local z4_compressor comp(Z_BEST_COMPRESSION, COMPRESSOR_LZ4);
+      return comp.compress(input, size, output, capacity);
+    } break;
+  }
+
+  PoolMem errmsg;
+  Mmsg(errmsg, "Unknown compression algorithm: %d", algo);
+  return errmsg;
 }
 
 bool SetupCompressionBuffers(JobControlRecord* jcr,

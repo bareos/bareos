@@ -341,8 +341,10 @@ template <typename T> class output {
   }
 };
 
+template <typename T> using channel_pair = std::pair<input<T>, output<T>>;
+
 template <typename T>
-std::pair<input<T>, output<T>> CreateBufferedChannel(std::size_t capacity)
+channel_pair<T> CreateBufferedChannel(std::size_t capacity)
 {
   auto shared = std::make_shared<queue<T>>(capacity);
   auto in = input(shared);

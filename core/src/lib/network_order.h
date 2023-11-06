@@ -26,7 +26,7 @@
 #include <cstring>
 #include <type_traits>
 
-#include "config.h"
+#include "include/config.h"
 
 namespace network_order {
 
@@ -39,7 +39,7 @@ constexpr T byteswap(T i)
   U u;
   std::memcpy(&u, &i, sizeof(U));
   if constexpr (sizeof(T) == 1) {
-    u = u;
+    static_cast<void>(u);
   } else if constexpr (sizeof(T) == 2) {
     u = ((u & 0x00ff) << 8) | ((u & 0xff00) >> 8);
   } else if constexpr (sizeof(T) == 4) {
@@ -51,7 +51,9 @@ constexpr T byteswap(T i)
         | ((u & 0x000000ff00000000) >> 8) | ((u & 0x0000ff0000000000) >> 24)
         | ((u & 0x00ff000000000000) >> 40) | ((u & 0xff00000000000000) >> 56);
   } else {
-    static_assert(false, "Unsupported integer-width");
+    constexpr auto bad_integer
+        = sizeof(T) != 1 && sizeof(T) != 2 && sizeof(T) != 4 && sizeof(T) != 8;
+    static_assert(bad_integer, "Unsupported integer-width");
   }
 
   std::memcpy(&i, &u, sizeof(T));
@@ -68,12 +70,12 @@ inline constexpr bool needs_flip = true;
 
 template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
 struct network {
-  [[implicit]] constexpr network(T value) noexcept
+  constexpr network(T value) noexcept
   {
     // since we have user provided constructors, we are not a pod type
     // but we should ensure that we meet the other criteria
-    static_assert(sizeof(*this) == sizeof(T));
-    static_assert(alignof(*this) == alignof(T));
+    static_assert(sizeof(decltype(*this)) == sizeof(T));
+    static_assert(alignof(decltype(*this)) == alignof(T));
     store(value);
   }
 
