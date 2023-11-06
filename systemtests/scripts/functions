@@ -792,8 +792,7 @@ check_restore_diff()
    #   * ${BackupDirectory} (set by test), or
    #   * ${src}
    dest=${1:-${BackupDirectory:-$src}}
-   defaultrestoredirectory="$tmp/bareos-restores"
-   restoredirectory=${2:-${defaultrestoredirectory}}
+   restoredirectory=${2:-${RestoreDirectory}}
    result=0
 
    restorepath="$restoredirectory/${dest}"
@@ -829,7 +828,7 @@ check_restore_only_files_diff()
    #
    differences=0
    for i in "$@"; do
-     if ! diff -ur "$i" "${tmp}/bareos-restores/$i"; then
+     if ! diff -ur "$i" "${RestoreDirectory}/$i"; then
        differences="$(( differences + 1 ))"
        dstat=1
      fi
@@ -850,7 +849,7 @@ check_restore_files_diff()
    #
 
    # get list of all restored files
-   RESTORED_FILES="$(find "${tmp}/bareos-restores" -type f | sed "s%^${tmp}/bareos-restores%%")"
+   RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed "s%^${RestoreDirectory}%%")"
    # remove all files given as parameter from the list
    for i in "$@"; do
      RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -v "$i")" || true
@@ -868,10 +867,10 @@ check_restore_files_diff()
 check_restore_bin_diff()
 {
    if test "$debug" -eq 1 ; then
-      "$rscripts/diff.pl" -s "${bin}" -d "${tmp}/bareos-restores${bin}"
-      diff -ur "${bin}" "${tmp}/bareos-restores${bin}"
+      "$rscripts/diff.pl" -s "${bin}" -d "${RestoreDirectory}${bin}"
+      diff -ur "${bin}" "${RestoreDirectory}${bin}"
    else
-      diff -ur "${bin}" "${tmp}/bareos-restores${bin}" >/dev/null 2>&1
+      diff -ur "${bin}" "${RestoreDirectory}${bin}" >/dev/null 2>&1
    fi
    dstat=$?
 }
@@ -880,10 +879,10 @@ check_restore_bin_diff()
 check_restore_tmp_build_diff()
 {
    if test "$debug" -eq 1 ; then
-      "$rscripts/diff.pl" -s "${tmpsrc}" -d "${tmp}/bareos-restores${tmpsrc}"
-      diff -ur "${tmpsrc}" "${tmp}/bareos-restores${tmpsrc}"
+      "$rscripts/diff.pl" -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
+      diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}"
    else
-      diff -ur "${tmpsrc}" "${tmp}/bareos-restores${tmpsrc}" >/dev/null 2>&1
+      diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}" >/dev/null 2>&1
    fi
    dstat=$?
 }

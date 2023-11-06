@@ -16,6 +16,10 @@ export TestName
 #shellcheck source=functions
 . functions
 
+# Use own restore directory to ensure it is always
+# clean before restore
+RestoreDirectory="${tmp}/fileregex-restores"
+
 start_test
 
 fileregex=".*/ot[h]er-.*"
@@ -33,7 +37,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 list jobs
 @$out /dev/null
 restore client=bareos-fd fileset=SelfTest \
-    where="$tmp/bareos-restores" \
+    where="$RestoreDirectory" \
     fileregex="$fileregex" \
     select current all done yes
 wait
