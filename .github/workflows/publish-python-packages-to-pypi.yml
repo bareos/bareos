@@ -1,0 +1,162 @@
+name: "python packages -> PyPI.org"
+
+#
+# build a Bareos Python packages
+# and publish it to https://test.pypi.org
+# and publish releases also to https://pypi.org
+#
+
+on:
+  push:
+    branches:
+      - master
+      - dev/*/master/publish-pypi-*
+    tags:
+      - Release/*
+
+jobs:
+  build:
+    name: "Build Python packages"
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: "Checkout source"
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+
+    - name: "Python: set up"
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: "Python: install wheel"
+      run: |
+        pip install --user wheel
+
+    - name: "python-bareos: build package"
+      run: |
+        cd python-bareos
+        # sdist mangles around with version information.
+        # We replace ~pre with dev, as this will not be modified.
+        # (pre will be replaced with rc).
+        ../docs/manuals/source/get-version.sh > bareos/VERSION.txt
+        printf "Version: %s\n" $(cat bareos/VERSION.txt)
+        python setup.py sdist bdist_wheel
+
+    - name: "python-bareos: create artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-bareos-dist
+        path: python-bareos/dist/
+
+    - name: "restapi: build package"
+      run: |
+        cd restapi
+        # sdist mangles around with version information.
+        # We replace ~pre with dev, as this will not be modified.
+        # (pre will be replaced with rc).
+        ../docs/manuals/source/get-version.sh > bareos_restapi/VERSION.txt
+        printf "Version: %s\n" $(cat bareos_restapi/VERSION.txt)
+        python setup.py sdist bdist_wheel
+
+    - name: "restapi: create artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: restapi-dist
+        path: restapi/dist/
+
+
+  publish-python-bareos-to-testpypi:
+    name: "python-bareos: publish to https://test.pypi.org/"
+    needs:
+    - build
+    runs-on: ubuntu-22.04
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/python-bareos
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: "Download artifact"
+      uses: actions/download-artifact@v3
+      with:
+        name: python-bareos-dist
+        path: dist/
+    - name: "python-bareos -> https://test.pypi.org/"
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+
+  publish-python-bareos-to-pypi:
+    name: "[Release] python-bareos: publish to https://pypi.org"
+    if: startsWith(github.ref, 'refs/tags/Release/')  # only publish to PyPI on Release tag pushes
+    needs:
+    - build
+    runs-on: ubuntu-22.04
+    environment:
+      name: pypi
+      url: https://pypi.org/p/python-bareos
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: "Download artifact"
+      uses: actions/download-artifact@v3
+      with:
+        name: python-bareos-dist
+        path: dist/
+    - name: "python-bareos -> https://pypi.org/"
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+
+  publish-restapi-to-testpypi:
+    name: "bareos-restapi: publish to https://test.pypi.org/"
+    needs:
+    - build
+    runs-on: ubuntu-22.04
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/bareos-restapi
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: "Download artifact"
+      uses: actions/download-artifact@v3
+      with:
+        name: restapi-dist
+        path: dist/
+    - name: "bareos-restapi -> https://test.pypi.org/"
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+
+  publish-restapi-to-pypi:
+    name: "[Release] bareos-restapi: publish to https://pypi.org"
+    if: startsWith(github.ref, 'refs/tags/Release/')  # only publish to PyPI on Release tag pushes
+    needs:
+    - build
+    runs-on: ubuntu-22.04
+    environment:
+      name: pypi
+      url: https://pypi.org/p/python-bareos
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: "Download artifact"
+      uses: actions/download-artifact@v3
+      with:
+        name: restapi-dist
+        path: dist/
+    - name: "bareos-restapi -> https://pypi.org/"
+      uses: pypa/gh-action-pypi-publish@release/v1
