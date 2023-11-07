@@ -122,7 +122,6 @@ endif()
 set(BAREOSCFG_SRCS
     bareos_resource.cc
     configured_tls_policy_getter.cc
-    ini.cc
     lex.cc
     parse_bsr.cc
     res.cc
