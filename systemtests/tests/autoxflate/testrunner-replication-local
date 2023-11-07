@@ -42,19 +42,20 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${tmp}/backup.out
 messages
-label volume=TestVolume001 storage=File pool=Full
+label volume=TestVolume001 storage=L1 pool=Full
 run job=backup-bareos-fd level=Full yes
 wait
 update volume=TestVolume001 volstatus=Used
 messages
 @$out ${tmp}/copy.out
-label volume=TestCopyVolume001 storage=File2 pool=FullCopy
-setdebug level=$debug_level storage=File
-setdebug level=$debug_level storage=File2
-run copy yes
+label volume=TestCopyVolume001 storage=L2 pool=FullCopy
+setdebug level=$debug_level storage=L1
+setdebug level=$debug_level storage=L2
+run copy-local yes
 wait
-setdebug level=0 storage=File
-setdebug level=0 storage=File2
+update volume=TestCopyVolume001 volstatus=Used
+setdebug level=0 storage=L1
+setdebug level=0 storage=L2
 messages
 @$out ${tmp}/restore.out
 restore jobid=4 client=bareos-fd where=$tmp/bareos-restores all done yes
@@ -68,11 +69,11 @@ run_bconsole "$@"
 # There should be no difference
 check_restore_diff "${BackupDirectory}"
 
-if ! is_file_compressed "FileStorage" "TestVolume001" "${File}"; then
+if ! is_file_compressed "LD1" "TestVolume001" "${File}"; then
     echo "TestVolume001 is not compressed"
     estat=3
 fi
-if is_file_compressed "FileStorage2" "TestCopyVolume001" "${File}"; then
+if is_file_compressed "LD2" "TestCopyVolume001" "${File}"; then
     echo "TestCopyVolume001 is not uncompressed"
     estat=4
 fi

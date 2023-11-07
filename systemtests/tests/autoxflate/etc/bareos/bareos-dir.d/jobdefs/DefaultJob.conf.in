@@ -4,7 +4,7 @@ JobDefs {
   Level = Incremental
   Client = bareos-fd
   FileSet = "SelfTest"
-  Storage = File
+  Storage = L1
   Messages = Standard
   Pool = Incremental
   Priority = 10

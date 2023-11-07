@@ -4,7 +4,7 @@ Job {
   Type = Restore
   Client = bareos-fd
   FileSet = SelfTest
-  Storage = File
+  Storage = L1
   Pool = Incremental
   Messages = Standard
   Where = @tmp@/bareos-restores
