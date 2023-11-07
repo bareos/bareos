@@ -36,26 +36,27 @@ File="bbatch.c"
 
 start_test
 
-# 1) Copy from local-copy (uncompressed) to offsite (compressed)
-# 2) Copy from offsite to offsite-copy; since autoxflate on replication is off
-#    the data should still be compressed
-# 3) Restore from offsite-copy
+restore_dir="${tmp}/LV1-restores"
+
+# 1) Create a full backup with LZ4 compression (as per SelfTest fileset config)
+# 2) Copy full backup to other pool and decompress (as per FileStorage2 device config)
+# 3) Restore copied job
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out ${tmp}/copy-from-offsite.out
+@$out ${tmp}/backup.out
 messages
-setdebug level=$debug_level storage=O12
+setdebug level=$debug_level storage=L1
 setdebug level=$debug_level storage=L2
-label volume=LV2 storage=L2 pool=FullCopy
-run copy-from-offsite yes
+label volume=LV1 storage=L1 pool=Full
+run job=backup-bareos-fd level=Full yes
 wait
-update volume=LV2 volstatus=Used
+update volume=LV1 volstatus=Used
 messages
 messages
-@$out ${tmp}/local-restore.out
-restore jobid=15 client=bareos-fd where=$tmp/from-offsite-restores all done yes
+@$out ${tmp}/restore-LV1.out
+restore jobid=1 client=bareos-fd where=$restore_dir all done yes
 wait
-setdebug level=0 storage=O11
-setdebug level=0 storage=O12
+setdebug level=0 storage=L1
+setdebug level=0 storage=L2
 messages
 quit
 END_OF_DATA
@@ -65,11 +66,19 @@ run_bconsole "$@"
 # There should be no difference, but with autoxflate decompression
 # the restore reports success ("Restore OK") but seems to fail silently
 # and doesn't actually restore anything
-check_restore_diff "${BackupDirectory}" "$tmp/from-offsite-restores"
+check_restore_diff "${BackupDirectory}" "$restore_dir"
 
-if is_file_compressed "LD1" "LV2" "${File}"; then
-    echo "LV2 is compressed"
+if ! is_file_compressed "LD1" "LV1" "${File}"; then
+    echo "TestVolume001 is not compressed"
     estat=3
 fi
+
+expect_grep "Backup OK" \
+	    "$tmp/backup.out" \
+	    "Backup did not succeed."
+
+expect_grep "Restore OK" \
+	    "$tmp/restore-LV1.out" \
+	    "Restore from LV1 did not succeed."
 
 end_test
