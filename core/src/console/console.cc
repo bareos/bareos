@@ -128,20 +128,20 @@ struct cmdstruct {
   const char* help;
 };
 static struct cmdstruct commands[] = {
-    {N_("input"), InputCmd, T_("input from file")},
-    {N_("output"), OutputCmd, T_("output to file")},
-    {N_("quit"), QuitCmd, T_("quit")},
-    {N_("tee"), TeeCmd, T_("output to file and terminal")},
-    {N_("sleep"), SleepCmd, T_("sleep specified time")},
-    {N_("time"), TimeCmd, T_("print current time")},
-    {N_("version"), Versioncmd, T_("print Console's version")},
-    {N_("echo"), EchoCmd, T_("echo command string")},
-    {N_("exec"), ExecCmd, T_("execute an external command")},
-    {N_("exit"), QuitCmd, T_("exit = quit")},
-    {N_("zed_keys"), ZedKeyscmd,
+    {NT_("input"), InputCmd, T_("input from file")},
+    {NT_("output"), OutputCmd, T_("output to file")},
+    {NT_("quit"), QuitCmd, T_("quit")},
+    {NT_("tee"), TeeCmd, T_("output to file and terminal")},
+    {NT_("sleep"), SleepCmd, T_("sleep specified time")},
+    {NT_("time"), TimeCmd, T_("print current time")},
+    {NT_("version"), Versioncmd, T_("print Console's version")},
+    {NT_("echo"), EchoCmd, T_("echo command string")},
+    {NT_("exec"), ExecCmd, T_("execute an external command")},
+    {NT_("exit"), QuitCmd, T_("exit = quit")},
+    {NT_("zed_keys"), ZedKeyscmd,
      T_("zed_keys = use zed keys instead of bash keys")},
-    {N_("help"), HelpCmd, T_("help listing")},
-    {N_("separator"), EolCmd, T_("set command separator")},
+    {NT_("help"), HelpCmd, T_("help listing")},
+    {NT_("separator"), EolCmd, T_("set command separator")},
 };
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 

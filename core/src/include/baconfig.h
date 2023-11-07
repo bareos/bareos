@@ -88,18 +88,13 @@ void InitWinAPIWrapper();
 #  ifndef T_
 #    define T_(s) gettext((s))
 #  endif /* T_ */
-#  ifndef N_
-#    define N_(s) (s)
-#  endif /* N_ */
 #else    /* !ENABLE_NLS */
 #  undef T_
-#  undef N_
 #  undef textdomain
 #  undef bindtextdomain
 #  undef setlocale
 
 #  define T_(s) (s)
-#  define N_(s) (s)
 #  define textdomain(d)
 #  define bindtextdomain(p, d)
 #  define setlocale(p, d)
