@@ -558,7 +558,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       if (!IsInFileset(ff_pkt)) {
         Jmsg(jcr, M_INFO, 1,
              T_("     %s is a different filesystem. Will not descend from %s "
-               "into it.\n"),
+                "into it.\n"),
              ff_pkt->fname, ff_pkt->top_fname);
       }
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
@@ -603,8 +603,9 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     }
     case FT_NOFOLLOW: {
       BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, T_("     Could not follow link \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      Jmsg(jcr, M_NOTSAVED, 0,
+           T_("     Could not follow link \"%s\": ERR=%s\n"), ff_pkt->fname,
+           be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
     }

@@ -242,7 +242,7 @@ CatalogResource* get_catalog_resource(UaContext* ua)
     } else if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
       ua->ErrorMsg(
           T_("You must specify a \"use <catalog-name>\" command before "
-            "continuing.\n"));
+             "continuing.\n"));
       return NULL;
     }
 
@@ -373,7 +373,8 @@ JobResource* select_restore_job_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, T_("Job"), T_("Select Restore Job"), name, sizeof(name)) < 0) {
+  if (DoPrompt(ua, T_("Job"), T_("Select Restore Job"), name, sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -403,8 +404,8 @@ ClientResource* select_client_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, T_("Client"), T_("Select Client (File daemon) resource"), name,
-               sizeof(name))
+  if (DoPrompt(ua, T_("Client"), T_("Select Client (File daemon) resource"),
+               name, sizeof(name))
       < 0) {
     return NULL;
   }
@@ -438,7 +439,8 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, T_("Client"), T_("Select Client resource"), name, sizeof(name))
+  if (DoPrompt(ua, T_("Client"), T_("Select Client resource"), name,
+               sizeof(name))
       < 0) {
     return NULL;
   }
@@ -565,7 +567,8 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
 
   cr->ClientId = 0;
   if (!ua->db->GetClientIds(ua->jcr, &num_clients, &ids)) {
-    ua->ErrorMsg(T_("Error obtaining client ids. ERR=%s\n"), ua->db->strerror());
+    ua->ErrorMsg(T_("Error obtaining client ids. ERR=%s\n"),
+                 ua->db->strerror());
     if (ids) { free(ids); }
     return false;
   }
@@ -573,7 +576,7 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
   if (num_clients <= 0) {
     ua->ErrorMsg(
         T_("No clients defined. You must run a job before using this "
-          "command.\n"));
+           "command.\n"));
     if (ids) { free(ids); }
     return false;
   }
@@ -891,7 +894,7 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 
     ua->SendMsg(
         T_("Enter the volume name or MediaId of the volume prefixed with an "
-          "asterisk (*).\n"));
+           "asterisk (*).\n"));
     if (!GetCmd(ua, T_("E.g. \"full-0001\" or \"*42\": "))) { goto bail_out; }
 
     if (ua->cmd[0] == '*' && Is_a_number(ua->cmd + 1)) {
@@ -1172,7 +1175,8 @@ int DoPrompt(UaContext* ua,
     item = 1;
     if (prompt) { bstrncpy(prompt, ua->prompt[1], max_prompt); }
     if (!ua->api && !ua->runscript) {
-      ua->SendMsg(T_("Automatically selected %s: %s\n"), automsg, ua->prompt[1]);
+      ua->SendMsg(T_("Automatically selected %s: %s\n"), automsg,
+                  ua->prompt[1]);
     }
     goto done;
   }
@@ -1185,7 +1189,7 @@ int DoPrompt(UaContext* ua,
 
     // Now print error message
     ua->SendMsg(T_("Your request has multiple choices for \"%s\". Selection is "
-                  "not possible in batch mode.\n"),
+                   "not possible in batch mode.\n"),
                 automsg);
     item = -1;
     goto done;
@@ -1305,11 +1309,13 @@ StorageResource* get_storage_resource(UaContext* ua,
       } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
         jobid = str_to_int64(ua->argv[i]);
         if (jobid <= 0) {
-          ua->ErrorMsg(T_("Expecting jobid=nn command, got: %s\n"), ua->argk[i]);
+          ua->ErrorMsg(T_("Expecting jobid=nn command, got: %s\n"),
+                       ua->argk[i]);
           return NULL;
         }
         if (!(jcr = get_jcr_by_id(jobid))) {
-          ua->ErrorMsg(T_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
+          ua->ErrorMsg(T_("JobId %s is not running.\n"),
+                       edit_int64(jobid, ed1));
           return NULL;
         }
         store = jcr->dir_impl->res.write_storage;
@@ -1550,7 +1556,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         if (!JobId) { continue; }
         if (!(jcr = get_jcr_by_id(JobId))) {
           ua->ErrorMsg(T_("JobId %s is not running. Use Job name to %s "
-                         "inactive jobs.\n"),
+                          "inactive jobs.\n"),
                        ua->argv[i], T_(reason));
           continue;
         }
@@ -1643,7 +1649,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
           if (selection_criterium == none) {
             ua->ErrorMsg(
                 T_("Illegal state either created, blocked, waiting or "
-                  "running\n"));
+                   "running\n"));
             goto bail_out;
           }
         }
@@ -1721,7 +1727,9 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       endeach_jcr(jcr);
 
       Bsnprintf(temp, sizeof(temp), T_("Choose Job to %s"), T_(reason));
-      if (DoPrompt(ua, T_("Job"), temp, buf, sizeof(buf)) < 0) { goto bail_out; }
+      if (DoPrompt(ua, T_("Job"), temp, buf, sizeof(buf)) < 0) {
+        goto bail_out;
+      }
 
       if (bstrcmp(reason, "cancel")) {
         if (ua->api && njobs == 1) {

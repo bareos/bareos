@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -191,8 +191,8 @@ int GetEnabled(UaContext* ua, const char* val)
   }
 
   if (Enabled < 0 || Enabled > 2) {
-    ua->ErrorMsg(
-        T_("Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
+    ua->ErrorMsg(T_(
+        "Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
     return -1;
   }
 
@@ -217,7 +217,9 @@ bool IsCommentLegal(UaContext* ua, const char* name)
   /* Restrict the characters permitted in the comment */
   for (p = name; *p; p++) {
     if (!strchr(forbid, (int)(*p))) { continue; }
-    if (ua) { ua->ErrorMsg(T_("Illegal character \"%c\" in a comment.\n"), *p); }
+    if (ua) {
+      ua->ErrorMsg(T_("Illegal character \"%c\" in a comment.\n"), *p);
+    }
     return 0;
   }
   len = strlen(name);

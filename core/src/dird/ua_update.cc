@@ -259,7 +259,8 @@ static void UpdateVolrecycle(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    ua->InfoMsg(T_("New Recycle flag is: %s\n"), recycle ? T_("yes") : T_("no"));
+    ua->InfoMsg(T_("New Recycle flag is: %s\n"),
+                recycle ? T_("yes") : T_("no"));
   }
 }
 
@@ -404,7 +405,8 @@ static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
   }
   SetPoolDbrDefaultsInMediaDbr(mr, &pr);
   if (!ua->db->UpdateMediaDefaults(ua->jcr, mr)) {
-    ua->ErrorMsg(T_("Error updating Volume record: ERR=%s"), ua->db->strerror());
+    ua->ErrorMsg(T_("Error updating Volume record: ERR=%s"),
+                 ua->db->strerror());
   } else {
     ua->InfoMsg(T_("Volume defaults updated from \"%s\" Pool record.\n"),
                 pr.Name);
@@ -668,7 +670,9 @@ static bool UpdateVolume(UaContext* ua)
       case 1: /* Retention */
         ua->InfoMsg(T_("Current retention period is: %s\n"),
                     edit_utime(mr.VolRetention, ed1, sizeof(ed1)));
-        if (!GetCmd(ua, T_("Enter Volume Retention period: "))) { return false; }
+        if (!GetCmd(ua, T_("Enter Volume Retention period: "))) {
+          return false;
+        }
         UpdateVolretention(ua, ua->cmd, &mr);
         break;
 
@@ -735,7 +739,7 @@ static bool UpdateVolume(UaContext* ua)
         int32_t VolFiles;
         ua->WarningMsg(
             T_("Warning changing Volume Files can result\n"
-              "in loss of data on your Volume\n\n"));
+               "in loss of data on your Volume\n\n"));
         ua->InfoMsg(T_("Current Volume Files is: %u\n"), mr.VolFiles);
         if (!GetPint(ua, T_("Enter new number of Files for Volume: "))) {
           return false;
@@ -1105,7 +1109,7 @@ static void UpdateSlots(UaContext* ua)
           } else {
             ua->InfoMsg(
                 T_("Catalog record for Volume \"%s\" updated to reference "
-                  "slot %d.\n"),
+                   "slot %d.\n"),
                 mr.VolumeName, mr.Slot);
           }
         } else {
@@ -1115,7 +1119,7 @@ static void UpdateSlots(UaContext* ua)
       } else {
         ua->WarningMsg(
             T_("Volume \"%s\" not found in catalog. Slot=%d InChanger "
-              "set to zero.\n"),
+               "set to zero.\n"),
             mr.VolumeName, vl->bareos_slot_number);
       }
     }
@@ -1237,7 +1241,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
       } else {
         ua->WarningMsg(
             T_("Volume \"%s\" not found in catalog. Slot=%d InChanger "
-              "set to zero.\n"),
+               "set to zero.\n"),
             mr.VolumeName, vl->bareos_slot_number);
       }
     }

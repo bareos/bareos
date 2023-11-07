@@ -165,12 +165,12 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   if (jcr) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Bootstrap file error: %s\n"
-           "            : Line %d, col %d of file %s\n%s\n"),
+            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   } else {
     e_msg(file, line, M_FATAL, 0,
           T_("Bootstrap file error: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
+             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
 }
@@ -200,12 +200,12 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   if (jcr) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Bootstrap file warning: %s\n"
-           "            : Line %d, col %d of file %s\n%s\n"),
+            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   } else {
     p_msg(file, line, 0,
           T_("Bootstrap file warning: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
+             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
 }

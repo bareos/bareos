@@ -96,7 +96,7 @@ void DumpBlock(DeviceBlock* b, const char* msg)
                              block_len - BLKHDR_CS_LENGTH);
   Pmsg6(000,
         T_("Dump block %s %x: size=%d BlkNum=%d\n"
-          "               Hdrcksum=%x cksum=%x\n"),
+           "               Hdrcksum=%x cksum=%x\n"),
         msg, b, block_len, BlockNumber, CheckSum, BlockCheckSum);
   p = b->buf + bhl;
   while (p < (b->buf + block_len + WRITE_RECHDR_LENGTH)) {
@@ -260,7 +260,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
       dev->dev_errno = EIO;
       Mmsg4(dev->errmsg,
             T_("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". "
-              "Buffer discarded.\n"),
+               "Buffer discarded.\n"),
             dev->file, dev->block_num, BLKHDR1_ID, Id);
       if (block->read_errors == 0 || verbose >= 2) {
         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
@@ -278,7 +278,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
       dev->dev_errno = EIO;
       Mmsg4(dev->errmsg,
             T_("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". "
-              "Buffer discarded.\n"),
+               "Buffer discarded.\n"),
             dev->file, dev->block_num, BLKHDR2_ID, Id);
       if (block->read_errors == 0 || verbose >= 2) {
         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
@@ -288,10 +288,11 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
     }
   } else {
     dev->dev_errno = EIO;
-    Mmsg4(dev->errmsg,
-          T_("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". Buffer "
-            "discarded.\n"),
-          dev->file, dev->block_num, BLKHDR2_ID, Id);
+    Mmsg4(
+        dev->errmsg,
+        T_("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". Buffer "
+           "discarded.\n"),
+        dev->file, dev->block_num, BLKHDR2_ID, Id);
     Dmsg1(50, "%s", dev->errmsg);
     if (block->read_errors == 0 || verbose >= 2) {
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
@@ -307,7 +308,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
     dev->dev_errno = EIO;
     Mmsg3(dev->errmsg,
           T_("Volume data error at %u:%u! Block length %u is insane (too "
-            "large), probably due to a bad archive.\n"),
+             "large), probably due to a bad archive.\n"),
           dev->file, dev->block_num, block_len);
     if (block->read_errors == 0 || verbose >= 2) {
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
@@ -335,7 +336,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
       dev->dev_errno = EIO;
       Mmsg6(dev->errmsg,
             T_("Volume data error at %u:%u!\n"
-              "Block checksum mismatch in block=%u len=%d: calc=%x blk=%x\n"),
+               "Block checksum mismatch in block=%u len=%d: calc=%x blk=%x\n"),
             dev->file, dev->block_num, (unsigned)BlockNumber, block_len,
             BlockCheckSum, CheckSum);
       if (block->read_errors == 0 || verbose >= 2) {
@@ -405,14 +406,14 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
           if (dev->LastBlock > (lblock->BlockNumber + 1)) {
             Jmsg(jcr, M_FATAL, 0,
                  T_("Re-read of last block: block numbers differ by more than "
-                   "one.\n"
-                   "Probable tape misconfiguration and data loss. Read "
-                   "block=%u Want block=%u.\n"),
+                    "one.\n"
+                    "Probable tape misconfiguration and data loss. Read "
+                    "block=%u Want block=%u.\n"),
                  lblock->BlockNumber, dev->LastBlock);
           } else {
             Jmsg(jcr, M_ERROR, 0,
                  T_("Re-read of last block OK, but block numbers differ. Read "
-                   "block=%u Want block=%u.\n"),
+                    "block=%u Want block=%u.\n"),
                  lblock->BlockNumber, dev->LastBlock);
           }
         } else {
@@ -449,10 +450,11 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
   dcr->block->write_failed = true;
   if (!dev->weof(1)) { /* end the tape */
     dev->VolCatInfo.VolCatErrors++;
-    Jmsg(dcr->jcr, M_ERROR, 0,
-         T_("Error writing final EOF to tape. This Volume may not be readable.\n"
+    Jmsg(
+        dcr->jcr, M_ERROR, 0,
+        T_("Error writing final EOF to tape. This Volume may not be readable.\n"
            "%s"),
-         dev->errmsg);
+        dev->errmsg);
     ok = false;
     Dmsg0(50, "Error writing final EOF to volume.\n");
   }
@@ -756,17 +758,18 @@ bool DeviceControlRecord::WriteBlockToDev()
     if (dev->dev_errno == ENOSPC) {
       Jmsg(jcr, M_INFO, 0,
            T_("End of Volume \"%s\" at %u:%u on device %s. Write of %u bytes "
-             "got %d.\n"),
+              "got %d.\n"),
            dev->getVolCatName(), dev->file, dev->block_num, dev->print_name(),
            wlen, status);
     } else {
       BErrNo be;
 
       be.SetErrno(dev->dev_errno);
-      Mmsg5(dev->errmsg,
-            T_("Write error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
-            dev->fd, dev->file, dev->block_num, dev->print_name(),
-            be.bstrerror());
+      Mmsg5(
+          dev->errmsg,
+          T_("Write error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
+          dev->fd, dev->file, dev->block_num, dev->print_name(),
+          be.bstrerror());
     }
 
     GeneratePluginEvent(jcr, bSdEventWriteError, dcr);
@@ -955,7 +958,7 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(bool)
   if (!dev->IsOpen()) {
     Mmsg4(dev->errmsg,
           T_("Attempt to read closed device: fd=%d at file:blk %u:%u on device "
-            "%s\n"),
+             "%s\n"),
           dev->fd, dev->file, dev->block_num, dev->print_name());
     Jmsg(dcr->jcr, M_WARNING, 0, "%s", dev->errmsg);
     block->read_len = 0;
@@ -1016,8 +1019,8 @@ reread:
   if (status == 0) { /* EOF (Berkley I/O Conventions) */
     dev->block_num = 0;
     block->read_len = 0;
-    Mmsg3(dev->errmsg, T_("Read zero bytes at %u:%u on device %s.\n"), dev->file,
-          dev->block_num, dev->print_name());
+    Mmsg3(dev->errmsg, T_("Read zero bytes at %u:%u on device %s.\n"),
+          dev->file, dev->block_num, dev->print_name());
     if (dev->AtEof()) { /* EOF already set before means end of tape */
       dev->SetEot();
       return ReadStatus::EndOfTape;
@@ -1043,7 +1046,7 @@ reread:
     dev->dev_errno = EIO;
     Mmsg4(dev->errmsg,
           T_("Volume data error at %u:%u! Very short block of %d bytes on "
-            "device %s discarded.\n"),
+             "device %s discarded.\n"),
           dev->file, dev->block_num, block->read_len, dev->print_name());
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     dev->SetShortBlock();
@@ -1110,7 +1113,7 @@ reread:
     dev->dev_errno = EIO;
     Mmsg4(dev->errmsg,
           T_("Volume data error at %u:%u! Short block of %d bytes on device %s "
-            "discarded.\n"),
+             "discarded.\n"),
           dev->file, dev->block_num, block->read_len, dev->print_name());
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     dev->SetShortBlock();

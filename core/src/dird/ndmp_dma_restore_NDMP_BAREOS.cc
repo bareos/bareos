@@ -306,7 +306,8 @@ bool DoNdmpRestoreInit(JobControlRecord* jcr)
   FreeWstorage(jcr); /* we don't write */
 
   if (!jcr->dir_impl->restore_tree_root) {
-    Jmsg(jcr, M_FATAL, 0, T_("Cannot NDMP restore without a file selection.\n"));
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Cannot NDMP restore without a file selection.\n"));
     return false;
   }
 
@@ -383,7 +384,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   if (!jcr->dir_impl->res.paired_read_write_storage) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Read storage %s doesn't point to storage definition with paired "
-           "storage option.\n"),
+            "storage option.\n"),
          jcr->dir_impl->res.read_storage->resource_name_);
     goto bail_out;
   }
@@ -491,11 +492,11 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 
         current_fi = last_fi;
 
-        Jmsg(
-            jcr, M_INFO, 0,
-            T_("Run restore for sesstime %s (%d), sessionid %d, fileindex %d\n"),
-            bstrftime(dt, sizeof(dt), current_session.time, NULL),
-            current_session.time, current_session.id, current_fi);
+        Jmsg(jcr, M_INFO, 0,
+             T_("Run restore for sesstime %s (%d), sessionid %d, fileindex "
+                "%d\n"),
+             bstrftime(dt, sizeof(dt), current_session.time, NULL),
+             current_session.time, current_session.id, current_fi);
 
 
         /* See if this is the first Restore NDMP stream or not. For NDMP we can
@@ -667,8 +668,8 @@ bool DoNdmpRestore(JobControlRecord* jcr)
   if (!jcr->RestoreBootstrap) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Cannot restore without a bootstrap file.\n"
-           "You probably ran a restore job directly. All restore jobs must\n"
-           "be run using the restore command.\n"));
+            "You probably ran a restore job directly. All restore jobs must\n"
+            "be run using the restore command.\n"));
     goto bail_out;
   }
 

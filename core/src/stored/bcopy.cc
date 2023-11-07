@@ -297,7 +297,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           /* Skipping record, because does not match BootStrapRecord filter */
           if (verbose) {
             Pmsg0(-1, T_("Copy skipped. Record does not match BootStrapRecord "
-                        "filter.\n"));
+                         "filter.\n"));
           }
         } else {
           jobs++;
@@ -393,10 +393,10 @@ static void GetSessionRecord(Device* dev,
         rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
         rec->data_len);
   if (verbose) {
-    Pmsg5(
-        -1,
-        T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
-        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-        rec->data_len);
+    Pmsg5(-1,
+          T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d "
+             "DataLen=%d\n"),
+          rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+          rec->data_len);
   }
 }

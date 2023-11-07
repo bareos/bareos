@@ -159,10 +159,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   if (!IsSlotNumberValid(wanted_slot)) {
     // Suppress info when polling
     if (!dcr->dev->poll) {
-      Jmsg(
-          jcr, M_INFO, 0,
-          T_("No slot defined in catalog (slot=%hd) for Volume \"%s\" on %s.\n"),
-          wanted_slot, dcr->getVolCatName(), dcr->dev->print_name());
+      Jmsg(jcr, M_INFO, 0,
+           T_("No slot defined in catalog (slot=%hd) for Volume \"%s\" on "
+              "%s.\n"),
+           wanted_slot, dcr->getVolCatName(), dcr->dev->print_name());
       Jmsg(jcr, M_INFO, 0,
            T_("Cartridge change or \"update slots\" may be required.\n"));
     }
@@ -172,7 +172,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     if (!dcr->dev->poll) {
       Jmsg(jcr, M_INFO, 0,
            T_("No \"Changer Device\" for %s. Manual load of Volume may be "
-             "required.\n"),
+              "required.\n"),
            dcr->dev->print_name());
     }
     rtn_stat = 0;
@@ -181,7 +181,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     if (!dcr->dev->poll) {
       Jmsg(jcr, M_INFO, 0,
            T_("No \"Changer Command\" for %s. Manual load of Volume may be "
-             "required.\n"),
+              "required.\n"),
            dcr->dev->print_name());
     }
     rtn_stat = 0;
@@ -215,10 +215,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       // Load the desired volume.
       Dmsg2(100, "Doing changer load slot %hd %s\n", wanted_slot,
             dcr->dev->print_name());
-      Jmsg(
-          jcr, M_INFO, 0,
-          T_("3304 Issuing autochanger \"load slot %hd, drive %hd\" command.\n"),
-          wanted_slot, drive);
+      Jmsg(jcr, M_INFO, 0,
+           T_("3304 Issuing autochanger \"load slot %hd, drive %hd\" "
+              "command.\n"),
+           wanted_slot, drive);
       dcr->VolCatInfo.Slot = wanted_slot; /* slot to be loaded */
       changer = edit_device_codes(
           dcr, changer, dcr->device_resource->changer_command, "load");
@@ -226,10 +226,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       Dmsg1(200, "Run program=%s\n", changer);
       status = RunProgramFullOutput(changer, timeout, results.addr());
       if (status == 0) {
-        Jmsg(
-            jcr, M_INFO, 0,
-            T_("3305 Autochanger \"load slot %hd, drive %hd\", status is OK.\n"),
-            wanted_slot, drive);
+        Jmsg(jcr, M_INFO, 0,
+             T_("3305 Autochanger \"load slot %hd, drive %hd\", status is "
+                "OK.\n"),
+             wanted_slot, drive);
         Dmsg2(100, "load slot %hd, drive %hd, status is OK.\n", wanted_slot,
               drive);
         dcr->dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
@@ -251,7 +251,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
               drive, be.bstrerror());
         Jmsg(jcr, rtn_stat == -3 ? M_ERROR : M_FATAL, 0,
              T_("3992 Bad autochanger \"load slot %hd, drive %hd\": "
-               "ERR=%s.\nResults=%s\n"),
+                "ERR=%s.\nResults=%s\n"),
              wanted_slot, drive, be.bstrerror(), results.c_str());
         dcr->dev->SetSlotNumber(-1); /* mark unknown */
       }
@@ -312,7 +312,8 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
    * Suppress info when polling */
   if (!dev->poll && debug_level >= 1) {
     Jmsg(jcr, M_INFO, 0,
-         T_("3301 Issuing autochanger \"loaded? drive %hd\" command.\n"), drive);
+         T_("3301 Issuing autochanger \"loaded? drive %hd\" command.\n"),
+         drive);
   }
 
   changer = GetPoolMemory(PM_FNAME);
@@ -328,9 +329,10 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
     if (IsSlotNumberValid(loaded_slot)) {
       // Suppress info when polling
       if (!dev->poll && debug_level >= 1) {
-        Jmsg(jcr, M_INFO, 0,
-             T_("3302 Autochanger \"loaded? drive %hd\", result is Slot %hd.\n"),
-             drive, loaded_slot);
+        Jmsg(
+            jcr, M_INFO, 0,
+            T_("3302 Autochanger \"loaded? drive %hd\", result is Slot %hd.\n"),
+            drive, loaded_slot);
       }
       dev->SetSlotNumber(loaded_slot);
     } else {
@@ -338,7 +340,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
       if (!dev->poll && debug_level >= 1) {
         Jmsg(jcr, M_INFO, 0,
              T_("3302 Autochanger \"loaded? drive %hd\", result: nothing "
-               "loaded.\n"),
+                "loaded.\n"),
              drive);
       }
       dev->SetSlotNumber(0);
@@ -348,7 +350,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
     be.SetErrno(status);
     Jmsg(jcr, M_INFO, 0,
          T_("3991 Bad autochanger \"loaded? drive %hd\" command: "
-           "ERR=%s.\nResults=%s\n"),
+            "ERR=%s.\nResults=%s\n"),
          drive, be.bstrerror(), results.c_str());
     loaded_slot = kInvalidSlotNumber; /* force unload */
   }
@@ -398,7 +400,8 @@ static bool UnlockChanger(DeviceControlRecord* dcr)
     if ((errstat = RwlWriteunlock(&changer_res->changer_lock)) != 0) {
       BErrNo be;
       Jmsg(dcr->jcr, M_ERROR_TERM, 0,
-           T_("Unlock failure on autochanger. ERR=%s\n"), be.bstrerror(errstat));
+           T_("Unlock failure on autochanger. ERR=%s\n"),
+           be.bstrerror(errstat));
     }
   }
 
@@ -449,10 +452,10 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
     PoolMem results(PM_MESSAGE);
     POOLMEM* changer = GetPoolMemory(PM_FNAME);
 
-    Jmsg(
-        jcr, M_INFO, 0,
-        T_("3307 Issuing autochanger \"unload slot %hd, drive %hd\" command.\n"),
-        loaded_slot, dev->drive);
+    Jmsg(jcr, M_INFO, 0,
+         T_("3307 Issuing autochanger \"unload slot %hd, drive %hd\" "
+            "command.\n"),
+         loaded_slot, dev->drive);
     slot = dcr->VolCatInfo.Slot;
     dcr->VolCatInfo.Slot = loaded_slot;
     changer = edit_device_codes(
@@ -467,7 +470,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
       be.SetErrno(status);
       Jmsg(jcr, M_INFO, 0,
            T_("3995 Bad autochanger \"unload slot %hd, drive %hd\": "
-             "ERR=%s\nResults=%s\n"),
+              "ERR=%s\nResults=%s\n"),
            loaded_slot, dev->drive, be.bstrerror(), results.c_str());
       retval = false;
       dev->InvalidateSlotNumber(); /* unknown */

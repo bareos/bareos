@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -121,16 +121,12 @@ void PruneVolumes(JobControlRecord* jcr,
   }
 
   Dmsg1(100, "Scratch pool(s)=%s\n", ed2);
-  /*
-   * ed2 ends up with scratch poolid and current poolid or
-   *   just current poolid if there is no scratch pool
-   */
+  /* ed2 ends up with scratch poolid and current poolid or
+   *   just current poolid if there is no scratch pool */
   bstrncat(ed2, ed1, sizeof(ed2));
 
-  /*
-   * Get the List of all media ids in the current Pool or whose
-   *  RecyclePoolId is the current pool or the scratch pool
-   */
+  /* Get the List of all media ids in the current Pool or whose
+   *  RecyclePoolId is the current pool or the scratch pool */
   const char* select
       = "SELECT DISTINCT MediaId,LastWritten FROM Media WHERE "
         "(PoolId=%s OR RecyclePoolId IN (%s)) AND MediaType='%s' %s"
@@ -186,11 +182,9 @@ void PruneVolumes(JobControlRecord* jcr,
       }
       Dmsg1(050, "Vol=%s is purged\n", lmr.VolumeName);
 
-      /*
-       * Since we are also pruning the Scratch pool, continue until and check if
+      /* Since we are also pruning the Scratch pool, continue until and check if
        * this volume is available (InChanger + StorageId) If not, just skip this
-       * volume and try the next one
-       */
+       * volume and try the next one */
       if (InChanger) {
         if (!lmr.InChanger || (lmr.StorageId != mr->StorageId)) {
           Dmsg1(100, "Vol=%s not inchanger or correct StoreId\n",
@@ -208,10 +202,8 @@ void PruneVolumes(JobControlRecord* jcr,
         continue; /* Volume not usable */
       }
 
-      /*
-       * If purged and not moved to another Pool, then we stop pruning and take
-       * this volume.
-       */
+      /* If purged and not moved to another Pool, then we stop pruning and take
+       * this volume. */
       if (lmr.PoolId == mr->PoolId) {
         Dmsg2(100, "Got Vol=%s MediaId=%d purged.\n", lmr.VolumeName,
               (int)lmr.MediaId);

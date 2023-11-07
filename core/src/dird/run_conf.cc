@@ -507,7 +507,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
           if (code > code2) {
             scan_err0(lc, T_("Bad day specification, offset must always be <= "
-                            "than modulo."));
+                             "than modulo."));
             return;
           }
           if (!have_mday) {
@@ -533,7 +533,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
           if (code > code2) {
             scan_err0(lc, T_("Bad week number specification in modulo, offset "
-                            "must always be <= than modulo."));
+                             "must always be <= than modulo."));
             return;
           }
           if (!have_woy) {
@@ -548,7 +548,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
         } else {
           scan_err0(lc, T_("Bad modulo time specification. Format for weekdays "
-                          "is '01/02', for yearweeks is 'w01/w02'."));
+                           "is '01/02', for yearweeks is 'w01/w02'."));
           return;
         }
         break;

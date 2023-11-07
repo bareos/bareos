@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -419,15 +419,13 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
   do {
     Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
 
-    /*
-     * Check on the remote backing store if the chunk already exists.
+    /* Check on the remote backing store if the chunk already exists.
      * We only upload this chunk if it is bigger then the chunk that exists
      * on the remote backing store. When using io-threads it could happen
      * that there are multiple flush requests for the same chunk when a
      * chunk is reused in a next backup job. We only want the chunk with
      * the biggest amount of valid data to persist as we only append to
-     * chunks.
-     */
+     * chunks. */
     sysmd = dpl_sysmd_dup(&sysmd_);
     status = dpl_getattr(ctx_,               /* context */
                          chunk_name.c_str(), /* locator */
@@ -455,10 +453,8 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
             break;
           case DPL_ENOENT:
           case DPL_FAILURE:
-            /*
-             * Make sure the chunk directory with the name of the volume
-             * exists.
-             */
+            /* Make sure the chunk directory with the name of the volume
+             * exists. */
             dpl_sysmd_free(sysmd);
             sysmd = dpl_sysmd_dup(&sysmd_);
             status = dpl_mkdir(ctx_,              /* context */
@@ -472,7 +468,7 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
               default:
                 Mmsg2(errmsg,
                       T_("Failed to create directory %s using dpl_mkdir(): "
-                        "ERR=%s.\n"),
+                         "ERR=%s.\n"),
                       chunk_dir.c_str(), dpl_status_str(status));
                 dev_errno = DropletErrnoToSystemErrno(status);
                 Bmicrosleep(INFLIGT_RETRY_TIME, 0);
@@ -486,13 +482,11 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
         break;
     }
 
-    /*
-     * Create some options for libdroplet.
+    /* Create some options for libdroplet.
      *
      * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
      *                      no need to let the library allocate memory we
-     *                      need to free after copying the data.
-     */
+     *                      need to free after copying the data. */
     memset(&dpl_options, 0, sizeof(dpl_options));
     dpl_options.mask |= DPL_OPTION_NOALLOC;
 
@@ -569,7 +563,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         if (sysmd->size > request->wbuflen) {
           Mmsg3(errmsg,
                 T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
-                  "bytes\n"),
+                   "bytes\n"),
                 chunk_name.c_str(), sysmd->size, request->wbuflen);
           Dmsg1(100, "%s", errmsg);
           dev_errno = EINVAL;
@@ -602,13 +596,11 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
     goto bail_out;
   }
 
-  /*
-   * Create some options for libdroplet.
+  /* Create some options for libdroplet.
    *
    * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
    *                      no need to let the library allocate memory we
-   *                      need to free after copying the data.
-   */
+   *                      need to free after copying the data. */
   tries = 0;
   success = false;
 
@@ -945,13 +937,11 @@ ssize_t DropletDevice::RemoteVolumeSize()
 
   Mmsg(chunk_dir, "/%s", getVolCatName());
 
-  /*
-   * FIXME: With the current version of libdroplet a dpl_getattr() on a
+  /* FIXME: With the current version of libdroplet a dpl_getattr() on a
    * directory fails with DPL_ENOENT even when the directory does exist. All
    * other operations succeed and as ForEachChunkInDirectoryRunCallback() does a
    * dpl_chdir() anyway that will fail if the directory doesn't exist for now we
-   * should be mostly fine.
-   */
+   * should be mostly fine. */
 
   Dmsg1(100, "get RemoteVolumeSize(%s)\n", getVolCatName());
   if (!ForEachChunkInDirectoryRunCallback(

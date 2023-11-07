@@ -172,7 +172,8 @@ static void DoSdCommands(JobControlRecord* jcr)
               Jmsg1(jcr, M_FATAL, 0,
                     T_("Command error with SD, hanging up. %s\n"), jcr->errmsg);
             } else {
-              Jmsg0(jcr, M_FATAL, 0, T_("Command error with SD, hanging up.\n"));
+              Jmsg0(jcr, M_FATAL, 0,
+                    T_("Command error with SD, hanging up.\n"));
             }
             jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           }

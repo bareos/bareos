@@ -379,7 +379,7 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
   if (did_setup) {
     Jmsg(ctx, M_INFO,
          T_("autoxflate-sd: %s OUT:[SD->inflate=%s->deflate=%s->DEV] "
-           "IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
+            "IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
          dcr->dev_name, inflate_out, deflate_out, inflate_in, deflate_in);
   }
 
@@ -506,7 +506,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
       if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
         Jmsg(ctx, M_FATAL,
              T_("autoxflate-sd: Compression fastlzlibSetCompressor error: "
-               "%d\n"),
+                "%d\n"),
              zstat);
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
@@ -592,7 +592,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   if (!dcr->jcr->compress.deflate_buffer) {
     Jmsg(ctx, M_FATAL,
          T_("autoxflate-sd: compress.deflate_buffer was not setup "
-           "missing bSdEventSetupRecordTranslation call?\n"));
+            "missing bSdEventSetupRecordTranslation call?\n"));
     goto bail_out;
   }
 
@@ -722,7 +722,7 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   if (!dcr->jcr->compress.inflate_buffer) {
     Jmsg(ctx, M_FATAL,
          T_("autoxflate-sd: compress.inflate_buffer was not setup "
-           "missing bSdEventSetupRecordTranslation call?\n"));
+            "missing bSdEventSetupRecordTranslation call?\n"));
     goto bail_out;
   }
 

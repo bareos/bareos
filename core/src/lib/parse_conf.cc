@@ -279,7 +279,7 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
       if (bstrcmp(current->resource_name_, new_resource->resource_name_)) {
         Emsg2(M_ERROR, 0,
               T_("Attempt to define second %s resource named \"%s\" is not "
-                "permitted.\n"),
+                 "permitted.\n"),
               resource_definitions_[rindex].name, new_resource->resource_name_);
         return false;
       }
@@ -447,8 +447,8 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
     if (!found) {
       Jmsg2(nullptr, M_ERROR, 0,
             T_("Failed to read config file at the default locations "
-              "\"%s\" (config file path) and \"%s\" (config include "
-              "directory).\n"),
+               "\"%s\" (config file path) and \"%s\" (config include "
+               "directory).\n"),
             config_path_file.c_str(), full_path.c_str());
     }
   } else if (PathExists(cf_.c_str())) {
@@ -463,8 +463,8 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
       if (!found) {
         Jmsg3(nullptr, M_ERROR, 0,
               T_("Failed to find configuration files under directory \"%s\". "
-                "Did look for \"%s\" (config file path) and \"%s\" (config "
-                "include directory).\n"),
+                 "Did look for \"%s\" (config file path) and \"%s\" (config "
+                 "include directory).\n"),
               cf_.c_str(), config_path_file.c_str(), full_path.c_str());
       }
     } else {
@@ -538,7 +538,8 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
         config_resources_container_->configuration_resources_[rindex]
             = res->next_;
       } else {
-        Dmsg2(900, T_("removing resource %s, name=%s\n"), ResToStr(rcode), name);
+        Dmsg2(900, T_("removing resource %s, name=%s\n"), ResToStr(rcode),
+              name);
         last->next_ = res->next_;
       }
       res->next_ = nullptr;

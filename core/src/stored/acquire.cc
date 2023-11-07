@@ -156,7 +156,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
     Jmsg3(jcr, M_INFO, 0,
           T_("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
-            "  device=%s\n"),
+             "  device=%s\n"),
           dcr->media_type, dev->device_resource->media_type, dev->print_name());
     Dmsg3(rdebuglevel,
           "Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
@@ -638,8 +638,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       }
       if (status != 0) {
         BErrNo be;
-        Jmsg(jcr, M_ALERT, 0, T_("3997 Bad alert command: %s: ERR=%s.\n"), alert,
-             be.bstrerror(status));
+        Jmsg(jcr, M_ALERT, 0, T_("3997 Bad alert command: %s: ERR=%s.\n"),
+             alert, be.bstrerror(status));
       }
 
       Dmsg1(400, "alert status=%d\n", status);

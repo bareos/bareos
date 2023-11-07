@@ -360,8 +360,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      *               info is not currently used, so is read, but ignored! */
     auto msg = handler.get_msg();
     if (!msg) {
-      Jmsg2(jcr, M_FATAL, 0, T_("Internal Error reading data header from %s.\n"),
-            what);
+      Jmsg2(jcr, M_FATAL, 0,
+            T_("Internal Error reading data header from %s.\n"), what);
       ok = false;
       break;
     }
@@ -439,8 +439,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
 
       if (auto* error = std::get_if<error_type>(&msg.value())) {
-        Jmsg2(jcr, M_FATAL, 0, T_("Error reading data header from %s. ERR=%s\n"),
-              what, error->msg.c_str());
+        Jmsg2(jcr, M_FATAL, 0,
+              T_("Error reading data header from %s. ERR=%s\n"), what,
+              error->msg.c_str());
         ok = false;
         break;
       }
@@ -596,7 +597,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   ReleaseDevice(jcr->sd_impl->dcr);
 
   if (!DeleteNullJobmediaRecords(jcr)) {
-    Jmsg(jcr, M_WARNING, 0, T_("Could not delete placeholder media records.\n"));
+    Jmsg(jcr, M_WARNING, 0,
+         T_("Could not delete placeholder media records.\n"));
   }
 
   /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,

@@ -133,7 +133,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);
     bs->fsend(T_("1990 Invalid Catalog Request: %s"), omsg);
-    Jmsg1(jcr, M_FATAL, 0, T_("Invalid Catalog request; DB not open: %s"), omsg);
+    Jmsg1(jcr, M_FATAL, 0, T_("Invalid Catalog request; DB not open: %s"),
+          omsg);
     FreeMemory(omsg);
 
     return;
@@ -257,7 +258,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       if (sdmr.VolFiles < mr.VolFiles) {
         Jmsg(jcr, M_INFO, 0,
              T_("Ignoring Volume Files at %u being set to %u"
-               " for Volume \"%s\".\n"),
+                " for Volume \"%s\".\n"),
              mr.VolFiles, sdmr.VolFiles, mr.VolumeName);
         sdmr.VolFiles = mr.VolFiles;
       }
@@ -266,7 +267,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       if (sdmr.VolBlocks < mr.VolBlocks) {
         Jmsg(jcr, M_INFO, 0,
              T_("Ignoring Volume Blocks at %u being set to %u"
-               " for Volume \"%s\".\n"),
+                " for Volume \"%s\".\n"),
              mr.VolBlocks, sdmr.VolBlocks, mr.VolumeName);
         sdmr.VolBlocks = mr.VolBlocks;
       }
@@ -275,7 +276,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       if (sdmr.VolBytes < mr.VolBytes) {
         Jmsg(jcr, M_INFO, 0,
              T_("Ignoring Volume Bytes at %lld being set to %lld"
-               " for Volume \"%s\".\n"),
+                " for Volume \"%s\".\n"),
              mr.VolBytes, sdmr.VolBytes, mr.VolumeName);
         sdmr.VolBytes = mr.VolBytes;
       }
@@ -636,7 +637,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             default:
               Jmsg(jcr, M_ERROR, 0,
                    T_("Catalog error updating file digest. Unsupported digest "
-                     "stream type: %d\n"),
+                      "stream type: %d\n"),
                    Stream);
           }
 

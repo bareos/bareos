@@ -452,16 +452,16 @@ static bool IsPluginCompatible(Plugin* plugin)
   if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
       && !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
-         info->plugin_license);
+         T_("Plugin license incompatible. Plugin=%s license=%s\n"),
+         plugin->file, info->plugin_license);
     Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
           plugin->file, info->plugin_license);
     return false;
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
-         sizeof(PluginInformation), info->size);
+         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }
 
@@ -550,7 +550,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
       if (instance > HIGHEST_PLUGIN_INSTANCE) {
         Jmsg(NULL, M_ERROR, 0,
              T_("Illegal SD plugin options encountered, %s instance %d "
-               "skipping\n"),
+                "skipping\n"),
              plugin_options, instance);
         continue;
       }

@@ -105,7 +105,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
     const std::string& configfile = my_config->get_base_config_path();
     Emsg2(M_ERROR_TERM, 0,
           T_("Error: %d Monitor resources defined in %s. "
-            "You must define one and only one Monitor resource.\n"),
+             "You must define one and only one Monitor resource.\n"),
           monitorItems, configfile.c_str());
   }
 

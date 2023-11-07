@@ -665,14 +665,14 @@ static int ReserveDevice(ReserveContext& rctx)
     if (rctx.device_resource->changer_res) {
       Jmsg(rctx.jcr, M_WARNING, 0,
            T_("\n"
-             "     Device \"%s\" in changer \"%s\" requested by DIR could not "
-             "be opened or does not exist.\n"),
+              "     Device \"%s\" in changer \"%s\" requested by DIR could not "
+              "be opened or does not exist.\n"),
            rctx.device_resource->resource_name_, rctx.device_name);
     } else {
       Jmsg(rctx.jcr, M_WARNING, 0,
            T_("\n"
-             "     Device \"%s\" requested by DIR could not be opened or does "
-             "not exist.\n"),
+              "     Device \"%s\" requested by DIR could not be opened or does "
+              "not exist.\n"),
            rctx.device_name);
     }
     return -1; /* no use waiting */
@@ -930,7 +930,7 @@ static int IsPoolOk(DeviceControlRecord* dcr)
     /* Drive Pool not suitable for us */
     Mmsg(jcr->errmsg,
          T_("3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d "
-           "on drive %s.\n"),
+            "on drive %s.\n"),
          (uint32_t)jcr->JobId, dcr->pool_name, dev->pool_name,
          dev->NumReserved(), dev->print_name());
     Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
@@ -1028,7 +1028,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
     if (rctx.PreferMountedVols && !dev->vol && dev->IsTape()) {
       Mmsg(jcr->errmsg,
            T_("3606 JobId=%u prefers mounted drives, but drive %s has no "
-             "Volume.\n"),
+              "Volume.\n"),
            jcr->JobId, dev->print_name());
       Dmsg1(debuglevel, "Failed: %s", jcr->errmsg);
       QueueReserveMessage(jcr);
@@ -1052,7 +1052,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
       if (!ok) {
         Mmsg(jcr->errmsg,
              T_("3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive "
-               "%s.\n"),
+                "%s.\n"),
              jcr->JobId, rctx.VolumeName, dev->VolHdr.VolumeName,
              dev->print_name());
         QueueReserveMessage(jcr);

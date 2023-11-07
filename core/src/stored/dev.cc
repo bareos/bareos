@@ -207,7 +207,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
         || !dev->device_resource->unmount_command) {
       Jmsg0(jcr, M_ERROR_TERM, 0,
             T_("Mount and unmount commands must defined for a device which "
-              "requires mount.\n"));
+               "requires mount.\n"));
     }
   }
 

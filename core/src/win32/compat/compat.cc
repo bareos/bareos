@@ -1463,7 +1463,7 @@ static int stat2(const char* filename, struct stat* sb)
   } else {
     Emsg0(M_FATAL, 0,
           T_("p_GetFileAttributesW and p_GetFileAttributesA undefined. "
-            "probably missing OSDependentInit() call\n"));
+             "probably missing OSDependentInit() call\n"));
   }
 
   if (attr == (DWORD)-1) {
@@ -1531,7 +1531,7 @@ int stat(const char* filename, struct stat* sb)
   } else {
     Emsg0(M_FATAL, 0,
           T_("p_GetFileAttributesExW and p_GetFileAttributesExA undefined. "
-            "probably missing OSDependentInit() call\n"));
+             "probably missing OSDependentInit() call\n"));
     goto bail_out;
   }
 

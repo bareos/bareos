@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
   } else if (uid || gid) {
     Emsg2(M_ERROR_TERM, 0,
           T_("The commandline options indicate to run as specified user/group, "
-            "but program was not started with required root privileges.\n"));
+             "but program was not started with required root privileges.\n"));
   }
 
   my_config = InitDirConfig(configfile, M_CONFIG_ERROR);

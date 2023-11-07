@@ -818,7 +818,7 @@ static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
         if (strchr(lc->str, '\\')) {
           scan_err1(lc,
                     T_("Backslash found. Use forward slashes or quote the "
-                      "string.: %s\n"),
+                       "string.: %s\n"),
                     lc->str);
           return;
         }
@@ -867,7 +867,7 @@ static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
         if (strchr(lc->str, '\\')) {
           scan_err1(lc,
                     T_("Backslash found. Use forward slashes or quote the "
-                      "string.: %s\n"),
+                       "string.: %s\n"),
                     lc->str);
           return;
         }

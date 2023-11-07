@@ -371,7 +371,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
       if (!aix_query_acl_support(jcr, acl_data, ACL_AIXC, &type)) {
         Mmsg1(jcr->errmsg,
               T_("Trying to restore POSIX acl on file \"%s\" on filesystem "
-                "without AIXC acl support\n"),
+                 "without AIXC acl support\n"),
               acl_data->last_fname);
         goto bail_out;
       }
@@ -380,7 +380,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
       if (!aix_query_acl_support(jcr, acl_data, ACL_NFS4, &type)) {
         Mmsg1(jcr->errmsg,
               T_("Trying to restore NFSv4 acl on file \"%s\" on filesystem "
-                "without NFS4 acl support\n"),
+                 "without NFS4 acl support\n"),
               acl_data->last_fname);
         goto bail_out;
       }
@@ -772,7 +772,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
         acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
         Mmsg1(jcr->errmsg,
               T_("acl_delete_def_file error on file \"%s\": filesystem doesn't "
-                "support ACLs\n"),
+                 "support ACLs\n"),
               acl_data->last_fname);
         return bacl_exit_error;
 #      endif
@@ -834,10 +834,11 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
          * files on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets
          * set again when we change from one filesystem to another. */
         acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
-        Mmsg1(jcr->errmsg,
-              T_("acl_set_file error on file \"%s\": filesystem doesn't support "
-                "ACLs\n"),
-              acl_data->last_fname);
+        Mmsg1(
+            jcr->errmsg,
+            T_("acl_set_file error on file \"%s\": filesystem doesn't support "
+               "ACLs\n"),
+            acl_data->last_fname);
         Dmsg2(100,
               "acl_set_file error acl=%s file=%s filesystem doesn't support "
               "ACLs\n",
@@ -1095,7 +1096,7 @@ static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord* jcr,
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
       Mmsg2(jcr->errmsg,
             T_("Trying to restore acl on file \"%s\" on filesystem without %s "
-              "acl support\n"),
+               "acl support\n"),
             acl_data->last_fname, acl_type_name);
       return bacl_exit_error;
     default:
@@ -1385,7 +1386,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
           acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
           Mmsg1(jcr->errmsg,
                 T_("Trying to restore acl on file \"%s\" on filesystem without "
-                  "acl support\n"),
+                   "acl support\n"),
                 acl_data->last_fname);
           return bacl_exit_error;
         case -1: {
@@ -1413,7 +1414,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
                   == 0) {
                 Mmsg1(jcr->errmsg,
                       T_("Trying to restore POSIX acl on file \"%s\" on "
-                        "filesystem without aclent acl support\n"),
+                         "filesystem without aclent acl support\n"),
                       acl_data->last_fname);
                 return bacl_exit_error;
               }
@@ -1424,7 +1425,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
               if ((acl_enabled & _ACL_ACE_ENABLED) == 0) {
                 Mmsg1(jcr->errmsg,
                       T_("Trying to restore NFSv4 acl on file \"%s\" on "
-                        "filesystem without ace acl support\n"),
+                         "filesystem without ace acl support\n"),
                       acl_data->last_fname);
                 return bacl_exit_error;
               }
@@ -1878,7 +1879,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
   }
   Qmsg2(jcr, M_WARNING, 0,
         T_("Can't restore ACLs of %s - incompatible acl stream encountered - "
-          "%d\n"),
+           "%d\n"),
         acl_data->last_fname, stream);
   return bacl_exit_error;
 }

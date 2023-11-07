@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -179,16 +179,12 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       return n;                           /* yes, return it */
     }
 
-    /*
-     * If we get here, it must be a request.  Either
+    /* If we get here, it must be a request.  Either
      *  a message to dispatch, or a catalog request.
-     *  Try to fulfill it.
-     */
+     *  Try to fulfill it. */
     if (sscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) {
-      /*
-       * If the special flag allow_any_message is given ignore
-       * the error and just return it as normal data.
-       */
+      /* If the special flag allow_any_message is given ignore
+       * the error and just return it as normal data. */
       if (allow_any_message) {
         return n;
       } else {
@@ -203,12 +199,10 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       continue;
     }
 
-    /*
-     * Here we are expecting a message of the following format:
+    /* Here we are expecting a message of the following format:
      *   Jmsg Job=nnn type=nnn level=nnn Message-string
      * Note, level should really be mtime, but that changes
-     *   the protocol.
-     */
+     *   the protocol. */
     if (bs->msg[0] == 'J') { /* Job message */
       if (sscanf(bs->msg, "Jmsg Job=%127s type=%d level=%lld", Job, &type,
                  &mtime)
@@ -226,10 +220,8 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       DispatchMessage(jcr, type, mtime, msg);
       continue;
     }
-    /*
-     * Here we expact a CatReq message
-     *   CatReq Job=nn Catalog-Request-Message
-     */
+    /* Here we expact a CatReq message
+     *   CatReq Job=nn Catalog-Request-Message */
     if (bs->msg[0] == 'C') { /* Catalog request */
       Dmsg2(900, "Catalog req jcr 0x%x: %s", jcr, bs->msg);
       CatalogRequest(jcr, bs);

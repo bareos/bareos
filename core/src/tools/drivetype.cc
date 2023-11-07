@@ -35,16 +35,16 @@ static void usage(int exit_code)
 {
   fprintf(stderr,
           T_("\n"
-            "Usage: Drivetype [-v] path ...\n"
-            "\n"
-            "       Print the drive type a given file/directory is on.\n"
-            "       The following options are supported:\n"
-            "\n"
-            "       -l     print local fixed hard drive\n"
-            "       -a     display information on all drives\n"
-            "       -v     print both path and file system type.\n"
-            "       -?     print this message.\n"
-            "\n"));
+             "Usage: Drivetype [-v] path ...\n"
+             "\n"
+             "       Print the drive type a given file/directory is on.\n"
+             "       The following options are supported:\n"
+             "\n"
+             "       -l     print local fixed hard drive\n"
+             "       -a     display information on all drives\n"
+             "       -v     print both path and file system type.\n"
+             "       -?     print this message.\n"
+             "\n"));
 
   exit(exit_code);
 }

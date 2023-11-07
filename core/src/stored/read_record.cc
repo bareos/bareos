@@ -79,10 +79,11 @@ static void HandleSessionRecord(Device* dev,
       rtype = buf;
       break;
   }
-  Dmsg5(debuglevel,
-        T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
-        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-        rec->data_len);
+  Dmsg5(
+      debuglevel,
+      T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
+      rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+      rec->data_len);
 }
 
 static char* rec_state_bits_to_str(DeviceRecord* rec)

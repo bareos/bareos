@@ -73,7 +73,7 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
     if (!jcr->fd_impl->crypto.pki_session) {
       Jmsg(jcr, M_FATAL, 0,
            T_("Cannot create a new crypto session probably unsupported cipher "
-             "configured.\n"));
+              "configured.\n"));
       return false;
     }
 

@@ -86,7 +86,8 @@ bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord*)
   return true;
 
 bail_out:
-  Mmsg1(errmsg, T_("error starting batch mode: %s"), PQerrorMessage(db_handle_));
+  Mmsg1(errmsg, T_("error starting batch mode: %s"),
+        PQerrorMessage(db_handle_));
   status_ = 0;
   PQclear(result_);
   result_ = NULL;
@@ -115,13 +116,15 @@ bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord*,
   if (res <= 0) {
     Dmsg0(500, "we failed\n");
     status_ = 0;
-    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"),
+          PQerrorMessage(db_handle_));
     Dmsg1(500, "failure %s\n", errmsg);
   }
 
   pg_result = PQgetResult(db_handle_);
   if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
-    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"),
+          PQerrorMessage(db_handle_));
     status_ = 0;
   }
 
@@ -364,7 +367,8 @@ bool BareosDbPostgresql::SqlCopyEnd()
   } while (res == 0 && --count > 0);
 
   if (res <= 0) {
-    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"),
+          PQerrorMessage(db_handle_));
     return false;
   }
 
@@ -372,7 +376,8 @@ bool BareosDbPostgresql::SqlCopyEnd()
 
   result_ = PQgetResult(db_handle_);
   if (PQresultStatus(result_) != PGRES_COMMAND_OK) {
-    Mmsg1(errmsg, T_("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+    Mmsg1(errmsg, T_("error ending batch mode: %s"),
+          PQerrorMessage(db_handle_));
     return false;
   }
 

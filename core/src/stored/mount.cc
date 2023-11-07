@@ -243,7 +243,8 @@ mount_next_vol:
     if (TryAutolabel(false) == try_read_vol) {
       break; /* created a new volume label */
     }
-    Jmsg3(jcr, M_WARNING, 0, T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+    Jmsg3(jcr, M_WARNING, 0,
+          T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
           dev->print_name(), dcr->VolumeName, dev->bstrerror());
     Dmsg0(50, "SetUnload\n");
     dev->SetUnload(); /* force ask sysop */
@@ -465,8 +466,8 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
         dev->SetUnload();                /* unload this volume */
         Jmsg(jcr, M_WARNING, 0,
              T_("Director wanted Volume \"%s\".\n"
-               "    Current Volume \"%s\" not acceptable because:\n"
-               "    %s"),
+                "    Current Volume \"%s\" not acceptable because:\n"
+                "    %s"),
              dcrVolCatInfo.VolCatName, dev->VolHdr.VolumeName,
              vol_info_msg.c_str());
         ask = true;
@@ -636,8 +637,8 @@ bool DeviceControlRecord::is_eod_valid()
       } else if (dev->GetFile() > dev->VolCatInfo.VolCatFiles) {
         Jmsg(jcr, M_WARNING, 0,
              T_("For Volume \"%s\":\n"
-               "The number of files mismatch! Volume=%u Catalog=%u\n"
-               "Correcting Catalog\n"),
+                "The number of files mismatch! Volume=%u Catalog=%u\n"
+                "Correcting Catalog\n"),
              VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
         dev->VolCatInfo.VolCatFiles = dev->GetFile();
         dev->VolCatInfo.VolCatBlocks = dev->GetBlockNum();
@@ -649,7 +650,7 @@ bool DeviceControlRecord::is_eod_valid()
       } else {
         Jmsg(jcr, M_ERROR, 0,
              T_("Bareos cannot write on tape Volume \"%s\" because:\n"
-               "The number of files mismatch! Volume=%u Catalog=%u\n"),
+                "The number of files mismatch! Volume=%u Catalog=%u\n"),
              VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
         MarkVolumeInError();
         return false;
@@ -663,13 +664,13 @@ bool DeviceControlRecord::is_eod_valid()
       if (dev->VolCatInfo.VolCatBytes == (uint64_t)pos) {
         Jmsg(jcr, M_INFO, 0,
              T_("Ready to append to end of Volume \"%s\""
-               " size=%s\n"),
+                " size=%s\n"),
              VolumeName, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1));
       } else if ((uint64_t)pos > dev->VolCatInfo.VolCatBytes) {
         Jmsg(jcr, M_WARNING, 0,
              T_("For Volume \"%s\":\n"
-               "The sizes do not match! Volume=%s Catalog=%s\n"
-               "Correcting Catalog\n"),
+                "The sizes do not match! Volume=%s Catalog=%s\n"
+                "Correcting Catalog\n"),
              VolumeName, edit_uint64(pos, ed1),
              edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
         dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
@@ -682,7 +683,7 @@ bool DeviceControlRecord::is_eod_valid()
       } else {
         Mmsg(jcr->errmsg,
              T_("Bareos cannot write on disk Volume \"%s\" because: "
-               "The sizes do not match! Volume=%s Catalog=%s\n"),
+                "The sizes do not match! Volume=%s Catalog=%s\n"),
              VolumeName, edit_uint64(pos, ed1),
              edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
         Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
@@ -789,7 +790,7 @@ void DeviceControlRecord::mark_volume_not_inchanger()
 
   Jmsg(jcr, M_ERROR, 0,
        T_("Autochanger Volume \"%s\" not found in slot %d.\n"
-         "    Setting InChanger to zero in catalog.\n"),
+          "    Setting InChanger to zero in catalog.\n"),
        getVolCatName(), VolCatInfo.Slot);
   dev->VolCatInfo = VolCatInfo; /* structure assignment */
   VolCatInfo.InChanger = false;
@@ -858,7 +859,7 @@ bool DeviceControlRecord::IsTapePositionOk()
     if (file >= 0 && file != (int32_t)dev->GetFile()) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Invalid tape position on volume \"%s\""
-             " on device %s. Expected %d, got %d\n"),
+              " on device %s. Expected %d, got %d\n"),
            dev->VolHdr.VolumeName, dev->print_name(), dev->GetFile(), file);
       /* If the current file is greater than zero, it means we probably
        *  have some bad count of EOF marks, so mark tape in error.  Otherwise

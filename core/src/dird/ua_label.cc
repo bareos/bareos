@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -79,7 +79,7 @@ static inline bool update_database(UaContext* ua,
 
     if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
       ua->InfoMsg(T_("Catalog record for Volume \"%s\", Slot %hd successfully "
-                    "created.\n"),
+                     "created.\n"),
                   mr->VolumeName, mr->Slot);
 
       // Update number of volumes in pool
@@ -145,15 +145,13 @@ static inline bool native_send_label_request(UaContext* ua,
           pr->MinBlocksize, pr->MaxBlocksize);
   }
 
-  /*
-   * We use BgetDirmsg here and not BnetRecv because as part of
+  /* We use BgetDirmsg here and not BnetRecv because as part of
    * the label request the stored can request catalog information for
    * any plugin who listens to the bsdEventLabelVerified event.
    * As we don't want to loose any non protocol data e.g. errors
    * without a 3xxx prefix we set the allow_any_message of
    * BgetDirmsg to true and as such is behaves like a normal
-   * BnetRecv for any non protocol messages.
-   */
+   * BnetRecv for any non protocol messages. */
   while (BgetDirmsg(sd, true) >= 0) {
     ua->SendMsg("%s", sd->msg);
     if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
@@ -330,8 +328,8 @@ static void label_from_barcodes(UaContext* ua,
   // Display list of Volumes and ask if he really wants to proceed
   ua->SendMsg(
       T_("The following Volumes will be labeled:\n"
-        "Slot  Volume\n"
-        "==============\n"));
+         "Slot  Volume\n"
+         "==============\n"));
   foreach_dlist (vl, vol_list->contents) {
     if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       continue;
@@ -375,10 +373,8 @@ static void label_from_barcodes(UaContext* ua,
     mr.InChanger = mr.Slot > 0; /* if slot give assume in changer */
     SetStorageidInMr(store, &mr);
 
-    /*
-     * Deal with creating cleaning tape here.
-     * Normal tapes created in SendLabelRequest() below
-     */
+    /* Deal with creating cleaning tape here.
+     * Normal tapes created in SendLabelRequest() below */
     if (IsCleaningTape(ua, &mr, &pr)) {
       if (media_record_exists) { /* we update it */
         mr.VolBytes = 1;         /* any bytes to indicate it exists */
@@ -399,7 +395,7 @@ static void label_from_barcodes(UaContext* ua,
         SetStorageidInMr(store, &mr);
         if (ua->db->CreateMediaRecord(ua->jcr, &mr)) {
           ua->SendMsg(T_("Catalog record for cleaning tape \"%s\" successfully "
-                        "created.\n"),
+                         "created.\n"),
                       mr.VolumeName);
           pr.NumVols++; /* this is a bit suspect */
           if (!ua->db->UpdatePoolRecord(ua->jcr, &pr)) {
@@ -476,11 +472,9 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     case APT_NDMPV2:
     case APT_NDMPV3:
     case APT_NDMPV4:
-      /*
-       * See if the user selected a NDMP storage device but its
+      /* See if the user selected a NDMP storage device but its
        * handled by a native Bareos storage daemon e.g. we have
-       * a paired_storage pointer.
-       */
+       * a paired_storage pointer. */
       if (store.store->paired_storage) {
         store.store = store.store->paired_storage;
       }
@@ -515,7 +509,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     if (!bstrcmp(omr.VolStatus, "Purged")
         && !bstrcmp(omr.VolStatus, "Recycle")) {
       ua->ErrorMsg(T_("Volume \"%s\" has VolStatus %s. It must be Purged or "
-                     "Recycled before relabeling.\n"),
+                      "Recycled before relabeling.\n"),
                    omr.VolumeName, omr.VolStatus);
       return 1;
     }
@@ -605,26 +599,22 @@ static int do_label(UaContext* ua, const char*, bool relabel)
       sd->fsend("mount %s drive=%hd", dev_name, drive);
       UnbashSpaces(dev_name);
 
-      /*
-       * We use BgetDirmsg here and not BnetRecv because as part of
+      /* We use BgetDirmsg here and not BnetRecv because as part of
        * the mount request the stored can request catalog information for
        * any plugin who listens to the bsdEventLabelVerified event.
        * As we don't want to loose any non protocol data e.g. errors
        * without a 3xxx prefix we set the allow_any_message of
        * BgetDirmsg to true and as such is behaves like a normal
-       * BnetRecv for any non protocol messages.
-       */
+       * BnetRecv for any non protocol messages. */
       while (BgetDirmsg(sd, true) >= 0) {
         ua->SendMsg("%s", sd->msg);
 
-        /*
-         * Here we can get
+        /* Here we can get
          *  3001 OK mount. Device=xxx      or
          *  3001 Mounted Volume vvvv
          *  3002 Device "DVD-Writer" (/dev/hdc) is mounted.
          *  3906 is cannot mount non-tape
-         * So for those, no need to print a reminder
-         */
+         * So for those, no need to print a reminder */
         if (bstrncmp(sd->msg, "3001 ", 5) || bstrncmp(sd->msg, "3002 ", 5)
             || bstrncmp(sd->msg, "3906 ", 5)) {
           print_reminder = false;

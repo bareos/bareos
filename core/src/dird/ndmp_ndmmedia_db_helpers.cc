@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,14 +71,12 @@ void NdmmediaToBareosDbRecords(ndmmedia* media,
   jm->StartBlock = media->file_mark_offset;
   jm->JobBytes = media->n_bytes;
 
-  /*
-   * We usually get here with the Volstatus used as it is set
+  /* We usually get here with the Volstatus used as it is set
    * to be sure the medium will not be used by other jobs
    *
    * If eom was reached, mark medium Full,
    * else make it append so that the remaining space
-   * will be used
-   */
+   * will be used */
   if (media->media_eom) {
     bstrncpy(mr->VolStatus, NT_("Full"), sizeof(mr->VolStatus));
   } else {
@@ -181,7 +179,7 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
   if (!VolCount) {
     Jmsg(jcr, M_ERROR, 0,
          T_("Could not get Job Volume Parameters to "
-           "create ndmmedia list. ERR=%s\n"),
+            "create ndmmedia list. ERR=%s\n"),
          jcr->db->strerror());
     goto bail_out;
   }

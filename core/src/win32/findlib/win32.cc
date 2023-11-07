@@ -235,7 +235,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
   if (CountIncludeListFileEntries(ff) == 0) {
     Qmsg(jcr, M_INFO, 1,
          T_("Fileset has no \"File=\" directives, ignoring FilesNotToBackup "
-           "Registry key\n"));
+            "Registry key\n"));
     return true;
   }
 
@@ -251,7 +251,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
       if (BitIsSet(FO_NO_AUTOEXCL, fo->flags)) {
         Qmsg(jcr, M_INFO, 1,
              T_("Fileset has autoexclude disabled, ignoring FilesNotToBackup "
-               "Registry key\n"));
+                "Registry key\n"));
         return true;
       }
     }
@@ -397,9 +397,10 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
       }
     }
 
-    Qmsg(jcr, M_INFO, 0,
-         T_("Created %d wildcard excludes from FilesNotToBackup Registry key\n"),
-         wild_count);
+    Qmsg(
+        jcr, M_INFO, 0,
+        T_("Created %d wildcard excludes from FilesNotToBackup Registry key\n"),
+        wild_count);
     RegCloseKey(hKey);
     retval = true;
   } else {

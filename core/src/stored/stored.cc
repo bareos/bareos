@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
   } else if (uid || gid) {
     Emsg2(M_ERROR_TERM, 0,
           T_("The commandline options indicate to run as specified user/group, "
-            "but program was not started with required root privileges.\n"));
+             "but program was not started with required root privileges.\n"));
   }
 
   if (export_config_schema) {
@@ -321,7 +321,8 @@ static int CheckResources()
   const std::string& configfile = my_config->get_base_config_path();
 
   if (my_config->GetNextRes(R_STORAGE, (BareosResource*)me) != nullptr) {
-    Jmsg1(nullptr, M_ERROR, 0, T_("Only one Storage resource permitted in %s\n"),
+    Jmsg1(nullptr, M_ERROR, 0,
+          T_("Only one Storage resource permitted in %s\n"),
           configfile.c_str());
     OK = false;
   }
@@ -372,7 +373,7 @@ static int CheckResources()
         && BitIsSet(CAP_LABEL, device_resource->cap_bits)) {
       Jmsg(nullptr, M_FATAL, 0,
            T_("LabelMedia enabled is incompatible with tape crypto on Device "
-             "\"%s\" in %s.\n"),
+              "\"%s\" in %s.\n"),
            device_resource->resource_name_, configfile.c_str());
       OK = false;
     }

@@ -361,7 +361,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
       && find_read_volume(VolumeName)) {
     Mmsg(dcr->jcr->errmsg,
          T_("Could not reserve volume \"%s\" for append, because it is read by "
-           "another Job.\n"),
+            "another Job.\n"),
          dcr->dev->VolHdr.VolumeName);
     return NULL;
   }

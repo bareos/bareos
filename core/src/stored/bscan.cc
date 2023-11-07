@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
     if (!director) {
       Emsg2(M_ERROR_TERM, 0,
             T_("No Director resource named %s defined in %s. Cannot "
-              "continue.\n"),
+               "continue.\n"),
             DirectorName.c_str(), configfile);
     }
   }
@@ -371,7 +371,8 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
     mjcr->sd_impl->read_dcr->VolLastIndex = dcr->VolLastIndex;
     if (mjcr->sd_impl->insert_jobmedia_records) {
       if (!CreateJobmediaRecord(db, mjcr)) {
-        Pmsg2(000, T_("Could not create JobMedia record for Volume=%s Job=%s\n"),
+        Pmsg2(000,
+              T_("Could not create JobMedia record for Volume=%s Job=%s\n"),
               dev->getVolCatName(), mjcr->Job);
       }
     }
@@ -575,14 +576,14 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         if (bsr && rec->match_stat < 1) {
           // Skipping record, because does not match BootStrapRecord filter
           Dmsg0(200, T_("SOS_LABEL skipped. Record does not match "
-                       "BootStrapRecord filter.\n"));
+                        "BootStrapRecord filter.\n"));
         } else {
           mr.VolJobs++;
           num_jobs++;
           if (ignored_msgs > 0) {
             Pmsg1(000,
                   T_("%d \"errors\" ignored before first Start of Session "
-                    "record.\n"),
+                     "record.\n"),
                   ignored_msgs);
             ignored_msgs = 0;
           }
@@ -639,16 +640,16 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           }
 
           if (rec->VolSessionId != jr.VolSessionId) {
-            Pmsg3(
-                000,
-                T_("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%d Vol=%d\n"),
-                jr.JobId, jr.VolSessionId, rec->VolSessionId);
+            Pmsg3(000,
+                  T_("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%d "
+                     "Vol=%d\n"),
+                  jr.JobId, jr.VolSessionId, rec->VolSessionId);
             return true; /* ignore error */
           }
           if (rec->VolSessionTime != jr.VolSessionTime) {
             Pmsg3(000,
                   T_("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%d "
-                    "Vol=%d\n"),
+                     "Vol=%d\n"),
                   jr.JobId, jr.VolSessionTime, rec->VolSessionTime);
             return true; /* ignore error */
           }
@@ -665,7 +666,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         if (bsr && rec->match_stat < 1) {
           // Skipping record, because does not match BootStrapRecord filter
           Dmsg0(200, T_("EOS_LABEL skipped. Record does not match "
-                       "BootStrapRecord filter.\n"));
+                        "BootStrapRecord filter.\n"));
         } else {
           UnserSessionLabel(&elabel, rec);
 
@@ -1273,10 +1274,10 @@ static bool UpdateJobRecord(BareosDb* db,
   }
 
   if (verbose) {
-    Pmsg3(
-        000,
-        T_("Updated Job termination record for JobId=%u Level=%s TermStat=%c\n"),
-        jr->JobId, job_level_to_str(mjcr->getJobLevel()), jr->JobStatus);
+    Pmsg3(000,
+          T_("Updated Job termination record for JobId=%u Level=%s "
+             "TermStat=%c\n"),
+          jr->JobId, job_level_to_str(mjcr->getJobLevel()), jr->JobStatus);
   }
 
   if (verbose > 1) {
@@ -1301,27 +1302,28 @@ static bool UpdateJobRecord(BareosDb* db,
         break;
       default:
         TermMsg = term_code;
-        sprintf(term_code, T_("Job Termination code: %d"), mjcr->getJobStatus());
+        sprintf(term_code, T_("Job Termination code: %d"),
+                mjcr->getJobStatus());
         break;
     }
     bstrftime(sdt, sizeof(sdt), mjcr->start_time);
     bstrftime(edt, sizeof(edt), mjcr->end_time);
     Pmsg15(000,
            T_("%s\n"
-             "JobId:                  %d\n"
-             "Job:                    %s\n"
-             "FileSet:                %s\n"
-             "Backup Level:           %s\n"
-             "Client:                 %s\n"
-             "Start time:             %s\n"
-             "End time:               %s\n"
-             "Files Written:          %s\n"
-             "Bytes Written:          %s\n"
-             "Volume Session Id:      %d\n"
-             "Volume Session Time:    %d\n"
-             "Last Volume Bytes:      %s\n"
-             "Bareos binary info:     %s\n"
-             "Termination:            %s\n\n"),
+              "JobId:                  %d\n"
+              "Job:                    %s\n"
+              "FileSet:                %s\n"
+              "Backup Level:           %s\n"
+              "Client:                 %s\n"
+              "Start time:             %s\n"
+              "End time:               %s\n"
+              "Files Written:          %s\n"
+              "Bytes Written:          %s\n"
+              "Volume Session Id:      %d\n"
+              "Volume Session Time:    %d\n"
+              "Last Volume Bytes:      %s\n"
+              "Bareos binary info:     %s\n"
+              "Termination:            %s\n\n"),
            edt, mjcr->JobId, mjcr->Job, mjcr->sd_impl->fileset_name,
            job_level_to_str(mjcr->getJobLevel()), mjcr->client_name, sdt, edt,
            edit_uint64_with_commas(mjcr->JobFiles, ec1),

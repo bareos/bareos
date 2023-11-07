@@ -55,11 +55,11 @@
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
  */
-#define ASSERT(x)                                    \
-  if (!(x)) {                                        \
+#define ASSERT(x)                                     \
+  if (!(x)) {                                         \
     Emsg1(M_ERROR, 0, T_("Failed ASSERT: %s\n"), #x); \
     Pmsg1(000, T_("Failed ASSERT: %s\n"), #x);        \
-    abort();                                         \
+    abort();                                          \
   }
 
 // Allow printing of NULL pointers

@@ -241,9 +241,9 @@ void* HandleDirectorConnection(BareosSocket* dir)
   bool found, quit;
 
   if (AreMaxConcurrentJobsExceeded()) {
-    Emsg0(
-        M_ERROR, 0,
-        T_("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+    Emsg0(M_ERROR, 0,
+          T_("Number of Jobs exhausted, please increase "
+             "MaximumConcurrentJobs\n"));
     dir->signal(BNET_TERMINATE);
     return NULL;
   }
@@ -749,7 +749,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
     case VOL_OK:
       if (!relabel) {
         dir->fsend(T_("3920 Cannot label Volume because it is already labeled: "
-                     "\"%s\"\n"),
+                      "\"%s\"\n"),
                    dev->VolHdr.VolumeName);
         goto cleanup;
       }
@@ -785,7 +785,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
       break;
     default:
       dir->fsend(T_("3913 Cannot label Volume. "
-                   "Unknown status %d from ReadVolumeLabel()\n"),
+                    "Unknown status %d from ReadVolumeLabel()\n"),
                  label_status);
       break;
   }
@@ -856,8 +856,8 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
       if (!device_resource->dev) {
         Jmsg(jcr, M_WARNING, 0,
              T_("\n"
-               "     Device \"%s\" requested by DIR could not be opened or "
-               "does not exist.\n"),
+                "     Device \"%s\" requested by DIR could not be opened or "
+                "does not exist.\n"),
              devname.c_str());
         continue;
       }
@@ -883,8 +883,8 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                   devname.c_str());
             Jmsg(jcr, M_WARNING, 0,
                  T_("\n"
-                   "     Device \"%s\" in changer \"%s\" requested by DIR "
-                   "could not be opened or does not exist.\n"),
+                    "     Device \"%s\" in changer \"%s\" requested by DIR "
+                    "could not be opened or does not exist.\n"),
                  device_resource->resource_name_, devname.c_str());
             continue;
           }
@@ -901,8 +901,8 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
           if (changer->device_resources->current()
               == changer->device_resources->size()) {
             Jmsg(jcr, M_ERROR, 0,
-                 T_("Drive number \"%d\" for device \"%s\" not found.\n"), drive,
-                 devname.c_str());
+                 T_("Drive number \"%d\" for device \"%s\" not found.\n"),
+                 drive, devname.c_str());
           }
         }
         break; /* we found it but could not open a device */
@@ -996,8 +996,8 @@ static bool MountCmd(JobControlRecord* jcr)
           } else {
             dir->fsend(
                 T_("3905 Device %s open but no Bareos volume is mounted.\n"
-                  "If this is not a blank tape, try unmounting and remounting "
-                  "the Volume.\n"),
+                   "If this is not a blank tape, try unmounting and remounting "
+                   "the Volume.\n"),
                 dev->print_name());
           }
           pthread_cond_broadcast(&dev->wait_next_vol);
@@ -1029,8 +1029,8 @@ static bool MountCmd(JobControlRecord* jcr)
             } else {
               dir->fsend(
                   T_("3905 Device %s open but no Bareos volume is mounted.\n"
-                    "If this is not a blank tape, try unmounting and "
-                    "remounting the Volume.\n"),
+                     "If this is not a blank tape, try unmounting and "
+                     "remounting the Volume.\n"),
                   dev->print_name());
             }
           } else if (dev->IsTape()) {
@@ -1047,8 +1047,8 @@ static bool MountCmd(JobControlRecord* jcr)
             } else {
               dir->fsend(
                   T_("3905 Device %s open but no Bareos volume is mounted.\n"
-                    "If this is not a blank tape, try unmounting and "
-                    "remounting the Volume.\n"),
+                     "If this is not a blank tape, try unmounting and "
+                     "remounting the Volume.\n"),
                   dev->print_name());
             }
             if (dev->IsOpen() && !dev->HasCap(CAP_ALWAYSOPEN)) {
@@ -1112,7 +1112,8 @@ static bool UnmountCmd(JobControlRecord* jcr)
         if (!dev->IsBusy()) { UnloadAutochanger(dcr, kInvalidSlotNumber); }
         if (dev->IsUnmountable()) {
           if (dev->unmount(dcr, 0)) {
-            dir->fsend(T_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
+            dir->fsend(T_("3002 Device \"%s\" unmounted.\n"),
+                       dev->print_name());
           } else {
             dir->fsend(T_("3907 %s"), dev->bstrerror());
           }
@@ -1507,7 +1508,7 @@ static void SendDirBusyMessage(BareosSocket* dir, Device* dev)
         break;
       case BST_UNMOUNTED_WAITING_FOR_SYSOP:
         dir->fsend(T_("3932 Device \"%s\" is BLOCKED. user unmounted during "
-                     "wait for media/mount.\n"),
+                      "wait for media/mount.\n"),
                    dev->print_name());
         break;
       case BST_WAITING_FOR_SYSOP:

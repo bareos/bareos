@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -161,7 +161,8 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
        = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void*)addrs))
       != 0) {
     BErrNo be;
-    Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"), be.bstrerror(status));
+    Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"),
+          be.bstrerror(status));
   }
 
   int tries = 200; /* consider bind() tries in BnetThreadServerTcp */

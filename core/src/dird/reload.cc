@@ -45,7 +45,7 @@ bool CheckResources()
   if (!me) {
     Jmsg(nullptr, M_FATAL, 0,
          T_("No Director resource defined in %s\n"
-           "Without that I don't know who I am :-(\n"),
+            "Without that I don't know who I am :-(\n"),
          configfile.c_str());
     return false;
   } else {
@@ -101,7 +101,7 @@ bool CheckResources()
     if (job->MaxFullConsolidations && job->JobType != JT_CONSOLIDATE) {
       Jmsg(nullptr, M_FATAL, 0,
            T_("MaxFullConsolidations configured in job %s which is not of job "
-             "type \"consolidate\" in file %s\n"),
+              "type \"consolidate\" in file %s\n"),
            job->resource_name_, configfile.c_str());
       return false;
     }
@@ -112,7 +112,7 @@ bool CheckResources()
             || job->AlwaysIncrementalMaxFullAge)) {
       Jmsg(nullptr, M_FATAL, 0,
            T_("AlwaysIncremental configured in job %s which is not of job type "
-             "\"backup\" in file %s\n"),
+              "\"backup\" in file %s\n"),
            job->resource_name_, configfile.c_str());
       return false;
     }
@@ -160,7 +160,7 @@ bool CheckResources()
           nstore->collectstats = false;
           Dmsg1(200,
                 T_("Disabling collectstats for storage \"%s\""
-                  " as other storage already collects from this SD.\n"),
+                   " as other storage already collects from this SD.\n"),
                 nstore->resource_name_);
         }
       }
@@ -212,7 +212,7 @@ bool InitializeSqlPooling(void)
             catalog->pooling_idle_timeout, catalog->pooling_validate_timeout)) {
       Jmsg(nullptr, M_FATAL, 0,
            T_("Could not setup sql pooling for Catalog \"%s\", database "
-             "\"%s\".\n"),
+              "\"%s\".\n"),
            catalog->resource_name_, catalog->db_name);
       retval = false;
       goto bail_out;

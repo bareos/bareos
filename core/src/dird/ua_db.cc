@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -105,8 +105,7 @@ bool OpenDb(UaContext* ua, bool use_private)
 {
   bool mult_db_conn;
 
-  /*
-   * See if we need to do any work at all.
+  /* See if we need to do any work at all.
    * Point the current used db e.g. ua->db to the correct database connection.
    */
   if (use_private) {
@@ -147,10 +146,8 @@ bool OpenDb(UaContext* ua, bool use_private)
   }
   ua->jcr->db = ua->db;
 
-  /*
-   * Save the new database connection under the right label e.g. shared or
-   * private.
-   */
+  /* Save the new database connection under the right label e.g. shared or
+   * private. */
   if (use_private) {
     ua->private_db = ua->db;
   } else {
@@ -255,7 +252,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
     } else {
       Jmsg(jcr, M_WARNING, 0,
            T_("Can't set %s RecyclePool to %s, %s is not in database.\n"
-             "Try to update it with 'update pool=%s'\n"),
+              "Try to update it with 'update pool=%s'\n"),
            pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
 
       ret = false;
@@ -273,7 +270,7 @@ bool SetPooldbrReferences(JobControlRecord* jcr,
     } else {
       Jmsg(jcr, M_WARNING, 0,
            T_("Can't set %s ScratchPool to %s, %s is not in database.\n"
-             "Try to update it with 'update pool=%s'\n"),
+              "Try to update it with 'update pool=%s'\n"),
            pool->resource_name_, rpool.Name, rpool.Name, pool->resource_name_);
       ret = false;
     }

@@ -62,23 +62,23 @@ static void usage()
 {
   fprintf(stderr,
           T_("\n"
-            "Usage: btestls [-d debug_level] [-] [pattern1 ...]\n"
-            "       -a          print extended attributes (Win32 debug)\n"
-            "       -d <nn>     set debug level to <nn>\n"
-            "       -dt         print timestamp in debug output\n"
-            "       -e          specify file of exclude patterns\n"
-            "       -i          specify file of include patterns\n"
-            "       -q          quiet, don't print filenames (debug)\n"
-            "       -           read pattern(s) from stdin\n"
-            "       -?          print this message.\n"
-            "\n"
-            "Patterns are file inclusion -- normally directories.\n"
-            "Debug level >= 1 prints each file found.\n"
-            "Debug level >= 10 prints path/file for catalog.\n"
-            "Errors always printed.\n"
-            "Files/paths truncated is number with len > 255.\n"
-            "Truncation is only in catalog.\n"
-            "\n"));
+             "Usage: btestls [-d debug_level] [-] [pattern1 ...]\n"
+             "       -a          print extended attributes (Win32 debug)\n"
+             "       -d <nn>     set debug level to <nn>\n"
+             "       -dt         print timestamp in debug output\n"
+             "       -e          specify file of exclude patterns\n"
+             "       -i          specify file of include patterns\n"
+             "       -q          quiet, don't print filenames (debug)\n"
+             "       -           read pattern(s) from stdin\n"
+             "       -?          print this message.\n"
+             "\n"
+             "Patterns are file inclusion -- normally directories.\n"
+             "Debug level >= 1 prints each file found.\n"
+             "Debug level >= 10 prints path/file for catalog.\n"
+             "Errors always printed.\n"
+             "Files/paths truncated is number with len > 255.\n"
+             "Truncation is only in catalog.\n"
+             "\n"));
 
   exit(BEXIT_FAILURE);
 }
@@ -228,12 +228,13 @@ static int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
       printf(T_("Err: Attempt to backup archive. Not saved. %s\n"), ff->fname);
       break;
     case FT_NORECURSE:
-      printf(T_("Recursion turned off. Directory not entered. %s\n"), ff->fname);
+      printf(T_("Recursion turned off. Directory not entered. %s\n"),
+             ff->fname);
       break;
     case FT_NOFSCHG:
-      printf(
-          T_("Skip: File system change prohibited. Directory not entered. %s\n"),
-          ff->fname);
+      printf(T_("Skip: File system change prohibited. Directory not entered. "
+                "%s\n"),
+             ff->fname);
       break;
     case FT_NOOPEN:
       printf(T_("Err: Could not open directory %s: %s\n"), ff->fname,

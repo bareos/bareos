@@ -187,7 +187,7 @@ bool TlsOpenSslPrivate::init()
   } else if (verify_peer_) {
     /* At least one CA is required for peer verification */
     Dmsg0(100, T_("Either a certificate file or a directory must be"
-                 " specified as a verification store\n"));
+                  " specified as a verification store\n"));
   }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) \
@@ -287,7 +287,7 @@ int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok,
 
     Jmsg5(NULL, M_ERROR, 0,
           T_("Error with certificate at depth: %d, issuer = %s,"
-            " subject = %s, ERR=%d:%s\n"),
+             " subject = %s, ERR=%d:%s\n"),
           depth, issuer, subject, err, X509_verify_cert_error_string(err));
   }
 

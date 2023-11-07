@@ -1196,7 +1196,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
       if (!res->IsMemberPresent(items[i].name)) {
         Jmsg(NULL, M_ERROR, 0,
              T_("\"%s\" directive in %s \"%s\" resource is required, but not "
-               "found.\n"),
+                "found.\n"),
              items[i].name, my_config->ResToStr(res_type), res->resource_name_);
         return false;
       }
@@ -1228,7 +1228,7 @@ bool JobResource::Validate()
       if (!client) {
         Jmsg(NULL, M_ERROR, 0,
              T_("\"client\" directive in Job \"%s\" resource is required, but "
-               "not found.\n"),
+                "not found.\n"),
              resource_name_);
         return false;
       }
@@ -1236,7 +1236,7 @@ bool JobResource::Validate()
       if (!fileset) {
         Jmsg(NULL, M_ERROR, 0,
              T_("\"fileset\" directive in Job \"%s\" resource is required, but "
-               "not found.\n"),
+                "not found.\n"),
              resource_name_);
         return false;
       }
@@ -1975,7 +1975,7 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
               default:
                 Emsg1(M_ERROR, 0,
                       T_("Unknown compression include/exclude option: "
-                        "%c\n"),
+                         "%c\n"),
                       *p);
                 break;
             }
@@ -2394,7 +2394,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     default:
-      Emsg1(M_ERROR, 0, T_("Unknown resource type %d in SaveResource.\n"), type);
+      Emsg1(M_ERROR, 0, T_("Unknown resource type %d in SaveResource.\n"),
+            type);
       return false;
   }
 
@@ -2574,7 +2575,8 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Migration Job Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Migration Job Type keyword, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
@@ -2642,7 +2644,8 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Restore replacement option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
@@ -2665,7 +2668,8 @@ static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
@@ -2871,7 +2875,7 @@ static void StoreRunscriptTarget(LEX* lc, ResourceItem* item, int, int pass)
       if (!(res = my_config->GetResWithName(R_CLIENT, lc->str))) {
         scan_err3(lc,
                   T_("Could not find config Resource %s referenced on line %d "
-                    ": %s\n"),
+                     ": %s\n"),
                   lc->str, lc->line_no, lc->line);
       }
 

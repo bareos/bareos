@@ -124,7 +124,8 @@ static void GetResponse(const std::string& mailhost)
     }
     Dmsg2(10, "%s --> %s\n", mailhost.c_str(), buf);
     if (!isdigit((int)buf[0]) || buf[0] > '3') {
-      Pmsg2(0, T_("Fatal malformed reply from %s: %s\n"), mailhost.c_str(), buf);
+      Pmsg2(0, T_("Fatal malformed reply from %s: %s\n"), mailhost.c_str(),
+            buf);
       exit(BEXIT_FAILURE);
     }
     if (buf[3] != '-') { break; }

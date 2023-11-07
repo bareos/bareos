@@ -257,7 +257,8 @@ int main(int argc, char* argv[])
           prog_name_msg);
   }
   if (win32_data_msg) {
-    Pmsg1(000, T_("%d Win32 data or Win32 gzip data stream records. Ignored.\n"),
+    Pmsg1(000,
+          T_("%d Win32 data or Win32 gzip data stream records. Ignored.\n"),
           win32_data_msg);
   }
   TermIncludeExcludeFiles(ff);

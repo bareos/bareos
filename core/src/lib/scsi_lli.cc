@@ -90,8 +90,8 @@ static inline bool do_scsi_cmd_page(int fd,
   if (rc < 0) {
     BErrNo be;
 
-    Emsg2(M_ERROR, 0, T_("Unable to perform SG_IO ioctl on fd %d: ERR=%s\n"), fd,
-          be.bstrerror());
+    Emsg2(M_ERROR, 0, T_("Unable to perform SG_IO ioctl on fd %d: ERR=%s\n"),
+          fd, be.bstrerror());
     goto bail_out;
   }
 

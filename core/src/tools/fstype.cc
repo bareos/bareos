@@ -36,14 +36,14 @@ static void usage(int exit_status)
 {
   fprintf(stderr,
           T_("\n"
-            "Usage: fstype [-v] path ...\n"
-            "\n"
-            "       Print the file system type a given file/directory is on.\n"
-            "       The following options are supported:\n"
-            "\n"
-            "       -v     print both path and file system type.\n"
-            "       -?     print this message.\n"
-            "\n"));
+             "Usage: fstype [-v] path ...\n"
+             "\n"
+             "       Print the file system type a given file/directory is on.\n"
+             "       The following options are supported:\n"
+             "\n"
+             "       -v     print both path and file system type.\n"
+             "       -?     print this message.\n"
+             "\n"));
 
   exit(exit_status);
 }

@@ -139,7 +139,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
              job->resource_name_, sdt);
         Dmsg4(10,
               T_("%s: considering jobs with ClientId %d and FilesetId %d older "
-                "than %s for consolidation.\n"),
+                 "than %s for consolidation.\n"),
               job->resource_name_, jcr->dir_impl->jr.ClientId,
               jcr->dir_impl->jr.FileSetId, sdt);
       }
@@ -165,7 +165,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
       if (incrementals_total < 1) {
         Jmsg(jcr, M_INFO, 0,
              T_("%s: less than two jobs to consolidate found, doing "
-               "nothing.\n"),
+                "nothing.\n"),
              job->resource_name_);
         continue;
       }
@@ -197,7 +197,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
       if (incrementals_to_consolidate < 1) {
         Jmsg(jcr, M_INFO, 0,
              T_("%s: After limited query: less incrementals than required, "
-               "not consolidating\n"),
+                "not consolidating\n"),
              job->resource_name_);
         continue;
       }
@@ -211,7 +211,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         if (incrementals_to_consolidate < 2) {
           Jmsg(jcr, M_INFO, 0,
                T_("%s: less incrementals than required to consolidate without "
-                 "full, not consolidating\n"),
+                  "full, not consolidating\n"),
                job->resource_name_);
           continue;
         }
@@ -243,7 +243,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         if (starttime > oldest_allowed_starttime) {
           Jmsg(jcr, M_INFO, 0,
                T_("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
-                 "first jobid %s because of age\n"),
+                  "first jobid %s because of age\n"),
                oldestjobid.c_str());
 
           jobids_ctx.PopFront();
@@ -252,7 +252,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
                    && fullconsolidations_started >= max_full_consolidations) {
           Jmsg(jcr, M_INFO, 0,
                T_("%d AlwaysIncrementalFullConsolidations reached -> skipping "
-                 "first jobid %s independent of age\n"),
+                  "first jobid %s independent of age\n"),
                max_full_consolidations, oldestjobid.c_str());
 
           jobids_ctx.PopFront();
@@ -260,7 +260,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         } else {
           Jmsg(jcr, M_INFO, 0,
                T_("Full is older than AlwaysIncrementalMaxFullAge -> also "
-                 "consolidating Full jobid %s\n"),
+                  "consolidating Full jobid %s\n"),
                oldestjobid.c_str());
           fullconsolidations_started++;
         }
@@ -356,14 +356,14 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 
   Jmsg(jcr, msg_type, 0,
        T_("BAREOS %s (%s): %s\n"
-         "  JobId:                  %d\n"
-         "  Job:                    %s\n"
-         "  Scheduled time:         %s\n"
-         "  Start time:             %s\n"
-         "  End time:               %s\n"
-         "  Bareos binary info:     %s\n"
-         "  Job triggered by:       %s\n"
-         "  Termination:            %s\n\n"),
+          "  JobId:                  %d\n"
+          "  Job:                    %s\n"
+          "  Scheduled time:         %s\n"
+          "  Start time:             %s\n"
+          "  End time:               %s\n"
+          "  Bareos binary info:     %s\n"
+          "  Job triggered by:       %s\n"
+          "  Termination:            %s\n\n"),
        kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
        jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt, sdt, edt,
        kBareosVersionStrings.JoblogMessage,

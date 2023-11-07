@@ -135,10 +135,10 @@ bool UserSelectFilesFromTree(TreeContext* tree)
 
   ua->SendMsg(
       T_("\nYou are now entering file selection mode where you add (mark) and\n"
-        "remove (unmark) files to be restored. No files are initially added, "
-        "unless\n"
-        "you used the \"all\" keyword on the command line.\n"
-        "Enter \"done\" to leave this mode.\n\n"));
+         "remove (unmark) files to be restored. No files are initially added, "
+         "unless\n"
+         "you used the \"all\" keyword on the command line.\n"
+         "Enter \"done\" to leave this mode.\n\n"));
   user->signal(BNET_START_RTREE);
 
   // Enter interactive command handler allowing selection of individual files.
@@ -266,7 +266,7 @@ int InsertTreeHandler(void* ctx, int, char** row)
       } else {
         tree->ua->WarningMsg(
             T_("Something is wrong with the Delta sequence of %s, "
-              "skipping new parts. Current sequence is %d\n"),
+               "skipping new parts. Current sequence is %d\n"),
             row[1], node->delta_seq);
 
         Dmsg3(0,
@@ -912,8 +912,8 @@ static int Estimatecmd(UaContext* ua, TreeContext* tree)
       }
     }
   }
-  ua->SendMsg(T_("%d total files; %d marked to be restored; %s bytes.\n"), total,
-              num_extract, edit_uint64_with_commas(total_bytes, ec1));
+  ua->SendMsg(T_("%d total files; %d marked to be restored; %s bytes.\n"),
+              total, num_extract, edit_uint64_with_commas(total_bytes, ec1));
   return 1;
 }
 
@@ -1063,7 +1063,8 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
     ua->SendMsg(T_("1 file unmarked.\n"));
   } else {
     char ed1[50];
-    ua->SendMsg(T_("%s files unmarked.\n"), edit_uint64_with_commas(count, ed1));
+    ua->SendMsg(T_("%s files unmarked.\n"),
+                edit_uint64_with_commas(count, ed1));
   }
 
   // Restore the CWD when we changed it.

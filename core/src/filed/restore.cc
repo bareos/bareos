@@ -136,7 +136,7 @@ static int BcloseChksize(JobControlRecord* jcr,
   if (fsize > 0 && fsize != osize) {
     Qmsg3(jcr, M_WARNING, 0,
           T_("Size of data or stream of %s not correct. Original %s, restored "
-            "%s.\n"),
+             "%s.\n"),
           jcr->fd_impl->last_fname, edit_uint64(osize, ec1),
           edit_uint64(fsize, ec2));
     return -1;
@@ -504,7 +504,8 @@ void DoRestore(JobControlRecord* jcr)
 
     // Now we expect the Stream Data
     if (BgetMsg(sd) < 0) {
-      Jmsg1(jcr, M_FATAL, 0, T_("Data record error. ERR=%s\n"), sd->bstrerror());
+      Jmsg1(jcr, M_FATAL, 0, T_("Data record error. ERR=%s\n"),
+            sd->bstrerror());
       goto bail_out;
     }
     if (rctx.size != (uint32_t)sd->message_length) {
@@ -644,7 +645,7 @@ void DoRestore(JobControlRecord* jcr)
           if (!jcr->fd_impl->crypto.pki_recipients) {
             Jmsg(jcr, M_ERROR, 0,
                  T_("No private decryption keys have been defined to decrypt "
-                   "encrypted backup data.\n"));
+                    "encrypted backup data.\n"));
             rctx.extract = false;
             bclose(&rctx.bfd);
             break;
@@ -671,8 +672,9 @@ void DoRestore(JobControlRecord* jcr)
               // Success
               break;
             case CRYPTO_ERROR_NORECIPIENT:
-              Jmsg(jcr, M_ERROR, 0,
-                   T_("Missing private key required to decrypt encrypted backup "
+              Jmsg(
+                  jcr, M_ERROR, 0,
+                  T_("Missing private key required to decrypt encrypted backup "
                      "data.\n"));
               break;
             case CRYPTO_ERROR_DECRYPTION:
@@ -680,10 +682,11 @@ void DoRestore(JobControlRecord* jcr)
               break;
             default:
               // Shouldn't happen
-              Jmsg1(jcr, M_ERROR, 0,
-                    T_("An error occurred while decoding encrypted session data "
-                      "stream: %s\n"),
-                    crypto_strerror(cryptoerr));
+              Jmsg1(
+                  jcr, M_ERROR, 0,
+                  T_("An error occurred while decoding encrypted session data "
+                     "stream: %s\n"),
+                  crypto_strerror(cryptoerr));
               break;
           }
 
@@ -1048,11 +1051,12 @@ ok_out:
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
          T_("%d non-supported data streams and %d non-supported attrib streams "
-           "ignored.\n"),
+            "ignored.\n"),
          non_support_data, non_support_attr);
   }
   if (non_support_rsrc) {
-    Jmsg(jcr, M_INFO, 0, T_("%d non-supported resource fork streams ignored.\n"),
+    Jmsg(jcr, M_INFO, 0,
+         T_("%d non-supported resource fork streams ignored.\n"),
          non_support_rsrc);
   }
   if (non_support_finfo) {

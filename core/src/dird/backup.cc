@@ -139,10 +139,11 @@ static inline bool ValidateStorage(JobControlRecord* jcr)
       case APT_NATIVE:
         continue;
       default:
-        Jmsg(jcr, M_FATAL, 0,
-             T_("Storage %s has illegal backup protocol %s for Native backup\n"),
-             store->resource_name_,
-             AuthenticationProtocolTypeToString(store->Protocol));
+        Jmsg(
+            jcr, M_FATAL, 0,
+            T_("Storage %s has illegal backup protocol %s for Native backup\n"),
+            store->resource_name_,
+            AuthenticationProtocolTypeToString(store->Protocol));
         return false;
     }
   }
@@ -520,7 +521,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
   if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Client \"%s\" doesn't support passive client mode. "
-           "Please upgrade your client or disable compat mode.\n"),
+            "Please upgrade your client or disable compat mode.\n"),
          jcr->dir_impl->res.client->resource_name_);
     CloseFdConnection(jcr);
     TerminateBackupWithError(jcr);
@@ -829,7 +830,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
       if (VolCount == 0) {
         Jmsg(jcr, M_ERROR, 0,
              T_("Could not get Job Volume Parameters to "
-               "update Bootstrap file. ERR=%s\n"),
+                "update Bootstrap file. ERR=%s\n"),
              jcr->db->strerror());
         if (jcr->dir_impl->SDJobFiles != 0) {
           jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -860,7 +861,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
           BErrNo err;
           Jmsg(jcr, M_ERROR, 0,
                T_("Error running program when updating bootstrap file: "
-                 "%s: ERR=%s\n"),
+                  "%s: ERR=%s\n"),
                fname, err.bstrerror(status));
           jcr->setJobStatus(JS_ErrorTerminated);
         }
@@ -871,7 +872,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
       BErrNo be;
       Jmsg(jcr, M_ERROR, 0,
            T_("Could not open WriteBootstrap file:\n"
-             "%s: ERR=%s\n"),
+              "%s: ERR=%s\n"),
            fname, be.bstrerror());
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     }

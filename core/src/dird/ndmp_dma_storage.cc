@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -346,11 +346,9 @@ static bool GetRobotElementStatus(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * Set the remote robotics name to use.
+  /* Set the remote robotics name to use.
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
-   * format of a device in the form NAME[,[CNUM,]SID[,LUN]
-   */
+   * format of a device in the form NAME[,[CNUM,]SID[,LUN] */
   ndmp_job.robot_target
       = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   int error_number = ndmscsi_target_from_str(ndmp_job.robot_target,
@@ -434,10 +432,8 @@ dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
     return (dlist<vol_list_t>*)NULL;
   }
 
-  /*
-   * If we have no storage mappings create them now from the data we just
-   * retrieved.
-   */
+  /* If we have no storage mappings create them now from the data we just
+   * retrieved. */
   NdmpFillStorageMappings(store, ndmp_sess);
 
   // Start with an empty dlist().
@@ -662,12 +658,10 @@ bool NdmpTransferVolume(UaContext* ua,
     return retval;
   }
 
-  /*
-   * Fill in the from and to address.
+  /* Fill in the from and to address.
    *
    * As the upper level functions work with logical slot numbers convert them
-   * to physical slot numbers for the actual NDMP operation.
-   */
+   * to physical slot numbers for the actual NDMP operation. */
   from_addr = GetBareosSlotNumberByElementAddress(
       &store->runtime_storage_status->storage_mapping,
       slot_type_t::kSlotTypeStorage, src_slot);
@@ -691,11 +685,9 @@ bool NdmpTransferVolume(UaContext* ua,
   ua->WarningMsg(T_("transferring form slot %hd to slot %hd...\n"), src_slot,
                  dst_slot);
 
-  /*
-   * Set the remote robotics name to use.
+  /* Set the remote robotics name to use.
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
-   * format of a device in the form NAME[,[CNUM,]SID[,LUN]
-   */
+   * format of a device in the form NAME[,[CNUM,]SID[,LUN] */
   ndmp_job.robot_target
       = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device)
@@ -889,11 +881,9 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
   ndmp_job.drive_addr = drive_mapping;
   ndmp_job.drive_addr_given = 1;
 
-  /*
-   * Set the remote robotics name to use.
+  /* Set the remote robotics name to use.
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
-   * format of a device in the form NAME[,[CNUM,]SID[,LUN]
-   */
+   * format of a device in the form NAME[,[CNUM,]SID[,LUN] */
   ndmp_job.robot_target
       = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device)
@@ -949,11 +939,9 @@ bool NdmpSendLabelRequest(UaContext* ua,
     return retval;
   }
 
-  /*
-   * Set the remote robotics name to use.
+  /* Set the remote robotics name to use.
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
-   * format of a device in the form NAME[,[CNUM,]SID[,LUN]
-   */
+   * format of a device in the form NAME[,[CNUM,]SID[,LUN] */
   ndmp_job.robot_target
       = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device)

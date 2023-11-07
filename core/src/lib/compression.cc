@@ -951,10 +951,10 @@ bool DecompressData(JobControlRecord* jcr,
 
       // Size check
       if (comp_len + sizeof(comp_stream_header) != *length) {
-        Qmsg(
-            jcr, M_ERROR, 0,
-            T_("Compressed header size error. comp_len=%d, message_length=%d\n"),
-            comp_len, *length);
+        Qmsg(jcr, M_ERROR, 0,
+             T_("Compressed header size error. comp_len=%d, "
+                "message_length=%d\n"),
+             comp_len, *length);
         return false;
       }
 

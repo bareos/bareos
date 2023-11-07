@@ -95,7 +95,7 @@ void ListSpoolStats(StatusPacket* sp)
   if (spool_stats.data_jobs || spool_stats.max_data_size) {
     len = Mmsg(msg,
                T_("Data spooling: %u active jobs, %s bytes; %u total jobs, %s "
-                 "max bytes/job.\n"),
+                  "max bytes/job.\n"),
                spool_stats.data_jobs,
                edit_uint64_with_commas(spool_stats.data_size, ed1),
                spool_stats.total_data_jobs,
@@ -106,7 +106,7 @@ void ListSpoolStats(StatusPacket* sp)
   if (spool_stats.attr_jobs || spool_stats.max_attr_size) {
     len = Mmsg(msg,
                T_("Attr spooling: %u active jobs, %s bytes; %u total jobs, %s "
-                 "max bytes.\n"),
+                  "max bytes.\n"),
                spool_stats.attr_jobs,
                edit_uint64_with_commas(spool_stats.attr_size, ed1),
                spool_stats.total_attr_jobs,
@@ -262,7 +262,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   if (commit) {
     Jmsg(jcr, M_INFO, 0,
          T_("Committing spooled data to Volume \"%s\". Despooling %s bytes "
-           "...\n"),
+            "...\n"),
          jcr->sd_impl->dcr->VolumeName,
          edit_uint64_with_commas(jcr->sd_impl->dcr->job_spool_size, ec1));
     jcr->setJobStatusWithPriorityCheck(JS_DataCommitting);
@@ -362,7 +362,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
 
   Jmsg(jcr, M_INFO, 0,
        T_("Despooling elapsed time = %02d:%02d:%02d, Transfer rate = %s "
-         "Bytes/second\n"),
+          "Bytes/second\n"),
        despool_elapsed / 3600, despool_elapsed % 3600 / 60,
        despool_elapsed % 60,
        edit_uint64_with_suffix(
@@ -451,8 +451,8 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
   }
   rlen = hdr.len;
   if (rlen > block->buf_len) {
-    Pmsg2(000, T_("Spool block too big. Max %u bytes, got %u\n"), block->buf_len,
-          rlen);
+    Pmsg2(000, T_("Spool block too big. Max %u bytes, got %u\n"),
+          block->buf_len, rlen);
     Jmsg2(jcr, M_FATAL, 0, T_("Spool block too big. Max %u bytes, got %u\n"),
           block->buf_len, rlen);
     jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
@@ -519,13 +519,13 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
     if (dcr->max_job_spool_size > 0) {
       Jmsg(dcr->jcr, M_INFO, 0,
            T_("User specified Job spool size reached: "
-             "JobSpoolSize=%s MaxJobSpoolSize=%s\n"),
+              "JobSpoolSize=%s MaxJobSpoolSize=%s\n"),
            edit_uint64_with_commas(dcr->job_spool_size, ec1),
            edit_uint64_with_commas(dcr->max_job_spool_size, ec2));
     } else {
       Jmsg(dcr->jcr, M_INFO, 0,
            T_("User specified Device spool size reached: "
-             "DevSpoolSize=%s MaxDevSpoolSize=%s\n"),
+              "DevSpoolSize=%s MaxDevSpoolSize=%s\n"),
            edit_uint64_with_commas(dcr->dev->spool_size, ec1),
            edit_uint64_with_commas(dcr->dev->max_spool_size, ec2));
     }
@@ -575,8 +575,8 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
     if (status != (ssize_t)sizeof(hdr)) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Error writing header to spool file."
-             " Disk probably full. Attempting recovery. Wanted to write=%d "
-             "got=%d\n"),
+              " Disk probably full. Attempting recovery. Wanted to write=%d "
+              "got=%d\n"),
            (int)status, (int)sizeof(hdr));
       /* If we wrote something, truncate it, then despool */
       if (status != -1) {
@@ -588,8 +588,8 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
         if (ftruncate(dcr->spool_fd, pos - status) != 0) {
           BErrNo be;
 
-          Jmsg(dcr->jcr, M_ERROR, 0, T_("Ftruncate spool file failed: ERR=%s\n"),
-               be.bstrerror());
+          Jmsg(dcr->jcr, M_ERROR, 0,
+               T_("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
           /* Note, try continuing despite ftruncate problem */
         }
       }
@@ -634,8 +634,8 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
         if (ftruncate(dcr->spool_fd, pos - status - sizeof(spool_hdr)) != 0) {
           BErrNo be;
 
-          Jmsg(dcr->jcr, M_ERROR, 0, T_("Ftruncate spool file failed: ERR=%s\n"),
-               be.bstrerror());
+          Jmsg(dcr->jcr, M_ERROR, 0,
+               T_("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
           /* Note, try continuing despite ftruncate problem */
         }
       }

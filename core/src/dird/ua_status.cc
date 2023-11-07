@@ -348,8 +348,9 @@ void ListDirStatusHeader(UaContext* ua)
               kBareosVersionStrings.Full, kBareosVersionStrings.Date,
               kBareosVersionStrings.GetOsInfo());
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  ua->SendMsg(T_("Daemon started %s. Jobs: run=%zu, running=%d db:postgresql, %s "
-        "binary\n"),
+  ua->SendMsg(
+      T_("Daemon started %s. Jobs: run=%zu, running=%d db:postgresql, %s "
+         "binary\n"),
       dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
 
   if (me->secure_erase_cmdline) {
@@ -362,9 +363,9 @@ void ListDirStatusHeader(UaContext* ua)
   if (my_config->HasWarnings()) {
     ua->SendMsg(
         T_("\n"
-          "There are WARNINGS for the director configuration!\n"
-          "See 'status configuration' for details.\n"
-          "\n"));
+           "There are WARNINGS for the director configuration!\n"
+           "See 'status configuration' for details.\n"
+           "\n"));
   }
 }
 
@@ -501,7 +502,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   if (ua->AclHasRestrictions(Client_ACL) || ua->AclHasRestrictions(Job_ACL)
       || ua->AclHasRestrictions(FileSet_ACL)) {
     ua->ErrorMsg(T_("%s %s: needs access to all client, job"
-                   " and fileset resources.\n"),
+                    " and fileset resources.\n"),
                  ua->argk[0], ua->argk[1]);
     return false;
   }
@@ -563,7 +564,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   if (kw_all || kw_unknown) {
     ua->SendMsg(
         T_("\nClients/Filesets that cannot be categorized for backup units "
-          "yet:\n"));
+           "yet:\n"));
     ua->db->ListSqlQuery(
         ua->jcr,
         BareosDb::SQL_QUERY::subscription_select_unclassified_client_fileset_0,
@@ -571,7 +572,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
 
     ua->SendMsg(
         T_("\nAmount of data that cannot be categorized for backup units "
-          "yet:\n"));
+           "yet:\n"));
     ua->db->ListSqlQuery(
         ua->jcr,
         BareosDb::SQL_QUERY::subscription_select_unclassified_amount_data_0,
@@ -580,7 +581,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
   ua->SendMsg(
       T_("\nEstimate only. Contact Bareos for actual quote"
-        " https://www.bareos.com/contact/\n"));
+         " https://www.bareos.com/contact/\n"));
   return true;
 }
 
@@ -588,7 +589,7 @@ static void DoConfigurationStatus(UaContext* ua)
 {
   if (!ua->AclAccessOk(Command_ACL, "configure")) {
     ua->ErrorMsg(T_("%s %s: is an invalid command or needs access right to the"
-                   " \"configure\" command.\n"),
+                    " \"configure\" command.\n"),
                  ua->argk[0], ua->argk[1]);
   } else {
     if (my_config->HasWarnings()) {
@@ -791,10 +792,10 @@ static void PrtRunhdr(UaContext* ua)
     ua->SendMsg(T_("\nScheduled Jobs:\n"));
     ua->SendMsg(
         T_("Level          Type     Pri  Scheduled          Name               "
-          "Volume\n"));
-    ua->SendMsg(
-        T_("===================================================================="
-          "===============\n"));
+           "Volume\n"));
+    ua->SendMsg(T_(
+        "===================================================================="
+        "===============\n"));
   }
 }
 
@@ -981,9 +982,9 @@ static void ListRunningJobs(UaContext* ua)
   njobs = 0;
   if (!ua->api) {
     ua->SendMsg(T_(" JobId Level   Name                       Status\n"));
-    ua->SendMsg(
-        T_("===================================================================="
-          "==\n"));
+    ua->SendMsg(T_(
+        "===================================================================="
+        "==\n"));
   }
   foreach_jcr (jcr) {
     if (jcr->JobId == 0
@@ -1118,7 +1119,7 @@ static void ListRunningJobs(UaContext* ua)
         if (!jcr->file_bsock) {
           // client initiated connection
           Mmsg(emsg, T_("is waiting for Client to connect (Client Initiated "
-                       "Connection)"));
+                        "Connection)"));
         } else if (!jcr->dir_impl->res.client
                    || !jcr->dir_impl->res.write_storage) {
           Mmsg(emsg, T_("is waiting for Client to connect to Storage daemon"));
@@ -1190,10 +1191,10 @@ static void ListTerminatedJobs(UaContext* ua)
     ua->SendMsg(T_("\nTerminated Jobs:\n"));
     ua->SendMsg(
         T_(" JobId  Level    Files      Bytes   Status   Finished        Name "
-          "\n"));
-    ua->SendMsg(
-        T_("===================================================================="
-          "\n"));
+           "\n"));
+    ua->SendMsg(T_(
+        "===================================================================="
+        "\n"));
   }
 
   for (const RecentJobResultsList::JobResult& je :
@@ -1642,12 +1643,12 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
     ua->WarningMsg(T_("No Volumes found, or no barcodes.\n"));
     goto bail_out;
   }
-  ua->SendMsg(
-      T_(" Slot |   Volume Name    |   Status  |  Media Type    |         Pool  "
-        "           |\n"));
-  ua->SendMsg(
-      T_("------+------------------+-----------+----------------+---------------"
-        "-----------|\n"));
+  ua->SendMsg(T_(
+      " Slot |   Volume Name    |   Status  |  Media Type    |         Pool  "
+      "           |\n"));
+  ua->SendMsg(T_(
+      "------+------------------+-----------+----------------+---------------"
+      "-----------|\n"));
 
   /* Walk through the list getting the media records
    * Slots start numbering at 1. */

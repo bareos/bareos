@@ -247,7 +247,8 @@ int main(int argc, char* argv[])
     // Let SD plugins setup the record translation
     if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr)
         != bRC_OK) {
-      Jmsg(jcr, M_FATAL, 0, T_("bSdEventSetupRecordTranslation call failed!\n"));
+      Jmsg(jcr, M_FATAL, 0,
+           T_("bSdEventSetupRecordTranslation call failed!\n"));
     }
 
     jcr->sd_impl->ignore_label_errors = ignore_label_errors;
@@ -261,7 +262,7 @@ int main(int argc, char* argv[])
     if (dev->VolHdr.PrevVolumeName[0] != 0) { /* second volume */
       Pmsg1(0,
             T_("\n"
-              "Warning, this Volume is a continuation of Volume %s\n"),
+               "Warning, this Volume is a continuation of Volume %s\n"),
             dev->VolHdr.PrevVolumeName);
     }
 
@@ -307,8 +308,8 @@ static void DoBlocks(char*)
       case DeviceControlRecord::ReadStatus::EndOfTape:
         if (!MountNextReadVolume(dcr)) {
           Jmsg(jcr, M_INFO, 0,
-               T_("Got EOM at file %u on device %s, Volume \"%s\"\n"), dev->file,
-               dev->print_name(), dcr->VolumeName);
+               T_("Got EOM at file %u on device %s, Volume \"%s\"\n"),
+               dev->file, dev->print_name(), dcr->VolumeName);
           return;
         }
         /* Read and discard Volume label */
@@ -349,7 +350,7 @@ static void DoBlocks(char*)
       ReadRecordFromBlock(dcr, rec);
       Pmsg9(-1,
             T_("File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u "
-              "SessTim=%u Strm=%s rlen=%d\n"),
+               "SessTim=%u Strm=%s rlen=%d\n"),
             dev->file, dev->block_num, block->BlockNumber, block->block_len,
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
             rec->VolSessionTime,
@@ -482,10 +483,10 @@ static void GetSessionRecord(Device* dev,
         rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
         rec->data_len);
   if (verbose) {
-    Pmsg5(
-        -1,
-        T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
-        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-        rec->data_len);
+    Pmsg5(-1,
+          T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d "
+             "DataLen=%d\n"),
+          rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+          rec->data_len);
   }
 }

@@ -120,7 +120,7 @@ bool BareosSocketTCP::connect(JobControlRecord* jcr,
       if (verbose)
         Qmsg4(jcr, M_WARNING, 0,
               T_("Could not connect to %s on %s:%d. ERR=%s\n"
-                "Retrying ...\n"),
+                 "Retrying ...\n"),
               name, host, port, be.bstrerror());
     }
     Bmicrosleep(retry_interval, 0);
@@ -570,9 +570,10 @@ int32_t BareosSocketTCP::recv()
   // If signal or packet size too big
   if (pktsiz < 0 || pktsiz > max_packet_size) {
     if (pktsiz > 0) { /* if packet too big */
-      Qmsg3(jcr_, M_FATAL, 0,
-            T_("Packet size too big from \"%s:%s:%d. Terminating connection.\n"),
-            who_, host_, port_);
+      Qmsg3(
+          jcr_, M_FATAL, 0,
+          T_("Packet size too big from \"%s:%s:%d. Terminating connection.\n"),
+          who_, host_, port_);
       pktsiz = BNET_TERMINATE; /* hang up */
     }
     if (pktsiz == BNET_TERMINATE) { SetTerminated(); }

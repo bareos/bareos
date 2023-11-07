@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -200,11 +200,9 @@ char* get_volume_name_from_SD(UaContext* ua,
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
   BashSpaces(dev_name);
 
-  /*
-   * Ask storage daemon to read the label of the volume in a
+  /* Ask storage daemon to read the label of the volume in a
    * specific slot of the autochanger using the drive number given.
-   * This could change the loaded volume in the drive.
-   */
+   * This could change the loaded volume in the drive. */
   sd->fsend(readlabelcmd, dev_name, Slot, drive);
   Dmsg1(100, "Sent: %s", sd->msg);
 
@@ -294,8 +292,7 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
       continue;
     }
 
-    /*
-     * Parse the message. list gives max 2 fields listall max 5.
+    /* Parse the message. list gives max 2 fields listall max 5.
      * We always make sure all fields are initialized to either
      * a value or nullptr.
      *
@@ -309,8 +306,7 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
      * - field3 == content (E for Empty, F for Full)
      * - field4 == loaded (loaded slot if type == D)
      * - field4 == volumename (if type == S or I)
-     * - field5 == volumename (if type == D)
-     */
+     * - field5 == volumename (if type == D) */
     field1 = sd->msg;
     field2 = strchr(sd->msg, ':');
     if (field2) {
@@ -355,10 +351,8 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
     {
       *vl = vol_list_t{};
     }
-    /*
-     * See if this is a parsable string from either list or listall
-     * e.g. at least f1:f2
-     */
+    /* See if this is a parsable string from either list or listall
+     * e.g. at least f1:f2 */
     if (!field1 || !field2) { goto parse_error; }
 
     if (scan && !listall) {
@@ -422,10 +416,8 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
           break;
       }
 
-      /*
-       * For drives the Slot is the actual drive number.
-       * For any other type its the actual slot number.
-       */
+      /* For drives the Slot is the actual drive number.
+       * For any other type its the actual slot number. */
       switch (vl->slot_type) {
         case slot_type_t::kSlotTypeDrive:
           if (!IsAnInteger(field2)
@@ -439,7 +431,7 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
           vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
           if (vl->element_address >= INDEX_MAX_DRIVES) {
             ua->ErrorMsg(T_("Drive number %hd greater then "
-                           "INDEX_MAX_DRIVES(%hd) please increase define\n"),
+                            "INDEX_MAX_DRIVES(%hd) please increase define\n"),
                          vl->bareos_slot_number, INDEX_MAX_DRIVES);
             free(vl);
             continue;
@@ -503,11 +495,9 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
     continue;
 
   parse_error:
-    /*
-     * We encountered a parse error, see how many replacements
+    /* We encountered a parse error, see how many replacements
      * we done of ':' with '\0' by looking at the nr_fields
-     * variable and undo those. Number of undo's are nr_fields - 1
-     */
+     * variable and undo those. Number of undo's are nr_fields - 1 */
     while (nr_fields > 1 && (bp = strchr(sd->msg, '\0')) != nullptr) {
       *bp = ':';
       nr_fields--;
@@ -815,15 +805,13 @@ bool NativeAutochangerVolumeOperation(UaContext* ua,
     sd->fsend(changervolopcmd, operation, dev_name, drive);
   }
 
-  /*
-   * We use BgetDirmsg here and not BnetRecv because as part of
+  /* We use BgetDirmsg here and not BnetRecv because as part of
    * the mount request the stored can request catalog information for
    * any plugin who listens to the bsdEventLabelVerified event.
    * As we don't want to loose any non protocol data e.g. errors
    * without a 3xxx prefix we set the allow_any_message of
    * BgetDirmsg to true and as such is behaves like a normal
-   * BnetRecv for any non protocol messages.
-   */
+   * BnetRecv for any non protocol messages. */
   while (BgetDirmsg(sd, true) >= 0) { ua->SendMsg("%s", sd->msg); }
 
   CloseSdBsock(ua);

@@ -269,9 +269,9 @@ static void ListDevices(JobControlRecord* jcr,
 
         len = Mmsg(msg,
                    T_("\nDevice %s is %s:\n"
-                     "    Volume:      %s\n"
-                     "    Pool:        %s\n"
-                     "    Media type:  %s\n"),
+                      "    Volume:      %s\n"
+                      "    Pool:        %s\n"
+                      "    Media type:  %s\n"),
                    dev->print_name(), state, dev->VolHdr.VolumeName,
                    dev->pool_name[0] ? dev->pool_name : "*unknown*",
                    dev->device_resource->media_type);
@@ -306,11 +306,11 @@ static void ListDevices(JobControlRecord* jcr,
         } else {
           bpb = 0;
         }
-        len = Mmsg(msg,
-                   T_("    Total Bytes Read=%s Blocks Read=%s Bytes/block=%s\n"),
-                   edit_uint64_with_commas(dev->VolCatInfo.VolCatRBytes, b1),
-                   edit_uint64_with_commas(dev->VolCatInfo.VolCatReads, b2),
-                   edit_uint64_with_commas(bpb, b3));
+        len = Mmsg(
+            msg, T_("    Total Bytes Read=%s Blocks Read=%s Bytes/block=%s\n"),
+            edit_uint64_with_commas(dev->VolCatInfo.VolCatRBytes, b1),
+            edit_uint64_with_commas(dev->VolCatInfo.VolCatReads, b2),
+            edit_uint64_with_commas(bpb, b3));
         sp->send(msg, len);
       }
 
@@ -417,8 +417,8 @@ static void ListStatusHeader(StatusPacket* sp)
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
 
   len = Mmsg(msg,
-             T_("Daemon started %s. Jobs: run=%zu, running=%d, %s binary\n"), dt,
-             NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
+             T_("Daemon started %s. Jobs: run=%zu, running=%d, %s binary\n"),
+             dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
@@ -498,8 +498,9 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
       sp->send(msg, len);
       break;
     case BST_UNMOUNTED_WAITING_FOR_SYSOP:
-      len = Mmsg(msg, T_("    Device is BLOCKED. User unmounted during wait for "
-                        "media/mount.\n"));
+      len = Mmsg(msg,
+                 T_("    Device is BLOCKED. User unmounted during wait for "
+                    "media/mount.\n"));
       sp->send(msg, len);
       break;
     case BST_WAITING_FOR_SYSOP: {
@@ -510,17 +511,18 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
           len = Mmsg(
               msg,
               T_("    Device is BLOCKED waiting for mount of volume \"%s\",\n"
-                "       Pool:        %s\n"
-                "       Media type:  %s\n"),
+                 "       Pool:        %s\n"
+                 "       Media type:  %s\n"),
               dcr->VolumeName, dcr->pool_name, dcr->media_type);
           sp->send(msg, len);
           found_jcr = true;
         } else if (dcr->jcr->getJobStatus() == JS_WaitMedia) {
-          len = Mmsg(msg,
-                     T_("    Device is BLOCKED waiting to create a volume for:\n"
-                       "       Pool:        %s\n"
-                       "       Media type:  %s\n"),
-                     dcr->pool_name, dcr->media_type);
+          len = Mmsg(
+              msg,
+              T_("    Device is BLOCKED waiting to create a volume for:\n"
+                 "       Pool:        %s\n"
+                 "       Media type:  %s\n"),
+              dcr->pool_name, dcr->media_type);
           sp->send(msg, len);
           found_jcr = true;
         }
@@ -671,7 +673,7 @@ static void ListRunningJobs(StatusPacket* sp)
       if (rdcr && rdcr->device_resource) {
         len = Mmsg(msg,
                    T_("Reading: Volume=\"%s\"\n"
-                     "    pool=\"%s\" device=%s\n"),
+                      "    pool=\"%s\" device=%s\n"),
                    rdcr->VolumeName, rdcr->pool_name,
                    rdcr->dev ? rdcr->dev->print_name()
                              : rdcr->device_resource->archive_device_string);
@@ -680,7 +682,7 @@ static void ListRunningJobs(StatusPacket* sp)
       if (dcr && dcr->device_resource) {
         len = Mmsg(msg,
                    T_("Writing: Volume=\"%s\"\n"
-                     "    pool=\"%s\" device=%s\n"),
+                      "    pool=\"%s\" device=%s\n"),
                    dcr->VolumeName, dcr->pool_name,
                    dcr->dev ? dcr->dev->print_name()
                             : dcr->device_resource->archive_device_string);
@@ -798,10 +800,11 @@ static void ListTerminatedJobs(StatusPacket* sp)
 
   if (!sp->api) {
     len = PmStrcpy(msg, T_(" JobId  Level    Files      Bytes   Status   "
-                          "Finished        Name \n"));
+                           "Finished        Name \n"));
     sp->send(msg, len);
-    len = PmStrcpy(msg, T_("===================================================="
-                          "===============\n"));
+    len = PmStrcpy(msg,
+                   T_("===================================================="
+                      "===============\n"));
     sp->send(msg, len);
   }
 
@@ -857,8 +860,8 @@ static void ListTerminatedJobs(StatusPacket* sp)
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                  JobName);
     } else {
-      len = Mmsg(msg, T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
-                 edit_uint64_with_commas(je.JobFiles, b1),
+      len = Mmsg(msg, T_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId,
+                 level, edit_uint64_with_commas(je.JobFiles, b1),
                  edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                  JobName);
     }

@@ -109,14 +109,14 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
 
   Jmsg(jcr, msg_type, 0,
        T_("BAREOS %s (%s): %s\n"
-         "  JobId:                  %d\n"
-         "  Job:                    %s\n"
-         "  Scheduled time:         %s\n"
-         "  Start time:             %s\n"
-         "  End time:               %s\n"
-         "  Bareos binary info:     %s\n"
-         "  Job triggered by:       %s\n"
-         "  Termination:            %s\n\n"),
+          "  JobId:                  %d\n"
+          "  Job:                    %s\n"
+          "  Scheduled time:         %s\n"
+          "  Start time:             %s\n"
+          "  End time:               %s\n"
+          "  Bareos binary info:     %s\n"
+          "  Job triggered by:       %s\n"
+          "  Termination:            %s\n\n"),
        kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
        jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt, sdt, edt,
        kBareosVersionStrings.JoblogMessage,
