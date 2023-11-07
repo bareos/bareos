@@ -276,12 +276,23 @@ static bool ValidateGenericDevice(const DeviceResource& resource)
 
 bool DeviceResource::Validate()
 {
+  if (IsMemberPresent("AutoDeflate")
+      && !IsMemberPresent("AutoDeflateAlgorithm")) {
+    Jmsg(nullptr, M_ERROR, 0,
+         _("Device %s: If autodeflate is set, then 'AutoDeflateAlgorithm' "
+           "also has to be set.\n"),
+         resource_name_);
+
+    return false;
+  }
+
   to_lower(device_type);
   if (device_type == DeviceType::B_TAPE_DEV) {
     return ValidateTapeDevice(*this);
   } else {
     return ValidateGenericDevice(*this);
   }
+
   return true;
 }
 
