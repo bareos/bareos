@@ -41,24 +41,18 @@ start_test
 #    the data should still be compressed
 # 3) Restore from offsite-copy
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out ${tmp}/copy-to-offsite.out
+@$out ${tmp}/copy-from-offsite.out
 messages
 setdebug level=$debug_level storage=O12
 setdebug level=$debug_level storage=L2
-label volume=O1V1 storage=O11 pool=Offsite
-run copy-to-offsite yes
+label volume=LV2 storage=L2 pool=FullCopy
+run copy-from-offsite yes
 wait
-update volume=O1V1 volstatus=Used
+update volume=LV2 volstatus=Used
 messages
-@$out ${tmp}/copy-offsite.out
-setdebug level=$debug_level storage=O12
-label volume=O1C1 storage=O12 pool=OffsiteCopy
-run copy-offsite yes
-wait
-update volume=O1C1 volstatus=Used
 messages
-@$out ${tmp}/offsite-restore.out
-restore jobid=11 client=bareos-fd where=$tmp/offsite-restores all done yes
+@$out ${tmp}/local-restore.out
+restore jobid=15 client=bareos-fd where=$tmp/from-offsite-restores all done yes
 wait
 setdebug level=0 storage=O11
 setdebug level=0 storage=O12
@@ -68,22 +62,14 @@ END_OF_DATA
 
 run_bconsole "$@"
 
-
-
 # There should be no difference, but with autoxflate decompression
 # the restore reports success ("Restore OK") but seems to fail silently
 # and doesn't actually restore anything
-check_restore_diff "${BackupDirectory}" "$tmp/offsite-restores"
+check_restore_diff "${BackupDirectory}" "$tmp/from-offsite-restores"
 
-conf="${BAREOS_CONFIG_DIR}"/../sd-1
-
-if ! is_file_compressed "1D1" "O1V1" "${File}"; then
-    echo "O1D1 is not compressed"
+if is_file_compressed "LD1" "LV2" "${File}"; then
+    echo "LV2 is compressed"
     estat=3
-fi
-if ! is_file_compressed "1D2" "O1C1" "${File}"; then
-    echo "O1D2 is not compressed"
-    estat=4
 fi
 
 end_test
