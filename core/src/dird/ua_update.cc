@@ -628,11 +628,11 @@ static bool UpdateVolume(UaContext* ua)
     AddPrompt(ua, T_("Volume from Pool"));           /* 11 */
     AddPrompt(ua, T_("All Volumes from Pool"));      /* 12 */
     AddPrompt(ua, T_("All Volumes from all Pools")); /* 13 */
-    AddPrompt(ua, T_("Enabled")),                    /* 14 */
-        AddPrompt(ua, T_("RecyclePool")),            /* 15 */
-        AddPrompt(ua, T_("Action On Purge")),        /* 16 */
-        AddPrompt(ua, T_("Storage")),                /* 17 */
-        AddPrompt(ua, T_("Done"));                   /* 18 */
+    AddPrompt(ua, T_("Enabled"));                    /* 14 */
+    AddPrompt(ua, T_("RecyclePool"));                /* 15 */
+    AddPrompt(ua, T_("Action On Purge"));            /* 16 */
+    AddPrompt(ua, T_("Storage"));                    /* 17 */
+    AddPrompt(ua, T_("Done"));                       /* 18 */
     i = DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0);
 
     /* For All Volumes, All Volumes from Pool, and Done, we don't need
