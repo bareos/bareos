@@ -63,6 +63,8 @@
 #  include "vss.h"
 #endif
 
+#include <atomic>
+
 namespace filedaemon {
 
 extern bool backup_only_mode;
@@ -87,7 +89,7 @@ const bool have_xattr = false;
 const bool have_encryption = true;
 
 /* Global variables to handle Client Initiated Connections */
-static bool quit_client_initiate_connection = false;
+static std::atomic<bool> quit_client_initiate_connection = false;
 static alist<pthread_t*>* client_initiated_connection_threads = nullptr;
 
 /* Imported functions */

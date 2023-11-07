@@ -42,6 +42,13 @@
 #include "lib/berrno.h"
 #include "lib/crypto.h"
 
+#include <thread>
+#include <variant>
+#include <deque>
+#include <utility>
+#include <condition_variable>
+#include "lib/channel.h"
+
 namespace storagedaemon {
 
 /* Responses sent to the daemon */
@@ -110,6 +117,125 @@ static bool SaveFullyProcessedFilesAttributes(
   }
   return false;
 }
+
+class MessageHandler {
+ public:
+  using signal_type = int;
+
+  struct message_type {
+    std::size_t size;
+    PoolMem data;
+  };
+
+  struct error_type {
+    enum class type
+    {
+      HARDEOF,
+      // both ERROR and SOCKET_ERROR are taken by windows.h
+      INTERNAL_ERROR,
+    } type;
+
+    std::string msg;
+  };
+
+  using result_type = std::variant<signal_type, message_type, error_type>;
+
+  MessageHandler(BareosSocket* fd)
+      : MessageHandler{fd,
+                       // 500 msg reserves at most 256MB in size
+                       // probably much less because of signals
+                       channel::CreateBufferedChannel<result_type>(500)}
+  {
+  }
+
+  std::optional<result_type> get_msg() { return output.get(); }
+
+  const char* error()
+  {
+    if (fd->IsError()) { return fd->bstrerror(); }
+    return nullptr;
+  }
+
+  BareosSocket* close_and_get_sock()
+  {
+    end.store(true);
+    receive_thread.join();
+    return fd;
+  }
+
+ private:
+  MessageHandler(BareosSocket* fd,
+                 std::pair<channel::input<result_type>,
+                           channel::output<result_type>> chan_pair)
+      : fd{fd}
+      , input{std::move(chan_pair.first)}
+      , output{std::move(chan_pair.second)}
+      , receive_thread{enlist, this}
+  {
+  }
+
+  bool error_while_reading{false};
+  std::atomic<bool> end{false};
+
+  BareosSocket* fd;
+  channel::input<result_type> input;
+  channel::output<result_type> output;
+
+  // receive_thread has to be defined last!
+  // The thread created will try to access this class immediately after
+  // being created!  As such everything else has to be initialized.
+  std::thread receive_thread;
+  void do_work()
+  {
+    POOLMEM* save = fd->msg;
+    bool cont = true;
+    for (int res = 0; cont; res = fd->WaitData(0, 100'000)) {
+      if (res == fd->DataAvailable) {
+        PoolMem msg(PM_MESSAGE);
+        fd->msg = msg.addr();
+        result_type result;
+        int n = BgetMsg(fd);
+        // fd->msg might have been relocated
+        msg.addr() = fd->msg;
+        if (n < 0) {
+          if (n == BNET_SIGNAL) {
+            result = signal_type{fd->message_length};
+            // break; /* end of data */
+          } else if (n == BNET_HARDEOF) {
+            result = error_type{error_type::type::HARDEOF, fd->bstrerror()};
+            cont = false;
+          } else {
+            result
+                = error_type{error_type::type::INTERNAL_ERROR, fd->bstrerror()};
+            cont = false;
+          }
+        } else {
+          std::size_t length = n;
+          result = message_type{length, std::move(msg)};
+        }
+        fd->msg = nullptr;
+
+        if (!input.emplace(std::move(result))) {
+          Dmsg1(20,
+                "Tried to put message into queue; but it did not succeed.\n");
+          cont = false;
+        }
+      } else if (res == fd->Error) {
+        cont = false;
+        error_while_reading = true;
+      } else {
+        ASSERT(res == fd->Timeout);
+      }
+      if (end.load()) { cont = false; }
+    }
+
+    input.close();
+
+    fd->msg = save;
+  }
+
+  static void enlist(MessageHandler* handler) { handler->do_work(); }
+};
 
 // Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
@@ -222,6 +348,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   ProcessedFile file_currently_processed;
   uint32_t current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
 
+  MessageHandler handler(std::exchange(bs, nullptr));
+
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /* Read Stream header from the daemon.
      *
@@ -230,19 +358,40 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * - stream     (Bareos number to distinguish parts of data)
      * - info       (Info for Storage daemon -- compressed, encrypted, ...)
      *               info is not currently used, so is read, but ignored! */
-    if ((n = BgetMsg(bs)) <= 0) {
-      if (n == BNET_SIGNAL && bs->message_length == BNET_EOD) {
-        break; /* end of data */
-      }
-      Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
-            what, bs->bstrerror());
+    auto msg = handler.get_msg();
+    if (!msg) {
+      Jmsg2(jcr, M_FATAL, 0, _("Internal Error reading data header from %s.\n"),
+            what);
       ok = false;
       break;
     }
 
-    if (sscanf(bs->msg, "%ld %ld", &file_index, &stream) != 2) {
+    using signal_type = MessageHandler::signal_type;
+    using message_type = MessageHandler::message_type;
+    using error_type = MessageHandler::error_type;
+
+    if (auto* error = std::get_if<error_type>(&msg.value())) {
+      Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
+            what, error->msg.c_str());
+      ok = false;
+      break;
+    }
+
+    if (auto* signal = std::get_if<signal_type>(&msg.value())) {
+      if (*signal != BNET_EOD) {
+        Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
+              *signal);
+        ok = false;
+      }
+      break;
+    }
+
+    auto content = std::get<message_type>(std::move(msg).value());
+    n = content.size;
+
+    if (sscanf(content.data.c_str(), "%ld %ld", &file_index, &stream) != 2) {
       Jmsg2(jcr, M_FATAL, 0, _("Malformed data header from %s: %s\n"), what,
-            bs->msg);
+            content.data.c_str());
       ok = false;
       break;
     }
@@ -279,15 +428,44 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * We save the original data pointer from the record so we can restore
      * that after the loop ends. */
     rec_data = jcr->sd_impl->dcr->rec->data;
-    while ((n = BgetMsg(bs)) > 0 && !jcr->IsJobCanceled()) {
+    while (!jcr->IsJobCanceled()) {
+      auto msg = handler.get_msg();
+
+      if (!msg) {
+        Jmsg2(jcr, M_FATAL, 0,
+              _("Internal Error reading data header from %s.\n"), what);
+        ok = false;
+        break;
+      }
+
+      if (auto* error = std::get_if<error_type>(&msg.value())) {
+        Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
+              what, error->msg.c_str());
+        ok = false;
+        break;
+      }
+
+      if (auto* signal = std::get_if<signal_type>(&msg.value())) {
+        if (*signal != BNET_EOD) {
+          Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
+                *signal);
+          ok = false;
+        }
+        break;
+      }
+
+      auto content = std::get<message_type>(std::move(msg).value());
+      n = content.size;
+
       jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
       jcr->sd_impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
       jcr->sd_impl->dcr->rec->FileIndex = file_index;
       jcr->sd_impl->dcr->rec->Stream = stream;
       jcr->sd_impl->dcr->rec->maskedStream
           = stream & STREAMMASK_TYPE; /* strip high bits */
-      jcr->sd_impl->dcr->rec->data_len = bs->message_length;
-      jcr->sd_impl->dcr->rec->data = bs->msg; /* use message buffer */
+      jcr->sd_impl->dcr->rec->data_len = content.size;
+      jcr->sd_impl->dcr->rec->data
+          = content.data.addr(); /* use message buffer */
 
       Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
             jcr->sd_impl->dcr->rec->FileIndex,
@@ -342,18 +520,19 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     // Restore the original data pointer.
     jcr->sd_impl->dcr->rec->data = rec_data;
 
-    if (bs->IsError()) {
+    if (auto* error = handler.error()) {
       if (!jcr->IsJobCanceled()) {
-        Dmsg2(350, "Network read error from %s. ERR=%s\n", what,
-              bs->bstrerror());
+        Dmsg2(350, "Network read error from %s. ERR=%s\n", what, error);
         Jmsg2(jcr, M_FATAL, 0, _("Network error reading from %s. ERR=%s\n"),
-              what, bs->bstrerror());
+              what, error);
       }
+
       ok = false;
       break;
     }
   }
 
+  bs = handler.close_and_get_sock();
   // Create Job status for end of session label
   jcr->setJobStatusWithPriorityCheck(ok ? JS_Terminated : JS_ErrorTerminated);
 
@@ -372,7 +551,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   /* Check if we can still write. This may not be the case
    * if we are at the end of the tape or we got a fatal I/O error. */
   if (ok || dev->CanWrite()) {
-    jcr->JobFiles = file_currently_processed.GetFileIndex();
+    // take into account the fact that GetFileIndex() may return -1
+    // if no file is currently getting processed.
+    // This should only happen if no file was send to begin with!
+    jcr->JobFiles = std::max(file_currently_processed.GetFileIndex(), 0);
     if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
