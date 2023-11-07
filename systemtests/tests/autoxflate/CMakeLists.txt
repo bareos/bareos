@@ -21,11 +21,11 @@ get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
 set_tests_properties(
-  system:autoxflate:replication-single
+  system:autoxflate:replication-local
   PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
 )
 
 set_tests_properties(
-  system:autoxflate:replication-distributed
+  system:autoxflate:replication-offsite
   PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
 )

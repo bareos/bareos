@@ -1,5 +1,5 @@
 Storage {
-  Name = bareos-sd-local
+  Name = bareos-sd
   Maximum Concurrent Jobs = 20
 
   Working Directory =  "@working_dir@"

@@ -36,4 +36,8 @@ export TestName
 setup_data
 
 bin/bareos start
+
+"${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}"/../sd-1 -t </dev/null
+"${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}"/../sd-1
+
 bin/bareos status

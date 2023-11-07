@@ -1,5 +1,5 @@
 Device {
-  Name = LD1
+  Name = FileStorage
   Media Type = File
   Archive Device = storage
   LabelMedia = yes;                   # lets Bareos label unlabeled media
@@ -10,7 +10,7 @@ Device {
   Description = "File device. A connecting Director must have the same Name and MediaType."
 }
 Device {
-  Name = LD2
+  Name = FileStorage2
   Media Type = File
   Archive Device = storage
   LabelMedia = yes;                   # lets Bareos label unlabeled media
