@@ -22,10 +22,16 @@ create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
 set_tests_properties(
   system:autoxflate:replication-local
-  PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
+  PROPERTIES FIXTURES_SETUP "system:autoxflate:replication-local-fixture"
 )
 
 set_tests_properties(
   system:autoxflate:replication-offsite
-  PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
+  PROPERTIES FIXTURES_SETUP "system:autoxflate:replication-offsite-fixture"
+             FIXTURES_REQUIRED "system:autoxflate:replication-local-fixture"
+)
+
+set_tests_properties(
+  system:autoxflate:replication-from-offsite
+  PROPERTIES FIXTURES_REQUIRED "system:autoxflate:replication-offsite-fixture"
 )
