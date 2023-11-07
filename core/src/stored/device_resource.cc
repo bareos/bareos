@@ -281,6 +281,7 @@ bool DeviceResource::Validate()
   if (dev_type == DeviceType::B_RADOS_DEV) {
     my_config->AddWarning("The Rados Storage Backend Device is deprecated");
   }
+
   return true;
 }
 
