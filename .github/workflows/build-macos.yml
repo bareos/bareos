@@ -28,6 +28,11 @@ on:
         description: "The workflow run's name"
         required: false
         type: string
+      ssh_access:
+        description: 'Enable sshd debugging'
+        type: boolean
+        required: false
+        default: false
 
 env:
   artifact_dir: "${{ github.workspace }}/artifacts"
@@ -37,6 +42,14 @@ jobs:
     name: Build MacOS packages
     runs-on: macos-12
     steps:
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        detached: true
+        limit-access-to-actor: true
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.ssh_access }}
+
     - name: "Checkout source"
       uses: actions/checkout@v3
       with:
@@ -62,6 +75,7 @@ jobs:
       env:
         VERSION: "${{ inputs.version }}"
         TIMESTAMP: "${{ inputs.timestamp }}"
+
     - name: Build package
       run: |
         cmake -S . -B cmake-build -DENABLE_JANSSON=OFF -Dclient-only=yes
@@ -75,11 +89,25 @@ jobs:
         CFLAGS: -I/usr/local/include
         CXXFLAGS: -I/usr/local/include
         CMAKE_BUILD_PARALLEL_LEVEL: 4
+
     - name: CTest
       run: |
         cd cmake-build
         ctest -V -S CTestScript.cmake
         mv ./Testing "${{ env.artifact_dir }}"
+
+    - name: Test package
+      run: |
+        set -x
+        sudo installer -pkg artifacts/BUILD_RESULTS/MacOS/bareos-${{ inputs.version }}.pkg -target /
+        cd /usr/local/bareos/
+        /usr/local/bareos/sbin/bareos-fd -d 100 --xc
+        cd
+        sudo launchctl start com.bareos.bareos-fd
+        sudo launchctl print system/com.bareos.bareos-fd
+        sleep 1
+        sudo launchctl print system/com.bareos.bareos-fd | grep "state = running"
+        sudo launchctl stop com.bareos.bareos-fd
 
     - name: Upload package
       uses: actions/upload-artifact@v3
