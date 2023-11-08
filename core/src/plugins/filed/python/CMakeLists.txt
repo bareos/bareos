@@ -133,7 +133,11 @@ endif()
 
 if(Python3_FOUND)
   add_library(bareosfd-python3-module MODULE module/bareosfd.cc)
-  install(TARGETS bareosfd-python3-module DESTINATION ${Python3_SITELIB})
+  install(
+    TARGETS bareosfd-python3-module
+    DESTINATION ${Python3_SITELIB}
+    COMPONENT filedaemon
+  )
   set_target_properties(
     bareosfd-python3-module
     PROPERTIES PREFIX ""
