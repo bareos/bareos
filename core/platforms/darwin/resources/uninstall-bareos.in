@@ -20,7 +20,7 @@ fi
 echo "* Bareos file daemon... "
 if [ -d "/usr/local/bareos" ]; then
   sudo rm -r "/usr/local/bareos"
-	echo "  + removed successfully"
+  echo "  + removed successfully"
 else
   echo "  - not found, nothing to remove"
 fi

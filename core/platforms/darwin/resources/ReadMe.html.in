@@ -47,7 +47,8 @@ sudo launchctl list com.bareos.bareos-fd
 </pre>
 You can also manually start bareos-fd in debug mode by:
 <pre>
-sudo /usr/local/bareos/sbin/bareos-fd -f -d 100
+cd @CMAKE_INSTALL_PREFIX@
+sudo @sbindir@/bareos-fd -f -d 100
 </pre>
 </body>
 </html>
