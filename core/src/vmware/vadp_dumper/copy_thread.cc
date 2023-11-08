@@ -34,37 +34,18 @@
 
 static CP_THREAD_CTX* cp_thread;
 
-// Copy thread cancel handler.
-static void copy_cleanup_thread(void* data)
-{
-  CP_THREAD_CTX* context = (CP_THREAD_CTX*)data;
-
-  pthread_mutex_unlock(&context->lock);
-}
-
 // Actual copy thread that copies data.
 static void* copy_thread(void* data)
 {
-  CP_THREAD_SAVE_DATA* save_data;
   CP_THREAD_CTX* context = (CP_THREAD_CTX*)data;
 
-  if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
+  bool end = false;
 
-  // When we get canceled make sure we run the cleanup function.
-  pthread_cleanup_push(copy_cleanup_thread, data);
-
-  while (1) {
+  while (!end) {
     size_t cnt;
 
-    /* Wait for the moment we are supposed to start.
-     * We are signalled by the restore thread. */
-    pthread_cond_wait(&context->start, &context->lock);
-    context->started = true;
-
-    pthread_mutex_unlock(&context->lock);
-
     // Dequeue an item from the circular buffer.
-    save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
+    auto* save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
 
     while (save_data) {
       auto total_length = save_data->data_len;
@@ -78,18 +59,21 @@ static void* copy_thread(void* data)
 
     /* Need to synchronize the main thread and this one so the main thread
      * cannot miss the conditional signal. */
-    if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
+    pthread_mutex_lock(&context->lock);
 
     // Signal the main thread we flushed the data.
+    context->flushed = true;
+
+    if (context->do_end) {
+      end = true;
+      context->do_end = false;
+    }
+
     pthread_cond_signal(&context->flush);
 
-    context->started = false;
-    context->flushed = true;
+    pthread_mutex_unlock(&context->lock);
   }
 
-  pthread_cleanup_pop(1);
-
-bail_out:
   return NULL;
 }
 
@@ -101,7 +85,7 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
   CP_THREAD_CTX* new_context;
 
   new_context = (CP_THREAD_CTX*)malloc(sizeof(CP_THREAD_CTX));
-  new_context->started = false;
+  new_context->do_end = false;
   new_context->flushed = false;
   new_context->cb = new circbuf;
 
@@ -117,7 +101,7 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
 
   if (pthread_mutex_init(&new_context->lock, NULL) != 0) { goto bail_out; }
 
-  if (pthread_cond_init(&new_context->start, NULL) != 0) {
+  if (pthread_cond_init(&new_context->flush, NULL) != 0) {
     pthread_mutex_destroy(&new_context->lock);
     goto bail_out;
   }
@@ -125,7 +109,7 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
   if (pthread_create(&new_context->thread_id, NULL, copy_thread,
                      (void*)new_context)
       != 0) {
-    pthread_cond_destroy(&new_context->start);
+    pthread_cond_destroy(&new_context->flush);
     pthread_mutex_destroy(&new_context->lock);
     goto bail_out;
   }
@@ -178,9 +162,6 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
 
   cb->enqueue(save_data);
 
-  // Signal the copy thread its time to start if it didn't start yet.
-  if (!cp_thread->started) { pthread_cond_signal(&cp_thread->start); }
-
   return true;
 }
 
@@ -213,7 +194,17 @@ void cleanup_copy_thread()
 
   // Stop the copy thread.
   if (!pthread_equal(cp_thread->thread_id, pthread_self())) {
-    pthread_cancel(cp_thread->thread_id);
+    pthread_mutex_lock(&cp_thread->lock);
+
+    cp_thread->do_end = true;
+    cp_thread->cb->flush();
+
+    while (cp_thread->do_end == true) {
+      pthread_cond_wait(&cp_thread->flush, &cp_thread->lock);
+    }
+
+    pthread_mutex_unlock(&cp_thread->lock);
+
     pthread_join(cp_thread->thread_id, NULL);
   }
 
