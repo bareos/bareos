@@ -41,12 +41,11 @@ struct CP_THREAD_CTX {
   CP_THREAD_SAVE_DATA*
       save_data; /* To save data (cached structure build during restore) */
   circbuf* cb;   /* Circular buffer for passing work to copy thread */
-  bool started;  /* Copy thread consuming data */
   bool flushed;  /* Copy thread flushed data */
-  pthread_t thread_id;  /* Id of copy thread */
-  pthread_mutex_t lock; /* Lock the structure */
-  pthread_cond_t start; /* Start consuming data from the Circular buffer */
-  pthread_cond_t flush; /* Flush data from the Circular buffer */
+  bool do_end;   /* If set, write thread will stop. */
+  pthread_t thread_id;          /* Id of copy thread */
+  pthread_mutex_t lock;         /* Lock the structure */
+  pthread_cond_t flush;         /* Flush data from the Circular buffer */
   IO_FUNCTION* input_function;  /* IO function that performs the output I/O */
   IO_FUNCTION* output_function; /* IO function that performs the output I/O */
 };
