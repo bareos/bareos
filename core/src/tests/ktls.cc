@@ -156,7 +156,7 @@ static void EnsureKtlsRecv(BareosSocket* sock)
 
 TEST(ktls, v12_send)
 {
-#if defined(DISABLE_KTLS) || defined(DISABLE_KTLS_12_SEND)
+#if defined(DISABLE_KTLS_12_SEND)
   GTEST_SKIP();
 #endif
   InitOpenSsl();
@@ -167,7 +167,7 @@ TEST(ktls, v12_send)
 
 TEST(ktls, v12_recv)
 {
-#if defined(DISABLE_KTLS) || defined(DISABLE_KTLS_12_RECV)
+#if defined(DISABLE_KTLS_12_RECV)
   GTEST_SKIP();
 #endif
   InitOpenSsl();
@@ -178,7 +178,7 @@ TEST(ktls, v12_recv)
 
 TEST(ktls, v13_send)
 {
-#if defined(DISABLE_KTLS) || defined(DISABLE_KTLS_13_SEND)
+#if defined(DISABLE_KTLS_13_SEND)
   GTEST_SKIP();
 #endif
   InitOpenSsl();
@@ -189,7 +189,7 @@ TEST(ktls, v13_send)
 
 TEST(ktls, v13_recv)
 {
-#if defined(DISABLE_KTLS) || defined(DISABLE_KTLS_13_RECV)
+#if defined(DISABLE_KTLS_13_RECV)
   GTEST_SKIP();
 #endif
   InitOpenSsl();
@@ -200,7 +200,7 @@ TEST(ktls, v13_recv)
 
 TEST(ktls, v12_256_send)
 {
-#if defined(DISABLE_KTLS) || defined(DISABLE_KTLS_12_256_SEND)
+#if defined(DISABLE_KTLS_12_256_SEND)
   GTEST_SKIP();
 #endif
   InitOpenSsl();
@@ -211,7 +211,7 @@ TEST(ktls, v12_256_send)
 
 TEST(ktls, v13_256_send)
 {
-#if defined(DISABLE_KTLS) || defined(DISABLE_KTLS_13_256_SEND)
+#if defined(DISABLE_KTLS_13_256_SEND)
   GTEST_SKIP();
 #endif
   InitOpenSsl();

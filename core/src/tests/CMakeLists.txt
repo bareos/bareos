@@ -33,12 +33,30 @@ else()
 endif()
 
 set(KTLS_DEFINITIONS)
+set(DISABLE_KTLS OFF)
 find_package(OpenSSL)
 if((OPENSSL_VERSION VERSION_LESS "3.0.0") OR (LINUX_KERNEL_VERSION VERSION_LESS
                                               "5.3")
 )
-  set(KTLS_DEFINITIONS DISABLE_KTLS)
+  set(DISABLE_KTLS ON)
 else()
+
+  check_cxx_source_compiles(
+    "
+#include <openssl/ssl.h>
+int main(void)
+{
+#ifndef OPENSSL_NO_KTLS
+#error ktls is enabled
+#endif
+return 0;
+}
+"
+    KTLS_DISABLED
+  )
+  if(KTLS_DISABLED)
+    set(DISABLE_KTLS ON)
+  endif()
   if(LINUX_KERNEL_VERSION VERSION_LESS "5.16")
     list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_12_RECV)
   endif()
@@ -215,12 +233,14 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
     LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
   )
-  bareos_add_test(
-    ktls
-    ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
-    LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
-    COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
-  )
+  if(NOT DISABLE_KTLS)
+    bareos_add_test(
+      ktls
+      ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
+      LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
+      COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
+    )
+  endif()
 
   bareos_add_test(
     catalog
