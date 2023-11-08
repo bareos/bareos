@@ -349,7 +349,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     ${HOMEBREW_PREFIX}/opt/gettext/lib/libintl.a iconv
     "-framework CoreFoundation" "-framework CoreServices"
   )
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
