@@ -84,14 +84,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # archivedir
   if(NOT DEFINED archivedir)
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-      # windows install scripts replace the string "/var/lib/bareos/storage"
-      set(archivedir "/var/lib/${CMAKE_PROJECT_NAME}/storage")
-    else()
-      set(archivedir
-          "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
-      )
-    endif()
+    set(archivedir
+        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+    )
   endif()
 
   # backenddir
