@@ -1,10 +1,9 @@
 FileSet {
-  Name = "Everything"
+  Name = "SpeedTest"
   Description = "fileset just to backup some files for selftest"
   Include {
     Options {
-      Compression = @comp_algo@
-      Signature = @checksum_algo@
+@include/etc/bareos/bareos-dir.d/fileset/default.conf
     }
     File=<@tmpdir@/file-list
   }

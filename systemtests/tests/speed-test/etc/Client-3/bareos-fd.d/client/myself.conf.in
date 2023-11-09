@@ -1,6 +1,0 @@
-Client {
-       Name = Client-3
-       Working Directory = "@working_dir@"
-       FD Port = @"Client-3"_Port@
-       NumWorkersPerJob=3
-}
