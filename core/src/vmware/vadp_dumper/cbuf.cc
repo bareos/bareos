@@ -45,6 +45,7 @@ int circbuf::init()
   m_next_out = 0;
   m_size = 0;
   m_capacity = QSIZE;
+  m_flush = false;
 
   return 0;
 }
