@@ -71,7 +71,7 @@ messages
 END_OF_DATA
 run_bconsole
 
-expect_grep "permission denied for function pg_" "${tmp}/rlog1.out" "No Role 'Backup Error' not found in job log"
+expect_grep "used role missed privileges to read configuration data_directory value" "${tmp}/rlog1.out" "No Role 'Backup Error' not found in job log"
 if [ ${estat} -ne 0 ]; then
     exit ${estat}
 fi
@@ -79,6 +79,7 @@ fi
 # Affect db_backup role to backup_group
 ${PSQL} -d postgres -c "grant backup_group to db_backup;"
 
+echo "run new full with granted role"
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages

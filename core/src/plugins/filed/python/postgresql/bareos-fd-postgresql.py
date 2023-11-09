@@ -86,17 +86,17 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
     """
     Bareos-FD-Plugin-Class for PostgreSQL online (Hot) backup of cluster
     files and database transaction logs (WAL) archiving to allow incremental
-    backups and point-in-time (pitr) recovery.
+    backups and point-in-time recovery (pitr).
     If the cluster use tablespaces, the backup will also backup and restore those
-    (both symlinks in `pg_tblspc`, and real external location data)
-    The plugin job will fail if previous job was not done on same PG major version
+    (both symlinks in `pg_tblspc`, and real external location data).
+    If the cluster detect a debian like system, it will try to add all instance configuration.
+    The plugin job will fail if previous job was not done on same PG major version.
     """
 
     def __init__(self, plugindef):
         bareosfd.DebugMessage(
             100, f"Constructor called in module {__name__} with plugindef={plugindef}\n"
         )
-
         bareosfd.DebugMessage(
             100,
             (
@@ -104,10 +104,29 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 f".{version_info.micro}\n"
             ),
         )
-
         # Last argument of super constructor is a list of mandatory arguments
-        super().__init__(plugindef, ["postgresql_data_dir", "wal_archive_dir"])
+        super().__init__(plugindef, ["wal_archive_dir"])
 
+        # The global list of cluster configuration parameter we will search for.
+        # To improve plugin robustness we will not allow backup of a cluster that have
+        # archive_mode = off or have archive_command = '' (cluster misconfigured)
+        self.cluster_configuration_parameters = dict(
+            [
+                ("data_directory", ""),
+                ("log_directory", ""),
+                ("config_file", ""),
+                ("hba_file", ""),
+                ("ident_file", ""),
+                ("ssl_ca_file", ""),
+                ("ssl_cert_file", ""),
+                ("ssl_crl_file", ""),
+                ("ssl_dh_params_file", ""),
+                ("ssl_key_file", ""),
+                ("ssl_crl_dir", ""),
+                ("archive_mode", ""),
+                ("archive_command", ""),
+            ]
+        )
         # The *contents* of the directories pg_dynshmem/, pg_notify/, pg_serial/, pg_snapshots/,
         # pg_stat_tmp/, and pg_subtrans/ can be omitted from the backup as they will be initialized
         # on postmaster startup.
@@ -145,6 +164,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.switch_wal = True
         self.switch_wal_timeout = 60
 
+        # virtual files populates when using pg_backup_stop()
         self.virtual_files = []
         self.backup_label_filename = None
         self.backup_label_data = None
@@ -152,6 +172,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.tablespace_map_data = None
         self.recovery_filename = None
         self.recovery_data = None
+        # Store items given by `pg_backup_stop()` for virtual backup_label file
+        self.label_items = {}
 
         # Needed to transfer Data to virtual files
         self.data_stream = None
@@ -168,8 +190,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # This will be set to True between select pg_backup_start() and pg_backup_stop().
         # We backup the cluster files during that time
         self.full_backup_running = False
-        # Store items given by `pg_backup_stop()` for virtual backup_label file
-        self.label_items = {}
         # We will store the `starttime` from `backup_label` here
         self.backup_start_time = None
         # PostgreSQL last backup stop time
@@ -207,73 +227,205 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         The deque is reversed, so files appear first, and directories at the end.
         `self.paths_to_backup` is extended with it.
 
-        This function is used to parse `postgresql_data_dir`, `wal_archive_dir`, `tablespace`
+        This function is used to parse `data_directory`, `wal_archive_dir`, `tablespace`
         """
+        bareosfd.DebugMessage(
+            100, f"__build_paths_to_backup() started with start_dir={start_dir}\n"
+        )
+        # Preliminary controls
+        if start_dir == "/" or not start_dir.strip():
+            raise ValueError("start_dir can not be '/' or empty")
+        if not os.path.isdir(start_dir.strip()):
+            raise ValueError("start_dir need to be a real dir.")
         if not start_dir.endswith("/"):
             start_dir += "/"
         self.paths_to_backup.append(start_dir)
         # local store for searching tree
         _paths = deque()
-        for topdir, dirnames, filenames in os.walk(start_dir, topdown=True):
-            # Usually Bareos takes care about timestamps when doing incremental backups
-            # but there we have to compare against last BackupPostgreSQL finish timestamp.
+        try:
+            for topdir, dirnames, filenames in os.walk(start_dir, topdown=True):
+                # Usually Bareos takes care about timestamps when doing incremental backups
+                # but there we have to compare against last BackupPostgreSQL finish timestamp.
 
-            # Filter out any ignored subdirectory
-            dirnames[:] = [
-                dirname for dirname in dirnames if not dirname in self.ignore_subdirs
-            ]
+                # Filter out any ignored subdirectory
+                dirnames[:] = [
+                    dirname
+                    for dirname in dirnames
+                    if not dirname in self.ignore_subdirs
+                ]
 
-            for filename in filenames:
-                if (
-                    not os.path.dirname(os.path.normpath(filename))
-                    in self.ignore_subdirs
-                    and not filename in self.ignore_files
-                ):
-                    fullname = os.path.join(topdir, filename)
-                    try:
-                        # Avoid checking os.stat for Full we took them all.
-                        if chr(self.level) != "F":
-                            mtime = os.stat(fullname).st_mtime
-                            if mtime > self.last_backup_stop_time:
-                                bareosfd.DebugMessage(
-                                    150,
-                                    (
-                                        f"file:{fullname}"
-                                        f" fullTime: {self.last_backup_stop_time}"
-                                        f" os.st_mtime: {mtime}\n"
-                                    ),
-                                )
+                for filename in filenames:
+                    if (
+                        not os.path.dirname(os.path.normpath(filename))
+                        in self.ignore_subdirs
+                        and not filename in self.ignore_files
+                    ):
+                        fullname = os.path.join(topdir, filename)
+                        try:
+                            # Avoid checking os.stat for Full we took them all.
+                            if chr(self.level) != "F":
+                                mtime = os.stat(fullname).st_mtime
+                                if mtime > self.last_backup_stop_time:
+                                    bareosfd.DebugMessage(
+                                        150,
+                                        (
+                                            f"file:{fullname}"
+                                            f" fullTime: {self.last_backup_stop_time}"
+                                            f" os.st_mtime: {mtime}\n"
+                                        ),
+                                    )
+                                    _paths.append(fullname)
+                            else:
+                                # Create the reference file
+                                if filename == "PG_VERSION":
+                                    self.ref_statp = os.stat(fullname)
                                 _paths.append(fullname)
-                        else:
-                            # Create the reference file
-                            if filename == "PG_VERSION":
-                                self.ref_statp = os.stat(fullname)
-                            _paths.append(fullname)
-                    except os.error as os_err:
-                        # if can't stat the file, record a debug message warning
-                        # and don't annoy user with that in joblog
-                        bareosfd.DebugMessage(
-                            150,
-                            f"Warning Skip Could not stat file {fullname}: {os_err}\n",
-                        )
-                        continue
-            # we don't care about mtime for dirs.
-            for dirname in dirnames:
-                if not dirname in self.ignore_subdirs:
-                    fulldirname = os.path.join(topdir, dirname) + "/"
-                    _paths.append(fulldirname)
+                        except os.error as os_error:
+                            # if can't stat the file, record a debug message warning
+                            # and don't annoy user with that in joblog
+                            bareosfd.DebugMessage(
+                                150,
+                                f"Warning Skip Could not stat file {fullname}: {os_error}\n",
+                            )
+                            continue
+                # we don't care about mtime for dirs.
+                for dirname in dirnames:
+                    if not dirname in self.ignore_subdirs:
+                        fulldirname = os.path.join(topdir, dirname) + "/"
+                        _paths.append(fulldirname)
+        except os.error as os_error:
+            bareosfd.DebugMessage(
+                100, f"os error raised in __build_paths_to backup(), error {os_error}\n"
+            )
+            raise
+        except Exception as global_error:
+            bareosfd.DebugMessage(
+                100,
+                f"unexpected error happen in __build_paths_to backup(), error {global_error}\n",
+            )
+            raise
 
         _paths.reverse()
         # Now re-add excluded mandatory_subdirs as directory only.
         # But only for Full and `pg_working_dir`
         if (
             self.full_backup_running
-            and start_dir == self.options["postgresql_data_dir"]
+            and start_dir == self.cluster_configuration_parameters["data_directory"]
         ):
             for dirname in self.mandatory_subdirs:
                 _paths.append(os.path.join(start_dir, dirname) + "/")
 
         self.paths_to_backup.extend(_paths)
+
+    def __check_cluster_configuration_parameters(self):
+        """
+        control and adjust configuration
+        """
+        bareosfd.DebugMessage(100, "__check_cluster_configuration_parameters started\n")
+
+        # Do some safety controls, we can't backup a non PITR ready cluster
+        if (
+            "archive_mode" in self.cluster_configuration_parameters
+            and self.cluster_configuration_parameters["archive_mode"] == "off"
+        ) or (
+            "archive_command" in self.cluster_configuration_parameters
+            and self.cluster_configuration_parameters["archive_command"].strip() == ""
+        ):
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "your cluster isn't configured for PITR backup"
+                " Archive mode = off or Archive command = ''",
+            )
+            raise ValueError("cluster is not configured for PITR backup")
+
+        # store parameters we will drop from self.cluster_configuration_parameters at the end
+        parameters_to_remove = ["archive_mode", "archive_command"]
+
+        # do the following controls
+        # - for all files, if they starts with data_directory, drop the parameter
+        # - delete logging_directory if it doesn't start with / or "[a-z]:"
+        #   which mean it belong to data_directory
+        for parameter, setting in self.cluster_configuration_parameters.items():
+            if parameter.startswith("archive_"):
+                continue
+
+            if parameter == "data_directory":
+                if setting == "":
+                    raise AttributeError(
+                        f"parameter {parameter} can not be an empty path"
+                    )
+                data_directory = setting
+                continue
+
+            if (
+                setting.startswith(data_directory)
+                or (parameter == "log_directory" and setting.startswith("log"))
+                or (
+                    parameter.endswith("_file")
+                    and not setting.startswith(data_directory)
+                    and not os.path.isfile(setting)
+                )
+                or setting == ""
+            ):
+                parameters_to_remove.append(parameter)
+                bareosfd.DebugMessage(
+                    100, f"check_config drop param:{parameter} value:{setting}\n"
+                )
+            else:
+                bareosfd.DebugMessage(
+                    100, f"check_config keep param:{parameter} value:{setting}\n"
+                )
+
+        # pop the self.cluster_configuration_parameters with all parameters_to_remove
+        for parameter in parameters_to_remove:
+            del self.cluster_configuration_parameters[parameter]
+
+        # On Debian system postgresql.conf is usually set to /etc/postgresql/<version>/<instance>
+        # there's a number of files there the cluster didn't know about but are useful to manage it.
+        # We will do our best to backup them all.
+        if (
+            "config_file" in self.cluster_configuration_parameters
+            and self.cluster_configuration_parameters["config_file"].startswith(
+                "/etc/postgresql/"
+            )
+        ):
+            conf_dir = os.path.dirname(
+                self.cluster_configuration_parameters["config_file"]
+            )
+            self.cluster_configuration_parameters["environment"] = os.path.join(
+                conf_dir, "environment"
+            )
+            self.cluster_configuration_parameters["pg_ctl"] = os.path.join(
+                conf_dir, "pg_ctl.conf"
+            )
+            self.cluster_configuration_parameters["environment"] = os.path.join(
+                conf_dir, "start.conf"
+            )
+            # Also any conf file present in config_dir/conf.d
+            conf_d_dir = os.path.join(conf_dir, "conf.d")
+            for item in os.listdir(conf_d_dir):
+                if os.path.isfile(os.path.join(conf_d_dir, item)) and item.endswith(
+                    ".conf"
+                ):
+                    self.cluster_configuration_parameters[
+                        os.path.splitext(item)[0]
+                    ] = os.path.join(conf_d_dir, item)
+            # and finally the subdir & dir
+            self.cluster_configuration_parameters["conf_dir"] = os.path.join(
+                conf_dir, "conf.d"
+            )
+            self.cluster_configuration_parameters["conf_dir"] = os.path.join(
+                conf_dir, ""
+            )
+        # At this stage we have a list of what to backup contained in
+        # self.cluster_configuration_parameters
+        bareosfd.DebugMessage(
+            100,
+            "cluster_configuration_parameters filtered: "
+            f"{str(self.cluster_configuration_parameters)}\n",
+        )
+        bareosfd.DebugMessage(100, "__check_cluster_configuration_parameters ended\n")
+        return bareosfd.bRC_OK
 
     def __check_for_wal_files(self):
         """
@@ -363,25 +515,17 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         """
 
         if self.last_pg_major is None:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL,
-                (
-                    "no pg version from previous backup recorded."
-                    " Is the previous backup from an old plugin?\n"
-                ),
+            raise ValueError(
+                "no pg version from previous backup recorded."
+                " Is the previous backup from an old plugin?\n"
             )
-            return bareosfd.bRC_Error
 
         if self.pg_major_version != self.last_pg_major:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL,
-                (
-                    f"PostgreSQL version of previous backup {self.last_pg_major}"
-                    f" does not match current version {self.pg_major_version}."
-                    f" Please run a new Full.\n"
-                ),
+            raise ValueError(
+                f"PostgreSQL version of previous backup {self.last_pg_major}"
+                f" does not match current version {self.pg_major_version}."
+                f" Please run a new Full.\n"
             )
-            return bareosfd.bRC_Error
 
     def __check_tablespace_in_cluster(self):
         """
@@ -398,7 +542,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 oid, tablespace_name = row
                 spacelink = os.path.realpath(
                     os.path.join(
-                        self.options["postgresql_data_dir"], "pg_tblspc", str(oid)
+                        self.cluster_configuration_parameters["data_directory"],
+                        "pg_tblspc",
+                        str(oid),
                     )
                 )
                 bareosfd.DebugMessage(
@@ -413,9 +559,19 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             bareosfd.JobMessage(
                 bareosfd.M_FATAL, f"tablespacemap checking statement failed: {pg_err}\n"
             )
-            return bareosfd.bRC_Error
-
-        return bareosfd.bRC_Error
+            raise
+        except os.error as os_error:
+            bareosfd.DebugMessage(
+                100,
+                f"os error raised in __check_tablespace_in_cluster(), error {os_error}\n",
+            )
+            raise
+        except Exception as global_error:
+            bareosfd.DebugMessage(
+                100,
+                f"unexpected error happen in __check_tablespace_in_cluster, error {global_error}\n",
+            )
+            raise
 
     def __close_db_connection(self):
         """
@@ -474,7 +630,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.last_lsn, self.backup_label_data, self.tablespace_map_data = first_row
 
             self.backup_label_filename = (
-                self.options["postgresql_data_dir"] + "backup_label"
+                self.cluster_configuration_parameters["data_directory"] + "backup_label"
             )
             bareosfd.DebugMessage(
                 100,
@@ -488,7 +644,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
             if len(self.tablespace_map_data) > 0 and self.tablespace_map_data != "":
                 self.tablespace_map_filename = (
-                    self.options["postgresql_data_dir"] + "tablespace_map"
+                    self.cluster_configuration_parameters["data_directory"]
+                    + "tablespace_map"
                 )
                 bareosfd.DebugMessage(
                     100,
@@ -505,14 +662,16 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
             if self.pg_major_version >= 10 and self.pg_major_version < 12:
                 self.recovery_filename = (
-                    self.options["postgresql_data_dir"] + "recovery.conf"
+                    self.cluster_configuration_parameters["data_directory"]
+                    + "recovery.conf"
                 )
                 self.recovery_data = bytes(
                     f"{recovery_string}\n# Place here your restore command\n", "utf-8"
                 )
             if self.pg_major_version >= 12:
                 self.recovery_filename = (
-                    self.options["postgresql_data_dir"] + "recovery.signal"
+                    self.cluster_configuration_parameters["data_directory"]
+                    + "recovery.signal"
                 )
                 self.recovery_data = bytes(recovery_string, "utf-8")
 
@@ -539,7 +698,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
     def __create_db_connection(self):
         """
-        Setup the db connection, and check pg cluster version.
+        Setup the cluster db connection, check pg minimal version, grab pg configuration.
         """
         bareosfd.DebugMessage(
             100, "create_check_db_connection in Postgresql Plugin called\n"
@@ -591,8 +750,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     f" Version detected {self.pg_major_version}\n"
                 ),
             )
-            return bareosfd.bRC_Error
+            raise ValueError("PostgreSQL server version lower than 10 detected")
 
+        bareosfd.DebugMessage(100, "create_check_db_connection finished\n")
         return bareosfd.bRC_OK
 
     def __do_switch_wal(self):
@@ -628,11 +788,65 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
         return current_lsn
 
+    def __get_cluster_configuration_parameters(self):
+        """
+        get and set each cluster_configuration_parameters asking the value of from the cluster.
+        beware that maybe the role you are using if not able to grab the expecting parameter.
+        """
+        try:
+            bareosfd.DebugMessage(100, "__get_cluster_configuration_parameters start\n")
+            for parameter, setting in self.cluster_configuration_parameters.items():
+                stmt = f"select setting from pg_settings where name = '{parameter}'"
+                ret = self.db_con.run(stmt)
+                # ensure we have a value
+                if not ret:
+                    m = f"used role missed privileges to read configuration {parameter} value\n"
+                    raise ValueError(m)
+                setting = ret[0][0]
+                # Add final slashes to any directory parameter
+                if parameter.endswith("_directory"):
+                    if not setting.endswith("/"):
+                        setting = os.path.join(setting, "")
+                self.cluster_configuration_parameters[parameter] = setting
+                bareosfd.DebugMessage(
+                    150,
+                    f"cluster configuration {parameter}={setting}\n",
+                )
+        except pg8000.Error as pg_err:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                (
+                    "__get_cluster_configuration_parameters could not get "
+                    f"cluster configuration: {pg_err}\n"
+                ),
+            )
+            raise
+        except ValueError as val_err:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                (f"__get_cluster_configuration_parameters() value error: {val_err}\n"),
+            )
+            raise
+        except Exception as global_err:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                (
+                    f"__get_cluster_configuration_parameters() unexpected error: {global_err}\n"
+                ),
+            )
+            raise
+
+        bareosfd.DebugMessage(
+            100,
+            f"cluster_configuration_parameters {str(self.cluster_configuration_parameters)}\n",
+        )
+        bareosfd.DebugMessage(100, "__get_cluster_configuration_parameters ended\n")
+
     def __pg_backup_start(self):
         """
         Run pg_backup_start depending on pg_major version
-        Return bRC_OK if success
         """
+        bareosfd.DebugMessage(100, "__pg_backup_start() started\n")
         # Add PG major version to the label that can help operator to distinguish backup.
         self.backup_label_string = (
             f"Bareos.plugin.postgresql.jobid.{self.jobId}.PG{self.pg_major_version}"
@@ -657,20 +871,18 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         try:
             result = self.db_con.run(f"select {start_stmt};")
         except pg8000.Error as pg_err:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"{start_stmt} statement failed: {pg_err}"
-            )
-            return bareosfd.bRC_Error
+            bareosfd.DebugMessage(150, f"{start_stmt} statement failed: {pg_err}\n")
+            raise
 
         bareosfd.DebugMessage(150, f"Start response LSN: {str(result)}\n")
-        return bareosfd.bRC_OK
+        bareosfd.DebugMessage(100, "__pg_backup_start() ended\n")
 
     def __wait_for_wal_archiving(self, lsn):
         """
         Wait for wal archiving to be finished by checking if the wal file
         for the given LSN is present in the filesystem.
         """
-
+        bareosfd.DebugMessage(100, "__wait_for_wal_archiving() started\n")
         if self.pg_major_version >= 10:
             wal_filename_func = "pg_walfile_name"
         else:
@@ -680,12 +892,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         try:
             wal_filename = self.db_con.run(walfile_stmt)[0][0]
-
             bareosfd.DebugMessage(
                 100,
                 f"__wait_for_wal_archiving({lsn}): wal filename={wal_filename}\n",
             )
-
         except Exception as err:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL, f"Error getting WAL filename for LSN {lsn}\n{err}\n"
@@ -700,6 +910,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         slept_sum = 0.0
         while slept_sum <= self.switch_wal_timeout:
             if os.path.exists(wal_file_path):
+                bareosfd.DebugMessage(
+                    100, "__wait_for_wal_archiving() ended wal found\n"
+                )
                 return True
             time.sleep(sleep_time)
             slept_sum += sleep_time
@@ -712,12 +925,14 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 f" for wal file {wal_filename} to be archived\n"
             ),
         )
+        bareosfd.DebugMessage(100, "__wait_for_wal_archiving() ended timeout\n")
         return False
 
     def check_options(self, mandatory_options=None):
         """
         Check for mandatory options and verify database connection
         """
+        bareosfd.DebugMessage(100, "check_options started\n")
         result = super().check_options(mandatory_options)
         if not result == bareosfd.bRC_OK:
             return result
@@ -733,18 +948,22 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
-        if not self.options["postgresql_data_dir"].endswith("/"):
-            self.options["postgresql_data_dir"] += "/"
-
-        if not self.options["wal_archive_dir"].endswith("/"):
-            self.options["wal_archive_dir"] += "/"
+        # check wal_archive_dir is not a symlink, otherwise replace it by the real location
+        # and emit a job warning for Backup jobs only
+        w_a_d = self.options["wal_archive_dir"].rstrip("/")
+        if os.path.islink(w_a_d):
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                (
+                    f"symlink detected in wal_archive_dir option: {self.options['wal_archive_dir']}\n"
+                    f" it is replaced by its real path {os.path.realpath(w_a_d)} \n"
+                ),
+            )
+        # Add the mandatory final /
+        self.options["wal_archive_dir"] = os.path.join(os.path.realpath(w_a_d), "")
 
         if "ignore_subdirs" in self.options:
             self.ignore_subdirs.extend(self.options["ignore_subdirs"])
-
-        self.backup_label_filename = (
-            self.options["postgresql_data_dir"] + "backup_label"
-        )
 
         # get PostgreSQL connection settings from the environment like libpq does
         self.db_user = os.environ.get("PGUSER", getpass.getuser())
@@ -798,7 +1017,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # TODO handle ssl_context support in connection
         # Normally not needed as the bareos-fd has to be located on host within
         # the pg cluster: as such using socket is preferably.
-
+        bareosfd.DebugMessage(100, "check_option() finished\n")
         return bareosfd.bRC_OK
 
     def plugin_io_read(self, IOP):
@@ -936,30 +1155,56 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
     def start_backup_job(self):
         """
-        Create the file list and tell PostgreSQL we start a backup now.
+        Create the PostgreSQL cluster connection
+        Get & Set & Check configuration give by the cluster
+        Determine the start_dir by the job.level
+        Build the list of objects to backup
         """
         bareosfd.DebugMessage(100, "start_backup_job in PostgresqlPlugin called\n")
-
-        self.__create_db_connection()
         bareosfd.JobMessage(
             bareosfd.M_INFO,
             f"python: {version} | pg8000: {pg8000.__version__}\n",
         )
+        try:
+            # Create and test the connection to the cluster
+            self.__create_db_connection()
+
+            # Grab all internal configuration
+            self.__get_cluster_configuration_parameters()
+
+            # Check all configuration option
+            self.__check_cluster_configuration_parameters()
+
+        except ValueError as val_error:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "cluster connection or configuration retrieval has failed"
+                f" with error: {val_error}\n",
+            )
+            return bareosfd.bRC_Error
+        except Exception as global_error:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "an unexpected error occur during cluster connection"
+                f" and configuration retrieval: {global_error}\n",
+            )
+            return bareosfd.bRC_Error
 
         if chr(self.level) == "F":
             # For Full we backup the PostgreSQL data directory
-            start_dir = self.options["postgresql_data_dir"]
+            start_dir = self.cluster_configuration_parameters["data_directory"]
             bareosfd.DebugMessage(100, f"data_dir: {start_dir}\n")
-            bareosfd.JobMessage(bareosfd.M_INFO, f"data_dir: {start_dir}\n")
             self.full_backup_running = True
         else:
             # If level is not Full, we only backup WAL files
             # and create a restore object ROP with timestamp information.
-
-            self.__check_pg_major_version()
+            try:
+                self.__check_pg_major_version()
+            except ValueError as val_error:
+                bareosfd.JobMessage(bareosfd.M_FATAL, val_error)
+                return bareosfd.bRC_Error
 
             start_dir = self.options["wal_archive_dir"]
-            bareosfd.JobMessage(bareosfd.M_INFO, f"data_dir: {start_dir}\n")
 
             self.paths_to_backup.append("ROP")
             self.virtual_files.append("ROP")
@@ -994,11 +1239,42 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # Plugins needs to build by themselves the list of files/dirs to backup
         # Gather files from start_dir:
         #     - full jobs:
-        #       - postgresql_data_dir
+        #       - self.cluster_configuration_parameters["data_directory"]
         #       - real location of tablespaces (if any)
         #     - incr/diff jobs:
         #        - wal_archive_dir
-        self.__build_paths_to_backup(start_dir)
+        bareosfd.JobMessage(bareosfd.M_INFO, f"data_dir: {start_dir}\n")
+        try:
+            self.__build_paths_to_backup(start_dir)
+            self.__check_tablespace_in_cluster()
+        except os.error as os_error:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "building paths to backup failed" f" with os.error: {os_error}",
+            )
+            return bareosfd.bRC_Error
+        except ValueError as val_error:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "building paths to backup failed" f" with value.error: {val_error}",
+            )
+            return bareosfd.bRC_Error
+        except Exception as global_error:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "building paths to backup failed"
+                f" with unexpected error: {global_error}",
+            )
+            return bareosfd.bRC_Error
+
+        # In non exclusive mode we can't know if there's already a running job.
+        # Documentation stipulate how to set `Allow Duplicate Job = no`
+        # to exclude that case in job config.
+        try:
+            self.__pg_backup_start()
+        except pg8000.Error as pg8000_error:
+            bareosfd.JobMessage(bareosfd.M_FATAL, pg8000_error)
+            return bareosfd.bRC_Error
 
         # If level is not Full, we are done here and set the new
         # last_backup_stop_time as reference for future jobs
@@ -1007,13 +1283,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.last_backup_stop_time = int(time.time())
             return bareosfd.bRC_OK
 
-        # For Full in non exclusive mode we can't know if there's
-        # already a running job. Document how to use
-        # Allow Duplicate Job = no to exclude that case in job config.
+        # For full we add the rest of configuration files and dirs
+        for parameter, setting in self.cluster_configuration_parameters.items():
+            if parameter == "data_directory":
+                continue
+            self.paths_to_backup.append(setting)
 
-        self.__check_tablespace_in_cluster()
-
-        return self.__pg_backup_start()
+        return bareosfd.bRC_OK
 
     def start_backup_file(self, savepkt):
         """
@@ -1085,6 +1361,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     if os.path.islink(self.file_to_backup.rstrip("/")):
                         statp = os.lstat(self.file_to_backup)
                         savepkt.type = bareosfd.FT_LNK
+                        # tell the fd to not open the symlink
+                        savepkt.no_read = True
                         savepkt.link = os.readlink(self.file_to_backup.rstrip("/"))
                     else:
                         statp = os.stat(self.file_to_backup)
