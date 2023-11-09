@@ -969,7 +969,7 @@ static inline bool read_meta_data_key(char* key)
   rmde.start_magic = BAREOSMAGIC;
   rmde.end_magic = BAREOSMAGIC;
   rmde.meta_key_length = strlen(key) + 1;
-  rmde.meta_data_length = requiredLen + 1;
+  rmde.meta_data_length = requiredLen;
 
   if (robust_writer(STDOUT_FILENO, &rmde, rmde_size) != rmde_size) {
     fprintf(stderr,
