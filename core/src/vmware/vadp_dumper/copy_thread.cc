@@ -69,8 +69,7 @@ static void* copy_thread(void* data)
       context->do_end = false;
     }
 
-    pthread_cond_signal(&context->flush);
-
+    assert(0 == pthread_cond_signal(&context->flush));
     pthread_mutex_unlock(&context->lock);
   }
 
@@ -170,7 +169,7 @@ void flush_copy_thread()
 {
   CP_THREAD_CTX* context = cp_thread;
 
-  if (pthread_mutex_lock(&context->lock) != 0) { return; }
+  assert(pthread_mutex_lock(&context->lock) == 0);
 
   /* In essence the flush should work in one shot but be a bit more
    * conservative. */
@@ -179,7 +178,7 @@ void flush_copy_thread()
     context->cb->flush();
 
     // Wait for the copy thread to say it flushed the data out.
-    pthread_cond_wait(&context->flush, &context->lock);
+    assert(pthread_cond_wait(&context->flush, &context->lock) == 0);
   }
 
   context->flushed = false;
