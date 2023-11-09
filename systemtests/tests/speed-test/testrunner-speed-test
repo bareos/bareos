@@ -45,11 +45,11 @@ cat "$tmp/bconcmds"
 		    "$log" \
 		    "Backup was not ok."
   ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
-	echo "... finished in $ToAdd"
-	Data+=("$ToAdd")
+	echo "... result: $ToAdd"
+	#Data+=("$ToAdd")
+  echo  " $options: $ToAdd"  >> "$output"
 done
 
-echo "$Data" > "$output"
 printf "\n\nResults:\n------\n"
 column -t -s, "${output}"
 

@@ -1,1 +1,1 @@
-FilesetOptions=("compression=lzo" "compression=lz4hc")
+FilesetOptions=("compression=lzo" "compression=lz4hc" "compression=gzip1" "aclsupport=no;xattrsupport=no")
