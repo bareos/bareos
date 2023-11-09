@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - github actions: update/fix publish to PyPI workflows [PR #1585]
 
+### Fixed
+- catreq.cc: suppress missing batch con warning [PR #1584]
+
 ## [22.1.1] - 2023-10-23
 
 ### Documentation
@@ -595,5 +598,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1567]: https://github.com/bareos/bareos/pull/1567
 [PR #1568]: https://github.com/bareos/bareos/pull/1568
 [PR #1574]: https://github.com/bareos/bareos/pull/1574
+[PR #1584]: https://github.com/bareos/bareos/pull/1584
 [PR #1585]: https://github.com/bareos/bareos/pull/1585
 [unreleased]: https://github.com/bareos/bareos/tree/master
