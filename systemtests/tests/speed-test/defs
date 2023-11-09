@@ -1,2 +1,1 @@
-Clients=(Client_0 Client_1 Client_2 Client_3 Client_4 Client_5 Client_10)
-Types=("Vanilla" "Checksum" "Compression" "Everything")
+FilesetOptions=("compression=lzo" "compression=lz4hc")

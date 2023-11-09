@@ -23,36 +23,22 @@ output="$tmp/output.csv"
 
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
-function start_client()
-{
-    BAREOS_CONFIG_DIR="etc/$1" "${rscripts}/bareos-ctl-fd" start
-    BAREOS_CONFIG_DIR="etc/$1" "${rscripts}/bareos-ctl-fd" status
-}
-
-function stop_clients()
-{
-    "${rscripts}/bareos-ctl-fd" stop
-}
-
-IFS=,
-echo "," "${Types[*]}" >> "${output}"
-
-for Client in "${Clients[@]}"; do
-    echo "Using $Client"
-    start_client "$Client"
-    Data=()
-    for Type in "${Types[@]}"; do
-	echo "Running $Type..."
-	log="$backup_log-$Client-$Type"
+for options in "${FilesetOptions[@]}"; do
+  echo $options > include/etc/bareos/bareos-dir.d/fileset/default.conf
+  options_filenamecompat=$(tr ',=' '_' <<< $options)
+	log="$backup_log-$options_filenamecompat"
 	rm -f "$log"
 	cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $log
-run job="Backup-$Client-$Type" level=Full yes
+reload
+show fileset=Default
+run job=backup-bareos-fd level=Full yes
 wait
 messages
 END_OF_DATA
+cat "$tmp/bconcmds"
 	run_bconsole
 
 	expect_grep "Backup OK" \
@@ -61,12 +47,9 @@ END_OF_DATA
   ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... finished in $ToAdd"
 	Data+=("$ToAdd")
-    done
-    IFS=,
-    echo "${Client}," "${Data[*]}" >> "$output"
-    stop_clients
 done
 
+echo "$Data" > "$output"
 printf "\n\nResults:\n------\n"
 column -t -s, "${output}"
 
