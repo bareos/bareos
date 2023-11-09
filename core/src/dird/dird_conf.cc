@@ -1249,7 +1249,11 @@ bool JobResource::Validate()
       }
       break;
   }
-
+  if (JobLevel == L_BASE) {
+    Jmsg(NULL, M_WARNING, 0,
+         _("Job \"%s\" has level 'Base' which is deprecated!\n"),
+         resource_name_);
+  }
   return true;
 }
 
