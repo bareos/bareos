@@ -58,8 +58,7 @@ END_OF_DATA
 	expect_grep "Backup OK" \
 		    "$log" \
 		    "Backup was not ok."
-
-	ToAdd=$(grep "Elapsed time:" "$log" |sed 's/Elapsed time:[[:space:]]*//' |sed 's/[[:space:]]*//g')
+  ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... finished in $ToAdd"
 	Data+=("$ToAdd")
     done
