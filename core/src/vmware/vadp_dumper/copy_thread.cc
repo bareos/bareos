@@ -173,9 +173,12 @@ void flush_copy_thread()
 
   /* In essence the flush should work in one shot but be a bit more
    * conservative. */
+  // make sure the other thread noticed
+  context->flushed = false;
+  context->cb->flush();
+
   while (!context->flushed) {
     // Tell the copy thread to flush out all data.
-    context->cb->flush();
 
     // Wait for the copy thread to say it flushed the data out.
     assert(pthread_cond_wait(&context->flush, &context->lock) == 0);
