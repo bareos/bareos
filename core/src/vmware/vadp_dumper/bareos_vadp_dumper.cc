@@ -1265,7 +1265,12 @@ static inline bool process_cbt(const char* key, json_t* cbt)
       offset_length -= sectors_to_read * DEFAULT_SECTOR_SIZE;
     }
 
-    if (multi_threaded) { flush_copy_thread(); }
+    if (multi_threaded) {
+      /* we need to wait until the thread has finished writing
+       * all data that we have given him to write -- otherwise both this thread
+       * and the copy thread would write to stdout at the same time! */
+      flush_copy_thread();
+    }
 
     if (verbose) { fflush(stderr); }
   }
