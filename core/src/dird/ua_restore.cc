@@ -1120,20 +1120,16 @@ static bool CheckAndSetFileregex(UaContext* ua,
                                  RestoreContext* rx,
                                  const char* regex)
 {
-  regex_t* fileregex_re{};
-  int rc;
-  char errmsg[500] = "";
+  regex_t fileregex_re{};
 
-  fileregex_re = (regex_t*)malloc(sizeof(regex_t));
-  rc = regcomp(fileregex_re, regex, REG_EXTENDED | REG_NOSUB);
-  if (rc != 0) { regerror(rc, fileregex_re, errmsg, sizeof(errmsg)); }
-  regfree(fileregex_re);
-  free(fileregex_re);
-
-  if (*errmsg) {
+  int rc = regcomp(&fileregex_re, regex, REG_EXTENDED | REG_NOSUB);
+  if (rc != 0) {
+    char errmsg[500];
+    regerror(rc, &fileregex_re, errmsg, sizeof(errmsg));
     ua->SendMsg(T_("Regex compile error: %s\n"), errmsg);
     return false;
   }
+  regfree(&fileregex_re);
 
   if (rx->bsr->fileregex) free(rx->bsr->fileregex);
   rx->bsr->fileregex = strdup(regex);
