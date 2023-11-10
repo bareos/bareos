@@ -278,8 +278,19 @@ bool DeviceResource::Validate()
     my_config->AddWarning(
         "Setting 'Maximum Block Size' on a non-tape device is unsupported");
   }
+
   if (dev_type == DeviceType::B_RADOS_DEV) {
     my_config->AddWarning("The Rados Storage Backend Device is deprecated");
+  }
+
+  if (IsMemberPresent("AutoDeflate")
+      && !IsMemberPresent("AutoDeflateAlgorithm")) {
+    Jmsg(nullptr, M_ERROR, 0,
+         _("Device %s: If 'AutoDeflate' is set, then 'AutoDeflateAlgorithm' "
+           "also has to be set.\n"),
+         resource_name_);
+
+    return false;
   }
 
   return true;

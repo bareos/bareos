@@ -372,12 +372,12 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
   }
 
-  if (dcr->autodeflate != IODirection::NONE) {
+  if (dcr->autodeflate != AutoXflateMode::IO_DIRECTION_NONE) {
     if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
 
-  if (dcr->autoinflate != IODirection::NONE) {
+  if (dcr->autoinflate != AutoXflateMode::IO_DIRECTION_NONE) {
     if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
