@@ -366,12 +366,14 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
   }
 
-  if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+  if (AutoxflateModeContainsOut(dcr->autodeflate)
+      || AutoxflateModeContainsIn(dcr->autodeflate)) {
     if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
 
-  if (AutoxflateModeContainsIn(dcr->autoinflate)) {
+  if (AutoxflateModeContainsIn(dcr->autoinflate)
+      || AutoxflateModeContainsOut(dcr->autoinflate)) {
     if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
@@ -715,6 +717,13 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   // Clone the data from the original DeviceRecord to the converted one.
   nrec = bareos_core_functions->new_record(/* with_data = */ false);
   bareos_core_functions->CopyRecordState(nrec, rec);
+
+  if (!dcr->jcr->compress.inflate_buffer) {
+    Jmsg(ctx, M_FATAL,
+         _("autoxflate-sd: compress.inflate_buffer was not setup "
+           "missing bSdEventSetupRecordTranslation call?\n"));
+    goto bail_out;
+  }
 
   // Setup the converted record to point to the original data. The
   // DecompressData function will decompress the data in the
