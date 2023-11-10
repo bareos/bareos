@@ -401,7 +401,7 @@ static bRC handle_read_translation(PluginContext* ctx, void* value)
   }
 
   if (!record_was_swapped) {
-    if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+    if (AutoxflateModeContainsIn(dcr->autodeflate)) {
       record_was_swapped = AutoDeflateRecord(ctx, dcr);
     }
   }
