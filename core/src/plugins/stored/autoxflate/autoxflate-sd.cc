@@ -565,7 +565,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   ser_declare;
   bool retval = false;
   comp_stream_header ch;
-  DeviceRecord *rec, *nrec;
+  DeviceRecord *rec, *nrec = nullptr;
   struct plugin_ctx* p_ctx;
   unsigned char* data = NULL;
   bool intermediate_value = false;
@@ -597,10 +597,10 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
            "missing bSdEventSetupRecordTranslation call?\n"));
     goto bail_out;
   }
+
   // Setup the converted DeviceRecord to point with its data buffer to the
   // compression buffer.
   nrec->data = dcr->jcr->compress.deflate_buffer;
-
 
   switch (rec->maskedStream) {
     case STREAM_FILE_DATA:
@@ -621,7 +621,6 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
                     rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {
-    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -687,6 +686,10 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   retval = true;
 
 bail_out:
+  if (nrec && dcr->after_rec != nrec) {
+    bareos_core_functions->FreeRecord(nrec);
+    nrec = nullptr;
+  }
   return retval;
 }
 
@@ -694,7 +697,7 @@ bail_out:
 // alternative datastream.
 static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 {
-  DeviceRecord *rec, *nrec;
+  DeviceRecord *rec, *nrec = nullptr;
   bool retval = false;
   struct plugin_ctx* p_ctx;
   bool intermediate_value = false;
@@ -733,7 +736,6 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (!DecompressData(dcr->jcr, "Unknown", rec->maskedStream, &nrec->data,
                       &nrec->data_len, true)) {
-    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -769,5 +771,9 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   retval = true;
 
 bail_out:
+  if (nrec && dcr->after_rec != nrec) {
+    bareos_core_functions->FreeRecord(nrec);
+    nrec = nullptr;
+  }
   return retval;
 }
