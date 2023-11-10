@@ -504,6 +504,16 @@ bool DoMacRun(JobControlRecord* jcr)
           jcr->sd_impl->read_dcr->dev->file,
           jcr->sd_impl->read_dcr->dev->block_num);
 
+    // Let SD plugins setup the record translation on read dcr
+    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
+                            jcr->sd_impl->read_dcr)
+        != bRC_OK) {
+      Jmsg(jcr, M_FATAL, 0,
+           _("bSdEventSetupRecordTranslation call failed for read dcr!\n"));
+      ok = false;
+      goto bail_out;
+    }
+
     jcr->sendJobStatus(JS_Running);
 
     // Set network buffering.
@@ -603,6 +613,26 @@ bool DoMacRun(JobControlRecord* jcr)
 
     Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->sd_impl->dcr->dev->file,
           jcr->sd_impl->dcr->dev->block_num);
+
+    // Let SD plugins setup the record translation on read dcr
+    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
+                            jcr->sd_impl->read_dcr)
+        != bRC_OK) {
+      Jmsg(jcr, M_FATAL, 0,
+           _("bSdEventSetupRecordTranslation call failed for read dcr!\n"));
+      ok = false;
+      goto bail_out;
+    }
+
+    // Let SD plugins setup the record translation on write dcr
+    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
+                            jcr->sd_impl->dcr)
+        != bRC_OK) {
+      Jmsg(jcr, M_FATAL, 0,
+           _("bSdEventSetupRecordTranslation call failed for write dcr!\n"));
+      ok = false;
+      goto bail_out;
+    }
 
     jcr->sendJobStatus(JS_Running);
 

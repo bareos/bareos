@@ -18,6 +18,8 @@ setup_data
 
 start_test
 
+debug_level=500
+
 # 1) Create a full backup with LZ4 compression (as per SelfTest fileset config)
 # 2) Copy full backup to other pool and decompress (as per FileStorage2 device config)
 # 3) Restore copied job
@@ -30,8 +32,12 @@ wait
 update volume=TestVolume001 volstatus=Used
 messages
 label volume=TestCopyVolume001 storage=File2 pool=FullCopy
+setdebug level=$debug_level storage=File
+setdebug level=$debug_level storage=File2
 run copy yes
 wait
+setdebug level=0 storage=File
+setdebug level=0 storage=File2
 messages
 restore jobid=4 client=bareos-fd where=$tmp/bareos-restores all done yes
 wait
