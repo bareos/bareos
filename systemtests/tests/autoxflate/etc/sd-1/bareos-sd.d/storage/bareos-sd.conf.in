@@ -1,0 +1,11 @@
+Storage {
+  Name = bareos-sd-1
+  Maximum Concurrent Jobs = 20
+
+  Working Directory =  "@working_dir@"
+  SD Port = @sd2_port@
+  @sd_backend_config@
+
+  Plugin Directory = "@SD_PLUGINS_DIR_TO_TEST@"
+  Plugin Names = "autoxflate"
+}

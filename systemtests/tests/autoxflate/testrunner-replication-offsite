@@ -1,0 +1,86 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+debug_level=500
+File="bbatch.c"
+
+restore_dir="${tmp}/O1C1-restores"
+start_test
+
+# 1) Copy from local-copy (uncompressed) to offsite (compressed)
+# 2) Copy from offsite to offsite-copy; since autoxflate on replication is off
+#    the data should still be compressed
+# 3) Restore from offsite-copy
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${tmp}/copy-offsite.out
+setdebug level=$debug_level storage=O11
+setdebug level=$debug_level storage=O12
+label volume=O1C1 storage=O12 pool=OffsiteCopy
+run copy-offsite yes
+wait
+update volume=O1C1 volstatus=Used
+messages
+@$out ${tmp}/restore-O1C1.out
+restore jobid=13 client=bareos-fd where=$restore_dir all done yes
+wait
+setdebug level=0 storage=O11
+setdebug level=0 storage=O12
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$@"
+
+
+
+# There should be no difference, but with autoxflate decompression
+# the restore reports success ("Restore OK") but seems to fail silently
+# and doesn't actually restore anything
+check_restore_diff "${BackupDirectory}" "$restore_dir"
+
+expect_grep "Copying OK" \
+	    "$tmp/copy-offsite.out" \
+	    "Offsite replication did not succeed."
+
+expect_grep "Restore OK" \
+	    "$tmp/restore-O1C1.out" \
+	    "Restore from O1C1 did not succeed."
+
+conf="${BAREOS_CONFIG_DIR}"/../sd-1
+
+if ! is_file_compressed "1D2" "O1C1" "${File}"; then
+    echo "O1D2 is not compressed"
+    estat=4
+fi
+
+end_test

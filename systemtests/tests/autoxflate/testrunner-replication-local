@@ -1,0 +1,80 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+debug_level=500
+File="bbatch.c"
+
+restore_dir="${tmp}/LC1-restores"
+
+start_test
+
+# 1) Create a full backup with LZ4 compression (as per SelfTest fileset config)
+# 2) Copy full backup to other pool and decompress (as per FileStorage2 device config)
+# 3) Restore copied job
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${tmp}/copy-local.out
+setdebug level=$debug_level storage=L1
+setdebug level=$debug_level storage=L2
+label volume=LC1 storage=L2 pool=FullCopy
+run copy-local yes
+wait
+update volume=LC1 volstatus=Used
+messages
+@$out ${tmp}/restore-LC1.out
+restore jobid=5 client=bareos-fd where=$restore_dir all done yes
+wait
+setdebug level=0 storage=L1
+setdebug level=0 storage=L2
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$@"
+
+# There should be no difference
+check_restore_diff "${BackupDirectory}" "$restore_dir"
+
+if is_file_compressed "LD2" "LC1" "${File}"; then
+    echo "TestCopyVolume001 is not uncompressed"
+    estat=4
+fi
+
+expect_grep "Copying OK" \
+	    "$tmp/copy-local.out" \
+	    "Local replication did not succeed."
+
+expect_grep "Restore OK" \
+	    "$tmp/restore-LC1.out" \
+	    "Restore from LC1 did not succeed."
+
+end_test
