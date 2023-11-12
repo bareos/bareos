@@ -48,6 +48,25 @@ cat "$tmp/bconcmds"
 	echo "... result: $ToAdd"
 	#Data+=("$ToAdd")
   echo  " $options: $ToAdd"  >> "$output"
+
+  # clean restore dir
+  rm -Rvf "$tmp/bareos-restores"
+  cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log-restore
+reload
+restore client=bareos-fd where=$tmp/bareos-restores select all done yes
+wait
+messages
+END_OF_DATA
+	run_bconsole
+	expect_grep "Restore OK" \
+		    "$log-restore" \
+		    "Restore was not ok."
+  ToAdd=$(grep -o "[0-9.]* KB/s" "$log-restore")
+	echo "... result: $ToAdd"
+  echo  " restore: $options: $ToAdd"  >> "$output"
 done
 
 printf "\n\nResults:\n------\n"
