@@ -26,11 +26,11 @@ start_test
 backup_log="$tmp"/backups.out
 restore_log="$tmp"/restores.out
 consolidate_log="$tmp"/consolidate.out
-output="$tmp/output.csv"
+output="$tmp/output.tsv"
 
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
-echo  "Test;backup;restore" > "$output"
+printf  "Test\tbackup\trestore\n" > "$output"
 
 for filesetoptions in "${FilesetOptions[@]}"; do
 
@@ -59,7 +59,7 @@ cat "$tmp/bconcmds"
   ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... result: $ToAdd"
 	#Data+=("$ToAdd")
-  echo  -n  "$filesetoptions;$ToAdd;"  >> "$output"
+  printf "$filesetoptions\t$ToAdd\t"  >> "$output"
 
 # now restore
 	log="$restore_log-$filesetoptions_filenamecompat"
@@ -81,10 +81,11 @@ END_OF_DATA
 		    "Restore was not ok."
   ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... result: $ToAdd"
-  echo  "$ToAdd"  >> "$output"
+  printf  "$ToAdd\n"  >> "$output"
 done
 
 printf "\n\nResults:\n------\n"
-column -t -s, "${output}"
+cat "${output}"
+#column -t -s, "${output}"
 
 end_test
