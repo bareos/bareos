@@ -32,13 +32,16 @@ rm -rf "$backup_log" "$consolidate_log" "$output"
 
 printf  "Test\tbackup\trestore\n" > "$output"
 
-for filesetoptions in "${FilesetOptions[@]}"; do
 
+for clientoptions in "${ClientOptions[@]}"; do
+  echo "$clientoptions" > include/etc/bareos/bareos-dir.d/client/bareos-fd.conf
+  clientoptions_filenamecompat=$(tr ',=' '_' <<< $clientoptions)
+
+  for filesetoptions in "${FilesetOptions[@]}"; do
   rm storage/* ||:
-
   echo $filesetoptions > include/etc/bareos/bareos-dir.d/fileset/default.conf
   filesetoptions_filenamecompat=$(tr ',=' '_' <<< $filesetoptions)
-	log="$backup_log-$filesetoptions_filenamecompat"
+	log="$backup_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
   echo > "$log"
 	cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -46,6 +49,9 @@ messages
 @$out $log
 reload
 show fileset=Default
+delete volume=Full-0103 yes
+delete volume=Full-0001 yes
+delete volume=Full-0002 yes
 run job=backup-bareos-fd level=Full yes
 wait
 messages
@@ -59,10 +65,10 @@ cat "$tmp/bconcmds"
   ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... result: $ToAdd"
 	#Data+=("$ToAdd")
-  printf "$filesetoptions\t$ToAdd\t"  >> "$output"
+  printf "$clientoptions-$filesetoptions\t$ToAdd\t"  >> "$output"
 
 # now restore
-	log="$restore_log-$filesetoptions_filenamecompat"
+	log="$restore_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
   echo > "$log"
   # clean restore dir
   sudo rm -Rvf "$tmp/bareos-restores"
@@ -83,7 +89,7 @@ END_OF_DATA
 	echo "... result: $ToAdd"
   printf  "$ToAdd\n"  >> "$output"
 done
-
+done
 printf "\n\nResults:\n------\n"
 cat "${output}"
 #column -t -s, "${output}"
