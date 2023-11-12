@@ -15,19 +15,31 @@ export TestName
 
 source "defs"
 
+bin/bareos stop
+bin/bareos start
+
+
+
+
 start_test
 
 backup_log="$tmp"/backups.out
+restore_log="$tmp"/restores.out
 consolidate_log="$tmp"/consolidate.out
 output="$tmp/output.csv"
 
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
-for options in "${FilesetOptions[@]}"; do
-  echo $options > include/etc/bareos/bareos-dir.d/fileset/default.conf
-  options_filenamecompat=$(tr ',=' '_' <<< $options)
-	log="$backup_log-$options_filenamecompat"
-	rm -f "$log"
+echo  "Test;backup;restore" > "$output"
+
+for filesetoptions in "${FilesetOptions[@]}"; do
+
+  rm storage/* ||:
+
+  echo $filesetoptions > include/etc/bareos/bareos-dir.d/fileset/default.conf
+  filesetoptions_filenamecompat=$(tr ',=' '_' <<< $filesetoptions)
+	log="$backup_log-$filesetoptions_filenamecompat"
+  echo > "$log"
 	cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
@@ -47,14 +59,17 @@ cat "$tmp/bconcmds"
   ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... result: $ToAdd"
 	#Data+=("$ToAdd")
-  echo  " $options: $ToAdd"  >> "$output"
+  echo  -n  "$filesetoptions;$ToAdd;"  >> "$output"
 
+# now restore
+	log="$restore_log-$filesetoptions_filenamecompat"
+  echo > "$log"
   # clean restore dir
-  rm -Rvf "$tmp/bareos-restores"
+  sudo rm -Rvf "$tmp/bareos-restores"
   cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
-@$out $log-restore
+@$out $log
 reload
 restore client=bareos-fd where=$tmp/bareos-restores select all done yes
 wait
@@ -62,11 +77,11 @@ messages
 END_OF_DATA
 	run_bconsole
 	expect_grep "Restore OK" \
-		    "$log-restore" \
+		    "$log" \
 		    "Restore was not ok."
-  ToAdd=$(grep -o "[0-9.]* KB/s" "$log-restore")
+  ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... result: $ToAdd"
-  echo  " restore: $options: $ToAdd"  >> "$output"
+  echo  "$ToAdd"  >> "$output"
 done
 
 printf "\n\nResults:\n------\n"

@@ -1,1 +1,3 @@
-FilesetOptions=("compression=lzo" "compression=lz4" "compression=gzip1" "compression=gzip2" "compression=gzip3" "compression=gzip4" "compression=gzip5" "compression=gzip6" "compression=gzip7" "compression=gzip8" "compression=gzip9" "compression=lzo;signature=xxh128" "compression=lz4hc" "compression=gzip1" "aclsupport=no;xattrsupport=no")
+#FilesetOptions=("#compression=none" "compression=lzo" "compression=lz4" "compression=gzip1" "compression=gzip2" "compression=gzip3" "compression=gzip4" "compression=gzip5" "compression=gzip6" "compression=gzip7" "compression=gzip8" "compression=gzip9" "compression=lzo;signature=xxh128" "compression=lz4hc" "compression=gzip1" "aclsupport=no;xattrsupport=no")
+FilesetOptions=("#compression=none" "compression=lzo" "compression=lz4" "aclsupport=no;xattrsupport=no")
+ClientOptions=("MaximumWorkersPerJob=2")
