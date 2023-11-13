@@ -3217,6 +3217,7 @@
         "BaseJob": {
           "datatype": "OPTION",
           "code": 0,
+          "deprecated": true,
           "equals": true
         },
         "Accurate": {
@@ -3292,6 +3293,7 @@
         "Base": {
           "datatype": "BASEJOB",
           "code": 0,
+          "deprecated": true,
           "equals": true
         },
         "Wild": {

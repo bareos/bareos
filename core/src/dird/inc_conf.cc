@@ -246,7 +246,7 @@ ResourceItem newinc_items[] = {
 ResourceItem options_items[] = {
   { "Compression", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Signature", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "BaseJob", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
+  { "BaseJob", CFG_TYPE_OPTION, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Accurate", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Verify", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "OneFs", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
@@ -261,7 +261,7 @@ ResourceItem options_items[] = {
   { "Regex", CFG_TYPE_REGEX, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "RegexDir", CFG_TYPE_REGEX, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "RegexFile", CFG_TYPE_REGEX, 0, nullptr, 2, 0, NULL, NULL, NULL },
-  { "Base", CFG_TYPE_BASE, 0, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Base", CFG_TYPE_BASE, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Wild", CFG_TYPE_WILD, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "WildDir", CFG_TYPE_WILD, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "WildFile", CFG_TYPE_WILD, 0, nullptr, 2, 0, NULL, NULL, NULL },
