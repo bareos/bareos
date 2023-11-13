@@ -724,9 +724,17 @@ check_restore_diff()
    #   * ${BackupDirectory} (set by test), or
    #   * ${src}
    dest=${1:-${BackupDirectory:-$src}}
+   defaultrestoredirectory="$tmp/bareos-restores"
+   restoredirectory=${2:-${defaultrestoredirectory}}
    result=0
 
-   if "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"; then
+   restorepath="$restoredirectory/${dest}"
+
+   echo "$restorepath"
+
+   result=0
+
+   if "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
        result=$?
    fi
 
@@ -736,7 +744,7 @@ check_restore_diff()
    else
      DIFFTOOL='diff'
    fi
-   OUT="$(LANG=C $DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
+   OUT="$(LANG=C $DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${restorepath}")"
    result=$(( result + $?))
    if is_debug; then
        printf "%s\n" "$OUT"

@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,15 +116,13 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
   Device* dev = jcr->impl->dcr->dev;
   char buf1[100], buf2[100];
 
-  /*
-   * If label, discard it as we create our SOS and EOS Labels
+  /* If label, discard it as we create our SOS and EOS Labels
    * However, we still want the first Start Of Session label as that contains
    * the timestamps from the first original Job.
    *
    * We need to put this info in our own SOS and EOS Labels so that
    * bscan-ing of virtual and always incremental consolidated jobs
-   * works.
-   */
+   * works. */
 
   if (rec->FileIndex < 0) {
     if (rec->FileIndex == SOS_LABEL) {
@@ -171,14 +169,12 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     goto bail_out;
   }
 
-  /*
-   * For normal migration jobs, FileIndex values are sequential because
+  /* For normal migration jobs, FileIndex values are sequential because
    *  we are dealing with one job.  However, for Vbackup (consolidation),
    *  we will be getting records from multiple jobs and writing them back
    *  out, so we need to ensure that the output FileIndex is sequential.
    *  We do so by detecting a FileIndex change and incrementing the
-   *  JobFiles, which we then use as the output FileIndex.
-   */
+   *  JobFiles, which we then use as the output FileIndex. */
   if (rec->FileIndex >= 0) {
     // If something changed, increment FileIndex
     if (rec->VolSessionId != rec->last_VolSessionId
@@ -208,12 +204,10 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     goto bail_out;
   }
 
-  /*
-   * The record got translated when we got an after_rec pointer after calling
+  /* The record got translated when we got an after_rec pointer after calling
    * the bSdEventWriteRecordTranslation plugin event. If no translation has
    * taken place we just point the after_rec pointer to same DeviceRecord as in
-   * the before_rec pointer.
-   */
+   * the before_rec pointer. */
   if (!jcr->impl->dcr->after_rec) {
     jcr->impl->dcr->after_rec = jcr->impl->dcr->before_rec;
   } else {
@@ -289,10 +283,8 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   // See if this is the first record being processed.
   if (rec->last_FileIndex == 0) {
-    /*
-     * Initialize the last counters so we can compare
-     * things in the next run through here.
-     */
+    /* Initialize the last counters so we can compare
+     * things in the next run through here. */
     rec->last_VolSessionId = rec->VolSessionId;
     rec->last_VolSessionTime = rec->VolSessionTime;
     rec->last_FileIndex = rec->FileIndex;
@@ -308,10 +300,8 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
         || rec->VolSessionTime != rec->last_VolSessionTime
         || rec->FileIndex != rec->last_FileIndex
         || rec->Stream != rec->last_Stream) {
-      /*
-       * See if we are changing the FileIndex e.g.
-       * start processing the next file in the backup stream.
-       */
+      /* See if we are changing the FileIndex e.g.
+       * start processing the next file in the backup stream. */
       if (rec->FileIndex != rec->last_FileIndex) { jcr->JobFiles++; }
 
       // Keep track of the new state.
@@ -351,12 +341,10 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
     }
   }
 
-  /*
-   * Send the record data.
+  /* Send the record data.
    * We don't want to copy the data from the record to the socket structure
    * so we save the original msg pointer and use the record data pointer for
-   * sending and restore the original msg pointer when done.
-   */
+   * sending and restore the original msg pointer when done. */
   msgsave = sd->msg;
   sd->msg = rec->data;
   sd->message_length = rec->data_len;
@@ -384,10 +372,8 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
 // Check autoinflation/autodeflation settings.
 static inline void CheckAutoXflation(JobControlRecord* jcr)
 {
-  /*
-   * See if the autoxflateonreplication flag is set to true then we allow
-   * autodeflation and autoinflation to take place.
-   */
+  /* See if the autoxflateonreplication flag is set to true then we allow
+   * autodeflation and autoinflation to take place. */
   if (me->autoxflateonreplication) { return; }
 
   // Check autodeflation.
@@ -501,7 +487,7 @@ bool DoMacRun(JobControlRecord* jcr)
 
     // Let SD plugins setup the record translation on read dcr
     if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
-                            jcr->sd_impl->read_dcr)
+                            jcr->impl->read_dcr)
         != bRC_OK) {
       Jmsg(jcr, M_FATAL, 0,
            _("bSdEventSetupRecordTranslation call failed for read dcr!\n"));
@@ -556,10 +542,8 @@ bool DoMacRun(JobControlRecord* jcr)
     ok = ReadRecords(jcr->impl->read_dcr, CloneRecordToRemoteSd,
                      MountNextReadVolume);
 
-    /*
-     * Send the last EOD to close the last data transfer and a next EOD to
-     * signal the remote we are done.
-     */
+    /* Send the last EOD to close the last data transfer and a next EOD to
+     * signal the remote we are done. */
     if (!sd->signal(BNET_EOD) || !sd->signal(BNET_EOD)) {
       if (!jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
@@ -610,7 +594,7 @@ bool DoMacRun(JobControlRecord* jcr)
 
     // Let SD plugins setup the record translation on read dcr
     if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
-                            jcr->sd_impl->read_dcr)
+                            jcr->impl->read_dcr)
         != bRC_OK) {
       Jmsg(jcr, M_FATAL, 0,
            _("bSdEventSetupRecordTranslation call failed for read dcr!\n"));
@@ -619,8 +603,7 @@ bool DoMacRun(JobControlRecord* jcr)
     }
 
     // Let SD plugins setup the record translation on write dcr
-    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
-                            jcr->sd_impl->dcr)
+    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, jcr->impl->dcr)
         != bRC_OK) {
       Jmsg(jcr, M_FATAL, 0,
            _("bSdEventSetupRecordTranslation call failed for write dcr!\n"));
@@ -658,10 +641,8 @@ bail_out:
   if (!ok) { jcr->setJobStatus(JS_ErrorTerminated); }
 
   if (!acquire_fail && !jcr->impl->remote_replicate && jcr->impl->dcr) {
-    /*
-     * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
-     *   and the subsequent Jmsg() editing will break
-     */
+    /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
+     *   and the subsequent Jmsg() editing will break */
     int32_t job_elapsed;
 
     Dmsg1(100, "ok=%d\n", ok);

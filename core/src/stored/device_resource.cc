@@ -283,8 +283,8 @@ bool DeviceResource::Validate()
     my_config->AddWarning("The Rados Storage Backend Device is deprecated");
   }
 
-  if (IsMemberPresent("AutoDeflate")
-      && !IsMemberPresent("AutoDeflateAlgorithm")) {
+  if (autodeflate != AutoXflateMode::IO_DIRECTION_NONE
+      && autodeflate_algorithm == 0) {
     Jmsg(nullptr, M_ERROR, 0,
          _("Device %s: If 'AutoDeflate' is set, then 'AutoDeflateAlgorithm' "
            "also has to be set.\n"),
