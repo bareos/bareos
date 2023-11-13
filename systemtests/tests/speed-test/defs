@@ -1,2 +1,17 @@
-FilesetOptions=("#compression=none" "compression=lzo" "compression=lz4" "aclsupport=no;xattrsupport=no")
-ClientOptions=("MaximumWorkersPerJob=0" "MaximumWorkersPerJob=1" "MaximumWorkersPerJob=2" "MaximumWorkersPerJob=5" "MaximumWorkersPerJob=10" )
+FilesetOptions=(
+    "aclsupport=no;xattrsupport=no"
+    "#compression=none"
+    "compression=lzo"
+    "compression=lz4"
+    "compression=lz4hc"
+    "compression=gzip1"
+    "compression=gzip3"
+    "compression=gzip6"
+    "compression=gzip9"
+)
+ClientOptions=(
+    "MaximumWorkersPerJob=00"
+    "MaximumWorkersPerJob=01"
+    "MaximumWorkersPerJob=02"
+    "MaximumWorkersPerJob=05"
+    "MaximumWorkersPerJob=10")

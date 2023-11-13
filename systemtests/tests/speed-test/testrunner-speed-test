@@ -15,12 +15,6 @@ export TestName
 
 source "defs"
 
-bin/bareos stop
-bin/bareos start
-
-
-
-
 start_test
 
 backup_log="$tmp"/backups.out
@@ -30,18 +24,22 @@ output="$tmp/output.tsv"
 
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
-printf  "Test\tbackup\trestore\n" > "$output"
-
+files=$(basename $(cat tmp/file-list))
+printf  "fileset\tfilesetoptions\tclientoptions\tbackup\tcompressionrate\trestore\n" >> "$output"
 
 for clientoptions in "${ClientOptions[@]}"; do
   echo "$clientoptions" > include/etc/bareos/bareos-dir.d/client/bareos-fd.conf
   clientoptions_filenamecompat=$(tr ',=' '_' <<< $clientoptions)
 
+  bin/bareos restart
+
   for filesetoptions in "${FilesetOptions[@]}"; do
   rm storage/* ||:
   echo $filesetoptions > include/etc/bareos/bareos-dir.d/fileset/default.conf
   filesetoptions_filenamecompat=$(tr ',=' '_' <<< $filesetoptions)
-	log="$backup_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
+
+
+  log="$backup_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
   echo > "$log"
 	cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -62,10 +60,11 @@ cat "$tmp/bconcmds"
 	expect_grep "Backup OK" \
 		    "$log" \
 		    "Backup was not ok."
-  ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
-	echo "... result: $ToAdd"
-	#Data+=("$ToAdd")
-  printf "$clientoptions-$filesetoptions\t$ToAdd\t"  >> "$output"
+  compression_rate=$(sed -n "s/^.*Software Compression:\s*\(.*\).*$/\1/p" "$log")
+  speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log")
+	echo "... result: $speed_in_kb"
+	#Data+=("$speed_in_kb")
+  printf "$files\t$filesetoptions\t$clientoptions\t$speed_in_kb\t$compression_rate\t"  >> "$output"
 
 # now restore
 	log="$restore_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
@@ -85,13 +84,12 @@ END_OF_DATA
 	expect_grep "Restore OK" \
 		    "$log" \
 		    "Restore was not ok."
-  ToAdd=$(grep -o "[0-9.]* KB/s" "$log")
-	echo "... result: $ToAdd"
-  printf  "$ToAdd\n"  >> "$output"
+  speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log")
+	echo "... result: $speed_in_kb"
+  printf  "$speed_in_kb\n"  >> "$output"
 done
 done
 printf "\n\nResults:\n------\n"
 cat "${output}"
-#column -t -s, "${output}"
 
 end_test
