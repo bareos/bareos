@@ -122,6 +122,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - database: media table: use bigint instead of integer [PR #1579]
 - stored: buffer fd messages [PR #1539]
 - autoxflate: fix autoxflate on replication [PR #1576]
+- configuration: deprecate base jobs [PR #1580]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -302,6 +303,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1577]: https://github.com/bareos/bareos/pull/1577
 [PR #1578]: https://github.com/bareos/bareos/pull/1578
 [PR #1579]: https://github.com/bareos/bareos/pull/1579
+[PR #1580]: https://github.com/bareos/bareos/pull/1580
 [PR #1582]: https://github.com/bareos/bareos/pull/1582
 [PR #1583]: https://github.com/bareos/bareos/pull/1583
 [unreleased]: https://github.com/bareos/bareos/tree/master
