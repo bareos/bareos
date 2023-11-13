@@ -171,7 +171,7 @@ static char* raw_disk_name = NULL;
 static int raw_disk_fd = -1;
 static char* force_transport = NULL;
 static char* disktype = NULL;
-static VixDiskLibConnectParams cnxParams;
+static VixDiskLibConnectParams* cnxParams = nullptr;
 static VixDiskLibConnection connection = NULL;
 static VixDiskLibHandle read_diskHandle = NULL;
 static VixDiskLibHandle write_diskHandle = NULL;
@@ -364,37 +364,42 @@ static void PanicFunction(const char* fmt, va_list args)
 
 static inline void cleanup_cnxParams()
 {
-  if (cnxParams.vmxSpec) {
-    free(cnxParams.vmxSpec);
-    cnxParams.vmxSpec = NULL;
+  if (!cnxParams) { return; }
+
+  if (cnxParams->vmxSpec) {
+    free(cnxParams->vmxSpec);
+    cnxParams->vmxSpec = nullptr;
   }
 
-  if (cnxParams.serverName) {
-    free(cnxParams.serverName);
-    cnxParams.serverName = NULL;
+  if (cnxParams->serverName) {
+    free(cnxParams->serverName);
+    cnxParams->serverName = nullptr;
   }
 
-  if (cnxParams.creds.uid.userName) {
-    free(cnxParams.creds.uid.userName);
-    cnxParams.creds.uid.userName = NULL;
+  if (cnxParams->creds.uid.userName) {
+    free(cnxParams->creds.uid.userName);
+    cnxParams->creds.uid.userName = nullptr;
   }
 
-  if (cnxParams.creds.uid.password) {
-    free(cnxParams.creds.uid.password);
-    cnxParams.creds.uid.password = NULL;
+  if (cnxParams->creds.uid.password) {
+    free(cnxParams->creds.uid.password);
+    cnxParams->creds.uid.password = nullptr;
   }
 
-  if (cnxParams.thumbPrint) {
-    free(cnxParams.thumbPrint);
-    cnxParams.thumbPrint = NULL;
+  if (cnxParams->thumbPrint) {
+    free(cnxParams->thumbPrint);
+    cnxParams->thumbPrint = nullptr;
   }
+
+  VixDiskLib_FreeConnectParams(cnxParams);
+  cnxParams = nullptr;
 }
 
 static inline void cleanup_vixdisklib()
 {
   uint32_t numCleanedUp, numRemaining;
 
-  VixDiskLib_Cleanup(&cnxParams, &numCleanedUp, &numRemaining);
+  VixDiskLib_Cleanup(cnxParams, &numCleanedUp, &numRemaining);
 }
 
 // Generic cleanup function.
@@ -420,7 +425,7 @@ static void cleanup(void)
   }
 
   if (!local_vmdk) {
-    err = VixDiskLib_EndAccess(&cnxParams, BAREOS_VADPDUMPER_IDENTITY);
+    err = VixDiskLib_EndAccess(cnxParams, BAREOS_VADPDUMPER_IDENTITY);
     if (VIX_FAILED(err)) {
       char* error_txt;
 
@@ -477,7 +482,12 @@ static inline void do_vixdisklib_connect(const char* key,
   VixError err;
   const char* snapshot_moref = NULL;
 
-  memset(&cnxParams, 0, sizeof(cnxParams));
+  cnxParams = VixDiskLib_AllocateConnectParams();
+
+  if (!cnxParams) {
+    fprintf(stderr, "Failed to allocate vixdisklib connection params.\n");
+    goto bail_out;
+  }
 
   err = VixDiskLib_InitEx(VIXDISKLIB_VERSION_MAJOR, VIXDISKLIB_VERSION_MINOR,
                           LogFunction, WarningFunction, PanicFunction,
@@ -503,8 +513,9 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_VM_MOREF_KEY, key);
       goto bail_out;
     }
-    cnxParams.vmxSpec = strdup(json_string_value(object));
-    if (!cnxParams.vmxSpec) {
+    cnxParams->specType = VIXDISKLIB_SPEC_VMX;
+    cnxParams->vmxSpec = strdup(json_string_value(object));
+    if (!cnxParams->vmxSpec) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_VM_MOREF_KEY);
       goto bail_out;
@@ -516,8 +527,8 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_HOST_KEY, key);
       goto bail_out;
     }
-    cnxParams.serverName = strdup(json_string_value(object));
-    if (!cnxParams.serverName) {
+    cnxParams->serverName = strdup(json_string_value(object));
+    if (!cnxParams->serverName) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_HOST_KEY);
       goto bail_out;
@@ -525,8 +536,8 @@ static inline void do_vixdisklib_connect(const char* key,
 
     object = json_object_get(connect_params, CON_PARAMS_THUMBPRINT_KEY);
     if (object) {
-      cnxParams.thumbPrint = strdup(json_string_value(object));
-      if (!cnxParams.thumbPrint) {
+      cnxParams->thumbPrint = strdup(json_string_value(object));
+      if (!cnxParams->thumbPrint) {
         fprintf(stderr, "Failed to allocate memory for holding %s\n",
                 CON_PARAMS_USERNAME_KEY);
         goto bail_out;
@@ -539,9 +550,9 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_USERNAME_KEY, key);
       goto bail_out;
     }
-    cnxParams.credType = VIXDISKLIB_CRED_UID;
-    cnxParams.creds.uid.userName = strdup(json_string_value(object));
-    if (!cnxParams.creds.uid.userName) {
+    cnxParams->credType = VIXDISKLIB_CRED_UID;
+    cnxParams->creds.uid.userName = strdup(json_string_value(object));
+    if (!cnxParams->creds.uid.userName) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_USERNAME_KEY);
       goto bail_out;
@@ -554,13 +565,13 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_PASSWORD_KEY, key);
       goto bail_out;
     }
-    cnxParams.creds.uid.password = strdup(json_string_value(object));
-    if (!cnxParams.creds.uid.password) {
+    cnxParams->creds.uid.password = strdup(json_string_value(object));
+    if (!cnxParams->creds.uid.password) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_PASSWORD_KEY);
       goto bail_out;
     }
-    cnxParams.port = VSPHERE_DEFAULT_ADMIN_PORT;
+    cnxParams->port = VSPHERE_DEFAULT_ADMIN_PORT;
 
     if (need_snapshot_moref) {
       object = json_object_get(connect_params, CON_PARAMS_SNAPSHOT_MOREF_KEY);
@@ -573,7 +584,7 @@ static inline void do_vixdisklib_connect(const char* key,
     }
 
     if (!local_vmdk) {
-      err = VixDiskLib_PrepareForAccess(&cnxParams, BAREOS_VADPDUMPER_IDENTITY);
+      err = VixDiskLib_PrepareForAccess(cnxParams, BAREOS_VADPDUMPER_IDENTITY);
       if (VIX_FAILED(err)) {
         char* error_txt;
 
@@ -585,14 +596,14 @@ static inline void do_vixdisklib_connect(const char* key,
     }
   }
 
-  err = VixDiskLib_ConnectEx(&cnxParams, (readonly) ? TRUE : FALSE,
+  err = VixDiskLib_ConnectEx(cnxParams, (readonly) ? TRUE : FALSE,
                              snapshot_moref, force_transport, &connection);
   if (VIX_FAILED(err)) {
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
     fprintf(stderr, "Failed to connect to %s : %s [%lu]\n",
-            cnxParams.serverName, error_txt, err);
+            cnxParams->serverName, error_txt, err);
     VixDiskLib_FreeErrorText(error_txt);
     goto bail_out;
   }
