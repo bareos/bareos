@@ -667,6 +667,7 @@ static inline void do_vixdisklib_open(const char* key,
               info->logicalSectorSize);
       fprintf(stderr, "DiskInfo physicalSectorSize: %u\n",
               info->physicalSectorSize);
+      fprintf(stderr, "DiskInfo capacity: %lu\n", info->capacity);
     }
 #endif
   }
