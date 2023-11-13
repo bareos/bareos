@@ -1042,6 +1042,7 @@
         "Base": {
           "datatype": "RESOURCE_LIST",
           "code": 3,
+          "deprecated": true,
           "equals": true
         },
         "MaxConcurrentCopies": {
@@ -1530,6 +1531,7 @@
         "Base": {
           "datatype": "RESOURCE_LIST",
           "code": 3,
+          "deprecated": true,
           "equals": true
         },
         "MaxConcurrentCopies": {
@@ -3215,6 +3217,7 @@
         "BaseJob": {
           "datatype": "OPTION",
           "code": 0,
+          "deprecated": true,
           "equals": true
         },
         "Accurate": {
@@ -3290,6 +3293,7 @@
         "Base": {
           "datatype": "BASEJOB",
           "code": 0,
+          "deprecated": true,
           "equals": true
         },
         "Wild": {

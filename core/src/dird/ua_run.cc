@@ -1149,16 +1149,12 @@ static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr)
 {
   if (jcr->is_JobType(JT_BACKUP)) {
     StartPrompt(ua, _("Levels:\n"));
-    //    AddPrompt(ua, _("Base"));
     AddPrompt(ua, _("Full"));
     AddPrompt(ua, _("Incremental"));
     AddPrompt(ua, _("Differential"));
     AddPrompt(ua, _("Since"));
     AddPrompt(ua, _("VirtualFull"));
     switch (DoPrompt(ua, "", _("Select level"), NULL, 0)) {
-        //    case 0:
-        //       jcr->JobLevel = L_BASE;
-        //       break;
       case 0:
         jcr->setJobLevel(L_FULL);
         break;
