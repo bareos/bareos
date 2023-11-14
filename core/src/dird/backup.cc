@@ -950,6 +950,10 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       bstrncpy(compress, "None", sizeof(compress));
    } else {
       compression = (double)100 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
+      if(compression < 0){
+        Jmsg(jcr, M_WARNING, 0, _("Negative compression rate detected! "
+              "Disable compression for this fileset or choose different algorithm.\n"));
+      }
       Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
       FindUsedCompressalgos(&compress_algo_list, jcr);
    }
