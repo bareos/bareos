@@ -1,13 +1,18 @@
+BackupDataDir=(
+#  /testspace/pstorz/data_kernelsource
+  /testspace/pstorz/data_multimedia
+#  /testspace/pstorz/data_rootfs
+    )
 FilesetOptions=(
-    "aclsupport=no;xattrsupport=no"
-    "#compression=none"
+#    "aclsupport=no;xattrsupport=no"
+#    "#compression=none"
     "compression=lzo"
-    "compression=lz4"
-    "compression=lz4hc"
-    "compression=gzip1"
-    "compression=gzip3"
-    "compression=gzip6"
-    "compression=gzip9"
+#    "compression=lz4"
+#    "compression=lz4hc"
+#    "compression=gzip1"
+#    "compression=gzip3"
+#    "compression=gzip6"
+#    "compression=gzip9"
 )
 ClientOptions=(
     "MaximumWorkersPerJob=00"

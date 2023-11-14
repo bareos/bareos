@@ -24,8 +24,11 @@ output="$tmp/output.tsv"
 
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
-files=$(basename $(cat tmp/file-list))
 printf  "fileset\tfilesetoptions\tclientoptions\tbackup\tcompressionrate\trestore\n" >> "$output"
+
+for backupdatadir in "${BackupDataDir[@]}"; do
+  echo "$backupdatadir" > tmp/file-list
+  files=$(basename $backupdatadir)
 
 for clientoptions in "${ClientOptions[@]}"; do
   echo "$clientoptions" > include/etc/bareos/bareos-dir.d/client/bareos-fd.conf
@@ -47,7 +50,6 @@ messages
 @$out $log
 reload
 show fileset=Default
-delete volume=Full-0103 yes
 delete volume=Full-0001 yes
 delete volume=Full-0002 yes
 run job=backup-bareos-fd level=Full yes
@@ -87,7 +89,8 @@ END_OF_DATA
   speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log")
 	echo "... result: $speed_in_kb"
   printf  "$speed_in_kb\n"  >> "$output"
-done
+  done
+ done
 done
 printf "\n\nResults:\n------\n"
 cat "${output}"
