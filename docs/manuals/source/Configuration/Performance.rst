@@ -63,9 +63,11 @@ Three different data sets were backed up:
      - Intermediate
      - Good
 
-.. list-table:: Test Hardware
+.. list-table:: Test System
    :header-rows: 0
 
+   * - **OS**
+     - Fedora 39 x86_64
    * - **CPU**
      - AMD Ryzen 7 PRO 7840U w/ Radeon 780M Graphics, 16 cores
    * - **Memory**
@@ -82,15 +84,19 @@ The test setup is configured so that the different Datasets are read from a
 xfs partition on the nvme Disk.
 The backup volumes are written into a 10GB tmpfs ramdisk.
 
-Remark about the number of test workers:
-0: Use the original code path as on bareos 22
-1-10: Use the new code path with the given number of workers.
+.. note::
+ The value "0" for the number of workers means the original code path used in bareos 22.
+ Other numbers are the value of `MaximumWorkersPerJob` in the client configuration.
 
 
 Multimedia Files
 ~~~~~~~~~~~~~~~~
 
-.. image:: /include/images/compress-test-multimedia-backup.png
+Backup
+^^^^^^^
+.. figure:: /include/images/compress-test-multimedia-backup.png
+
+   MaximumWorkersPerJob vs compression algorithms for the multimedia data backup
 
 The test shows, that the system is capable of 650 M/s backup speed when backing
 up the multimedia data. The lzo compression performs best, but does not
@@ -105,7 +111,11 @@ and can speedup the backup by the factor 5.
 
 Overall, the backup speed is very slow compared to the uncompressed backup.
 
-.. image:: /include/images/compress-test-multimedia-restore.png
+Restore
+^^^^^^^
+.. figure:: /include/images/compress-test-multimedia-restore.png
+
+   MaximumWorkersPerJob vs compression algorithms for the multimedia data restore
 
 The restore speed is not influenced by the number of threads and reaches almost
 the uncompressed rate with lzo, lz4 and lz4hc. The gzip family of algorithms
@@ -114,7 +124,11 @@ slows down the restore speed by around 50%.
 Linux Filesystem
 ~~~~~~~~~~~~~~~~
 
-.. image:: /include/images/compress-test-rootfs-backup.png
+Backup
+^^^^^^
+.. figure:: /include/images/compress-test-rootfs-backup.png
+
+   MaximumWorkersPerJob vs compression algorithms for the linux root fs data backup
 
 The maximum backup speed of the Linux Filesystem is about 260MB/s.
 Lzo reaches a compression rate of 46.7% while slowing down the backup speed to
@@ -126,7 +140,11 @@ compression!
 gzip1 is faster than lz4hc while reaching a better compression rate (56.9% vs 52.3%.)
 
 
-.. image:: /include/images/compress-test-rootfs-restore.png
+Restore
+^^^^^^^
+.. figure:: /include/images/compress-test-rootfs-restore.png
+
+   MaximumWorkersPerJob vs compression algorithms for the linux root fs data restore
 
 On restore of the linux rootfs, lzo, lz4 and lzfast are only a bit slower than
 the uncompressed backup, while the gzip algorithms are around 20% slower.
@@ -135,7 +153,11 @@ the uncompressed backup, while the gzip algorithms are around 20% slower.
 Linux Kernel Sources
 ~~~~~~~~~~~~~~~~~~~~
 
-.. image:: /include/images/compress-test-kernelsource-backup.png
+Backup
+^^^^^^
+.. figure:: /include/images/compress-test-kernelsource-backup.png
+
+  MaximumWorkersPerJob vs compression algorithms for the linux kernel source data backup
 
 The maximum backup speed of the kernel sources is 100M/s.
 lzo reaches a speed of 25MB/s with a compression of 68.8%.
@@ -145,7 +167,11 @@ than lzo and worse in compression.
 The number of threads almost has no impact on the backup speed for all
 algorithms.
 
-.. image:: /include/images/compress-test-kernelsource-restore.png
+Restore
+^^^^^^^
+.. figure:: /include/images/compress-test-kernelsource-restore.png
+
+  MaximumWorkersPerJob vs compression algorithms for the linux kernel source data restore
 
 Restoring the linux kernel sources reaches around 125MB/s for uncompressed backups.
 All algorithms reach about 110-120MB/s. This shows that the decompression of
@@ -169,8 +195,154 @@ environments, the bandwith probably will the bottleneck and
 thus using compression will lead to an overall much better performance.
 
 Regarding restores it can be said that the speed is not reduced by the lzo and
-lz4 family of compression algorithms, while gzip does have a significant impact
-on restore speed.
+lz4 family of compression algorithms, while gzip does have a significant negative
+impact on restore speed.
+
+Because of their bad performance, gzip algorithms should not be used at all.
+
+
+
+
+.. _TLS_Settings:
+
+TLS Settings
+------------
+
+.. index::
+   single: TLS settings
+   single: tls; performance
+
+
+Bareos encrypts all network traffic by default. TLS-PSK is used to encrypt the traffic.
+It is however possible to disable the TLS encryption and allow cleartext communication
+between.
+
+
+Disabling TLS Encryption
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+We tested the influence of disabling TLS on the backup speed of our lab environment.
+Only *LZO* and *No Compression* are regarded.
+
+
+No TLS with no Encryption
+^^^^^^^^^^^^^^^^^^^^^^^^^
+.. figure:: /include/images/disable-tls-no-compression.png
+
+   Speed comparison [MiB/s] when TLS is disabled and no compression is configured.
+
+No TLS with LZO Encryption
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. figure:: /include/images/disable-tls-lzo-compression.png
+
+   Speed comparison [MiB/s] when TLS is disabled and LZO compression is configured.
+
+The impact of disabling TLS depends on the dataset being backed up.
+The faster the backup itself runs(and the faster the network traffic itself
+is), the bigger is the impact.  Both with cleartext  and lzo encryption we see
+similar accelerations:
+
+.. list-table:: Acceleration by disabling TLS
+   :header-rows: 1
+
+   * -
+     - Backup
+     - Backup LZO
+     - Restore
+     - Restore LZO
+   * - **Multimedia files**
+     - 67%
+     - 67%
+     - 43%
+     - 38%
+   * - **Linux Root Filesystem**
+     - 15%
+     - 28%
+     - 26%
+     - 40%
+   * - **Kernel Source**
+     - 8%
+     - 8%
+     - 10%
+     - 38%
+
+
+Conclusion
+^^^^^^^^^^
+
+Disabling the TLS encryption of the network traffic in bareos can
+bring a significant acceleration.
+
+The acceleration depends on the dataset being backed up.
+The faster the network transfer is, the more influence the TLS load has.
+
+If the backup speed is not fast enough, and traffic encryption is not required, 
+disabling TLS can help to get the backups faster.
+
+
+
+
+Use different TLS Ciphers
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If disabling TLS is not an option, it still is possible to use a different cipher
+that might be faster than what is chosen by default.
+
+
+
+Use kTLS
+~~~~~~~~
+
+Newer Linux and FreeBSD versions have the possibility to use |ktls|.
+|ktls| allows the cryptographic library to ask the Kernel to do the encryption
+and decryption of the network traffic. If appropriate hardware(e.g. Network Card)
+is available, the TLS load can be offloaded to the NIC.
+
+
+
+.. _xattr_and_acl_support:
+
+Extended Attribute and ACL Support
+----------------------------------
+
+Bareos is capable of backing up extended attributes, and the support for both is
+enabled by default.
+If the backup speed needs to be accelerated, and not backing up extended attributes
+and/or ACLs, both options can be disabled which will save some time for each file
+being backed up.
+
+Disable ACL and Xattr Support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. figure:: /include/images/disable-acl-xattr.png
+
+   Speed comparison when extended attribute and acl support is disabled. Speed is in MB/s.
+
+.. list-table:: Acceleration by disabling Extended Attributes and ACL support.
+   :header-rows: 1
+
+   * -
+     - Backup
+     - Restore
+   * - **Multimedia files**
+     - 0%
+     - 0%
+   * - **Linux Root Filesystem**
+     - 19%
+     - 37%
+   * - **Kernel Source**
+     - 17%
+     - 0%
+
+
+Conclusion
+~~~~~~~~~~
+
+Disabling the extended attribute and acl support in the fileset can improve the
+backup speed. As always, it depends on the dataset being backed up, and if the
+acl and/or extended attribute information is expendable.
 
 
 
@@ -180,17 +352,35 @@ on restore speed.
 File Checksums
 --------------
 
+If the FileSet option *signature* is set, Bareos calculates a checksum for every
+file being backed up.
 
-.. _Encryption_Settings:
+The following graphs show the results of testing the performance of the available checksums.
 
-Encryption settings
--------------------
+.. figure:: /include/images/signature-compare-multimedia-dataset.png
 
-.. index::
-   single: Encryption settings
-   single: encryption; performance
+   Checksum performance comparison for multimedia file dataset
 
-- TLS
-- Data encryption
+.. figure:: /include/images/signature-compare-rootfs-dataset.png
 
+   Checksum performance comparison for rootfs dataset
 
+.. figure:: /include/images/signature-compare-kernelsource-dataset.png
+
+   Checksum performance comparison for kernel source dataset
+
+Conclusion
+~~~~~~~~~~
+
+The results of the tests are unfortunately not clear.  SHA512 seems to be the
+fastest algorithm, though the difference between the different algorithms is
+not significant.
+
+It is also strange that the restore results seem to be much less affected than
+the backup results, as the restore code also recalculates the checksum to verify
+that the restore successfully restored the correct data.
+
+Theoretically, xxh128 is the by far fastest algorithm
+offered and thus should be
+the fastest option.
+The results show that more investigation is required to understand the results.
