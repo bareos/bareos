@@ -22,19 +22,21 @@ MDB="@MDB@"
 # Try to generate a core dump for postmortem analyzing.
 #
 POSTMORTEM="NONE"
-if [ ! -z "${GCORE}" -a -x "${GCORE}" ]; then
-   POSTMORTEM="${WD}/${PNAME}.core"
-   ${GCORE} -o ${POSTMORTEM} $2 > /dev/null 2>&1
-   POSTMORTEM="${POSTMORTEM}.$2"
-   echo "Created ${POSTMORTEM} for doing postmortem debugging" > ${WD}/bareos.$2.traceback
-else
-   which gcore > /dev/null 2>&1 && GCORE="`which gcore`" || GCORE=''
-   if [ ! -z "${GCORE}" -a -x "${GCORE}" ]; then
-      POSTMORTEM="${WD}/${PNAME}.core"
-      ${GCORE} -o ${POSTMORTEM} $2 > /dev/null 2>&1
-      POSTMORTEM="${POSTMORTEM}.$2"
-      echo "Created ${POSTMORTEM} for doing postmortem debugging" > ${WD}/bareos.$2.traceback
-   fi
+if [ -n "${DUMPCORE+x}" ]; then
+    if [ ! -z "${GCORE}" -a -x "${GCORE}" ]; then
+        POSTMORTEM="${WD}/${PNAME}.core"
+        ${GCORE} -o ${POSTMORTEM} $2 > /dev/null 2>&1
+        POSTMORTEM="${POSTMORTEM}.$2"
+        echo "Created ${POSTMORTEM} for doing postmortem debugging" > ${WD}/bareos.$2.traceback
+    else
+        which gcore > /dev/null 2>&1 && GCORE="`which gcore`" || GCORE=''
+        if [ ! -z "${GCORE}" -a -x "${GCORE}" ]; then
+            POSTMORTEM="${WD}/${PNAME}.core"
+            ${GCORE} -o ${POSTMORTEM} $2 > /dev/null 2>&1
+            POSTMORTEM="${POSTMORTEM}.$2"
+            echo "Created ${POSTMORTEM} for doing postmortem debugging" > ${WD}/bareos.$2.traceback
+        fi
+    fi
 fi
 
 #
