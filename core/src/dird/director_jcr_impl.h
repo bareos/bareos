@@ -109,6 +109,7 @@ struct DirectorJcrImpl {
   pthread_cond_t nextrun_ready = PTHREAD_COND_INITIALIZER;  /**< Wait for job next run to become ready */
   Resources res;                  /**< Resources assigned */
   TREE_ROOT* restore_tree_root{}; /**< Selected files to restore (some protocols need this info) */
+  TREE_ROOT* backup_tree_root{}; /**< files that are getting backed up */
   storagedaemon::BootStrapRecord* bsr{}; /**< Bootstrap record -- has everything */
   char* backup_format{};          /**< Backup format used when doing a NDMP backup */
   char* plugin_options{};         /**< User set options for plugin */

@@ -46,6 +46,10 @@
 #include "lib/util.h"
 #include "lib/serial.h"
 
+#include "lib/tree.h"
+#include "lib/attribs.h"
+#include "lib/scan.h"
+
 namespace directordaemon {
 
 /*
@@ -408,6 +412,109 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   return;
 }
 
+static bool InsertNode(JobControlRecord* jcr, AttributesDbRecord* ar)
+{
+  if (!jcr->dir_impl->backup_tree_root) { return true; }
+  struct stat statp;
+  int32_t LinkFI;
+  DecodeStat(ar->attr, &statp, sizeof(statp), &LinkFI);
+
+  int FileIndex = ar->FileIndex;
+  bool hard_link = (LinkFI != 0);
+  int32_t delta_seq = ar->DeltaSeq;
+  JobId_t JobId = ar->JobId;
+
+  PoolMem Path, File;
+  int fsize, psize;  // not used
+  SplitPathAndFilename(ar->fname, Path.addr(), &psize, File.addr(), &fsize);
+
+  int type = [&] {
+    if (*File.c_str() != 0) {
+      return TN_FILE;
+    } else if (!IsPathSeparator(*Path.c_str())) {
+      return TN_DIR_NLS;
+    } else {
+      return TN_DIR;
+    }
+  }();
+
+  auto* root = jcr->dir_impl->backup_tree_root;
+  auto* node = insert_tree_node(Path.c_str(), File.c_str(), type, root, NULL);
+
+  node->fhinfo = ar->Fhinfo;
+  node->fhnode = ar->Fhnode;
+
+  if (delta_seq > 0) {
+    if (delta_seq == (node->delta_seq + 1)) {
+      TreeAddDeltaPart(root, node, node->JobId, node->FileIndex);
+
+    } else {
+      /* File looks to be deleted */
+      if (node->delta_seq == -1) { /* just created */
+        TreeRemoveNode(root, node);
+
+      } else {
+        Dmsg3(0,
+              "Something is wrong with Delta, skip it "
+              "fname=%s d1=%d d2=%d\n",
+              File, node->delta_seq, delta_seq);
+      }
+      return false;
+    }
+  }
+
+  /* - The first time we see a file (node->inserted==true), we accept it.
+   * - In the same JobId, we accept only the first copy of a
+   *   hard linked file (the others are simply pointers).
+   * - In the same JobId, we accept the last copy of any other
+   *   file -- in particular directories.
+   *
+   * All the code to set ok could be condensed to a single
+   * line, but it would be even harder to read. */
+  bool ok = true;
+  if (!node->inserted && JobId == node->JobId) {
+    if ((hard_link && FileIndex > node->FileIndex)
+        || (!hard_link && FileIndex < node->FileIndex)) {
+      ok = false;
+    }
+  }
+  if (ok) {
+    node->hard_link = hard_link;
+    node->FileIndex = FileIndex;
+    node->JobId = JobId;
+    node->type = type;
+    node->soft_link = S_ISLNK(statp.st_mode) != 0;
+    node->delta_seq = delta_seq;
+
+    // Insert file having hardlinks into hardlink hashtable.
+    if (statp.st_nlink > 1 && type != TN_DIR && type != TN_DIR_NLS) {
+      if (!LinkFI) {
+        // First occurence - file hardlinked to
+        auto* entry = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+        entry->key = (((uint64_t)JobId) << 32) + FileIndex;
+        entry->node = node;
+        root->hardlinks.insert(entry->key, entry);
+      } else {
+        // See if we are optimizing for speed or size.
+        // Hardlink to known file index: lookup original file
+        uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
+        HL_ENTRY* first_hl = (HL_ENTRY*)root->hardlinks.lookup(file_key);
+
+        if (first_hl && first_hl->node) {
+          // Then add hardlink entry to linked node.
+          auto* entry
+              = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+          entry->key = (((uint64_t)JobId) << 32) + FileIndex;
+          entry->node = first_hl->node;
+          root->hardlinks.insert(entry->key, entry);
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 /**
  * Note, we receive the whole attribute record, but we select out only the
  * stat packet, VolSessionId, VolSessionTime, FileIndex, file type, and file
@@ -546,6 +653,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
       ar->Fhinfo = 0;
       ar->Fhnode = 0;
 
+      InsertNode(jcr, ar);
 
       Dmsg2(400, "dird<filed: stream=%d %s\n", Stream, fname);
       Dmsg1(400, "dird<filed: attr=%s\n", attr);

@@ -140,7 +140,7 @@ struct node_meta {
   std::uint64_t delta_seq;
   std::uint64_t fhnode;
   std::uint64_t fhinfo;
-  std::int64_t original; // -1 = no original
+  std::int64_t original;  // -1 = no original
 };
 
 class parts {
@@ -261,9 +261,7 @@ struct tree {
     marked.resize(count);
   }
 
-  std::size_t size() const {
-    return nodes.size();
-  }
+  std::size_t size() const { return nodes.size(); }
 
   bool match(std::string_view pattern, std::string_view str)
   {
@@ -295,16 +293,16 @@ struct tree {
       count += (meta.type == TN_FILE);
 
       if (meta.original >= 0) {
-	count += (marked[meta.original] == false);
-	marked[meta.original] = true;
+        count += (marked[meta.original] == false);
+        marked[meta.original] = true;
       }
     }
     return count;
   }
 
   std::size_t unmark_glob(std::string_view glob,
-			  std::size_t start,
-			  std::size_t end)
+                          std::size_t start,
+                          std::size_t end)
   {
     std::size_t count = 0;
 
@@ -519,7 +517,8 @@ struct tree_builder {
 
   using node_map = std::unordered_map<const TREE_NODE*, std::size_t>;
 
-  tree_builder(TREE_ROOT* root) {
+  tree_builder(TREE_ROOT* root)
+  {
     node_map m;
     build(m, root->first);
     for (auto& meta : metas) {
@@ -529,9 +528,9 @@ struct tree_builder {
 
       HL_ENTRY* entry = root->hardlinks.lookup(key);
       if (entry && entry->node) {
-	meta.original = m[entry->node];
+        meta.original = m[entry->node];
       } else {
-	meta.original = -1;
+        meta.original = -1;
       }
     }
   }
@@ -556,12 +555,9 @@ struct tree_builder {
       meta.type = node->type;
       meta.hard_link = node->hard_link;
       meta.soft_link = node->soft_link;
-      meta.delta_seq= node->delta_seq;
+      meta.delta_seq = node->delta_seq;
       meta.fhnode = node->fhnode;
       meta.fhinfo = node->fhinfo;
-
-
-
     }
 
     std::size_t start = nodes.size();
@@ -650,11 +646,11 @@ static void MallocBuf(TREE_ROOT* root, int size)
   Dmsg2(200, "malloc buf size=%d rem=%d\n", size, mem->rem);
 }
 
-static char *RootMalloc(TREE_ROOT* root, int size)
+static char* RootMalloc(TREE_ROOT* root, int size)
 {
   struct s_mem* mem;
 
-  mem = (struct s_mem*)malloc(size+sizeof(struct s_mem));
+  mem = (struct s_mem*)malloc(size + sizeof(struct s_mem));
   root->total_size += size + sizeof(struct s_mem);
   root->blocks++;
   if (root->mem) {
@@ -667,7 +663,7 @@ static char *RootMalloc(TREE_ROOT* root, int size)
   mem->mem = mem->first;
   mem->rem = 0;
   Dmsg2(200, "malloc buf size=%d rem=%d\n", size, mem->rem);
-  return (char*) mem + sizeof(struct s_mem);
+  return (char*)mem + sizeof(struct s_mem);
 }
 
 template <typename T> static T* tree_alloc(TREE_ROOT* root, int size)
@@ -708,7 +704,8 @@ TREE_ROOT* load_tree(struct tree tree)
 {
   TREE_ROOT* root = new_tree(tree.size());
 
-  TREE_NODE* nodes = (TREE_NODE*)RootMalloc(root, tree.size() * sizeof(TREE_NODE));
+  TREE_NODE* nodes
+      = (TREE_NODE*)RootMalloc(root, tree.size() * sizeof(TREE_NODE));
 
   // this can probably be done in the othre direction too!
   for (std::size_t i = tree.size(); i > 0;) {
@@ -718,11 +715,10 @@ TREE_ROOT* load_tree(struct tree tree)
     auto str = tree.nodes[i].name;
     node.fname = tree_alloc<char>(root, str.end - str.start + 1);
     std::memcpy(node.fname, tree.string_pool.data() + str.start,
-		str.end - str.start);
+                str.end - str.start);
     node.fname[str.end - str.start] = 0;
-    for (std::size_t child = pnode.sub.start;
-	 child < pnode.sub.end;
-	 child = tree.nodes[child].sub.end + 1) {
+    for (std::size_t child = pnode.sub.start; child < pnode.sub.end;
+         child = tree.nodes[child].sub.end + 1) {
       auto& childnode = nodes[child];
       node.child.insert(&childnode, NodeCompare);
       childnode.parent = &node;
@@ -737,17 +733,17 @@ TREE_ROOT* load_tree(struct tree tree)
     TREE_NODE& current = nodes[i];
 
     auto& meta = tree.metas[tree.nodes[i].misc.meta];
-    current.next = &nodes[i+1];
+    current.next = &nodes[i + 1];
     current.FileIndex = meta.findex;
     current.JobId = meta.jobid;
     current.delta_seq = meta.delta_seq;
-    current.delta_list = nullptr; // ??
+    current.delta_list = nullptr;  // ??
     current.fhinfo = meta.fhinfo;
     current.fhnode = meta.fhnode;
 
     auto str = tree.nodes[i].name;
     std::memcpy(current.fname, tree.string_pool.data() + str.start,
-		str.end - str.start);
+                str.end - str.start);
     current.fname[str.end - str.start] = 0;
 
     current.type = meta.type;
@@ -954,9 +950,8 @@ static void BM_populatetree(benchmark::State& state)
     ASSERT(fd >= 0);
     std::size_t written = 0;
     while (written < bytes.size()) {
-      auto bytes_written = write(fd,
-				 (bytes.data() + written),
-				 bytes.size() - written);
+      auto bytes_written
+          = write(fd, (bytes.data() + written), bytes.size() - written);
       ASSERT(bytes_written > 0);
 
       written += bytes_written;
@@ -977,9 +972,7 @@ static void BM_populatetree(benchmark::State& state)
     ASSERT(s.st_size == (ssize_t)bytes.size());
     std::size_t read = 0;
     while (read < bytes.size()) {
-      auto bytes_read = ::read(fd,
-			     bytes.data() + read,
-			     bytes.size() - read);
+      auto bytes_read = ::read(fd, bytes.data() + read, bytes.size() - read);
       ASSERT(bytes_read > 0);
 
       read += bytes_read;
@@ -1028,7 +1021,7 @@ static void BM_populatetree(benchmark::State& state)
 // BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
 // BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
 
-//BENCHMARK(BM_populatetree2)->Arg(100'000'000)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_populatetree2)->Arg(100'000'000)->Unit(benchmark::kSecond);
 BENCHMARK(BM_populatetree)->Arg(50'000'000)->Unit(benchmark::kSecond);
 BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
 
