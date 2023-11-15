@@ -28,8 +28,22 @@
 
 #include "lib/tree.h"
 
-bool SaveTree(const char *path, TREE_ROOT* root);
-TREE_ROOT* LoadTree(const char *path, std::size_t* size, bool mark_on_load);
+bool SaveTree(const char* path, TREE_ROOT* root);
+TREE_ROOT* LoadTree(const char* path, std::size_t* size, bool mark_on_load);
 
+
+#include <memory>
+
+class NewTree;
+void DeleteTree(const NewTree*);
+struct TreeDeleter {
+  void operator()(const NewTree* nt) const { DeleteTree(nt); }
+};
+using tree_ptr = std::unique_ptr<NewTree, TreeDeleter>;
+tree_ptr MakeNewTree();
+bool AddTree(NewTree*, const char* path);
+TREE_ROOT* CombineTree(tree_ptr tree,
+                       std::size_t* file_count,
+                       bool mark_on_load);
 
 #endif  // BAREOS_LIB_TREE_SAVE_H_

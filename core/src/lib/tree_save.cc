@@ -22,6 +22,7 @@
 #include "lib/tree_save.h"
 
 #include <cstring>
+#include <cstdint>
 
 template <typename T> struct span {
   const T* mem{nullptr};
@@ -40,8 +41,7 @@ template <typename T> struct span {
 };
 
 template <typename T, typename V> static span<V> to_span(const T& val);
-template <typename T>
-static span<T> to_span(const std::vector<T>& val)
+template <typename T> static span<T> to_span(const std::vector<T>& val)
 {
   return span(val.data(), val.size());
 }
@@ -64,17 +64,11 @@ struct proto_node {
     std::uint64_t end;
   } sub;
 
-  std::uint64_t child_begin() {
-    return sub.start;
-  }
+  std::uint64_t child_begin() { return sub.start; }
 
-  std::uint64_t next() {
-    return sub.end;
-  }
+  std::uint64_t next() { return sub.end; }
 
-  std::uint64_t child_end() {
-    return sub.end;
-  }
+  std::uint64_t child_end() { return sub.end; }
 
   struct {
     // byte offsets relative to the start of the string area
@@ -109,8 +103,8 @@ struct delta_part {
 };
 
 struct meta_data {
-  std::int32_t findex;           /* file index */
-  std::uint32_t jobid;           /* JobId */
+  std::int32_t findex; /* file index */
+  std::uint32_t jobid; /* JobId */
   struct {
     std::uint32_t type : 8;      /* node type */
     std::uint32_t hard_link : 1; /* set if have hard link */
@@ -120,7 +114,7 @@ struct meta_data {
   std::uint64_t delta_seq;
   std::uint64_t fhnode;
   std::uint64_t fhinfo;
-  std::int64_t original; // -1 = no original; else index of original
+  std::int64_t original;  // -1 = no original; else index of original
 };
 
 struct tree_header {
@@ -162,8 +156,8 @@ struct tree_view {
       metas = span(start, count);
     }
     {
-      const delta_part* start =
-	(const delta_part*)(bytes.data() + header.delta_offset);
+      const delta_part* start
+          = (const delta_part*)(bytes.data() + header.delta_offset);
       deltas = span(start, header.delta_count);
     }
     {
@@ -174,9 +168,7 @@ struct tree_view {
     }
   }
 
-  std::size_t size() const {
-    return nodes.size();
-  }
+  std::size_t size() const { return nodes.size(); }
 };
 
 struct tree_builder {
@@ -189,7 +181,8 @@ struct tree_builder {
 
   // TREE_ROOT cannot be const because lookups in hardlinks is not
   // const :/
-  tree_builder(TREE_ROOT* root) {
+  tree_builder(TREE_ROOT* root)
+  {
     node_map m;
     build(m, root->first);
     for (auto& meta : metas) {
@@ -199,9 +192,9 @@ struct tree_builder {
 
       HL_ENTRY* entry = root->hardlinks.lookup(key);
       if (entry && entry->node) {
-	meta.original = m[entry->node];
+        meta.original = m[entry->node];
       } else {
-	meta.original = -1;
+        meta.original = -1;
       }
     }
   }
@@ -260,14 +253,14 @@ struct tree_builder {
     }
     auto delta_offset = data.size();
     {
-      auto b = (const char*) deltas.data();
+      auto b = (const char*)deltas.data();
       auto e = (const char*)(deltas.data() + deltas.size());
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
     }
 
-    tree_header header{nodes.size(), node_offset, string_offset, meta_offset,
-		       delta_offset, deltas.size()};
+    tree_header header{nodes.size(), node_offset,  string_offset,
+                       meta_offset,  delta_offset, deltas.size()};
 
     auto header_bytes = byte_view(header);
     for (size_t i = 0; i < header_bytes.size(); ++i) {
@@ -276,7 +269,7 @@ struct tree_builder {
     return data;
   }
 
-private:
+ private:
   void build(node_map& m, const TREE_NODE* node)
   {
     if (!node) { return; }
@@ -298,15 +291,15 @@ private:
       meta.type = node->type;
       meta.hard_link = node->hard_link;
       meta.soft_link = node->soft_link;
-      meta.delta_seq= node->delta_seq;
+      meta.delta_seq = node->delta_seq;
       meta.fhnode = node->fhnode;
       meta.fhinfo = node->fhinfo;
 
       n.deltas.start = deltas.size();
       for (auto* delta = node->delta_list; delta; delta = delta->next) {
-	delta_part& part = deltas.emplace_back();
-	part.jobid = delta->JobId;
-	part.findex = delta->FileIndex;
+        delta_part& part = deltas.emplace_back();
+        part.jobid = delta->JobId;
+        part.findex = delta->FileIndex;
       }
       n.deltas.end = deltas.size();
     }
@@ -321,7 +314,6 @@ private:
     nodes[pos].sub.start = start;
     nodes[pos].sub.end = end;
   }
-
 };
 
 #include <fstream>
@@ -330,9 +322,7 @@ bool MakeFileWithContents(const char* path, span<char> content)
 {
   std::ofstream output(path, std::ios::binary);
 
-  if (!output) {
-    return false;
-  }
+  if (!output) { return false; }
 
   try {
     output.write(content.data(), content.size());
@@ -347,9 +337,7 @@ std::vector<char> LoadFile(const char* path)
   std::ifstream input(path, std::ios::binary);
   input.exceptions(std::ios_base::badbit);
 
-  if (!input) {
-    throw std::ios_base::failure("error opening file");
-  }
+  if (!input) { throw std::ios_base::failure("error opening file"); }
 
   std::vector<char> content;
   auto current = content.size();
@@ -389,11 +377,11 @@ static void MallocBuf(TREE_ROOT* root, int size)
   Dmsg2(200, "malloc buf size=%d rem=%d\n", size, mem->rem);
 }
 
-static char *RootMalloc(TREE_ROOT* root, int size)
+static char* RootMalloc(TREE_ROOT* root, int size)
 {
   struct s_mem* mem;
 
-  mem = (struct s_mem*)malloc(size+sizeof(struct s_mem));
+  mem = (struct s_mem*)malloc(size + sizeof(struct s_mem));
   root->total_size += size + sizeof(struct s_mem);
   root->blocks++;
   if (root->mem) {
@@ -406,7 +394,7 @@ static char *RootMalloc(TREE_ROOT* root, int size)
   mem->mem = mem->first;
   mem->rem = 0;
   Dmsg2(200, "malloc buf size=%d rem=%d\n", size, mem->rem);
-  return (char*) mem + sizeof(struct s_mem);
+  return (char*)mem + sizeof(struct s_mem);
 }
 
 template <typename T> static T* tree_alloc(TREE_ROOT* root, int size)
@@ -445,9 +433,7 @@ static int NodeCompare(void* item1, void* item2)
 
 inline void PrintTree(TREE_NODE* node, std::string& s, int depth = 0)
 {
-  for (int i = 0; i < depth; ++i) {
-    s += "*";
-  }
+  for (int i = 0; i < depth; ++i) { s += "*"; }
 
   s += "* ";
 
@@ -455,18 +441,17 @@ inline void PrintTree(TREE_NODE* node, std::string& s, int depth = 0)
   s += "\n";
 
   TREE_NODE* child;
-  foreach_child(child, node) {
-    PrintTree(child, s, depth + 1);
-  }
+  foreach_child (child, node) { PrintTree(child, s, depth + 1); }
 }
 
 TREE_ROOT* tree_from_view(tree_view tree, bool mark)
 {
   TREE_ROOT* root = new_tree(tree.size());
 
-  TREE_NODE* nodes = (TREE_NODE*)RootMalloc(root, tree.size() * sizeof(TREE_NODE));
-  delta_list* deltas = (delta_list*)RootMalloc(root,
-					      tree.deltas.size() * sizeof(delta_list));
+  TREE_NODE* nodes
+      = (TREE_NODE*)RootMalloc(root, tree.size() * sizeof(TREE_NODE));
+  delta_list* deltas
+      = (delta_list*)RootMalloc(root, tree.deltas.size() * sizeof(delta_list));
 
   // this can probably be done in the othre direction too!
   for (std::size_t i = tree.size(); i > 0;) {
@@ -476,12 +461,11 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     auto str = tree.nodes[i].name;
     node.fname = tree_alloc<char>(root, str.end - str.start + 1);
     std::memcpy(node.fname, tree.string_pool.data() + str.start,
-		str.end - str.start);
+                str.end - str.start);
     node.fname[str.end - str.start] = 0;
     node.parent = (TREE_NODE*)root;
-    for (std::size_t child = pnode.sub.start;
-	 child < pnode.sub.end;
-	 child = tree.nodes[child].sub.end) {
+    for (std::size_t child = pnode.sub.start; child < pnode.sub.end;
+         child = tree.nodes[child].sub.end) {
       auto& childnode = nodes[child];
       node.child.insert(&childnode, NodeCompare);
       childnode.parent = &node;
@@ -499,7 +483,7 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
 
     auto& meta = tree.metas[saved.misc.meta];
     if (i < tree.size() - 1) {
-      current.next = &nodes[i+1];
+      current.next = &nodes[i + 1];
     } else {
       current.next = nullptr;
     }
@@ -511,7 +495,7 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
 
     auto str = saved.name;
     std::memcpy(current.fname, tree.string_pool.data() + str.start,
-		str.end - str.start);
+                str.end - str.start);
     current.fname[str.end - str.start] = 0;
 
     current.type = meta.type;
@@ -520,7 +504,7 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     if (mark) {
       current.extract = true;
       if (meta.type == TN_DIR || meta.type == TN_DIR_NLS) {
-	current.extract_dir = true;
+        current.extract_dir = true;
       }
     }
     current.hard_link = meta.hard_link;
@@ -540,18 +524,16 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     }
 
     if (saved.deltas.start != saved.deltas.end) {
-      for (auto cur = saved.deltas.start;
-	   cur < saved.deltas.end;
-	   ++cur) {
-	auto& delta = deltas[cur];
-	auto& saved_delta = tree.deltas[cur];
-	delta.JobId = saved_delta.jobid;
-	delta.FileIndex = saved_delta.findex;
-	if (cur != saved.deltas.end - 1) {
-	  delta.next = &delta + 1;
-	} else {
-	  delta.next = nullptr;
-	}
+      for (auto cur = saved.deltas.start; cur < saved.deltas.end; ++cur) {
+        auto& delta = deltas[cur];
+        auto& saved_delta = tree.deltas[cur];
+        delta.JobId = saved_delta.jobid;
+        delta.FileIndex = saved_delta.findex;
+        if (cur != saved.deltas.end - 1) {
+          delta.next = &delta + 1;
+        } else {
+          delta.next = nullptr;
+        }
       }
       current.delta_list = &deltas[saved.deltas.start];
     } else {
@@ -576,4 +558,40 @@ TREE_ROOT* LoadTree(const char* path, std::size_t* size, bool marked_initially)
     *size = 0;
     return nullptr;
   }
+}
+
+class NewTree {
+  using bytes = std::vector<char>;
+
+ public:
+  std::vector<bytes> tree_data;
+  std::vector<tree_view> views;
+};
+
+void DeleteTree(const NewTree* nt) { nt->~NewTree(); }
+
+tree_ptr MakeNewTree() { return tree_ptr(new NewTree); }
+
+bool AddTree(NewTree* tree, const char* path)
+{
+  try {
+    std::vector<char> bytes = LoadFile(path);
+
+
+    tree_view view(to_span(bytes));
+
+    tree->tree_data.emplace_back(std::move(bytes));
+    tree->views.push_back(view);
+
+    return true;
+  } catch (const std::exception& e) {
+    Dmsg1(50, "Error while loading tree from %s: ERR=%s\n", path, e.what());
+    return false;
+  }
+}
+
+TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
+{
+  *count = tree->views[0].size();
+  return tree_from_view(tree->views[0], mark_on_load);
 }
