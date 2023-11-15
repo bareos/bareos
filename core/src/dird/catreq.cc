@@ -425,8 +425,13 @@ static bool InsertNode(JobControlRecord* jcr, AttributesDbRecord* ar)
   JobId_t JobId = ar->JobId;
 
   PoolMem Path, File;
-  int fsize, psize;  // not used
-  SplitPathAndFilename(ar->fname, Path.addr(), &psize, File.addr(), &fsize);
+  if (S_ISDIR(statp.st_mode)) {
+    Path.strcpy(ar->fname);
+    File.strcpy("");
+  } else {
+    int fsize, psize;  // not used
+    SplitPathAndFilename(ar->fname, Path.addr(), &psize, File.addr(), &fsize);
+  }
 
   int type = [&] {
     if (*File.c_str() != 0) {

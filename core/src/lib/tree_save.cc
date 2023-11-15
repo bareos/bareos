@@ -60,7 +60,7 @@ struct proto_node {
   struct {
     // indices into the proto node array
     // start and end of subtree (start is the first child!)
-    std::uint64_t start;
+    std::uint64_t start;  // start is useless; its always the next one
     std::uint64_t end;
   } sub;
 
@@ -169,6 +169,14 @@ struct tree_view {
   }
 
   std::size_t size() const { return nodes.size(); }
+
+  std::string_view name(size_t i)
+  {
+    auto& node = nodes[i];
+    auto name_size = node.name.end - node.name.start;
+    auto* start = string_pool.data() + node.name.start;
+    return std::string_view{start, name_size};
+  }
 };
 
 struct tree_builder {
@@ -590,8 +598,176 @@ bool AddTree(NewTree* tree, const char* path)
   }
 }
 
+static bool InsertNode(TREE_ROOT* root,
+                       int32_t LinkFI,
+                       bool soft_link,
+                       int FileIndex,
+                       int32_t delta_seq,
+                       JobId_t JobId,
+                       const char* Path,
+                       const char* File,
+                       int type,
+                       int fhinfo,
+                       int fhnode,
+                       bool all)
+{
+  int ntype = [&] {
+    if (*File != 0) {
+      return TN_FILE;
+    } else if (!IsPathSeparator(*Path)) {
+      return TN_DIR_NLS;
+    } else {
+      return TN_DIR;
+    }
+  }();
+
+  ASSERT(ntype == type);
+
+  bool hard_link = LinkFI != 0;
+  auto* node = insert_tree_node((char*)Path, (char*)File, type, root, NULL);
+
+  node->fhinfo = fhinfo;
+  node->fhnode = fhnode;
+
+  if (delta_seq > 0) {
+    if (delta_seq == (node->delta_seq + 1)) {
+      TreeAddDeltaPart(root, node, node->JobId, node->FileIndex);
+
+    } else {
+      /* File looks to be deleted */
+      if (node->delta_seq == -1) { /* just created */
+        TreeRemoveNode(root, node);
+
+      } else {
+        Dmsg3(0,
+              "Something is wrong with Delta, skip it "
+              "fname=%s d1=%d d2=%d\n",
+              File, node->delta_seq, delta_seq);
+      }
+      return false;
+    }
+  }
+
+  /* - The first time we see a file (node->inserted==true), we accept it.
+   * - In the same JobId, we accept only the first copy of a
+   *   hard linked file (the others are simply pointers).
+   * - In the same JobId, we accept the last copy of any other
+   *   file -- in particular directories.
+   *
+   * All the code to set ok could be condensed to a single
+   * line, but it would be even harder to read. */
+  bool ok = true;
+  if (!node->inserted && JobId == node->JobId) {
+    if ((hard_link && FileIndex > node->FileIndex)
+        || (!hard_link && FileIndex < node->FileIndex)) {
+      ok = false;
+    }
+  }
+  if (ok) {
+    node->hard_link = hard_link;
+    node->FileIndex = FileIndex;
+    node->JobId = JobId;
+    node->type = type;
+    node->soft_link = soft_link;
+    node->delta_seq = delta_seq;
+
+    if (all) {
+      node->extract = true; /* extract all by default */
+      if (type == TN_DIR || type == TN_DIR_NLS) {
+        node->extract_dir = true; /* if dir, extract it */
+      }
+    }
+
+    // Insert file having hardlinks into hardlink hashtable.
+    if (type != TN_DIR && type != TN_DIR_NLS) {
+      if (!LinkFI) {
+        // First occurence - file hardlinked to
+        auto* entry = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+        entry->key = (((uint64_t)JobId) << 32) + FileIndex;
+        entry->node = node;
+        root->hardlinks.insert(entry->key, entry);
+      } else {
+        // Hardlink to known file index: lookup original file
+        uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
+        HL_ENTRY* first_hl = (HL_ENTRY*)root->hardlinks.lookup(file_key);
+
+        if (first_hl && first_hl->node) {
+          // Then add hardlink entry to linked node.
+          auto* entry
+              = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+          entry->key = (((uint64_t)JobId) << 32) + FileIndex;
+          entry->node = first_hl->node;
+          root->hardlinks.insert(entry->key, entry);
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
 {
-  *count = tree->views[0].size();
-  return tree_from_view(tree->views[0], mark_on_load);
+  size_t int_count = 0;
+  for (auto& view : tree->views) { int_count += view.size(); }
+
+  std::string Path{"/"}, File;
+  TREE_ROOT* root = new_tree(int_count);
+  std::vector<size_t> path_stack;
+
+  for (auto& view : tree->views) {
+    path_stack.clear();
+    Path.assign("/");
+    for (size_t i = 0; i < view.size(); ++i) {
+      while (path_stack.size()) {
+        ASSERT(Path.size() > 0);
+        if (i >= path_stack.back()) {
+          Path.pop_back();  // remove last /
+          auto pos = Path.find_last_of('/');
+          ASSERT(pos != Path.npos);
+          Path.resize(pos + 1);  // keep /
+          path_stack.pop_back();
+        } else {
+          break;
+        }
+      }
+      auto& node = view.nodes[i];
+
+      auto j = node.misc.meta;
+      auto& meta = view.metas[j];
+      int type = meta.type;
+      auto fname = view.name(i);
+      if (type != TN_FILE) {
+        Path.append(fname);
+        Path += "/";
+        if (path_stack.size()) { ASSERT(path_stack.back() >= node.sub.end); }
+        path_stack.push_back(node.sub.end);
+        File.clear();
+      } else {
+        File.assign(fname);
+      }
+
+      if (type == TN_NEWDIR) continue;
+      auto FileIndex = meta.findex;
+      auto delta_seq = meta.delta_seq;
+      auto fhinfo = meta.fhinfo;
+      auto fhnode = meta.fhnode;
+      auto JobId = meta.jobid;
+      int LinkFI = 0;
+      if (meta.original >= 0) {
+        auto oj = view.nodes[meta.original].misc.meta;
+        LinkFI = view.metas[oj].findex;
+      }
+      bool soft_link = meta.soft_link;
+
+      if (!InsertNode(root, LinkFI, soft_link, FileIndex, delta_seq, JobId,
+                      Path.c_str(), File.c_str(), type, fhinfo, fhnode,
+                      mark_on_load)) {
+        int_count -= 1;
+      }
+    }
+  }
+
+  *count = int_count;
+  return root;
 }

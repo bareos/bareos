@@ -1186,17 +1186,14 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   ua->LogAuditEventInfoMsg(T_("Building directory tree for JobId(s) %s"),
                            rx->JobIds);
 
-  int32_t single_jobid = 0;
-
-
   auto nt = MakeNewTree();
   bool got_all{true};
   {
     JobId_t jobid;
     for (const char* p = rx->JobIds; GetNextJobidFromList(&p, &jobid) > 0;) {
       std::string cwd = me->working_directory;
-      std::string path = cwd + std::string{"/bareos-"}
-                         + std::to_string(single_jobid) + ".tree";
+      std::string path
+          = cwd + std::string{"/bareos-"} + std::to_string(jobid) + ".tree";
       if (!AddTree(nt.get(), path.c_str())) {
         got_all = false;
         break;
