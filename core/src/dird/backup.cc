@@ -950,8 +950,12 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       bstrncpy(compress, "None", sizeof(compress));
    } else {
       compression = (double)100 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
-      Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
-      FindUsedCompressalgos(&compress_algo_list, jcr);
+      if (compression < 0.5) {
+         bstrncpy(compress, "None", sizeof(compress));
+      } else {
+         Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
+         FindUsedCompressalgos(&compress_algo_list, jcr);
+      }
    }
 
    std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
