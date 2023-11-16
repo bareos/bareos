@@ -32,6 +32,7 @@
 #include <signal.h>
 #include <vector>
 #include <cerrno>
+#include <algorithm>
 
 #include "copy_thread.h"
 
@@ -48,7 +49,9 @@
          index++)
 #endif
 
+extern "C" {
 #include <vixDiskLib.h>
+}
 
 /* This is the minimum version we require, i.e. vSphere 6.5 or later */
 #define VIXDISKLIB_VERSION_MAJOR 6
@@ -97,7 +100,7 @@ struct disk_type {
   VixDiskLibDiskType vadp_type;
 };
 
-static struct disk_type disk_types[]
+static disk_type disk_types[]
     = {{"monolithic_sparse", VIXDISKLIB_DISK_MONOLITHIC_SPARSE},
        {"monolithic_flat", VIXDISKLIB_DISK_MONOLITHIC_FLAT},
        {"split_sparse", VIXDISKLIB_DISK_SPLIT_SPARSE},
@@ -163,6 +166,8 @@ static bool verbose = false;
 static bool check_size = true;
 static bool create_disk = false;
 static bool local_vmdk = false;
+static bool do_query_allocated = true;
+static uint64 ChunkSize = VIXDISKLIB_MIN_CHUNK_SIZE;
 static bool multi_threaded = false;
 static bool restore_meta_data = false;
 static uint64_t sectors_per_call = DEFAULT_SECTORS_PER_CALL;
@@ -1171,21 +1176,179 @@ bail_out:
   return false;
 }
 
+/* Process a single cbt record. */
+static bool process_single_cbt(std::vector<uint8>& buffer,
+                               uint64 start_offset,
+                               uint64 offset_length)
+{
+  struct runtime_cbt_encoding rce;
+  rce.start_magic = BAREOSMAGIC;
+  rce.end_magic = BAREOSMAGIC;
+  rce.start_offset = start_offset;
+  rce.offset_length = offset_length;
+
+  if (verbose) {
+    fprintf(stderr, "start = %lu\n", start_offset);
+    fprintf(stderr, "length = %lu\n", offset_length);
+    fprintf(stderr, "nr length = %lu\n", offset_length / DEFAULT_SECTOR_SIZE);
+    fflush(stderr);
+  }
+
+
+  // Write the CBT info into the output stream.
+  if (robust_writer(STDOUT_FILENO, (char*)&rce, rce_size) != rce_size) {
+    fprintf(stderr,
+            "Failed to write runtime_cbt_encoding structure to output "
+            "datastream\n");
+    return false;
+  }
+
+  if (raw_disk_fd != -1) {
+    lseek(raw_disk_fd, start_offset, SEEK_SET);
+    if (verbose) {
+      fprintf(stderr, "Log: RAWFILE: Adusting seek position in file\n");
+    }
+  }
+
+  bool retval = true;
+  /* Calculate the start offset and read as many sectors as defined by the
+   * length element of the JSON structure. */
+  uint64 current_offset = absolute_start_offset + start_offset;
+  uint64 max_offset = current_offset + offset_length;
+  uint64 sector_offset = current_offset / DEFAULT_SECTOR_SIZE;
+  while (current_offset < max_offset) {
+    /* The number of sectors to read is the minimum of either the total number
+     * of sectors still available in this CBT range or the upper setting
+     * specified in the sectors_per_call variable. */
+    uint64 sectors_to_read
+        = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
+
+    if (multi_threaded) {
+      if (!send_to_copy_thread(sector_offset,
+                               sectors_to_read * DEFAULT_SECTOR_SIZE)) {
+        retval = false;
+        break;
+      }
+    } else {
+      if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
+                         buffer.data())
+          != sectors_to_read * DEFAULT_SECTOR_SIZE) {
+        fprintf(stderr, "Read error on VMDK\n");
+        retval = false;
+        break;
+      }
+
+      if (write_to_stream(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
+                          buffer.data())
+          != sectors_to_read * DEFAULT_SECTOR_SIZE) {
+        fprintf(stderr, "Failed to write data to output datastream\n");
+        retval = false;
+        break;
+      }
+    }
+
+    // Calculate the new offsets for a next run.
+    current_offset += (sectors_to_read * DEFAULT_SECTOR_SIZE);
+    sector_offset += sectors_to_read;
+    offset_length -= sectors_to_read * DEFAULT_SECTOR_SIZE;
+  }
+
+  if (multi_threaded) {
+    /* we need to wait until the thread has finished writing
+     * all data that we have given him to write -- otherwise both this thread
+     * and the copy thread would write to stdout at the same time! */
+    flush_copy_thread();
+  }
+
+  if (verbose) { fflush(stderr); }
+
+  return retval;
+}
+
+// std::vector<> can often not be used because of a version mismatch
+// between the vixdisklib stdlib version and the compiler stdlib version.
+struct vec {
+  size_t capacity{0};
+  size_t count{0};
+  VixDiskLibBlock* data{nullptr};
+
+  using value_type = VixDiskLibBlock;
+  using pointer = VixDiskLibBlock*;
+  using reference = VixDiskLibBlock&;
+
+  vec(size_t capacity = 200)
+      : capacity{capacity}
+      , data{reinterpret_cast<pointer>(malloc(sizeof(value_type) * capacity))}
+  {
+  }
+
+  vec(const vec&) = delete;
+  vec& operator=(const vec&) = delete;
+
+  vec& operator=(vec&& other)
+  {
+    std::swap(data, other.data);
+    std::swap(capacity, other.capacity);
+    std::swap(count, other.count);
+
+    return *this;
+  }
+
+  vec(vec&& other) { *this = std::move(other); }
+
+  void push_back(VixDiskLibBlock b)
+  {
+    if (count == capacity) {
+      if (capacity <= 2) {
+        capacity = 16;
+      } else {
+        capacity = capacity + (capacity >> 1);
+      }
+      data = reinterpret_cast<pointer>(
+          realloc(data, sizeof(value_type) * capacity));
+    }
+    data[count++] = b;
+  }
+
+  size_t size() const { return count; }
+
+  reference operator[](size_t i) { return data[i]; }
+
+  ~vec()
+  {
+    if (data) { free(data); }
+  }
+};
+
 /*
  * Process the Change Block Tracking information and write the wanted sectors
  * to the output stream. We self encode the data using a prefix header that
  * describes the data that is encoded after it including a MAGIC key and the
  * actual CBT information e.g. start of the read sectors and the number of
  * sectors that follow.
+ * A wanted sector is a sector that is both allocated and has changed.
  */
-static inline bool process_cbt(const char* key, json_t* cbt)
+static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 {
+  if (verbose) {
+    fprintf(stderr, "Allocated Blocks:\n");
+    for (size_t i = 0; i < allocated.size(); ++i) {
+      auto& block = allocated[i];
+      auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
+      auto blength = block.length * DEFAULT_SECTOR_SIZE;
+
+      fprintf(stderr, "  %10lu: { start: %lu, length: %lu }\n", i, boffset,
+              blength);
+    }
+    fprintf(stderr, "\n\n");
+  }
+
   bool retval = false;
   size_t index;
   json_t *object, *array_element, *start, *length;
-  uint64_t start_offset, offset_length, current_offset, max_offset;
-  uint64_t sector_offset, sectors_to_read;
-  struct runtime_cbt_encoding rce;
+  uint64_t start_offset, offset_length;
+  uint64 current_block = 0;
+  uint64 changed_len = 0, saved_len = 0;
 
   std::vector<uint8> buffer;
   if (!multi_threaded) {
@@ -1209,8 +1372,6 @@ static inline bool process_cbt(const char* key, json_t* cbt)
 
   /* Iterate over each element of the JSON array and get the "start" and
    * "length" member. */
-  rce.start_magic = BAREOSMAGIC;
-  rce.end_magic = BAREOSMAGIC;
   json_array_foreach(object, index, array_element)
   {
     // Get the two members we are interested in.
@@ -1222,82 +1383,48 @@ static inline bool process_cbt(const char* key, json_t* cbt)
     start_offset = json_integer_value(start);
     offset_length = json_integer_value(length);
 
-    if (verbose) {
-      fprintf(stderr, "start = %lu\n", start_offset);
-      fprintf(stderr, "length = %lu\n", offset_length);
-      fprintf(stderr, "nr length = %lu\n", offset_length / DEFAULT_SECTOR_SIZE);
-      fflush(stderr);
-    }
+    changed_len += offset_length;
 
-    rce.start_offset = start_offset;
-    rce.offset_length = offset_length;
+    if (allocated.size() == current_block) break;
 
-    // Write the CBT info into the output stream.
-    if (robust_writer(STDOUT_FILENO, (char*)&rce, rce_size) != rce_size) {
-      fprintf(stderr,
-              "Failed to write runtime_cbt_encoding structure to output "
-              "datastream\n");
-      goto bail_out;
-    }
+    for (;;) {
+      auto& block = allocated[current_block];
 
-    if (raw_disk_fd != -1) {
-      lseek(raw_disk_fd, start_offset, SEEK_SET);
-      if (verbose) {
-        fprintf(stderr, "Log: RAWFILE: Adusting seek position in file\n");
-      }
-    }
+      auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
+      auto blength = block.length * DEFAULT_SECTOR_SIZE;
 
-    /* Calculate the start offset and read as many sectors as defined by the
-     * length element of the JSON structure. */
-    current_offset = absolute_start_offset + start_offset;
-    max_offset = current_offset + offset_length;
-    sector_offset = current_offset / DEFAULT_SECTOR_SIZE;
-    while (current_offset < max_offset) {
-      /* The number of sectors to read is the minimum of either the total number
-       * of sectors still available in this CBT range or the upper setting
-       * specified in the sectors_per_call variable. */
-      sectors_to_read
-          = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
-
-      if (multi_threaded) {
-        if (!send_to_copy_thread(sector_offset,
-                                 sectors_to_read * DEFAULT_SECTOR_SIZE)) {
-          goto bail_out;
-        }
-      } else {
-        if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
-                           buffer.data())
-            != sectors_to_read * DEFAULT_SECTOR_SIZE) {
-          fprintf(stderr, "Read error on VMDK\n");
-          goto bail_out;
-        }
-
-        if (write_to_stream(sector_offset,
-                            sectors_to_read * DEFAULT_SECTOR_SIZE,
-                            buffer.data())
-            != sectors_to_read * DEFAULT_SECTOR_SIZE) {
-          fprintf(stderr, "Failed to write data to output datastream\n");
-          goto bail_out;
-        }
+      if (start_offset + offset_length < boffset) {
+        // skip unallocated block
+        break;
       }
 
-      // Calculate the new offsets for a next run.
-      current_offset += (sectors_to_read * DEFAULT_SECTOR_SIZE);
-      sector_offset += sectors_to_read;
-      offset_length -= sectors_to_read * DEFAULT_SECTOR_SIZE;
-    }
+      // in a perfect world we would also save information about
+      // newly unallocated blocks as well.
+      // But since we cannot currently take advantage of that information
+      // -- we do restores first -> last instead of last -> first and we
+      //    do not do consolidations for plugins --
+      // we just ignore them.  See process_empty_block on how one could
+      // add that information to the stream.
+      if (boffset < start_offset + offset_length
+          && boffset + blength > start_offset) {
+        uint64 offset = std::max(boffset, start_offset);
+        uint64 length = std::min(blength, offset_length);
 
-    if (multi_threaded) {
-      /* we need to wait until the thread has finished writing
-       * all data that we have given him to write -- otherwise both this thread
-       * and the copy thread would write to stdout at the same time! */
-      flush_copy_thread();
-    }
+        saved_len += length;
 
-    if (verbose) { fflush(stderr); }
+        if (!process_single_cbt(buffer, offset, length)) { goto bail_out; }
+      }
+
+      if (boffset + blength <= start_offset + offset_length) {
+        current_block += 1;
+      }
+
+      if (start_offset + offset_length <= boffset + blength) { break; }
+    }
   }
 
-  if (multi_threaded) { cleanup_copy_thread(); }
+  fprintf(stderr, "Changed len: %lu, Saved len: %lu\n", changed_len, saved_len);
+
 
   retval = true;
 
@@ -1529,7 +1656,75 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
     }
   }
 
-  return process_cbt(CBT_DISKCHANGEINFO_KEY, value);
+  vec blocks{};
+
+  if (do_query_allocated) {
+    uint64 Offset = 0;
+    uint64 Capacity = info->capacity;
+
+    if (ChunkSize > Capacity) { ChunkSize = Capacity; }
+
+    if (ChunkSize < VIXDISKLIB_MIN_CHUNK_SIZE) {
+      ChunkSize = VIXDISKLIB_MIN_CHUNK_SIZE;
+    }
+
+    uint64 NumChunks = Capacity / ChunkSize;
+    uint64 BlocksAllocated = 0;
+    uint64 NumBlocks = 0;
+
+    if (verbose) {
+      fprintf(stderr, "ChunkSize: %lu, NumChunks: %lu\n", ChunkSize, NumChunks);
+    }
+
+    while (NumChunks > 0) {
+      uint64 NumChunksToQuery
+          = std::min((uint64)VIXDISKLIB_MAX_CHUNK_NUMBER, NumChunks);
+      VixDiskLibBlockList* blocklist;
+
+      auto err = VixDiskLib_QueryAllocatedBlocks(read_diskHandle, Offset,
+                                                 NumChunksToQuery * ChunkSize,
+                                                 ChunkSize, &blocklist);
+
+      if (VIX_FAILED(err)) {
+        char* error_txt;
+
+        error_txt = VixDiskLib_GetErrorText(err, NULL);
+        fprintf(stderr, "Failed to query allocated blocks: %s [%lu]\n",
+                error_txt, err);
+        VixDiskLib_FreeErrorText(error_txt);
+        goto bail_out;
+      }
+
+      for (uint32 i = 0; i < blocklist->numBlocks; ++i) {
+        blocks.push_back(blocklist->blocks[i]);
+        NumBlocks += 1;
+        BlocksAllocated += blocklist->blocks[i].length;
+      }
+
+      VixDiskLib_FreeBlockList(blocklist);
+
+      Offset += NumChunksToQuery * ChunkSize;
+      NumChunks -= NumChunksToQuery;
+    }
+
+    uint64 Unaligned = Capacity % ChunkSize;
+
+    if (verbose) {
+      fprintf(stderr, "Allocated Sectors: %lu\n", Unaligned + BlocksAllocated);
+    }
+
+    if (Unaligned > 0) {
+      if (verbose) { fprintf(stderr, "Unaligned: %lu bytes\n", Unaligned); }
+      blocks.push_back(VixDiskLibBlock{.offset = Offset, .length = Unaligned});
+    }
+  } else {
+    uint64 Capacity = info->capacity;
+    blocks.push_back(VixDiskLibBlock{.offset = 0, .length = Capacity});
+  }
+
+  return process_cbt(CBT_DISKCHANGEINFO_KEY, std::move(blocks), value);
+bail_out:
+  return false;
 }
 
 // Worker function that performs the restore operation of the program.
@@ -1574,7 +1769,8 @@ void usage(const char* program_name)
 {
   fprintf(stderr,
           "Usage: %s [-d <vmdk_diskname>] [-f force_transport] [-s "
-          "sectors_per_call] [-t disktype] [-CcDlMmRSv] dump <workfile> | "
+          "sectors_per_call] [-t disktype] [-k chunksize] [-CcDlMmRSvQ] dump "
+          "<workfile> | "
           "restore <workfile> | show\n",
           program_name);
   fprintf(stderr, "Where:\n");
@@ -1592,6 +1788,8 @@ void usage(const char* program_name)
   fprintf(stderr, "   -S - Cleanup on Start\n");
   fprintf(stderr, "   -s - Sectors to read per call to VDDK\n");
   fprintf(stderr, "   -t - Disktype to create for local VMDK\n");
+  fprintf(stderr, "   -Q - Do not query allocated blocks\n");
+  fprintf(stderr, "   -k - Query allocated blocks with this chunk size\n");
   fprintf(stderr, "   -v - Verbose output\n");
   fprintf(stderr, "   -? - This help text\n");
   exit(1);
@@ -1604,7 +1802,7 @@ int main(int argc, char** argv)
   int ch;
 
   program_name = argv[0];
-  while ((ch = getopt(argc, argv, "CcDd:r:f:hlMmRSs:t:v?")) != -1) {
+  while ((ch = getopt(argc, argv, "CcDd:r:f:hlMmRSs:Qk:t:v?")) != -1) {
     switch (ch) {
       case 'C':
         create_disk = true;
@@ -1646,6 +1844,12 @@ int main(int argc, char** argv)
         break;
       case 'l':
         local_vmdk = true;
+        break;
+      case 'k':
+        ChunkSize = atoi(optarg);
+        break;
+      case 'Q':
+        do_query_allocated = false;
         break;
       case 'M':
         save_metadata = true;
