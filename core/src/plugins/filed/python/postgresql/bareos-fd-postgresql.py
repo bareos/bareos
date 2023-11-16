@@ -236,7 +236,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         if start_dir == "/" or not start_dir.strip():
             raise ValueError("start_dir can not be '/' or empty")
         if not os.path.isdir(start_dir.strip()):
-            raise ValueError("start_dir need to be a real dir.")
+            raise ValueError("start_dir needs to be a real directory, symlinks are not supported.")
         if not start_dir.endswith("/"):
             start_dir += "/"
         self.paths_to_backup.append(start_dir)
@@ -319,11 +319,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
     def __check_cluster_configuration_parameters(self):
         """
-        control and adjust configuration
+        check and adjust configuration
         """
         bareosfd.DebugMessage(100, "__check_cluster_configuration_parameters started\n")
 
-        # Do some safety controls, we can't backup a non PITR ready cluster
+        # Do some safety checks, as we can't backup a non PITR ready cluster
         if (
             "archive_mode" in self.cluster_configuration_parameters
             and self.cluster_configuration_parameters["archive_mode"] == "off"
@@ -341,10 +341,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # store parameters we will drop from self.cluster_configuration_parameters at the end
         parameters_to_remove = ["archive_mode", "archive_command"]
 
-        # do the following controls
-        # - for all files, if they starts with data_directory, drop the parameter
-        # - delete logging_directory if it doesn't start with / or "[a-z]:"
-        #   which mean it belong to data_directory
+        # - drop all file parameters and the logging directory if they are part of the data_directory
         for parameter, setting in self.cluster_configuration_parameters.items():
             if parameter.startswith("archive_"):
                 continue
@@ -381,7 +378,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             del self.cluster_configuration_parameters[parameter]
 
         # On Debian system postgresql.conf is usually set to /etc/postgresql/<version>/<instance>
-        # there's a number of files there the cluster didn't know about but are useful to manage it.
+        # there's a number of files there the cluster doesn't know about but are useful to manage it.
         # We will do our best to backup them all.
         if (
             "config_file" in self.cluster_configuration_parameters
@@ -401,7 +398,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.cluster_configuration_parameters["environment"] = os.path.join(
                 conf_dir, "start.conf"
             )
-            # Also any conf file present in config_dir/conf.d
+            # Also conf files present in config_dir/conf.d
             conf_d_dir = os.path.join(conf_dir, "conf.d")
             for item in os.listdir(conf_d_dir):
                 if os.path.isfile(os.path.join(conf_d_dir, item)) and item.endswith(
@@ -791,7 +788,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
     def __get_cluster_configuration_parameters(self):
         """
         get and set each cluster_configuration_parameters asking the value of from the cluster.
-        beware that maybe the role you are using if not able to grab the expecting parameter.
+        beware that maybe the role you are using is not able to grab the expecting parameter.
         """
         try:
             bareosfd.DebugMessage(100, "__get_cluster_configuration_parameters start\n")
@@ -800,7 +797,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 ret = self.db_con.run(stmt)
                 # ensure we have a value
                 if not ret:
-                    m = f"used role missed privileges to read configuration {parameter} value\n"
+                    m = f"used role misses privileges to read configuration {parameter} value\n"
                     raise ValueError(m)
                 setting = ret[0][0]
                 # Add final slashes to any directory parameter
@@ -1156,7 +1153,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
     def start_backup_job(self):
         """
         Create the PostgreSQL cluster connection
-        Get & Set & Check configuration give by the cluster
+        Get & Set & Check configuration given by the cluster
         Determine the start_dir by the job.level
         Build the list of objects to backup
         """
@@ -1169,10 +1166,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             # Create and test the connection to the cluster
             self.__create_db_connection()
 
-            # Grab all internal configuration
+            # Grab all internal configuration parameters
             self.__get_cluster_configuration_parameters()
 
-            # Check all configuration option
+            # Check all configuration options
             self.__check_cluster_configuration_parameters()
 
         except ValueError as val_error:
@@ -1185,7 +1182,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except Exception as global_error:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "an unexpected error occur during cluster connection"
+                "an unexpected error occured during cluster connection"
                 f" and configuration retrieval: {global_error}\n",
             )
             return bareosfd.bRC_Error
@@ -1267,8 +1264,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
-        # In non exclusive mode we can't know if there's already a running job.
-        # Documentation stipulate how to set `Allow Duplicate Job = no`
+        # In non-exclusive mode we can't know if there's already a running job.
+        # Documentation stipulates how to set `Allow Duplicate Job = no`
         # to exclude that case in job config.
         try:
             self.__pg_backup_start()

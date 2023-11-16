@@ -361,7 +361,7 @@ Initiate the Recovery Process
 '''''''''''''''''''''''''''''
 
 Make sure that the user :strong:`postgres` is allowed to rename the recovery marker file
-(:file:`recovery.signal` or :file:`recovery.conf`), as the file need to be renamed during the
+(:file:`recovery.signal` or :file:`recovery.conf`), as the file needs to be renamed during the
 recovery process. Should be the case if restored by the plugin.
 You might have to adapt your SELINUX configuration for this.
 
@@ -387,7 +387,7 @@ Troubleshooting the PostgreSQL Plugin
 If things don't work as expected, make sure that
 
 - the |fd| (FD) works in general, so that you can make simple file backups and restores
-- the Bareos FD Python plugins work in general, try one of the shipped simple sample plugins
+- the Bareos FD Python plugins works in general, try one of the shipped simple sample plugins
 - check your |postgresql| data directory for files `backup_label` `recovery.signal` `tablespace_map`.
   If they exists, the cluster has been restored, but has not been restarted yet.
 - make sure your `dbuser` can connect to the database `dbname` and is allowed to issue
