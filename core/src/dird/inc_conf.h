@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,7 @@
 
 namespace directordaemon {
 
-void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr);
+bool FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr);
 bool print_incexc_schema_json(PoolMem& buffer,
                               int level,
                               const int type,
