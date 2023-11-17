@@ -17,13 +17,23 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|amd64|AMD64)$")
+  set(XXHASH_ENABLE_DISPATCH
+      ON
+      CACHE INTERNAL ""
+  )
+else()
+  set(XXHASH_ENABLE_DISPATCH
+      OFF
+      CACHE INTERNAL ""
+  )
+endif()
+
 add_library(xxhash STATIC)
 set_property(TARGET xxhash PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_sources(xxhash PRIVATE xxHash/xxhash.c)
-if(("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-   OR ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "amd64")
-   OR ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
-)
+target_compile_options(xxhash PRIVATE "-O3")
+if(XXHASH_ENABLE_DISPATCH)
   target_sources(xxhash PRIVATE xxHash/xxh_x86dispatch.c)
 endif()
 target_include_directories(xxhash INTERFACE xxHash)

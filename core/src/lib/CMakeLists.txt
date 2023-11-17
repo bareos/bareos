@@ -157,6 +157,12 @@ target_link_libraries(
           ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash
 )
 
+if(XXHASH_ENABLE_DISPATCH)
+  set_source_files_properties(
+    xxhash.cc PROPERTIES COMPILE_FLAGS "-DXXHASH_ENABLE_DISPATCH"
+  )
+endif()
+
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
    AND CMAKE_CXX_COMPILER_VERSION MATCHES "^12"
