@@ -17,6 +17,14 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-add_library(xxhash INTERFACE)
+add_library(xxhash STATIC)
+set_property(TARGET xxhash PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_sources(xxhash PRIVATE xxHash/xxhash.c)
+if(("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+   OR ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "amd64")
+   OR ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
+)
+  target_sources(xxhash PRIVATE xxHash/xxh_x86dispatch.c)
+endif()
 target_include_directories(xxhash INTERFACE xxHash)
 add_library(xxHash::xxhash ALIAS xxhash)
