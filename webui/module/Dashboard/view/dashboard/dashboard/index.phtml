@@ -220,6 +220,13 @@ $this->headTitle($title);
                sortable: true,
             },
             {
+               field: 'rate',
+               sortable: true,
+               formatter: function(value) {
+                  return formatRate(value);
+               }
+            },
+            {
                field: 'jobbytes',
                sortable: true,
                formatter: function(value) {

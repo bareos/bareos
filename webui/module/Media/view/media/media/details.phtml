@@ -147,6 +147,12 @@ $this->headTitle($title);
       data-filter-control-placeholder="<?php echo $this->translate("Duration"); ?>">
       <?php echo $this->translate("Duration"); ?>
    </th>
+   <th
+      data-field="rate"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Rate"); ?>">
+      <?php echo $this->translate("Rate"); ?>
+   </th>
 </thead>
 
 </table>
@@ -323,6 +329,10 @@ $this->headTitle($title);
             },
             {
                field: 'duration',
+               sortable: true,
+            },
+            {
+               field: 'rate',
                sortable: true,
             },
          ]
