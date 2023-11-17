@@ -109,7 +109,7 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
   dcr->setVolCatInfo(false);
   if (dir->recv() <= 0) {
     Dmsg0(debuglevel, "getvolname error BnetRecv\n");
-    Mmsg(jcr->errmsg, _("Network error on BnetRecv in req_vol_info.\n"));
+    Mmsg(jcr->errmsg, T_("Network error on BnetRecv in req_vol_info.\n"));
     return false;
   }
   VolumeCatalogInfo vol;
@@ -125,7 +125,7 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
   if (n != 24) {
     Dmsg3(debuglevel, "Bad response from Dir fields=%d, len=%d: %s", n,
           dir->message_length, dir->msg);
-    Mmsg(jcr->errmsg, _("Error getting Volume info: %s"), dir->msg);
+    Mmsg(jcr->errmsg, T_("Error getting Volume info: %s"), dir->msg);
     return false;
   }
   vol.InChanger = InChanger; /* bool in structure */
@@ -289,8 +289,8 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   if (jcr->is_JobType(JT_SYSTEM)) { return true; }
 
   if (vol->VolCatName[0] == 0) {
-    Jmsg0(jcr, M_FATAL, 0, _("NULL Volume name. This shouldn't happen!!!\n"));
-    Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("NULL Volume name. This shouldn't happen!!!\n"));
+    Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
     return false;
   }
 
@@ -321,7 +321,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   if (!jcr->IsJobCanceled()) {
     if (!DoGetVolumeInfo(this)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
-      Dmsg2(debuglevel, _("Didn't get vol info vol=%s: ERR=%s\n"),
+      Dmsg2(debuglevel, T_("Didn't get vol info vol=%s: ERR=%s\n"),
             vol->VolCatName, jcr->errmsg);
       goto bail_out;
     }
@@ -368,7 +368,7 @@ bool StorageDaemonDeviceControlRecord::DirCreateJobmediaRecord(bool zero)
 
   if (dir->recv() <= 0) {
     Dmsg0(debuglevel, "create_jobmedia error BnetRecv\n");
-    Jmsg(jcr, M_FATAL, 0, _("Error creating JobMedia record: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Error creating JobMedia record: ERR=%s\n"),
          dir->bstrerror());
     return false;
   }
@@ -376,7 +376,7 @@ bool StorageDaemonDeviceControlRecord::DirCreateJobmediaRecord(bool zero)
 
   if (!bstrcmp(dir->msg, OK_create)) {
     Dmsg1(debuglevel, "Bad response from Dir: %s\n", dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Error creating JobMedia record: %s\n"), dir->msg);
+    Jmsg(jcr, M_FATAL, 0, T_("Error creating JobMedia record: %s\n"), dir->msg);
     return false;
   }
 
@@ -461,8 +461,8 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
   for (;;) {
     if (jcr->IsJobCanceled()) {
       Mmsg(dev->errmsg,
-           _("Job %s canceled while waiting for mount on Storage Device "
-             "\"%s\".\n"),
+           T_("Job %s canceled while waiting for mount on Storage Device "
+              "\"%s\".\n"),
            jcr->Job, dev->print_name());
       Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
       return false;
@@ -473,11 +473,11 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
     } else {
       if (status == W_TIMEOUT || status == W_MOUNT) {
         Mmsg(dev->errmsg,
-             _("Job %s is waiting. Cannot find any appendable volumes.\n"
-               "Please use the \"label\" command to create a new Volume for:\n"
-               "    Storage:      %s\n"
-               "    Pool:         %s\n"
-               "    Media type:   %s\n"),
+             T_("Job %s is waiting. Cannot find any appendable volumes.\n"
+                "Please use the \"label\" command to create a new Volume for:\n"
+                "    Storage:      %s\n"
+                "    Pool:         %s\n"
+                "    Media type:   %s\n"),
              jcr->Job, dev->print_name(), pool_name, media_type);
         Jmsg(jcr, M_MOUNT, 0, "%s", dev->errmsg);
         Dmsg1(debuglevel, "%s", dev->errmsg);
@@ -497,8 +497,8 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
     if (status == W_TIMEOUT) {
       if (!DoubleDevWaitTime(dev)) {
         Mmsg(dev->errmsg,
-             _("Max time exceeded waiting to mount Storage Device %s for Job "
-               "%s\n"),
+             T_("Max time exceeded waiting to mount Storage Device %s for Job "
+                "%s\n"),
              dev->print_name(), jcr->Job);
         Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
         Dmsg1(debuglevel, "Gave up waiting on device %s\n", dev->print_name());
@@ -509,7 +509,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
 
     if (status == W_ERROR) {
       BErrNo be;
-      Mmsg0(dev->errmsg, _("pthread error in mount_next_volume.\n"));
+      Mmsg0(dev->errmsg, T_("pthread error in mount_next_volume.\n"));
       Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
       return false;
     }
@@ -541,15 +541,16 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
   Dmsg0(debuglevel, "enter DirAskSysopToMountVolume\n");
   if (!VolumeName[0]) {
     Mmsg0(dev->errmsg,
-          _("Cannot request another volume: no volume name given.\n"));
+          T_("Cannot request another volume: no volume name given.\n"));
     return false;
   }
   ASSERT(dev->blocked());
   while (1) {
     if (jcr->IsJobCanceled()) {
-      Mmsg(dev->errmsg,
-           _("Job %s canceled while waiting for mount on Storage Device %s.\n"),
-           jcr->Job, dev->print_name());
+      Mmsg(
+          dev->errmsg,
+          T_("Job %s canceled while waiting for mount on Storage Device %s.\n"),
+          jcr->Job, dev->print_name());
       return false;
     }
 
@@ -559,19 +560,19 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
       const char* msg;
 
       if (mode == ST_APPENDREADY) {
-        msg
-            = _("Please mount append Volume \"%s\" or label a new one for:\n"
-                "    Job:          %s\n"
-                "    Storage:      %s\n"
-                "    Pool:         %s\n"
-                "    Media type:   %s\n");
+        msg = T_(
+            "Please mount append Volume \"%s\" or label a new one for:\n"
+            "    Job:          %s\n"
+            "    Storage:      %s\n"
+            "    Pool:         %s\n"
+            "    Media type:   %s\n");
       } else {
-        msg
-            = _("Please mount read Volume \"%s\" for:\n"
-                "    Job:          %s\n"
-                "    Storage:      %s\n"
-                "    Pool:         %s\n"
-                "    Media type:   %s\n");
+        msg = T_(
+            "Please mount read Volume \"%s\" for:\n"
+            "    Job:          %s\n"
+            "    Storage:      %s\n"
+            "    Pool:         %s\n"
+            "    Media type:   %s\n");
       }
       Jmsg(jcr, M_MOUNT, 0, msg, VolumeName, jcr->Job, dev->print_name(),
            pool_name, media_type);
@@ -593,8 +594,8 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
     if (status == W_TIMEOUT) {
       if (!DoubleDevWaitTime(dev)) {
         Mmsg(dev->errmsg,
-             _("Max time exceeded waiting to mount Storage Device %s for Job "
-               "%s\n"),
+             T_("Max time exceeded waiting to mount Storage Device %s for Job "
+                "%s\n"),
              dev->print_name(), jcr->Job);
         Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
         Dmsg1(debuglevel, "Gave up waiting on device %s\n", dev->print_name());
@@ -605,7 +606,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
 
     if (status == W_ERROR) {
       BErrNo be;
-      Mmsg(dev->errmsg, _("pthread error in mount_volume\n"));
+      Mmsg(dev->errmsg, T_("pthread error in mount_volume\n"));
       Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
       return false;
     }
@@ -636,7 +637,7 @@ bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord()
 bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)
 {
   fprintf(stderr,
-          _("Mount Volume \"%s\" on device %s and press return when ready: "),
+          T_("Mount Volume \"%s\" on device %s and press return when ready: "),
           VolumeName, dev->print_name());
   dev->close(this);
   getchar();
@@ -653,7 +654,7 @@ bool DeleteNullJobmediaRecords(JobControlRecord* jcr)
   if (dir->recv() <= 0) {
     Dmsg0(100, "DeleteNullJobmediaRecords error BnetRecv\n");
     Mmsg(jcr->errmsg,
-         _("Network error on BnetRecv in DeleteNullJobmediaRecords.\n"));
+         T_("Network error on BnetRecv in DeleteNullJobmediaRecords.\n"));
     return false;
   }
   Dmsg1(100, ">dird %s", dir->msg);

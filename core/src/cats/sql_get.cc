@@ -137,7 +137,7 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
     Dmsg1(050, "GetFileRecord num_rows=%d\n", num_rows);
     if (num_rows >= 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("Error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("Error fetching row: %s\n"), sql_strerror());
       } else {
         fdbr->FileId = (FileId_t)str_to_int64(row[0]);
         bstrncpy(fdbr->LStat, row[1], sizeof(fdbr->LStat));
@@ -145,18 +145,18 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
         retval = true;
         if (num_rows > 1) {
           Mmsg3(errmsg,
-                _("GetFileRecord want 1 got rows=%d PathId=%s Filename=%s\n"),
+                T_("GetFileRecord want 1 got rows=%d PathId=%s Filename=%s\n"),
                 num_rows, edit_int64(fdbr->PathId, ed1), esc_name);
           Dmsg1(000, "=== Problem!  %s", errmsg);
         }
       }
     } else {
-      Mmsg2(errmsg, _("File record for PathId=%s Filename=%s not found.\n"),
+      Mmsg2(errmsg, T_("File record for PathId=%s Filename=%s not found.\n"),
             edit_int64(fdbr->PathId, ed1), esc_name);
     }
     SqlFreeResult();
   } else {
-    Mmsg(errmsg, _("File record not found in Catalog.\n"));
+    Mmsg(errmsg, T_("File record not found in Catalog.\n"));
   }
   return retval;
 }
@@ -188,18 +188,18 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
     char ed1[30];
     num_rows = SqlNumRows();
     if (num_rows > 1) {
-      Mmsg2(errmsg, _("More than one Path!: %s for path: %s\n"),
+      Mmsg2(errmsg, T_("More than one Path!: %s for path: %s\n"),
             edit_uint64(num_rows, ed1), path);
       Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
     }
     /* Even if there are multiple paths, take the first one */
     if (num_rows >= 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
       } else {
         PathId = str_to_int64(row[0]);
         if (PathId <= 0) {
-          Mmsg2(errmsg, _("Get DB path record %s found bad record: %s\n"), cmd,
+          Mmsg2(errmsg, T_("Get DB path record %s found bad record: %s\n"), cmd,
                 edit_int64(PathId, ed1));
           PathId = 0;
         } else {
@@ -211,11 +211,11 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
         }
       }
     } else {
-      Mmsg1(errmsg, _("Path record: %s not found.\n"), path);
+      Mmsg1(errmsg, T_("Path record: %s not found.\n"), path);
     }
     SqlFreeResult();
   } else {
-    Mmsg(errmsg, _("Path record: %s not found in Catalog.\n"), path);
+    Mmsg(errmsg, T_("Path record: %s not found in Catalog.\n"), path);
   }
   return PathId;
 }
@@ -262,9 +262,9 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
   if ((row = SqlFetchRow()) == NULL) {
     if (search_by_jobname) {
-      Mmsg1(errmsg, _("No Job found for JobName %s\n"), esc);
+      Mmsg1(errmsg, T_("No Job found for JobName %s\n"), esc);
     } else {
-      Mmsg1(errmsg, _("No Job found for JobId %s\n"),
+      Mmsg1(errmsg, T_("No Job found for JobId %s\n"),
             edit_int64(jr->JobId, ed1));
     }
     SqlFreeResult();
@@ -344,13 +344,13 @@ int BareosDb::GetJobVolumeNames(JobControlRecord* jcr,
     num_rows = SqlNumRows();
     Dmsg1(130, "Num rows=%d\n", num_rows);
     if (num_rows <= 0) {
-      Mmsg1(errmsg, _("No volumes found for JobId=%d\n"), JobId);
+      Mmsg1(errmsg, T_("No volumes found for JobId=%d\n"), JobId);
       retval = 0;
     } else {
       retval = num_rows;
       for (i = 0; i < retval; i++) {
         if ((row = SqlFetchRow()) == NULL) {
-          Mmsg2(errmsg, _("Error fetching row %d: ERR=%s\n"), i,
+          Mmsg2(errmsg, T_("Error fetching row %d: ERR=%s\n"), i,
                 sql_strerror());
           Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
           retval = 0;
@@ -363,7 +363,7 @@ int BareosDb::GetJobVolumeNames(JobControlRecord* jcr,
     }
     SqlFreeResult();
   } else {
-    Mmsg(errmsg, _("No Volume for JobId %d found in Catalog.\n"), JobId);
+    Mmsg(errmsg, T_("No Volume for JobId %d found in Catalog.\n"), JobId);
   }
 
   return retval;
@@ -403,7 +403,7 @@ int BareosDb::GetJobVolumeParameters(JobControlRecord* jcr,
     num_rows = SqlNumRows();
     Dmsg1(200, "Num rows=%d\n", num_rows);
     if (num_rows <= 0) {
-      Mmsg1(errmsg, _("No volumes found for JobId=%d\n"), JobId);
+      Mmsg1(errmsg, T_("No volumes found for JobId=%d\n"), JobId);
       retval = 0;
     } else {
       retval = num_rows;
@@ -415,7 +415,7 @@ int BareosDb::GetJobVolumeParameters(JobControlRecord* jcr,
       }
       for (i = 0; i < retval; i++) {
         if ((row = SqlFetchRow()) == NULL) {
-          Mmsg2(errmsg, _("Error fetching row %d: ERR=%s\n"), i,
+          Mmsg2(errmsg, T_("Error fetching row %d: ERR=%s\n"), i,
                 sql_strerror());
           Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
           retval = 0;
@@ -488,7 +488,7 @@ int BareosDb::GetPoolIds(JobControlRecord* jcr, int* num_ids, DBId_t** ids)
     SqlFreeResult();
     retval = 1;
   } else {
-    Mmsg(errmsg, _("Pool id select failed: ERR=%s\n"), sql_strerror());
+    Mmsg(errmsg, T_("Pool id select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     retval = 0;
   }
@@ -523,7 +523,7 @@ int BareosDb::GetStorageIds(JobControlRecord* jcr, int* num_ids, DBId_t* ids[])
     SqlFreeResult();
     retval = 1;
   } else {
-    Mmsg(errmsg, _("Storage id select failed: ERR=%s\n"), sql_strerror());
+    Mmsg(errmsg, T_("Storage id select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     retval = 0;
   }
@@ -557,7 +557,7 @@ bool BareosDb::GetClientIds(JobControlRecord* jcr, int* num_ids, DBId_t* ids[])
     SqlFreeResult();
     return true;
   } else {
-    Mmsg(errmsg, _("Client id select failed: ERR=%s\n"), sql_strerror());
+    Mmsg(errmsg, T_("Client id select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
   }
   return false;
@@ -606,11 +606,12 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       char ed1[30];
-      Mmsg1(errmsg, _("More than one Pool!: %s\n"), edit_uint64(num_rows, ed1));
+      Mmsg1(errmsg, T_("More than one Pool!: %s\n"),
+            edit_uint64(num_rows, ed1));
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     } else if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       } else {
         pdbr->PoolId = str_to_int64(row[0]);
@@ -656,7 +657,7 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
       ok = UpdatePoolRecord(jcr, pdbr);
     }
   } else {
-    Mmsg(errmsg, _("Pool record not found in Catalog.\n"));
+    Mmsg(errmsg, T_("Pool record not found in Catalog.\n"));
   }
 
   return ok;
@@ -696,12 +697,12 @@ bool BareosDb::GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr)
     if (num_rows > 1) {
       char ed1[30];
 
-      Mmsg1(errmsg, _("More than one Storage!: %s\n"),
+      Mmsg1(errmsg, T_("More than one Storage!: %s\n"),
             edit_uint64(num_rows, ed1));
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     } else if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       } else {
         sdbr->StorageId = str_to_int64(row[0]);
@@ -750,12 +751,12 @@ bool BareosDb::GetClientRecord(JobControlRecord* jcr, ClientDbRecord* cdbr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
-      Mmsg1(errmsg, _("More than one Client!: %s\n"),
+      Mmsg1(errmsg, T_("More than one Client!: %s\n"),
             edit_uint64(num_rows, ed1));
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     } else if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       } else {
         cdbr->ClientId = str_to_int64(row[0]);
@@ -769,11 +770,11 @@ bool BareosDb::GetClientRecord(JobControlRecord* jcr, ClientDbRecord* cdbr)
         retval = true;
       }
     } else {
-      Mmsg(errmsg, _("Client record not found in Catalog.\n"));
+      Mmsg(errmsg, T_("Client record not found in Catalog.\n"));
     }
     SqlFreeResult();
   } else {
-    Mmsg(errmsg, _("Client record not found in Catalog.\n"));
+    Mmsg(errmsg, T_("Client record not found in Catalog.\n"));
   }
 
   return retval;
@@ -800,12 +801,12 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
     num_rows = SqlNumRows();
 
     if (num_rows > 1) {
-      Mmsg1(errmsg, _("More than one Counter!: %d\n"), num_rows);
+      Mmsg1(errmsg, T_("More than one Counter!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     }
     if (num_rows >= 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching Counter row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching Counter row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
         return retval;
@@ -824,7 +825,7 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
     }
     SqlFreeResult();
   } else {
-    Mmsg(errmsg, _("Counter record: %s not found in Catalog.\n"), cr->Counter);
+    Mmsg(errmsg, T_("Counter record: %s not found in Catalog.\n"), cr->Counter);
   }
 
   return retval;
@@ -864,12 +865,12 @@ int BareosDb::GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       char ed1[30];
-      Mmsg1(errmsg, _("Error got %s FileSets but expected only one!\n"),
+      Mmsg1(errmsg, T_("Error got %s FileSets but expected only one!\n"),
             edit_uint64(num_rows, ed1));
       SqlDataSeek(num_rows - 1);
     }
     if ((row = SqlFetchRow()) == NULL) {
-      Mmsg1(errmsg, _("FileSet record \"%s\" not found.\n"), fsr->FileSet);
+      Mmsg1(errmsg, T_("FileSet record \"%s\" not found.\n"), fsr->FileSet);
     } else {
       fsr->FileSetId = str_to_int64(row[0]);
       bstrncpy(fsr->FileSet, (row[1] != NULL) ? row[1] : "",
@@ -881,7 +882,7 @@ int BareosDb::GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
     }
     SqlFreeResult();
   } else {
-    Mmsg(errmsg, _("FileSet record not found in Catalog.\n"));
+    Mmsg(errmsg, T_("FileSet record not found in Catalog.\n"));
   }
   return retval;
 }
@@ -962,13 +963,13 @@ bool BareosDb::GetMediaIds(JobControlRecord* jcr,
   *ids = NULL;
 
   if (!PrepareMediaSqlQuery(jcr, mr, volumes)) {
-    Mmsg(errmsg, _("Media id select failed: invalid parameter"));
+    Mmsg(errmsg, T_("Media id select failed: invalid parameter"));
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     return false;
   }
 
   if (!QUERY_DB(jcr, cmd)) {
-    Mmsg(errmsg, _("Media id select failed: ERR=%s\n"), sql_strerror());
+    Mmsg(errmsg, T_("Media id select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     return false;
   }
@@ -1016,7 +1017,7 @@ bool BareosDb::GetQueryDbids(JobControlRecord* jcr,
     SqlFreeResult();
     ok = true;
   } else {
-    Mmsg(errmsg, _("query dbids failed: ERR=%s\n"), sql_strerror());
+    Mmsg(errmsg, T_("query dbids failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     ok = false;
   }
@@ -1096,12 +1097,12 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     char ed1[50];
     num_rows = SqlNumRows();
     if (num_rows > 1) {
-      Mmsg1(errmsg, _("More than one Volume!: %s\n"),
+      Mmsg1(errmsg, T_("More than one Volume!: %s\n"),
             edit_uint64(num_rows, ed1));
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     } else if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       } else {
         /* return values */
@@ -1161,20 +1162,20 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
       }
     } else {
       if (mr->MediaId != 0) {
-        Mmsg1(errmsg, _("Media record MediaId=%s not found.\n"),
+        Mmsg1(errmsg, T_("Media record MediaId=%s not found.\n"),
               edit_int64(mr->MediaId, ed1));
       } else {
-        Mmsg1(errmsg, _("Media record for Volume \"%s\" not found.\n"),
+        Mmsg1(errmsg, T_("Media record for Volume \"%s\" not found.\n"),
               mr->VolumeName);
       }
     }
     SqlFreeResult();
   } else {
     if (mr->MediaId != 0) {
-      Mmsg(errmsg, _("Media record for MediaId=%u not found in Catalog.\n"),
+      Mmsg(errmsg, T_("Media record for MediaId=%u not found in Catalog.\n"),
            mr->MediaId);
     } else {
-      Mmsg(errmsg, _("Media record for Vol=%s not found in Catalog.\n"),
+      Mmsg(errmsg, T_("Media record for Vol=%s not found in Catalog.\n"),
            mr->VolumeName);
     }
   }
@@ -1213,7 +1214,7 @@ bool BareosDb::GetFileList(JobControlRecord*,
 
   if (!*jobids) {
     DbLocker _{this};
-    Mmsg(errmsg, _("ERR=JobIds are empty\n"));
+    Mmsg(errmsg, T_("ERR=JobIds are empty\n"));
     return false;
   }
 
@@ -1509,7 +1510,7 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
     SqlFreeResult();
     return true;
   } else {
-    Mmsg(errmsg, _("JobBytes sum select failed: ERR=%s\n"), sql_strerror());
+    Mmsg(errmsg, T_("JobBytes sum select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
   }
 
@@ -1558,7 +1559,7 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
     SqlFreeResult();
     return true;
   } else {
-    Mmsg(errmsg, _("JobBytes sum select failed: ERR=%s\n"), sql_strerror());
+    Mmsg(errmsg, T_("JobBytes sum select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
   }
 
@@ -1587,7 +1588,7 @@ bool BareosDb::GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cdbr)
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
       } else {
@@ -1597,11 +1598,11 @@ bool BareosDb::GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cdbr)
         retval = true;
       }
     } else {
-      Mmsg(errmsg, _("Quota record not found in Catalog.\n"));
+      Mmsg(errmsg, T_("Quota record not found in Catalog.\n"));
       SqlFreeResult();
     }
   } else {
-    Mmsg(errmsg, _("Quota record not found in Catalog.\n"));
+    Mmsg(errmsg, T_("Quota record not found in Catalog.\n"));
   }
 
   return retval;
@@ -1637,7 +1638,7 @@ int BareosDb::GetNdmpLevelMapping(JobControlRecord* jcr,
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {
-        Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+        Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
         return dumplevel;
@@ -1648,12 +1649,12 @@ int BareosDb::GetNdmpLevelMapping(JobControlRecord* jcr,
         return dumplevel;
       }
     } else {
-      Mmsg(errmsg, _("NDMP Dump Level record not found in Catalog.\n"));
+      Mmsg(errmsg, T_("NDMP Dump Level record not found in Catalog.\n"));
       SqlFreeResult();
       return dumplevel;
     }
   } else {
-    Mmsg(errmsg, _("NDMP Dump Level record not found in Catalog.\n"));
+    Mmsg(errmsg, T_("NDMP Dump Level record not found in Catalog.\n"));
     return dumplevel;
   }
 
@@ -1866,7 +1867,7 @@ bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
   for (int i = 0; i < mediaIds.size(); i++) {
     mr.MediaId = mediaIds.get(i);
     if (!GetMediaRecord(jcr, &mr)) {
-      Mmsg1(errmsg, _("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);
+      Mmsg1(errmsg, T_("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       return false;
     } else if (i == 0) {

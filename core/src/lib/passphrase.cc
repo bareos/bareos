@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,8 +61,8 @@ char* generate_crypto_passphrase(uint16_t length)
 
     error = ERR_get_error();
     Emsg1(M_ERROR, 0,
-          _("Failed to get random bytes from RAND_bytes for passphrase: "
-            "ERR=%s\n"),
+          T_("Failed to get random bytes from RAND_bytes for passphrase: "
+             "ERR=%s\n"),
           ERR_lib_error_string(error));
 
     free(rand_bytes);
@@ -72,12 +72,10 @@ char* generate_crypto_passphrase(uint16_t length)
   }
 #  endif
 
-  /*
-   * Convert the random bytes into a readable string.
+  /* Convert the random bytes into a readable string.
    *
    * This conversion gives reasonable good passphrases with 32 bytes.
-   * Tested was around 300k passphrases without one duplicate.
-   */
+   * Tested was around 300k passphrases without one duplicate. */
   vc_len = strlen(valid_chars);
   for (cnt = 0; cnt < length; cnt++) {
     c = rand_bytes[cnt] % vc_len;
@@ -111,12 +109,10 @@ char* generate_crypto_passphrase(uint16_t length)
   srand(time(NULL));
   for (cnt = 0; cnt < length; cnt++) { rand_bytes[cnt] = rand(); }
 
-  /*
-   * Convert the random bytes into a readable string.
+  /* Convert the random bytes into a readable string.
    * Due to the limited randomness of srand and rand this gives
    * more duplicates then the version using the openssl RAND_bytes
-   * function. If available please use the openssl version.
-   */
+   * function. If available please use the openssl version. */
   vc_len = strlen(valid_chars);
   for (cnt = 0; cnt < length; cnt++) {
     c = rand_bytes[cnt] % vc_len;

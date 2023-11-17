@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,13 +102,11 @@ static inline void validate_slot_list(UaContext* ua,
             case slot_status_t::kSlotStatusFull:
               // If it has the correct status we are done.
               if (vl->slot_status == status) { continue; }
-              /*
-               * If the request is for a slot with status
+              /* If the request is for a slot with status
                * we check the actual status. When its empty
                * but loaded in the drive we just pretend
                * that it has status. We just unload the drive
-               * on the export move operation.
-               */
+               * on the export move operation. */
               if (vl->slot_type == slot_type_t::kSlotTypeStorage
                   && vl->slot_status == slot_status_t::kSlotStatusEmpty
                   && vol_is_loaded_in_drive(store, vol_list,
@@ -119,18 +117,16 @@ static inline void validate_slot_list(UaContext* ua,
               Dmsg1(100, "Deselecting slot %hd doesn't have wanted status.\n",
                     vl->bareos_slot_number);
               ua->WarningMsg(
-                  _("Deselecting slot %hd doesn't have wanted status.\n"),
+                  T_("Deselecting slot %hd doesn't have wanted status.\n"),
                   vl->bareos_slot_number);
               ClearBit(vl->bareos_slot_number - 1, slot_list);
               break;
             case slot_status_t::kSlotStatusEmpty:
               // If it has the correct status we are done.
               if (vl->slot_status == status) { continue; }
-              /*
-               * If the slot is empty and this is normal slot
+              /* If the slot is empty and this is normal slot
                * make sure its not loaded in a drive because
-               * then the slot is not really empty.
-               */
+               * then the slot is not really empty. */
               if (vl->slot_type == slot_type_t::kSlotTypeStorage
                   && vl->slot_status == slot_status_t::kSlotStatusEmpty
                   && vol_is_loaded_in_drive(store, vol_list,
@@ -141,7 +137,7 @@ static inline void validate_slot_list(UaContext* ua,
               Dmsg1(100, "Deselecting slot %hd doesn't have wanted status.\n",
                     vl->bareos_slot_number);
               ua->WarningMsg(
-                  _("Deselecting slot %hd doesn't have wanted status.\n"),
+                  T_("Deselecting slot %hd doesn't have wanted status.\n"),
                   vl->bareos_slot_number);
               ClearBit(vl->bareos_slot_number - 1, slot_list);
               break;
@@ -205,11 +201,9 @@ static inline bool slot_lists_overlap(char* src_slot_list,
   bool other_slot_enabled = false;
 
   for (i = 0; i < max_slots; i++) {
-    /*
-     * See if both the source and destination slot are selected
+    /* See if both the source and destination slot are selected
      * and there has not been a source or destination slot
-     * which has been selected before.
-     */
+     * which has been selected before. */
     if (BitIsSet(i, src_slot_list) && BitIsSet(i, dst_slot_list)
         && !other_slot_enabled) {
       Dmsg0(100,
@@ -256,11 +250,9 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
       case slot_type_t::kSlotTypeDrive:
         continue;
       default:
-        /*
-         * See if a slot list selection was done and
+        /* See if a slot list selection was done and
          * if so only get the content for this slot when
-         * it is selected in the slot list.
-         */
+         * it is selected in the slot list. */
         if (src_slot_list
             && !BitIsSet(vl1->bareos_slot_number - 1, src_slot_list)) {
           continue;
@@ -278,10 +270,8 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
                   vl1->bareos_slot_number);
             break;
           case slot_status_t::kSlotStatusEmpty:
-            /*
-             * See if the slot is empty because the volume is
-             * loaded in a drive.
-             */
+            /* See if the slot is empty because the volume is
+             * loaded in a drive. */
             if (vl1->slot_type == slot_type_t::kSlotTypeStorage
                 && (vl2 = vol_is_loaded_in_drive(store, vol_list,
                                                  vl1->bareos_slot_number))
@@ -303,11 +293,9 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
     }
   }
 
-  /*
-   * As the scan for volumes can alter the location of
+  /* As the scan for volumes can alter the location of
    * the volumes in the autochanger e.g. volumes in drives
-   * being put back into slots etc we rescan the changer.
-   */
+   * being put back into slots etc we rescan the changer. */
   new_vol_list = get_vol_list_from_storage(ua, store, true /* listall */,
                                            true /* want to see all slots */,
                                            false /* non cached list */);
@@ -317,14 +305,12 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
     return NULL;
   }
 
-  /*
-   * Walk the list of drives and slots available.
+  /* Walk the list of drives and slots available.
    * And copy the new scanned volume names from the old list
    * to the new list.
    *
    * This is optimized for the case the slots are still
-   * filled with the same volume.
-   */
+   * filled with the same volume. */
   foreach_dlist (vl1, new_vol_list->contents) {
     switch (vl1->slot_type) {
       case slot_type_t::kSlotTypeDrive:
@@ -342,11 +328,9 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
               vl2->VolName = vl1->VolName;
               vl1->VolName = NULL;
             } else {
-              /*
-               * Drive is loaded with a volume which was previously
+              /* Drive is loaded with a volume which was previously
                * loaded somewhere else. Lookup the currently loaded
-               * volume in the old list.
-               */
+               * volume in the old list. */
               vl2 = find_slot_in_list(vol_list,
                                       vl1->currently_loaded_slot_number);
               if (vl2) {
@@ -362,11 +346,9 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
         break;
       case slot_type_t::kSlotTypeStorage:
       case slot_type_t::kSlotTypeImport:
-        /*
-         * See if a slot list selection was done and
+        /* See if a slot list selection was done and
          * if so only get the content for this slot when
-         * it is selected in the slot list.
-         */
+         * it is selected in the slot list. */
         if (src_slot_list
             && !BitIsSet(vl1->bareos_slot_number - 1, src_slot_list)) {
           continue;
@@ -384,11 +366,9 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
               vl2->VolName = vl1->VolName;
               vl1->VolName = NULL;
             } else {
-              /*
-               * This should never happen as a volume is always put back
+              /* This should never happen as a volume is always put back
                * into the same slot it was taken from. But as we have the
-               * code to lookup the old place we take a shot at it.
-               */
+               * code to lookup the old place we take a shot at it. */
               vl2 = find_slot_in_list(vol_list, vl1->bareos_slot_number);
               if (vl2) {
                 if (vl2->VolName) { free(vl2->VolName); }
@@ -428,10 +408,8 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
       switch (vl1->slot_type) {
         case slot_type_t::kSlotTypeStorage:
         case slot_type_t::kSlotTypeImport:
-          /*
-           * When the source slot list is limited we check to
-           * see if this slot should be taken into consideration.
-           */
+          /* When the source slot list is limited we check to
+           * see if this slot should be taken into consideration. */
           if (wanted_slot_list
               && !BitIsSet(vl1->bareos_slot_number - 1, wanted_slot_list)) {
             continue;
@@ -450,10 +428,8 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
               }
               break;
             case slot_status_t::kSlotStatusEmpty:
-              /*
-               * See if this slot is loaded in drive and drive contains wanted
-               * volume
-               */
+              /* See if this slot is loaded in drive and drive contains wanted
+               * volume */
               vl2 = vol_is_loaded_in_drive(store, vol_list,
                                            vl1->bareos_slot_number);
               if (vl2 != NULL) {
@@ -482,24 +458,22 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
       if (found) { break; }
     }
 
-    /*
-     * See if we found the wanted volumename in the list
+    /* See if we found the wanted volumename in the list
      * of available slots in the autochanger and mark the
      * slot in the slot_list or give a warning when the
-     * volumename was not found.
-     */
+     * volumename was not found. */
     if (found) {
       SetBit(vl1->bareos_slot_number - 1, selected_slot_list);
     } else {
       Dmsg1(100, "No volume named %s in changer or in selected source slots.\n",
             volumename);
       ua->WarningMsg(
-          _("No volume named %s in changer or in selected source slots.\n"),
+          T_("No volume named %s in changer or in selected source slots.\n"),
           volumename);
     }
   } else {
     Dmsg1(100, "Skipping illegal volumename %s.\n", volumename);
-    ua->WarningMsg(_("Skipping illegal volumename %s.\n"), volumename);
+    ua->WarningMsg(T_("Skipping illegal volumename %s.\n"), volumename);
   }
 
   return found;
@@ -518,24 +492,20 @@ static inline slot_number_t get_slot_list_using_volnames(
   slot_number_t cnt = 0;
   char *s, *token, *sep;
 
-  /*
-   * The arg argument contains the index of the first occurence
+  /* The arg argument contains the index of the first occurence
    * of the volume keyword. We scan the whole cmdline for one
-   * or more volume= cmdline parameters.
-   */
+   * or more volume= cmdline parameters. */
   for (i = arg; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], "volume")) {
       // Parse a volumelist e.g. vol1|vol2 and a single volume e.g. vol1
       s = strdup(ua->argv[i]);
       token = s;
 
-      /*
-       * We could use strtok() here. But we're not going to, because:
+      /* We could use strtok() here. But we're not going to, because:
        * (a) strtok() is deprecated, having been replaced by strsep();
        * (b) strtok() is broken in significant ways.
        * we could use strsep() instead, but it's not universally available.
-       * so we grow our own using strchr().
-       */
+       * so we grow our own using strchr(). */
       sep = strchr(token, '|');
       while (sep != NULL) {
         *sep = '\0';
@@ -585,11 +555,9 @@ static inline slot_number_t auto_fill_slot_selection(
       continue;
     }
 
-    /*
-     * If the slot is empty and this is normal slot
+    /* If the slot is empty and this is normal slot
      * make sure its not loaded in a drive because
-     * then the slot is not really empty.
-     */
+     * then the slot is not really empty. */
     if (type == slot_type_t::kSlotTypeStorage
         && content == slot_status_t::kSlotStatusEmpty
         && vol_is_loaded_in_drive(store, vol_list, vl->bareos_slot_number)
@@ -601,10 +569,8 @@ static inline slot_number_t auto_fill_slot_selection(
       continue;
     }
 
-    /*
-     * Mark the slot as selected in the slot list.
-     * And increase the number of slots selected.
-     */
+    /* Mark the slot as selected in the slot list.
+     * And increase the number of slots selected. */
     Dmsg3(100,
           "Selected slot %hd which has slot_type %hd and content_type %hd\n",
           vl->bareos_slot_number, vl->slot_type, vl->slot_status);
@@ -628,11 +594,9 @@ static inline bool verify_slot_list(StorageResource* store,
 
   // Walk the list of drives and slots available.
   foreach_dlist (vl, vol_list->contents) {
-    /*
-     * Move operations are only allowed between
+    /* Move operations are only allowed between
      * normal slots and import/export slots so
-     * don't consider any other slot type.
-     */
+     * don't consider any other slot type. */
     switch (vl->slot_type) {
       case slot_type_t::kSlotTypeStorage:
       case slot_type_t::kSlotTypeImport:
@@ -640,15 +604,13 @@ static inline bool verify_slot_list(StorageResource* store,
           // If the type and content is ok we can continue with the next one.
           if (vl->slot_type == type && vl->slot_status == content) { continue; }
 
-          /*
-           * When the content is not the wanted and this is a normal
+          /* When the content is not the wanted and this is a normal
            * slot take into consideration if its loaded into the drive.
            * When we are asked for an empty slot it should NOT be loaded
            * in the drive but when we are asked for a full slot it being
            * loaded in the drive also makes that the slot is filled as
            * we can just release the drive so that its put back into
-           * the slot and then moved.
-           */
+           * the slot and then moved. */
           if (vl->slot_type == slot_type_t::kSlotTypeStorage) {
             switch (content) {
               case slot_status_t::kSlotStatusEmpty:
@@ -762,17 +724,13 @@ static bool release_loaded_volume(UaContext* ua,
       default:
         break;
     }
-    /*
-     * As drives are at the front of the list
-     * when we see the first non drive we are done.
-     */
+    /* As drives are at the front of the list
+     * when we see the first non drive we are done. */
     if (found || vl1->slot_type != slot_type_t::kSlotTypeDrive) { break; }
   }
 
-  /*
-   * Lookup the slot in the slotlist referenced by the loaded value in the drive
-   * slot.
-   */
+  /* Lookup the slot in the slotlist referenced by the loaded value in the drive
+   * slot. */
   found = false;
   foreach_dlist (vl2, vol_list->contents) {
     switch (vl2->slot_type) {
@@ -826,15 +784,13 @@ static char* move_volumes_in_autochanger(UaContext* ua,
   nr_enabled_src_slots = count_enabled_slots(src_slot_list, max_slots);
   nr_enabled_dst_slots = count_enabled_slots(dst_slot_list, max_slots);
   if (nr_enabled_src_slots == 0 || nr_enabled_dst_slots == 0) {
-    ua->WarningMsg(_("Nothing to do\n"));
+    ua->WarningMsg(T_("Nothing to do\n"));
     return NULL;
   }
 
-  /*
-   * When doing an export we first set all slots in the database
+  /* When doing an export we first set all slots in the database
    * to inchanger = 0 so we cannot get surprises that a running
-   * backup can grab such a volume.
-   */
+   * backup can grab such a volume. */
   switch (operation) {
     case VOLUME_EXPORT:
       UpdateInchangerForExport(ua, store, vol_list, src_slot_list);
@@ -843,12 +799,10 @@ static char* move_volumes_in_autochanger(UaContext* ua,
       break;
   }
 
-  /*
-   * Create an empty slot list in which we keep track of the slots
+  /* Create an empty slot list in which we keep track of the slots
    * we visited during this move operation so we can return that data
    * to the caller which can use it to update only the slots updated
-   * by the move operation.
-   */
+   * by the move operation. */
   visited_slot_list = (char*)malloc(NbytesForBits(max_slots));
   ClearAllBits(max_slots, visited_slot_list);
 
@@ -866,24 +820,22 @@ static char* move_volumes_in_autochanger(UaContext* ua,
       if (transfer_to > max_slots) {
         Dmsg0(100, "Failed to find suitable destination slot in slot range.\n");
         ua->WarningMsg(
-            _("Failed to find suitable destination slot in slot range.\n"));
+            T_("Failed to find suitable destination slot in slot range.\n"));
         break;
       }
 
       // Based on the operation see if we need to unload the drive.
       switch (operation) {
         case VOLUME_EXPORT:
-          /*
-           * Sanity check to see if the volume being exported is in the drive.
-           * If so we release the drive and then perform the actual move.
-           */
+          /* Sanity check to see if the volume being exported is in the drive.
+           * If so we release the drive and then perform the actual move. */
           vl = vol_is_loaded_in_drive(store, vol_list, transfer_from);
           if (vl != NULL) {
             if (!release_loaded_volume(ua, store, vl->bareos_slot_number,
                                        vol_list)) {
               Dmsg1(100, "Failed to release volume in drive %hd\n",
                     vl->bareos_slot_number);
-              ua->WarningMsg(_("Failed to release volume in drive %hd\n"),
+              ua->WarningMsg(T_("Failed to release volume in drive %hd\n"),
                              vl->bareos_slot_number);
               continue;
             }
@@ -907,16 +859,14 @@ static char* move_volumes_in_autochanger(UaContext* ua,
               "Failed to move volume from source slot %hd to destination slot "
               "%hd\n",
               transfer_from, transfer_to);
-        ua->WarningMsg(_("Failed to move volume from source slot %hd to "
-                         "destination slot %hd\n"),
+        ua->WarningMsg(T_("Failed to move volume from source slot %hd to "
+                          "destination slot %hd\n"),
                        transfer_from, transfer_to);
         switch (operation) {
           case VOLUME_EXPORT:
-            /*
-             * For an export we always set the source slot as visited so when
+            /* For an export we always set the source slot as visited so when
              * the move operation fails we update the inchanger flag in the
-             * database back to 1 so we know it still is in the changer.
-             */
+             * database back to 1 so we know it still is in the changer. */
             SetBit(transfer_from - 1, visited_slot_list);
             break;
           default:
@@ -952,35 +902,29 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   store.store = get_storage_resource(ua, false, true);
   if (!store.store) { return retval; }
 
-  PmStrcpy(store.store_source, _("command line"));
+  PmStrcpy(store.store_source, T_("command line"));
   SetWstorage(ua->jcr, &store);
 
-  /*
-   * See if the scan option was given.
+  /* See if the scan option was given.
    * We need a drive for the scanning so ask if
-   * the scan option was specified.
-   */
+   * the scan option was specified. */
   scan = FindArg(ua, NT_("scan")) >= 0;
   if (scan) { drive = GetStorageDrive(ua, store.store); }
 
-  /*
-   * Get the number of slots in the autochanger for
-   * sizing the slot lists.
-   */
+  /* Get the number of slots in the autochanger for
+   * sizing the slot lists. */
   max_slots = GetNumSlots(ua, store.store);
   if (max_slots <= 0) {
-    ua->WarningMsg(_("No slots in changer.\n"));
+    ua->WarningMsg(T_("No slots in changer.\n"));
     return retval;
   }
 
-  /*
-   * Get the current content of the autochanger for
-   * validation and selection purposes.
-   */
+  /* Get the current content of the autochanger for
+   * validation and selection purposes. */
   vol_list = get_vol_list_from_storage(ua, store.store, true /* listall */,
                                        true /* want to see all slots */);
   if (!vol_list) {
-    ua->WarningMsg(_("No Volumes found, or no barcodes.\n"));
+    ua->WarningMsg(T_("No Volumes found, or no barcodes.\n"));
     goto bail_out;
   }
 
@@ -993,12 +937,10 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
     if (!GetUserSlotList(ua, src_slot_list, "srcslots", max_slots)) {
       goto bail_out;
     } else {
-      /*
-       * See if we should scan slots for the correct
+      /* See if we should scan slots for the correct
        * volume name or that we can use the barcodes.
        * If a set of src slots was given we only scan
-       * the content of those slots.
-       */
+       * the content of those slots. */
       if (scan) {
         vol_list = scan_slots_for_volnames(ua, store.store, drive, vol_list,
                                            src_slot_list);
@@ -1011,10 +953,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
       nr_enabled_src_slots = count_enabled_slots(src_slot_list, max_slots);
     }
   } else {
-    /*
-     * See if we should scan slots for the correct
-     * volume name or that we can use the barcodes.
-     */
+    /* See if we should scan slots for the correct
+     * volume name or that we can use the barcodes. */
     if (scan) {
       vol_list = scan_slots_for_volnames(ua, store.store, drive, vol_list,
                                          src_slot_list);
@@ -1031,10 +971,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
     if (!GetUserSlotList(ua, dst_slot_list, "dstslots", max_slots)) {
       goto bail_out;
     } else {
-      /*
-       * Clear any slot in the destination slot list which has not the wanted
-       * content.
-       */
+      /* Clear any slot in the destination slot list which has not the wanted
+       * content. */
       switch (operation) {
         case VOLUME_IMPORT:
         case VOLUME_EXPORT:
@@ -1048,21 +986,17 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
     }
   }
 
-  /*
-   * For Import and Export operations we can also use a list
+  /* For Import and Export operations we can also use a list
    * of volume names for which we lookup the slot they are
-   * loaded in.
-   */
+   * loaded in. */
   switch (operation) {
     case VOLUME_IMPORT:
     case VOLUME_EXPORT:
       list_index = FindArgWithValue(ua, "volume");
       if (list_index > 0) {
-        /*
-         * Create a new temporary slot list with gets filled
+        /* Create a new temporary slot list with gets filled
          * by the selection criteria on the cmdline. We provide
-         * the current src_slot_list as an extra selection criteria.
-         */
+         * the current src_slot_list as an extra selection criteria. */
         tmp_slot_list = (char*)malloc(NbytesForBits(max_slots));
         ClearAllBits(max_slots, tmp_slot_list);
         nr_enabled_src_slots = get_slot_list_using_volnames(
@@ -1079,16 +1013,14 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   Dmsg2(100, "src_slots = %hd, dst_slots = %hd\n", nr_enabled_src_slots,
         nr_enabled_dst_slots);
 
-  /*
-   * First generic sanity check if there is a source selection the number
+  /* First generic sanity check if there is a source selection the number
    * of selected slots in the source must be less or equal to the
-   * number of slots in the destination
-   */
+   * number of slots in the destination */
   if (nr_enabled_src_slots && nr_enabled_dst_slots
       && nr_enabled_src_slots > nr_enabled_dst_slots) {
     ua->WarningMsg(
-        _("Source slot selection doesn't fit into destination slot "
-          "selection.\n"));
+        T_("Source slot selection doesn't fit into destination slot "
+           "selection.\n"));
     goto bail_out;
   }
 
@@ -1096,7 +1028,7 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
   if (nr_enabled_src_slots && nr_enabled_dst_slots
       && slot_lists_overlap(src_slot_list, dst_slot_list, max_slots)) {
     ua->WarningMsg(
-        _("Source slot selection and destination slot selection overlap.\n"));
+        T_("Source slot selection and destination slot selection overlap.\n"));
     goto bail_out;
   }
 
@@ -1105,16 +1037,16 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
     case VOLUME_EXPORT:
       if (nr_enabled_src_slots == 0) {
         ua->WarningMsg(
-            _("Cannot perform an export operation without source slot "
-              "selection\n"));
+            T_("Cannot perform an export operation without source slot "
+               "selection\n"));
         goto bail_out;
       }
       break;
     case VOLUME_MOVE:
       if (nr_enabled_src_slots == 0 || nr_enabled_dst_slots == 0) {
         ua->WarningMsg(
-            _("Cannot perform a move operation without source and/or "
-              "destination selection\n"));
+            T_("Cannot perform a move operation without source and/or "
+               "destination selection\n"));
         goto bail_out;
       }
       break;
@@ -1132,16 +1064,14 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
             store.store, vol_list, src_slot_list, slot_type_t::kSlotTypeImport,
             slot_status_t::kSlotStatusFull);
       } else {
-        /*
-         * All slots in the source selection need to be import/export slots and
-         * filled.
-         */
+        /* All slots in the source selection need to be import/export slots and
+         * filled. */
         if (!verify_slot_list(store.store, vol_list, src_slot_list,
                               slot_type_t::kSlotTypeImport,
                               slot_status_t::kSlotStatusFull)) {
           ua->WarningMsg(
-              _("Not all slots in source selection are import slots and "
-                "filled.\n"));
+              T_("Not all slots in source selection are import slots and "
+                 "filled.\n"));
           goto bail_out;
         }
       }
@@ -1154,21 +1084,19 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
             slot_status_t::kSlotStatusEmpty);
         if (nr_enabled_src_slots > nr_enabled_dst_slots) {
           ua->WarningMsg(
-              _("Not enough free slots available to import %hd volumes\n"),
+              T_("Not enough free slots available to import %hd volumes\n"),
               nr_enabled_src_slots);
           goto bail_out;
         }
       } else {
-        /*
-         * All slots in the destination selection need to be normal slots and
-         * empty.
-         */
+        /* All slots in the destination selection need to be normal slots and
+         * empty. */
         if (!verify_slot_list(store.store, vol_list, dst_slot_list,
                               slot_type_t::kSlotTypeStorage,
                               slot_status_t::kSlotStatusEmpty)) {
           ua->WarningMsg(
-              _("Not all slots in destination selection are normal slots and "
-                "empty.\n"));
+              T_("Not all slots in destination selection are normal slots and "
+                 "empty.\n"));
           goto bail_out;
         }
       }
@@ -1182,8 +1110,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
                             slot_type_t::kSlotTypeStorage,
                             slot_status_t::kSlotStatusFull)) {
         ua->WarningMsg(
-            _("Not all slots in source selection are normal slots and "
-              "filled.\n"));
+            T_("Not all slots in source selection are normal slots and "
+               "filled.\n"));
         goto bail_out;
       }
       // Perform an autofill of the destination slots when none are selected.
@@ -1194,23 +1122,21 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
             store.store, vol_list, dst_slot_list, slot_type_t::kSlotTypeImport,
             slot_status_t::kSlotStatusEmpty);
         if (nr_enabled_src_slots > nr_enabled_dst_slots) {
-          ua->WarningMsg(_("Not enough free export slots available to export "
-                           "%hd volume%s\n"),
+          ua->WarningMsg(T_("Not enough free export slots available to export "
+                            "%hd volume%s\n"),
                          nr_enabled_src_slots,
                          nr_enabled_src_slots > 1 ? "s" : "");
           goto bail_out;
         }
       } else {
-        /*
-         * All slots in the destination selection need to be import/export slots
-         * and empty.
-         */
+        /* All slots in the destination selection need to be import/export slots
+         * and empty. */
         if (!verify_slot_list(store.store, vol_list, dst_slot_list,
                               slot_type_t::kSlotTypeImport,
                               slot_status_t::kSlotStatusEmpty)) {
           ua->WarningMsg(
-              _("Not all slots in destination selection are export slots and "
-                "empty.\n"));
+              T_("Not all slots in destination selection are export slots and "
+                 "empty.\n"));
           goto bail_out;
         }
       }
@@ -1227,10 +1153,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
       break;
   }
 
-  /*
-   * If we actually moved some volumes update the database with the
-   * new info for those slots.
-   */
+  /* If we actually moved some volumes update the database with the
+   * new info for those slots. */
   if (visited_slot_list
       && count_enabled_slots(visited_slot_list, max_slots) > 0) {
     Dmsg0(100, "Updating database with new info for visited slots\n");

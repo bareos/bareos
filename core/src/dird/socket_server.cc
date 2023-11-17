@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -82,7 +82,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   }
 
   if (bs->recv() <= 0) {
-    Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"), bs->who());
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
     bs->close();
@@ -93,7 +93,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   // Do a sanity check on the message received
   if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
     Dmsg1(000, "<filed: %s", bs->msg);
-    Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(),
+    Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
           bs->message_length);
     Bmicrosleep(5, 0); /* make user wait 5 seconds */
     bs->signal(BNET_TERMINATE);
@@ -161,7 +161,8 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
        = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void*)addrs))
       != 0) {
     BErrNo be;
-    Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
+    Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"),
+          be.bstrerror(status));
   }
 
   int tries = 200; /* consider bind() tries in BnetThreadServerTcp */

@@ -55,15 +55,15 @@
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
  */
-#define ASSERT(x)                                    \
-  if (!(x)) {                                        \
-    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
-    Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
-    abort();                                         \
+#define ASSERT(x)                                     \
+  if (!(x)) {                                         \
+    Emsg1(M_ERROR, 0, T_("Failed ASSERT: %s\n"), #x); \
+    Pmsg1(000, T_("Failed ASSERT: %s\n"), #x);        \
+    abort();                                          \
   }
 
 // Allow printing of NULL pointers
-#define NPRT(x) (x) ? (x) : _("*None*")
+#define NPRT(x) (x) ? (x) : T_("*None*")
 #define NSTDPRNT(x) x.empty() ? "*None*" : x.c_str()
 #define NPRTB(x) (x) ? (x) : ""
 
@@ -85,34 +85,19 @@ void InitWinAPIWrapper();
 #ifdef ENABLE_NLS
 #  include <libintl.h>
 #  include <locale.h>
-#  ifndef _
-#    define _(s) gettext((s))
-#  endif /* _ */
-#  ifndef N_
-#    define N_(s) (s)
-#  endif /* N_ */
+#  ifndef T_
+#    define T_(s) gettext((s))
+#  endif /* T_ */
 #else    /* !ENABLE_NLS */
-#  undef _
-#  undef N_
+#  undef T_
 #  undef textdomain
 #  undef bindtextdomain
 #  undef setlocale
 
-#  ifndef _
-#    define _(s) (s)
-#  endif
-#  ifndef N_
-#    define N_(s) (s)
-#  endif
-#  ifndef textdomain
-#    define textdomain(d)
-#  endif
-#  ifndef bindtextdomain
-#    define bindtextdomain(p, d)
-#  endif
-#  ifndef setlocale
-#    define setlocale(p, d)
-#  endif
+#  define T_(s) (s)
+#  define textdomain(d)
+#  define bindtextdomain(p, d)
+#  define setlocale(p, d)
 #endif /* ENABLE_NLS */
 
 

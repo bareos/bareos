@@ -407,13 +407,13 @@ static inline bool ConfigureAdd(UaContext* ua, int resource_type_parameter)
 
   res_table = my_config->GetResourceTable(ua->argk[resource_type_parameter]);
   if ((!res_table) || (res_table->rcode == R_DEVICE)) {
-    ua->ErrorMsg(_("invalid resource type %s.\n"),
+    ua->ErrorMsg(T_("invalid resource type %s.\n"),
                  ua->argk[resource_type_parameter]);
     return false;
   }
 
   if (res_table->rcode == R_DIRECTOR) {
-    ua->ErrorMsg(_("Only one Director resource allowed.\n"));
+    ua->ErrorMsg(T_("Only one Director resource allowed.\n"));
     return false;
   }
 
@@ -426,7 +426,7 @@ static inline bool ConfigureAdd(UaContext* ua, int resource_type_parameter)
 
 static inline void ConfigureExportUsage(UaContext* ua)
 {
-  ua->ErrorMsg(_("usage: configure export client=<clientname>\n"));
+  ua->ErrorMsg(T_("usage: configure export client=<clientname>\n"));
 }
 
 static inline bool ConfigureExport(UaContext* ua)
@@ -458,17 +458,17 @@ bool ConfigureCmd(UaContext* ua, const char*)
 
   if (!(my_config->IsUsingConfigIncludeDir())) {
     ua->WarningMsg(
-        _("It seems that the configuration is not adapted to the include "
-          "directory structure. "
-          "This means, that the configure command may not work as expected. "
-          "Your configuration changes may not survive a reload/restart. "));
+        T_("It seems that the configuration is not adapted to the include "
+           "directory structure. "
+           "This means, that the configure command may not work as expected. "
+           "Your configuration changes may not survive a reload/restart. "));
   }
 
   if (ua->argc < 3) {
     ua->ErrorMsg(
-        _("usage:\n"
-          "  configure add <resourcetype> <key1>=<value1> ...\n"
-          "  configure export client=<clientname>\n"));
+        T_("usage:\n"
+           "  configure add <resourcetype> <key1>=<value1> ...\n"
+           "  configure export client=<clientname>\n"));
     return false;
   }
 
@@ -477,7 +477,7 @@ bool ConfigureCmd(UaContext* ua, const char*)
   } else if (Bstrcasecmp(ua->argk[1], NT_("export"))) {
     result = ConfigureExport(ua);
   } else {
-    ua->ErrorMsg(_("invalid subcommand %s.\n"), ua->argk[1]);
+    ua->ErrorMsg(T_("invalid subcommand %s.\n"), ua->argk[1]);
     return false;
   }
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -228,7 +228,7 @@ void Device::rLock(bool locked)
       if ((status = pthread_cond_wait(&wait, &mutex_)) != 0) {
         BErrNo be;
         this->Unlock();
-        Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),
+        Emsg1(M_ABORT, 0, T_("pthread_cond_wait failure. ERR=%s\n"),
               be.bstrerror(status));
       }
     }
@@ -335,7 +335,7 @@ const char* Device::print_blocked() const
     case BST_RELEASING:
       return "BST_RELEASING";
     default:
-      return _("unknown blocked code");
+      return T_("unknown blocked code");
   }
 }
 

@@ -77,7 +77,7 @@ bool AutodisplayCmd(UaContext* ua, const char*)
       ua->auto_display_messages = false;
       break;
     default:
-      ua->ErrorMsg(_("ON or OFF keyword missing.\n"));
+      ua->ErrorMsg(T_("ON or OFF keyword missing.\n"));
       break;
   }
   return true;
@@ -96,7 +96,7 @@ bool gui_cmd(UaContext* ua, const char*)
       ua->jcr->gui = ua->gui = false;
       break;
     default:
-      ua->ErrorMsg(_("ON or OFF keyword missing.\n"));
+      ua->ErrorMsg(T_("ON or OFF keyword missing.\n"));
       break;
   }
   return true;
@@ -115,13 +115,13 @@ static void ShowDisabledJobs(UaContext* ua)
     if (!job->enabled) {
       if (first) {
         first = false;
-        ua->send->Decoration(_("Disabled Jobs:\n"));
+        ua->send->Decoration(T_("Disabled Jobs:\n"));
       }
       ua->send->ArrayItem(job->resource_name_, "   %s\n");
     }
   }
 
-  if (first) { ua->send->Decoration(_("No disabled Jobs.\n")); }
+  if (first) { ua->send->Decoration(T_("No disabled Jobs.\n")); }
   ua->send->ArrayEnd("jobs");
 }
 
@@ -140,13 +140,13 @@ static void ShowDisabledClients(UaContext* ua)
     if (!client->enabled) {
       if (first) {
         first = false;
-        ua->send->Decoration(_("Disabled Clients:\n"));
+        ua->send->Decoration(T_("Disabled Clients:\n"));
       }
       ua->send->ArrayItem(client->resource_name_, "   %s\n");
     }
   }
 
-  if (first) { ua->send->Decoration(_("No disabled Clients.\n")); }
+  if (first) { ua->send->Decoration(T_("No disabled Clients.\n")); }
   ua->send->ArrayEnd("clients");
 }
 
@@ -165,13 +165,13 @@ static void ShowDisabledSchedules(UaContext* ua)
     if (!sched->enabled) {
       if (first) {
         first = false;
-        ua->send->Decoration(_("Disabled Schedules:\n"));
+        ua->send->Decoration(T_("Disabled Schedules:\n"));
       }
       ua->send->ArrayItem(sched->resource_name_, "   %s\n");
     }
   }
 
-  if (first) { ua->send->Decoration(_("No disabled Schedules.\n")); }
+  if (first) { ua->send->Decoration(T_("No disabled Schedules.\n")); }
   ua->send->ArrayEnd("schedules");
 }
 
@@ -222,7 +222,7 @@ bool show_cmd(UaContext* ua, const char*)
   if (FindArg(ua, NT_("verbose")) > 0) { show_verbose = true; }
 
   if (FindArg(ua, "help") > 0) {
-    ua->InfoMsg(_("Keywords for the show command are:\n"));
+    ua->InfoMsg(T_("Keywords for the show command are:\n"));
     for (const auto& command : show_cmd_available_resources) {
       ua->InfoMsg("%s\n", command.first.c_str());
     }
@@ -284,7 +284,7 @@ bool show_cmd(UaContext* ua, const char*)
           type = command.second;
           res = (BareosResource*)ua->GetResWithName(type, ua->argv[i], true);
           if (!res) {
-            ua->ErrorMsg(_("%s resource %s not found.\n"), res_name,
+            ua->ErrorMsg(T_("%s resource %s not found.\n"), res_name,
                          ua->argv[i]);
             return true;
           }
@@ -298,7 +298,7 @@ bool show_cmd(UaContext* ua, const char*)
                                  hide_sensitive_data, show_verbose);
 
     } else {
-      ua->ErrorMsg(_("Resource %s not found\n"), res_name);
+      ua->ErrorMsg(T_("Resource %s not found\n"), res_name);
     }
   }
 
@@ -534,7 +534,7 @@ static bool ListMedia(UaContext* ua,
         bstrncpy(pr.Name, ua->argv[i], sizeof(pr.Name));
 
         if (!GetPoolDbr(ua, &pr)) {
-          ua->ErrorMsg(_("Pool %s doesn't exist.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Pool %s doesn't exist.\n"), ua->argv[i]);
           return true;
         }
 
@@ -558,8 +558,8 @@ static bool ListMedia(UaContext* ua,
            * For this reason, we prevent this command. */
           if (ua->AclHasRestrictions(Pool_ACL) && (llist != VERT_LIST)) {
             ua->ErrorMsg(
-                _("Restricted permission. Use the commands 'list media' or "
-                  "'llist media all' instead\n"));
+                T_("Restricted permission. Use the commands 'list media' or "
+                   "'llist media all' instead\n"));
             return false;
           }
           ua->send->ArrayStart("volumes");
@@ -573,7 +573,7 @@ static bool ListMedia(UaContext* ua,
         } else {
           // List Volumes in all pools
           if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
-            ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"),
+            ua->ErrorMsg(T_("Error obtaining pool ids. ERR=%s\n"),
                          ua->db->strerror());
             return true;
           }
@@ -618,7 +618,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   Dmsg1(20, "list: %s\n", cmd);
 
   if (ua->argc <= 1) {
-    ua->ErrorMsg(_("%s command requires a keyword\n"), NPRT(ua->argk[0]));
+    ua->ErrorMsg(T_("%s command requires a keyword\n"), NPRT(ua->argk[0]));
     return false;
   }
 
@@ -650,7 +650,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (ua->GetClientResWithName(ua->argv[argument])) {
       clientname = ua->argv[argument];
     } else {
-      ua->ErrorMsg(_("invalid client parameter\n"));
+      ua->ErrorMsg(T_("invalid client parameter\n"));
       return false;
     }
   }
@@ -659,21 +659,21 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   // jobstatus=X,Y,Z....
   std::vector<char> jobstatuslist;
   if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
-    ua->ErrorMsg(_("invalid jobstatus parameter\n"));
+    ua->ErrorMsg(T_("invalid jobstatus parameter\n"));
     return false;
   }
 
   // joblevel=X
   std::vector<char> joblevel_list;
   if (!GetUserJobLevelSelection(ua, joblevel_list)) {
-    ua->ErrorMsg(_("invalid joblevel parameter\n"));
+    ua->ErrorMsg(T_("invalid joblevel parameter\n"));
     return false;
   }
 
   // jobtype=X
   std::vector<char> jobtypes{};
   if (!GetUserJobTypeListSelection(ua, jobtypes, false)) {
-    ua->ErrorMsg(_("invalid jobtype parameter\n"));
+    ua->ErrorMsg(T_("invalid jobtype parameter\n"));
     return false;
   }
 
@@ -797,8 +797,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send);
     } else {
       ua->ErrorMsg(
-          _("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+          T_("jobid not found in db, access to job or client denied by ACL, or "
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
     // List FILES
@@ -807,8 +807,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->db->ListFilesForJob(ua->jcr, jobid, ua->send);
     } else {
       ua->ErrorMsg(
-          _("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+          T_("jobid not found in db, access to job or client denied by ACL, or "
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("fileset"))) {
     int filesetid = 0;
@@ -830,8 +830,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
     } else {
       ua->ErrorMsg(
-          _("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db or missing filesetid\n"));
+          T_("jobid not found in db, access to job or client denied by ACL, or "
+             "client not found in db or missing filesetid\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("filesets"))) {
     // List FILESETs
@@ -848,8 +848,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send, llist);
     } else {
       ua->ErrorMsg(
-          _("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+          T_("jobid not found in db, access to job or client denied by ACL, or "
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
@@ -859,8 +859,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
                                 optionslist.count, ua->send, llist);
     } else {
       ua->ErrorMsg(
-          _("jobid not found in db, access to job or client denied by ACL, or "
-            "client not found in db\n"));
+          T_("jobid not found in db, access to job or client denied by ACL, or "
+             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("log"))) {
     bool reverse;
@@ -968,7 +968,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (argument >= 0) {
       days = atoi(ua->argv[argument]);
       if ((days < 0) || (days > kDefaultNumberOfDays)) {
-        ua->WarningMsg(_("Ignoring invalid value for days. Max is %d.\n"),
+        ua->WarningMsg(T_("Ignoring invalid value for days. Max is %d.\n"),
                        kDefaultNumberOfDays);
         days = 1;
       }
@@ -1015,11 +1015,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (jobid > 0) {
       ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
     } else {
-      ua->ErrorMsg(_("no jobid given\n"));
+      ua->ErrorMsg(T_("no jobid given\n"));
       return false;
     }
   } else {
-    ua->ErrorMsg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
+    ua->ErrorMsg(T_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
     return false;
   }
 
@@ -1159,7 +1159,7 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
 
   } else if (fileset >= 0) {
     if (!ua->AclAccessOk(FileSet_ACL, ua->argv[fileset], true)) {
-      ua->ErrorMsg(_("Access to specified FileSet not allowed.\n"));
+      ua->ErrorMsg(T_("Access to specified FileSet not allowed.\n"));
       return false;
     } else {
       selection.bsprintf("AND FileSet='%s' ", ua->argv[fileset]);
@@ -1178,12 +1178,12 @@ static bool ParseListBackupsCmd(UaContext* ua,
 
   client = FindArgWithValue(ua, "client");
   if (client < 0) {
-    ua->ErrorMsg(_("missing parameter: client\n"));
+    ua->ErrorMsg(T_("missing parameter: client\n"));
     return false;
   }
 
   if (!ua->AclAccessOk(Client_ACL, ua->argv[client], true)) {
-    ua->ErrorMsg(_("Access to specified Client not allowed.\n"));
+    ua->ErrorMsg(T_("Access to specified Client not allowed.\n"));
     return false;
   }
 
@@ -1245,7 +1245,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
   } else {
     job = ua->GetJobResWithName(ua->argv[i]);
     if (!job) {
-      Jmsg(ua->jcr, M_ERROR, 0, _("%s is not a job name.\n"), ua->argv[i]);
+      Jmsg(ua->jcr, M_ERROR, 0, T_("%s is not a job name.\n"), ua->argv[i]);
       if ((job = select_job_resource(ua)) == NULL) { return false; }
     }
   }
@@ -1257,7 +1257,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
       goto get_out;
     }
     if (!jcr->dir_impl->jr.PoolId) {
-      ua->ErrorMsg(_("Could not find Pool for Job %s\n"), job->resource_name_);
+      ua->ErrorMsg(T_("Could not find Pool for Job %s\n"), job->resource_name_);
       continue;
     }
     PoolDbRecord pr;
@@ -1273,11 +1273,11 @@ static bool ListNextvol(UaContext* ua, int ndays)
     if (!FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
                                  fnv_prune)) {
       ua->ErrorMsg(
-          _("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
+          T_("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
           job->resource_name_, pr.Name, JobLevelToString(run->level));
     } else {
-      ua->SendMsg(_("The next Volume to be used by Job \"%s\" (Pool=%s, "
-                    "Level=%s) will be %s\n"),
+      ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
+                     "Level=%s) will be %s\n"),
                   job->resource_name_, pr.Name, JobLevelToString(run->level),
                   mr.VolumeName);
       found = true;
@@ -1291,7 +1291,7 @@ get_out:
   }
   FreeJcr(jcr);
   if (!found) {
-    ua->ErrorMsg(_("Could not find next Volume for Job %s.\n"),
+    ua->ErrorMsg(T_("Could not find next Volume for Job %s.\n"),
                  job->resource_name_);
     return false;
   }
@@ -1387,7 +1387,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
   Dmsg0(100, "complete_jcr open db\n");
   jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
-    Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Could not open database \"%s\".\n"),
          jcr->dir_impl->res.catalog->db_name);
     return false;
   }
@@ -1396,7 +1396,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
     if (CreatePool(jcr, jcr->db, jcr->dir_impl->res.pool, POOL_OP_CREATE) < 0) {
-      Jmsg(jcr, M_FATAL, 0, _("Pool %s not in database. %s\n"), pr.Name,
+      Jmsg(jcr, M_FATAL, 0, T_("Pool %s not in database. %s\n"), pr.Name,
            jcr->db->strerror());
       if (jcr->db) {
         DbSqlClosePooledConnection(jcr, jcr->db);
@@ -1404,7 +1404,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
       }
       return false;
     } else {
-      Jmsg(jcr, M_INFO, 0, _("Pool %s created in database.\n"), pr.Name);
+      Jmsg(jcr, M_INFO, 0, T_("Pool %s created in database.\n"), pr.Name);
     }
   }
   jcr->dir_impl->jr.PoolId = pr.PoolId;
@@ -1454,7 +1454,7 @@ bool MessagesCmd(UaContext* ua, const char* cmd)
   if (console_msg_pending && ua->AclAccessOk(Command_ACL, cmd)) {
     DoMessages(ua, cmd);
   } else {
-    ua->send->Decoration(_("You have no messages.\n"));
+    ua->send->Decoration(T_("You have no messages.\n"));
   }
   return true;
 }

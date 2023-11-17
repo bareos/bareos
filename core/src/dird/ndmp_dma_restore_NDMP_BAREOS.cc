@@ -188,7 +188,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
      * the database when its either expired or when an old NDMP backup is
      * restored where the whole environment was not saved. */
     Jmsg(jcr, M_WARNING, 0,
-         _("Could not load NDMP environment. Using fallback.\n"));
+         T_("Could not load NDMP environment. Using fallback.\n"));
 
     if (!nbf_options || nbf_options->uses_file_history) {
       // We asked during the NDMP backup to receive file history info.
@@ -306,7 +306,8 @@ bool DoNdmpRestoreInit(JobControlRecord* jcr)
   FreeWstorage(jcr); /* we don't write */
 
   if (!jcr->dir_impl->restore_tree_root) {
-    Jmsg(jcr, M_FATAL, 0, _("Cannot NDMP restore without a file selection.\n"));
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Cannot NDMP restore without a file selection.\n"));
     return false;
   }
 
@@ -374,7 +375,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   // We first parse the BootStrapRecord ourself so we know what to restore.
   jcr->dir_impl->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
   if (!jcr->dir_impl->bsr) {
-    Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Error parsing bootstrap file.\n"));
     goto bail_out;
   }
 
@@ -382,8 +383,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   SetPairedStorage(jcr);
   if (!jcr->dir_impl->res.paired_read_write_storage) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Read storage %s doesn't point to storage definition with paired "
-           "storage option.\n"),
+         T_("Read storage %s doesn't point to storage definition with paired "
+            "storage option.\n"),
          jcr->dir_impl->res.read_storage->resource_name_);
     goto bail_out;
   }
@@ -491,11 +492,11 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 
         current_fi = last_fi;
 
-        Jmsg(
-            jcr, M_INFO, 0,
-            _("Run restore for sesstime %s (%d), sessionid %d, fileindex %d\n"),
-            bstrftime(dt, sizeof(dt), current_session.time, NULL),
-            current_session.time, current_session.id, current_fi);
+        Jmsg(jcr, M_INFO, 0,
+             T_("Run restore for sesstime %s (%d), sessionid %d, fileindex "
+                "%d\n"),
+             bstrftime(dt, sizeof(dt), current_session.time, NULL),
+             current_session.time, current_session.id, current_fi);
 
 
         /* See if this is the first Restore NDMP stream or not. For NDMP we can
@@ -538,25 +539,25 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
                sizeof(struct ndm_job_param));
         if (!fill_restore_environment(jcr, current_fi, current_session,
                                       &ndmp_sess.control_acb->job)) {
-          Jmsg(jcr, M_ERROR, 0, _("ERROR in fill_restore_environment\n"));
+          Jmsg(jcr, M_ERROR, 0, T_("ERROR in fill_restore_environment\n"));
           goto cleanup_ndmp;
         }
 
         ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
         if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) {
-          Jmsg(jcr, M_ERROR, 0, _("ERROR in NdmpValidateJob\n"));
+          Jmsg(jcr, M_ERROR, 0, T_("ERROR in NdmpValidateJob\n"));
           goto cleanup_ndmp;
         }
 
         // Commission the session for a run.
         if (ndma_session_commission(&ndmp_sess)) {
-          Jmsg(jcr, M_ERROR, 0, _("ERROR in ndma_session_commission\n"));
+          Jmsg(jcr, M_ERROR, 0, T_("ERROR in ndma_session_commission\n"));
           goto cleanup_ndmp;
         }
 
         // Setup the DMA.
         if (ndmca_connect_control_agent(&ndmp_sess)) {
-          Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_connect_control_agent\n"));
+          Jmsg(jcr, M_ERROR, 0, T_("ERROR in ndmca_connect_control_agent\n"));
           goto cleanup_ndmp;
         }
 
@@ -565,13 +566,13 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 
         // Let the DMA perform its magic.
         if (ndmca_control_agent(&ndmp_sess) != 0) {
-          Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_control_agent\n"));
+          Jmsg(jcr, M_ERROR, 0, T_("ERROR in ndmca_control_agent\n"));
           goto cleanup_ndmp;
         }
 
         // See if there were any errors during the restore.
         if (!ExtractPostRestoreStats(jcr, &ndmp_sess)) {
-          Jmsg(jcr, M_ERROR, 0, _("ERROR in ExtractPostRestoreStats\n"));
+          Jmsg(jcr, M_ERROR, 0, T_("ERROR in ExtractPostRestoreStats\n"));
           goto cleanup_ndmp;
         }
 
@@ -666,14 +667,14 @@ bool DoNdmpRestore(JobControlRecord* jcr)
 
   if (!jcr->RestoreBootstrap) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Cannot restore without a bootstrap file.\n"
-           "You probably ran a restore job directly. All restore jobs must\n"
-           "be run using the restore command.\n"));
+         T_("Cannot restore without a bootstrap file.\n"
+            "You probably ran a restore job directly. All restore jobs must\n"
+            "be run using the restore command.\n"));
     goto bail_out;
   }
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
+  Jmsg(jcr, M_INFO, 0, T_("Start Restore Job %s\n"), jcr->Job);
 
   // Read the bootstrap file and do the restore
   if (!DoNdmpRestoreBootstrap(jcr)) { goto bail_out; }
@@ -691,19 +692,19 @@ bail_out:
 
 bool DoNdmpRestoreInit(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 
 bool DoNdmpRestore(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 
 bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
   return false;
 }
 

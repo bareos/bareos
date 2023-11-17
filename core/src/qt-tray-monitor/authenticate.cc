@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -108,8 +108,8 @@ static AuthenticationResult AuthenticateWithDirector(JobControlRecord* jcr,
           my_config->CreateOwnQualifiedNameForNetworkDump(), response_args,
           response_id)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Director authorization problem.\n"
-           "Most likely the passwords do not agree.\n"));
+         T_("Director authorization problem.\n"
+            "Most likely the passwords do not agree.\n"));
     return AuthenticationResult::kCramMd5HandshakeFailed;
   }
 
@@ -148,9 +148,9 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
 
   if (!sd->fsend(SDFDhello, dirname)) {
-    Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
+    Dmsg1(debuglevel, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
           BnetStrerror(sd));
-    Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Error sending Hello to Storage daemon. ERR=%s\n"),
          BnetStrerror(sd));
     return AuthenticationResult::kSendHelloMessageFailed;
   }
@@ -163,12 +163,12 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
           "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
           sd->host(), sd->port());
     Jmsg(jcr, M_FATAL, 0,
-         _("Director unable to authenticate with Storage daemon at \"%s:%d\". "
-           "Possible causes:\n"
-           "Passwords or names not the same or\n"
-           "TLS negotiation problem or\n"
-           "Maximum Concurrent Jobs exceeded on the SD or\n"
-           "SD networking messed up (restart daemon).\n"),
+         T_("Director unable to authenticate with Storage daemon at \"%s:%d\". "
+            "Possible causes:\n"
+            "Passwords or names not the same or\n"
+            "TLS negotiation problem or\n"
+            "Maximum Concurrent Jobs exceeded on the SD or\n"
+            "SD networking messed up (restart daemon).\n"),
          sd->host(), sd->port());
     return AuthenticationResult::kCramMd5HandshakeFailed;
   }
@@ -176,17 +176,17 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   Dmsg1(116, ">stored: %s", sd->msg);
   if (sd->recv() <= 0) {
     Jmsg3(jcr, M_FATAL, 0,
-          _("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
+          T_("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
           sd->who(), sd->host(), sd->bstrerror());
     return AuthenticationResult::kDaemonResponseFailed;
   }
 
   Dmsg1(110, "<stored: %s", sd->msg);
   if (!bstrncmp(sd->msg, SDOKhello, sizeof(SDOKhello))) {
-    Dmsg0(debuglevel, _("Storage daemon rejected Hello command\n"));
+    Dmsg0(debuglevel, T_("Storage daemon rejected Hello command\n"));
     Jmsg2(jcr, M_FATAL, 0,
-          _("Storage daemon at \"%s:%d\" rejected Hello command\n"), sd->host(),
-          sd->port());
+          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),
+          sd->host(), sd->port());
     return AuthenticationResult::kRejectedByDaemon;
   }
 
@@ -225,7 +225,7 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
 
   if (!fd->fsend(SDFDhello, dirname)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
+         T_("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
     return AuthenticationResult::kSendHelloMessageFailed;
   }
@@ -239,12 +239,12 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
     Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n",
           fd->host(), fd->port());
     Jmsg(jcr, M_FATAL, 0,
-         _("Unable to authenticate with File daemon at \"%s:%d\". Possible "
-           "causes:\n"
-           "Passwords or names not the same or\n"
-           "TLS negotiation failed or\n"
-           "Maximum Concurrent Jobs exceeded on the FD or\n"
-           "FD networking messed up (restart daemon).\n"),
+         T_("Unable to authenticate with File daemon at \"%s:%d\". Possible "
+            "causes:\n"
+            "Passwords or names not the same or\n"
+            "TLS negotiation failed or\n"
+            "Maximum Concurrent Jobs exceeded on the FD or\n"
+            "FD networking messed up (restart daemon).\n"),
          fd->host(), fd->port());
     return AuthenticationResult::kCramMd5HandshakeFailed;
   }
@@ -252,18 +252,18 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
   Dmsg1(116, ">filed: %s", fd->msg);
   if (fd->recv() <= 0) {
     Dmsg1(debuglevel,
-          _("Bad response from File daemon to Hello command: ERR=%s\n"),
+          T_("Bad response from File daemon to Hello command: ERR=%s\n"),
           BnetStrerror(fd));
     Jmsg(jcr, M_FATAL, 0,
-         _("Bad response from File daemon at \"%s:%d\" to Hello command: "
-           "ERR=%s\n"),
+         T_("Bad response from File daemon at \"%s:%d\" to Hello command: "
+            "ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
     return AuthenticationResult::kDaemonResponseFailed;
   }
 
   Dmsg1(110, "<filed: %s", fd->msg);
   if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello) - 1) != 0) {
-    Jmsg(jcr, M_FATAL, 0, _("File daemon rejected Hello command\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("File daemon rejected Hello command\n"));
     return AuthenticationResult::kRejectedByDaemon;
   }
 
@@ -282,7 +282,7 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
       return AuthenticateWithStorageDaemon(jcr,
                                            (StorageResource*)item->resource());
     default:
-      printf(_("Error, currentitem is not a Client or a Storage..\n"));
+      printf(T_("Error, currentitem is not a Client or a Storage..\n"));
       return AuthenticationResult::kUnknownDaemon;
   }
 }

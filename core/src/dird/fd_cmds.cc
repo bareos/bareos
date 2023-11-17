@@ -130,7 +130,7 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
   heart_beat = get_heartbeat_interval(jcr->dir_impl->res.client);
 
   char name[MAX_NAME_LENGTH + 100];
-  bstrncpy(name, _("Client: "), sizeof(name));
+  bstrncpy(name, T_("Client: "), sizeof(name));
   bstrncat(name, jcr->dir_impl->res.client->resource_name_, sizeof(name));
 
   fd->SetSourceAddress(me->DIRsrc_addr);
@@ -274,7 +274,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
                          UaContext* ua)
 {
   if (!IsConnectingToClientAllowed(jcr) && !IsConnectFromClientAllowed(jcr)) {
-    Emsg1(M_WARNING, 0, _("Connecting to %s is not allowed.\n"),
+    Emsg1(M_WARNING, 0, T_("Connecting to %s is not allowed.\n"),
           jcr->dir_impl->res.client->resource_name_);
     return false;
   }
@@ -354,7 +354,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
         } else if (jcr->dir_impl->res.read_storage) {
           storage = jcr->dir_impl->res.read_storage;
         } else {
-          Jmsg(jcr, M_FATAL, 0, _("No read or write storage defined\n"));
+          Jmsg(jcr, M_FATAL, 0, T_("No read or write storage defined\n"));
           jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           return 0;
         }
@@ -385,7 +385,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
   if (BgetDirmsg(fd) > 0) {
     Dmsg1(110, "<filed: %s", fd->msg);
     if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
-      Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("File daemon \"%s\" rejected Job command: %s\n"),
            jcr->dir_impl->res.client->resource_name_, fd->msg);
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       return 0;
@@ -399,12 +399,12 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
       cr.JobRetention = jcr->dir_impl->res.client->JobRetention;
       bstrncpy(cr.Uname, fd->msg + strlen(OKjob) + 1, sizeof(cr.Uname));
       if (!jcr->db->UpdateClientRecord(jcr, &cr)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"),
+        Jmsg(jcr, M_WARNING, 0, T_("Error updating Client record. ERR=%s\n"),
              jcr->db->strerror());
       }
     }
   } else {
-    Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("FD gave bad response to JobId command: %s\n"),
          BnetStrerror(fd));
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return 0;
@@ -469,7 +469,7 @@ bool SendSecureEraseReqToFd(JobControlRecord* jcr)
               jcr->dir_impl->FDSecureEraseCmd);
         break;
       } else {
-        Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Secure Erase Cmd: %s\n"),
+        Jmsg(jcr, M_WARNING, 0, T_("Unexpected Client Secure Erase Cmd: %s\n"),
              fd->msg);
         PmStrcpy(jcr->dir_impl->FDSecureEraseCmd, "*None*");
         return false;
@@ -528,11 +528,11 @@ bool SendLevelCommand(JobControlRecord* jcr)
       SendSinceTime(jcr);
       break;
     case L_SINCE:
-      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented backup level %d %c\n"), JobLevel,
+      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented backup level %d %c\n"), JobLevel,
             JobLevel);
       break;
     default:
-      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented backup level %d %c\n"), JobLevel,
+      Jmsg2(jcr, M_FATAL, 0, T_("Unimplemented backup level %d %c\n"), JobLevel,
             JobLevel);
       return 0;
   }
@@ -657,7 +657,7 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
   return 1;
 
 bail_out:
-  Jmsg(jcr, M_FATAL, 0, _("Client \"%s\" RunScript failed.\n"), ehost);
+  Jmsg(jcr, M_FATAL, 0, T_("Client \"%s\" RunScript failed.\n"), ehost);
   FreePoolMemory(msg);
   FreePoolMemory(ehost);
 
@@ -683,8 +683,8 @@ static int RestoreObjectHandler(void* ctx, int, char** row)
   // Old File Daemon doesn't handle restore objects
   if (jcr->dir_impl->FDVersion < FD_VERSION_3) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Client \"%s\" may not be used to restore "
-           "this job. Please upgrade your client.\n"),
+         T_("Client \"%s\" may not be used to restore "
+            "this job. Please upgrade your client.\n"),
          jcr->dir_impl->res.client->resource_name_);
     return 1;
   }
@@ -742,7 +742,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
     FreePoolMemory(msg);
 
     if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
-      Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("Plugin options failed.\n"));
       return false;
     }
   }
@@ -756,7 +756,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
 
       fd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
       if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
-        Jmsg(jcr, M_FATAL, 0, _("Plugin options failed.\n"));
+        Jmsg(jcr, M_FATAL, 0, T_("Plugin options failed.\n"));
         return false;
       }
     }
@@ -825,7 +825,7 @@ bool SendRestoreObjects(JobControlRecord* jcr, JobId_t JobId, bool send_global)
     fd = jcr->file_bsock;
     fd->fsend(restoreobjectendcmd);
     if (!response(jcr, fd, OKRestoreObject, "RestoreObject", DISPLAY_ERROR)) {
-      Jmsg(jcr, M_FATAL, 0, _("RestoreObject failed.\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("RestoreObject failed.\n"));
       return false;
     }
   }
@@ -865,8 +865,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
          = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str()))
         != 3) {
       Jmsg(jcr, M_FATAL, 0,
-           _("<filed: bad attributes, expected 3 fields got %d\n"
-             "message_length=%d msg=%s\n"),
+           T_("<filed: bad attributes, expected 3 fields got %d\n"
+              "message_length=%d msg=%s\n"),
            len, fd->message_length, fd->msg);
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       return 0;
@@ -887,7 +887,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
         Dmsg3(debuglevel, "Cached attr. Stream=%d fname=%s\n", ar->Stream,
               ar->fname, ar->attr);
         if (!jcr->db->CreateFileAttributesRecord(jcr, ar)) {
-          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"),
+          Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error. %s"),
                 jcr->db->strerror());
         }
       }
@@ -925,7 +925,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
        * can add file to the catalog At the end, we have to add the last file */
       if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
-        Jmsg3(jcr, M_ERROR, 0, _("%s index %d not same as attributes %d\n"),
+        Jmsg3(jcr, M_ERROR, 0, T_("%s index %d not same as attributes %d\n"),
               stream_to_ascii(stream), file_index, jcr->dir_impl->FileIndex);
         continue;
       }
@@ -944,7 +944,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
 
   if (IsBnetError(fd)) {
     Jmsg1(jcr, M_FATAL, 0,
-          _("<filed: Network error getting attributes. ERR=%s\n"),
+          T_("<filed: Network error getting attributes. ERR=%s\n"),
           fd->bstrerror());
     return 0;
   }
@@ -953,7 +953,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     Dmsg3(debuglevel, "Cached attr with digest. Stream=%d fname=%s attr=%s\n",
           ar->Stream, ar->fname, ar->attr);
     if (!jcr->db->CreateFileAttributesRecord(jcr, ar)) {
-      Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error. %s"),
             jcr->db->strerror());
     }
     jcr->cached_attribute = false;
@@ -971,7 +971,7 @@ bool CancelFileDaemonJob(UaContext* ua, JobControlRecord* jcr)
 
   ua->jcr->dir_impl->res.client = jcr->dir_impl->res.client;
   if (!ConnectToFileDaemon(ua->jcr, 10, me->FDConnectTimeout, true, ua)) {
-    ua->ErrorMsg(_("\nFailed to connect to File daemon.\n"));
+    ua->ErrorMsg(T_("\nFailed to connect to File daemon.\n"));
     return false;
   }
   Dmsg0(200, "Connected to file daemon\n");
@@ -997,12 +997,12 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 
   // Try to connect for 15 seconds
   if (!ua->api) {
-    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
-                client->address, client->FDport);
+    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+                client->resource_name_, client->address, client->FDport);
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
+    ua->SendMsg(T_("\nFailed to connect to Client %s.\n====\n"),
                 client->resource_name_);
     if (ua->jcr->file_bsock) {
       ua->jcr->file_bsock->close();
@@ -1012,7 +1012,7 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
     return;
   }
 
-  Dmsg0(20, _("Connected to file daemon\n"));
+  Dmsg0(20, T_("Connected to file daemon\n"));
   fd = ua->jcr->file_bsock;
   if (cmd) {
     fd->fsend(".status %s", cmd);
@@ -1040,12 +1040,12 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
 
   // Try to connect for 15 seconds
   if (!ua->api) {
-    ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
-                client->address, client->FDport);
+    ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"),
+                client->resource_name_, client->address, client->FDport);
   }
 
   if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-    ua->SendMsg(_("\nFailed to connect to Client %s.\n====\n"),
+    ua->SendMsg(T_("\nFailed to connect to Client %s.\n====\n"),
                 client->resource_name_);
     if (ua->jcr->file_bsock) {
       ua->jcr->file_bsock->close();
@@ -1055,7 +1055,7 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
     return;
   }
 
-  Dmsg0(20, _("Connected to file daemon\n"));
+  Dmsg0(20, T_("Connected to file daemon\n"));
   fd = ua->jcr->file_bsock;
 
   for (int i = 1; i < ua->argc; i++) {

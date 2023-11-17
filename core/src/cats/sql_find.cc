@@ -89,13 +89,14 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
        *  then we do a second look to find the most recent
        *  backup */
       if (!QUERY_DB(jcr, cmd)) {
-        Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+        Mmsg2(errmsg,
+              T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
               sql_strerror(), cmd);
         return false;
       }
       if ((row = SqlFetchRow()) == NULL) {
         SqlFreeResult();
-        Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
+        Mmsg(errmsg, T_("No prior Full backup Job record found.\n"));
         return false;
       }
       SqlFreeResult();
@@ -108,7 +109,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
            jr->JobType, L_INCREMENTAL, L_DIFFERENTIAL, L_FULL, esc_jobname,
            edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
     } else {
-      Mmsg1(errmsg, _("Unknown level=%d\n"), jr->JobLevel);
+      Mmsg1(errmsg, T_("Unknown level=%d\n"), jr->JobLevel);
       return false;
     }
   } else {
@@ -119,13 +120,13 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
 
   if (!QUERY_DB(jcr, cmd)) {
     PmStrcpy(stime, ""); /* set EOS */
-    Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+    Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return false;
   }
 
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
+    Mmsg2(errmsg, T_("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
           cmd);
     SqlFreeResult();
     return false;
@@ -185,14 +186,14 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
        esc_jobname.data(), esc_clientname.data());
 
   if (!QUERY_DB(jcr, cmd)) {
-    Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+    Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return SqlFindResult::kError;
   }
 
   SQL_ROW row;
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
+    Mmsg2(errmsg, T_("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
           cmd);
     SqlFreeResult();
     return SqlFindResult::kEmptyResultSet;
@@ -243,13 +244,13 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
        jr->JobType, JobLevel, esc_jobname, edit_int64(jr->ClientId, ed1),
        edit_int64(jr->FileSetId, ed2));
   if (!QUERY_DB(jcr, cmd)) {
-    Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+    Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return false;
   }
   if ((row = SqlFetchRow()) == NULL) {
     SqlFreeResult();
-    Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
+    Mmsg(errmsg, T_("No prior Full backup Job record found.\n"));
     return false;
   }
   Dmsg1(100, "Got start time: %s\n", row[0]);
@@ -346,13 +347,13 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
           edit_int64(jr->ClientId, ed1));
     }
   } else {
-    Mmsg1(errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
+    Mmsg1(errmsg, T_("Unknown Job level=%d\n"), jr->JobLevel);
     return false;
   }
   Dmsg1(100, "Query: %s\n", cmd);
   if (!QUERY_DB(jcr, cmd)) { return false; }
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg1(errmsg, _("No Job found for: %s.\n"), cmd);
+    Mmsg1(errmsg, T_("No Job found for: %s.\n"), cmd);
     SqlFreeResult();
     return false;
   }
@@ -362,7 +363,7 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
 
   Dmsg1(100, "db_get_last_jobid: got JobId=%d\n", jr->JobId);
   if (jr->JobId <= 0) {
-    Mmsg1(errmsg, _("No Job found for: %s\n"), cmd);
+    Mmsg1(errmsg, T_("No Job found for: %s\n"), cmd);
     return false;
   }
 
@@ -381,7 +382,7 @@ bool BareosDb::FindJobById(JobControlRecord* jcr, std::string id)
   Dmsg1(100, "Query: %s\n", query.c_str());
   if (!QUERY_DB(jcr, query.c_str())) { return false; }
   if (SqlFetchRow() == NULL) {
-    Mmsg1(errmsg, _("No Job found with id: %d.\n"), id.c_str());
+    Mmsg1(errmsg, T_("No Job found with id: %d.\n"), id.c_str());
     SqlFreeResult();
     return false;
   } else {
@@ -517,7 +518,7 @@ retry_fetch:
   if (item > num_rows || item < 1) {
     Dmsg2(050, "item=%d got=%d\n", item, num_rows);
     Mmsg2(errmsg,
-          _("Request for Volume item %d greater than max %d or less than 1\n"),
+          T_("Request for Volume item %d greater than max %d or less than 1\n"),
           item, num_rows);
     num_rows = 0;
     Dmsg1(050, "Rtn numrows=%d\n", num_rows);
@@ -527,7 +528,7 @@ retry_fetch:
   for (int i = 0; i < item; i++) {
     if ((row = SqlFetchRow()) == NULL) {
       Dmsg1(050, "Fail fetch item=%d\n", i);
-      Mmsg1(errmsg, _("No Volume record found for item %d.\n"), i);
+      Mmsg1(errmsg, T_("No Volume record found for item %d.\n"), i);
       SqlFreeResult();
       num_rows = 0;
       Dmsg1(050, "Rtn numrows=%d\n", num_rows);

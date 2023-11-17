@@ -1037,7 +1037,7 @@ static void PropagateResource(ResourceItem* items,
           def_svalue = (char**)((char*)(source) + offset);
           svalue = (char**)((char*)dest + offset);
           if (*svalue) {
-            Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
+            Pmsg1(000, T_("Hey something is wrong. p=0x%lu\n"), *svalue);
           }
           *svalue = *def_svalue;
           dest->SetMemberPresent(items[i].name);
@@ -1195,8 +1195,8 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!res->IsMemberPresent(items[i].name)) {
         Jmsg(NULL, M_ERROR, 0,
-             _("\"%s\" directive in %s \"%s\" resource is required, but not "
-               "found.\n"),
+             T_("\"%s\" directive in %s \"%s\" resource is required, but not "
+                "found.\n"),
              items[i].name, my_config->ResToStr(res_type), res->resource_name_);
         return false;
       }
@@ -1204,7 +1204,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
 
     // If this triggers, take a look at lib/parse_conf.h
     if (i >= MAX_RES_ITEMS) {
-      Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"),
+      Emsg1(M_ERROR, 0, T_("Too many items in %s resource\n"),
             my_config->ResToStr(res_type));
       return false;
     }
@@ -1227,23 +1227,23 @@ bool JobResource::Validate()
       // All others must have a client and fileset.
       if (!client) {
         Jmsg(NULL, M_ERROR, 0,
-             _("\"client\" directive in Job \"%s\" resource is required, but "
-               "not found.\n"),
+             T_("\"client\" directive in Job \"%s\" resource is required, but "
+                "not found.\n"),
              resource_name_);
         return false;
       }
 
       if (!fileset) {
         Jmsg(NULL, M_ERROR, 0,
-             _("\"fileset\" directive in Job \"%s\" resource is required, but "
-               "not found.\n"),
+             T_("\"fileset\" directive in Job \"%s\" resource is required, but "
+                "not found.\n"),
              resource_name_);
         return false;
       }
 
       if (!storage && (!pool || !pool->storage)) {
         Jmsg(NULL, M_ERROR, 0,
-             _("No storage specified in Job \"%s\" nor in Pool.\n"),
+             T_("No storage specified in Job \"%s\" nor in Pool.\n"),
              resource_name_);
         return false;
       }
@@ -1251,7 +1251,7 @@ bool JobResource::Validate()
   }
   if (JobLevel == L_BASE) {
     Jmsg(NULL, M_WARNING, 0,
-         _("Job \"%s\" has level 'Base' which is deprecated!\n"),
+         T_("Job \"%s\" has level 'Base' which is deprecated!\n"),
          resource_name_);
   }
   return true;
@@ -1974,15 +1974,15 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
                 break;
               default:
                 Emsg1(M_ERROR, 0,
-                      _("Unknown compression include/exclude option: "
-                        "%c\n"),
+                      T_("Unknown compression include/exclude option: "
+                         "%c\n"),
                       *p);
                 break;
             }
             break;
           default:
             Emsg1(M_ERROR, 0,
-                  _("Unknown compression include/exclude option: %c\n"), *p);
+                  T_("Unknown compression include/exclude option: %c\n"), *p);
             break;
         }
         break;
@@ -1993,7 +1993,7 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
         send.KeyBool("AutoExclude", false);
         break;
       default:
-        Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
+        Emsg1(M_ERROR, 0, T_("Unknown include/exclude option: %c\n"), *p);
         break;
     }
   }
@@ -2176,7 +2176,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       PoolResource* p = dynamic_cast<PoolResource*>(
           my_config->GetResWithName(R_POOL, res_pool->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Pool resource %s\n"),
               res_pool->resource_name_);
         return false;
       } else {
@@ -2194,7 +2194,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       ConsoleResource* p = dynamic_cast<ConsoleResource*>(
           my_config->GetResWithName(R_CONSOLE, res_con->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Console resource %s\n"),
               res_con->resource_name_);
         return false;
       } else {
@@ -2209,7 +2209,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       UserResource* p = dynamic_cast<UserResource*>(
           my_config->GetResWithName(R_USER, res_user->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find User resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find User resource %s\n"),
               res_user->resource_name_);
         return false;
       } else {
@@ -2222,7 +2222,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       DirectorResource* p = dynamic_cast<DirectorResource*>(
           my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Director resource %s\n"),
               res_dir->resource_name_);
         return false;
       } else {
@@ -2237,7 +2237,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       StorageResource* p = dynamic_cast<StorageResource*>(
           my_config->GetResWithName(type, res_store->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Storage resource %s\n"),
               res_dir->resource_name_);
         return false;
       } else {
@@ -2256,7 +2256,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
             != 0) {
           BErrNo be;
 
-          Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
+          Emsg1(M_ERROR_TERM, 0, T_("pthread_mutex_init: ERR=%s\n"),
                 be.bstrerror(status));
         }
         if ((status = pthread_mutex_init(
@@ -2264,7 +2264,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
             != 0) {
           BErrNo be;
 
-          Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
+          Emsg1(M_ERROR_TERM, 0, T_("pthread_mutex_init: ERR=%s\n"),
                 be.bstrerror(status));
         }
       }
@@ -2275,7 +2275,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       JobResource* p = dynamic_cast<JobResource*>(
           my_config->GetResWithName(type, res_job->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Job resource %s\n"),
               res_job->resource_name_);
         return false;
       } else {
@@ -2344,7 +2344,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       CounterResource* p = dynamic_cast<CounterResource*>(
           my_config->GetResWithName(type, res_counter->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Counter resource %s\n"),
               res_counter->resource_name_);
         return false;
       } else {
@@ -2357,7 +2357,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       ClientResource* p = dynamic_cast<ClientResource*>(
           my_config->GetResWithName(type, res_client->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Client resource %s\n"),
               res_client->resource_name_);
         return false;
       } else {
@@ -2385,7 +2385,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       ScheduleResource* p = dynamic_cast<ScheduleResource*>(
           my_config->GetResWithName(type, res_sch->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Schedule resource %s\n"),
               res_client->resource_name_);
         return false;
       } else {
@@ -2394,7 +2394,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     default:
-      Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"), type);
+      Emsg1(M_ERROR, 0, T_("Unknown resource type %d in SaveResource.\n"),
+            type);
       return false;
   }
 
@@ -2473,7 +2474,7 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
     }
 
     if (!found) {
-      scan_err1(lc, _("Expected a Pool Type option, got: %s"), lc->str);
+      scan_err1(lc, T_("Expected a Pool Type option, got: %s"), lc->str);
     }
   }
 
@@ -2499,7 +2500,7 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected an Action On Purge option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected an Action On Purge option, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2574,7 +2575,8 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Migration Job Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Migration Job Type keyword, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
@@ -2597,7 +2599,7 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Job Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2620,7 +2622,7 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Protocol Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2642,7 +2644,8 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Restore replacement option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
@@ -2665,7 +2668,8 @@ static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
@@ -2688,7 +2692,7 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"),
+    scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
               lc->str);
   }
 
@@ -2713,7 +2717,7 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Job Level keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
@@ -2794,7 +2798,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
-        Emsg1(M_ERROR, 0, _("Cannot store Acl: %s\n"), msg.data());
+        Emsg1(M_ERROR, 0, T_("Cannot store Acl: %s\n"), msg.data());
         return;
       }
       list->append(strdup(lc->str));
@@ -2846,7 +2850,7 @@ static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int, int)
   } else if (Bstrcasecmp(lc->str, "always")) {
     value = SCRIPT_Any;
   } else {
-    scan_err2(lc, _("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
+    scan_err2(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
               lc->str);
   }
   if (value != SCRIPT_INVALID) { SetItemVariable<uint32_t>(*item, value); }
@@ -2870,8 +2874,8 @@ static void StoreRunscriptTarget(LEX* lc, ResourceItem* item, int, int pass)
 
       if (!(res = my_config->GetResWithName(R_CLIENT, lc->str))) {
         scan_err3(lc,
-                  _("Could not find config Resource %s referenced on line %d "
-                    ": %s\n"),
+                  T_("Could not find config Resource %s referenced on line %d "
+                     ": %s\n"),
                   lc->str, lc->line_no, lc->line);
       }
 
@@ -2958,7 +2962,7 @@ static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int, int)
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
     SetItemVariable<bool>(*item, false);
   } else {
-    scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
   }
   ScanToEol(lc);
@@ -2978,7 +2982,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   int token = LexGetToken(lc, BCT_SKIP_EOL);
 
   if (token != BCT_BOB) {
-    scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
+    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
     return;
   }
 
@@ -2994,7 +2998,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_EOB) { break; }
 
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
+      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
       goto bail_out;
     }
 
@@ -3003,7 +3007,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
-          scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
+          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
           goto bail_out;
         }
         switch (runscript_items[i].type) {
@@ -3028,7 +3032,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
     }
 
     if (!keyword_ok) {
-      scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
+      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
       goto bail_out;
     }
   }
@@ -3714,7 +3718,7 @@ static void DumpResource(int type,
 
   if (!res) {
     PoolMem msg;
-    msg.bsprintf(_("No %s resource defined\n"), my_config->ResToStr(type));
+    msg.bsprintf(T_("No %s resource defined\n"), my_config->ResToStr(type));
     output_formatter->message(MSG_TYPE_INFO, msg);
     return;
   }
@@ -3758,7 +3762,7 @@ static void DumpResource(int type,
       break;
     }
     default:
-      sendit(sock, _("Unknown resource type %d in DumpResource.\n"), type);
+      sendit(sock, T_("Unknown resource type %d in DumpResource.\n"), type);
       break;
   }
 
@@ -3978,7 +3982,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     default:
-      printf(_("Unknown resource type %d in FreeResource.\n"), type);
+      printf(T_("Unknown resource type %d in FreeResource.\n"), type);
       break;
   }
   if (next_resource) { my_config->FreeResourceCb_(next_resource, type); }
@@ -4017,7 +4021,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       if (items[0].flags & CFG_ITEM_REQUIRED) {
         if (!allocated_resource->IsMemberPresent(items[0].name)) {
           Emsg2(M_ERROR, 0,
-                _("%s item is required in %s resource, but not found.\n"),
+                T_("%s item is required in %s resource, but not found.\n"),
                 items[0].name, resources[type].name);
           return false;
         }

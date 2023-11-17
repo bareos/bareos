@@ -166,14 +166,14 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   if (rx.RegexWhere) {
     if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere, true)) {
-      ua->ErrorMsg(_("\"RegexWhere\" specification not authorized.\n"));
+      ua->ErrorMsg(T_("\"RegexWhere\" specification not authorized.\n"));
       goto bail_out;
     }
   }
 
   if (rx.where) {
     if (!ua->AclAccessOk(Where_ACL, rx.where, true)) {
-      ua->ErrorMsg(_("\"where\" specification not authorized.\n"));
+      ua->ErrorMsg(T_("\"where\" specification not authorized.\n"));
       goto bail_out;
     }
   }
@@ -191,8 +191,8 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
   if (!rx.restore_jobs) {
     ua->ErrorMsg(
-        _("No Restore Job Resource found in %s.\n"
-          "You must create at least one before running this command.\n"),
+        T_("No Restore Job Resource found in %s.\n"
+           "You must create at least one before running this command.\n"),
         my_config->get_base_config_path().c_str());
     goto bail_out;
   }
@@ -207,7 +207,7 @@ bool RestoreCmd(UaContext* ua, const char*)
     case 1: /* selected by jobid */
       GetAndDisplayBasejobs(ua, &rx);
       if (!BuildDirectoryTree(ua, &rx)) {
-        ua->SendMsg(_("Restore not done.\n"));
+        ua->SendMsg(T_("Restore not done.\n"));
         goto bail_out;
       }
       break;
@@ -227,38 +227,38 @@ bool RestoreCmd(UaContext* ua, const char*)
    * done by the NDMP state machine via robot and tape interface. */
   if (job->Protocol == PT_NDMP_NATIVE) {
     ua->InfoMsg(
-        _("Skipping BootStrapRecord creation as we are doing NDMP_NATIVE "
-          "restore.\n"));
+        T_("Skipping BootStrapRecord creation as we are doing NDMP_NATIVE "
+           "restore.\n"));
 
   } else {
     if (rx.bsr->JobId) {
       char ed1[50];
       if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
-        ua->ErrorMsg(_(
+        ua->ErrorMsg(T_(
             "Unable to construct a valid BootStrapRecord. Cannot continue.\n"));
         goto bail_out;
       }
       if (!(rx.selected_files = WriteBsrFile(ua, rx))) {
-        ua->WarningMsg(_("No files selected to be restored.\n"));
+        ua->WarningMsg(T_("No files selected to be restored.\n"));
         goto bail_out;
       }
       DisplayBsrInfo(ua, rx); /* display vols needed, etc */
 
       if (rx.selected_files == 1) {
-        ua->InfoMsg(_("\n1 file selected to be restored.\n\n"));
+        ua->InfoMsg(T_("\n1 file selected to be restored.\n\n"));
       } else {
-        ua->InfoMsg(_("\n%s files selected to be restored.\n\n"),
+        ua->InfoMsg(T_("\n%s files selected to be restored.\n\n"),
                     edit_uint64_with_commas(rx.selected_files, ed1));
       }
     } else {
-      ua->WarningMsg(_("No files selected to be restored.\n"));
+      ua->WarningMsg(T_("No files selected to be restored.\n"));
       goto bail_out;
     }
   }
 
   if (!GetClientName(ua, &rx)) { goto bail_out; }
   if (!rx.ClientName) {
-    ua->ErrorMsg(_("No Client resource found!\n"));
+    ua->ErrorMsg(T_("No Client resource found!\n"));
     goto bail_out;
   }
   if (!GetRestoreClientName(ua, rx)) { goto bail_out; }
@@ -351,7 +351,7 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
   if (!jobids.empty()) {
     PoolMem query(PM_MESSAGE);
 
-    ua->SendMsg(_("The restore will use the following job(s) as Base\n"));
+    ua->SendMsg(T_("The restore will use the following job(s) as Base\n"));
     ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_print_jobs,
                       jobids.GetAsString().c_str());
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
@@ -384,7 +384,7 @@ static void free_rx(RestoreContext* rx)
 static bool HasValue(UaContext* ua, int i)
 {
   if (!ua->argv[i]) {
-    ua->ErrorMsg(_("Missing value for keyword: %s\n"), ua->argk[i]);
+    ua->ErrorMsg(T_("Missing value for keyword: %s\n"), ua->argk[i]);
     return false;
   }
   return true;
@@ -464,21 +464,21 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   JobId_t JobId;
   bool done = false;
   int i, j;
-  const char* list[]
-      = {_("List last 20 Jobs run"),
-         _("List Jobs where a given File is saved"),
-         _("Enter list of comma separated JobIds to select"),
-         _("Enter SQL list command"),
-         _("Select the most recent backup for a client"),
-         _("Select backup for a client before a specified time"),
-         _("Enter a list of files to restore"),
-         _("Enter a list of files to restore before a specified time"),
-         _("Find the JobIds of the most recent backup for a client"),
-         _("Find the JobIds for a backup for a client before a specified time"),
-         _("Enter a list of directories to restore for found JobIds"),
-         _("Select full restore to a specified Job date"),
-         _("Cancel"),
-         NULL};
+  const char* list[] = {
+      T_("List last 20 Jobs run"),
+      T_("List Jobs where a given File is saved"),
+      T_("Enter list of comma separated JobIds to select"),
+      T_("Enter SQL list command"),
+      T_("Select the most recent backup for a client"),
+      T_("Select backup for a client before a specified time"),
+      T_("Enter a list of files to restore"),
+      T_("Enter a list of files to restore before a specified time"),
+      T_("Find the JobIds of the most recent backup for a client"),
+      T_("Find the JobIds for a backup for a client before a specified time"),
+      T_("Enter a list of directories to restore for found JobIds"),
+      T_("Select full restore to a specified Job date"),
+      T_("Cancel"),
+      NULL};
 
   const char* kw[] = {             // These keywords are handled in a for loop
                       "jobid",     /* 0 */
@@ -526,7 +526,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       }
     }
     if (!found_kw) {
-      ua->ErrorMsg(_("Unknown keyword: %s\n"), ua->argk[i]);
+      ua->ErrorMsg(T_("Unknown keyword: %s\n"), ua->argk[i]);
       return 0;
     }
     /* Found keyword in kw[] list, process it */
@@ -552,7 +552,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         std::string cpdate = CompensateShortDate(ua->argv[i]);
 
         if (StrToUtime(cpdate.c_str()) == 0) {
-          ua->ErrorMsg(_("Improper date format: %s\n"), cpdate.c_str());
+          ua->ErrorMsg(T_("Improper date format: %s\n"), cpdate.c_str());
           return 0;
         }
         bstrncpy(date, cpdate.c_str(), sizeof(date));
@@ -574,7 +574,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!HasValue(ua, i)) { return 0; }
         rx->pool = ua->GetPoolResWithName(ua->argv[i]);
         if (!rx->pool) {
-          ua->ErrorMsg(_("Error: Pool resource \"%s\" does not exist.\n"),
+          ua->ErrorMsg(T_("Error: Pool resource \"%s\" does not exist.\n"),
                        ua->argv[i]);
           return 0;
         }
@@ -607,10 +607,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   if (!done) {
     ua->SendMsg(
-        _("\nFirst you select one or more JobIds that contain files\n"
-          "to be restored. You will be presented several methods\n"
-          "of specifying the JobIds. Then you will be allowed to\n"
-          "select which files from those JobIds are to be restored.\n\n"));
+        T_("\nFirst you select one or more JobIds that contain files\n"
+           "to be restored. You will be presented several methods\n"
+           "of specifying the JobIds. Then you will be allowed to\n"
+           "select which files from those JobIds are to be restored.\n\n"));
   }
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
@@ -623,10 +623,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     db_list_ctx jobids;
 
     StartPrompt(ua,
-                _("To select the JobIds, you have the following choices:\n"));
+                T_("To select the JobIds, you have the following choices:\n"));
     for (int i = 0; list[i]; i++) { AddPrompt(ua, list[i]); }
     done = true;
-    switch (DoPrompt(ua, "", _("Select item: "), NULL, 0)) {
+    switch (DoPrompt(ua, "", T_("Select item: "), NULL, 0)) {
       case -1: /* error or cancel */
         return 0;
       case 0: /* list last 20 Jobs run */
@@ -635,7 +635,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_list_jobs,
                           filter_name);
         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
-          ua->ErrorMsg(_("SQL query not authorized.\n"));
+          ua->ErrorMsg(T_("SQL query not authorized.\n"));
           return 0;
         }
         gui_save = ua->jcr->gui;
@@ -646,7 +646,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       } break;
       case 1: /* list where a file is saved */
         if (!GetClientName(ua, rx)) { return 0; }
-        if (!GetCmd(ua, _("Enter Filename (no path):"))) { return 0; }
+        if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
         len = strlen(ua->cmd);
         fname = (char*)malloc(len * 2 + 1);
         ua->db->EscapeString(ua->jcr, fname, ua->cmd, len);
@@ -660,17 +660,17 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         done = false;
         break;
       case 2: /* enter a list of JobIds */
-        if (!GetCmd(ua, _("Enter JobId(s), comma separated, to restore: "))) {
+        if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
           return 0;
         }
         PmStrcpy(rx->JobIds, ua->cmd);
         break;
       case 3: /* Enter an SQL list command */
         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
-          ua->ErrorMsg(_("SQL query not authorized.\n"));
+          ua->ErrorMsg(T_("SQL query not authorized.\n"));
           return 0;
         }
-        if (!GetCmd(ua, _("Enter SQL list command: "))) { return 0; }
+        if (!GetCmd(ua, T_("Enter SQL list command: "))) { return 0; }
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
         ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, HORZ_LIST, true);
@@ -691,11 +691,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!have_date) { bstrutime(date, sizeof(date), now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
-            _("Enter file names with paths, or < to enter a filename\n"
-              "containing a list of file names with paths, and Terminate\n"
-              "them with a blank line.\n"));
+            T_("Enter file names with paths, or < to enter a filename\n"
+               "containing a list of file names with paths, and Terminate\n"
+               "them with a blank line.\n"));
         for (;;) {
-          if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
+          if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
           InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
@@ -707,11 +707,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
-            _("Enter file names with paths, or < to enter a filename\n"
-              "containing a list of file names with paths, and Terminate\n"
-              "them with a blank line.\n"));
+            T_("Enter file names with paths, or < to enter a filename\n"
+               "containing a list of file names with paths, and Terminate\n"
+               "them with a blank line.\n"));
         for (;;) {
-          if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
+          if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
           InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
@@ -734,10 +734,12 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
       case 10: /* Enter directories */
         if (*rx->JobIds != 0) {
-          ua->SendMsg(_("You have already selected the following JobIds: %s\n"),
-                      rx->JobIds);
-        } else if (GetCmd(ua,
-                          _("Enter JobId(s), comma separated, to restore: "))) {
+          ua->SendMsg(
+              T_("You have already selected the following JobIds: %s\n"),
+              rx->JobIds);
+        } else if (GetCmd(
+                       ua,
+                       T_("Enter JobId(s), comma separated, to restore: "))) {
           if (*rx->JobIds != 0 && *ua->cmd) { PmStrcat(rx->JobIds, ","); }
           bstrncpy(rx->last_jobid, ua->cmd, sizeof(rx->last_jobid));
           PmStrcat(rx->JobIds, ua->cmd);
@@ -749,11 +751,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!have_date) { bstrutime(date, sizeof(date), now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
-            _("Enter full directory names or start the name\n"
-              "with a < to indicate it is a filename containing a list\n"
-              "of directories and Terminate them with a blank line.\n"));
+            T_("Enter full directory names or start the name\n"
+               "with a < to indicate it is a filename containing a list\n"
+               "of directories and Terminate them with a blank line.\n"));
         for (;;) {
-          if (!GetCmd(ua, _("Enter directory name: "))) { return 0; }
+          if (!GetCmd(ua, T_("Enter directory name: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
           /* Add trailing slash to end of directory names */
@@ -765,7 +767,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         return 2;
 
       case 11: /* Choose a jobid and select jobs */
-        if (!GetCmd(ua, _("Enter JobId to get the state to restore: "))
+        if (!GetCmd(ua, T_("Enter JobId to get the state to restore: "))
             || !IsAnInteger(ua->cmd)) {
           return 0;
         }
@@ -773,11 +775,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           JobDbRecord jr;
           jr.JobId = str_to_int64(ua->cmd);
           if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-            ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+            ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
                          ua->cmd, ua->db->strerror());
             return 0;
           }
-          ua->SendMsg(_("Selecting jobs to build the Full state at %s\n"),
+          ua->SendMsg(T_("Selecting jobs to build the Full state at %s\n"),
                       jr.cStartTime);
           jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
           if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &jobids)) { return 0; }
@@ -800,7 +802,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     char ed1[50];
     int status = GetNextJobidFromList(&p, &JobId);
     if (status < 0) {
-      ua->ErrorMsg(_("Invalid JobId in list.\n"));
+      ua->ErrorMsg(T_("Invalid JobId in list.\n"));
       FreePoolMemory(JobIds);
       return 0;
     }
@@ -809,14 +811,14 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     jr = JobDbRecord{};
     jr.JobId = JobId;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-      ua->ErrorMsg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+      ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
                    edit_int64(JobId, ed1), ua->db->strerror());
       FreePoolMemory(JobIds);
       return 0;
     }
     if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
       ua->ErrorMsg(
-          _("Access to JobId=%s (Job \"%s\") not authorized. Not selected.\n"),
+          T_("Access to JobId=%s (Job \"%s\") not authorized. Not selected.\n"),
           edit_int64(JobId, ed1), jr.Name);
       continue;
     }
@@ -827,14 +829,14 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   FreePoolMemory(rx->JobIds);
   rx->JobIds = JobIds; /* Set ACL filtered list */
   if (*rx->JobIds == 0) {
-    ua->WarningMsg(_("No Jobs selected.\n"));
+    ua->WarningMsg(T_("No Jobs selected.\n"));
     return 0;
   }
 
   if (strchr(rx->JobIds, ',')) {
-    ua->InfoMsg(_("You have selected the following JobIds: %s\n"), rx->JobIds);
+    ua->InfoMsg(T_("You have selected the following JobIds: %s\n"), rx->JobIds);
   } else {
-    ua->InfoMsg(_("You have selected the following JobId: %s\n"), rx->JobIds);
+    ua->InfoMsg(T_("You have selected the following JobId: %s\n"), rx->JobIds);
   }
   return 1;
 }
@@ -843,15 +845,17 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 static bool get_date(UaContext* ua, char* date, int date_len)
 {
   ua->SendMsg(
-      _("The restored files will the most current backup\n"
-        "BEFORE the date you specify below.\n\n"));
+      T_("The restored files will the most current backup\n"
+         "BEFORE the date you specify below.\n\n"));
   std::string cmpdate;
   for (;;) {
-    if (!GetCmd(ua, _("Enter date as YYYY-MM-DD HH:MM:SS :"))) { return false; }
+    if (!GetCmd(ua, T_("Enter date as YYYY-MM-DD HH:MM:SS :"))) {
+      return false;
+    }
     cmpdate = CompensateShortDate(ua->cmd);
 
     if (StrToUtime(cmpdate.c_str()) != 0) { break; }
-    ua->ErrorMsg(_("Improper date format.\n"));
+    ua->ErrorMsg(T_("Improper date format.\n"));
   }
   bstrncpy(date, cmpdate.c_str(), date_len);
   return true;
@@ -920,19 +924,19 @@ static void InsertOneFileOrDir(UaContext* ua,
       p++;
       if ((ffd = fopen(p, "rb")) == NULL) {
         BErrNo be;
-        ua->ErrorMsg(_("Cannot open file %s: ERR=%s\n"), p, be.bstrerror());
+        ua->ErrorMsg(T_("Cannot open file %s: ERR=%s\n"), p, be.bstrerror());
         break;
       }
       while (fgets(file, sizeof(file), ffd)) {
         line++;
         if (dir) {
           if (!InsertDirIntoFindexList(ua, rx, file, date)) {
-            ua->ErrorMsg(_("Error occurred on line %d of file \"%s\"\n"), line,
+            ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
           }
         } else {
           if (!InsertFileIntoFindexList(ua, rx, file, date)) {
-            ua->ErrorMsg(_("Error occurred on line %d of file \"%s\"\n"), line,
+            ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
           }
         }
@@ -979,11 +983,11 @@ static bool InsertFileIntoFindexList(UaContext* ua,
   // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
+    ua->ErrorMsg(T_("Query failed: %s. ERR=%s\n"), rx->query,
                  ua->db->strerror());
   }
   if (!rx->found) {
-    ua->ErrorMsg(_("No database record found for: %s\n"), file);
+    ua->ErrorMsg(T_("No database record found for: %s\n"), file);
     return true;
   }
   return true;
@@ -1001,7 +1005,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
   StripTrailingJunk(dir);
 
   if (*rx->JobIds == 0) {
-    ua->ErrorMsg(_("No JobId specified cannot continue.\n"));
+    ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
     return false;
   } else {
     ua->db->FillQuery(rx->query,
@@ -1012,11 +1016,11 @@ static bool InsertDirIntoFindexList(UaContext* ua,
   // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
+    ua->ErrorMsg(T_("Query failed: %s. ERR=%s\n"), rx->query,
                  ua->db->strerror());
   }
   if (!rx->found) {
-    ua->ErrorMsg(_("No database record found for: %s\n"), dir);
+    ua->ErrorMsg(T_("No database record found for: %s\n"), dir);
     return true;
   }
   return true;
@@ -1035,11 +1039,11 @@ static bool InsertTableIntoFindexList(UaContext* ua,
   // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
+    ua->ErrorMsg(T_("Query failed: %s. ERR=%s\n"), rx->query,
                  ua->db->strerror());
   }
   if (!rx->found) {
-    ua->ErrorMsg(_("No table found: %s\n"), table);
+    ua->ErrorMsg(T_("No table found: %s\n"), table);
     return true;
   }
   return true;
@@ -1096,14 +1100,14 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
     return true;                      /* select everything */
   }
   ua->SendMsg(
-      _("\n\nFor one or more of the JobIds selected, no files were found,\n"
-        "so file selection is not possible.\n"
-        "Most likely your retention policy pruned the files.\n"));
-  if (GetYesno(ua, _("\nDo you want to restore all the files? (yes|no): "))) {
+      T_("\n\nFor one or more of the JobIds selected, no files were found,\n"
+         "so file selection is not possible.\n"
+         "Most likely your retention policy pruned the files.\n"));
+  if (GetYesno(ua, T_("\nDo you want to restore all the files? (yes|no): "))) {
     if (ua->pint32_val) { return true; }
 
     while (GetCmd(
-        ua, _("\nRegexp matching files to restore? (empty to abort): "))) {
+        ua, T_("\nRegexp matching files to restore? (empty to abort): "))) {
       if (ua->cmd[0] == '\0') {
         break;
       } else {
@@ -1117,7 +1121,7 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
         regfree(fileregex_re);
         free(fileregex_re);
         if (*errmsg) {
-          ua->SendMsg(_("Regex compile error: %s\n"), errmsg);
+          ua->SendMsg(T_("Regex compile error: %s\n"), errmsg);
         } else {
           rx->bsr->fileregex = strdup(ua->cmd);
           return true;
@@ -1175,9 +1179,10 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  ua->InfoMsg(_("\nBuilding directory tree for JobId(s) %s ...  "), rx->JobIds);
+  ua->InfoMsg(T_("\nBuilding directory tree for JobId(s) %s ...  "),
+              rx->JobIds);
 
-  ua->LogAuditEventInfoMsg(_("Building directory tree for JobId(s) %s"),
+  ua->LogAuditEventInfoMsg(T_("Building directory tree for JobId(s) %s"),
                            rx->JobIds);
 
   if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
@@ -1220,10 +1225,10 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     char ec1[50];
     if (tree.all) {
       ua->InfoMsg(
-          _("\n%s files inserted into the tree and marked for extraction.\n"),
+          T_("\n%s files inserted into the tree and marked for extraction.\n"),
           edit_uint64_with_commas(tree.FileCount, ec1));
     } else {
-      ua->InfoMsg(_("\n%s files inserted into the tree.\n"),
+      ua->InfoMsg(T_("\n%s files inserted into the tree.\n"),
                   edit_uint64_with_commas(tree.cnt, ec1));
     }
 
@@ -1340,36 +1345,36 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
     bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
     if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
-      ua->ErrorMsg(_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
+      ua->ErrorMsg(T_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
                    ua->db->strerror());
       i = -1;
     }
   } else if (i >= 0) { /* name is invalid */
-    ua->ErrorMsg(_("FileSet argument: %s\n"), ua->errmsg.c_str());
+    ua->ErrorMsg(T_("FileSet argument: %s\n"), ua->errmsg.c_str());
   }
 
   if (i < 0) { /* fileset not found */
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_fileset,
                       edit_int64(cr.ClientId, ed1), ed1);
 
-    StartPrompt(ua, _("The defined FileSet resources are:\n"));
+    StartPrompt(ua, T_("The defined FileSet resources are:\n"));
     if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void*)ua)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
-    if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"), fileset_name,
+    if (DoPrompt(ua, T_("FileSet"), T_("Select FileSet resource"), fileset_name,
                  sizeof(fileset_name))
         < 0) {
-      ua->ErrorMsg(_("No FileSet found for client \"%s\".\n"), cr.Name);
+      ua->ErrorMsg(T_("No FileSet found for client \"%s\".\n"), cr.Name);
       goto bail_out;
     }
 
     bstrncpy(fsr.FileSet, fileset_name, sizeof(fsr.FileSet));
     if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
-      ua->WarningMsg(_("Error getting FileSet record: %s\n"),
+      ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
                      ua->db->strerror());
       ua->SendMsg(
-          _("This probably means you modified the FileSet.\n"
-            "Continuing anyway.\n"));
+          T_("This probably means you modified the FileSet.\n"
+             "Continuing anyway.\n"));
     }
   }
 
@@ -1382,7 +1387,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
       Bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
                 edit_int64(pr.PoolId, ed1));
     } else {
-      ua->WarningMsg(_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
+      ua->WarningMsg(T_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
     }
   }
 
@@ -1401,7 +1406,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
   if (rx->JobTDate == 0) {
-    ua->ErrorMsg(_("No Full backup%s before %s found.\n"),
+    ua->ErrorMsg(T_("No Full backup%s before %s found.\n"),
                  (rx->job_filter == RestoreContext::JobTypeFilter::Backup)
                      ? ""
                      : " archive",
@@ -1487,7 +1492,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
         ua->pint32_val = 1;
       } else {
         GetYesno(ua,
-                 _("\nDo you want to restore from these copies? (yes|no): "));
+                 T_("\nDo you want to restore from these copies? (yes|no): "));
       }
 
       if (ua->pint32_val) {
@@ -1512,7 +1517,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
 
     ok = true;
   } else {
-    ua->WarningMsg(_("No jobs found.\n"));
+    ua->WarningMsg(T_("No jobs found.\n"));
   }
 
 bail_out:
@@ -1621,7 +1626,7 @@ void FindStorageResource(UaContext* ua,
     if (i > 0) { store = ua->GetStoreResWithName(ua->argv[i]); }
     if (store && (store != rx.store)) {
       ua->InfoMsg(
-          _("Warning default storage overridden by \"%s\" on command line.\n"),
+          T_("Warning default storage overridden by \"%s\" on command line.\n"),
           store->resource_name_);
       rx.store = store;
       Dmsg1(200, "Set store=%s\n", rx.store->resource_name_);
@@ -1637,19 +1642,19 @@ void FindStorageResource(UaContext* ua,
           rx.store = store;
           Dmsg1(200, "Set store=%s\n", rx.store->resource_name_);
           if (Storage == NULL) {
-            ua->WarningMsg(_("Using Storage \"%s\" from MediaType \"%s\".\n"),
+            ua->WarningMsg(T_("Using Storage \"%s\" from MediaType \"%s\".\n"),
                            store->resource_name_, MediaType);
           } else {
-            ua->WarningMsg(_("Storage \"%s\" not found, using Storage \"%s\" "
-                             "from MediaType \"%s\".\n"),
+            ua->WarningMsg(T_("Storage \"%s\" not found, using Storage \"%s\" "
+                              "from MediaType \"%s\".\n"),
                            Storage, store->resource_name_, MediaType);
           }
         }
         return;
       }
     }
-    ua->WarningMsg(_("\nUnable to find Storage resource for\n"
-                     "MediaType \"%s\", needed by the Jobs you selected.\n"),
+    ua->WarningMsg(T_("\nUnable to find Storage resource for\n"
+                      "MediaType \"%s\", needed by the Jobs you selected.\n"),
                    MediaType);
   }
 

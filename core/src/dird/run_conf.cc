@@ -186,7 +186,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
       if (Bstrcasecmp(lc->str, RunFields[i].name)) {
         found = true;
         if (LexGetToken(lc, BCT_ALL) != BCT_EQUALS) {
-          scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
+          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
           return;
         }
         switch (RunFields[i].token) {
@@ -200,7 +200,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               res_run.spool_data = false;
               res_run.spool_data_set = true;
             } else {
-              scan_err1(lc, _("Expect a YES or NO, got: %s"), lc->str);
+              scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
               return;
             }
             break;
@@ -215,7 +215,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               }
             }
             if (j != 0) {
-              scan_err1(lc, _("Job level field: %s not found in run record"),
+              scan_err1(lc, T_("Job level field: %s not found in run record"),
                         lc->str);
               return;
             }
@@ -234,7 +234,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             if (pass == 2) {
               res = my_config->GetResWithName(R_POOL, lc->str);
               if (res == NULL) {
-                scan_err1(lc, _("Could not find specified Pool Resource: %s"),
+                scan_err1(lc, T_("Could not find specified Pool Resource: %s"),
                           lc->str);
                 return;
               }
@@ -266,7 +266,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               res = my_config->GetResWithName(R_STORAGE, lc->str);
               if (res == NULL) {
                 scan_err1(lc,
-                          _("Could not find specified Storage Resource: %s"),
+                          T_("Could not find specified Storage Resource: %s"),
                           lc->str);
                 return;
               }
@@ -279,7 +279,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               res = my_config->GetResWithName(R_MSGS, lc->str);
               if (res == NULL) {
                 scan_err1(lc,
-                          _("Could not find specified Messages Resource: %s"),
+                          T_("Could not find specified Messages Resource: %s"),
                           lc->str);
                 return;
               }
@@ -289,7 +289,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           case 'm': /* Max run sched time */
             token = LexGetToken(lc, BCT_QUOTED_STRING);
             if (!DurationToUtime(lc->str, &utime)) {
-              scan_err1(lc, _("expected a time period, got: %s"), lc->str);
+              scan_err1(lc, T_("expected a time period, got: %s"), lc->str);
               return;
             }
             res_run.MaxRunSchedTime = utime;
@@ -306,11 +306,11 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               res_run.accurate = false;
               res_run.accurate_set = true;
             } else {
-              scan_err1(lc, _("Expect a YES or NO, got: %s"), lc->str);
+              scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
             }
             break;
           default:
-            scan_err1(lc, _("Expected a keyword name, got: %s"), lc->str);
+            scan_err1(lc, T_("Expected a keyword name, got: %s"), lc->str);
             return;
             break;
         } /* end switch */
@@ -345,7 +345,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         state = s_mday;
         code = atoi(lc->str) - 1;
         if (code < 0 || code > 30) {
-          scan_err0(lc, _("Day number out of range (1-31)"));
+          scan_err0(lc, T_("Day number out of range (1-31)"));
           return;
         }
         break;
@@ -367,7 +367,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             && IsAnInteger(lc->str + 1)) {
           code = atoi(lc->str + 1);
           if (code < 0 || code > 53) {
-            scan_err0(lc, _("Week number out of range (0-53)"));
+            scan_err0(lc, T_("Week number out of range (0-53)"));
             return;
           }
           state = s_woy; /* Week of year */
@@ -383,7 +383,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
         }
         if (i != 0) {
-          scan_err1(lc, _("Job type field: %s in run record not found"),
+          scan_err1(lc, T_("Job type field: %s in run record not found"),
                     lc->str);
           return;
         }
@@ -391,7 +391,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
       case BCT_COMMA:
         continue;
       default:
-        scan_err2(lc, _("Unexpected token: %d:%s"), token, lc->str);
+        scan_err2(lc, T_("Unexpected token: %d:%s"), token, lc->str);
         return;
         break;
     }
@@ -435,7 +435,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         break;
       case s_time: /* Time */
         if (!have_at) {
-          scan_err0(lc, _("Time must be preceded by keyword AT."));
+          scan_err0(lc, T_("Time must be preceded by keyword AT."));
           return;
         }
         if (!have_hour) {
@@ -444,7 +444,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         //       Dmsg1(000, "s_time=%s\n", lc->str);
         p = strchr(lc->str, ':');
         if (!p) {
-          scan_err0(lc, _("Time logic error.\n"));
+          scan_err0(lc, T_("Time logic error.\n"));
           return;
         }
         *p++ = 0;             /* Separate two halves */
@@ -457,7 +457,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         } else if (Bstrcasecmp(p, "am")) {
           am = true;
         } else if (len != 2) {
-          scan_err0(lc, _("Bad time specification."));
+          scan_err0(lc, T_("Bad time specification."));
           return;
         }
         /* Note, according to NIST, 12am and 12pm are ambiguous and
@@ -472,7 +472,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           code -= 12;
         }
         if (code < 0 || code > 23 || code2 < 0 || code2 > 59) {
-          scan_err0(lc, _("Bad time specification."));
+          scan_err0(lc, T_("Bad time specification."));
           return;
         }
         SetBit(code, res_run.date_time_bitfield.hour);
@@ -492,7 +492,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
       case s_modulo:
         p = strchr(lc->str, '/');
         if (!p) {
-          scan_err0(lc, _("Modulo logic error.\n"));
+          scan_err0(lc, T_("Modulo logic error.\n"));
           return;
         }
         *p++ = 0; /* Separate two halves */
@@ -502,12 +502,12 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           code = atoi(lc->str) - 1;
           code2 = atoi(p);
           if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, _("Bad day specification in modulo."));
+            scan_err0(lc, T_("Bad day specification in modulo."));
             return;
           }
           if (code > code2) {
-            scan_err0(lc, _("Bad day specification, offset must always be <= "
-                            "than modulo."));
+            scan_err0(lc, T_("Bad day specification, offset must always be <= "
+                             "than modulo."));
             return;
           }
           if (!have_mday) {
@@ -528,12 +528,12 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           code = atoi(lc->str + 1);
           code2 = atoi(p + 1);
           if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
-            scan_err0(lc, _("Week number out of range (0-53) in modulo"));
+            scan_err0(lc, T_("Week number out of range (0-53) in modulo"));
             return;
           }
           if (code > code2) {
-            scan_err0(lc, _("Bad week number specification in modulo, offset "
-                            "must always be <= than modulo."));
+            scan_err0(lc, T_("Bad week number specification in modulo, offset "
+                             "must always be <= than modulo."));
             return;
           }
           if (!have_woy) {
@@ -547,15 +547,15 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             }
           }
         } else {
-          scan_err0(lc, _("Bad modulo time specification. Format for weekdays "
-                          "is '01/02', for yearweeks is 'w01/w02'."));
+          scan_err0(lc, T_("Bad modulo time specification. Format for weekdays "
+                           "is '01/02', for yearweeks is 'w01/w02'."));
           return;
         }
         break;
       case s_range:
         p = strchr(lc->str, '-');
         if (!p) {
-          scan_err0(lc, _("Range logic error.\n"));
+          scan_err0(lc, T_("Range logic error.\n"));
           return;
         }
         *p++ = 0; /* Separate two halves */
@@ -565,7 +565,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           code = atoi(lc->str) - 1;
           code2 = atoi(p) - 1;
           if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, _("Bad day range specification."));
+            scan_err0(lc, T_("Bad day range specification."));
             return;
           }
           if (!have_mday) {
@@ -586,7 +586,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           code = atoi(lc->str + 1);
           code2 = atoi(p + 1);
           if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
-            scan_err0(lc, _("Week number out of range (0-53)"));
+            scan_err0(lc, T_("Week number out of range (0-53)"));
             return;
           }
           if (!have_woy) {
@@ -612,7 +612,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
           if (i != 0
               || (state != s_month && state != s_wday && state != s_wom)) {
-            scan_err0(lc, _("Invalid month, week or position day range"));
+            scan_err0(lc, T_("Invalid month, week or position day range"));
             return;
           }
 
@@ -627,7 +627,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             }
           }
           if (i != 0 || state != state2 || code == code2) {
-            scan_err0(lc, _("Invalid month, weekday or position range"));
+            scan_err0(lc, T_("Invalid month, weekday or position range"));
             return;
           }
           if (state == s_wday) {
@@ -687,7 +687,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         SetBitRange(0, 11, res_run.date_time_bitfield.month);
         break;
       default:
-        scan_err0(lc, _("Unexpected run state\n"));
+        scan_err0(lc, T_("Unexpected run state\n"));
         return;
         break;
     }

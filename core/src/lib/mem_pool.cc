@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,7 +75,7 @@ constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
   va_list arg_ptr;
   int len;
 
-  len = Bsnprintf(buf, sizeof(buf), _("%s: ABORTING due to ERROR in %s:%d\n"),
+  len = Bsnprintf(buf, sizeof(buf), T_("%s: ABORTING due to ERROR in %s:%d\n"),
                   my_name, get_basename(file), line);
 
   va_start(arg_ptr, fmt);
@@ -111,7 +111,7 @@ POOLMEM* GetMemory(int32_t size) noexcept
   char* buf = static_cast<char*>(malloc(size + HEAD_SIZE));
   if (buf == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
-                        _("Out of memory requesting %d bytes\n"), size);
+                        T_("Out of memory requesting %d bytes\n"), size);
     return NULL;
   }
   POOLMEM* pm_ptr = static_cast<POOLMEM*>(buf + HEAD_SIZE);
@@ -130,7 +130,7 @@ POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size) noexcept
   char* buf = static_cast<char*>(realloc(old_abuf_ptr, size + HEAD_SIZE));
   if (buf == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
-                        _("Out of memory requesting %d bytes\n"), size);
+                        T_("Out of memory requesting %d bytes\n"), size);
     return NULL;
   }
   POOLMEM* new_pm_ptr = static_cast<POOLMEM*>(buf + HEAD_SIZE);

@@ -206,7 +206,7 @@ static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags)
       && (ff_pkt->statp.st_flags & UF_NODUMP)) {
-    Jmsg(jcr, M_INFO, 1, _("     NODUMP flag set - will not process %s\n"),
+    Jmsg(jcr, M_INFO, 1, T_("     NODUMP flag set - will not process %s\n"),
          ff_pkt->fname);
     return true; /* do not backup this file */
   }
@@ -269,13 +269,13 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (lstat(ff_pkt->fname, &statp) != 0) {
     BErrNo be;
-    Jmsg(jcr, M_WARNING, 0, _("Cannot stat file %s: ERR=%s\n"), ff_pkt->fname,
+    Jmsg(jcr, M_WARNING, 0, T_("Cannot stat file %s: ERR=%s\n"), ff_pkt->fname,
          be.bstrerror());
     return true;
   }
 
   if (statp.st_mtime != ff_pkt->statp.st_mtime) {
-    Jmsg(jcr, M_ERROR, 0, _("%s: mtime changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: mtime changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s mtime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_mtime, (int64_t)statp.st_mtime);
@@ -283,7 +283,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   }
 
   if (statp.st_ctime != ff_pkt->statp.st_ctime) {
-    Jmsg(jcr, M_ERROR, 0, _("%s: ctime changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: ctime changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s ctime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_ctime, (int64_t)statp.st_ctime);
@@ -292,7 +292,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (statp.st_size != ff_pkt->statp.st_size) {
     /* TODO: add size change */
-    Jmsg(jcr, M_ERROR, 0, _("%s: size changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_size, (int64_t)statp.st_size);
@@ -301,7 +301,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if ((statp.st_blksize != ff_pkt->statp.st_blksize)
       || (statp.st_blocks != ff_pkt->statp.st_blocks)) {
-    Jmsg(jcr, M_ERROR, 0, _("%s: size changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_blocks, (int64_t)statp.st_blocks);
@@ -692,7 +692,7 @@ static inline int process_directory(JobControlRecord* jcr,
     /* Some filesystems violate against the rules and return filenames
      * longer than _PC_NAME_MAX. Log the error and continue. */
     if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
-      Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), entry->d_name,
+      Jmsg2(jcr, M_ERROR, 0, T_("%s: File name too long [%d]\n"), entry->d_name,
             name_length);
       continue;
     }
@@ -735,8 +735,8 @@ static inline int process_directory(JobControlRecord* jcr,
     /* Some filesystems violate against the rules and return filenames
      * longer than _PC_NAME_MAX. Log the error and continue. */
     if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
-      Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), result->d_name,
-            name_length);
+      Jmsg2(jcr, M_ERROR, 0, T_("%s: File name too long [%d]\n"),
+            result->d_name, name_length);
       continue;
     }
 
@@ -848,7 +848,7 @@ static inline bool NeedsProcessing(JobControlRecord* jcr,
     }
 
     Jmsg(jcr, loglevel, 0,
-         _("Top level directory \"%s\" has unlisted fstype \"%s\"\n"), fname,
+         T_("Top level directory \"%s\" has unlisted fstype \"%s\"\n"), fname,
          fs);
     return false; /* Just ignore this error - or the whole backup is cancelled
                    */
@@ -868,7 +868,7 @@ static inline bool NeedsProcessing(JobControlRecord* jcr,
     }
 
     Jmsg(jcr, loglevel, 0,
-         _("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"),
+         T_("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"),
          fname, dt);
     return false; /* Just ignore this error - or the whole backup is cancelled
                    */

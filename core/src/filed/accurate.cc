@@ -130,7 +130,7 @@ bool AccurateFinish(JobControlRecord* jcr)
 
     AccurateFree(jcr);
     if (jcr->is_JobLevel(L_FULL)) {
-      Jmsg(jcr, M_INFO, 0, _("Space saved with Base jobs: %lld MB\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Space saved with Base jobs: %lld MB\n"),
            jcr->fd_impl->base_size / (1024 * 1024));
     }
   }
@@ -289,7 +289,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
                     || BitIsSet(FO_SHA512, ff_pkt->flags)
                     || BitIsSet(FO_XXH128, ff_pkt->flags)))) {
           if (!*payload->chksum && !jcr->rerunning) {
-            Jmsg(jcr, M_WARNING, 0, _("Cannot verify checksum for %s\n"),
+            Jmsg(jcr, M_WARNING, 0, T_("Cannot verify checksum for %s\n"),
                  ff_pkt->fname);
             status = true;
           } else {
@@ -334,7 +334,7 @@ bool AccurateCmd(JobControlRecord* jcr)
   if (jcr->IsJobCanceled()) { return true; }
 
   if (sscanf(dir->msg, "accurate files=%u", &number_of_previous_files) != 1) {
-    dir->fsend(_("2991 Bad accurate command\n"));
+    dir->fsend(T_("2991 Bad accurate command\n"));
     return false;
   }
 

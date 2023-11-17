@@ -60,14 +60,14 @@ DeviceControlRecord::DeviceControlRecord()
   if ((errstat = pthread_mutex_init(&mutex_, NULL)) != 0) {
     BErrNo be;
 
-    Mmsg(errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
+    Mmsg(errmsg, T_("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
     Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
   }
 
   if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
     BErrNo be;
 
-    Mmsg(errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
+    Mmsg(errmsg, T_("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
     Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
   }
 }
@@ -110,7 +110,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
   if (dev->num_writers > 0) {
     Jmsg2(jcr, M_FATAL, 0,
-          _("Acquire read: num_writers=%d not zero. Job %d canceled.\n"),
+          T_("Acquire read: num_writers=%d not zero. Job %d canceled.\n"),
           dev->num_writers, jcr->JobId);
     goto get_out;
   }
@@ -120,7 +120,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   if (!vol) {
     char ed1[50];
     Jmsg(jcr, M_FATAL, 0,
-         _("No volumes specified for reading. Job %s canceled.\n"),
+         T_("No volumes specified for reading. Job %s canceled.\n"),
          edit_int64(jcr->JobId, ed1));
     goto get_out;
   }
@@ -128,7 +128,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   for (i = 1; i < jcr->sd_impl->CurReadVolume; i++) { vol = vol->next; }
   if (!vol) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Logic error: no next volume to read. Numvol=%d Curvol=%d\n"),
+         T_("Logic error: no next volume to read. Numvol=%d Curvol=%d\n"),
          jcr->sd_impl->NumReadVolumes, jcr->sd_impl->CurReadVolume);
     goto get_out; /* should not happen */
   }
@@ -155,8 +155,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     int status;
 
     Jmsg3(jcr, M_INFO, 0,
-          _("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
-            "  device=%s\n"),
+          T_("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
+             "  device=%s\n"),
           dcr->media_type, dev->device_resource->media_type, dev->print_name());
     Dmsg3(rdebuglevel,
           "Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
@@ -197,7 +197,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
       dcr->VolumeName[0] = 0;
       Jmsg(jcr, M_INFO, 0,
-           _("Media Type change.  New read device %s chosen.\n"),
+           T_("Media Type change.  New read device %s chosen.\n"),
            dev->print_name());
       Dmsg1(50, "Media Type change.  New read device %s chosen.\n",
             dev->print_name());
@@ -212,7 +212,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     } else {
       /* error */
       Jmsg1(jcr, M_FATAL, 0,
-            _("No suitable device found to read Volume \"%s\"\n"),
+            T_("No suitable device found to read Volume \"%s\"\n"),
             vol->VolumeName);
       Dmsg1(rdebuglevel, "No suitable device found to read Volume \"%s\"\n",
             vol->VolumeName);
@@ -259,7 +259,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
     if (jcr->IsJobCanceled()) {
       char ed1[50];
-      Mmsg1(dev->errmsg, _("Job %s canceled.\n"), edit_int64(jcr->JobId, ed1));
+      Mmsg1(dev->errmsg, T_("Job %s canceled.\n"), edit_int64(jcr->JobId, ed1));
       Jmsg(jcr, M_INFO, 0, dev->errmsg);
       goto get_out; /* error return */
     }
@@ -275,7 +275,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
       if (!dev->poll) {
         Jmsg3(jcr, M_WARNING, 0,
-              _("Read open device %s Volume \"%s\" failed: ERR=%s\n"),
+              T_("Read open device %s Volume \"%s\" failed: ERR=%s\n"),
               dev->print_name(), dcr->VolumeName, dev->bstrerror());
       }
       goto default_path;
@@ -369,7 +369,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
   if (!retval) {
     Jmsg1(jcr, M_FATAL, 0,
-          _("Too many errors trying to mount device %s for reading.\n"),
+          T_("Too many errors trying to mount device %s for reading.\n"),
           dev->print_name());
     goto get_out;
   }
@@ -377,7 +377,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   dev->ClearAppend();
   dev->SetRead();
   jcr->sendJobStatus(JS_Running);
-  Jmsg(jcr, M_INFO, 0, _("Ready to read from volume \"%s\" on device %s.\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Ready to read from volume \"%s\" on device %s.\n"),
        dcr->VolumeName, dev->print_name());
 
 get_out:
@@ -429,7 +429,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   // With the reservation system, this should not happen
   if (dev->CanRead()) {
     Jmsg1(jcr, M_FATAL, 0,
-          _("Want to append, but device %s is busy reading.\n"),
+          T_("Want to append, but device %s is busy reading.\n"),
           dev->print_name());
     Dmsg1(200, "Want to append but device %s is busy reading.\n",
           dev->print_name());
@@ -460,7 +460,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
     if (!dcr->MountNextWriteVolume()) {
       if (!jcr->IsJobCanceled()) {
         /* Reduce "noise" -- don't print if job canceled */
-        Jmsg(jcr, M_FATAL, 0, _("Could not ready device %s for append.\n"),
+        Jmsg(jcr, M_FATAL, 0, T_("Could not ready device %s for append.\n"),
              dev->print_name());
         Dmsg1(200, "Could not ready device %s for append.\n",
               dev->print_name());
@@ -570,7 +570,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
             dev->getVolCatName(), dev->print_name());
       if (!dev->AtWeot() && !dcr->DirCreateJobmediaRecord(false)) {
         Jmsg2(jcr, M_FATAL, 0,
-              _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
+              T_("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
               dcr->getVolCatName(), jcr->Job);
       }
 
@@ -630,7 +630,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       bpipe = OpenBpipe(alert, 60 * 5, "r");
       if (bpipe) {
         while (bfgets(line, bpipe->rfd)) {
-          Jmsg(jcr, M_ALERT, 0, _("Alert: %s\n"), line);
+          Jmsg(jcr, M_ALERT, 0, T_("Alert: %s\n"), line);
         }
         status = CloseBpipe(bpipe);
       } else {
@@ -638,8 +638,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       }
       if (status != 0) {
         BErrNo be;
-        Jmsg(jcr, M_ALERT, 0, _("3997 Bad alert command: %s: ERR=%s.\n"), alert,
-             be.bstrerror(status));
+        Jmsg(jcr, M_ALERT, 0, T_("3997 Bad alert command: %s: ERR=%s.\n"),
+             alert, be.bstrerror(status));
       }
 
       Dmsg1(400, "alert status=%d\n", status);

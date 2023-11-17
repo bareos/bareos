@@ -71,15 +71,15 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
   DbLocker _{this};
 
   if (!SqlQuery(query, QF_STORE_RESULT)) {
-    Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
+    Mmsg(errmsg, T_("Query failed: %s\n"), sql_strerror());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;
   }
 
   if ((collapse == CollapseMode::Collapse) && (SqlNumRows() > 1)) {
     Mmsg(errmsg,
-         _("Query returned %d rows. In collapsed mode, only one row is "
-           "accepted.\n"),
+         T_("Query returned %d rows. In collapsed mode, only one row is "
+            "accepted.\n"),
          SqlNumRows());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;
@@ -364,9 +364,9 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
 
   if (SqlNumRows()) {
     if (JobIds && JobIds[0]) {
-      send->Decoration(_("These JobIds have copies as follows:\n"));
+      send->Decoration(T_("These JobIds have copies as follows:\n"));
     } else {
-      send->Decoration(_("The catalog contains copies as follows:\n"));
+      send->Decoration(T_("The catalog contains copies as follows:\n"));
     }
 
     send->ArrayStart("copies");

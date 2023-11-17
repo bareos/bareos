@@ -638,7 +638,7 @@ bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
   const char* accept = "!()[]|+?*.:_-'/"; /* Special characters to accept */
 
   if (!acl) {
-    Mmsg(msg, _("Empty acl not allowed.\n"));
+    Mmsg(msg, T_("Empty acl not allowed.\n"));
     return false;
   }
 
@@ -647,18 +647,18 @@ bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
     if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
       continue;
     }
-    Mmsg(msg, _("Illegal character \"%c\" in acl.\n"), *p);
+    Mmsg(msg, T_("Illegal character \"%c\" in acl.\n"), *p);
     return false;
   }
 
   len = p - acl;
   if (len >= MAX_NAME_LENGTH) {
-    Mmsg(msg, _("Acl too long.\n"));
+    Mmsg(msg, T_("Acl too long.\n"));
     return false;
   }
 
   if (len == 0) {
-    Mmsg(msg, _("Acl must be at least one character long.\n"));
+    Mmsg(msg, T_("Acl must be at least one character long.\n"));
     return false;
   }
 

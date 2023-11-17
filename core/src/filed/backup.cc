@@ -129,7 +129,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   }
   if (!sd->SetBufferSize(buf_size, BNET_SETBUF_WRITE)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-    Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size FD->SD.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Cannot set buffer size FD->SD.\n"));
     return false;
   }
 
@@ -175,12 +175,12 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Encountered %ld acl errors while doing backup\n"),
+         T_("Encountered %ld acl errors while doing backup\n"),
          jcr->fd_impl->acl_data->u.build->nr_errors);
   }
   if (have_xattr && jcr->fd_impl->xattr_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Encountered %ld xattr errors while doing backup\n"),
+         T_("Encountered %ld xattr errors while doing backup\n"),
          jcr->fd_impl->xattr_data->u.build->nr_errors);
   }
 
@@ -231,7 +231,7 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
       bsctx.ff_pkt->ff_errno = errno;
       BErrNo be;
       Jmsg(bsctx.jcr, M_NOTSAVED, -1,
-           _("     Cannot open resource fork for \"%s\": ERR=%s.\n"),
+           T_("     Cannot open resource fork for \"%s\": ERR=%s.\n"),
            bsctx.ff_pkt->fname, be.bstrerror());
       bsctx.jcr->JobErrors++;
       if (IsBopen(&bsctx.ff_pkt->bfd)) { bclose(&bsctx.ff_pkt->bfd); }
@@ -316,7 +316,7 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
 
   // Did digest initialization fail?
   if (bsctx.digest_stream != STREAM_NONE && bsctx.digest == NULL) {
-    Jmsg(bsctx.jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
+    Jmsg(bsctx.jcr, M_WARNING, 0, T_("%s digest initialization failed\n"),
          stream_to_ascii(bsctx.digest_stream));
   }
 
@@ -331,7 +331,7 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
     // Full-stop if a failure occurred initializing the signature digest
     if (bsctx.signing_digest == NULL) {
       Jmsg(bsctx.jcr, M_NOTSAVED, 0,
-           _("%s signature digest initialization failed\n"),
+           T_("%s signature digest initialization failed\n"),
            stream_to_ascii(signing_algorithm));
       bsctx.jcr->JobErrors++;
       goto bail_out;
@@ -358,21 +358,21 @@ static inline bool TerminateSigningDigest(b_save_ctx& bsctx)
 
   if ((signature = crypto_sign_new(bsctx.jcr)) == NULL) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
-         _("Failed to allocate memory for crypto signature.\n"));
+         T_("Failed to allocate memory for crypto signature.\n"));
     goto bail_out;
   }
 
   if (!CryptoSignAddSigner(signature, bsctx.signing_digest,
                            bsctx.jcr->fd_impl->crypto.pki_keypair)) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
-         _("An error occurred while signing the stream.\n"));
+         T_("An error occurred while signing the stream.\n"));
     goto bail_out;
   }
 
   // Get signature size
   if (!CryptoSignEncode(signature, NULL, &size)) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
-         _("An error occurred while signing the stream.\n"));
+         T_("An error occurred while signing the stream.\n"));
     goto bail_out;
   }
 
@@ -388,7 +388,7 @@ static inline bool TerminateSigningDigest(b_save_ctx& bsctx)
   // Encode signature data
   if (!CryptoSignEncode(signature, (uint8_t*)sd->msg, &size)) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
-         _("An error occurred while signing the stream.\n"));
+         T_("An error occurred while signing the stream.\n"));
     goto bail_out;
   }
 
@@ -421,7 +421,7 @@ static inline bool TerminateDigest(b_save_ctx& bsctx)
 
   if (!CryptoDigestFinalize(bsctx.digest, (uint8_t*)sd->msg, &size)) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
-         _("An error occurred finalizing signing the stream.\n"));
+         T_("An error occurred finalizing signing the stream.\n"));
     goto bail_out;
   }
 
@@ -549,7 +549,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       return 1;                           /* not used */
     case FT_NORECURSE:
       Jmsg(jcr, M_INFO, 1,
-           _("     Recursion turned off. Will not descend from %s into %s\n"),
+           T_("     Recursion turned off. Will not descend from %s into %s\n"),
            ff_pkt->top_fname, ff_pkt->fname);
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
@@ -557,21 +557,21 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       /* Suppress message for /dev filesystems */
       if (!IsInFileset(ff_pkt)) {
         Jmsg(jcr, M_INFO, 1,
-             _("     %s is a different filesystem. Will not descend from %s "
-               "into it.\n"),
+             T_("     %s is a different filesystem. Will not descend from %s "
+                "into it.\n"),
              ff_pkt->fname, ff_pkt->top_fname);
       }
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_INVALIDFS:
       Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+           T_("     Disallowed filesystem. Will not descend from %s into %s\n"),
            ff_pkt->top_fname, ff_pkt->fname);
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_INVALIDDT:
       Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed drive type. Will not descend into %s\n"),
+           T_("     Disallowed drive type. Will not descend into %s\n"),
            ff_pkt->fname);
       break;
     case FT_REPARSE:
@@ -582,7 +582,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     case FT_SPEC:
       Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
       if (S_ISSOCK(ff_pkt->statp.st_mode)) {
-        Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
+        Jmsg(jcr, M_SKIPPED, 1, T_("     Socket file skipped: %s\n"),
              ff_pkt->fname);
         return 1;
       }
@@ -596,38 +596,39 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       break;
     case FT_NOACCESS: {
       BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
+      Jmsg(jcr, M_NOTSAVED, 0, T_("     Could not access \"%s\": ERR=%s\n"),
            ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
     }
     case FT_NOFOLLOW: {
       BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      Jmsg(jcr, M_NOTSAVED, 0,
+           T_("     Could not follow link \"%s\": ERR=%s\n"), ff_pkt->fname,
+           be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
     }
     case FT_NOSTAT: {
       BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
+      Jmsg(jcr, M_NOTSAVED, 0, T_("     Could not stat \"%s\": ERR=%s\n"),
            ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
     }
     case FT_DIRNOCHG:
     case FT_NOCHG:
-      Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
+      Jmsg(jcr, M_SKIPPED, 1, T_("     Unchanged file skipped: %s\n"),
            ff_pkt->fname);
       return 1;
     case FT_ISARCH:
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
+      Jmsg(jcr, M_NOTSAVED, 0, T_("     Archive file not saved: %s\n"),
            ff_pkt->fname);
       return 1;
     case FT_NOOPEN: {
       BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0,
-           _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
+           T_("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
            be.bstrerror(ff_pkt->ff_errno));
       jcr->JobErrors++;
       return 1;
@@ -636,7 +637,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
       break;
     default:
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d; not saved: %s\n"),
+      Jmsg(jcr, M_NOTSAVED, 0, T_("     Unknown file type %d; not saved: %s\n"),
            ff_pkt->type, ff_pkt->fname);
       jcr->JobErrors++;
       return 1;
@@ -753,7 +754,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         < 0) {
       ff_pkt->ff_errno = errno;
       BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
+      Jmsg(jcr, M_NOTSAVED, 0, T_("     Cannot open \"%s\": ERR=%s.\n"),
            ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       if (tid) {
@@ -942,7 +943,7 @@ static inline bool SendDataToSd(b_ctx* bctx)
 
   if (!sd->send()) {
     if (!bctx->jcr->IsJobCanceled()) {
-      Jmsg1(bctx->jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+      Jmsg1(bctx->jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
     return false;
@@ -997,7 +998,7 @@ static inline bool SendEncryptedData(b_ctx& bctx)
 
   if (!p_ReadEncryptedFileRaw) {
     Jmsg0(bctx.jcr, M_FATAL, 0,
-          _("Encrypted file but no EFS support functions\n"));
+          T_("Encrypted file but no EFS support functions\n"));
   }
 
   /* The EFS read function, ReadEncryptedFileRaw(), works in a specific way.
@@ -1465,7 +1466,7 @@ static int send_data(JobControlRecord* jcr,
    *    <file-index> <stream> <info> */
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
     if (!jcr->IsJobCanceled()) {
-      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
     goto bail_out;
@@ -1499,10 +1500,10 @@ static int send_data(JobControlRecord* jcr,
 
   if (sd->message_length < 0) { /* error */
     BErrNo be;
-    Jmsg(jcr, M_ERROR, 0, _("Read error on file %s. ERR=%s\n"), ff_pkt->fname,
+    Jmsg(jcr, M_ERROR, 0, T_("Read error on file %s. ERR=%s\n"), ff_pkt->fname,
          be.bstrerror(ff_pkt->bfd.BErrNo));
     if (jcr->JobErrors++ > 1000) { /* insanity check */
-      Jmsg(jcr, M_FATAL, 0, _("Too many errors. JobErrors=%d.\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Too many errors. JobErrors=%d.\n"),
            jcr->JobErrors);
     }
   } else if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
@@ -1511,7 +1512,7 @@ static int send_data(JobControlRecord* jcr,
                               (uint8_t*)jcr->fd_impl->crypto.crypto_buf,
                               &bctx.encrypted_len)) {
       // Padding failed. Shouldn't happen.
-      Jmsg(jcr, M_FATAL, 0, _("Encryption padding error\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("Encryption padding error\n"));
       goto bail_out;
     }
 
@@ -1521,7 +1522,7 @@ static int send_data(JobControlRecord* jcr,
       sd->msg = jcr->fd_impl->crypto.crypto_buf; /* set correct write buffer */
       if (!sd->send()) {
         if (!jcr->IsJobCanceled()) {
-          Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+          Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
                 sd->bstrerror());
         }
         goto bail_out;
@@ -1535,7 +1536,7 @@ static int send_data(JobControlRecord* jcr,
 
   if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
     if (!jcr->IsJobCanceled()) {
-      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
     goto bail_out;
@@ -1576,7 +1577,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   if ((data_stream = SelectDataStream(ff_pkt)) == STREAM_NONE) {
     /* This should not happen */
     Jmsg0(jcr, M_FATAL, 0,
-          _("Invalid file flags, no supported data stream type.\n"));
+          T_("Invalid file flags, no supported data stream type.\n"));
     return false;
   }
   EncodeStat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp),
@@ -1611,7 +1612,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    *    <file-index> <stream> <info> */
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
     if (!jcr->IsJobCanceled() && !jcr->IsIncomplete()) {
-      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
     return false;
@@ -1713,7 +1714,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
   Dmsg2(300, ">stored: attr len=%d: %s\n", sd->message_length, sd->msg);
   if (!status && !jcr->IsJobCanceled()) {
-    Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+    Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
   }
 
@@ -1836,7 +1837,7 @@ static void CloseVssBackupSession(JobControlRecord* jcr)
           msg_type = M_WARNING;
           jcr->JobErrors++;
         }
-        Jmsg(jcr, msg_type, 0, _("VSS Writer (BackupComplete): %s\n"),
+        Jmsg(jcr, msg_type, 0, T_("VSS Writer (BackupComplete): %s\n"),
              jcr->fd_impl->pVSSClient->GetWriterInfo(i));
       }
     }

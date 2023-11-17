@@ -279,8 +279,8 @@ bool DeviceResource::Validate()
   if (IsMemberPresent("AutoDeflate")
       && !IsMemberPresent("AutoDeflateAlgorithm")) {
     Jmsg(nullptr, M_ERROR, 0,
-         _("Device %s: If 'AutoDeflate' is set, then 'AutoDeflateAlgorithm' "
-           "also has to be set.\n"),
+         T_("Device %s: If 'AutoDeflate' is set, then 'AutoDeflateAlgorithm' "
+            "also has to be set.\n"),
          resource_name_);
 
     return false;

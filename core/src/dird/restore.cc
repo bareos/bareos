@@ -186,8 +186,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       // Check if the file daemon supports passive client mode.
       if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
         Jmsg(jcr, M_FATAL, 0,
-             _("Client \"%s\" doesn't support passive client mode. "
-               "Please upgrade your client or disable compat mode.\n"),
+             T_("Client \"%s\" doesn't support passive client mode. "
+                "Please upgrade your client or disable compat mode.\n"),
              jcr->dir_impl->res.client->resource_name_);
         goto bail_out;
       }
@@ -303,8 +303,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
          * protocol keyword. */
         if (jcr->dir_impl->plugin_options) {
           Jmsg(jcr, M_FATAL, 0,
-               _("Client \"%s\" doesn't support plugin option passing. "
-                 "Please upgrade your client or disable compat mode.\n"),
+               T_("Client \"%s\" doesn't support plugin option passing. "
+                  "Please upgrade your client or disable compat mode.\n"),
                jcr->dir_impl->res.client->resource_name_);
           goto bail_out;
         }
@@ -385,14 +385,14 @@ bool DoNativeRestore(JobControlRecord* jcr)
 
   if (!jcr->RestoreBootstrap) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Cannot restore without a bootstrap file.\n"
-           "You probably ran a restore job directly. All restore jobs must\n"
-           "be run using the restore command.\n"));
+         T_("Cannot restore without a bootstrap file.\n"
+            "You probably ran a restore job directly. All restore jobs must\n"
+            "be run using the restore command.\n"));
     goto bail_out;
   }
 
   // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
+  Jmsg(jcr, M_INFO, 0, T_("Start Restore Job %s\n"), jcr->Job);
 
   // Read the bootstrap file and do the restore
   if (!DoNativeRestoreBootstrap(jcr)) { goto bail_out; }
@@ -425,21 +425,21 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
 
   if (jcr->dir_impl->ExpectedFiles != jcr->JobFiles) {
     Jmsg(jcr, M_WARNING, 0,
-         _("File count mismatch: expected=%lu , restored=%lu\n"),
+         T_("File count mismatch: expected=%lu , restored=%lu\n"),
          jcr->dir_impl->ExpectedFiles, jcr->JobFiles);
     if (TermCode == JS_Terminated) { TermCode = JS_Warnings; }
   }
 
   switch (TermCode) {
     case JS_Terminated:
-      TermMsg = _("Restore OK");
+      TermMsg = T_("Restore OK");
       break;
     case JS_Warnings:
-      TermMsg = _("Restore OK -- with warnings");
+      TermMsg = T_("Restore OK -- with warnings");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Restore Error ***");
+      TermMsg = T_("*** Restore Error ***");
       msg_type = M_ERROR;  // Generate error message
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
@@ -449,7 +449,7 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
       }
       break;
     case JS_Canceled:
-      TermMsg = _("Restore Canceled");
+      TermMsg = T_("Restore Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
         if (jcr->dir_impl->SD_msg_chan_started) {
@@ -459,7 +459,7 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
+      sprintf(term_code, T_("Inappropriate term code: %c\n"), TermCode);
       break;
   }
 
@@ -503,7 +503,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Client record for Job report: ERR=%s\n"),
+         T_("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     // if we could not look up the client record we print nothing
     cr.Uname[0] = '\0';
@@ -513,22 +513,22 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
     case PT_NDMP_BAREOS:
     case PT_NDMP_NATIVE:
       Jmsg(jcr, msg_type, 0,
-           _("%s %s %s (%s):\n"
-             "  Build OS:               %s\n"
-             "  JobId:                  %d\n"
-             "  Job:                    %s\n"
-             "  Restore Client:         \"%s\" %s\n"
-             "  Start time:             %s\n"
-             "  End time:               %s\n"
-             "  Elapsed time:           %s\n"
-             "  Files Expected:         %s\n"
-             "  Files Restored:         %s\n"
-             "  Bytes Restored:         %s\n"
-             "  Rate:                   %.1f KB/s\n"
-             "  SD termination status:  %s\n"
-             "  Bareos binary info:     %s\n"
-             "  Job triggered by:       %s\n"
-             "  Termination:            %s\n\n"),
+           T_("%s %s %s (%s):\n"
+              "  Build OS:               %s\n"
+              "  JobId:                  %d\n"
+              "  Job:                    %s\n"
+              "  Restore Client:         \"%s\" %s\n"
+              "  Start time:             %s\n"
+              "  End time:               %s\n"
+              "  Elapsed time:           %s\n"
+              "  Files Expected:         %s\n"
+              "  Files Restored:         %s\n"
+              "  Bytes Restored:         %s\n"
+              "  Rate:                   %.1f KB/s\n"
+              "  SD termination status:  %s\n"
+              "  Bareos binary info:     %s\n"
+              "  Job triggered by:       %s\n"
+              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
@@ -558,25 +558,25 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
       }
 
       Jmsg(jcr, msg_type, 0,
-           _("%s %s %s (%s):\n"
-             "  Build OS:               %s\n"
-             "  JobId:                  %d\n"
-             "  Job:                    %s\n"
-             "  Restore Client:         \"%s\" %s\n"
-             "  Start time:             %s\n"
-             "  End time:               %s\n"
-             "  Elapsed time:           %s\n"
-             "  Files Expected:         %s\n"
-             "  Files Restored:         %s\n"
-             "  Bytes Restored:         %s\n"
-             "  Rate:                   %.1f KB/s\n"
-             "  FD Errors:              %d\n"
-             "  FD termination status:  %s\n"
-             "  SD termination status:  %s\n"
-             "%s"
-             "  Bareos binary info:     %s\n"
-             "  Job triggered by:       %s\n"
-             "  Termination:            %s\n\n"),
+           T_("%s %s %s (%s):\n"
+              "  Build OS:               %s\n"
+              "  JobId:                  %d\n"
+              "  Job:                    %s\n"
+              "  Restore Client:         \"%s\" %s\n"
+              "  Start time:             %s\n"
+              "  End time:               %s\n"
+              "  Elapsed time:           %s\n"
+              "  Files Expected:         %s\n"
+              "  Files Restored:         %s\n"
+              "  Bytes Restored:         %s\n"
+              "  Rate:                   %.1f KB/s\n"
+              "  FD Errors:              %d\n"
+              "  FD termination status:  %s\n"
+              "  SD termination status:  %s\n"
+              "%s"
+              "  Bareos binary info:     %s\n"
+              "  Job triggered by:       %s\n"
+              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
