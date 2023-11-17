@@ -514,10 +514,6 @@ if(DEFINED traymonitor)
   set(HAVE_TRAYMONITOR 1)
 endif()
 
-if(DEFINED test-plugin)
-  set(HAVE_TEST_PLUGIN 1)
-endif()
-
 if(NOT DEFINED coverage)
   set(coverage OFF)
 endif()
