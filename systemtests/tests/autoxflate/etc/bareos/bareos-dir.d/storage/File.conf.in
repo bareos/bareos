@@ -1,0 +1,35 @@
+Storage {
+  Name = L1
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = LD1
+  Media Type = File
+  SD Port = @sd_port@
+}
+
+Storage {
+  Name = L2
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = LD2
+  Media Type = File
+  SD Port = @sd_port@
+}
+
+Storage {
+  Name = O11
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = 1D1
+  Media Type = File
+  SD Port = @sd2_port@
+}
+
+Storage {
+  Name = O12
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = 1D2
+  Media Type = File
+  SD Port = @sd2_port@
+}
