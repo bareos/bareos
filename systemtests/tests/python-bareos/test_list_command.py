@@ -69,6 +69,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         expected_list_keys = [
             "jobid",
             "name",
+            "rate",
             "client",
             "starttime",
             "duration",
@@ -95,6 +96,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "jobid",
             "job",
             "name",
+            "rate",
             "purgedfiles",
             "type",
             "level",
