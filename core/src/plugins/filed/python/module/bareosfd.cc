@@ -574,6 +574,15 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, io_pkt* io)
 
       if (!(buf = PyByteArray_AsString(pIoPkt->buf))) { return false; }
       memcpy(io->buf, buf, io->status);
+    } else if (PyBytes_Check(pIoPkt->buf)) {
+      char* buf;
+
+      if (PyBytes_Size(pIoPkt->buf) > io->count || io->status > io->count) {
+        return false;
+      }
+
+      if (!(buf = PyBytes_AsString(pIoPkt->buf))) { return false; }
+      memcpy(io->buf, buf, io->status);
     }
   }
 
