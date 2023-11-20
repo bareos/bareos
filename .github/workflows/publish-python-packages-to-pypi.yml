@@ -31,9 +31,9 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: "Python: install wheel"
+    - name: "Python: install dependencies"
       run: |
-        pip install --user wheel
+        pip install --user wheel setuptools
 
     - name: "python-bareos: build package"
       run: |
