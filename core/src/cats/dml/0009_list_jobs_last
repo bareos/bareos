@@ -7,12 +7,14 @@ Job.StartTime,
 CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
     ELSE CURRENT_TIMESTAMP(0) - Job.starttime
-    END as Duration,
+END as Duration,
 CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime > Job.starttime
         THEN Job.JobBytes / EXTRACT (EPOCH FROM (Job.endtime - Job.starttime))
-    ELSE Job.JobBytes / EXTRACT (EPOCH FROM CURRENT_TIMESTAMP(0) - Job.starttime)
-    END as Rate,
+    WHEN EXTRACT (EPOCH FROM CURRENT_TIMESTAMP(0) - Job.starttime) > 0
+        THEN Job.JobBytes / EXTRACT (EPOCH FROM CURRENT_TIMESTAMP(0) - Job.starttime)
+    ELSE 0
+END as Rate,
 Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
