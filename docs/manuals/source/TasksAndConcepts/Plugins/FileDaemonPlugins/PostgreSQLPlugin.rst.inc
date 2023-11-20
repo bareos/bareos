@@ -41,7 +41,7 @@ This is just a short outline of the tasks performed by the plugin.
 #. |postgresql| will write `Write-Ahead-Logfiles` (WAL) into the WAL Archive directory. These
    transaction logs contain transactions done while the file backup proceeded
 #. Backup fresh created WAL files
-#. Add files required for a restore (`backup_label`, `recovery.signal`/`recovery.conf` (for version <= 12)
+#. Add files required for a restore `backup_label`, `recovery.signal`/`recovery.conf` (for version <= 12)
    and `tablespace_map` (if tablespaces are in use) as virtual files to the backup.
 
 .. uml::
@@ -130,7 +130,7 @@ The restore basically works like this:
 
   group Database restore by PostgreSQL
     admin -> psql: start postgresql
-    psql -> psql: read backup_lablel, recovery.signal, tablespace.map
+    psql -> psql: read backup_label, recovery.signal, tablespace.map
     psql -> psql: recover database to the end of the WAL log
     psql -> psql: startup normal database operation
   end
@@ -143,8 +143,8 @@ The restore basically works like this:
 
 .. warning::
 
-   In order to make coherent backups, it is imperative that :strong:`the same postgresql major version`
-   is used for :strong:`full and incremental` Backups depending on each other.
+   In order to make coherent backups, it is imperative that :strong:`the same |postgresql| major version`
+   is used for :strong:`full and incremental` backups depending on each other.
 
 
 Prerequisites for the PostgreSQL Plugin
@@ -227,7 +227,7 @@ Now include the plugin as command-plugin in the fileset resource and define a jo
            }
            Plugin = "python"
                     ":module_name=bareos-fd-postgresql"
-                    ":postgresql_data_dir=/var/lib/pgsql/data"
+                    ":db_host=/run/postgresql/"
                     ":wal_archive_dir=/var/lib/pgsql/wal_archive/"
        }
    }
@@ -236,8 +236,6 @@ Now include the plugin as command-plugin in the fileset resource and define a jo
 
 You can append options to the plugin call as key=value pairs, separated by ``:``. The following options are available:
 
-postgresql_data_dir
-   the Postgres data directory. Default: :file:`/var/lib/pgsql/data`
 
 wal_archive_dir
    directory where |postgresql| archives the WAL files as defined in your :file:`postgresql.conf`
@@ -245,6 +243,7 @@ wal_archive_dir
 
 db_user
    with this user the plugin will try to connect to the database.
+   this role should be granted to access all `pg_settings` and backup functions in the cluster.
    Default: `root`
 
 db_password
@@ -256,15 +255,18 @@ db_name
    Default: `postgres`
 
 db_host
-   useful, if socket is not in default location. Specify socket-directory with a leading / here
-   Default: `None`
+   used to specify the host or the socket-directory when starting with a leading /
+
+   usually you will set it to `/run/postgresql`
+
+   Default: `localhost`
 
 db_port
    useful, if cluster is not listening default port.
    Default: `5432`
 
 ignore_subdirs
-   a list of comma separated directories below the `postgres_data_dir`, that will not be backed up.
+   a list of comma separated directories below the `data_directory`, you want to exclude.
    Default: `pgsql_tmp`
 
    .. note::
@@ -314,7 +316,7 @@ Restore with the PostgreSQL Plugin
 With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client
 under the default restore location according to the options set:
 
--   :file:`<restore prefix>/<postgresql_data_dir>/`
+-   :file:`<restore prefix>/<cluster_data_directory>/`
 -   :file:`<restore prefix>/<wal_archive_dir>/`
 
 This example describes how to restore to the latest possible consistent point in time. You can
@@ -359,7 +361,7 @@ Initiate the Recovery Process
 '''''''''''''''''''''''''''''
 
 Make sure that the user :strong:`postgres` is allowed to rename the recovery marker file
-(:file:`recovery.signal` or :file:`recovery.conf`), as the file will be renamed during the
+(:file:`recovery.signal` or :file:`recovery.conf`), as the file needs to be renamed during the
 recovery process. Should be the case if restored by the plugin.
 You might have to adapt your SELINUX configuration for this.
 
@@ -369,7 +371,14 @@ Starting the |postgresql| server shall now initiate the recovery process.
 
    When restoring a cluster which uses :strong:`tablespaces`, the table space location
    (directory) needs to be empty before the restore. Also ensure that the restored links
-   in `data/pg_tblspc` point to the restored tablespace data.
+   in `data/pg_tblspc` point to the restored tablespace data, by default the symlinks will point
+   to the original location.
+
+
+.. warning::
+
+   We highly advise after a cluster restore, to cleanup older wals than the new history, and
+   trigger as soon as possible a new full backup.
 
 
 Troubleshooting the PostgreSQL Plugin
@@ -378,8 +387,7 @@ Troubleshooting the PostgreSQL Plugin
 If things don't work as expected, make sure that
 
 - the |fd| (FD) works in general, so that you can make simple file backups and restores
-- the Bareos FD Python plugins work in general, try one of
-  the shipped simple sample plugins
+- the Bareos FD Python plugins works in general, try one of the shipped simple sample plugins
 - check your |postgresql| data directory for files `backup_label` `recovery.signal` `tablespace_map`.
   If they exists, the cluster has been restored, but has not been restarted yet.
 - make sure your `dbuser` can connect to the database `dbname` and is allowed to issue
@@ -388,6 +396,20 @@ If things don't work as expected, make sure that
   .. code-block:: sql
 
      SELECT current_setting('server_version_num');
+     SELECT current_setting('archive_mode');
+     SELECT current_setting('archive_command');
+     SELECT current_setting('data_directory');
+     SELECT current_setting('log_directory');
+     SELECT current_setting('config_file');
+     SELECT current_setting('hba_file');
+     SELECT current_setting('identity_file');
+     SELECT current_setting('ssl_ca_file');
+     SELECT current_setting('ssl_cert_file');
+     SELECT current_setting('ssl_crl_file');
+     SELECT current_setting('ssl_key_file');
+     SELECT current_setting('ssl_dh_params_file');
+     SELECT current_setting('ssl_crl_dir');
+
      -- Version >= 15
      SELECT pg_backup_start();
      SELECT pg_backup_stop();

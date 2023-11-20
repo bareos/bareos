@@ -9,7 +9,6 @@ FileSet {
              ":module_path=@current_test_directory@/python-modules"
              ":module_name=bareos-fd-postgresql"
              ":db_host=@dbHost@"
-             ":postgresql_data_dir=@current_test_directory@/database/data/"
              ":wal_archive_dir=@current_test_directory@/database/wal_archive/"
              ":start_fast=True"
   }

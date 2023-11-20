@@ -1,6 +1,6 @@
 FileSet {
-  Name = "PluginTestNoRole"
-  Description = "Test the Plugin functionality with a Python Plugin."
+  Name = "PluginTestWalSymlink"
+  Description = "Test the Plugin functionality wal_archive_dir pointing to a symlink"
   Include {
     Options {
       signature = XXH128
@@ -9,8 +9,7 @@ FileSet {
              ":module_path=@current_test_directory@/python-modules"
              ":module_name=bareos-fd-postgresql"
              ":db_host=@dbHost@"
-             ":db_user=db_backup"
-             ":wal_archive_dir=@current_test_directory@/database/wal_archive/"
+             ":wal_archive_dir=@current_test_directory@/database/wal_archive_symlink"
              ":start_fast=True"
   }
 }

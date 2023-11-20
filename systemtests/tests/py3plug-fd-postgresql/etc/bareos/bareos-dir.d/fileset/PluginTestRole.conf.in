@@ -11,8 +11,7 @@ FileSet {
              ":db_host=@dbHost@"
              ":db_user=db_backup"
              ":role=backup_group"
-             ":postgresql_data_dir=@current_test_directory@/database/data/"
              ":wal_archive_dir=@current_test_directory@/database/wal_archive/"
-             ":start_fast_start=True"
+             ":start_fast=True"
   }
 }

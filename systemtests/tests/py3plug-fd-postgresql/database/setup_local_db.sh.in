@@ -39,8 +39,9 @@ local_db_stop_server() {
 
 local_db_prepare_files() {
   echo "Prepare files"
-  rm --recursive --force tmp data log wal_archive table_space index_space
+  rm --recursive --force tmp data log wal_archive table_space index_space wal_archive_symlink
   mkdir tmp data log wal_archive table_space index_space
+  ln -s wal_archive wal_archive_symlink
   if [ $UID -eq 0 ]; then
     chown postgres  tmp data log wal_archive table_space index_space
     LANG= su postgres -c "${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data --log=log/postgres.log initdb"
@@ -76,7 +77,7 @@ local_db_start_server() {
 
 local_db_create_superuser_role() {
   if [ $UID -eq 0 ]; then
-    su postgres -c "${POSTGRES_BIN_PATH}/psql -h \"$1\" -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'" 
+    su postgres -c "${POSTGRES_BIN_PATH}/psql -h \"$1\" -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'"
   else
     # create role and db root for podman test.
     ${POSTGRES_BIN_PATH}/psql -h "$1" -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'
@@ -89,9 +90,9 @@ setup_local_db() {
   if ! local_db_start_server "$1"; then return 1; fi
   local_db_create_superuser_role "$1"
   if [ $UID -eq 0 ]; then
-    echo stop server with "su postgres -c '${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data stop'"
+    echo stop server with "su postgres -c '${POSTGRES_BIN_PATH}/pg_ctl --pgdata=data stop'"
   else
-    echo stop server with "${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data stop"
+    echo stop server with "${POSTGRES_BIN_PATH}/pg_ctl --pgdata=data stop"
   fi
   return 0
 }
