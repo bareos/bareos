@@ -236,7 +236,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         if start_dir == "/" or not start_dir.strip():
             raise ValueError("start_dir can not be '/' or empty")
         if not os.path.isdir(start_dir.strip()):
-            raise ValueError("start_dir needs to be a real directory, symlinks are not supported.")
+            raise ValueError(
+                "start_dir needs to be a real directory, symlinks are not supported."
+            )
         if not start_dir.endswith("/"):
             start_dir += "/"
         self.paths_to_backup.append(start_dir)
