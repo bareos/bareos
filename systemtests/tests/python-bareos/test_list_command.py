@@ -146,6 +146,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "job",
             "name",
             "purgedfiles",
+            "rate",
             "type",
             "level",
             "clientid",

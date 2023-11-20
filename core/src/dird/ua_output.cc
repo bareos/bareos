@@ -707,13 +707,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
         if (!optionslist.count) {  // count result is one column, no filtering
           SetAclFilter(ua, 2, Job_ACL);
           SetAclFilter(ua, 7, Client_ACL);
-          SetAclFilter(ua, 22, Pool_ACL);
-          SetAclFilter(ua, 25, FileSet_ACL);
+          SetAclFilter(ua, 23, Pool_ACL);
+          SetAclFilter(ua, 26, FileSet_ACL);
           if (optionslist.current) {
             SetResFilter(ua, 2, R_JOB);
             SetResFilter(ua, 7, R_CLIENT);
-            SetResFilter(ua, 22, R_POOL);
-            SetResFilter(ua, 25, R_FILESET);
+            SetResFilter(ua, 23, R_POOL);
+            SetResFilter(ua, 26, R_FILESET);
           }
         }
         if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
@@ -759,13 +759,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
           case VERT_LIST:
             SetAclFilter(ua, 2, Job_ACL);
             SetAclFilter(ua, 7, Client_ACL);
-            SetAclFilter(ua, 22, Pool_ACL);
-            SetAclFilter(ua, 25, FileSet_ACL);
+            SetAclFilter(ua, 23, Pool_ACL);
+            SetAclFilter(ua, 26, FileSet_ACL);
             if (optionslist.current) {
               SetResFilter(ua, 2, R_JOB);
               SetResFilter(ua, 7, R_CLIENT);
-              SetResFilter(ua, 22, R_POOL);
-              SetResFilter(ua, 25, R_FILESET);
+              SetResFilter(ua, 23, R_POOL);
+              SetResFilter(ua, 26, R_FILESET);
             }
             if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
             if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
@@ -991,10 +991,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       switch (llist) {
         case VERT_LIST:
           SetAclFilter(ua, 2, Job_ACL);
-          SetAclFilter(ua, 22, Pool_ACL);
+          SetAclFilter(ua, 23, Pool_ACL);
           if (optionslist.current) {
             SetResFilter(ua, 2, R_JOB);
-            SetResFilter(ua, 22, R_POOL);
+            SetResFilter(ua, 23, R_POOL);
           }
           if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
           if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
