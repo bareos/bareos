@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,9 +35,8 @@ struct plugin_private_context {
   char* link;                       // Target symlink points to
   char* object_name;                // Restore Object Name
   char* object;                     // Restore Object Content
-  PyThreadState*
-      interpreter;    // Python interpreter for this instance of the plugin
-  PyObject* pModule;  // Python Module entry point
+  PyInterpreterState* interp;
+  PyObject* pModule;                // Python Module entry point
   PyObject* pyModuleFunctionsDict;  // Python Dictionary
 };
 
