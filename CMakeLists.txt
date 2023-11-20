@@ -36,6 +36,8 @@ find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
+include(RemoveNDebugFlag)
+
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -116,6 +118,13 @@ if(NOT hostname)
 endif()
 
 if(BUILD_BAREOS_BINARIES)
+  project(bareos C CXX)
+  if(NOT CMAKE_BUILD_TYPE
+     AND NOT CMAKE_C_FLAGS
+     AND NOT CMAKE_CXX_FLAGS
+  )
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+  endif()
   add_subdirectory(core)
   add_subdirectory(webui)
   if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
