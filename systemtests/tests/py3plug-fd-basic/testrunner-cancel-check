@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+# This tests checks that the fd correctly handles the case where two different
+# threads access the same plugin context at the same time.  This is done by
+# canceling a job while the job is inside the plugin.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=cancel-check
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+logf="$tmp/cancel-check.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $logf
+run job=$JobName yes
+wait
+messages
+status client
+END_OF_DATA
+
+run_bconsole
+
+expect_not_grep "Failed to connect to Client" \
+		"$logf" \
+		"The client crashed"
+
+end_test
