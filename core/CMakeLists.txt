@@ -346,7 +346,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   include_directories(${HOMEBREW_PREFIX}/opt/gettext/include)
   link_libraries(
-    ${HOMEBREW_PREFIX}/opt/gettext/lib/libintl.a iconv "-framework CoreFoundation"
+    ${HOMEBREW_PREFIX}/opt/gettext/lib/libintl.a iconv
+    "-framework CoreFoundation" "-framework CoreServices"
   )
   set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 endif()
