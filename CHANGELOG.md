@@ -7,11 +7,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - github actions: update/fix publish to PyPI workflows [PR #1585]
-- autoxflate: fix autoxflate on replication [PR #1594]
 - github actions: PyPi: install setuptools [PR #1590]
 
 ### Fixed
 - catreq.cc: suppress missing batch con warning [PR #1584]
+- autoxflate: fix autoxflate on replication [PR #1594]
 
 ## [22.1.1] - 2023-10-23
 
