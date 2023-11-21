@@ -29,8 +29,8 @@ endif()
 
 # Darwin
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  list(APPEND pymod_include_dirs /usr/local/opt/gettext/include
-       /usr/local/opt/openssl/include
+  list(APPEND pymod_include_dirs ${HOMEBREW_PREFIX}/opt/gettext/include
+       ${HOMEBREW_PREFIX}/opt/openssl/include
   )
 endif()
 
