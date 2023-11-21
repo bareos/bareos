@@ -1,0 +1,159 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This systemtest tests the mariadb plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginMariabackup.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+skip_if_root
+
+JobName=backup-bareos-fd
+MARIABACKUP="${MARIADB_BACKUP_BINARY} --defaults-file=mysqldefaults"
+mariabackup_test_db="${db_name}_mariabackup"
+
+# override MYSQL_*_BINARY variables to be able to use mysql.sh
+MYSQL_DAEMON_BINARY="${MARIADB_DAEMON_BINARY}"
+MYSQL_CLIENT_BINARY="${MARIADB_CLIENT_BINARY}"
+
+#shellcheck source=../scripts/mysql.sh
+. "${rscripts}"/mysql.sh
+
+start_test
+
+# TODO test job failed when Accurate is On
+
+mysql_init
+mysql_server_start
+
+echo "create database ${mariabackup_test_db}" | ${MYSQL_CLIENT}
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | ${MYSQL_CLIENT} "${mariabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 1') " | ${MYSQL_CLIENT} "${mariabackup_test_db}"
+
+cat <<END_OF_DATA1 >"${tmp}/bconcmds"
+@$out ${tmp}/log1.out
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} yes
+wait JobName=${JobName}
+status dir
+wait
+messages
+quit
+END_OF_DATA1
+echo "Run first Full job"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/log1.out" "Backup OK for Full not found in job log"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+# insert data and run incremental
+${MYSQL_CLIENT} "${mariabackup_test_db}" <<< "insert into test (data) VALUES ('test entry 2')"
+
+cat <<END_OF_DATA2 >"${tmp}/bconcmds"
+@$out ${tmp}/log2.out
+@# run incremental with new data
+run job=$JobName level=Incremental yes
+wait JobName=$JobName
+status dir
+wait
+messages
+quit
+END_OF_DATA2
+echo "Run first incremental job"
+run_bconsole
+
+expect_grep "Backup OK" "${tmp}/log2.out" "Backup OK for incremental not found in job log"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+cat <<END_OF_DATA3 >"$tmp/bconcmds"
+@$out ${tmp}/log3.out
+@# run incremental again without any new data
+run job=${JobName} yes
+wait JobName=${JobName}
+status dir
+wait
+messages
+quit
+END_OF_DATA3
+echo "Run second empty incremental job"
+run_bconsole
+
+expect_grep "Backup OK" "${tmp}/log3.out" "Backup OK for empty incremental not found in job log"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+
+cat <<END_OF_DATA4 >"$tmp/bconcmds"
+@$out ${tmp}/log4.out
+restore client=bareos-fd fileset=MariaBackupTest yes restorejob=RestoreFile select all done
+wait
+status dir
+wait
+messages
+quit
+END_OF_DATA4
+echo "Run restore job"
+run_bconsole
+
+expect_grep "Restore OK" "${tmp}/log4.out" "Restore OK not found in job log"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+# Check if mariabackup has extracted some files at least
+# TODO: verify that mariabackup --prepare works and eventually do complete database restore
+ls -lR  "${tmp}/bareos-restores/_mariadb-backup/"
+if [ -z "$(ls -A "${tmp}"/bareos-restores/_mariadb-backup/)" ]; then
+       echo "No restore data found"
+       estat=1
+fi
+
+mysql_server_stop
+
+# create new empty data dir
+rm -Rf mysql/data/*
+mkdir -p mysql/data/
+
+TARGETDIR=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*001')
+INCDIR1=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*002')
+INCDIR2=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*003')
+
+# First, prepare the base backup:
+${MARIABACKUP} --prepare --target-dir="${TARGETDIR}"
+# Then, apply the incremental changes to the base full backup:
+${MARIABACKUP} --prepare --target-dir="${TARGETDIR}" --incremental-dir="${INCDIR1}"
+# after prepare a file is left in data dir, this seems to be a bug
+rm -Rvf mysql/data/*
+# Finally transfer the restore
+${MARIABACKUP} --copy-back --target-dir="${TARGETDIR}"
+
+mysql_server_start
+
+if ! echo "SELECT * from test " | ${MYSQL_CLIENT} "${mariabackup_test_db}" | grep "test entry 1"; then
+    echo "test entry 1 not found"
+    estat=2
+fi
+
+if ! echo "SELECT * from test " | ${MYSQL_CLIENT} "${mariabackup_test_db}" | grep "test entry 2"; then
+    echo "test entry 2 not found"
+    estat=3
+fi
+
+check_for_zombie_jobs storage=File
+
+mysql_server_stop
+
+end_test

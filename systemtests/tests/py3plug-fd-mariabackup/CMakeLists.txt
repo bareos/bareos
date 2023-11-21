@@ -19,13 +19,13 @@
 
 # This test requires the following variables to be set:
 #
-# -D MARIABACKUP_BINARY=/usr/bin/mariabackup \ -D
-# MARIADB_DAEMON_BINARY=/usr/libexec/mysqld \ -D
-# MARIADB_CLIENT_BINARY=/usr/bin/mysql \ -D
+# -D MARIADB_BACKUP_BINARY=/usr/bin/mariadb-backup \ -D
+# MARIADB_DAEMON_BINARY=/usr/bin/mariadbd \ -D
+# MARIADB_CLIENT_BINARY=/usr/bin/mariadb \ -D
 # MARIADB_MYSQL_INSTALL_DB_SCRIPT=/usr/bin/mysql_install_db
 
 if(TARGET python3-fd
-   AND MARIABACKUP_BINARY
+   AND MARIADB_BACKUP_BINARY
    AND MARIADB_DAEMON_BINARY
    AND MARIADB_CLIENT_BINARY
    AND MARIADB_MYSQL_INSTALL_DB_SCRIPT
@@ -38,11 +38,11 @@ else()
     DISABLED
     COMMENT
     "
-    no python3-fd or MARIABACKUP_BINARY,MARIADB_DAEMON_BINARY,MARIADB_CLIENT_BINARY or MARIADB_MYSQL_INSTALL_DB_SCRIPT not set.
+    no python3-fd or MARIADB_BACKUP_BINARY,MARIADB_DAEMON_BINARY,MARIADB_CLIENT_BINARY or MARIADB_MYSQL_INSTALL_DB_SCRIPT not set.
     example:
-    cmake -D MARIABACKUP_BINARY=/usr/bin/mariabackup \
+    cmake -D MARIADB_BACKUP_BINARY=/usr/bin/mariadb-backup \
     -D MARIADB_DAEMON_BINARY=/usr/libexec/mysqld \
-    -D MARIADB_CLIENT_BINARY=/usr/bin/mysql \
+    -D MARIADB_CLIENT_BINARY=/usr/bin/mariadb \
     -D MARIADB_MYSQL_INSTALL_DB_SCRIPT=/usr/bin/mysql_install_db"
   )
 endif()
