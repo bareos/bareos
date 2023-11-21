@@ -57,17 +57,31 @@ class TestPlugin(BareosFdPluginBaseclass):
 
         RegisterEvents([bEventCancelCommand])
         self.files_to_backup = ["result"]
+        self.should_wait = True
 
     def parse_plugin_definition(self, plugindef):
         JobMessage(M_INFO, "parse_plugin_definition('{}')\n".format(plugindef))
+        ret = super().parse_plugin_definition(plugindef)
         self.plugindef = plugindef
-        return super().parse_plugin_definition(plugindef)
+        wait_opt = self.options["should_wait"]
+        if wait_opt is not None:
+            if wait_opt == "Yes":
+                self.should_wait = True
+            elif wait_opt == "No":
+                self.should_wait = False
+            else:
+                JobMessage(M_WARNING, f"Unknown boolean should_wait={wait_opt}\n")
+        else:
+            JobMessage(M_INFO, "No should wait value set.\n")
+
+        return ret
 
     def handle_plugin_event(self, event):
         JobMessage(M_INFO, "handle_plugin_event({})\n".format(event))
         if event == bEventCancelCommand:
             JobMessage(M_INFO, f"Canceling jobid={GetValue(bVarJobId)}")
             time.sleep(5)
+            JobMessage(M_INFO, f"Return from Canceling jobid={GetValue(bVarJobId)}")
             return bRC_OK
         else:
             return super().handle_plugin_event(event)
@@ -92,14 +106,19 @@ class TestPlugin(BareosFdPluginBaseclass):
     def plugin_io_read(self, IOP):
         JobMessage(M_INFO, "plugin_io called plugin_io_read()\n")
 
-        if self.p.poll() == None:
-            JobMessage(M_INFO, "waiting...")
-            IOP.buf = "1".encode()
-            IOP.status = 1
+        if self.should_wait:
+            if self.p.poll() is None:
+                JobMessage(M_INFO, "waiting...")
+                IOP.buf = "1".encode()
+                IOP.status = 1
+            else:
+                JobMessage(M_INFO, f"canceled jobid={jobid}\n")
+                self.p = None
+                IOP.buf = bytearray()
+                IOP.status = 0
         else:
-            JobMessage(M_INFO, f"canceled jobid={jobid}\n")
             self.p = None
-            IOP.buf = bytarray()
+            IOP.buf = bytearray()
             IOP.status = 0
 
         IOP.io_errno = 0
