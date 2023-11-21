@@ -24,7 +24,11 @@ output="$tmp/output.tsv"
 
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
-printf  "fileset\tfilesetoptions\tclientoptions\tbackup\tcompressionrate\trestore\n" >> "$output"
+date --iso-8601=seconds >> "$output"
+printf  "tlssettings\tfileset\tfilesetoptions\tclientoptions\tbackup\tcompressionrate\trestore\n" >> "$output"
+
+for tlssettings in "${TlsSettings[@]}"; do
+  echo "$tlssettings" > include/common_tls.conf
 
 for backupdatadir in "${BackupDataDir[@]}"; do
   echo "$backupdatadir" > tmp/file-list
@@ -63,10 +67,10 @@ cat "$tmp/bconcmds"
 		    "$log" \
 		    "Backup was not ok."
   compression_rate=$(sed -n "s/^.*Software Compression:\s*\(.*\).*$/\1/p" "$log")
-  speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log")
+  speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log" | sed -e 's#KB/s##g' -e 's/\./,/g' )
 	echo "... result: $speed_in_kb"
 	#Data+=("$speed_in_kb")
-  printf "$files\t$filesetoptions\t$clientoptions\t$speed_in_kb\t$compression_rate\t"  >> "$output"
+  printf "$tlssettings\t$files\t$filesetoptions\t$clientoptions\t$speed_in_kb\t$compression_rate\t"  >> "$output"
 
 # now restore
 	log="$restore_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
@@ -86,12 +90,15 @@ END_OF_DATA
 	expect_grep "Restore OK" \
 		    "$log" \
 		    "Restore was not ok."
-  speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log")
+  speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log" | sed -e 's#KB/s##g' -e 's/\./,/g' )
 	echo "... result: $speed_in_kb"
   printf  "$speed_in_kb\n"  >> "$output"
   done
  done
 done
+
+done
+
 printf "\n\nResults:\n------\n"
 cat "${output}"
 
