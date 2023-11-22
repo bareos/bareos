@@ -751,6 +751,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
             raise ValueError("PostgreSQL server version lower than 10 detected")
 
+        if self.pg_major_version < 14:
+            del self.cluster_configuration_parameters["ssl_crl_dir"]
+
         bareosfd.DebugMessage(100, "create_check_db_connection finished\n")
         return bareosfd.bRC_OK
 

@@ -71,7 +71,7 @@ messages
 END_OF_DATA
 run_bconsole
 
-expect_grep "used role missed privileges to read configuration data_directory value" "${tmp}/rlog1.out" "No Role 'Backup Error' not found in job log"
+expect_grep "used role misse.* privileges to read configuration data_directory value" "${tmp}/rlog1.out" "No Role 'Backup Error' not found in job log"
 if [ ${estat} -ne 0 ]; then
     exit ${estat}
 fi
