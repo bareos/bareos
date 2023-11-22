@@ -60,13 +60,13 @@ static void ReadKeyBits(const std::string& keyfile,
   } else {
     kfd = open(keyfile.c_str(), O_RDONLY);
     if (kfd < 0) {
-      fprintf(stderr, T_("Cannot open keyfile %s\n", keyfile.c_str()));
+      fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
       TerminateBscrypto(1);
     }
   }
   Dmsg1(5, "data size = %d\n", sizeof_data);
   if (read(kfd, data, sizeof_data) == 0) {
-    fprintf(stderr, T_("Cannot read from keyfile %s\n", keyfile.c_str()));
+    fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
     TerminateBscrypto(1);
   }
   if (kfd > 0) { close(kfd); }
@@ -260,7 +260,7 @@ int main(int argc, char* const* argv)
       && (generate_passphrase || show_keydata || dump_cache || populate_cache
           || reset_cache)) {
     fprintf(stderr, T_("Don't mix operations which are incompatible "
-                      "e.g. generate/show vs set/clear etc.\n"));
+                       "e.g. generate/show vs set/clear etc.\n"));
     TerminateBscrypto(1);
   }
 
@@ -342,7 +342,7 @@ int main(int argc, char* const* argv)
     passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
     if (!passphrase) { TerminateBscrypto(1); }
 
-    Dmsg1(10, "Generated passphrase = %s\n", passphrase);
+    Dmsg1(10, T_("Generated passphrase = %s\n"), passphrase);
 
     // See if we need to wrap the passphrase.
     if (wrapped_keys) {
@@ -368,7 +368,7 @@ int main(int argc, char* const* argv)
     } else {
       kfd = open(keyfile.c_str(), O_WRONLY | O_CREAT, 0644);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n", keyfile.c_str()));
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
         free(passphrase);
         TerminateBscrypto(1);
       }
@@ -377,14 +377,14 @@ int main(int argc, char* const* argv)
     if (base64_transform || wrapped_keys) {
       cnt = BinToBase64(keydata, sizeof(keydata), passphrase, length, true);
       if (write(kfd, keydata, cnt) != cnt) {
-        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n", cnt,
-                keyfile.c_str()));
+        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
+                keyfile.c_str());
       }
     } else {
       cnt = DEFAULT_PASSPHRASE_LENGTH;
       if (write(kfd, passphrase, cnt) != cnt) {
-        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n", cnt,
-                keyfile.c_str()));
+        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
+                keyfile.c_str());
       }
     }
 
@@ -421,8 +421,8 @@ int main(int argc, char* const* argv)
           == 0) {
         fprintf(stderr,
                 T_("Failed to base64 decode the keydata read from %s, "
-                  "aborting...\n",
-                keyfile.c_str()));
+                   "aborting...\n"),
+                keyfile.c_str());
         free(wrapped_passphrase);
         TerminateBscrypto(0);
       }
@@ -437,8 +437,8 @@ int main(int argc, char* const* argv)
           == -1) {
         fprintf(stderr,
                 T_("Failed to aes unwrap the keydata read from %s using the "
-                  "wrap data from %s, aborting...\n",
-                keyfile.c_str(), wrap_keyfile.c_str()));
+                   "wrap data from %s, aborting...\n"),
+                keyfile.c_str(), wrap_keyfile.c_str());
         free(wrapped_passphrase);
         TerminateBscrypto(0);
       }
@@ -463,7 +463,7 @@ int main(int argc, char* const* argv)
     }
 
     Dmsg1(10, "Unwrapped passphrase = %s\n", passphrase);
-    fprintf(stdout, T_("%s\n", passphrase));
+    fprintf(stdout, T_("%s\n"), passphrase);
 
     free(passphrase);
     TerminateBscrypto(0);
@@ -484,7 +484,7 @@ int main(int argc, char* const* argv)
 
     if (GetScsiDriveEncryptionStatus(-1, device_name.c_str(), encryption_status,
                                      0)) {
-      fprintf(stdout, T_("%s", encryption_status));
+      fprintf(stdout, T_("%s"), encryption_status);
       FreePoolMemory(encryption_status);
     } else {
       FreePoolMemory(encryption_status);
@@ -510,7 +510,7 @@ int main(int argc, char* const* argv)
 
     if (GetScsiVolumeEncryptionStatus(-1, device_name.c_str(),
                                       encryption_status, 0)) {
-      fprintf(stdout, T_("%s", encryption_status));
+      fprintf(stdout, T_("%s"), encryption_status);
       FreePoolMemory(encryption_status);
     } else {
       FreePoolMemory(encryption_status);
