@@ -62,7 +62,7 @@ fi
 # Set the KEK to configuration
 # first stage is cleaning any previous run
 sed -i "/Key Encryption Key =.*/d" etc/bareos/bareos-dir.d/director/bareos-dir.conf
-sed -i "/Key Encryption Key =.*/d" etc/bareos/bareos-dir.d/director/bareos-dir.conf
+sed -i "/Key Encryption Key =.*/d" etc/bareos/bareos-sd.d/director/bareos-dir.conf
 # we don't use our config-libs set(get)_config_param_in_file 
 # due to bad parsing and writing of complex string like KEK
 # here we also use œ char that will never appear in KEK
@@ -193,7 +193,7 @@ expect_grep "E01001L8" \
 export confdir=$(pwd)/etc/bareos
 # load the tape into the drive
 /usr/sbin/mtx -f "${changer}" load 1 0 ||:
-/usr/sbin/mt -f "${ltodrive}" rewind ||:
+/usr/bin/mt -f "${ltodrive}" rewind ||:
 bls_lj_log=$tmp/bls-Ljoutput.log
 sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${bls_lj_log}"
 expect_grep "JobId             : 1" \
