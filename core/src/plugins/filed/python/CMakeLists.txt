@@ -121,7 +121,6 @@ set(PYFILES
     ovirt/bareos-fd-ovirt.py
     ovirt/BareosFdPluginOvirt.py
     percona-xtrabackup/bareos-fd-percona-xtrabackup.py
-    percona-xtrabackup/BareosFdPluginPerconaXtraBackup.py
     postgres/bareos-fd-postgres.py
     postgres/BareosFdPluginPostgres.py
     postgresql/bareos-fd-postgresql.py

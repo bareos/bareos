@@ -1492,7 +1492,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-percona-xtrabackup-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-percona-xtrabackup.py*
-%{plugin_dir}/BareosFdPluginPerconaXtraBackup.py*
 
 %files filedaemon-mariabackup-python-plugin
 %defattr(-, root, root)
