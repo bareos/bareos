@@ -26,7 +26,7 @@
 # are intended to pass the call to a method of an object of type
 # BareosFdPluginBaseclass (or derived)
 
-from bareosfd import bRC_OK, bRC_Error, JobMessage, M_ERROR
+from bareosfd import bRC_OK, bRC_Error, JobMessage, M_FATAL
 
 # use this as global plugin object among your python-fd-plugin modules
 bareos_fd_plugin_object = None
@@ -36,6 +36,7 @@ _plugin_class = None
 def BareosPlugin(plugin_class):
     global _plugin_class
     _plugin_class = plugin_class
+    return plugin_class
 
 
 def load_bareos_plugin(plugindef):
@@ -45,7 +46,8 @@ def load_bareos_plugin(plugindef):
         bareos_fd_plugin_object = _plugin_class(plugindef)
         return bRC_OK
     except Exception as e:
-        JobMessage(M_ERROR, "load_bareos_plugin() failed: {}\n".format(e))
+        bareos_fd_plugin_object = None
+        JobMessage(M_FATAL, "load_bareos_plugin() failed: {}\n".format(e))
         return bRC_Error
 
 
