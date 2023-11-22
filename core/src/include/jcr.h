@@ -282,9 +282,9 @@ void InitJcr(std::shared_ptr<JobControlRecord> jcr,
              JCR_free_HANDLER* daemon_free_jcr);
 std::size_t GetJcrCount();
 std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId);
-std::shared_ptr<JobControlRecord> GetJcrByFullName(std::string name);
-std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string name);
-std::shared_ptr<JobControlRecord> GetJcrBySession(const VolumeSessionInfo& vsi);
+std::shared_ptr<JobControlRecord> GetJcrByFullName(std::string_view name);
+std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string_view name);
+std::shared_ptr<JobControlRecord> GetJcrBySession(VolumeSessionInfo vsi);
 uint32_t GetJobIdByThreadId(pthread_t tid);
 /* ************* */
 

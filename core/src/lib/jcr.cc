@@ -246,7 +246,7 @@ void InitJcr(std::shared_ptr<JobControlRecord> jcr,
 
   LockJobs();
   LockJcrChain();
-  job_control_record_cache.emplace_back(jcr);
+  job_control_record_cache.emplace_back(std::move(jcr));
   UnlockJcrChain();
   UnlockJobs();
 }
@@ -474,45 +474,34 @@ JobControlRecord* get_jcr_by_id(uint32_t JobId)
   return jcr;
 }
 
-std::size_t GetJcrCount()
+static void CleanupExpired(std::vector<std::weak_ptr<JobControlRecord>>& v)
 {
-  LockJcrChain();
-  std::size_t count = count_if(
-      job_control_record_cache.begin(), job_control_record_cache.end(),
-      [](std::weak_ptr<JobControlRecord>& p) { return !p.expired(); });
-  UnlockJcrChain();
-
-  return count;
+  v.erase(std::remove_if(v.begin(), v.end(),
+                         [](const auto& p) { return p.expired(); }),
+          v.end());
 }
 
-static std::shared_ptr<JobControlRecord> GetJcr(
-    std::function<bool(const JobControlRecord*)> compare)
+std::size_t GetJcrCount()
 {
-  std::shared_ptr<JobControlRecord> result;
+  std::unique_lock _{jcr_chain_mutex};
 
-  LockJcrChain();
+  CleanupExpired(job_control_record_cache);
 
-  // cleanup chache
-  job_control_record_cache.erase(
-      std::remove_if(
-          job_control_record_cache.begin(), job_control_record_cache.end(),
-          [](std::weak_ptr<JobControlRecord>& p) { return p.expired(); }),
-      job_control_record_cache.end());
+  return job_control_record_cache.size();
+}
 
-  std::ignore = find_if(
-      job_control_record_cache.begin(), job_control_record_cache.end(),
-      [&compare, &result](std::weak_ptr<JobControlRecord>& p) {
-        auto jcr = p.lock();
-        if (compare(jcr.get())) {
-          result = jcr;
-          return true;
-        }
-        return false;
-      });
+template <typename P>
+static std::shared_ptr<JobControlRecord> GetJcr(P predicate)
+{
+  std::unique_lock _{jcr_chain_mutex};
 
-  UnlockJcrChain();
+  CleanupExpired(job_control_record_cache);
 
-  return result;
+  for (const auto& ptr : job_control_record_cache) {
+    if (auto jcr = ptr.lock(); jcr && predicate(jcr.get())) { return jcr; }
+  }
+
+  return {};
 }
 
 std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId)
@@ -521,23 +510,24 @@ std::shared_ptr<JobControlRecord> GetJcrById(uint32_t JobId)
       [JobId](const JobControlRecord* jcr) { return jcr->JobId == JobId; });
 }
 
-std::shared_ptr<JobControlRecord> GetJcrByFullName(std::string name)
+std::shared_ptr<JobControlRecord> GetJcrByFullName(std::string_view name)
 {
-  return GetJcr([&name](const JobControlRecord* jcr) {
-    return std::string{jcr->Job} == name;
+  return GetJcr([name](const JobControlRecord* jcr) {
+    return std::string_view{jcr->Job} == name;
   });
 }
 
-std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string name)
+std::shared_ptr<JobControlRecord> GetJcrByPartialName(std::string_view name)
 {
-  return GetJcr([&name](const JobControlRecord* jcr) {
-    return std::string{jcr->Job}.find(name) == 0;
+  return GetJcr([name](const JobControlRecord* jcr) {
+    return std::string_view{jcr->Job}.find(name) == 0;
   });
 }
 
-std::shared_ptr<JobControlRecord> GetJcrBySession(const VolumeSessionInfo& vsi)
+std::shared_ptr<JobControlRecord> GetJcrBySession(VolumeSessionInfo vsi)
 {
-  return GetJcr([&vsi](const JobControlRecord* jcr) {
+  static_assert(sizeof(vsi) == 8);
+  return GetJcr([vsi](const JobControlRecord* jcr) {
     return (VolumeSessionInfo{jcr->VolSessionId, jcr->VolSessionTime} == vsi);
   });
 }
