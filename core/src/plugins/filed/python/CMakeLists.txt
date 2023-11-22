@@ -114,7 +114,6 @@ endif()
 set(PYFILES
     pyfiles/BareosFdPluginBaseclass.py
     pyfiles/BareosFdWrapper.py
-    pyfiles/BareosFdPluginLocalFileset.py
     pyfiles/BareosFdPluginLocalFilesBaseclass.py
     pyfiles/bareos-fd-local-fileset.py
     ldap/bareos-fd-ldap.py

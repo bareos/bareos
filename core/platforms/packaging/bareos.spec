@@ -1454,7 +1454,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-python-plugins-common
 %{plugin_dir}/bareos-fd-local-fileset.py*
 %{plugin_dir}/BareosFdPluginBaseclass.py*
-%{plugin_dir}/BareosFdPluginLocalFileset.py*
 %{plugin_dir}/BareosFdPluginLocalFilesBaseclass.py*
 %{plugin_dir}/BareosFdWrapper.py*
 
