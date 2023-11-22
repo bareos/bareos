@@ -134,6 +134,18 @@ static PyThreadState* mainThreadState{nullptr};
 #include "plugins/include/python_plugins_common.inc"
 #include "plugins/include/python_plugin_modules_common.inc"
 
+static inline unsigned long PyVersion()
+{
+#if PY_VERSION_HEX < VERSION_HEX(3, 11, 0)
+  // bake it in statically
+  return PY_VERSION_HEX;
+#else
+  // determine it at runtime
+  return Py_Version;
+#endif
+}
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -374,12 +386,13 @@ static bRC freePlugin(PluginContext* plugin_ctx)
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
   Py_EndInterpreter(ts);
-#if PY_VERSION_HEX < VERSION_HEX(3, 2, 0)
-  PyEval_ReleaseLock();
-#else
-  PyThreadState_Swap(mainThreadState);
-  PyEval_ReleaseThread(mainThreadState);
-#endif
+  if (PyVersion() < VERSION_HEX(3, 12, 0)) {
+    // release gil a different way
+    PyThreadState_Swap(mainThreadState);
+    PyEval_ReleaseThread(mainThreadState);
+  } else {
+    // endinterpreter releases the gil for us since 3.12
+  }
 
   free(plugin_priv_ctx);
   plugin_ctx->plugin_private_context = NULL;
