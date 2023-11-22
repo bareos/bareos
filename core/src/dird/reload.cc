@@ -36,9 +36,10 @@ namespace directordaemon {
 bool CheckResources()
 {
   JobResource* job;
-  const std::string& configfile = my_config->get_base_config_path();
 
   ResLocker _{my_config};
+
+  const std::string& configfile = my_config->get_base_config_path();
 
   job = (JobResource*)my_config->GetNextRes(R_JOB, nullptr);
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
