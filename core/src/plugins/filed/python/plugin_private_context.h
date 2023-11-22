@@ -35,8 +35,9 @@ struct plugin_private_context {
   char* link;                       // Target symlink points to
   char* object_name;                // Restore Object Name
   char* object;                     // Restore Object Content
-  PyInterpreterState* interp;
-  PyObject* pModule;                // Python Module entry point
+  PyInterpreterState*
+      interp;         // Python interpreter for this instance of the plugin
+  PyObject* pModule;  // Python Module entry point
   PyObject* pyModuleFunctionsDict;  // Python Dictionary
 };
 
