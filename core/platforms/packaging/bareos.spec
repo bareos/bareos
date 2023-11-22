@@ -1498,7 +1498,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-mariabackup-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-mariabackup.py*
-%{plugin_dir}/BareosFdPluginMariabackup.py*
 
 
 %files director-python3-plugin
