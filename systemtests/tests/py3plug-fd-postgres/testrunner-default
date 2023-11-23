@@ -28,7 +28,7 @@ mkdir -p "$TESTPGHOST"
 
 pushd database > /dev/null
 setup_local_db "$TESTPGHOST"
-PSQL_VERSION=$(${PSQL} -qtAX  <<< "SHOW server_version;" | sed 's/\..*//g')
+PSQL_VERSION=$(${PSQL} -d postgres -qtAX  <<< "SHOW server_version;" | sed 's/\..*//g')
 if [ ${PSQL_VERSION} -ge 15 ]; then
 # skip test
  echo "${TestName} test skipped: not compatible with PG >= 15"
