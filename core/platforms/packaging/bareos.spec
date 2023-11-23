@@ -1049,7 +1049,6 @@ rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.*
 
 # remove vmware plugin files when vmware is not built
 %if  !0%{?vmware}
-rm -f %{buildroot}%{plugin_dir}/BareosFdPluginVMware.py*
 rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
 %endif
 # install systemd service files
@@ -1112,7 +1111,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-,root,root)
 %dir %{_libdir}/bareos/
 %{_sbindir}/vmware_cbt_tool.py
-%{plugin_dir}/BareosFdPluginVMware.py*
 %{plugin_dir}/bareos-fd-vmware.py*
 %doc core/src/vmware/LICENSE core/src/vmware/README.md
 
