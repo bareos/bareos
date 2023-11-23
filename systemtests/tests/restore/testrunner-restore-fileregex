@@ -39,7 +39,7 @@ list jobs
 restore client=bareos-fd fileset=SelfTest \
     where="$RestoreDirectory" \
     fileregex="$fileregex" \
-    select current all done yes
+    yes
 wait
 messages
 quit

@@ -98,6 +98,7 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 static bool CheckAndSetFileregex(UaContext* ua,
                                  RestoreContext* rx,
                                  const char* regex);
+static bool AddAllFindex(RestoreContext* rx);
 
 // Restore files
 bool RestoreCmd(UaContext* ua, const char*)
@@ -223,6 +224,13 @@ bool RestoreCmd(UaContext* ua, const char*)
       }
       break;
     case 2: /* selected by filename, no tree needed */
+      break;
+    case 3: /* selected by fileregex only, add all findexes */
+      if (!AddAllFindex(&rx)) {
+        ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
+        ua->SendMsg(T_("Restore not done.\n"));
+        goto bail_out;
+      }
       break;
   }
 
@@ -471,7 +479,8 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
  *  select a list of JobIds from which he will subsequently
  *  select which files are to be restored.
  *
- *  Returns:  2  if filename list made
+ *  Returns:  3  if only fileregex specified
+ *            2  if filename list made
  *            1  if jobid list made
  *            0  on error
  */
@@ -510,27 +519,27 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "select",    /* 5 */
                       "pool",      /* 6 */
                       "all",       /* 7 */
+                      "fileregex", /* 8 */
 
                       // The keyword below are handled by individual arg lookups
-                      "client",        /* 8 */
-                      "storage",       /* 9 */
-                      "fileset",       /* 10 */
-                      "where",         /* 11 */
-                      "yes",           /* 12 */
-                      "bootstrap",     /* 13 */
-                      "done",          /* 14 */
-                      "strip_prefix",  /* 15 */
-                      "add_prefix",    /* 16 */
-                      "add_suffix",    /* 17 */
-                      "regexwhere",    /* 18 */
-                      "restoreclient", /* 19 */
-                      "copies",        /* 20 */
-                      "comment",       /* 21 */
-                      "restorejob",    /* 22 */
-                      "replace",       /* 23 */
-                      "pluginoptions", /* 24 */
-                      "archive",       /* 25 */
-                      "fileregex",     /* 26 */
+                      "client",        /* 9 */
+                      "storage",       /* 10 */
+                      "fileset",       /* 11 */
+                      "where",         /* 12 */
+                      "yes",           /* 13 */
+                      "bootstrap",     /* 14 */
+                      "done",          /* 15 */
+                      "strip_prefix",  /* 16 */
+                      "add_prefix",    /* 17 */
+                      "add_suffix",    /* 18 */
+                      "regexwhere",    /* 19 */
+                      "restoreclient", /* 20 */
+                      "copies",        /* 21 */
+                      "comment",       /* 22 */
+                      "restorejob",    /* 23 */
+                      "replace",       /* 24 */
+                      "pluginoptions", /* 25 */
+                      "archive",       /* 26 */
                       NULL};
 
   rx->JobIds[0] = 0;
@@ -538,6 +547,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   std::vector<char*> files;
   std::vector<char*> dirs;
   bool use_select = false;
+  bool use_fileregex = false;
 
   for (i = 1; i < ua->argc; i++) { /* loop through arguments */
     bool found_kw = false;
@@ -604,19 +614,33 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case 7: /* all specified */
         rx->all = true;
         break;
+      case 8: /* fileregex */
+        use_fileregex = true;
+        break;
       default:
         // All keywords 7 or greater are ignored or handled by a select prompt
         break;
     }
   }
 
-  if (files.size() + dirs.size() > 0) {
+  if (files.size() + dirs.size() > 0 || use_fileregex) {
     if (!have_date) { bstrutime(date, sizeof(date), now); }
     if (!GetClientName(ua, rx)) { return 0; }
 
     for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
 
     for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
+
+    if (files.size() + dirs.size() == 0) {
+      /* If only fileregex but no specific files or dirs were specified
+       * then restore all files and filter by fileregex. Before that we
+       * need to select the jobids if none were specified. This makes
+       * fileregex behave similarly to the file parameter. */
+      if (*rx->JobIds == 0 && !SelectBackupsBeforeDate(ua, rx, date)) {
+        return 0;
+      }
+      return 3;
+    }
 
     return 2;
   }
@@ -1176,10 +1200,22 @@ static void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst)
   AddFindex(rx->bsr.get(), lst->JobId, lst->FileIndex);
 }
 
+static bool AddAllFindex(RestoreContext* rx)
+{
+  bool has_jobid = false;
+  JobId_t JobId, last_JobId = 0;
+  for (const char* p = rx->JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
+    if (JobId == last_JobId) { continue; /* eliminate duplicate JobIds */ }
+    AddFindexAll(rx->bsr.get(), JobId);
+    has_jobid = true;
+  }
+  return has_jobid;
+}
+
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 {
   TreeContext tree;
-  JobId_t JobId, last_JobId;
+  JobId_t JobId;
   const char* p;
   bool OK = true;
   char ed1[50];
@@ -1188,7 +1224,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   tree.root = new_tree(rx->TotalFiles);
   tree.ua = ua;
   tree.all = rx->all;
-  last_JobId = 0;
 
   /* For display purposes, the same JobId, with different volumes may
    * appear more than once, however, we only insert it once. */
@@ -1244,13 +1279,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
   if (tree.FileCount == 0) {
     OK = AskForFileregex(ua, rx);
-    if (OK) {
-      last_JobId = 0;
-      for (p = rx->JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
-        if (JobId == last_JobId) { continue; /* eliminate duplicate JobIds */ }
-        AddFindexAll(rx->bsr.get(), JobId);
-      }
-    }
+    if (OK) { AddAllFindex(rx); }
   } else {
     char ec1[50];
     if (tree.all) {
