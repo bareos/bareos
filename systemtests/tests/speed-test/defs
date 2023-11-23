@@ -1,8 +1,15 @@
+TestRuns=("1" "2" "3")
+
 TlsSettings=(
+"TLS Cipher Suites = TLS_AES_128_GCM_SHA256"
+"TLS Cipher Suites = TLS_AES_128_CCM_SHA256"
 "#TLS Enable = Yes;TLS Require = Yes"
 "TLS Enable = No;TLS Require = No"
 )
-
+#TLS Cipher Suites = TLS_AES_256_GCM_SHA384 # does not work
+#TLS Cipher Suites = TLS_CHACHA20_POLY1305_SHA256 # standard
+#TLS Cipher Suites = TLS_AES_128_GCM_SHA256
+#TLS Cipher Suites = TLS_AES_128_CCM_SHA256
 BackupDataDir=(
   /testspace/pstorz/data_multimedia
   /testspace/pstorz/data_rootfs
@@ -12,11 +19,11 @@ FilesetOptions=(
     "#compression=none"
     "compression=lzo"
     "compression=lz4"
-    "compression=lz4hc"
-    "compression=gzip1"
-    "compression=gzip3"
-    "compression=gzip6"
-    "compression=gzip9"
+#    "compression=lz4hc"
+#    "compression=gzip1"
+#    "compression=gzip3"
+#    "compression=gzip6"
+#    "compression=gzip9"
 # "aclsupport=no;xattrsupport=no"
 # "signature=md5"
 # "signature=sha1"
@@ -25,9 +32,9 @@ FilesetOptions=(
 # "signature=xxh128"
 )
 ClientOptions=(
-    "MaximumWorkersPerJob=00"
-    "MaximumWorkersPerJob=01"
+#    "MaximumWorkersPerJob=00"
+#    "MaximumWorkersPerJob=01"
     "MaximumWorkersPerJob=02"
-    "MaximumWorkersPerJob=05"
-    "MaximumWorkersPerJob=10"
+#    "MaximumWorkersPerJob=05"
+#    "MaximumWorkersPerJob=10"
 )

@@ -4,4 +4,5 @@ Client {
   Address = @hostname@
   Password = "@fd_password@"
   Fd Port = @fd_port@
+  @include/common_tls.conf
 }

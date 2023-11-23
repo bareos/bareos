@@ -25,10 +25,11 @@ output="$tmp/output.tsv"
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
 date --iso-8601=seconds >> "$output"
-printf  "tlssettings\tfileset\tfilesetoptions\tclientoptions\tbackup\tcompressionrate\trestore\n" >> "$output"
+printf  "testrun\ttlssettings\tfileset\tfilesetoptions\tclientoptions\tcompressionrate\tbackup\trestore\ttls_settings\n" >> "$output"
 
 for tlssettings in "${TlsSettings[@]}"; do
   echo "$tlssettings" > include/common_tls.conf
+  tlssettings_filenamecompat=$(tr ' ,=;' '_' <<< $tlssettings)
 
 for backupdatadir in "${BackupDataDir[@]}"; do
   echo "$backupdatadir" > tmp/file-list
@@ -40,13 +41,16 @@ for clientoptions in "${ClientOptions[@]}"; do
 
   bin/bareos restart
 
-  for filesetoptions in "${FilesetOptions[@]}"; do
+for filesetoptions in "${FilesetOptions[@]}"; do
+
+for testrun in "${TestRuns[@]}"; do
+
   rm storage/* ||:
   echo $filesetoptions > include/etc/bareos/bareos-dir.d/fileset/default.conf
   filesetoptions_filenamecompat=$(tr ',=' '_' <<< $filesetoptions)
 
 
-  log="$backup_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
+  log="$backup_log-$testrun-$tlssettings_filenamecompat-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
   echo > "$log"
 	cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -68,12 +72,13 @@ cat "$tmp/bconcmds"
 		    "Backup was not ok."
   compression_rate=$(sed -n "s/^.*Software Compression:\s*\(.*\).*$/\1/p" "$log")
   speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log" | sed -e 's#KB/s##g' -e 's/\./,/g' )
+  tls_settings=$(grep "speed-test-fd.*Connected Storage daemon at .* encryption: " "$log" | sed 's/.*ncryption: //g')
 	echo "... result: $speed_in_kb"
-	#Data+=("$speed_in_kb")
-  printf "$tlssettings\t$files\t$filesetoptions\t$clientoptions\t$speed_in_kb\t$compression_rate\t"  >> "$output"
+
+  printf "$testrun\t$tlssettings\t$files\t$filesetoptions\t$clientoptions\t$compression_rate\t$speed_in_kb\t"  >> "$output"
 
 # now restore
-	log="$restore_log-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
+	log="$restore_log-$testrun-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
   echo > "$log"
   # clean restore dir
   sudo rm -Rvf "$tmp/bareos-restores"
@@ -92,9 +97,10 @@ END_OF_DATA
 		    "Restore was not ok."
   speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log" | sed -e 's#KB/s##g' -e 's/\./,/g' )
 	echo "... result: $speed_in_kb"
-  printf  "$speed_in_kb\n"  >> "$output"
-  done
- done
+  printf  "$speed_in_kb\t$tls_settings\n"  >> "$output"
+done
+done
+done
 done
 
 done

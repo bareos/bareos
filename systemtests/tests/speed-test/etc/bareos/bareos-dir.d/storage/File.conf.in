@@ -7,4 +7,5 @@ Storage {
   Media Type = File
   SD Port = @sd_port@
   Maximum Concurrent Jobs= 10
+  @include/common_tls.conf
 }

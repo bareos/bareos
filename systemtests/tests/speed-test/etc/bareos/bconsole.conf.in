@@ -7,4 +7,5 @@ Director {
   DIRport = @dir_port@
   Address = @hostname@
   Password = "@dir_password@"
+  @include/common_tls.conf
 }
