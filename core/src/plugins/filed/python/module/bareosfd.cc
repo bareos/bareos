@@ -1281,6 +1281,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
   switch (var) {
     case bVarFDName:
     case bVarWorkingDir:
+    case bVarUsedConfig:
     case bVarExePath:
     case bVarVersion:
     case bVarDistName: {

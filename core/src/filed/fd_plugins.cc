@@ -43,6 +43,7 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/plugins.h"
+#include "lib/parse_conf.h"
 
 // Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosFilePacket* bfd,
@@ -2009,6 +2010,9 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
       break;
     case bVarWorkingDir:
       *(void**)value = me->working_directory;
+      break;
+    case bVarUsedConfig:
+      *(const void**)value = my_config->get_base_config_path().c_str();
       break;
     case bVarExePath:
       *(char**)value = exepath;
