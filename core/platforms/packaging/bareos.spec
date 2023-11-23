@@ -1484,7 +1484,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-postgresql.py*
 # old plugin is still distributed for restore during 23 lifetime
-%{plugin_dir}/BareosFdPluginPostgres.py*
 %{plugin_dir}/bareos-fd-postgres.py*
 
 %files filedaemon-percona-xtrabackup-python-plugin
