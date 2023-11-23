@@ -448,8 +448,10 @@ bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(
   test_fd_plugins
-  ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
-                     ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
+  ADDITIONAL_SOURCES
+    ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
+    ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
+    ${PROJECT_SOURCE_DIR}/src/filed/filed_globals.cc
   LINK_LIBRARIES bareos bareosfind GTest::gtest_main
 )
 
