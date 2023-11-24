@@ -114,22 +114,16 @@ endif()
 set(PYFILES
     pyfiles/BareosFdPluginBaseclass.py
     pyfiles/BareosFdWrapper.py
-    pyfiles/BareosFdPluginLocalFileset.py
     pyfiles/BareosFdPluginLocalFilesBaseclass.py
     pyfiles/bareos-fd-local-fileset.py
     ldap/bareos-fd-ldap.py
-    ldap/BareosFdPluginLDAP.py
-    mariabackup/BareosFdPluginMariabackup.py
     mariabackup/bareos-fd-mariabackup.py
     ovirt/bareos-fd-ovirt.py
     ovirt/BareosFdPluginOvirt.py
     percona-xtrabackup/bareos-fd-percona-xtrabackup.py
-    percona-xtrabackup/BareosFdPluginPerconaXtraBackup.py
     postgres/bareos-fd-postgres.py
-    postgres/BareosFdPluginPostgres.py
     postgresql/bareos-fd-postgresql.py
     vmware/bareos-fd-vmware.py
-    vmware/BareosFdPluginVMware.py
     libcloud/BareosLibcloudApi.py
     libcloud/bareos-fd-libcloud.py
     libcloud/BareosFdPluginLibcloud.py

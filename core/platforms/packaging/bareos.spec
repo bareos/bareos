@@ -1049,7 +1049,6 @@ rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.*
 
 # remove vmware plugin files when vmware is not built
 %if  !0%{?vmware}
-rm -f %{buildroot}%{plugin_dir}/BareosFdPluginVMware.py*
 rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
 %endif
 # install systemd service files
@@ -1112,7 +1111,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-,root,root)
 %dir %{_libdir}/bareos/
 %{_sbindir}/vmware_cbt_tool.py
-%{plugin_dir}/BareosFdPluginVMware.py*
 %{plugin_dir}/bareos-fd-vmware.py*
 %doc core/src/vmware/LICENSE core/src/vmware/README.md
 
@@ -1454,14 +1452,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-python-plugins-common
 %{plugin_dir}/bareos-fd-local-fileset.py*
 %{plugin_dir}/BareosFdPluginBaseclass.py*
-%{plugin_dir}/BareosFdPluginLocalFileset.py*
 %{plugin_dir}/BareosFdPluginLocalFilesBaseclass.py*
 %{plugin_dir}/BareosFdWrapper.py*
 
 %files filedaemon-ldap-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-ldap.py*
-%{plugin_dir}/BareosFdPluginLDAP.py*
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ldap.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ldap.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/restore-ldap.conf.example
@@ -1488,18 +1484,15 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-postgresql.py*
 # old plugin is still distributed for restore during 23 lifetime
-%{plugin_dir}/BareosFdPluginPostgres.py*
 %{plugin_dir}/bareos-fd-postgres.py*
 
 %files filedaemon-percona-xtrabackup-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-percona-xtrabackup.py*
-%{plugin_dir}/BareosFdPluginPerconaXtraBackup.py*
 
 %files filedaemon-mariabackup-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-mariabackup.py*
-%{plugin_dir}/BareosFdPluginMariabackup.py*
 
 
 %files director-python3-plugin
