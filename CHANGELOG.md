@@ -5,4 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- github actions: PyPi: install setuptools [PR #1589]
+
+[PR #1589]: https://github.com/bareos/bareos/pull/1589
 [unreleased]: https://github.com/bareos/bareos/tree/master
