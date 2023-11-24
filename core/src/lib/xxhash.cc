@@ -19,7 +19,11 @@
    02110-1301, USA.
 */
 #include <cstring>
-#include <xxh3.h>
+#if defined(XXHASH_ENABLE_DISPATCH)
+#  include <xxh_x86dispatch.h>
+#else
+#  include <xxhash.h>
+#endif
 
 #include "crypto.h"
 #include "xxhash.h"

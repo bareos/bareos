@@ -42,6 +42,10 @@ option(USE_SYSTEM_XXHASH "Use the xxHash lib of the operating system" OFF)
 if(USE_SYSTEM_XXHASH)
   find_package(xxHash REQUIRED)
   set_target_properties(xxHash::xxhash PROPERTIES IMPORTED_GLOBAL TRUE)
+  set(XXHASH_ENABLE_DISPATCH
+      OFF
+      CACHE INTERNAL ""
+  )
   message(STATUS "Using system xxHash ${XXHASH_VERSION}")
 else()
   include(./xxHash.cmake)
