@@ -13,3 +13,4 @@ Configuration
       /Configuration/Messages.rst
       /Configuration/Console.rst
       /Configuration/Monitor.rst
+      /Configuration/Performance.rst

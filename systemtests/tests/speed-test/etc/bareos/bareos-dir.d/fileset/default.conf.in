@@ -1,0 +1,10 @@
+FileSet {
+  Name = "Default"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+@include/etc/bareos/bareos-dir.d/fileset/default.conf
+    }
+    File=<@tmpdir@/file-list
+  }
+}
