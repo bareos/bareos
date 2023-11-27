@@ -8,5 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - github actions: PyPi: install setuptools [PR #1589]
 
+### Removed
+- plugins: remove old deprecated postgres plugin [PR #1606]
+
 [PR #1589]: https://github.com/bareos/bareos/pull/1589
+[PR #1606]: https://github.com/bareos/bareos/pull/1606
 [unreleased]: https://github.com/bareos/bareos/tree/master
