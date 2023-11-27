@@ -131,7 +131,7 @@ struct runtime_disk_info_encoding {
   uint32_t padding[16];
   uint32_t end_magic;
 };
-inline constexpr int rdie_size = sizeof(struct runtime_disk_info_encoding);
+inline constexpr int rdie_size = sizeof(runtime_disk_info_encoding);
 
 /*
  * Disk Meta data structure,
@@ -144,7 +144,7 @@ struct runtime_meta_data_encoding {
   uint32_t meta_data_length;
   uint32_t end_magic;
 };
-inline constexpr int rmde_size = sizeof(struct runtime_meta_data_encoding);
+inline constexpr int rmde_size = sizeof(runtime_meta_data_encoding);
 
 /*
  * Changed Block Tracking structure.
@@ -157,7 +157,7 @@ struct runtime_cbt_encoding {
   uint64_t offset_length;
   uint32_t end_magic;
 };
-inline constexpr int rce_size = sizeof(struct runtime_cbt_encoding);
+inline constexpr int rce_size = sizeof(runtime_cbt_encoding);
 
 static bool cleanup_on_start = false;
 static bool cleanup_on_disconnect = false;
@@ -187,7 +187,7 @@ static int exit_code = 1;
 
 // Encode the VDDK VixDiskLibInfo into an internal representation.
 static inline void fill_runtime_disk_info_encoding(
-    struct runtime_disk_info_encoding* rdie)
+    runtime_disk_info_encoding* rdie)
 {
   memset(rdie, 0, rdie_size);
 
@@ -224,7 +224,7 @@ static inline void fill_runtime_disk_info_encoding(
  * mode.
  */
 static inline void dump_runtime_disk_info_encoding(
-    struct runtime_disk_info_encoding* rdie)
+    runtime_disk_info_encoding* rdie)
 {
   fprintf(stderr, "Protocol version = %u\n", rdie->protocol_version);
   fprintf(stderr, "Absolute disk length = %lu\n", rdie->absolute_disk_length);
@@ -242,7 +242,7 @@ static inline void dump_runtime_disk_info_encoding(
  * VDMK settings.
  */
 static inline char validate_runtime_disk_info_encoding(
-    struct runtime_disk_info_encoding* rdie)
+    runtime_disk_info_encoding* rdie)
 {
   if (info->biosGeo.cylinders > 0
       && info->biosGeo.cylinders < rdie->bios_cylinders) {
@@ -832,7 +832,7 @@ static inline bool save_disk_info(const char* key,
                                   uint64_t* absolute_disk_length)
 {
   bool retval = false;
-  struct runtime_disk_info_encoding rdie;
+  runtime_disk_info_encoding rdie;
   json_t* object;
 
   fill_runtime_disk_info_encoding(&rdie);
@@ -877,7 +877,7 @@ bail_out:
 // Decode the disk info of the disk restored from the backup input stream.
 static inline bool process_disk_info(bool validate_only, json_t* value)
 {
-  struct runtime_disk_info_encoding rdie;
+  runtime_disk_info_encoding rdie;
 
   memset(&rdie, 0, rdie_size);
   if (robust_reader(STDIN_FILENO, (char*)&rdie, rdie_size) != rdie_size) {
@@ -943,7 +943,7 @@ static inline bool read_meta_data_key(char* key)
   VixError err;
   size_t requiredLen;
   char* buffer = NULL;
-  struct runtime_meta_data_encoding rmde;
+  runtime_meta_data_encoding rmde;
 
   if (verbose) { fprintf(stderr, "Processing metadata key %s\n", key); }
 
@@ -1026,7 +1026,7 @@ static inline bool save_meta_data()
   size_t requiredLen;
   char* bp;
   char* buffer = NULL;
-  struct runtime_meta_data_encoding rmde;
+  runtime_meta_data_encoding rmde;
 
   /* See if we are actually saving all meta data or should only write the META
    * data end marker. */
@@ -1090,7 +1090,7 @@ bail_out:
  */
 static inline bool process_meta_data(bool validate_only)
 {
-  struct runtime_meta_data_encoding rmde;
+  runtime_meta_data_encoding rmde;
   char* key = NULL;
   char* buffer = NULL;
 
@@ -1181,7 +1181,7 @@ static bool process_single_cbt(std::vector<uint8>& buffer,
                                uint64 start_offset,
                                uint64 offset_length)
 {
-  struct runtime_cbt_encoding rce;
+  runtime_cbt_encoding rce;
   rce.start_magic = BAREOSMAGIC;
   rce.end_magic = BAREOSMAGIC;
   rce.start_offset = start_offset;
@@ -1448,7 +1448,7 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
   size_t cnt;
   uint64_t current_offset, max_offset;
   uint64_t sector_offset, sectors_to_read;
-  struct runtime_cbt_encoding rce;
+  runtime_cbt_encoding rce;
 
   std::vector<uint8> buffer;
   if (!multi_threaded) {
