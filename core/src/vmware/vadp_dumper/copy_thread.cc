@@ -66,19 +66,20 @@ static void* copy_thread(void* data)
     pthread_mutex_unlock(&context->lock);
 
     // Dequeue an item from the circular buffer.
-    save_data = (CP_THREAD_SAVE_DATA*)context->cb->dequeue();
+    save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
 
     while (save_data) {
+      auto total_length = save_data->data_len;
       cnt = cp_thread->output_function(save_data->sector_offset,
                                        save_data->data_len, save_data->data);
-      if (cnt < save_data->data_len) { return NULL; }
-      save_data = (CP_THREAD_SAVE_DATA*)context->cb->dequeue();
+      // dequeue invalidates save_data!
+      context->cb->dequeue();
+      if (cnt < total_length) { return NULL; }
+      save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
     }
 
-    /*
-     * Need to synchronize the main thread and this one so the main thread
-     * cannot miss the conditional signal.
-     */
+    /* Need to synchronize the main thread and this one so the main thread
+     * cannot miss the conditional signal. */
     if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
 
     // Signal the main thread we flushed the data.
