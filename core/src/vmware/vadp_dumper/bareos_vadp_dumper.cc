@@ -30,6 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
+#include <vector>
 #include <cerrno>
 
 #include "copy_thread.h"
@@ -59,9 +60,10 @@
 
 /*
  * In each call to the VixDiskLib read/write this number of sectors.
- * e.g. 512 means 256 Kb per call (e.g. 512 x 512 bytes)
+ * e.g. 512 means 256 Kb per call (e.g. 512 x 512 bytes);
+ * Actual value may be changed at runtime with the -s option.
  */
-#define SECTORS_PER_CALL 1024
+#define DEFAULT_SECTORS_PER_CALL 1024
 
 #define MIN(a, b) ((a) < b) ? (a) : (b)
 #define MAX(a, b) ((a) > b) ? (a) : (b)
@@ -162,7 +164,7 @@ static bool create_disk = false;
 static bool local_vmdk = false;
 static bool multi_threaded = false;
 static bool restore_meta_data = false;
-static uint64_t sectors_per_call = SECTORS_PER_CALL;
+static uint64_t sectors_per_call = DEFAULT_SECTORS_PER_CALL;
 static uint64_t absolute_start_offset = 0;
 static char* vmdk_disk_name = NULL;
 static char* raw_disk_name = NULL;
@@ -1170,8 +1172,14 @@ static inline bool process_cbt(const char* key, json_t* cbt)
   json_t *object, *array_element, *start, *length;
   uint64_t start_offset, offset_length, current_offset, max_offset;
   uint64_t sector_offset, sectors_to_read;
-  uint8 buf[DEFAULT_SECTOR_SIZE * SECTORS_PER_CALL];
   struct runtime_cbt_encoding rce;
+
+  std::vector<uint8> buffer;
+  if (!multi_threaded) {
+    // we read at most sectors_per_call sectors at once
+    // buffer is unused in multithreaded mode
+    buffer.resize(DEFAULT_SECTOR_SIZE * sectors_per_call);
+  }
 
   if (!read_diskHandle) {
     fprintf(stderr,
@@ -1245,14 +1253,15 @@ static inline bool process_cbt(const char* key, json_t* cbt)
         }
       } else {
         if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
-                           buf)
+                           buffer.data())
             != sectors_to_read * DEFAULT_SECTOR_SIZE) {
           fprintf(stderr, "Read error on VMDK\n");
           goto bail_out;
         }
 
         if (write_to_stream(sector_offset,
-                            sectors_to_read * DEFAULT_SECTOR_SIZE, buf)
+                            sectors_to_read * DEFAULT_SECTOR_SIZE,
+                            buffer.data())
             != sectors_to_read * DEFAULT_SECTOR_SIZE) {
           fprintf(stderr, "Failed to write data to output datastream\n");
           goto bail_out;
@@ -1299,8 +1308,14 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
   size_t cnt;
   uint64_t current_offset, max_offset;
   uint64_t sector_offset, sectors_to_read;
-  uint8 buf[DEFAULT_SECTOR_SIZE * SECTORS_PER_CALL];
   struct runtime_cbt_encoding rce;
+
+  std::vector<uint8> buffer;
+  if (!multi_threaded) {
+    // we read at most sectors_per_call sectors at once
+    // buffer is unused in multithreaded mode
+    buffer.resize(DEFAULT_SECTOR_SIZE * sectors_per_call);
+  }
 
   if (!create_disk && !validate_only) {
     do_vixdisklib_open(DISK_PARAMS_KEY, vmdk_disk_name, value, false, true,
@@ -1370,12 +1385,14 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
           goto bail_out;
         }
       } else {
-        cnt = robust_reader(STDIN_FILENO, (char*)buf,
+        cnt = robust_reader(STDIN_FILENO, (char*)buffer.data(),
                             sectors_to_read * DEFAULT_SECTOR_SIZE);
         if (cnt != sectors_to_read * DEFAULT_SECTOR_SIZE) { goto bail_out; }
 
         if (!validate_only) {
-          if (write_to_vmdk(sector_offset, cnt, buf) != cnt) { goto bail_out; }
+          if (write_to_vmdk(sector_offset, cnt, buffer.data()) != cnt) {
+            goto bail_out;
+          }
         }
       }
 
