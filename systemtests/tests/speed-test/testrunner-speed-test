@@ -17,15 +17,17 @@ source "defs"
 
 start_test
 
+starttimestamp=$(date --iso-8601=seconds)
+
 backup_log="$tmp"/backups.out
 restore_log="$tmp"/restores.out
 consolidate_log="$tmp"/consolidate.out
-output="$tmp/output.tsv"
+output="$tmp/output-$starttimestamp.tsv"
 
 rm -rf "$backup_log" "$consolidate_log" "$output"
 
-date --iso-8601=seconds >> "$output"
-printf  "testrun\ttlssettings\tfileset\tfilesetoptions\tclientoptions\tcompressionrate\tbackup\trestore\ttls_settings\n" >> "$output"
+echo "$starttimestamp" >> "$output"
+printf  "bareos_version\ttestrun\ttlssettings\tfileset\tfilesetoptions\tclientoptions\tused_tls_settings\tcompression_rate\tbackup speed\tbackup time\trestore speed\trestore time\n" >> "$output"
 
 for tlssettings in "${TlsSettings[@]}"; do
   echo "$tlssettings" > include/common_tls.conf
@@ -72,16 +74,18 @@ cat "$tmp/bconcmds"
 		    "Backup was not ok."
   compression_rate=$(sed -n "s/^.*Software Compression:\s*\(.*\).*$/\1/p" "$log")
   speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log" | sed -e 's#KB/s##g' -e 's/\./,/g' )
-  tls_settings=$(grep "speed-test-fd.*Connected Storage daemon at .* encryption: " "$log" | sed 's/.*ncryption: //g')
-	echo "... result: $speed_in_kb"
+  tls_settings_found=$(grep "speed-test-fd.*Connected Storage daemon at .* encryption: " "$log" | sed 's/.*ncryption: //g')
+  elapsed_time_backup=$(grep "Elapsed time:  .*" "$log" | cut -b 27-)
+  bareos_version=$(grep -o [0-9][0-9]\\.[0-9]\\.[0-9]\\S* "$log" | head -n1)
+  echo "... result: $speed_in_kb"
 
-  printf "$testrun\t$tlssettings\t$files\t$filesetoptions\t$clientoptions\t$compression_rate\t$speed_in_kb\t"  >> "$output"
+  printf "$bareos_version\t$testrun\t$tlssettings\t$files\t$filesetoptions\t$clientoptions\t$tls_settings_found\t$compression_rate\t$speed_in_kb\t$elapsed_time_backup\t"  >> "$output"
 
 # now restore
 	log="$restore_log-$testrun-$clientoptions_filenamecompat-$filesetoptions_filenamecompat"
   echo > "$log"
   # clean restore dir
-  sudo rm -Rvf "$tmp/bareos-restores"
+  sudo rm -Rf "$tmp/bareos-restores"
   cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
@@ -96,8 +100,9 @@ END_OF_DATA
 		    "$log" \
 		    "Restore was not ok."
   speed_in_kb=$(grep -o "[0-9.]* KB/s" "$log" | sed -e 's#KB/s##g' -e 's/\./,/g' )
+  elapsed_time_restore=$(grep "Elapsed time:  .*" "$log" | cut -b 27-)
 	echo "... result: $speed_in_kb"
-  printf  "$speed_in_kb\t$tls_settings\n"  >> "$output"
+  printf  "$speed_in_kb\t$elapsed_time_restore\n"  >> "$output"
 done
 done
 done
