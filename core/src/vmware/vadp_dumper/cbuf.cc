@@ -22,6 +22,7 @@
 
 // Circular buffer used for producer/consumer problem with pthreads.
 #include <pthread.h>
+#include <cassert>
 #include "cbuf.h"
 
 // Initialize a new circular buffer.
@@ -76,7 +77,7 @@ int circbuf::enqueue(void* data)
 }
 
 // Dequeue an item from the circular buffer.
-void* circbuf::dequeue()
+void* circbuf::peek()
 {
   void* data;
 
@@ -93,16 +94,28 @@ void* circbuf::dequeue()
     return NULL;
   }
 
-  data = m_data[m_next_out++];
+  data = m_data[m_next_out];
+
+  pthread_mutex_unlock(&m_lock);
+
+  return data;
+}
+
+void circbuf::dequeue()
+{
+  pthread_mutex_lock(&m_lock);
+
+  assert(m_size > 0);
+
+  m_data[m_next_out] = nullptr;
   m_size--;
+  m_next_out += 1;
   m_next_out %= m_capacity;
 
   // Let a waiting producer know there is room.
   pthread_cond_signal(&m_notfull);
 
   pthread_mutex_unlock(&m_lock);
-
-  return data;
 }
 
 /*
