@@ -44,7 +44,8 @@ class circbuf {
   int init();
   void destroy();
   int enqueue(void* data);
-  void* dequeue();
+  void* peek();
+  void dequeue();
   int next_slot();
   int flush();
   bool full() { return m_size == m_capacity; };
