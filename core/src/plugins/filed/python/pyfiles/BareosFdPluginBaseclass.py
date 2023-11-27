@@ -30,6 +30,7 @@ import os
 import stat
 import sys
 import time
+from base64 import a85decode
 
 
 def parse_plugindef_string(plugindef):
@@ -102,6 +103,14 @@ def get_config_path():
         return path
     else:
         return "/"
+
+
+def transform_value(value, transform):
+    if transform == "enc":
+        return a85decode(value).decode("utf-8")
+    else:
+        raise NameError("unknown transformation")
+    return value
 
 
 class BareosFdPluginBaseclass(object):
@@ -190,10 +199,21 @@ class BareosFdPluginBaseclass(object):
             return {}
 
     def _add_options(self, options):
-        for k, v in options.items():
-            if k not in self.options:
+        for key, value in options.items():
+            key_name, _, transform = key.partition("#")
+            if transform:
+                key = key_name
+                try:
+                    value = transform_value(value, transform)
+                except Exception as e:
+                    raise ValueError(
+                        "Transformation %s of value '%s' for key %s failed: %s"
+                        % (transform, value, key_name, e)
+                    )
+
+            if key not in self.options:
                 bareosfd.DebugMessage(100, 'key:value = "%s:%s"\n' % (key, value))
-                self.options[k] = v
+                self.options[key] = value
 
     def parse_plugin_definition(self, plugindef):
         bareosfd.DebugMessage(100, 'plugin def parser called with "%s"\n' % (plugindef))
@@ -217,7 +237,12 @@ class BareosFdPluginBaseclass(object):
         effective_options.update(plugindef_options)
         effective_options.update(override_options)
 
-        self._add_options(effective_options)
+        try:
+            self._add_options(effective_options)
+        except ValueError as e:
+            JobMessage(M_FATAL, str(e))
+            return False
+
         return self.check_options(self.mandatory_options)
 
     def check_options(self, mandatory_options=None):
