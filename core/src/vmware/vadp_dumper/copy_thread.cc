@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,10 +56,8 @@ static void* copy_thread(void* data)
   while (1) {
     size_t cnt;
 
-    /*
-     * Wait for the moment we are supposed to start.
-     * We are signalled by the restore thread.
-     */
+    /* Wait for the moment we are supposed to start.
+     * We are signalled by the restore thread. */
     pthread_cond_wait(&context->start, &context->lock);
     context->started = true;
 
@@ -153,11 +151,9 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
   circbuf* cb = cp_thread->cb;
   CP_THREAD_SAVE_DATA* save_data;
 
-  /*
-   * Find out which next slot will be used on the Circular Buffer.
+  /* Find out which next slot will be used on the Circular Buffer.
    * The method will block when the circular buffer is full until a slot is
-   * available.
-   */
+   * available. */
   slotnr = cb->next_slot();
   save_data = &cp_thread->save_data[slotnr];
 
@@ -195,10 +191,8 @@ void flush_copy_thread()
 
   if (pthread_mutex_lock(&context->lock) != 0) { return; }
 
-  /*
-   * In essence the flush should work in one shot but be a bit more
-   * conservative.
-   */
+  /* In essence the flush should work in one shot but be a bit more
+   * conservative. */
   while (!context->flushed) {
     // Tell the copy thread to flush out all data.
     context->cb->flush();
