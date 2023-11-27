@@ -125,6 +125,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - configuration: deprecate base jobs [PR #1580]
 - rename gettext macro [PR #1588]
 - Enable automatic cpu-dependent dispatch for xxHash [PR #1601]
+- github actions: PyPi: install setuptools [PR #1604]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -314,4 +315,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1599]: https://github.com/bareos/bareos/pull/1599
 [PR #1601]: https://github.com/bareos/bareos/pull/1601
 [PR #1602]: https://github.com/bareos/bareos/pull/1602
+[PR #1604]: https://github.com/bareos/bareos/pull/1604
 [unreleased]: https://github.com/bareos/bareos/tree/master
