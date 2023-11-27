@@ -30,6 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
+#include <cerrno>
 
 #include "copy_thread.h"
 
@@ -294,14 +295,19 @@ bail_out:
 // Writer function that handles partial writes.
 static inline size_t robust_writer(int fd, void* buffer, int size)
 {
+  if (size == 0) { return 0; }
   size_t total_bytes = 0;
-  size_t cnt = 0;
+  ssize_t cnt = 0;
 
   do {
     cnt = write(fd, (char*)buffer + total_bytes, size);
     if (cnt > 0) {
       size -= cnt;
       total_bytes += cnt;
+    } else if (cnt < 0) {
+      fprintf(stderr, "[robust_writer] Encountered write error: %d ERR=%s\n",
+              errno, strerror(errno));
+      return 0;
     }
   } while (size > 0 && cnt > 0);
 
@@ -311,14 +317,20 @@ static inline size_t robust_writer(int fd, void* buffer, int size)
 // Reader function that handles partial reads.
 static inline size_t robust_reader(int fd, void* buffer, int size)
 {
+  if (size == 0) { return 0; }
+
   size_t total_bytes = 0;
-  size_t cnt = 0;
+  ssize_t cnt = 0;
 
   do {
     cnt = read(fd, (char*)buffer + total_bytes, size);
     if (cnt > 0) {
       size -= cnt;
       total_bytes += cnt;
+    } else if (cnt < 0) {
+      fprintf(stderr, "[robust_reader] Encountered read error: %d ERR=%s\n",
+              errno, strerror(errno));
+      return 0;
     }
   } while (size > 0 && cnt > 0);
 
