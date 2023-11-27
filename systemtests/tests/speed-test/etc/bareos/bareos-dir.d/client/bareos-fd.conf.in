@@ -5,4 +5,5 @@ Client {
   Password = "@fd_password@"
   Fd Port = @fd_port@
   @include/common_tls.conf
+  @include/etc/bareos/bareos-dir.d/client/bareos-fd.conf
 }
