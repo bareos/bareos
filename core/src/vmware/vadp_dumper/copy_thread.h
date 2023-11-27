@@ -30,6 +30,7 @@
 typedef size_t(IO_FUNCTION)(size_t sector_offset, size_t nbyte, void* buf);
 
 struct CP_THREAD_SAVE_DATA {
+  size_t capacity;      /* capacity */
   size_t sector_offset; /* Sector offset where to write data */
   size_t data_len;      /* Length of Data */
   void* data;           /* Data */

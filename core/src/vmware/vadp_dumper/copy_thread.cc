@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <malloc.h>
+#include <assert.h>
 
 #include <pthread.h>
 #include "copy_thread.h"
@@ -160,10 +161,22 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
   save_data = &cp_thread->save_data[slotnr];
 
   // If this is the first time we use this slot we need to allocate some memory.
-  if (!save_data->data) { save_data->data = malloc(nbyte + 1); }
+  if (save_data->capacity < nbyte) {
+    if (save_data->data) {
+      fprintf(stderr, "Making slot %d bigger (%zu -> %zu)\n", slotnr,
+              save_data->capacity, nbyte);
+      save_data->data = realloc(save_data->data, nbyte + 1);
+    } else {
+      save_data->data = malloc(nbyte + 1);
+    }
+    save_data->capacity = nbyte;
+  }
 
   save_data->data_len
       = cp_thread->input_function(sector_offset, nbyte, save_data->data);
+
+  assert(save_data->data_len == nbyte);
+
   save_data->sector_offset = sector_offset;
 
   cb->enqueue(save_data);
