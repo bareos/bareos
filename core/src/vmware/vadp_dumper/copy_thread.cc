@@ -59,7 +59,7 @@ static void* copy_thread(void* data)
 
     /* Need to synchronize the main thread and this one so the main thread
      * cannot miss the conditional signal. */
-    pthread_mutex_lock(&context->lock);
+    assert(0 == pthread_mutex_lock(&context->lock));
 
     // Signal the main thread we flushed the data.
     context->flushed = true;
@@ -70,7 +70,7 @@ static void* copy_thread(void* data)
     }
 
     assert(0 == pthread_cond_signal(&context->flush));
-    pthread_mutex_unlock(&context->lock);
+    assert(0 == pthread_mutex_unlock(&context->lock));
   }
 
   return NULL;
@@ -186,7 +186,7 @@ void flush_copy_thread()
 
   context->flushed = false;
 
-  pthread_mutex_unlock(&context->lock);
+  assert(0 == pthread_mutex_unlock(&context->lock));
 }
 
 // Cleanup all data allocated for the copy thread.
@@ -196,16 +196,16 @@ void cleanup_copy_thread()
 
   // Stop the copy thread.
   if (!pthread_equal(cp_thread->thread_id, pthread_self())) {
-    pthread_mutex_lock(&cp_thread->lock);
+    assert(0 == pthread_mutex_lock(&cp_thread->lock));
 
     cp_thread->do_end = true;
     cp_thread->cb->flush();
 
     while (cp_thread->do_end == true) {
-      pthread_cond_wait(&cp_thread->flush, &cp_thread->lock);
+      assert(0 == pthread_cond_wait(&cp_thread->flush, &cp_thread->lock));
     }
 
-    pthread_mutex_unlock(&cp_thread->lock);
+    assert(0 == pthread_mutex_unlock(&cp_thread->lock));
 
     pthread_join(cp_thread->thread_id, NULL);
   }
@@ -216,6 +216,7 @@ void cleanup_copy_thread()
       free(cp_thread->save_data[slotnr].data);
     }
   }
+
   free(cp_thread->save_data);
   delete cp_thread->cb;
   free(cp_thread);
