@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
    Copyright (C) 2015-2015 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -1008,10 +1008,8 @@ static inline bool save_meta_data()
   char* buffer = NULL;
   struct runtime_meta_data_encoding rmde;
 
-  /*
-   * See if we are actually saving all meta data or should only write the META
-   * data end marker.
-   */
+  /* See if we are actually saving all meta data or should only write the META
+   * data end marker. */
   if (save_metadata) {
     err = VixDiskLib_GetMetadataKeys(read_diskHandle, NULL, 0, &requiredLen);
     if (err != VIX_OK && err != VIX_E_BUFFER_TOOSMALL) { return false; }
@@ -1043,10 +1041,8 @@ static inline bool save_meta_data()
     }
   }
 
-  /*
-   * Write an META data end marker.
-   * e.g. metadata header with key and data length == 0
-   */
+  /* Write an META data end marker.
+   * e.g. metadata header with key and data length == 0 */
   rmde.start_magic = BAREOSMAGIC;
   rmde.end_magic = BAREOSMAGIC;
   rmde.meta_key_length = 0;
@@ -1190,10 +1186,8 @@ static inline bool process_cbt(const char* key, json_t* cbt)
     goto bail_out;
   }
 
-  /*
-   * Iterate over each element of the JSON array and get the "start" and
-   * "length" member.
-   */
+  /* Iterate over each element of the JSON array and get the "start" and
+   * "length" member. */
   rce.start_magic = BAREOSMAGIC;
   rce.end_magic = BAREOSMAGIC;
   json_array_foreach(object, index, array_element)
@@ -1232,19 +1226,15 @@ static inline bool process_cbt(const char* key, json_t* cbt)
       }
     }
 
-    /*
-     * Calculate the start offset and read as many sectors as defined by the
-     * length element of the JSON structure.
-     */
+    /* Calculate the start offset and read as many sectors as defined by the
+     * length element of the JSON structure. */
     current_offset = absolute_start_offset + start_offset;
     max_offset = current_offset + offset_length;
     sector_offset = current_offset / DEFAULT_SECTOR_SIZE;
     while (current_offset < max_offset) {
-      /*
-       * The number of sectors to read is the minimum of either the total number
+      /* The number of sectors to read is the minimum of either the total number
        * of sectors still available in this CBT range or the upper setting
-       * specified in the sectors_per_call variable.
-       */
+       * specified in the sectors_per_call variable. */
       sectors_to_read
           = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
 
@@ -1363,11 +1353,9 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     max_offset = current_offset + rce.offset_length;
     sector_offset = current_offset / DEFAULT_SECTOR_SIZE;
     while (current_offset < max_offset) {
-      /*
-       * The number of sectors to read is the minimum of either the total number
+      /* The number of sectors to read is the minimum of either the total number
        * of sectors still available in this CBT range or the upper setting
-       * specified in the sectors_per_call variable.
-       */
+       * specified in the sectors_per_call variable. */
       sectors_to_read
           = MIN(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
 
@@ -1483,10 +1471,8 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
     exit(1);
   }
 
-  /*
-   * See if we are requested to clone the content to a new VMDK.
-   * save_disk_info() initializes absolute_disk_length.
-   */
+  /* See if we are requested to clone the content to a new VMDK.
+   * save_disk_info() initializes absolute_disk_length. */
   if (vmdk_disk_name) {
     if (create_disk) {
       do_vixdisklib_create(NULL, vmdk_disk_name, value, absolute_disk_length);
@@ -1587,10 +1573,8 @@ int main(int argc, char** argv)
     switch (ch) {
       case 'C':
         create_disk = true;
-        /*
-         * If we create the disk we should not check for the size as that won't
-         * match.
-         */
+        /* If we create the disk we should not check for the size as that won't
+         * match. */
         check_size = false;
         break;
       case 'c':
