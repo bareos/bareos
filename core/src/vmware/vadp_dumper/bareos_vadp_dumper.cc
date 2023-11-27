@@ -50,6 +50,7 @@
 
 #include <vixDiskLib.h>
 
+/* This is the minimum version we require, i.e. vSphere 6.5 or later */
 #define VIXDISKLIB_VERSION_MAJOR 6
 #define VIXDISKLIB_VERSION_MINOR 5
 
@@ -127,7 +128,7 @@ struct runtime_disk_info_encoding {
   uint32_t padding[16];
   uint32_t end_magic;
 };
-const int rdie_size = sizeof(struct runtime_disk_info_encoding);
+inline constexpr int rdie_size = sizeof(struct runtime_disk_info_encoding);
 
 /*
  * Disk Meta data structure,
@@ -140,7 +141,7 @@ struct runtime_meta_data_encoding {
   uint32_t meta_data_length;
   uint32_t end_magic;
 };
-const int rmde_size = sizeof(struct runtime_meta_data_encoding);
+inline constexpr int rmde_size = sizeof(struct runtime_meta_data_encoding);
 
 /*
  * Changed Block Tracking structure.
@@ -153,7 +154,7 @@ struct runtime_cbt_encoding {
   uint64_t offset_length;
   uint32_t end_magic;
 };
-const int rce_size = sizeof(struct runtime_cbt_encoding);
+inline constexpr int rce_size = sizeof(struct runtime_cbt_encoding);
 
 static bool cleanup_on_start = false;
 static bool cleanup_on_disconnect = false;
