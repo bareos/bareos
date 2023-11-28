@@ -41,6 +41,8 @@
 
 
 #ifdef BAREOSFD_MODULE
+
+#  include "include/filetypes.h"
 /* This section is used when compiling bareosfd.cc */
 
 namespace filedaemon {
@@ -663,31 +665,33 @@ MOD_INIT(bareosfd)
   DEFINE_bRCs_DICT();
   DEFINE_bJobMessageTypes_DICT();
 
+#define EXPORT_ENUM_VALUE(dict, symbol) ConstSet_StrLong(dict, symbol, symbol)
+
   const char* bVariable = "bVariable";
   PyObject* pDictbVariable = NULL;
   pDictbVariable = PyDict_New();
   if (!pDictbVariable) { return MOD_ERROR_VAL; }
-  ConstSet_StrLong(pDictbVariable, bVarJobId, 1);
-  ConstSet_StrLong(pDictbVariable, bVarFDName, 2);
-  ConstSet_StrLong(pDictbVariable, bVarLevel, 3);
-  ConstSet_StrLong(pDictbVariable, bVarType, 4);
-  ConstSet_StrLong(pDictbVariable, bVarClient, 5);
-  ConstSet_StrLong(pDictbVariable, bVarJobName, 6);
-  ConstSet_StrLong(pDictbVariable, bVarJobStatus, 7);
-  ConstSet_StrLong(pDictbVariable, bVarSinceTime, 8);
-  ConstSet_StrLong(pDictbVariable, bVarAccurate, 9);
-  ConstSet_StrLong(pDictbVariable, bVarFileSeen, 10);
-  ConstSet_StrLong(pDictbVariable, bVarVssClient, 11);
-  ConstSet_StrLong(pDictbVariable, bVarWorkingDir, 12);
-  ConstSet_StrLong(pDictbVariable, bVarWhere, 13);
-  ConstSet_StrLong(pDictbVariable, bVarRegexWhere, 14);
-  ConstSet_StrLong(pDictbVariable, bVarExePath, 15);
-  ConstSet_StrLong(pDictbVariable, bVarVersion, 16);
-  ConstSet_StrLong(pDictbVariable, bVarDistName, 17);
-  ConstSet_StrLong(pDictbVariable, bVarPrevJobName, 18);
-  ConstSet_StrLong(pDictbVariable, bVarPrefixLinks, 19);
-  ConstSet_StrLong(pDictbVariable, bVarCheckChanges, 20);
-  ConstSet_StrLong(pDictbVariable, bVarUsedConfig, 21);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarJobId);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarFDName);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarLevel);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarType);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarClient);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarJobName);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarJobStatus);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarSinceTime);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarAccurate);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarFileSeen);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarVssClient);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarWorkingDir);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarWhere);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarRegexWhere);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarExePath);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarVersion);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarDistName);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarPrevJobName);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarPrefixLinks);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarCheckChanges);
+  EXPORT_ENUM_VALUE(pDictbVariable, bVarUsedConfig);
   if (PyModule_AddObject(m, bVariable, pDictbVariable)) {
     return MOD_ERROR_VAL;
   }
@@ -696,35 +700,35 @@ MOD_INIT(bareosfd)
   const char* bFileType = "bFileType";
   PyObject* pDictbFileType = NULL;
   pDictbFileType = PyDict_New();
-  ConstSet_StrLong(pDictbFileType, FT_LNKSAVED, 1);
-  ConstSet_StrLong(pDictbFileType, FT_REGE, 2);
-  ConstSet_StrLong(pDictbFileType, FT_REG, 3);
-  ConstSet_StrLong(pDictbFileType, FT_LNK, 4);
-  ConstSet_StrLong(pDictbFileType, FT_DIREND, 5);
-  ConstSet_StrLong(pDictbFileType, FT_SPEC, 6);
-  ConstSet_StrLong(pDictbFileType, FT_NOACCESS, 7);
-  ConstSet_StrLong(pDictbFileType, FT_NOFOLLOW, 8);
-  ConstSet_StrLong(pDictbFileType, FT_NOSTAT, 9);
-  ConstSet_StrLong(pDictbFileType, FT_NOCHG, 10);
-  ConstSet_StrLong(pDictbFileType, FT_DIRNOCHG, 11);
-  ConstSet_StrLong(pDictbFileType, FT_ISARCH, 12);
-  ConstSet_StrLong(pDictbFileType, FT_NORECURSE, 13);
-  ConstSet_StrLong(pDictbFileType, FT_NOFSCHG, 14);
-  ConstSet_StrLong(pDictbFileType, FT_NOOPEN, 15);
-  ConstSet_StrLong(pDictbFileType, FT_RAW, 16);
-  ConstSet_StrLong(pDictbFileType, FT_FIFO, 17);
-  ConstSet_StrLong(pDictbFileType, FT_DIRBEGIN, 18);
-  ConstSet_StrLong(pDictbFileType, FT_INVALIDFS, 19);
-  ConstSet_StrLong(pDictbFileType, FT_INVALIDDT, 20);
-  ConstSet_StrLong(pDictbFileType, FT_REPARSE, 21);
-  ConstSet_StrLong(pDictbFileType, FT_PLUGIN, 22);
-  ConstSet_StrLong(pDictbFileType, FT_DELETED, 23);
-  ConstSet_StrLong(pDictbFileType, FT_BASE, 24);
-  ConstSet_StrLong(pDictbFileType, FT_RESTORE_FIRST, 25);
-  ConstSet_StrLong(pDictbFileType, FT_JUNCTION, 26);
-  ConstSet_StrLong(pDictbFileType, FT_PLUGIN_CONFIG, 27);
-  ConstSet_StrLong(pDictbFileType, FT_PLUGIN_CONFIG_FILLED, 28);
   if (!pDictbFileType) { return MOD_ERROR_VAL; }
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_LNKSAVED);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_REGE);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_REG);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_LNK);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_DIREND);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_SPEC);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_NOACCESS);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_NOFOLLOW);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_NOSTAT);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_NOCHG);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_DIRNOCHG);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_ISARCH);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_NORECURSE);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_NOFSCHG);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_NOOPEN);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_RAW);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_FIFO);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_DIRBEGIN);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_INVALIDFS);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_INVALIDDT);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_REPARSE);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_PLUGIN);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_DELETED);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_BASE);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_RESTORE_FIRST);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_JUNCTION);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_PLUGIN_CONFIG);
+  EXPORT_ENUM_VALUE(pDictbFileType, FT_PLUGIN_CONFIG_FILLED);
   if (PyModule_AddObject(m, bFileType, pDictbFileType)) {
     return MOD_ERROR_VAL;
   }
@@ -733,49 +737,49 @@ MOD_INIT(bareosfd)
   const char* bCFs = "bCFs";
   PyObject* pDictbCFs = NULL;
   pDictbCFs = PyDict_New();
-  ConstSet_StrLong(pDictbCFs, CF_SKIP, 1);
-  ConstSet_StrLong(pDictbCFs, CF_ERROR, 2);
-  ConstSet_StrLong(pDictbCFs, CF_EXTRACT, 3);
-  ConstSet_StrLong(pDictbCFs, CF_CREATED, 4);
-  ConstSet_StrLong(pDictbCFs, CF_CORE, 5);
   if (!pDictbCFs) { return MOD_ERROR_VAL; }
+  EXPORT_ENUM_VALUE(pDictbCFs, CF_SKIP);
+  EXPORT_ENUM_VALUE(pDictbCFs, CF_ERROR);
+  EXPORT_ENUM_VALUE(pDictbCFs, CF_EXTRACT);
+  EXPORT_ENUM_VALUE(pDictbCFs, CF_CREATED);
+  EXPORT_ENUM_VALUE(pDictbCFs, CF_CORE);
   if (PyModule_AddObject(m, bCFs, pDictbCFs)) { return MOD_ERROR_VAL; }
 
   const char* bEventType = "bEventType";
   PyObject* pDictbEventType = NULL;
   pDictbEventType = PyDict_New();
-  ConstSet_StrLong(pDictbEventType, bEventJobStart, 1);
-  ConstSet_StrLong(pDictbEventType, bEventJobEnd, 2);
-  ConstSet_StrLong(pDictbEventType, bEventStartBackupJob, 3);
-  ConstSet_StrLong(pDictbEventType, bEventEndBackupJob, 4);
-  ConstSet_StrLong(pDictbEventType, bEventStartRestoreJob, 5);
-  ConstSet_StrLong(pDictbEventType, bEventEndRestoreJob, 6);
-  ConstSet_StrLong(pDictbEventType, bEventStartVerifyJob, 7);
-  ConstSet_StrLong(pDictbEventType, bEventEndVerifyJob, 8);
-  ConstSet_StrLong(pDictbEventType, bEventBackupCommand, 9);
-  ConstSet_StrLong(pDictbEventType, bEventRestoreCommand, 10);
-  ConstSet_StrLong(pDictbEventType, bEventEstimateCommand, 11);
-  ConstSet_StrLong(pDictbEventType, bEventLevel, 12);
-  ConstSet_StrLong(pDictbEventType, bEventSince, 13);
-  ConstSet_StrLong(pDictbEventType, bEventCancelCommand, 14);
-  ConstSet_StrLong(pDictbEventType, bEventRestoreObject, 15);
-  ConstSet_StrLong(pDictbEventType, bEventEndFileSet, 16);
-  ConstSet_StrLong(pDictbEventType, bEventPluginCommand, 17);
-  ConstSet_StrLong(pDictbEventType, bEventOptionPlugin, 18);
-  ConstSet_StrLong(pDictbEventType, bEventHandleBackupFile, 19);
-  ConstSet_StrLong(pDictbEventType, bEventNewPluginOptions, 20);
-  ConstSet_StrLong(pDictbEventType, bEventVssInitializeForBackup, 21);
-  ConstSet_StrLong(pDictbEventType, bEventVssInitializeForRestore, 22);
-  ConstSet_StrLong(pDictbEventType, bEventVssSetBackupState, 23);
-  ConstSet_StrLong(pDictbEventType, bEventVssPrepareForBackup, 24);
-  ConstSet_StrLong(pDictbEventType, bEventVssBackupAddComponents, 25);
-  ConstSet_StrLong(pDictbEventType, bEventVssPrepareSnapshot, 26);
-  ConstSet_StrLong(pDictbEventType, bEventVssCreateSnapshots, 27);
-  ConstSet_StrLong(pDictbEventType, bEventVssRestoreLoadComponentMetadata, 28);
-  ConstSet_StrLong(pDictbEventType, bEventVssRestoreSetComponentsSelected, 29);
-  ConstSet_StrLong(pDictbEventType, bEventVssCloseRestore, 30);
-  ConstSet_StrLong(pDictbEventType, bEventVssBackupComplete, 31);
   if (!pDictbEventType) { return MOD_ERROR_VAL; }
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventJobStart);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventJobEnd);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventStartBackupJob);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventEndBackupJob);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventStartRestoreJob);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventEndRestoreJob);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventStartVerifyJob);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventEndVerifyJob);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventBackupCommand);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventRestoreCommand);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventEstimateCommand);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventLevel);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventSince);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventCancelCommand);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventRestoreObject);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventEndFileSet);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventPluginCommand);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventOptionPlugin);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventHandleBackupFile);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventNewPluginOptions);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssInitializeForBackup);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssInitializeForRestore);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssSetBackupState);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssPrepareForBackup);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssBackupAddComponents);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssPrepareSnapshot);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssCreateSnapshots);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssRestoreLoadComponentMetadata);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssRestoreSetComponentsSelected);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssCloseRestore);
+  EXPORT_ENUM_VALUE(pDictbEventType, bEventVssBackupComplete);
   if (PyModule_AddObject(m, bEventType, pDictbEventType)) {
     return MOD_ERROR_VAL;
   }
@@ -784,21 +788,21 @@ MOD_INIT(bareosfd)
   const char* bIOPS = "bIOPS";
   PyObject* pDictbIOPS = NULL;
   pDictbIOPS = PyDict_New();
-  ConstSet_StrLong(pDictbIOPS, IO_OPEN, 1);
-  ConstSet_StrLong(pDictbIOPS, IO_READ, 2);
-  ConstSet_StrLong(pDictbIOPS, IO_WRITE, 3);
-  ConstSet_StrLong(pDictbIOPS, IO_CLOSE, 4);
-  ConstSet_StrLong(pDictbIOPS, IO_SEEK, 5);
   if (!pDictbIOPS) { return MOD_ERROR_VAL; }
+  EXPORT_ENUM_VALUE(pDictbIOPS, IO_OPEN);
+  EXPORT_ENUM_VALUE(pDictbIOPS, IO_READ);
+  EXPORT_ENUM_VALUE(pDictbIOPS, IO_WRITE);
+  EXPORT_ENUM_VALUE(pDictbIOPS, IO_CLOSE);
+  EXPORT_ENUM_VALUE(pDictbIOPS, IO_SEEK);
   if (PyModule_AddObject(m, bIOPS, pDictbIOPS)) { return MOD_ERROR_VAL; }
 
   const char* bIOPstatus = "bIOPstatus";
   PyObject* pDictbIOPstatus = NULL;
   pDictbIOPstatus = PyDict_New();
+  if (!pDictbIOPstatus) { return MOD_ERROR_VAL; }
   ConstSet_StrLong(pDictbIOPstatus, iostat_error, IoStatus::error);
   ConstSet_StrLong(pDictbIOPstatus, iostat_do_in_plugin, IoStatus::success);
   ConstSet_StrLong(pDictbIOPstatus, iostat_do_in_core, IoStatus::do_io_in_core);
-  if (!pDictbIOPstatus) { return MOD_ERROR_VAL; }
   if (PyModule_AddObject(m, bIOPstatus, pDictbIOPstatus)) { return MOD_ERROR_VAL; }
 
 
@@ -806,6 +810,7 @@ MOD_INIT(bareosfd)
   const char* bLevels = "bLevels";
   PyObject* pDictbLevels = NULL;
   pDictbLevels = PyDict_New();
+  if (!pDictbLevels) { return MOD_ERROR_VAL; }
   ConstSet_StrStr(pDictbLevels, L_FULL, "F");
   ConstSet_StrStr(pDictbLevels, L_INCREMENTAL, "I");
   ConstSet_StrStr(pDictbLevels, L_DIFFERENTIAL, "D");
@@ -818,7 +823,6 @@ MOD_INIT(bareosfd)
   ConstSet_StrStr(pDictbLevels, L_BASE, "B");
   ConstSet_StrStr(pDictbLevels, L_NONE, " ");
   ConstSet_StrStr(pDictbLevels, L_VIRTUAL_FULL, "f");
-  if (!pDictbLevels) { return MOD_ERROR_VAL; }
   if (PyModule_AddObject(m, bLevels, pDictbLevels)) { return MOD_ERROR_VAL; }
 
 
