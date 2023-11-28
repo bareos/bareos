@@ -37,13 +37,13 @@ for backupdatadir in "${BackupDataDir[@]}"; do
   echo "$backupdatadir" > tmp/file-list
   files=$(basename $backupdatadir)
 
+for filesetoptions in "${FilesetOptions[@]}"; do
+
 for clientoptions in "${ClientOptions[@]}"; do
   echo "$clientoptions" > include/etc/bareos/bareos-dir.d/client/bareos-fd.conf
   clientoptions_filenamecompat=$(tr ',=' '_' <<< $clientoptions)
 
   bin/bareos restart
-
-for filesetoptions in "${FilesetOptions[@]}"; do
 
 for testrun in "${TestRuns[@]}"; do
 
