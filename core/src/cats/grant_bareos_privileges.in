@@ -24,7 +24,7 @@
 set -e
 set -u
 
-# change to root dir
+# change to root dir needed to fix pg binary issue
 cd /
 
 #
