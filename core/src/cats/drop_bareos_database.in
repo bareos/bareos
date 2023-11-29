@@ -28,7 +28,7 @@ set -u
 # Source the Bareos config functions.
 #
 
-# change to root dir needed to fix pg binary issue
+# avoid misleading PostgreSQL warning 'could not change directory to ...'
 cd /
 
 . "@scriptdir@"/bareos-config-lib.sh
