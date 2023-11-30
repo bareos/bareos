@@ -72,18 +72,13 @@ struct proto_node {
 
   struct {
     // byte offsets relative to the start of the string area
-    std::uint64_t start;
-    std::uint64_t end;
+    std::uint64_t start : 48;
+    std::uint64_t end : 16;  // TODO: make it a 16bit length instead
   } name;
 
   struct {
-    // index into the meta data array
-    std::uint64_t meta;
-  } misc;
-
-  struct {
     std::uint64_t start;
-    std::uint64_t end;
+    std::uint64_t end;  // TODO: 32bit length enough here ?
   } deltas;
 
   static std::uint64_t make_id(int32_t findex, uint32_t jobid)
@@ -111,18 +106,27 @@ struct meta_data {
     std::uint32_t soft_link : 1; /* set if is soft link */
   };
 
-  std::uint64_t delta_seq;
-  std::uint64_t fhnode;
-  std::uint64_t fhinfo;
   std::int64_t original;  // -1 = no original; else index of original
 };
 
+struct fh {
+  std::uint64_t node{0};
+  std::uint64_t info{0};
+};
+
+struct delta {
+  std::uint64_t seq_num{0};
+};
+
 struct tree_header {
+  static constexpr std::uint64_t offset_not_found = 0;
   // todo: checksum ?
   std::uint64_t num_nodes;
   std::uint64_t nodes_offset;
   std::uint64_t string_offset;
   std::uint64_t meta_offset;
+  std::uint64_t fh_offset;
+  std::uint64_t seq_offset;
   std::uint64_t delta_offset;
   std::uint64_t delta_count;
 };
@@ -136,6 +140,8 @@ struct tree_view {
   // other stuff is not necessary.
   span<meta_data> metas{};
   span<delta_part> deltas{};
+  span<delta> delta_seqs{};
+  span<fh> fhs{};
   std::string_view string_pool{};
 
   tree_view() {}
@@ -146,18 +152,23 @@ struct tree_view {
 
     auto count = header.num_nodes;
     {
-      const proto_node* start
-          = (const proto_node*)(bytes.data() + header.nodes_offset);
+      auto* start = (const proto_node*)(bytes.data() + header.nodes_offset);
       nodes = span(start, count);
     }
     {
-      const meta_data* start
-          = (const meta_data*)(bytes.data() + header.meta_offset);
+      auto* start = (const meta_data*)(bytes.data() + header.meta_offset);
       metas = span(start, count);
     }
+    if (header.fh_offset != header.offset_not_found) {
+      auto* start = (const fh*)(bytes.data() + header.fh_offset);
+      fhs = span(start, header.num_nodes);
+    }
+    if (header.seq_offset != header.offset_not_found) {
+      auto* start = (const delta*)(bytes.data() + header.seq_offset);
+      delta_seqs = span(start, header.num_nodes);
+    }
     {
-      const delta_part* start
-          = (const delta_part*)(bytes.data() + header.delta_offset);
+      auto* start = (const delta_part*)(bytes.data() + header.delta_offset);
       deltas = span(start, header.delta_count);
     }
     {
@@ -177,12 +188,32 @@ struct tree_view {
     auto* start = string_pool.data() + node.name.start;
     return std::string_view{start, name_size};
   }
+
+  std::uint64_t delta_seq_at(std::size_t i)
+  {
+    if (delta_seqs.data()) {
+      return delta_seqs[i].seq_num;
+    } else {
+      return 0;
+    }
+  }
+
+  fh fh_at(std::size_t i)
+  {
+    if (fhs.data()) {
+      return fhs[i];
+    } else {
+      return fh{};
+    }
+  }
 };
 
 struct tree_builder {
   std::vector<proto_node> nodes;
   std::vector<char> string_area;
   std::vector<meta_data> metas;
+  std::vector<delta> delta_seqs;
+  std::vector<fh> fhs;
   std::vector<delta_part> deltas;
 
   using node_map = std::unordered_map<const TREE_NODE*, std::size_t>;
@@ -229,10 +260,15 @@ struct tree_builder {
       auto bytes = byte_view(node);
       data.insert(data.end(), bytes.begin(), bytes.end());
     }
+    Dmsg0(10, "Nodes: %llu - %llu (%llu)\n", node_offset, data.size(),
+          data.size() - node_offset);
 
     auto string_offset = data.size();
 
     data.insert(data.end(), string_area.begin(), string_area.end());
+
+    Dmsg0(10, "Strings: %llu - %llu (%llu)\n", string_offset, data.size(),
+          data.size() - string_offset);
 
     {
       std::size_t align = alignof(meta_data);
@@ -250,6 +286,55 @@ struct tree_builder {
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
     }
+    Dmsg0(10, "Meta: %llu - %llu (%llu)\n", meta_offset, data.size(),
+          data.size() - meta_offset);
+
+    {
+      std::size_t align = alignof(fh);
+      std::size_t current = data.size();
+      std::size_t a = current + align - 1;
+      std::size_t next = (a / align) * align;
+      ASSERT(next >= current);
+      data.resize(next);
+    }
+
+    auto fh_offset = data.size();
+    if (std::find_if(fhs.begin(), fhs.end(),
+                     [](auto&& fh) { return fh.info != 0 || fh.node != 0; })
+        != fhs.end()) {
+      auto b = (const char*)fhs.data();
+      auto e = (const char*)(fhs.data() + fhs.size());
+      auto bytes = span(b, e - b);
+      data.insert(data.end(), bytes.begin(), bytes.end());
+    } else {
+      fh_offset = tree_header::offset_not_found;
+    }
+    Dmsg0(10, "fh: %llu - %llu (%llu)\n", fh_offset, data.size(),
+          data.size() - fh_offset);
+
+    {
+      std::size_t align = alignof(delta);
+      std::size_t current = data.size();
+      std::size_t a = current + align - 1;
+      std::size_t next = (a / align) * align;
+      ASSERT(next >= current);
+      data.resize(next);
+    }
+
+    // todo: delta_seq = -1 is used to denote new file entries
+    auto seq_offset = data.size();
+    if (std::find_if(delta_seqs.begin(), delta_seqs.end(),
+                     [](auto&& delta_seq) { return delta_seq.seq_num != 0; })
+        != delta_seqs.end()) {
+      auto b = (const char*)delta_seqs.data();
+      auto e = (const char*)(delta_seqs.data() + delta_seqs.size());
+      auto bytes = span(b, e - b);
+      data.insert(data.end(), bytes.begin(), bytes.end());
+    } else {
+      seq_offset = tree_header::offset_not_found;
+    }
+    Dmsg0(10, "delta_seq: %llu - %llu (%llu)\n", seq_offset, data.size(),
+          data.size() - seq_offset);
 
     {
       std::size_t align = alignof(delta_part);
@@ -259,6 +344,7 @@ struct tree_builder {
       ASSERT(next >= current);
       data.resize(next);
     }
+
     auto delta_offset = data.size();
     {
       auto b = (const char*)deltas.data();
@@ -266,9 +352,17 @@ struct tree_builder {
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
     }
+    Dmsg0(10, "deltas: %llu - %llu (%llu)\n", delta_offset, data.size(),
+          data.size() - delta_offset);
 
-    tree_header header{nodes.size(), node_offset,  string_offset,
-                       meta_offset,  delta_offset, deltas.size()};
+    tree_header header{.num_nodes = nodes.size(),
+                       .nodes_offset = node_offset,
+                       .string_offset = string_offset,
+                       .meta_offset = meta_offset,
+                       .fh_offset = fh_offset,
+                       .seq_offset = seq_offset,
+                       .delta_offset = delta_offset,
+                       .delta_count = deltas.size()};
 
     auto header_bytes = byte_view(header);
     for (size_t i = 0; i < header_bytes.size(); ++i) {
@@ -291,17 +385,19 @@ struct tree_builder {
                          node->fname + strlen(node->fname));
       n.name.end = string_area.size();
 
-      n.misc.meta = metas.size();
-
       meta_data& meta = metas.emplace_back();
       meta.findex = node->FileIndex;
       meta.jobid = node->JobId;
       meta.type = node->type;
       meta.hard_link = node->hard_link;
       meta.soft_link = node->soft_link;
-      meta.delta_seq = node->delta_seq;
-      meta.fhnode = node->fhnode;
-      meta.fhinfo = node->fhinfo;
+
+      delta& delta_seq = delta_seqs.emplace_back();
+      delta_seq.seq_num = node->delta_seq;
+
+      fh& fh = fhs.emplace_back();
+      fh.node = node->fhnode;
+      fh.info = node->fhinfo;
 
       n.deltas.start = deltas.size();
       for (auto* delta = node->delta_list; delta; delta = delta->next) {
@@ -489,7 +585,7 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     auto& saved = tree.nodes[i];
     TREE_NODE& current = nodes[i];
 
-    auto& meta = tree.metas[saved.misc.meta];
+    auto& meta = tree.metas[i];
     if (i < tree.size() - 1) {
       current.next = &nodes[i + 1];
     } else {
@@ -497,9 +593,12 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     }
     current.FileIndex = meta.findex;
     current.JobId = meta.jobid;
-    current.delta_seq = meta.delta_seq;
-    current.fhinfo = meta.fhinfo;
-    current.fhnode = meta.fhnode;
+
+    current.delta_seq = tree.delta_seq_at(i);
+
+    auto fh = tree.fh_at(i);
+    current.fhinfo = fh.info;
+    current.fhnode = fh.node;
 
     auto str = saved.name;
     std::memcpy(current.fname, tree.string_pool.data() + str.start,
@@ -733,8 +832,7 @@ TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
       }
       auto& node = view.nodes[i];
 
-      auto j = node.misc.meta;
-      auto& meta = view.metas[j];
+      auto& meta = view.metas[i];
       int type = meta.type;
       auto fname = view.name(i);
       if (type != TN_FILE) {
@@ -749,15 +847,13 @@ TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
 
       if (type == TN_NEWDIR) continue;
       auto FileIndex = meta.findex;
-      auto delta_seq = meta.delta_seq;
-      auto fhinfo = meta.fhinfo;
-      auto fhnode = meta.fhnode;
+      auto delta_seq = view.delta_seq_at(i);
+      auto fh = view.fh_at(i);
+      auto fhinfo = fh.info;
+      auto fhnode = fh.node;
       auto JobId = meta.jobid;
       int LinkFI = 0;
-      if (meta.original >= 0) {
-        auto oj = view.nodes[meta.original].misc.meta;
-        LinkFI = view.metas[oj].findex;
-      }
+      if (meta.original >= 0) { LinkFI = view.metas[meta.original].findex; }
       bool soft_link = meta.soft_link;
 
       if (!InsertNode(root, LinkFI, soft_link, FileIndex, delta_seq, JobId,
