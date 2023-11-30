@@ -30,7 +30,7 @@ import os
 import stat
 import sys
 import time
-from base64 import a85decode
+from base64 import b85decode
 
 
 def parse_plugindef_string(plugindef):
@@ -107,7 +107,7 @@ def get_config_path():
 
 def transform_value(value, transform):
     if transform == "enc":
-        return a85decode(value).decode("utf-8")
+        return b85decode(value).decode("utf-8")
     else:
         raise NameError("unknown transformation")
     return value

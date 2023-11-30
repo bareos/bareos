@@ -18,7 +18,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-from base64 import a85encode
+from base64 import b85encode
 from sys import argv, stdin, stderr
 
 usage = f"""Usage: {argv[0]} [VALUE]
@@ -27,7 +27,7 @@ If VALUE is omitted, it will be read from stdin."""
 
 
 def encode(val):
-    return a85encode(val.encode("utf-8")).decode("ascii")
+    return b85encode(val.encode("utf-8")).decode("ascii")
 
 
 def main():
