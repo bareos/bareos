@@ -34,6 +34,7 @@ endif()
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
 include(GNUInstallDirs)
+include(BareosHelper)
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
@@ -790,7 +791,7 @@ string(TIMESTAMP NOW "%Y-%m-%d %H:%M:%S")
 
 # give configure output
 message(" ")
-message("Configuration on ${NOW} : ")
+message("Configuration on ${NOW}: ")
 message(" ")
 
 message(
@@ -950,6 +951,9 @@ if(HAVE_WIN32)
   message("   WINDOWS_BITS:                 ${WINDOWS_BITS}")
   message("   WINEPATH environment:         $ENV{WINEPATH}")
 endif()
+
+print_variables("${DUMP_VARS}")
+
 # REPEAT_UNTIL requires cmake 3.17+
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
   set(REPEAT_UNTIL "REPEAT UNTIL_PASS:2")
