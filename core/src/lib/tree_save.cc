@@ -58,10 +58,12 @@ template <typename T> static span<char> byte_view(const T& val)
  */
 struct proto_node {
   struct {
+    // since findex is only (signed) 32bit, (unsigned) 32bit here should
+    // be enough to account for not-backedup-files
     // indices into the proto node array
     // start and end of subtree (start is the first child!)
-    std::uint64_t start;  // start is useless; its always the next one
-    std::uint64_t end;
+    std::uint32_t start;  // start is useless; its always the next one
+    std::uint32_t end;
   } sub;
 
   std::uint64_t child_begin() { return sub.start; }
@@ -73,9 +75,12 @@ struct proto_node {
   struct {
     // byte offsets relative to the start of the string area
     std::uint64_t start : 48;
-    std::uint64_t end : 16;  // TODO: make it a 16bit length instead
+    std::uint64_t length : 16;
   } name;
 
+  // deltas only make sense when adding up multiple jobs.  Since
+  // this storage format is only to be used for one job, we can savely remove
+  // this
   struct {
     std::uint64_t start;
     std::uint64_t end;  // TODO: 32bit length enough here ?
@@ -184,7 +189,7 @@ struct tree_view {
   std::string_view name(size_t i)
   {
     auto& node = nodes[i];
-    auto name_size = node.name.end - node.name.start;
+    auto name_size = node.name.length;
     auto* start = string_pool.data() + node.name.start;
     return std::string_view{start, name_size};
   }
@@ -383,7 +388,7 @@ struct tree_builder {
       n.name.start = string_area.size();
       string_area.insert(string_area.end(), node->fname,
                          node->fname + strlen(node->fname));
-      n.name.end = string_area.size();
+      n.name.length = string_area.size() - n.name.start;
 
       meta_data& meta = metas.emplace_back();
       meta.findex = node->FileIndex;
@@ -563,10 +568,9 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     const proto_node& pnode = tree.nodes[i];
     TREE_NODE& node = *new (&nodes[i]) TREE_NODE;
     auto str = tree.nodes[i].name;
-    node.fname = tree_alloc<char>(root, str.end - str.start + 1);
-    std::memcpy(node.fname, tree.string_pool.data() + str.start,
-                str.end - str.start);
-    node.fname[str.end - str.start] = 0;
+    node.fname = tree_alloc<char>(root, str.length + 1);
+    std::memcpy(node.fname, tree.string_pool.data() + str.start, str.length);
+    node.fname[str.length] = 0;
     node.parent = (TREE_NODE*)root;
     for (std::size_t child = pnode.sub.start; child < pnode.sub.end;
          child = tree.nodes[child].sub.end) {
@@ -601,9 +605,8 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     current.fhnode = fh.node;
 
     auto str = saved.name;
-    std::memcpy(current.fname, tree.string_pool.data() + str.start,
-                str.end - str.start);
-    current.fname[str.end - str.start] = 0;
+    std::memcpy(current.fname, tree.string_pool.data() + str.start, str.length);
+    current.fname[str.length] = 0;
 
     current.type = meta.type;
     current.extract = 0;
