@@ -2,3 +2,4 @@
 @plugindir@/BareosFdPluginBaseclass.py*
 @plugindir@/BareosFdPluginLocalFilesBaseclass.py*
 @plugindir@/BareosFdWrapper.py*
+@scriptdir@/bareos_encode_string.py

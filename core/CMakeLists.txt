@@ -773,10 +773,10 @@ endif()
 
 include(BareosConfigureFile)
 
-add_subdirectory(scripts)
-add_subdirectory(manpages)
 add_subdirectory(platforms)
 add_subdirectory(src)
+add_subdirectory(scripts)
+add_subdirectory(manpages)
 
 include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
