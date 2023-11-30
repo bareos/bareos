@@ -12,6 +12,6 @@ FileSet {
     ":option2=value2"
     ":option3=value3"
     ":option4=value4"
-    ":password#enc=E+*g/GAhM4"
+    ":password#enc=aA9+EcW-iJ"
   }
 }
