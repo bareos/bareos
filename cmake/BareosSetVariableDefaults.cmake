@@ -647,3 +647,8 @@ if(NOT DEFINED gfapi_fd_testvolume)
       PARENT_SCOPE
   )
 endif()
+
+set(DUMP_VARS
+    ""
+    CACHE STRING "Dump all variables that matches this regex."
+)
