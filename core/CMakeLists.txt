@@ -193,7 +193,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(HOMEBREW_PREFIX "/usr/local")
   endif()
 
-  set(OPENSSL_ROOT_DIR ${HOMEBREW_PREFIX}/opt/openssl)
+  set(OPENSSL_ROOT_DIR ${HOMEBREW_PREFIX}/opt/openssl@3)
   set(Readline_ROOT_DIR ${HOMEBREW_PREFIX}/opt/readline)
   set(Intl_ROOT_DIR ${HOMEBREW_PREFIX}/opt/gettext)
 endif()
