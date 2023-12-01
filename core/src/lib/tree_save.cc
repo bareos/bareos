@@ -345,8 +345,11 @@ struct tree_builder {
     } else {
       fh_offset = tree_header::offset_not_found;
     }
-    Dmsg0(10, "fh: %llu - %llu (%llu)\n", fh_offset, data.size(),
-          data.size() - fh_offset);
+
+    if (fh_offset != tree_header::offset_not_found) {
+      Dmsg0(10, "fh: %llu - %llu (%llu)\n", fh_offset, data.size(),
+            data.size() - fh_offset);
+    }
 
     {
       std::size_t align = alignof(delta);
@@ -369,8 +372,10 @@ struct tree_builder {
     } else {
       seq_offset = tree_header::offset_not_found;
     }
-    Dmsg0(10, "delta_seq: %llu - %llu (%llu)\n", seq_offset, data.size(),
-          data.size() - seq_offset);
+    if (seq_offset != tree_header::offset_not_found) {
+      Dmsg0(10, "delta_seq: %llu - %llu (%llu)\n", seq_offset, data.size(),
+            data.size() - seq_offset);
+    }
 
     {
       std::size_t align = alignof(delta_part);
