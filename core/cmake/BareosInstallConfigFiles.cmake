@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,39 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+
+function(bareos_install_single_config_file configfile baseconfigdir
+         additionalconfigdir
+)
+  if(IS_ABSOLUTE ${baseconfigdir})
+    set(DESTCONFDIR "$ENV{DESTDIR}${baseconfigdir}/")
+  else()
+    set(DESTCONFDIR "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${baseconfigdir}/")
+  endif()
+
+  get_filename_component(fname ${configfile} NAME)
+  if(EXISTS ${DESTCONFDIR}${additionalconfigdir}/${fname})
+    message(
+      STATUS "${DESTCONFDIR}${additionalconfigdir}/${fname} already exists"
+    )
+    message(
+      STATUS
+        "Installing config: ${DESTCONFDIR}${additionalconfigdir}/${fname}.new"
+    )
+    file(RENAME "${configfile}" "${configfile}.new")
+    file(COPY "${configfile}.new"
+         DESTINATION "${DESTCONFDIR}${additionalconfigdir}"
+    )
+    file(RENAME "${configfile}.new" "${configfile}")
+  else()
+    message(
+      STATUS "Installing config: ${DESTCONFDIR}${additionalconfigdir}/${fname}"
+    )
+    file(COPY "${configfile}"
+         DESTINATION "${DESTCONFDIR}${additionalconfigdir}"
+    )
+  endif()
+endfunction()
 
 macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
       SRC_DIR
@@ -41,7 +74,7 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
 
   message(
     STATUS
-      "installing configuration ${CONFIGBASEDIRECTORY}  resource files to ${DESTCONFDIR}"
+      "installing configuration ${CONFIGBASEDIRECTORY} resource files to ${DESTCONFDIR}"
   )
 
   message(
@@ -54,21 +87,9 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
     file(GLOB configfiles "${resdir}/*.conf")
     get_filename_component(resname ${resdir} NAME)
     foreach(configfile ${configfiles})
-      get_filename_component(fname ${configfile} NAME)
-      if(EXISTS ${DESTCONFDIR}/${resname}/${fname})
-        message(STATUS "${DESTCONFDIR}/${resname}/${fname} exists")
-        message(STATUS "rename ${configfile} to ${configfile}.new")
-        file(RENAME "${configfile}" "${configfile}.new")
-
-        message(STATUS "copy ${configfile}.new to ${DESTCONFDIR}/${resname}")
-        file(COPY "${configfile}.new" DESTINATION "${DESTCONFDIR}/${resname}")
-        file(RENAME "${configfile}.new" "${configfile}")
-      else()
-        message(
-          STATUS "${resname}/${fname} as ${resname}/${fname} (new installation)"
-        )
-        file(COPY "${configfile}" DESTINATION "${DESTCONFDIR}/${resname}")
-      endif()
+      bareos_install_single_config_file(
+        "${configfile}" "${CONFDIR}" "${CONFIGBASEDIRECTORY}/${resname}"
+      )
     endforeach()
   endforeach()
 
