@@ -28,211 +28,173 @@ if(NOT DEFINED prefix)
   set(prefix ${CMAKE_DEFAULT_PREFIX})
 endif()
 
+option(USE_RELATIVE_PATHS
+       "Compile with relatives path, required for relocatable binaries." OFF
+)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(HAVE_EXTENDED_ACL 1)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(USE_RELATIVE_PATHS)
 
-  # libdir
-  if(NOT DEFINED libdir)
-    set(libdir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # includedir
-  if(NOT DEFINED includedir)
-    set(includedir ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # bindir
-  if(NOT DEFINED bindir)
-    set(bindir ${CMAKE_INSTALL_BINDIR})
-    message(STATUS "set bindir to default ${bindir}")
-  endif()
-
-  # sbindir
-  if(NOT DEFINED sbindir)
-    set(sbindir ${CMAKE_INSTALL_SBINDIR})
-    message(STATUS "set sbindir to default ${sbindir}")
-  endif()
-
-  # sysconfdir
-  if(NOT DEFINED sysconfdir)
-    set(sysconfdir ${CMAKE_INSTALL_SYSCONFDIR})
-  endif()
+  set(bindir
+      "${CMAKE_INSTALL_BINDIR}"
+      CACHE STRING "bin directory"
+  )
+  set(sbindir
+      "${CMAKE_INSTALL_SBINDIR}"
+      CACHE STRING "sbin directory"
+  )
+  set(libdir
+      "${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "lib directory"
+  )
+  set(backenddir
+      "${libdir}/backends"
+      CACHE STRING "directory for Bareos backends"
+  )
+  set(plugindir
+      "${libdir}/plugins"
+      CACHE STRING "directory for Bareos plugins"
+  )
+  set(scriptdir
+      "lib/${CMAKE_PROJECT_NAME}/scripts"
+      CACHE STRING "directory for Bareos helper scripts"
+  )
+  set(sysconfdir
+      "${CMAKE_INSTALL_SYSCONFDIR}"
+      CACHE STRING "system configuration directory"
+  )
   set(SYSCONFDIR "\"${sysconfdir}\"")
-
-  # confdir
-  if(NOT DEFINED confdir)
-    set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # configtemplatedir
-  if(NOT DEFINED configtemplatedir)
-    set(configtemplatedir "lib/${CMAKE_PROJECT_NAME}/defaultconfigs")
-  endif()
-
-  # mandir
-  if(NOT DEFINED mandir)
-    set(mandir ${CMAKE_INSTALL_MANDIR})
-  endif()
-
-  # docdir
-  if(NOT DEFINED docdir)
-    set(docdir default_for_docdir)
-  endif()
-
-  # archivedir
-  if(NOT DEFINED archivedir)
-    set(archivedir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
-    )
-  endif()
-
-  # backenddir
-  if(NOT DEFINED backenddir)
-    set(backenddir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
-  endif()
-
-  # scriptdir
-  if(NOT DEFINED scriptdir)
-    set(scriptdir "lib/${CMAKE_PROJECT_NAME}/scripts")
-  endif()
-
-  # workingdir
-  if(NOT DEFINED workingdir)
-    set(workingdir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
-    )
-  endif()
+  set(confdir
+      "${sysconfdir}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos configuration directory"
+  )
+  set(configtemplatedir
+      "${confdir}"
+      CACHE STRING "directory for Bareos configuration templates (optional)"
+  )
+  set(includedir
+      "${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "include directory"
+  )
+  set(mandir
+      ${CMAKE_INSTALL_MANDIR}
+      CACHE STRING "man(uals) directory"
+  )
+  # TODO: unused?
+  set(docdir
+      default_for_docdir
+      CACHE STRING "doc directory"
+  )
+  set(workingdir
+      "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos working directory"
+  )
   set(working_dir "${workingdir}")
+  set(archivedir
+      "${workingdir}/storage"
+      CACHE STRING "Bareos archive directory"
+  )
+  # TODO: unused?
+  set(bsrdir
+      "${workingdir}"
+      CACHE STRING "Bareos BSR directory"
+  )
+  set(subsysdir
+      "${workingdir}"
+      CACHE STRING "subsys directory"
+  )
+  set(logdir
+      "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "log directory"
+  )
+  set(datarootdir
+      "${CMAKE_INSTALL_DATAROOTDIR}"
+      CACHE STRING "data root directory"
+  )
 
-  # plugindir
-  if(NOT DEFINED plugindir)
-    set(plugindir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-  endif()
+else() # if(USE_RELATIVE_PATHS)
 
-  # bsrdir
-  if(NOT DEFINED bsrdir)
-    set(bsrdir ${workingdir})
-  endif()
-
-  # logdir
-  if(NOT DEFINED logdir)
-    set(logdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # datarootdir
-  if(NOT DEFINED datarootdir)
-    set(datarootdir "${CMAKE_INSTALL_DATAROOTDIR}")
-  endif()
-
-  # subsysdir
-  if(NOT DEFINED subsysdir)
-    set(subsysdir "${workingdir}")
-  endif()
-
-else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-  # libdir
-  if(NOT DEFINED libdir)
-    set(libdir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # includedir
-  if(NOT DEFINED includedir)
-    set(includedir ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # bindir
-  if(NOT DEFINED bindir)
-    set(bindir ${CMAKE_INSTALL_FULL_BINDIR})
-    message(STATUS "set bindir to default ${bindir}")
-  endif()
-
-  # sbindir
-  if(NOT DEFINED sbindir)
-    set(sbindir ${CMAKE_INSTALL_FULL_SBINDIR})
-    message(STATUS "set sbindir to default ${sbindir}")
-  endif()
-
-  # sysconfdir
-  if(NOT DEFINED sysconfdir)
-    set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
-  endif()
+  set(bindir
+      "${CMAKE_INSTALL_FULL_BINDIR}"
+      CACHE STRING "bin directory"
+  )
+  set(sbindir
+      "${CMAKE_INSTALL_FULL_SBINDIR}"
+      CACHE STRING "sbin directory"
+  )
+  set(libdir
+      "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "lib directory"
+  )
+  set(backenddir
+      "${libdir}/backends"
+      CACHE STRING "directory for Bareos backends"
+  )
+  set(plugindir
+      "${libdir}/plugins"
+      CACHE STRING "directory for Bareos plugins"
+  )
+  set(scriptdir
+      "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts"
+      CACHE STRING "directory for Bareos helper scripts"
+  )
+  set(sysconfdir
+      "${CMAKE_INSTALL_FULL_SYSCONFDIR}"
+      CACHE STRING "system configuration directory"
+  )
   set(SYSCONFDIR "\"${sysconfdir}\"")
-
-  # confdir
-  if(NOT DEFINED confdir)
-    set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # configtemplatedir
-  if(NOT DEFINED configtemplatedir)
-    set(configtemplatedir "${confdir}")
-  endif()
-
-  # mandir
-  if(NOT DEFINED mandir)
-    set(mandir ${CMAKE_INSTALL_FULL_MANDIR})
-  endif()
-
-  # docdir
-  if(NOT DEFINED docdir)
-    set(docdir default_for_docdir)
-  endif()
-
-  # archivedir
-  if(NOT DEFINED archivedir)
-    set(archivedir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
-    )
-  endif()
-
-  # backenddir
-  if(NOT DEFINED backenddir)
-    set(backenddir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
-  endif()
-
-  # scriptdir
-  if(NOT DEFINED scriptdir)
-    set(scriptdir "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts")
-  endif()
-
-  # workingdir
-  if(NOT DEFINED workingdir)
-    set(workingdir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
-    )
-  endif()
+  set(confdir
+      "${sysconfdir}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos configuration directory"
+  )
+  set(configtemplatedir
+      "${confdir}"
+      CACHE STRING "directory for Bareos configuration templates (optional)"
+  )
+  set(includedir
+      "${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "include directory"
+  )
+  set(mandir
+      ${CMAKE_INSTALL_FULL_MANDIR}
+      CACHE STRING "man(uals) directory"
+  )
+  # TODO: unused?
+  set(docdir
+      default_for_docdir
+      CACHE STRING "doc directory"
+  )
+  set(workingdir
+      "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos working directory"
+  )
   set(working_dir "${workingdir}")
+  set(archivedir
+      "${workingdir}/storage"
+      CACHE STRING "Bareos archive directory"
+  )
+  # TODO: unused?
+  set(bsrdir
+      "${workingdir}"
+      CACHE STRING "Bareos BSR directory"
+  )
+  set(subsysdir
+      "${workingdir}"
+      CACHE STRING "subsys directory"
+  )
+  set(logdir
+      "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "log directory"
+  )
+  set(datarootdir
+      "${CMAKE_INSTALL_FULL_DATAROOTDIR}"
+      CACHE STRING "data root directory"
+  )
 
-  # plugindir
-  if(NOT DEFINED plugindir)
-    set(plugindir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-  endif()
-
-  # bsrdir
-  if(NOT DEFINED bsrdir)
-    set(bsrdir ${workingdir})
-  endif()
-
-  # logdir
-  if(NOT DEFINED logdir)
-    set(logdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # datarootdir
-  if(NOT DEFINED datarootdir)
-    set(datarootdir "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
-  endif()
-
-  # subsysdir
-  if(NOT DEFINED subsysdir)
-    set(subsysdir "${workingdir}")
-  endif()
-
-endif() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+endif() # if(USE_RELATIVE_PATHS)
 
 set(PYTHON_MODULE_PATH
     "${plugindir}"
