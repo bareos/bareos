@@ -80,7 +80,10 @@ struct proto_node {
 
   // deltas only make sense when adding up multiple jobs.  Since
   // this storage format is only to be used for one job, we can savely remove
-  // this
+  // this.
+  // in case we want to support this, we can probably just add an index to each
+  // delta pair instead; on a restore we would iterate over each pair and add
+  // the pair to the corresponding node.
   struct {
     std::uint64_t start;
     std::uint64_t end;  // TODO: 32bit length enough here ?
@@ -111,7 +114,10 @@ struct meta_data {
     std::uint32_t soft_link : 1; /* set if is soft link */
   };
 
-  std::int64_t original;  // -1 = no original; else index of original
+  std::uint32_t original;  // uint32_max = no original; else index of original
+
+  static constexpr std::uint32_t original_not_found
+      = std::numeric_limits<decltype(original)>::max();
 };
 
 struct fh {
@@ -120,12 +126,13 @@ struct fh {
 };
 
 struct delta {
-  std::uint64_t seq_num{0};
+  std::uint32_t seq_num{0};
 };
 
 struct tree_header {
   static constexpr std::uint64_t offset_not_found = 0;
   // todo: checksum ?
+  // todo: add jobid(s)?
   std::uint64_t num_nodes;
   std::uint64_t nodes_offset;
   std::uint64_t string_offset;
@@ -620,7 +627,7 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     current.hard_link = meta.hard_link;
     current.soft_link = meta.soft_link;
 
-    if (meta.original < 0) {
+    if (meta.original == meta.original_not_found) {
       auto* entry = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
       entry->key = (((uint64_t)meta.jobid) << 32) + meta.findex;
       entry->node = &current;
@@ -856,7 +863,9 @@ TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
       auto fhnode = fh.node;
       auto JobId = meta.jobid;
       int LinkFI = 0;
-      if (meta.original >= 0) { LinkFI = view.metas[meta.original].findex; }
+      if (meta.original != meta.original_not_found) {
+        LinkFI = view.metas[meta.original].findex;
+      }
       bool soft_link = meta.soft_link;
 
       if (!InsertNode(root, LinkFI, soft_link, FileIndex, delta_seq, JobId,
