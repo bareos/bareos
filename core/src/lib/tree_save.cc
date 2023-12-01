@@ -60,17 +60,11 @@ struct proto_node {
   struct {
     // since findex is only (signed) 32bit, (unsigned) 32bit here should
     // be enough to account for not-backedup-files
-    // indices into the proto node array
-    // start and end of subtree (start is the first child!)
-    std::uint32_t start;  // start is useless; its always the next one
-    std::uint32_t end;
+    // indices into the proto node array.
+    // If this node lies at index i, then its subtree are all nodes
+    // i+1 <= j < end.
+    std::uint32_t size;
   } sub;
-
-  std::uint64_t child_begin() { return sub.start; }
-
-  std::uint64_t next() { return sub.end; }
-
-  std::uint64_t child_end() { return sub.end; }
 
   struct {
     // byte offsets relative to the start of the string area
@@ -96,6 +90,36 @@ struct proto_node {
     std::uint64_t high = jobid;
     return high << 32 | low;
   }
+};
+
+struct children {
+  using idx_type = std::ptrdiff_t;
+
+  struct child_iter {
+    idx_type idx;
+    const proto_node* nodes;
+
+    child_iter& operator++()
+    {
+      idx += nodes[idx].sub.size + 1;
+      return *this;
+    }
+
+    bool operator!=(const child_iter& other) const
+    {
+      return idx != other.idx || nodes != other.nodes;
+    }
+
+    idx_type operator*() const { return idx; }
+  };
+
+  child_iter begin() const { return child_iter{1, nodes}; }
+
+  child_iter end() const { return child_iter{nodes[0].sub.size, nodes}; }
+
+  const proto_node* nodes;
+
+  children(const proto_node& node) : nodes{&node} {}
 };
 
 static_assert(std::is_same_v<JobId_t, std::uint32_t>);
@@ -427,8 +451,7 @@ struct tree_builder {
 
     std::size_t end = nodes.size();
 
-    nodes[pos].sub.start = start;
-    nodes[pos].sub.end = end;
+    nodes[pos].sub.size = end - start;
   }
 };
 
@@ -579,9 +602,8 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     std::memcpy(node.fname, tree.string_pool.data() + str.start, str.length);
     node.fname[str.length] = 0;
     node.parent = (TREE_NODE*)root;
-    for (std::size_t child = pnode.sub.start; child < pnode.sub.end;
-         child = tree.nodes[child].sub.end) {
-      auto& childnode = nodes[child];
+    for (auto child : children(pnode)) {
+      auto& childnode = nodes[i + child];
       node.child.insert(&childnode, NodeCompare);
       childnode.parent = &node;
     }
@@ -848,8 +870,9 @@ TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
       if (type != TN_FILE) {
         Path.append(fname);
         Path += "/";
-        if (path_stack.size()) { ASSERT(path_stack.back() >= node.sub.end); }
-        path_stack.push_back(node.sub.end);
+        auto end = i + 1 + node.sub.size;
+        if (path_stack.size()) { ASSERT(path_stack.back() >= end); }
+        path_stack.push_back(end);
         File.clear();
       } else {
         File.assign(fname);
