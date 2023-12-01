@@ -478,8 +478,6 @@ extern "C" void* msg_thread(void* arg)
   Dmsg0(100, "Start msg_thread loop\n");
   n = 0;
 
-  jcr->dir_impl->backup_tree_root = new_tree(1);
-
   while (!jcr->IsJobCanceled() && (n = BgetDirmsg(sd)) >= 0) {
     Dmsg1(400, "<stored: %s", sd->msg);
     /* Check for "3000 OK Job Authorization="
@@ -516,12 +514,14 @@ extern "C" void* msg_thread(void* arg)
     Qmsg(jcr, M_FATAL, 0, T_("Director's comm line to SD dropped.\n"));
   }
 
-  std::string cwd = "working";
-  std::string path
-      = cwd + std::string{"/bareos-"} + std::to_string(jcr->JobId) + ".tree";
-  SaveTree(path.c_str(), jcr->dir_impl->backup_tree_root);
-  FreeTree(jcr->dir_impl->backup_tree_root);
-  jcr->dir_impl->backup_tree_root = nullptr;
+  if (jcr->dir_impl->backup_tree_root) {
+    std::string cwd = "working";
+    std::string path
+        = cwd + std::string{"/bareos-"} + std::to_string(jcr->JobId) + ".tree";
+    SaveTree(path.c_str(), jcr->dir_impl->backup_tree_root);
+    FreeTree(jcr->dir_impl->backup_tree_root);
+    jcr->dir_impl->backup_tree_root = nullptr;
+  }
 
   if (IsBnetError(sd)) { jcr->dir_impl->SDJobStatus = JS_ErrorTerminated; }
   pthread_cleanup_pop(1); /* remove and execute the handler */

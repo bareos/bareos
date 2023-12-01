@@ -56,6 +56,7 @@
 #include "lib/util.h"
 #include "lib/version.h"
 #include "lib/bpipe.h"
+#include "lib/tree.h"
 
 namespace directordaemon {
 
@@ -172,6 +173,8 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
   if (!ValidateClient(jcr) || !ValidateStorage(jcr)) { return false; }
 
   CreateClones(jcr); /* run any clone jobs */
+
+  jcr->dir_impl->backup_tree_root = new_tree(1);
 
   return true;
 }
