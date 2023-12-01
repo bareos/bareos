@@ -79,7 +79,7 @@ jobs:
     - name: Build package
       run: |
         eval "$(brew shellenv)"
-        cmake -S . -B cmake-build -DCMAKE_INSTALL_PREFIX=/usr/local/bareos -DENABLE_JANSSON=OFF -Dclient-only=yes
+        cmake -S . -B cmake-build -DCMAKE_INSTALL_PREFIX=/usr/local/bareos -DUSE_RELATIVE_PATHS=ON -Dconfigtemplatedir=lib/bareos/defaultconfigs -DENABLE_JANSSON=OFF -Dclient-only=yes
         cmake --build cmake-build -- package
         ls -la cmake-build/*.pkg
         mkdir -p "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
