@@ -462,7 +462,7 @@ static bool InsertNode(JobControlRecord* jcr, AttributesDbRecord* ar)
         Dmsg3(0,
               "Something is wrong with Delta, skip it "
               "fname=%s d1=%d d2=%d\n",
-              File, node->delta_seq, delta_seq);
+              File.c_str(), node->delta_seq, delta_seq);
       }
       return false;
     }
