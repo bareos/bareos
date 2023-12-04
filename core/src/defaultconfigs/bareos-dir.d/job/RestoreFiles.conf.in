@@ -8,5 +8,5 @@ Job {
   Pool = Incremental
   Messages = Standard
   Where = /tmp/bareos-restores
-  Maximum Concurrent Job = 10
+  Maximum Concurrent Jobs = 10
 }

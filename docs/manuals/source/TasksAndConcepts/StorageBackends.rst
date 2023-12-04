@@ -30,7 +30,7 @@ Droplet Storage Backend
    single: Backend; S3|see {Backend; Droplet}
 
 The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to
-access Object Storage through **libdroplet**. Droplet support a number of backends, most
+access Object Storage through **libdroplet**. Droplet supports a number of backends, most
 notably S3. For details about Droplet itself see https://github.com/scality/Droplet.
 
 Requirements
@@ -135,35 +135,35 @@ files, so every append operation could result in reading and writing the full vo
 
 Following :config:option:`sd/device/DeviceOptions`\  settings are possible:
 
-`profile`
+profile
    Droplet profile path (e.g. /etc/bareos/bareos-sd.d/device/droplet/droplet.profile).
    Make sure the profile file is readable for user **bareos**.
 
-`acl`
+acl
    Canned ACL
 
-`storageclass`
+storageclass
    Storage Class to use.
 
-`bucket`
+bucket
    Bucket to store objects in.
 
-`chunksize`
+chunksize
    Size of Volume Chunks (default = 10 Mb). see below the limitation with Maximum Volume Size
 
-`iothreads`
+iothreads
    Number of IO-threads to use for uploads (if not set, blocking uploads are used)
 
-`ioslots`
+ioslots
    Number of IO-slots per IO-thread (0-255, default 10). Set this to values greater than 1 for cached and to 0 for direct writing.
 
-`retries`
+retries
    Number of writing tries before discarding the data. Set this to 0 for unlimited retries. Setting anything != 0 here will cause dataloss if the backend is not available, so be very careful (0-255, default = 0, which means unlimited retries).
 
-`mmap`
+mmap
    Use mmap to allocate Chunk memory instead of malloc().
 
-`location`
+location
    Deprecated. If required (AWS only), it has to be set in the Droplet profile.
 
 Create the Droplet profile to be used. This profile is used later by the droplet library when accessing your cloud storage.
@@ -320,7 +320,7 @@ As a new DNS entry is not available immediately, Amazon solves this by using HTT
 redirects (code: 307) to redirect to the correct host. Unfortunately, the Droplet library
 does not support HTTP redirects.
 
-Requesting the device status only resturn a unspecific error:
+Requesting the device status only returns an unspecific error:
 
 .. code-block:: bconsole
    :caption: status storage
@@ -349,8 +349,8 @@ AWS S3 Logging
 ^^^^^^^^^^^^^^
 
 If you use AWS S3 object storage and want to debug your bareos setup, it is recommended
-to turn on the server access logging in your bucket properties. You will see if bareos
-gets to try writing into your bucket or not.
+to turn on the server access logging in your bucket properties.
+This will allow you to determine whether Bareos attempted to write to your bucket or not.
 
 .. _SdBackendGfapi:
 

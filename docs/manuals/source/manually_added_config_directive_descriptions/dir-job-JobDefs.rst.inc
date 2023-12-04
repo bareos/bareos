@@ -2,4 +2,4 @@ If a :ref:`Job Defs <DirectorResourceJobDefs>` resource name is specified, all t
 bulk of the directives are defined in one or more :ref:`Job Defs <DirectorResourceJobDefs>`. This is particularly useful if you have many similar Jobs but with minor variations such as different Clients. To structure the configuration even more, :ref:`Job Defs <DirectorResourceJobDefs>` themselves can also refer to other :ref:`Job Defs <DirectorResourceJobDefs>`.
 
 .. warning::
-   While most of the parsed configuration will replace the oldest read parameter by the most recent, Instructions that can handle several instantiations like `RunScript` will simply be added.
+   If a parameter like RunScript for example can be specified multiple times, the configuration will be added instead of overridden as described above. Therefore, if one RunScript is defined in the JobDefs and another in the job, both will be executed.
