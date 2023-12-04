@@ -22,11 +22,17 @@ RestoreDirectory="${tmp}/fileregex-restores"
 
 start_test
 
-fileregex=".*/ot[h]er-.*"
+fileregex=".*/[Aa]-file.*"
 
-matched_files=$(find "$BackupDirectory/" -type f -regex "$fileregex")
+mapfile -d $'\0' matched_files < \
+  <(find "$BackupDirectory/" -type f -regex "$fileregex" -print0)
 
-if [ -z "$matched_files" ]; then
+echo "Matched files:" > "$log_home/matched.out"
+for file in "${matched_files[@]}"; do
+    echo "$file" >> "$log_home/matched.out"
+done
+
+if [ "${#matched_files[@]}" -eq 0 ]; then
   echo "FileRegex did not match any files in test data"
   exit 1
 fi
@@ -35,7 +41,7 @@ fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $log_home/jobs.out
 list jobs
-@$out /dev/null
+@$out $log_home/restore.out
 restore client=bareos-fd fileset=SelfTest \
     where="$RestoreDirectory" \
     fileregex="$fileregex" \
@@ -52,6 +58,6 @@ check_preconditions
 
 # We expect to restore exactly those files
 # matched by the regex
-check_restore_files_diff $matched_files
+check_restore_files_diff "${matched_files[@]}"
 
 end_test
