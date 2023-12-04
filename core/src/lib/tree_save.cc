@@ -747,6 +747,8 @@ static bool InsertNode(TREE_ROOT* root,
                        int fhnode,
                        bool all)
 {
+  if (type == TN_ROOT) { return false; }
+
   int ntype = [&] {
     if (*File != 0) {
       return TN_FILE;
