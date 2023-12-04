@@ -262,7 +262,7 @@ struct tree_builder {
     {
       TREE_NODE* root_node = reinterpret_cast<TREE_NODE*>(root);
       TREE_NODE* child;
-      foreach_child (child, root_node) { build(m, root_node); }
+      foreach_child (child, root_node) { build(m, child); }
     }
 
     for (auto& meta : metas) {
@@ -270,11 +270,12 @@ struct tree_builder {
       key <<= 32;
       key |= meta.findex;
 
+      // this does not work when using optimize_for_size!
       HL_ENTRY* entry = root->hardlinks.lookup(key);
-      if (entry && entry->node) {
+      if (entry && entry->node && entry->node->FileIndex != meta.findex) {
         meta.original = m[entry->node];
       } else {
-        meta.original = -1;
+        meta.original = meta.original_not_found;
       }
     }
   }
