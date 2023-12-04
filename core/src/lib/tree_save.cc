@@ -259,7 +259,12 @@ struct tree_builder {
   tree_builder(TREE_ROOT* root)
   {
     node_map m;
-    build(m, root->first);
+    {
+      TREE_NODE* root_node = reinterpret_cast<TREE_NODE*>(root);
+      TREE_NODE* child;
+      foreach_child (child, root_node) { build(m, root_node); }
+    }
+
     for (auto& meta : metas) {
       std::uint64_t key = meta.jobid;
       key <<= 32;
