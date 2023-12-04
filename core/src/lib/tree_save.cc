@@ -904,9 +904,13 @@ TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
       }
       bool soft_link = meta.soft_link;
 
+      const char* path = Path.c_str();
+      if (type == TN_DIR_NLS) {
+        // remove leading slash
+        path += 1;
+      }
       if (!InsertNode(root, LinkFI, soft_link, FileIndex, delta_seq, JobId,
-                      Path.c_str(), File.c_str(), type, fhinfo, fhnode,
-                      mark_on_load)) {
+                      path, File.c_str(), type, fhinfo, fhnode, mark_on_load)) {
         int_count -= 1;
       }
     }
