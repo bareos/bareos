@@ -336,6 +336,11 @@ bail_out:
 
   if (regexp) { free(regexp); }
 
+  if (jcr->dir_impl->restore_tree_root) {
+    FreeTree(jcr->dir_impl->restore_tree_root);
+    jcr->dir_impl->restore_tree_root = nullptr;
+  }
+
   free_rx(&rx);
   return false;
 }
