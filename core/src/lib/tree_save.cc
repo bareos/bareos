@@ -718,7 +718,7 @@ class NewTree {
   std::vector<tree_view> views;
 };
 
-void DeleteTree(const NewTree* nt) { nt->~NewTree(); }
+void DeleteTree(NewTree* nt) { nt->~NewTree(); }
 
 tree_ptr MakeNewTree() { return tree_ptr(new NewTree); }
 

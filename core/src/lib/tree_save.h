@@ -35,9 +35,9 @@ TREE_ROOT* LoadTree(const char* path, std::size_t* size, bool mark_on_load);
 #include <memory>
 
 class NewTree;
-void DeleteTree(const NewTree*);
+void DeleteTree(NewTree*);
 struct TreeDeleter {
-  void operator()(const NewTree* nt) const { DeleteTree(nt); }
+  void operator()(NewTree* nt) const { DeleteTree(nt); }
 };
 using tree_ptr = std::unique_ptr<NewTree, TreeDeleter>;
 tree_ptr MakeNewTree();
