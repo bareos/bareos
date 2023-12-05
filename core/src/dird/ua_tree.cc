@@ -379,27 +379,19 @@ static int SetExtract(UaContext* ua,
       }
     }
   } else {
-    if (extract) {
-      uint64_t key = 0;
-      bool is_hardlinked = false;
+    if (extract && node->hard_link) {
+      // Every hardlink is in hashtable, and it points to linked file.
+      uint64_t key = (((uint64_t)node->JobId) << 32) + node->FileIndex;
 
-      if (node->hard_link) {
-        // Every hardlink is in hashtable, and it points to linked file.
-        key = (((uint64_t)node->JobId) << 32) + node->FileIndex;
-        is_hardlinked = true;
-      }
-
-      if (is_hardlinked) {
-        /* If we point to a hard linked file, find that file in hardlinks
-         * hashmap, and mark it to be restored as well. */
-        HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
-        if (entry && entry->node) {
-          n = entry->node;
-          // if this is our first time marking it, then add to the count
-          if (!n->extract) { count += 1; }
-          n->extract = true;
-          n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
-        }
+      /* If we point to a hard linked file, find that file in hardlinks
+       * hashmap, and mark it to be restored as well. */
+      HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
+      if (entry && entry->node) {
+        n = entry->node;
+        // if this is our first time marking it, then add to the count
+        if (!n->extract) { count += 1; }
+        n->extract = true;
+        n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
       }
     }
   }
