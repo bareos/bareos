@@ -24,6 +24,12 @@
 #include <cstring>
 #include <cstdint>
 
+extern "C" {
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+}
+
 template <typename T> struct span {
   const T* mem{nullptr};
   std::size_t count{0};
@@ -710,11 +716,58 @@ TREE_ROOT* LoadTree(const char* path, std::size_t* size, bool marked_initially)
   }
 }
 
+struct map_ptr {
+  void* ptr{nullptr};
+  std::size_t size{0};
+
+  map_ptr(const char* path)
+  {
+    int fd = open(path, O_RDONLY);
+
+    if (fd < 0) { throw std::ios_base::failure("error opening file"); }
+
+    struct stat s;
+    if (fstat(fd, &s) < 0) {
+      throw std::ios_base::failure("error stating file");
+    }
+
+    size = s.st_size;
+    ptr = ::mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
+
+    if (ptr == MAP_FAILED) {
+      throw std::ios_base::failure("error mmaping file");
+    }
+
+    if (madvise(ptr, size, MADV_WILLNEED) != 0) {
+      throw std::ios_base::failure("error madvising mmap");
+    }
+
+    ::close(fd);
+  }
+
+  map_ptr(map_ptr&& other) { *this = std::move(other); }
+
+  map_ptr& operator=(map_ptr&& other)
+  {
+    std::swap(ptr, other.ptr);
+    std::swap(size, other.size);
+    return *this;
+  }
+
+  span<char> to_span() { return span{static_cast<char*>(ptr), size}; }
+
+  ~map_ptr()
+  {
+    if (ptr) { munmap(ptr, size); }
+  }
+};
+
 class NewTree {
   using bytes = std::vector<char>;
 
  public:
   std::vector<bytes> tree_data;
+  std::vector<map_ptr> tree_mmap;
   std::vector<tree_view> views;
 };
 
@@ -725,13 +778,21 @@ tree_ptr MakeNewTree() { return tree_ptr(new NewTree); }
 bool AddTree(NewTree* tree, const char* path)
 {
   try {
+#if 1
     std::vector<char> bytes = LoadFile(path);
-
 
     tree_view view(to_span(bytes));
 
     tree->tree_data.emplace_back(std::move(bytes));
     tree->views.push_back(view);
+#else
+    map_ptr map(path);
+
+    tree_view view(map.to_span());
+
+    tree->tree_mmap.emplace_back(std::move(map));
+    tree->views.push_back(view);
+#endif
 
     return true;
   } catch (const std::exception& e) {
