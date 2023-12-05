@@ -22,7 +22,6 @@ Director {
   HeartbeatInterval = 30 seconds
   VerId = "My Private Version ID"
   OptimizeForSize = Yes
-  # OptimizeForSpeed = No
   NdmpSnooping = Yes
   NdmpLogLevel = 40
   # NdmpNamelistFhinfoSetZeroForInvalidUquad = No
