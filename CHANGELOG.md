@@ -6,165 +6,180 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Breaking changes
-- The following deprecated configuration options have been removed, make sure to update your configuration accordingly:
+- Automatic downgrades to cleartext connections are now disabled by default. **Connecting to Bareos filedaemon < 18.2 is not possible anymore** - even if configured with TLS certificates. **Please update your clients**. Only if you absolutely cannot update a client you can configure `TLS Enable = no` explicitly. However, this is inherently insecure.
+- The old catalog backup script `make_catalog_backup.pl` has been removed. Its replacement `make_catalog_backup` was already the default. If you didn't already update your BackupCatalog job, now is the time to do so.
+- Support for Windows x86 (32Bit) has been removed.
+- Support for Python 2 has been removed.
+
+- The following **deprecated configuration options** have been **removed**, make sure to update your configuration accordingly:
    * Director daemon
-     * Pid Directory
+     * `Pid Directory`
+     * `Maximum Connections`
      
    * File daemon
-     * Pid Directory
-     * Compatible
-     
+     * `Pid Directory`
+     * `Compatible`
+     * `Maximum Connections`
+
    * Storage daemon
-     * Pid Directory
-     * Compatible
+     * `Pid Directory`
+     * `Compatible`
+     * `Maximum Connections`
 
 - The following configuration defaults have changed:
    * Director daemon
-     * Hard Links (Dir->Fileset->Include->Options) = no (was yes)
+     * `Hard Links = no` (was `yes`) in FileSet->Include->Options
+     * `TLS Require = yes` (was `no`)
+   * Storage daemon
+     * `Maximum Concurrent Jobs = 1` (was `0`) in Device
+     * `Maximum Block Size = 1048576` (was `0`) in Device
+     * `TLS Require = yes` (was `no`)
+   * File daemon
+     * `TLS Require = yes` (was `no`)
 
 - The PostgreSQL plugin got a complete rewrite, the minimal changes are:
    * `module_name=bareos-fd-postgresql`
    * `db_host=`
-   * `postgresql_data_dir=`
    * `wal_archive_dir=`
+
+### Added
+- file checksums: add new signature algorithm xxh128 [PR #1359]
+- stored: buffer fd messages [PR #1539]
+- filed: parallel compression/reading/sending [PR #1533]
+- cats: postgresql introduce pl/sql lstat_decode() function [PR #1466]
+- bareos-fd-plugin: new python PostgreSQL [PR #1541]
+- tls: add tls v1.3 configuration option [PR #1577]
+- webui: add machine-readable copyright file [PR #1419]
+- webui: add config resource graph to analytics (experimental) [PR #1412]
+- build: add Debian 12 [PR #1477]
+- build: add Fedora 38 [PR #1563]
+- devtools: add `pr-tool` to automate PR review and merge [PR #935]
 
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1352]
-- devtools: add `pr-tool` to automate PR review and merge [PR #935]
-- build: replace sprintf by snprintf due to upgraded MacOS compiler, change linking of googletest [PR #1361]
-- storage daemon: fix crash on volume swap [PR #1356]
-- core: make resource/configuration locking safer [PR #1325]
-- json generation: Fix some leaks and an integer overflow [PR #1130]
-- tray-monitor: build against Qt6 when present [PR #1011]
-- systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1339]
-- stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1348]
+- VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1473]
+- VMware Plugin: improve snapshot cleanup [PR #1484]
 - webui: enable sorting on version column [PR #1365]
-- dird: skip disabled clients in status command [PR #1367]
-- bsmtp: fix and update code, and change CLI parsing to CLI11 [PR #1316]
-- ua_restore: Add additional client info for restore report [PR #1374]
-- restore: fix failed restores showing Restore ok with warning [PR #1387]
-- FreeBSD: build cleanup [PR #1336]
-- improvements to pr-tool [PR #1389]
-- file checksums: add new signature algorithm xxh128 [PR #1359]
-- stored: remove warning for maximum block size for tapes [PR #1375]
-- ua_restore: enable restore from archive [PR #1372]
-- testfind: reuse filedaemon logic [PR #1234]
-- dird: enable default options in `fileset` config when no options are explicitly specified [PR #1357]
-- introduce php-cs-fixer and apply PSR-12 guidelines [PR #1403]
-- berrno_test.cc: accept both 271E and 273E [PR #1407]
-- Sanitizers: add ASAN options to avoid crashes [PR #1410]
-- dird: cats: adapt `purge` command to delete jobs with specific jobstatus and/or from specific pool [PR #1349]
-- filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
-- webui: remove some development leftovers and artefacts [PR #1422]
-- dird: allow to disable TLS-PSK downgrades [PR #1398]
-- core: fixes for gcc-13 support [PR #1424]
-- webui: update localization [PR #1414]
-- webui: improve localization process [PR #1429]
-- webui: add machine-readable copyright file [PR #1419]
-- webui: add config resource graph to analytics (experimental) [PR #1412]
-- dird: keep copy and migration control/administrative jobs [PR #1421]
-- scripts: config-lib improve get_local_hostname fallback [PR #1402]
-- dird: deprecate client `Autoprune`, `JobRetention`, and `FileRetention` [PR #1425]
-- daemons: remove deprecated `Pid Directory` config option, and update `Maximum Concurrent Jobs` default value to 1 [PR #1426]
-- build: switch to FreeBSD 12.4 [PR #1440]
 - webui: create internal api module [PR #1447]
 - webui: make restore merge options configurable [PR #1445]
 - webui: update German translation [PR #1437]
-- build: fix for gcc 13.1.1 [PR #1459]
-- packaging: systemd unit: set a limit of restart [PR #1450]
-- python-bareos: add missing `dirname` variable [PR #1460]
-- build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1469]
-- cleanup: remove some unused functions and shrink number of includes in bareos.h [PR #1433]
-- core: fix schema public with PostgreSQL 15 [PR #1449]
-- pr-tool: handling POEditor commits and optional github ci tests [PR #1434]
-- VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1473]
-- stored: change default block size to 1 MiB [PR #1396]
+- webui: update localization [PR #1414]
+- webui: improve localization process [PR #1429]
 - webui: re-add show update status for clients [PR #1371]
-- build: add Debian 12 [PR #1477]
-- pr-tool: Add options to be used in CI runs [PR #1488]
-- VMware Plugin: improve snapshot cleanup [PR #1484]
-- packaging: cleanup SUSE webui dependencies [PR #1493]
-- vss: remove dependency on live system during backup [PR #1452]
-- build: adapt matrix and pkglist for changes to CI [PR #1490]
-- cats: postgresql introduce pl/sql lstat_decode() function [PR #1466]
-- bsmtp: make mailhost and port message info a debug message [PR #1507]
+- webui: upgrade bootstrap to version 3.4.1 [PR #1550]
+- tray-monitor: build against Qt6 when present [PR #1011]
+- dird: skip disabled clients in status command [PR #1367]
+- ua_restore: Add additional client info for restore report [PR #1374]
+- ua_restore: enable restore from archive [PR #1372]
+- dird: enable default options in `fileset` config when no options are explicitly specified [PR #1357]
+- dird: cats: adapt `purge` command to delete jobs with specific jobstatus and/or from specific pool [PR #1349]
+- dird: allow to disable TLS-PSK downgrades [PR #1398]
+- dird: keep copy and migration control/administrative jobs [PR #1421]
+- dird: deprecate client `Autoprune`, `JobRetention`, and `FileRetention` [PR #1425]
 - dird: cats: abort purge when there are no eligible jobids [PR #1512]
 - dird: show current and allowed console connections [PR #1487]
 - dird: add prev and new jobid variables [PR #1499]
-- improve default configuration [PR #1508]
-- stored: add AccessMode SD->Device directive to reserve devices exclusively for reading or writing [PR #1464]
-- plugins: switch python-ldap plugin to  python3 [PR #1522]
-- build: switch from FreeBSD 13.1 to 13.2 [PR #1524]
-- stored: automatically increment tape block size in case the buffer is too small [PR #1496]
-- ua_restore: change restore argument handling [PR #1516]
-- plugin-fd: allow fd plugins to (re-)set since-time and disable/re-enable timestamp/accurate checks [PR #1505]
-- config: deprecate `LabelType` and `CheckLabels` [PR #1521]
-- devtools: Update python dependencies [PR #1531]
-- webui: upgrade bootstrap to version 3.4.1 [PR #1550]
-- bareos-check-sources: ignore bootstrap*.css [PR #1556]
-- daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1515]
-- database: improve subscription view [PR #1542]
-- utils: add a thread-safe single-producer/single-consumer queue [PR #1504]
-- require TLS by default [PR #1529]
-- build: introduce fedora38 [PR #1563]
-- python: adapt for new Python module versions [PR #1546]
-- tools: fix tools not starting up on windows  [PR #1549]
 - dird: `list jobs`: add `level` keyword and accept a list of job levels [PR #1548]
-- Allow to use the third-party libraries of the OS instead of the bundled ones [PR #1441]
-- packaging: debian fix dependencies [PR #1573]
-- stored: fix support for non-tape block-addressed devices [PR #1554]
 - consolidate: make virtualfull jobs spawned by consolidate job inherit same priority and max concurrent jobs [PR #1530]
-- tls: add tls v1.3 configuration option [PR #1577]
-- bareos-fd-plugin: new python PostgreSQL [PR #1541]
+- database: improve subscription view [PR #1542]
+- update `Maximum Concurrent Jobs` default value to 1 [PR #1426] 
+- stored: change default block size to 1 MiB [PR #1396]
+- stored: add AccessMode SD->Device directive to reserve devices exclusively for reading or writing [PR #1464]
+- stored: automatically increment tape block size in case the buffer is too small [PR #1496]
+- vss: remove dependency on live system during backup [PR #1452]
+- bsmtp: make mailhost and port message info a debug message [PR #1507]
+- improve default configuration [PR #1508]
+- ua_restore: change restore argument handling [PR #1516]
+- plugins: switch python-ldap plugin to  python3 [PR #1522]
+- python-fd: allow fd plugins to (re-)set since-time and disable/re-enable timestamp/accurate checks [PR #1505]
+- python-bareos: add missing `dirname` variable [PR #1460]
 - python-bareos: add timeout setting when connecting to the director. [PR #1583]
-- github actions: update/fix publish to PyPI workflows [PR #1572]
-- filed: parallel compression/reading/sending [PR #1533]
+- python: adapt for new Python module versions [PR #1546]
+- Python Plugins: Avoid pop(0) performance impact [PR #1351]
+- config: deprecate `LabelType` and `CheckLabels` [PR #1521]
+- daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1515]
+- require TLS by default [PR #1529]
 - database: media table: use bigint instead of integer [PR #1579]
-- stored: buffer fd messages [PR #1539]
-- autoxflate: fix autoxflate on replication [PR #1576]
 - configuration: deprecate base jobs [PR #1580]
-- rename gettext macro [PR #1588]
 - Enable automatic cpu-dependent dispatch for xxHash [PR #1601]
-- github actions: PyPi: install setuptools [PR #1604]
+- packaging: systemd unit: set a limit of restart [PR #1450]
+- Allow to use the third-party libraries of the OS instead of the bundled ones [PR #1441]
+- scripts: config-lib improve get_local_hostname fallback [PR #1402]
+- cleanup: remove some unused functions and shrink number of includes in bareos.h [PR #1433]
+- rename gettext macro [PR #1588]
+- build: replace sprintf by snprintf due to upgraded MacOS compiler, change linking of googletest [PR #1361]
+- introduce php-cs-fixer and apply PSR-12 guidelines [PR #1403]
+- berrno_test.cc: accept both 271E and 273E [PR #1407]
+- Sanitizers: add ASAN options to avoid crashes [PR #1410]
+- packaging: cleanup SUSE webui dependencies [PR #1493]
+- build: adapt matrix and pkglist for changes to CI [PR #1490]
+- build: switch from FreeBSD 13.1 to 13.2 [PR #1524]
+- build: switch to FreeBSD 12.4 [PR #1440]
+- FreeBSD: build cleanup [PR #1336]
+- testfind: reuse filedaemon logic [PR #1234]
+- core: make resource/configuration locking safer [PR #1325]
+- systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1339]
+- improvements to pr-tool [PR #1389]
+- pr-tool: handling POEditor commits and optional github ci tests [PR #1434]
+- pr-tool: Add options to be used in CI runs [PR #1488]
+- bareos-check-sources: ignore bootstrap*.css [PR #1556]
+- utils: add a thread-safe single-producer/single-consumer queue [PR #1504]
+- devtools: Update python dependencies [PR #1531]
 
 ### Removed
-- remove no longer used pkglists [PR #1335]
-- core: remove deprecated make_catalog_backup.pl [PR #1378]
 - cats: remove remains of deprecated databases [PR #1377]
-- dird: filed: stored: remove deprecated `maxconnections` option from configuration [PR #1340]
-- cats: remove dynamic catalog backends [PR #1392]
+- dird: filed: stored: remove deprecated `maximumconnections` option from configuration [PR #1340]
+- filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
+- daemons: remove deprecated `Pid Directory` config option [PR #1426] 
+- core: remove deprecated make_catalog_backup.pl [PR #1378]
 - build: remove python2 support [PR #1520]
 - build: disable building for Windows 32-bit [PR #1582]
+- build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1469]
+- cats: remove dynamic catalog backends [PR #1392]
+- remove no longer used pkglists [PR #1335]
 - Remove unnecessary loader/module split in Python modules for the FD [PR #1602]
-
-### Changed
-- cats: fix issue where `startfile` field gets wrongly updated [PR #1346]
-- Python Plugins: Avoid pop(0) performance impact [PR #1351]
+- webui: remove some development leftovers and artefacts [PR #1422]
 
 ### Fixed
-- Fix gcc warnings in ndmjob program [PR #1343]
-- filed: avoid reading from ephemeral buffer [PR #1373]
-- checkpoints: fix performance drop on big volume restores [PR #1345]
+- VMware Plugin: Fix backup and recreating VMs with PCI passthrough for GPU [PR #1565]
+- VMware Plugin: Fix transformer issues [PR #1532]
 - VMware Plugin: fix restore to different vmname [PR #1390]
 - vmware_cbt_tool.py: pyVmomi 8.x compatibility [PR #1386]
-- Fix problem with reoccuring files in always incremental [PR #1395]
-- bsmtp bls bextract: fixes for command line parsing [PR #1455]
-- daemons: update network handling when IP protocols unavailable [PR #1454]
-- Improve handling of catalog requests that try to reduce VolFiles, VolBlocks and VolBytes [PR #1431]
-- filed: fix off-by-one error when resizing acl buffer [PR #1479]
-- Consolidate: fix for consolidate job's client name not being correctly shown [PR #1474]
-- scripts: config-lib improve setup_sd_user [PR #1448]
-- cats: fix creates, grants and drops postgresql [PR #1502]
-- stored: fix blocksize warning [PR #1503]
+- stored: fix support for non-tape block-addressed devices [PR #1554]
+- stored: remove warning for maximum block size for tapes [PR #1375]
+- stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1348]
+- storage daemon: fix crash on volume swap [PR #1356]
 - status storage: fix wrong data displayed about waiting jobs [PR #1476]
+- stored: fix blocksize warning [PR #1503]
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1495]
-- dird: fix expected file count error during bsr build  [PR #1511]
-- VMware Plugin: Fix transformer issues [PR #1532]
-- filed: fix possible data-loss when excluding hardlinks [PR #1506]
+- daemons: update network handling when IP protocols unavailable [PR #1454]
+- autoxflate: fix autoxflate on replication [PR #1576]
+- core: fix schema public with PostgreSQL 15 [PR #1449]
+- cats: fix issue where `startfile` field gets wrongly updated [PR #1346]
 - cats: fix for integer overflow issue when using `offset` in `llist` [PR #1547]
-- VMware Plugin: Fix backup and recreating VMs with PCI passthrough for GPU [PR #1565]
 - catreq.cc: suppress missing batch con warning [PR #1578]
 - postgresql plugin: read config parameters from cluster [PR #1599]
+- cats: fix creates, grants and drops postgresql [PR #1502]
+- Improve handling of catalog requests that try to reduce VolFiles, VolBlocks and VolBytes [PR #1431]
+- dird: fix expected file count error during bsr build  [PR #1511]
+- tools: fix tools not starting up on windows  [PR #1549]
+- bsmtp: fix and update code, and change CLI parsing to CLI11 [PR #1316]
+- restore: fix failed restores showing `Restore ok with warning` [PR #1387]
+- json generation: Fix some leaks and an integer overflow [PR #1130]
+- bsmtp bls bextract: fixes for command line parsing [PR #1455]
+- checkpoints: fix performance drop on big volume restores [PR #1345]
+- Fix problem with reoccuring files in always incremental [PR #1395]
+- Consolidate: fix for consolidate job's client name not being correctly shown [PR #1474]
+- filed: fix possible data-loss when excluding hardlinks [PR #1506]
+- filed: avoid reading from ephemeral buffer [PR #1373]
+- filed: fix off-by-one error when resizing acl buffer [PR #1479]
+- core: fixes for gcc-13 support [PR #1424]
+- build: fix for gcc 13.1.1 [PR #1459]
+- Fix gcc warnings in ndmjob program [PR #1343]
+- packaging: debian fix dependencies [PR #1573]
+- github actions: update/fix publish to PyPI workflows [PR #1572]
+- github actions: PyPi: install setuptools [PR #1604]
+- scripts: config-lib improve setup_sd_user [PR #1448]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
