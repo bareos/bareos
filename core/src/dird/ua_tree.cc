@@ -317,21 +317,17 @@ int InsertTreeHandler(void* ctx, int, char** row)
         entry->node = node;
         tree->root->hardlinks.insert(entry->key, entry);
       } else {
-        // See if we are optimizing for speed or size.
-        if (!me->optimize_for_size && me->optimize_for_speed) {
-          // Hardlink to known file index: lookup original file
-          uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
-          HL_ENTRY* first_hl
-              = (HL_ENTRY*)tree->root->hardlinks.lookup(file_key);
+        // Hardlink to known file index: lookup original file
+        uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
+        HL_ENTRY* first_hl = (HL_ENTRY*)tree->root->hardlinks.lookup(file_key);
 
-          if (first_hl && first_hl->node) {
-            // Then add hardlink entry to linked node.
-            entry = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(
-                sizeof(HL_ENTRY));
-            entry->key = (((uint64_t)JobId) << 32) + FileIndex;
-            entry->node = first_hl->node;
-            tree->root->hardlinks.insert(entry->key, entry);
-          }
+        if (first_hl && first_hl->node) {
+          // Then add hardlink entry to linked node.
+          entry
+              = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+          entry->key = (((uint64_t)JobId) << 32) + FileIndex;
+          entry->node = first_hl->node;
+          tree->root->hardlinks.insert(entry->key, entry);
         }
       }
     }
@@ -387,38 +383,10 @@ static int SetExtract(UaContext* ua,
       uint64_t key = 0;
       bool is_hardlinked = false;
 
-      // See if we are optimizing for speed or size.
-      if (!me->optimize_for_size && me->optimize_for_speed) {
-        if (node->hard_link) {
-          // Every hardlink is in hashtable, and it points to linked file.
-          key = (((uint64_t)node->JobId) << 32) + node->FileIndex;
-          is_hardlinked = true;
-        }
-      } else {
-        FileDbRecord fdbr;
-        POOLMEM* cwd;
-
-        /* Ordinary file, we get the full path, look up the attributes, decode
-         * them, and if we are hard linked to a file that was saved, we must
-         * load that file too. */
-        cwd = tree_getpath(node);
-        if (cwd) {
-          fdbr.FileId = 0;
-          fdbr.JobId = node->JobId;
-
-          if (node->hard_link
-              && ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
-            int32_t LinkFI;
-            struct stat statp;
-
-            DecodeStat(fdbr.LStat, &statp, sizeof(statp),
-                       &LinkFI); /* decode stat pkt */
-            key = (((uint64_t)node->JobId) << 32)
-                  + LinkFI; /* lookup by linked file's fileindex */
-            is_hardlinked = true;
-          }
-          FreePoolMemory(cwd);
-        }
+      if (node->hard_link) {
+        // Every hardlink is in hashtable, and it points to linked file.
+        key = (((uint64_t)node->JobId) << 32) + node->FileIndex;
+        is_hardlinked = true;
       }
 
       if (is_hardlinked) {
