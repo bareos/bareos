@@ -176,6 +176,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: replace GZIP compression by LZ4 and MD5/SHA1 signature by XXH128 [PR #1453]
 - docs: Windows add Antivirus section [PR #1468]
 - doc: renew tutorial, suggest passive client, restructure heartbeat interval [PR #1543]
+- docs: improvements for droplet, jobdefs, concurrents jobs for restore [PR #1611]
 
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
@@ -316,4 +317,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1601]: https://github.com/bareos/bareos/pull/1601
 [PR #1602]: https://github.com/bareos/bareos/pull/1602
 [PR #1604]: https://github.com/bareos/bareos/pull/1604
+[PR #1611]: https://github.com/bareos/bareos/pull/1611
 [unreleased]: https://github.com/bareos/bareos/tree/master
