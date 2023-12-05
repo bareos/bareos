@@ -272,7 +272,7 @@ struct tree_builder {
 
       // this does not work when using optimize_for_size!
       HL_ENTRY* entry = root->hardlinks.lookup(key);
-      if (entry && entry->node && entry->node->FileIndex != meta.findex) {
+      if (entry && entry->node) {
         meta.original = m[entry->node];
       } else {
         meta.original = meta.original_not_found;
@@ -742,6 +742,7 @@ bool AddTree(NewTree* tree, const char* path)
 
 static bool InsertNode(TREE_ROOT* root,
                        int32_t LinkFI,
+                       bool hardlinked,
                        bool soft_link,
                        int FileIndex,
                        int32_t delta_seq,
@@ -823,7 +824,7 @@ static bool InsertNode(TREE_ROOT* root,
     }
 
     // Insert file having hardlinks into hardlink hashtable.
-    if (type != TN_DIR && type != TN_DIR_NLS) {
+    if (hardlinked && type != TN_DIR && type != TN_DIR_NLS) {
       if (!LinkFI) {
         // First occurence - file hardlinked to
         auto* entry = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
@@ -899,8 +900,12 @@ TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
       auto fhnode = fh.node;
       auto JobId = meta.jobid;
       int LinkFI = 0;
-      if (meta.original != meta.original_not_found) {
-        LinkFI = view.metas[meta.original].findex;
+      bool hardlinked = false;
+      if (meta.original == i) {
+        hardlinked = true;  // we are the original hardlink
+      } else if (meta.original != meta.original_not_found) {
+        LinkFI = view.metas[meta.original].findex;  // we are not the original
+        hardlinked = true;
       }
       bool soft_link = meta.soft_link;
 
@@ -909,8 +914,9 @@ TREE_ROOT* CombineTree(tree_ptr tree, std::size_t* count, bool mark_on_load)
         // remove leading slash
         path += 1;
       }
-      if (!InsertNode(root, LinkFI, soft_link, FileIndex, delta_seq, JobId,
-                      path, File.c_str(), type, fhinfo, fhnode, mark_on_load)) {
+      if (!InsertNode(root, LinkFI, hardlinked, soft_link, FileIndex, delta_seq,
+                      JobId, path, File.c_str(), type, fhinfo, fhnode,
+                      mark_on_load)) {
         int_count -= 1;
       }
     }
