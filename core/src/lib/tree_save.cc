@@ -20,6 +20,7 @@
 */
 
 #include "lib/tree_save.h"
+#include "lib/xxhash.h"
 
 #include <cstring>
 #include <cstdint>
@@ -163,7 +164,6 @@ struct delta {
 
 struct tree_header {
   static constexpr std::uint64_t offset_not_found = 0;
-  // todo: checksum ?
   // todo: add jobid(s)?
   std::uint64_t num_nodes;
   std::uint64_t nodes_offset;
@@ -174,6 +174,8 @@ struct tree_header {
   std::uint64_t seq_offset;
   std::uint64_t delta_offset;
   std::uint64_t delta_count;
+  std::uint64_t checksum_offset;
+  std::uint64_t checksum_size;
 };
 
 struct tree_view {
@@ -188,6 +190,7 @@ struct tree_view {
   span<delta> delta_seqs{};
   span<fh> fhs{};
   std::string_view string_pool{};
+  span<char> chksum{};
 
   tree_view() {}
   tree_view(span<char> bytes)
@@ -221,6 +224,11 @@ struct tree_view {
       std::size_t size = header.string_size;
 
       string_pool = std::string_view(start, size);
+    }
+
+    {
+      auto* start = (const char*)(bytes.data() + header.checksum_offset);
+      chksum = span(start, header.checksum_size);
     }
   }
 
@@ -293,6 +301,8 @@ struct tree_builder {
   {
     std::vector<char> data;
 
+    simple_checksum chk{};
+
     static_assert(sizeof(tree_header) % alignof(proto_node) == 0);
 
     data.resize(sizeof(tree_header));
@@ -307,9 +317,11 @@ struct tree_builder {
     }
 
     auto node_offset = data.size();
-    for (auto& node : nodes) {
-      auto bytes = byte_view(node);
-      data.insert(data.end(), bytes.begin(), bytes.end());
+    {
+      auto b = (const char*)nodes.data();
+      auto e = (const char*)(nodes.data() + nodes.size());
+      data.insert(data.end(), b, e);
+      chk.add(b, e);
     }
     Dmsg0(10, "Nodes: %llu - %llu (%llu)\n", node_offset, data.size(),
           data.size() - node_offset);
@@ -317,6 +329,7 @@ struct tree_builder {
     auto string_offset = data.size();
 
     data.insert(data.end(), string_area.begin(), string_area.end());
+    chk.add(&*string_area.cbegin(), &*string_area.cend());
 
     Dmsg0(10, "Strings: %llu - %llu (%llu)\n", string_offset, data.size(),
           data.size() - string_offset);
@@ -336,6 +349,7 @@ struct tree_builder {
       auto e = (const char*)(metas.data() + metas.size());
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
+      chk.add(bytes.begin(), bytes.end());
     }
     Dmsg0(10, "Meta: %llu - %llu (%llu)\n", meta_offset, data.size(),
           data.size() - meta_offset);
@@ -357,6 +371,7 @@ struct tree_builder {
       auto e = (const char*)(fhs.data() + fhs.size());
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
+      chk.add(bytes.begin(), bytes.end());
     } else {
       fh_offset = tree_header::offset_not_found;
     }
@@ -386,6 +401,7 @@ struct tree_builder {
       auto e = (const char*)(delta_seqs.data() + delta_seqs.size());
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
+      chk.add(bytes.begin(), bytes.end());
     } else {
       seq_offset = tree_header::offset_not_found;
     }
@@ -409,9 +425,29 @@ struct tree_builder {
       auto e = (const char*)(deltas.data() + deltas.size());
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
+      chk.add(bytes.begin(), bytes.end());
     }
     Dmsg0(10, "deltas: %llu - %llu (%llu)\n", delta_offset, data.size(),
           data.size() - delta_offset);
+
+    std::vector chksum = chk.finalize();
+    {
+      std::size_t align = alignof(*chksum.data());
+      std::size_t current = data.size();
+      std::size_t a = current + align - 1;
+      std::size_t next = (a / align) * align;
+      ASSERT(next >= current);
+      data.resize(next);
+    }
+
+    auto chk_off = data.size();
+    {
+      auto b = (const char*)chksum.data();
+      auto e = (const char*)(chksum.data() + chksum.size());
+      auto bytes = span(b, e - b);
+      data.insert(data.end(), bytes.begin(), bytes.end());
+    }
+
 
     tree_header header{.num_nodes = nodes.size(),
                        .nodes_offset = node_offset,
@@ -421,7 +457,9 @@ struct tree_builder {
                        .fh_offset = fh_offset,
                        .seq_offset = seq_offset,
                        .delta_offset = delta_offset,
-                       .delta_count = deltas.size()};
+                       .delta_count = deltas.size(),
+                       .checksum_offset = chk_off,
+                       .checksum_size = chksum.size()};
 
     auto header_bytes = byte_view(header);
     for (size_t i = 0; i < header_bytes.size(); ++i) {
@@ -777,6 +815,35 @@ class NewTree {
   std::vector<tree_view> views;
 };
 
+bool CheckTree(const tree_view& view)
+{
+  try {
+    std::vector chksum
+        = simple_checksum{}
+              .add((const char*)view.nodes.begin(),
+                   (const char*)view.nodes.end())
+              .add((const char*)view.string_pool.begin(),
+                   (const char*)view.string_pool.end())
+              .add((const char*)view.metas.begin(),
+                   (const char*)view.metas.end())
+              .add((const char*)view.fhs.begin(), (const char*)view.fhs.end())
+              .add((const char*)view.delta_seqs.begin(),
+                   (const char*)view.delta_seqs.end())
+              .add((const char*)view.deltas.begin(),
+                   (const char*)view.deltas.end())
+              .finalize();
+
+
+    if (chksum.size() == view.chksum.size()
+        && memcmp(chksum.data(), view.chksum.data(), chksum.size()) == 0) {
+      return true;
+    }
+  } catch (const std::exception& e) {
+    Dmsg1(50, "Error while computing checksum: %s\n", e.what());
+  }
+  return false;
+}
+
 void DeleteTree(NewTree* nt) { nt->~NewTree(); }
 
 tree_ptr MakeNewTree() { return tree_ptr(new NewTree); }
@@ -789,6 +856,8 @@ bool AddTree(NewTree* tree, const char* path)
 
     tree_view view(to_span(bytes));
 
+    if (!CheckTree(view)) { return false; }
+
     tree->tree_data.emplace_back(std::move(bytes));
     tree->views.push_back(view);
 #else
@@ -796,8 +865,11 @@ bool AddTree(NewTree* tree, const char* path)
 
     tree_view view(map.to_span());
 
+    if (!CheckTree(view)) { return false; }
+
     tree->tree_mmap.emplace_back(std::move(map));
     tree->views.push_back(view);
+
 #endif
 
     return true;
