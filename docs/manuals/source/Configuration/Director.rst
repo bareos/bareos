@@ -1181,8 +1181,6 @@ The directives within an Options resource may be one of the following:
    become very long and the File daemon will consume a lot of CPU power
    checking hard links.
 
-   See related performance option like :config:option:`dir/director/OptimizeForSize`
-
    .. note::
 
       If you created backups with :config:option:`dir/fileset/include/options/HardLinks = yes`
