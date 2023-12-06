@@ -115,6 +115,7 @@ class DirectorResource
   dlist<IPADDR>* DIRsrc_addr = nullptr; /* Address to source connections from */
   char* query_file = nullptr;           /* SQL query file */
   char* working_directory = nullptr;    /* WorkingDirectory */
+  char* cache_directory = nullptr;      /* directory for caches */
   char* scripts_directory = nullptr;    /* ScriptsDirectory */
   char* plugin_directory = nullptr;     /* Plugin Directory */
   alist<const char*>* plugin_names = nullptr; /* Plugin names to load */
