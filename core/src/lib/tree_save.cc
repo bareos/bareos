@@ -72,6 +72,8 @@ struct proto_node {
     std::uint32_t size;
   } sub;
 
+  std::uint32_t padding{0};
+
   struct {
     // byte offsets relative to the start of the string area
     std::uint64_t start : 48;
