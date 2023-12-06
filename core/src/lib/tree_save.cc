@@ -375,7 +375,9 @@ struct tree_builder {
       data.resize(next);
     }
 
-    // todo: delta_seq = -1 is used to denote new file entries
+    // note: delta_seq = -1 is used to denote new file entries
+    // so we will almost never throw this away; think of a way
+    // to make everything 0 ?
     auto seq_offset = data.size();
     if (std::find_if(delta_seqs.begin(), delta_seqs.end(),
                      [](auto&& delta_seq) { return delta_seq.seq_num != 0; })
