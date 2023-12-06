@@ -24,8 +24,10 @@ start_test
 
 fileregex=".*/[Aa]-file.*"
 
-mapfile -d $'\0' matched_files < \
-  <(find "$BackupDirectory/" -type f -regex "$fileregex" -print0)
+matched_files=()
+while IFS=  read -r -d $'\0'; do
+    matched_files+=("$REPLY")
+done < <(find "$BackupDirectory/" -type f -regex "$fileregex" -print0)
 
 echo "Matched files:" > "$log_home/matched.out"
 for file in "${matched_files[@]}"; do
