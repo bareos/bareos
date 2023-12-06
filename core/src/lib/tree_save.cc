@@ -168,6 +168,7 @@ struct tree_header {
   std::uint64_t num_nodes;
   std::uint64_t nodes_offset;
   std::uint64_t string_offset;
+  std::uint64_t string_size;
   std::uint64_t meta_offset;
   std::uint64_t fh_offset;
   std::uint64_t seq_offset;
@@ -217,7 +218,7 @@ struct tree_view {
     }
     {
       const char* start = (const char*)(bytes.data() + header.string_offset);
-      std::size_t size = bytes.size() - header.string_offset;
+      std::size_t size = header.string_size;
 
       string_pool = std::string_view(start, size);
     }
@@ -413,6 +414,7 @@ struct tree_builder {
     tree_header header{.num_nodes = nodes.size(),
                        .nodes_offset = node_offset,
                        .string_offset = string_offset,
+                       .string_size = string_area.size(),
                        .meta_offset = meta_offset,
                        .fh_offset = fh_offset,
                        .seq_offset = seq_offset,
