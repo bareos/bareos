@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+  Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,4 +26,18 @@
 class JobControlRecord;
 
 DIGEST* XxhashDigestNew(JobControlRecord* jcr, crypto_digest_t type);
+
+#include <vector>
+
+struct simple_checksum {
+  // all these functions may throw
+ public:
+  simple_checksum& add(const char* begin, const char* end);
+  std::vector<char> finalize();
+  ~simple_checksum();
+
+ private:
+  void* state{nullptr};
+};
+
 #endif  // BAREOS_LIB_XXHASH_H_

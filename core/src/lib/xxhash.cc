@@ -74,3 +74,65 @@ DIGEST* XxhashDigestNew(JobControlRecord* jcr, crypto_digest_t type)
 {
   return new XxhashDigest(jcr, type);
 }
+
+class xxh3_exception : std::exception {
+  const char* str{nullptr};
+
+ public:
+  xxh3_exception(const char* str) : str{str} {}
+
+  const char* what() const noexcept override { return str; }
+};
+
+simple_checksum& simple_checksum::add(const char* begin, const char* end)
+{
+  if (begin != end) {
+    if (state == nullptr) {
+      state = XXH3_createState();
+      if (state == nullptr) { throw xxh3_exception("xxh3 init error."); }
+
+      XXH3_state_t* real_state = static_cast<XXH3_state_t*>(state);
+      if (XXH3_128bits_reset(real_state) == XXH_ERROR) {
+        XXH3_freeState(real_state);
+        throw xxh3_exception("xxh3 reset error.");
+      }
+    }
+
+    XXH3_state_t* real_state = static_cast<XXH3_state_t*>(state);
+    if (real_state == nullptr) { throw xxh3_exception("xxh3 init error."); }
+
+    if (XXH3_128bits_update(real_state, begin, end - begin) != XXH_OK) {
+      throw xxh3_exception("xxh3 update error.");
+    }
+  }
+
+  return *this;
+}
+
+std::vector<char> simple_checksum::finalize()
+{
+  if (state == nullptr) { state = XXH3_createState(); }
+
+  XXH3_state_t* real_state = static_cast<XXH3_state_t*>(state);
+  if (real_state == nullptr) { throw xxh3_exception("xxh3 init error."); }
+
+  const XXH128_hash_t hash = XXH3_128bits_digest(real_state);
+  XXH128_canonical_t canonical{};
+  XXH128_canonicalFromHash(&canonical, hash);
+
+  std::vector<char> vec;
+  vec.resize(sizeof(canonical));
+  std::memcpy(vec.data(), &canonical, sizeof(canonical));
+  XXH3_freeState(real_state);
+  state = nullptr;
+
+  return vec;
+}
+
+simple_checksum::~simple_checksum()
+{
+  if (state) {
+    XXH3_state_t* real_state = static_cast<XXH3_state_t*>(state);
+    XXH3_freeState(real_state);
+  }
+}
