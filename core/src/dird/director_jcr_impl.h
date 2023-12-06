@@ -28,6 +28,9 @@
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/job_trigger.h"
 
+#include <string_view>
+#include <string>
+
 typedef struct s_tree_root TREE_ROOT;
 
 class ConfigResourcesContainer;
@@ -99,7 +102,11 @@ struct Resources {
 };
 
 struct DirectorJcrImpl {
-  DirectorJcrImpl( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
+  DirectorJcrImpl(std::shared_ptr<ConfigResourcesContainer> configuration_resources_container,
+		  std::string_view cache_dir)
+    : job_config_resources_container_(configuration_resources_container)
+    , cache_dir{cache_dir}
+  {
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
   std::shared_ptr<ConfigResourcesContainer> job_config_resources_container_;
@@ -170,6 +177,8 @@ struct DirectorJcrImpl {
   directordaemon::ClientConnectionHandshakeMode connection_handshake_try_{
     directordaemon::ClientConnectionHandshakeMode::kUndefined};
   JobTrigger job_trigger{JobTrigger::kUndefined};
+
+  std::string cache_dir;
 };
 /* clang-format on */
 

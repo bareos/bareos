@@ -515,10 +515,11 @@ extern "C" void* msg_thread(void* arg)
   }
 
   if (jcr->dir_impl->backup_tree_root) {
-    std::string cwd = "working";
-    std::string path
-        = cwd + std::string{"/bareos-"} + std::to_string(jcr->JobId) + ".tree";
-    SaveTree(path.c_str(), jcr->dir_impl->backup_tree_root);
+    if (!jcr->dir_impl->cache_dir.empty()) {
+      std::string path = jcr->dir_impl->cache_dir + std::string{"/"}
+                         + std::to_string(jcr->JobId) + ".tree";
+      SaveTree(path.c_str(), jcr->dir_impl->backup_tree_root);
+    }
     FreeTree(jcr->dir_impl->backup_tree_root);
     jcr->dir_impl->backup_tree_root = nullptr;
   }

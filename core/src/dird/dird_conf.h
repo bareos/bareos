@@ -36,6 +36,7 @@
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
 #include "lib/tls_conf.h"
+#include "lib/parse_conf.h"
 
 template <typename T> class dlist;
 struct json_t;
@@ -686,6 +687,26 @@ const char* GetUsageStringForConsoleConfigureCommand();
 void DestroyConfigureUsageString();
 bool PopulateDefs();
 std::vector<JobResource*> GetAllJobResourcesByClientName(std::string name);
+
+
+template <typename T> struct resource_type_type;
+
+template <> struct resource_type_type<DirectorResource> {
+  static constexpr auto value = R_DIRECTOR;
+};
+
+template <> struct resource_type_type<FilesetResource> {
+  static constexpr auto value = R_FILESET;
+};
+
+template <typename T>
+static inline constexpr auto resource_type_v = resource_type_type<T>::value;
+
+template <typename T>
+inline T* NextRes(ConfigurationParser* conf, T* cur = nullptr)
+{
+  return static_cast<T*>(conf->GetNextRes(resource_type_v<T>, cur));
+}
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_DIRD_CONF_H_

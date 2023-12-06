@@ -1193,17 +1193,18 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
   auto nt = MakeNewTree();
   bool got_all{true};
-  {
+  if (!ua->jcr->dir_impl->cache_dir.empty()) {
     JobId_t jobid;
     for (const char* p = rx->JobIds; GetNextJobidFromList(&p, &jobid) > 0;) {
-      std::string cwd = me->working_directory;
-      std::string path
-          = cwd + std::string{"/bareos-"} + std::to_string(jobid) + ".tree";
+      std::string path = ua->jcr->dir_impl->cache_dir + std::string{"/"}
+                         + std::to_string(jobid) + ".tree";
       if (!AddTree(nt.get(), path.c_str())) {
         got_all = false;
         break;
       }
     }
+  } else {
+    got_all = false;
   }
 
   if (got_all) {
