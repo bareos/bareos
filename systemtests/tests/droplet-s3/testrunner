@@ -59,6 +59,14 @@ check_for_zombie_jobs storage=File
 check_two_logs
 check_restore_diff "${BackupDirectory}"
 
+# In case we want to tackle the close_wait issue
+#bareos_sd_pid=$(pidof bareos_sd-${TestName})
+#if [ $(lsof -p ${bareos_sd_pid} | grep -c "CLOSE_WAIT") -ne 0 ]
+#then
+#   echo "Error: Connection CLOSE_WAIT found"
+#   estat=1
+#fi
+
 "${rscripts}"/stop_minio.sh "$TestName"
 
 end_test
