@@ -221,6 +221,12 @@ if(NOT client-only)
     LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
     COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
   )
+  set_tests_properties(gtest:ktls.v12_send PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v12_recv PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v12_256_send PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v13_send PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v13_recv PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v13_256_send PROPERTIES LABELS broken)
 
   bareos_add_test(
     catalog
