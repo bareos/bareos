@@ -525,6 +525,7 @@ struct tree_builder {
 };
 
 #include <fstream>
+#include <fastlz/lz4.h>
 
 bool MakeFileWithContents(const char* path, span<char> content)
 {
@@ -534,9 +535,27 @@ bool MakeFileWithContents(const char* path, span<char> content)
 
   output.exceptions(output.exceptions() | std::ios::failbit | std::ios::badbit);
 
+  auto* lz4s = LZ4_createStream();
+
+  bool retval = false;
+
+  constexpr std::size_t chunk_size = 64 * 1024;
+  auto bufsize = LZ4_compressBound(chunk_size);
+
+  std::vector<char> buffer(bufsize);
+  const char* head = content.data();
+
   try {
-    output.write(content.data(), content.size());
-    return true;
+    output << (std::size_t)content.size();
+    while (head != content.end()) {
+      std::size_t togo = content.end() - head;
+      std::size_t actual_size = std::min(togo, chunk_size);
+      int compr = LZ4_compress_continue(lz4s, head, buffer.data(), actual_size);
+      if (compr < 0) { break; }
+      output.write(buffer.data(), compr);
+      head += actual_size;
+    }
+    retval = true;
   } catch (const std::system_error& e) {
     Dmsg3(100, "Caught system error: [%s:%d] ERR=%s\n",
           e.code().category().name(), e.code().value(), e.what());
@@ -545,7 +564,9 @@ bool MakeFileWithContents(const char* path, span<char> content)
   } catch (...) {
     Dmsg0(30, "Caught something that was not an exception.\n");
   }
-  return false;
+
+  LZ4_freeStream(lz4s);
+  return retval;
 }
 
 std::vector<char> LoadFile(const char* path)
@@ -556,14 +577,38 @@ std::vector<char> LoadFile(const char* path)
   if (!input) { throw std::ios_base::failure("error opening file"); }
 
   std::vector<char> content;
-  auto current = content.size();
-  std::size_t read_size = 256 * 1024;
-  do {
-    current += input.gcount();
-    content.resize(current + read_size);
-  } while (input.read(content.data() + current, read_size));
-  content.resize(current + input.gcount());
+  constexpr std::size_t read_size = 256 * 1024;
+  std::vector<char> buffer(read_size);
 
+  auto* lz4s = LZ4_createStreamDecode();
+
+  std::size_t size;
+  try {
+    input >> size;
+    content.resize(size);
+    auto* current = content.data();
+    while (input.read(buffer.data(), buffer.size())) {
+      auto read_bytes = input.gcount();
+      int res = LZ4_decompress_safe_continue(
+          lz4s, buffer.data(), current, read_bytes, &*content.end() - current);
+      if (res < 0) { throw std::invalid_argument("lz4 decompress exception"); }
+      current += res;
+    }
+    auto read_bytes = input.gcount();
+    int res = LZ4_decompress_safe_continue(
+        lz4s, buffer.data(), current, read_bytes, &*content.end() - current);
+    if (res < 0) { throw std::invalid_argument("lz4 decompress exception"); }
+    current += res;
+
+    if (current != &*content.end()) {
+      throw std::invalid_argument("sizes do not match up");
+    }
+  } catch (...) {
+    LZ4_freeStreamDecode(lz4s);
+    throw std::current_exception();
+  }
+
+  LZ4_freeStreamDecode(lz4s);
   return content;
 }
 
