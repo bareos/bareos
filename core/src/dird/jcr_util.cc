@@ -25,6 +25,8 @@
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 
+#include <filesystem>
+#include <string>
 
 namespace directordaemon {
 
@@ -35,9 +37,15 @@ JobControlRecord* NewDirectorJcr(JCR_free_HANDLER* DirdFreeJcr)
   {
     ResLocker _{my_config};
 
-    std::string_view cache_dir{};
+    std::string cache_dir{};
     if (auto* me = NextRes<DirectorResource>(my_config); me != nullptr) {
-      cache_dir = me->cache_directory;
+      std::filesystem::path cache_path(me->cache_directory);
+      if (cache_path.is_absolute()) {
+        cache_dir = cache_path.string();
+      } else {
+        std::filesystem::path working_path(me->working_directory);
+        cache_dir = (working_path / cache_path).string();
+      }
     }
     jcr->dir_impl = new DirectorJcrImpl(my_config->config_resources_container_,
                                         cache_dir);
