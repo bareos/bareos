@@ -33,7 +33,6 @@ x86_64/bareos-director-python3-plugin
 x86_64/bareos-filedaemon
 x86_64/bareos-filedaemon-ldap-python-plugin
 x86_64/bareos-filedaemon-libcloud-python-plugin
-x86_64/bareos-filedaemon-ovirt-python-plugin
 x86_64/bareos-filedaemon-percona-xtrabackup-python-plugin
 x86_64/bareos-filedaemon-mariabackup-python-plugin
 x86_64/bareos-filedaemon-postgresql-python-plugin

@@ -35,7 +35,7 @@ This Python plugin can be configured via the usual plugin configuration mechanis
 which python files to load. The python files then implement the plugin
 functionality.
 
-Examples for such Python Plugins are the VMware Python Plugin or the oVirt Python Plugin.
+An example for such Python Plugins is the VMware Python Plugin.
 
 With Bareos :sinceVersion:`23: Python API`,
 the support of Python version *2* (which is end-of-life since Jan 1 2020) was removed.
