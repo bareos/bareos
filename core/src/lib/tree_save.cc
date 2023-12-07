@@ -31,6 +31,13 @@ extern "C" {
 #include <unistd.h>
 }
 
+enum class tree_version : std::uint64_t
+{
+  V_0_1 = 1,
+};
+
+static inline constexpr tree_version current_version = tree_version::V_0_1;
+
 template <typename T> struct span {
   const T* mem{nullptr};
   std::size_t count{0};
@@ -165,6 +172,7 @@ struct delta {
 struct tree_header {
   static constexpr std::uint64_t offset_not_found = 0;
   // todo: add jobid(s)?
+  tree_version version;
   std::uint64_t num_nodes;
   std::uint64_t nodes_offset;
   std::uint64_t string_offset;
@@ -181,6 +189,7 @@ struct tree_header {
 struct tree_view {
   // This struct does not hold any data!
   // it just gives a convinient view into the stored tree data
+  tree_version version;
   span<proto_node> nodes{};
   // probably best to have one span per important meta field,
   // i.e. type, hardlink (offset of original hl file), id (= findex | jobid)
@@ -197,6 +206,8 @@ struct tree_view {
   {
     tree_header header;
     std::memcpy(&header, bytes.data(), sizeof(header));
+
+    version = header.version;
 
     auto count = header.num_nodes;
     {
@@ -446,7 +457,8 @@ struct tree_builder {
     }
 
 
-    tree_header header{.num_nodes = nodes.size(),
+    tree_header header{.version = current_version,
+                       .num_nodes = nodes.size(),
                        .nodes_offset = node_offset,
                        .string_offset = string_offset,
                        .string_size = string_area.size(),
