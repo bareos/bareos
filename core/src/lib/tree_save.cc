@@ -520,12 +520,20 @@ bool MakeFileWithContents(const char* path, span<char> content)
 
   if (!output) { return false; }
 
+  output.exceptions(output.exceptions() | std::ios::failbit | std::ios::badbit);
+
   try {
     output.write(content.data(), content.size());
     return true;
+  } catch (const std::system_error& e) {
+    Dmsg3(100, "Caught system error: [%s:%d] ERR=%s\n",
+          e.code().category().name(), e.code().value(), e.what());
+  } catch (const std::exception& e) {
+    Dmsg0(100, "Caught exception: %s\n", e.what());
   } catch (...) {
-    return false;
+    Dmsg0(30, "Caught something that was not an exception.\n");
   }
+  return false;
 }
 
 std::vector<char> LoadFile(const char* path)
