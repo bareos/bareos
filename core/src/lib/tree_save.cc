@@ -159,7 +159,7 @@ struct fh {
 };
 
 struct delta {
-  std::uint32_t seq_num{0};
+  std::int32_t seq_num{0};
 };
 
 struct tree_header {
