@@ -748,12 +748,45 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
   return root;
 }
 
+bool CheckTree(const tree_view& view)
+{
+  if (view.version != current_version) { return false; }
+  try {
+    std::vector chksum
+        = simple_checksum{}
+              .add((const char*)view.nodes.begin(),
+                   (const char*)view.nodes.end())
+              .add((const char*)view.string_pool.begin(),
+                   (const char*)view.string_pool.end())
+              .add((const char*)view.metas.begin(),
+                   (const char*)view.metas.end())
+              .add((const char*)view.fhs.begin(), (const char*)view.fhs.end())
+              .add((const char*)view.delta_seqs.begin(),
+                   (const char*)view.delta_seqs.end())
+              .add((const char*)view.deltas.begin(),
+                   (const char*)view.deltas.end())
+              .finalize();
+
+
+    if (chksum.size() == view.chksum.size()
+        && memcmp(chksum.data(), view.chksum.data(), chksum.size()) == 0) {
+      return true;
+    }
+  } catch (const std::exception& e) {
+    Dmsg1(50, "Error while computing checksum: %s\n", e.what());
+  }
+  return false;
+}
+
+
 TREE_ROOT* LoadTree(const char* path, std::size_t* size, bool marked_initially)
 {
   try {
     std::vector<char> bytes = LoadFile(path);
 
     tree_view view(to_span(bytes));
+
+    if (!CheckTree(view)) { return nullptr; }
 
     *size = view.size();
     return tree_from_view(view, marked_initially);
@@ -818,35 +851,6 @@ class NewTree {
   std::vector<map_ptr> tree_mmap;
   std::vector<tree_view> views;
 };
-
-bool CheckTree(const tree_view& view)
-{
-  try {
-    std::vector chksum
-        = simple_checksum{}
-              .add((const char*)view.nodes.begin(),
-                   (const char*)view.nodes.end())
-              .add((const char*)view.string_pool.begin(),
-                   (const char*)view.string_pool.end())
-              .add((const char*)view.metas.begin(),
-                   (const char*)view.metas.end())
-              .add((const char*)view.fhs.begin(), (const char*)view.fhs.end())
-              .add((const char*)view.delta_seqs.begin(),
-                   (const char*)view.delta_seqs.end())
-              .add((const char*)view.deltas.begin(),
-                   (const char*)view.deltas.end())
-              .finalize();
-
-
-    if (chksum.size() == view.chksum.size()
-        && memcmp(chksum.data(), view.chksum.data(), chksum.size()) == 0) {
-      return true;
-    }
-  } catch (const std::exception& e) {
-    Dmsg1(50, "Error while computing checksum: %s\n", e.what());
-  }
-  return false;
-}
 
 void DeleteTree(NewTree* nt) { nt->~NewTree(); }
 
