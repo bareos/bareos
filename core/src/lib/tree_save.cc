@@ -462,9 +462,8 @@ struct tree_builder {
                        .checksum_size = chksum.size()};
 
     auto header_bytes = byte_view(header);
-    for (size_t i = 0; i < header_bytes.size(); ++i) {
-      data[i] = header_bytes[i];
-    }
+    ASSERT(header_bytes.size() == sizeof(tree_header));
+    std::memcpy(data.data(), header_bytes.data(), header_bytes.size());
     return data;
   }
 
