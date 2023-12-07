@@ -242,12 +242,12 @@ struct tree_view {
     return std::string_view{start, name_size};
   }
 
-  std::uint64_t delta_seq_at(std::size_t i)
+  std::int32_t delta_seq_at(std::size_t i)
   {
     if (delta_seqs.data()) {
-      return delta_seqs[i].seq_num;
+      return delta_seqs[i].seq_num - (metas[i].type == TN_NEWDIR);
     } else {
-      return 0;
+      return -(metas[i].type == TN_NEWDIR);
     }
   }
 
@@ -390,9 +390,6 @@ struct tree_builder {
       data.resize(next);
     }
 
-    // note: delta_seq = -1 is used to denote new file entries
-    // so we will almost never throw this away; think of a way
-    // to make everything 0 ?
     auto seq_offset = data.size();
     if (std::find_if(delta_seqs.begin(), delta_seqs.end(),
                      [](auto&& delta_seq) { return delta_seq.seq_num != 0; })
@@ -489,7 +486,7 @@ struct tree_builder {
       meta.soft_link = node->soft_link;
 
       delta& delta_seq = delta_seqs.emplace_back();
-      delta_seq.seq_num = node->delta_seq;
+      delta_seq.seq_num = node->delta_seq + node->type == TN_NEWDIR;
 
       fh& fh = fhs.emplace_back();
       fh.node = node->fhnode;
