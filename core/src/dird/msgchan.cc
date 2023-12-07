@@ -50,6 +50,9 @@
 #include "lib/tree.h"
 #include "lib/tree_save.h"
 
+#include <string_view>
+#include <filesystem>
+
 namespace directordaemon {
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -452,6 +455,24 @@ extern "C" void MsgThreadCleanup(void* arg)
   FreeJcr(jcr);             /* release jcr */
 }
 
+static bool EnsurePathExists(const std::string& path)
+{
+  try {
+    std::filesystem::create_directories(path);
+    return true;
+  } catch (const std::system_error& e) {
+    Dmsg1(100, "Caught system error while creating path %s: [%s:%d] ERR=%s\n",
+          path.c_str(), e.code().category().name(), e.code().value(), e.what());
+  } catch (const std::exception& e) {
+    Dmsg1(100, "Caught exception while creating path %s: %s\n", path.c_str(),
+          e.what());
+  } catch (...) {
+    Dmsg1(30, "Caught unknown exception while creating path %s\n",
+          path.c_str());
+  }
+  return false;
+}
+
 /** Handle the message channel (i.e. requests from the
  *  Storage daemon).
  * Note, we are running in a separate thread.
@@ -516,9 +537,11 @@ extern "C" void* msg_thread(void* arg)
 
   if (jcr->dir_impl->backup_tree_root) {
     if (!jcr->dir_impl->cache_dir.empty()) {
-      std::string path = jcr->dir_impl->cache_dir + std::string{"/"}
-                         + std::to_string(jcr->JobId) + ".tree";
-      SaveTree(path.c_str(), jcr->dir_impl->backup_tree_root);
+      if (EnsurePathExists(jcr->dir_impl->cache_dir)) {
+        std::string path = jcr->dir_impl->cache_dir + std::string{"/"}
+                           + std::to_string(jcr->JobId) + ".tree";
+        SaveTree(path.c_str(), jcr->dir_impl->backup_tree_root);
+      }
     }
     FreeTree(jcr->dir_impl->backup_tree_root);
     jcr->dir_impl->backup_tree_root = nullptr;
