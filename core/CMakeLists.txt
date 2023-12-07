@@ -724,8 +724,6 @@ endif()
 # info what the config files need to be installed PLUGINS  ############
 set(PLUGINS python-ldap)
 
-list(APPEND PLUGINS python-ovirt)
-
 if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
 endif()

@@ -3,6 +3,10 @@
 oVirt Plugin
 ~~~~~~~~~~~~
 
+.. warning::
+
+   The oVirt Plugin is deprecated since :sinceVersion:`23: oVirt Plugin`.
+
 .. index::
    pair: Plugin; oVirt
 
