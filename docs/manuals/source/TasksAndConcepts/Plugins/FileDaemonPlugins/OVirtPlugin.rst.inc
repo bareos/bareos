@@ -5,10 +5,19 @@ oVirt Plugin
 
 .. warning::
 
-   The oVirt Plugin is deprecated since :sinceVersion:`23: oVirt Plugin`.
+   The oVirt Plugin has been removed in :sinceVersion:`23: oVirt Plugin` because
+   the plugin behaves unstable with Python 3.
+
+   As Red Hat already has announced that Red Hat Virtualization will be
+   discontinued and customers should merge away, the Bareos project will not
+   work on solving the problems with Python 3 which are caused by third-party
+   python modules.
+   If you are using the oVirt plugin, stay with Baros 22 using the Python 2
+   version of the plugin.
 
 .. index::
    pair: Plugin; oVirt
+
 
 The oVirt Plugin can be used for agentless backups of virtual machines running on oVirt or Red Hat Virtualization (RHV).
 It was tested with oVirt/RHV 4.4. There are currently no known technical differences between
