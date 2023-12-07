@@ -57,6 +57,10 @@
 #include "lib/version.h"
 #include "lib/bpipe.h"
 #include "lib/tree.h"
+#include "lib/tree_save.h"
+
+#include <string_view>
+#include <filesystem>
 
 namespace directordaemon {
 
@@ -730,6 +734,24 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   return jcr->dir_impl->SDJobStatus;
 }
 
+static bool EnsurePathExists(const std::string& path)
+{
+  try {
+    std::filesystem::create_directories(path);
+    return true;
+  } catch (const std::system_error& e) {
+    Dmsg1(100, "Caught system error while creating path %s: [%s:%d] ERR=%s\n",
+          path.c_str(), e.code().category().name(), e.code().value(), e.what());
+  } catch (const std::exception& e) {
+    Dmsg1(100, "Caught exception while creating path %s: %s\n", path.c_str(),
+          e.what());
+  } catch (...) {
+    Dmsg1(30, "Caught unknown exception while creating path %s\n",
+          path.c_str());
+  }
+  return false;
+}
+
 // Release resources allocated during backup.
 void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 {
@@ -763,15 +785,19 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateBootstrapFile(jcr);
 
+  bool create_tree = false;
+
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = T_("Backup OK");
+      create_tree = true;
       break;
     case JS_Incomplete:
       TermMsg = T_("Backup failed -- incomplete");
       break;
     case JS_Warnings:
       TermMsg = T_("Backup OK -- with warnings");
+      create_tree = true;
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
@@ -801,6 +827,19 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
   }
 
   GenerateBackupSummary(jcr, &cr, msg_type, TermMsg);
+
+  if (jcr->dir_impl->backup_tree_root) {
+    if (create_tree && !jcr->dir_impl->cache_dir.empty()) {
+      if (EnsurePathExists(jcr->dir_impl->cache_dir)) {
+        std::string path = jcr->dir_impl->cache_dir + std::string{"/"}
+                           + std::to_string(jcr->JobId) + ".tree";
+        SaveTree(path.c_str(), jcr->dir_impl->backup_tree_root);
+      }
+    }
+    FreeTree(jcr->dir_impl->backup_tree_root);
+    jcr->dir_impl->backup_tree_root = nullptr;
+  }
+
 
   Dmsg0(100, "Leave backup_cleanup()\n");
 }
