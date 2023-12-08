@@ -372,12 +372,12 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
   }
 
-  if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+  if (dcr->autodeflate != AutoXflateMode::IO_DIRECTION_NONE) {
     if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
 
-  if (AutoxflateModeContainsIn(dcr->autoinflate)) {
+  if (dcr->autoinflate != AutoXflateMode::IO_DIRECTION_NONE) {
     if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
@@ -407,7 +407,7 @@ static bRC handle_read_translation(PluginContext* ctx, void* value)
   }
 
   if (!record_was_swapped) {
-    if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+    if (AutoxflateModeContainsIn(dcr->autodeflate)) {
       record_was_swapped = AutoDeflateRecord(ctx, dcr);
     }
   }
@@ -568,7 +568,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   ser_declare;
   bool retval = false;
   comp_stream_header ch;
-  DeviceRecord *rec, *nrec;
+  DeviceRecord *rec, *nrec = nullptr;
   struct plugin_ctx* p_ctx;
   unsigned char* data = NULL;
   bool intermediate_value = false;
@@ -600,10 +600,10 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
            "missing bSdEventSetupRecordTranslation call?\n"));
     goto bail_out;
   }
+
   // Setup the converted DeviceRecord to point with its data buffer to the
   // compression buffer.
   nrec->data = dcr->jcr->compress.deflate_buffer;
-
 
   switch (rec->maskedStream) {
     case STREAM_FILE_DATA:
@@ -624,7 +624,6 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
                     rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {
-    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -690,6 +689,10 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   retval = true;
 
 bail_out:
+  if (nrec && dcr->after_rec != nrec) {
+    bareos_core_functions->FreeRecord(nrec);
+    nrec = nullptr;
+  }
   return retval;
 }
 
@@ -697,7 +700,7 @@ bail_out:
 // alternative datastream.
 static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 {
-  DeviceRecord *rec, *nrec;
+  DeviceRecord *rec, *nrec = nullptr;
   bool retval = false;
   struct plugin_ctx* p_ctx;
   bool intermediate_value = false;
@@ -721,6 +724,13 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   nrec = bareos_core_functions->new_record(/* with_data = */ false);
   bareos_core_functions->CopyRecordState(nrec, rec);
 
+  if (!dcr->jcr->compress.inflate_buffer) {
+    Jmsg(ctx, M_FATAL,
+         _("autoxflate-sd: compress.inflate_buffer was not setup "
+           "missing bSdEventSetupRecordTranslation call?\n"));
+    goto bail_out;
+  }
+
   // Setup the converted record to point to the original data. The
   // DecompressData function will decompress the data in the
   // compression buffer and set the length of the decompressed data.
@@ -729,7 +739,6 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (!DecompressData(dcr->jcr, "Unknown", rec->maskedStream, &nrec->data,
                       &nrec->data_len, true)) {
-    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -765,5 +774,9 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   retval = true;
 
 bail_out:
+  if (nrec && dcr->after_rec != nrec) {
+    bareos_core_functions->FreeRecord(nrec);
+    nrec = nullptr;
+  }
   return retval;
 }

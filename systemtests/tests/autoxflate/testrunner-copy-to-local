@@ -1,0 +1,85 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+debug_level=500
+File="bbatch.c"
+
+restore_dir="${tmp}/LC2-restores"
+
+start_test
+
+# 1) Copy from local-copy (uncompressed) to offsite (compressed)
+# 2) Copy from offsite to offsite-copy; since autoxflate on replication is off
+#    the data should still be compressed
+# 3) Restore from offsite-copy
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${tmp}/copy-to-local.out
+messages
+setdebug level=$debug_level storage=O12
+setdebug level=$debug_level storage=L2
+label volume=LC2 storage=L2 pool=FullCopy
+run copy-from-offsite yes
+wait
+update volume=LC2 volstatus=Used
+messages
+messages
+@$out ${tmp}/restore-LC2.out
+restore jobid=17 client=bareos-fd where=$restore_dir all done yes
+wait
+setdebug level=0 storage=O11
+setdebug level=0 storage=O12
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$@"
+
+# There should be no difference, but with autoxflate decompression
+# the restore reports success ("Restore OK") but seems to fail silently
+# and doesn't actually restore anything
+check_restore_diff "${BackupDirectory}" "$restore_dir"
+
+if is_file_compressed "LD1" "LC2" "${File}"; then
+    echo "LC2 is compressed"
+    estat=3
+fi
+
+expect_grep "Copying OK" \
+	    "$tmp/copy-local.out" \
+	    "Local copy did not succeed."
+
+expect_grep "Restore OK" \
+	    "$tmp/restore-LC2.out" \
+	    "Restore from LC2 did not succeed."
+
+end_test

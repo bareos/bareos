@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - github actions: update/fix publish to PyPI workflows [PR #1586]
 - github actions: PyPi: install setuptools [PR #1591]
+- autoxflate: fix autoxflate on replication [PR #1596]
 
 ## [21.1.8] - 2023-10-23
 
@@ -700,4 +701,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1575]: https://github.com/bareos/bareos/pull/1575
 [PR #1586]: https://github.com/bareos/bareos/pull/1586
 [PR #1591]: https://github.com/bareos/bareos/pull/1591
+[PR #1596]: https://github.com/bareos/bareos/pull/1596
 [unreleased]: https://github.com/bareos/bareos/tree/master

@@ -316,13 +316,25 @@ bls_files_verbose()
    local STORAGE=${1}
    local VOLUME=${2}
    # JobId is not yet evaluated
-   #local JOBID=${3}
-   #local FILENAME=${4}
 
    "${BAREOS_BLS_BINARY}" -V "${VOLUME}" -c "${conf}" -v "${STORAGE}"
    return $?
 }
 
+
+is_file_compressed()
+{
+   local STORAGE=${1}
+   local VOLUME=${2}
+   local FILENAME=${3}
+
+   print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} ?"
+   if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" | grep -A1 "${FILENAME}$" | grep -i "COMPRESSED"); then
+       return 0
+   else
+       return 1
+   fi
+}
 
 check_compression()
 {
@@ -340,7 +352,11 @@ check_compression()
    fi
 
    print_debug "Is ${FILENAME} compressed with ${COMPRESSION_DESCRIPTION} ?"
-   if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "); then
+   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" )
+   print_debug "$BLS_OUT"
+   echo "$BLS_OUT"
+   echo "Hallo"
+   if OUT=$(echo "$BLS_OUT" | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "); then
       print_debug "$OUT"
    else
       set_error "Use of compression algorithm ${COMPRESSION_DESCRIPTION} in job=${JOBID}, file=${FILENAME} not detected."
@@ -708,9 +724,17 @@ check_restore_diff()
    #   * ${BackupDirectory} (set by test), or
    #   * ${src}
    dest=${1:-${BackupDirectory:-$src}}
+   defaultrestoredirectory="$tmp/bareos-restores"
+   restoredirectory=${2:-${defaultrestoredirectory}}
    result=0
 
-   if "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"; then
+   restorepath="$restoredirectory/${dest}"
+
+   echo "$restorepath"
+
+   result=0
+
+   if "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
        result=$?
    fi
 
@@ -720,7 +744,7 @@ check_restore_diff()
    else
      DIFFTOOL='diff'
    fi
-   OUT="$(LANG=C $DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
+   OUT="$(LANG=C $DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${restorepath}")"
    result=$(( result + $?))
    if is_debug; then
        printf "%s\n" "$OUT"

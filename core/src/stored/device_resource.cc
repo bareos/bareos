@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -278,9 +278,21 @@ bool DeviceResource::Validate()
     my_config->AddWarning(
         "Setting 'Maximum Block Size' on a non-tape device is unsupported");
   }
+
   if (dev_type == DeviceType::B_RADOS_DEV) {
     my_config->AddWarning("The Rados Storage Backend Device is deprecated");
   }
+
+  if (autodeflate != AutoXflateMode::IO_DIRECTION_NONE
+      && autodeflate_algorithm == 0) {
+    Jmsg(nullptr, M_ERROR, 0,
+         _("Device %s: If 'AutoDeflate' is set, then 'AutoDeflateAlgorithm' "
+           "also has to be set.\n"),
+         resource_name_);
+
+    return false;
+  }
+
   return true;
 }
 
