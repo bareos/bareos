@@ -24,6 +24,10 @@
 #
 set -e
 set -u
+
+# avoid misleading PostgreSQL warning 'could not change directory to ...'
+cd /
+
 #
 # Source the Bareos config functions.
 #

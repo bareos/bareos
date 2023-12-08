@@ -125,6 +125,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos-check-sources: ignore bootstrap*.css [PR #1556]
 - utils: add a thread-safe single-producer/single-consumer queue [PR #1504]
 - devtools: Update python dependencies [PR #1531]
+- scripts: force cd / for all PostgreSQL scripts [PR #1608]
 
 ### Removed
 - cats: remove remains of deprecated databases [PR #1377]
@@ -332,5 +333,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1601]: https://github.com/bareos/bareos/pull/1601
 [PR #1602]: https://github.com/bareos/bareos/pull/1602
 [PR #1604]: https://github.com/bareos/bareos/pull/1604
+[PR #1608]: https://github.com/bareos/bareos/pull/1608
 [PR #1611]: https://github.com/bareos/bareos/pull/1611
 [unreleased]: https://github.com/bareos/bareos/tree/master
