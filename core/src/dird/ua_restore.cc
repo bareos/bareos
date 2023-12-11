@@ -335,6 +335,16 @@ bail_out:
 
   if (regexp) { free(regexp); }
 
+  /* restore_tree_root only gets freed if either the backup starts
+   * or the ua session ends.  Since the first definitely does not happen
+   * after this point, and we cannot control the second one, we need
+   * to ensure that we free the tree here before returning false; otherwise
+   * this memory will leak, if another restore is attempted. */
+  if (jcr->dir_impl->restore_tree_root) {
+    FreeTree(jcr->dir_impl->restore_tree_root);
+    jcr->dir_impl->restore_tree_root = nullptr;
+  }
+
   free_rx(&rx);
   return false;
 }

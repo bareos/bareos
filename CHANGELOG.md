@@ -126,6 +126,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - utils: add a thread-safe single-producer/single-consumer queue [PR #1504]
 - devtools: Update python dependencies [PR #1531]
 - scripts: force cd / for all PostgreSQL scripts [PR #1608]
+- dird: remove optimize_for_size/optimize_for_speed [PR #1613]
 
 ### Removed
 - cats: remove remains of deprecated databases [PR #1377]
@@ -335,4 +336,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1604]: https://github.com/bareos/bareos/pull/1604
 [PR #1608]: https://github.com/bareos/bareos/pull/1608
 [PR #1611]: https://github.com/bareos/bareos/pull/1611
+[PR #1613]: https://github.com/bareos/bareos/pull/1613
 [unreleased]: https://github.com/bareos/bareos/tree/master
