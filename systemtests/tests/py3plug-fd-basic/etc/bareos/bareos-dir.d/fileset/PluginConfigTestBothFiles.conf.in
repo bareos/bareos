@@ -1,0 +1,18 @@
+FileSet {
+  Name = "PluginConfigTestBothFiles"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "@python_module_name@"
+    ":module_path=@python_plugin_module_src_test_dir@"
+    ":module_name=config-test-module"
+    ":option1=value1"
+    ":option2=value2"
+    ":overrides_file=plugin_overrides.ini"
+    ":option3=value3"
+    ":option4=value4"
+    ":defaults_file=plugin_defaults.ini"
+  }
+}

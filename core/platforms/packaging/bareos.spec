@@ -1454,6 +1454,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/BareosFdPluginBaseclass.py*
 %{plugin_dir}/BareosFdPluginLocalFilesBaseclass.py*
 %{plugin_dir}/BareosFdWrapper.py*
+%{script_dir}/bareos_encode_string.py
 
 %files filedaemon-ldap-python-plugin
 %defattr(-, root, root)
