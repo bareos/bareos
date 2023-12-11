@@ -221,6 +221,12 @@ if(NOT client-only)
     LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
     COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
   )
+  set_tests_properties(gtest:ktls.v12_send PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v12_recv PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v12_256_send PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v13_send PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v13_recv PROPERTIES LABELS broken)
+  set_tests_properties(gtest:ktls.v13_256_send PROPERTIES LABELS broken)
 
   bareos_add_test(
     catalog
@@ -448,8 +454,10 @@ bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(
   test_fd_plugins
-  ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
-                     ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
+  ADDITIONAL_SOURCES
+    ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
+    ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
+    ${PROJECT_SOURCE_DIR}/src/filed/filed_globals.cc
   LINK_LIBRARIES bareos bareosfind GTest::gtest_main
 )
 

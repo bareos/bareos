@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -30,11 +30,92 @@ import os
 import stat
 import sys
 import time
+from base64 import b85decode
+
+
+def parse_plugindef_string(plugindef):
+    options = {}
+    parts = plugindef.split(":")
+    while parts:
+        raw_key, _, raw_val = parts.pop(0).partition("=")
+        key = raw_key.strip()
+        val = raw_val.strip()
+        if not key:
+            continue
+        if not val:
+            bareosfd.JobMessage(
+                M_WARNING, "ignoring option '%s' with no value!\n" % (key)
+            )
+            continue
+        # See if the last character is a escape of the value string
+        while val[-1:] == "\\":
+            val = val[:-1] + ":" + plugin_options.pop(0)
+        if key not in options:
+            options[key] = val
+    return options
+
+
+def parse_options_file(path):
+    bareosfd.DebugMessage(100, 'reading options from file "%s"\n' % (path))
+    options = {}
+    with open(path, "r") as fp:
+        lines = fp.readlines()
+        while lines:
+            line = lines.pop(0)
+            raw_key, _, raw_val = line.partition("=")
+            key = raw_key.strip()
+            val = raw_val.strip()
+            if key == "" and val == "":  # empty line
+                continue
+            elif key.startswith(("#", ";", "[")):
+                continue
+            elif not key or not val:
+                bareosfd.JobMessage(
+                    M_FATAL,
+                    "error parsing '%s' (found no key or value)!\n" % (line.strip()),
+                )
+                return {}
+            # check if last character escapes the newline
+            while val[-1:] == "\\":
+                val = val[:-1] + lines.pop(0).strip()
+            if key in options:
+                bareosfd.JobMessage(
+                    M_WARNING,
+                    "duplicate option '%s' overriding previous value!\n" % (key),
+                )
+            options[key] = val
+    return options
+
+
+def get_config_path():
+    """
+    we can only get the effective configuration file from core, so this function
+    tries to convert it to a path that our plugin configuration can be relative to
+    """
+    used_config = bareosfd.GetValue(bareosfd.bVarUsedConfig)
+    if used_config.endswith("/*/*.conf"):
+        path = used_config[:-8]
+    elif os.path.isfile(used_config):
+        path = os.path.dirname(used_config)
+    else:
+        return "/"
+    if os.path.isdir(path):
+        return path
+    else:
+        return "/"
+
+
+def transform_value(value, transform):
+    if transform == "enc":
+        return b85decode(value).decode("utf-8")
+    else:
+        raise NameError("unknown transformation")
+    return value
 
 
 class BareosFdPluginBaseclass(object):
 
-    """ Bareos python plugin base class """
+    """Bareos python plugin base class"""
 
     def __init__(self, plugindef, mandatory_options=None):
         bareosfd.DebugMessage(
@@ -65,6 +146,7 @@ class BareosFdPluginBaseclass(object):
         # short Name is everything left of the third point seen from the right
         self.shortName = self.jobName.rsplit(".", 3)[0]
         self.workingdir = bareosfd.GetValue(bVarWorkingDir)
+        self.configdir = get_config_path()
         self.startTime = int(time.time())
         self.FNAME = "undef"
         self.filetype = "undef"
@@ -75,38 +157,92 @@ class BareosFdPluginBaseclass(object):
         self.mandatory_options = mandatory_options
 
     def __str__(self):
-        return "<%s:fdname=%s jobId=%s client=%s since=%d level=%c jobName=%s workingDir=%s>" % (
-            self.__class__,
-            self.fdname,
-            self.jobId,
-            self.client,
-            self.since,
-            self.level,
-            self.jobName,
-            self.workingdir,
+        return (
+            "<%s:fdname=%s jobId=%s client=%s since=%d level=%c jobName=%s workingDir=%s>"
+            % (
+                self.__class__,
+                self.fdname,
+                self.jobId,
+                self.client,
+                self.since,
+                self.level,
+                self.jobName,
+                self.workingdir,
+            )
         )
+
+    def _load_options_from_file(self, option_dict, key):
+        """
+        consume the given key from the option_dict if it exists and return
+        the options that are configured in the file the option pointed to
+        """
+        if key in option_dict:
+            try:
+                self.configdir
+            except AttributeError:
+                self.configdir = get_config_path()
+                JobMessage(
+                    M_WARNING, "Plugin did not call BareosFdPluginBaseclass.__init__()"
+                )
+            path = os.path.join(self.configdir, option_dict[key])
+            try:
+                options = parse_options_file(path)
+            except OSError as e:
+                JobMessage(
+                    M_FATAL,
+                    "While loading options file '%s': %s" % (option_dict[key], e),
+                )
+                raise
+            del option_dict[key]
+            return options
+        else:
+            return {}
+
+    def _add_options(self, options):
+        for key, value in options.items():
+            key_name, _, transform = key.partition("#")
+            if transform:
+                key = key_name
+                try:
+                    value = transform_value(value, transform)
+                except Exception as e:
+                    raise ValueError(
+                        "Transformation %s of value '%s' for key %s failed: %s"
+                        % (transform, value, key_name, e)
+                    )
+
+            if key not in self.options:
+                bareosfd.DebugMessage(100, 'key:value = "%s:%s"\n' % (key, value))
+                self.options[key] = value
 
     def parse_plugin_definition(self, plugindef):
         bareosfd.DebugMessage(100, 'plugin def parser called with "%s"\n' % (plugindef))
         # Parse plugin options into a dict
         if not hasattr(self, "options"):
             self.options = dict()
-        plugin_options = plugindef.split(":")
-        while plugin_options:
-            current_option = plugin_options.pop(0)
-            key, sep, val = current_option.partition("=")
-            # See if the last character is a escape of the value string
-            while val[-1:] == "\\":
-                val = val[:-1] + ":" + plugin_options.pop(0)
-            # Replace all '\\'
-            val = val.replace("\\", "")
-            bareosfd.DebugMessage(100, 'key:val = "%s:%s"\n' % (key, val))
-            if val == "":
-                continue
-            else:
-                if key not in self.options:
-                    self.options[key] = val
-        # after we've parsed all arguments, we check the options for mandatory settings
+
+        plugindef_options = parse_plugindef_string(plugindef)
+        try:
+            default_options = self._load_options_from_file(
+                plugindef_options, "defaults_file"
+            )
+            override_options = self._load_options_from_file(
+                plugindef_options, "overrides_file"
+            )
+        except OSError:
+            return False
+
+        effective_options = {}
+        effective_options.update(default_options)
+        effective_options.update(plugindef_options)
+        effective_options.update(override_options)
+
+        try:
+            self._add_options(effective_options)
+        except ValueError as e:
+            JobMessage(M_FATAL, str(e))
+            return False
+
         return self.check_options(self.mandatory_options)
 
     def check_options(self, mandatory_options=None):
