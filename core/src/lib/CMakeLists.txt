@@ -97,6 +97,7 @@ set(BAREOS_SRCS
     tls_openssl_crl.cc
     tls_openssl_private.cc
     tree.cc
+    tree_save.cc
     try_tls_handshake_as_a_server.cc
     compression.cc
     util.cc

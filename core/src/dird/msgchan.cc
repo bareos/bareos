@@ -475,6 +475,7 @@ extern "C" void* msg_thread(void* arg)
   // Read the Storage daemon's output.
   Dmsg0(100, "Start msg_thread loop\n");
   n = 0;
+
   while (!jcr->IsJobCanceled() && (n = BgetDirmsg(sd)) >= 0) {
     Dmsg1(400, "<stored: %s", sd->msg);
     /* Check for "3000 OK Job Authorization="
@@ -510,8 +511,10 @@ extern "C" void* msg_thread(void* arg)
      * but still end as JS_Warnings (OK -- with warnings). */
     Qmsg(jcr, M_FATAL, 0, T_("Director's comm line to SD dropped.\n"));
   }
+
   if (IsBnetError(sd)) { jcr->dir_impl->SDJobStatus = JS_ErrorTerminated; }
   pthread_cleanup_pop(1); /* remove and execute the handler */
+
   return NULL;
 }
 

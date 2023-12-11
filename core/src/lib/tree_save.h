@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-  Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,26 +18,32 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/**
+ * @file
+ * Directory tree load/save routines
+ */
 
-#ifndef BAREOS_LIB_XXHASH_H_
-#define BAREOS_LIB_XXHASH_H_
+#ifndef BAREOS_LIB_TREE_SAVE_H_
+#define BAREOS_LIB_TREE_SAVE_H_
 
-#include "crypto.h"
-class JobControlRecord;
+#include "lib/tree.h"
 
-DIGEST* XxhashDigestNew(JobControlRecord* jcr, crypto_digest_t type);
+bool SaveTree(const char* path, TREE_ROOT* root);
+TREE_ROOT* LoadTree(const char* path, std::size_t* size, bool mark_on_load);
 
-#include <vector>
 
-struct simple_checksum {
-  // all these functions may throw
- public:
-  simple_checksum& add(const char* begin, const char* end);
-  std::vector<char> finalize();
-  ~simple_checksum();
+#include <memory>
 
- private:
-  void* state{nullptr};
+class NewTree;
+void DeleteTree(NewTree*);
+struct TreeDeleter {
+  void operator()(NewTree* nt) const { DeleteTree(nt); }
 };
+using tree_ptr = std::unique_ptr<NewTree, TreeDeleter>;
+tree_ptr MakeNewTree();
+bool AddTree(NewTree*, const char* path);
+TREE_ROOT* CombineTree(tree_ptr tree,
+                       std::size_t* file_count,
+                       bool mark_on_load);
 
-#endif  // BAREOS_LIB_XXHASH_H_
+#endif  // BAREOS_LIB_TREE_SAVE_H_

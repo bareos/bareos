@@ -50,6 +50,7 @@
 #include "lib/parse_conf.h"
 #include "lib/tree.h"
 #include "include/protocol_types.h"
+#include "lib/tree_save.h"
 
 #include <vector>
 
@@ -353,6 +354,11 @@ bail_out:
   if (escaped_where_name != NULL) { free(escaped_where_name); }
 
   if (regexp) { free(regexp); }
+
+  if (jcr->dir_impl->restore_tree_root) {
+    FreeTree(jcr->dir_impl->restore_tree_root);
+    jcr->dir_impl->restore_tree_root = nullptr;
+  }
 
   free_rx(&rx);
   return false;
@@ -1240,11 +1246,35 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   ua->LogAuditEventInfoMsg(T_("Building directory tree for JobId(s) %s"),
                            rx->JobIds);
 
-  if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
-                           true /* get delta */, InsertTreeHandler,
-                           (void*)&tree)) {
-    ua->ErrorMsg("%s", ua->db->strerror());
+  auto nt = MakeNewTree();
+  bool got_all{true};
+  if (!ua->jcr->dir_impl->cache_dir.empty()) {
+    JobId_t jobid;
+    for (const char* p = rx->JobIds; GetNextJobidFromList(&p, &jobid) > 0;) {
+      std::string path = ua->jcr->dir_impl->cache_dir + std::string{"/"}
+                         + std::to_string(jobid) + ".tree";
+      if (!AddTree(nt.get(), path.c_str())) {
+        got_all = false;
+        break;
+      }
+    }
+  } else {
+    got_all = false;
   }
+
+  if (got_all) {
+    FreeTree(tree.root);
+    std::size_t count;
+    tree.root = CombineTree(std::move(nt), &count, tree.all);
+    tree.FileCount = count;
+  } else {
+    if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
+                             true /* get delta */, InsertTreeHandler,
+                             (void*)&tree)) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+    }
+  }
+
 
   if (*rx->BaseJobIds) {
     PmStrcat(rx->JobIds, ",");
