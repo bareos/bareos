@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - docs: improvements for droplet, jobdefs [PR #1581]
 
+### Fixed
+- dird: fix `purge oldest volume` [PR #1628]
+
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
 [PR #1587]: https://github.com/bareos/bareos/pull/1587
 [PR #1589]: https://github.com/bareos/bareos/pull/1589
@@ -33,4 +36,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1612]: https://github.com/bareos/bareos/pull/1612
 [PR #1614]: https://github.com/bareos/bareos/pull/1614
 [PR #1617]: https://github.com/bareos/bareos/pull/1617
+[PR #1628]: https://github.com/bareos/bareos/pull/1628
 [unreleased]: https://github.com/bareos/bareos/tree/master
