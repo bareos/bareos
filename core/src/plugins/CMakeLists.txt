@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,8 +29,8 @@ endif()
 
 # Darwin
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  list(APPEND pymod_include_dirs /usr/local/opt/gettext/include
-       /usr/local/opt/openssl/include
+  list(APPEND pymod_include_dirs ${HOMEBREW_PREFIX}/opt/gettext/include
+       ${HOMEBREW_PREFIX}/opt/openssl/include
   )
 endif()
 

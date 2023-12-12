@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -194,9 +194,16 @@ set(CMAKE_CTEST_COMMAND ctest -V)
 include(CTest)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
-  set(Readline_ROOT_DIR /usr/local/opt/readline)
-  set(Intl_ROOT_DIR /usr/local/opt/gettext)
+  set(HAVE_DARWIN_OS 1)
+  if(DEFINED ENV{HOMEBREW_PREFIX})
+    set(HOMEBREW_PREFIX "$ENV{HOMEBREW_PREFIX}")
+  else()
+    set(HOMEBREW_PREFIX "/usr/local")
+  endif()
+
+  set(OPENSSL_ROOT_DIR ${HOMEBREW_PREFIX}/opt/openssl@3)
+  set(Readline_ROOT_DIR ${HOMEBREW_PREFIX}/opt/readline)
+  set(Intl_ROOT_DIR ${HOMEBREW_PREFIX}/opt/gettext)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -328,16 +335,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(HAVE_DARWIN_OS 1)
   # set(CMAKE_INCLUDE_PATH  "${OPENSSL_INCLUDE_DIR}:${CMAKE_INCLUDE_PATH}")
-  set(CMAKE_INCLUDE_PATH "/usr/local/opt/:${CMAKE_INCLUDE_PATH}")
-  link_directories(/usr/local/lib)
+  set(CMAKE_INCLUDE_PATH "${HOMEBREW_PREFIX}/opt/:${CMAKE_INCLUDE_PATH}")
+  link_directories(${HOMEBREW_PREFIX}/lib)
 
-  include_directories(/usr/local/opt/gettext/include)
+  include_directories(${HOMEBREW_PREFIX}/opt/gettext/include)
   link_libraries(
-    /usr/local/opt/gettext/lib/libintl.a iconv "-framework CoreFoundation"
+    ${HOMEBREW_PREFIX}/opt/gettext/lib/libintl.a iconv
+    "-framework CoreFoundation" "-framework CoreServices"
   )
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 endif()
 
 # hpux

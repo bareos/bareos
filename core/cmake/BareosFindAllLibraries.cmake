@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -187,7 +187,7 @@ if(ENABLE_LZO)
   if(${LZO2_FOUND})
     set(HAVE_LZO 1)
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-      set(LZO2_LIBRARIES "/usr/local/opt/lzo/lib/liblzo2.a")
+      set(LZO2_LIBRARIES "${HOMEBREW_PREFIX}/opt/lzo/lib/liblzo2.a")
     endif()
   endif()
 endif()

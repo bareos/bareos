@@ -185,17 +185,17 @@ The |fd| service on solaris is now ready for use.
 
 .. _section-macosx:
 
-Installing a Bareos Client on Mac OS X
---------------------------------------
+Installing a Bareos Client on macOS
+------------------------------------
 
 .. index::
-   single: Platform; Mac; OS X
+   single: Platform; macOS
 
-Bareos for MacOS X is available either
-
--  via the `Homebrew project <https://brew.sh/>`_ (https://formulae.brew.sh/formula/bareos-client) or
+Bareos for macOS is available either
 
 -  as pkg file from https://download.bareos.org/ or https://download.bareos.com/.
+
+-  via the `Homebrew project <https://brew.sh/>`_ (https://formulae.brew.sh/formula/bareos-client).
 
 However, you have to choose upfront, which client you want to use. Otherwise conflicts do occur.
 
@@ -205,17 +205,23 @@ Installing the Bareos Client as PKG
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
-   single: Installation; MacOS
+   single: Installation; macOS
 
-The Bareos installer package for Mac OS X contains the |fd| for Mac OS X 10.5 or later.
+The Bareos installer package for macOS contains the |fd| for macOS 10.5 or later.
 
 On your local Mac, you must be an admin user. The main user is an admin user.
 
-Download the :file:`bareos-*.pkg` installer package from https://download.bareos.org/ or  or https://download.bareos.com/.
+Download the :file:`bareos-*.pkg` installer package from https://download.bareos.org/ or https://download.bareos.com/.
 
 Find the .pkg you just downloaded. Install the .pkg by holding the CTRL key, left-clicking the installer and choosing "open".
 
 Follow the directions given to you and finish the installation.
+
+Alternatively you can install the package via command line:
+
+.. code-block:: shell-session
+
+   sudo installer -pkg bareos-*.pkg -target /
 
 Configuration
 ~~~~~~~~~~~~~
@@ -226,23 +232,28 @@ Configure the server-side by follow the instructions at :ref:`section-AddAClient
 
 After configuring the server-side you can either transfer the necessary configuration file using following command or configure the client locally.
 
+The configuration path differs from a Linux installation.
+On Linux the configuration files are located under :file:`/etc/bareos/`.
+On macOS pkg installations, the configuration path is  :file:`/usr/local/bareos/etc/bareos/`.
+On macOS Homebrew installatons, the configuration path is :file:`/usr/local/etc/bareos/`.
+
+
 Option 1: Copy the director resource from the Bareos Director to the Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Assuming your client has the DNS entry :strong:`client2.example.com` and has been added to |dir| as :config:option:`dir/client = client2-fd`\ :
 
 .. code-block:: shell-session
+   :caption: copy director resource to a macOS pkg installation client
 
-   scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/usr/local/etc/bareos/bareos-fd.d/director/
-
-This differs in so far, as on Linux the configuration files are located under :file:`/etc/bareos/`, while on MacOS they are located at :file:`/usr/local/etc/bareos/`.
+   scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/usr/local/bareos/etc/bareos/bareos-fd.d/director/
 
 Option 2: Edit the director resource on the Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Alternatively, you can edit the file :file:`/usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf`.
+Alternatively, you can edit the file :file:`/usr/local/bareos/etc/bareos/bareos-fd.d/director/bareos-dir.conf`.
 
-This can be done by right-clicking the finder icon in your task bar, select "Go to folder ..." and paste :file:`/usr/local/etc/bareos/bareos-fd.d/director/`.
+This can be done by right-clicking the finder icon in your task bar, select "Go to folder ..." and paste :file:`/usr/local/bareos/etc/bareos/bareos-fd.d/director/`.
 
 Select the :file:`bareos-dir.conf` file and open it.
 
@@ -250,7 +261,7 @@ Alternatively you can also call following command on the command console:
 
 .. code-block:: shell-session
 
-   open -t /usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf
+   open -t /usr/local/bareos/etc/bareos/bareos-fd.d/director/bareos-dir.conf
 
 The file should look similar to this:
 
@@ -279,8 +290,8 @@ The bareos-fd must be restarted to reread its configuration:
 .. code-block:: shell-session
    :caption: Restart the |fd|
 
-   sudo launchctl stop  org.bareos.bareos-fd
-   sudo launchctl start org.bareos.bareos-fd
+   sudo launchctl stop  com.bareos.bareos-fd
+   sudo launchctl start com.bareos.bareos-fd
 
 Verify that the Bareos File Daemon is working
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,7 +308,7 @@ In case, the client does not react, following command are useful the check the s
    :caption: Verify the status of |fd|
 
    # check if bareos-fd is started by system:
-   sudo launchctl list org.bareos.bareos-fd
+   sudo launchctl list com.bareos.bareos-fd
 
    # get process id (PID) of bareos-fd
    pgrep bareos-fd
@@ -313,7 +324,8 @@ You can also manually start bareos-fd in debug mode by:
 .. code-block:: shell-session
    :caption: Start |fd| in debug mode
 
-   sudo /usr/local/sbin/bareos-fd -f -d 100
+   cd /usr/local/bareos
+   sudo /usr/local/bareos/sbin/bareos-fd -f -d 100
 
 
 Installing a Bareos Client on Windows
