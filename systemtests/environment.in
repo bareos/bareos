@@ -21,6 +21,7 @@ working_dir=${working}
 messagesfile=${working_dir}/bareos-dir.conmsg
 tmp=${current_test_directory}/tmp
 export BackupDirectory="${tmp}/data"
+export RestoreDirectory="${tmp}/bareos-restores"
 systemtests_s3_use_https=@systemtests_s3_use_https@
 
 

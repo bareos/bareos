@@ -1,0 +1,65 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Restore files and filter them with FileRegex
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+# Use own restore directory to ensure it is always
+# clean before restore
+RestoreDirectory="${tmp}/fileregex-restores"
+
+start_test
+
+fileregex=".*/[Aa]-file.*"
+
+matched_files=()
+while IFS=  read -r -d $'\0'; do
+    matched_files+=("$REPLY")
+done < <(find "$BackupDirectory/" -type f -regex "$fileregex" -print0)
+
+echo "Matched files:" > "$log_home/matched.out"
+for file in "${matched_files[@]}"; do
+    echo "$file" >> "$log_home/matched.out"
+done
+
+if [ "${#matched_files[@]}" -eq 0 ]; then
+  echo "FileRegex did not match any files in test data"
+  exit 1
+fi
+
+# Restore all files but filter by fileregex
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/restore.out
+restore client=bareos-fd fileset=SelfTest \
+    where="$RestoreDirectory" \
+    fileregex="$fileregex" \
+    yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+# We expect to restore exactly those files
+# matched by the regex
+check_restore_files_diff "${matched_files[@]}"
+
+end_test

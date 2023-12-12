@@ -95,6 +95,10 @@ static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
                                       char* table);
 static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
+static bool CheckAndSetFileregex(UaContext* ua,
+                                 RestoreContext* rx,
+                                 const char* regex);
+static bool AddAllFindex(RestoreContext* rx);
 
 // Restore files
 bool RestoreCmd(UaContext* ua, const char*)
@@ -146,6 +150,14 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   i = FindArgWithValue(ua, "regexwhere");
   if (i >= 0) { rx.RegexWhere = ua->argv[i]; }
+
+  i = FindArgWithValue(ua, "fileregex");
+  if (i >= 0) {
+    if (!CheckAndSetFileregex(ua, &rx, ua->argv[i])) {
+      ua->ErrorMsg(T_("Invalid \"FileRegex\" value.\n"));
+      goto bail_out;
+    }
+  }
 
   i = FindArg(ua, "archive");
   if (i >= 0) {
@@ -212,6 +224,13 @@ bool RestoreCmd(UaContext* ua, const char*)
       }
       break;
     case 2: /* selected by filename, no tree needed */
+      break;
+    case 3: /* selected by fileregex only, add all findexes */
+      if (!AddAllFindex(&rx)) {
+        ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
+        ua->SendMsg(T_("Restore not done.\n"));
+        goto bail_out;
+      }
       break;
   }
 
@@ -460,7 +479,8 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
  *  select a list of JobIds from which he will subsequently
  *  select which files are to be restored.
  *
- *  Returns:  2  if filename list made
+ *  Returns:  3  if only fileregex specified
+ *            2  if filename list made
  *            1  if jobid list made
  *            0  on error
  */
@@ -499,26 +519,27 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "select",    /* 5 */
                       "pool",      /* 6 */
                       "all",       /* 7 */
+                      "fileregex", /* 8 */
 
                       // The keyword below are handled by individual arg lookups
-                      "client",        /* 8 */
-                      "storage",       /* 9 */
-                      "fileset",       /* 10 */
-                      "where",         /* 11 */
-                      "yes",           /* 12 */
-                      "bootstrap",     /* 13 */
-                      "done",          /* 14 */
-                      "strip_prefix",  /* 15 */
-                      "add_prefix",    /* 16 */
-                      "add_suffix",    /* 17 */
-                      "regexwhere",    /* 18 */
-                      "restoreclient", /* 19 */
-                      "copies",        /* 20 */
-                      "comment",       /* 21 */
-                      "restorejob",    /* 22 */
-                      "replace",       /* 23 */
-                      "pluginoptions", /* 24 */
-                      "archive",       /* 25 */
+                      "client",        /* 9 */
+                      "storage",       /* 10 */
+                      "fileset",       /* 11 */
+                      "where",         /* 12 */
+                      "yes",           /* 13 */
+                      "bootstrap",     /* 14 */
+                      "done",          /* 15 */
+                      "strip_prefix",  /* 16 */
+                      "add_prefix",    /* 17 */
+                      "add_suffix",    /* 18 */
+                      "regexwhere",    /* 19 */
+                      "restoreclient", /* 20 */
+                      "copies",        /* 21 */
+                      "comment",       /* 22 */
+                      "restorejob",    /* 23 */
+                      "replace",       /* 24 */
+                      "pluginoptions", /* 25 */
+                      "archive",       /* 26 */
                       NULL};
 
   rx->JobIds[0] = 0;
@@ -526,6 +547,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   std::vector<char*> files;
   std::vector<char*> dirs;
   bool use_select = false;
+  bool use_fileregex = false;
 
   for (i = 1; i < ua->argc; i++) { /* loop through arguments */
     bool found_kw = false;
@@ -592,19 +614,33 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case 7: /* all specified */
         rx->all = true;
         break;
+      case 8: /* fileregex */
+        use_fileregex = true;
+        break;
       default:
         // All keywords 7 or greater are ignored or handled by a select prompt
         break;
     }
   }
 
-  if (files.size() + dirs.size() > 0) {
+  if (files.size() + dirs.size() > 0 || use_fileregex) {
     if (!have_date) { bstrutime(date, sizeof(date), now); }
     if (!GetClientName(ua, rx)) { return 0; }
 
     for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
 
     for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
+
+    if (files.size() + dirs.size() == 0) {
+      /* If only fileregex but no specific files or dirs were specified
+       * then restore all files and filter by fileregex. Before that we
+       * need to select the jobids if none were specified. This makes
+       * fileregex behave similarly to the file parameter. */
+      if (*rx->JobIds == 0 && !SelectBackupsBeforeDate(ua, rx, date)) {
+        return 0;
+      }
+      return 3;
+    }
 
     return 2;
   }
@@ -1104,10 +1140,32 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
 }
 
+static bool CheckAndSetFileregex(UaContext* ua,
+                                 RestoreContext* rx,
+                                 const char* regex)
+{
+  regex_t fileregex_re{};
+
+  int rc = regcomp(&fileregex_re, regex, REG_EXTENDED | REG_NOSUB);
+  if (rc != 0) {
+    char errmsg[500];
+    regerror(rc, &fileregex_re, errmsg, sizeof(errmsg));
+    ua->SendMsg(T_("Regex compile error: %s\n"), errmsg);
+    return false;
+  }
+  regfree(&fileregex_re);
+
+  if (rx->bsr->fileregex) free(rx->bsr->fileregex);
+  rx->bsr->fileregex = strdup(regex);
+  return true;
+}
+
 static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
 {
-  if (FindArg(ua, NT_("all")) >= 0) { /* if user enters all on command line */
-    return true;                      /* select everything */
+  /* if user enters all on command line select everything */
+  if (FindArg(ua, NT_("all")) >= 0
+      || FindArgWithValue(ua, NT_("fileregex")) >= 0) {
+    return true;
   }
   ua->SendMsg(
       T_("\n\nFor one or more of the JobIds selected, no files were found,\n"
@@ -1120,22 +1178,8 @@ static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
         ua, T_("\nRegexp matching files to restore? (empty to abort): "))) {
       if (ua->cmd[0] == '\0') {
         break;
-      } else {
-        regex_t* fileregex_re{};
-        int rc;
-        char errmsg[500] = "";
-
-        fileregex_re = (regex_t*)malloc(sizeof(regex_t));
-        rc = regcomp(fileregex_re, ua->cmd, REG_EXTENDED | REG_NOSUB);
-        if (rc != 0) { regerror(rc, fileregex_re, errmsg, sizeof(errmsg)); }
-        regfree(fileregex_re);
-        free(fileregex_re);
-        if (*errmsg) {
-          ua->SendMsg(T_("Regex compile error: %s\n"), errmsg);
-        } else {
-          rx->bsr->fileregex = strdup(ua->cmd);
-          return true;
-        }
+      } else if (CheckAndSetFileregex(ua, rx, ua->cmd)) {
+        return true;
       }
     }
   }
@@ -1156,10 +1200,22 @@ static void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst)
   AddFindex(rx->bsr.get(), lst->JobId, lst->FileIndex);
 }
 
+static bool AddAllFindex(RestoreContext* rx)
+{
+  bool has_jobid = false;
+  JobId_t JobId, last_JobId = 0;
+  for (const char* p = rx->JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
+    if (JobId == last_JobId) { continue; /* eliminate duplicate JobIds */ }
+    AddFindexAll(rx->bsr.get(), JobId);
+    has_jobid = true;
+  }
+  return has_jobid;
+}
+
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 {
   TreeContext tree;
-  JobId_t JobId, last_JobId;
+  JobId_t JobId;
   const char* p;
   bool OK = true;
   char ed1[50];
@@ -1168,7 +1224,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   tree.root = new_tree(rx->TotalFiles);
   tree.ua = ua;
   tree.all = rx->all;
-  last_JobId = 0;
 
   /* For display purposes, the same JobId, with different volumes may
    * appear more than once, however, we only insert it once. */
@@ -1224,13 +1279,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
   if (tree.FileCount == 0) {
     OK = AskForFileregex(ua, rx);
-    if (OK) {
-      last_JobId = 0;
-      for (p = rx->JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
-        if (JobId == last_JobId) { continue; /* eliminate duplicate JobIds */ }
-        AddFindexAll(rx->bsr.get(), JobId);
-      }
-    }
+    if (OK) { AddAllFindex(rx); }
   } else {
     char ec1[50];
     if (tree.all) {
