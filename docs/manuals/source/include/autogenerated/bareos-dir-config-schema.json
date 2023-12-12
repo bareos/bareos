@@ -141,18 +141,6 @@
           "code": 0,
           "equals": true
         },
-        "OptimizeForSize": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true
-        },
-        "OptimizeForSpeed": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true
-        },
         "KeyEncryptionKey": {
           "datatype": "AUTOPASSWORD",
           "code": 1,

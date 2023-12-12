@@ -62,16 +62,6 @@ bool CheckResources()
       }
     }
 
-    // When the user didn't force us we optimize for size.
-    if (!me->optimize_for_size && !me->optimize_for_speed) {
-      me->optimize_for_size = true;
-    } else if (me->optimize_for_size && me->optimize_for_speed) {
-      Jmsg(nullptr, M_FATAL, 0,
-           T_("Cannot optimize for speed and size define only one in %s\n"),
-           configfile.c_str());
-      return false;
-    }
-
     if (my_config->GetNextRes(R_DIRECTOR, (BareosResource*)me) != nullptr) {
       Jmsg(nullptr, M_FATAL, 0,
            T_("Only one Director resource permitted in %s\n"),

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,8 +84,6 @@ int FakeMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
 void PopulateTree(int quantity, TreeContext* tree)
 {
   me = new DirectorResource;
-  me->optimize_for_size = true;
-  me->optimize_for_speed = false;
   InitContexts(&ua, tree);
 
   char* filename = GetPoolMemory(PM_FNAME);
