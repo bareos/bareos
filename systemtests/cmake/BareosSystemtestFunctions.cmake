@@ -410,7 +410,6 @@ macro(prepare_test_python)
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/mariabackup:"
-        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgresql:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
