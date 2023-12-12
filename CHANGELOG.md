@@ -129,6 +129,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: remove optimize_for_size/optimize_for_speed [PR #1613]
 - Improve python plugin configuration [PR #1619]
 - restore: add fileregex parameter [PR #1618]
+- macOS: fix linking problem for macOS >= 14 [PR #1620]
 
 ### Removed
 - cats: remove remains of deprecated databases [PR #1377]
@@ -341,4 +342,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1613]: https://github.com/bareos/bareos/pull/1613
 [PR #1618]: https://github.com/bareos/bareos/pull/1618
 [PR #1619]: https://github.com/bareos/bareos/pull/1619
+[PR #1620]: https://github.com/bareos/bareos/pull/1620
 [unreleased]: https://github.com/bareos/bareos/tree/master
