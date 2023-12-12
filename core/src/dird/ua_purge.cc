@@ -538,7 +538,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
   } else {
     ua->InfoMsg(T_("Found %d Jobs for media \"%s\" in catalog \"%s\".\n"),
                 lst.size(), mr->VolumeName, client->catalog->resource_name_);
-    if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
+    if (!GetConfirmation(ua, "Purge (yes/no)? ", true)) {
       ua->InfoMsg(T_("Purge canceled.\n"));
     } else {
       PurgeJobsFromCatalog(ua, jobids.c_str());
