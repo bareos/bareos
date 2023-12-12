@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - scripts: force cd / for all PostgreSQL scripts [PR #1607]
 - Improve python plugin configuration [PR #1605]
 - macOS: fix linking problem for macOS >= 14 [PR #1592]
+- dird: remove optimize_for_size/optimize_for_speed [PR #1612]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -25,4 +26,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1605]: https://github.com/bareos/bareos/pull/1605
 [PR #1606]: https://github.com/bareos/bareos/pull/1606
 [PR #1607]: https://github.com/bareos/bareos/pull/1607
+[PR #1612]: https://github.com/bareos/bareos/pull/1612
 [unreleased]: https://github.com/bareos/bareos/tree/master
