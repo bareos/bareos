@@ -124,7 +124,6 @@ bareos-filedaemon-glusterfs-plugin                 GlusterFS plugin for Bareos F
 bareos-filedaemon-ldap-python-plugin               LDAP Python plugin for Bareos File daemon
 bareos-filedaemon-libcloud-python-plugin           Apache libcloud CEPH plugin for Bareos File daemon
 bareos-filedaemon-mariabackup-python-plugin        Mariabackup python plugin for File daemon
-bareos-filedaemon-ovirt-python-plugin              oVirt python plugin for Bareos File daemon
 bareos-filedaemon-percona-xtrabackup-python-plugin Perconna xtrabackup python plugin for Bareos File daemon
 bareos-filedaemon-postgresql-python-plugin         PostgreSQL python plugin for Bareos File daemon
 bareos-filedaemon-python-plugins-common            Common Python plugins for Bareos File daemon

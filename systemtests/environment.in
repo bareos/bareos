@@ -110,12 +110,6 @@ export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 export PHP_EXECUTABLE=@PHP@
 export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
-#
-# oVirt Plugin Test
-#
-
-export OVIRT_SERVER=@ovirt_server@
-
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
 # If there are multiple version, select the first.
