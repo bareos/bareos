@@ -65,7 +65,7 @@ else
   certs=""
 fi
 
-exec -a "$minio_alias" "${MINIO}" server ${certs} --address ":${minio_port_number}" "$minio_tmp_data_dir" > "$logdir"/minio.log 2>/dev/null &
+exec -a "$minio_alias" "${MINIO}" server ${certs} --address ":${minio_port_number}" "$minio_tmp_data_dir" > "$logdir"/minio.log 2>"$logdir"/minio_err.log &
 
 if ! pidof ${MINIO} > /dev/null; then
   echo "$0: could not start minio server"
