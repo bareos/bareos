@@ -1,0 +1,91 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+# This systemtest tests the plugin functionality
+# of the Bareos FD plugin bareos-fd-libcloud.py
+#
+# This test will start a s3minio server and populate it with some data.
+# Then it runs a backup and a restore with the plugin.
+# A full comparison is made afterwards.
+# File attributes like uses and times will not be saved.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+bucket_name=bareos-test
+
+JobName=backup-bareos-fd
+#shellcheck source=../environment.in
+. ./environment
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=100 trace=1 timestamp=1 storage=File
+setdebug level=200 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} yes
+wait
+setdebug level=0 client=bareos-fd
+status director
+status client
+status storage=File
+messages
+END_OF_DATA
+
+echo "Full backup stage"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${tmp}/log2.out
+setdebug level=200 trace=1 timestamp=1 client=bareos-fd
+restore client=bareos-fd fileset=PluginTest where=${tmp}/bareos-restores select all done yes
+wait
+messages
+quit
+END_OF_DATA
+echo "Restore backup stage"
+run_bconsole
+expect_grep "Restore OK" "${tmp}/log2.out" "Full Restore not ok!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+check_for_zombie_jobs storage=File
+
+check_two_logs
+
+if ! diff -r tmp/data tmp/bareos-restores/${bucket_name}/data; then
+  export estat=1
+fi
+
+end_test

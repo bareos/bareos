@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - macOS: fix linking problem for macOS >= 14 [PR #1592]
 - dird: remove optimize_for_size/optimize_for_speed [PR #1612]
 - build: introduce Fedora 39 [PR #1614]
+- libcloud: modularize systemtest [PR #1609]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1605]: https://github.com/bareos/bareos/pull/1605
 [PR #1606]: https://github.com/bareos/bareos/pull/1606
 [PR #1607]: https://github.com/bareos/bareos/pull/1607
+[PR #1609]: https://github.com/bareos/bareos/pull/1609
 [PR #1612]: https://github.com/bareos/bareos/pull/1612
 [PR #1614]: https://github.com/bareos/bareos/pull/1614
 [unreleased]: https://github.com/bareos/bareos/tree/master
