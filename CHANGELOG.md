@@ -130,6 +130,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Improve python plugin configuration [PR #1619]
 - restore: add fileregex parameter [PR #1618]
 - macOS: fix linking problem for macOS >= 14 [PR #1620]
+- build: introduce Fedora 39 [PR #1615]
 
 ### Removed
 - cats: remove remains of deprecated databases [PR #1377]
@@ -340,6 +341,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1608]: https://github.com/bareos/bareos/pull/1608
 [PR #1611]: https://github.com/bareos/bareos/pull/1611
 [PR #1613]: https://github.com/bareos/bareos/pull/1613
+[PR #1615]: https://github.com/bareos/bareos/pull/1615
 [PR #1618]: https://github.com/bareos/bareos/pull/1618
 [PR #1619]: https://github.com/bareos/bareos/pull/1619
 [PR #1620]: https://github.com/bareos/bareos/pull/1620

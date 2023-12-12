@@ -1,8 +1,8 @@
 OS:
   Sanitize:
-    "F38":
+    "F39":
       TYPE: scripted
-      IMAGE: fedora38
+      IMAGE: fedora39
       BUILD_SCRIPT: bareos/devtools/build-and-test-with-sanitize.sh
       FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
       ARCH:
@@ -40,14 +40,14 @@ OS:
       ARCH:
       - x86_64
   Fedora:
+    "39":
+      TYPE: rpm
+      IMAGE: fedora39
+      ARCH:
+      - x86_64
     "38":
       TYPE: rpm
       IMAGE: fedora38
-      ARCH:
-      - x86_64
-    "37":
-      TYPE: rpm
-      IMAGE: fedora37
       ARCH:
       - x86_64
   Debian:
