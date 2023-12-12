@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,9 @@ find_path(
 
 # Search for library
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(Readline_LIBRARY /usr/local/opt/readline/lib/libreadline.a ncurses)
+  set(Readline_LIBRARY ${HOMEBREW_PREFIX}/opt/readline/lib/libreadline.a
+                       ncurses
+  )
 else()
   find_library(
     Readline_LIBRARY
