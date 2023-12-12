@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- macOS: fix linking problem for macOS >= 14  [PR #1621]
+
 ## [22.1.2] - 2023-11-21
 
 ### Changed
@@ -607,4 +610,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1585]: https://github.com/bareos/bareos/pull/1585
 [PR #1590]: https://github.com/bareos/bareos/pull/1590
 [PR #1594]: https://github.com/bareos/bareos/pull/1594
+[PR #1621]: https://github.com/bareos/bareos/pull/1621
 [unreleased]: https://github.com/bareos/bareos/tree/master
