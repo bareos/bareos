@@ -102,7 +102,7 @@ jobs:
         set -x
         sudo installer -pkg artifacts/BUILD_RESULTS/MacOS/bareos-${{ inputs.version }}.pkg -target /
         cd /usr/local/bareos/
-        /usr/local/bareos/sbin/bareos-fd -d 100 --xc
+        /usr/local/bareos/sbin/bareos-fd -d 100 --xc || /usr/local/bareos/sbin/bareos-fd -d 100 -xc
         cd
         sudo launchctl start com.bareos.bareos-fd
         sudo launchctl print system/com.bareos.bareos-fd
