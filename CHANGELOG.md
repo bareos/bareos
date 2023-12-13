@@ -132,6 +132,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - macOS: fix linking problem for macOS >= 14 [PR #1620]
 - build: introduce Fedora 39 [PR #1615]
 - filedaemon: remove ovirt plugin [PR #1626]
+- vadp-dumper: fix multithreaded backup/restore issues [PR #1623]
 
 ### Removed
 - cats: remove remains of deprecated databases [PR #1377]
@@ -347,6 +348,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1618]: https://github.com/bareos/bareos/pull/1618
 [PR #1619]: https://github.com/bareos/bareos/pull/1619
 [PR #1620]: https://github.com/bareos/bareos/pull/1620
+[PR #1623]: https://github.com/bareos/bareos/pull/1623
 [PR #1626]: https://github.com/bareos/bareos/pull/1626
 [PR #1629]: https://github.com/bareos/bareos/pull/1629
 [unreleased]: https://github.com/bareos/bareos/tree/master
