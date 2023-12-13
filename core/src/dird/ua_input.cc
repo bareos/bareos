@@ -160,14 +160,12 @@ bool GetYesno(UaContext* ua, const char* prompt)
  *                 or user enters "yes"
  *           false otherwise
  */
-bool GetConfirmation(UaContext* ua, const char* prompt)
+bool GetConfirmation(UaContext* ua, const char* prompt, bool fallback_value)
 {
   if (FindArg(ua, NT_("yes")) >= 0) { return true; }
-
+  if (!ua->UA_sock) { return fallback_value; }
   if (ua->api || ua->batch) { return false; }
-
   if (GetYesno(ua, prompt)) { return (ua->pint32_val == 1); }
-
   return false;
 }
 
