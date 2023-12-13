@@ -77,7 +77,7 @@ int circbuf::enqueue(void* data)
   return 0;
 }
 
-// Dequeue an item from the circular buffer.
+// Look at the next item in the circular buffer.
 void* circbuf::peek()
 {
   void* data;
@@ -102,6 +102,7 @@ void* circbuf::peek()
   return data;
 }
 
+// Dequeue an item from the circular buffer.
 void circbuf::dequeue()
 {
   pthread_mutex_lock(&m_lock);
