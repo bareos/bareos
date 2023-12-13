@@ -1417,7 +1417,10 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
     }
   }
 
-  fprintf(stderr, "Changed len: %lu, Saved len: %lu\n", changed_len, saved_len);
+  if (verbose) {
+    fprintf(stderr, "Changed len: %lu, Saved len: %lu\n", changed_len,
+            saved_len);
+  }
 
 
   retval = true;
