@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [23.0.0] - 2023-12-13
 
 ### Breaking changes
 - Automatic downgrades to cleartext connections are now disabled by default. **Connecting to Bareos filedaemon < 18.2 is not possible anymore** - even if configured with TLS certificates. **Please update your clients**. Only if you absolutely cannot update a client you can configure `TLS Enable = no` explicitly. However, this is inherently insecure.
@@ -203,6 +203,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - doc: renew tutorial, suggest passive client, restructure heartbeat interval [PR #1543]
 - docs: improvements for droplet, jobdefs, concurrents jobs for restore [PR #1611]
 
+[23.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.0
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
@@ -353,4 +354,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1626]: https://github.com/bareos/bareos/pull/1626
 [PR #1629]: https://github.com/bareos/bareos/pull/1629
 [PR #1631]: https://github.com/bareos/bareos/pull/1631
-[unreleased]: https://github.com/bareos/bareos/tree/master
