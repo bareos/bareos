@@ -133,6 +133,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: introduce Fedora 39 [PR #1615]
 - filedaemon: remove ovirt plugin [PR #1626]
 - vadp-dumper: fix multithreaded backup/restore issues [PR #1623]
+- VMware Plugin: Run bareos_vadp_dumper with optimized parameters to increase backup performance [PR #1631]
 
 ### Removed
 - cats: remove remains of deprecated databases [PR #1377]
@@ -351,4 +352,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1623]: https://github.com/bareos/bareos/pull/1623
 [PR #1626]: https://github.com/bareos/bareos/pull/1626
 [PR #1629]: https://github.com/bareos/bareos/pull/1629
+[PR #1631]: https://github.com/bareos/bareos/pull/1631
 [unreleased]: https://github.com/bareos/bareos/tree/master
