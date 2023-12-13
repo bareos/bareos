@@ -1860,9 +1860,21 @@ int main(int argc, char** argv)
       case 'S':
         cleanup_on_start = true;
         break;
-      case 's':
-        sectors_per_call = atoi(optarg);
-        break;
+      case 's': {
+        auto new_sectors_per_call = atoi(optarg);
+
+        if (new_sectors_per_call <= 0) {
+          fprintf(stderr,
+                  "We cannot back up data while not being able to request data "
+                  "from vmware; sectors_per_call has to be a number > 0 "
+                  "(got '%s')!\n",
+                  optarg);
+          exit(1);
+        }
+
+        sectors_per_call = new_sectors_per_call;
+
+      } break;
       case 't':
         disktype = strdup(optarg);
         if (!disktype) {
