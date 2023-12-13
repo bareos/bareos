@@ -187,6 +187,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - github actions: update/fix publish to PyPI workflows [PR #1572]
 - github actions: PyPi: install setuptools [PR #1604]
 - scripts: config-lib improve setup_sd_user [PR #1448]
+- dird: fix `purge oldest volume` [PR #1629]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -347,4 +348,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1619]: https://github.com/bareos/bareos/pull/1619
 [PR #1620]: https://github.com/bareos/bareos/pull/1620
 [PR #1626]: https://github.com/bareos/bareos/pull/1626
+[PR #1629]: https://github.com/bareos/bareos/pull/1629
 [unreleased]: https://github.com/bareos/bareos/tree/master
