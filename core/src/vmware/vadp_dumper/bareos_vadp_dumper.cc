@@ -1365,7 +1365,40 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
   }
 
   /* Iterate over each element of the JSON array and get the "start" and
-   * "length" member. */
+   * "length" member.
+   * The json array is a sorted list of disjoint sector intervals,
+   * which were changed. allocated is a sorted list of disjoint sector intervals
+   * which are allocated.  We want to save their intersection, i.e. only sectors
+   * which are both allocated and have changed. To visualise this:
+   *
+   * sectors    0 1 2 3 4 5 6 7 8 9
+   * changed     [. . .] [. .]   [.] (as list: (1-3), (5-6))
+   * allocated [. .] [. . . . .]     (as list: (0-1), (3-7))
+   * saved:      [.] [.] [. .]       (as list: (1), (3), (5-6))
+   *
+   * Instead of backing up each sector (~512byte) separately, we instead
+   * want to compute the resulting sector interval list directly. Since we are
+   * given two "sorted" arrays, we can proceed similar to the merge step
+   * of merge sort:
+   * We look at the first elements of both lists, then
+   * - if they have no intersection, one of them has to be completely smaller
+   *   than the other (i.e. the last sector of one of them comes before the
+   *   first sector of the other). Pop the smaller one from its list and
+   *   continue.
+   * - if they have some intersection, then compute the intersection
+   *   and back it up.  Now select one of the intervals with the smallest
+   *   end sector and pop it of its list.  This works because we know that
+   *   it cannot have an nonempty intersection with any other interval
+   *   of the other list (since both list contain only disjoint intervals and
+   * are sorted). Then continue.
+   *
+   * We are finished once one list is empty, since we do not care about changed,
+   * unallocated blocks and allocated blocks that were not changed.
+   * In this specific implementation, popping of the changed list happens
+   * automatically in each iteration of the outermost loop (since we just
+   * iterate over them), whereas popping the allocated list happens byr
+   * advancing the current_block index.
+   */
   json_array_foreach(object, index, array_element)
   {
     // Get the two members we are interested in.
@@ -1379,7 +1412,10 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
     changed_len += offset_length;
 
-    if (allocated.size() == current_block) break;
+    if (allocated.size() == current_block) {
+      // All further sectors are unallocated, so we can stop here.
+      break;
+    }
 
     for (;;) {
       auto& block = allocated[current_block];
