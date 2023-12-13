@@ -631,7 +631,6 @@ static inline void do_vixdisklib_open(const char* key,
                                       bool getdiskinfo,
                                       VixDiskLibHandle* diskHandle)
 {
-  int succeeded = 0;
   VixError err;
   const char* disk_path;
   uint32_t flags;
@@ -644,7 +643,7 @@ static inline void do_vixdisklib_open(const char* key,
     if (!object) {
       fprintf(stderr, "Failed to find %s in JSON definition of object %s\n",
               DISK_PARAMS_DISK_PATH_KEY, key);
-      goto bail_out;
+      exit(1);
     }
 
     disk_path = json_string_value(object);
@@ -663,7 +662,7 @@ static inline void do_vixdisklib_open(const char* key,
     fprintf(stderr, "Failed to open %s : %s [%lu]\n", disk_path, error_txt,
             err);
     VixDiskLib_FreeErrorText(error_txt);
-    goto bail_out;
+    exit(1);
   }
 
   if (getdiskinfo) {
@@ -676,7 +675,7 @@ static inline void do_vixdisklib_open(const char* key,
       fprintf(stderr, "Failed to get Logical Disk Info for %s, %s [%lu]\n",
               disk_path, error_txt, err);
       VixDiskLib_FreeErrorText(error_txt);
-      goto bail_out;
+      exit(1);
     }
 #ifdef VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE
     if (verbose) {
@@ -693,11 +692,6 @@ static inline void do_vixdisklib_open(const char* key,
     fprintf(stderr, "Selected transport method: %s\n",
             VixDiskLib_GetTransportMode(*diskHandle));
   }
-
-  succeeded = 1;
-
-bail_out:
-  if (!succeeded) { exit(1); }
 }
 
 // Create a VMDK using VDDK.
