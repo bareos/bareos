@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,7 @@
 typedef size_t(IO_FUNCTION)(size_t sector_offset, size_t nbyte, void* buf);
 
 struct CP_THREAD_SAVE_DATA {
+  size_t capacity;      /* capacity */
   size_t sector_offset; /* Sector offset where to write data */
   size_t data_len;      /* Length of Data */
   void* data;           /* Data */
@@ -40,12 +41,11 @@ struct CP_THREAD_CTX {
   CP_THREAD_SAVE_DATA*
       save_data; /* To save data (cached structure build during restore) */
   circbuf* cb;   /* Circular buffer for passing work to copy thread */
-  bool started;  /* Copy thread consuming data */
   bool flushed;  /* Copy thread flushed data */
-  pthread_t thread_id;  /* Id of copy thread */
-  pthread_mutex_t lock; /* Lock the structure */
-  pthread_cond_t start; /* Start consuming data from the Circular buffer */
-  pthread_cond_t flush; /* Flush data from the Circular buffer */
+  bool do_end;   /* If set, write thread will stop. */
+  pthread_t thread_id;          /* Id of copy thread */
+  pthread_mutex_t lock;         /* Lock the structure */
+  pthread_cond_t flush;         /* Flush data from the Circular buffer */
   IO_FUNCTION* input_function;  /* IO function that performs the output I/O */
   IO_FUNCTION* output_function; /* IO function that performs the output I/O */
 };

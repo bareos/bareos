@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,69 +27,52 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <malloc.h>
+#include <assert.h>
 
 #include <pthread.h>
 #include "copy_thread.h"
 
 static CP_THREAD_CTX* cp_thread;
 
-// Copy thread cancel handler.
-static void copy_cleanup_thread(void* data)
-{
-  CP_THREAD_CTX* context = (CP_THREAD_CTX*)data;
-
-  pthread_mutex_unlock(&context->lock);
-}
-
 // Actual copy thread that copies data.
 static void* copy_thread(void* data)
 {
-  CP_THREAD_SAVE_DATA* save_data;
   CP_THREAD_CTX* context = (CP_THREAD_CTX*)data;
 
-  if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
+  bool end = false;
 
-  // When we get canceled make sure we run the cleanup function.
-  pthread_cleanup_push(copy_cleanup_thread, data);
-
-  while (1) {
+  while (!end) {
     size_t cnt;
 
-    /*
-     * Wait for the moment we are supposed to start.
-     * We are signalled by the restore thread.
-     */
-    pthread_cond_wait(&context->start, &context->lock);
-    context->started = true;
-
-    pthread_mutex_unlock(&context->lock);
-
     // Dequeue an item from the circular buffer.
-    save_data = (CP_THREAD_SAVE_DATA*)context->cb->dequeue();
+    auto* save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
 
     while (save_data) {
+      auto total_length = save_data->data_len;
       cnt = cp_thread->output_function(save_data->sector_offset,
                                        save_data->data_len, save_data->data);
-      if (cnt < save_data->data_len) { return NULL; }
-      save_data = (CP_THREAD_SAVE_DATA*)context->cb->dequeue();
+      // dequeue invalidates save_data!
+      context->cb->dequeue();
+      if (cnt < total_length) { return NULL; }
+      save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
     }
 
-    /*
-     * Need to synchronize the main thread and this one so the main thread
-     * cannot miss the conditional signal.
-     */
-    if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
+    /* Need to synchronize the main thread and this one so the main thread
+     * cannot miss the conditional signal. */
+    assert(0 == pthread_mutex_lock(&context->lock));
 
     // Signal the main thread we flushed the data.
-    pthread_cond_signal(&context->flush);
-
-    context->started = false;
     context->flushed = true;
+
+    if (context->do_end) {
+      end = true;
+      context->do_end = false;
+    }
+
+    assert(0 == pthread_cond_signal(&context->flush));
+    assert(0 == pthread_mutex_unlock(&context->lock));
   }
 
-  pthread_cleanup_pop(1);
-
-bail_out:
   return NULL;
 }
 
@@ -101,7 +84,7 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
   CP_THREAD_CTX* new_context;
 
   new_context = (CP_THREAD_CTX*)malloc(sizeof(CP_THREAD_CTX));
-  new_context->started = false;
+  new_context->do_end = false;
   new_context->flushed = false;
   new_context->cb = new circbuf;
 
@@ -117,7 +100,7 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
 
   if (pthread_mutex_init(&new_context->lock, NULL) != 0) { goto bail_out; }
 
-  if (pthread_cond_init(&new_context->start, NULL) != 0) {
+  if (pthread_cond_init(&new_context->flush, NULL) != 0) {
     pthread_mutex_destroy(&new_context->lock);
     goto bail_out;
   }
@@ -125,7 +108,7 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
   if (pthread_create(&new_context->thread_id, NULL, copy_thread,
                      (void*)new_context)
       != 0) {
-    pthread_cond_destroy(&new_context->start);
+    pthread_cond_destroy(&new_context->flush);
     pthread_mutex_destroy(&new_context->lock);
     goto bail_out;
   }
@@ -151,25 +134,30 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
   circbuf* cb = cp_thread->cb;
   CP_THREAD_SAVE_DATA* save_data;
 
-  /*
-   * Find out which next slot will be used on the Circular Buffer.
+  /* Find out which next slot will be used on the Circular Buffer.
    * The method will block when the circular buffer is full until a slot is
-   * available.
-   */
+   * available. */
   slotnr = cb->next_slot();
   save_data = &cp_thread->save_data[slotnr];
 
   // If this is the first time we use this slot we need to allocate some memory.
-  if (!save_data->data) { save_data->data = malloc(nbyte + 1); }
+  if (save_data->capacity < nbyte) {
+    if (save_data->data) {
+      save_data->data = realloc(save_data->data, nbyte + 1);
+    } else {
+      save_data->data = malloc(nbyte + 1);
+    }
+    save_data->capacity = nbyte;
+  }
 
   save_data->data_len
       = cp_thread->input_function(sector_offset, nbyte, save_data->data);
+
+  assert(save_data->data_len == nbyte);
+
   save_data->sector_offset = sector_offset;
 
   cb->enqueue(save_data);
-
-  // Signal the copy thread its time to start if it didn't start yet.
-  if (!cp_thread->started) { pthread_cond_signal(&cp_thread->start); }
 
   return true;
 }
@@ -179,23 +167,25 @@ void flush_copy_thread()
 {
   CP_THREAD_CTX* context = cp_thread;
 
-  if (pthread_mutex_lock(&context->lock) != 0) { return; }
+  assert(pthread_mutex_lock(&context->lock) == 0);
 
-  /*
-   * In essence the flush should work in one shot but be a bit more
-   * conservative.
-   */
+  /* In essence the flush should work in one shot but be a bit more
+   * conservative. */
+  // make sure the other thread has noticed by checking that
+  // this was set to true _after_ we flushed the buffer.
+  context->flushed = false;
+  context->cb->flush();
+
   while (!context->flushed) {
     // Tell the copy thread to flush out all data.
-    context->cb->flush();
 
     // Wait for the copy thread to say it flushed the data out.
-    pthread_cond_wait(&context->flush, &context->lock);
+    assert(pthread_cond_wait(&context->flush, &context->lock) == 0);
   }
 
   context->flushed = false;
 
-  pthread_mutex_unlock(&context->lock);
+  assert(0 == pthread_mutex_unlock(&context->lock));
 }
 
 // Cleanup all data allocated for the copy thread.
@@ -205,7 +195,17 @@ void cleanup_copy_thread()
 
   // Stop the copy thread.
   if (!pthread_equal(cp_thread->thread_id, pthread_self())) {
-    pthread_cancel(cp_thread->thread_id);
+    assert(0 == pthread_mutex_lock(&cp_thread->lock));
+
+    cp_thread->do_end = true;
+    cp_thread->cb->flush();
+
+    while (cp_thread->do_end == true) {
+      assert(0 == pthread_cond_wait(&cp_thread->flush, &cp_thread->lock));
+    }
+
+    assert(0 == pthread_mutex_unlock(&cp_thread->lock));
+
     pthread_join(cp_thread->thread_id, NULL);
   }
 
@@ -215,6 +215,7 @@ void cleanup_copy_thread()
       free(cp_thread->save_data[slotnr].data);
     }
   }
+
   free(cp_thread->save_data);
   delete cp_thread->cb;
   free(cp_thread);

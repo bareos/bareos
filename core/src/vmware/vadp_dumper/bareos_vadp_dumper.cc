@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
    Copyright (C) 2015-2015 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -30,6 +30,9 @@
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
+#include <vector>
+#include <cerrno>
+#include <algorithm>
 
 #include "copy_thread.h"
 
@@ -46,8 +49,11 @@
          index++)
 #endif
 
+extern "C" {
 #include <vixDiskLib.h>
+}
 
+/* This is the minimum version we require, i.e. vSphere 6.5 or later */
 #define VIXDISKLIB_VERSION_MAJOR 6
 #define VIXDISKLIB_VERSION_MINOR 5
 
@@ -58,9 +64,10 @@
 
 /*
  * In each call to the VixDiskLib read/write this number of sectors.
- * e.g. 512 means 256 Kb per call (e.g. 512 x 512 bytes)
+ * e.g. 512 means 256 Kb per call (e.g. 512 x 512 bytes);
+ * Actual value may be changed at runtime with the -s option.
  */
-#define SECTORS_PER_CALL 1024
+#define DEFAULT_SECTORS_PER_CALL 1024
 
 #define MIN(a, b) ((a) < b) ? (a) : (b)
 #define MAX(a, b) ((a) > b) ? (a) : (b)
@@ -93,7 +100,7 @@ struct disk_type {
   VixDiskLibDiskType vadp_type;
 };
 
-static struct disk_type disk_types[]
+static disk_type disk_types[]
     = {{"monolithic_sparse", VIXDISKLIB_DISK_MONOLITHIC_SPARSE},
        {"monolithic_flat", VIXDISKLIB_DISK_MONOLITHIC_FLAT},
        {"split_sparse", VIXDISKLIB_DISK_SPLIT_SPARSE},
@@ -124,7 +131,7 @@ struct runtime_disk_info_encoding {
   uint32_t padding[16];
   uint32_t end_magic;
 };
-const int rdie_size = sizeof(struct runtime_disk_info_encoding);
+inline constexpr int rdie_size = sizeof(runtime_disk_info_encoding);
 
 /*
  * Disk Meta data structure,
@@ -137,7 +144,7 @@ struct runtime_meta_data_encoding {
   uint32_t meta_data_length;
   uint32_t end_magic;
 };
-const int rmde_size = sizeof(struct runtime_meta_data_encoding);
+inline constexpr int rmde_size = sizeof(runtime_meta_data_encoding);
 
 /*
  * Changed Block Tracking structure.
@@ -150,7 +157,7 @@ struct runtime_cbt_encoding {
   uint64_t offset_length;
   uint32_t end_magic;
 };
-const int rce_size = sizeof(struct runtime_cbt_encoding);
+inline constexpr int rce_size = sizeof(runtime_cbt_encoding);
 
 static bool cleanup_on_start = false;
 static bool cleanup_on_disconnect = false;
@@ -159,16 +166,18 @@ static bool verbose = false;
 static bool check_size = true;
 static bool create_disk = false;
 static bool local_vmdk = false;
+static bool do_query_allocated = true;
+static uint64 ChunkSize = VIXDISKLIB_MIN_CHUNK_SIZE;
 static bool multi_threaded = false;
 static bool restore_meta_data = false;
-static uint64_t sectors_per_call = SECTORS_PER_CALL;
+static uint64_t sectors_per_call = DEFAULT_SECTORS_PER_CALL;
 static uint64_t absolute_start_offset = 0;
 static char* vmdk_disk_name = NULL;
 static char* raw_disk_name = NULL;
 static int raw_disk_fd = -1;
 static char* force_transport = NULL;
 static char* disktype = NULL;
-static VixDiskLibConnectParams cnxParams;
+static VixDiskLibConnectParams* cnxParams = nullptr;
 static VixDiskLibConnection connection = NULL;
 static VixDiskLibHandle read_diskHandle = NULL;
 static VixDiskLibHandle write_diskHandle = NULL;
@@ -178,7 +187,7 @@ static int exit_code = 1;
 
 // Encode the VDDK VixDiskLibInfo into an internal representation.
 static inline void fill_runtime_disk_info_encoding(
-    struct runtime_disk_info_encoding* rdie)
+    runtime_disk_info_encoding* rdie)
 {
   memset(rdie, 0, rdie_size);
 
@@ -215,7 +224,7 @@ static inline void fill_runtime_disk_info_encoding(
  * mode.
  */
 static inline void dump_runtime_disk_info_encoding(
-    struct runtime_disk_info_encoding* rdie)
+    runtime_disk_info_encoding* rdie)
 {
   fprintf(stderr, "Protocol version = %u\n", rdie->protocol_version);
   fprintf(stderr, "Absolute disk length = %lu\n", rdie->absolute_disk_length);
@@ -233,7 +242,7 @@ static inline void dump_runtime_disk_info_encoding(
  * VDMK settings.
  */
 static inline char validate_runtime_disk_info_encoding(
-    struct runtime_disk_info_encoding* rdie)
+    runtime_disk_info_encoding* rdie)
 {
   if (info->biosGeo.cylinders > 0
       && info->biosGeo.cylinders < rdie->bios_cylinders) {
@@ -294,14 +303,19 @@ bail_out:
 // Writer function that handles partial writes.
 static inline size_t robust_writer(int fd, void* buffer, int size)
 {
+  if (size == 0) { return 0; }
   size_t total_bytes = 0;
-  size_t cnt = 0;
+  ssize_t cnt = 0;
 
   do {
     cnt = write(fd, (char*)buffer + total_bytes, size);
     if (cnt > 0) {
       size -= cnt;
       total_bytes += cnt;
+    } else if (cnt < 0) {
+      fprintf(stderr, "[robust_writer] Encountered write error: %d ERR=%s\n",
+              errno, strerror(errno));
+      return 0;
     }
   } while (size > 0 && cnt > 0);
 
@@ -311,14 +325,20 @@ static inline size_t robust_writer(int fd, void* buffer, int size)
 // Reader function that handles partial reads.
 static inline size_t robust_reader(int fd, void* buffer, int size)
 {
+  if (size == 0) { return 0; }
+
   size_t total_bytes = 0;
-  size_t cnt = 0;
+  ssize_t cnt = 0;
 
   do {
     cnt = read(fd, (char*)buffer + total_bytes, size);
     if (cnt > 0) {
       size -= cnt;
       total_bytes += cnt;
+    } else if (cnt < 0) {
+      fprintf(stderr, "[robust_reader] Encountered read error: %d ERR=%s\n",
+              errno, strerror(errno));
+      return 0;
     }
   } while (size > 0 && cnt > 0);
 
@@ -350,37 +370,42 @@ static void PanicFunction(const char* fmt, va_list args)
 
 static inline void cleanup_cnxParams()
 {
-  if (cnxParams.vmxSpec) {
-    free(cnxParams.vmxSpec);
-    cnxParams.vmxSpec = NULL;
+  if (!cnxParams) { return; }
+
+  if (cnxParams->vmxSpec) {
+    free(cnxParams->vmxSpec);
+    cnxParams->vmxSpec = nullptr;
   }
 
-  if (cnxParams.serverName) {
-    free(cnxParams.serverName);
-    cnxParams.serverName = NULL;
+  if (cnxParams->serverName) {
+    free(cnxParams->serverName);
+    cnxParams->serverName = nullptr;
   }
 
-  if (cnxParams.creds.uid.userName) {
-    free(cnxParams.creds.uid.userName);
-    cnxParams.creds.uid.userName = NULL;
+  if (cnxParams->creds.uid.userName) {
+    free(cnxParams->creds.uid.userName);
+    cnxParams->creds.uid.userName = nullptr;
   }
 
-  if (cnxParams.creds.uid.password) {
-    free(cnxParams.creds.uid.password);
-    cnxParams.creds.uid.password = NULL;
+  if (cnxParams->creds.uid.password) {
+    free(cnxParams->creds.uid.password);
+    cnxParams->creds.uid.password = nullptr;
   }
 
-  if (cnxParams.thumbPrint) {
-    free(cnxParams.thumbPrint);
-    cnxParams.thumbPrint = NULL;
+  if (cnxParams->thumbPrint) {
+    free(cnxParams->thumbPrint);
+    cnxParams->thumbPrint = nullptr;
   }
+
+  VixDiskLib_FreeConnectParams(cnxParams);
+  cnxParams = nullptr;
 }
 
 static inline void cleanup_vixdisklib()
 {
   uint32_t numCleanedUp, numRemaining;
 
-  VixDiskLib_Cleanup(&cnxParams, &numCleanedUp, &numRemaining);
+  VixDiskLib_Cleanup(cnxParams, &numCleanedUp, &numRemaining);
 }
 
 // Generic cleanup function.
@@ -406,7 +431,7 @@ static void cleanup(void)
   }
 
   if (!local_vmdk) {
-    err = VixDiskLib_EndAccess(&cnxParams, BAREOS_VADPDUMPER_IDENTITY);
+    err = VixDiskLib_EndAccess(cnxParams, BAREOS_VADPDUMPER_IDENTITY);
     if (VIX_FAILED(err)) {
       char* error_txt;
 
@@ -463,7 +488,12 @@ static inline void do_vixdisklib_connect(const char* key,
   VixError err;
   const char* snapshot_moref = NULL;
 
-  memset(&cnxParams, 0, sizeof(cnxParams));
+  cnxParams = VixDiskLib_AllocateConnectParams();
+
+  if (!cnxParams) {
+    fprintf(stderr, "Failed to allocate vixdisklib connection params.\n");
+    goto bail_out;
+  }
 
   err = VixDiskLib_InitEx(VIXDISKLIB_VERSION_MAJOR, VIXDISKLIB_VERSION_MINOR,
                           LogFunction, WarningFunction, PanicFunction,
@@ -489,8 +519,9 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_VM_MOREF_KEY, key);
       goto bail_out;
     }
-    cnxParams.vmxSpec = strdup(json_string_value(object));
-    if (!cnxParams.vmxSpec) {
+    cnxParams->specType = VIXDISKLIB_SPEC_VMX;
+    cnxParams->vmxSpec = strdup(json_string_value(object));
+    if (!cnxParams->vmxSpec) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_VM_MOREF_KEY);
       goto bail_out;
@@ -502,8 +533,8 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_HOST_KEY, key);
       goto bail_out;
     }
-    cnxParams.serverName = strdup(json_string_value(object));
-    if (!cnxParams.serverName) {
+    cnxParams->serverName = strdup(json_string_value(object));
+    if (!cnxParams->serverName) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_HOST_KEY);
       goto bail_out;
@@ -511,8 +542,8 @@ static inline void do_vixdisklib_connect(const char* key,
 
     object = json_object_get(connect_params, CON_PARAMS_THUMBPRINT_KEY);
     if (object) {
-      cnxParams.thumbPrint = strdup(json_string_value(object));
-      if (!cnxParams.thumbPrint) {
+      cnxParams->thumbPrint = strdup(json_string_value(object));
+      if (!cnxParams->thumbPrint) {
         fprintf(stderr, "Failed to allocate memory for holding %s\n",
                 CON_PARAMS_USERNAME_KEY);
         goto bail_out;
@@ -525,9 +556,9 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_USERNAME_KEY, key);
       goto bail_out;
     }
-    cnxParams.credType = VIXDISKLIB_CRED_UID;
-    cnxParams.creds.uid.userName = strdup(json_string_value(object));
-    if (!cnxParams.creds.uid.userName) {
+    cnxParams->credType = VIXDISKLIB_CRED_UID;
+    cnxParams->creds.uid.userName = strdup(json_string_value(object));
+    if (!cnxParams->creds.uid.userName) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_USERNAME_KEY);
       goto bail_out;
@@ -540,13 +571,13 @@ static inline void do_vixdisklib_connect(const char* key,
               CON_PARAMS_PASSWORD_KEY, key);
       goto bail_out;
     }
-    cnxParams.creds.uid.password = strdup(json_string_value(object));
-    if (!cnxParams.creds.uid.password) {
+    cnxParams->creds.uid.password = strdup(json_string_value(object));
+    if (!cnxParams->creds.uid.password) {
       fprintf(stderr, "Failed to allocate memory for holding %s\n",
               CON_PARAMS_PASSWORD_KEY);
       goto bail_out;
     }
-    cnxParams.port = VSPHERE_DEFAULT_ADMIN_PORT;
+    cnxParams->port = VSPHERE_DEFAULT_ADMIN_PORT;
 
     if (need_snapshot_moref) {
       object = json_object_get(connect_params, CON_PARAMS_SNAPSHOT_MOREF_KEY);
@@ -559,7 +590,7 @@ static inline void do_vixdisklib_connect(const char* key,
     }
 
     if (!local_vmdk) {
-      err = VixDiskLib_PrepareForAccess(&cnxParams, BAREOS_VADPDUMPER_IDENTITY);
+      err = VixDiskLib_PrepareForAccess(cnxParams, BAREOS_VADPDUMPER_IDENTITY);
       if (VIX_FAILED(err)) {
         char* error_txt;
 
@@ -571,14 +602,14 @@ static inline void do_vixdisklib_connect(const char* key,
     }
   }
 
-  err = VixDiskLib_ConnectEx(&cnxParams, (readonly) ? TRUE : FALSE,
+  err = VixDiskLib_ConnectEx(cnxParams, (readonly) ? TRUE : FALSE,
                              snapshot_moref, force_transport, &connection);
   if (VIX_FAILED(err)) {
     char* error_txt;
 
     error_txt = VixDiskLib_GetErrorText(err, NULL);
     fprintf(stderr, "Failed to connect to %s : %s [%lu]\n",
-            cnxParams.serverName, error_txt, err);
+            cnxParams->serverName, error_txt, err);
     VixDiskLib_FreeErrorText(error_txt);
     goto bail_out;
   }
@@ -600,7 +631,6 @@ static inline void do_vixdisklib_open(const char* key,
                                       bool getdiskinfo,
                                       VixDiskLibHandle* diskHandle)
 {
-  int succeeded = 0;
   VixError err;
   const char* disk_path;
   uint32_t flags;
@@ -613,7 +643,7 @@ static inline void do_vixdisklib_open(const char* key,
     if (!object) {
       fprintf(stderr, "Failed to find %s in JSON definition of object %s\n",
               DISK_PARAMS_DISK_PATH_KEY, key);
-      goto bail_out;
+      exit(1);
     }
 
     disk_path = json_string_value(object);
@@ -632,7 +662,7 @@ static inline void do_vixdisklib_open(const char* key,
     fprintf(stderr, "Failed to open %s : %s [%lu]\n", disk_path, error_txt,
             err);
     VixDiskLib_FreeErrorText(error_txt);
-    goto bail_out;
+    exit(1);
   }
 
   if (getdiskinfo) {
@@ -645,7 +675,7 @@ static inline void do_vixdisklib_open(const char* key,
       fprintf(stderr, "Failed to get Logical Disk Info for %s, %s [%lu]\n",
               disk_path, error_txt, err);
       VixDiskLib_FreeErrorText(error_txt);
-      goto bail_out;
+      exit(1);
     }
 #ifdef VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE
     if (verbose) {
@@ -653,6 +683,7 @@ static inline void do_vixdisklib_open(const char* key,
               info->logicalSectorSize);
       fprintf(stderr, "DiskInfo physicalSectorSize: %u\n",
               info->physicalSectorSize);
+      fprintf(stderr, "DiskInfo capacity: %lu\n", info->capacity);
     }
 #endif
   }
@@ -661,11 +692,6 @@ static inline void do_vixdisklib_open(const char* key,
     fprintf(stderr, "Selected transport method: %s\n",
             VixDiskLib_GetTransportMode(*diskHandle));
   }
-
-  succeeded = 1;
-
-bail_out:
-  if (!succeeded) { exit(1); }
 }
 
 // Create a VMDK using VDDK.
@@ -768,10 +794,10 @@ static size_t write_to_vmdk(size_t sector_offset, size_t nbyte, void* buf)
 // Read data from a stream using the robust reader function.
 static size_t read_from_stream(size_t, size_t nbyte, void* buf)
 {
-  return robust_reader(STDOUT_FILENO, buf, nbyte);
+  return robust_reader(STDIN_FILENO, buf, nbyte);
 }
 
-// Write data from a stream using the robust reader function.
+// Write data from a stream using the robust writer function.
 static size_t write_to_stream(size_t sector_offset, size_t nbyte, void* buf)
 {
   // Should we clone to rawdevice ?
@@ -800,7 +826,7 @@ static inline bool save_disk_info(const char* key,
                                   uint64_t* absolute_disk_length)
 {
   bool retval = false;
-  struct runtime_disk_info_encoding rdie;
+  runtime_disk_info_encoding rdie;
   json_t* object;
 
   fill_runtime_disk_info_encoding(&rdie);
@@ -845,7 +871,7 @@ bail_out:
 // Decode the disk info of the disk restored from the backup input stream.
 static inline bool process_disk_info(bool validate_only, json_t* value)
 {
-  struct runtime_disk_info_encoding rdie;
+  runtime_disk_info_encoding rdie;
 
   memset(&rdie, 0, rdie_size);
   if (robust_reader(STDIN_FILENO, (char*)&rdie, rdie_size) != rdie_size) {
@@ -911,7 +937,7 @@ static inline bool read_meta_data_key(char* key)
   VixError err;
   size_t requiredLen;
   char* buffer = NULL;
-  struct runtime_meta_data_encoding rmde;
+  runtime_meta_data_encoding rmde;
 
   if (verbose) { fprintf(stderr, "Processing metadata key %s\n", key); }
 
@@ -957,7 +983,7 @@ static inline bool read_meta_data_key(char* key)
   rmde.start_magic = BAREOSMAGIC;
   rmde.end_magic = BAREOSMAGIC;
   rmde.meta_key_length = strlen(key) + 1;
-  rmde.meta_data_length = requiredLen + 1;
+  rmde.meta_data_length = requiredLen;
 
   if (robust_writer(STDOUT_FILENO, &rmde, rmde_size) != rmde_size) {
     fprintf(stderr,
@@ -994,12 +1020,10 @@ static inline bool save_meta_data()
   size_t requiredLen;
   char* bp;
   char* buffer = NULL;
-  struct runtime_meta_data_encoding rmde;
+  runtime_meta_data_encoding rmde;
 
-  /*
-   * See if we are actually saving all meta data or should only write the META
-   * data end marker.
-   */
+  /* See if we are actually saving all meta data or should only write the META
+   * data end marker. */
   if (save_metadata) {
     err = VixDiskLib_GetMetadataKeys(read_diskHandle, NULL, 0, &requiredLen);
     if (err != VIX_OK && err != VIX_E_BUFFER_TOOSMALL) { return false; }
@@ -1031,10 +1055,8 @@ static inline bool save_meta_data()
     }
   }
 
-  /*
-   * Write an META data end marker.
-   * e.g. metadata header with key and data length == 0
-   */
+  /* Write an META data end marker.
+   * e.g. metadata header with key and data length == 0 */
   rmde.start_magic = BAREOSMAGIC;
   rmde.end_magic = BAREOSMAGIC;
   rmde.meta_key_length = 0;
@@ -1062,7 +1084,7 @@ bail_out:
  */
 static inline bool process_meta_data(bool validate_only)
 {
-  struct runtime_meta_data_encoding rmde;
+  runtime_meta_data_encoding rmde;
   char* key = NULL;
   char* buffer = NULL;
 
@@ -1148,22 +1170,186 @@ bail_out:
   return false;
 }
 
+/* Process a single cbt record. */
+static bool process_single_cbt(std::vector<uint8>& buffer,
+                               uint64 start_offset,
+                               uint64 offset_length)
+{
+  runtime_cbt_encoding rce;
+  rce.start_magic = BAREOSMAGIC;
+  rce.end_magic = BAREOSMAGIC;
+  rce.start_offset = start_offset;
+  rce.offset_length = offset_length;
+
+  if (verbose) {
+    fprintf(stderr, "start = %lu\n", start_offset);
+    fprintf(stderr, "length = %lu\n", offset_length);
+    fprintf(stderr, "nr length = %lu\n", offset_length / DEFAULT_SECTOR_SIZE);
+    fflush(stderr);
+  }
+
+
+  // Write the CBT info into the output stream.
+  if (robust_writer(STDOUT_FILENO, (char*)&rce, rce_size) != rce_size) {
+    fprintf(stderr,
+            "Failed to write runtime_cbt_encoding structure to output "
+            "datastream\n");
+    return false;
+  }
+
+  if (raw_disk_fd != -1) {
+    lseek(raw_disk_fd, start_offset, SEEK_SET);
+    if (verbose) {
+      fprintf(stderr, "Log: RAWFILE: Adusting seek position in file\n");
+    }
+  }
+
+  bool retval = true;
+  /* Calculate the start offset and read as many sectors as defined by the
+   * length element of the JSON structure. */
+  uint64 current_offset = absolute_start_offset + start_offset;
+  uint64 max_offset = current_offset + offset_length;
+  uint64 sector_offset = current_offset / DEFAULT_SECTOR_SIZE;
+  while (current_offset < max_offset) {
+    /* The number of sectors to read is the minimum of either the total number
+     * of sectors still available in this CBT range or the upper setting
+     * specified in the sectors_per_call variable. */
+    uint64 sectors_to_read
+        = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
+
+    if (multi_threaded) {
+      if (!send_to_copy_thread(sector_offset,
+                               sectors_to_read * DEFAULT_SECTOR_SIZE)) {
+        retval = false;
+        break;
+      }
+    } else {
+      if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
+                         buffer.data())
+          != sectors_to_read * DEFAULT_SECTOR_SIZE) {
+        fprintf(stderr, "Read error on VMDK\n");
+        retval = false;
+        break;
+      }
+
+      if (write_to_stream(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
+                          buffer.data())
+          != sectors_to_read * DEFAULT_SECTOR_SIZE) {
+        fprintf(stderr, "Failed to write data to output datastream\n");
+        retval = false;
+        break;
+      }
+    }
+
+    // Calculate the new offsets for a next run.
+    current_offset += (sectors_to_read * DEFAULT_SECTOR_SIZE);
+    sector_offset += sectors_to_read;
+    offset_length -= sectors_to_read * DEFAULT_SECTOR_SIZE;
+  }
+
+  if (multi_threaded) {
+    /* we need to wait until the thread has finished writing
+     * all data that we have given him to write -- otherwise both this thread
+     * and the copy thread would write to stdout at the same time! */
+    flush_copy_thread();
+  }
+
+  if (verbose) { fflush(stderr); }
+
+  return retval;
+}
+
+// std::vector<> can often not be used because of a version mismatch
+// between the vixdisklib stdlib version and the compiler stdlib version.
+struct vec {
+  size_t capacity{0};
+  size_t count{0};
+  VixDiskLibBlock* data{nullptr};
+
+  using value_type = VixDiskLibBlock;
+  using pointer = VixDiskLibBlock*;
+  using reference = VixDiskLibBlock&;
+
+  vec(size_t capacity = 200)
+      : capacity{capacity}
+      , data{reinterpret_cast<pointer>(malloc(sizeof(value_type) * capacity))}
+  {
+  }
+
+  vec(const vec&) = delete;
+  vec& operator=(const vec&) = delete;
+
+  vec& operator=(vec&& other)
+  {
+    std::swap(data, other.data);
+    std::swap(capacity, other.capacity);
+    std::swap(count, other.count);
+
+    return *this;
+  }
+
+  vec(vec&& other) { *this = std::move(other); }
+
+  void push_back(VixDiskLibBlock b)
+  {
+    if (count == capacity) {
+      if (capacity <= 2) {
+        capacity = 16;
+      } else {
+        capacity = capacity + (capacity >> 1);
+      }
+      data = reinterpret_cast<pointer>(
+          realloc(data, sizeof(value_type) * capacity));
+    }
+    data[count++] = b;
+  }
+
+  size_t size() const { return count; }
+
+  reference operator[](size_t i) { return data[i]; }
+
+  ~vec()
+  {
+    if (data) { free(data); }
+  }
+};
+
 /*
  * Process the Change Block Tracking information and write the wanted sectors
  * to the output stream. We self encode the data using a prefix header that
  * describes the data that is encoded after it including a MAGIC key and the
  * actual CBT information e.g. start of the read sectors and the number of
  * sectors that follow.
+ * A wanted sector is a sector that is both allocated and has changed.
  */
-static inline bool process_cbt(const char* key, json_t* cbt)
+static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 {
+  if (verbose) {
+    fprintf(stderr, "Allocated Blocks:\n");
+    for (size_t i = 0; i < allocated.size(); ++i) {
+      auto& block = allocated[i];
+      auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
+      auto blength = block.length * DEFAULT_SECTOR_SIZE;
+
+      fprintf(stderr, "  %10lu: { start: %lu, length: %lu }\n", i, boffset,
+              blength);
+    }
+    fprintf(stderr, "\n\n");
+  }
+
   bool retval = false;
   size_t index;
   json_t *object, *array_element, *start, *length;
-  uint64_t start_offset, offset_length, current_offset, max_offset;
-  uint64_t sector_offset, sectors_to_read;
-  uint8 buf[DEFAULT_SECTOR_SIZE * SECTORS_PER_CALL];
-  struct runtime_cbt_encoding rce;
+  uint64_t start_offset, offset_length;
+  uint64 current_block = 0;
+  uint64 changed_len = 0, saved_len = 0;
+
+  std::vector<uint8> buffer;
+  if (!multi_threaded) {
+    // we read at most sectors_per_call sectors at once
+    // buffer is unused in multithreaded mode
+    buffer.resize(DEFAULT_SECTOR_SIZE * sectors_per_call);
+  }
 
   if (!read_diskHandle) {
     fprintf(stderr,
@@ -1178,12 +1364,41 @@ static inline bool process_cbt(const char* key, json_t* cbt)
     goto bail_out;
   }
 
-  /*
-   * Iterate over each element of the JSON array and get the "start" and
+  /* Iterate over each element of the JSON array and get the "start" and
    * "length" member.
+   * The json array is a sorted list of disjoint sector intervals,
+   * which were changed. allocated is a sorted list of disjoint sector intervals
+   * which are allocated.  We want to save their intersection, i.e. only sectors
+   * which are both allocated and have changed. To visualise this:
+   *
+   * sectors    0 1 2 3 4 5 6 7 8 9
+   * changed     [. . .] [. .]   [.] (as list: (1-3), (5-6))
+   * allocated [. .] [. . . . .]     (as list: (0-1), (3-7))
+   * saved:      [.] [.] [. .]       (as list: (1), (3), (5-6))
+   *
+   * Instead of backing up each sector (~512byte) separately, we instead
+   * want to compute the resulting sector interval list directly. Since we are
+   * given two "sorted" arrays, we can proceed similar to the merge step
+   * of merge sort:
+   * We look at the first elements of both lists, then
+   * - if they have no intersection, one of them has to be completely smaller
+   *   than the other (i.e. the last sector of one of them comes before the
+   *   first sector of the other). Pop the smaller one from its list and
+   *   continue.
+   * - if they have some intersection, then compute the intersection
+   *   and back it up.  Now select one of the intervals with the smallest
+   *   end sector and pop it of its list.  This works because we know that
+   *   it cannot have an nonempty intersection with any other interval
+   *   of the other list (since both list contain only disjoint intervals and
+   * are sorted). Then continue.
+   *
+   * We are finished once one list is empty, since we do not care about changed,
+   * unallocated blocks and allocated blocks that were not changed.
+   * In this specific implementation, popping of the changed list happens
+   * automatically in each iteration of the outermost loop (since we just
+   * iterate over them), whereas popping the allocated list happens byr
+   * advancing the current_block index.
    */
-  rce.start_magic = BAREOSMAGIC;
-  rce.end_magic = BAREOSMAGIC;
   json_array_foreach(object, index, array_element)
   {
     // Get the two members we are interested in.
@@ -1195,80 +1410,54 @@ static inline bool process_cbt(const char* key, json_t* cbt)
     start_offset = json_integer_value(start);
     offset_length = json_integer_value(length);
 
-    if (verbose) {
-      fprintf(stderr, "start = %lu\n", start_offset);
-      fprintf(stderr, "length = %lu\n", offset_length);
-      fprintf(stderr, "nr length = %lu\n", offset_length / DEFAULT_SECTOR_SIZE);
-      fflush(stderr);
+    changed_len += offset_length;
+
+    if (allocated.size() == current_block) {
+      // All further sectors are unallocated, so we can stop here.
+      break;
     }
 
-    rce.start_offset = start_offset;
-    rce.offset_length = offset_length;
+    for (;;) {
+      auto& block = allocated[current_block];
 
-    // Write the CBT info into the output stream.
-    if (robust_writer(STDOUT_FILENO, (char*)&rce, rce_size) != rce_size) {
-      fprintf(stderr,
-              "Failed to write runtime_cbt_encoding structure to output "
-              "datastream\n");
-      goto bail_out;
-    }
+      auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
+      auto blength = block.length * DEFAULT_SECTOR_SIZE;
 
-    if (raw_disk_fd != -1) {
-      lseek(raw_disk_fd, start_offset, SEEK_SET);
-      if (verbose) {
-        fprintf(stderr, "Log: RAWFILE: Adusting seek position in file\n");
-      }
-    }
-
-    /*
-     * Calculate the start offset and read as many sectors as defined by the
-     * length element of the JSON structure.
-     */
-    current_offset = absolute_start_offset + start_offset;
-    max_offset = current_offset + offset_length;
-    sector_offset = current_offset / DEFAULT_SECTOR_SIZE;
-    while (current_offset < max_offset) {
-      /*
-       * The number of sectors to read is the minimum of either the total number
-       * of sectors still available in this CBT range or the upper setting
-       * specified in the sectors_per_call variable.
-       */
-      sectors_to_read
-          = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
-
-      if (multi_threaded) {
-        if (!send_to_copy_thread(sector_offset,
-                                 sectors_to_read * DEFAULT_SECTOR_SIZE)) {
-          goto bail_out;
-        }
-      } else {
-        if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
-                           buf)
-            != sectors_to_read * DEFAULT_SECTOR_SIZE) {
-          fprintf(stderr, "Read error on VMDK\n");
-          goto bail_out;
-        }
-
-        if (write_to_stream(sector_offset,
-                            sectors_to_read * DEFAULT_SECTOR_SIZE, buf)
-            != sectors_to_read * DEFAULT_SECTOR_SIZE) {
-          fprintf(stderr, "Failed to write data to output datastream\n");
-          goto bail_out;
-        }
+      if (start_offset + offset_length < boffset) {
+        // skip unallocated block
+        break;
       }
 
-      // Calculate the new offsets for a next run.
-      current_offset += (sectors_to_read * DEFAULT_SECTOR_SIZE);
-      sector_offset += sectors_to_read;
-      offset_length -= sectors_to_read * DEFAULT_SECTOR_SIZE;
+      // in a perfect world we would also save information about
+      // newly unallocated blocks as well.
+      // But since we cannot currently take advantage of that information
+      // -- we do restores first -> last instead of last -> first and we
+      //    do not do consolidations for plugins --
+      // we just ignore them.  If needed in the future, we can mark "empty"
+      // by e.g. changing the BAREOS_MAGIC to a different one.
+      if (boffset < start_offset + offset_length
+          && boffset + blength > start_offset) {
+        uint64 offset = std::max(boffset, start_offset);
+        uint64 length = std::min(blength, offset_length);
+
+        saved_len += length;
+
+        if (!process_single_cbt(buffer, offset, length)) { goto bail_out; }
+      }
+
+      if (boffset + blength <= start_offset + offset_length) {
+        current_block += 1;
+      }
+
+      if (start_offset + offset_length <= boffset + blength) { break; }
     }
-
-    if (multi_threaded) { flush_copy_thread(); }
-
-    if (verbose) { fflush(stderr); }
   }
 
-  if (multi_threaded) { cleanup_copy_thread(); }
+  if (verbose) {
+    fprintf(stderr, "Changed len: %lu, Saved len: %lu\n", changed_len,
+            saved_len);
+  }
+
 
   retval = true;
 
@@ -1292,8 +1481,14 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
   size_t cnt;
   uint64_t current_offset, max_offset;
   uint64_t sector_offset, sectors_to_read;
-  uint8 buf[DEFAULT_SECTOR_SIZE * SECTORS_PER_CALL];
-  struct runtime_cbt_encoding rce;
+  runtime_cbt_encoding rce;
+
+  std::vector<uint8> buffer;
+  if (!multi_threaded) {
+    // we read at most sectors_per_call sectors at once
+    // buffer is unused in multithreaded mode
+    buffer.resize(DEFAULT_SECTOR_SIZE * sectors_per_call);
+  }
 
   if (!create_disk && !validate_only) {
     do_vixdisklib_open(DISK_PARAMS_KEY, vmdk_disk_name, value, false, true,
@@ -1351,11 +1546,9 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     max_offset = current_offset + rce.offset_length;
     sector_offset = current_offset / DEFAULT_SECTOR_SIZE;
     while (current_offset < max_offset) {
-      /*
-       * The number of sectors to read is the minimum of either the total number
+      /* The number of sectors to read is the minimum of either the total number
        * of sectors still available in this CBT range or the upper setting
-       * specified in the sectors_per_call variable.
-       */
+       * specified in the sectors_per_call variable. */
       sectors_to_read
           = MIN(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
 
@@ -1365,12 +1558,14 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
           goto bail_out;
         }
       } else {
-        cnt = robust_reader(STDIN_FILENO, (char*)buf,
+        cnt = robust_reader(STDIN_FILENO, (char*)buffer.data(),
                             sectors_to_read * DEFAULT_SECTOR_SIZE);
         if (cnt != sectors_to_read * DEFAULT_SECTOR_SIZE) { goto bail_out; }
 
         if (!validate_only) {
-          if (write_to_vmdk(sector_offset, cnt, buf) != cnt) { goto bail_out; }
+          if (write_to_vmdk(sector_offset, cnt, buffer.data()) != cnt) {
+            goto bail_out;
+          }
         }
       }
 
@@ -1471,10 +1666,8 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
     exit(1);
   }
 
-  /*
-   * See if we are requested to clone the content to a new VMDK.
-   * save_disk_info() initializes absolute_disk_length.
-   */
+  /* See if we are requested to clone the content to a new VMDK.
+   * save_disk_info() initializes absolute_disk_length. */
   if (vmdk_disk_name) {
     if (create_disk) {
       do_vixdisklib_create(NULL, vmdk_disk_name, value, absolute_disk_length);
@@ -1496,7 +1689,75 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
     }
   }
 
-  return process_cbt(CBT_DISKCHANGEINFO_KEY, value);
+  vec blocks{};
+
+  if (do_query_allocated) {
+    uint64 Offset = 0;
+    uint64 Capacity = info->capacity;
+
+    if (ChunkSize > Capacity) { ChunkSize = Capacity; }
+
+    if (ChunkSize < VIXDISKLIB_MIN_CHUNK_SIZE) {
+      ChunkSize = VIXDISKLIB_MIN_CHUNK_SIZE;
+    }
+
+    uint64 NumChunks = Capacity / ChunkSize;
+    uint64 BlocksAllocated = 0;
+    uint64 NumBlocks = 0;
+
+    if (verbose) {
+      fprintf(stderr, "ChunkSize: %lu, NumChunks: %lu\n", ChunkSize, NumChunks);
+    }
+
+    while (NumChunks > 0) {
+      uint64 NumChunksToQuery
+          = std::min((uint64)VIXDISKLIB_MAX_CHUNK_NUMBER, NumChunks);
+      VixDiskLibBlockList* blocklist;
+
+      auto err = VixDiskLib_QueryAllocatedBlocks(read_diskHandle, Offset,
+                                                 NumChunksToQuery * ChunkSize,
+                                                 ChunkSize, &blocklist);
+
+      if (VIX_FAILED(err)) {
+        char* error_txt;
+
+        error_txt = VixDiskLib_GetErrorText(err, NULL);
+        fprintf(stderr, "Failed to query allocated blocks: %s [%lu]\n",
+                error_txt, err);
+        VixDiskLib_FreeErrorText(error_txt);
+        goto bail_out;
+      }
+
+      for (uint32 i = 0; i < blocklist->numBlocks; ++i) {
+        blocks.push_back(blocklist->blocks[i]);
+        NumBlocks += 1;
+        BlocksAllocated += blocklist->blocks[i].length;
+      }
+
+      VixDiskLib_FreeBlockList(blocklist);
+
+      Offset += NumChunksToQuery * ChunkSize;
+      NumChunks -= NumChunksToQuery;
+    }
+
+    uint64 Unaligned = Capacity % ChunkSize;
+
+    if (verbose) {
+      fprintf(stderr, "Allocated Sectors: %lu\n", Unaligned + BlocksAllocated);
+    }
+
+    if (Unaligned > 0) {
+      if (verbose) { fprintf(stderr, "Unaligned: %lu bytes\n", Unaligned); }
+      blocks.push_back(VixDiskLibBlock{.offset = Offset, .length = Unaligned});
+    }
+  } else {
+    uint64 Capacity = info->capacity;
+    blocks.push_back(VixDiskLibBlock{.offset = 0, .length = Capacity});
+  }
+
+  return process_cbt(CBT_DISKCHANGEINFO_KEY, std::move(blocks), value);
+bail_out:
+  return false;
 }
 
 // Worker function that performs the restore operation of the program.
@@ -1541,7 +1802,8 @@ void usage(const char* program_name)
 {
   fprintf(stderr,
           "Usage: %s [-d <vmdk_diskname>] [-f force_transport] [-s "
-          "sectors_per_call] [-t disktype] [-CcDlMmRSv] dump <workfile> | "
+          "sectors_per_call] [-t disktype] [-k chunksize] [-CcDlMmRSvQ] dump "
+          "<workfile> | "
           "restore <workfile> | show\n",
           program_name);
   fprintf(stderr, "Where:\n");
@@ -1559,6 +1821,8 @@ void usage(const char* program_name)
   fprintf(stderr, "   -S - Cleanup on Start\n");
   fprintf(stderr, "   -s - Sectors to read per call to VDDK\n");
   fprintf(stderr, "   -t - Disktype to create for local VMDK\n");
+  fprintf(stderr, "   -Q - Do not query allocated blocks\n");
+  fprintf(stderr, "   -k - Query allocated blocks with this chunk size\n");
   fprintf(stderr, "   -v - Verbose output\n");
   fprintf(stderr, "   -? - This help text\n");
   exit(1);
@@ -1571,14 +1835,12 @@ int main(int argc, char** argv)
   int ch;
 
   program_name = argv[0];
-  while ((ch = getopt(argc, argv, "CcDd:r:f:hlMmRSs:t:v?")) != -1) {
+  while ((ch = getopt(argc, argv, "CcDd:r:f:hlMmRSs:Qk:t:v?")) != -1) {
     switch (ch) {
       case 'C':
         create_disk = true;
-        /*
-         * If we create the disk we should not check for the size as that won't
-         * match.
-         */
+        /* If we create the disk we should not check for the size as that won't
+         * match. */
         check_size = false;
         break;
       case 'c':
@@ -1616,6 +1878,12 @@ int main(int argc, char** argv)
       case 'l':
         local_vmdk = true;
         break;
+      case 'k':
+        ChunkSize = atoi(optarg);
+        break;
+      case 'Q':
+        do_query_allocated = false;
+        break;
       case 'M':
         save_metadata = true;
         break;
@@ -1628,9 +1896,21 @@ int main(int argc, char** argv)
       case 'S':
         cleanup_on_start = true;
         break;
-      case 's':
-        sectors_per_call = atoi(optarg);
-        break;
+      case 's': {
+        auto new_sectors_per_call = atoi(optarg);
+
+        if (new_sectors_per_call <= 0) {
+          fprintf(stderr,
+                  "We cannot back up data while not being able to request data "
+                  "from vmware; sectors_per_call has to be a number > 0 "
+                  "(got '%s')!\n",
+                  optarg);
+          exit(1);
+        }
+
+        sectors_per_call = new_sectors_per_call;
+
+      } break;
       case 't':
         disktype = strdup(optarg);
         if (!disktype) {

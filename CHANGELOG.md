@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - build: introduce Fedora 39 [PR #1614]
 - libcloud: modularize systemtest [PR #1609]
 - filedaemon: remove ovirt plugin [PR #1617]
+- vadp-dumper: fix multithreaded backup/restore issues [PR #1593]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1587]: https://github.com/bareos/bareos/pull/1587
 [PR #1589]: https://github.com/bareos/bareos/pull/1589
 [PR #1592]: https://github.com/bareos/bareos/pull/1592
+[PR #1593]: https://github.com/bareos/bareos/pull/1593
 [PR #1605]: https://github.com/bareos/bareos/pull/1605
 [PR #1606]: https://github.com/bareos/bareos/pull/1606
 [PR #1607]: https://github.com/bareos/bareos/pull/1607
