@@ -173,7 +173,8 @@ void flush_copy_thread()
 
   /* In essence the flush should work in one shot but be a bit more
    * conservative. */
-  // make sure the other thread noticed
+  // make sure the other thread has noticed by checking that
+  // this was set to true _after_ we flushed the buffer.
   context->flushed = false;
   context->cb->flush();
 

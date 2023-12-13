@@ -1397,8 +1397,8 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
       // But since we cannot currently take advantage of that information
       // -- we do restores first -> last instead of last -> first and we
       //    do not do consolidations for plugins --
-      // we just ignore them.  See process_empty_block on how one could
-      // add that information to the stream.
+      // we just ignore them.  If needed in the future, we can mark "empty"
+      // by e.g. changing the BAREOS_MAGIC to a different one.
       if (boffset < start_offset + offset_length
           && boffset + blength > start_offset) {
         uint64 offset = std::max(boffset, start_offset);
