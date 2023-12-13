@@ -1133,10 +1133,26 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
     // plugin does read/write
     if (!bfd->do_io_in_core) { return plugin_bread(bfd, buf, count); }
 
+  char* ptr = static_cast<char*>(buf);
+
   Dmsg1(400, "bread handled in core via bfd->filedes=%d\n", bfd->filedes);
-  ssize_t status = read(bfd->filedes, buf, count);
+  ASSERT(static_cast<ssize_t>(count) >= 0);
+  ssize_t bytes_read = 0;
+  while (bytes_read < static_cast<ssize_t>(count)) {
+    ssize_t status = read(bfd->filedes, ptr + bytes_read, count - bytes_read);
+    if (status < 0) {
+      // error while reading
+      bytes_read = status;
+      break;
+    } else if (status == 0) {
+      // no more data left
+      break;
+    } else {
+      bytes_read += status;
+    }
+  }
   bfd->BErrNo = errno;
-  return status;
+  return bytes_read;
 }
 
 ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
@@ -1145,10 +1161,27 @@ ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
     // plugin does read/write
     if (!bfd->do_io_in_core) { return plugin_bwrite(bfd, buf, count); }
 
+  const char* ptr = static_cast<const char*>(buf);
+
   Dmsg1(400, "bwrite handled in core via bfd->filedes=%d\n", bfd->filedes);
-  ssize_t status = write(bfd->filedes, buf, count);
+  ASSERT(static_cast<ssize_t>(count) >= 0);
+  ssize_t bytes_written = 0;
+  while (bytes_written < static_cast<ssize_t>(count)) {
+    ssize_t status
+        = write(bfd->filedes, ptr + bytes_written, count - bytes_written);
+    if (status < 0) {
+      // error while reading
+      bytes_written = status;
+      break;
+    } else if (status == 0) {
+      // no more data left
+      break;
+    } else {
+      bytes_written += status;
+    }
+  }
   bfd->BErrNo = errno;
-  return status;
+  return bytes_written;
 }
 
 bool IsBopen(BareosFilePacket* bfd) { return bfd->filedes >= 0; }

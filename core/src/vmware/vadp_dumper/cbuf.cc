@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,7 @@
 
 // Circular buffer used for producer/consumer problem with pthreads.
 #include <pthread.h>
+#include <cassert>
 #include "cbuf.h"
 
 // Initialize a new circular buffer.
@@ -44,6 +45,7 @@ int circbuf::init()
   m_next_out = 0;
   m_size = 0;
   m_capacity = QSIZE;
+  m_flush = false;
 
   return 0;
 }
@@ -75,8 +77,8 @@ int circbuf::enqueue(void* data)
   return 0;
 }
 
-// Dequeue an item from the circular buffer.
-void* circbuf::dequeue()
+// Look at the next item in the circular buffer.
+void* circbuf::peek()
 {
   void* data;
 
@@ -93,16 +95,29 @@ void* circbuf::dequeue()
     return NULL;
   }
 
-  data = m_data[m_next_out++];
+  data = m_data[m_next_out];
+
+  pthread_mutex_unlock(&m_lock);
+
+  return data;
+}
+
+// Dequeue an item from the circular buffer.
+void circbuf::dequeue()
+{
+  pthread_mutex_lock(&m_lock);
+
+  assert(m_size > 0);
+
+  m_data[m_next_out] = nullptr;
   m_size--;
+  m_next_out += 1;
   m_next_out %= m_capacity;
 
   // Let a waiting producer know there is room.
   pthread_cond_signal(&m_notfull);
 
   pthread_mutex_unlock(&m_lock);
-
-  return data;
 }
 
 /*
