@@ -25,24 +25,7 @@
 # Bareos-fd-vmware is a python Bareos FD Plugin intended to backup and
 # restore VMware images and configuration
 
-import sys
 import os.path
-
-libdirs = ["/usr/lib64/bareos/plugins/", "/usr/lib/bareos/plugins/"]
-sys.path.extend([l for l in libdirs if os.path.isdir(l)])
-
-# newer Python versions, eg. Debian 8/Python >= 2.7.9 and
-# CentOS/RHEL since 7.4 by default do SSL cert verification,
-# we then try to disable it here.
-# see https://github.com/vmware/pyvmomi/issues/212
-py_ver = sys.version_info[0:3]
-if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 5:
-    import ssl
-
-    try:
-        ssl._create_default_https_context = ssl._create_unverified_context
-    except AttributeError:
-        pass
 
 from BareosFdWrapper import *  # noqa
 
@@ -135,6 +118,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "snapshot_retries",
             "snapshot_retry_wait",
             "enable_cbt",
+            "do_io_in_core",
+            "vadp_dumper_multithreading",
+            "vadp_dumper_sectors_per_call",
+            "vadp_dumper_query_allocated_blocks_chunk_size",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -149,6 +136,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.vadp.plugin = self
         self.vm_config_info_saved = False
         self.current_object_index = int(time.time())
+        self.do_io_in_core = True
 
     def parse_plugin_definition(self, plugindef):
         """
@@ -275,6 +263,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 set(mandatory_options).union(set(self.mandatory_options_vmname))
             )
 
+        if not self._check_option_boolean("localvmdk"):
+            return bareosfd.bRC_Error
+
         if self.options.get("localvmdk") == "yes":
             mandatory_options = list(
                 set(mandatory_options)
@@ -312,10 +303,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     "Converting Option %s=%s to utf8\n"
                     % (option, self.options[option]),
                 )
-                try:
-                    self.options[option] = unicode(self.options[option], "utf8")
-                except NameError:
-                    self.options[option] = str(self.options[option])
+                self.options[option] = str(self.options[option])
                 bareosfd.DebugMessage(
                     100,
                     "Type of option %s is %s\n" % (option, type(self.options[option])),
@@ -337,60 +325,65 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # restore previous power state by default
             self.options["restore_powerstate"] = "previous"
 
-        if self.options.get("poweron_timeout"):
-            try:
-                self.vadp.poweron_timeout = int(self.options["poweron_timeout"])
-            except ValueError:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Invalid value '%s' for poweron_timeout, only digits allowed\n"
-                    % self.options["poweron_timeout"],
-                )
-                return bareosfd.bRC_Error
+        if not self._check_option_integer_positive("poweron_timeout"):
+            return bareosfd.bRC_Error
 
-        else:
-            self.vadp.poweron_timeout = 15
+        if self.options.get("poweron_timeout"):
+            self.vadp.poweron_timeout = int(self.options["poweron_timeout"])
+
+        if not self._check_option_integer_positive("snapshot_retries"):
+            return bareosfd.bRC_Error
 
         if self.options.get("snapshot_retries"):
-            try:
-                self.vadp.snapshot_retries = int(self.options["snapshot_retries"])
-            except ValueError:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Invalid value '%s' for snapshot_retries, only digits allowed\n"
-                    % self.options["snapshot_retries"],
-                )
-                return bareosfd.bRC_Error
+            self.vadp.snapshot_retries = int(self.options["snapshot_retries"])
 
-            if self.vadp.snapshot_retries < 0:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Invalid value '%s' for snapshot_retries, negative values not allowed\n"
-                    % self.options["snapshot_retries"],
-                )
-                return bareosfd.bRC_Error
+        if not self._check_option_integer_positive("snapshot_retry_wait"):
+            return bareosfd.bRC_Error
 
         if self.options.get("snapshot_retry_wait"):
-            try:
-                self.vadp.snapshot_retry_wait = int(self.options["snapshot_retry_wait"])
-            except ValueError:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Invalid value '%s' for snapshot_retry_wait, only digits allowed\n"
-                    % self.options["snapshot_retry_wait"],
-                )
-                return bareosfd.bRC_Error
+            self.vadp.snapshot_retry_wait = int(self.options["snapshot_retry_wait"])
 
-            if self.vadp.snapshot_retry_wait < 0:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Invalid value '%s' for snapshot_retry_wait, negative values not allowed\n"
-                    % self.options["snapshot_retry_wait"],
-                )
-                return bareosfd.bRC_Error
+        if not self._check_option_boolean("enable_cbt"):
+            return bareosfd.bRC_Error
 
-        if self.options.get("enable_cbt") == "yes":
-            self.vadp.enable_cbt = True
+        if self.options.get("enable_cbt") == "no":
+            self.vadp.enable_cbt = False
+
+        if not self._check_option_boolean("do_io_in_core"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("do_io_in_core") == "no":
+            self.do_io_in_core = False
+
+        if not self._check_option_boolean("vadp_dumper_verbose"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("vadp_dumper_verbose") == "yes":
+            self.vadp.dumper_verbose = True
+
+        if not self._check_option_boolean("vadp_dumper_multithreading"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("vadp_dumper_multithreading") == "no":
+            self.vadp.dumper_multithreading = False
+
+        if not self._check_option_integer_positive("vadp_dumper_sectors_per_call"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("vadp_dumper_sectors_per_call"):
+            self.vadp.dumper_sectors_per_call = int(
+                self.options["vadp_dumper_sectors_per_call"]
+            )
+
+        if not self._check_option_integer_positive(
+            "vadp_dumper_query_allocated_blocks_chunk_size"
+        ):
+            return bareosfd.bRC_Error
+
+        if self.options.get("vadp_dumper_query_allocated_blocks_chunk_size"):
+            self.vadp.dumper_query_allocated_blocks_chunk_size = int(
+                self.options["vadp_dumper_query_allocated_blocks_chunk_size"]
+            )
 
         for options in self.options:
             bareosfd.DebugMessage(
@@ -423,6 +416,54 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     return bareosfd.bRC_Error
 
         return bareosfd.bRC_OK
+
+    def _check_option_boolean(self, option_name):
+        """
+        Check a boolean option for valid values.
+        If a value is given, it must be "yes" or "no",
+        otherwise the calling code must decide what's the default.
+        """
+        if self.options.get(option_name) is None:
+            return True
+        if self.options[option_name] not in ("yes", "no"):
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Invalid value '%s' for option %s, valid: yes or no.\n"
+                % (self.options[option_name], option_name),
+            )
+            return False
+        return True
+
+    def _check_option_integer_positive(self, option_name):
+        """
+        Check an integer option for valid and positive values.
+        If a value is given, it must be a valid integer and greater than 0,
+        otherwise the calling code must decide what's the default.
+        """
+        if self.options.get(option_name) is None:
+            return True
+
+        integer_value = None
+
+        try:
+            integer_value = int(self.options[option_name])
+        except ValueError:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Invalid value '%s' for %s, only digits allowed\n"
+                % (self.options[option_name], option_name),
+            )
+            return False
+
+        if integer_value <= 0:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Invalid value '%s' for %s, only positive values allowed\n"
+                % (self.options[option_name], option_name),
+            )
+            return False
+
+        return True
 
     def start_backup_job(self):
         """
@@ -663,9 +704,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             200,
             (
                 "BareosFdPluginVMware:plugin_io() called with function %s"
-                " self.FNAME is set to %s\n"
+                " IOP.count=%s, self.FNAME is set to %s\n"
             )
-            % (IOP.func, self.FNAME),
+            % (IOP.func, IOP.count, self.FNAME),
         )
 
         self.vadp.keepalive()
@@ -689,9 +730,19 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     if self.vadp.check_dumper():
                         bareosfd.DebugMessage(
                             100,
-                            ("plugin_io: bareos_vadp_dumper running with" " PID %s\n")
+                            ("plugin_io: bareos_vadp_dumper running with PID %s\n")
                             % (self.vadp.dumper_process.pid),
                         )
+                        if self.do_io_in_core:
+                            bareosfd.DebugMessage(
+                                100,
+                                (
+                                    "plugin_io: doing IO in core for restore, filedescriptor: %s\n"
+                                )
+                                % (self.vadp.dumper_process.stdin.fileno()),
+                            )
+                            IOP.filedes = self.vadp.dumper_process.stdin.fileno()
+                            IOP.status = bareosfd.iostat_do_in_core
                     else:
                         bareosfd.JobMessage(
                             bareosfd.M_FATAL,
@@ -713,6 +764,16 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                             ("plugin_io: bareos_vadp_dumper running with" " PID %s\n")
                             % (self.vadp.dumper_process.pid),
                         )
+                        if self.do_io_in_core:
+                            bareosfd.DebugMessage(
+                                100,
+                                (
+                                    "plugin_io: doing IO in core for backup, filedescriptor: %s\n"
+                                )
+                                % (self.vadp.dumper_process.stdout.fileno()),
+                            )
+                            IOP.filedes = self.vadp.dumper_process.stdout.fileno()
+                            IOP.status = bareosfd.iostat_do_in_core
                     else:
                         bareosfd.JobMessage(
                             bareosfd.M_FATAL,
@@ -837,13 +898,27 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             bareosfd.DebugMessage(
                 100, "handle_plugin_event() called with bEventEndBackupJob\n"
             )
+
+            # This is called even if the VM wasn't found and a fatal job
+            # message was emitted, so if no snapshot was taken, there's
+            # nothing to do here.
+            if not self.vadp.create_snap_tstamp:
+                return bareosfd.bRC_OK
+
             bareosfd.DebugMessage(100, "removing Snapshot\n")
             # Normal snapshot removal usually failed when there were long
             # delays during backup, so that keepalive had to reconnect
             # to vCenter. Retrieving the VM details again and cleaning
             # up any snapshots taken by this plugin is more reliable.
             self.vadp.get_vm_details()
-            self.vadp.cleanup_vm_snapshots()
+
+            if self.options.get("cleanup_tmpfiles") == "no":
+                bareosfd.DebugMessage(
+                    100,
+                    "not deleting snapshot, cleanup_tmpfiles is set to no\n",
+                )
+            else:
+                self.vadp.cleanup_vm_snapshots()
 
         elif event == bareosfd.bEventEndFileSet:
             bareosfd.DebugMessage(
@@ -998,6 +1073,7 @@ class BareosVADPWrapper(object):
         self.vm = None
         self.create_snap_task = None
         self.create_snap_result = None
+        self.create_snap_tstamp = None
         self.file_to_backup = None
         self.files_to_backup = []
         self.disk_devices = None
@@ -1028,13 +1104,17 @@ class BareosVADPWrapper(object):
         self.datastore_rex = re.compile(r"\[(.+?)\]")
         self.datastore_vm_path_rex = re.compile(r"\[(.+?)\] (.+)\/")
         self.slashes_rex = re.compile(r"\/+")
-        self.poweron_timeout = None
+        self.poweron_timeout = 15
         self.restore_disk_paths_map = OrderedDict()
         self.fetched_vcthumbprint = None
         self.snapshot_retries = 3
         self.snapshot_retry_wait = 5
         self.snapshot_prefix = "BareosTmpSnap_jobId"
-        self.enable_cbt = False
+        self.enable_cbt = True
+        self.dumper_verbose = False
+        self.dumper_multithreading = True
+        self.dumper_sectors_per_call = 16384
+        self.dumper_query_allocated_blocks_chunk_size = 1024
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1154,22 +1234,22 @@ class BareosVADPWrapper(object):
                     "Error getting details for VM with UUID %s\n"
                     % (self.options["uuid"]),
                 )
-                return bareosfd.bRC_Error
+                return False
         else:
             if not self.get_vm_details_dc_folder_vmname():
-                error_message = "No VM with Folder/Name %s/%s found in DC %s\n" % (
+                debug_message = "No VM with Folder/Name %s/%s found in DC %s\n" % (
                     self.options["folder"],
                     self.options["vmname"],
                     self.options["dc"],
                 )
-                bareosfd.DebugMessage(100, StringCodec.encode(error_message))
-                bareosfd.JobMessage(bareosfd.M_FATAL, StringCodec.encode(error_message))
-                return bareosfd.bRC_Error
+                bareosfd.DebugMessage(100, StringCodec.encode(debug_message))
+                return False
 
         bareosfd.DebugMessage(
             100,
             "Successfully got details for VM %s\n" % (StringCodec.encode(self.vm.name)),
         )
+        return True
 
     def prepare_vm_backup(self):
         """
@@ -1177,7 +1257,8 @@ class BareosVADPWrapper(object):
         - take snapshot
         - get disk devices
         """
-        self.get_vm_details()
+        if not self.get_vm_details():
+            return bareosfd.bRC_Error
 
         # check if the VM supports CBT and that CBT is enabled
         if not self.vm.capability.changeTrackingSupported:
@@ -1298,8 +1379,10 @@ class BareosVADPWrapper(object):
                 bareosfd.JobMessage(bareosfd.M_FATAL, StringCodec.encode(error_message))
                 return bareosfd.bRC_Error
         else:
-            if not self.get_vm_details_dc_folder_vmname():
-                error_message = (
+            if not self.get_vm_details_dc_folder_vmname(
+                vm_not_found_error_level=bareosfd.M_INFO
+            ):
+                debug_message = (
                     "No VM with Folder/Name %s/%s found in DC %s, recreating it now\n"
                     % (
                         self.options["folder"],
@@ -1307,7 +1390,7 @@ class BareosVADPWrapper(object):
                         self.options["dc"],
                     )
                 )
-                bareosfd.DebugMessage(100, StringCodec.encode(error_message))
+                bareosfd.DebugMessage(100, StringCodec.encode(debug_message))
                 if not self.create_vm():
                     # job message is already done within create_vm
                     return bareosfd.bRC_Error
@@ -1324,7 +1407,7 @@ class BareosVADPWrapper(object):
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
                 "Error VM %s must be poweredOff for restore, but is %s\n"
-                % (self.vm.name.encode("utf-8"), vm_power_state),
+                % (self.vm.name, vm_power_state),
             )
             return bareosfd.bRC_Error
 
@@ -1355,32 +1438,42 @@ class BareosVADPWrapper(object):
 
         return bareosfd.bRC_OK
 
-    def get_vm_details_dc_folder_vmname(self):
+    def get_vm_details_dc_folder_vmname(
+        self, vm_not_found_error_level=bareosfd.M_FATAL
+    ):
         """
         Get details of VM given by plugin options dc, folder, vmname
         and save result in self.vm
         Returns True on success, False otherwise
         """
-        dcView = self.si.content.viewManager.CreateContainerView(
-            self.si.content.rootFolder, [vim.Datacenter], False
-        )
-        vmListWithFolder = {}
-        dcList = dcView.view
-        dcView.Destroy()
-        for dc in dcList:
-            if dc.name == self.options["dc"]:
-                self.dc = dc
-                folder = ""
-                self._get_dcftree(vmListWithFolder, folder, dc.vmFolder)
-
         vm_path = self.proper_path(
-            "%s/%s" % (self.options["folder"], self.options["vmname"])
+            "/%s/%s" % (self.options["folder"], self.options["vmname"])
         )
+        dc_vm_path = self.proper_path(
+            "/%s/vm/%s/%s"
+            % (self.options["dc"], self.options["folder"], self.options["vmname"])
+        )
+        search_index = self.si.content.searchIndex
 
-        if vm_path not in vmListWithFolder:
+        found_dc = search_index.FindByInventoryPath("/" + self.options["dc"])
+        if not found_dc:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Could not find DC %s \n" % (StringCodec.encode(self.options["dc"])),
+            )
+            return False
+        self.dc = found_dc
+
+        found_vm = search_index.FindByInventoryPath(dc_vm_path)
+        if not found_vm:
+            bareosfd.JobMessage(
+                vm_not_found_error_level,
+                "Could not find VM %s in DC %s\n"
+                % (StringCodec.encode(vm_path), StringCodec.encode(self.dc.name)),
+            )
             return False
 
-        self.vm = vmListWithFolder[vm_path]
+        self.vm = found_vm
         return True
 
     def get_vm_details_by_uuid(self):
@@ -1775,6 +1868,14 @@ class BareosVADPWrapper(object):
                 return False
 
             try:
+                bareosfd.DebugMessage(
+                    100,
+                    "Creating VM: %s in VMFS path %s\n"
+                    % (
+                        StringCodec.encode(self.options["vmname"]),
+                        config.files.vmPathName,
+                    ),
+                )
                 create_vm_task = target_folder.CreateVm(
                     config, pool=resource_pool, host=destination_host
                 )
@@ -2371,8 +2472,16 @@ class BareosVADPWrapper(object):
                     " -f %s" % self.options["transport"]
                 )
 
-        if self.options.get("vadp_dumper_verbose") == "yes":
+        if self.dumper_verbose:
             bareos_vadp_dumper_opts[cmd] = "-v " + bareos_vadp_dumper_opts[cmd]
+
+        if self.dumper_multithreading:
+            bareos_vadp_dumper_opts[cmd] += " -m"
+
+        bareos_vadp_dumper_opts[cmd] += " -s %s" % self.dumper_sectors_per_call
+        bareos_vadp_dumper_opts[cmd] += (
+            " -k %s" % self.dumper_query_allocated_blocks_chunk_size
+        )
 
         bareosfd.DebugMessage(
             100,
@@ -2943,12 +3052,15 @@ class BareosVmConfigInfoToSpec(object):
         self.target_datastore_name = None
         self.orig_vm_datastore_name = None
         self.new_vm_datastore_name = None
+        self.new_target_vm_name = None
         self.disk_device_change_delayed = []
         self.config_spec_delayed = None
         self.vadp = vadp
 
     def transform(self, target_datastore_name=None, target_vm_name=None):
         config_spec = vim.vm.ConfigSpec()
+        if target_vm_name:
+            self.new_target_vm_name = target_vm_name
         self.target_datastore_name = target_datastore_name
         self.orig_vm_datastore_name = self._get_vm_datastore_name()
         self.new_vm_datastore_name = self.orig_vm_datastore_name
@@ -3711,6 +3823,13 @@ class BareosVmConfigInfoToSpec(object):
         files.snapshotDirectory = self.config_info["files"]["snapshotDirectory"]
         files.suspendDirectory = self.config_info["files"]["suspendDirectory"]
         files.vmPathName = self.config_info["files"]["vmPathName"]
+
+        if self.new_target_vm_name:
+            files.vmPathName = "[%s] %s/%s.vmx" % (
+                self.new_vm_datastore_name,
+                self.new_target_vm_name,
+                self.new_target_vm_name,
+            )
 
         return files
 
