@@ -143,8 +143,6 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
   // If this is the first time we use this slot we need to allocate some memory.
   if (save_data->capacity < nbyte) {
     if (save_data->data) {
-      fprintf(stderr, "Making slot %d bigger (%zu -> %zu)\n", slotnr,
-              save_data->capacity, nbyte);
       save_data->data = realloc(save_data->data, nbyte + 1);
     } else {
       save_data->data = malloc(nbyte + 1);
