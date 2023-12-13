@@ -9,12 +9,12 @@ VMware Plugin
 
 The |vmware| Plugin can be used for agentless backups of virtual machines running on |vsphere|. It makes use of CBT (Changed Block Tracking) to do space efficient full and incremental backups, see below for mandatory requirements.
 
-The plugin consists of two parts, the first part is implemented in Python, it
+The plugin consists of two parts. The first part is implemented in Python, it
 uses the vSphere Web Services API to create and remove snapshots, retrieve VM
 config metadata, recreate virtual machines and to query CBT data.
-The second part is the `bareos_vadp_dumper` which is implemented in C++, it
-uses the Virtual Disk Development Kit (VDDK) to retrieve the virtual disks
-from the Hypervisor hosts.
+The second part is the `bareos_vadp_dumper` which is implemented in C++. This
+binary uses the Virtual Disk Development Kit (VDDK) to retrieve the virtual
+disks from the Hypervisor hosts.
 
 It is included in Bareos since :sinceVersion:`15.2.0: VMware Plugin`.
 
@@ -300,7 +300,7 @@ Before running the first backup, CBT (Changed Block Tracking) must be enabled fo
 
 Since :sinceVersion:`22.1.1: VMware Plugin: enable_cbt` the plugin will try to
 enable CBT automatically when the plugin option **enable_cbt=yes** is set (see below).
-Since :sinceVersion:`23.0.0: VMware Plugin: enable_cbt` this option is set to yes by default.
+Since :sinceVersion:`23.0.0: VMware Plugin: enable_cbt` this option is set to **yes** by default.
 
 As of https://kb.vmware.com/s/article/2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
 
@@ -621,50 +621,49 @@ poweron_timeout (optional)
    Timeout in seconds to wait for a VM to be powered on after restore, default 15s. When a VM is powered on after restore (see also the option *restore_powerstate* above), the plugin will check if it succeeded by checking the power state. If it is not powered on within this timeout, the restore job will issue a warning message.
 
 enable_cbt (optional)
-   When using ``enable_cbt=yes`` the plugin will enable CBT (changed block
+   When using ``enable_cbt=yes``, the plugin will enable CBT (changed block
    tracking) if possible and it is not yet enabled.
    It is required that no snapshot exists when enabling CBT, otherwise the
    plugin will emit an error message.
-   By default this option is set to yes since :sinceVersion:`23.0.0: VMware Plugin`
+   By default this option is set to **yes** since :sinceVersion:`23.0.0: VMware Plugin`
    so that ``vmware_cbt_tool.py`` is no longer necessary to enable CBT.
    This option exists since :sinceVersion:`22.1.1: VMware Plugin`
 
 do_io_in_core (optional)
    With the option ``do_io_in_core=yes`` the data stream from the
-   `bareos_vadp_dumper` will be processed by the directly by the Bareos core.
-   When set to *no*, the data stream is processed by the Python plugin code
-   before being sent to the core.
+   `bareos_vadp_dumper` will be processed directly by the Bareos core via file descriptor.
+   When set to **no**, the data stream is read and written by the Python plugin
+   code from the file descriptor and exchanged with the core over a buffer.
    So enabling this can improve the performance and will save CPU resource consumption.
    See :ref:`section-Python Plugin API` for more details.
-   By default this is set to *yes*. Since :sinceVersion:`23.0.0: VMware Plugin`
+   By default this is set to **yes**. Since :sinceVersion:`23.0.0: VMware Plugin`
 
 vadp_dumper_multithreading (optional)
    The option ``vadp_dumper_multithreading=yes`` enables multithreading when
    running `bareos_vadp_dumper`, so that it will run one reader and one writer
    thread.
-   By default it is set to *yes* as nowadays CPUs usually have mulitple cores,
+   By default it is set to **yes** as nowadays CPUs usually have multiple cores,
    so this improves the performance in most cases.
    Since :sinceVersion:`23.0.0: VMware Plugin`
 
 vadp_dumper_sectors_per_call (optional)
-   This option can be used to optimize the performance, by default it is set
-   to 16384, because in benchmark tests the performance did not increase when
-   set to higher values.
-   Especially together with ``vadp_dumper_multithreading=yes`` this setting
-   will improve the backup performance significantly.
+   This option can be used to optimize the performance. The default value it is set
+   to **16384**. This is the smallest value that achieved the maximum
+   throughput in our benchmark tests.
+   Together with ``vadp_dumper_multithreading=yes`` this setting can improve
+   the backup performance significantly.
    Since :sinceVersion:`23.0.0: VMware Plugin`
 
 vadp_dumper_query_allocated_blocks_chunk_size (optional)
    The `bareos_vadp_dumper` uses a VDDK function to query the allocated blocks
    of virtual disks since :sinceVersion:`23.0.0: VMware Plugin`.
-   By using this plugin option, the chunk size which is passed to that functioni
-   can by set.
-   Allowed values are power of 2, >= 128 and <= 131072.
-   Especially for full backups, this normally leads to smaller and implicitly
-   faster backups.
-   By default it is set to 1024, other values do not have a performance impact
-   for small VMs with used space of about only 3 GB, this could be different
-   for VMs with larger disks.
+   Especially for full backups, this normally leads to smaller and implicitly faster backups.
+   By setting this plugin option, the chunk size which is passed to that
+   function can be set.  The default value for the chunk size is **1024**.
+   Allowed values are powers of two between 128 and 131072, inclusive.
+   In our benchmark tests with small VMs of 3GB size, this value did not have
+   any performance impact. However, with more data it might have an impact on
+   the backup performance.
 
 
 uuid (deprecated)
