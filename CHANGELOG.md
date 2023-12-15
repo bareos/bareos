@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- pkglists: update SUSE to have vmware packages [PR #1634]
+
 ## [22.1.3] - 2023-12-13
 
 ### Changed
@@ -618,4 +621,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1594]: https://github.com/bareos/bareos/pull/1594
 [PR #1621]: https://github.com/bareos/bareos/pull/1621
 [PR #1627]: https://github.com/bareos/bareos/pull/1627
+[PR #1634]: https://github.com/bareos/bareos/pull/1634
 [unreleased]: https://github.com/bareos/bareos/tree/master
