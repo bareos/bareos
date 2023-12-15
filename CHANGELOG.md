@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - filedaemon: remove ovirt plugin [PR #1617]
 - vadp-dumper: fix multithreaded backup/restore issues [PR #1593]
 - VMware Plugin: Run bareos_vadp_dumper with optimized parameters to increase backup performance [PR #1630]
+- pkglists: update SUSE to have vmware packages [PR #1632]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -41,4 +42,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1617]: https://github.com/bareos/bareos/pull/1617
 [PR #1628]: https://github.com/bareos/bareos/pull/1628
 [PR #1630]: https://github.com/bareos/bareos/pull/1630
+[PR #1632]: https://github.com/bareos/bareos/pull/1632
 [unreleased]: https://github.com/bareos/bareos/tree/master
