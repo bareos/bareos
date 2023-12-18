@@ -12,10 +12,12 @@ CASE
 END as Duration,
 CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime > Job.starttime
-        THEN Job.JobBytes / EXTRACT (EPOCH FROM (Job.endtime - Job.starttime))
+        THEN pg_size_pretty(ROUND(Job.JobBytes / EXTRACT (EPOCH FROM (Job.endtime - Job.starttime)),2)) || '/s'
+    WHEN Job.endtime IS NOT NULL AND Job.endtime = Job.starttime
+        THEN pg_size_pretty(ROUND(Job.JobBytes / EXTRACT (EPOCH FROM (Job.endtime - Job.starttime + interval '1 second')),2)) || '/s'
     WHEN EXTRACT (EPOCH FROM CURRENT_TIMESTAMP(0) - Job.starttime) > 0
-        THEN Job.JobBytes / EXTRACT (EPOCH FROM CURRENT_TIMESTAMP(0) - Job.starttime)
-    ELSE 0
+        THEN pg_size_pretty(ROUND(Job.JobBytes / EXTRACT (EPOCH FROM CURRENT_TIMESTAMP(0) - Job.starttime),2)) || '/s'
+    ELSE '0 bytes/s'
 END as Rate,
 Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
 FROM Job
