@@ -499,15 +499,16 @@ static std::shared_ptr<JobControlRecord> GetJcr(
           [](std::weak_ptr<JobControlRecord>& p) { return p.expired(); }),
       job_control_record_cache.end());
 
-  find_if(job_control_record_cache.begin(), job_control_record_cache.end(),
-          [&compare, &result](std::weak_ptr<JobControlRecord>& p) {
-            auto jcr = p.lock();
-            if (compare(jcr.get())) {
-              result = jcr;
-              return true;
-            }
-            return false;
-          });
+  std::ignore = find_if(
+      job_control_record_cache.begin(), job_control_record_cache.end(),
+      [&compare, &result](std::weak_ptr<JobControlRecord>& p) {
+        auto jcr = p.lock();
+        if (compare(jcr.get())) {
+          result = jcr;
+          return true;
+        }
+        return false;
+      });
 
   UnlockJcrChain();
 
