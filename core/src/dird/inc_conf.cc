@@ -297,7 +297,8 @@ struct OptionsDefaultValues {
 };
 
 // determine used compression algorithms
-void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
+// returns if compression is used at all.
+bool FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
 {
   int cnt = 0;
   IncludeExcludeItem* inc;
@@ -305,7 +306,9 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   FilesetResource* fs;
   struct s_fs_opt* fs_opt;
 
-  if (!jcr->dir_impl->res.job || !jcr->dir_impl->res.job->fileset) { return; }
+  if (!jcr->dir_impl->res.job || !jcr->dir_impl->res.job->fileset) {
+    return false;
+  }
 
   fs = jcr->dir_impl->res.job->fileset;
   for (std::size_t i = 0; i < fs->include_items.size(); i++) {
@@ -341,6 +344,8 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   }
 
   if (cnt > 0) { compressalgos->strcat(")"); }
+
+  return cnt > 0;
 }
 
 // Check if the configured options are valid.

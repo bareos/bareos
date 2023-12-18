@@ -894,7 +894,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    char sdt[50], edt[50], schedt[50], gdt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], compress[50];
    char ec6[30], ec7[30], ec8[30], elapsed[50];
-   double kbps, compression;
+   double kbps;
    utime_t RunTime;
    MediaDbRecord mr;
    PoolMem temp,
@@ -946,16 +946,18 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       }
    }
 
-   if (jcr->ReadBytes == 0) {
+   if (jcr->ReadBytes == 0 || !FindUsedCompressalgos(&compress_algo_list, jcr)) {
+     // compress_algo_list is guaranteed to be emtpy
       bstrncpy(compress, "None", sizeof(compress));
    } else {
-      compression = (double)100 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
-      if (compression < 0.5) {
-         bstrncpy(compress, "None", sizeof(compress));
-      } else {
-         Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
-         FindUsedCompressalgos(&compress_algo_list, jcr);
-      }
+     double compression = 100.0 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
+     if (compression < -1 && jcr->is_JobLevel(L_FULL)) {
+       Jmsg(jcr, M_INFO, 0,
+	    T_("Compression inflated the full backup data by more than 1%%."
+	       " We suggest to use a different algorithm or to disable "
+	       "compression.\n"));
+     }
+     Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
    }
 
    std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
