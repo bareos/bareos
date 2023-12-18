@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -69,11 +69,20 @@ message("BAREOS_NUMERIC_VERSION is ${BAREOS_NUMERIC_VERSION}")
 message("BAREOS_FULL_VERSION is ${BAREOS_FULL_VERSION}")
 
 if(VERSION_TIMESTAMP GREATER 0)
-  include(BareosTimeFunctions)
-  timestamp_at("${VERSION_TIMESTAMP}" DATE "%d %B %Y")
-  timestamp_at("${VERSION_TIMESTAMP}" BAREOS_SHORT_DATE "%d%b%y")
-  timestamp_at("${VERSION_TIMESTAMP}" BAREOS_YEAR "%Y")
-  timestamp_at("${VERSION_TIMESTAMP}" BAREOS_PROG_DATE_TIME "%Y-%m-%d %H:%M:%S")
+  if(DEFINED ENV{SOURCE_DATE_EPOCH})
+    set(_old_source_date_epoch "$ENV{SOURCE_DATE_EPOCH}")
+  endif()
+  set(ENV{SOURCE_DATE_EPOCH} "${VERSION_TIMESTAMP}")
+  string(TIMESTAMP DATE "%d %B %Y" UTC)
+  string(TIMESTAMP BAREOS_SHORT_DATE "%d%b%y" UTC)
+  string(TIMESTAMP BAREOS_YEAR "%Y" UTC)
+  string(TIMESTAMP BAREOS_PROG_DATE_TIME "%Y-%m-%d %H:%M:%S" UTC)
+  if(DEFINED _old_source_date_epoch)
+    set(ENV{SOURCE_DATE_EPOCH} "${_old_source_date_epoch}")
+    unset(_old_source_date_epoch)
+  else()
+    unset(ENV{SOURCE_DATE_EPOCH})
+  endif()
 else()
   message(FATAL_ERROR "VERSION_TIMESTAMP is not set")
 endif()
