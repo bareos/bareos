@@ -49,7 +49,7 @@ def parse_plugindef_string(plugindef):
             continue
         # See if the last character is a escape of the value string
         while val[-1:] == "\\":
-            val = val[:-1] + ":" + plugin_options.pop(0)
+            val = val[:-1] + ":" + parts.pop(0)
         if key not in options:
             options[key] = val
     return options
