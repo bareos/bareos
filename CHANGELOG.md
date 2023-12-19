@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - dird: fix `purge oldest volume` [PR #1628]
+- Fix continuation on colons in plugin baseclass [PR #1637]
 
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
 [PR #1587]: https://github.com/bareos/bareos/pull/1587
@@ -45,4 +46,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1628]: https://github.com/bareos/bareos/pull/1628
 [PR #1630]: https://github.com/bareos/bareos/pull/1630
 [PR #1632]: https://github.com/bareos/bareos/pull/1632
+[PR #1637]: https://github.com/bareos/bareos/pull/1637
 [unreleased]: https://github.com/bareos/bareos/tree/master
