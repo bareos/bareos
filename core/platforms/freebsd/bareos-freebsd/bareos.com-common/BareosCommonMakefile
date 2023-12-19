@@ -62,13 +62,7 @@ USES+=shebangfix
 
 USE_LDCONFIG=	yes
 
-LDFLAGS+=	-L${LOCALBASE}/lib
-LDFLAGS+=	-lz
-LDFLAGS+=	-ljansson
-LDFLAGS+=	-lcrypto
-
-CPPFLAGS+=	-I/usr/include/readline
-CPPFLAGS+=      -I${LOCALBASE}/include
+#CPPFLAGS+=-I${LOCALBASE}/include
 
 LIB_DEPENDS+=	liblzo2.so:archivers/lzo2 \
 		          libjansson.so:devel/jansson
