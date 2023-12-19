@@ -13,5 +13,6 @@ FileSet {
     ":option3=value3"
     ":option4=value4"
     ":password#enc=aA9+EcW-iJ"
+    ":masked-colon=one\\:two\\:three"
   }
 }

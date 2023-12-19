@@ -66,6 +66,7 @@ for i in 1 2 3 4; do
   check_option "option$i" "value$i" nofile
 done
 check_option "password" "password" nofile
+check_option "masked-colon" 'one:two:three' nofile
 
 for i in 1 6 7 8; do
   check_not_option "option$i" "override-value$i" defaults-file
