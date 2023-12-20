@@ -155,7 +155,12 @@ class TaskProcess(Task):
     def pool(self):
         if self.use_stderr:
             try:
-                self.stderr_buffer.write(self.process.stderr.read())
+                while True:
+                    stderrtext=self.process.stderr.read()
+                    if stderrtext:
+                        self.stderr_buffer.write(stderrtext)
+                    else:
+                        break
             except IOError:
                 pass
 
@@ -172,7 +177,6 @@ class TaskProcess(Task):
             self.process = subprocess.Popen(sudo + self.command, shell=False, bufsize=-1,
                                             stdout=subprocess.PIPE if self.use_stdout else None,
                                             stderr=subprocess.PIPE if self.use_stderr else None)
-                                            #preexec_fn=self.pre_run_execute)
             if self.use_stderr:
                 fcntl(self.process.stderr, F_SETFL, fcntl(self.process.stderr, F_GETFL) | os.O_NONBLOCK)
         except (subprocess.CalledProcessError, OSError, ValueError) as e:

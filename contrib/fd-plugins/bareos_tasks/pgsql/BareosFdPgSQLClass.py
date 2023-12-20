@@ -27,13 +27,13 @@ class TaskQueryDatabase(TaskProcess):
 
     def __init__(self, psql=None, pg_user=None):
         self.run_as_user = pg_user
-        psql_options = 'postgres --expanded --no-align'
+        psql_options = '--expanded --no-align --no-psqlrc'
         self.command = [psql if psql else 'psql'] + shlex.split(psql_options)
         super(TaskQueryDatabase, self).__init__()
 
     def execute_query(self, query):
         items = list()
-        data = self.execute_command(self.command + ['--command=' + query])
+        data = self.execute_command(self.command + ['--command=' + query]).decode('utf-8')
         for record in data.split('\n\n'):
             item = dict(map(lambda x: x.split('|', 1), record.splitlines()))
             items.append(item)
@@ -88,7 +88,6 @@ class BareosFdPgSQLClass(BareosFdTaskClass):
         pg_user = self.options.get('pg_user', 'postgres')
 
         databases = self.config.get_list('databases', TaskQueryDatabase(psql, pg_user).get_databases())
-        self.job_message(bareosfd.M_INFO, "databases: {}".format(databases))
 
         if 'exclude' in self.config:
             exclude = self.config.get_list('exclude')
