@@ -42,6 +42,8 @@ from changelog_utils import (
 
 from check_sources.main import main_program as check_sources
 
+from .github import Gh
+
 
 class Mark:
     PASS = " ✓ "
@@ -62,67 +64,6 @@ class Mark:
     @classmethod
     def _decorate(cls, text, color):
         return "{}{}{}".format(color, text, cls._ENDC)
-
-
-class InvokationError(Exception):
-    def __init__(self, result):
-        self.result = result
-        super().__init__(
-            "invocation of {} returned {}\nMessage:\n{}".format(
-                result.args, result.returncode, result.stderr
-            )
-        )
-
-
-class Gh:
-    """thin and simple proxy wrapper around github cli"""
-
-    @staticmethod
-    def make_option_str(k, v):
-        param = k.replace("_", "-")
-        if isinstance(v, list):
-            return "--{}={}".format(param, ",".join(v))
-        elif v:
-            return "--{}={}".format(param, v)
-        else:
-            return "--{}".format(param)
-
-    def __init__(self, *, cmd=["gh"], dryrun=False):
-        environ["NO_COLOR"] = "1"
-        environ["GH_NO_UPDATE_NOTIFIER"] = "1"
-        environ["GH_PROMPT_DISABLED"] = "1"
-        self.cmd = cmd
-        self.dryrun = dryrun
-
-    def __getattr__(self, name):
-        """return another proxy object with the name added as additional
-        positional parameter"""
-        return Gh(cmd=self.cmd + [name], dryrun=self.dryrun)
-
-    def __call__(self, *args, **kwargs):
-        """invoke command, parse response if json and return"""
-        # filter out args that evaluate to False (i.e. None or "")
-        params = list(filter(lambda x: x, args))
-        # convert kwargs to "--key-word=value"
-        opts = [Gh.make_option_str(k, v) for (k, v) in kwargs.items()]
-        if self.dryrun:
-            print(self.cmd + opts + params)
-        else:
-            res = run(
-                self.cmd + opts + params,
-                stdin=DEVNULL,
-                stdout=PIPE,
-                stderr=PIPE,
-                encoding="UTF-8",
-            )
-
-            if res.returncode != 0:
-                raise InvokationError(res)
-
-            if "json" in kwargs or len(self.cmd) >= 2 and self.cmd[1] == "api":
-                return json.loads(res.stdout)
-
-            return res.stdout
 
 
 class CheckSources:
