@@ -155,7 +155,12 @@ class TaskProcess(Task):
     def pool(self):
         if self.use_stderr:
             try:
-                self.stderr_buffer.write(self.process.stderr.read())
+                while True:
+                    errortext=self.process.stderr.read()
+                    if errortext:
+                        self.stderr_buffer.write(errortext)
+                    else:
+                        break
             except IOError:
                 pass
 
@@ -172,9 +177,8 @@ class TaskProcess(Task):
             self.process = subprocess.Popen(sudo + self.command, shell=False, bufsize=-1,
                                             stdout=subprocess.PIPE if self.use_stdout else None,
                                             stderr=subprocess.PIPE if self.use_stderr else None)
-            # No need for O_NONBLOCK with BytesIO , it could/will lead to incomplete buffers while reading
-            #if self.use_stderr:
-            #    fcntl(self.process.stderr, F_SETFL, fcntl(self.process.stderr, F_GETFL) | os.O_NONBLOCK)
+            if self.use_stderr:
+                fcntl(self.process.stderr, F_SETFL, fcntl(self.process.stderr, F_GETFL) | os.O_NONBLOCK)
         except (subprocess.CalledProcessError, OSError, ValueError) as e:
             raise TaskException('invalid command: {0} {1}'.format(self.command, e))
 
