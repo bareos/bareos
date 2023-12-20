@@ -19,19 +19,18 @@
 #   02110-1301, USA.
 
 
-import json
 import logging
 import re
 
 from argparse import ArgumentParser, Namespace
-from git import Repo
-import git.exc
 from os import environ, chdir
 from pprint import pprint
-from subprocess import run, PIPE, DEVNULL
 from sys import stdout, stderr
 from time import sleep
 from io import StringIO
+
+from git import Repo
+import git.exc
 
 from changelog_utils import (
     file_has_pr_entry,
@@ -41,7 +40,7 @@ from changelog_utils import (
 )
 
 from check_sources.main import main_program as check_sources
-
+from . import backport
 from .github import Gh
 
 
@@ -416,6 +415,36 @@ def parse_cmdline_args():
         help="ignore (required) github status checks",
     )
     dump_parser = subparsers.add_parser("dump")
+    backport_parser = subparsers.add_parser("backport")
+    backport_sp = backport_parser.add_subparsers(dest="bp_mode")
+    backport_create_parser = backport_sp.add_parser("create")
+    backport_create_parser.add_argument(
+        "pr",
+        metavar="<pr number>",
+        help="GitHub PR number of the PR to backport from",
+        type=int,
+        choices=range(1, 1000000),
+    )
+    backport_create_parser.add_argument(
+        "--into",
+        metavar="<base_branch>",
+        help="Branch into which the backport should be done (defaults to current branch)",
+        type=str,
+    )
+    backport_create_parser.add_argument(
+        "--all", action="store_true", help="pick all commits"
+    )
+    backport_cherrypick_parser = backport_sp.add_parser("cherry-pick")
+    backport_cherrypick_parser.add_argument(
+        "--reset", action="store_true", help="reset before cherry-pick"
+    )
+    backport_cherrypick_parser.add_argument(
+        "--all", action="store_true", help="pick all commits"
+    )
+    backport_publish_parser = backport_sp.add_parser("publish")
+    backport_publish_parser.add_argument(
+        "--dry-run", "-n", action="store_true", help="no push and no pr create"
+    )
 
     args = parser.parse_args()
 
@@ -622,6 +651,40 @@ def main():
         logging.critical("Could not find the remote that is used by gh.")
         return 2
     logging.info("Using git remote '{}'".format(git_remote))
+
+    if args.subcommand == "backport":
+        if repo.is_dirty():
+            logging.critical("working copy is not clean")
+            return 2
+        if args.bp_mode == "cherry-pick":
+            if backport.cherry_pick(
+                repo=repo,
+                select_all=args.all,
+                allow_reset=args.reset,
+                upstream=git_remote,
+            ):
+                return 0
+            else:
+                return 2
+        elif args.bp_mode == "create":
+            target_branch = backport.resolve_target_branch(repo, git_remote, args.into)
+            if target_branch:
+                if backport.create(
+                    pr=args.pr,
+                    into=target_branch,
+                    repo=repo,
+                    upstream=git_remote,
+                    select_all=args.all,
+                ):
+                    return 0
+                else:
+                    return 1
+        elif args.bp_mode == "publish":
+            if backport.publish(repo=repo, dry_run=args.dry_run):
+                return 0
+            else:
+                return 1
+        return 2
 
     pr_data = get_current_pr_data()
     pr_data["_repo"] = repo
