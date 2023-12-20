@@ -88,7 +88,6 @@ class BareosFdPgSQLClass(BareosFdTaskClass):
         pg_user = self.options.get('pg_user', 'postgres')
 
         databases = self.config.get_list('databases', TaskQueryDatabase(psql, pg_user).get_databases())
-        self.job_message(bareosfd.M_INFO, "databases: {}".format(databases))
 
         if 'exclude' in self.config:
             exclude = self.config.get_list('exclude')
