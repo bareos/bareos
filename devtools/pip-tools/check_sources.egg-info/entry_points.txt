@@ -1,7 +1,0 @@
-[console_scripts]
-add-changelog-entry = changelog_utils.add_entry:main
-add-copyright-header = check_sources.add_copyright_header:main
-bareos-check-sources = check_sources.__main__:main
-check-sources = check_sources.__main__:main
-pr-tool = pr_tool.main:main
-update-changelog-links = changelog_utils.update_links:main
