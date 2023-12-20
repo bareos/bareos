@@ -156,9 +156,9 @@ class TaskProcess(Task):
         if self.use_stderr:
             try:
                 while True:
-                    errortext=self.process.stderr.read()
-                    if errortext:
-                        self.stderr_buffer.write(errortext)
+                    stderrtext=self.process.stderr.read()
+                    if stderrtext:
+                        self.stderr_buffer.write(stderrtext)
                     else:
                         break
             except IOError:
