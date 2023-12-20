@@ -30,4 +30,6 @@ check_sources/plugins/shebang_plugin.py
 check_sources/plugins/three_line_comments.py
 check_sources/plugins/whitespace_plugin.py
 pr_tool/__init__.py
+pr_tool/backport.py
+pr_tool/github.py
 pr_tool/main.py
