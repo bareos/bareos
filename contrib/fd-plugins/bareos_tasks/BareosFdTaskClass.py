@@ -19,11 +19,9 @@
 
 import os
 import subprocess
-from fcntl import fcntl, F_GETFL, F_SETFL
 from pwd import getpwnam
 from io import BytesIO
 
-#import bareosfd
 from bareosfd import JobMessage, DebugMessage, StatPacket, GetValue, bRCs, bIOPS, bJobMessageType, bFileType, bVariable, bVarType, M_ERROR, M_INFO
 from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 
@@ -155,12 +153,10 @@ class TaskProcess(Task):
     def pool(self):
         if self.use_stderr:
             try:
-                while True:
+                stderrtext=self.process.stderr.read()
+                while stderrtext:
+                    self.stderr_buffer.write(stderrtext)
                     stderrtext=self.process.stderr.read()
-                    if stderrtext:
-                        self.stderr_buffer.write(stderrtext)
-                    else:
-                        break
             except IOError:
                 pass
 
@@ -178,7 +174,7 @@ class TaskProcess(Task):
                                             stdout=subprocess.PIPE if self.use_stdout else None,
                                             stderr=subprocess.PIPE if self.use_stderr else None)
             if self.use_stderr:
-                fcntl(self.process.stderr, F_SETFL, fcntl(self.process.stderr, F_GETFL) | os.O_NONBLOCK)
+                os.set_blocking(self.process.stderr.fileno(), False)
         except (subprocess.CalledProcessError, OSError, ValueError) as e:
             raise TaskException('invalid command: {0} {1}'.format(self.command, e))
 
