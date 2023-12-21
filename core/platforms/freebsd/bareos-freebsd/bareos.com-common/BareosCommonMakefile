@@ -58,7 +58,7 @@ USES+=		libtool:keepla pkgconfig readline:port
 #USES+=cmake
 USES+=cmake:noninja
 USES+=shebangfix
-USES+=python
+USES+=python:env
 
 USE_LDCONFIG=	yes
 
