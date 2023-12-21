@@ -1,0 +1,145 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+#
+# This systemtest tests the plugin functionality
+# of the bareos-fd with the tasks.pgsql plugin.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName="backup-bareos-fd-tasks-pgsql"
+#shellcheck source=../environment.in
+. ./environment
+. ./database/setup_local_db.sh
+
+# setup local database server
+DBNAME="db_tasks_pgsql"
+TESTPGHOST="${dbHost}"
+PSQL="${POSTGRES_BIN_PATH}/psql --host ${TESTPGHOST}"
+RESTORE_DIR="$tmp/bareos-restores/@PGSQL/"
+
+[ -d "${TESTPGHOST}" ] && rm -R  "${TESTPGHOST}"
+mkdir -p "${TESTPGHOST}"
+[ $EUID -eq 0 ] && chown postgres "${TESTPGHOST}"
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+pushd database > /dev/null
+setup_local_db "${TESTPGHOST}"
+
+if [ $EUID -ne 0 ]; then
+    # Make sure, a database for the current user exists.
+    # Required by the psql command, when called without explicit database.
+    ${PSQL} postgres -c "create database ${USER}" || true
+fi
+
+# Create Test DB with table and 1 statement
+${PSQL} postgres -c "create database ${DBNAME}"
+${PSQL} ${DBNAME} -c "
+create table t(id serial primary key, text varchar(20), created_on timestamp);
+insert into t (text, created_on) values ('test for FULL backup', current_timestamp);
+select * from t;
+"
+popd > /dev/null
+
+echo "First full backup stage"
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} level=Full yes
+wait
+setdebug level=0 client=bareos-fd
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+check_log $tmp/log1.out
+expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+echo "First incremental backup stage"
+# insert data and run incremental
+${PSQL} ${DBNAME} -c "insert into t (text, created_on) values ('test entry 2', current_timestamp)"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log1i.out
+@# run incremental
+run job=$JobName yes
+wait
+status dir
+END_OF_DATA
+
+run_bconsole "$@"
+check_log $tmp/log1i.out
+
+# restore to file
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/restore.log
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
+restore client=bareos-fd fileset=bareos_tasks_pgsql select all done yes
+wait
+setdebug level=0 client=bareos-fd
+messages
+END_OF_DATA
+
+echo "Restore stage"
+run_bconsole
+check_log $tmp/restore.log
+expect_grep "Restore OK" "${tmp}/restore.log" "Restore Backup not ok!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+check_for_zombie_jobs storage=File
+
+check_two_logs "${tmp}/log1.out" "${tmp}/restore.log"
+
+# Check if some files are restored
+ls -lR "${RESTORE_DIR}"
+if [ -z "$(ls -A "${RESTORE_DIR}")" ]; then
+    echo "No restore data found"
+    estat=1
+fi
+
+# delete database
+${PSQL} postgres -c "drop database ${DBNAME};"
+
+if ${PSQL} ${DBNAME} -c "SELECT * FROM t WHERE id=2;" 2>/dev/null; then
+    echo "database ${DBNAME} should be deleted and command should fail."
+    estat=2
+fi
+
+# restore db
+${PSQL} postgres -c "create database ${DBNAME}"
+${PSQL} ${DBNAME} < "${RESTORE_DIR}/dump-database-${DBNAME}.sql"
+
+if ! ${PSQL} ${DBNAME} -c "SELECT * FROM t WHERE id=2;" 2>/dev/null; then
+    echo "test entry not found after restore"
+    estat=3
+fi
+
+# stop the database server
+pushd database/ > /dev/null
+local_db_stop_server "${TESTPGHOST}"
+popd > /dev/null
+
+end_test
