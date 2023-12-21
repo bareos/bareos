@@ -58,14 +58,15 @@ USES+=		libtool:keepla pkgconfig readline:port
 #USES+=cmake
 USES+=cmake:noninja
 USES+=shebangfix
+USES+=python
 
 USE_LDCONFIG=	yes
 
-#CPPFLAGS+=-I${LOCALBASE}/include
-
 LIB_DEPENDS+=	liblzo2.so:archivers/lzo2 \
-		          libjansson.so:devel/jansson
-LIB_DEPENDS+= libpython3.9.so:lang/python39
+              libjansson.so:devel/jansson \
+              libpython${_PYVERSION}.so:lang/python${PYTHON_SUFFIX}
+
+_PYVERSION= ${PYTHON_VER}${PYTHON_ABIVER}
 
 # optional overrides, used by build system.
 .-include "BareosCommonMakefile-overrides.mk"
