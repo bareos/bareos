@@ -3,3 +3,4 @@ lib/bareos/plugins/python-sd.so
 lib/bareos/plugins/BareosSdPluginBaseclass.py
 lib/bareos/plugins/BareosSdWrapper.py
 lib/bareos/plugins/bareos-sd-class-plugin.py
+%%PYTHON_SITELIBDIR%%/bareossd%%PYTHON_EXT_SUFFIX%%.so
