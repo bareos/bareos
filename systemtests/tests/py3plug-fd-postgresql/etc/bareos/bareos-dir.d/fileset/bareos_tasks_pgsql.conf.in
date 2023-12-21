@@ -1,0 +1,13 @@
+FileSet {
+  Name = "bareos_tasks_pgsql"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      signature = XXH128
+    }
+    Plugin = "@python_module_name@"
+             ":module_name=bareos_tasks.pgsql"
+             ":pg_host=@dbHost@"
+             ":pg_user=''"
+  }
+}
