@@ -64,6 +64,16 @@ Command (with or without full path) to *pg_dump* tool. Default: *pg_dump*
 #### pg_dump_options
 Options to be used with the *pg_dump* tool. Default: *--no-owner --no-acl*
 
+#### pg_host
+Specifies the host name of the machine on which the server is running.
+If the value begins with a slash,
+it is used as the directory for the Unix-domain socket.
+
+#### pg_port
+Specifies the TCP port
+or the local Unix-domain socket file extension
+on which the server is listening for connections.
+
 #### pg_user
 Username of the system user running the *psql* and *pg_dump* tools. Default: *postgres*
 

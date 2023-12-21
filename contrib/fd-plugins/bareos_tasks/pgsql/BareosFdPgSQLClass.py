@@ -25,10 +25,15 @@ from bareos_tasks.BareosFdTaskClass import TaskProcess, BareosFdTaskClass
 
 class TaskQueryDatabase(TaskProcess):
 
-    def __init__(self, psql=None, pg_user=None):
+    def __init__(self, psql='psql', pg_host=None, pg_port=None, pg_user=None):
         self.run_as_user = pg_user
         psql_options = '--expanded --no-align --no-psqlrc'
-        self.command = [psql if psql else 'psql'] + shlex.split(psql_options)
+        self.command = [ psql ]
+        if pg_host:
+            self.command.append("--host={}".format(pg_host))
+        if pg_port:
+            self.command.append("--port={}".format(pg_port))
+        self.command += shlex.split(psql_options)
         super(TaskQueryDatabase, self).__init__()
 
     def execute_query(self, query):
@@ -58,11 +63,19 @@ class TaskDumpDatabase(TaskProcess):
     task_name = 'dump-database'
     file_extension = 'sql'
 
-    def __init__(self, database, psql=None, pg_dump=None, pg_user=None, pg_dump_options=''):
+    def __init__(self, database, psql='psql', pg_dump='pg_dump', pg_host=None, pg_port=None, pg_user=None, pg_dump_options=''):
         self.database = database
         self.psql = psql
+        self.pg_host = pg_host
+        self.pg_port = pg_port
         self.run_as_user = pg_user
-        self.command = [pg_dump if pg_dump else 'pg_dump'] + shlex.split(pg_dump_options) + [self.database]
+        self.command = [ pg_dump ]
+        if pg_host:
+            self.command.append("--host={}".format(pg_host))
+        if pg_port:
+            self.command.append("--port={}".format(pg_port))
+        self.command += shlex.split(pg_dump_options)
+        self.command.append(self.database)
         super(TaskDumpDatabase, self).__init__()
 
     def get_name(self):
@@ -73,7 +86,7 @@ class TaskDumpDatabase(TaskProcess):
         # However, as the need the size before the dump command is executed,
         # this is the best estimation we got.
         # However, there will be warnings about incorrect sizes on restore.
-        return TaskQueryDatabase(self.psql, self.run_as_user).get_database_size(self.database)
+        return TaskQueryDatabase(self.psql, self.pg_host, self.pg_port, self.run_as_user).get_database_size(self.database)
 
 
 class BareosFdPgSQLClass(BareosFdTaskClass):
@@ -85,13 +98,19 @@ class BareosFdPgSQLClass(BareosFdTaskClass):
         psql = self.options.get('psql', 'psql')
         pg_dump = self.options.get('pg_dump', 'pg_dump')
         pg_dump_options = self.options.get('pg_dump_options', '--no-owner --no-acl')
+        pg_host = self.options.get('pg_host')
+        pg_port = self.options.get('pg_port')
         pg_user = self.options.get('pg_user', 'postgres')
+        # allow user to specify an empty string,
+        # to run the commands as the some user as bareos-fd.
+        if pg_user == "''":
+            pg_user = None
 
-        databases = self.config.get_list('databases', TaskQueryDatabase(psql, pg_user).get_databases())
+        databases = self.config.get_list('databases', TaskQueryDatabase(psql, pg_host, pg_port, pg_user).get_databases())
 
         if 'exclude' in self.config:
             exclude = self.config.get_list('exclude')
             databases = filter(lambda x: x not in exclude, databases)
 
         for database in databases:
-            self.tasks.append(TaskDumpDatabase(database, psql, pg_dump, pg_user, pg_dump_options))
+            self.tasks.append(TaskDumpDatabase(database, psql, pg_dump, pg_host, pg_port, pg_user, pg_dump_options))
