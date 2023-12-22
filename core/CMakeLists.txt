@@ -878,7 +878,6 @@ message(
 message("   LMDB support:                 ${lmdb} ")
 message("   NDMP support:                 ${ndmp} ")
 message("   Build ndmjob binary:          ${build_ndmjob} ")
-message("   enable-lockmgr:               ${lockmgr} ")
 message("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
 message("   webui:                        ${ENABLE_WEBUI} ")
 message("   client-only:                  ${build_client_only} ")
