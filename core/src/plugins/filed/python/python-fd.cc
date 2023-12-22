@@ -71,70 +71,22 @@ static const int debuglevel = 150;
   "' is always checked for modules.\n"                                         \
   "  Additional parameters are plugin specific."
 
-/* Forward referenced functions */
-static bRC newPlugin(PluginContext* plugin_ctx);
-static bRC freePlugin(PluginContext* plugin_ctx);
-
-static bRC getPluginValue(PluginContext* plugin_ctx,
-                          pVariable var,
-                          void* value);
-static bRC setPluginValue(PluginContext* plugin_ctx,
-                          pVariable var,
-                          void* value);
-static bRC handlePluginEvent(PluginContext* plugin_ctx,
-                             bEvent* event,
-                             void* value);
-static bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
-static bRC endBackupFile(PluginContext* plugin_ctx);
-static bRC pluginIO(PluginContext* plugin_ctx, io_pkt* io);
-static bRC startRestoreFile(PluginContext* plugin_ctx, const char* cmd);
-static bRC endRestoreFile(PluginContext* plugin_ctx);
-static bRC createFile(PluginContext* plugin_ctx, restore_pkt* rp);
-static bRC setFileAttributes(PluginContext* plugin_ctx, restore_pkt* rp);
-static bRC checkFile(PluginContext* plugin_ctx, char* fname);
-static bRC getAcl(PluginContext* plugin_ctx, acl_pkt* ap);
-static bRC setAcl(PluginContext* plugin_ctx, acl_pkt* ap);
-static bRC getXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
-static bRC setXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
-static bRC parse_plugin_definition(PluginContext* plugin_ctx,
-                                   void* value,
-                                   PoolMem& plugin_options);
-
+namespace {
 /* Pointers to Bareos functions */
-static CoreFunctions* bareos_core_functions = NULL;
-static PluginApiDefinition* bareos_plugin_interface_version = NULL;
-
-static PluginInformation pluginInfo
-    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-       PLUGIN_AUTHOR,      PLUGIN_DATE,
-       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-       PLUGIN_USAGE};
-
-static PluginFunctions pluginFuncs
-    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
-
-       /* Entry points into plugin */
-       newPlugin,  /* new plugin instance */
-       freePlugin, /* free plugin instance */
-       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
-       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
-
+CoreFunctions* bareos_core_functions = NULL;
+PluginApiDefinition* bareos_plugin_interface_version = NULL;
+}  // namespace
 
 #include "plugin_private_context.h"
-/**
- * We don't actually use this but we need it to tear down the
- * final python interpreter on unload of the plugin. Each instance of
- * the plugin get its own interpreter.
- */
-static PyThreadState* mainThreadState{nullptr};
 
 /* functions common to all plugins */
 #include "plugins/include/python_plugins_common.inc"
 #include "plugins/include/python_plugin_modules_common.inc"
 
-static inline unsigned long PyVersion()
+
+namespace {
+
+unsigned long PyVersion()
 {
 #if PY_VERSION_HEX < VERSION_HEX(3, 11, 0)
   // bake it in statically
@@ -145,87 +97,22 @@ static inline unsigned long PyVersion()
 #endif
 }
 
-
-extern "C" {
-
-// Plugin called here when it is first loaded
-bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
-               CoreFunctions* lbareos_core_functions,
-               PluginInformation** plugin_information,
-               PluginFunctions** plugin_functions)
-{
-  if (Py_IsInitialized()) { return bRC_Error; }
-
-  Py_InitializeEx(0);
-  // add bareos plugin path to python module search path
-  PyObject* sysPath = PySys_GetObject((char*)"path");
-  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
-  PyList_Append(sysPath, pluginPath);
-  Py_DECREF(pluginPath);
-
-  /* import the bareosfd module */
-  PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
-  if (!bareosfdModule) {
-    printf("loading of bareosfd extension module failed\n");
-    if (PyErr_Occurred()) { PyErrorHandler(); }
-  }
-
-  /* import the CAPI from the bareosfd python module
-   * afterwards, Bareosfd_* macros are initialized to
-   * point to the corresponding functions in the bareosfd python
-   * module */
-  import_bareosfd();
-
-  /* set bareos_core_functions inside of barosfd module */
-  Bareosfd_set_bareos_core_functions(lbareos_core_functions);
-
-  bareos_core_functions
-      = lbareos_core_functions; /* Set Bareos funct pointers */
-  bareos_plugin_interface_version = lbareos_plugin_interface_version;
-
-  *plugin_information = &pluginInfo; /* Return pointer to our info */
-  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
-
-#if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
-  PyEval_InitThreads();
-#endif
-
-  mainThreadState = PyEval_SaveThread();
-  return bRC_OK;
-}
-
-/**
- * Plugin called here when it is unloaded, normally when Bareos is going to
- * exit.
+/* List of interpreters accessed by this thread.
+ * We use a vector instead of a set here since we expect that each thread
+ * only accesses very few interpreters (<= 1) at the same time.
  */
-bRC unloadPlugin()
-{
-  /* Terminate Python if it was initialized correctly */
-  if (mainThreadState) {
-    PyEval_RestoreThread(mainThreadState);
-    Py_Finalize();
-    mainThreadState = nullptr;
-  }
-  return bRC_OK;
-}
-
-}  //  extern "C"
-
-/**
- * Called here to make a new instance of the plugin -- i.e. when
- * a new Job is started. There can be multiple instances of
- * each plugin that are running at the same time.  Your
- * plugin instance must be thread safe and keep its own
- * local data.
- */
-
-// we use a vector instead of a set here since we expect that each thread
-// only accesses very few interpreters (<= 1) at the same time.
 thread_local std::vector<PyThreadState*> tl_threadstates{};
+
+/**
+ * We don't actually use this but we need it to tear down the
+ * final python interpreter on unload of the plugin. Each instance of
+ * the plugin get its own interpreter.
+ */
+PyThreadState* mainThreadState{nullptr};
 
 /* Return this threads thread state for interp if it exists.  Returns
  * nullptr otherwise */
-static PyThreadState* GetThreadStateForInterp(PyInterpreterState* interp)
+PyThreadState* GetThreadStateForInterp(PyInterpreterState* interp)
 {
   for (auto* thread : tl_threadstates) {
     if (thread->interp == interp) { return thread; }
@@ -233,7 +120,7 @@ static PyThreadState* GetThreadStateForInterp(PyInterpreterState* interp)
   return nullptr;
 }
 
-static PyThreadState* PopThreadStateForInterp(PyInterpreterState* interp)
+PyThreadState* PopThreadStateForInterp(PyInterpreterState* interp)
 {
   auto iter = std::find_if(
       tl_threadstates.begin(), tl_threadstates.end(),
@@ -305,7 +192,7 @@ class locked_threadstate {
 /* Acquire the gil for this thread.  If this thread does not have a thread
  * state for interp, a new one is created.  This newly created thread state
  * is destroyed by locked_threadstates destructor. */
-static locked_threadstate AcquireLock(PyInterpreterState* interp)
+locked_threadstate AcquireLock(PyInterpreterState* interp)
 {
   auto* ts = GetThreadStateForInterp(interp);
   if (!ts) {
@@ -316,7 +203,14 @@ static locked_threadstate AcquireLock(PyInterpreterState* interp)
   return locked_threadstate{ts};
 }
 
-static bRC newPlugin(PluginContext* plugin_ctx)
+/**
+ * Called here to make a new instance of the plugin -- i.e. when
+ * a new Job is started. There can be multiple instances of
+ * each plugin that are running at the same time.  Your
+ * plugin instance must be thread safe and keep its own
+ * local data.
+ */
+bRC newPlugin(PluginContext* plugin_ctx)
 {
   struct plugin_private_context* plugin_priv_ctx
       = (struct plugin_private_context*)malloc(
@@ -352,7 +246,7 @@ static bRC newPlugin(PluginContext* plugin_ctx)
  * Release everything concerning a particular instance of a
  * plugin. Normally called when the Job terminates.
  */
-static bRC freePlugin(PluginContext* plugin_ctx)
+bRC freePlugin(PluginContext* plugin_ctx)
 {
   struct plugin_private_context* plugin_priv_ctx
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
@@ -397,149 +291,6 @@ static bRC freePlugin(PluginContext* plugin_ctx)
 }
 
 
-static bRC handlePluginEvent(PluginContext* plugin_ctx,
-                             bEvent* event,
-                             void* value)
-{
-  bRC retval = bRC_Error;
-  bool event_dispatched = false;
-  PoolMem plugin_options(PM_FNAME);
-  plugin_private_context* plugin_priv_ctx
-      = (plugin_private_context*)plugin_ctx->plugin_private_context;
-
-  if (!plugin_priv_ctx) { goto bail_out; }
-
-  Bareosfd_set_plugin_context(plugin_ctx);
-
-  /* First handle some events internally before calling python if it
-   * want to do some special handling on the event triggered. */
-  switch (event->eventType) {
-    case bEventLevel:
-      plugin_priv_ctx->backup_level = (int64_t)value;
-      break;
-    case bEventSince:
-      plugin_priv_ctx->since = (int64_t)value;
-      break;
-    case bEventBackupCommand:
-      /* Fall-through wanted */
-    case bEventRestoreCommand:
-      /* Fall-through wanted */
-    case bEventEstimateCommand:
-      /* Fall-through wanted */
-    case bEventPluginCommand:
-      event_dispatched = true;
-      retval = parse_plugin_definition(plugin_ctx, value, plugin_options);
-      break;
-    case bEventNewPluginOptions:
-      /* Free any previous value.  */
-      if (plugin_priv_ctx->plugin_options) {
-        free(plugin_priv_ctx->plugin_options);
-        plugin_priv_ctx->plugin_options = NULL;
-      }
-
-      event_dispatched = true;
-      retval = parse_plugin_definition(plugin_ctx, value, plugin_options);
-
-      /* Save that we got a plugin override.  */
-      plugin_priv_ctx->plugin_options = strdup((char*)value);
-      break;
-    case bEventRestoreObject: {
-      restore_object_pkt* rop;
-
-      rop = (restore_object_pkt*)value;
-
-      /* Only use the plugin definition of a restore object if we
-       * didn't get any other plugin definition from some other source before.*/
-      if (!plugin_priv_ctx->python_loaded) {
-        if (rop && *rop->plugin_name) {
-          event_dispatched = true;
-          retval = parse_plugin_definition(plugin_ctx, rop->plugin_name,
-                                           plugin_options);
-        }
-      }
-      break;
-    }
-    default:
-      break;
-  }
-
-  /* See if we have been triggered in the previous switch if not we have to
-   * always dispatch the event. If we already processed the event internally
-   * we only do a dispatch to the python entry point when that internal
-   * processing was successful (e.g. retval == bRC_OK). */
-  if (!event_dispatched || retval == bRC_OK) {
-    auto l = AcquireLock(plugin_priv_ctx->interp);
-
-    /* Now dispatch the event to Python.
-     * First the calls that need special handling. */
-    switch (event->eventType) {
-      case bEventBackupCommand:
-        /* Fall-through wanted */
-      case bEventRestoreCommand:
-        /* Fall-through wanted */
-      case bEventEstimateCommand:
-        /* Fall-through wanted */
-      case bEventPluginCommand:
-        /* Fall-through wanted */
-      case bEventNewPluginOptions:
-        /* See if we already loaded the Python modules. */
-        if (!plugin_priv_ctx->python_loaded) {
-          retval = PyLoadModule(plugin_ctx, plugin_options.c_str());
-        }
-
-        /* Only try to call when the loading succeeded. */
-        if (retval == bRC_OK) {
-          retval = Bareosfd_PyParsePluginDefinition(plugin_ctx,
-                                                    plugin_options.c_str());
-        }
-        break;
-      case bEventRestoreObject: {
-        restore_object_pkt* rop;
-
-        rop = (restore_object_pkt*)value;
-        if (!rop) {
-          /* If rop == NULL this means we got the last restore object.
-           * No need to call into python so just return. */
-          retval = bRC_OK;
-        } else {
-          /* See if we already loaded the Python modules. */
-          if (!plugin_priv_ctx->python_loaded && *rop->plugin_name) {
-            retval = PyLoadModule(plugin_ctx, plugin_options.c_str());
-
-            /* Only try to call when the loading succeeded. */
-            if (retval == bRC_OK) {
-              retval = Bareosfd_PyParsePluginDefinition(plugin_ctx,
-                                                        plugin_options.c_str());
-              if (retval == bRC_OK) {
-                retval = Bareosfd_PyRestoreObjectData(plugin_ctx, rop);
-              }
-            }
-          } else {
-            retval = Bareosfd_PyRestoreObjectData(plugin_ctx, rop);
-          }
-        }
-        break;
-      }
-      case bEventHandleBackupFile:
-        retval = Bareosfd_PyHandleBackupFile(plugin_ctx, (save_pkt*)value);
-        break;
-      default:
-        /* Handle the generic events e.g. the ones which are just passed on.
-         * We only try to call Python when we loaded the right module until
-         * that time we pretend the call succeeded. */
-        if (plugin_priv_ctx->python_loaded) {
-          retval = Bareosfd_PyHandlePluginEvent(plugin_ctx, event, value);
-        } else {
-          retval = bRC_OK;
-        }
-        break;
-    }
-  }
-
-bail_out:
-  return retval;
-}
-
 /**
  * Called when starting to backup a file. Here the plugin must
  * return the "stat" packet for the directory/file and provide
@@ -547,7 +298,7 @@ bail_out:
  * The plugin can create "Virtual" files by giving them a
  * name that is not normally found on the file system.
  */
-static bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
+bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -597,7 +348,7 @@ bail_out:
 }
 
 // Done backing up a file.
-static bRC endBackupFile(PluginContext* plugin_ctx)
+bRC endBackupFile(PluginContext* plugin_ctx)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -619,7 +370,7 @@ bail_out:
  * or after startRestoreFile to do the actual file
  * input or output.
  */
-static bRC pluginIO(PluginContext* plugin_ctx, io_pkt* io)
+bRC pluginIO(PluginContext* plugin_ctx, io_pkt* io)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -639,7 +390,7 @@ bail_out:
 }
 
 // Start restore of a file.
-static bRC startRestoreFile(PluginContext* plugin_ctx, const char* cmd)
+bRC startRestoreFile(PluginContext* plugin_ctx, const char* cmd)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -657,7 +408,7 @@ bail_out:
 }
 
 // Done restoring a file.
-static bRC endRestoreFile(PluginContext* plugin_ctx)
+bRC endRestoreFile(PluginContext* plugin_ctx)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -681,7 +432,7 @@ bail_out:
  * This data is what is needed to create the file, but does
  * not contain actual file data.
  */
-static bRC createFile(PluginContext* plugin_ctx, restore_pkt* rp)
+bRC createFile(PluginContext* plugin_ctx, restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -702,7 +453,7 @@ bail_out:
  * Called after the file has been restored. This can be used to
  * set directory permissions, ...
  */
-static bRC setFileAttributes(PluginContext* plugin_ctx, restore_pkt* rp)
+bRC setFileAttributes(PluginContext* plugin_ctx, restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -720,7 +471,7 @@ bail_out:
 }
 
 // When using Incremental dump, all previous dumps are necessary
-static bRC checkFile(PluginContext* plugin_ctx, char* fname)
+bRC checkFile(PluginContext* plugin_ctx, char* fname)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -741,7 +492,7 @@ bail_out:
 
 /**
  */
-static bRC getAcl(PluginContext* plugin_ctx, acl_pkt* ap)
+bRC getAcl(PluginContext* plugin_ctx, acl_pkt* ap)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -760,7 +511,7 @@ bail_out:
 
 /**
  */
-static bRC setAcl(PluginContext* plugin_ctx, acl_pkt* ap)
+bRC setAcl(PluginContext* plugin_ctx, acl_pkt* ap)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -779,7 +530,7 @@ bail_out:
 
 /**
  */
-static bRC getXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
+bRC getXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -798,7 +549,7 @@ bail_out:
 
 /**
  */
-static bRC setXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
+bRC setXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -816,7 +567,7 @@ bail_out:
 }
 
 // Only set destination to value when it has no previous setting.
-static inline void SetStringIfNull(char** destination, char* value)
+void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
     *destination = strdup(value);
@@ -831,9 +582,9 @@ static inline void SetStringIfNull(char** destination, char* value)
  *
  * python:module_path=<path>:module_name=<python_module_name>:...
  */
-static bRC parse_plugin_definition(PluginContext* plugin_ctx,
-                                   void* value,
-                                   PoolMem& plugin_options)
+bRC parse_plugin_definition(PluginContext* plugin_ctx,
+                            void* value,
+                            PoolMem& plugin_options)
 {
   bool found;
   int i, cnt;
@@ -996,10 +747,149 @@ bail_out:
   return bRC_Error;
 }
 
+bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
+{
+  bRC retval = bRC_Error;
+  bool event_dispatched = false;
+  PoolMem plugin_options(PM_FNAME);
+  plugin_private_context* plugin_priv_ctx
+      = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
-static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
+  if (!plugin_priv_ctx) { goto bail_out; }
+
+  Bareosfd_set_plugin_context(plugin_ctx);
+
+  /* First handle some events internally before calling python if it
+   * want to do some special handling on the event triggered. */
+  switch (event->eventType) {
+    case bEventLevel:
+      plugin_priv_ctx->backup_level = (int64_t)value;
+      break;
+    case bEventSince:
+      plugin_priv_ctx->since = (int64_t)value;
+      break;
+    case bEventBackupCommand:
+      /* Fall-through wanted */
+    case bEventRestoreCommand:
+      /* Fall-through wanted */
+    case bEventEstimateCommand:
+      /* Fall-through wanted */
+    case bEventPluginCommand:
+      event_dispatched = true;
+      retval = parse_plugin_definition(plugin_ctx, value, plugin_options);
+      break;
+    case bEventNewPluginOptions:
+      /* Free any previous value.  */
+      if (plugin_priv_ctx->plugin_options) {
+        free(plugin_priv_ctx->plugin_options);
+        plugin_priv_ctx->plugin_options = NULL;
+      }
+
+      event_dispatched = true;
+      retval = parse_plugin_definition(plugin_ctx, value, plugin_options);
+
+      /* Save that we got a plugin override.  */
+      plugin_priv_ctx->plugin_options = strdup((char*)value);
+      break;
+    case bEventRestoreObject: {
+      restore_object_pkt* rop;
+
+      rop = (restore_object_pkt*)value;
+
+      /* Only use the plugin definition of a restore object if we
+       * didn't get any other plugin definition from some other source before.*/
+      if (!plugin_priv_ctx->python_loaded) {
+        if (rop && *rop->plugin_name) {
+          event_dispatched = true;
+          retval = parse_plugin_definition(plugin_ctx, rop->plugin_name,
+                                           plugin_options);
+        }
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  /* See if we have been triggered in the previous switch if not we have to
+   * always dispatch the event. If we already processed the event internally
+   * we only do a dispatch to the python entry point when that internal
+   * processing was successful (e.g. retval == bRC_OK). */
+  if (!event_dispatched || retval == bRC_OK) {
+    auto l = AcquireLock(plugin_priv_ctx->interp);
+
+    /* Now dispatch the event to Python.
+     * First the calls that need special handling. */
+    switch (event->eventType) {
+      case bEventBackupCommand:
+        /* Fall-through wanted */
+      case bEventRestoreCommand:
+        /* Fall-through wanted */
+      case bEventEstimateCommand:
+        /* Fall-through wanted */
+      case bEventPluginCommand:
+        /* Fall-through wanted */
+      case bEventNewPluginOptions:
+        /* See if we already loaded the Python modules. */
+        if (!plugin_priv_ctx->python_loaded) {
+          retval = PyLoadModule(plugin_ctx, plugin_options.c_str());
+        }
+
+        /* Only try to call when the loading succeeded. */
+        if (retval == bRC_OK) {
+          retval = Bareosfd_PyParsePluginDefinition(plugin_ctx,
+                                                    plugin_options.c_str());
+        }
+        break;
+      case bEventRestoreObject: {
+        restore_object_pkt* rop;
+
+        rop = (restore_object_pkt*)value;
+        if (!rop) {
+          /* If rop == NULL this means we got the last restore object.
+           * No need to call into python so just return. */
+          retval = bRC_OK;
+        } else {
+          /* See if we already loaded the Python modules. */
+          if (!plugin_priv_ctx->python_loaded && *rop->plugin_name) {
+            retval = PyLoadModule(plugin_ctx, plugin_options.c_str());
+
+            /* Only try to call when the loading succeeded. */
+            if (retval == bRC_OK) {
+              retval = Bareosfd_PyParsePluginDefinition(plugin_ctx,
+                                                        plugin_options.c_str());
+              if (retval == bRC_OK) {
+                retval = Bareosfd_PyRestoreObjectData(plugin_ctx, rop);
+              }
+            }
+          } else {
+            retval = Bareosfd_PyRestoreObjectData(plugin_ctx, rop);
+          }
+        }
+        break;
+      }
+      case bEventHandleBackupFile:
+        retval = Bareosfd_PyHandleBackupFile(plugin_ctx, (save_pkt*)value);
+        break;
+      default:
+        /* Handle the generic events e.g. the ones which are just passed on.
+         * We only try to call Python when we loaded the right module until
+         * that time we pretend the call succeeded. */
+        if (plugin_priv_ctx->python_loaded) {
+          retval = Bareosfd_PyHandlePluginEvent(plugin_ctx, event, value);
+        } else {
+          retval = bRC_OK;
+        }
+        break;
+    }
+  }
+
+bail_out:
+  return retval;
+}
+
+
+bRC getPluginValue(PluginContext* bareos_plugin_ctx, pVariable var, void* value)
 {
   struct plugin_private_context* plugin_priv_ctx
       = (struct plugin_private_context*)
@@ -1017,9 +907,7 @@ bail_out:
   return retval;
 }
 
-static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
+bRC setPluginValue(PluginContext* bareos_plugin_ctx, pVariable var, void* value)
 {
   struct plugin_private_context* plugin_priv_ctx
       = (struct plugin_private_context*)
@@ -1033,5 +921,89 @@ static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
 
   return retval;
 }
+
+PluginInformation pluginInfo = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+                                FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+                                PLUGIN_AUTHOR,      PLUGIN_DATE,
+                                PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+                                PLUGIN_USAGE};
+
+PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+
+}  // namespace
+
+extern "C" {
+
+// Plugin called here when it is first loaded
+bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+               CoreFunctions* lbareos_core_functions,
+               PluginInformation** plugin_information,
+               PluginFunctions** plugin_functions)
+{
+  if (Py_IsInitialized()) { return bRC_Error; }
+
+  Py_InitializeEx(0);
+  // add bareos plugin path to python module search path
+  PyObject* sysPath = PySys_GetObject((char*)"path");
+  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+  PyList_Append(sysPath, pluginPath);
+  Py_DECREF(pluginPath);
+
+  /* import the bareosfd module */
+  PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
+  if (!bareosfdModule) {
+    printf("loading of bareosfd extension module failed\n");
+    if (PyErr_Occurred()) { PyErrorHandler(); }
+  }
+
+  /* import the CAPI from the bareosfd python module
+   * afterwards, Bareosfd_* macros are initialized to
+   * point to the corresponding functions in the bareosfd python
+   * module */
+  import_bareosfd();
+
+  /* set bareos_core_functions inside of barosfd module */
+  Bareosfd_set_bareos_core_functions(lbareos_core_functions);
+
+  bareos_core_functions
+      = lbareos_core_functions; /* Set Bareos funct pointers */
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
+
+  *plugin_information = &pluginInfo; /* Return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
+
+#if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
+  PyEval_InitThreads();
+#endif
+
+  mainThreadState = PyEval_SaveThread();
+  return bRC_OK;
+}
+
+/**
+ * Plugin called here when it is unloaded, normally when Bareos is going to
+ * exit.
+ */
+bRC unloadPlugin()
+{
+  /* Terminate Python if it was initialized correctly */
+  if (mainThreadState) {
+    PyEval_RestoreThread(mainThreadState);
+    Py_Finalize();
+    mainThreadState = nullptr;
+  }
+  return bRC_OK;
+}
+
+}  //  extern "C"
+
 
 } /* namespace filedaemon */
