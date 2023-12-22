@@ -27,6 +27,7 @@ from os import environ
 from sys import stdout, stderr
 from subprocess import run
 from tempfile import NamedTemporaryFile
+from importlib import resources
 from git import RemoteReference
 from git.exc import GitCommandError
 from .github import Gh, InvokationError, whoami
@@ -296,9 +297,9 @@ def publish(*, repo, dry_run=False):
     original_data = get_pr_info(str(original_pr), ["title", "labels"])
     labels = munge_labels(original_data["labels"], base_branch)
 
-    template_file = f"{repo.working_tree_dir}/.github/backport_pr_template.md"
+    template_file = resources.files(__package__).joinpath('backport_pr_template.md')
     template_vars = {"original_pr": original_pr, "base_branch": base_branch}
-    with open(template_file, "r", encoding="utf-8") as template_fp:
+    with template_file.open('r', encoding="utf-8") as template_fp:
         with NamedTemporaryFile("r+", suffix=".md") as body_fp:
             _fill_template(template_fp, body_fp, template_vars)
             if not git_editor(repo, body_fp.name):
