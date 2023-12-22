@@ -365,12 +365,6 @@ if(NOT client-only)
 endif()
 
 option(systemd "Enable systemd support" OFF)
-
-# includes TODO: used?
-if(NOT DEFINED includes)
-  set(includes ON)
-endif()
-
 option(openssl "Enable openssl support" ON)
 
 # ports
@@ -446,7 +440,7 @@ if(HAVE_WIN32)
     set(WINDOWS_BITS 64)
   endif()
 
-endif()
+endif() # HAVE_WIN32
 
 if(DEFINED do-static-code-checks)
   set(DO_STATIC_CODE_CHECKS ${do-static-code-checks})

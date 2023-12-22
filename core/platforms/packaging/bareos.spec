@@ -920,7 +920,6 @@ cmake  .. \
 %if 0%{?systemd_support}
   -Dsystemd=yes \
 %endif
-  -Dincludes=yes \
 %if !0%{?webui}
   -DENABLE_WEBUI=no \
 %endif
