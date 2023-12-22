@@ -83,11 +83,6 @@ if(USE_RELATIVE_PATHS)
       ${CMAKE_INSTALL_MANDIR}
       CACHE STRING "man(uals) directory"
   )
-  # TODO: unused?
-  set(docdir
-      default_for_docdir
-      CACHE STRING "doc directory"
-  )
   set(workingdir
       "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
       CACHE STRING "Bareos working directory"
@@ -161,11 +156,6 @@ else() # if(USE_RELATIVE_PATHS)
   set(mandir
       ${CMAKE_INSTALL_FULL_MANDIR}
       CACHE STRING "man(uals) directory"
-  )
-  # TODO: unused?
-  set(docdir
-      default_for_docdir
-      CACHE STRING "doc directory"
   )
   set(workingdir
       "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"

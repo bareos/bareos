@@ -875,7 +875,6 @@ cmake  .. \
   -Dsysconfdir=%{_sysconfdir} \
   -Dconfdir=%{_sysconfdir}/bareos \
   -Dmandir=%{_mandir} \
-  -Ddocdir=%{_docdir}/%{name} \
   -Darchivedir=/var/lib/%{name}/storage \
   -Dbackenddir=%{backend_dir} \
   -Dscriptdir=%{script_dir} \
