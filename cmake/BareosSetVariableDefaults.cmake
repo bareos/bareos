@@ -182,19 +182,13 @@ set(PYTHON_MODULE_PATH
 )
 
 # db_name
-if(NOT DEFINED db_name)
-  set(db_name "bareos")
-endif()
+set(db_name "bareos" CACHE STRING "Bareos database name")
 
 # db_user
-if(NOT DEFINED db_user)
-  set(db_user "bareos")
-endif()
+set(db_user "bareos" CACHE STRING "Bareos database username")
 
 # db_password
-if(NOT DEFINED db_password)
-  set(db_password "")
-endif()
+set(db_password "" CACHE STRING "Bareos database password")
 
 set(systemtest_db_user
     "regress"
@@ -207,86 +201,58 @@ set(systemtest_db_password
 )
 
 # dir-user
-if(NOT DEFINED dir-user)
-  set(dir-user "")
-endif()
+set(dir-user "" CACHE STRING "Bareos Director user")
 set(dir_user "${dir-user}")
 
 # dir-group
-if(NOT DEFINED dir-group)
-  set(dir-group "")
-endif()
+set(dir-group "" CACHE STRING "Bareos Director group")
 set(dir_group ${dir-group})
 
 # sd-user
-if(NOT DEFINED sd-user)
-  set(sd-user "")
-endif()
+set(sd-user "" CACHE STRING "Bareos Storage Daemon user")
 set(sd_user ${sd-user})
 
 # sd-group
-if(NOT DEFINED sd-group)
-  set(sd-group "")
-endif()
+set(sd-group "" CACHE STRING "Bareos Storage Daemon group")
 set(sd_group ${sd-group})
 
 # fd-user
-if(NOT DEFINED fd-user)
-  set(fd-user "")
-endif()
+set(fd-user "" CACHE STRING "Bareos File Daemon user")
 set(fd_user ${fd-user})
 
 # fd-group
-if(NOT DEFINED fd-group)
-  set(fd-group "")
-endif()
+set(fd-group "" CACHE STRING "Bareos File Daemon group")
 set(fd_group ${fd-group})
 
 # dir-password
-if(NOT DEFINED dir-password)
-  set(dir-password "bareos")
-endif()
+set(dir-password "" CACHE STRING "Bareos Director password")
 set(dir_password ${dir-password})
 
-# fd-password
-if(NOT DEFINED fd-password)
-  set(fd-password "")
-endif()
-set(fd_password ${fd-password})
-
 # sd-password
-if(NOT DEFINED sd-password)
-  set(sd-password "")
-endif()
+set(sd-password "" CACHE STRING "Bareos Storage Daemon password")
 set(sd_password ${sd-password})
 
+# fd-password
+set(fd-password "" CACHE STRING "Bareos File Daemon password")
+set(fd_password ${fd-password})
+
 # mon-dir-password
-if(NOT DEFINED mon-dir-password)
-  set(mon-dir-password "")
-endif()
+set(mon-dir-password "" CACHE STRING "Bareos Director monitor password")
 set(mon_dir_password ${mon-dir-password})
 
 # mon-fd-password
-if(NOT DEFINED mon-fd-password)
-  set(mon-fd-password "")
-endif()
+set(mon-fd-password "" CACHE STRING "Bareos File Daemon monitor password")
 set(mon_fd_password ${mon-fd-password})
 
 # mon-sd-password
-if(NOT DEFINED mon-sd-password)
-  set(mon-sd-password "")
-endif()
+set(mon-sd-password "" CACHE STRING "Bareos Storage Daemon monitor password")
 set(mon_sd_password ${mon-sd-password})
 
 # basename
-if(NOT DEFINED basename)
-  set(basename localhost)
-endif()
+set(basename "localhost" CACHE STRING "basename")
 
 # hostname
-if(NOT DEFINED hostname)
-  set(hostname localhost)
-endif()
+set(hostname "localhost" CACHE STRING "hostname")
 
 # ##############################################################################
 # rights
