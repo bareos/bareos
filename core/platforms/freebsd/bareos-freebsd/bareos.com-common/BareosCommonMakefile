@@ -110,7 +110,6 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dopenssl=yes\
   -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-  -Dincludes=yes\
   -Djansson=${LOCALBASE} \
   -Ddir-user=$(DIRECTOR_DAEMON_USER) \
   -Ddir-group=$(DAEMON_GROUP) \
