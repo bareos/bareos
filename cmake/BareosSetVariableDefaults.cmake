@@ -182,13 +182,22 @@ set(PYTHON_MODULE_PATH
 )
 
 # db_name
-set(db_name "bareos" CACHE STRING "Bareos database name")
+set(db_name
+    "bareos"
+    CACHE STRING "Bareos database name"
+)
 
 # db_user
-set(db_user "bareos" CACHE STRING "Bareos database username")
+set(db_user
+    "bareos"
+    CACHE STRING "Bareos database username"
+)
 
 # db_password
-set(db_password "" CACHE STRING "Bareos database password")
+set(db_password
+    ""
+    CACHE STRING "Bareos database password"
+)
 
 set(systemtest_db_user
     "regress"
@@ -201,66 +210,102 @@ set(systemtest_db_password
 )
 
 # dir-user
-set(dir-user "" CACHE STRING "Bareos Director user")
+set(dir-user
+    ""
+    CACHE STRING "Bareos Director user"
+)
 set(dir_user "${dir-user}")
 
 # dir-group
-set(dir-group "" CACHE STRING "Bareos Director group")
+set(dir-group
+    ""
+    CACHE STRING "Bareos Director group"
+)
 set(dir_group ${dir-group})
 
 # sd-user
-set(sd-user "" CACHE STRING "Bareos Storage Daemon user")
+set(sd-user
+    ""
+    CACHE STRING "Bareos Storage Daemon user"
+)
 set(sd_user ${sd-user})
 
 # sd-group
-set(sd-group "" CACHE STRING "Bareos Storage Daemon group")
+set(sd-group
+    ""
+    CACHE STRING "Bareos Storage Daemon group"
+)
 set(sd_group ${sd-group})
 
 # fd-user
-set(fd-user "" CACHE STRING "Bareos File Daemon user")
+set(fd-user
+    ""
+    CACHE STRING "Bareos File Daemon user"
+)
 set(fd_user ${fd-user})
 
 # fd-group
-set(fd-group "" CACHE STRING "Bareos File Daemon group")
+set(fd-group
+    ""
+    CACHE STRING "Bareos File Daemon group"
+)
 set(fd_group ${fd-group})
 
 # dir-password
-set(dir-password "" CACHE STRING "Bareos Director password")
+set(dir-password
+    ""
+    CACHE STRING "Bareos Director password"
+)
 set(dir_password ${dir-password})
 
 # sd-password
-set(sd-password "" CACHE STRING "Bareos Storage Daemon password")
+set(sd-password
+    ""
+    CACHE STRING "Bareos Storage Daemon password"
+)
 set(sd_password ${sd-password})
 
 # fd-password
-set(fd-password "" CACHE STRING "Bareos File Daemon password")
+set(fd-password
+    ""
+    CACHE STRING "Bareos File Daemon password"
+)
 set(fd_password ${fd-password})
 
 # mon-dir-password
-set(mon-dir-password "" CACHE STRING "Bareos Director monitor password")
+set(mon-dir-password
+    ""
+    CACHE STRING "Bareos Director monitor password"
+)
 set(mon_dir_password ${mon-dir-password})
 
 # mon-fd-password
-set(mon-fd-password "" CACHE STRING "Bareos File Daemon monitor password")
+set(mon-fd-password
+    ""
+    CACHE STRING "Bareos File Daemon monitor password"
+)
 set(mon_fd_password ${mon-fd-password})
 
 # mon-sd-password
-set(mon-sd-password "" CACHE STRING "Bareos Storage Daemon monitor password")
+set(mon-sd-password
+    ""
+    CACHE STRING "Bareos Storage Daemon monitor password"
+)
 set(mon_sd_password ${mon-sd-password})
 
 # basename
-set(basename "localhost" CACHE STRING "basename")
+set(basename
+    "localhost"
+    CACHE STRING "basename"
+)
 
 # hostname
-set(hostname "localhost" CACHE STRING "hostname")
+set(hostname
+    "localhost"
+    CACHE STRING "hostname"
+)
 
-# ##############################################################################
-# bool
-# ##############################################################################
-# python
-if(NOT DEFINED python)
-  set(python ON)
-endif()
+option(python "Use Python" ON)
 
 # batch-insert
 if((NOT DEFINED batch-insert) OR (${batch-insert}))
@@ -283,50 +328,21 @@ else()
   )
 endif()
 
-# scsi-crypto
-if(NOT DEFINED scsi-crypto)
-  set(scsi-crypto OFF)
-endif()
+option(scsi-crypto "Enable scsi-crypto" OFF)
+option(lmdb "Enable LMDP" ON)
+option(ndmp "Enable NDMP support" ON)
+option(acl "Enable ACL support" ON)
+option(xattr "Enable extended file attributes (xattr) support" ON)
+option(build_ndmjob "Enable building ndmpjob" OFF)
+option(traymonitor "Enable building the bareos-traymonitor" OFF)
 
-# lmdb
-if(NOT DEFINED lmdb)
-  set(lmdb ON)
-endif()
-
-# ndmp
-if(NOT DEFINED ndmp)
-  set(ndmp ON)
-endif()
-
-# acl
-if(NOT DEFINED acl)
-  set(acl ON)
-endif()
-
-# xattr
-if(NOT DEFINED xattr)
-  set(xattr ON)
-endif()
-
-# build_ndmjob
-if(NOT DEFINED build_ndmjob)
-  set(build_ndmjob OFF)
-endif()
-
-# traymonitor
-if(NOT DEFINED traymonitor)
-  set(HAVE_TRAYMONITOR 0)
-endif()
-
-# client-only
-if(NOT DEFINED client-only)
-  set(client-only OFF)
-  set(build_client_only OFF)
-  set(postgresql ON)
-else()
-  set(client-only ON)
+option(client-only "Build only the client components" OFF)
+if(client-only)
   set(build_client_only ON)
   set(postgresql OFF)
+else()
+  set(build_client_only OFF)
+  set(postgresql ON)
 endif()
 
 if(NOT postgresql)
@@ -348,33 +364,28 @@ if(NOT client-only)
   endif()
 endif()
 
-# systemd
-if(NOT DEFINED systemd)
-  set(systemd OFF)
-endif()
+option(systemd "Enable systemd support" OFF)
 
-# includes
+# includes TODO: used?
 if(NOT DEFINED includes)
   set(includes ON)
 endif()
 
-# openssl
-if(NOT DEFINED openssl)
-  set(openssl ON)
-endif()
+option(openssl "Enable openssl support" ON)
 
 # ports
-if(NOT DEFINED dir_port)
-  set(dir_port "9101")
-endif()
-
-if(NOT DEFINED fd_port)
-  set(fd_port "9102")
-endif()
-
-if(NOT DEFINED sd_port)
-  set(sd_port "9103")
-endif()
+set(dir_port
+    "9101"
+    CACHE STRING "Bareos Director TCP listen port"
+)
+set(fd_port
+    "9102"
+    CACHE STRING "Bareos File Daemon TCP listen port"
+)
+set(sd_port
+    "9103"
+    CACHE STRING "Bareos Storage Daemon TCP listen port"
+)
 
 if(DEFINED baseport)
   math(EXPR dir_port "${baseport}+0")
@@ -382,25 +393,21 @@ if(DEFINED baseport)
   math(EXPR sd_port "${baseport}+2")
 endif()
 
-if(NOT DEFINED job_email)
-  set(job_email "root")
-endif()
+# email
+set(job_email
+    "root"
+    CACHE STRING "Email address for job mails"
+)
+set(dump_email
+    "root"
+    CACHE STRING "Email address for tracebacks"
+)
+set(smtp_host
+    "localhost"
+    CACHE STRING "SMTP host"
+)
 
-if(NOT DEFINED dump_email)
-  set(dump_email "root")
-endif()
-
-if(NOT DEFINED smtp_host)
-  set(smtp_host "localhost")
-endif()
-
-if(DEFINED traymonitor)
-  set(HAVE_TRAYMONITOR 1)
-endif()
-
-if(NOT DEFINED coverage)
-  set(coverage OFF)
-endif()
+option(coverage "coverage" OFF)
 
 # do not destroy bareos-config-lib.sh
 set(DB_NAME "@DB_NAME@")
@@ -424,9 +431,10 @@ set(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
 set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
 set(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
 
-if(NOT DEFINED ENABLE_NLS)
-  set(ENABLE_NLS 1)
-endif()
+set(ENABLE_NLS
+    "1"
+    CACHE STRING "Enable (1) or disable (0) Native Language Support (NLS)"
+)
 
 if(HAVE_WIN32)
 
