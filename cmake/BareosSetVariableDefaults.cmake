@@ -262,12 +262,6 @@ if(NOT DEFINED python)
   set(python ON)
 endif()
 
-# lockmgr
-if(NOT DEFINED lockmgr)
-  set(lockmgr OFF)
-  set(LOCKMGR 0)
-endif()
-
 # readline
 if(NOT DEFINED readline)
   set(readline ON)
