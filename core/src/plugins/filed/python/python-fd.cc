@@ -146,9 +146,7 @@ static inline unsigned long PyVersion()
 }
 
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 // Plugin called here when it is first loaded
 bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
@@ -211,9 +209,7 @@ bRC unloadPlugin()
   return bRC_OK;
 }
 
-#ifdef __cplusplus
-}
-#endif
+}  //  extern "C"
 
 /**
  * Called here to make a new instance of the plugin -- i.e. when
