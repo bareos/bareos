@@ -878,7 +878,7 @@ message(
 message("   LMDB support:                 ${lmdb} ")
 message("   NDMP support:                 ${ndmp} ")
 message("   Build ndmjob binary:          ${build_ndmjob} ")
-message("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
+message("   Build tray-monitor:           ${traymonitor} ")
 message("   webui:                        ${ENABLE_WEBUI} ")
 message("   client-only:                  ${build_client_only} ")
 message("   Plugin support:               ${have_plugins} ")
