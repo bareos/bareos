@@ -13,6 +13,6 @@
 sbin/bareos-sd
 /usr/lib/bareos/scripts/disk-changer
 lib/bareos/plugins/autoxflate-sd.so
-share/man/man8/bareos-sd.8.gz
+man/man8/bareos-sd.8.gz
 @dir(bareos,bareos,0775) /var/lib/bareos/storage
 etc/rc.d/bareos-sd
