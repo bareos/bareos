@@ -105,7 +105,7 @@ if(docs-build-json)
   if(NOT traymonitor)
     message(
       FATAL_ERROR
-        "\n\"docs-build-json\" needs the traymonitor executable: add \"-Dtraymonitor=yes\""
+        "\n\"docs-build-json\" needs the traymonitor executable: add \"-Dtraymonitor=on\""
     )
   endif()
 endif()

@@ -75,7 +75,7 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python-plugins-common")
   endif()
 
-  if(TRAYMONITOR)
+  if(traymonitor)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-traymonitor")
   endif()
 
