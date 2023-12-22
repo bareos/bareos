@@ -63,7 +63,7 @@ class TestPlugin(BareosFdPluginBaseclass):
         JobMessage(M_INFO, "parse_plugin_definition('{}')\n".format(plugindef))
         ret = super().parse_plugin_definition(plugindef)
         self.plugindef = plugindef
-        wait_opt = self.options["should_wait"]
+        wait_opt = self.options.get("should_wait")
         if wait_opt is not None:
             if wait_opt == "Yes":
                 self.should_wait = True
