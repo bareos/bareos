@@ -880,7 +880,6 @@ cmake  .. \
   -Dscriptdir=%{script_dir} \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
-  -Dbsrdir=%{bsr_dir} \
   -Dlogdir=/var/log/bareos \
   -Dsubsysdir=%{_subsysdir} \
 %if 0%{?python_plugins}

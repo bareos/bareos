@@ -92,11 +92,6 @@ if(USE_RELATIVE_PATHS)
       "${workingdir}/storage"
       CACHE STRING "Bareos archive directory"
   )
-  # TODO: unused?
-  set(bsrdir
-      "${workingdir}"
-      CACHE STRING "Bareos BSR directory"
-  )
   set(subsysdir
       "${workingdir}"
       CACHE STRING "subsys directory"
@@ -165,11 +160,6 @@ else() # if(USE_RELATIVE_PATHS)
   set(archivedir
       "${workingdir}/storage"
       CACHE STRING "Bareos archive directory"
-  )
-  # TODO: unused?
-  set(bsrdir
-      "${workingdir}"
-      CACHE STRING "Bareos BSR directory"
   )
   set(subsysdir
       "${workingdir}"

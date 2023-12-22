@@ -88,7 +88,6 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dscriptdir=/usr/local/lib/bareos/scripts \
   -Dworkingdir=/var/lib/bareos \
   -Dplugindir=/usr/local/lib/bareos/plugins \
-  -Dbsrdir=/var/lib/bareos \
   -Dlogdir=/var/log/bareos \
   -Dsubsys-dir=/var/lock \
   -Dpython=yes\
