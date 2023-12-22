@@ -55,8 +55,6 @@ USES+=gettext-runtime
 USES+=readline
 
 USES+=		libtool:keepla pkgconfig readline:port
-#USES+=cmake:outsource
-#USES+=cmake
 USES+=cmake:noninja
 USES+=shebangfix
 USES+=python:env
@@ -78,6 +76,7 @@ CMAKE_SOURCE_PATH=   ${WRKSRC}
 CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_INSTALL_PREFIX:PATH=/usr/local \
       -DCMAKE_INSTALL_LIBDIR:PATH=/usr/local/lib \
+      -DCMAKE_INSTALL_MANDIR:PATH=/usr/local/man \
       -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
       -DLIB_INSTALL_DIR:PATH=/usr/local/lib \
       -DSYSCONF_INSTALL_DIR:PATH=/etc \
