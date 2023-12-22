@@ -375,7 +375,12 @@ bool CheckIfFamilyEnabled(IpFamily family)
           FamilyName(family), be.bstrerror());
     return false;
   }
-  close(fd);
+
+#ifdef HAVE_WIN32
+  ::closesocket(fd);
+#else
+  ::close(fd);
+#endif
   return true;
 }
 

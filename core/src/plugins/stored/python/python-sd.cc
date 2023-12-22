@@ -301,6 +301,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
   if (!plugin_priv_ctx) { goto bail_out; }
 
+  Bareossd_set_plugin_context(plugin_ctx);
+
   /* First handle some events internally before calling python if it
    * want to do some special handling on the event triggered. */
   switch (event->eventType) {
