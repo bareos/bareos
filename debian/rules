@@ -32,7 +32,6 @@ define CONFIGURE_COMMON
   -Dsubsysdir=/var/lock \
   -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
   -Dwebuiconfdir=/etc/bareos-webui \
-  -Dreadline=yes \
   -Dbatch-insert=yes \
   -Ddynamic-cats-backends=yes \
   -Ddynamic-storage-backends=yes \
