@@ -262,11 +262,6 @@ if(NOT DEFINED python)
   set(python ON)
 endif()
 
-# readline
-if(NOT DEFINED readline)
-  set(readline ON)
-endif()
-
 # batch-insert
 if((NOT DEFINED batch-insert) OR (${batch-insert}))
   set(batch-insert ON)

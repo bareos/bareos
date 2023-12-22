@@ -884,7 +884,6 @@ cmake  .. \
 %if 0%{?python_plugins}
   -Dpython=yes \
 %endif
-  -Dreadline=yes \
   -Dbatch-insert=yes \
   -Ddynamic-cats-backends=yes \
   -Ddynamic-storage-backends=yes \
