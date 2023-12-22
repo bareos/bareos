@@ -23,6 +23,6 @@
 lib/bareos/scripts/delete_catalog_backup
 lib/bareos/scripts/make_catalog_backup
 sbin/bareos-dir
-share/man/man8/bareos-dir.8.gz
-share/man/man8/bareos.8.gz
+man/man8/bareos-dir.8.gz
+man/man8/bareos.8.gz
 etc/rc.d/bareos-dir
