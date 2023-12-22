@@ -871,7 +871,6 @@ cmake  .. \
   -Dprefix=%{_prefix}\
   -Dlibdir=%{library_dir} \
   -Dsbindir=%{_sbindir} \
-  -Dsbin-perm=755 \
   -Dsysconfdir=%{_sysconfdir} \
   -Dconfdir=%{_sysconfdir}/bareos \
   -Dmandir=%{_mandir} \
