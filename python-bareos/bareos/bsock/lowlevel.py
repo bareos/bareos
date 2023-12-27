@@ -92,7 +92,7 @@ class LowLevel(object):
         self.logger.debug("init")
         self.status = None
         self.address = None
-        self.timeout = None
+        self.timeout = 30
         self.password = None
         self.pam_username = None
         self.pam_password = None
@@ -162,7 +162,8 @@ class LowLevel(object):
             self.dirname = dirname
         else:
             self.dirname = address
-        self.timeout = timeout
+        if timeout:
+            self.timeout = timeout
         self.connection_type = connection_type
         self.name = name
         if password is None:
@@ -236,12 +237,11 @@ class LowLevel(object):
         return auth
 
     def __connect_plain(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # initialize
         try:
-            if self.timeout:
-                self.socket.settimeout(self.timeout)
-            self.socket.connect((self.address, self.port))
+            self.socket = socket.create_connection(
+                (self.address, self.port), timeout=self.timeout
+            )
         except (socket.error, socket.gaierror) as e:
             self._handleSocketError(e)
             raise bareos.exceptions.ConnectionError(
