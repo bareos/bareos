@@ -155,11 +155,11 @@ class BareosDirPluginPrometheusExporter(BareosDirPluginBaseclass.BareosDirPlugin
         TIME_BUCKETS=(6, 60, 600, 1800, 3600, 10800, 18000, 28800, 86400)
 
         bareos_job_status = Enum('bareos_job_status', 'Backup Status',
-                                 states=self.job_status.values(),
+                                 states=list(self.job_status.values()),
                                  labelnames=['instance', 'jobid'], registry=registry)
         # see https://github.com/bareos/bareos/blob/master/core/src/include/job_level.h
         bareos_job_level = Enum('bareos_job_level', 'Backup Level',
-                                states=self.job_levels.values(),
+                                states=list(self.job_levels.values()),
                                 labelnames=['instance', 'jobid'], registry=registry)
         bareos_job_running_time = Histogram('bareos_job_running_time', 'Job running time',
                                             labelnames=['instance', 'jobid'], registry=registry,
@@ -172,7 +172,7 @@ class BareosDirPluginPrometheusExporter(BareosDirPluginBaseclass.BareosDirPlugin
                                       registry=registry, labelnames=['instance', 'jobid'])
         # see https://github.com/bareos/bareos/blob/master/core/src/include/job_types.h
         bareos_job_type = Enum('bareos_job_type', 'Job Type',
-                               states=self.job_types.values(),
+                               states=list(self.job_types.values()),
                                registry=registry, labelnames=['instance', 'jobid'])
         bareos_job_client = Info('bareos_job_client', 'Client',
                                registry=registry, labelnames=['instance', 'jobid'])
