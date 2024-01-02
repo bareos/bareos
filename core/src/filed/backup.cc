@@ -48,6 +48,7 @@
 #include "lib/btimers.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
 #include "lib/serial.h"
 #include "lib/compression.h"
 
@@ -114,6 +115,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   sd = jcr->store_bsock;
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
+  Jmsg(jcr, M_INFO, 0, T_("Version: %s (%s) %s\n"), kBareosVersionStrings.Full,
+       kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
 
   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
   ClientResource* client = nullptr;

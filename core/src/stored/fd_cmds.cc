@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,6 +44,7 @@
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/version.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {
@@ -170,6 +171,9 @@ void RunJob(JobControlRecord* jcr)
   jcr->start_time = time(NULL);
   jcr->run_time = jcr->start_time;
   jcr->sendJobStatus(JS_Running);
+
+  Jmsg(jcr, M_INFO, 0, T_("Version: %s (%s) %s\n"), kBareosVersionStrings.Full,
+       kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
 
   DoFdCommands(jcr);
 

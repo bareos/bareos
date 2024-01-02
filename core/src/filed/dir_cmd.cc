@@ -431,6 +431,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
           break;
         }
         Dmsg1(100, "Executing %s command.\n", cmds[i].cmd);
+
         if (!cmds[i].func(jcr)) { /* do command */
           quit = true;            /* error or fully terminated, get out */
           Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
