@@ -197,68 +197,144 @@ static void EnsureKtlsRecv(BareosSocket* sock)
   EXPECT_TRUE(sock->tls_conn->KtlsRecvStatus());
 }
 
+enum test
+{
+  test_v12_send,
+  test_v12_recv,
+  test_v13_send,
+  test_v13_recv,
+  test_v12_256_send,
+  test_v13_256_send,
+};
+
+#if HAVE_LINUX_OS
+bool IsTlsModuleLoaded()
+{
+  static bool warning_given = false;
+
+  int res = system("lsmod | grep -w tls > /dev/null");
+
+  if (res != 0 && !warning_given) {
+    fprintf(stderr, "Could not detect loaded tls module. Skipping tests.\n");
+    warning_given = true;
+  }
+
+  return (res == 0);
+}
+#endif
+
+bool IsTestDisabled(test T)
+{
+#if HAVE_LINUX_OS
+  if (!IsTlsModuleLoaded()) { return true; }
+#endif
+
+  switch (T) {
+#if defined(DISABLE_KTLS_12_SEND)
+    case test_v12_send: {
+      return true;
+    }
+#endif
+#if defined(DISABLE_KTLS_12_RECV)
+    case test_v12_recv: {
+      return true;
+    }
+#endif
+#if defined(DISABLE_KTLS_13_SEND)
+    case test_v13_send: {
+      return true;
+    }
+#endif
+#if defined(DISABLE_KTLS_13_RECV)
+    case test_v13_recv: {
+      return true;
+    }
+#endif
+#if defined(DISABLE_KTLS_12_256_SEND)
+    case test_v12_256_send: {
+      return true;
+    }
+#endif
+#if defined(DISABLE_KTLS_13_256_SEND)
+    case test_v13_256_send: {
+      return true;
+    }
+#endif
+
+    default: {
+      return false;
+    }
+  }
+}
+
 TEST(ktls, v12_send)
 {
-#if defined(DISABLE_KTLS_12_SEND)
-  GTEST_SKIP();
-#endif
-  InitOpenSsl();
-  do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
-                     RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/12/",
-                     [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  if (IsTestDisabled(test_v12_send)) {
+    GTEST_SKIP();
+  } else {
+    InitOpenSsl();
+    do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
+                       RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/12/",
+                       [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  }
 }
 
 TEST(ktls, v12_recv)
 {
-#if defined(DISABLE_KTLS_12_RECV)
-  GTEST_SKIP();
-#endif
-  InitOpenSsl();
-  do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
-                     RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/12/",
-                     [](BareosSocket* sock) { EnsureKtlsRecv(sock); });
+  if (IsTestDisabled(test_v12_recv)) {
+    GTEST_SKIP();
+  } else {
+    InitOpenSsl();
+    do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
+                       RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/12/",
+                       [](BareosSocket* sock) { EnsureKtlsRecv(sock); });
+  }
 }
 
 TEST(ktls, v13_send)
 {
-#if defined(DISABLE_KTLS_13_SEND)
-  GTEST_SKIP();
-#endif
-  InitOpenSsl();
-  do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
-                     RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/13/",
-                     [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  if (IsTestDisabled(test_v13_send)) {
+    GTEST_SKIP();
+  } else {
+    InitOpenSsl();
+    do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
+                       RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/13/",
+                       [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  }
 }
 
 TEST(ktls, v13_recv)
 {
-#if defined(DISABLE_KTLS_13_RECV)
-  GTEST_SKIP();
-#endif
-  InitOpenSsl();
-  do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
-                     RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/13/",
-                     [](BareosSocket* sock) { EnsureKtlsRecv(sock); });
+  if (IsTestDisabled(test_v13_recv)) {
+    GTEST_SKIP();
+  } else {
+    InitOpenSsl();
+    do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
+                       RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/13/",
+                       [](BareosSocket* sock) { EnsureKtlsRecv(sock); });
+  }
 }
 
 TEST(ktls, v12_256_send)
 {
-#if defined(DISABLE_KTLS_12_256_SEND)
-  GTEST_SKIP();
-#endif
-  InitOpenSsl();
-  do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
-                     RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/12-256/",
-                     [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  if (IsTestDisabled(test_v12_256_send)) {
+    GTEST_SKIP();
+  } else {
+    InitOpenSsl();
+    do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
+                       RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/12-256/",
+                       [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  }
 }
 
 TEST(ktls, v13_256_send)
 {
-#if defined(DISABLE_KTLS_13_256_SEND)
-  GTEST_SKIP();
-#endif
-  InitOpenSsl();
-  do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
-                     RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/13-256/",
-                     [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  if (IsTestDisabled(test_v13_256_send)) {
+    GTEST_SKIP();
+  } else {
+    InitOpenSsl();
+    do_connection_test(RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/bareos/",
+                       RELATIVE_PROJECT_SOURCE_DIR "/configs/ktls/13-256/",
+                       [](BareosSocket* sock) { EnsureKtlsSend(sock); });
+  }
 }
