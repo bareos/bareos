@@ -148,7 +148,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
                            AccurateCheckFile);
   }
 
-  StartHeartbeatMonitor(jcr);
+  auto hb_send = MakeHeartbeatMonitor(jcr);
 
   if (have_acl) {
     jcr->fd_impl->acl_data = std::make_unique<AclData>();
@@ -190,7 +190,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   AccurateFinish(jcr); /* send deleted or base file list to SD */
 
-  StopHeartbeatMonitor(jcr);
+  hb_send.reset();
 
   sd->signal(BNET_EOD); /* end of sending data */
 
