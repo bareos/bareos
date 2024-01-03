@@ -29,6 +29,7 @@ slowjob="slow-backup-bareos-fd"
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
+setdebug level=100 trace=1 all
 @$out $backup_log
 run job=$slowjob fileset=bigfileset level=Full yes
 quit
@@ -71,6 +72,7 @@ messages
 restore jobid=${slowjobid} where=$restore_directory all done yes
 wait
 messages
+setdebug trace=0 all
 quit
 END_OF_DATA
 
@@ -81,7 +83,12 @@ expect_grep "Termination:            Backup Canceled" \
             "$backup_log" \
             "Job was not canceled!"
 
-NumberOfBackedUpFiles=$(grep 'FD Files Written:       ' "$backup_log" | sed -n -e 's/^.*Written:       //p')
+NumberOfBackedUpFiles=0
+while read -a nums; do
+    for num in "${nums[@]}"; do
+	(( NumberOfBackedUpFiles += num ))
+    done
+done <<< "$(grep "entries start" "$backup_log" | cut -d" " -f12)"
 
 # Check that part of the files were written despite the cancel
 if [ "$NumberOfBackedUpFiles" -le 0 ]; then
