@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
 #include "lib/watchdog.h"
+#include "lib/bnet_server_tcp.h"
 #include "tests/init_openssl.h"
 
 #include "include/jcr.h"
@@ -119,12 +120,54 @@ static bool do_connection_test(const char* path_to_config,
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return false; }
 
+  {
+    IPADDR* addr;
+    foreach_dlist (addr, directordaemon::me->DIRaddrs) { addr->SetPortNet(0); }
+  }
+
+  auto bound_sockets = OpenAndBindSockets(directordaemon::me->DIRaddrs);
+
+  EXPECT_NE(bound_sockets.size(), 0);
+
+  if (bound_sockets.size() == 0) { return false; }
+
+  // remember one fd
+  auto sockfd = bound_sockets[0].fd;
+
   bool start_socket_server_ok
-      = directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
-  EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
+      = directordaemon::StartSocketServer(std::move(bound_sockets));
+
+  EXPECT_TRUE(start_socket_server_ok);
   if (!start_socket_server_ok) { return false; }
 
+  union {
+    struct sockaddr addr;
+    struct sockaddr_in addr4;
+    struct sockaddr_in6 addr6;
+  } buf = {};
+
+  // the port gets chosen during StartSocketServer, so we need to query
+  // the port number afterwards.
+  socklen_t len = sizeof(buf);
+  auto error = getsockname(sockfd, &buf.addr, &len);
+  EXPECT_EQ(error, 0);
+  if (error != 0) {
+    perror("sock name error");
+    return false;
+  }
+
+  EXPECT_TRUE(buf.addr.sa_family == AF_INET || buf.addr.sa_family == AF_INET6);
+  if (buf.addr.sa_family != AF_INET && buf.addr.sa_family != AF_INET6) {
+    return false;
+  }
+
+  auto nport = (buf.addr.sa_family == AF_INET) ? buf.addr4.sin_port
+                                               : buf.addr6.sin6_port;
+
+  auto port = ntohs(nport);
+
   JobControlRecord jcr;
+  console::director_resource->DIRport = port;
 
   PBareosSocket UA_sock(ConnectToDirector(jcr));
   if (!UA_sock) { return false; }
