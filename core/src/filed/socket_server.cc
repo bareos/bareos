@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@ namespace filedaemon {
 /* Global variables */
 static ThreadList thread_list;
 static pthread_t tcp_server_tid;
-static alist<s_sockfd*>* sock_fds = nullptr;
+static std::atomic<bool> server_running = false;
 
 /**
  * Connection request. We accept connections either from the Director or the
@@ -122,22 +122,25 @@ void StartSocketServer(dlist<IPADDR>* addrs)
     Dmsg1(10, "filed: listening on port %d\n", p->GetPortHostOrder());
   }
 
-  sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
-  BnetThreadServerTcp(addrs, sock_fds, thread_list, HandleConnectionRequest,
-                      my_config, nullptr, UserAgentShutdownCallback);
+  auto bound_sockets = OpenAndBindSockets(addrs);
+  if (bound_sockets.size()) {
+    server_running = true;
+    BnetThreadServerTcp(std::move(bound_sockets), thread_list,
+                        HandleConnectionRequest, my_config, nullptr,
+                        UserAgentShutdownCallback);
+  }
 }
 
 void StopSocketServer(bool wait)
 {
   Dmsg0(100, "StopSocketServer\n");
-  if (sock_fds) {
+  if (server_running) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
     /* before thread_servers terminates,
      * it calls cleanup_bnet_thread_server_tcp */
     if (wait) {
       pthread_join(tcp_server_tid, NULL);
-      delete (sock_fds);
-      sock_fds = NULL;
+      server_running = false;
     }
   }
 }

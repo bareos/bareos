@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@
 namespace storagedaemon {
 
 static ThreadList thread_list;
-static alist<s_sockfd*>* sock_fds = NULL;
+static std::atomic<bool> server_running = false;
 static pthread_t tcp_server_tid;
 
 // Sanity check for the lengths of the Hello messages.
@@ -136,17 +136,20 @@ void StartSocketServer(dlist<IPADDR>* addrs)
     Dmsg1(10, "stored: listening on port %d\n", p->GetPortHostOrder());
   }
 
-  sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
-  BnetThreadServerTcp(addrs, sock_fds, thread_list, HandleConnectionRequest,
-                      my_config, nullptr, UserAgentShutdownCallback);
+  auto bound_sockets = OpenAndBindSockets(addrs);
+  if (bound_sockets.size()) {
+    server_running = true;
+    BnetThreadServerTcp(std::move(bound_sockets), thread_list,
+                        HandleConnectionRequest, my_config, nullptr,
+                        UserAgentShutdownCallback);
+  }
 }
 
 void StopSocketServer()
 {
-  if (sock_fds) {
+  if (server_running) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    delete sock_fds;
-    sock_fds = NULL;
+    server_running = false;
   }
 }
 

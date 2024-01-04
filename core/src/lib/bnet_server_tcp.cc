@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,7 +64,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static std::atomic<bool> quit{false};
 
 /**
- * Stop the Threaded Network Server if its realy running in a separate thread.
+ * Stop the Threaded Network Server if its really running in a separate thread.
  * e.g. set the quit flag and wait for the other thread to exit cleanly.
  */
 void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
@@ -82,19 +82,9 @@ void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
-static void CleanupBnetThreadServerTcp(alist<s_sockfd*>* sockfds,
-                                       ThreadList& thread_list)
+static void CleanupBnetThreadServerTcp(ThreadList& thread_list)
 {
   Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
-
-  if (sockfds && !sockfds->empty()) {
-    s_sockfd* fd_ptr = (s_sockfd*)sockfds->first();
-    while (fd_ptr) {
-      close(fd_ptr->fd);
-      fd_ptr = (s_sockfd*)sockfds->next();
-    }
-    sockfds->destroy();
-  }
 
   if (!thread_list.ShutdownAndWaitForThreadsToFinish()) {
     Emsg1(M_ERROR, 0, T_("Could not destroy thread list.\n"));
@@ -104,19 +94,14 @@ static void CleanupBnetThreadServerTcp(alist<s_sockfd*>* sockfds,
 
 class BNetThreadServerCleanupObject {
  public:
-  BNetThreadServerCleanupObject(alist<s_sockfd*>* sockfds,
-                                ThreadList& thread_list)
-      : sockfds_(sockfds), thread_list_(thread_list)
+  BNetThreadServerCleanupObject(ThreadList& thread_list)
+      : thread_list_(thread_list)
   {
   }
 
-  ~BNetThreadServerCleanupObject()
-  {
-    CleanupBnetThreadServerTcp(sockfds_, thread_list_);
-  }
+  ~BNetThreadServerCleanupObject() { CleanupBnetThreadServerTcp(thread_list_); }
 
  private:
-  alist<s_sockfd*>* sockfds_;
   ThreadList& thread_list_;
 };
 
@@ -231,6 +216,40 @@ int OpenSocketAndBind(IPADDR* ipaddr,
   return -3;
 }
 
+std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
+{
+  RemoveDuplicateAddresses(addr_list);
+  LogAllAddresses(addr_list);
+
+  std::vector<s_sockfd> bound_sockets;
+  IPADDR* ipaddr = nullptr;
+
+  foreach_dlist (ipaddr, addr_list) {
+    s_sockfd sock;
+    sock.port = ipaddr->GetPortNetOrder();
+    sock.fd = OpenSocketAndBind(ipaddr, addr_list, sock.port);
+
+    if (sock.fd < 0) {
+      BErrNo be;
+      char tmp[1024];
+#ifdef HAVE_WIN32
+      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%u.\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port),
+            WSAGetLastError());
+#else
+      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%s.\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port),
+            be.bstrerror());
+#endif
+      return {};
+    } else {
+      bound_sockets.emplace_back(std::move(sock));
+    }
+  }
+
+  return bound_sockets;
+}
+
 /**
  * Become Threaded Network Server
  *
@@ -241,8 +260,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
  * At the moment it is impossible to bind to different ports.
  */
 void BnetThreadServerTcp(
-    dlist<IPADDR>* addr_list,
-    alist<s_sockfd*>* sockfds,
+    std::vector<s_sockfd> bound_sockets,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,
@@ -251,49 +269,16 @@ void BnetThreadServerTcp(
     std::function<void*(void* bsock)> UserAgentShutdownCallback,
     std::function<void()> CustomCallback)
 {
-  BNetThreadServerCleanupObject cleanup_object(sockfds, thread_list);
+  BNetThreadServerCleanupObject cleanup_object(thread_list);
 
   quit = false;  // allow other threads to set this true during initialization
   if (server_state) { server_state->store(BnetServerState::kStarting); }
 
-  RemoveDuplicateAddresses(addr_list);
-  LogAllAddresses(addr_list);
-
 #ifdef HAVE_POLL
-  nfds_t number_of_filedescriptors = 0;
+  nfds_t number_of_filedescriptors = bound_sockets.size();
 #endif
 
-  IPADDR* ipaddr = nullptr;
-
-  foreach_dlist (ipaddr, addr_list) {
-    s_sockfd* fd_ptr = (s_sockfd*)alloca(sizeof(s_sockfd));
-
-    fd_ptr->port = ipaddr->GetPortNetOrder();
-    fd_ptr->fd = OpenSocketAndBind(ipaddr, addr_list, fd_ptr->port);
-
-    if (fd_ptr->fd < 0) {
-      BErrNo be;
-      char tmp[1024];
-#ifdef HAVE_WIN32
-      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%u.\n"),
-            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
-            WSAGetLastError());
-#else
-      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%s.\n"),
-            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
-            be.bstrerror());
-#endif
-      if (server_state) { server_state->store(BnetServerState::kError); }
-      return;
-    }
-
-    listen(fd_ptr->fd, kListenBacklog); /* tell system we are ready */
-    sockfds->append(fd_ptr);
-
-#ifdef HAVE_POLL
-    number_of_filedescriptors++;
-#endif
-  }
+  for (auto& sock : bound_sockets) { listen(sock.fd, kListenBacklog); }
 
   thread_list.Init(HandleConnectionRequest, UserAgentShutdownCallback);
 
@@ -313,11 +298,10 @@ void BnetThreadServerTcp(
   events |= POLLPRI;
 #  endif
 
-  s_sockfd* fd_ptr = nullptr;
   int i = 0;
 
-  foreach_alist (fd_ptr, sockfds) {
-    pfds[i].fd = fd_ptr->fd;
+  for (auto& sock : bound_sockets) {
+    pfds[i].fd = sock.fd;
     pfds[i].events = events;
     i++;
   }
@@ -332,10 +316,9 @@ void BnetThreadServerTcp(
     fd_set sockset;
     FD_ZERO(&sockset);
 
-    s_sockfd* fd_ptr = nullptr;
-    foreach_alist (fd_ptr, sockfds) {
-      FD_SET((unsigned)fd_ptr->fd, &sockset);
-      maxfd = std::max(fd_ptr->fd, maxfd);
+    for (auto& sock : bound_sockets) {
+      FD_SET(sock.fd, &sockset);
+      maxfd = std::max(sock.fd, maxfd);
     }
 
     struct timeval timeout {
@@ -355,8 +338,8 @@ void BnetThreadServerTcp(
       break;
     }
 
-    foreach_alist (fd_ptr, sockfds) {
-      if (FD_ISSET(fd_ptr->fd, &sockset)) {
+    for (auto& sock : bound_sockets) {
+      if (FD_ISSET(sock.fd, &sockset)) {
 #else
     static constexpr int timeout_ms{1000};
 
@@ -374,17 +357,16 @@ void BnetThreadServerTcp(
     }
 
     int cnt = 0;
-    foreach_alist (fd_ptr, sockfds) {
+    for (auto& sock : bound_sockets) {
       if (pfds[cnt++].revents & events) {
 #endif
-
         int newsockfd = -1;
         socklen_t clilen;
         struct sockaddr_storage cli_addr; /* client's address */
 
         do {
           clilen = sizeof(cli_addr);
-          newsockfd = accept(fd_ptr->fd, reinterpret_cast<sockaddr*>(&cli_addr),
+          newsockfd = accept(sock.fd, reinterpret_cast<sockaddr*>(&cli_addr),
                              &clilen);
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
@@ -426,7 +408,7 @@ void BnetThreadServerTcp(
         bs->fd_ = newsockfd;
         bs->SetWho(strdup("client"));
         bs->SetHost(strdup(buf));
-        bs->SetPort(ntohs(fd_ptr->port));
+        bs->SetPort(ntohs(sock.port));
         memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
         memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 
@@ -438,3 +420,5 @@ void BnetThreadServerTcp(
   }
   if (server_state) { server_state->store(BnetServerState::kEnded); }
 }
+
+void close_socket(int fd) { close(fd); }
