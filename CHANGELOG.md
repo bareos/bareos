@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - Fix continuation on colons in plugin baseclass [PR #1638]
+- plugins: fix cancel handling crash [PR #1642]
 
 ## [23.0.0] - 2023-12-13
 
@@ -364,4 +365,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1631]: https://github.com/bareos/bareos/pull/1631
 [PR #1633]: https://github.com/bareos/bareos/pull/1633
 [PR #1638]: https://github.com/bareos/bareos/pull/1638
+[PR #1642]: https://github.com/bareos/bareos/pull/1642
 [unreleased]: https://github.com/bareos/bareos/tree/master

@@ -470,6 +470,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
   // Inform Director that we are done
   dir->signal(BNET_TERMINATE);
+  jcr->EnterFinish();
 
   FreePlugins(jcr); /* release instantiated plugins */
   FreeAndNullPoolMemory(jcr->fd_impl->job_metadata);
@@ -732,13 +733,16 @@ static bool CancelCmd(JobControlRecord* jcr)
     if (!(cjcr = get_jcr_by_full_name(Job))) {
       dir->fsend(T_("2901 Job %s not found.\n"), Job);
     } else {
-      GeneratePluginEvent(cjcr, bEventCancelCommand, nullptr);
-      cjcr->setJobStatusWithPriorityCheck(JS_Canceled);
-      if (cjcr->store_bsock) {
-        cjcr->store_bsock->SetTimedOut();
-        cjcr->store_bsock->SetTerminated();
+      if (cjcr->PrepareCancel()) {
+        GeneratePluginEvent(cjcr, bEventCancelCommand, nullptr);
+        cjcr->setJobStatusWithPriorityCheck(JS_Canceled);
+        if (cjcr->store_bsock) {
+          cjcr->store_bsock->SetTimedOut();
+          cjcr->store_bsock->SetTerminated();
+        }
+        cjcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+        cjcr->CancelFinished();
       }
-      cjcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
       FreeJcr(cjcr);
       dir->fsend(T_("2001 Job %s marked to be canceled.\n"), Job);
     }
