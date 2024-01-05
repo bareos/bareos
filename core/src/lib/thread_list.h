@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,10 +46,10 @@ class ThreadList {
   bool ShutdownAndWaitForThreadsToFinish();
   std::size_t Size() const;
 
-  ThreadList(const ThreadList& ohter) = delete;
-  ThreadList(const ThreadList&& ohter) = delete;
+  ThreadList(const ThreadList& other) = delete;
+  ThreadList(ThreadList&& other) = delete;
   ThreadList& operator=(const ThreadList& rhs) = delete;
-  ThreadList& operator=(const ThreadList&& rhs) = delete;
+  ThreadList& operator=(ThreadList&& rhs) = delete;
 
  private:
   std::unique_ptr<ThreadListPrivate> impl_;
