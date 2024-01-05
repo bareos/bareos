@@ -86,10 +86,6 @@ OS:
       ARCH:
       - x86_64
   FreeBSD:
-    "12.4":
-      TYPE: freebsd
-      ARCH:
-        - amd64
     "13.2":
       TYPE: freebsd
       ARCH:
