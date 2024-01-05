@@ -421,4 +421,11 @@ void BnetThreadServerTcp(
   if (server_state) { server_state->store(BnetServerState::kEnded); }
 }
 
-void close_socket(int fd) { close(fd); }
+void close_socket(int fd)
+{
+#ifdef HAVE_WIN32
+  closesocket(fd);
+#else
+  close(fd);
+#endif
+}
