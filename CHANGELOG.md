@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - pkglists: update SUSE to have vmware packages [PR #1632]
 - backup report: show negative compression [PR #1598]
 - core: add build patch for `sprintf` in macos builds [PR #1636]
+- python-bareos: use socket.create_connection() to allow AF_INET6 [PR #1646]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -51,4 +52,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1632]: https://github.com/bareos/bareos/pull/1632
 [PR #1636]: https://github.com/bareos/bareos/pull/1636
 [PR #1637]: https://github.com/bareos/bareos/pull/1637
+[PR #1646]: https://github.com/bareos/bareos/pull/1646
 [unreleased]: https://github.com/bareos/bareos/tree/master
