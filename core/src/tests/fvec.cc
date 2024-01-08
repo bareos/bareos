@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,16 +35,6 @@ struct file_closer {
   void operator()(FILE* f) const { std::fclose(f); }
 };
 
-std::unique_ptr<FILE, file_closer> backing;
-
-std::size_t file_size(int fd)
-{
-  struct stat s;
-  if (fstat(fd, &s) != 0) { return 0; }
-
-  return s.st_size;
-}
-
 std::vector<int> gen_rand_ints(std::size_t count)
 {
   std::random_device rd;
@@ -57,11 +47,32 @@ std::vector<int> gen_rand_ints(std::size_t count)
   return data;
 }
 
-std::vector<int> rand_ints = gen_rand_ints(1000);
-TEST(fvec, creation)
-{
-  backing = std::unique_ptr<FILE, file_closer>(std::tmpfile());
+struct fvec_fixture : public testing::Test {
+ protected:
+  static std::unique_ptr<FILE, file_closer> backing;
+  static std::vector<int> rand_ints;
 
+  static void SetUpTestSuite()
+  {
+    backing = std::unique_ptr<FILE, file_closer>(std::tmpfile());
+    rand_ints = std::move(gen_rand_ints(100));
+  }
+  static void TeardownTestSuite() { rand_ints.clear(); }
+};
+
+std::unique_ptr<FILE, file_closer> fvec_fixture::backing{};
+std::vector<int> fvec_fixture::rand_ints;
+
+std::size_t file_size(int fd)
+{
+  struct stat s;
+  if (fstat(fd, &s) != 0) { return 0; }
+
+  return s.st_size;
+}
+
+TEST_F(fvec_fixture, creation)
+{
   int fd = fileno(backing.get());
 
   try {
@@ -71,7 +82,7 @@ TEST(fvec, creation)
   }
 }
 
-TEST(fvec, pushing)
+TEST_F(fvec_fixture, pushing)
 {
   try {
     int fd = fileno(backing.get());
@@ -85,7 +96,7 @@ TEST(fvec, pushing)
   }
 }
 
-TEST(fvec, push_consistency)
+TEST_F(fvec_fixture, push_consistency)
 {
   try {
     int fd = fileno(backing.get());
@@ -103,20 +114,21 @@ TEST(fvec, push_consistency)
   }
 }
 
-TEST(fvec, operations)
+TEST_F(fvec_fixture, clear)
 {
   try {
     int fd = fileno(backing.get());
 
-    fvec<int> v(fd, rand_ints.size());
-
-    EXPECT_EQ(v.size(), rand_ints.size());
-
-    v.clear();
-
-    EXPECT_EQ(v.size(), 0);
+    {
+      fvec<int> v(fd, rand_ints.size());
+      EXPECT_EQ(v.size(), rand_ints.size());
+      v.clear();
+      EXPECT_EQ(v.size(), 0);
+    }
 
     for (std::size_t i = 0; i < rand_ints.size(); ++i) {
+      fvec<int> v(fd, i);
+      EXPECT_EQ(v.size(), i);
       v.push_back(i);
       EXPECT_EQ(v.size(), i + 1);
       EXPECT_LE(v.size(), v.capacity());
@@ -130,8 +142,3 @@ TEST(fvec, operations)
     FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
   }
 }
-
-// TEST(fvec, consistency)
-// {
-
-// }
