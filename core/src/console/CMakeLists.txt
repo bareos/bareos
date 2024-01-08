@@ -66,3 +66,4 @@ install(
   endif()
 "
 )
+BareosCopyDllsToBinDir()

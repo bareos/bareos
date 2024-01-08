@@ -447,19 +447,4 @@ bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(version_strings LINK_LIBRARIES bareos GTest::gtest_main)
 
-# Windows: copy over all dlls our binaries depend on into the test dir
-
-if(HAVE_WIN32)
-  set(DLLS_TO_COPY_MANUALLY C:/vcpkg/installed/x64-windows/bin/jansson.dll)
-  get_property(current_targets DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} PROPERTY BUILDSYSTEM_TARGETS)
-  foreach(TGT ${current_targets})
-  get_target_property(targettype ${TGT} TYPE)
-  message(STATUS "Type of ${TGT} is ${targettype}")
-    if ( ${targettype} MATCHES "EXECUTABLE")
-    add_custom_command(TARGET ${TGT} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TGT}> $<TARGET_RUNTIME_DLLS:${TGT}>;${DLLS_TO_COPY_MANUALLY}
-       COMMAND_EXPAND_LISTS
-      )
-    endif()
-  endforeach()
-endif()
+BareosCopyDllsToBinDir()

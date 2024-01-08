@@ -216,3 +216,5 @@ add_subdirectory(backends)
 if(TARGET droplet)
   target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
 endif()
+
+BareosCopyDllsToBinDir()

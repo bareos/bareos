@@ -106,3 +106,4 @@ install(
   DESTINATION ${datarootdir}/pixmaps/
   RENAME bareos-tray-monitor.png
 )
+BareosCopyDllsToBinDir()
