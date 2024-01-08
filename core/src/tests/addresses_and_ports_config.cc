@@ -27,6 +27,7 @@
 #include "lib/berrno.h"
 
 #include <iostream>
+#include <algorithm>
 
 #ifdef HAVE_WIN32
 #  define socketClose(fd) ::closesocket(fd)
