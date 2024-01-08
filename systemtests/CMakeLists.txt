@@ -184,17 +184,19 @@ else()
   set(TEST_INFO_TEXT "running system tests on the sourcetree")
 endif()
 
-execute_process(
-  COMMAND "${CMAKE_BINARY_DIR}/systemtests/scripts/generate_minio_certs.sh"
-  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/systemtests/tls/minio/"
-  RESULT_VARIABLE RESULT_GENERATE_MINIO_CERTS
-  OUTPUT_QUIET ERROR_QUIET
-)
-if(NOT "${RESULT_GENERATE_MINIO_CERTS}" STREQUAL "0")
-  message(
-    FATAL_ERROR
-      "Creation of certificates failed: ${RESULT_GENERATE_MINIO_CERTS} ${CMAKE_BINARY_DIR}"
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  execute_process(
+    COMMAND "${CMAKE_BINARY_DIR}/systemtests/scripts/generate_minio_certs.sh"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/systemtests/tls/minio/"
+    RESULT_VARIABLE RESULT_GENERATE_MINIO_CERTS
+    OUTPUT_QUIET ERROR_QUIET
   )
+  if(NOT "${RESULT_GENERATE_MINIO_CERTS}" STREQUAL "0")
+    message(
+      FATAL_ERROR
+        "Creation of certificates failed: ${RESULT_GENERATE_MINIO_CERTS} ${CMAKE_BINARY_DIR}"
+    )
+  endif()
 endif()
 
 configure_file(
