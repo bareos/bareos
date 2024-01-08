@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -89,7 +89,6 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bls
     bscan
     bconsole
-    bsmtp
     bwild
     bpluginfo
     bsmtp
