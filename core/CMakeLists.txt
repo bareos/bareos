@@ -242,37 +242,6 @@ if(NOT MSVC)
 
     set(ENV{WINEPATH} ${WINEPATH})
   endif()
-else()
-  # MSVC: set path to VCPKG dlls
-  set(ENVPATH "")
-  foreach(CURPATH $ENV{PATH})
-    list(APPEND ENVPATH "${CURPATH}")
-    # message(STATUS "${ENVPATH}")
-  endforeach()
-
-  # might be interesting:
-  # https://learn.microsoft.com/en-us/vcpkg/users/buildsystems/cmake-integration
-
-  file(GLOB VCPKG_PACKAGEDIRS "C:/vcpkg/packages/*/bin")
-  foreach(DIR ${VCPKG_PACKAGEDIRS})
-    string(STRIP DIR ${DIR})
-    string(REPLACE "/" "\\" DIR ${DIR})
-    list(APPEND ENVPATH "${DIR}")
-  endforeach()
-
-  set(OUT "")
-  foreach(P ${ENVPATH})
-    message(STATUS "${P}")
-    set(OUT "${OUT}\;${P}")
-  endforeach()
-  # string(REPLACE ";" "\\\;" ENVPAH "${ENVPATH}")
-  set(ENVPATH "${OUT}")
-  set(ENVPATH "${ENVPATH}\;${CMAKE_BINARY_DIR}\\core\\src\\cats\\Debug")
-  set(ENVPATH "${ENVPATH}\;${CMAKE_BINARY_DIR}\\core\\src\\lib\\Debug")
-  set(ENVPATH "${ENVPATH}\;${CMAKE_BINARY_DIR}\\core\\src\\findlib\\Debug")
-  set(ENVPATH "${ENVPATH}\;${CMAKE_BINARY_DIR}\\core\\src\\stored\\Debug")
-  set(ENVPATH "${ENVPATH}\;${CMAKE_BINARY_DIR}\\core\\src\\fastlz\\Debug")
-  message(STATUS "AFTER: ${ENVPATH}")
 endif()
 
 include(BareosFindAllLibraries)

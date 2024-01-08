@@ -137,3 +137,4 @@ if(docs
   add_subdirectory(docs/manuals)
 endif()
 set(SITE ${BAREOS_PLATFORM}-${DISTVER})
+

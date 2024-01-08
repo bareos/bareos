@@ -61,3 +61,8 @@ add_subdirectory(fastlz)
 if(${traymonitor})
   add_subdirectory(qt-tray-monitor)
 endif()
+
+#include(GetAllTargets)
+#get_all_targets(all_targets)
+#message("All targets: ${all_targets}")
+
