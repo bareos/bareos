@@ -78,12 +78,19 @@ endmacro()
 # find the full path of the given binary when *compiling* the software and
 # create and set the BINARY_NAME_TO_TEST variable to the full path of it
 macro(find_compiled_binary_and_set_binary_name_to_test_variable_for binary_name)
+
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set (BINARY_SUBDIR "Debug/")
+  else()
+    set (BINARY_SUBDIR "")
+  endif()
+
   create_variable_binary_name_to_test_for_binary_name(${binary_name})
   get_target_property(
     "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
   )
   set("${binary_name_to_test_upcase}"
-      "${${binary_name_to_test_upcase}}/${binary_name}"
+    "${${binary_name_to_test_upcase}}/${BINARY_SUBDIR}${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
   )
   message(
     "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
@@ -288,6 +295,7 @@ macro(check_for_pamtest)
 endmacro()
 
 macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
+
   foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
     string(REPLACE "-" "_" binary_name ${binary_name})
@@ -295,8 +303,8 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
     if (NOT ${${binary_name_to_test_upcase}} STREQUAL "")
       set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
-      message(STATUS "create symlink ${${binary_name_to_test_upcase}}${CMAKE_EXECUTABLE_SUFFIX} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX}")
-      create_symlink(${${binary_name_to_test_upcase}}${CMAKE_EXECUTABLE_SUFFIX} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX})
+      message(STATUS "create symlink ${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX}")
+      create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX})
     else()
       message(STATUS ${${binary_name_to_test_upcase}} is empty) 
     endif()
