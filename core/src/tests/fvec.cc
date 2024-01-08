@@ -31,6 +31,8 @@
 #include <random>
 #include <cerrno>
 
+using namespace dedup;
+
 struct file_closer {
   void operator()(FILE* f) const { std::fclose(f); }
 };
@@ -71,22 +73,22 @@ std::size_t file_size(int fd)
   return s.st_size;
 }
 
-TEST_F(fvec_fixture, creation)
+TEST_F(fvec_fixture, Creation)
 {
   int fd = fileno(backing.get());
 
   try {
-    fvec<int> v(fd);
+    fvec<int> v(access::rdwr, fd);
   } catch (std::system_error& ec) {
     FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
   }
 }
 
-TEST_F(fvec_fixture, pushing)
+TEST_F(fvec_fixture, Pushing)
 {
   try {
     int fd = fileno(backing.get());
-    fvec<int> v(fd);
+    fvec<int> v(access::rdwr, fd);
 
     for (auto i : rand_ints) { v.push_back(i); }
 
@@ -96,12 +98,12 @@ TEST_F(fvec_fixture, pushing)
   }
 }
 
-TEST_F(fvec_fixture, push_consistency)
+TEST_F(fvec_fixture, PushConsistency)
 {
   try {
     int fd = fileno(backing.get());
 
-    fvec<int> v(fd, rand_ints.size());
+    fvec<int> v(access::rdonly, fd, rand_ints.size());
 
     EXPECT_EQ(v.size(), rand_ints.size());
 
@@ -114,20 +116,29 @@ TEST_F(fvec_fixture, push_consistency)
   }
 }
 
-TEST_F(fvec_fixture, clear)
+TEST_F(fvec_fixture, Clear)
 {
   try {
     int fd = fileno(backing.get());
 
     {
-      fvec<int> v(fd, rand_ints.size());
+      fvec<int> v(access::rdwr, fd, rand_ints.size());
       EXPECT_EQ(v.size(), rand_ints.size());
       v.clear();
       EXPECT_EQ(v.size(), 0);
     }
+  } catch (std::system_error& ec) {
+    FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
+  }
+}
 
+TEST_F(fvec_fixture, PushWithChecks)
+{
+  int fd = fileno(backing.get());
+
+  try {
     for (std::size_t i = 0; i < rand_ints.size(); ++i) {
-      fvec<int> v(fd, i);
+      fvec<int> v(access::rdwr, fd, i);
       EXPECT_EQ(v.size(), i);
       v.push_back(i);
       EXPECT_EQ(v.size(), i + 1);

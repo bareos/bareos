@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -30,7 +30,20 @@ extern "C" {
 #include <unistd.h>
 }
 
-template <typename T> class fvec {
+namespace dedup {
+struct access {
+  static constexpr struct {
+  } rdonly{};
+  static constexpr struct {
+  } rdwr{};
+
+  // write only is simply not possible, since its not supported by most
+  // cpus/operating systems!
+  using rdonly_t = decltype(rdonly);
+  using rdwr_t = decltype(rdwr);
+};
+
+template <typename T> class fvec : access {
  public:
   using size_type = std::size_t;
   using value_type = T;
@@ -44,33 +57,15 @@ template <typename T> class fvec {
   static constexpr size_type element_size = sizeof(T);
   static constexpr auto element_align = alignof(T);
 
-  fvec(int fd, size_type initial_size = 0) : count{initial_size}, fd{fd}
+
+  fvec(rdonly_t, int fd, size_type initial_size = 0)
+      : fvec(fd, initial_size, PROT_READ)
   {
-    static_assert(element_align <= 4096, "Alignment too big.");
-    struct stat s;
-    if (fstat(fd, &s) != 0) { throw error("fstat"); }
+  }
 
-    cap = s.st_size / element_size;
-
-    if (count > cap) {
-      throw std::runtime_error("size > capacity (" + std::to_string(count)
-                               + " > " + std::to_string(cap) + ")");
-    }
-
-    if (cap == 0) {
-      auto new_cap = 1024;
-      grow_file(new_cap * element_size);
-      cap = new_cap;
-    }
-
-    buffer
-        = reinterpret_cast<T*>(mmap(nullptr, cap * element_size,
-                                    PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
-    if (buffer == MAP_FAILED) { throw error("mmap"); }
-    if (buffer == nullptr) {
-      // this should not happen
-      throw std::runtime_error("mmap returned nullptr.");
-    }
+  fvec(rdwr_t, int fd, size_type initial_size = 0)
+      : fvec(fd, initial_size, PROT_READ | PROT_WRITE)
+  {
   }
 
   reference operator[](size_type idx) { return buffer[idx]; }
@@ -160,6 +155,39 @@ template <typename T> class fvec {
       throw std::system_error(err, std::generic_category(), "posix_fallocate");
     }
   }
+
+  fvec(int fd, size_type initial_size, int prot) : count{initial_size}, fd{fd}
+  {
+    static_assert(element_align <= 4096, "Alignment too big.");
+    struct stat s;
+    if (fstat(fd, &s) != 0) { throw error("fstat"); }
+
+    cap = s.st_size / element_size;
+
+    if (count > cap) {
+      throw std::runtime_error("size > capacity (" + std::to_string(count)
+                               + " > " + std::to_string(cap) + ")");
+    }
+
+    if (cap == 0) {
+      // mmap errors out if length is zero, as such we need to always ensure
+      // that we can map something
+      auto new_cap = 1024;
+      grow_file(new_cap * element_size);
+      cap = new_cap;
+    }
+
+    buffer = reinterpret_cast<T*>(
+        mmap(nullptr, cap * element_size, prot, MAP_SHARED, fd, 0));
+    if (buffer == MAP_FAILED) { throw error("mmap"); }
+    if (buffer == nullptr) {
+      // this should not happen
+      throw std::runtime_error("mmap returned nullptr.");
+    }
+  }
 };
+
+};  // namespace dedup
+
 
 #endif  // BAREOS_STORED_BACKENDS_DEDUP_FVEC_H_
