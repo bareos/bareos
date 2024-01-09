@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -674,7 +674,7 @@ bool Bvfs::DropRestoreList(char* output_table)
 {
   PoolMem query(PM_MESSAGE);
   if (CheckTemp(output_table)) {
-    Mmsg(query, "DROP TABLE %s", output_table);
+    Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
     db->SqlQuery(query.c_str());
     return true;
   }
@@ -704,10 +704,10 @@ bool Bvfs::compute_restore_list(char* fileid,
   DbLocker _{db};
 
   /* Cleanup old tables first */
-  Mmsg(query, "DROP TABLE btemp%s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
   db->SqlQuery(query.c_str());
 
-  Mmsg(query, "DROP TABLE %s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
   db->SqlQuery(query.c_str());
 
   Mmsg(query, "CREATE TABLE btemp%s AS ", output_table);
@@ -717,7 +717,7 @@ bool Bvfs::compute_restore_list(char* fileid,
     Mmsg(tmp,
          "SELECT Job.JobId, JobTDate, FileIndex, File.Name, "
          "PathId, FileId "
-         "FROM File JOIN Job USING (JobId) WHERE FileId IN (%s)",
+         "FROM File JOIN Job USING (JobId) WHERE FileId IN (%s) ",
          fileid);
     PmStrcat(query, tmp.c_str());
   }
@@ -834,7 +834,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   retval = true;
 
 bail_out:
-  Mmsg(query, "DROP TABLE btemp%s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
   db->SqlQuery(query.c_str());
   return retval;
 }
