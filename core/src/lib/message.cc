@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -145,9 +145,10 @@ static void DeliveryError(const char* fmt, ...)
  * Resource record. On the second call, generally,
  * argv is NULL to avoid doing the path code twice.
  */
-void MyNameIs(int argc, char* argv[], const char* name)
+void MyNameIs(int argc, const char* const argv[], const char* name)
 {
-  char *l, *p, *q;
+  const char *l, *p;
+  char* q;
   char cpath[1024];
   int len;
 

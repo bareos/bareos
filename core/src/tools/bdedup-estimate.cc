@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -245,6 +245,7 @@ int main(int argc, const char* argv[])
   desc += "The Bareos Deduplication Estimation Tool";
   InitCLIApp(app, desc, 0);
   AddDebugOptions(app);
+  MyNameIs(argc, argv, "bdedupestimate");
 
   std::vector<std::string> volumes;
   app.add_option("-V,--volumes", volumes, "List of volumes to be analyzed.")

@@ -81,7 +81,6 @@ if(NOT client-only)
   list(APPEND TOOLS_SBIN bdedupestimate)
 endif()
 
-
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 
