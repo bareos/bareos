@@ -32,15 +32,31 @@
 
 #include <unistd.h>
 #include <utility>
+#include <stdexcept>
 
 namespace storagedaemon {
 
-static constexpr std::uint64_t block_number(std::uint32_t rfile,
-                                            std::uint32_t rblock)
+namespace {
+constexpr std::uint64_t block_number(std::uint32_t rfile, std::uint32_t rblock)
 {
   std::uint64_t block_num = static_cast<std::uint64_t>(rfile) << 32 | rblock;
   return block_num;
 }
+
+constexpr bool check_open_mode(DeviceMode open_mode)
+{
+  switch (open_mode) {
+    case DeviceMode::CREATE_READ_WRITE:
+    case DeviceMode::OPEN_READ_WRITE:
+    case DeviceMode::OPEN_READ_ONLY:
+      return true;
+      // write only is not possible
+    case DeviceMode::OPEN_WRITE_ONLY:
+    default:
+      return false;
+  }
+}
+};  // namespace
 
 // Mount the device. Timeout is ignored.
 bool dedup_device::MountBackend(DeviceControlRecord*, int)
@@ -62,11 +78,21 @@ bool dedup_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
   return false;
 }
 
-
 int dedup_device::d_open(const char* path, int, int mode)
 {
-  (void)path;
-  (void)mode;
+  if (openvol) {
+    Emsg0(M_ERROR, 0, T_("Volume %s is opened already on this device.\n"),
+          openvol->path());
+    return -1;
+  }
+
+  if (!check_open_mode(open_mode)) {
+    Emsg0(M_ABORT, 0, T_("Illegal mode given to open dev. (mode = %d)\n"),
+          (int)open_mode);
+    return -1;
+  }
+
+  bool read_only = open_mode == DeviceMode::OPEN_READ_ONLY;
 
   try {
     auto parsed = dedup::device_option_parser::parse(dev_options ?: "");
@@ -75,7 +101,13 @@ int dedup_device::d_open(const char* path, int, int mode)
       Emsg0(M_WARNING, 0, "Dedup device option warning: %s\n", warning.c_str());
     }
 
-    return -1;
+    auto& vol = (read_only)
+                    ? openvol.emplace(dedup::volume::open_type::ReadOnly, mode,
+                                      path, parsed.options.blocksize)
+                    : openvol.emplace(dedup::volume::open_type::ReadWrite, mode,
+                                      path, parsed.options.blocksize);
+
+    return vol.fileno();
   } catch (const std::exception& ex) {
     Emsg0(M_ERROR, 0, T_("Could not open volume. ERR=%s\n"), ex.what());
     return -1;
@@ -101,8 +133,28 @@ ssize_t dedup_device::d_read(int fd, void* data, size_t size)
 
 int dedup_device::d_close(int fd)
 {
-  (void)fd;
-  return -1;
+  if (!openvol) {
+    Emsg0(M_ERROR, 0, T_("Trying to close dedup volume when non are open.\n"));
+    return -1;
+  }
+
+  if (openvol->fileno() != fd) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to close dedup volume that is not open "
+             "(open = %d, trying to close = %d).\n"),
+          openvol->fileno(), fd);
+    return -1;
+  }
+
+  std::string volname = openvol->path();
+  try {
+    openvol.reset();
+    return 0;
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0, T_("Could not close dedup device %s. ERR=%s\n"),
+          volname.c_str(), ex.what());
+    return -1;
+  }
 }
 
 int dedup_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }

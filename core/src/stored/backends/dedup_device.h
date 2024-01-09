@@ -23,8 +23,9 @@
 #define BAREOS_STORED_BACKENDS_DEDUP_DEVICE_H_
 
 #include "stored/dev.h"
+#include "dedup/volume.h"
 
-#include <unordered_map>
+#include <optional>
 
 namespace storagedaemon {
 
@@ -58,6 +59,7 @@ class dedup_device : public Device {
 
  private:
   bool mounted{false};
+  std::optional<dedup::volume> openvol;
 };
 
 } /* namespace storagedaemon */
