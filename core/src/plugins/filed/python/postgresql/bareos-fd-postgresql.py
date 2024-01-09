@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -187,9 +187,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # in end_restore_file(), and this may be mixed up with different files
         self.stat_packets = {}
         self.last_lsn = 0
-        # This will be set to True between select pg_backup_start() and pg_backup_stop().
-        # We backup the cluster files during that time
-        self.full_backup_running = False
+        # True if backup level is Full
+        self.is_full_backup = False
+        # True between select pg_backup_start() and pg_backup_stop(). (while backing up
+        # the cluster)
+        self.is_backup_running = False
         # We will store the `starttime` from `backup_label` here
         self.backup_start_time = None
         # PostgreSQL last backup stop time
@@ -311,7 +313,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # Now re-add excluded mandatory_subdirs as directory only.
         # But only for Full and `pg_working_dir`
         if (
-            self.full_backup_running
+            self.is_full_backup
             and start_dir == self.cluster_configuration_parameters["data_directory"]
         ):
             for dirname in self.mandatory_subdirs:
@@ -693,7 +695,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 bareosfd.M_ERROR, f"__complete_backup_job unknown failure: {err}\n"
             )
 
-        self.full_backup_running = False
+        self.is_backup_running = False
 
     def __create_db_connection(self):
         """
@@ -876,6 +878,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             bareosfd.DebugMessage(150, f"{start_stmt} statement failed: {pg_err}\n")
             raise
 
+        self.is_backup_running = True
         bareosfd.DebugMessage(150, f"Start response LSN: {str(result)}\n")
         bareosfd.DebugMessage(100, "__pg_backup_start() ended\n")
 
@@ -1194,9 +1197,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         if chr(self.level) == "F":
             # For Full we backup the PostgreSQL data directory
+            self.is_full_backup = True
             start_dir = self.cluster_configuration_parameters["data_directory"]
             bareosfd.DebugMessage(100, f"data_dir: {start_dir}\n")
-            self.full_backup_running = True
         else:
             # If level is not Full, we only backup WAL files
             # and create a restore object ROP with timestamp information.
@@ -1644,7 +1647,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         if self.paths_to_backup:
             return bareosfd.bRC_More
 
-        if self.full_backup_running:
+        if self.is_full_backup and self.is_backup_running:
             self.__complete_backup_job()
             # Now we can also create the Restore object with the right timestamp
             # We start by ROP so it is the last object in backup and first in restore
@@ -1658,8 +1661,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.paths_to_backup += self.virtual_files
             return self.__check_for_wal_files()
 
-        self.__close_db_connection()
-
         return bareosfd.bRC_OK
 
     def end_backup_job(self):
@@ -1668,11 +1669,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         Make sure that db connection was closed in any way,
         especially when job was canceled
         """
-        if self.full_backup_running:
+        bareosfd.DebugMessage(100, "end_backup_job() entry point in Python called\n")
+        # Execute pg_backup_stop() in case of incremental
+        if self.is_backup_running:
             self.__complete_backup_job()
-            self.full_backup_running = False
-        else:
-            self.__close_db_connection()
+        self.__close_db_connection()
         return bareosfd.bRC_OK
 
 
