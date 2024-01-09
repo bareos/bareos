@@ -28,6 +28,7 @@
 #include "lib/util.h"
 #include "lib/edit.h"
 #include "dedup_device.h"
+#include "dedup/device_options.h"
 
 #include <unistd.h>
 #include <utility>
@@ -66,7 +67,19 @@ int dedup_device::d_open(const char* path, int, int mode)
 {
   (void)path;
   (void)mode;
-  return -1;
+
+  try {
+    auto parsed = dedup::device_option_parser::parse(dev_options ?: "");
+
+    for (auto& warning : parsed.warnings) {
+      Emsg0(M_WARNING, 0, "Dedup device option warning: %s\n", warning.c_str());
+    }
+
+    return -1;
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0, T_("Could not open volume. ERR=%s\n"), ex.what());
+    return -1;
+  }
 }
 
 ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
