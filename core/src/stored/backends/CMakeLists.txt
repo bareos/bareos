@@ -62,6 +62,8 @@ else()
   target_sources(bareossd-file PRIVATE unix_file_device.cc)
   target_sources(bareossd-fifo PRIVATE unix_fifo_device.cc)
   target_sources(bareossd-tape PRIVATE unix_tape_device.cc)
+  add_sd_backend(bareossd-dedup)
+  target_sources(bareossd-dedup PRIVATE dedup_device.cc)
 endif()
 
 if(HAVE_DARWIN_OS)
