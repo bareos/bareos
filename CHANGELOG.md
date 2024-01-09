@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - pkglists: update SUSE to have vmware packages [PR #1633]
+-  python-bareos: use socket.create_connection() to allow AF_INET6 [PR #1650]
 
 ### Fixed
 - Fix continuation on colons in plugin baseclass [PR #1638]
@@ -366,4 +367,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1633]: https://github.com/bareos/bareos/pull/1633
 [PR #1638]: https://github.com/bareos/bareos/pull/1638
 [PR #1642]: https://github.com/bareos/bareos/pull/1642
+[PR #1650]: https://github.com/bareos/bareos/pull/1650
 [unreleased]: https://github.com/bareos/bareos/tree/master
