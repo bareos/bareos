@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -825,7 +825,7 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 
 
 bail_out:
-  SqlQuery("DROP TABLE batch");
+  SqlQuery("DROP TABLE IF EXISTS batch");
   jcr->batch_started = false;
   changes = 0;
 
@@ -1025,10 +1025,10 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
 void BareosDb::CleanupBaseFile(JobControlRecord* jcr)
 {
   PoolMem buf(PM_MESSAGE);
-  Mmsg(buf, "DROP TABLE new_basefile%lld", (uint64_t)jcr->JobId);
+  Mmsg(buf, "DROP TABLE IF EXISTS new_basefile%lld", (uint64_t)jcr->JobId);
   SqlQuery(buf.c_str());
 
-  Mmsg(buf, "DROP TABLE basefile%lld", (uint64_t)jcr->JobId);
+  Mmsg(buf, "DROP TABLE IF EXISTS basefile%lld", (uint64_t)jcr->JobId);
   SqlQuery(buf.c_str());
 }
 
