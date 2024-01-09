@@ -69,7 +69,7 @@ extern bool console_msg_pending;
 extern FILE* con_fd;       /* Console file descriptor */
 extern brwlock_t con_lock; /* Console lock structure */
 
-void MyNameIs(int argc, char* argv[], const char* name);
+void MyNameIs(int argc, const char* const argv[], const char* name);
 void InitMsg(JobControlRecord* jcr,
              MessagesResource* msg,
              job_code_callback_t job_code_callback = NULL);
