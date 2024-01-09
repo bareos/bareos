@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -303,8 +303,8 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     ttime = mr->FirstWritten;
     bstrutime(dt, sizeof(dt), ttime);
     Mmsg(cmd,
-         "UPDATE Media SET FirstWritten='%s'"
-         " WHERE VolumeName='%s'",
+         "UPDATE Media SET FirstWritten='%s' "
+         "WHERE VolumeName='%s'",
          dt, esc_medianame);
     UPDATE_DB(jcr, cmd);
     Dmsg1(400, "Firstwritten=%d\n", mr->FirstWritten);
@@ -341,8 +341,8 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "MaxVolJobs=%d,MaxVolFiles=%d,Enabled=%d,LocationId=%s,"
        "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,"
        "ActionOnPurge=%d,"
-       "MinBlocksize=%u,MaxBlocksize=%u"
-       " WHERE VolumeName='%s'",
+       "MinBlocksize=%u,MaxBlocksize=%u "
+       "WHERE VolumeName='%s'",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
        mr->VolMounts, mr->VolErrors, mr->VolWrites,
        edit_uint64(mr->MaxVolBytes, ed2), esc_status, mr->Slot, mr->InChanger,
@@ -383,8 +383,8 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
          "UPDATE Media SET "
          "ActionOnPurge=%d,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
          "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
-         "MinBlocksize=%d,MaxBlocksize=%d"
-         " WHERE VolumeName='%s'",
+         "MinBlocksize=%d,MaxBlocksize=%d "
+         "WHERE VolumeName='%s'",
          mr->ActionOnPurge, mr->Recycle, edit_uint64(mr->VolRetention, ed1),
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,
          edit_uint64(mr->MaxVolBytes, ed3), edit_uint64(mr->RecyclePoolId, ed4),
@@ -394,8 +394,8 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
          "UPDATE Media SET "
          "ActionOnPurge=%d,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
          "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
-         "MinBlocksize=%d,MaxBlocksize=%d"
-         " WHERE PoolId=%s",
+         "MinBlocksize=%d,MaxBlocksize=%d "
+         "WHERE PoolId=%s",
          mr->ActionOnPurge, mr->Recycle, edit_uint64(mr->VolRetention, ed1),
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,
          edit_uint64(mr->MaxVolBytes, ed3), edit_int64(mr->RecyclePoolId, ed4),
@@ -571,7 +571,7 @@ void BareosDb::UpgradeCopies(const char* jobids)
        JT_COPY);
   SqlQuery(query.c_str());
 
-  SqlQuery("DROP TABLE cpy_tmp");
+  SqlQuery("DROP TABLE IF EXISTS cpy_tmp");
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
           HAVE_DBI */
