@@ -82,10 +82,12 @@ if(NOT client-only)
     testfind dird_objects fd_objects bareosfind CLI11::CLI11
   )
   list(APPEND TOOLS_SBIN testfind)
+
+  add_executable(bdedupestimate bdedup-estimate.cc)
+  target_link_libraries(bdedupestimate bareos bareossd CLI11::CLI11)
+  list(APPEND TOOLS_SBIN bdedupestimate)
 endif()
 
-add_executable(bdedupestimate bdedup-estimate.cc)
-target_link_libraries(bdedupestimate bareos bareossd CLI11::CLI11)
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")

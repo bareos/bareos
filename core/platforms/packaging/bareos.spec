@@ -394,7 +394,7 @@ Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-dbtools
 
 %package    tools
-Summary:    Bareos CLI tools (bcopy, bextract, bls, bregex, bwild)
+Summary:    Bareos CLI tools (bcopy, bextract, bls, bregex, bwild, bdedupestimate)
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 
@@ -1389,6 +1389,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/bregex
 %{_sbindir}/bwild
 %{_sbindir}/bpluginfo
+%{_sbindir}/bdedupestimate
 %{_mandir}/man1/bwild.1.gz
 %{_mandir}/man1/bregex.1.gz
 %{_mandir}/man8/bcopy.8.gz
