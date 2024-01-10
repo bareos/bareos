@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - backup report: show negative compression [PR #1598]
 - core: add build patch for `sprintf` in macos builds [PR #1636]
 - python-bareos: use socket.create_connection() to allow AF_INET6 [PR #1646]
+- Improve FreeBSD build [PR #1538]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix continuation on colons in plugin baseclass [PR #1637]
 - plugins: fix cancel handling crash [PR #1595]
 
+[PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
 [PR #1587]: https://github.com/bareos/bareos/pull/1587
 [PR #1589]: https://github.com/bareos/bareos/pull/1589
