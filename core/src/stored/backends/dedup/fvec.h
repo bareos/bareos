@@ -28,7 +28,10 @@ extern "C" {
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 }
+#include <system_error>
+#include <limits>
 
 namespace dedup {
 struct access {
@@ -58,6 +61,8 @@ template <typename T> class fvec : access {
   static constexpr auto element_align = alignof(T);
 
 
+  fvec() = default;
+
   fvec(rdonly_t, int fd, size_type initial_size = 0)
       : fvec(fd, initial_size, PROT_READ)
   {
@@ -66,6 +71,28 @@ template <typename T> class fvec : access {
   fvec(rdwr_t, int fd, size_type initial_size = 0)
       : fvec(fd, initial_size, PROT_READ | PROT_WRITE)
   {
+  }
+
+  fvec(bool readonly, int fd, size_type initial_size = 0)
+      : fvec(fd,
+             initial_size,
+             readonly ? (PROT_READ) : (PROT_READ | PROT_WRITE))
+  {
+  }
+
+  fvec(const fvec&) = delete;
+  fvec& operator=(const fvec&) = delete;
+
+  fvec(fvec&& other) : fvec{} { *this = std::move(other); }
+
+  fvec& operator=(fvec&& other)
+  {
+    std::swap(buffer, other.buffer);
+    std::swap(cap, other.cap);
+    std::swap(count, other.count);
+    std::swap(fd, other.fd);
+
+    return *this;
   }
 
   reference operator[](size_type idx) { return buffer[idx]; }
@@ -134,7 +161,10 @@ template <typename T> class fvec : access {
     if (ftruncate(fd, cap * element_size) != 0) { throw error("ftruncate"); }
   }
 
-  ~fvec() { munmap(buffer, cap * element_size); }
+  ~fvec()
+  {
+    if (buffer) { munmap(buffer, cap * element_size); }
+  }
 
  private:
   T* buffer{nullptr};
