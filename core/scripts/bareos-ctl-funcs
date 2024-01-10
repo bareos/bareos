@@ -31,7 +31,7 @@ pidofproc() {
    fi
 
    # Finally try to extract it from ps
-   pid=`${PSCMD} | grep -m 1 $base | ${AWK} '{ print $1 }' | tr '\n' ' '`
+   pid=$(tasklist | grep bash.exe | awk '{print $2}' | head -n1)
    echo $pid
    return 0
 }
