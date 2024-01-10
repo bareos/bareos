@@ -84,17 +84,22 @@ macro(find_compiled_binary_and_set_binary_name_to_test_variable_for binary_name)
   else()
     set (BINARY_SUBDIR "")
   endif()
-
-  create_variable_binary_name_to_test_for_binary_name(${binary_name})
-  get_target_property(
-    "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
-  )
-  set("${binary_name_to_test_upcase}"
-    "${${binary_name_to_test_upcase}}/${BINARY_SUBDIR}${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
-  )
-  message(
-    "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
-  )
+  if (TARGET ${binary_name})
+    create_variable_binary_name_to_test_for_binary_name(${binary_name})
+    get_target_property(
+      "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
+    )
+    set("${binary_name_to_test_upcase}"
+      "${${binary_name_to_test_upcase}}/${BINARY_SUBDIR}${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
+    )
+    message(
+      "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
+    )
+  else()
+    message(
+      "Target ${binary_name} does not exist, skipping"
+    )
+  endif()
 endmacro()
 
 # find the full path of the given binary in the *installed* binaries and create
@@ -524,7 +529,7 @@ function(add_systemtest name file)
   else()
     add_test(
       NAME ${name}
-      COMMAND ${file}
+      COMMAND ${BASH_EXE} ${file}
       WORKING_DIRECTORY ${directory}
     )
   endif()

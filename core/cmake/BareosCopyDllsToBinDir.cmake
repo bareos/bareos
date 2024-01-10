@@ -21,7 +21,7 @@
 # Windows: copy over all dlls our binaries depend on into the test dir
 macro(BareosCopyDllsToBinDir)
   if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(DLLS_TO_COPY_MANUALLY C:/vcpkg/installed/x64-windows/bin/jansson.dll)
+    set(DLLS_TO_COPY_MANUALLY C:/vcpkg/installed/x64-windows/bin/jansson.dll C:/vcpkg/installed/x64-windows/bin/lzo2.dll)
     get_property(current_targets DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} PROPERTY BUILDSYSTEM_TARGETS)
     foreach(TGT ${current_targets})
     get_target_property(targettype ${TGT} TYPE)
