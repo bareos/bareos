@@ -30,6 +30,7 @@
 #include "lib/network_order.h"
 #include "dedup_device.h"
 #include "dedup/device_options.h"
+#include "dedup/util.h"
 
 #include <unistd.h>
 #include <utility>
@@ -121,74 +122,11 @@ int dedup_device::d_open(const char* path, int, int mode)
   }
 }
 
-class chunked_reader {
- public:
-  chunked_reader(const void* data, std::size_t size)
-      : begin{(const char*)data}, end{begin + size}
-  {
-  }
-
-  const char* get(std::size_t size)
-  {
-    ASSERT(begin < end);
-    if (static_cast<std::size_t>(end - begin) < size) { return nullptr; }
-
-    begin += size;
-    return begin - size;
-  }
-
-  bool read(void* mem, std::size_t size)
-  {
-    ASSERT(begin < end);
-    if (static_cast<std::size_t>(end - begin) < size) { return false; }
-
-    std::memcpy(mem, begin, size);
-    begin += size;
-
-    return true;
-  }
-
-  bool finished() const { return begin == end; }
-  std::size_t leftover() const { return end - begin; }
-
- private:
-  const char* begin;
-  const char* end;
-};
-
-namespace {
-using net_u64 = network_order::network<std::uint64_t>;
-using net_i64 = network_order::network<std::int64_t>;
-using net_u32 = network_order::network<std::uint32_t>;
-using net_i32 = network_order::network<std::int32_t>;
-using net_u16 = network_order::network<std::uint16_t>;
-using net_u8 = std::uint8_t;
-
-struct block_header {
-  net_u32 CheckSum;       /* Block check sum */
-  net_u32 BlockSize;      /* Block byte size including the header */
-  net_u32 BlockNumber;    /* Block number */
-  char ID[4];             /* Identification and block level */
-  net_u32 VolSessionId;   /* Session Id for Job */
-  net_u32 VolSessionTime; /* Session Time for Job */
-
-  // actual payload size
-  std::size_t size() const { return BlockSize.load() - sizeof(block_header); }
-};
-
-struct record_header {
-  net_i32 FileIndex; /* File index supplied by File daemon */
-  net_i32 Stream;    /* Stream number supplied by File daemon */
-  net_u32 DataSize;  /* size of following data record in bytes */
-
-  // actual payload size
-  std::size_t size() const { return DataSize.load(); }
-};
-
-};  // namespace
-
 ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
 {
+  using block_header = dedup::block_header;
+  using record_header = dedup::record_header;
+  using chunked_reader = dedup::chunked_reader;
   if (!openvol) {
     Emsg0(M_ERROR, 0, T_("Trying to write dedup volume when none are open.\n"));
     return -1;
