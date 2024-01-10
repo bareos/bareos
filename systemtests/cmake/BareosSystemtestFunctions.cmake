@@ -308,10 +308,10 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
     if (NOT ${${binary_name_to_test_upcase}} STREQUAL "")
       set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
-      message(STATUS "create symlink ${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX}")
+      # message(STATUS "create symlink ${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX}")
       create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX})
-    else()
-      message(STATUS ${${binary_name_to_test_upcase}} is empty) 
+      # else()
+      # message(STATUS ${${binary_name_to_test_upcase}} is empty) 
     endif()
   endforeach()
   create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
@@ -529,7 +529,7 @@ function(add_systemtest name file)
   else()
     add_test(
       NAME ${name}
-      COMMAND ${BASH_EXE} ${file}
+      COMMAND ${BASH_EXE} "-x" ${file}
       WORKING_DIRECTORY ${directory}
     )
       #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

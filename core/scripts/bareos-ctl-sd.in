@@ -8,17 +8,24 @@
 
 export PSCMD="@PSCMD@"
 export PS="ps"
-export AWK="@AWK@"
-export PIDOF="@PIDOF@"
-export PGREP="@PGREP@"
+export AWK="C:/Program Files/Git/usr/bin/awk.exe"
+export PIDOF="PIDOF-NOTFOUND"
+export PGREP="PGREP-NOTFOUND"
 
-SUBSYSDIR=@subsysdir@
-BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-@sbindir@/bareos-sd}
-export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
-BAREOS_SD_PORT=${BAREOS_SD_PORT:-@sd_port@}
-BAREOS_SD_USER=${BAREOS_SD_USER:-@sd_user@}
-BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-@sd_group@}
-BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+SUBSYSDIR=C:/src/bin/systemtests/subsysdir
+BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-C:/src/bin/systemtests/sbin/bareos-sd}
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
+BAREOS_SD_PORT=${BAREOS_SD_PORT:-}
+BAREOS_SD_USER=${BAREOS_SD_USER:-}
+BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-}
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-C:/src/bin/systemtests/scripts}
+
+
+srv_name=$(basename "${BAREOS_STORAGEDAEMON_BINARY}" .exe)
+srv_sbindir=$(dirname "${BAREOS_STORAGEDAEMON_BINARY}")
+srv_configdir=$(dirname "$srv_sbindir")
+srv_configdir=${srv_configdir}/etc/bareos
+
 
 #
 # Source the generic functions.
@@ -42,19 +49,46 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
-            if [ "x${VALGRIND_SD}" = "x1" ]; then
-                valgrind --leak-check=full ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
-            else
-                ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS} &
-            fi
+            #if [ "x${VALGRIND_SD}" = "x1" ]; then
+            #    valgrind --leak-check=full ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+            #else
+            #    ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS} &
+            #fi
+
+            #nssm install bareos_dir-bareos-basic C:\src\bin\systemtests\tests\bareos-basic\sbin\bareos_dir-bareos-basic.exe
+            #nssm set bareos_dir-bareos-basic AppParameters "-d 1000 -v -c C:\src\bin\systemtests\tests\bareos-basic\etc\bareos"
+            #nssm set bareos_dir-bareos-basic AppDirectory C:\src\bin\core\src\dird\Debug
+            #nssm set bareos_dir-bareos-basic AppExit Default Restart
+            #nssm set bareos_dir-bareos-basic AppNoConsole 1
+            #nssm set bareos_dir-bareos-basic DisplayName bareos_dir-bareos-basic
+            #nssm set bareos_dir-bareos-basic ObjectName LocalSystem
+            #nssm set bareos_dir-bareos-basic Start SERVICE_AUTO_START
+            #nssm set bareos_dir-bareos-basic Type SERVICE_WIN32_OWN_PROCESS
+
+
+            nssm install $srv_name $(cygpath -w "${BAREOS_STORAGEDAEMON_BINARY}")
+            nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
+            nssm set $srv_name AppDirectory 'C:\src\bin\core\src\stored\Debug'
+            nssm set $srv_name AppExit Default Restart
+            nssm set $srv_name AppNoConsole 1
+            nssm set $srv_name DisplayName $srv_name
+            nssm set $srv_name ObjectName LocalSystem
+            nssm set $srv_name Start SERVICE_AUTO_START
+            nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
+            echo  "nssm start $srv_name"
+            nssm start $srv_name
+            #echo "${BAREOS_STORAGEDAEMON_BINARY}" -v $2 $3 ${OPTIONS}
+            #"${BAREOS_STORAGEDAEMON_BINARY}" -v $2 $3 ${OPTIONS} &
         fi
         ;;
 
     stop)
-        if [ -x ${BAREOS_STORAGEDAEMON_BINARY} ]; then
+        #if [ -x ${BAREOS_STORAGEDAEMON_BINARY} ]; then
             printf "Stopping the Bareos Storage daemon: "
-            killproc ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
-        fi
+        #    killproc ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
+        #fi
+        nssm stop $srv_name confirm
+        nssm remove $srv_name confirm
         ;;
 
     restart)
@@ -64,7 +98,9 @@ case "$1" in
         ;;
 
     status)
-        [ -x ${BAREOS_STORAGEDAEMON_BINARY} ] && status ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
+        #[ -x ${BAREOS_STORAGEDAEMON_BINARY} ] && status ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
+        echo -n "$srv_name "
+        nssm status $srv_name
         exit $?
         ;;
 

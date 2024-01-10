@@ -34,7 +34,7 @@ set -u
 # Fill ${BackupDirectory} with data.
 setup_data
 
-gentestdata="${CMAKE_BINARY_DIR}/core/src/tools/gentestdata"
+gentestdata="${CMAKE_BINARY_DIR}/core/src/tools/Debug/gentestdata"
 for i in 1 2 3 4 5 6 7 8 9 10; do
   "$gentestdata" --size=1048576 >"$tmp/data/testfile$i.bin"
 done
@@ -43,4 +43,4 @@ bin/bareos start
 bin/bareos status
 
 # make sure, director is up and running.
-print_debug "$(bin/bconsole <<< "status dir")"
+#print_debug "$(bin/bconsole <<< "status dir")"

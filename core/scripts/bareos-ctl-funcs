@@ -1,6 +1,5 @@
 #! /bin/sh
 
-set -x
 # A function to find the pid of a program.
 pidofproc() {
    pid=""

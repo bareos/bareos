@@ -3,6 +3,8 @@ set -u
 #shellcheck source=../environment.in
 . ./environment
 
+"${rscripts}/bareos" stop >/dev/null
+
 rm -rf "${tmp:?}"/*
 rm -rf "${logdir:?}"/*.log
 rm -rf "${working:?}"/*.bsr "${working:?}"/log*.sd
@@ -20,7 +22,6 @@ find . -name "gigaslam.gif" -exec rm -f {} \;
 # cleanup chrome user data (selenium tests)
 rm -rf /tmp/chrome-user-data-*
 
-"${rscripts}/bareos" stop >/dev/null
 
 #${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1

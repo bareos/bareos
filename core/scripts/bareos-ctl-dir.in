@@ -8,17 +8,24 @@
 
 export PSCMD="@PSCMD@"
 export PS="ps"
-export AWK="@AWK@"
-export PIDOF="@PIDOF@"
-export PGREP="@PGREP@"
+export AWK="C:/Program Files/Git/usr/bin/awk.exe"
+export PIDOF="PIDOF-NOTFOUND"
+export PGREP="PGREP-NOTFOUND"
 
-SUBSYSDIR=@subsysdir@
-BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY:-@sbindir@/bareos-dir}"
-export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
-BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
-BAREOS_DIRECTOR_USER=${BAREOS_DIRECTOR_USER:-@dir_user@}
-BAREOS_DIRECTOR_GROUP=${BAREOS_DIRECTOR_GROUP:-@dir_group@}
-BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+SUBSYSDIR=C:/src/bin/systemtests/subsysdir
+BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY:-C:/src/bin/systemtests/sbin/bareos-dir}"
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
+BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-}
+BAREOS_DIRECTOR_USER=${BAREOS_DIRECTOR_USER:-}
+BAREOS_DIRECTOR_GROUP=${BAREOS_DIRECTOR_GROUP:-}
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-C:/src/bin/systemtests/scripts}
+
+
+srv_name=$(basename "${BAREOS_DIRECTOR_BINARY}" .exe)
+srv_sbindir=$(dirname "${BAREOS_DIRECTOR_BINARY}")
+srv_configdir=$(dirname "$srv_sbindir")
+srv_configdir=${srv_configdir}/etc/bareos
+
 
 #
 # Source the generic functions.
@@ -43,12 +50,35 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
-            checkcfg
-            if [ $? != 0 ]; then
-                exit 1
-            fi
+            #checkcfg
+            #if [ $? != 0 ]; then
+            #    exit 1
+            #fi
 
-            "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS} &
+            #nssm install bareos_dir-bareos-basic C:\src\bin\systemtests\tests\bareos-basic\sbin\bareos_dir-bareos-basic.exe
+            #nssm set bareos_dir-bareos-basic AppParameters "-d 1000 -v -c C:\src\bin\systemtests\tests\bareos-basic\etc\bareos"
+            #nssm set bareos_dir-bareos-basic AppDirectory C:\src\bin\core\src\dird\Debug
+            #nssm set bareos_dir-bareos-basic AppExit Default Restart
+            #nssm set bareos_dir-bareos-basic AppNoConsole 1
+            #nssm set bareos_dir-bareos-basic DisplayName bareos_dir-bareos-basic
+            #nssm set bareos_dir-bareos-basic ObjectName LocalSystem
+            #nssm set bareos_dir-bareos-basic Start SERVICE_AUTO_START
+            #nssm set bareos_dir-bareos-basic Type SERVICE_WIN32_OWN_PROCESS
+
+
+            nssm install $srv_name $(cygpath -w "${BAREOS_DIRECTOR_BINARY}")
+            nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
+            nssm set $srv_name AppDirectory 'C:\src\bin\core\src\dird\Debug'
+            nssm set $srv_name AppExit Default Restart
+            nssm set $srv_name AppNoConsole 1
+            nssm set $srv_name DisplayName $srv_name
+            nssm set $srv_name ObjectName LocalSystem
+            nssm set $srv_name Start SERVICE_AUTO_START
+            nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
+            echo  "nssm start $srv_name"
+            nssm start $srv_name
+            #echo "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
+            #"${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS} &
         fi
         ;;
 
@@ -57,6 +87,8 @@ case "$1" in
             printf "Stopping the Bareos Director daemon: "
             killproc "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
         fi
+        nssm stop $srv_name confirm
+        nssm remove $srv_name confirm
         ;;
 
     restart)
@@ -66,7 +98,9 @@ case "$1" in
         ;;
 
     status)
-        [ -x "${BAREOS_DIRECTOR_BINARY}" ] && status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
+        #[ -x "${BAREOS_DIRECTOR_BINARY}" ] && status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
+        echo -n "$srv_name "
+        nssm status $srv_name
         exit $?
         ;;
 

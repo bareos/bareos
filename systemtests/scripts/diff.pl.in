@@ -16,7 +16,7 @@ use File::Find;
 no warnings 'File::Find';
 use Digest::MD5;
 use Getopt::Long ;
-use Pod::Usage;
+#use Pod::Usage;
 use Data::Dumper;
 use Cwd;
 use POSIX qw/strftime/;

@@ -128,9 +128,9 @@ $PATH
 # If there are multiple version, select the first.
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
-  export PATH=$POSTGRES_BINARY_DIR:$PATH
+  export PATH="@POSTGRES_BIN_PATH@:$PATH"
 else
-  export PATH=/sbin:/usr/sbin:/c/Program\ Files/PostgreSQL/14/bin:$PATH
+  export PATH=/sbin:/usr/sbin:$PATH
 fi
 export PYTHONPATH=@pythonpath@
 
@@ -153,7 +153,7 @@ SYSTEMTEST_LDAP_PASSWORD="@SYSTEMTEST_LDAP_PASSWORD@"
 LANG=en_US.UTF-8
 
 # path to real postgres binaries, NOT debian wrappers
-POSTGRES_BIN_PATH=@POSTGRES_BIN_PATH@
+POSTGRES_BIN_PATH="@POSTGRES_BIN_PATH@"
 
 
 XTRABACKUP_BINARY=@XTRABACKUP_BINARY@
