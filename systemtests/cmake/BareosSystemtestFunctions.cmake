@@ -532,11 +532,15 @@ function(add_systemtest name file)
       COMMAND ${BASH_EXE} ${file}
       WORKING_DIRECTORY ${directory}
     )
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+      set_property(TEST ${name} PROPERTY ENVIRONMENT
+        "PATH=%PATH%\;$CMAKE_BINARY_DIR\\core\\src\\dird\\Debug")
+    endif()
+    set_tests_properties(
+      ${name} PROPERTIES TIMEOUT "${SYSTEMTEST_TIMEOUT}" COST 1.0
+                         SKIP_RETURN_CODE 77
+    )
   endif()
-  set_tests_properties(
-    ${name} PROPERTIES TIMEOUT "${SYSTEMTEST_TIMEOUT}" COST 1.0
-                       SKIP_RETURN_CODE 77
-  )
 endfunction()
 
 function(add_systemtest_from_directory tests_basedir prefix test_subdir)

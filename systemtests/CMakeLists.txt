@@ -70,7 +70,7 @@ endif()
 
 # Main starts here...
 
-find_program(PG_CTL pg_ctl /usr/lib/postgresql/*/bin /usr/bin /bin)
+find_program(PG_CTL pg_ctl /usr/lib/postgresql/*/bin /usr/bin /bin "C:/Program Files/PostgreSQL/14")
 
 get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
 # message(STATUS "PG_CTL is ${PG_CTL}")

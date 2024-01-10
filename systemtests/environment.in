@@ -114,6 +114,14 @@ export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 #
 
 export OVIRT_SERVER=@ovirt_server@
+PATH=\
+../../../core/src/console/Debug:\
+../../../core/src/dird/Debug:\
+../../../core/src/filed/Debug:\
+../../../core/src/stored/Debug:\
+../../../core/src/tests/Debug:\
+../../../core/src/tools/Debug:\
+$PATH
 
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
