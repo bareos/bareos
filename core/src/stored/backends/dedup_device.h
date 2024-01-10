@@ -60,6 +60,8 @@ class dedup_device : public Device {
  private:
   bool mounted{false};
   std::optional<dedup::volume> openvol;
+
+  std::size_t current_block();
 };
 
 } /* namespace storagedaemon */

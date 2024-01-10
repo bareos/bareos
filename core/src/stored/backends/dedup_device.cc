@@ -295,10 +295,21 @@ bool dedup_device::d_truncate(DeviceControlRecord* dcr)
   return false;
 }
 
+std::size_t dedup_device::current_block()
+{
+  return block_number(file, block_num);
+}
+
 bool dedup_device::rewind(DeviceControlRecord* dcr)
 {
-  (void)dcr;
-  return false;
+  if (!openvol) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to rewind dedup volume when none are open.\n"));
+    return false;
+  }
+  block_num = 0;
+  file = 0;
+  return UpdatePos(dcr);
 }
 
 bool dedup_device::UpdatePos(DeviceControlRecord*)
@@ -312,10 +323,16 @@ bool dedup_device::Reposition(DeviceControlRecord* dcr,
                               uint32_t rfile,
                               uint32_t rblock)
 {
-  (void)dcr;
-  (void)rfile;
-  (void)rblock;
-  return false;
+  if (!openvol) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to reposition dedup volume when none are open.\n"));
+    return false;
+  }
+  Dmsg2(10, "file: %u -> %u; block: %u -> %u\n", file, rfile, block_num,
+        rblock);
+  block_num = rblock;
+  file = rfile;
+  return UpdatePos(dcr);
 }
 
 bool dedup_device::eod(DeviceControlRecord* dcr)
