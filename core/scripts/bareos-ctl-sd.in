@@ -45,7 +45,7 @@ case "$1" in
             if [ "x${VALGRIND_SD}" = "x1" ]; then
                 valgrind --leak-check=full ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             else
-                ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+                ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS} &
             fi
         fi
         ;;

@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # A set of useful functions to be sourced in each test
 #
@@ -781,8 +781,8 @@ check_restore_diff()
    result=0
 
    restorepath="$restoredirectory/${dest}"
-
-   if "$rscripts/diff.pl" -s "${dest}" -d "${restorepath}"; then
+   restorepath=$(sed 's#/C:#/c#g'<<< $restorepath)
+   if perl "$rscripts/diff.pl" -s "${dest}" -d "${restorepath}"; then
        result=$?
    fi
 

@@ -130,7 +130,7 @@ if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
   export PATH=$POSTGRES_BINARY_DIR:$PATH
 else
-  export PATH=/sbin:/usr/sbin:$PATH
+  export PATH=/sbin:/usr/sbin:/c/Program\ Files/PostgreSQL/14/bin:$PATH
 fi
 export PYTHONPATH=@pythonpath@
 

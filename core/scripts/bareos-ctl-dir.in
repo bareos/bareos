@@ -48,7 +48,7 @@ case "$1" in
                 exit 1
             fi
 
-            "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
+            "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS} &
         fi
         ;;
 
