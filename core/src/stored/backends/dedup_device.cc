@@ -27,12 +27,14 @@
 #include "lib/berrno.h"
 #include "lib/util.h"
 #include "lib/edit.h"
+#include "lib/network_order.h"
 #include "dedup_device.h"
 #include "dedup/device_options.h"
 
 #include <unistd.h>
 #include <utility>
 #include <stdexcept>
+#include <cstring>
 
 namespace storagedaemon {
 
@@ -114,12 +116,135 @@ int dedup_device::d_open(const char* path, int, int mode)
   }
 }
 
+class chunked_reader {
+ public:
+  chunked_reader(const void* data, std::size_t size)
+      : begin{(const char*)data}, end{begin + size}
+  {
+  }
+
+  const char* get(std::size_t size)
+  {
+    ASSERT(begin < end);
+    if (static_cast<std::size_t>(end - begin) < size) { return nullptr; }
+
+    begin += size;
+    return begin - size;
+  }
+
+  bool read(void* mem, std::size_t size)
+  {
+    ASSERT(begin < end);
+    if (static_cast<std::size_t>(end - begin) < size) { return false; }
+
+    std::memcpy(mem, begin, size);
+    begin += size;
+
+    return true;
+  }
+
+  bool finished() const { return begin == end; }
+  std::size_t leftover() const { return end - begin; }
+
+ private:
+  const char* begin;
+  const char* end;
+};
+
+namespace {
+using net_u64 = network_order::network<std::uint64_t>;
+using net_i64 = network_order::network<std::int64_t>;
+using net_u32 = network_order::network<std::uint32_t>;
+using net_i32 = network_order::network<std::int32_t>;
+using net_u16 = network_order::network<std::uint16_t>;
+using net_u8 = std::uint8_t;
+
+struct block_header {
+  net_u32 CheckSum;       /* Block check sum */
+  net_u32 BlockSize;      /* Block byte size including the header */
+  net_u32 BlockNumber;    /* Block number */
+  char ID[4];             /* Identification and block level */
+  net_u32 VolSessionId;   /* Session Id for Job */
+  net_u32 VolSessionTime; /* Session Time for Job */
+
+  std::size_t size() const { return BlockSize.load(); }
+};
+
+struct record_header {
+  net_i32 FileIndex; /* File index supplied by File daemon */
+  net_i32 Stream;    /* Stream number supplied by File daemon */
+  net_u32 DataSize;  /* size of following data record in bytes */
+
+  std::size_t size() const { return DataSize.load(); }
+};
+
+};  // namespace
+
 ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
 {
-  (void)fd;
-  (void)data;
-  (void)size;
-  return -1;
+  if (!openvol) {
+    Emsg0(M_ERROR, 0, T_("Trying to write dedup volume when none are open.\n"));
+    return -1;
+  }
+
+  if (openvol->fileno() != fd) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to write dedup volume that is not open "
+             "(open = %d, trying to write = %d).\n"),
+          openvol->fileno(), fd);
+    return -1;
+  }
+
+  auto save = openvol->begin();
+
+  try {
+    chunked_reader stream{data, size};
+    ssize_t datawritten = 0;
+
+    while (!stream.finished()) {
+      block_header block;
+      if (!stream.read(&block, sizeof(block))) {
+        throw std::runtime_error("Could not read block header from stream.");
+      }
+
+      // openvol->append_block(block);
+      datawritten += sizeof(block);
+
+      if (auto* block_data = stream.get(block.size()); !block_data) {
+        throw std::runtime_error("Could not read block data from stream.");
+      } else {
+        chunked_reader records{block_data, block.size()};
+
+        while (!records.finished()) {
+          record_header record;
+          if (!records.read(&record, sizeof(record))) {
+            throw std::runtime_error(
+                "Could not read record header from stream.");
+          }
+
+          // openvol->append_record(record);
+          datawritten += sizeof(record);
+
+          if (auto* record_data = records.get(record.size()); !record_data) {
+            throw std::runtime_error("Could not read record data from stream.");
+          } else {
+            // openvol->append_data(record_data, record.size());
+            datawritten += sizeof(record.size());
+          }
+        }
+      }
+    }
+
+
+    openvol->commit(save);
+    return datawritten;
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0,
+          T_("Encountered error while trying to write to volume %s. ERR=%s\n"),
+          openvol->path(), ex.what());
+    openvol->abort(save);
+    return -1;
+  }
 }
 
 ssize_t dedup_device::d_read(int fd, void* data, size_t size)
@@ -134,7 +259,7 @@ ssize_t dedup_device::d_read(int fd, void* data, size_t size)
 int dedup_device::d_close(int fd)
 {
   if (!openvol) {
-    Emsg0(M_ERROR, 0, T_("Trying to close dedup volume when non are open.\n"));
+    Emsg0(M_ERROR, 0, T_("Trying to close dedup volume when none are open.\n"));
     return -1;
   }
 
