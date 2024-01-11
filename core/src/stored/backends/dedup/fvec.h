@@ -179,6 +179,13 @@ template <typename T> class fvec : access {
     if (ftruncate(fd, cap * element_size) != 0) { throw error("ftruncate"); }
   }
 
+  void flush()
+  {
+    if (msync(buffer, cap * element_size, MS_SYNC) < 0) {
+      throw error("msync");
+    }
+  }
+
   ~fvec()
   {
     if (buffer) { munmap(buffer, cap * element_size); }
