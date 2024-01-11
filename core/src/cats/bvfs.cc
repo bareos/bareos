@@ -72,18 +72,14 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
 
   Dmsg1(dbglevel, "BuildPathHierarchy(%s)\n", new_path);
 
-  /*
-   * Does the ppathid exist for this? use a memory cache ...
+  /* Does the ppathid exist for this? use a memory cache ...
    * In order to avoid the full loop, we consider that if a dir is already in
    * the PathHierarchy table, then there is no need to calculate all the
-   * hierarchy
-   */
+   * hierarchy */
   while (new_path && *new_path) {
     if (ppathid_cache.lookup(pathid)) {
-      /*
-       * It's already in the cache.  We can leave, no time to waste here,
-       * all the parent dirs have already been done
-       */
+      /* It's already in the cache.  We can leave, no time to waste here,
+       * all the parent dirs have already been done */
       goto bail_out;
     } else {
       Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %llu",
@@ -165,12 +161,10 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
   UPDATE_DB(jcr, cmd);
 
-  /*
-   * need to COMMIT here to ensure that other concurrent .bvfs_update runs
+  /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
    * see the current HasCache value. A new transaction must only be started
    * after having finished PathHierarchy processing, otherwise prevention
-   * from duplicate key violations in BuildPathHierarchy() will not work.
-   */
+   * from duplicate key violations in BuildPathHierarchy() will not work. */
   EndTransaction(jcr);
 
   /* Inserting path records for JobId */
@@ -189,12 +183,10 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * Now we have to do the directory recursion stuff to determine missing
+  /* Now we have to do the directory recursion stuff to determine missing
    * visibility.
    * We try to avoid recursion, to be as fast as possible.
-   * We also only work on not already hierarchised directories ...
-   */
+   * We also only work on not already hierarchised directories ... */
   Mmsg(cmd,
        "SELECT PathVisibility.PathId, Path "
        "FROM PathVisibility "
@@ -440,17 +432,13 @@ char* bvfs_parent_dir(char* path)
     p += len;
     while (p > path && !IsPathSeparator(*p)) { p--; }
     if (IsPathSeparator(*p) and (len >= 1)) {
-      /*
-       * Terminate the string after the "/".
+      /* Terminate the string after the "/".
        * Do this instead of overwritting the "/"
-       * to keep the root directory "/" as a separate path.
-       */
+       * to keep the root directory "/" as a separate path. */
       p[1] = '\0';
     } else {
-      /*
-       * path did not start with a "/".
-       * This can be the case for plugin results.
-       */
+      /* path did not start with a "/".
+       * This can be the case for plugin results. */
       p[0] = '\0';
     }
   }
@@ -684,12 +672,10 @@ static bool CheckTemp(char* output_table)
 
 void Bvfs::clear_cache()
 {
-  /*
-   * FIXME:
+  /* FIXME:
    * can't use predefined query,
    * as MySQL queries do only support single SQL statements,
-   * not multiple.
-   */
+   * not multiple. */
   // db->SqlQuery(BareosDb::SQL_QUERY::bvfs_clear_cache_0);
   db->StartTransaction(jcr);
   db->SqlQuery("UPDATE Job SET HasCache=0");
