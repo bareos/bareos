@@ -24,10 +24,10 @@ if(CHFLAGS_PROG)
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/chflags-test-file.txt"
        "Just a testfile"
   )
-  exec_program(
-    ${CHFLAGS_PROG} ${CMAKE_CURRENT_BINARY_DIR}
-    ARGS "nosunlink chflags-test-file.txt"
-    RETURN_VALUE CHFLAGS_RETURN
+  execute_process(
+    COMMAND ${CHFLAGS_PROG} nosunlink chflags-test-file.txt
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    RESULT_VARIABLE CHFLAGS_RETURN
   )
   if(CHFLAGS_RETURN EQUAL 0)
     set(CHFLAGS_WORKS YES)

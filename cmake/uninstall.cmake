@@ -29,11 +29,10 @@ foreach(file ${files})
   if(EXISTS ${file})
     message(STATUS "Removing file: '${file}'")
 
-    exec_program(
-      ${CMAKE_COMMAND} ARGS
-      "-E remove ${file}"
-      OUTPUT_VARIABLE stdout
-      RETURN_VALUE result
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E remove ${file}
+      COMMAND_ECHO STDOUT
+      RESULT_VARIABLE result
     )
 
     if(NOT "${result}" STREQUAL 0)
