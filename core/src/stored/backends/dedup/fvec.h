@@ -160,6 +160,15 @@ template <typename T> class fvec : access {
     count += size;
   }
 
+  // does not initialize the new values if new_size > size
+  void resize_uninitialized(std::size_t new_size)
+  {
+    // does nothing if new_size <= cap
+    reserve(new_size);
+
+    count = new_size;
+  }
+
   void reserve_extra(size_type additional) { reserve(additional + count); }
 
   void clear() { count = 0; }
