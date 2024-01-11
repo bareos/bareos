@@ -31,7 +31,7 @@ wait
 messages
 @$out $log_home/jobs.out
 list jobs
-@$out $log_home/backup-full.out
+@$out $log_home/restore-full.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
 wait
 messages
@@ -44,8 +44,12 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/backup-full.out" \
+	    "$log_home/restore-full.out" \
 	    "Required restore job was not started."
+
+expect_grep "Restore OK" \
+	    "$log_home/restore-full.out" \
+	    "Restore job was not successful"
 
 check_restore_diff "${BackupDirectory}"
 end_test
