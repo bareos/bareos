@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -24,10 +24,10 @@ if(CHFLAGS_PROG)
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/chflags-test-file.txt"
        "Just a testfile"
   )
-  exec_program(
-    ${CHFLAGS_PROG} ${CMAKE_CURRENT_BINARY_DIR}
-    ARGS "nosunlink chflags-test-file.txt"
-    RETURN_VALUE CHFLAGS_RETURN
+  execute_process(
+    COMMAND ${CHFLAGS_PROG} nosunlink chflags-test-file.txt
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    RESULT_VARIABLE CHFLAGS_RETURN
   )
   if(CHFLAGS_RETURN EQUAL 0)
     set(CHFLAGS_WORKS YES)

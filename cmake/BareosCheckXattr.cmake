@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -25,10 +25,11 @@ if(SETFATTR_PROG AND GETFATTR_PROG)
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/xattr-test-file.txt"
        "Just a testfile"
   )
-  exec_program(
-    ${SETFATTR_PROG} ${CMAKE_CURRENT_BINARY_DIR}
-    ARGS "--name=user.cmake-check --value=xattr-value xattr-test-file.txt"
-    RETURN_VALUE SETFATTR_RETURN
+  execute_process(
+    COMMAND ${SETFATTR_PROG} --name=user.cmake-check --value=xattr-value
+            xattr-test-file.txt
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    RESULT_VARIABLE SETFATTR_RETURN
   )
   if(SETFATTR_RETURN EQUAL 0)
     set(SETFATTR_WORKS YES)

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,11 +29,9 @@ foreach(file ${files})
   if(EXISTS ${file})
     message(STATUS "Removing file: '${file}'")
 
-    exec_program(
-      ${CMAKE_COMMAND} ARGS
-      "-E remove ${file}"
-      OUTPUT_VARIABLE stdout
-      RETURN_VALUE result
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E remove ${file} COMMAND_ECHO STDOUT
+      RESULT_VARIABLE result
     )
 
     if(NOT "${result}" STREQUAL 0)
