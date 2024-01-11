@@ -411,22 +411,17 @@ check_duration_lt()
 }
 
 start_dir() {
-   "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
-   dir_pid=$!
+   ${rscripts}/bareos-ctl-dir start
 }
 
 start_fd() {
-   "${BAREOS_FILEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_FILEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
-   fd_pid=$!
+  ${rscripts}/bareos-ctl-fd start
 }
 
 start_sd() {
-   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
-   sd_pid=$!
-}
+ ${rscripts}/bareos-ctl-sd start
+} 
+
 
 start_bareos()
 {
@@ -565,18 +560,9 @@ waitpid()
 
 stop_bareos()
 {
-  if [ "$fd_pid" -gt 0 ]; then
-    kill_process "$fd_pid"
-    fd_pid=0
-  fi
-  if [ "$sd_pid" -gt 0 ]; then
-    kill_process "$sd_pid"
-    sd_pid=0
-  fi
-  if [ "$dir_pid" -gt 0 ]; then
-    kill_process "$dir_pid"
-    dir_pid=0
-  fi
+  ${rscripts}/bareos-ctl-dir stop
+  ${rscripts}/bareos-ctl-fd stop
+  ${rscripts}/bareos-ctl-sd stop
 }
 
 
