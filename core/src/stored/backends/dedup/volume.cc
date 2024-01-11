@@ -54,6 +54,19 @@ struct raii_fd {
 
   int fd{-1};
 };
+
+std::uint32_t SafeCast(std::size_t size)
+{
+  constexpr std::size_t max = std::numeric_limits<std::uint32_t>::max();
+  if (size > max) {
+    throw std::invalid_argument(std::to_string(size)
+                                + " is bigger than allowed ("
+                                + std::to_string(max) + ").");
+  }
+
+  return size;
+}
+
 std::vector<char> LoadFile(int fd)
 {
   std::vector<char> loaded;
@@ -110,6 +123,16 @@ int OpenRelative(open_context ctx, const char* path)
   return fd;
 }
 
+std::size_t aligned_idx(const std::vector<config::data_file>& datafiles)
+{
+  ASSERT(datafiles.size() == 2);
+
+  if (datafiles[0].BlockSize != 1) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
 };  // namespace
 
 volume::volume(open_type type, const char* path) : sys_path{path}
@@ -185,6 +208,109 @@ data::data(open_context ctx, const config& conf)
   records = decltype(records){ctx.read_only, rfd.fileno(), rf.End};
   aligned = decltype(aligned){ctx.read_only, afd.fileno(), alf->Size};
   unaligned = decltype(unaligned){ctx.read_only, ufd.fileno(), unalf->Size};
+}
+
+void volume::update_config()
+{
+  conf->blockfile().End = backing->blocks.size();
+  conf->recordfile().End = backing->records.size();
+  for (auto& dfile : conf->datafiles()) {
+    if (dfile.BlockSize == 1) {
+      dfile.Size = backing->unaligned.size();
+    } else {
+      dfile.Size = backing->aligned.size();
+    }
+  }
+
+  auto serialized = conf->serialize();
+
+  raii_fd conf_fd = openat(dird, "config", O_WRONLY);
+
+  if (!conf_fd) {
+    std::string errctx = "Could not open dedup config file";
+    throw std::system_error(errno, std::generic_category(), errctx);
+  }
+
+  WriteFile(conf_fd.fileno(), serialized);
+}
+
+save_state volume::BeginBlock()
+{
+  return {
+      .block_size = backing->blocks.size(),
+      .record_size = backing->records.size(),
+      .aligned_size = backing->aligned.size(),
+      .unaligned_size = backing->unaligned.size(),
+  };
+}
+
+void volume::CommitBlock(save_state s, block_header header)
+{
+  backing->blocks.push_back(block{
+      .CheckSum = header.CheckSum,
+      .BlockSize = header.BlockSize,
+      .BlockNumber = header.BlockNumber,
+      .ID = {header.ID[0], header.ID[1], header.ID[2], header.ID[3]},
+      .VolSessionId = header.VolSessionId,
+      .VolSessionTime = header.VolSessionTime,
+      .Count = backing->records.size() - s.record_size,
+      .Begin = s.record_size,
+  });
+
+  update_config();
+}
+
+void volume::AbortBlock(save_state s)
+{
+  backing->blocks.resize_uninitialized(s.block_size);
+  backing->records.resize_uninitialized(s.record_size);
+  backing->aligned.resize_uninitialized(s.aligned_size);
+  backing->unaligned.resize_uninitialized(s.unaligned_size);
+}
+
+void volume::PushRecord(record_header header,
+                        const char* data,
+                        std::size_t size)
+{
+  auto& dfiles = conf->datafiles();
+  auto idx = aligned_idx(dfiles);
+
+  if (size % dfiles[idx].BlockSize == 0) {
+    // aligned
+    auto& dfile = dfiles[idx];
+    auto& vec = backing->aligned;
+
+    auto start = vec.size();
+    vec.reserve_extra(size);
+    vec.append_range(data, size);
+    backing->records.push_back(record{
+        .FileIndex = header.FileIndex,
+        .Stream = header.Stream,
+        .DataSize = header.DataSize,
+        .Padding = 0,
+        .FileIdx = dfile.Idx,
+        .Size = size,
+        .Begin = start,
+    });
+  } else {
+    // unaligned
+    auto& dfile = dfiles[1 - idx];
+
+    auto& vec = backing->unaligned;
+
+    auto start = vec.size();
+    vec.reserve_extra(size);
+    vec.append_range(data, size);
+    backing->records.push_back(record{
+        .FileIndex = header.FileIndex,
+        .Stream = header.Stream,
+        .DataSize = header.DataSize,
+        .Padding = 0,
+        .FileIdx = dfile.Idx,
+        .Size = size,
+        .Begin = start,
+    });
+  }
 }
 
 void volume::create_new(int creation_mode,
@@ -264,13 +390,13 @@ namespace {
 template <typename T> using net = network_order::network<T>;
 
 struct net_string {
-  net<std::uint32_t> Start;
-  net<std::uint32_t> Size;
+  net_u32 Start;
+  net_u32 Size;
   net_string() = default;
   net_string(std::vector<char>& string_area,
              const char* data,
              std::uint32_t size)
-      : Start{(uint32_t)string_area.size()}, Size{size}
+      : Start{SafeCast(string_area.size())}, Size{size}
   {
     string_area.insert(string_area.end(), data, data + size);
   }
