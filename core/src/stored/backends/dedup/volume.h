@@ -134,6 +134,9 @@ class config {
 };
 
 class data {
+ private:
+  raii_fd afd, ufd, rfd, bfd;
+
  public:
   fvec<char> aligned;
   fvec<char> unaligned;
