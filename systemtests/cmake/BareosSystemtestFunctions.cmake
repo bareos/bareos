@@ -529,7 +529,7 @@ function(add_systemtest name file)
   else()
     add_test(
       NAME ${name}
-      COMMAND ${BASH_EXE} "-x" ${file}
+      COMMAND ${BASH_EXE} ${file}
       WORKING_DIRECTORY ${directory}
     )
       #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

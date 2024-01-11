@@ -236,6 +236,8 @@ int main(int margc, char* margv[])
   InitMsg(nullptr, nullptr);
 
   OSDependentInit();
+ 
+  (void)WSA_Init(); /* Initialize Windows sockets */
 
   CLI::App btape_app;
   InitCLIApp(btape_app, "The Bareos Tape Manipulation tool.", 2000);

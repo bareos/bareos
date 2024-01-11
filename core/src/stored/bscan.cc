@@ -143,6 +143,8 @@ int main(int argc, char* argv[])
 
   OSDependentInit();
 
+  (void)WSA_Init(); /* Initialize Windows sockets */
+
   CLI::App bscan_app;
   InitCLIApp(bscan_app, "The Bareos Database Scan tool.", 2001);
 

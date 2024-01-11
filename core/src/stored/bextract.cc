@@ -112,6 +112,8 @@ int main(int argc, char* argv[])
 
   OSDependentInit();
 
+  (void)WSA_Init(); /* Initialize Windows sockets */
+
   ff = init_find_files();
   binit(&bfd);
 
