@@ -5,7 +5,6 @@
 #
 # description: Backup Archiving REcovery Open Sourced.
 #
-
 export PSCMD="@PSCMD@"
 export PS="ps"
 export AWK="C:/Program Files/Git/usr/bin/awk.exe"
@@ -44,7 +43,7 @@ case "$1" in
           nssm set $srv_name ObjectName LocalSystem
           nssm set $srv_name Start SERVICE_AUTO_START
           nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
-          nssm set $srv_name AppEnvironmentExtra PATH='C:\src\bin\core\src\filed\Debug;%PATH%'
+          nssm set $srv_name AppEnvironmentExtra PATH=${CMAKE_BINARY_DIR}'\core\src\filed\Debug;%PATH%'
           echo  "nssm start $srv_name"
           nssm start $srv_name
         ;;
