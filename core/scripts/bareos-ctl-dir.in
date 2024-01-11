@@ -8,7 +8,7 @@
 
 export PSCMD="@PSCMD@"
 export PS="ps"
-export AWK="C:/Program Files/Git/usr/bin/awk.exe"
+export AWK="@AWK@"
 export PIDOF="PIDOF-NOTFOUND"
 export PGREP="PGREP-NOTFOUND"
 
@@ -23,8 +23,8 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-C:/src/bin/systemtests/scripts}
 
 srv_name=$(basename "${BAREOS_DIRECTOR_BINARY}" .exe)
 srv_sbindir=$(dirname "${BAREOS_DIRECTOR_BINARY}")
-srv_configdir=$(dirname "$srv_sbindir")
-srv_configdir=${srv_configdir}/etc/bareos
+srv_rundir=$(dirname "$srv_sbindir")
+srv_configdir=${srv_rundir}/etc/bareos
 
 
 #
@@ -35,58 +35,22 @@ srv_configdir=${srv_configdir}/etc/bareos
 
 case "$1" in
     start)
-        if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
-            echo "Starting the Bareos Director daemon"
-            OPTIONS=''
-            if [ "${BAREOS_DIRECTOR_USER}" != '' ]; then
-                OPTIONS="${OPTIONS} -u ${BAREOS_DIRECTOR_USER}"
-            fi
-
-            if [ "${BAREOS_DIRECTOR_GROUP}" != '' ]; then
-                OPTIONS="${OPTIONS} -g ${BAREOS_DIRECTOR_GROUP}"
-            fi
-
-            if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
-                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
-            fi
-
-            #checkcfg
-            #if [ $? != 0 ]; then
-            #    exit 1
-            #fi
-
-            #nssm install bareos_dir-bareos-basic C:\src\bin\systemtests\tests\bareos-basic\sbin\bareos_dir-bareos-basic.exe
-            #nssm set bareos_dir-bareos-basic AppParameters "-d 1000 -v -c C:\src\bin\systemtests\tests\bareos-basic\etc\bareos"
-            #nssm set bareos_dir-bareos-basic AppDirectory C:\src\bin\core\src\dird\Debug
-            #nssm set bareos_dir-bareos-basic AppExit Default Restart
-            #nssm set bareos_dir-bareos-basic AppNoConsole 1
-            #nssm set bareos_dir-bareos-basic DisplayName bareos_dir-bareos-basic
-            #nssm set bareos_dir-bareos-basic ObjectName LocalSystem
-            #nssm set bareos_dir-bareos-basic Start SERVICE_AUTO_START
-            #nssm set bareos_dir-bareos-basic Type SERVICE_WIN32_OWN_PROCESS
-
-
-            nssm install $srv_name $(cygpath -w "${BAREOS_DIRECTOR_BINARY}")
-            nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
-            nssm set $srv_name AppDirectory 'C:\src\bin\core\src\dird\Debug'
-            nssm set $srv_name AppExit Default Restart
-            nssm set $srv_name AppNoConsole 1
-            nssm set $srv_name DisplayName $srv_name
-            nssm set $srv_name ObjectName LocalSystem
-            nssm set $srv_name Start SERVICE_AUTO_START
-            nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
-            echo  "nssm start $srv_name"
-            nssm start $srv_name
-            #echo "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
-            #"${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS} &
-        fi
+          nssm install $srv_name $(cygpath -w "${BAREOS_DIRECTOR_BINARY}")
+          nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
+          nssm set $srv_name AppDirectory  "$(cygpath -w ${srv_rundir})"
+          nssm set $srv_name AppExit Default Restart
+          nssm set $srv_name AppNoConsole 1
+          nssm set $srv_name DisplayName $srv_name
+          nssm set $srv_name ObjectName LocalSystem
+          nssm set $srv_name Start SERVICE_AUTO_START
+          nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
+          nssm set $srv_name AppEnvironmentExtra PATH='C:\src\bin\core\src\dird\Debug;%PATH%'
+          echo  "nssm start $srv_name"
+          nssm start $srv_name
         ;;
 
     stop)
-        if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
-            printf "Stopping the Bareos Director daemon: "
-            killproc "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
-        fi
+        printf "Stopping the Bareos Director daemon: "
         nssm stop $srv_name confirm
         nssm remove $srv_name confirm
         ;;
@@ -98,7 +62,6 @@ case "$1" in
         ;;
 
     status)
-        #[ -x "${BAREOS_DIRECTOR_BINARY}" ] && status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
         echo -n "$srv_name "
         nssm status $srv_name
         exit $?

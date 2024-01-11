@@ -128,8 +128,8 @@ $PATH
 # If there are multiple version, select the first.
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
-  export PATH="@POSTGRES_BIN_PATH@:$PATH"
 else
+  export PATH="@POSTGRES_BIN_PATH@:$PATH"
   export PATH=/sbin:/usr/sbin:$PATH
 fi
 export PYTHONPATH=@pythonpath@
