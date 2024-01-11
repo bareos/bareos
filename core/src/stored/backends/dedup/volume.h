@@ -164,11 +164,14 @@ class volume {
                          std::size_t blocksize);
 
 
+  // writing interface
   save_state BeginBlock();
   void CommitBlock(save_state save, block_header header);
   void AbortBlock(save_state save);
   void PushRecord(record_header header, const char* data, std::size_t size);
 
+  // reading interface
+  std::size_t ReadBlock(std::size_t blocknum, void* data, std::size_t datasize);
 
   // misc
   void reset();
