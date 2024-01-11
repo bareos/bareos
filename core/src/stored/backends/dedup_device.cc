@@ -140,20 +140,41 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
     return -1;
   }
 
-  auto save = openvol->begin();
+  struct raii_save_state {
+    dedup::volume* vol;
+    dedup::save_state save;
 
+    raii_save_state(dedup::volume& vol) : vol{&vol}, save{vol.BeginBlock()} {}
+
+    void commit(block_header hdr)
+    {
+      vol->CommitBlock(save, hdr);
+      vol = nullptr;
+    }
+
+    ~raii_save_state()
+    {
+      if (vol) {
+        vol->AbortBlock(save);
+        vol = nullptr;
+      }
+    }
+  };
+  std::size_t datawritten = 0;
   try {
     chunked_reader stream{data, size};
-    ssize_t datawritten = 0;
 
     while (!stream.finished()) {
+      // when save goes out of scope without being commited, it will get
+      // aborted
+      auto save = raii_save_state(openvol.value());
+
       block_header block;
       if (!stream.read(&block, sizeof(block))) {
         throw std::runtime_error("Could not read block header from stream.");
       }
 
-      // openvol->append_block(block);
-      datawritten += sizeof(block);
+      auto blocksize = sizeof(block);
 
       if (auto* block_data = stream.get(block.size()); !block_data) {
         throw std::runtime_error("Could not read block data from stream.");
@@ -167,28 +188,27 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
                 "Could not read record header from stream.");
           }
 
-          // openvol->append_record(record);
-          datawritten += sizeof(record);
+          blocksize += sizeof(record);
 
           if (auto* record_data = records.get(record.size()); !record_data) {
             throw std::runtime_error("Could not read record data from stream.");
           } else {
-            // openvol->append_data(record_data, record.size());
-            datawritten += record.size();
+            openvol->PushRecord(record, record_data, record.size());
+            blocksize += record.size();
           }
         }
       }
+
+      save.commit(block);
+      datawritten += blocksize;
     }
 
-
-    openvol->commit(save);
     return datawritten;
   } catch (const std::exception& ex) {
     Emsg0(M_ERROR, 0,
           T_("Encountered error while trying to write to volume %s. ERR=%s\n"),
           openvol->path(), ex.what());
-    openvol->abort(save);
-    return -1;
+    return datawritten;
   }
 }
 

@@ -27,6 +27,7 @@
 #include <optional>
 #include <vector>
 #include "fvec.h"
+#include "util.h"
 
 #include "lib/network_order.h"
 
@@ -53,17 +54,33 @@ struct block {
   char ID[4];             /* Identification and block level */
   net_u32 VolSessionId;   /* Session Id for Job */
   net_u32 VolSessionTime; /* Session Time for Job */
+  net_u32 Count;          /* number of records inside block */
+  net_u64 Begin;          /* start record index of this block */
 };
 
 struct record {
   net_i32 FileIndex; /* File index supplied by File daemon */
   net_i32 Stream;    /* Stream number supplied by File daemon */
   net_u32 DataSize;  /* size of following data record in bytes */
-  net_u32 FileIdx;
-  net_u64 Size;
+  net_u32 Padding;   /* unused */
+  net_u32 FileIdx;   /* wich data file has the record */
+  net_u32 Size;      /* payload size(*) of record */
+  net_u64 Begin;     /* offset into datafile from where to start reading */
+
+  // (*) Size and DataSize can be completely different in cases where the
+  //     record is split across.  The first record has DataSize set to the
+  //     the combined size, so Size can be much smaller.
+  //     Probably redundant when BlockSize is given
 };
 
-struct save_state {};
+class volume;
+
+struct save_state {
+  std::size_t block_size{0};
+  std::size_t record_size{0};
+  std::size_t aligned_size{0};
+  std::size_t unaligned_size{0};
+};
 
 class config {
  public:
@@ -100,8 +117,12 @@ class config {
     bool ReadOnly;
   };
 
+  block_file& blockfile() { return bfile; }
+  record_file& recordfile() { return rfile; }
+  std::vector<data_file>& datafiles() { return dfiles; }
+
   const block_file& blockfile() const { return bfile; }
-  const record_file recordfile() const { return rfile; }
+  const record_file& recordfile() const { return rfile; }
   const std::vector<data_file>& datafiles() const { return dfiles; }
 
   std::vector<char> serialize();
@@ -113,12 +134,12 @@ class config {
 };
 
 class data {
+ public:
   fvec<char> aligned;
   fvec<char> unaligned;
   fvec<record> records;
   fvec<block> blocks;
 
- public:
   data(open_context ctx, const config& conf);
 };
 
@@ -135,13 +156,16 @@ class volume {
   const char* path() const { return sys_path.c_str(); }
   int fileno() const { return dird; }
 
-  save_state begin() { return {}; }
-  void abort(save_state) {}
-  void commit(save_state) {}
-
   static void create_new(int creation_mode,
                          const char* path,
                          std::size_t blocksize);
+
+
+  save_state BeginBlock();
+  void CommitBlock(save_state save, block_header header);
+  void AbortBlock(save_state save);
+  void PushRecord(record_header header, const char* data, std::size_t size);
+
 
  private:
   std::string sys_path;
@@ -149,6 +173,7 @@ class volume {
 
   std::optional<config> conf;
   std::optional<data> backing;
+  void update_config();
 };
 };  // namespace dedup
 
