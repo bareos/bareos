@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-import argparse
+import bareos.util.argparse as argparse
 import bareos.bsock
 import logging
 import sys

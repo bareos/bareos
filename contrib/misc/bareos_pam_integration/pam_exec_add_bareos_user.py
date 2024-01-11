@@ -8,7 +8,7 @@ Requires Bareos >= 19.2.4.
 """
 
 from __future__ import print_function
-import argparse
+import bareos.util.argparse as argparse
 import bareos.bsock
 import bareos.exceptions
 import logging
