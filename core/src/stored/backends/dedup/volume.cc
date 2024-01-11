@@ -364,6 +364,16 @@ void volume::create_new(int creation_mode,
   }
 }
 
+void volume::reset()
+{
+  backing->blocks.clear();
+  backing->records.clear();
+  backing->aligned.clear();
+  backing->unaligned.clear();
+
+  update_config();
+}
+
 namespace {
 template <typename T> using net = network_order::network<T>;
 
