@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: add build patch for `sprintf` in macos builds [PR #1636]
 - python-bareos: use socket.create_connection() to allow AF_INET6 [PR #1646]
 - Improve FreeBSD build [PR #1538]
+- core: sql_* add leading space to sql construct [PR #1656]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -55,4 +56,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1636]: https://github.com/bareos/bareos/pull/1636
 [PR #1637]: https://github.com/bareos/bareos/pull/1637
 [PR #1646]: https://github.com/bareos/bareos/pull/1646
+[PR #1656]: https://github.com/bareos/bareos/pull/1656
 [unreleased]: https://github.com/bareos/bareos/tree/master
