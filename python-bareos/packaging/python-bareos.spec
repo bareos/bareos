@@ -4,18 +4,6 @@
 
 # based on
 # https://docs.fedoraproject.org/en-US/packaging-guidelines/Python_Appendix/
-# specifically on
-# https://pagure.io/packaging-committee/blob/ae14fdb50cc6665a94bc32f7d984906ce1eece45/f/guidelines/modules/ROOT/pages/Python_Appendix.adoc
-#
-
-#
-# For current distribution, create
-# python2-bareos and python3-bareos packages.
-#
-# CentOS 6 supports only Python2.
-#
-# CentOS <= 7 and SLES <= 12,
-# the Python2 package is namend python-bareos (instead of python2-bareos).
 #
 
 %global srcname bareos
@@ -48,6 +36,10 @@ It also includes some tools based on this module.}
 Summary:        %{summary}
 BuildRequires:  %{python3_build_requires}
 %{?python_provide:%python_provide python3-%{srcname}}
+%if 0%{?fedora} || 0%{?rhel} >= 8 || 0%{?suse_version} || 0%{?sle_version}
+# Recommends is not supported on RHEL <= 7.
+Recommends:     python3-configargparse
+%endif
 
 %description -n python3-%{srcname} %_description
 

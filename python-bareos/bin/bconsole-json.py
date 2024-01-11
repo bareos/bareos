@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+#
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +21,7 @@
 
 
 from __future__ import print_function
-import argparse
+import bareos.util.argparse as argparse
 import bareos.bsock
 import bareos.exceptions
 import logging
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     logger.debug("options: %s" % (bareos_args))
     try:
         director = bareos.bsock.DirectorConsoleJson(**bareos_args)
-    except (bareos.exceptions.Error) as e:
+    except bareos.exceptions.Error as e:
         print(str(e))
         sys.exit(1)
 
