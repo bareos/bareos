@@ -170,6 +170,9 @@ class volume {
   void PushRecord(record_header header, const char* data, std::size_t size);
 
 
+  // misc
+  void reset();
+
  private:
   std::string sys_path;
   int dird;
