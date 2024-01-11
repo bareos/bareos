@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 -  python-bareos: use socket.create_connection() to allow AF_INET6 [PR #1650]
 - core: add build patch for `sprintf` in macos builds [PR #1651]
 - Improve FreeBSD build [PR #1643]
+- core: sql_* add leading space to sql construct [PR #1657]
 
 ### Fixed
 - Fix continuation on colons in plugin baseclass [PR #1638]
@@ -372,4 +373,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1643]: https://github.com/bareos/bareos/pull/1643
 [PR #1650]: https://github.com/bareos/bareos/pull/1650
 [PR #1651]: https://github.com/bareos/bareos/pull/1651
+[PR #1657]: https://github.com/bareos/bareos/pull/1657
 [unreleased]: https://github.com/bareos/bareos/tree/master
