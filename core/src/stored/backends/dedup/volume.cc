@@ -33,28 +33,6 @@ extern "C" {
 
 namespace dedup {
 namespace {
-struct raii_fd {
-  raii_fd(int fd) : fd{fd} {}
-
-  int fileno() { return fd; }
-
-  int release()
-  {
-    auto old = fd;
-    fd = -1;
-    return old;
-  }
-
-  operator bool() const { return fd >= 0; }
-
-  ~raii_fd()
-  {
-    if (fd >= 0) { close(fd); }
-  }
-
-  int fd{-1};
-};
-
 std::uint32_t SafeCast(std::size_t size)
 {
   constexpr std::size_t max = std::numeric_limits<std::uint32_t>::max();
