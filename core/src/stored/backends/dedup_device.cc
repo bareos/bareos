@@ -219,11 +219,27 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
 
 ssize_t dedup_device::d_read(int fd, void* data, size_t size)
 {
-  (void)fd;
-  (void)data;
-  (void)size;
+  if (!openvol) {
+    Emsg0(M_ERROR, 0, T_("Trying to write dedup volume when none are open.\n"));
+    return -1;
+  }
 
-  return -1;
+  if (openvol->fileno() != fd) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to write dedup volume that is not open "
+             "(open = %d, trying to write = %d).\n"),
+          openvol->fileno(), fd);
+    return -1;
+  }
+
+  try {
+    return openvol->ReadBlock(current_block(), data, size);
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0,
+          T_("Encountered error while trying to read from volume %s. ERR=%s\n"),
+          openvol->path(), ex.what());
+    return -1;
+  }
 }
 
 int dedup_device::d_close(int fd)

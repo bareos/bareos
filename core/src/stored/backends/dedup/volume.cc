@@ -111,6 +111,54 @@ std::size_t aligned_idx(const std::vector<config::data_file>& datafiles)
     return 1;
   }
 }
+
+block to_dedup(block_header header, std::uint64_t Begin, std::uint32_t Count)
+{
+  return block{
+      .CheckSum = header.CheckSum,
+      .BlockSize = header.BlockSize,
+      .BlockNumber = header.BlockNumber,
+      .ID = {header.ID[0], header.ID[1], header.ID[2], header.ID[3]},
+      .VolSessionId = header.VolSessionId,
+      .VolSessionTime = header.VolSessionTime,
+      .Count = Count,
+      .Begin = Begin,
+  };
+}
+record to_dedup(record_header header,
+                std::uint32_t FileIdx,
+                std::uint64_t Begin,
+                std::uint32_t Size)
+{
+  return record{
+      .FileIndex = header.FileIndex,
+      .Stream = header.Stream,
+      .DataSize = header.DataSize,
+      .Padding = 0,
+      .FileIdx = FileIdx,
+      .Size = Size,
+      .Begin = Begin,
+  };
+}
+block_header from_dedup(block b)
+{
+  return block_header{
+      .CheckSum = b.CheckSum,
+      .BlockSize = b.BlockSize,
+      .BlockNumber = b.BlockNumber,
+      .ID = {b.ID[0], b.ID[1], b.ID[2], b.ID[3]},
+      .VolSessionId = b.VolSessionId,
+      .VolSessionTime = b.VolSessionTime,
+  };
+}
+record_header from_dedup(record r)
+{
+  return record_header{
+      .FileIndex = r.FileIndex,
+      .Stream = r.Stream,
+      .DataSize = r.DataSize,
+  };
+}
 };  // namespace
 
 volume::volume(open_type type, const char* path) : sys_path{path}
@@ -224,16 +272,9 @@ save_state volume::BeginBlock()
 
 void volume::CommitBlock(save_state s, block_header header)
 {
-  backing->blocks.push_back(block{
-      .CheckSum = header.CheckSum,
-      .BlockSize = header.BlockSize,
-      .BlockNumber = header.BlockNumber,
-      .ID = {header.ID[0], header.ID[1], header.ID[2], header.ID[3]},
-      .VolSessionId = header.VolSessionId,
-      .VolSessionTime = header.VolSessionTime,
-      .Count = backing->records.size() - s.record_size,
-      .Begin = s.record_size,
-  });
+  auto start = s.record_size;
+  auto count = backing->records.size() - s.record_size;
+  backing->blocks.push_back(to_dedup(header, start, count));
 
   update_config();
 }
@@ -261,15 +302,7 @@ void volume::PushRecord(record_header header,
     auto start = vec.size();
     vec.reserve_extra(size);
     vec.append_range(data, size);
-    backing->records.push_back(record{
-        .FileIndex = header.FileIndex,
-        .Stream = header.Stream,
-        .DataSize = header.DataSize,
-        .Padding = 0,
-        .FileIdx = dfile.Idx,
-        .Size = size,
-        .Begin = start,
-    });
+    backing->records.push_back(to_dedup(header, dfile.Idx, start, size));
   } else {
     // unaligned
     auto& dfile = dfiles[1 - idx];
@@ -380,6 +413,76 @@ void volume::flush()
   backing->records.flush();
   backing->aligned.flush();
   backing->unaligned.flush();
+}
+
+std::size_t volume::ReadBlock(std::size_t blocknum,
+                              void* data,
+                              std::size_t size)
+{
+  if (backing->blocks.size() == blocknum) {
+    // trying to read one past the end is ok.  Just return 0 here to signal
+    // that the volume has reached its end.
+    return 0;
+  } else if (backing->blocks.size() < blocknum) {
+    throw std::invalid_argument("blocknum is out of bounds ("
+                                + std::to_string(blocknum) + " > "
+                                + std::to_string(backing->blocks.size()) + ")");
+  }
+
+  chunked_writer stream(data, size);
+
+  auto block = backing->blocks[blocknum];
+  auto begin = block.Begin.load();
+  auto end = begin + block.Count;
+
+  if (backing->records.size() < end) {
+    throw std::runtime_error("Trying to read records [" + std::to_string(begin)
+                             + ", " + std::to_string(end) + ") but only "
+                             + std::to_string(backing->records.size())
+                             + " records exist.");
+  }
+
+  block_header header = from_dedup(block);
+
+  if (!stream.write(&header, sizeof(header))) { return 0; }
+
+  auto& dfiles = conf->datafiles();
+
+  auto al_idx = aligned_idx(dfiles);
+
+  auto afx = dfiles[al_idx].Idx;
+  auto ufx = dfiles[1 - al_idx].Idx;
+
+  for (auto cur = begin; cur != end; ++cur) {
+    auto record = backing->records[cur];
+    auto rheader = from_dedup(record);
+
+    auto didx = record.FileIdx.load();
+    if (didx != afx && didx != ufx) {
+      throw std::runtime_error(
+          "Trying to read from unknown file index " + std::to_string(didx)
+          + "; known file indices are " + std::to_string(afx) + ", "
+          + std::to_string(ufx));
+    }
+
+    if (!stream.write(&rheader, sizeof(rheader))) { return 0; }
+
+    auto dbegin = record.Begin.load();
+    auto dsize = record.Size.load();
+
+    auto& vec = (didx == afx) ? backing->aligned : backing->unaligned;
+
+    if (vec.size() < dbegin + dsize) {
+      throw std::runtime_error(
+          "Trying to read region [" + std::to_string(dbegin) + ", "
+          + std::to_string(dbegin + dsize) + ") from file __ but only"
+          + std::to_string(vec.size()) + " bytes are used.");
+    }
+
+    if (!stream.write(vec.data() + dbegin, dsize)) { return 0; }
+  }
+
+  return size - stream.leftover();
 }
 
 namespace {
