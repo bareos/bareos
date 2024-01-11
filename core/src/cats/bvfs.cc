@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -72,18 +72,14 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
 
   Dmsg1(dbglevel, "BuildPathHierarchy(%s)\n", new_path);
 
-  /*
-   * Does the ppathid exist for this? use a memory cache ...
+  /* Does the ppathid exist for this? use a memory cache ...
    * In order to avoid the full loop, we consider that if a dir is already in
    * the PathHierarchy table, then there is no need to calculate all the
-   * hierarchy
-   */
+   * hierarchy */
   while (new_path && *new_path) {
     if (ppathid_cache.lookup(pathid)) {
-      /*
-       * It's already in the cache.  We can leave, no time to waste here,
-       * all the parent dirs have already been done
-       */
+      /* It's already in the cache.  We can leave, no time to waste here,
+       * all the parent dirs have already been done */
       goto bail_out;
     } else {
       Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %llu",
@@ -165,12 +161,10 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
   UPDATE_DB(jcr, cmd);
 
-  /*
-   * need to COMMIT here to ensure that other concurrent .bvfs_update runs
+  /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
    * see the current HasCache value. A new transaction must only be started
    * after having finished PathHierarchy processing, otherwise prevention
-   * from duplicate key violations in BuildPathHierarchy() will not work.
-   */
+   * from duplicate key violations in BuildPathHierarchy() will not work. */
   EndTransaction(jcr);
 
   /* Inserting path records for JobId */
@@ -189,12 +183,10 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * Now we have to do the directory recursion stuff to determine missing
+  /* Now we have to do the directory recursion stuff to determine missing
    * visibility.
    * We try to avoid recursion, to be as fast as possible.
-   * We also only work on not already hierarchised directories ...
-   */
+   * We also only work on not already hierarchised directories ... */
   Mmsg(cmd,
        "SELECT PathVisibility.PathId, Path "
        "FROM PathVisibility "
@@ -440,17 +432,13 @@ char* bvfs_parent_dir(char* path)
     p += len;
     while (p > path && !IsPathSeparator(*p)) { p--; }
     if (IsPathSeparator(*p) and (len >= 1)) {
-      /*
-       * Terminate the string after the "/".
+      /* Terminate the string after the "/".
        * Do this instead of overwritting the "/"
-       * to keep the root directory "/" as a separate path.
-       */
+       * to keep the root directory "/" as a separate path. */
       p[1] = '\0';
     } else {
-      /*
-       * path did not start with a "/".
-       * This can be the case for plugin results.
-       */
+      /* path did not start with a "/".
+       * This can be the case for plugin results. */
       p[0] = '\0';
     }
   }
@@ -684,12 +672,10 @@ static bool CheckTemp(char* output_table)
 
 void Bvfs::clear_cache()
 {
-  /*
-   * FIXME:
+  /* FIXME:
    * can't use predefined query,
    * as MySQL queries do only support single SQL statements,
-   * not multiple.
-   */
+   * not multiple. */
   // db->SqlQuery(BareosDb::SQL_QUERY::bvfs_clear_cache_0);
   db->StartTransaction(jcr);
   db->SqlQuery("UPDATE Job SET HasCache=0");
@@ -707,7 +693,7 @@ bool Bvfs::DropRestoreList(char* output_table)
 {
   PoolMem query(PM_MESSAGE);
   if (CheckTemp(output_table)) {
-    Mmsg(query, "DROP TABLE %s", output_table);
+    Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
     db->SqlQuery(query.c_str());
     return true;
   }
@@ -737,10 +723,10 @@ bool Bvfs::compute_restore_list(char* fileid,
   DbLocker _{db};
 
   /* Cleanup old tables first */
-  Mmsg(query, "DROP TABLE btemp%s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
   db->SqlQuery(query.c_str());
 
-  Mmsg(query, "DROP TABLE %s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
   db->SqlQuery(query.c_str());
 
   Mmsg(query, "CREATE TABLE btemp%s AS ", output_table);
@@ -750,7 +736,7 @@ bool Bvfs::compute_restore_list(char* fileid,
     Mmsg(tmp,
          "SELECT Job.JobId, JobTDate, FileIndex, File.Name, "
          "PathId, FileId "
-         "FROM File JOIN Job USING (JobId) WHERE FileId IN (%s)",
+         "FROM File JOIN Job USING (JobId) WHERE FileId IN (%s) ",
          fileid);
     PmStrcat(query, tmp.c_str());
   }
@@ -878,7 +864,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   retval = true;
 
 bail_out:
-  Mmsg(query, "DROP TABLE btemp%s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
   db->SqlQuery(query.c_str());
   return retval;
 }
