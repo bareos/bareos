@@ -170,10 +170,10 @@ data::data(open_context ctx, const config& conf)
 
   if (!alf) { throw std::runtime_error("no aligned file."); }
 
-  raii_fd bfd = OpenRelative(ctx, bf.relpath.c_str());
-  raii_fd rfd = OpenRelative(ctx, rf.relpath.c_str());
-  raii_fd afd = OpenRelative(ctx, alf->relpath.c_str());
-  raii_fd ufd = OpenRelative(ctx, unalf->relpath.c_str());
+  bfd = OpenRelative(ctx, bf.relpath.c_str());
+  rfd = OpenRelative(ctx, rf.relpath.c_str());
+  afd = OpenRelative(ctx, alf->relpath.c_str());
+  ufd = OpenRelative(ctx, unalf->relpath.c_str());
 
   if (!ctx.read_only && alf->ReadOnly) {
     throw std::runtime_error("aligned file is readonly, but rw requested.");
