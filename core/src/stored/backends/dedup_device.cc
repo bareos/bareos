@@ -127,18 +127,6 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
   using block_header = dedup::block_header;
   using record_header = dedup::record_header;
   using chunked_reader = dedup::chunked_reader;
-  if (!openvol) {
-    Emsg0(M_ERROR, 0, T_("Trying to write dedup volume when none are open.\n"));
-    return -1;
-  }
-
-  if (openvol->fileno() != dird) {
-    Emsg0(M_ERROR, 0,
-          T_("Trying to write dedup volume that is not open "
-             "(open = %d, trying to write = %d).\n"),
-          openvol->fileno(), dird);
-    return -1;
-  }
 
   struct raii_save_state {
     dedup::volume* vol;
@@ -163,6 +151,38 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
       }
     }
   };
+  if (!openvol) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to write dedup device with no loaded volume.\n"));
+    return -1;
+  }
+
+  if (openvol->fileno() != dird) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to write dedup volume that is not open "
+             "(open = %d, trying to write = %d).\n"),
+          openvol->fileno(), dird);
+    return -1;
+  }
+
+  if (current_block() == 0) {
+    /* Bareos tries to always just append to a drive.  There is a special case
+     * though:  If the label is supposed to be rewritten, then bareos
+     * writes the new label to the first block (i.e. current_block = 0).
+     * Bareos only does so when the contents of the volume are not of interest
+     * anymore.
+     * As the dedup device only knows how to append data, we simply clear the
+     * volume when we detect a write to the first block, as the rest of the
+     * data is not necessary anymore
+     * Bareos only does so when the contents of the volume are not of interest
+     * anymore.
+     * As the dedup device only knows how to append data, we simply clear the
+     * volume when we detect a write to the first block, as the rest of the
+     * data is not necessary anymore. */
+
+    if (!ResetOpenVolume()) { return -1; }
+  }
+
   std::size_t datawritten = 0;
   try {
     chunked_reader stream{data, size};
@@ -310,6 +330,21 @@ bool dedup_device::eod(DeviceControlRecord* dcr)
 }
 
 bool dedup_device::d_flush(DeviceControlRecord*) { return false; }
+
+bool dedup_device::ResetOpenVolume()
+{
+  ASSERT(!!openvol);
+  // FIXME: support secure erase command
+  try {
+    openvol->reset();
+    return true;
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0,
+          T_("Encountered error while trying to reset volume %s. ERR=%s\n"),
+          openvol->path(), ex.what());
+    return false;
+  }
+}
 
 REGISTER_SD_BACKEND(dedup, dedup_device);
 
