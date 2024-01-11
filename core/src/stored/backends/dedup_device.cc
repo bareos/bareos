@@ -311,7 +311,23 @@ bool dedup_device::eod(DeviceControlRecord* dcr)
   return false;
 }
 
-bool dedup_device::d_flush(DeviceControlRecord*) { return false; }
+bool dedup_device::d_flush(DeviceControlRecord*)
+{
+  if (!openvol) {
+    Emsg0(M_ERROR, 0, T_("Trying to flush dedup volume when none are open.\n"));
+    return false;
+  }
+
+  try {
+    openvol->flush();
+    return true;
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0, T_("Could not flush volume %s. ERR=%s\n"),
+          openvol->path(), ex.what());
+    (void)ex;
+    return false;
+  }
+}
 
 bool dedup_device::ResetOpenVolume()
 {

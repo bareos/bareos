@@ -172,6 +172,7 @@ class volume {
 
   // misc
   void reset();
+  void flush();
 
  private:
   std::string sys_path;

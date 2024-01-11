@@ -374,6 +374,14 @@ void volume::reset()
   update_config();
 }
 
+void volume::flush()
+{
+  backing->blocks.flush();
+  backing->records.flush();
+  backing->aligned.flush();
+  backing->unaligned.flush();
+}
+
 namespace {
 template <typename T> using net = network_order::network<T>;
 
