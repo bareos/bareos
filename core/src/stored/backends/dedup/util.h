@@ -91,6 +91,37 @@ struct record_header {
   std::size_t size() const { return DataSize.load(); }
 };
 
+struct raii_fd {
+  raii_fd() = default;
+  raii_fd(int fd) : fd{fd} {}
+  raii_fd(const raii_fd&) = delete;
+  raii_fd& operator=(const raii_fd&) = delete;
+  raii_fd(raii_fd&& other) : raii_fd{} { *this = std::move(other); }
+  raii_fd& operator=(raii_fd&& other)
+  {
+    std::swap(fd, other.fd);
+    return *this;
+  }
+
+  int fileno() { return fd; }
+
+  int release()
+  {
+    auto old = fd;
+    fd = -1;
+    return old;
+  }
+
+  operator bool() const { return fd >= 0; }
+
+  ~raii_fd()
+  {
+    if (fd >= 0) { close(fd); }
+  }
+
+  int fd{-1};
+};
+
 };  // namespace dedup
 
 #endif  // BAREOS_STORED_BACKENDS_DEDUP_UTIL_H_
