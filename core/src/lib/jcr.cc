@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -502,15 +502,16 @@ static std::shared_ptr<JobControlRecord> GetJcr(
           [](std::weak_ptr<JobControlRecord>& p) { return p.expired(); }),
       job_control_record_cache.end());
 
-  find_if(job_control_record_cache.begin(), job_control_record_cache.end(),
-          [&compare, &result](std::weak_ptr<JobControlRecord>& p) {
-            auto jcr = p.lock();
-            if (compare(jcr.get())) {
-              result = jcr;
-              return true;
-            }
-            return false;
-          });
+  std::ignore = find_if(
+      job_control_record_cache.begin(), job_control_record_cache.end(),
+      [&compare, &result](std::weak_ptr<JobControlRecord>& p) {
+        auto jcr = p.lock();
+        if (compare(jcr.get())) {
+          result = jcr;
+          return true;
+        }
+        return false;
+      });
 
   UnlockJcrChain();
 
@@ -681,11 +682,9 @@ static void UpdateWaitTime(JobControlRecord* jcr, int newJobStatus)
       break;
   }
 
-  /*
-   * If we were previously waiting and are not any more
+  /* If we were previously waiting and are not any more
    * we want to update the wait_time variable, which is
-   * the start of waiting.
-   */
+   * the start of waiting. */
   switch (oldJobStatus) {
     case JS_WaitFD:
     case JS_WaitSD:
@@ -780,19 +779,15 @@ void JobControlRecord::setJobStatus(int newJobStatus)
   // Update wait_time depending on newJobStatus and oldJobStatus
   UpdateWaitTime(this, newJobStatus);
 
-  /*
-   * For a set of errors, ... keep the current status
-   * so it isn't lost. For all others, set it.
-   */
+  /* For a set of errors, ... keep the current status
+   * so it isn't lost. For all others, set it. */
   Dmsg2(800, "OnEntry JobStatus=%c newJobstatus=%c\n", oldJobStatus,
         newJobStatus);
 
-  /*
-   * If status priority is > than proposed new status, change it.
+  /* If status priority is > than proposed new status, change it.
    * If status priority == new priority and both are zero, take the new
    * status. If it is not zero, then we keep the first non-zero "error" that
-   * occurred.
-   */
+   * occurred. */
   if (priority > old_priority || (priority == 0 && old_priority == 0)) {
     Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n", oldJobStatus,
           old_priority, newJobStatus, priority);

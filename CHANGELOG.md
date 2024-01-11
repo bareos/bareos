@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - autoxflate: fix autoxflate on replication [PR #1596]
 - macOS: fix linking problem for macOS >= 14 [PR #1624]
 - pkglists: update SUSE to have vmware packages [PR #1635]
+- Improve FreeBSD build [PR #1645]
 
 ## [21.1.8] - 2023-10-23
 
@@ -706,4 +707,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1596]: https://github.com/bareos/bareos/pull/1596
 [PR #1624]: https://github.com/bareos/bareos/pull/1624
 [PR #1635]: https://github.com/bareos/bareos/pull/1635
+[PR #1645]: https://github.com/bareos/bareos/pull/1645
 [unreleased]: https://github.com/bareos/bareos/tree/master
