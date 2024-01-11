@@ -35,6 +35,32 @@ using net_i32 = network_order::network<std::int32_t>;
 using net_u16 = network_order::network<std::uint16_t>;
 using net_u8 = std::uint8_t;
 
+class chunked_writer {
+ public:
+  chunked_writer(void* data, std::size_t size)
+      : begin{(char*)data}, end{begin + size}
+  {
+  }
+
+  bool write(const void* mem, std::size_t size)
+  {
+    ASSERT(begin <= end);
+    if (static_cast<std::size_t>(end - begin) < size) { return false; }
+
+    std::memcpy(begin, mem, size);
+    begin += size;
+
+    return true;
+  }
+
+  bool finished() const { return begin == end; }
+  std::size_t leftover() const { return end - begin; }
+
+ private:
+  char* begin;
+  char* end;
+};
+
 class chunked_reader {
  public:
   chunked_reader(const void* data, std::size_t size)
