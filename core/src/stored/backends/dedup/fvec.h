@@ -32,6 +32,7 @@ extern "C" {
 }
 #include <system_error>
 #include <limits>
+#include <cstring>
 
 namespace dedup {
 struct access {
@@ -149,6 +150,14 @@ template <typename T> class fvec : access {
     } else {
       throw error("mremap");
     }
+  }
+
+  // think of (arr, size) as a span; then the name makes sense
+  void append_range(const T* arr, std::size_t size)
+  {
+    reserve_extra(size);
+    std::memcpy(end(), arr, size * element_size);
+    count += size;
   }
 
   void reserve_extra(size_type additional) { reserve(additional + count); }
