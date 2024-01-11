@@ -26,6 +26,10 @@
 #include "lib/network_order.h"
 #include "include/bareos.h"
 
+extern "C" {
+#include <unistd.h>
+}
+
 namespace dedup {
 
 using net_u64 = network_order::network<std::uint64_t>;
@@ -89,6 +93,37 @@ struct record_header {
 
   // actual payload size
   std::size_t size() const { return DataSize.load(); }
+};
+
+struct raii_fd {
+  raii_fd() = default;
+  raii_fd(int fd_) : fd{fd_} {}
+  raii_fd(const raii_fd&) = delete;
+  raii_fd& operator=(const raii_fd&) = delete;
+  raii_fd(raii_fd&& other) : raii_fd{} { *this = std::move(other); }
+  raii_fd& operator=(raii_fd&& other)
+  {
+    std::swap(fd, other.fd);
+    return *this;
+  }
+
+  int fileno() { return fd; }
+
+  int release()
+  {
+    auto old = fd;
+    fd = -1;
+    return old;
+  }
+
+  operator bool() const { return fd >= 0; }
+
+  ~raii_fd()
+  {
+    if (fd >= 0) { close(fd); }
+  }
+
+  int fd{-1};
 };
 
 };  // namespace dedup
