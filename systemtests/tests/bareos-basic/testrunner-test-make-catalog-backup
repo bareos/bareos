@@ -13,7 +13,7 @@ export TestName
 OS=$(uname)
 if [[ $OS =~ MINGW64_.* ]];
 then
- # echo "Test $TestName does not work on windows"
+  echo "Test $TestName does not work on windows"
   exit 77
 fi
 

@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #shellcheck source=../environment.in
-#. ./environment
+. ./environment
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
