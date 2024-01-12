@@ -136,14 +136,14 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
 
     void commit(block_header hdr)
     {
-      vol->CommitBlock(save, hdr);
+      vol->CommitBlock(std::move(save), hdr);
       vol = nullptr;
     }
 
     ~raii_save_state()
     {
       if (vol) {
-        vol->AbortBlock(save);
+        vol->AbortBlock(std::move(save));
         vol = nullptr;
       }
     }

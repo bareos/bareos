@@ -25,9 +25,13 @@
 #include <cstdlib>
 #include <string>
 #include <optional>
+#include <unordered_map>
+#include <map>
+#include <utility>
 #include <vector>
 #include "fvec.h"
 #include "util.h"
+#include "lib/util.h"
 
 #include "lib/network_order.h"
 
@@ -78,8 +82,13 @@ class volume;
 struct save_state {
   std::size_t block_size{0};
   std::size_t record_size{0};
-  std::size_t aligned_size{0};
-  std::size_t unaligned_size{0};
+  std::vector<std::size_t> data_sizes;
+
+  save_state() = default;
+  save_state(save_state&&) = default;
+  save_state& operator=(save_state&&) = default;
+  save_state(const save_state&) = delete;
+  save_state& operator=(const save_state&) = delete;
 };
 
 class config {
@@ -135,15 +144,42 @@ class config {
 
 class data {
  private:
-  raii_fd afd, ufd, rfd, bfd;
+  std::vector<raii_fd> fds;
 
  public:
-  fvec<char> aligned;
-  fvec<char> unaligned;
+  using bsize_map
+      = std::map<std::uint64_t, std::uint32_t, std::greater<std::uint64_t>>;
+
   fvec<record> records;
   fvec<block> blocks;
+  std::vector<fvec<char>> datafiles;
+  std::unordered_map<std::uint32_t, std::size_t> idx_to_dfile;
+  bsize_map bsize_to_idx;
 
   data(open_context ctx, const config& conf);
+};
+
+struct urid  // universial record id
+{
+  std::uint32_t VolSessionId;   /* Session Id for Job */
+  std::uint32_t VolSessionTime; /* Session Time for Job */
+
+  std::int32_t FileIndex; /* File index supplied by File daemon */
+  std::int32_t Stream;    /* Stream number supplied by File daemon */
+};
+
+struct urid_hash {
+  std::size_t operator()(urid id) const
+  {
+    constexpr auto uhash = std::hash<std::uint32_t>{};
+    constexpr auto ihash = std::hash<std::int32_t>{};
+    std::size_t h0 = hash_combine(0, uhash(id.VolSessionId));
+    std::size_t h1 = hash_combine(h0, uhash(id.VolSessionTime));
+    std::size_t h2 = hash_combine(h1, ihash(id.FileIndex));
+    std::size_t h3 = hash_combine(h2, ihash(id.Stream));
+
+    return h3;
+  }
 };
 
 class volume {
@@ -184,6 +220,15 @@ class volume {
   std::optional<config> conf;
   std::optional<data> backing;
   void update_config();
+
+  struct record_space {
+    std::uint32_t FileIdx; /* in which data file was the space reserved */
+    std::uint32_t Size;    /* Size left of reserved space */
+    std::uint64_t
+        Begin; /* offset into datafile from where to continue writing */
+  };
+
+  std::unordered_map<urid, record_space, urid_hash> unfinished;
 };
 };  // namespace dedup
 

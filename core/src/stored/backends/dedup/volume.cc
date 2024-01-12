@@ -101,17 +101,6 @@ int OpenRelative(open_context ctx, const char* path)
   return fd;
 }
 
-std::size_t aligned_idx(const std::vector<config::data_file>& datafiles)
-{
-  ASSERT(datafiles.size() == 2);
-
-  if (datafiles[0].BlockSize != 1) {
-    return 0;
-  } else {
-    return 1;
-  }
-}
-
 block to_dedup(block_header header, std::uint64_t Begin, std::uint32_t Count)
 {
   return block{
@@ -159,6 +148,18 @@ record_header from_dedup(record r)
       .DataSize = r.DataSize,
   };
 }
+
+auto FindDataIdx(const data::bsize_map& map, std::uint64_t size)
+{
+  for (auto [bsize, idx] : map) {
+    if (size % bsize == 0) { return idx; }
+  }
+
+  throw std::runtime_error(
+      "Could not find an appropriate data file for "
+      "record of size "
+      + std::to_string(size));
+}
 };  // namespace
 
 volume::volume(open_type type, const char* path) : sys_path{path}
@@ -201,39 +202,27 @@ data::data(open_context ctx, const config& conf)
   auto& rf = conf.recordfile();
   if (rf.Start != 0) { throw std::runtime_error("recordfile start != 0."); }
 
-  auto& dfs = conf.datafiles();
-  if (dfs.size() != 2) { throw std::runtime_error("too many datafiles."); }
-  const config::data_file* unalf = nullptr;
-  const config::data_file* alf = nullptr;
-
-  for (auto& df : dfs) {
-    if (df.BlockSize == 1) {
-      unalf = &df;
-    } else if (df.BlockSize > 1) {
-      alf = &df;
-    }
-  }
-
-  if (!unalf) { throw std::runtime_error("no unaligned file."); }
-
-  if (!alf) { throw std::runtime_error("no aligned file."); }
-
-  bfd = OpenRelative(ctx, bf.relpath.c_str());
-  rfd = OpenRelative(ctx, rf.relpath.c_str());
-  afd = OpenRelative(ctx, alf->relpath.c_str());
-  ufd = OpenRelative(ctx, unalf->relpath.c_str());
-
-  if (!ctx.read_only && alf->ReadOnly) {
-    throw std::runtime_error("aligned file is readonly, but rw requested.");
-  }
-  if (!ctx.read_only && unalf->ReadOnly) {
-    throw std::runtime_error("unaligned file is readonly, but rw requested.");
-  }
-
+  raii_fd bfd = OpenRelative(ctx, bf.relpath.c_str());
+  raii_fd rfd = OpenRelative(ctx, rf.relpath.c_str());
   blocks = decltype(blocks){ctx.read_only, bfd.fileno(), bf.End};
   records = decltype(records){ctx.read_only, rfd.fileno(), rf.End};
-  aligned = decltype(aligned){ctx.read_only, afd.fileno(), alf->Size};
-  unaligned = decltype(unaligned){ctx.read_only, ufd.fileno(), unalf->Size};
+  fds.emplace_back(std::move(bfd));
+  fds.emplace_back(std::move(rfd));
+
+  auto& dfs = conf.datafiles();
+
+  for (auto& df : dfs) {
+    raii_fd& fd = fds.emplace_back(OpenRelative(ctx, df.relpath.c_str()));
+    if (!ctx.read_only && df.ReadOnly) {
+      throw std::runtime_error("file '" + df.relpath + "' is readonly,"
+			       " but write permissions requested.");
+    }
+    auto idx = datafiles.size();
+    datafiles.emplace_back(ctx.read_only, fd.fileno(), df.Size);
+
+    idx_to_dfile[df.Idx] = idx;
+    bsize_to_idx[df.BlockSize] = df.Idx;
+  }
 }
 
 void volume::update_config()
@@ -241,11 +230,8 @@ void volume::update_config()
   conf->blockfile().End = backing->blocks.size();
   conf->recordfile().End = backing->records.size();
   for (auto& dfile : conf->datafiles()) {
-    if (dfile.BlockSize == 1) {
-      dfile.Size = backing->unaligned.size();
-    } else {
-      dfile.Size = backing->aligned.size();
-    }
+    auto dfile_idx = backing->idx_to_dfile.at(dfile.Idx);
+    dfile.Size = backing->datafiles[dfile_idx].size();
   }
 
   auto serialized = conf->serialize();
@@ -262,12 +248,14 @@ void volume::update_config()
 
 save_state volume::BeginBlock()
 {
-  return {
-      .block_size = backing->blocks.size(),
-      .record_size = backing->records.size(),
-      .aligned_size = backing->aligned.size(),
-      .unaligned_size = backing->unaligned.size(),
-  };
+  save_state s;
+
+  s.block_size = backing->blocks.size();
+  s.record_size = backing->records.size();
+
+  for (auto& vec : backing->datafiles) { s.data_sizes.push_back(vec.size()); }
+
+  return s;
 }
 
 void volume::CommitBlock(save_state s, block_header header)
@@ -283,45 +271,24 @@ void volume::AbortBlock(save_state s)
 {
   backing->blocks.resize_uninitialized(s.block_size);
   backing->records.resize_uninitialized(s.record_size);
-  backing->aligned.resize_uninitialized(s.aligned_size);
-  backing->unaligned.resize_uninitialized(s.unaligned_size);
+  ASSERT(s.data_sizes.size() == backing->datafiles.size());
+  for (std::size_t i = 0; i < s.data_sizes.size(); ++i) {
+    backing->datafiles[i].resize_uninitialized(s.data_sizes[i]);
+  }
 }
 
 void volume::PushRecord(record_header header,
                         const char* data,
                         std::size_t size)
 {
-  auto& dfiles = conf->datafiles();
-  auto idx = aligned_idx(dfiles);
+  auto idx = FindDataIdx(backing->bsize_to_idx, header.DataSize);
 
-  if (size % dfiles[idx].BlockSize == 0) {
-    // aligned
-    auto& dfile = dfiles[idx];
-    auto& vec = backing->aligned;
+  auto& vec = backing->datafiles[backing->idx_to_dfile[idx]];
 
-    auto start = vec.size();
-    vec.reserve_extra(size);
-    vec.append_range(data, size);
-    backing->records.push_back(to_dedup(header, dfile.Idx, start, size));
-  } else {
-    // unaligned
-    auto& dfile = dfiles[1 - idx];
-
-    auto& vec = backing->unaligned;
-
-    auto start = vec.size();
-    vec.reserve_extra(size);
-    vec.append_range(data, size);
-    backing->records.push_back(record{
-        .FileIndex = header.FileIndex,
-        .Stream = header.Stream,
-        .DataSize = header.DataSize,
-        .Padding = 0,
-        .FileIdx = dfile.Idx,
-        .Size = size,
-        .Begin = start,
-    });
-  }
+  auto start = vec.size();
+  vec.reserve_extra(header.DataSize);
+  vec.append_range(data, size);
+  backing->records.push_back(to_dedup(header, idx, start, size));
 }
 
 void volume::create_new(int creation_mode,
@@ -401,8 +368,7 @@ void volume::reset()
 {
   backing->blocks.clear();
   backing->records.clear();
-  backing->aligned.clear();
-  backing->unaligned.clear();
+  for (auto& vec : backing->datafiles) { vec.clear(); }
 
   update_config();
 }
@@ -411,8 +377,7 @@ void volume::flush()
 {
   backing->blocks.flush();
   backing->records.flush();
-  backing->aligned.flush();
-  backing->unaligned.flush();
+  for (auto& vec : backing->datafiles) { vec.flush(); }
 }
 
 std::size_t volume::ReadBlock(std::size_t blocknum,
@@ -446,23 +411,17 @@ std::size_t volume::ReadBlock(std::size_t blocknum,
 
   if (!stream.write(&header, sizeof(header))) { return 0; }
 
-  auto& dfiles = conf->datafiles();
-
-  auto al_idx = aligned_idx(dfiles);
-
-  auto afx = dfiles[al_idx].Idx;
-  auto ufx = dfiles[1 - al_idx].Idx;
-
   for (auto cur = begin; cur != end; ++cur) {
     auto record = backing->records[cur];
     auto rheader = from_dedup(record);
 
     auto didx = record.FileIdx.load();
-    if (didx != afx && didx != ufx) {
-      throw std::runtime_error(
-          "Trying to read from unknown file index " + std::to_string(didx)
-          + "; known file indices are " + std::to_string(afx) + ", "
-          + std::to_string(ufx));
+
+    auto dfile = backing->idx_to_dfile.find(didx);
+    if (dfile == backing->idx_to_dfile.end()) {
+      throw std::runtime_error("Trying to read from unknown file index "
+                               + std::to_string(didx)
+                               + "; known file indices are ...");
     }
 
     if (!stream.write(&rheader, sizeof(rheader))) { return 0; }
@@ -470,7 +429,7 @@ std::size_t volume::ReadBlock(std::size_t blocknum,
     auto dbegin = record.Begin.load();
     auto dsize = record.Size.load();
 
-    auto& vec = (didx == afx) ? backing->aligned : backing->unaligned;
+    auto& vec = backing->datafiles[dfile->second];
 
     if (vec.size() < dbegin + dsize) {
       throw std::runtime_error(
