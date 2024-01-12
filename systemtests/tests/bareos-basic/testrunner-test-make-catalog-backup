@@ -13,8 +13,8 @@ export TestName
 OS=$(uname)
 if [[ $OS =~ MINGW64_.* ]];
 then
- # echo "Test $Testname does not work on windows"
-  exit 0
+ # echo "Test $TestName does not work on windows"
+  exit 77
 fi
 
 JobName=BackupCatalog
