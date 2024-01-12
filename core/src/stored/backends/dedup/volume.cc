@@ -246,8 +246,13 @@ void volume::update_config()
   WriteFile(conf_fd.fileno(), serialized);
 }
 
-save_state volume::BeginBlock()
+save_state volume::BeginBlock(block_header header)
 {
+  if (current_block) {
+    throw std::runtime_error(
+        "Trying to start new block before finishing last block.");
+  }
+
   save_state s;
 
   s.block_size = backing->blocks.size();
@@ -255,16 +260,23 @@ save_state volume::BeginBlock()
 
   for (auto& vec : backing->datafiles) { s.data_sizes.push_back(vec.size()); }
 
+  current_block.emplace(header);
+
   return s;
 }
 
-void volume::CommitBlock(save_state s, block_header header)
+void volume::CommitBlock(save_state s)
 {
+  if (!current_block) {
+    throw std::runtime_error("Cannot commit block that was not started.");
+  }
   auto start = s.record_size;
   auto count = backing->records.size() - s.record_size;
-  backing->blocks.push_back(to_dedup(header, start, count));
+  backing->blocks.push_back(to_dedup(current_block.value(), start, count));
 
   update_config();
+
+  current_block.reset();
 }
 
 void volume::AbortBlock(save_state s)
@@ -272,9 +284,12 @@ void volume::AbortBlock(save_state s)
   backing->blocks.resize_uninitialized(s.block_size);
   backing->records.resize_uninitialized(s.record_size);
   ASSERT(s.data_sizes.size() == backing->datafiles.size());
+
   for (std::size_t i = 0; i < s.data_sizes.size(); ++i) {
     backing->datafiles[i].resize_uninitialized(s.data_sizes[i]);
   }
+
+  if (current_block) { current_block.reset(); }
 }
 
 void volume::PushRecord(record_header header,
