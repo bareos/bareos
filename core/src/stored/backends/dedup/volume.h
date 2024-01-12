@@ -166,6 +166,13 @@ struct urid  // universial record id
 
   std::int32_t FileIndex; /* File index supplied by File daemon */
   std::int32_t Stream;    /* Stream number supplied by File daemon */
+
+  friend constexpr bool operator==(urid l, urid r)
+  {
+    return l.VolSessionId == r.VolSessionId
+           && l.VolSessionTime == r.VolSessionTime && l.FileIndex == r.FileIndex
+           && l.Stream == r.Stream;
+  }
 };
 
 struct urid_hash {
@@ -227,7 +234,7 @@ class volume {
     std::uint32_t FileIdx; /* in which data file was the space reserved */
     std::uint32_t Size;    /* Size left of reserved space */
     std::uint64_t
-        Begin; /* offset into datafile from where to continue writing */
+        Continue; /* offset into datafile from where to continue writing */
   };
 
   std::unordered_map<urid, record_space, urid_hash> unfinished;
