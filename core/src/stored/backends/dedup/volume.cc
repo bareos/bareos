@@ -296,6 +296,42 @@ void volume::PushRecord(record_header header,
                         const char* data,
                         std::size_t size)
 {
+  if (!current_block) {
+    throw std::runtime_error(
+        "Cannot write record to volume when no block was started.");
+  }
+
+  if (header.Stream < 0) {
+    // this header might be a continuation header
+    urid rec_id = {
+        .VolSessionId = current_block->VolSessionId,
+        .VolSessionTime = current_block->VolSessionTime,
+        .FileIndex = header.FileIndex,
+        .Stream = -header.Stream,
+    };
+
+    if (auto found = unfinished.find(rec_id); found != unfinished.end()) {
+      auto idx = found->second.FileIdx;
+      auto& vec = backing->datafiles[backing->idx_to_dfile[idx]];
+      auto start = found->second.Continue;
+
+      if (found->second.Size < size) {
+        throw std::runtime_error("Trying to append " + std::to_string(size)
+                                 + " bytes to a record, but only "
+                                 + std::to_string(found->second.Size)
+                                 + " bytes are left.");
+      }
+
+      auto* ptr = vec.data() + start;
+      std::memcpy(ptr, data, size);
+
+      found->second.Size -= size;
+      found->second.Continue += size;
+
+      if (found->second.Size == 0) { unfinished.erase(found); }
+    }
+  }
+
   auto idx = FindDataIdx(backing->bsize_to_idx, header.DataSize);
 
   auto& vec = backing->datafiles[backing->idx_to_dfile[idx]];
@@ -304,6 +340,21 @@ void volume::PushRecord(record_header header,
   vec.reserve_extra(header.DataSize);
   vec.append_range(data, size);
   backing->records.push_back(to_dedup(header, idx, start, size));
+
+  if (size != header.DataSize) {
+    urid rec_id = {
+        .VolSessionId = current_block->VolSessionId,
+        .VolSessionTime = current_block->VolSessionTime,
+        .FileIndex = header.FileIndex,
+        .Stream = header.Stream,
+    };
+
+    unfinished.emplace(rec_id, record_space{
+                                   .FileIdx = idx,
+                                   .Size = SafeCast(header.DataSize - size),
+                                   .Continue = start + size,
+                               });
+  }
 }
 
 void volume::create_new(int creation_mode,
