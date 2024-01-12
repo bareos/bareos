@@ -132,14 +132,14 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
     dedup::volume* vol;
     dedup::save_state save;
 
-    raii_save_state(dedup::volume& opened_volume)
-        : vol{&opened_volume}, save{opened_volume.BeginBlock()}
+    raii_save_state(dedup::volume& opened_volume, block_header header)
+        : vol{&opened_volume}, save{opened_volume.BeginBlock(header)}
     {
     }
 
-    void commit(block_header hdr)
+    void commit()
     {
-      vol->CommitBlock(std::move(save), hdr);
+      vol->CommitBlock(std::move(save));
       vol = nullptr;
     }
 
@@ -188,16 +188,16 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
     chunked_reader stream{data, size};
 
     while (!stream.finished()) {
-      // when save goes out of scope without being commited, it will get
-      // aborted
-      auto save = raii_save_state(openvol.value());
-
       block_header block;
       if (!stream.read(&block, sizeof(block))) {
         throw std::runtime_error("Could not read block header from stream.");
       }
 
       auto blocksize = sizeof(block);
+
+      // when save goes out of scope without being commited, it will get
+      // aborted
+      auto save = raii_save_state(openvol.value(), block);
 
       if (auto* block_data = stream.get(block.size()); !block_data) {
         throw std::runtime_error("Could not read block data from stream.");
@@ -222,7 +222,7 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
         }
       }
 
-      save.commit(block);
+      save.commit();
       datawritten += blocksize;
     }
 
