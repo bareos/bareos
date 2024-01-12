@@ -39,27 +39,26 @@ config config_from_data(
     const std::unordered_map<std::uint32_t, std::string>& data_names,
     const data& backing)
 {
-  config new_conf{0};
+  config new_conf;
 
-  auto& bf = new_conf.blockfile();
-  auto& rf = new_conf.recordfile();
-  auto& dfs = new_conf.datafiles();
+  auto& bfs = new_conf.bfiles;
+  auto& rfs = new_conf.rfiles;
+  auto& dfs = new_conf.dfiles;
 
-  bf = config::block_file{
+  bfs.push_back(config::block_file{
       .relpath = block_names.at(0),
       .Start = 0,
       .End = backing.blocks.size(),
       .Idx = 0,
-  };
+  });
 
-  rf = config::record_file{
+  rfs.push_back(config::record_file{
       .relpath = record_names.at(0),
       .Start = 0,
       .End = backing.records.size(),
       .Idx = 0,
-  };
+  });
 
-  dfs.clear();
   for (auto [bsize, idx] : backing.bsize_to_idx) {
     auto dfile = backing.idx_to_dfile.at(idx);
     auto& df = backing.datafiles.at(dfile);
@@ -226,12 +225,11 @@ volume::volume(open_type type, const char* path) : sys_path{path}
     throw std::system_error(errno, std::generic_category(), errctx);
   }
 
-  config conf{LoadFile(conf_fd.fileno())};
+  auto conf = config::deserialize(LoadFile(conf_fd.fileno()));
 
-  block_names[conf.blockfile().Idx] = conf.blockfile().relpath;
-  record_names[conf.recordfile().Idx] = conf.recordfile().relpath;
-
-  for (auto& df : conf.datafiles()) { data_names[df.Idx] = df.relpath; }
+  for (auto& bf : conf.bfiles) { block_names[bf.Idx] = bf.relpath; }
+  for (auto& rf : conf.rfiles) { record_names[rf.Idx] = rf.relpath; }
+  for (auto& df : conf.dfiles) { data_names[df.Idx] = df.relpath; }
 
   backing.emplace(
       open_context{
@@ -244,10 +242,19 @@ volume::volume(open_type type, const char* path) : sys_path{path}
 
 data::data(open_context ctx, const config& conf)
 {
-  auto& bf = conf.blockfile();
+  if (conf.bfiles.size() != 1) {
+    throw std::runtime_error("bad config (num blockfiles ("
+                             + std::to_string(conf.bfiles.size()) + ") != 1)");
+  }
+  if (conf.rfiles.size() != 1) {
+    throw std::runtime_error("bad config (num recordfiles ("
+                             + std::to_string(conf.rfiles.size()) + ") != 1)");
+  }
+
+  auto& bf = conf.bfiles[0];
   if (bf.Start != 0) { throw std::runtime_error("blockfile start != 0."); }
 
-  auto& rf = conf.recordfile();
+  auto& rf = conf.rfiles[0];
   if (rf.Start != 0) { throw std::runtime_error("recordfile start != 0."); }
 
   raii_fd bfd = OpenRelative(ctx, bf.relpath.c_str());
@@ -257,9 +264,7 @@ data::data(open_context ctx, const config& conf)
   fds.emplace_back(std::move(bfd));
   fds.emplace_back(std::move(rfd));
 
-  auto& dfs = conf.datafiles();
-
-  for (auto& df : dfs) {
+  for (auto& df : conf.dfiles) {
     raii_fd& fd = fds.emplace_back(OpenRelative(ctx, df.relpath.c_str()));
     if (!ctx.read_only && df.ReadOnly) {
       throw std::runtime_error("file '" + df.relpath + "' is readonly,"
@@ -270,6 +275,10 @@ data::data(open_context ctx, const config& conf)
 
     idx_to_dfile[df.Idx] = idx;
     bsize_to_idx[df.BlockSize] = df.Idx;
+  }
+
+  if (bsize_to_idx.find(1) == bsize_to_idx.end()) {
+    throw std::runtime_error("bad config (no datafile with BlockSize 1).");
   }
 }
 
@@ -285,7 +294,7 @@ void volume::update_config()
   config conf = config_from_data(block_names, record_names, data_names,
                                  backing.value());
 
-  auto serialized = conf.serialize();
+  auto serialized = config::serialize(conf);
 
   WriteFile(conf_fd.fileno(), serialized);
 }
@@ -428,9 +437,9 @@ void volume::create_new(int creation_mode,
     throw std::system_error(errno, std::generic_category(), errctx);
   }
 
-  config def{blocksize};
+  auto conf = config::make_default(blocksize);
 
-  auto data = def.serialize();
+  auto data = config::serialize(conf);
 
   raii_fd conf_fd = openat(dird.fileno(), "config", flags, creation_mode);
   if (!conf_fd) {
@@ -441,28 +450,31 @@ void volume::create_new(int creation_mode,
   }
   WriteFile(conf_fd.fileno(), data);
 
-  if (raii_fd block_fd = openat(dird.fileno(), def.blockfile().relpath.c_str(),
-                                flags, creation_mode);
-      !block_fd) {
-    std::string errctx = "Cannot open '";
-    errctx += path;
-    errctx += "/";
-    errctx += def.blockfile().relpath;
-    errctx += "'";
-    throw std::system_error(errno, std::generic_category(), errctx);
+  for (auto& bfile : conf.bfiles) {
+    if (raii_fd block_fd
+        = openat(dird.fileno(), bfile.relpath.c_str(), flags, creation_mode);
+        !block_fd) {
+      std::string errctx = "Cannot open '";
+      errctx += path;
+      errctx += "/";
+      errctx += bfile.relpath;
+      errctx += "'";
+      throw std::system_error(errno, std::generic_category(), errctx);
+    }
   }
-  if (raii_fd record_fd
-      = openat(dird.fileno(), def.recordfile().relpath.c_str(), flags,
-               creation_mode);
-      !record_fd) {
-    std::string errctx = "Cannot open '";
-    errctx += path;
-    errctx += "/";
-    errctx += def.recordfile().relpath;
-    errctx += "'";
-    throw std::system_error(errno, std::generic_category(), errctx);
+  for (auto& rfile : conf.rfiles) {
+    if (raii_fd record_fd
+        = openat(dird.fileno(), rfile.relpath.c_str(), flags, creation_mode);
+        !record_fd) {
+      std::string errctx = "Cannot open '";
+      errctx += path;
+      errctx += "/";
+      errctx += rfile.relpath;
+      errctx += "'";
+      throw std::system_error(errno, std::generic_category(), errctx);
+    }
   }
-  for (auto& dfile : def.datafiles()) {
+  for (auto& dfile : conf.dfiles) {
     if (raii_fd block_fd
         = openat(dird.fileno(), dfile.relpath.c_str(), flags, creation_mode);
         !block_fd) {
@@ -658,25 +670,27 @@ struct config_header {
 };  // namespace
 
 
-std::vector<char> config::serialize()
+std::vector<char> config::serialize(const config& conf)
 {
   std::vector<char> serial;
 
   config_header hdr;
 
-  serializable_block_file bf{bfile, serial};
-  serializable_record_file rf{rfile, serial};
+  std::vector<serializable_block_file> bfs;
+  for (auto bfile : conf.bfiles) { bfs.emplace_back(bfile, serial); }
+  std::vector<serializable_record_file> rfs;
+  for (auto rfile : conf.rfiles) { rfs.emplace_back(rfile, serial); }
   std::vector<serializable_data_file> dfs;
-  for (auto dfile : dfiles) { dfs.emplace_back(dfile, serial); }
+  for (auto dfile : conf.dfiles) { dfs.emplace_back(dfile, serial); }
 
   hdr.string_size = serial.size();
 
-  {
+  for (auto& bf : bfs) {
     auto* as_char = reinterpret_cast<const char*>(&bf);
     serial.insert(serial.end(), as_char, as_char + sizeof(bf));
     hdr.num_blockfiles = hdr.num_blockfiles + 1;
   }
-  {
+  for (auto& rf : rfs) {
     auto* as_char = reinterpret_cast<const char*>(&rf);
     serial.insert(serial.end(), as_char, as_char + sizeof(rf));
     hdr.num_recordfiles = hdr.num_recordfiles + 1;
@@ -695,8 +709,26 @@ std::vector<char> config::serialize()
   return serial;
 }
 
-config::config(const std::vector<char>& serial)
+config config::make_default(std::uint64_t BlockSize)
 {
+  return config{
+    .bfiles = {
+      {"blocks", 0, 0, 0},
+    },
+    .rfiles = {
+      {"records", 0, 0, 0},
+    },
+    .dfiles = {
+      {"aligned.data", 0, BlockSize, 0, false},
+      {"unaligned.data", 0, 1, 1, false},
+    }
+  };
+}
+
+config config::deserialize(const std::vector<char>& serial)
+{
+  config conf;
+
   chunked_reader stream(serial.data(), serial.size());
 
   config_header hdr;
@@ -724,7 +756,7 @@ config::config(const std::vector<char>& serial)
       throw std::runtime_error("config file to small.");
     }
 
-    bfile = bf.unserialize(string_area);
+    conf.bfiles.push_back(bf.unserialize(string_area));
   }
   {
     serializable_record_file rf;
@@ -732,7 +764,7 @@ config::config(const std::vector<char>& serial)
       throw std::runtime_error("config file to small.");
     }
 
-    rfile = rf.unserialize(string_area);
+    conf.rfiles.push_back(rf.unserialize(string_area));
   }
 
   for (std::size_t i = 0; i < hdr.num_datafiles; ++i) {
@@ -741,9 +773,11 @@ config::config(const std::vector<char>& serial)
       throw std::runtime_error("config file to small.");
     }
 
-    dfiles.push_back(df.unserialize(string_area));
+    conf.dfiles.push_back(df.unserialize(string_area));
   }
 
   if (!stream.finished()) { throw std::runtime_error("config file to big."); }
+
+  return conf;
 }
 };  // namespace dedup
