@@ -3,24 +3,25 @@ set -u
 #shellcheck source=../environment.in
 . ./environment
 
+function deletefiles(){
+  rm -rf "${tmp:?}"/*
+  rm -rf "${logdir:?}"/*.log
+  rm -rf "${working:?}"/*.bsr "${working:?}"/log*.sd
+  rm -rf "${working:?}"/*.trace "${working:?}"/*.traceback "${working:?}"/*.bactrace
+  rm -rf "${working:?}"/*.state
+  rm -rf "${working:?}"/*.conmsg
+  rm -rf "${working:?}"/*.pid
+  rm -rf "${working:?}"/*.mail
+  rm -rf "${working:?}"/CLEANUPMARKER
+  rm -rf "${working:?}"/plugins/*
+  rm -rf "${archivedir:?}"/*
+  rm -f  "${config_directory_dir_additional_test_config}"/*
+  find . -name "gigaslam.gif" -exec rm -f {} \;
+  # cleanup chrome user data (selenium tests)
+  rm -rf /tmp/chrome-user-data-*
+}
 
-rm -rf "${tmp:?}"/*
-rm -rf "${logdir:?}"/*.log
-rm -rf "${working:?}"/*.bsr "${working:?}"/log*.sd
-rm -rf "${working:?}"/*.trace "${working:?}"/*.traceback "${working:?}"/*.bactrace
-rm -rf "${working:?}"/*.state
-rm -rf "${working:?}"/*.conmsg
-rm -rf "${working:?}"/*.pid
-rm -rf "${working:?}"/*.mail
-rm -rf "${working:?}"/CLEANUPMARKER
-rm -rf "${working:?}"/plugins/*
-rm -rf "${archivedir:?}"/*
-rm -f  "${config_directory_dir_additional_test_config}"/*
-find . -name "gigaslam.gif" -exec rm -f {} \;
-
-# cleanup chrome user data (selenium tests)
-rm -rf /tmp/chrome-user-data-*
-
+#deletefiles;
 
 "${rscripts}/bareos" stop >/dev/null
 #${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1

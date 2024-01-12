@@ -130,7 +130,7 @@ $PATH
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
 else
-  PG_CYGPATH=$(cygpath @POSTGRES_BIN_PATH@)
+  PG_CYGPATH=$(cygpath "@POSTGRES_BIN_PATH@")
   export PATH="$PG_CYGPATH:$PATH"
   export PATH=/sbin:/usr/sbin:$PATH
 fi

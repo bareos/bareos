@@ -5,7 +5,7 @@
 #
 
 # shellcheck source=../environment.in
-. ./environment
+#. ./environment
 
 # shellcheck source= ./functions
 . "${rscripts}"/functions
