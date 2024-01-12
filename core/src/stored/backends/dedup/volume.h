@@ -119,7 +119,7 @@ struct config {
   std::vector<data_file> dfiles;
 
   static std::vector<char> serialize(const config& conf);
-  static config deserialize(const std::vector<char>& serialized);
+  static config deserialize(const char* data, std::size_t size);
   static config make_default(std::uint64_t BlockSize);
 };
 

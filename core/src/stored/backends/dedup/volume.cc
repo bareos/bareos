@@ -224,8 +224,8 @@ volume::volume(open_type type, const char* path) : sys_path{path}
     errctx += "/config'";
     throw std::system_error(errno, std::generic_category(), errctx);
   }
-
-  auto conf = config::deserialize(LoadFile(conf_fd.fileno()));
+  auto content = LoadFile(conf_fd.fileno());
+  auto conf = config::deserialize(content.data(), content.size());
 
   for (auto& bf : conf.bfiles) { block_names[bf.Idx] = bf.relpath; }
   for (auto& rf : conf.rfiles) { record_names[rf.Idx] = rf.relpath; }
@@ -725,11 +725,11 @@ config config::make_default(std::uint64_t BlockSize)
   };
 }
 
-config config::deserialize(const std::vector<char>& serial)
+config config::deserialize(const char* data, std::size_t size)
 {
   config conf;
 
-  chunked_reader stream(serial.data(), serial.size());
+  chunked_reader stream(data, size);
 
   config_header hdr;
   if (!stream.read(&hdr, sizeof(hdr))) {
