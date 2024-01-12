@@ -44,17 +44,12 @@ STORAGE_DAEMON_GROUP=operator
 PLIST_SUB+=	LIBVERSION=${DISTVERSION:C/\..*//} # major version
 PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(.{6}).*/\1/} # full version
 
-DEFAULT_VERSIONS+=ssl=openssl
 USES+=ssl
 USES+=gettext-runtime
 USES+=readline
 USES+=libtool
 USES+=pkgconfig
-
-USES+=gettext-runtime
-USES+=readline
-
-USES+=		libtool:keepla pkgconfig readline:port
+USES+=libtool:keepla pkgconfig readline:port
 USES+=cmake:noninja
 USES+=shebangfix
 USES+=python:env
