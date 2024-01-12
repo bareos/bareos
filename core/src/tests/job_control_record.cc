@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,7 +59,7 @@ void JobControlRecordTest::SetUp()
   for (int i = 0; i < 3; i++) {
     jobs.push_back(std::make_shared<JobControlRecord>());
     InitJcr(jobs[i], callback);
-    sprintf(jobs[i]->Job, "%d-test", 123 + i);
+    snprintf(jobs[i]->Job, sizeof(jobs[i]->Job), "%d-test", 123 + i);
     jobs[i]->JobId = 123 + i;
     jobs[i]->VolSessionId = 10 + i;
     jobs[i]->VolSessionTime = 100 + i;
@@ -118,7 +118,7 @@ TEST_F(JobControlRecordTest, get_job_by_partial_name)
 TEST_F(JobControlRecordTest, get_job_by_partial_name_not_found)
 {
   std::shared_ptr<JobControlRecord> jcr(std::make_shared<JobControlRecord>());
-  sprintf(jcr->Job, "987-654-321");
+  snprintf(jcr->Job, sizeof(jcr->Job), "987-654-321");
   InitJcr(jcr, callback);
 
   char name[12]{"654"};
