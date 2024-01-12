@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - pkglists: update SUSE to have vmware packages [PR #1634]
 - Improve FreeBSD build [PR #1644]
 - core: sql_* add leading space to sql construct [PR #1658]
+- core: add build patch for `sprintf` in macos builds [PR #1652]
 
 ## [22.1.3] - 2023-12-13
 
@@ -625,5 +626,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1627]: https://github.com/bareos/bareos/pull/1627
 [PR #1634]: https://github.com/bareos/bareos/pull/1634
 [PR #1644]: https://github.com/bareos/bareos/pull/1644
+[PR #1652]: https://github.com/bareos/bareos/pull/1652
 [PR #1658]: https://github.com/bareos/bareos/pull/1658
 [unreleased]: https://github.com/bareos/bareos/tree/master
