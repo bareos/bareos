@@ -34,7 +34,7 @@ set -u
 # Fill ${BackupDirectory} with data.
 setup_data
 
-gentestdata="${CMAKE_BINARY_DIR}/core/src/tools/gentestdata"
+gentestdata="${CMAKE_BINARY_DIR}/core/src/tools/Debug/gentestdata"
 mkdir -p "$tmp/bigdata"
 echo "$tmp/bigdata" >"$tmp/bigdata-list"
 for i in 1 2 3 4 5 6 7 8 9 10; do

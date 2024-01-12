@@ -98,10 +98,12 @@ expect_grep "Files Restored:         ${NumberOfBackedUpFiles}" \
             "$restore_log" \
             "Restore of canceled job did not go well!"
 
+restorepath="$restore_directory/$tmp/bigdata"
+restorepath=$(sed 's#/C:#/c#g'<<< $restorepath)
 # Certain systems do not support multiple types for find (-type f,l)
-NumberOfFilesRestored=$(find "$restore_directory/$tmp/bigdata" -type f | wc -l)
-NumberOfLinksRestored=$(find "$restore_directory/$tmp/bigdata" -type l | wc -l)
-NumberOfDirectoriesRestored=$(find "$restore_directory/$tmp/bigdata" -type d | wc -l)
+NumberOfFilesRestored=$(find "$restorepath" -type f | wc -l)
+NumberOfLinksRestored=$(find "$restorepath" -type l | wc -l)
+NumberOfDirectoriesRestored=$(find "$restorepath" -type d | wc -l)
 RestoredItems=$((NumberOfFilesRestored + NumberOfLinksRestored + NumberOfDirectoriesRestored))
 
 # Check that the restored files are actually there
