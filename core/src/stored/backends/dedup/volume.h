@@ -219,6 +219,7 @@ class volume {
   // misc
   void reset();
   void flush();
+  std::size_t blockcount();
 
  private:
   std::string sys_path;

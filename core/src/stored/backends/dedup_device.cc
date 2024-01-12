@@ -46,6 +46,15 @@ constexpr std::uint64_t block_number(std::uint32_t rfile, std::uint32_t rblock)
   return block_num;
 }
 
+constexpr std::pair<std::uint32_t, std::uint32_t> file_block(
+    std::uint64_t blocknumber)
+{
+  std::uint32_t file = (blocknumber >> 32);
+  std::uint32_t block = blocknumber;
+
+  return {file, block};
+}
+
 constexpr bool check_open_mode(DeviceMode open_mode)
 {
   switch (open_mode) {
@@ -326,8 +335,15 @@ bool dedup_device::Reposition(DeviceControlRecord* dcr,
 
 bool dedup_device::eod(DeviceControlRecord* dcr)
 {
-  (void)dcr;
-  return false;
+  if (!openvol) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to move to end of dedup volume when none are open.\n"));
+    return false;
+  }
+  auto endblock = openvol->blockcount();
+  auto [rfile, rblock] = file_block(endblock);
+
+  return Reposition(dcr, rfile, rblock);
 }
 
 bool dedup_device::d_flush(DeviceControlRecord*)
