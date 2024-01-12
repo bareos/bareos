@@ -91,19 +91,7 @@ struct save_state {
   save_state& operator=(const save_state&) = delete;
 };
 
-class config {
- public:
-  config(const std::vector<char>& serialized);
-  config(std::uint64_t BlockSize)
-      : bfile{"blocks", 0, 0, 0}
-      , rfile{"records", 0, 0, 0}
-      , dfiles{
-            {"aligned.data", 0, BlockSize, 0, false},
-            {"unaligned.data", 0, 1, 1, false},
-        }
-  {
-  }
-
+struct config {
   struct block_file {
     std::string relpath;
     std::uint64_t Start;
@@ -126,20 +114,13 @@ class config {
     bool ReadOnly;
   };
 
-  block_file& blockfile() { return bfile; }
-  record_file& recordfile() { return rfile; }
-  std::vector<data_file>& datafiles() { return dfiles; }
-
-  const block_file& blockfile() const { return bfile; }
-  const record_file& recordfile() const { return rfile; }
-  const std::vector<data_file>& datafiles() const { return dfiles; }
-
-  std::vector<char> serialize();
-
- private:
-  block_file bfile;
-  record_file rfile;
+  std::vector<block_file> bfiles;
+  std::vector<record_file> rfiles;
   std::vector<data_file> dfiles;
+
+  static std::vector<char> serialize(const config& conf);
+  static config deserialize(const std::vector<char>& serialized);
+  static config make_default(std::uint64_t BlockSize);
 };
 
 class data {
