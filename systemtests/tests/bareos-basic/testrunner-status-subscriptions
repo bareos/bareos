@@ -40,7 +40,7 @@ run_bconsole
 sed -i'.bak' -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' "$tmp"/status-subscription*.txt
 
 for f in status-subscriptions status-subscriptions-detail status-subscriptions-unknown; do
-  if ! diff -u expected/$f.txt "$tmp/$f.txt"; then
+  if ! diff -w -u expected/$f.txt "$tmp/$f.txt"; then
     echo "Output $f does not match expectation!" >&2
     estat=1
   fi

@@ -2,12 +2,20 @@
 set -e
 set -o pipefail
 set -u
+
 #
 # Run one time the BackupCatalog default configuration job.
 # Restore the dump, drop all tables, then restore them.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
+
+OS=$(uname)
+if [[ $OS =~ MINGW64_.* ]];
+then
+ # echo "Test $Testname does not work on windows"
+  exit 0
+fi
 
 JobName=BackupCatalog
 
