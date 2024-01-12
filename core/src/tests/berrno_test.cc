@@ -44,6 +44,15 @@ const char* bind_error_message = "Invalid argument";
 const char* open_error_message = "No such file or directory";
 const char* socket_error_message = "Invalid argument";
 const char* bind_error_message = "Bad file number";
+#elif defined _MSVC_LANG
+const char* open_error_message
+    = "No such file or directory (errno=2 | win_error=0x00000002)";
+const char* win_open_error_message = "The system cannot find the file specified.\r\n";
+const char* socket_error_message
+    = "No such file or directory (errno=2 | win_error=0x0000273C)";
+const char* win_socket_error_message = "The support for the specified socket type does not exist in this address family.\r\n";
+const char* bind_error_message
+    = "No such file or directory (errno=2 | win_error=0x000027";
 #elif defined HAVE_WIN32
 const char* open_error_message
     = "No such file or directory (errno=2 | win_error=0x00000002)";
@@ -60,6 +69,7 @@ const char* bind_error_message
 
 TEST(berrno, errors)
 {
+  OSDependentInit();
   int operation_result = 0;
 
   operation_result = open("filethatdoesnotexist", O_RDONLY);
