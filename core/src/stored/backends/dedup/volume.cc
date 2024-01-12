@@ -33,6 +33,47 @@ extern "C" {
 
 namespace dedup {
 namespace {
+config config_from_data(
+    const std::unordered_map<std::uint32_t, std::string>& block_names,
+    const std::unordered_map<std::uint32_t, std::string>& record_names,
+    const std::unordered_map<std::uint32_t, std::string>& data_names,
+    const data& backing)
+{
+  config new_conf{0};
+
+  auto& bf = new_conf.blockfile();
+  auto& rf = new_conf.recordfile();
+  auto& dfs = new_conf.datafiles();
+
+  bf = config::block_file{
+      .relpath = block_names.at(0),
+      .Start = 0,
+      .End = backing.blocks.size(),
+      .Idx = 0,
+  };
+
+  rf = config::record_file{
+      .relpath = record_names.at(0),
+      .Start = 0,
+      .End = backing.records.size(),
+      .Idx = 0,
+  };
+
+  dfs.clear();
+  for (auto [bsize, idx] : backing.bsize_to_idx) {
+    auto dfile = backing.idx_to_dfile.at(idx);
+    auto& df = backing.datafiles.at(dfile);
+    dfs.push_back(config::data_file{
+        .relpath = data_names.at(idx),
+        .Size = df.size(),
+        .BlockSize = bsize,
+        .Idx = idx,
+        .ReadOnly = false,
+    });
+  }
+
+  return new_conf;
+}
 std::uint32_t SafeCast(std::size_t size)
 {
   constexpr std::size_t max = std::numeric_limits<std::uint32_t>::max();
@@ -176,14 +217,21 @@ volume::volume(open_type type, const char* path) : sys_path{path}
     throw std::system_error(errno, std::generic_category(), errctx);
   }
 
-  if (raii_fd conf_fd = openat(dird, "config", flags); conf_fd) {
-    conf.emplace(LoadFile(conf_fd.fileno()));
-  } else {
+  raii_fd conf_fd = openat(dird, "config", flags);
+
+  if (!conf_fd) {
     std::string errctx = "Cannot open '";
     errctx += path;
     errctx += "/config'";
     throw std::system_error(errno, std::generic_category(), errctx);
   }
+
+  config conf{LoadFile(conf_fd.fileno())};
+
+  block_names[conf.blockfile().Idx] = conf.blockfile().relpath;
+  record_names[conf.recordfile().Idx] = conf.recordfile().relpath;
+
+  for (auto& df : conf.datafiles()) { data_names[df.Idx] = df.relpath; }
 
   backing.emplace(
       open_context{
@@ -191,7 +239,7 @@ volume::volume(open_type type, const char* path) : sys_path{path}
           .flags = flags,
           .dird = dird,
       },
-      conf.value());
+      conf);
 }
 
 data::data(open_context ctx, const config& conf)
@@ -227,21 +275,17 @@ data::data(open_context ctx, const config& conf)
 
 void volume::update_config()
 {
-  conf->blockfile().End = backing->blocks.size();
-  conf->recordfile().End = backing->records.size();
-  for (auto& dfile : conf->datafiles()) {
-    auto dfile_idx = backing->idx_to_dfile.at(dfile.Idx);
-    dfile.Size = backing->datafiles[dfile_idx].size();
-  }
-
-  auto serialized = conf->serialize();
-
   raii_fd conf_fd = openat(dird, "config", O_WRONLY);
 
   if (!conf_fd) {
     std::string errctx = "Could not open dedup config file";
     throw std::system_error(errno, std::generic_category(), errctx);
   }
+
+  config conf = config_from_data(block_names, record_names, data_names,
+                                 backing.value());
+
+  auto serialized = conf.serialize();
 
   WriteFile(conf_fd.fileno(), serialized);
 }
