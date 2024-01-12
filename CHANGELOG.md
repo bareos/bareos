@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: fix `purge oldest volume` [PR #1628]
 - Fix continuation on colons in plugin baseclass [PR #1637]
 - plugins: fix cancel handling crash [PR #1595]
+- Fix bareos_tasks plugin for pgsql [PR #1659]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -57,4 +58,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1637]: https://github.com/bareos/bareos/pull/1637
 [PR #1646]: https://github.com/bareos/bareos/pull/1646
 [PR #1656]: https://github.com/bareos/bareos/pull/1656
+[PR #1659]: https://github.com/bareos/bareos/pull/1659
 [unreleased]: https://github.com/bareos/bareos/tree/master
