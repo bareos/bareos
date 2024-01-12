@@ -246,6 +246,8 @@ void volume::update_config()
   WriteFile(conf_fd.fileno(), serialized);
 }
 
+std::size_t volume::blockcount() { return backing->blocks.size(); }
+
 save_state volume::BeginBlock(block_header header)
 {
   if (current_block) {
