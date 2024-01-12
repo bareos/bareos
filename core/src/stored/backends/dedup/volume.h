@@ -225,7 +225,10 @@ class volume {
   std::string sys_path;
   int dird;
 
-  std::optional<config> conf;
+  std::unordered_map<std::uint32_t, std::string> block_names;
+  std::unordered_map<std::uint32_t, std::string> record_names;
+  std::unordered_map<std::uint32_t, std::string> data_names;
+
   std::optional<data> backing;
   void update_config();
 
