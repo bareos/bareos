@@ -3,6 +3,16 @@
 # A set of useful functions to be sourced in each test
 #
 
+generate_test_data(){
+  subdir=$1
+  mkdir -p "$tmp/$subdir"
+  gentestdata="${CMAKE_BINARY_DIR}/core/src/tools/Debug/gentestdata"
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    "$gentestdata" --size=1048576 >"$tmp/$subdir/testfile$i.bin"
+  done
+}
+
+
 wait_for_jobs_to_terminate ()
 {
   status_of_what=$1
