@@ -14,6 +14,13 @@ myname=$(basename "$0")
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+OS=$(uname)
+if [[ $OS =~ MINGW64_.* ]];then
+  expected_files=3
+else
+  expected_files=2
+fi
+
 start_test
 
 echo "$0" >"${tmp}/data/$myname"
@@ -30,7 +37,7 @@ END_OF_DATA
 
 run_bconsole
 
-if ! grep -q 'FD Files Written:.*2' "$tmp/$myname.log"; then
+if ! grep -q "FD Files Written:.*${expected_files}" "$tmp/$myname.log"; then
   echo "Number of files mismatch!"
   exit 2
 fi
