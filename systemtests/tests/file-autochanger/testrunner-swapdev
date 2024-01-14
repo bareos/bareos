@@ -9,6 +9,14 @@ export TestName
 #shellcheck source=../environment.in
 . ./environment
 
+OS=$(uname)
+if [[ $OS =~ MINGW64_.* ]];
+then
+  echo "Test $TestName does not work on windows: stored_conf.cc:570 Backend autochanger_test for device File1 not available."
+  exit 77
+fi
+
+
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
