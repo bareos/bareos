@@ -19,6 +19,13 @@ export TestName
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+OS=$(uname)
+if [[ $OS =~ MINGW64_.* ]];
+then
+  echo "Test $TestName does not work on windows : messages_resource.cc(105): error: Value of: config_dir.empty()"
+  exit 77
+fi
+
 console_messages_file="${BAREOS_LOG_DIR}"/.conmsg
 syslog_file="${BAREOS_LOG_DIR}"/syslog
 dblog_file="${BAREOS_LOG_DIR}"/dblog
@@ -53,8 +60,7 @@ function check_output_file {
 }
 
 start_test
-
-${BAREOS_UNITTESTS_BINARY_DIR}/messages_resource > "$stdout_file" 2> "$stderr_file" || exit_error
+${BAREOS_UNITTESTS_BINARY_DIR}/Debug/messages_resource > "$stdout_file" 2> "$stderr_file" || exit_error
 
 check_output_file "$console_messages_file"
 check_output_file "$syslog_file"
