@@ -14,6 +14,13 @@ export TestName
 #shellcheck source=../environment.in
 . ./environment
 
+OS=$(uname)
+if [[ $OS =~ MINGW64_.* ]];
+then
+  echo "Test $TestName does not work on windows"
+  exit 77
+fi
+
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions

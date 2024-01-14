@@ -11,6 +11,13 @@ export TestName
 #shellcheck source=../environment.in
 . ./environment
 
+OS=$(uname)
+if [[ $OS =~ MINGW64_.* ]];
+then
+  echo "Test $TestName does not work on windows mark full file does not work in bconsole if 'C:/' is in path"
+  exit 77
+fi
+
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
@@ -18,18 +25,22 @@ export TestName
 
 start_test
 
-file1="$(pwd)/tmp/data/weird-files/socket.pl"
-file2="$(pwd)/tmp/data/weird-files/softlinkee"
-file3="$(pwd)/tmp/data/weird-files/softlink-to-softlinkee"
-
+file1="$(pwd)/tmp/data/build/src/tests/cats_test.c"
+file2="$(pwd)/tmp/data/build/src/tests/bregtest.c"
+file3="$(pwd)/tmp/data/build/src/tests/bbatch.c"
 for f in "$file1" "$file2" "$file3" ; do
     if [[ -f "$tmp/bareos-restores/$f" ]]; then
-	rm "$tmp/bareos-restores/$f"
-    fi
+      rm "$tmp/bareos-restores/$f"
+    fi;
 done
+      
+filename1="$(cygpath -w -m $file1)"
+filename2="$(cygpath -w -m $file2)"
+filename3="$(cygpath -w -m $file3)"
+
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
-setdebug level=10 storage=File
+setdebug level=100 storage=File
 @$out $log_home/log1.out
 status director
 status client
@@ -41,7 +52,7 @@ list jobs
 @$out $log_home/should-work.out
 update jobid=1 jobtype=A
 restore archive client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores \
-	file=$file1 \
+	file=$filename1 \
 	done yes
 wait
 messages
@@ -49,7 +60,8 @@ messages
 restore archive
 12
 1
-mark $file2
+find $filename2
+mark $filename2
 done
 yes
 wait
@@ -58,7 +70,7 @@ messages
 restore archive
 8
 $(( $(date +%Y) + 1))
-$file3
+$filename3
 
 yes
 wait
