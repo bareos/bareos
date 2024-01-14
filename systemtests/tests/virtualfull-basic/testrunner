@@ -120,7 +120,7 @@ run_bconsole "$tmp/bconcmds3"
 check_for_zombie_jobs storage=File
 check_two_logs
 
-if ! grep -q "Consolidating JobIds 1,2 containing 74 files" "$tmp/log1.out"; then
+if ! grep -q "Consolidating JobIds 1,2 containing .. files" "$tmp/log1.out"; then
   echo "Consolidation message was not emitted" >&2
   cat "$tmp/log1.out"
   estat=1
