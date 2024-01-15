@@ -23,7 +23,7 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-C:/src/bin/systemtests/scripts}
 srv_name=$(basename "${BAREOS_FILEDAEMON_BINARY}" .exe)
 srv_sbindir=$(dirname "${BAREOS_FILEDAEMON_BINARY}")
 srv_rundir=$(dirname "$srv_sbindir")
-srv_configdir=${srv_rundir}/etc/bareos
+srv_configdir=${BAREOS_CONFIG_DIR}
 
 
 #

@@ -24,7 +24,8 @@ mkdir -p "${archivedir}-remote"
 find "${archivedir}-remote" -mindepth 1 -delete
 
 bareos_ctl_sd2() {
-  BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote" BAREOS_SD_PORT=${BAREOS_STORAGE2_PORT} "${rscripts}/bareos-ctl-sd" "$@"
+  ln -sf "${BAREOS_STORAGEDAEMON_BINARY}" "${BAREOS_STORAGEDAEMON_BINARY}2"
+  BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote"  BAREOS_STORAGEDAEMON_BINARY="${BAREOS_STORAGEDAEMON_BINARY}2" "${rscripts}/bareos-ctl-sd" "$@"
 }
 
 my_stop_bareos() {
