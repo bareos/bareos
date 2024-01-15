@@ -114,9 +114,27 @@ int dedup_device::d_open(const char* path, int, int mode)
       Emsg0(M_WARNING, 0, "Dedup device option warning: %s\n", warning.c_str());
     }
 
-    if (open_mode == DeviceMode::CREATE_READ_WRITE) {
-      // if the folder already exists, it will do nothing
-      dedup::volume::create_new(mode, path, parsed.options.blocksize);
+    if (!read_only) {
+      // try creating a new one but ignore any errors
+      // NOTE(ssura): this looks weird, but bareos first tries to open
+      //              new volumes with OPEN_READ_ONLY twice before trying
+      //              to open them with CREATE_READ_WRITE.  As such
+      //              not doing this will lead to bareos outputting two error
+      //              messages everytime a job tries to write to a new volume!
+      //              Also sometimes bareos calls this with CREATE_READ_WRITE
+      //              even though it knows that it already exists.
+      //              E.g. when relabeling because of a truncate command.
+      try {
+        dedup::volume::create_new(mode, path, parsed.options.blocksize);
+      } catch (const std::exception& ex) {
+        Dmsg3(200,
+              "Could not create new volume %s while opening as %s. "
+              "ERR=%s\n",
+              path,
+              open_mode == (DeviceMode::CREATE_READ_WRITE) ? "CREATE_READ_WRITE"
+                                                           : "OPEN_READ_WRITE",
+              ex.what());
+      }
     }
 
     auto& vol
