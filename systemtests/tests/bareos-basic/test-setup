@@ -36,6 +36,11 @@ setup_data
 
 generate_test_data data
 
+mkdir "$tmp/data/hardlinks"
+mkdir "$tmp/data/hardlinks/file"
+touch "$tmp/data/hardlinks/file/file"
+ln "$tmp/data/hardlinks/file/file" "$tmp/data/hardlinks/link"
+
 bin/bareos start
 bin/bareos status
 

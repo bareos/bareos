@@ -119,17 +119,15 @@ int FindFiles(JobControlRecord* jcr,
                              bool top_level))
 {
   ff->FileSave = FileSave;
-  ff->PluginSave = PluginSave;
 
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   if (fileset) {
-    int i, j;
     /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
      * (not only Options{} blocks inside a Include{}) */
     ClearAllBits(FO_MAX, ff->flags);
-    for (i = 0; i < fileset->include_list.size(); i++) {
+    for (int i = 0; i < fileset->include_list.size(); i++) {
       dlistString* node;
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
@@ -144,7 +142,7 @@ int FindFiles(JobControlRecord* jcr,
 
       /* By setting all options, we in effect OR the global options which is
        * what we want. */
-      for (j = 0; j < incexe->opts_list.size(); j++) {
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo;
 
         fo = (findFOPTS*)incexe->opts_list.get(j);
@@ -189,13 +187,13 @@ int FindFiles(JobControlRecord* jcr,
         char* fname = node->c_str();
 
         if (!PluginSave) {
-          Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
+          Jmsg(jcr, M_FATAL, 0, T_("Plugin: \"%s\" not found.\n"), fname);
           return 0;
         }
         Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
         ff->top_fname = fname;
         ff->cmd_plugin = true;
-        PluginSave(jcr, ff, true);
+        if (!PluginSave(jcr, ff, true)) { return 0; }
         ff->cmd_plugin = false;
         if (jcr->IsJobCanceled()) { return 0; }
       }

@@ -125,6 +125,21 @@ core/src/tests/configs/statistics_thread/sd_statistics_thread/default_config/bar
 core/src/tests/configs/statistics_thread/sd_statistics_thread/only_collect_set/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/statistics_thread/sd_statistics_thread/only_interval_set/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/stored_multiplied_device/bareos-sd.d/storage/bareos-sd.conf
+core/src/tests/configs/ktls/12-256/bconsole.conf
+core/src/tests/configs/ktls/12/bconsole.conf
+core/src/tests/configs/ktls/13-256/bconsole.conf
+core/src/tests/configs/ktls/13/bconsole.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/catalog/MyCatalog.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/client/bareos-fd.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/director/bareos-dir.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/fileset/Catalog.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/fileset/SelfTest.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/job/BackupCatalog.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/job/RestoreFiles.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/jobdefs/DefaultJob.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/messages/Daemon.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/messages/Standard.conf
+core/src/tests/configs/ktls/bareos/bareos-dir.d/storage/File.conf
 core/src/win32/console/consoleres.rc
 core/src/win32/dird/dbcheckres.rc
 core/src/win32/dird/dirdres.rc
@@ -155,7 +170,6 @@ debian/bareos-database-tools.postinst
 debian/bareos-director.install
 debian/bareos-director.postinst
 debian/bareos-director.preinst
-debian/bareos-director-python2-plugin.install
 debian/bareos-director-python3-plugin.install
 debian/bareos-director-python-plugins-common.install
 debian/bareos-director.service
@@ -168,7 +182,6 @@ debian/bareos-filedaemon-percona-xtrabackup-python-plugin.install
 debian/bareos-filedaemon-postgresql-python-plugin.install
 debian/bareos-filedaemon.postinst
 debian/bareos-filedaemon.preinst
-debian/bareos-filedaemon-python2-plugin.install
 debian/bareos-filedaemon-python3-plugin.install
 debian/bareos-filedaemon-python-plugins-common.install
 debian/bareos-filedaemon.service
@@ -178,7 +191,6 @@ debian/bareos-storage-glusterfs.install
 debian/bareos-storage.install
 debian/bareos-storage.postinst
 debian/bareos-storage.preinst
-debian/bareos-storage-python2-plugin.install
 debian/bareos-storage-python3-plugin.install
 debian/bareos-storage-python-plugins-common.install
 debian/bareos-storage.service

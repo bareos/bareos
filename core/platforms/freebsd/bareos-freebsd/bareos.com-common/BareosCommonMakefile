@@ -55,24 +55,17 @@ USES+=gettext-runtime
 USES+=readline
 
 USES+=		libtool:keepla pkgconfig readline:port
-#USES+=cmake:outsource
-#USES+=cmake
 USES+=cmake:noninja
 USES+=shebangfix
+USES+=python:env
 
 USE_LDCONFIG=	yes
 
-LDFLAGS+=	-L${LOCALBASE}/lib
-LDFLAGS+=	-lz
-LDFLAGS+=	-ljansson
-LDFLAGS+=	-lcrypto
-
-CPPFLAGS+=	-I/usr/include/readline
-CPPFLAGS+=      -I${LOCALBASE}/include
-
 LIB_DEPENDS+=	liblzo2.so:archivers/lzo2 \
-		          libjansson.so:devel/jansson
-LIB_DEPENDS+= libpython3.7m.so:lang/python37
+              libjansson.so:devel/jansson \
+              libpython${_PYVERSION}.so:lang/python${PYTHON_SUFFIX}
+
+_PYVERSION= ${PYTHON_VER}${PYTHON_ABIVER}
 
 # optional overrides, used by build system.
 .-include "BareosCommonMakefile-overrides.mk"
@@ -83,6 +76,7 @@ CMAKE_SOURCE_PATH=   ${WRKSRC}
 CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_INSTALL_PREFIX:PATH=/usr/local \
       -DCMAKE_INSTALL_LIBDIR:PATH=/usr/local/lib \
+      -DCMAKE_INSTALL_MANDIR:PATH=/usr/local/man \
       -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
       -DLIB_INSTALL_DIR:PATH=/usr/local/lib \
       -DSYSCONF_INSTALL_DIR:PATH=/etc \

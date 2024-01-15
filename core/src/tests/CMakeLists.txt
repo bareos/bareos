@@ -20,6 +20,59 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
+if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
+  set(LINUX_KERNEL_VERSION "0.0")
+else()
+  execute_process(
+    COMMAND uname -r
+    OUTPUT_VARIABLE UNAME_RESULT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  message(-- " Kernel version: " ${UNAME_RESULT})
+  string(REGEX MATCH "[0-9]+.[0-9]+" LINUX_KERNEL_VERSION ${UNAME_RESULT})
+endif()
+
+set(KTLS_DEFINITIONS)
+set(DISABLE_KTLS OFF)
+find_package(OpenSSL)
+if((OPENSSL_VERSION VERSION_LESS "3.0.0") OR (LINUX_KERNEL_VERSION VERSION_LESS
+                                              "5.3")
+)
+  set(DISABLE_KTLS ON)
+else()
+
+  check_cxx_source_compiles(
+    "
+#include <openssl/ssl.h>
+int main(void)
+{
+#ifndef OPENSSL_NO_KTLS
+#error ktls is enabled
+#endif
+return 0;
+}
+"
+    KTLS_DISABLED
+  )
+  if(KTLS_DISABLED)
+    set(DISABLE_KTLS ON)
+  endif()
+  if(LINUX_KERNEL_VERSION VERSION_LESS "5.16")
+    list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_12_RECV)
+  endif()
+  if(LINUX_KERNEL_VERSION VERSION_LESS "5.20" OR OPENSSL_VERSION VERSION_LESS
+                                                 "3.2.0"
+  )
+    list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_13_RECV)
+  endif()
+
+  if(LINUX_KERNEL_VERSION VERSION_LESS "6.1")
+    list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_12_256_SEND
+         DISABLE_KTLS_13_256_SEND
+    )
+  endif()
+endif()
+
 macro(bareos_gtest_add_tests testname)
   set(options OPTIONAL DISABLE)
   cmake_parse_arguments(
@@ -128,8 +181,8 @@ else() # NOT HAVE_WIN32
   set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 endif() # HAVE_WIN32
 
-add_definitions(
-  -DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\"
+add_compile_definitions(
+  RELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\"
 )
 
 set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
@@ -182,6 +235,22 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
     LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
   )
+
+  if(NOT DISABLE_KTLS)
+    bareos_add_test(
+      ktls
+      ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
+      LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
+      COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
+    )
+    set_tests_properties(gtest:ktls.v12_send PROPERTIES LABELS broken)
+    set_tests_properties(gtest:ktls.v12_recv PROPERTIES LABELS broken)
+    set_tests_properties(gtest:ktls.v12_256_send PROPERTIES LABELS broken)
+    set_tests_properties(gtest:ktls.v13_send PROPERTIES LABELS broken)
+    set_tests_properties(gtest:ktls.v13_recv PROPERTIES LABELS broken)
+    set_tests_properties(gtest:ktls.v13_256_send PROPERTIES LABELS broken)
+  endif()
+
   bareos_add_test(
     catalog
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
@@ -366,7 +435,7 @@ if(NOT HAVE_WIN32 AND NOT client-only)
       bsock_cert_verify_common_names_test.cc create_resource.cc
       ${SSL_UNIT_TEST_FILES}
     LINK_LIBRARIES ${LINK_LIBRARIES}
-    COMPILE_DEFINITIONS -DCERTDIR=\"${CERTDIR}\"
+    COMPILE_DEFINITIONS CERTDIR=\"${CERTDIR}\"
   )
   bareos_add_test(watchdog_timer LINK_LIBRARIES bareos GTest::gtest_main)
 endif() # NOT HAVE_WIN32 AND NOT client-only
@@ -447,4 +516,7 @@ bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(version_strings LINK_LIBRARIES bareos GTest::gtest_main)
 
+bareos_add_test(
+  channel LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
+)
 BareosCopyDllsToBinDir()

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,13 +26,13 @@ std::string JobTriggerToString(JobTrigger trig)
 {
   switch (trig) {
     case JobTrigger::kScheduler:
-      return _("Scheduler");
+      return T_("Scheduler");
     case JobTrigger::kClient:
-      return _("Client");
+      return T_("Client");
     case JobTrigger::kUser:
-      return _("User");
+      return T_("User");
     default:
     case JobTrigger::kUndefined:
-      return _("Unknown");
+      return T_("Unknown");
   }
 }

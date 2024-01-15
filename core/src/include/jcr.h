@@ -84,7 +84,25 @@ class JobControlRecord {
   int32_t JobLevel_{};           /**< Job level */
   int32_t Protocol_{};           /**< Backup Protocol */
   bool my_thread_killable_{};
+  enum class cancel_status : int8_t {
+    None,
+    InProcess,
+    Finished,
+  };
+  std::atomic<cancel_status> canceled_status{cancel_status::None};
  public:
+  /* tells the jcr that it will get canceled soon.  This can happen only once.
+   * Returns true if you may cancel it (in that case you _must_ call
+   * CancelFinished() when done); otherwise false is returned (in which case
+   * you _may not_ call CancelFinished()) */
+  bool PrepareCancel();
+  void CancelFinished();
+
+  /* Once called, this function stops other threads from canceling this job;
+   * If this job is currently getting canceled, then it wait until
+   * that is done, i.e. until CancelFinished() is called. */
+  void EnterFinish();
+
   JobControlRecord();
   ~JobControlRecord();
   JobControlRecord(const JobControlRecord &other) = delete;
@@ -138,6 +156,7 @@ class JobControlRecord {
   void MyThreadSendSignal(int sig);              /**< in lib/jcr.c */
   void SetKillable(bool killable);               /**< in lib/jcr.c */
   bool IsKillable() const { return my_thread_killable_; }
+  void UpdateJobStats();
 
   dlink<JobControlRecord> link;                     /**< JobControlRecord chain link */
   pthread_t my_thread_id{};       /**< Id of thread controlling jcr */
@@ -159,12 +178,14 @@ class JobControlRecord {
   uint32_t JobFiles{};          /**< Number of files written, this job */
   uint32_t JobErrors{};         /**< Number of non-fatal errors this job */
   uint32_t JobWarnings{};       /**< Number of warning messages */
-  uint32_t LastRate{};          /**< Last sample bytes/sec */
+  uint32_t AverageRate{};       /**< Last average bytes/sec */
+  uint32_t LastRate{};            /**< Last sample bytes/sec */
   uint64_t JobBytes{};          /**< Number of bytes processed this job */
   uint64_t LastJobBytes{};      /**< Last sample number bytes */
   uint64_t ReadBytes{};         /**< Bytes read -- before compression */
   FileId_t FileId{};            /**< Last FileId used */
   int32_t JobPriority{};        /**< Job priority */
+  bool allow_mixed_priority{};  /**< Allow jobs with higher priority concurrently with this */
   time_t sched_time{};          /**< Job schedule time, i.e. when it should start */
   time_t initial_sched_time{};  /**< Original sched time before any reschedules are done */
   time_t start_time{};          /**< When job actually started */
@@ -240,18 +261,19 @@ class JobControlRecord {
 BAREOS_IMPORT int GetNextJobidFromList(const char** p, uint32_t* JobId);
 BAREOS_IMPORT bool InitJcrSubsystem(int timeout);
 BAREOS_IMPORT JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
+BAREOS_IMPORT void register_jcr(JobControlRecord* jcr);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_id(uint32_t JobId);
-BAREOS_IMPORT JobControlRecord* get_jcr_by_session(uint32_t SessionId,
-                                                   uint32_t SessionTime);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_partial_name(char* Job);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(char* Job);
 BAREOS_IMPORT const char* JcrGetAuthenticateKey(const char* unified_job_name);
 TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
-BAREOS_IMPORT int num_jobs_run;
+BAREOS_IMPORT std::size_t NumJobsRun();
 
 BAREOS_IMPORT void b_free_jcr(const char* file,
                               int line,
                               JobControlRecord* jcr);
+void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 
 // Used to display specific job information after a fatal signal

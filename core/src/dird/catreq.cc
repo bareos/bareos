@@ -74,6 +74,8 @@ static char Update_filelist[] = "Catreq Job=%127s UpdateFileList\n";
 
 static char Update_jobrecord[]
     = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
+static char Delete_nulljobmediarecord[]
+    = "CatReq Job=%127s DeleteNullJobmediaRecords jobid=%u\n";
 
 // Responses sent to Storage daemon
 static char OK_media[]
@@ -84,6 +86,7 @@ static char OK_media[]
       " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
       " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
 static char OK_create[] = "1000 OK CreateJobMedia\n";
+static char OK_delete[] = "1000 OK DeleteNullJobmediaRecords\n";
 
 static int SendVolumeInfoToStorageDaemon(JobControlRecord* jcr,
                                          BareosSocket* sd,
@@ -122,14 +125,16 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   uint64_t MediaId;
   utime_t VolFirstWritten;
   utime_t VolLastWritten;
+  std::uint32_t jobid;
 
   // Request to find next appendable Volume for this Job
   Dmsg1(100, "catreq %s", bs->msg);
   if (!jcr->db) {
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);
-    bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
-    Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request; DB not open: %s"), omsg);
+    bs->fsend(T_("1990 Invalid Catalog Request: %s"), omsg);
+    Jmsg1(jcr, M_FATAL, 0, T_("Invalid Catalog request; DB not open: %s"),
+          omsg);
     FreeMemory(omsg);
 
     return;
@@ -159,7 +164,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     if (ok) {
       SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
     } else {
-      bs->fsend(_("1901 No Media.\n"));
+      bs->fsend(T_("1901 No Media.\n"));
       Dmsg0(500, "1901 No Media.\n");
     }
   } else if (sscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing)
@@ -180,10 +185,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
          *   Pool matches, and it is either Append or Recycle
          *   and Media Type matches and Pool allows any volume. */
         if (mr.PoolId != jcr->dir_impl->jr.PoolId) {
-          reason = _("not in Pool");
+          reason = T_("not in Pool");
         } else if (!bstrcmp(mr.MediaType,
                             jcr->dir_impl->res.write_storage->media_type)) {
-          reason = _("not correct MediaType");
+          reason = T_("not correct MediaType");
         } else {
           /* Now try recycling if necessary
            *   reason set non-NULL if we cannot use it */
@@ -192,18 +197,18 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       }
 
       if (!reason && mr.Enabled != VOL_ENABLED) {
-        reason = _("is not Enabled");
+        reason = T_("is not Enabled");
       }
 
       if (reason == NULL) {
         SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
       } else {
         /* Not suitable volume */
-        bs->fsend(_("1998 Volume \"%s\" catalog status is %s, %s.\n"),
+        bs->fsend(T_("1998 Volume \"%s\" catalog status is %s, %s.\n"),
                   mr.VolumeName, mr.VolStatus, reason);
       }
     } else {
-      bs->fsend(_("1997 Volume \"%s\" not in catalog.\n"), mr.VolumeName);
+      bs->fsend(T_("1997 Volume \"%s\" not in catalog.\n"), mr.VolumeName);
       Dmsg1(100, "1997 Volume \"%s\" not in catalog.\n", mr.VolumeName);
     }
   } else if (sscanf(bs->msg, Update_media, &Job, &sdmr.VolumeName,
@@ -224,9 +229,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     UnbashSpaces(mr.VolumeName);
     if (!jcr->db->GetMediaRecord(jcr, &mr)) {
       Jmsg(jcr, M_ERROR, 0,
-           _("Unable to get Media record for Volume %s: ERR=%s\n"),
+           T_("Unable to get Media record for Volume %s: ERR=%s\n"),
            mr.VolumeName, jcr->db->strerror());
-      bs->fsend(_("1991 Catalog Request for vol=%s failed: %s"), mr.VolumeName,
+      bs->fsend(T_("1991 Catalog Request for vol=%s failed: %s"), mr.VolumeName,
                 jcr->db->strerror());
       goto bail_out;
     }
@@ -252,8 +257,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       // Sanity check for VolFiles to be increasing
       if (sdmr.VolFiles < mr.VolFiles) {
         Jmsg(jcr, M_INFO, 0,
-             _("Ignoring Volume Files at %u being set to %u"
-               " for Volume \"%s\".\n"),
+             T_("Ignoring Volume Files at %u being set to %u"
+                " for Volume \"%s\".\n"),
              mr.VolFiles, sdmr.VolFiles, mr.VolumeName);
         sdmr.VolFiles = mr.VolFiles;
       }
@@ -261,8 +266,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       // Sanity check for VolBlocks to be increasing
       if (sdmr.VolBlocks < mr.VolBlocks) {
         Jmsg(jcr, M_INFO, 0,
-             _("Ignoring Volume Blocks at %u being set to %u"
-               " for Volume \"%s\".\n"),
+             T_("Ignoring Volume Blocks at %u being set to %u"
+                " for Volume \"%s\".\n"),
              mr.VolBlocks, sdmr.VolBlocks, mr.VolumeName);
         sdmr.VolBlocks = mr.VolBlocks;
       }
@@ -270,8 +275,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       // Sanity check for VolBytes to be increasing
       if (sdmr.VolBytes < mr.VolBytes) {
         Jmsg(jcr, M_INFO, 0,
-             _("Ignoring Volume Bytes at %lld being set to %lld"
-               " for Volume \"%s\".\n"),
+             T_("Ignoring Volume Bytes at %lld being set to %lld"
+                " for Volume \"%s\".\n"),
              mr.VolBytes, sdmr.VolBytes, mr.VolumeName);
         sdmr.VolBytes = mr.VolBytes;
       }
@@ -318,9 +323,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     /* Update the database, then before sending the response to the SD,
      * check if the Volume has expired. */
     if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record. %s"),
+      Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating Media record. %s"),
            jcr->db->strerror());
-      bs->fsend(_("1993 Update Media error\n"));
+      bs->fsend(T_("1993 Update Media error\n"));
       Dmsg0(400, "send error\n");
     } else {
       (void)HasVolumeExpired(jcr, &mr);
@@ -347,9 +352,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
           jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex,
           jm.LastIndex);
     if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
-      Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Catalog error creating JobMedia record. %s\n"),
            jcr->db->strerror());
-      bs->fsend(_("1992 Create JobMedia error\n"));
+      bs->fsend(T_("1992 Create JobMedia error\n"));
     } else {
       Dmsg0(400, "JobMedia record created\n");
       bs->fsend(OK_create);
@@ -359,13 +364,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
     if (jcr->db_batch) {
       if (!jcr->db_batch->WriteBatchFileRecords(jcr)) {
-        Jmsg(jcr, M_FATAL, 0, _("Catalog error updating File table. %s\n"),
+        Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating File table. %s\n"),
              jcr->db_batch->strerror());
-        bs->fsend(_("1992 Update File table error\n"));
+        bs->fsend(T_("1992 Update File table error\n"));
       }
     } else {
-      Jmsg(jcr, M_WARNING, 0,
-           _("Batch database connection not found. Cannot update file list\n"));
+      Dmsg0(400,
+            "No batch database connection exists, no files have been added to "
+            "the batch (yet).\n");
     }
   } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
                     &update_jobbytes)
@@ -376,15 +382,23 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     jcr->JobBytes = update_jobbytes;
 
     if (!jcr->db->UpdateRunningJobRecord(jcr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Job record. %s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating Job record. %s\n"),
            jcr->db->strerror());
-      bs->fsend(_("1992 Update job record error\n"));
+      bs->fsend(T_("1992 Update job record error\n"));
+    }
+  } else if (sscanf(bs->msg, Delete_nulljobmediarecord, &Job, &jobid) == 2) {
+    int numrows = jcr->db->DeleteNullJobmediaRecords(jcr, jobid);
+    Dmsg1(400, "Deleted %d rows.\n", numrows);
+    if (numrows == -1) {
+      bs->fsend(T_("1992 DeleteNullJobMediaRecords error\n"));
+    } else {
+      bs->fsend(OK_delete);
     }
   } else {
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);
-    bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
-    Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request: %s"), omsg);
+    bs->fsend(T_("1990 Invalid Catalog Request: %s"), omsg);
+    Jmsg1(jcr, M_FATAL, 0, T_("Invalid Catalog request: %s"), omsg);
     FreeMemory(omsg);
   }
 
@@ -475,7 +489,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
       if (jcr->cached_attribute) {
         Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
         if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
-          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"),
+          Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
                 jcr->db->strerror());
         }
         jcr->cached_attribute = false;
@@ -582,7 +596,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
 
       // Store it.
       if (!jcr->db->CreateRestoreObjectRecord(jcr, &ro)) {
-        Jmsg1(jcr, M_FATAL, 0, _("Restore object create error. %s"),
+        Jmsg1(jcr, M_FATAL, 0, T_("Restore object create error. %s"),
               jcr->db->strerror());
       }
       break;
@@ -591,7 +605,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
       if (CryptoDigestStreamType(Stream) != CRYPTO_DIGEST_NONE) {
         fname = p;
         if (ar->FileIndex != FileIndex) {
-          Jmsg3(jcr, M_WARNING, 0, _("%s not same File=%d as attributes=%d\n"),
+          Jmsg3(jcr, M_WARNING, 0, T_("%s not same File=%d as attributes=%d\n"),
                 stream_to_ascii(Stream), FileIndex, ar->FileIndex);
         } else {
           // Update digest in catalog
@@ -622,8 +636,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
               break;
             default:
               Jmsg(jcr, M_ERROR, 0,
-                   _("Catalog error updating file digest. Unsupported digest "
-                     "stream type: %d\n"),
+                   T_("Catalog error updating file digest. Unsupported digest "
+                      "stream type: %d\n"),
                    Stream);
           }
 
@@ -641,7 +655,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
 
             // Update BaseFile table
             if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
-              Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s\n"),
+              Jmsg1(jcr, M_FATAL, 0, T_("attribute create error. %s\n"),
                     jcr->db->strerror());
             }
             jcr->cached_attribute = false;
@@ -649,7 +663,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             if (!jcr->db->AddDigestToFileRecord(jcr, ar->FileId, digestbuf,
                                                 type)) {
               Jmsg(jcr, M_ERROR, 0,
-                   _("Catalog error updating file digest. %s\n"),
+                   T_("Catalog error updating file digest. %s\n"),
                    jcr->db->strerror());
             }
           }
@@ -671,8 +685,8 @@ void CatalogUpdate(JobControlRecord* jcr, BareosSocket* bs)
   if (!jcr->db) {
     POOLMEM* omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);
-    bs->fsend(_("1994 Invalid Catalog Update: %s"), omsg);
-    Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog Update; DB not open: %s"), omsg);
+    bs->fsend(T_("1994 Invalid Catalog Update: %s"), omsg);
+    Jmsg1(jcr, M_FATAL, 0, T_("Invalid Catalog Update; DB not open: %s"), omsg);
     FreeMemory(omsg);
     goto bail_out;
   }
@@ -728,7 +742,7 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
       if (nbytes != (size_t)message_length) {
         BErrNo be;
         Dmsg2(400, "nbytes=%d message_length=%d\n", nbytes, message_length);
-        Qmsg1(jcr, M_FATAL, 0, _("read attr spool error. ERR=%s\n"),
+        Qmsg1(jcr, M_FATAL, 0, T_("read attr spool error. ERR=%s\n"),
               be.bstrerror());
         goto bail_out;
       }

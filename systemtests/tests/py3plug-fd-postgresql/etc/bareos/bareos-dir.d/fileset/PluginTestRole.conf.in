@@ -1,0 +1,17 @@
+FileSet {
+  Name = "PluginTestRole"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      signature = XXH128
+    }
+    Plugin = "@python_module_name@"
+             ":module_path=@current_test_directory@/python-modules"
+             ":module_name=bareos-fd-postgresql"
+             ":db_host=@dbHost@"
+             ":db_user=db_backup"
+             ":role=backup_group"
+             ":wal_archive_dir=@current_test_directory@/database/wal_archive/"
+             ":start_fast=True"
+  }
+}

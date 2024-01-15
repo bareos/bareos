@@ -61,8 +61,9 @@ JobControlRecord* SetupDummyJcr(const char* name,
                                 BootStrapRecord* bsr,
                                 DirectorResource* director)
 {
-  JobControlRecord* jcr = new_jcr(MyFreeJcr);
+  JobControlRecord* jcr = new_jcr(&MyFreeJcr);
   jcr->sd_impl = new StoredJcrImpl;
+  register_jcr(jcr);
 
   jcr->sd_impl->read_session.bsr = bsr;
   jcr->sd_impl->director = director;
@@ -145,12 +146,16 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   if (!VolumeName.empty()) {
     bstrncpy(VolName, VolumeName.c_str(), sizeof(VolName));
     if (VolumeName.size() >= MAX_NAME_LENGTH) {
-      Jmsg0(jcr, M_ERROR, 0,
-            _("Volume name or names is too long. Please use a .bsr file.\n"));
+      /* We do not handle this case gracefully, so its best to just
+       * abort the job here. */
+      Jmsg0(jcr, M_FATAL, 0,
+            T_("Volume name or names is too long. Please use a .bsr file.\n"));
+      return false;
     }
   } else {
     VolName[0] = 0;
   }
+
   if (!jcr->sd_impl->read_session.bsr && VolName[0] == 0) {
     if (!bstrncmp(dev_name, "/dev/", 5)) {
       /* Try stripping file part */
@@ -165,14 +170,14 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   }
 
   if ((device_resource = find_device_res(dev_name, readonly)) == NULL) {
-    Jmsg2(jcr, M_FATAL, 0, _("Cannot find device \"%s\" in config file %s.\n"),
+    Jmsg2(jcr, M_FATAL, 0, T_("Cannot find device \"%s\" in config file %s.\n"),
           dev_name, configfile);
     return false;
   }
 
   dev = FactoryCreateDevice(jcr, device_resource);
   if (!dev) {
-    Jmsg1(jcr, M_FATAL, 0, _("Cannot init device %s\n"), dev_name);
+    Jmsg1(jcr, M_FATAL, 0, T_("Cannot init device %s\n"), dev_name);
     return false;
   }
   device_resource->dev = dev;
@@ -194,7 +199,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
     jcr->sd_impl->read_dcr = dcr;
   } else {
     if (!FirstOpenDevice(dcr)) {
-      Jmsg1(jcr, M_FATAL, 0, _("Cannot open %s\n"), dev->print_name());
+      Jmsg1(jcr, M_FATAL, 0, T_("Cannot open %s\n"), dev->print_name());
       return false;
     }
   }
@@ -291,15 +296,15 @@ static DeviceResource* find_device_res(char* archive_device_string,
   }
 
   if (!found) {
-    Pmsg2(0, _("Could not find device \"%s\" in config file %s.\n"),
+    Pmsg2(0, T_("Could not find device \"%s\" in config file %s.\n"),
           archive_device_string, configfile);
     return NULL;
   }
 
   if (readonly) {
-    Pmsg1(0, _("Using device: \"%s\" for reading.\n"), archive_device_string);
+    Pmsg1(0, T_("Using device: \"%s\" for reading.\n"), archive_device_string);
   } else {
-    Pmsg1(0, _("Using device: \"%s\" for writing.\n"), archive_device_string);
+    Pmsg1(0, T_("Using device: \"%s\" for writing.\n"), archive_device_string);
   }
 
   return device_resource;
@@ -313,15 +318,15 @@ void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev)
   status = dev->StatusDev();
 
   if (BitIsSet(BMT_EOD, status))
-    Jmsg(jcr, M_ERROR, 0, _("Unexpected End of Data\n"));
+    Jmsg(jcr, M_ERROR, 0, T_("Unexpected End of Data\n"));
   else if (BitIsSet(BMT_EOT, status))
-    Jmsg(jcr, M_ERROR, 0, _("Unexpected End of Tape\n"));
+    Jmsg(jcr, M_ERROR, 0, T_("Unexpected End of Tape\n"));
   else if (BitIsSet(BMT_EOF, status))
-    Jmsg(jcr, M_ERROR, 0, _("Unexpected End of File\n"));
+    Jmsg(jcr, M_ERROR, 0, T_("Unexpected End of File\n"));
   else if (BitIsSet(BMT_DR_OPEN, status))
-    Jmsg(jcr, M_ERROR, 0, _("Tape Door is Open\n"));
+    Jmsg(jcr, M_ERROR, 0, T_("Tape Door is Open\n"));
   else if (!BitIsSet(BMT_ONLINE, status))
-    Jmsg(jcr, M_ERROR, 0, _("Unexpected Tape is Off-line\n"));
+    Jmsg(jcr, M_ERROR, 0, T_("Unexpected Tape is Off-line\n"));
 
   free(status);
 }

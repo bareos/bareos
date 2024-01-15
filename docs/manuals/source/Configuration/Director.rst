@@ -123,16 +123,24 @@ The following is an example of a valid Job resource definition:
 JobDefs Resource
 ----------------
 
-:index:`\ <single: Job; JobDefs Resource>`\  :index:`\ <single: Resource; JobDefs>`\
+.. index::
+   single: Job; JobDefs Resource
+   single: Resource; JobDefs
 
-The JobDefs resource permits all the same directives that can appear in a Job resource. However, a JobDefs resource does not create a Job, rather it can be referenced within a Job to provide defaults for that Job. This permits you to concisely define several nearly identical Jobs, each one referencing a JobDefs resource which contains the defaults. Only the changes from the defaults need to be mentioned in each Job.
+The JobDefs resource permits all the same directives that can appear in a Job resource.
+However, a JobDefs resource does not create a Job, rather it can be referenced within
+a Job to provide defaults for that Job. This permits you to concisely define several nearly
+identical Jobs, each one referencing a JobDefs resource which contains the defaults.
+Only the changes from the defaults need to be mentioned in each Job.
 
 .. _DirectorResourceSchedule:
 
 Schedule Resource
 -----------------
 
-:index:`\ <single: Resource; Schedule>`\  :index:`\ <single: Schedule; Resource>`\
+.. index::
+   single: Resource; Schedule
+   single: Schedule; Resource
 
 The Schedule resource provides a means of automatically scheduling a Job as well as the ability to override the default Level, Pool, Storage and Messages resources. If a Schedule resource is not referenced in a Job, the Job can only be run manually. In general, you specify an action to be taken and when.
 
@@ -1151,21 +1159,39 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/HardLinks
 
    :type: yes|no
-   :default: yes
+   :default: no
 
+   .. warning::
 
-   When enabled (default), this directive will cause hard links to be
-   backed up. However, the File daemon keeps track of hard linked files and
-   will backup the data only once. The process of keeping track of the
-   hard links can be quite expensive if you have lots of them (tens of
-   thousands or more). This doesn't occur on normal Unix systems, but if
-   you use a program like BackupPC, it can create hundreds of thousands, or
-   even millions of hard links. Backups become very long and the File daemon
-   will consume a lot of CPU power checking hard links.  In such a case,
-   set :config:option:`dir/fileset/include/options/HardLinks = no`
-   and hard links will not be backed up.  Note, using
-   this option will most likely backup more data and on a restore the file
-   system will not be restored identically to the original.
+      Since :sinceVersion:`23.0.0: fileset keep hard links option switched from yes to no`
+      the default is :strong:`no`.
+
+   When disabled, Bareos will backup each file individually and restore them as
+   unrelated files as well. The fact that the files were hard links will be
+   lost.
+
+   When enabled, this directive will cause hard links to be backed up as hard
+   links. For each set of hard links, the file daemon will only backup the file
+   contents once -- when it encounters the first file of that set -- and only
+   backup meta data and a reference to that first file for each subsequent file
+   in that set.
+
+   Be aware that the process of keeping track of the hard links can be quite
+   expensive if you have lots of them (tens of thousands or more). Backups
+   become very long and the File daemon will consume a lot of CPU power
+   checking hard links.
+
+   .. note::
+
+      If you created backups with :config:option:`dir/fileset/include/options/HardLinks = yes`
+      you should only ever restore all files in that set of hard links at once
+      or not restore any of them.
+      If you were to restore a file inside that set, which was not the file
+      with the contents attached, then Bareos will not restore its data, but
+      instead just try to link with the file it references and restore its meta
+      data.
+      This means that the newly restored file might not actually have the same
+      contents as when it was backed up.
 
 .. config:option:: dir/fileset/include/options/Wild
 
@@ -1545,7 +1571,7 @@ The directives within an Options resource may be one of the following:
         Name = "Test Set"
         Include {
           Options {
-            signature = MD5
+            Signature = XXH128
             shadowing = localwarn
           }
           File = /
@@ -1906,7 +1932,7 @@ The following example demonstrates a Windows FileSet. It backups all data from a
      Enable VSS = yes
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
          Drive Type = fixed
          IgnoreCase = yes
          WildFile = "[A-Z]:/pagefile.sys"

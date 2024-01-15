@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,6 @@
 #endif
 
 #include "Python.h"
-#include "plugins/include/python3compat.h"
 #include <inttypes.h>
 class PoolMem;
 #define NbytesForBits(n) ((((n)-1) >> 3) + 1)
@@ -83,7 +82,7 @@ bRC bareosGetValue(PluginContext*, filedaemon::bVariable, void*)
 {
   return bRC_OK;
 };
-bRC bareosSetValue(PluginContext*, filedaemon::bVariable, void*)
+bRC bareosSetValue(PluginContext*, filedaemon::bVariable, const void*)
 {
   return bRC_OK;
 };

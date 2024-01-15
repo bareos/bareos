@@ -193,7 +193,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
         && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file owner %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -205,7 +205,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
         && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file owner %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -217,7 +217,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     if (fchmod(ofd->filedes, attr->statp.st_mode) < 0 && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file modes %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -233,7 +233,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
 #endif
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file modes %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -252,7 +252,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     if (futimes(ofd->filedes, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -269,7 +269,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     if (futimens(ofd->filedes, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -288,7 +288,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     if (lutimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -303,7 +303,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     if (utimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -315,7 +315,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
   if (utime(attr->ofname, reinterpret_cast<utimbuf*>(&restore_times)) < 0 && !suppress_errors) {
     BErrNo be;
 
-    Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
+    Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
           attr->ofname, be.bstrerror());
     ok = false;
   }
@@ -380,8 +380,8 @@ bool SetAttributes(JobControlRecord* jcr,
     if (attr->type == FT_REG && fsize > 0 && attr->statp.st_size > 0
         && fsize != (boffset_t)attr->statp.st_size) {
       Jmsg3(jcr, M_ERROR, 0,
-            _("File size of restored file %s not correct. Original %s, "
-              "restored %s.\n"),
+            T_("File size of restored file %s not correct. Original %s, "
+               "restored %s.\n"),
             attr->ofname, edit_uint64(attr->statp.st_size, ec1),
             edit_uint64(fsize, ec2));
     }
@@ -393,8 +393,8 @@ bool SetAttributes(JobControlRecord* jcr,
       if (attr->type == FT_REG && st.st_size > 0 && attr->statp.st_size > 0
           && st.st_size != attr->statp.st_size) {
         Jmsg3(jcr, M_ERROR, 0,
-              _("File size of restored file %s not correct. Original %s, "
-                "restored %s.\n"),
+              T_("File size of restored file %s not correct. Original %s, "
+                 "restored %s.\n"),
               attr->ofname, edit_uint64(attr->statp.st_size, ec1),
               edit_uint64(st.st_size, ec2));
       }
@@ -413,7 +413,7 @@ bool SetAttributes(JobControlRecord* jcr,
         && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file owner %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -422,7 +422,7 @@ bool SetAttributes(JobControlRecord* jcr,
     if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
       BErrNo be;
 
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
+      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file modes %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
       ok = false;
     }
@@ -439,7 +439,7 @@ bool SetAttributes(JobControlRecord* jcr,
        * fail. */
       if (chflags(attr->ofname, attr->statp.st_flags) < 0 && !suppress_errors) {
         BErrNo be;
-        Jmsg2(jcr, M_ERROR, 0, _("Unable to set file flags %s: ERR=%s\n"),
+        Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file flags %s: ERR=%s\n"),
               attr->ofname, be.bstrerror());
         ok = false;
       }
@@ -652,7 +652,7 @@ void WinError(JobControlRecord* jcr, const char* prefix, POOLMEM* win32_ofile)
                 NULL, lerror, 0, (LPTSTR)&msg, 0, NULL);
   Dmsg3(100, "Error in %s on file %s: ERR=%s\n", prefix, win32_ofile, msg);
   StripTrailingJunk(msg);
-  Jmsg3(jcr, M_ERROR, 0, _("Error in %s file %s: ERR=%s\n"), prefix,
+  Jmsg3(jcr, M_ERROR, 0, T_("Error in %s file %s: ERR=%s\n"), prefix,
         win32_ofile, msg);
   LocalFree(msg);
 }
@@ -664,7 +664,7 @@ void WinError(JobControlRecord* jcr, const char* prefix, DWORD lerror)
                 NULL, lerror, 0, (LPTSTR)&msg, 0, NULL);
   StripTrailingJunk(msg);
   if (jcr) {
-    Jmsg2(jcr, M_ERROR, 0, _("Error in %s: ERR=%s\n"), prefix, msg);
+    Jmsg2(jcr, M_ERROR, 0, T_("Error in %s: ERR=%s\n"), prefix, msg);
   } else {
     MessageBox(NULL, msg, prefix, MB_OK);
   }

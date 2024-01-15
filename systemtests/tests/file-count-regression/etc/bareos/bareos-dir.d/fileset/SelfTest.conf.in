@@ -1,0 +1,7 @@
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    File=@tmpdir@/data
+  }
+}

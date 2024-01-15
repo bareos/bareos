@@ -23,33 +23,22 @@ if(${SYSTEMD_FOUND})
 endif()
 
 option(ENABLE_PYTHON "Enable Python support" ON)
-option(ENABLE_PYTHON2 "Enable Python2 support" ON)
 
 
 if(NOT ENABLE_PYTHON OR MSVC)
   set(HAVE_PYTHON 0)
-  set(Python2_FOUND 0)
   set(Python3_FOUND 0)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(HAVE_PYTHON 1)
-  set(Python2_FOUND 1)
-  set(Python2_EXT_SUFFIX ".dll")
-
   set(Python3_FOUND 1)
   set(Python3_EXT_SUFFIX ".pyd")
 
   # Python Plugins currently cannot be built for Solaris
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(HAVE_PYTHON 0)
-  set(Python2_FOUND 0)
   set(Python3_FOUND 0)
 
 else()
-  if(ENABLE_PYTHON2)
-    find_package(Python2 COMPONENTS Interpreter Development)
-  else()
-    set(Python2_FOUND 0)
-  endif()
   find_package(Python3 COMPONENTS Interpreter Development)
 
   set(Python3_VERSION_MAJOR
@@ -62,26 +51,8 @@ else()
       PARENT_SCOPE
   )
 
-  if(${Python2_FOUND} OR ${Python3_FOUND})
+  if(${Python3_FOUND})
     set(HAVE_PYTHON 1)
-  endif()
-
-  if(${Python2_FOUND})
-    set(PYTHON_EXECUTABLE
-        ${Python2_EXECUTABLE}
-        PARENT_SCOPE
-    )
-    set(Python2_EXECUTABLE
-        ${Python2_EXECUTABLE}
-        PARENT_SCOPE
-    )
-    execute_process(
-      COMMAND ${Python2_EXECUTABLE}
-              ${CMAKE_CURRENT_SOURCE_DIR}/cmake/get_python_compile_settings.py
-      OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/py2settings.cmake
-    )
-    include(${CMAKE_CURRENT_BINARY_DIR}/py2settings.cmake)
-    set(Python2_CCSHARED ${Python2_CC_FLAGS} -Wno-register)
   endif()
 
   if(${Python3_FOUND})
@@ -185,7 +156,7 @@ if(ENABLE_LZO)
   if(${LZO2_FOUND})
     set(HAVE_LZO 1)
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-      set(LZO2_LIBRARIES "/usr/local/opt/lzo/lib/liblzo2.a")
+      set(LZO2_LIBRARIES "${HOMEBREW_PREFIX}/opt/lzo/lib/liblzo2.a")
     endif()
   endif()
 endif()

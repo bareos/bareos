@@ -9,7 +9,6 @@ database-postgresql
 database-tools
 tools
 director-python-plugin
-filedaemon-python2-plugin
 filedaemon-python3-plugin
 filedaemon-ldap-python-plugin
 storage-python-plugin

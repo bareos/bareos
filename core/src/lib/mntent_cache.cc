@@ -142,10 +142,18 @@ static mntent_cache_entry_t* add_mntent_mapping(uint32_t dev,
 
   auto retval = mntent_cache_entries->binary_insert(mce, CompareMntentMapping);
   if (retval != mce) {
-    Dmsg1(0, "failed to insert: %s %p, already exists!\n", mce->mountpoint,
-          mce->mountpoint);
+    if (retval) {
+      Dmsg4(200, "failed to insert: %s (%s), already exists as %s (%s)!\n",
+            mce->mountpoint, mce->fstype, retval->mountpoint, mce->fstype);
+    } else {
+      Dmsg2(50, "failed to insert: %s (%s); something went wrong!\n",
+            mce->mountpoint, mce->fstype);
+    }
     DestroyMntentCacheEntry(mce);
     free(mce);
+  } else {
+    Dmsg2(250, "inserted %s (%s) into mountpoint cache!\n", mce->mountpoint,
+          mce->fstype);
   }
   return mce;
 }

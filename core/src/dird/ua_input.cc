@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,17 +84,17 @@ bool GetPint(UaContext* ua, const char* prompt)
     if (!GetCmd(ua, prompt)) { return false; }
     /* Kludge for slots blank line => 0 */
     if (ua->cmd[0] == 0
-        && bstrncmp(prompt, _("Enter slot"), strlen(_("Enter slot")))) {
+        && bstrncmp(prompt, T_("Enter slot"), strlen(T_("Enter slot")))) {
       return true;
     }
     if (!Is_a_number(ua->cmd)) {
-      ua->WarningMsg(_("Expected a positive integer, got: %s\n"), ua->cmd);
+      ua->WarningMsg(T_("Expected a positive integer, got: %s\n"), ua->cmd);
       continue;
     }
     errno = 0;
     dval = strtod(ua->cmd, NULL);
     if (errno != 0 || dval < 0) {
-      ua->WarningMsg(_("Expected a positive integer, got: %s\n"), ua->cmd);
+      ua->WarningMsg(T_("Expected a positive integer, got: %s\n"), ua->cmd);
       continue;
     }
     ua->pint32_val = (uint32_t)dval;
@@ -112,9 +112,9 @@ bool GetPint(UaContext* ua, const char* prompt)
 bool IsYesno(char* val, bool* ret)
 {
   *ret = 0;
-  if (Bstrcasecmp(val, _("yes")) || Bstrcasecmp(val, NT_("yes"))) {
+  if (Bstrcasecmp(val, T_("yes")) || Bstrcasecmp(val, NT_("yes"))) {
     *ret = true;
-  } else if (Bstrcasecmp(val, _("no")) || Bstrcasecmp(val, NT_("no"))) {
+  } else if (Bstrcasecmp(val, T_("no")) || Bstrcasecmp(val, NT_("no"))) {
     *ret = false;
   } else {
     return false;
@@ -148,7 +148,7 @@ bool GetYesno(UaContext* ua, const char* prompt)
       return true;
     }
 
-    ua->WarningMsg(_("Invalid response. You must answer yes or no.\n"));
+    ua->WarningMsg(T_("Invalid response. You must answer yes or no.\n"));
   }
 }
 
@@ -160,14 +160,12 @@ bool GetYesno(UaContext* ua, const char* prompt)
  *                 or user enters "yes"
  *           false otherwise
  */
-bool GetConfirmation(UaContext* ua, const char* prompt)
+bool GetConfirmation(UaContext* ua, const char* prompt, bool fallback_value)
 {
   if (FindArg(ua, NT_("yes")) >= 0) { return true; }
-
+  if (!ua->UA_sock) { return fallback_value; }
   if (ua->api || ua->batch) { return false; }
-
   if (GetYesno(ua, prompt)) { return (ua->pint32_val == 1); }
-
   return false;
 }
 
@@ -191,8 +189,8 @@ int GetEnabled(UaContext* ua, const char* val)
   }
 
   if (Enabled < 0 || Enabled > 2) {
-    ua->ErrorMsg(
-        _("Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
+    ua->ErrorMsg(T_(
+        "Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
     return -1;
   }
 
@@ -217,17 +215,19 @@ bool IsCommentLegal(UaContext* ua, const char* name)
   /* Restrict the characters permitted in the comment */
   for (p = name; *p; p++) {
     if (!strchr(forbid, (int)(*p))) { continue; }
-    if (ua) { ua->ErrorMsg(_("Illegal character \"%c\" in a comment.\n"), *p); }
+    if (ua) {
+      ua->ErrorMsg(T_("Illegal character \"%c\" in a comment.\n"), *p);
+    }
     return 0;
   }
   len = strlen(name);
   if (len >= MAX_NAME_LENGTH) {
-    if (ua) { ua->ErrorMsg(_("Comment too long.\n")); }
+    if (ua) { ua->ErrorMsg(T_("Comment too long.\n")); }
     return 0;
   }
   if (len == 0) {
     if (ua) {
-      ua->ErrorMsg(_("Comment must be at least one character long.\n"));
+      ua->ErrorMsg(T_("Comment must be at least one character long.\n"));
     }
     return 0;
   }

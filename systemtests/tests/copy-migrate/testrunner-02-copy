@@ -42,6 +42,22 @@ expect_grep "|.*C.*|" \
             "$query_results" \
             "Copy job does not have the expected type."
 
+expect_grep "JobId 2: BeforeJob: prevjobid=\*None\* newjobid=\*None\*" \
+            "$copy_log" \
+            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+			
+expect_grep "JobId 2: AfterJob: prevjobid=\*None\* newjobid=\*None\*" \
+            "$copy_log" \
+            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+			
+expect_grep "JobId 3: BeforeJob: prevjobid=1 newjobid=4" \
+            "$copy_log" \
+            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+			
+expect_grep "JobId 3: AfterJob: prevjobid=1 newjobid=4" \
+            "$copy_log" \
+            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+			
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $query_results
 prune volume=TestVolume001 yes

@@ -80,6 +80,8 @@ rst_epilog = """
 .. |ndmpbareos| replace:: :ref:`section-NdmpBareos`
 .. |ndmpnative| replace:: :ref:`section-NdmpNative`
 
+.. |ktls| replace:: Kernel TLS
+
 """
 
 
@@ -385,8 +387,8 @@ scv_whitelist_branches = (
 scv_whitelist_tags = (re.compile(r"^not-exisiting-tag$"),)
 scv_show_banner = True
 scv_priority = "branches"
-scv_root_ref = "bareos-22"
-scv_banner_main_ref = "bareos-22"
+scv_root_ref = "bareos-23"
+scv_banner_main_ref = "bareos-23"
 
 
 plantuml_output_format = "svg_img"

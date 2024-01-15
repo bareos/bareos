@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,61 +16,6 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-
-if(Python2_FOUND)
-  add_library(python-dir MODULE python-dir.cc)
-  # do not prefix with "lib"
-  set_target_properties(
-    python-dir PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
-  )
-  install(TARGETS python-dir DESTINATION ${plugindir})
-  target_link_libraries(python-dir ${Python2_LIBRARIES} bareos)
-  target_include_directories(python-dir PUBLIC ${Python2_INCLUDE_DIRS})
-  target_compile_definitions(
-    python-dir PUBLIC PY2MODDIR=\"${Python2_SITEARCH}\"
-  )
-  target_compile_options(python-dir PUBLIC ${Python2_CCSHARED})
-  add_dependencies(python-dir bareosdir-python2-module)
-
-  set(PYFILES pyfiles/bareos-dir-class-plugin.py
-              pyfiles/BareosDirPluginBaseclass.py pyfiles/BareosDirWrapper.py
-  )
-
-  install(FILES ${PYFILES} DESTINATION ${plugindir})
-endif()
-
-if(Python2_FOUND)
-  add_library(bareosdir-python2-module MODULE module/bareosdir.cc)
-  install(TARGETS bareosdir-python2-module DESTINATION ${Python2_SITEARCH})
-  set_target_properties(
-    bareosdir-python2-module
-    PROPERTIES PREFIX ""
-               C_STANDARD 11
-               # SUFFIX ${Python2_EXT_SUFFIX}
-               LIBRARY_OUTPUT_DIRECTORY pythonmodules
-               LIBRARY_OUTPUT_NAME bareosdir
-               LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
-               LINKER_LANGUAGE CXX
-               INCLUDE_DIRECTORIES "${pymod2_include_dirs}"
-  )
-  if(NOT "${Python2_CCSHARED}" STREQUAL "")
-    target_compile_options(bareosdir-python2-module PUBLIC ${Python2_CCSHARED})
-  endif()
-  target_link_libraries(bareosdir-python2-module bareos ${Python2_LIBRARIES})
-
-  add_test(NAME bareosdir-python2-module
-           COMMAND ${Python2_EXECUTABLE}
-                   ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosdir_test.py
-  )
-  set_property(
-    TEST bareosdir-python2-module
-    PROPERTY
-      ENVIRONMENT
-      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/test"
-      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
-      "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
-  )
-endif()
 
 if(Python3_FOUND)
   add_library(python3-dir MODULE python-dir.cc)

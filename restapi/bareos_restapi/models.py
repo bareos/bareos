@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field, PositiveInt
 from enum import Enum
 import pathlib
 from typing import Optional, List
+from typing_extensions import Annotated
 from fastapi import Depends, FastAPI, HTTPException, status, Response, Path, Body, Query
 
 
@@ -68,12 +69,6 @@ class bareosFlag(str, Enum):
         return self.name == "yes"
 
 
-class bareosTime(str):
-    # TODO: define this, stuff like "20 days" or "1 months"
-    def __str__(self):
-        return self.name
-
-
 class bareosReplaceOption(str, Enum):
     """
     Replace option used by restore command
@@ -88,22 +83,12 @@ class bareosReplaceOption(str, Enum):
         return self.name
 
 
-class bareosSpeed(str):
-    # TODO: define this
-    def __str__(self):
-        return self.name
-
-
-class bareosSize(str):
-    # TODO: define this. Samples: 300, 10G
-    def __str__(self):
-        return self.name
-
-
-class bareosACL(str):
-    # TODO: define this.
-    def __str__(self):
-        return self.name
+# TODO: define this. Samples: "20 days" or "1 months"
+bareosTime = Annotated[str, Field()]
+bareosSpeed = Annotated[str, Field()]
+# TODO: define this. Samples: 300, 10G
+bareosSize = Annotated[str, Field()]
+bareosACL = Annotated[str, Field()]
 
 
 class jobStatus(str, Enum):

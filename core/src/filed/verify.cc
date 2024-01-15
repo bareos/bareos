@@ -69,7 +69,7 @@ void DoVerify(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
   if ((jcr->fd_impl->big_buf = (char*)malloc(jcr->buf_size)) == NULL) {
-    Jmsg1(jcr, M_ABORT, 0, _("Cannot malloc %d network read buffer\n"),
+    Jmsg1(jcr, M_ABORT, 0, T_("Cannot malloc %d network read buffer\n"),
           DEFAULT_NETWORK_BUFFER_SIZE);
   }
   SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, jcr->fd_impl->incremental,
@@ -135,7 +135,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     case FT_NOACCESS: {
       BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
-      Jmsg(jcr, M_NOTSAVED, 1, _("     Could not access %s: ERR=%s\n"),
+      Jmsg(jcr, M_NOTSAVED, 1, T_("     Could not access %s: ERR=%s\n"),
            ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
@@ -143,7 +143,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     case FT_NOFOLLOW: {
       BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
-      Jmsg(jcr, M_NOTSAVED, 1, _("     Could not follow link %s: ERR=%s\n"),
+      Jmsg(jcr, M_NOTSAVED, 1, T_("     Could not follow link %s: ERR=%s\n"),
            ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
@@ -151,29 +151,29 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     case FT_NOSTAT: {
       BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
-      Jmsg(jcr, M_NOTSAVED, 1, _("     Could not stat %s: ERR=%s\n"),
+      Jmsg(jcr, M_NOTSAVED, 1, T_("     Could not stat %s: ERR=%s\n"),
            ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
     }
     case FT_DIRNOCHG:
     case FT_NOCHG:
-      Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
+      Jmsg(jcr, M_SKIPPED, 1, T_("     Unchanged file skipped: %s\n"),
            ff_pkt->fname);
       return 1;
     case FT_ISARCH:
-      Jmsg(jcr, M_SKIPPED, 1, _("     Archive file skipped: %s\n"),
+      Jmsg(jcr, M_SKIPPED, 1, T_("     Archive file skipped: %s\n"),
            ff_pkt->fname);
       return 1;
     case FT_NORECURSE:
       Jmsg(jcr, M_SKIPPED, 1,
-           _("     Recursion turned off. Directory skipped: %s\n"),
+           T_("     Recursion turned off. Directory skipped: %s\n"),
            ff_pkt->fname);
       ff_pkt->type = FT_DIREND; /* directory entry was backed up */
       break;
     case FT_NOFSCHG:
       Jmsg(jcr, M_SKIPPED, 1,
-           _("     File system change prohibited. Directory skipped: %s\n"),
+           T_("     File system change prohibited. Directory skipped: %s\n"),
            ff_pkt->fname);
       return 1;
     case FT_PLUGIN_CONFIG:
@@ -182,13 +182,13 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     case FT_NOOPEN: {
       BErrNo be;
       be.SetErrno(ff_pkt->ff_errno);
-      Jmsg(jcr, M_NOTSAVED, 1, _("     Could not open directory %s: ERR=%s\n"),
+      Jmsg(jcr, M_NOTSAVED, 1, T_("     Could not open directory %s: ERR=%s\n"),
            ff_pkt->fname, be.bstrerror());
       jcr->JobErrors++;
       return 1;
     }
     default:
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d: %s\n"),
+      Jmsg(jcr, M_NOTSAVED, 0, T_("     Unknown file type %d: %s\n"),
            ff_pkt->type, ff_pkt->fname);
       jcr->JobErrors++;
       return 1;
@@ -233,7 +233,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   Dmsg2(20, "filed>dir: attribs len=%d: msg=%s\n", dir->message_length,
         dir->msg);
   if (!status) {
-    Jmsg(jcr, M_FATAL, 0, _("Network error in send to Director: ERR=%s\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Network error in send to Director: ERR=%s\n"),
          BnetStrerror(dir));
     return 0;
   }
@@ -252,7 +252,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
                               &digest_name)) {
       // Did digest initialization fail?
       if (digest_stream != STREAM_NONE && digest == NULL) {
-        Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
+        Jmsg(jcr, M_WARNING, 0, T_("%s digest initialization failed\n"),
              stream_to_ascii(digest_stream));
       } else if (digest && digest_buf) {
         Dmsg3(400, "send inx=%d %s=%s\n", jcr->JobFiles, digest_name,
@@ -292,7 +292,7 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
     BErrNo be;
     be.SetErrno(bfd.BErrNo);
     Dmsg2(100, "Cannot open %s: ERR=%s\n", ff_pkt->fname, be.bstrerror());
-    Jmsg(jcr, M_ERROR, 1, _("     Cannot open %s: ERR=%s.\n"), ff_pkt->fname,
+    Jmsg(jcr, M_ERROR, 1, T_("     Cannot open %s: ERR=%s.\n"), ff_pkt->fname,
          be.bstrerror());
     return 1;
   }
@@ -307,7 +307,7 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
         ff_pkt->ff_errno = errno;
         BErrNo be;
         Jmsg(jcr, M_ERROR, -1,
-             _("     Cannot open resource fork for %s: ERR=%s.\n"),
+             T_("     Cannot open resource fork for %s: ERR=%s.\n"),
              ff_pkt->fname, be.bstrerror());
         if (IsBopen(&ff_pkt->bfd)) { bclose(&ff_pkt->bfd); }
         return 1;
@@ -367,7 +367,7 @@ static int ReadDigest(BareosFilePacket* bfd,
     be.SetErrno(bfd->BErrNo);
     Dmsg2(100, "Error reading file %s: ERR=%s\n", jcr->fd_impl->last_fname,
           be.bstrerror());
-    Jmsg(jcr, M_ERROR, 1, _("Error reading file %s: ERR=%s\n"),
+    Jmsg(jcr, M_ERROR, 1, T_("Error reading file %s: ERR=%s\n"),
          jcr->fd_impl->last_fname, be.bstrerror());
     jcr->JobErrors++;
     return -1;
@@ -453,7 +453,7 @@ bool CalculateAndCompareFileChksum(JobControlRecord* jcr,
   if (calculate_file_chksum(jcr, ff_pkt, &digest, &digest_stream, &digest_buf,
                             &digest_name)) {
     if (digest_stream != STREAM_NONE && digest == NULL) {
-      Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
+      Jmsg(jcr, M_WARNING, 0, T_("%s digest initialization failed\n"),
            stream_to_ascii(digest_stream));
     } else if (digest && digest_buf) {
       if (!bstrcmp(digest_buf, chksum)) {

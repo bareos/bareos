@@ -113,17 +113,15 @@ static int const debuglevel = 200;
 
 
 // Does the mode contain OUT
-static bool AutoxflateModeContainsOut(AutoXflateMode mode)
+static bool AutoxflateModeContainsOut(IODirection mode)
 {
-  return (mode == AutoXflateMode::IO_DIRECTION_OUT
-          || mode == AutoXflateMode::IO_DIRECTION_INOUT);
+  return (mode == IODirection::WRITE || mode == IODirection::READ_WRITE);
 }
 
 // Does the mode contain IN
-static bool AutoxflateModeContainsIn(AutoXflateMode mode)
+static bool AutoxflateModeContainsIn(IODirection mode)
 {
-  return (mode == AutoXflateMode::IO_DIRECTION_IN
-          || mode == AutoXflateMode::IO_DIRECTION_INOUT);
+  return (mode == IODirection::READ || mode == IODirection::READ_WRITE);
 }
 
 // what streams can be decompressed by the plugin
@@ -276,7 +274,7 @@ static bRC handleJobEnd(PluginContext* ctx)
     Dmsg(ctx, debuglevel, "autoxflate-sd: inflate ratio: %lld/%lld = %0.2f%%\n",
          p_ctx->inflate_bytes_out, p_ctx->inflate_bytes_in,
          (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
-    Jmsg(ctx, M_INFO, _("autoxflate-sd: inflate ratio: %0.2f%%\n"),
+    Jmsg(ctx, M_INFO, T_("autoxflate-sd: inflate ratio: %0.2f%%\n"),
          (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
   }
 
@@ -285,7 +283,7 @@ static bRC handleJobEnd(PluginContext* ctx)
          "autoxflate-sd: deflate ratio: %lld/%lld =  %0.2f%%\n",
          p_ctx->deflate_bytes_out, p_ctx->deflate_bytes_in,
          (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
-    Jmsg(ctx, M_INFO, _("autoxflate-sd: deflate ratio: %0.2f%%\n"),
+    Jmsg(ctx, M_INFO, T_("autoxflate-sd: deflate ratio: %0.2f%%\n"),
          (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
   }
 
@@ -312,76 +310,76 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       && dcr->jcr->is_JobType(JT_RESTORE)
       && (AutoxflateModeContainsIn(dcr->autodeflate)
           || !AutoxflateModeContainsIn(dcr->autoinflate))) {
-    dcr->autoinflate = AutoXflateMode::IO_DIRECTION_IN;
-    dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+    dcr->autoinflate = IODirection::READ;
+    dcr->autodeflate = IODirection::NONE;
     Jmsg(ctx, M_INFO,
-         _("autoxflate-sd: overriding settings on %s for NDMP restore\n"),
+         T_("autoxflate-sd: overriding settings on %s for NDMP restore\n"),
          dcr->dev_name);
   }
 
   // Give jobmessage info what is configured
   switch (dcr->autodeflate) {
-    case AutoXflateMode::IO_DIRECTION_NONE:
+    case IODirection::NONE:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_IN:
+    case IODirection::READ:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_OUT:
+    case IODirection::WRITE:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_YES;
       break;
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ_WRITE:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_YES;
       break;
     default:
       Jmsg(ctx, M_ERROR,
-           _("autoxflate-sd: Unexpected autodeflate setting on %s"),
+           T_("autoxflate-sd: Unexpected autodeflate setting on %s"),
            dcr->dev_name);
       break;
   }
 
   switch (dcr->autoinflate) {
-    case AutoXflateMode::IO_DIRECTION_NONE:
+    case IODirection::NONE:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_IN:
+    case IODirection::READ:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_OUT:
+    case IODirection::WRITE:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_YES;
       break;
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ_WRITE:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_YES;
       break;
     default:
       Jmsg(ctx, M_ERROR,
-           _("autoxflate-sd: Unexpected autoinflate setting on %s"),
+           T_("autoxflate-sd: Unexpected autoinflate setting on %s"),
            dcr->dev_name);
       break;
   }
 
-  if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+  if (dcr->autodeflate != IODirection::NONE) {
     if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
 
-  if (AutoxflateModeContainsIn(dcr->autoinflate)) {
+  if (dcr->autoinflate != IODirection::NONE) {
     if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
 
   if (did_setup) {
     Jmsg(ctx, M_INFO,
-         _("autoxflate-sd: %s OUT:[SD->inflate=%s->deflate=%s->DEV] "
-           "IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
+         T_("autoxflate-sd: %s OUT:[SD->inflate=%s->deflate=%s->DEV] "
+            "IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
          dcr->dev_name, inflate_out, deflate_out, inflate_in, deflate_in);
   }
 
@@ -403,7 +401,7 @@ static bRC handle_read_translation(PluginContext* ctx, void* value)
   }
 
   if (!record_was_swapped) {
-    if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+    if (AutoxflateModeContainsIn(dcr->autodeflate)) {
       record_was_swapped = AutoDeflateRecord(ctx, dcr);
     }
   }
@@ -473,7 +471,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
                            Z_DEFAULT_STRATEGY))
           != Z_OK) {
         Jmsg(ctx, M_FATAL,
-             _("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
+             T_("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
       }
@@ -507,8 +505,8 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
       pZfastStream = (zfast_stream*)jcr->compress.workset.pZFAST;
       if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
         Jmsg(ctx, M_FATAL,
-             _("autoxflate-sd: Compression fastlzlibSetCompressor error: "
-               "%d\n"),
+             T_("autoxflate-sd: Compression fastlzlibSetCompressor error: "
+                "%d\n"),
              zstat);
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
@@ -519,7 +517,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
       break;
   }
 
-  Jmsg(ctx, M_INFO, _("autoxflate-sd: Compressor on device %s is %s\n"),
+  Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),
        dcr->dev_name, compressorname);
   retval = true;
 
@@ -565,7 +563,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   ser_declare;
   bool retval = false;
   comp_stream_header ch;
-  DeviceRecord *rec, *nrec;
+  DeviceRecord *rec, *nrec = nullptr;
   struct plugin_ctx* p_ctx;
   unsigned char* data = NULL;
   bool intermediate_value = false;
@@ -593,14 +591,14 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (!dcr->jcr->compress.deflate_buffer) {
     Jmsg(ctx, M_FATAL,
-         _("autoxflate-sd: compress.deflate_buffer was not setup "
-           "missing bSdEventSetupRecordTranslation call?\n"));
+         T_("autoxflate-sd: compress.deflate_buffer was not setup "
+            "missing bSdEventSetupRecordTranslation call?\n"));
     goto bail_out;
   }
+
   // Setup the converted DeviceRecord to point with its data buffer to the
   // compression buffer.
   nrec->data = dcr->jcr->compress.deflate_buffer;
-
 
   switch (rec->maskedStream) {
     case STREAM_FILE_DATA:
@@ -621,7 +619,6 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
                     rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {
-    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -687,6 +684,10 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   retval = true;
 
 bail_out:
+  if (nrec && dcr->after_rec != nrec) {
+    bareos_core_functions->FreeRecord(nrec);
+    nrec = nullptr;
+  }
   return retval;
 }
 
@@ -694,7 +695,7 @@ bail_out:
 // alternative datastream.
 static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 {
-  DeviceRecord *rec, *nrec;
+  DeviceRecord *rec, *nrec = nullptr;
   bool retval = false;
   struct plugin_ctx* p_ctx;
   bool intermediate_value = false;
@@ -718,6 +719,13 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   nrec = bareos_core_functions->new_record(/* with_data = */ false);
   bareos_core_functions->CopyRecordState(nrec, rec);
 
+  if (!dcr->jcr->compress.inflate_buffer) {
+    Jmsg(ctx, M_FATAL,
+         T_("autoxflate-sd: compress.inflate_buffer was not setup "
+            "missing bSdEventSetupRecordTranslation call?\n"));
+    goto bail_out;
+  }
+
   // Setup the converted record to point to the original data. The
   // DecompressData function will decompress the data in the
   // compression buffer and set the length of the decompressed data.
@@ -726,7 +734,6 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (!DecompressData(dcr->jcr, "Unknown", rec->maskedStream, &nrec->data,
                       &nrec->data_len, true)) {
-    bareos_core_functions->FreeRecord(nrec);
     goto bail_out;
   }
 
@@ -762,5 +769,9 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   retval = true;
 
 bail_out:
+  if (nrec && dcr->after_rec != nrec) {
+    bareos_core_functions->FreeRecord(nrec);
+    nrec = nullptr;
+  }
   return retval;
 }

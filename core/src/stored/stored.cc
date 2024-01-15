@@ -32,6 +32,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
@@ -112,11 +113,11 @@ int main(int argc, char* argv[])
   // Sanity checks
   if (TAPE_BSIZE % B_DEV_BSIZE != 0 || TAPE_BSIZE / B_DEV_BSIZE == 0) {
     Emsg2(M_ABORT, 0,
-          _("Tape block size (%d) not multiple of system size (%d)\n"),
+          T_("Tape block size (%d) not multiple of system size (%d)\n"),
           TAPE_BSIZE, B_DEV_BSIZE);
   }
   if (TAPE_BSIZE != (1 << (ffs(TAPE_BSIZE) - 1))) {
-    Emsg1(M_ABORT, 0, _("Tape block size (%d) is not a power of 2\n"),
+    Emsg1(M_ABORT, 0, T_("Tape block size (%d) is not a power of 2\n"),
           TAPE_BSIZE);
   }
 
@@ -138,7 +139,7 @@ int main(int argc, char* argv[])
   AddDebugOptions(sd_app);
 
   bool foreground = false;
-  CLI::Option* foreground_option = sd_app.add_flag(
+  [[maybe_unused]] CLI::Option* foreground_option = sd_app.add_flag(
       "-f,--foreground", foreground, "Run in foreground (for debugging).");
 
   std::string user{};
@@ -152,20 +153,16 @@ int main(int argc, char* argv[])
   sd_app.add_flag("-i,--ignore-io-errors", forge_on, "Ignore IO errors.");
 
   bool test_config = false;
-  auto testconfig_option = sd_app.add_flag(
+  [[maybe_unused]] auto testconfig_option = sd_app.add_flag(
       "-t,--test-config", test_config, "Test - read configuration and exit.");
 
-#if !defined(HAVE_WIN32)
+#ifndef HAVE_WIN32
   sd_app
       .add_option("-p,--pid-file", pidfile_path,
                   "Full path to pidfile (default: none)")
       ->excludes(foreground_option)
       ->excludes(testconfig_option)
       ->type_name("<file>");
-#else
-  // to silence unused variable error on windows
-  (void)testconfig_option;
-  (void)foreground_option;
 #endif
 
   bool no_signals = false;
@@ -187,7 +184,7 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(sd_app);
 
-  CLI11_PARSE(sd_app, argc, argv);
+  ParseBareosApp(sd_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateStored); }
 
@@ -209,22 +206,22 @@ int main(int argc, char* argv[])
     drop(uid, gid, false);
   } else if (uid || gid) {
     Emsg2(M_ERROR_TERM, 0,
-          _("The commandline options indicate to run as specified user/group, "
-            "but program was not started with required root privileges.\n"));
+          T_("The commandline options indicate to run as specified user/group, "
+             "but program was not started with required root privileges.\n"));
   }
 
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitSdConfig(configfile, M_ERROR_TERM);
+    my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (forge_on) {
     my_config->AddWarning(
@@ -235,18 +232,18 @@ int main(int argc, char* argv[])
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
   if (!CheckResources()) {
     Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
-         _("Please correct the configuration in %s\n"),
+         T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
   }
 
   if (my_config->HasWarnings()) {
     // messaging not initialized, so Jmsg with  M_WARNING doesn't work
-    fprintf(stderr, _("There are configuration warnings:\n"));
+    fprintf(stderr, T_("There are configuration warnings:\n"));
     for (auto& warning : my_config->GetWarnings()) {
       fprintf(stderr, " * %s\n", warning.c_str());
     }
@@ -259,7 +256,7 @@ int main(int argc, char* argv[])
 
   if (InitCrypto() != 0) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         _("Cryptography library initialization failed.\n"));
+         T_("Cryptography library initialization failed.\n"));
   }
 
   InitReservationsLock();
@@ -284,14 +281,14 @@ int main(int argc, char* argv[])
    */
   vol_session_time = (uint32_t)daemon_start_time;
   if (vol_session_time == 0) { /* paranoid */
-    Jmsg0(nullptr, M_ABORT, 0, _("Volume Session Time is ZERO!\n"));
+    Jmsg0(nullptr, M_ABORT, 0, T_("Volume Session Time is ZERO!\n"));
   }
 
   // Start the device allocation thread
   CreateVolumeLists(); /* do before device_init */
   if (pthread_create(&thid, nullptr, device_initialization, nullptr) != 0) {
     BErrNo be;
-    Emsg1(M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
+    Emsg1(M_ABORT, 0, T_("Unable to create thread. ERR=%s\n"), be.bstrerror());
   }
 
   InitJcrChain();
@@ -312,9 +309,9 @@ int main(int argc, char* argv[])
   StartSocketServer(me->SDaddrs);
 
   /* to keep compiler quiet */
-  TerminateStored(0);
+  TerminateStored(BEXIT_SUCCESS);
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 /* Check Configuration file for necessary info */
@@ -324,21 +321,22 @@ static int CheckResources()
   const std::string& configfile = my_config->get_base_config_path();
 
   if (my_config->GetNextRes(R_STORAGE, (BareosResource*)me) != nullptr) {
-    Jmsg1(nullptr, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
+    Jmsg1(nullptr, M_ERROR, 0,
+          T_("Only one Storage resource permitted in %s\n"),
           configfile.c_str());
     OK = false;
   }
 
   if (my_config->GetNextRes(R_DIRECTOR, nullptr) == nullptr) {
     Jmsg1(nullptr, M_ERROR, 0,
-          _("No Director resource defined in %s. Cannot continue.\n"),
+          T_("No Director resource defined in %s. Cannot continue.\n"),
           configfile.c_str());
     OK = false;
   }
 
   if (my_config->GetNextRes(R_DEVICE, nullptr) == nullptr) {
     Jmsg1(nullptr, M_ERROR, 0,
-          _("No Device resource defined in %s. Cannot continue.\n"),
+          T_("No Device resource defined in %s. Cannot continue.\n"),
           configfile.c_str());
     OK = false;
   }
@@ -347,7 +345,7 @@ static int CheckResources()
     me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, nullptr);
     if (!me->messages) {
       Jmsg1(nullptr, M_ERROR, 0,
-            _("No Messages resource defined in %s. Cannot continue.\n"),
+            T_("No Messages resource defined in %s. Cannot continue.\n"),
             configfile.c_str());
       OK = false;
     }
@@ -355,7 +353,7 @@ static int CheckResources()
 
   if (!me->working_directory) {
     Jmsg1(nullptr, M_ERROR, 0,
-          _("No Working Directory defined in %s. Cannot continue.\n"),
+          T_("No Working Directory defined in %s. Cannot continue.\n"),
           configfile.c_str());
     OK = false;
   }
@@ -364,7 +362,7 @@ static int CheckResources()
   if (store->IsTlsConfigured()) {
     if (!have_tls) {
       Jmsg(nullptr, M_FATAL, 0,
-           _("TLS required but not compiled into Bareos.\n"));
+           T_("TLS required but not compiled into Bareos.\n"));
       OK = false;
     }
   }
@@ -374,8 +372,8 @@ static int CheckResources()
     if (device_resource->drive_crypto_enabled
         && BitIsSet(CAP_LABEL, device_resource->cap_bits)) {
       Jmsg(nullptr, M_FATAL, 0,
-           _("LabelMedia enabled is incompatible with tape crypto on Device "
-             "\"%s\" in %s.\n"),
+           T_("LabelMedia enabled is incompatible with tape crypto on Device "
+              "\"%s\" in %s.\n"),
            device_resource->resource_name_, configfile.c_str());
       OK = false;
     }
@@ -428,7 +426,7 @@ static void CleanUpOldFiles()
   rc = regcomp(&preg1, pat1, REG_EXTENDED);
   if (rc != 0) {
     regerror(rc, &preg1, prbuf, sizeof(prbuf));
-    Pmsg2(000, _("Could not compile regex pattern \"%s\" ERR=%s\n"), pat1,
+    Pmsg2(000, T_("Could not compile regex pattern \"%s\" ERR=%s\n"), pat1,
           prbuf);
     goto get_out2;
   }
@@ -507,7 +505,7 @@ extern "C" void* device_initialization(void*)
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
-          _("Unable to init job start cond variable: ERR=%s\n"),
+          T_("Unable to init job start cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
   }
 
@@ -516,7 +514,7 @@ extern "C" void* device_initialization(void*)
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
-          _("Unable to init job endstart cond variable: ERR=%s\n"),
+          T_("Unable to init job endstart cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
   }
 
@@ -526,7 +524,7 @@ extern "C" void* device_initialization(void*)
     dev = FactoryCreateDevice(nullptr, device_resource);
     Dmsg1(10, "SD init done %s\n", device_resource->archive_device_string);
     if (!dev) {
-      Jmsg1(nullptr, M_ERROR, 0, _("Could not initialize %s\n"),
+      Jmsg1(nullptr, M_ERROR, 0, T_("Could not initialize %s\n"),
             device_resource->archive_device_string);
       continue;
     }
@@ -544,7 +542,7 @@ extern "C" void* device_initialization(void*)
     if (BitIsSet(CAP_ALWAYSOPEN, device_resource->cap_bits)) {
       Dmsg1(20, "calling FirstOpenDevice %s\n", dev->print_name());
       if (!FirstOpenDevice(dcr)) {
-        Jmsg1(nullptr, M_ERROR, 0, _("Could not open device %s\n"),
+        Jmsg1(nullptr, M_ERROR, 0, T_("Could not open device %s\n"),
               dev->print_name());
         Dmsg1(20, "Could not open device %s\n", dev->print_name());
         FreeDeviceControlRecord(dcr);
@@ -560,7 +558,7 @@ extern "C" void* device_initialization(void*)
           VolumeUnused(dcr); /* mark volume "released" */
           break;
         default:
-          Jmsg1(nullptr, M_WARNING, 0, _("Could not mount device %s\n"),
+          Jmsg1(nullptr, M_WARNING, 0, T_("Could not mount device %s\n"),
                 dev->print_name());
           break;
       }
@@ -588,7 +586,7 @@ static
 
   if (in_here) {       /* prevent loops */
     Bmicrosleep(2, 0); /* yield */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   in_here = true;
   debug_level = 0; /* turn off any debug */

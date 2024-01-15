@@ -164,13 +164,13 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 
   if (jcr) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Bootstrap file error: %s\n"
-           "            : Line %d, col %d of file %s\n%s\n"),
+         T_("Bootstrap file error: %s\n"
+            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   } else {
     e_msg(file, line, M_FATAL, 0,
-          _("Bootstrap file error: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
+          T_("Bootstrap file error: %s\n"
+             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
 }
@@ -199,13 +199,13 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 
   if (jcr) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Bootstrap file warning: %s\n"
-           "            : Line %d, col %d of file %s\n%s\n"),
+         T_("Bootstrap file warning: %s\n"
+            "            : Line %d, col %d of file %s\n%s\n"),
          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   } else {
     p_msg(file, line, 0,
-          _("Bootstrap file warning: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
+          T_("Bootstrap file warning: %s\n"
+             "            : Line %d, col %d of file %s\n%s\n"),
           buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
   }
 }
@@ -243,7 +243,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
   Dmsg1(300, "Enter parse_bsf %s\n", fname);
   if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
     BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Cannot open bootstrap file %s: %s\n"), fname,
+    Emsg2(M_ERROR_TERM, 0, T_("Cannot open bootstrap file %s: %s\n"), fname,
           be.bstrerror());
   }
   lc->caller_ctx = (void*)jcr;
@@ -337,7 +337,7 @@ static storagedaemon::BootStrapRecord* store_mediatype(
   token = LexGetToken(lc, BCT_STRING);
   if (token == BCT_ERROR) { return NULL; }
   if (!bsr->volume) {
-    Emsg1(M_ERROR, 0, _("MediaType %s in bsr at inappropriate place.\n"),
+    Emsg1(M_ERROR, 0, T_("MediaType %s in bsr at inappropriate place.\n"),
           lc->str);
     return bsr;
   }
@@ -369,7 +369,7 @@ static storagedaemon::BootStrapRecord* StoreDevice(
   token = LexGetToken(lc, BCT_STRING);
   if (token == BCT_ERROR) { return NULL; }
   if (!bsr->volume) {
-    Emsg1(M_ERROR, 0, _("Device \"%s\" in bsr at inappropriate place.\n"),
+    Emsg1(M_ERROR, 0, T_("Device \"%s\" in bsr at inappropriate place.\n"),
           lc->str);
     return bsr;
   }
@@ -533,7 +533,7 @@ static storagedaemon::BootStrapRecord* store_fileregex(
   if (rc != 0) {
     char prbuf[500];
     regerror(rc, bsr->fileregex_re, prbuf, sizeof(prbuf));
-    Emsg2(M_ERROR, 0, _("REGEX '%s' compile error. ERR=%s\n"), bsr->fileregex,
+    Emsg2(M_ERROR, 0, T_("REGEX '%s' compile error. ERR=%s\n"), bsr->fileregex,
           prbuf);
     return NULL;
   }
@@ -545,7 +545,7 @@ static storagedaemon::BootStrapRecord* StoreJobtype(
     storagedaemon::BootStrapRecord* bsr)
 {
   /* *****FIXME****** */
-  Pmsg0(-1, _("JobType not yet implemented\n"));
+  Pmsg0(-1, T_("JobType not yet implemented\n"));
   return bsr;
 }
 
@@ -554,7 +554,7 @@ static storagedaemon::BootStrapRecord* store_joblevel(
     storagedaemon::BootStrapRecord* bsr)
 {
   /* *****FIXME****** */
-  Pmsg0(-1, _("JobLevel not yet implemented\n"));
+  Pmsg0(-1, T_("JobLevel not yet implemented\n"));
   return bsr;
 }
 
@@ -754,7 +754,7 @@ static storagedaemon::BootStrapRecord* store_slot(
   token = LexGetToken(lc, BCT_PINT32);
   if (token == BCT_ERROR) { return NULL; }
   if (!bsr->volume) {
-    Emsg1(M_ERROR, 0, _("Slot %d in bsr at inappropriate place.\n"),
+    Emsg1(M_ERROR, 0, T_("Slot %d in bsr at inappropriate place.\n"),
           lc->u.pint32_val);
     return bsr;
   }
@@ -782,7 +782,7 @@ static storagedaemon::BootStrapRecord* store_exclude(
 static inline void DumpVolfile(storagedaemon::BsrVolumeFile* volfile)
 {
   if (volfile) {
-    Pmsg2(-1, _("VolFile     : %u-%u\n"), volfile->sfile, volfile->efile);
+    Pmsg2(-1, T_("VolFile     : %u-%u\n"), volfile->sfile, volfile->efile);
     DumpVolfile(volfile->next);
   }
 }
@@ -790,7 +790,7 @@ static inline void DumpVolfile(storagedaemon::BsrVolumeFile* volfile)
 static inline void DumpVolblock(storagedaemon::BsrVolumeBlock* volblock)
 {
   if (volblock) {
-    Pmsg2(-1, _("VolBlock    : %u-%u\n"), volblock->sblock, volblock->eblock);
+    Pmsg2(-1, T_("VolBlock    : %u-%u\n"), volblock->sblock, volblock->eblock);
     DumpVolblock(volblock->next);
   }
 }
@@ -798,7 +798,7 @@ static inline void DumpVolblock(storagedaemon::BsrVolumeBlock* volblock)
 static inline void DumpVoladdr(storagedaemon::BsrVolumeAddress* voladdr)
 {
   if (voladdr) {
-    Pmsg2(-1, _("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
+    Pmsg2(-1, T_("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
     DumpVoladdr(voladdr->next);
   }
 }
@@ -807,9 +807,9 @@ static inline void DumpFindex(storagedaemon::BsrFileIndex* FileIndex)
 {
   if (FileIndex) {
     if (FileIndex->findex == FileIndex->findex2) {
-      Pmsg1(-1, _("FileIndex   : %u\n"), FileIndex->findex);
+      Pmsg1(-1, T_("FileIndex   : %u\n"), FileIndex->findex);
     } else {
-      Pmsg2(-1, _("FileIndex   : %u-%u\n"), FileIndex->findex,
+      Pmsg2(-1, T_("FileIndex   : %u-%u\n"), FileIndex->findex,
             FileIndex->findex2);
     }
     DumpFindex(FileIndex->next);
@@ -820,9 +820,9 @@ static inline void DumpJobid(storagedaemon::BsrJobid* jobid)
 {
   if (jobid) {
     if (jobid->JobId == jobid->JobId2) {
-      Pmsg1(-1, _("JobId       : %u\n"), jobid->JobId);
+      Pmsg1(-1, T_("JobId       : %u\n"), jobid->JobId);
     } else {
-      Pmsg2(-1, _("JobId       : %u-%u\n"), jobid->JobId, jobid->JobId2);
+      Pmsg2(-1, T_("JobId       : %u-%u\n"), jobid->JobId, jobid->JobId2);
     }
     DumpJobid(jobid->next);
   }
@@ -832,9 +832,9 @@ static inline void DumpSessid(storagedaemon::BsrSessionId* sessid)
 {
   if (sessid) {
     if (sessid->sessid == sessid->sessid2) {
-      Pmsg1(-1, _("SessId      : %u\n"), sessid->sessid);
+      Pmsg1(-1, T_("SessId      : %u\n"), sessid->sessid);
     } else {
-      Pmsg2(-1, _("SessId      : %u-%u\n"), sessid->sessid, sessid->sessid2);
+      Pmsg2(-1, T_("SessId      : %u-%u\n"), sessid->sessid, sessid->sessid2);
     }
     DumpSessid(sessid->next);
   }
@@ -843,10 +843,10 @@ static inline void DumpSessid(storagedaemon::BsrSessionId* sessid)
 static inline void DumpVolume(storagedaemon::BsrVolume* volume)
 {
   if (volume) {
-    Pmsg1(-1, _("VolumeName  : %s\n"), volume->VolumeName);
-    Pmsg1(-1, _("  MediaType : %s\n"), volume->MediaType);
-    Pmsg1(-1, _("  Device    : %s\n"), volume->device);
-    Pmsg1(-1, _("  Slot      : %d\n"), volume->Slot);
+    Pmsg1(-1, T_("VolumeName  : %s\n"), volume->VolumeName);
+    Pmsg1(-1, T_("  MediaType : %s\n"), volume->MediaType);
+    Pmsg1(-1, T_("  Device    : %s\n"), volume->device);
+    Pmsg1(-1, T_("  Slot      : %d\n"), volume->Slot);
     DumpVolume(volume->next);
   }
 }
@@ -854,7 +854,7 @@ static inline void DumpVolume(storagedaemon::BsrVolume* volume)
 static inline void DumpClient(storagedaemon::BsrClient* client)
 {
   if (client) {
-    Pmsg1(-1, _("Client      : %s\n"), client->ClientName);
+    Pmsg1(-1, T_("Client      : %s\n"), client->ClientName);
     DumpClient(client->next);
   }
 }
@@ -862,7 +862,7 @@ static inline void DumpClient(storagedaemon::BsrClient* client)
 static inline void dump_job(storagedaemon::BsrJob* job)
 {
   if (job) {
-    Pmsg1(-1, _("Job          : %s\n"), job->Job);
+    Pmsg1(-1, T_("Job          : %s\n"), job->Job);
     dump_job(job->next);
   }
 }
@@ -870,7 +870,7 @@ static inline void dump_job(storagedaemon::BsrJob* job)
 static inline void DumpSesstime(storagedaemon::BsrSessionTime* sesstime)
 {
   if (sesstime) {
-    Pmsg1(-1, _("SessTime    : %u\n"), sesstime->sesstime);
+    Pmsg1(-1, T_("SessTime    : %u\n"), sesstime->sesstime);
     DumpSesstime(sesstime->next);
   }
 }
@@ -880,12 +880,12 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse)
   int save_debug = debug_level;
   debug_level = 1;
   if (!bsr) {
-    Pmsg0(-1, _("storagedaemon::BootStrapRecord is NULL\n"));
+    Pmsg0(-1, T_("storagedaemon::BootStrapRecord is NULL\n"));
     debug_level = save_debug;
     return;
   }
-  Pmsg1(-1, _("Next        : 0x%x\n"), bsr->next);
-  Pmsg1(-1, _("Root bsr    : 0x%x\n"), bsr->root);
+  Pmsg1(-1, T_("Next        : 0x%x\n"), bsr->next);
+  Pmsg1(-1, T_("Root bsr    : 0x%x\n"), bsr->root);
   DumpVolume(bsr->volume);
   DumpSessid(bsr->sessid);
   DumpSesstime(bsr->sesstime);
@@ -897,13 +897,13 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse)
   dump_job(bsr->job);
   DumpFindex(bsr->FileIndex);
   if (bsr->count) {
-    Pmsg1(-1, _("count       : %u\n"), bsr->count);
-    Pmsg1(-1, _("found       : %u\n"), bsr->found);
+    Pmsg1(-1, T_("count       : %u\n"), bsr->count);
+    Pmsg1(-1, T_("found       : %u\n"), bsr->found);
   }
 
-  Pmsg1(-1, _("done        : %s\n"), bsr->done ? _("yes") : _("no"));
-  Pmsg1(-1, _("positioning : %d\n"), bsr->use_positioning);
-  Pmsg1(-1, _("fast_reject : %d\n"), bsr->use_fast_rejection);
+  Pmsg1(-1, T_("done        : %s\n"), bsr->done ? T_("yes") : T_("no"));
+  Pmsg1(-1, T_("positioning : %d\n"), bsr->use_positioning);
+  Pmsg1(-1, T_("fast_reject : %d\n"), bsr->use_fast_rejection);
   if (recurse && bsr->next) {
     Pmsg0(-1, "\n");
     DumpBsr(bsr->next, true);

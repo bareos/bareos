@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@
 #include "lib/parse_conf.h"
 #include "lib/thread_specific_data.h"
 #include "dird/jcr_util.h"
-
+#include "console_connection_lease.h"
 
 namespace directordaemon {
 
@@ -91,6 +91,7 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
   ua->UA_sock = user_agent_socket;
   SetJcrInThreadSpecificData(nullptr);
 
+  ConsoleConnectionLease lease;  // obtain lease to count connections
   bool success = AuthenticateConsole(ua);
 
   if (!success) { ua->quit = true; }
@@ -117,7 +118,7 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
             if (ua->api) {
               user_agent_socket->signal(BNET_MSGS_PENDING);
             } else {
-              bsendmsg(ua, _("You have messages.\n"));
+              bsendmsg(ua, T_("You have messages.\n"));
             }
             ua->user_notified_msg_pending = true;
           }

@@ -526,6 +526,73 @@ In Bareos Version 18.2 the relevant resources for some connections had to be cha
 .. [#cert] Certificate directives are: TlsVerifyPeer, TlsCaCertificateFile, TlsCaCertificateDir, TlsCertificateRevocationList, TlsCertificate, TlsKey, TlsAllowedCn
 
 
+.. _TLSKernelTLS:
+
+Enabling |ktls|
+---------------
+
+|ktls| is a feature of some operating systems in which the application may pass data directly to the kernel,
+so that it performs the necessary encryption in kernel space.
+
+.. warning::
+   If |ktls| is used then the data is written **unencrypted** to the socket.
+
+
+This allows the kernel to offload this work to dedicated hardware to speed up the connection.
+
+You may set the following options to **Yes** so that the respective daemon announces to the
+operating system that it wants to make use of |ktls|.
+
+:config:option:`dir/director/EnableKtls`
+:config:option:`fd/client/EnableKtls`
+:config:option:`sd/storage/EnableKtls`
+
+.. note::
+   In the end the SSL implementation and the operating
+   system itself will decide whether |ktls| will be used or not.
+   Bareos cannot influence this decision directly.
+
+To make it more likely that |ktls| is used, you may consult your operating system vendors manual to
+see which TLS ciphers it supports and configure bareos to use those.
+
+.. warning::
+   Some SSL implementations do not correctly report whether |ktls| is used or not.
+   In that case Bareos may send data completely unencrypted!  Make sure to study
+   the respective manuals.
+
+If `EnableKtls` was set to **Yes** then Bareos will emit a debug message saying whether
+it thinks that |ktls| is enabled or not.
+
+.. note::
+   On some operating systems you have to prepare |ktls| before bareos can take
+   advantage of it.  For example on Linux you have to load the **tls** kernel
+   module.
+
+.. code-block:: shell-session
+   :caption: connecting a console with |ktls| enabled
+   :emphasize-lines: 18,19
+
+   bin/bconsole -d150                     
+   [...]
+   bconsole (100): lib/tls_openssl_private.cc:58-0 Construct TlsOpenSslPrivate
+   bconsole (100): lib/tls_openssl_private.cc:614-0 Set tcp filedescriptor: <3>
+   bconsole (100): lib/tls_openssl_private.cc:632-0 Set protocol:	<>
+   bconsole (100): lib/tls_openssl_private.cc:554-0 Set ca_certfile:	<>
+   bconsole (100): lib/tls_openssl_private.cc:560-0 Set ca_certdir:	<>
+   bconsole (100): lib/tls_openssl_private.cc:566-0 Set crlfile_:	<>
+   bconsole (100): lib/tls_openssl_private.cc:572-0 Set certfile_:	<>
+   bconsole (100): lib/tls_openssl_private.cc:578-0 Set keyfile_:	<>
+   bconsole (100): lib/tls_openssl_private.cc:596-0 Set dhfile_:	<>
+   bconsole (100): lib/tls_openssl_private.cc:620-0 Set cipherlist:	<>
+   bconsole (100): lib/tls_openssl_private.cc:626-0 Set ciphersuites:	<>
+   bconsole (100): lib/tls_openssl_private.cc:602-0 Set Verify Peer:	<false>
+   bconsole (100): lib/tls_openssl_private.cc:608-0 Set ktls:	<true>
+   bconsole (50): lib/tls_openssl.cc:63-0 Preparing TLS_PSK CLIENT context for identity R_CONSOLE *UserAgent*
+   bconsole (100): lib/tls_openssl_private.cc:541-0 psk_client_cb. identity: R_CONSOLE *UserAgent*.
+   bconsole (150): lib/tls_openssl_private.cc:436-0 Ktls used for Recv: no
+   bconsole (150): lib/tls_openssl_private.cc:437-0 Ktls used for Send: yes
+   [...]
+
 .. _TLSRestrictingProtocolCipherChapter:
 
 TLS Restricting Protocol and Cipher
@@ -533,8 +600,6 @@ TLS Restricting Protocol and Cipher
 
 .. index:: Example; TLS howto limit cipher
 .. index:: TLS Limit protocol, TLS Limit cipher
-
-
 
 With TLS/PSK activated by default in Bareos since version 18, it is sometimes mandatory to achieve better performance and increase the throughput of backups and restores.
 To do so, you need to fine-tune the configuration, selecting wisely the protocol and ciphers used. Syntax and parameter usage is far from evident.
@@ -544,11 +609,11 @@ This chapter will show you how to do that.
 
 .. note::
 
-   Bareos version 21 does not yet provide a way to parameterize the TLSv1.3 protocol and associated ciphers. And since TLS protocols below 1.2 are considered weak, we will concentrate efforts on restricting cipher usage to protocol version 1.2.
+   Since TLS protocols below 1.2 are considered weak, we will concentrate efforts on restricting cipher usage to protocol version 1.2 and above.
 
 
-Determine available ciphers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Determine available ciphers for TLSv1.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following command :command:`openssl` helps to determine which ciphers are available for protocol 1.2 with the needed PSK extensions.
 
@@ -633,10 +698,32 @@ Order is done by level of "most secure" label done by [ciphersuite.info](https:/
 
 Just be sure they are present on all hosts you want to use with Bareos.
 
-.. note ::
+Determine available ciphers for TLSv1.3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   In the future Bareos, we will have support the Linux kernel kTLS feature and fully configurable TLSv1.3, on modern platforms with OpenSSL > 3.x
+Similar to TLSv1.2 we can list the supported ciphers with
 
+.. code-block:: shell-session
+   :caption: openssl list available ciphers for tls v1.3
+
+   openssl ciphers -tls1_3 -psk -s
+
+Currently only SHA256 ciphers are supported by bareos.
+
+.. code-block:: shell-session
+   :caption: openssl verbose cipher list for tls v1.3 with psk filtering for SHA256
+
+   openssl ciphers -v -tls1_3 -psk -s | grep SHA256
+
+
+   Example output list of ciphers:
+
+      TLS_CHACHA20_POLY1305_SHA256   TLSv1.3 Kx=any      Au=any   Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      TLS_AES_128_GCM_SHA256         TLSv1.3 Kx=any      Au=any   Enc=AESGCM(128)            Mac=AEAD
+      TLS_AES_128_CCM_SHA256         TLSv1.3 Kx=any      Au=any   Enc=AESCCM(128)            Mac=AEAD
+
+Since all available TLSv1.3 ciphers are fairly strong, we recommend to not set the ciphersuites manually unless
+needed; for example to enable |ktls|.
 
 Resources parameters to configure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -694,7 +781,7 @@ For bconsole
 
 In the following example, we will remove all protocols below 1.2 and 1.3, and activate specifically 1.2 if it is not by default.
 
-The order of the list of ciphers that should normally be hardware accelerated and usable by kernel kTLS, is important.
+The order of the list of ciphers that should normally be hardware accelerated and usable by kernel |ktls|, is important.
 
 Both values need to be set as strings enclosed by double quotes.
 
@@ -863,7 +950,6 @@ With the restricted configuration in place, the signature in :command:`bconsole`
     Connecting to Director localhost:9101
       Encryption: PSK-AES128-GCM-SHA256 TLSv1.2
     1000 OK: bareos-dir Version: 21.1.5 (09 November 2022)
-
 
 Conclusion
 ~~~~~~~~~~

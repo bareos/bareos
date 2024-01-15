@@ -34,6 +34,7 @@
 #include "lib/htable.h"
 #include "lib/dlist.h"
 #include "lib/alist.h"
+#include "findlib/hardlink.h"
 
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
@@ -176,28 +177,6 @@ struct HfsPlusInfo {
 };
 
 /**
- * Structure for keeping track of hard linked files, we
- * keep an entry for each hardlinked file that we save,
- * which is the first one found. For all the other files that
- * are linked to this one, we save only the directory
- * entry so we can link it.
- */
-struct CurLink {
-  struct hlink link;
-  dev_t dev;             /**< Device */
-  ino_t ino;             /**< Inode with device is unique */
-  uint32_t FileIndex;    /**< Bareos FileIndex of this file */
-  int32_t digest_stream; /**< Digest type if needed */
-  uint32_t digest_len;   /**< Digest len if needed */
-  char* digest;          /**< Checksum of the file if needed */
-  char name[1];          /**< The name */
-};
-
-using LinkHash
-    = htable<htable_binary_key, CurLink, MonotonicBuffer::Size::Medium>;
-
-
-/**
  * Definition of the FindFiles packet passed as the
  * first argument to the FindFiles callback subroutine.
  */
@@ -241,9 +220,6 @@ struct FindFilesPacket {
   int (*FileSave)(JobControlRecord*,
                   FindFilesPacket*,
                   bool){};   /**< User's callback */
-  int (*PluginSave)(JobControlRecord*,
-                    FindFilesPacket*,
-                    bool){}; /**< User's callback */
   bool (*CheckFct)(
       JobControlRecord*,
       FindFilesPacket*){};   /**< Optional user fct to check file changes */
@@ -291,7 +267,6 @@ findIncludeExcludeItem* new_include(findFILESET* fileset);
 findIncludeExcludeItem* new_preinclude(findFILESET* fileset);
 findFOPTS* start_options(FindFilesPacket* ff);
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe);
-
 
 #include "acl.h"
 #include "xattr.h"

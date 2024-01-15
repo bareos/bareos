@@ -5,26 +5,26 @@
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
-   This program is Free Software; you can redistribute it and/or
-   modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation and included
-   in the file LICENSE.
+ This program is Free Software; you can redistribute it and/or
+ modify it under the terms of version three of the GNU Affero General Public
+ License as published by the Free Software Foundation and included
+ in the file LICENSE.
 
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   Affero General Public License for more details.
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ Affero General Public License for more details.
 
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+ You should have received a copy of the GNU Affero General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ 02110-1301, USA.
 */
 // Kern Sibbald, 2000
 /**
- * @file
- * Define Message Types for BAREOS
- */
+* @file
+* Define Message Types for BAREOS
+*/
 
 #ifndef BAREOS_LIB_MESSAGE_H_
 #define BAREOS_LIB_MESSAGE_H_
@@ -39,12 +39,12 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <optional>
 
 class JobControlRecord;
 
-extern "C" {
-typedef char* (*job_code_callback_t)(JobControlRecord*, const char*);
-}
+typedef std::optional<std::string> (*job_code_callback_t)(JobControlRecord*,
+                                                        const char*);
 
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
@@ -53,7 +53,7 @@ const char* get_basename(const char* pathname);
 void SetLogTimestampFormat(const char* format);
 
 using DbLogInsertCallback = std::function<
-    bool(JobControlRecord* jcr, utime_t mtime, const char* msg)>;
+  bool(JobControlRecord* jcr, utime_t mtime, const char* msg)>;
 void SetDbLogInsertCallback(DbLogInsertCallback f);
 
 class MessagesResource;

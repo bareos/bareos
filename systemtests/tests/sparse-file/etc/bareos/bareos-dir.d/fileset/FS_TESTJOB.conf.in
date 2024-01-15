@@ -2,7 +2,8 @@ FileSet {
   Name = FS_TESTJOB
   Include {
     Options {
-      Signature = MD5
+      Signature = XXH128
+      HardLinks = Yes
       Sparse=yes
     }
     File = "<@tmpdir@/file-list"

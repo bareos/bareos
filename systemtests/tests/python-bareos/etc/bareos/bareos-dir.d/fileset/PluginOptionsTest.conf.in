@@ -3,8 +3,8 @@ FileSet {
   Description = "Test the Plugin functionality with a Python Plugin."
   Include {
     Options {
-      signature = MD5
+      Signature = XXH128
     }
-    Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos_fd_pluginoptions:filename=@tmpdir@/file-list-simple:filesetoption=fileset"
+    Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-pluginoptions:filename=@tmpdir@/file-list-simple:filesetoption=fileset"
   }
 }

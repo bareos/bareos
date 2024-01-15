@@ -97,7 +97,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
    * SD under the debugger fails. */
   // Bmicrosleep(0, 50000);             /* wait 50 millisecs */
   if (!(jcr = get_jcr_by_full_name(job_name))) {
-    Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"),
+    Jmsg1(NULL, M_FATAL, 0, T_("SD connect failed: Job name not found: %s\n"),
           job_name);
     Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
     sd->close();
@@ -109,7 +109,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
 
   if (jcr->authenticated) {
     Jmsg2(jcr, M_FATAL, 0,
-          _("Hey!!!! JobId %u Job %s already authenticated.\n"),
+          T_("Hey!!!! JobId %u Job %s already authenticated.\n"),
           (uint32_t)jcr->JobId, jcr->Job);
     Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
           (uint32_t)jcr->JobId, jcr->Job);
@@ -125,7 +125,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
   // Authenticate the Storage daemon
   if (jcr->authenticated || !AuthenticateStoragedaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-    Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
   } else {
     jcr->authenticated = true;
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
@@ -170,9 +170,10 @@ static void DoSdCommands(JobControlRecord* jcr)
           if (!jcr->IsJobCanceled()) {
             if (jcr->errmsg[0]) {
               Jmsg1(jcr, M_FATAL, 0,
-                    _("Command error with SD, hanging up. %s\n"), jcr->errmsg);
+                    T_("Command error with SD, hanging up. %s\n"), jcr->errmsg);
             } else {
-              Jmsg0(jcr, M_FATAL, 0, _("Command error with SD, hanging up.\n"));
+              Jmsg0(jcr, M_FATAL, 0,
+                    T_("Command error with SD, hanging up.\n"));
             }
             jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           }
@@ -184,7 +185,7 @@ static void DoSdCommands(JobControlRecord* jcr)
 
     if (!found) { /* command not found */
       if (!jcr->IsJobCanceled()) {
-        Jmsg1(jcr, M_FATAL, 0, _("SD command not found: %s\n"), sd->msg);
+        Jmsg1(jcr, M_FATAL, 0, T_("SD command not found: %s\n"), sd->msg);
         Dmsg1(110, "<stored: Command not found: %s\n", sd->msg);
       }
       sd->fsend(serrmsg);
@@ -277,7 +278,7 @@ static bool StartReplicationSession(JobControlRecord* jcr)
 
   Dmsg1(120, "Start replication session: %s", sd->msg);
   if (jcr->sd_impl->session_opened) {
-    PmStrcpy(jcr->errmsg, _("Attempt to open already open session.\n"));
+    PmStrcpy(jcr->errmsg, T_("Attempt to open already open session.\n"));
     sd->fsend(NO_open);
     return false;
   }
@@ -312,12 +313,12 @@ static bool ReplicateData(JobControlRecord* jcr)
     if (DoAppendData(jcr, sd, "SD")) {
       return true;
     } else {
-      PmStrcpy(jcr->errmsg, _("Replicate data error.\n"));
+      PmStrcpy(jcr->errmsg, T_("Replicate data error.\n"));
       BnetSuppressErrorMessages(sd, 1); /* ignore errors at this point */
       sd->fsend(ERROR_replicate);
     }
   } else {
-    PmStrcpy(jcr->errmsg, _("Attempt to replicate on non-open session.\n"));
+    PmStrcpy(jcr->errmsg, T_("Attempt to replicate on non-open session.\n"));
     sd->fsend(NOT_opened);
   }
 
@@ -331,7 +332,7 @@ static bool EndReplicationSession(JobControlRecord* jcr)
 
   Dmsg1(120, "stored<stored: %s", sd->msg);
   if (!jcr->sd_impl->session_opened) {
-    PmStrcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
+    PmStrcpy(jcr->errmsg, T_("Attempt to close non-open session.\n"));
     sd->fsend(NOT_opened);
     return false;
   }

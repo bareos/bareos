@@ -198,7 +198,7 @@ static void DumpResource(int type,
       = OutputFormatterResource(&output_formatter);
 
   if (res == NULL) {
-    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
+    sendit(sock, T_("Warning: no \"%s\" resource (%d) defined.\n"),
            my_config->ResToStr(type), type);
     return;
   }
@@ -258,7 +258,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     default:
-      printf(_("Unknown resource type %d in FreeResource.\n"), type);
+      printf(T_("Unknown resource type %d in FreeResource.\n"), type);
       break;
   }
 
@@ -279,15 +279,15 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
+      if (!items[i].IsPresent()) {
         Emsg2(M_ERROR_TERM, 0,
-              _("%s item is required in %s resource, but not found.\n"),
+              T_("%s item is required in %s resource, but not found.\n"),
               items[i].name, resource_definitions[type].name);
       }
     }
     /* If this triggers, take a look at lib/parse_conf.h */
     if (i >= MAX_RES_ITEMS) {
-      Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"),
+      Emsg1(M_ERROR_TERM, 0, T_("Too many items in %s resource\n"),
             resource_definitions[type].name);
     }
   }
@@ -306,7 +306,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         // Resources not containing a resource
         break;
       default:
-        Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"),
+        Emsg1(M_ERROR, 0, T_("Unknown resource type %d in SaveResource.\n"),
               type);
         error = 1;
         break;

@@ -63,6 +63,7 @@
 #include <unistd.h>
 #endif
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/jcr.h"
 #include "lib/cli.h"
 #include "lib/bstringlist.h"
@@ -125,13 +126,14 @@ static void GetResponse(const std::string& mailhost)
     }
     Dmsg2(10, "%s --> %s\n", mailhost.c_str(), buf);
     if (!isdigit((int)buf[0]) || buf[0] > '3') {
-      Pmsg2(0, _("Fatal malformed reply from %s: %s\n"), mailhost.c_str(), buf);
-      exit(1);
+      Pmsg2(0, T_("Fatal malformed reply from %s: %s\n"), mailhost.c_str(),
+            buf);
+      exit(BEXIT_FAILURE);
     }
     if (buf[3] != '-') { break; }
   }
   if (ferror(rfp)) {
-    fprintf(stderr, _("Fatal fgets error: ERR=%s\n"), strerror(errno));
+    fprintf(stderr, T_("Fatal fgets error: ERR=%s\n"), strerror(errno));
   }
   return;
 }
@@ -278,6 +280,7 @@ int main(int argc, char* argv[])
 
   int mailport = default_port;
   std::string mailhost = default_mailhost;
+  std::string host_and_port_source = "Mailhost and mailport set to default";
 
   char* env_variable_smtpserver;
   if ((env_variable_smtpserver = getenv("SMTPSERVER")) != nullptr) {
@@ -285,24 +288,21 @@ int main(int argc, char* argv[])
         = ParseHostAndPort(std::string(env_variable_smtpserver));
     mailhost = host_and_port.first;
     mailport = host_and_port.second;
-    Pmsg2(0,
-          "Taking host and mailport from the SMTPSERVER environment variable: "
-          "host=%s ; port=%d\n",
-          mailhost.c_str(), mailport);
+    host_and_port_source
+        = "Mailhost and port extracted from SMTPSERVER environment variable";
   }
 
   bsmtp_app
       .add_option(
           "-h,--mailhost",
-          [&mailport, &mailhost](std::vector<std::string> val) {
+          [&mailport, &mailhost,
+           &host_and_port_source](std::vector<std::string> val) {
             std::pair<std::string, int> host_and_port
                 = ParseHostAndPort(val[0]);
             mailhost = host_and_port.first;
             mailport = host_and_port.second;
-            Pmsg2(0,
-                  "Mailhost argument detected: Taking host and mailport from "
-                  "cli : host=%s ; port=%d\n",
-                  mailhost.c_str(), mailport);
+            host_and_port_source
+                = "Mailhost and port extracted from CLI arguments";
             return true;
           },
           "Use mailhost:port as the SMTP server.")
@@ -324,7 +324,10 @@ int main(int argc, char* argv[])
   bsmtp_app.add_option("recipients", recipients, "List of recipients.")
       ->required();
 
-  CLI11_PARSE(bsmtp_app, argc, argv);
+  ParseBareosApp(bsmtp_app, argc, argv);
+
+  Dmsg3(20, "%s: mailhost=%s ; mailport=%d\n", host_and_port_source.c_str(),
+        mailhost.c_str(), mailport);
 
 
 #if defined(HAVE_WIN32)
@@ -338,8 +341,8 @@ int main(int argc, char* argv[])
    *  if possible, get the fully qualified domain name */
   char my_hostname[MAXSTRING];
   if (gethostname(my_hostname, sizeof(my_hostname) - 1) < 0) {
-    Pmsg1(0, _("Fatal gethostname error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal gethostname error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
 
 #ifdef HAVE_GETADDRINFO
@@ -355,9 +358,9 @@ int main(int argc, char* argv[])
   hints.ai_flags = AI_CANONNAME;
 
   if ((res = getaddrinfo(my_hostname, NULL, &hints, &ai)) != 0) {
-    Pmsg2(0, _("Fatal getaddrinfo for myself failed \"%s\": ERR=%s\n"),
+    Pmsg2(0, T_("Fatal getaddrinfo for myself failed \"%s\": ERR=%s\n"),
           my_hostname, gai_strerror(res));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   strncpy(my_hostname, ai->ai_canonname, sizeof(my_hostname) - 1);
   my_hostname[sizeof(my_hostname) - 1] = '\0';
@@ -367,9 +370,9 @@ int main(int argc, char* argv[])
   struct sockaddr_in sin;
 
   if ((hp = gethostbyname(my_hostname)) == NULL) {
-    Pmsg2(0, _("Fatal gethostbyname for myself failed \"%s\": ERR=%s\n"),
+    Pmsg2(0, T_("Fatal gethostbyname for myself failed \"%s\": ERR=%s\n"),
           my_hostname, strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   strncpy(my_hostname, hp->h_name, sizeof(my_hostname) - 1);
   my_hostname[sizeof(my_hostname) - 1] = '\0';
@@ -426,14 +429,14 @@ lookup_host:
   snprintf(service_port, sizeof(service_port), "%d", mailport);
 
   if ((res = getaddrinfo(mailhost.c_str(), service_port, &hints, &ai)) != 0) {
-    Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
+    Pmsg2(0, T_("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
           gai_strerror(res));
     if (!Bstrcasecmp(mailhost.c_str(), "localhost")) {
-      Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
+      Pmsg0(0, T_("Retrying connection using \"localhost\".\n"));
       mailhost = "localhost";
       goto lookup_host;
     }
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
 #  if defined(HAVE_WIN32)
@@ -455,27 +458,27 @@ lookup_host:
   }
 
   if (!rp) {
-    Pmsg1(0, _("Failed to connect to mailhost %s\n"), mailhost.c_str());
-    exit(1);
+    Pmsg1(0, T_("Failed to connect to mailhost %s\n"), mailhost.c_str());
+    exit(BEXIT_FAILURE);
   }
 
   freeaddrinfo(ai);
 #else
   if ((hp = gethostbyname(mailhost.c_str())) == NULL) {
-    Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
+    Pmsg2(0, T_("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
           strerror(errno));
     if (!Bstrcasecmp(mailhost.c_str(), "localhost")) {
-      Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
+      Pmsg0(0, T_("Retrying connection using \"localhost\".\n"));
       mailhost = "localhost";
       goto lookup_host;
     }
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   if (hp->h_addrtype != AF_INET) {
-    Pmsg1(0, _("Fatal error: Unknown address family for smtp host: %d\n"),
+    Pmsg1(0, T_("Fatal error: Unknown address family for smtp host: %d\n"),
           hp->h_addrtype);
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   memset((char*)&sin, 0, sizeof(sin));
   memcpy((char*)&sin.sin_addr, hp->h_addr, hp->h_length);
@@ -483,19 +486,19 @@ lookup_host:
   sin.sin_port = htons(mailport);
 #  if defined(HAVE_WIN32)
   if ((s = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0)) < 0) {
-    Pmsg1(0, _("Fatal socket error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal socket error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
 #  else
   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    Pmsg1(0, _("Fatal socket error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal socket error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
 #  endif
   if (connect(s, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
-    Pmsg2(0, _("Fatal connect error to %s: ERR=%s\n"), mailhost.c_str(),
+    Pmsg2(0, T_("Fatal connect error to %s: ERR=%s\n"), mailhost.c_str(),
           strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   Dmsg0(20, "Connected\n");
 #endif
@@ -503,32 +506,32 @@ lookup_host:
 #if defined(HAVE_WIN32)
   int fdSocket = _open_osfhandle(s, _O_RDWR | _O_BINARY);
   if (fdSocket == -1) {
-    Pmsg1(0, _("Fatal _open_osfhandle error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal _open_osfhandle error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
 
   int fdSocket2 = dup(fdSocket);
 
   if ((sfp = fdopen(fdSocket, "wb")) == NULL) {
-    Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal fdopen error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
   if ((rfp = fdopen(fdSocket2, "rb")) == NULL) {
-    Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal fdopen error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
 #else
   if ((r = dup(s)) < 0) {
-    Pmsg1(0, _("Fatal dup error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal dup error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
   if ((sfp = fdopen(s, "w")) == 0) {
-    Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal fdopen error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
   if ((rfp = fdopen(r, "r")) == 0) {
-    Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    Pmsg1(0, T_("Fatal fdopen error: ERR=%s\n"), strerror(errno));
+    exit(BEXIT_FAILURE);
   }
 #endif
 
@@ -620,5 +623,5 @@ lookup_host:
   chat(my_hostname, mailhost, "QUIT\r\n");
 
   //  Go away gracefully ...
-  exit(0);
+  return BEXIT_SUCCESS;
 }

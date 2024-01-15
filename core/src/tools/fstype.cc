@@ -29,6 +29,7 @@
 #include <unistd.h>
 #endif
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
 #include "findlib/fstype.h"
@@ -37,20 +38,20 @@
 char* optarg {};
 #endif
 
-static void usage()
+static void usage(int exit_status)
 {
   fprintf(stderr,
-          _("\n"
-            "Usage: fstype [-v] path ...\n"
-            "\n"
-            "       Print the file system type a given file/directory is on.\n"
-            "       The following options are supported:\n"
-            "\n"
-            "       -v     print both path and file system type.\n"
-            "       -?     print this message.\n"
-            "\n"));
+          T_("\n"
+             "Usage: fstype [-v] path ...\n"
+             "\n"
+             "       Print the file system type a given file/directory is on.\n"
+             "       The following options are supported:\n"
+             "\n"
+             "       -v     print both path and file system type.\n"
+             "       -?     print this message.\n"
+             "\n"));
 
-  exit(1);
+  exit(exit_status);
 }
 
 
@@ -58,7 +59,7 @@ int main(int argc, char* const* argv)
 {
   char fs[1000];
   int verbose = 0;
-  int status = 0;
+  int exit_status = BEXIT_SUCCESS;
   int ch, i;
 
   setlocale(LC_ALL, "");
@@ -72,14 +73,16 @@ int main(int argc, char* const* argv)
         verbose = 1;
         break;
       case '?':
+        usage(BEXIT_SUCCESS);
+        break;
       default:
-        usage();
+        usage(BEXIT_FAILURE);
     }
   }
   argc -= optind;
   argv += optind;
 
-  if (argc < 1) { usage(); }
+  if (argc < 1) { usage(BEXIT_FAILURE); }
 
   OSDependentInit();
 
@@ -91,12 +94,12 @@ int main(int argc, char* const* argv)
         puts(fs);
       }
     } else {
-      fprintf(stderr, _("%s: unknown\n"), *argv);
-      status = 1;
+      fprintf(stderr, T_("%s: unknown\n"), *argv);
+      exit_status = BEXIT_FAILURE;
     }
   }
 
   FlushMntentCache();
 
-  exit(status);
+  exit(exit_status);
 }

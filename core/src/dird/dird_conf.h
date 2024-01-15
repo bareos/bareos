@@ -124,11 +124,8 @@ class DirectorResource
   utime_t FDConnectTimeout = {0};     /* Timeout for connect in seconds */
   utime_t SDConnectTimeout = {0};     /* Timeout for connect in seconds */
   utime_t heartbeat_interval = {0};   /* Interval to send heartbeats */
-  utime_t stats_retention = {0};   /* Statistics retention period in seconds */
-  bool optimize_for_size = false;  /* Optimize daemon for minimum memory size */
-  bool optimize_for_speed = false; /* Optimize daemon for speed which may need
-                              more memory */
-  bool ndmp_snooping = false;      /* NDMP Protocol specific snooping enabled */
+  utime_t stats_retention = {0}; /* Statistics retention period in seconds */
+  bool ndmp_snooping = false;    /* NDMP Protocol specific snooping enabled */
   bool ndmp_fhinfo_set_zero_for_invalid_u_quad
       = false;  // Workaround for Isilon 9.1.0.0 not accepting -1 as value for
                 // FhInfo (which is the tape offset)
@@ -679,7 +676,8 @@ bool print_datatype_schema_json(PoolMem& buffer,
 json_t* json_datatype(const int type, ResourceItem items[]);
 const char* AuthenticationProtocolTypeToString(uint32_t auth_protocol);
 const char* JobLevelToString(int level);
-extern "C" char* job_code_callback_director(JobControlRecord* jcr, const char*);
+std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
+                                                      const char*);
 const char* GetUsageStringForConsoleConfigureCommand();
 void DestroyConfigureUsageString();
 bool PopulateDefs();

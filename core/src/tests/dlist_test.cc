@@ -34,6 +34,7 @@
 #  include "gtest/gtest.h"
 #  include "include/bareos.h"
 #endif
+#include "include/exit_codes.h"
 #include "lib/dlist.h"
 
 #include <memory>
@@ -281,7 +282,7 @@ TEST(dlist, BinaryInsert)
   foreach_dlist (jcr, jcr_chain) {
     if (!jcr_chain->binary_search(jcr, MyCompare)) {
       printf("Dlist binary_search item not found = %s\n", jcr->buf);
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
   }
   foreach_dlist (jcr, jcr_chain) {

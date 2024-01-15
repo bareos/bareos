@@ -28,6 +28,7 @@ set(BAREOS_SRCS
     alist.cc
     attr.cc
     attribs.cc
+    bareos_universal_initialiser.cc
     backtrace.cc
     base64.cc
     berrno.cc
@@ -121,7 +122,6 @@ endif()
 set(BAREOSCFG_SRCS
     bareos_resource.cc
     configured_tls_policy_getter.cc
-    ini.cc
     lex.cc
     parse_bsr.cc
     res.cc
@@ -157,6 +157,12 @@ target_link_libraries(
   ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash 
   PUBLIC ${THREADS_THREADS} 
 )
+
+if(XXHASH_ENABLE_DISPATCH)
+  set_source_files_properties(
+    xxhash.cc PROPERTIES COMPILE_FLAGS "-DXXHASH_ENABLE_DISPATCH"
+  )
+endif()
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"

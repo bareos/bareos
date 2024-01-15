@@ -32,6 +32,7 @@
 #if !defined(_MSC_VER)
 #include <unistd.h>
 #endif
+#include <assert.h>
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"
@@ -206,7 +207,7 @@ static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags)
       && (ff_pkt->statp.st_flags & UF_NODUMP)) {
-    Jmsg(jcr, M_INFO, 1, _("     NODUMP flag set - will not process %s\n"),
+    Jmsg(jcr, M_INFO, 1, T_("     NODUMP flag set - will not process %s\n"),
          ff_pkt->fname);
     return true; /* do not backup this file */
   }
@@ -269,13 +270,13 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (lstat(ff_pkt->fname, &statp) != 0) {
     BErrNo be;
-    Jmsg(jcr, M_WARNING, 0, _("Cannot stat file %s: ERR=%s\n"), ff_pkt->fname,
+    Jmsg(jcr, M_WARNING, 0, T_("Cannot stat file %s: ERR=%s\n"), ff_pkt->fname,
          be.bstrerror());
     return true;
   }
 
   if (statp.st_mtime != ff_pkt->statp.st_mtime) {
-    Jmsg(jcr, M_ERROR, 0, _("%s: mtime changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: mtime changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s mtime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_mtime, (int64_t)statp.st_mtime);
@@ -283,7 +284,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   }
 
   if (statp.st_ctime != ff_pkt->statp.st_ctime) {
-    Jmsg(jcr, M_ERROR, 0, _("%s: ctime changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: ctime changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s ctime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_ctime, (int64_t)statp.st_ctime);
@@ -292,7 +293,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (statp.st_size != ff_pkt->statp.st_size) {
     /* TODO: add size change */
-    Jmsg(jcr, M_ERROR, 0, _("%s: size changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_size, (int64_t)statp.st_size);
@@ -301,7 +302,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if ((statp.st_blksize != ff_pkt->statp.st_blksize)
       || (statp.st_blocks != ff_pkt->statp.st_blocks)) {
-    Jmsg(jcr, M_ERROR, 0, _("%s: size changed during backup.\n"),
+    Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
           (int64_t)ff_pkt->statp.st_blocks, (int64_t)statp.st_blocks);
@@ -429,37 +430,36 @@ static inline int process_hardlink(JobControlRecord* jcr,
                                    bool* done)
 {
   int rtn_stat = 0;
-  CurLink* hl;
 
-  hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
-  if (hl) {
+  if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
+
+  auto [iter, inserted] = ff_pkt->linkhash->try_emplace(
+      Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, fname);
+  CurLink& hl = iter->second;
+
+  if (hl.FileIndex == 0) {
+    // no file backed up yet
+    ff_pkt->linked = &hl;
+    *done = false;
+  } else if (bstrcmp(hl.name.c_str(), fname)) {
     // If we have already backed up the hard linked file don't do it again
-    if (bstrcmp(hl->name, fname)) {
-      Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex,
-            fname);
-      *done = true;
-      return 1; /* ignore */
-    }
-
-    ff_pkt->link = hl->name;
+    Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex, fname);
+    *done = true;
+    rtn_stat = 1; /* ignore */
+  } else {
+    // some other file was already backed up!
+    ff_pkt->link = hl.name.data();
     ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
-    ff_pkt->LinkFI = hl->FileIndex;
+    ff_pkt->LinkFI = hl.FileIndex;
     ff_pkt->linked = NULL;
-    ff_pkt->digest = hl->digest;
-    ff_pkt->digest_stream = hl->digest_stream;
-    ff_pkt->digest_len = hl->digest_len;
+    ff_pkt->digest = hl.digest.data();
+    ff_pkt->digest_stream = hl.digest_stream;
+    ff_pkt->digest_len = hl.digest.size();
 
     rtn_stat = HandleFile(jcr, ff_pkt, top_level);
     Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-          hl->FileIndex, hl->name);
+          hl.FileIndex, hl.name.c_str());
     *done = true;
-  } else {
-    // File not previously dumped. Chain it into our list.
-    hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino,
-                      ff_pkt->statp.st_dev);
-    ff_pkt->linked = hl; /* Mark saved link */
-    Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
-    *done = false;
   }
 
   return rtn_stat;
@@ -511,8 +511,9 @@ static inline int process_symlink(JobControlRecord* jcr,
 {
   int rtn_stat;
   int size;
-  char* buffer = (char*)alloca(path_max + name_max + 102);
 
+  assert(path_max + name_max + 102 > 0);
+  char* buffer = (char*)alloca(path_max + name_max + 102);
   size = readlink(fname, buffer, path_max + name_max + 101);
   if (size < 0) {
     // Could not follow link
@@ -691,7 +692,7 @@ static inline int process_directory(JobControlRecord* jcr,
     /* Some filesystems violate against the rules and return filenames
      * longer than _PC_NAME_MAX. Log the error and continue. */
     if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
-      Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), entry->d_name,
+      Jmsg2(jcr, M_ERROR, 0, T_("%s: File name too long [%d]\n"), entry->d_name,
             name_length);
       continue;
     }
@@ -715,7 +716,6 @@ static inline int process_directory(JobControlRecord* jcr,
 
     if (!FileIsExcluded(ff_pkt, link)) {
       rtn_stat = FindOneFile(jcr, ff_pkt, HandleFile, link, our_device, false);
-      if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
     }
   }
 
@@ -735,8 +735,8 @@ static inline int process_directory(JobControlRecord* jcr,
     /* Some filesystems violate against the rules and return filenames
      * longer than _PC_NAME_MAX. Log the error and continue. */
     if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
-      Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), result->d_name,
-            name_length);
+      Jmsg2(jcr, M_ERROR, 0, T_("%s: File name too long [%d]\n"),
+            result->d_name, name_length);
       continue;
     }
 
@@ -772,7 +772,9 @@ static inline int process_directory(JobControlRecord* jcr,
    * the directory modes and dates.  Temp directory values
    * were used without this record. */
   HandleFile(jcr, dir_ff_pkt, top_level); /* handle directory entry */
-  if (ff_pkt->linked) { ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex; }
+  if (dir_ff_pkt->linked) {
+    dir_ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex;
+  }
   FreeDirFfPkt(dir_ff_pkt);
 
   if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
@@ -846,7 +848,7 @@ static inline bool NeedsProcessing(JobControlRecord* jcr,
     }
 
     Jmsg(jcr, loglevel, 0,
-         _("Top level directory \"%s\" has unlisted fstype \"%s\"\n"), fname,
+         T_("Top level directory \"%s\" has unlisted fstype \"%s\"\n"), fname,
          fs);
     return false; /* Just ignore this error - or the whole backup is cancelled
                    */
@@ -866,7 +868,7 @@ static inline bool NeedsProcessing(JobControlRecord* jcr,
     }
 
     Jmsg(jcr, loglevel, 0,
-         _("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"),
+         T_("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"),
          fname, dt);
     return false; /* Just ignore this error - or the whole backup is cancelled
                    */
@@ -897,7 +899,7 @@ int FindOneFile(JobControlRecord* jcr,
   int rtn_stat;
   bool done = false;
 
-  ff_pkt->fname = ff_pkt->link = fname;
+  ff_pkt->link = ff_pkt->fname = fname;
   ff_pkt->type = FT_UNSET;
   if (lstat(fname, &ff_pkt->statp) != 0) {
     // Cannot stat file
@@ -950,6 +952,13 @@ int FindOneFile(JobControlRecord* jcr,
 #endif
 
   ff_pkt->LinkFI = 0;
+  // some codes accesses FileIndex even if the file was never send
+  // If we did not reset it here, they would read the file index of the
+  // last send file.  This is obviously not great and as such we
+  // reset it to zero here before it can do any damage (0 is an invalid
+  // FileIndex).
+  ff_pkt->FileIndex = 0;
+  ff_pkt->linked = nullptr;
   /* Handle hard linked files
    *
    * Maintain a list of hard linked files already backed up. This

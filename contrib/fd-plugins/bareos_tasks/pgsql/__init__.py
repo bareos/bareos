@@ -17,15 +17,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import bareosfd
-from BareosFdPgSQLClass import BareosFdPgSQLClass
-
-# This module contains the wrapper functions called by the Bareos-FD, the
-# functions call the corresponding methods from your plugin class
 import BareosFdWrapper
+from bareosfd import bRC_OK
 from BareosFdWrapper import *
-
+from bareos_tasks.pgsql.BareosFdPgSQLClass import BareosFdPgSQLClass
 
 def load_bareos_plugin(plugin_def):
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPgSQLClass(plugin_def)
-    bareosfd.bRC_OK
+    return bRC_OK

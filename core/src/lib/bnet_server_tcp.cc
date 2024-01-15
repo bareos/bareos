@@ -40,6 +40,7 @@
 #include "lib/address_conf.h"
 
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -102,7 +103,7 @@ static void CleanupBnetThreadServerTcp(alist<s_sockfd*>* sockfds,
   }
 
   if (!thread_list.ShutdownAndWaitForThreadsToFinish()) {
-    Emsg1(M_ERROR, 0, _("Could not destroy thread list.\n"));
+    Emsg1(M_ERROR, 0, T_("Could not destroy thread list.\n"));
   }
   Dmsg0(100, "CleanupBnetThreadServerTcp: finish\n");
 }
@@ -176,7 +177,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
     std::vector<char> buf2(256 * addr_list->size());
 
     Emsg3(M_WARNING, 0,
-          _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
+          T_("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
           be.bstrerror(), ipaddr->build_address_str(buf1.data(), buf1.size()),
           BuildAddressesString(addr_list, buf2.data(), buf2.size()));
 
@@ -188,7 +189,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
                  sizeof(reuseaddress))
       < 0) {
     BErrNo be;
-    Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
+    Emsg1(M_WARNING, 0, T_("Cannot set SO_REUSEADDR on socket: %s\n"),
           be.bstrerror());
     return -2;
   }
@@ -201,7 +202,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
                    (sockopt_val_t)&ipv6only_option_value, option_len)
         < 0) {
       BErrNo be;
-      Emsg1(M_WARNING, 0, _("Cannot set IPV6_V6ONLY on socket: %s\n"),
+      Emsg1(M_WARNING, 0, T_("Cannot set IPV6_V6ONLY on socket: %s\n"),
             be.bstrerror());
 
       return -2;
@@ -217,12 +218,12 @@ int OpenSocketAndBind(IPADDR* ipaddr,
       char tmp[1024];
 #ifdef HAVE_WIN32
       Emsg2(M_WARNING, 0,
-            _("Cannot bind address %s port %d ERR=%u. Retrying...\n"),
+            T_("Cannot bind address %s port %d ERR=%u. Retrying...\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(port_number),
             WSAGetLastError());
 #else
       Emsg2(M_WARNING, 0,
-            _("Cannot bind address %s port %d ERR=%s. Retrying...\n"),
+            T_("Cannot bind address %s port %d ERR=%s. Retrying...\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(port_number),
             be.bstrerror());
 #endif
@@ -280,11 +281,11 @@ void BnetThreadServerTcp(
       BErrNo be;
       char tmp[1024];
 #ifdef HAVE_WIN32
-      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%u.\n"),
+      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%u.\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
             WSAGetLastError());
 #else
-      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%s.\n"),
+      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%s.\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
             be.bstrerror());
 #endif
@@ -356,7 +357,7 @@ void BnetThreadServerTcp(
       BErrNo be; /* capture errno */
       if (errno == EINTR) { continue; }
       if (server_state) { server_state->store(BnetServerState::kError); }
-      Emsg1(M_FATAL, 0, _("Error in select: %s\n"), be.bstrerror());
+      Emsg1(M_FATAL, 0, T_("Error in select: %s\n"), be.bstrerror());
       break;
     }
 
@@ -373,7 +374,7 @@ void BnetThreadServerTcp(
     } else if (status < 0) {
       BErrNo be; /* capture errno */
       if (errno == EINTR) { continue; }
-      Emsg1(M_FATAL, 0, _("Error in poll: %s\n"), be.bstrerror());
+      Emsg1(M_FATAL, 0, T_("Error in poll: %s\n"), be.bstrerror());
 
       break;
     }
@@ -394,12 +395,26 @@ void BnetThreadServerTcp(
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
 
+#ifdef HAVE_LINUX_OS
+#  ifdef TCP_ULP
+        // without this you cannot enable ktls on linux
+        if (setsockopt(newsockfd, SOL_TCP, TCP_ULP, "tls", sizeof("tls")) < 0) {
+          BErrNo be;
+          Dmsg1(20,
+                "Cannot set TCP_ULP on socket: %s;\n"
+                "Is the tls module not loaded?  "
+                "kTLS will not work without it.",
+                be.bstrerror());
+        }
+#  endif
+#endif
+
         int keepalive = 1;
         if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE,
                        (sockopt_val_t)&keepalive, sizeof(keepalive))
             < 0) {
           BErrNo be;
-          Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
+          Emsg1(M_WARNING, 0, T_("Cannot set SO_KEEPALIVE on socket: %s\n"),
                 be.bstrerror());
         }
 
@@ -422,7 +437,7 @@ void BnetThreadServerTcp(
         memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 
         if (!thread_list.CreateAndAddNewThread(config, bs)) {
-          Jmsg1(NULL, M_ABORT, 0, _("Could not add thread to list.\n"));
+          Jmsg1(NULL, M_ABORT, 0, T_("Could not add thread to list.\n"));
         }
       }
     }

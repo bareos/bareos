@@ -53,16 +53,30 @@
         "TlsRequire": {
           "datatype": "BOOLEAN",
           "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
+        },
+        "EnableKtls": {
+          "datatype": "BOOLEAN",
+          "code": 0,
           "default_value": "false",
           "equals": true,
-          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "List of valid TLS Ciphers."
+          "description": "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"
+        },
+        "TlsCipherSuites": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
         },
         "TlsDhFile": {
           "datatype": "DIRECTORY",
@@ -332,7 +346,9 @@
         "AbsoluteJobTimeout": {
           "datatype": "PINT32",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "versions": "14.2.0-",
+          "description": "Absolute time after which a Job gets terminated regardless of its progress"
         },
         "CollectDeviceStatistics": {
           "datatype": "BOOLEAN",
@@ -377,6 +393,7 @@
         "LogTimestampFormat": {
           "datatype": "STRING",
           "code": 0,
+          "default_value": "%d-%b %H:%M",
           "equals": true,
           "versions": "15.2.3-"
         },
@@ -397,16 +414,30 @@
         "TlsRequire": {
           "datatype": "BOOLEAN",
           "code": 0,
+          "default_value": "true",
+          "equals": true,
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
+        },
+        "EnableKtls": {
+          "datatype": "BOOLEAN",
+          "code": 0,
           "default_value": "false",
           "equals": true,
-          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "List of valid TLS Ciphers."
+          "description": "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"
+        },
+        "TlsCipherSuites": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
         },
         "TlsDhFile": {
           "datatype": "DIRECTORY",
@@ -621,6 +652,7 @@
           "datatype": "BIT",
           "code": 22,
           "default_value": "off",
+          "deprecated": true,
           "equals": true
         },
         "RequiresMount": {
@@ -640,6 +672,13 @@
           "code": 23,
           "default_value": "on",
           "equals": true
+        },
+        "AccessMode": {
+          "datatype": "IO_DIRECTION",
+          "code": 0,
+          "default_value": "readwrite",
+          "equals": true,
+          "description": "Access mode specifies whether this device can be reserved for reading, writing or for both modes (default)."
         },
         "AutoSelect": {
           "datatype": "BOOLEAN",
@@ -769,6 +808,7 @@
         "LabelType": {
           "datatype": "LABEL",
           "code": 0,
+          "deprecated": true,
           "equals": true
         },
         "NoRewindOnClose": {

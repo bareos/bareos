@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,12 +32,18 @@
      NULL, "Use TLS only to authenticate, not for encryption."}, \
   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), 0, CFG_ITEM_DEFAULT, "true", \
      NULL, "Enable TLS support."}, \
-  { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "false", \
-     NULL, "Without setting this to yes, Bareos can fall back to use unencrypted " \
-     "connections. " \
-     "Enabling this implicitly sets \"TLS Enable = yes\"."}, \
+  { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "true", \
+     NULL, "If set to \"no\", Bareos can fall back to use unencrypted " \
+     "connections. " }, \
+  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res, enable_ktls_), 0, CFG_ITEM_DEFAULT, "false", \
+     NULL, "If set to \"yes\", Bareos will allow the SSL implementation to use " \
+     "Kernel TLS. " }, \
   { "TlsCipherList", CFG_TYPE_STDSTRDIR, ITEM(res, cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
-     NULL, "List of valid TLS Ciphers."}, \
+     NULL, "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"}, \
+  { "TlsCipherSuites", CFG_TYPE_STDSTRDIR, ITEM(res, ciphersuites_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
+     NULL, "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`." \
+    " Leftmost element has the highest priority." \
+    " Currently only SHA256 ciphers are supported."},						\
   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res, tls_cert_.dhfile_), 0, 0, NULL, \
      NULL, "Path to PEM encoded Diffie-Hellman parameter file. " \
      "If this directive is specified, DH key exchange will be used for " \

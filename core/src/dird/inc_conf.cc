@@ -231,10 +231,8 @@ static IncludeExcludeItem* res_incexe;
 
 /* clang-format off */
 
-/*
- * new Include/Exclude items
- * name handler value code flags default_value
- */
+/* new Include/Exclude items
+ * name handler value code flags default_value */
 ResourceItem newinc_items[] = {
   { "File", CFG_TYPE_FNAME, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Plugin", CFG_TYPE_PLUGINNAME, 0, nullptr, 0, 0, NULL, NULL, NULL },
@@ -243,14 +241,12 @@ ResourceItem newinc_items[] = {
   { NULL, 0, 0, nullptr, 0, 0, NULL, NULL, NULL }
 };
 
-/*
- * Items that are valid in an Options resource
- * name handler value code flags default_value
- */
+/* Items that are valid in an Options resource
+ * name handler value code flags default_value */
 ResourceItem options_items[] = {
   { "Compression", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Signature", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "BaseJob", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
+  { "BaseJob", CFG_TYPE_OPTION, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Accurate", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Verify", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "OneFs", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
@@ -265,7 +261,7 @@ ResourceItem options_items[] = {
   { "Regex", CFG_TYPE_REGEX, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "RegexDir", CFG_TYPE_REGEX, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "RegexFile", CFG_TYPE_REGEX, 0, nullptr, 2, 0, NULL, NULL, NULL },
-  { "Base", CFG_TYPE_BASE, 0, nullptr, 0, 0, NULL, NULL, NULL },
+  { "Base", CFG_TYPE_BASE, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Wild", CFG_TYPE_WILD, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "WildDir", CFG_TYPE_WILD, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "WildFile", CFG_TYPE_WILD, 0, nullptr, 2, 0, NULL, NULL, NULL },
@@ -295,11 +291,14 @@ ResourceItem options_items[] = {
 
 struct OptionsDefaultValues {
   std::map<int, options_default_value_s> option_default_values
-      = {{INC_KW_ACL, {false, "A"}}, {INC_KW_XATTR, {false, "X"}}};
+      = {{INC_KW_ACL, {false, "A"}},
+         {INC_KW_HARDLINK, {false, "H"}},
+         {INC_KW_XATTR, {false, "X"}}};
 };
 
 // determine used compression algorithms
-void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
+// returns if compression is used at all.
+bool FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
 {
   int cnt = 0;
   IncludeExcludeItem* inc;
@@ -307,7 +306,9 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   FilesetResource* fs;
   struct s_fs_opt* fs_opt;
 
-  if (!jcr->dir_impl->res.job || !jcr->dir_impl->res.job->fileset) { return; }
+  if (!jcr->dir_impl->res.job || !jcr->dir_impl->res.job->fileset) {
+    return false;
+  }
 
   fs = jcr->dir_impl->res.job->fileset;
   for (std::size_t i = 0; i < fs->include_items.size(); i++) {
@@ -343,6 +344,8 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   }
 
   if (cnt > 0) { compressalgos->strcat(")"); }
+
+  return cnt > 0;
 }
 
 // Check if the configured options are valid.
@@ -363,7 +366,7 @@ static inline void IsInPermittedSet(LEX* lc,
     }
 
     if (!found) {
-      scan_err3(lc, _("Illegal %s option %c, got option string: %s:"), SetType,
+      scan_err3(lc, T_("Illegal %s option %c, got option string: %s:"), SetType,
                 *p, lc->str);
     }
   }
@@ -387,26 +390,26 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
   lc->options |= LOPT_STRING;     /* force string */
   LexGetToken(lc, BCT_STRING);    /* expect at least one option */
   if (keyword == INC_KW_VERIFY) { /* special case */
-    IsInPermittedSet(lc, _("verify"), PERMITTED_VERIFY_OPTIONS);
+    IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
     bstrncat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_ACCURATE) { /* special case */
-    IsInPermittedSet(lc, _("accurate"), PERMITTED_ACCURATE_OPTIONS);
+    IsInPermittedSet(lc, T_("accurate"), PERMITTED_ACCURATE_OPTIONS);
     bstrncat(opts, "C", optlen); /* indicate Accurate */
     bstrncat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_BASEJOB) { /* special case */
-    IsInPermittedSet(lc, _("base job"), PERMITTED_BASEJOB_OPTIONS);
+    IsInPermittedSet(lc, T_("base job"), PERMITTED_BASEJOB_OPTIONS);
     bstrncat(opts, "J", optlen); /* indicate BaseJob */
     bstrncat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_STRIPPATH) { /* special case */
     if (!IsAnInteger(lc->str)) {
-      scan_err1(lc, _("Expected a strip path positive integer, got: %s:"),
+      scan_err1(lc, T_("Expected a strip path positive integer, got: %s:"),
                 lc->str);
       return;
     }
@@ -416,7 +419,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_SIZE) { /* special case */
     if (!ParseSizeMatch(lc->str, &size_matching)) {
-      scan_err1(lc, _("Expected a parseable size, got: %s:"), lc->str);
+      scan_err1(lc, T_("Expected a parseable size, got: %s:"), lc->str);
       return;
     }
     bstrncat(opts, "z", optlen); /* indicate size */
@@ -434,7 +437,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
       }
     }
     if (i != 0) {
-      scan_err1(lc, _("Expected a FileSet option keyword, got: %s:"), lc->str);
+      scan_err1(lc, T_("Expected a FileSet option keyword, got: %s:"), lc->str);
       return;
     } else { /* add option */
       bstrncat(opts, option, optlen);
@@ -468,7 +471,7 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
         if (rc != 0) {
           regerror(rc, &preg, prbuf, sizeof(prbuf));
           regfree(&preg);
-          scan_err1(lc, _("Regex compile error. ERR=%s\n"), prbuf);
+          scan_err1(lc, T_("Regex compile error. ERR=%s\n"), prbuf);
           return;
         }
         regfree(&preg);
@@ -489,7 +492,7 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
               newsize, lc->str);
         break;
       default:
-        scan_err1(lc, _("Expected a regex string, got: %s\n"), lc->str);
+        scan_err1(lc, T_("Expected a regex string, got: %s\n"), lc->str);
         return;
     }
   }
@@ -555,7 +558,7 @@ static void StoreWild(LEX* lc, ResourceItem* item, int pass)
               newsize, lc->str);
         break;
       default:
-        scan_err1(lc, _("Expected a wild-card string, got: %s\n"), lc->str);
+        scan_err1(lc, T_("Expected a wild-card string, got: %s\n"), lc->str);
         return;
     }
   }
@@ -579,7 +582,7 @@ static void StoreFstype(LEX* lc, ResourceItem*, int pass)
               res_incexe->current_opts->fstype.size(), lc->str);
         break;
       default:
-        scan_err1(lc, _("Expected a fstype string, got: %s\n"), lc->str);
+        scan_err1(lc, T_("Expected a fstype string, got: %s\n"), lc->str);
         return;
     }
   }
@@ -603,7 +606,7 @@ static void StoreDrivetype(LEX* lc, ResourceItem*, int pass)
               res_incexe->current_opts->Drivetype.size(), lc->str);
         break;
       default:
-        scan_err1(lc, _("Expected a Drivetype string, got: %s\n"), lc->str);
+        scan_err1(lc, T_("Expected a Drivetype string, got: %s\n"), lc->str);
         return;
     }
   }
@@ -626,7 +629,7 @@ static void StoreMeta(LEX* lc, ResourceItem*, int pass)
               res_incexe->current_opts->meta.size(), lc->str);
         break;
       default:
-        scan_err1(lc, _("Expected a meta string, got: %s\n"), lc->str);
+        scan_err1(lc, T_("Expected a meta string, got: %s\n"), lc->str);
         return;
     }
   }
@@ -659,7 +662,7 @@ static void StoreOption(
   }
 
   if (keyword == INC_KW_NONE) {
-    scan_err1(lc, _("Expected a FileSet keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a FileSet keyword, got: %s"), lc->str);
     return;
   }
 
@@ -722,12 +725,12 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
   OptionsDefaultValues default_values;
 
   if (exclude) {
-    scan_err0(lc, _("Options section not permitted in Exclude\n"));
+    scan_err0(lc, T_("Options section not permitted in Exclude\n"));
     return;
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token != BCT_BOB) {
-    scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
+    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
     return;
   }
 
@@ -737,7 +740,7 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
     if (token == BCT_EOL) { continue; }
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
+      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
       return;
     }
     bool found = false;
@@ -745,7 +748,7 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
       if (Bstrcasecmp(options_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
-          scan_err1(lc, _("expected an equals, got: %s"), lc->str);
+          scan_err1(lc, T_("expected an equals, got: %s"), lc->str);
           return;
         }
         /* Call item handler */
@@ -783,7 +786,7 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
       }
     }
     if (!found) {
-      scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
+      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
       return;
     }
   }
@@ -819,8 +822,8 @@ static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
       case BCT_UNQUOTED_STRING:
         if (strchr(lc->str, '\\')) {
           scan_err1(lc,
-                    _("Backslash found. Use forward slashes or quote the "
-                      "string.: %s\n"),
+                    T_("Backslash found. Use forward slashes or quote the "
+                       "string.: %s\n"),
                     lc->str);
           return;
         }
@@ -840,7 +843,7 @@ static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
         break;
       }
       default:
-        scan_err1(lc, _("Expected a filename, got: %s"), lc->str);
+        scan_err1(lc, T_("Expected a filename, got: %s"), lc->str);
         return;
     }
   }
@@ -857,7 +860,7 @@ static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
   int token;
 
   if (exclude) {
-    scan_err0(lc, _("Plugin directive not permitted in Exclude\n"));
+    scan_err0(lc, T_("Plugin directive not permitted in Exclude\n"));
     return;
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
@@ -868,8 +871,8 @@ static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
       case BCT_UNQUOTED_STRING:
         if (strchr(lc->str, '\\')) {
           scan_err1(lc,
-                    _("Backslash found. Use forward slashes or quote the "
-                      "string.: %s\n"),
+                    T_("Backslash found. Use forward slashes or quote the "
+                       "string.: %s\n"),
                     lc->str);
           return;
         }
@@ -889,7 +892,7 @@ static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
         break;
       }
       default:
-        scan_err1(lc, _("Expected a filename, got: %s"), lc->str);
+        scan_err1(lc, T_("Expected a filename, got: %s"), lc->str);
         return;
     }
   }
@@ -901,7 +904,7 @@ static void StoreExcludedir(LEX* lc, ResourceItem*, int pass, bool exclude)
 {
   if (exclude) {
     scan_err0(lc,
-              _("ExcludeDirContaining directive not permitted in Exclude.\n"));
+              T_("ExcludeDirContaining directive not permitted in Exclude.\n"));
     return;
   }
 
@@ -940,7 +943,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
+      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
       return;
     }
     bool found = false;
@@ -950,7 +953,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
         if (!options) {
           token = LexGetToken(lc, BCT_SKIP_EOL);
           if (token != BCT_EQUALS) {
-            scan_err1(lc, _("expected an equals, got: %s"), lc->str);
+            scan_err1(lc, T_("expected an equals, got: %s"), lc->str);
             return;
           }
         }
@@ -976,7 +979,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
       }
     }
     if (!found) {
-      scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
+      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
       return;
     }
   }
@@ -1001,7 +1004,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   ASSERT(!res_incexe);
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -1021,7 +1024,7 @@ void StoreInc(LEX* lc, ResourceItem* item, int index, int pass)
     StoreNewinc(lc, item, index, pass);
     return;
   }
-  scan_err0(lc, _("Old style Include/Exclude not supported\n"));
+  scan_err0(lc, T_("Old style Include/Exclude not supported\n"));
 }
 
 json_t* json_incexc(const int type)

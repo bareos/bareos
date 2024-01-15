@@ -31,6 +31,7 @@
 #include <unistd.h>
 #endif
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"
 #include "findlib/find.h"
@@ -62,26 +63,26 @@ static int CountFiles(JobControlRecord* jcr,
 static void usage()
 {
   fprintf(stderr,
-          _("\n"
-            "Usage: btestls [-d debug_level] [-] [pattern1 ...]\n"
-            "       -a          print extended attributes (Win32 debug)\n"
-            "       -d <nn>     set debug level to <nn>\n"
-            "       -dt         print timestamp in debug output\n"
-            "       -e          specify file of exclude patterns\n"
-            "       -i          specify file of include patterns\n"
-            "       -q          quiet, don't print filenames (debug)\n"
-            "       -           read pattern(s) from stdin\n"
-            "       -?          print this message.\n"
-            "\n"
-            "Patterns are file inclusion -- normally directories.\n"
-            "Debug level >= 1 prints each file found.\n"
-            "Debug level >= 10 prints path/file for catalog.\n"
-            "Errors always printed.\n"
-            "Files/paths truncated is number with len > 255.\n"
-            "Truncation is only in catalog.\n"
-            "\n"));
+          T_("\n"
+             "Usage: btestls [-d debug_level] [-] [pattern1 ...]\n"
+             "       -a          print extended attributes (Win32 debug)\n"
+             "       -d <nn>     set debug level to <nn>\n"
+             "       -dt         print timestamp in debug output\n"
+             "       -e          specify file of exclude patterns\n"
+             "       -i          specify file of include patterns\n"
+             "       -q          quiet, don't print filenames (debug)\n"
+             "       -           read pattern(s) from stdin\n"
+             "       -?          print this message.\n"
+             "\n"
+             "Patterns are file inclusion -- normally directories.\n"
+             "Debug level >= 1 prints each file found.\n"
+             "Debug level >= 10 prints path/file for catalog.\n"
+             "Errors always printed.\n"
+             "Files/paths truncated is number with len > 255.\n"
+             "Truncation is only in catalog.\n"
+             "\n"));
 
-  exit(1);
+  exit(BEXIT_FAILURE);
 }
 
 
@@ -136,6 +137,7 @@ int main(int argc, char* const* argv)
   argv += optind;
 
   jcr = new_jcr(nullptr);
+  register_jcr(jcr);
 
   ff = init_find_files();
   if (argc == 0 && !inc) {
@@ -155,8 +157,8 @@ int main(int argc, char* const* argv)
   if (inc) {
     fd = fopen(inc, "rb");
     if (!fd) {
-      printf(_("Could not open include file: %s\n"), inc);
-      exit(1);
+      printf(T_("Could not open include file: %s\n"), inc);
+      exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
       StripTrailingJunk(name);
@@ -168,8 +170,8 @@ int main(int argc, char* const* argv)
   if (exc) {
     fd = fopen(exc, "rb");
     if (!fd) {
-      printf(_("Could not open exclude file: %s\n"), exc);
-      exit(1);
+      printf(T_("Could not open exclude file: %s\n"), exc);
+      exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
       StripTrailingJunk(name);
@@ -182,14 +184,14 @@ int main(int argc, char* const* argv)
   } else {
     MatchFiles(jcr, ff, PrintFile);
   }
-  printf(_("Files seen = %d\n"), num_files);
+  printf(T_("Files seen = %d\n"), num_files);
   TermIncludeExcludeFiles(ff);
   TermFindFiles(ff);
 
   FreeJcr(jcr);
   RecentJobResultsList::Cleanup();
   CleanupJcrChain();
-  exit(0);
+  exit(BEXIT_SUCCESS);
 }
 
 static int CountFiles(JobControlRecord*, FindFilesPacket*, bool)
@@ -212,35 +214,36 @@ static int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
     case FT_DIRBEGIN:
       break;
     case FT_NOACCESS:
-      printf(_("Err: Could not access %s: %s\n"), ff->fname, strerror(errno));
+      printf(T_("Err: Could not access %s: %s\n"), ff->fname, strerror(errno));
       break;
     case FT_NOFOLLOW:
-      printf(_("Err: Could not follow ff->link %s: %s\n"), ff->fname,
+      printf(T_("Err: Could not follow ff->link %s: %s\n"), ff->fname,
              strerror(errno));
       break;
     case FT_NOSTAT:
-      printf(_("Err: Could not stat %s: %s\n"), ff->fname, strerror(errno));
+      printf(T_("Err: Could not stat %s: %s\n"), ff->fname, strerror(errno));
       break;
     case FT_NOCHG:
-      printf(_("Skip: File not saved. No change. %s\n"), ff->fname);
+      printf(T_("Skip: File not saved. No change. %s\n"), ff->fname);
       break;
     case FT_ISARCH:
-      printf(_("Err: Attempt to backup archive. Not saved. %s\n"), ff->fname);
+      printf(T_("Err: Attempt to backup archive. Not saved. %s\n"), ff->fname);
       break;
     case FT_NORECURSE:
-      printf(_("Recursion turned off. Directory not entered. %s\n"), ff->fname);
+      printf(T_("Recursion turned off. Directory not entered. %s\n"),
+             ff->fname);
       break;
     case FT_NOFSCHG:
-      printf(
-          _("Skip: File system change prohibited. Directory not entered. %s\n"),
-          ff->fname);
+      printf(T_("Skip: File system change prohibited. Directory not entered. "
+                "%s\n"),
+             ff->fname);
       break;
     case FT_NOOPEN:
-      printf(_("Err: Could not open directory %s: %s\n"), ff->fname,
+      printf(T_("Err: Could not open directory %s: %s\n"), ff->fname,
              strerror(errno));
       break;
     default:
-      printf(_("Err: Unknown file ff->type %d: %s\n"), ff->type, ff->fname);
+      printf(T_("Err: Unknown file ff->type %d: %s\n"), ff->type, ff->fname);
       break;
   }
   num_files++;

@@ -23,6 +23,7 @@
 
 #include <sys/stat.h>
 #include <chrono>
+#include <variant>
 
 #if defined(HAVE_WIN32)
 #  include "bregex.h"
@@ -58,8 +59,7 @@ char* encode_time(utime_t time, char* buf);
 bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds);
 char* encode_mode(mode_t mode, char* buf);
 int DoShellExpansion(char* name, int name_len);
-void JobstatusToAscii(int JobStatus, char* msg, int maxlen);
-void JobstatusToAsciiGui(int JobStatus, char* msg, int maxlen);
+std::string JobstatusToAscii(int JobStatus);
 int RunProgram(char* prog, int wait, POOLMEM*& results);
 int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results);
 char* action_on_purge_to_string(int aop, PoolMem& ret);
@@ -89,5 +89,55 @@ std::string CreateDelimitedStringForSqlQueries(
 std::string TPAsString(const std::chrono::system_clock::time_point& tp);
 regex_t* StringToRegex(const char* input);
 void to_lower(std::string& s);
+
+// see N3876 / boost::hash_combine
+inline std::size_t hash_combine(std::size_t seed, std::size_t hash)
+{
+  // 0x9e3779b9 is approximately 2^32 / phi (where phi is the golden ratio)
+  std::size_t changed = hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  return seed ^ changed;
+}
+
+// fixme(ssura): replace by std::expected<T, PoolMem> (C++23)
+//               or std::expected<T, std::string>
+template <typename T> class result {
+ public:
+  constexpr result() : data{1, "Not Initialized"} {}
+
+  template <typename Arg0, typename... Args>
+  constexpr result(Arg0 arg0, Args... args)
+      : data(std::forward<Arg0>(arg0), std::forward<Args>(args)...)
+  {
+  }
+
+  bool holds_error() const { return data.index() == 1; }
+  PoolMem* error()
+  {
+    if (holds_error()) {
+      return &std::get<1>(data);
+    } else {
+      return nullptr;
+    }
+  }
+
+  T* value()
+  {
+    if (!holds_error()) {
+      return &std::get<0>(data);
+    } else {
+      return nullptr;
+    }
+  }
+
+  PoolMem& error_unchecked() { return std::get<1>(data); }
+
+  T& value_unchecked() { return std::get<0>(data); }
+
+ private:
+  // we are using PoolMem here, since it is easier to format into a PoolMem.
+  // Once we have access to std::format everywhere, this should change
+  // to std::string.
+  std::variant<T, PoolMem> data;
+};
 
 #endif  // BAREOS_LIB_UTIL_H_

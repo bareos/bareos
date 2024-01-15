@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -279,12 +279,12 @@ int DevLock::writeunlock()
   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
   if (rwl->w_active <= 0) {
     pthread_mutex_unlock(&rwl->mutex);
-    Jmsg0(NULL, M_ABORT, 0, _("writeunlock called too many times.\n"));
+    Jmsg0(NULL, M_ABORT, 0, T_("writeunlock called too many times.\n"));
   }
   rwl->w_active--;
   if (!pthread_equal(pthread_self(), rwl->writer_id)) {
     pthread_mutex_unlock(&rwl->mutex);
-    Jmsg0(NULL, M_ABORT, 0, _("writeunlock by non-owner.\n"));
+    Jmsg0(NULL, M_ABORT, 0, T_("writeunlock by non-owner.\n"));
   }
   if (rwl->w_active > 0) {
     status = 0; /* writers still active */

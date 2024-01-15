@@ -24,6 +24,7 @@
 // Program to check a BAREOS database for consistency and to make repairs
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "cats/cats.h"
 #include "lib/runscript.h"
 #include "lib/cli.h"
@@ -127,7 +128,7 @@ static bool yes_no(const char* prompt, bool batchvalue = true)
     quit = true;
     return false;
   }
-  return (Bstrcasecmp(cmd, "yes")) || (Bstrcasecmp(cmd, _("yes")));
+  return (Bstrcasecmp(cmd, "yes")) || (Bstrcasecmp(cmd, T_("yes")));
 }
 
 static void set_quit() { quit = true; }
@@ -136,18 +137,18 @@ static void toggle_modify()
 {
   fix = !fix;
   if (fix)
-    printf(_("Database will be modified.\n"));
+    printf(T_("Database will be modified.\n"));
   else
-    printf(_("Database will NOT be modified.\n"));
+    printf(T_("Database will NOT be modified.\n"));
 }
 
 static void toggle_verbose()
 {
   verbose = verbose ? 0 : 1;
   if (verbose)
-    printf(_(" Verbose is on.\n"));
+    printf(T_(" Verbose is on.\n"));
   else
-    printf(_(" Verbose is off.\n"));
+    printf(T_(" Verbose is off.\n"));
 }
 
 
@@ -187,7 +188,7 @@ typedef struct s_idx_list {
 static bool DropTmpIdx(const char* idx_name, const char* table_name)
 {
   if (idx_tmp_name != nullptr) {
-    printf(_("Drop temporary index.\n"));
+    printf(T_("Drop temporary index.\n"));
     fflush(stdout);
     Bsnprintf(buf, sizeof(buf), "DROP INDEX %s ON %s", idx_name, table_name);
     if (verbose) { printf("%s\n", buf); }
@@ -195,7 +196,9 @@ static bool DropTmpIdx(const char* idx_name, const char* table_name)
       printf("%s\n", db->strerror());
       return false;
     } else {
-      if (verbose) { printf(_("Temporary index %s deleted.\n"), idx_tmp_name); }
+      if (verbose) {
+        printf(T_("Temporary index %s deleted.\n"), idx_tmp_name);
+      }
     }
     fflush(stdout);
   }
@@ -210,7 +213,7 @@ static int DeleteIdList(const char* query, ID_LIST* id_list)
 
   for (int i = 0; i < id_list->num_ids; i++) {
     Bsnprintf(buf, sizeof(buf), query, edit_int64(id_list->Id[i], ed1));
-    if (verbose) { printf(_("Deleting: %s\n"), buf); }
+    if (verbose) { printf(T_("Deleting: %s\n"), buf); }
     db->SqlQuery(buf, nullptr, nullptr);
   }
   return 1;
@@ -221,7 +224,7 @@ static void eliminate_duplicate_paths()
   const char* query;
   char esc_name[5000];
 
-  printf(_("Checking for duplicate Path entries.\n"));
+  printf(T_("Checking for duplicate Path entries.\n"));
   fflush(stdout);
 
   // Make list of duplicated names
@@ -229,10 +232,10 @@ static void eliminate_duplicate_paths()
       = "SELECT Path, count(Path) as Count FROM Path "
         "GROUP BY Path HAVING count(Path) > 1";
 
-  if (!MakeNameList(db, query, &name_list)) { exit(1); }
-  printf(_("Found %d duplicate Path records.\n"), name_list.num_ids);
+  if (!MakeNameList(db, query, &name_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d duplicate Path records.\n"), name_list.num_ids);
   fflush(stdout);
-  if (name_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (name_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     PrintNameList(&name_list);
   }
   if (quit) { return; }
@@ -245,9 +248,9 @@ static void eliminate_duplicate_paths()
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
                 esc_name);
       if (verbose > 1) { printf("%s\n", buf); }
-      if (!MakeIdList(db, buf, &id_list)) { exit(1); }
+      if (!MakeIdList(db, buf, &id_list)) { exit(BEXIT_FAILURE); }
       if (verbose) {
-        printf(_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
+        printf(T_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
       }
       // Force all records to use the first id then delete the other ids
       for (int j = 1; j < id_list.num_ids; j++) {
@@ -276,13 +279,13 @@ static void eliminate_orphaned_jobmedia_records()
         "LEFT OUTER JOIN Job USING(JobId) "
         "WHERE Job.JobId IS NULL LIMIT 300000";
 
-  printf(_("Checking for orphaned JobMedia entries.\n"));
+  printf(T_("Checking for orphaned JobMedia entries.\n"));
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
-    printf(_("Found %d orphaned JobMedia records.\n"), id_list.num_ids);
-    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+    printf(T_("Found %d orphaned JobMedia records.\n"), id_list.num_ids);
+    if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
       for (int i = 0; i < id_list.num_ids; i++) {
         char ed1[50];
         Bsnprintf(
@@ -299,12 +302,12 @@ static void eliminate_orphaned_jobmedia_records()
     if (quit) { return; }
 
     if (fix && id_list.num_ids > 0) {
-      printf(_("Deleting %d orphaned JobMedia records.\n"), id_list.num_ids);
+      printf(T_("Deleting %d orphaned JobMedia records.\n"), id_list.num_ids);
       DeleteIdList("DELETE FROM JobMedia WHERE JobMediaId=%s", &id_list);
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(db, query, &id_list)) { exit(1); }
+    if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   }
   fflush(stdout);
 }
@@ -316,14 +319,14 @@ static void eliminate_orphaned_file_records()
         "LEFT OUTER JOIN Job USING (JobId) "
         "WHERE Job.JobId IS NULL LIMIT 300000";
 
-  printf(_("Checking for orphaned File entries. This may take some time!\n"));
+  printf(T_("Checking for orphaned File entries. This may take some time!\n"));
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
-    printf(_("Found %d orphaned File records.\n"), id_list.num_ids);
-    if (name_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+    printf(T_("Found %d orphaned File records.\n"), id_list.num_ids);
+    if (name_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
       for (int i = 0; i < id_list.num_ids; i++) {
         char ed1[50];
         Bsnprintf(buf, sizeof(buf),
@@ -337,12 +340,12 @@ static void eliminate_orphaned_file_records()
     }
     if (quit) { return; }
     if (fix && id_list.num_ids > 0) {
-      printf(_("Deleting %d orphaned File records.\n"), id_list.num_ids);
+      printf(T_("Deleting %d orphaned File records.\n"), id_list.num_ids);
       DeleteIdList("DELETE FROM File WHERE FileId=%s", &id_list);
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(db, query, &id_list)) { exit(1); }
+    if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   }
   fflush(stdout);
 }
@@ -357,15 +360,15 @@ static void eliminate_orphaned_path_records()
 
   db->FillQuery(query, BareosDb::SQL_QUERY::get_orphaned_paths_0);
 
-  printf(_("Checking for orphaned Path entries. This may take some time!\n"));
+  printf(T_("Checking for orphaned Path entries. This may take some time!\n"));
   if (verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
-  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
+  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
-    printf(_("Found %d orphaned Path records.\n"), id_list.num_ids);
+    printf(T_("Found %d orphaned Path records.\n"), id_list.num_ids);
     fflush(stdout);
-    if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+    if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
       for (int i = 0; i < id_list.num_ids; i++) {
         char ed1[50];
         Bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
@@ -376,13 +379,13 @@ static void eliminate_orphaned_path_records()
     }
     if (quit) { return; }
     if (fix && id_list.num_ids > 0) {
-      printf(_("Deleting %d orphaned Path records.\n"), id_list.num_ids);
+      printf(T_("Deleting %d orphaned Path records.\n"), id_list.num_ids);
       fflush(stdout);
       DeleteIdList("DELETE FROM Path WHERE PathId=%s", &id_list);
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
+    if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   }
 }
 
@@ -390,17 +393,17 @@ static void eliminate_orphaned_fileset_records()
 {
   const char* query;
 
-  printf(_("Checking for orphaned FileSet entries. This takes some time!\n"));
+  printf(T_("Checking for orphaned FileSet entries. This takes some time!\n"));
   query
       = "SELECT FileSet.FileSetId,Job.FileSetId FROM FileSet "
         "LEFT OUTER JOIN Job USING(FileSetId) "
         "WHERE Job.FileSetId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
-  printf(_("Found %d orphaned FileSet records.\n"), id_list.num_ids);
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d orphaned FileSet records.\n"), id_list.num_ids);
   fflush(stdout);
-  if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf),
@@ -415,7 +418,7 @@ static void eliminate_orphaned_fileset_records()
   }
   if (quit) { return; }
   if (fix && id_list.num_ids > 0) {
-    printf(_("Deleting %d orphaned FileSet records.\n"), id_list.num_ids);
+    printf(T_("Deleting %d orphaned FileSet records.\n"), id_list.num_ids);
     fflush(stdout);
     DeleteIdList("DELETE FROM FileSet WHERE FileSetId=%s", &id_list);
   }
@@ -425,7 +428,7 @@ static void eliminate_orphaned_client_records()
 {
   const char* query;
 
-  printf(_("Checking for orphaned Client entries.\n"));
+  printf(T_("Checking for orphaned Client entries.\n"));
   /* In English:
    *   Wiffle through Client for every Client
    *   joining with the Job table including every Client even if
@@ -438,9 +441,9 @@ static void eliminate_orphaned_client_records()
         "WHERE Job.ClientId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
-  printf(_("Found %d orphaned Client records.\n"), id_list.num_ids);
-  if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d orphaned Client records.\n"), id_list.num_ids);
+  if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf),
@@ -455,7 +458,7 @@ static void eliminate_orphaned_client_records()
   }
   if (quit) { return; }
   if (fix && id_list.num_ids > 0) {
-    printf(_("Deleting %d orphaned Client records.\n"), id_list.num_ids);
+    printf(T_("Deleting %d orphaned Client records.\n"), id_list.num_ids);
     fflush(stdout);
     DeleteIdList("DELETE FROM Client WHERE ClientId=%s", &id_list);
   }
@@ -465,7 +468,7 @@ static void eliminate_orphaned_job_records()
 {
   const char* query;
 
-  printf(_("Checking for orphaned Job entries.\n"));
+  printf(T_("Checking for orphaned Job entries.\n"));
   /* In English:
    *   Wiffle through Job for every Job
    *   joining with the Client table including every Job even if
@@ -478,10 +481,10 @@ static void eliminate_orphaned_job_records()
         "WHERE Client.Name IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
-  printf(_("Found %d orphaned Job records.\n"), id_list.num_ids);
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d orphaned Job records.\n"), id_list.num_ids);
   fflush(stdout);
-  if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf),
@@ -496,13 +499,13 @@ static void eliminate_orphaned_job_records()
   }
   if (quit) { return; }
   if (fix && id_list.num_ids > 0) {
-    printf(_("Deleting %d orphaned Job records.\n"), id_list.num_ids);
+    printf(T_("Deleting %d orphaned Job records.\n"), id_list.num_ids);
     fflush(stdout);
     DeleteIdList("DELETE FROM Job WHERE JobId=%s", &id_list);
-    printf(_("Deleting JobMedia records of orphaned Job records.\n"));
+    printf(T_("Deleting JobMedia records of orphaned Job records.\n"));
     fflush(stdout);
     DeleteIdList("DELETE FROM JobMedia WHERE JobId=%s", &id_list);
-    printf(_("Deleting Log records of orphaned Job records.\n"));
+    printf(T_("Deleting Log records of orphaned Job records.\n"));
     fflush(stdout);
     DeleteIdList("DELETE FROM Log WHERE JobId=%s", &id_list);
   }
@@ -510,19 +513,19 @@ static void eliminate_orphaned_job_records()
 
 static void eliminate_orphaned_storage_records()
 {
-  printf(_("Checking for orphaned Storage entries.\n"));
+  printf(T_("Checking for orphaned Storage entries.\n"));
   fflush(stdout);
 
   std::vector<std::string> orphaned_storage_names_list
       = get_orphaned_storages_names(db);
 
-  printf(_("Found %zu orphaned Storage records.\n"),
+  printf(T_("Found %zu orphaned Storage records.\n"),
          orphaned_storage_names_list.size());
 
   std::vector<int> storages_to_be_deleted;
 
   if (orphaned_storage_names_list.size() > 0) {
-    if (verbose && yes_no(_("Print orhpaned storages? (yes/no): "))) {
+    if (verbose && yes_no(T_("Print orhpaned storages? (yes/no): "))) {
       for (auto const& storage : orphaned_storage_names_list) {
         printf("'%s'\n", storage.c_str());
       }
@@ -534,7 +537,7 @@ static void eliminate_orphaned_storage_records()
   }
   if (quit) { return; }
   if (fix && storages_to_be_deleted.size() > 0) {
-    printf(_("Deleting %zu orphaned storage records.\n"),
+    printf(T_("Deleting %zu orphaned storage records.\n"),
            storages_to_be_deleted.size());
     fflush(stdout);
     delete_storages(db, storages_to_be_deleted);
@@ -545,15 +548,15 @@ static void eliminate_admin_records()
 {
   const char* query;
 
-  printf(_("Checking for Admin Job entries.\n"));
+  printf(T_("Checking for Admin Job entries.\n"));
   query
       = "SELECT Job.JobId FROM Job "
         "WHERE Job.Type='D'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
-  printf(_("Found %d Admin Job records.\n"), id_list.num_ids);
-  if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d Admin Job records.\n"), id_list.num_ids);
+  if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf),
@@ -568,7 +571,7 @@ static void eliminate_admin_records()
   }
   if (quit) { return; }
   if (fix && id_list.num_ids > 0) {
-    printf(_("Deleting %d Admin Job records.\n"), id_list.num_ids);
+    printf(T_("Deleting %d Admin Job records.\n"), id_list.num_ids);
     fflush(stdout);
     DeleteIdList("DELETE FROM Job WHERE JobId=%s", &id_list);
   }
@@ -578,15 +581,15 @@ static void eliminate_restore_records()
 {
   const char* query;
 
-  printf(_("Checking for Restore Job entries.\n"));
+  printf(T_("Checking for Restore Job entries.\n"));
   query
       = "SELECT Job.JobId FROM Job "
         "WHERE Job.Type='R'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
-  printf(_("Found %d Restore Job records.\n"), id_list.num_ids);
-  if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d Restore Job records.\n"), id_list.num_ids);
+  if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf),
@@ -601,7 +604,7 @@ static void eliminate_restore_records()
   }
   if (quit) { return; }
   if (fix && id_list.num_ids > 0) {
-    printf(_("Deleting %d Restore Job records.\n"), id_list.num_ids);
+    printf(T_("Deleting %d Restore Job records.\n"), id_list.num_ids);
     fflush(stdout);
     DeleteIdList("DELETE FROM Job WHERE JobId=%s", &id_list);
   }
@@ -612,15 +615,15 @@ static void repair_bad_filenames()
   const char* query;
   int i;
 
-  printf(_("Checking for Filenames with a trailing slash\n"));
+  printf(T_("Checking for Filenames with a trailing slash\n"));
   query
       = "SELECT FileId,Name from File "
         "WHERE Name LIKE '%/'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
-  printf(_("Found %d bad Filename records.\n"), id_list.num_ids);
-  if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d bad Filename records.\n"), id_list.num_ids);
+  if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     for (i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Name FROM File WHERE FileId=%s",
@@ -635,7 +638,7 @@ static void repair_bad_filenames()
   if (fix && id_list.num_ids > 0) {
     POOLMEM* name = GetPoolMemory(PM_FNAME);
     char esc_name[5000];
-    printf(_("Reparing %d bad Filename records.\n"), id_list.num_ids);
+    printf(T_("Reparing %d bad Filename records.\n"), id_list.num_ids);
     fflush(stdout);
     for (i = 0; i < id_list.num_ids; i++) {
       int len;
@@ -671,14 +674,14 @@ static void repair_bad_paths()
   PoolMem query(PM_MESSAGE);
   int i;
 
-  printf(_("Checking for Paths without a trailing slash\n"));
+  printf(T_("Checking for Paths without a trailing slash\n"));
   db->FillQuery(query, BareosDb::SQL_QUERY::get_bad_paths_0);
   if (verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
-  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
-  printf(_("Found %d bad Path records.\n"), id_list.num_ids);
+  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
+  printf(T_("Found %d bad Path records.\n"), id_list.num_ids);
   fflush(stdout);
-  if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+  if (id_list.num_ids && verbose && yes_no(T_("Print them? (yes/no): "))) {
     for (i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
@@ -693,7 +696,7 @@ static void repair_bad_paths()
   if (fix && id_list.num_ids > 0) {
     POOLMEM* name = GetPoolMemory(PM_FNAME);
     char esc_name[5000];
-    printf(_("Reparing %d bad Filename records.\n"), id_list.num_ids);
+    printf(T_("Reparing %d bad Filename records.\n"), id_list.num_ids);
     fflush(stdout);
     for (i = 0; i < id_list.num_ids; i++) {
       int len;
@@ -752,22 +755,22 @@ static void do_interactive_mode()
 {
   const char* cmd;
 
-  printf(_("Hello, this is the Bareos database check/correct program.\n"));
+  printf(T_("Hello, this is the Bareos database check/correct program.\n"));
 
   while (!quit) {
     if (fix)
-      printf(_("Modify database is on."));
+      printf(T_("Modify database is on."));
     else
-      printf(_("Modify database is off."));
+      printf(T_("Modify database is off."));
     if (verbose)
-      printf(_(" Verbose is on.\n"));
+      printf(T_(" Verbose is on.\n"));
     else
-      printf(_(" Verbose is off.\n"));
+      printf(T_(" Verbose is off.\n"));
 
-    printf(_("Please select the function you want to perform.\n"));
+    printf(T_("Please select the function you want to perform.\n"));
 
     print_commands();
-    cmd = GetCmd(_("Select function number: "));
+    cmd = GetCmd(T_("Select function number: "));
     if (cmd) {
       int item = atoi(cmd);
       if ((item >= 0) && (item < number_commands)) {
@@ -854,7 +857,7 @@ int main(int argc, char* argv[])
   manual_args->add_option("port", dbport, "Database port")
       ->check(CLI::PositiveNumber);
 
-  CLI11_PARSE(dbcheck_app, argc, argv);
+  ParseBareosApp(dbcheck_app, argc, argv);
 
   const char* db_driver = "postgresql";
 
@@ -862,8 +865,8 @@ int main(int argc, char* argv[])
     CatalogResource* catalog = nullptr;
     int found = 0;
 
-    my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
-    my_config->ParseConfig();
+    my_config = InitDirConfig(configfile.c_str(), M_CONFIG_ERROR);
+    my_config->ParseConfigOrExit();
 
     foreach_res (catalog, R_CATALOG) {
       if (!catalogname.empty()
@@ -880,16 +883,16 @@ int main(int argc, char* argv[])
     if (!found) {
       if (!catalogname.empty()) {
         Pmsg2(0,
-              _("Error can not find the Catalog name[%s] in the given config "
-                "file [%s]\n"),
+              T_("Error can not find the Catalog name[%s] in the given config "
+                 "file [%s]\n"),
               catalogname.c_str(), configfile.c_str());
       } else {
         Pmsg1(0,
-              _("Error there is no Catalog section in the given config file "
-                "[%s]\n"),
+              T_("Error there is no Catalog section in the given config file "
+                 "[%s]\n"),
               configfile.c_str());
       }
-      exit(1);
+      exit(BEXIT_FAILURE);
     } else {
       {
         ResLocker _{my_config};
@@ -897,8 +900,8 @@ int main(int argc, char* argv[])
         my_config->own_resource_ = me;
       }
       if (!me) {
-        Pmsg0(0, _("Error no Director resource defined.\n"));
-        exit(1);
+        Pmsg0(0, T_("Error no Director resource defined.\n"));
+        exit(BEXIT_FAILURE);
       }
 
       SetWorkingDirectory(me->working_directory);
@@ -906,7 +909,7 @@ int main(int argc, char* argv[])
       // Print catalog information and exit (-B)
       if (print_catalog) {
         PrintCatalogDetails(catalog);
-        exit(0);
+        exit(BEXIT_SUCCESS);
       }
 
       db_name = catalog->db_name;
@@ -946,5 +949,5 @@ int main(int argc, char* argv[])
   CloseMsg(nullptr);
   TermMsg();
 
-  return 0;
+  return BEXIT_SUCCESS;
 }

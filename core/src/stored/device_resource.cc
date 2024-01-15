@@ -22,7 +22,6 @@
 */
 
 #include "lib/parse_conf.h"
-#include "stored/autoxflate.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
 #include <fmt/format.h>
@@ -62,6 +61,7 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   }
   device_type = other.device_type;
   label_type = other.label_type;
+  access_mode = other.access_mode;
   autoselect = other.autoselect;
   norewindonclose = other.norewindonclose;
   drive_tapealert_enabled = other.drive_tapealert_enabled;
@@ -117,6 +117,7 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   spool_directory = rhs.spool_directory;
   device_type = rhs.device_type;
   label_type = rhs.label_type;
+  access_mode = rhs.access_mode;
   autoselect = rhs.autoselect;
   norewindonclose = rhs.norewindonclose;
   drive_tapealert_enabled = rhs.drive_tapealert_enabled;
@@ -217,14 +218,14 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
   resource_name_ = strdup(tmp_name.c_str());
 }
 
-static void WarnOnNonZeroBlockSize(int max_block_size, std::string_view name)
+static void WarnOnSetMaxBlockSize(const DeviceResource& resource)
 {
-  if (max_block_size > 0) {
+  if (resource.IsMemberPresent("MaximumBlockSize")) {
     my_config->AddWarning(fmt::format(
         FMT_STRING(
             "Device {:s}: Setting 'Maximum Block Size' is only supported on  "
             "tape devices"),
-        name));
+        resource.resource_name_));
   }
 }
 
@@ -264,7 +265,7 @@ static bool ValidateTapeDevice(const DeviceResource& resource)
 
 static bool ValidateGenericDevice(const DeviceResource& resource)
 {
-  WarnOnNonZeroBlockSize(resource.max_block_size, resource.resource_name_);
+  WarnOnSetMaxBlockSize(resource);
   WarnOnZeroMaxConcurrentJobs(resource.max_concurrent_jobs,
                               resource.resource_name_);
   WarnOnGtOneMaxConcurrentJobs(resource.max_concurrent_jobs,
@@ -275,12 +276,23 @@ static bool ValidateGenericDevice(const DeviceResource& resource)
 
 bool DeviceResource::Validate()
 {
+  if (IsMemberPresent("AutoDeflate")
+      && !IsMemberPresent("AutoDeflateAlgorithm")) {
+    Jmsg(nullptr, M_ERROR, 0,
+         T_("Device %s: If 'AutoDeflate' is set, then 'AutoDeflateAlgorithm' "
+            "also has to be set.\n"),
+         resource_name_);
+
+    return false;
+  }
+
   to_lower(device_type);
   if (device_type == DeviceType::B_TAPE_DEV) {
     return ValidateTapeDevice(*this);
   } else {
     return ValidateGenericDevice(*this);
   }
+
   return true;
 }
 

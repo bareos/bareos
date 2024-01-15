@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,6 +20,7 @@
 */
 
 #include "dbcheck_utils.h"
+#include "include/exit_codes.h"
 
 using namespace directordaemon;
 
@@ -39,35 +40,35 @@ int GetNameHandler(void* ctx, int, char** row)
 
 int PrintJobHandler(void*, int, char** row)
 {
-  printf(_("JobId=%s Name=\"%s\" StartTime=%s\n"), NPRT(row[0]), NPRT(row[1]),
+  printf(T_("JobId=%s Name=\"%s\" StartTime=%s\n"), NPRT(row[0]), NPRT(row[1]),
          NPRT(row[2]));
   return 0;
 }
 
 int PrintJobmediaHandler(void*, int, char** row)
 {
-  printf(_("Orphaned JobMediaId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
+  printf(T_("Orphaned JobMediaId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
 int PrintFileHandler(void*, int, char** row)
 {
-  printf(_("Orphaned FileId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
+  printf(T_("Orphaned FileId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
 int PrintFilesetHandler(void*, int, char** row)
 {
-  printf(_("Orphaned FileSetId=%s FileSet=\"%s\" MD5=%s\n"), NPRT(row[0]),
+  printf(T_("Orphaned FileSetId=%s FileSet=\"%s\" MD5=%s\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
 int PrintClientHandler(void*, int, char** row)
 {
-  printf(_("Orphaned ClientId=%s Name=\"%s\"\n"), NPRT(row[0]), NPRT(row[1]));
+  printf(T_("Orphaned ClientId=%s Name=\"%s\"\n"), NPRT(row[0]), NPRT(row[1]));
   return 0;
 }
 
@@ -166,7 +167,9 @@ std::vector<int> get_deletable_storageids(
   query += ")";
 
   ID_LIST orphaned_storage_ids_list{};
-  if (!MakeIdList(db, query.c_str(), &orphaned_storage_ids_list)) { exit(1); }
+  if (!MakeIdList(db, query.c_str(), &orphaned_storage_ids_list)) {
+    exit(BEXIT_FAILURE);
+  }
 
   std::vector<int> storage_ids_to_delete;
   NameList volume_names = {};
@@ -178,15 +181,17 @@ std::vector<int> get_deletable_storageids(
         = "SELECT volumename FROM media WHERE storageid="
           + std::to_string(orphaned_storage_ids_list.Id[orphaned_storage_id]);
 
-    if (!MakeNameList(db, media_query.c_str(), &volume_names)) { exit(1); }
+    if (!MakeNameList(db, media_query.c_str(), &volume_names)) {
+      exit(BEXIT_FAILURE);
+    }
 
     if (volume_names.num_ids > 0) {
       for (int volumename = 0; volumename < volume_names.num_ids;
            ++volumename) {
         Emsg3(M_WARNING, 0,
-              _("Orphaned storage '%s' is being used by volume '%s'. "
-                "An orphaned storage will only be removed when it is "
-                "no longer referenced.\n"),
+              T_("Orphaned storage '%s' is being used by volume '%s'. "
+                 "An orphaned storage will only be removed when it is "
+                 "no longer referenced.\n"),
               orphaned_storage_names_list[orphaned_storage_id].c_str(),
               volume_names.name[volumename]);
       }
@@ -197,15 +202,17 @@ std::vector<int> get_deletable_storageids(
         = "SELECT name FROM device WHERE storageid="
           + std::to_string(orphaned_storage_ids_list.Id[orphaned_storage_id]);
 
-    if (!MakeNameList(db, device_query.c_str(), &device_names)) { exit(1); }
+    if (!MakeNameList(db, device_query.c_str(), &device_names)) {
+      exit(BEXIT_FAILURE);
+    }
 
     if (device_names.num_ids > 0) {
       for (int devicename = 0; devicename < device_names.num_ids;
            ++devicename) {
         Emsg3(M_WARNING, 0,
-              _("Orphaned storage '%s' is being used by device '%s'. "
-                "An orphaned storage will only be removed when it is "
-                "no longer referenced.\n"),
+              T_("Orphaned storage '%s' is being used by device '%s'. "
+                 "An orphaned storage will only be removed when it is "
+                 "no longer referenced.\n"),
               orphaned_storage_names_list[orphaned_storage_id].c_str(),
               device_names.name[devicename]);
       }
@@ -240,7 +247,7 @@ std::vector<std::string> get_orphaned_storages_names(BareosDb* db)
 
   NameList database_storage_names_list{};
   if (!MakeNameList(db, query.c_str(), &database_storage_names_list)) {
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   std::vector<std::string> orphaned_storage_names_list;

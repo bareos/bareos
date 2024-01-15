@@ -68,7 +68,7 @@ IPADDR::IPADDR(int af) : IPADDR()
 {
   type = R_EMPTY;
   if (!(af == AF_INET6 || af == AF_INET)) {
-    Emsg1(M_ERROR_TERM, 0, _("Only ipv4 and ipv6 are supported (%d)\n"), af);
+    Emsg1(M_ERROR_TERM, 0, T_("Only ipv4 and ipv6 are supported (%d)\n"), af);
   }
 
   memset(&saddrbuf, 0, sizeof(saddrbuf));
@@ -142,7 +142,7 @@ void IPADDR::SetAddr4(struct in_addr* ip4)
 {
   if (saddr->sa_family != AF_INET) {
     Emsg1(M_ERROR_TERM, 0,
-          _("It was tried to assign a ipv6 address to a ipv4(%d)\n"),
+          T_("It was tried to assign a ipv6 address to a ipv4(%d)\n"),
           saddr->sa_family);
   }
   saddr4->sin_addr = *ip4;
@@ -152,7 +152,7 @@ void IPADDR::SetAddr6(struct in6_addr* ip6)
 {
   if (saddr->sa_family != AF_INET6) {
     Emsg1(M_ERROR_TERM, 0,
-          _("It was tried to assign a ipv4 address to a ipv6(%d)\n"),
+          T_("It was tried to assign a ipv4 address to a ipv6(%d)\n"),
           saddr->sa_family);
   }
   saddr6->sin6_addr = *ip6;
@@ -297,7 +297,7 @@ bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
       }
     } else if (iaddr->GetType() != type) {
       Bsnprintf(buf, buflen,
-                _("the old style addresses cannot be mixed with new style"));
+                T_("the old style addresses cannot be mixed with new style"));
       return false;
     }
   }
@@ -328,7 +328,7 @@ bool SetupPort(unsigned short& port,
         port = s->s_port;
         return true;
       } else {
-        Bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
+        Bsnprintf(buf, buflen, T_("can't resolve service(%s)"), port_str);
         return false;
       }
     }
@@ -373,17 +373,21 @@ bool CheckIfFamilyEnabled(IpFamily family)
   do {
     ++tries;
     if ((fd = socket(GetFamily(family).value(), SOCK_STREAM, 0)) < 0) {
-      Bmicrosleep(15, 0);
+      Bmicrosleep(1, 0);
     }
   } while (fd < 0 && tries < 3);
 
   if (fd < 0) {
     BErrNo be;
-    Emsg2(M_WARNING, 0, _("Cannot open %s stream socket. ERR=%s\n"),
+    Emsg2(M_WARNING, 0, T_("Cannot open %s stream socket. ERR=%s\n"),
           FamilyName(family), be.bstrerror());
     return false;
   }
-  socketClose(fd);
+#ifdef HAVE_WIN32
+  ::closesocket(fd);
+#else
+  ::close(fd);
+#endif
   return true;
 }
 
@@ -422,21 +426,21 @@ int AddAddress(dlist<IPADDR>** out,
     if (!ipv4_enabled && ipv6_enabled) { family = AF_INET6; }
     if (ipv4_enabled && !ipv6_enabled) { family = AF_INET; }
     if (!ipv4_enabled && !ipv6_enabled) {
-      Bsnprintf(buf, buflen, _("Both IPv4 are IPv6 are disabled!"));
+      Bsnprintf(buf, buflen, T_("Both IPv4 are IPv6 are disabled!"));
       return 0;
     }
   } else if (family == AF_INET6 && !IsFamilyEnabled(IpFamily::V6)) {
-    Bsnprintf(buf, buflen, _("IPv6 address wanted but IPv6 is disabled!"));
+    Bsnprintf(buf, buflen, T_("IPv6 address wanted but IPv6 is disabled!"));
     return 0;
   } else if (family == AF_INET && !IsFamilyEnabled(IpFamily::V4)) {
-    Bsnprintf(buf, buflen, _("IPv4 address wanted but IPv4 is disabled!"));
+    Bsnprintf(buf, buflen, T_("IPv4 address wanted but IPv4 is disabled!"));
     return 0;
   }
 
   const char* myerrstr;
   hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
   if (!hostaddrs) {
-    Bsnprintf(buf, buflen, _("can't resolve hostname(%s) %s"), hostname_str,
+    Bsnprintf(buf, buflen, T_("can't resolve hostname(%s) %s"), hostname_str,
               myerrstr);
     return 0;
   }
@@ -503,18 +507,18 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
 
   if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
                   sizeof(buf))) {
-    Emsg1(M_WARNING, 0, _("Can't add default IPv4 address (%s)\n"), buf);
+    Emsg1(M_WARNING, 0, T_("Can't add default IPv4 address (%s)\n"), buf);
     ipv4_added = false;
   }
 
   if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET6, 0, 0, buf,
                   sizeof(buf))) {
-    Emsg1(M_WARNING, 0, _("Can't add default IPv6 address (%s)\n"), buf);
+    Emsg1(M_WARNING, 0, T_("Can't add default IPv6 address (%s)\n"), buf);
     ipv6_added = false;
   }
 
   if (!ipv6_added && !ipv4_added) {
-    Emsg0(M_ERROR_TERM, 0, _("Can't add default IPv6 and IPv4 addresses\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("Can't add default IPv6 and IPv4 addresses\n"));
   }
 }
 

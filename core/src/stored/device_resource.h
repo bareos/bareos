@@ -25,7 +25,7 @@
 #define BAREOS_STORED_DEVICE_RESOURCE_H_
 
 #include "stored/dev.h"
-#include "stored/autoxflate.h"
+#include "stored/io_direction.h"
 #include "lib/bareos_resource.h"
 
 namespace storagedaemon {
@@ -45,8 +45,10 @@ class DeviceResource : public BareosResource {
   char* spool_directory;       /**< Spool file directory */
   std::string device_type{DeviceType::B_UNKNOWN_DEV};
   uint32_t label_type{B_BAREOS_LABEL};
-  bool autoselect{true};      /**< Automatically select from AutoChanger */
-  bool norewindonclose{true}; /**< Don't rewind tape drive on close */
+  IODirection access_mode{
+      IODirection::READ_WRITE}; /**< Allowed access mode(s) for reservation */
+  bool autoselect{true};        /**< Automatically select from AutoChanger */
+  bool norewindonclose{true};   /**< Don't rewind tape drive on close */
   bool drive_tapealert_enabled{false}; /**< Enable Tape Alert monitoring */
   bool drive_crypto_enabled{false};    /**< Enable hardware crypto */
   bool query_crypto_status{false};     /**< Query device for crypto status */
@@ -60,21 +62,19 @@ class DeviceResource : public BareosResource {
   utime_t max_rewind_wait{300};  /**< Maximum secs to wait for rewind */
   utime_t max_open_wait{300};    /**< Maximum secs to wait for open */
   uint32_t max_open_vols{1};     /**< Maximum simultaneous open volumes */
-  uint32_t label_block_size{64512};    /**< block size of the label block*/
-  uint32_t min_block_size{0};          /**< Current Minimum block size */
-  uint32_t max_block_size{1048576};    /**< Current Maximum block size */
-  uint32_t max_network_buffer_size{0}; /**< Max network buf size */
+  uint32_t label_block_size{64512};     /**< block size of the label block*/
+  uint32_t min_block_size{0};           /**< Current Minimum block size */
+  uint32_t max_block_size{1024 * 1024}; /**< Current Maximum block size */
+  uint32_t max_network_buffer_size{0};  /**< Max network buf size */
   uint32_t max_concurrent_jobs{0};   /**< Maximum concurrent jobs this drive */
   uint32_t autodeflate_algorithm{0}; /**< Compression algorithm to use for
                                      compression */
   uint16_t autodeflate_level{6}; /**< Compression level to use for compression
                                  algorithm which uses levels */
-  AutoXflateMode autodeflate{
-      AutoXflateMode::IO_DIRECTION_NONE}; /**< auto deflation in this IO
-                                             direction */
-  AutoXflateMode autoinflate{
-      AutoXflateMode::IO_DIRECTION_NONE}; /**< auto inflation in this IO
-                                             direction */
+  IODirection autodeflate{IODirection::NONE}; /**< auto deflation in this IO
+                                                                 direction */
+  IODirection autoinflate{IODirection::NONE}; /**< auto inflation in this IO
+                                                                 direction */
   utime_t vol_poll_interval{
       300}; /**< Interval between polling volume during mount */
   int64_t max_file_size{1000000000}; /**< Max file size in bytes */

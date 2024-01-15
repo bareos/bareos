@@ -138,18 +138,16 @@ static ResourceItem dir_items[] = {
   { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "160704000" /* 5 years */, NULL, NULL },
   { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", "14.2.0-", NULL },
   { "VerId", CFG_TYPE_STR, ITEM(res_dir, verid), 0, 0, NULL, NULL, NULL },
-  { "OptimizeForSize", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_size), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "OptimizeForSpeed", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, keyencrkey), 1, 0, NULL, NULL, NULL },
   { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_snooping), 0, 0, NULL, "13.2.0-", NULL },
   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_dir, ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", "13.2.0-", NULL },
   { "NdmpNamelistFhinfoSetZeroForInvalidUquad", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_fhinfo_set_zero_for_invalid_u_quad), 0, CFG_ITEM_DEFAULT, "false", "20.0.6-", NULL },
-  { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", NULL },
+  { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
   { "Auditing", CFG_TYPE_BOOL, ITEM(res_dir, auditing), 0, CFG_ITEM_DEFAULT, "false", "14.2.0-", NULL },
   { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir, audit_events), 0, 0, NULL, "14.2.0-", NULL },
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
-  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
+  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -408,7 +406,7 @@ ResourceItem job_items[] = {
   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), 0, 0, NULL, NULL, NULL },
-  { "Base", CFG_TYPE_ALIST_RES, ITEM(res_job, base), R_JOB, 0, NULL, NULL, NULL },
+  { "Base", CFG_TYPE_ALIST_RES, ITEM(res_job, base), R_JOB, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "MaxConcurrentCopies", CFG_TYPE_PINT32, ITEM(res_job, MaxConcurrentCopies), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
    /* Settings for always incremental */
   { "AlwaysIncremental", CFG_TYPE_BOOL, ITEM(res_job, AlwaysIncremental), 0, CFG_ITEM_DEFAULT, "false", "16.2.4-",
@@ -454,7 +452,7 @@ static ResourceItem pool_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_pool, description_), 0, 0, NULL, NULL, NULL },
   { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool, pool_type), 0, CFG_ITEM_DEFAULT, "Backup", NULL, NULL },
   { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool, label_format), 0, 0, NULL, NULL, NULL },
-  { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), 0, 0, NULL, NULL, NULL },
+  { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool, cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN", NULL, NULL },
   { "UseCatalog", CFG_TYPE_BOOL, ITEM(res_pool, use_catalog), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
   { "PurgeOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, purge_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -1012,9 +1010,9 @@ static void PropagateResource(ResourceItem* items,
   uint32_t offset;
 
   for (int i = 0; items[i].name; i++) {
-    if (!BitIsSet(i, dest->item_present_)
-        && BitIsSet(i, source->item_present_)) {
-      offset = items[i].offset;
+    offset = items[i].offset;
+    if (!dest->IsMemberPresent(items[i].name)
+        && source->IsMemberPresent(items[i].name)) {
       switch (items[i].type) {
         case CFG_TYPE_STR:
         case CFG_TYPE_DIR:
@@ -1026,7 +1024,7 @@ static void PropagateResource(ResourceItem* items,
           svalue = (char**)((char*)dest + offset);
           if (*svalue) { free(*svalue); }
           *svalue = strdup(*def_svalue);
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1037,10 +1035,10 @@ static void PropagateResource(ResourceItem* items,
           def_svalue = (char**)((char*)(source) + offset);
           svalue = (char**)((char*)dest + offset);
           if (*svalue) {
-            Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
+            Pmsg1(000, T_("Hey something is wrong. p=0x%lu\n"), *svalue);
           }
           *svalue = *def_svalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1061,7 +1059,7 @@ static void PropagateResource(ResourceItem* items,
 
             foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
 
-            SetBit(i, dest->item_present_);
+            dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
           }
           break;
@@ -1083,7 +1081,7 @@ static void PropagateResource(ResourceItem* items,
 
             foreach_alist (res, orig_list) { (*new_list)->append(res); }
 
-            SetBit(i, dest->item_present_);
+            dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
           }
           break;
@@ -1107,7 +1105,7 @@ static void PropagateResource(ResourceItem* items,
 
             foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
 
-            SetBit(i, dest->item_present_);
+            dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
           }
           break;
@@ -1128,7 +1126,7 @@ static void PropagateResource(ResourceItem* items,
           def_ivalue = (uint32_t*)((char*)(source) + offset);
           ivalue = (uint32_t*)((char*)dest + offset);
           *ivalue = *def_ivalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1142,7 +1140,7 @@ static void PropagateResource(ResourceItem* items,
           def_lvalue = (int64_t*)((char*)(source) + offset);
           lvalue = (int64_t*)((char*)dest + offset);
           *lvalue = *def_lvalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1153,7 +1151,7 @@ static void PropagateResource(ResourceItem* items,
           def_bvalue = (bool*)((char*)(source) + offset);
           bvalue = (bool*)((char*)dest + offset);
           *bvalue = *def_bvalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1166,7 +1164,7 @@ static void PropagateResource(ResourceItem* items,
 
           d_pwd->encoding = s_pwd->encoding;
           d_pwd->value = strdup(s_pwd->value);
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1193,10 +1191,10 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
 
   for (int i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res->item_present_)) {
+      if (!res->IsMemberPresent(items[i].name)) {
         Jmsg(NULL, M_ERROR, 0,
-             _("\"%s\" directive in %s \"%s\" resource is required, but not "
-               "found.\n"),
+             T_("\"%s\" directive in %s \"%s\" resource is required, but not "
+                "found.\n"),
              items[i].name, my_config->ResToStr(res_type), res->resource_name_);
         return false;
       }
@@ -1204,7 +1202,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
 
     // If this triggers, take a look at lib/parse_conf.h
     if (i >= MAX_RES_ITEMS) {
-      Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"),
+      Emsg1(M_ERROR, 0, T_("Too many items in %s resource\n"),
             my_config->ResToStr(res_type));
       return false;
     }
@@ -1227,29 +1225,33 @@ bool JobResource::Validate()
       // All others must have a client and fileset.
       if (!client) {
         Jmsg(NULL, M_ERROR, 0,
-             _("\"client\" directive in Job \"%s\" resource is required, but "
-               "not found.\n"),
+             T_("\"client\" directive in Job \"%s\" resource is required, but "
+                "not found.\n"),
              resource_name_);
         return false;
       }
 
       if (!fileset) {
         Jmsg(NULL, M_ERROR, 0,
-             _("\"fileset\" directive in Job \"%s\" resource is required, but "
-               "not found.\n"),
+             T_("\"fileset\" directive in Job \"%s\" resource is required, but "
+                "not found.\n"),
              resource_name_);
         return false;
       }
 
       if (!storage && (!pool || !pool->storage)) {
         Jmsg(NULL, M_ERROR, 0,
-             _("No storage specified in Job \"%s\" nor in Pool.\n"),
+             T_("No storage specified in Job \"%s\" nor in Pool.\n"),
              resource_name_);
         return false;
       }
       break;
   }
-
+  if (JobLevel == L_BASE) {
+    Jmsg(NULL, M_WARNING, 0,
+         T_("Job \"%s\" has level 'Base' which is deprecated!\n"),
+         resource_name_);
+  }
   return true;
 }
 
@@ -1864,7 +1866,7 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
         send.KeyBool("Recurse", false);
         break;
       case 'H': /* no hard link handling */
-        send.KeyBool("Hardlinks", false);
+        send.KeyBool("HardLinks", false);
         break;
       case 'i':
         send.KeyBool("IgnoreCase", true);
@@ -1970,15 +1972,15 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
                 break;
               default:
                 Emsg1(M_ERROR, 0,
-                      _("Unknown compression include/exclude option: "
-                        "%c\n"),
+                      T_("Unknown compression include/exclude option: "
+                         "%c\n"),
                       *p);
                 break;
             }
             break;
           default:
             Emsg1(M_ERROR, 0,
-                  _("Unknown compression include/exclude option: %c\n"), *p);
+                  T_("Unknown compression include/exclude option: %c\n"), *p);
             break;
         }
         break;
@@ -1989,7 +1991,7 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
         send.KeyBool("AutoExclude", false);
         break;
       default:
-        Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
+        Emsg1(M_ERROR, 0, T_("Unknown include/exclude option: %c\n"), *p);
         break;
     }
   }
@@ -2172,7 +2174,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       PoolResource* p = dynamic_cast<PoolResource*>(
           my_config->GetResWithName(R_POOL, res_pool->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Pool resource %s\n"),
               res_pool->resource_name_);
         return false;
       } else {
@@ -2190,7 +2192,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       ConsoleResource* p = dynamic_cast<ConsoleResource*>(
           my_config->GetResWithName(R_CONSOLE, res_con->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Console resource %s\n"),
               res_con->resource_name_);
         return false;
       } else {
@@ -2205,7 +2207,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       UserResource* p = dynamic_cast<UserResource*>(
           my_config->GetResWithName(R_USER, res_user->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find User resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find User resource %s\n"),
               res_user->resource_name_);
         return false;
       } else {
@@ -2218,7 +2220,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       DirectorResource* p = dynamic_cast<DirectorResource*>(
           my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Director resource %s\n"),
               res_dir->resource_name_);
         return false;
       } else {
@@ -2233,7 +2235,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       StorageResource* p = dynamic_cast<StorageResource*>(
           my_config->GetResWithName(type, res_store->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Storage resource %s\n"),
               res_dir->resource_name_);
         return false;
       } else {
@@ -2252,7 +2254,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
             != 0) {
           BErrNo be;
 
-          Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
+          Emsg1(M_ERROR_TERM, 0, T_("pthread_mutex_init: ERR=%s\n"),
                 be.bstrerror(status));
         }
         if ((status = pthread_mutex_init(
@@ -2260,7 +2262,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
             != 0) {
           BErrNo be;
 
-          Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
+          Emsg1(M_ERROR_TERM, 0, T_("pthread_mutex_init: ERR=%s\n"),
                 be.bstrerror(status));
         }
       }
@@ -2271,7 +2273,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       JobResource* p = dynamic_cast<JobResource*>(
           my_config->GetResWithName(type, res_job->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Job resource %s\n"),
               res_job->resource_name_);
         return false;
       } else {
@@ -2340,7 +2342,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       CounterResource* p = dynamic_cast<CounterResource*>(
           my_config->GetResWithName(type, res_counter->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Counter resource %s\n"),
               res_counter->resource_name_);
         return false;
       } else {
@@ -2353,7 +2355,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       ClientResource* p = dynamic_cast<ClientResource*>(
           my_config->GetResWithName(type, res_client->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Client resource %s\n"),
               res_client->resource_name_);
         return false;
       } else {
@@ -2381,7 +2383,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       ScheduleResource* p = dynamic_cast<ScheduleResource*>(
           my_config->GetResWithName(type, res_sch->resource_name_));
       if (!p) {
-        Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"),
+        Emsg1(M_ERROR, 0, T_("Cannot find Schedule resource %s\n"),
               res_client->resource_name_);
         return false;
       } else {
@@ -2390,7 +2392,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     default:
-      Emsg1(M_ERROR, 0, _("Unknown resource type %d in SaveResource.\n"), type);
+      Emsg1(M_ERROR, 0, T_("Unknown resource type %d in SaveResource.\n"),
+            type);
       return false;
   }
 
@@ -2469,12 +2472,12 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
     }
 
     if (!found) {
-      scan_err1(lc, _("Expected a Pool Type option, got: %s"), lc->str);
+      scan_err1(lc, T_("Expected a Pool Type option, got: %s"), lc->str);
     }
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2495,11 +2498,11 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected an Action On Purge option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected an Action On Purge option, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2548,7 +2551,7 @@ static void StoreDevice(LEX* lc,
     }
 
     ScanToEol(lc);
-    SetBit(index, (*item->allocated_resource)->item_present_);
+    item->SetPresent();
     ClearBit(index, (*item->allocated_resource)->inherit_content_);
   } else {
     my_config->StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
@@ -2570,11 +2573,12 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Migration Job Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Migration Job Type keyword, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2593,11 +2597,11 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Job Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2616,11 +2620,11 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Protocol Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2638,11 +2642,12 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Restore replacement option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2661,11 +2666,12 @@ static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
+              lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2684,12 +2690,12 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"),
+    scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
               lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2709,11 +2715,11 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int)
   }
 
   if (!found) {
-    scan_err1(lc, _("Expected a Job Level keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2790,7 +2796,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
-        Emsg1(M_ERROR, 0, _("Cannot store Acl: %s\n"), msg.data());
+        Emsg1(M_ERROR, 0, T_("Cannot store Acl: %s\n"), msg.data());
         return;
       }
       list->append(strdup(lc->str));
@@ -2798,7 +2804,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     }
     token = LexGetToken(lc, BCT_ALL);
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2824,7 +2830,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_COMMA) { continue; }
     break;
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2842,7 +2848,7 @@ static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int, int)
   } else if (Bstrcasecmp(lc->str, "always")) {
     value = SCRIPT_Any;
   } else {
-    scan_err2(lc, _("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
+    scan_err2(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
               lc->str);
   }
   if (value != SCRIPT_INVALID) { SetItemVariable<uint32_t>(*item, value); }
@@ -2866,8 +2872,8 @@ static void StoreRunscriptTarget(LEX* lc, ResourceItem* item, int, int pass)
 
       if (!(res = my_config->GetResWithName(R_CLIENT, lc->str))) {
         scan_err3(lc,
-                  _("Could not find config Resource %s referenced on line %d "
-                    ": %s\n"),
+                  T_("Could not find config Resource %s referenced on line %d "
+                     ": %s\n"),
                   lc->str, lc->line_no, lc->line);
       }
 
@@ -2954,7 +2960,7 @@ static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int, int)
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
     SetItemVariable<bool>(*item, false);
   } else {
-    scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
   }
   ScanToEol(lc);
@@ -2974,7 +2980,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   int token = LexGetToken(lc, BCT_SKIP_EOL);
 
   if (token != BCT_BOB) {
-    scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
+    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
     return;
   }
 
@@ -2990,7 +2996,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_EOB) { break; }
 
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
+      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
       goto bail_out;
     }
 
@@ -2999,7 +3005,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
-          scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
+          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
           goto bail_out;
         }
         switch (runscript_items[i].type) {
@@ -3024,7 +3030,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
     }
 
     if (!keyword_ok) {
-      scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
+      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
       goto bail_out;
     }
   }
@@ -3064,7 +3070,7 @@ bail_out:
   res_runscript = nullptr;
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -3080,12 +3086,15 @@ bail_out:
  * %C = Cloning (yes/no)
  * %D = Director name
  * %V = Volume name(s) (Destination)
+ * %O = Prev Backup JobId
+ * %N = New Backup JobId
  */
-extern "C" char* job_code_callback_director(JobControlRecord* jcr,
-                                            const char* param)
+std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
+                                                      const char* param)
 {
-  static char yes[] = "yes";
-  static char no[] = "no";
+  static const std::string yes = "yes";
+  static const std::string no = "no";
+  static const std::string none = "*None*";
 
   switch (param[0]) {
     case 'f':
@@ -3123,15 +3132,31 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
         if (jcr->VolumeName) {
           return jcr->VolumeName;
         } else {
-          return (char*)_("*None*");
+          return none;
         }
       } else {
-        return (char*)_("*None*");
+        return none;
+      }
+      break;
+    case 'O': /* Migration/copy job prev jobid */
+      if (jcr && jcr->dir_impl && jcr->dir_impl->previous_jr.JobId) {
+        return std::to_string(jcr->dir_impl->previous_jr.JobId);
+      } else {
+        return none;
+      }
+      break;
+    case 'N': /* Migration/copy job new jobid */
+      if (jcr && jcr->dir_impl && jcr->dir_impl->mig_jcr
+          && jcr->dir_impl->mig_jcr->dir_impl
+          && jcr->dir_impl->mig_jcr->dir_impl->jr.JobId) {
+        return std::to_string(jcr->dir_impl->mig_jcr->dir_impl->jr.JobId);
+      } else {
+        return none;
       }
       break;
   }
 
-  return NULL;
+  return std::nullopt;
 }
 
 /**
@@ -3691,7 +3716,7 @@ static void DumpResource(int type,
 
   if (!res) {
     PoolMem msg;
-    msg.bsprintf(_("No %s resource defined\n"), my_config->ResToStr(type));
+    msg.bsprintf(T_("No %s resource defined\n"), my_config->ResToStr(type));
     output_formatter->message(MSG_TYPE_INFO, msg);
     return;
   }
@@ -3735,7 +3760,7 @@ static void DumpResource(int type,
       break;
     }
     default:
-      sendit(sock, _("Unknown resource type %d in DumpResource.\n"), type);
+      sendit(sock, T_("Unknown resource type %d in DumpResource.\n"), type);
       break;
   }
 
@@ -3955,7 +3980,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     default:
-      printf(_("Unknown resource type %d in FreeResource.\n"), type);
+      printf(T_("Unknown resource type %d in FreeResource.\n"), type);
       break;
   }
   if (next_resource) { my_config->FreeResourceCb_(next_resource, type); }
@@ -3992,9 +4017,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       /* Check Job requirements after applying JobDefs
        * Ensure that the name item is present however. */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
-        if (!BitIsSet(0, allocated_resource->item_present_)) {
+        if (!allocated_resource->IsMemberPresent(items[0].name)) {
           Emsg2(M_ERROR, 0,
-                _("%s item is required in %s resource, but not found.\n"),
+                T_("%s item is required in %s resource, but not found.\n"),
                 items[0].name, resources[type].name);
           return false;
         }

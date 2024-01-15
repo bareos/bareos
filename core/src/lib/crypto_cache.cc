@@ -146,7 +146,7 @@ void WriteCryptoCache(const char* cache_file)
   if ((fd = open(cache_file, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
     BErrNo be;
 
-    Emsg2(M_ERROR, 0, _("Could not create crypto cache file. %s ERR=%s\n"),
+    Emsg2(M_ERROR, 0, T_("Could not create crypto cache file. %s ERR=%s\n"),
           cache_file, be.bstrerror());
     goto bail_out;
   }
@@ -301,8 +301,8 @@ void DumpCryptoCache(int fd)
   lock_mutex(crypto_cache_lock);
 
   // See how long the biggest volumename and key are.
-  max_vol_length = strlen(_("Volumename"));
-  max_key_length = strlen(_("EncryptionKey"));
+  max_vol_length = strlen(T_("Volumename"));
+  max_key_length = strlen(T_("EncryptionKey"));
   foreach_dlist (cce, cached_crypto_keys) {
     if (strlen(cce->VolumeName) > max_vol_length) {
       max_vol_length = strlen(cce->VolumeName);
@@ -313,8 +313,8 @@ void DumpCryptoCache(int fd)
     }
   }
 
-  len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, _("Volumename"),
-             max_key_length, _("EncryptionKey"), _("Added"), _("Expires"));
+  len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, T_("Volumename"),
+             max_key_length, T_("EncryptionKey"), T_("Added"), T_("Expires"));
 
   if (write(fd, msg.c_str(), len) <= 0) {
     BErrNo be;

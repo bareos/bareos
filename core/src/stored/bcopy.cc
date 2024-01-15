@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
@@ -161,7 +162,7 @@ int main(int argc, char* argv[])
       ->required()
       ->type_name(" ");
 
-  CLI11_PARSE(bcopy_app, argc, argv);
+  ParseBareosApp(bcopy_app, argc, argv);
 
   OSDependentInit();
   
@@ -169,8 +170,8 @@ int main(int argc, char* argv[])
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configfile.c_str(), M_ERROR_TERM);
-  ParseSdConfig(configfile.c_str(), M_ERROR_TERM);
+  my_config = InitSdConfig(configfile.c_str(), M_CONFIG_ERROR);
+  ParseSdConfig(configfile.c_str(), M_CONFIG_ERROR);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
@@ -180,7 +181,7 @@ int main(int argc, char* argv[])
     if (!director) {
       Emsg2(
           M_ERROR_TERM, 0,
-          _("No Director resource named %s defined in %s. Cannot continue.\n"),
+          T_("No Director resource named %s defined in %s. Cannot continue.\n"),
           DirectorName.c_str(), configfile.c_str());
     }
   }
@@ -196,18 +197,18 @@ int main(int argc, char* argv[])
   DeviceControlRecord* in_dcr = new DeviceControlRecord;
   in_jcr = SetupJcr("bcopy", input_archive.data(), bsr, director, in_dcr,
                     inputVolumes, true); /* read device */
-  if (!in_jcr) { exit(1); }
+  if (!in_jcr) { exit(BEXIT_FAILURE); }
 
   in_jcr->sd_impl->ignore_label_errors = ignore_label_errors;
 
   in_dev = in_jcr->sd_impl->dcr->dev;
-  if (!in_dev) { exit(1); }
+  if (!in_dev) { exit(BEXIT_FAILURE); }
 
   // Let SD plugins setup the record translation
   if (GeneratePluginEvent(in_jcr, bSdEventSetupRecordTranslation, in_dcr)
       != bRC_OK) {
     Jmsg(in_jcr, M_FATAL, 0,
-         _("bSdEventSetupRecordTranslation call for input failed!\n"));
+         T_("bSdEventSetupRecordTranslation call for input failed!\n"));
   }
 
 
@@ -217,16 +218,16 @@ int main(int argc, char* argv[])
   DeviceControlRecord* out_dcr = new DeviceControlRecord;
   out_jcr = SetupJcr("bcopy", output_archive.data(), bsr, director, out_dcr,
                      outputVolumes, false); /* write device */
-  if (!out_jcr) { exit(1); }
+  if (!out_jcr) { exit(BEXIT_FAILURE); }
 
   out_dev = out_jcr->sd_impl->dcr->dev;
-  if (!out_dev) { exit(1); }
+  if (!out_dev) { exit(BEXIT_FAILURE); }
 
   // Let SD plugins setup the record translation
   if (GeneratePluginEvent(out_jcr, bSdEventSetupRecordTranslation, out_dcr)
       != bRC_OK) {
     Jmsg(in_jcr, M_FATAL, 0,
-         _("bSdEventSetupRecordTranslation call for output failed!\n"));
+         T_("bSdEventSetupRecordTranslation call for output failed!\n"));
   }
 
   Dmsg0(100, "About to acquire device for writing\n");
@@ -234,14 +235,14 @@ int main(int argc, char* argv[])
   // For we must now acquire the device for writing
   out_dev->rLock(false);
   if (!out_dev->open(out_jcr->sd_impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
-    Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
+    Emsg1(M_FATAL, 0, T_("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   out_dev->Unlock();
   if (!AcquireDeviceForAppend(out_jcr->sd_impl->dcr)) {
     FreeJcr(in_jcr);
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   out_block = out_jcr->sd_impl->dcr->block;
 
@@ -249,11 +250,11 @@ int main(int argc, char* argv[])
 
   if (ok || out_dev->CanWrite()) {
     if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
-      Pmsg0(000, _("Write of last block failed.\n"));
+      Pmsg0(000, T_("Write of last block failed.\n"));
     }
   }
 
-  Pmsg2(000, _("%u Jobs copied. %u records copied.\n"), jobs, records);
+  Pmsg2(000, T_("%u Jobs copied. %u records copied.\n"), jobs, records);
 
 
   CleanupCompression(in_jcr);
@@ -268,7 +269,7 @@ int main(int argc, char* argv[])
   delete out_dev;
 
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 
@@ -277,7 +278,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
 {
   if (list_records) {
     Pmsg5(000,
-          _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
+          T_("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
           rec->VolSessionId, rec->VolSessionTime, rec->FileIndex, rec->Stream,
           rec->data_len);
   }
@@ -288,17 +289,17 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
     if (verbose > 1) { DumpLabelRecord(in_dcr->dev, rec, true); }
     switch (rec->FileIndex) {
       case PRE_LABEL:
-        Pmsg0(000, _("Volume is prelabeled. This volume cannot be copied.\n"));
+        Pmsg0(000, T_("Volume is prelabeled. This volume cannot be copied.\n"));
         return false;
       case VOL_LABEL:
-        Pmsg0(000, _("Volume label not copied.\n"));
+        Pmsg0(000, T_("Volume label not copied.\n"));
         return true;
       case SOS_LABEL:
         if (bsr && rec->match_stat < 1) {
           /* Skipping record, because does not match BootStrapRecord filter */
           if (verbose) {
-            Pmsg0(-1, _("Copy skipped. Record does not match BootStrapRecord "
-                        "filter.\n"));
+            Pmsg0(-1, T_("Copy skipped. Record does not match BootStrapRecord "
+                         "filter.\n"));
           }
         } else {
           jobs++;
@@ -315,7 +316,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
             Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                   out_dev->print_name(), out_dev->bstrerror());
-            Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
+            Jmsg(out_jcr, M_FATAL, 0, T_("Cannot fixup device error. %s\n"),
                  out_dev->bstrerror());
             return false;
           }
@@ -323,16 +324,16 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
         if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
           Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                 out_dev->print_name(), out_dev->bstrerror());
-          Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
+          Jmsg(out_jcr, M_FATAL, 0, T_("Cannot fixup device error. %s\n"),
                out_dev->bstrerror());
           return false;
         }
         return true;
       case EOM_LABEL:
-        Pmsg0(000, _("EOM label not copied.\n"));
+        Pmsg0(000, T_("EOM label not copied.\n"));
         return true;
       case EOT_LABEL: /* end of all tapes */
-        Pmsg0(000, _("EOT label not copied.\n"));
+        Pmsg0(000, T_("EOT label not copied.\n"));
         return true;
       default:
         return true;
@@ -351,7 +352,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
     if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
       Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
             out_dev->print_name(), out_dev->bstrerror());
-      Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
+      Jmsg(out_jcr, M_FATAL, 0, T_("Cannot fixup device error. %s\n"),
            out_dev->bstrerror());
       return false;
     }
@@ -367,26 +368,26 @@ static void GetSessionRecord(Device* dev,
   *sessrec = Session_Label{};
   switch (rec->FileIndex) {
     case PRE_LABEL:
-      rtype = _("Fresh Volume Label");
+      rtype = T_("Fresh Volume Label");
       break;
     case VOL_LABEL:
-      rtype = _("Volume Label");
+      rtype = T_("Volume Label");
       UnserVolumeLabel(dev, rec);
       break;
     case SOS_LABEL:
-      rtype = _("Begin Job Session");
+      rtype = T_("Begin Job Session");
       UnserSessionLabel(sessrec, rec);
       break;
     case EOS_LABEL:
-      rtype = _("End Job Session");
+      rtype = T_("End Job Session");
       UnserSessionLabel(sessrec, rec);
       break;
     case 0:
     case EOM_LABEL:
-      rtype = _("End of Medium");
+      rtype = T_("End of Medium");
       break;
     default:
-      rtype = _("Unknown");
+      rtype = T_("Unknown");
       break;
   }
   Dmsg5(10,
@@ -394,10 +395,10 @@ static void GetSessionRecord(Device* dev,
         rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
         rec->data_len);
   if (verbose) {
-    Pmsg5(
-        -1,
-        _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
-        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-        rec->data_len);
+    Pmsg5(-1,
+          T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d "
+             "DataLen=%d\n"),
+          rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+          rec->data_len);
   }
 }

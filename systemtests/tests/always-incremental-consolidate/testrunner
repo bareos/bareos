@@ -154,6 +154,37 @@ END_OF_DATA
 
 run_bconsole
 
+# Check whether consolidate job priority is also applied to jobs.
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/aibackups.out
+messages
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName level=Full yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-16'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-17'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-18'"
+run job=$JobName level=Incremental yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/consolidatevfs.out
+run job=Consolidate yes
+wait job=Consolidate
+wait
+messages
+quit
+END_OF_DATA
+run_bconsole
+
 check_job_canceled
 
 expect_grep "purged JobIds 1,2,3 as they were consolidated into Job 6" \
@@ -176,8 +207,32 @@ expect_grep "0	0	A A A A A A A A A A A A A A	/" \
             "$tmp"/virtualfull.out \
             "bvfs_update did not take into consideration VirtualFull Archive."
 
-expect_grep "43xzp14Dk2Gvm+cKgszDNQ	AI-Longterm" \
+expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
             "$tmp"/virtualfull.out \
             ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
+
+expect_grep "Priority:[[:space:]]*10" \
+            "$tmp"/aibackups.out \
+            "always incremental backup doesn't have priority set to 10."
+
+expect_grep "Allow Mixed Priority:[[:space:]]*no" \
+            "$tmp"/aibackups.out \
+            "always incremental backup doesn't have allow mixed priority set to false."
+
+expect_grep "Priority:[[:space:]]*5" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have the same priority as consolidate job (expected 5)."
+
+expect_grep "Allow Mixed Priority:[[:space:]]*yes" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have same allow mixed priority value as consolidate job (expected true)."
+
+expect_not_grep "Spooling data" \
+                "$tmp"/aibackups.out \
+                "always incremental backup spooling is not set to false."
+
+expect_grep "Spooling data" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have same spooling value as consolidate job (expected true)."
 
 end_test

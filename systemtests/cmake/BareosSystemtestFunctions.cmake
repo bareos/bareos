@@ -231,9 +231,7 @@ function(check_pymodule_available python_version module)
   if(NOT python_version)
     message(FATAL_ERROR "python_version ist not set")
   endif()
-  if(${python_version} EQUAL 2)
-    set(python_exe ${Python2_EXECUTABLE})
-  elseif(${python_version} EQUAL 3)
+  if(${python_version} EQUAL 3)
     set(python_exe ${Python3_EXECUTABLE})
   else()
     message(FATAL_ERROR "unsupported python_version ${python_version}")
@@ -427,8 +425,8 @@ macro(prepare_test_python)
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/mariabackup:"
-        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgresql:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
         "${CMAKE_SOURCE_DIR}/contrib/fd-plugins:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"

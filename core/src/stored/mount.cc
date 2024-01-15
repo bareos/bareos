@@ -98,7 +98,7 @@ mount_next_vol:
     VolCatInfo.Slot = 0;
     unlock_mutex(mount_mutex);
     if (!dcr->DirAskSysopToMountVolume(ST_APPENDREADY)) {
-      Jmsg(jcr, M_FATAL, 0, _("Too many errors trying to mount device %s.\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Too many errors trying to mount device %s.\n"),
            dev->print_name());
       goto no_lock_bail_out;
     }
@@ -108,7 +108,7 @@ mount_next_vol:
   }
 
   if (jcr->IsJobCanceled()) {
-    Jmsg(jcr, M_FATAL, 0, _("Job %d canceled.\n"), jcr->JobId);
+    Jmsg(jcr, M_FATAL, 0, T_("Job %d canceled.\n"), jcr->JobId);
     goto bail_out;
   }
   recycle = false;
@@ -243,7 +243,8 @@ mount_next_vol:
     if (TryAutolabel(false) == try_read_vol) {
       break; /* created a new volume label */
     }
-    Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
+    Jmsg3(jcr, M_WARNING, 0,
+          T_("Open device %s Volume \"%s\" failed: ERR=%s\n"),
           dev->print_name(), dcr->VolumeName, dev->bstrerror());
     Dmsg0(50, "SetUnload\n");
     dev->SetUnload(); /* force ask sysop */
@@ -312,14 +313,14 @@ read_volume:
         "Device previously written, moving to end of data. Expect %lld bytes\n",
         dev->VolCatInfo.VolCatBytes);
     Jmsg(jcr, M_INFO, 0,
-         _("Volume \"%s\" previously written, moving to end of data.\n"),
+         T_("Volume \"%s\" previously written, moving to end of data.\n"),
          VolumeName);
 
     if (!dev->eod(dcr)) {
       Dmsg2(050, "Unable to position to end of data on device %s: ERR=%s\n",
             dev->print_name(), dev->bstrerror());
       Jmsg(jcr, M_ERROR, 0,
-           _("Unable to position to end of data on device %s: ERR=%s\n"),
+           T_("Unable to position to end of data on device %s: ERR=%s\n"),
            dev->print_name(), dev->bstrerror());
       MarkVolumeInError();
       goto mount_next_vol;
@@ -434,7 +435,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
 
       /* If not removable, Volume is broken */
       if (!dev->IsRemovable()) {
-        Jmsg(jcr, M_WARNING, 0, _("Volume \"%s\" not on device %s.\n"),
+        Jmsg(jcr, M_WARNING, 0, T_("Volume \"%s\" not on device %s.\n"),
              VolumeName, dev->print_name());
         MarkVolumeInError();
         goto check_next_volume;
@@ -464,9 +465,9 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
         dev->VolCatInfo = devVolCatInfo; /* structure assignment */
         dev->SetUnload();                /* unload this volume */
         Jmsg(jcr, M_WARNING, 0,
-             _("Director wanted Volume \"%s\".\n"
-               "    Current Volume \"%s\" not acceptable because:\n"
-               "    %s"),
+             T_("Director wanted Volume \"%s\".\n"
+                "    Current Volume \"%s\" not acceptable because:\n"
+                "    %s"),
              dcrVolCatInfo.VolCatName, dev->VolHdr.VolumeName,
              vol_info_msg.c_str());
         ask = true;
@@ -481,7 +482,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
       dev->VolCatInfo = VolCatInfo; /* structure assignment */
       Dmsg1(100, "Call reserve_volume=%s\n", dev->VolHdr.VolumeName);
       if (reserve_volume(dcr, dev->VolHdr.VolumeName) == NULL) {
-        Jmsg2(jcr, M_WARNING, 0, _("Could not reserve volume %s on %s\n"),
+        Jmsg2(jcr, M_WARNING, 0, T_("Could not reserve volume %s on %s\n"),
               dev->VolHdr.VolumeName, dev->print_name());
         ask = true;
         dev->setVolCatInfo(false);
@@ -631,25 +632,25 @@ bool DeviceControlRecord::is_eod_valid()
        * that the database says we should be. */
       if (dev->VolCatInfo.VolCatFiles == dev->GetFile()) {
         Jmsg(jcr, M_INFO, 0,
-             _("Ready to append to end of Volume \"%s\" at file=%d.\n"),
+             T_("Ready to append to end of Volume \"%s\" at file=%d.\n"),
              VolumeName, dev->GetFile());
       } else if (dev->GetFile() > dev->VolCatInfo.VolCatFiles) {
         Jmsg(jcr, M_WARNING, 0,
-             _("For Volume \"%s\":\n"
-               "The number of files mismatch! Volume=%u Catalog=%u\n"
-               "Correcting Catalog\n"),
+             T_("For Volume \"%s\":\n"
+                "The number of files mismatch! Volume=%u Catalog=%u\n"
+                "Correcting Catalog\n"),
              VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
         dev->VolCatInfo.VolCatFiles = dev->GetFile();
         dev->VolCatInfo.VolCatBlocks = dev->GetBlockNum();
         if (!DirUpdateVolumeInfo(is_labeloperation::False)) {
-          Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
+          Jmsg(jcr, M_WARNING, 0, T_("Error updating Catalog\n"));
           MarkVolumeInError();
           return false;
         }
       } else {
         Jmsg(jcr, M_ERROR, 0,
-             _("Bareos cannot write on tape Volume \"%s\" because:\n"
-               "The number of files mismatch! Volume=%u Catalog=%u\n"),
+             T_("Bareos cannot write on tape Volume \"%s\" because:\n"
+                "The number of files mismatch! Volume=%u Catalog=%u\n"),
              VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
         MarkVolumeInError();
         return false;
@@ -662,27 +663,27 @@ bool DeviceControlRecord::is_eod_valid()
       pos = dev->d_lseek(this, (boffset_t)0, SEEK_CUR);
       if (dev->VolCatInfo.VolCatBytes == (uint64_t)pos) {
         Jmsg(jcr, M_INFO, 0,
-             _("Ready to append to end of Volume \"%s\""
-               " size=%s\n"),
+             T_("Ready to append to end of Volume \"%s\""
+                " size=%s\n"),
              VolumeName, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1));
       } else if ((uint64_t)pos > dev->VolCatInfo.VolCatBytes) {
         Jmsg(jcr, M_WARNING, 0,
-             _("For Volume \"%s\":\n"
-               "The sizes do not match! Volume=%s Catalog=%s\n"
-               "Correcting Catalog\n"),
+             T_("For Volume \"%s\":\n"
+                "The sizes do not match! Volume=%s Catalog=%s\n"
+                "Correcting Catalog\n"),
              VolumeName, edit_uint64(pos, ed1),
              edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
         dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
         dev->VolCatInfo.VolCatFiles = (uint32_t)(pos >> 32);
         if (!DirUpdateVolumeInfo(is_labeloperation::False)) {
-          Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
+          Jmsg(jcr, M_WARNING, 0, T_("Error updating Catalog\n"));
           MarkVolumeInError();
           return false;
         }
       } else {
         Mmsg(jcr->errmsg,
-             _("Bareos cannot write on disk Volume \"%s\" because: "
-               "The sizes do not match! Volume=%s Catalog=%s\n"),
+             T_("Bareos cannot write on disk Volume \"%s\" because: "
+                "The sizes do not match! Volume=%s Catalog=%s\n"),
              VolumeName, edit_uint64(pos, ed1),
              edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
         Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
@@ -743,18 +744,18 @@ int DeviceControlRecord::TryAutolabel(bool opened)
             is_labeloperation::True)) { /* indicate tape labeled */
       return try_error;
     }
-    Jmsg(dcr->jcr, M_INFO, 0, _("Labeled new Volume \"%s\" on device %s.\n"),
+    Jmsg(dcr->jcr, M_INFO, 0, T_("Labeled new Volume \"%s\" on device %s.\n"),
          VolumeName, dev->print_name());
     return try_read_vol; /* read label we just wrote */
   }
   if (!dev->HasCap(CAP_LABEL) && VolCatInfo.VolCatBytes == 0) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Device %s not configured to autolabel Volumes.\n"),
+         T_("Device %s not configured to autolabel Volumes.\n"),
          dev->print_name());
   }
   /* If not removable, Volume is broken */
   if (!dev->IsRemovable()) {
-    Jmsg(jcr, M_WARNING, 0, _("Volume \"%s\" not on device %s.\n"), VolumeName,
+    Jmsg(jcr, M_WARNING, 0, T_("Volume \"%s\" not on device %s.\n"), VolumeName,
          dev->print_name());
     MarkVolumeInError();
     return try_next_vol;
@@ -767,7 +768,7 @@ void DeviceControlRecord::MarkVolumeInError()
 {
   DeviceControlRecord* dcr = this;
 
-  Jmsg(jcr, M_INFO, 0, _("Marking Volume \"%s\" in Error in Catalog.\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Marking Volume \"%s\" in Error in Catalog.\n"),
        VolumeName);
   dev->VolCatInfo = VolCatInfo; /* structure assignment */
   bstrncpy(dev->VolCatInfo.VolCatStatus, "Error",
@@ -788,8 +789,8 @@ void DeviceControlRecord::mark_volume_not_inchanger()
   DeviceControlRecord* dcr = this;
 
   Jmsg(jcr, M_ERROR, 0,
-       _("Autochanger Volume \"%s\" not found in slot %d.\n"
-         "    Setting InChanger to zero in catalog.\n"),
+       T_("Autochanger Volume \"%s\" not found in slot %d.\n"
+          "    Setting InChanger to zero in catalog.\n"),
        getVolCatName(), VolCatInfo.Slot);
   dev->VolCatInfo = VolCatInfo; /* structure assignment */
   VolCatInfo.InChanger = false;
@@ -811,7 +812,7 @@ void DeviceControlRecord::ReleaseVolume()
   GeneratePluginEvent(jcr, bSdEventVolumeUnload, dcr);
 
   if (WroteVol) {
-    Jmsg0(jcr, M_ERROR, 0, _("Hey!!!!! WroteVol non-zero !!!!!\n"));
+    Jmsg0(jcr, M_ERROR, 0, T_("Hey!!!!! WroteVol non-zero !!!!!\n"));
     Pmsg0(190, "Hey!!!!! WroteVol non-zero !!!!!\n");
   }
   // First erase all memory of the current volume
@@ -857,8 +858,8 @@ bool DeviceControlRecord::IsTapePositionOk()
     int32_t file = dev->GetOsTapeFile();
     if (file >= 0 && file != (int32_t)dev->GetFile()) {
       Jmsg(jcr, M_ERROR, 0,
-           _("Invalid tape position on volume \"%s\""
-             " on device %s. Expected %d, got %d\n"),
+           T_("Invalid tape position on volume \"%s\""
+              " on device %s. Expected %d, got %d\n"),
            dev->VolHdr.VolumeName, dev->print_name(), dev->GetFile(), file);
       /* If the current file is greater than zero, it means we probably
        *  have some bad count of EOF marks, so mark tape in error.  Otherwise
@@ -893,7 +894,7 @@ bool MountNextReadVolume(DeviceControlRecord* dcr)
     dcr->SetReserved();
     dev->Unlock();
     if (!AcquireDeviceForRead(dcr)) {
-      Jmsg2(jcr, M_FATAL, 0, _("Cannot open Dev=%s, Vol=%s\n"),
+      Jmsg2(jcr, M_FATAL, 0, T_("Cannot open Dev=%s, Vol=%s\n"),
             dev->print_name(), dcr->VolumeName);
       return false;
     }

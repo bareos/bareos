@@ -6,15 +6,14 @@
 Description=Bareos Director Daemon service
 Documentation=man:bareos-dir(8)
 Requires=network.target nss-lookup.target time-sync.target
-After=network-online.target nss-lookup.target remote-fs.target time-sync.target postgresql.service
+After=network-online.target nss-lookup.target local-fs.target remote-fs.target time-sync.target postgresql.service
 # Dependency about the database
 # We let administrators decide if they need it (if local db instance)
 # Wants=@DEFAULT_DB_TYPE@.service
 # Check if working dir exist
 ConditionPathExists=@working_dir@
-# Limit the number of restart per day to 10
+# Limit the number of restart per day
 StartLimitIntervalSec=1d
-StartLimitBurst=10
 
 [Service]
 Type=simple
@@ -30,8 +29,10 @@ LimitNOFILE=8192:524288
 # Restart on failure, wait 30 seconds
 Restart=on-failure
 RestartSec=30
+# Limit the number of restart to 10. to reset counter use systemctl reset-failed bareos-dir
+StartLimitBurst=10
 # Don't restart on wrong exec arguments and configuration errors.
-RestartPreventExitStatus=109 1
+RestartPreventExitStatus=41 42
 
 
 [Install]

@@ -77,7 +77,7 @@ static bool create_and_bind_v6socket(int test_fd, int port)
                  (sockopt_val_t)&ipv6only_option_value, option_len)
       < 0) {
     BErrNo be;
-    Emsg1(M_WARNING, 0, _("Cannot set IPV6_V6ONLY on socket: %s\n"),
+    Emsg1(M_WARNING, 0, T_("Cannot set IPV6_V6ONLY on socket: %s\n"),
           be.bstrerror());
     socketClose(test_fd);
     return false;

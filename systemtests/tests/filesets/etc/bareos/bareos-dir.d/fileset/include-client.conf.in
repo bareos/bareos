@@ -2,7 +2,7 @@ FileSet {
   Name = "include-client"
   Include {
     Options {
-      Signature = MD5
+      Signature = XXH128
     }
     File = "\\<@confdir@/include-client"
   }

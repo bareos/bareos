@@ -38,6 +38,7 @@
 
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "lib/berrno.h"
 #include "lib/daemon.h"
 
@@ -82,12 +83,12 @@ void daemon_start(const char* progname,
       break;
     case -1: {
       BErrNo be;
-      Emsg1(M_ABORT, 0, _("Cannot fork to become daemon: ERR=%s\n"),
+      Emsg1(M_ABORT, 0, T_("Cannot fork to become daemon: ERR=%s\n"),
             be.bstrerror());
       break;
     }
     default:
-      exit(0);
+      exit(BEXIT_SUCCESS);
   }
 
   Dmsg0(900, "Exit daemon_start\n");

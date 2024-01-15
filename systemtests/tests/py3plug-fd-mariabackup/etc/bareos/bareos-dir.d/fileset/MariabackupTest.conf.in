@@ -1,0 +1,15 @@
+FileSet {
+  Name = "MariabackupTest"
+  Description = "Test the Plugin functionality of the Percona Plugin."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "@python_module_name@:"
+    "module_path=@python_plugin_module_src_test_dir@:"
+    "module_name=bareos-fd-mariabackup:"
+    "dumpbinary=@MARIABACKUP_BINARY@ --defaults-file=mysqldefaults:"
+    "extradumpoptions=--user=@USER@@extradumpoptions@:"
+    "mysqlcmd=mysql --defaults-file=mysqldefaults --user=@USER@ --raw"
+  }
+}

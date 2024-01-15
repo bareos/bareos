@@ -54,11 +54,9 @@ namespace filedaemon {
  * %D = Director
  * %m = Modification time (for incremental and differential)
  */
-extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
-                                         const char* param)
+std::optional<std::string> job_code_callback_filed(JobControlRecord* jcr,
+                                                   const char* param)
 {
-  static char str[50];
-
   switch (param[0]) {
     case 'D':
       if (jcr->fd_impl->director) {
@@ -66,10 +64,10 @@ extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
       }
       break;
     case 'm':
-      return edit_uint64(jcr->fd_impl->since_time, str);
+      return std::to_string(jcr->fd_impl->since_time);
   }
 
-  return NULL;
+  return std::nullopt;
 }
 
 bool InitFileset(JobControlRecord* jcr)
@@ -103,7 +101,7 @@ static void append_file(JobControlRecord* jcr,
     incexe->plugin_list.append(new_dlistString(buf));
   } else {
     Jmsg(jcr, M_FATAL, 0,
-         _("Plugin Directory not defined. Cannot use plugin: \"%s\"\n"), buf);
+         T_("Plugin Directory not defined. Cannot use plugin: \"%s\"\n"), buf);
   }
 }
 
@@ -134,7 +132,7 @@ void AddFileToFileset(JobControlRecord* jcr,
       bpipe = OpenBpipe(fn, 0, "r");
       if (!bpipe) {
         BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"), p,
+        Jmsg(jcr, M_FATAL, 0, T_("Cannot run program: %s. ERR=%s\n"), p,
              be.bstrerror());
         FreePoolMemory(fn);
         return;
@@ -147,7 +145,7 @@ void AddFileToFileset(JobControlRecord* jcr,
       if ((status = CloseBpipe(bpipe)) != 0) {
         BErrNo be;
         Jmsg(jcr, M_FATAL, 0,
-             _("Error running program: %s. status=%d: ERR=%s\n"), p,
+             T_("Error running program: %s. status=%d: ERR=%s\n"), p,
              be.code(status), be.bstrerror(status));
         return;
       }
@@ -157,8 +155,9 @@ void AddFileToFileset(JobControlRecord* jcr,
       p++; /* skip over < */
       if ((ffd = fopen(p, "rb")) == NULL) {
         BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Cannot open FileSet input file: %s. ERR=%s\n"),
-             p, be.bstrerror());
+        Jmsg(jcr, M_FATAL, 0,
+             T_("Cannot open FileSet input file: %s. ERR=%s\n"), p,
+             be.bstrerror());
         return;
       }
       while (fgets(buf, sizeof(buf), ffd)) {
@@ -206,7 +205,7 @@ int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type)
     regerror(rc, preg, prbuf, sizeof(prbuf));
     regfree(preg);
     free(preg);
-    Jmsg(jcr, M_FATAL, 0, _("REGEX %s compile error. ERR=%s\n"), item, prbuf);
+    Jmsg(jcr, M_FATAL, 0, T_("REGEX %s compile error. ERR=%s\n"), item, prbuf);
     return state_error;
   }
   if (type == ' ') {
@@ -504,11 +503,11 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
               = (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
         }
         if (!ParseSizeMatch(size, fo->size_match)) {
-          Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
+          Emsg1(M_ERROR, 0, T_("Unparseable size option: %s\n"), size);
         }
         break;
       default:
-        Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
+        Emsg1(M_ERROR, 0, T_("Unknown include/exclude option: %c\n"), *p);
         break;
     }
   }
@@ -622,7 +621,7 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       state = state_options;
       break;
     default:
-      Jmsg(jcr, M_FATAL, 0, _("Invalid FileSet command: %s\n"), item);
+      Jmsg(jcr, M_FATAL, 0, T_("Invalid FileSet command: %s\n"), item);
       state = state_error;
       break;
   }

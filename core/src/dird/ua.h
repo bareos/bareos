@@ -261,6 +261,7 @@ class RunContext {
   JobResource* job = nullptr;
   JobResource* verify_job = nullptr;
   JobResource* previous_job = nullptr;
+  JobResource* consolidate_job = nullptr;
   UnifiedStorageResource* store = nullptr;
   ClientResource* client = nullptr;
   FilesetResource* fileset = nullptr;

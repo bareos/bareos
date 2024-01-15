@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,7 @@ static int enable_priv(JobControlRecord* jcr,
   if (lerror != ERROR_SUCCESS) {
     if (!ignore_errors) {
       char buf[200];
-      strcpy(buf, _("AdjustTokenPrivileges set "));
+      strcpy(buf, T_("AdjustTokenPrivileges set "));
       bstrncat(buf, name, sizeof(buf));
       WinError(jcr, buf, lerror);
     }

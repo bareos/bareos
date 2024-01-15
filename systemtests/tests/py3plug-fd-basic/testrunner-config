@@ -1,0 +1,121 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+check_option() {
+  expect_grep \
+    "effective configuration: $1 = '$2'" \
+    "$tmp/config-test-$3.out" \
+    "$3 is missing or has wrong option $1"
+}
+
+check_not_option() {
+  expect_not_grep \
+    "effective configuration: $1 = '$2'" \
+    "$tmp/config-test-$3.out" \
+    "$3 has wrong option $1"
+}
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+rm -f "$tmp/config-test.out"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/config-test-nofile.out
+run job=$JobName fileset=PluginConfigTestNoFile yes
+wait
+messages
+@$out $tmp/config-test-defaults-file.out
+run job=$JobName fileset=PluginConfigTestDefaultsFile yes
+wait
+messages
+@$out $tmp/config-test-override-file.out
+run job=$JobName fileset=PluginConfigTestOverridesFile yes
+wait
+messages
+@$out $tmp/config-test-both-files.out
+run job=$JobName fileset=PluginConfigTestBothFiles yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+for i in 1 6 7 8; do
+  check_not_option "option$i" "override-value$i" nofile
+done
+for i in 3 4 5 6; do
+  check_not_option "option$i" "default-value$i" nofile
+done
+for i in 1 2 3 4; do
+  check_option "option$i" "value$i" nofile
+done
+check_option "password" "password" nofile
+check_option "masked-colon" 'one:two:three' nofile
+
+for i in 1 6 7 8; do
+  check_not_option "option$i" "override-value$i" defaults-file
+done
+for i in 3 4; do
+  check_not_option "option$i" "default-value$i" defaults-file
+done
+for i in 5 6; do
+  check_option "option$i" "default-value$i" defaults-file
+done
+for i in 1 2 3 4; do
+  check_option "option$i" "value$i" defaults-file
+done
+check_option "multiline" "multiline-value" defaults-file
+check_option "whitespace_separated" "one two  three   end" defaults-file
+check_option "password" "default-password" defaults-file
+
+for i in 3 4 5 6; do
+  check_not_option "option$i" "default-value$i" override-file
+done
+check_not_option "option1" "value1" override-file
+for i in 2 3 4; do
+  check_option "option$i" "value$i" override-file
+done
+for i in 1 6 7 8; do
+  check_option "option$i" "override-value$i" override-file
+done
+
+check_option "option5" "default-value5" both-files
+for i in 3 4 6; do
+  check_not_option "option$i" "default-value$i" both-files
+done
+check_not_option "option1" "value1" both-files
+for i in 2 3 4; do
+  check_option "option$i" "value$i" both-files
+done
+for i in 1 6 7 8; do
+  check_option "option$i" "override-value$i" both-files
+done
+
+for f in defaults-file override-file both-files; do
+expect_not_grep \
+  "effective configuration: defaults_file" \
+  "$tmp/config-test-$f.out" \
+  "defaults_file option was not consumed"
+expect_not_grep \
+  "effective configuration: overrides_file" \
+  "$tmp/config-test-$f.out" \
+  "overrides_file option was not consumed"
+done
+
+end_test

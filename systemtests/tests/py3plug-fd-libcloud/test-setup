@@ -1,0 +1,96 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+bin/bareos start
+bin/bareos status
+
+# make sure, director is up and running.
+print_debug "$(bin/bconsole <<< "status dir")"
+
+TestName="$(basename "$(pwd)")"
+export TestName
+bucket_name=bareos-test
+
+
+# local test-setup extending
+print_debug "Data preparation starting"
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+# shortcut for s3cmd
+S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
+
+# create files to test the temporary-file and the stream-download path
+prefetch_size=$(( $(grep prefetch_size etc/libcloud_config.ini | cut -d '=' -f 2) ))
+
+#backup via temp file
+dd if=/dev/random \
+  of="${tmp}/data/object-size-downloads-to-temporary-file" \
+  bs=$(( prefetch_size -1 )) count=1
+
+#backup via stream object using the plugin process itself
+dd if=/dev/random \
+  of="${tmp}/data/object-size-downloads-with-plugin-process" \
+  bs=$(( prefetch_size +1 )) count=1
+
+"${rscripts}"/start_minio.sh "$MINIO_PORT" "$TestName"
+
+# create s3 content for test
+${S3} rb --recursive --force s3://$bucket_name || echo "s3://$bucket_name does not exist"
+${S3} mb s3://$bucket_name
+print_debug "s3 ready for operation"
+
+# this test does not work with links and some other weird files as they would already
+# have a changed name by syncing to S3 using s3cmd
+find ${tmp}/data/weird-files -type l -exec rm {} \;
+find ${tmp}/data/weird-files -links +1 -type f -exec rm {} \;
+rm ${tmp}/data/weird-files/fifo*
+rm ${tmp}/data/weird-files/newline*
+rm ${tmp}/data/weird-files/tab*
+# the following file also makes problems
+rm ${tmp}/data/weird-files/filename-with-non-utf8-bytestring*
+
+# s3cmd does not sync empty dirs, but you can create them by placing
+# into them an empty dummy file with same name
+# Most end-user expect to be able to restore those empty dirs.
+rmdir ${tmp}/data/weird-files/big-X
+rmdir ${tmp}/data/weird-files/subdir
+mkdir -p ${tmp}/data/empty_subdir/
+touch ${tmp}/data/empty_subdir/empty_subdir
+${S3} sync "${BackupDirectory}" s3://${bucket_name}
+# create directly an empty directory in the s3 (would be a plus) but
+# unfortunately doesn't work
+# ${S3} put remote_empty s3://${bucket_name}/remote_empty/
+
+print_debug "Data preparation done"

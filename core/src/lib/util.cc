@@ -361,98 +361,88 @@ bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds)
 }
 
 // Convert a JobStatus code into a human readable form
-void JobstatusToAscii(int JobStatus, char* msg, int maxlen)
+std::string JobstatusToAscii(int JobStatus)
 {
-  const char* jobstat;
-  char buf[100];
-
   switch (JobStatus) {
     case JS_Created:
-      jobstat = _("Created");
-      break;
+      return "Created";
+
     case JS_Running:
-      jobstat = _("Running");
-      break;
+      return "Running";
+
     case JS_Blocked:
-      jobstat = _("Blocked");
-      break;
+      return "Blocked";
+
     case JS_Terminated:
-      jobstat = _("OK");
-      break;
+      return "OK";
+
     case JS_Incomplete:
-      jobstat = _("Error: incomplete job");
-      break;
+      return "Error: incomplete job";
+
     case JS_FatalError:
-      jobstat = _("Fatal Error");
-      break;
+      return "Fatal Error";
+
     case JS_ErrorTerminated:
-      jobstat = _("Error");
-      break;
+      return "Error";
+
     case JS_Error:
-      jobstat = _("Non-fatal error");
-      break;
+      return "Non-fatal error";
+
     case JS_Warnings:
-      jobstat = _("OK -- with warnings");
-      break;
+      return "OK -- with warnings";
+
     case JS_Canceled:
-      jobstat = _("Canceled");
-      break;
+      return "Canceled";
+
     case JS_Differences:
-      jobstat = _("Verify differences");
-      break;
+      return "Verify differences";
+
     case JS_WaitFD:
-      jobstat = _("Waiting on FD");
-      break;
+      return "Waiting on FD";
+
     case JS_WaitSD:
-      jobstat = _("Wait on SD");
-      break;
+      return "Wait on SD";
+
     case JS_WaitMedia:
-      jobstat = _("Wait for new Volume");
-      break;
+      return "Wait for new Volume";
+
     case JS_WaitMount:
-      jobstat = _("Waiting for mount");
-      break;
+      return "Waiting for mount";
+
     case JS_WaitStoreRes:
-      jobstat = _("Waiting for Storage resource");
-      break;
+      return "Waiting for Storage resource";
+
     case JS_WaitJobRes:
-      jobstat = _("Waiting for Job resource");
-      break;
+      return "Waiting for Job resource";
+
     case JS_WaitClientRes:
-      jobstat = _("Waiting for Client resource");
-      break;
+      return "Waiting for Client resource";
+
     case JS_WaitMaxJobs:
-      jobstat = _("Waiting on Max Jobs");
-      break;
+      return "Waiting on Max Jobs";
+
     case JS_WaitStartTime:
-      jobstat = _("Waiting for Start Time");
-      break;
+      return "Waiting for Start Time";
+
     case JS_WaitPriority:
-      jobstat = _("Waiting on Priority");
-      break;
+      return "Waiting on Priority";
+
     case JS_DataCommitting:
-      jobstat = _("SD committing Data");
-      break;
+      return "SD committing Data";
+
     case JS_DataDespooling:
-      jobstat = _("SD despooling Data");
-      break;
+      return "SD despooling Data";
+
     case JS_AttrDespooling:
-      jobstat = _("SD despooling Attributes");
-      break;
+      return "SD despooling Attributes";
+
     case JS_AttrInserting:
-      jobstat = _("Dir inserting Attributes");
-      break;
+      return "Dir inserting Attributes";
+    case 0:
+      return "";
     default:
-      if (JobStatus == 0) {
-        buf[0] = 0;
-      } else {
-        Bsnprintf(buf, sizeof(buf), _("Unknown Job termination status=%d"),
-                  JobStatus);
-      }
-      jobstat = buf;
-      break;
+      return "Unknown Job termination status=" + std::to_string(JobStatus);
   }
-  bstrncpy(msg, jobstat, maxlen);
 }
 
 // Convert Job Termination Status into a string
@@ -462,26 +452,26 @@ const char* job_status_to_str(int stat)
 
   switch (stat) {
     case JS_Terminated:
-      str = _("OK");
+      str = T_("OK");
       break;
     case JS_Warnings:
-      str = _("OK -- with warnings");
+      str = T_("OK -- with warnings");
       break;
     case JS_ErrorTerminated:
     case JS_Error:
-      str = _("Error");
+      str = T_("Error");
       break;
     case JS_FatalError:
-      str = _("Fatal Error");
+      str = T_("Fatal Error");
       break;
     case JS_Canceled:
-      str = _("Canceled");
+      str = T_("Canceled");
       break;
     case JS_Differences:
-      str = _("Differences");
+      str = T_("Differences");
       break;
     default:
-      str = _("Unknown term code");
+      str = T_("Unknown term code");
       break;
   }
   return str;
@@ -494,46 +484,46 @@ const char* job_type_to_str(int type)
 
   switch (type) {
     case JT_BACKUP:
-      str = _("Backup");
+      str = T_("Backup");
       break;
     case JT_MIGRATED_JOB:
-      str = _("Migrated Job");
+      str = T_("Migrated Job");
       break;
     case JT_VERIFY:
-      str = _("Verify");
+      str = T_("Verify");
       break;
     case JT_RESTORE:
-      str = _("Restore");
+      str = T_("Restore");
       break;
     case JT_CONSOLE:
-      str = _("Console");
+      str = T_("Console");
       break;
     case JT_SYSTEM:
-      str = _("System or Console");
+      str = T_("System or Console");
       break;
     case JT_ADMIN:
-      str = _("Admin");
+      str = T_("Admin");
       break;
     case JT_ARCHIVE:
-      str = _("Archive");
+      str = T_("Archive");
       break;
     case JT_JOB_COPY:
-      str = _("Job Copy");
+      str = T_("Job Copy");
       break;
     case JT_COPY:
-      str = _("Copy");
+      str = T_("Copy");
       break;
     case JT_MIGRATE:
-      str = _("Migrate");
+      str = T_("Migrate");
       break;
     case JT_SCAN:
-      str = _("Scan");
+      str = T_("Scan");
       break;
     case JT_CONSOLIDATE:
-      str = _("Consolidate");
+      str = T_("Consolidate");
       break;
   }
-  if (!str) { str = _("Unknown Type"); }
+  if (!str) { str = T_("Unknown Type"); }
   return str;
 }
 
@@ -542,19 +532,19 @@ const char* job_replace_to_str(int replace)
   const char* str = NULL;
   switch (replace) {
     case REPLACE_ALWAYS:
-      str = _("always");
+      str = T_("always");
       break;
     case REPLACE_IFNEWER:
-      str = _("ifnewer");
+      str = T_("ifnewer");
       break;
     case REPLACE_IFOLDER:
-      str = _("ifolder");
+      str = T_("ifolder");
       break;
     case REPLACE_NEVER:
-      str = _("never");
+      str = T_("never");
       break;
     default:
-      str = _("Unknown Replace");
+      str = T_("Unknown Replace");
       break;
   }
   return str;
@@ -563,8 +553,8 @@ const char* job_replace_to_str(int replace)
 // Convert ActionOnPurge to string (Truncate, Erase, Destroy)
 char* action_on_purge_to_string(int aop, PoolMem& ret)
 {
-  if (aop & ON_PURGE_TRUNCATE) { PmStrcpy(ret, _("Truncate")); }
-  if (!aop) { PmStrcpy(ret, _("None")); }
+  if (aop & ON_PURGE_TRUNCATE) { PmStrcpy(ret, T_("Truncate")); }
+  if (!aop) { PmStrcpy(ret, T_("None")); }
   return ret.c_str();
 }
 
@@ -575,43 +565,43 @@ const char* job_level_to_str(int level)
 
   switch (level) {
     case L_BASE:
-      str = _("Base");
+      str = T_("Base");
       break;
     case L_FULL:
-      str = _("Full");
+      str = T_("Full");
       break;
     case L_INCREMENTAL:
-      str = _("Incremental");
+      str = T_("Incremental");
       break;
     case L_DIFFERENTIAL:
-      str = _("Differential");
+      str = T_("Differential");
       break;
     case L_SINCE:
-      str = _("Since");
+      str = T_("Since");
       break;
     case L_VERIFY_CATALOG:
-      str = _("Verify Catalog");
+      str = T_("Verify Catalog");
       break;
     case L_VERIFY_INIT:
-      str = _("Verify Init Catalog");
+      str = T_("Verify Init Catalog");
       break;
     case L_VERIFY_VOLUME_TO_CATALOG:
-      str = _("Verify Volume to Catalog");
+      str = T_("Verify Volume to Catalog");
       break;
     case L_VERIFY_DISK_TO_CATALOG:
-      str = _("Verify Disk to Catalog");
+      str = T_("Verify Disk to Catalog");
       break;
     case L_VERIFY_DATA:
-      str = _("Verify Data");
+      str = T_("Verify Data");
       break;
     case L_VIRTUAL_FULL:
-      str = _("Virtual Full");
+      str = T_("Virtual Full");
       break;
     case L_NONE:
       str = " ";
       break;
     default:
-      str = _("Unknown Job Level");
+      str = T_("Unknown Job Level");
       break;
   }
   return str;
@@ -834,14 +824,14 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
                       edit_uint64_with_suffix(jcr->JobBytes, ed1));
             str = add;
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'F': /* Job Files */
           if (jcr) {
             str = edit_uint64(jcr->JobFiles, add);
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'P': /* Process Id */
@@ -852,14 +842,14 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           if (jcr) {
             str = edit_uint64(jcr->JobBytes, add);
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'c': /* Client's name */
           if (jcr && jcr->client_name) {
             str = jcr->client_name;
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'd': /* Director's name */
@@ -869,7 +859,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           if (jcr) {
             str = job_status_to_str(jcr->getJobStatus());
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'i': /* JobId */
@@ -877,21 +867,21 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
             Bsnprintf(add, sizeof(add), "%d", jcr->JobId);
             str = add;
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'j': /* Job name */
           if (jcr) {
             str = jcr->Job;
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'l': /* Job level */
           if (jcr) {
             str = job_level_to_str(jcr->getJobLevel());
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'n': /* Unadorned Job name */
@@ -903,7 +893,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
             }
             str = name;
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'r': /* Recipients */
@@ -913,14 +903,14 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           if (jcr && jcr->starttime_string) {
             str = jcr->starttime_string;
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 't': /* Job type */
           if (jcr) {
             str = job_type_to_str(jcr->getJobType());
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         case 'v': /* Volume name(s) */
@@ -928,15 +918,21 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
             if (jcr->VolumeName) {
               str = jcr->VolumeName;
             } else {
-              str = _("*None*");
+              str = T_("*None*");
             }
           } else {
-            str = _("*None*");
+            str = T_("*None*");
           }
           break;
         default:
           str = NULL;
-          if (callback != NULL) { str = callback(jcr, p); }
+          if (callback != NULL) {
+            auto callback_result = callback(jcr, p);
+            if (callback_result) {
+              snprintf(add, sizeof(add), "%s", callback_result->c_str());
+              str = add;
+            }
+          }
 
           if (!str) {
             add[0] = '%';
@@ -965,16 +961,17 @@ void SetWorkingDirectory(const char* wd)
 
   if (wd == NULL) {
     Emsg0(M_ERROR_TERM, 0,
-          _("Working directory not defined. Cannot continue.\n"));
+          T_("Working directory not defined. Cannot continue.\n"));
   }
   if (stat(wd, &stat_buf) != 0) {
     Emsg1(M_ERROR_TERM, 0,
-          _("Working Directory: \"%s\" not found. Cannot continue.\n"), wd);
+          T_("Working Directory: \"%s\" not found. Cannot continue.\n"), wd);
   }
   if (!S_ISDIR(stat_buf.st_mode)) {
-    Emsg1(M_ERROR_TERM, 0,
-          _("Working Directory: \"%s\" is not a directory. Cannot continue.\n"),
-          wd);
+    Emsg1(
+        M_ERROR_TERM, 0,
+        T_("Working Directory: \"%s\" is not a directory. Cannot continue.\n"),
+        wd);
   }
   working_directory = wd; /* set global */
 }

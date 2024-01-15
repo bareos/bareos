@@ -78,7 +78,7 @@ Paragraphs
 ----------
 
 The paragraph is the most basic block in a reST document.  Paragraphs are simply
-chunks of text seperated by one or more blank lines.  As in Python, indentation
+chunks of text separated by one or more blank lines.  As in Python, indentation
 is significant in reST, so all lines of the same paragraph must be left-aligned
 to the same level of indentation.
 
@@ -101,7 +101,7 @@ Be aware of some restrictions of this markup:
 
 * it may not be nested,
 * content may not start or end with whitespace: ``* text*`` is wrong,
-* it must be seperated from surrounding text by non-word characters.  Use a
+* it must be separated from surrounding text by non-word characters.  Use a
   backslash escaped space to work around that: ``thisis\ *one*\ word``.
 
 These restrictions may be lifted in future versions of the docutils.
@@ -130,7 +130,7 @@ automatically numbered using a ``#`` sign::
    #. It has two items too.
 
 
-Nested lists are possible, but be aware that they must be seperated from the
+Nested lists are possible, but be aware that they must be separated from the
 parent list items by blank lines::
 
    * this is
@@ -230,7 +230,7 @@ Valid values for the highlighting language are:
   * ... and any other `lexer alias that Pygments supports
     <https://pygments.org/docs/lexers/>`_.
 
-If the text resides in a seperate file, use::
+If the text resides in a separate file, use::
 
    .. literalinclude:: /include/config/backup-client1.cfg
       :language: bareosconfig

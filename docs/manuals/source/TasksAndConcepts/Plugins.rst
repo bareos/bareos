@@ -35,27 +35,23 @@ This Python plugin can be configured via the usual plugin configuration mechanis
 which python files to load. The python files then implement the plugin
 functionality.
 
-Examples for such Python Plugins are the VMware Python Plugin or the oVirt Python Plugin.
+An example for such Python Plugins is the VMware Python Plugin.
 
-With Bareos :sinceVersion:`20: Python API`,
-the Bareos Python API was refactored and adapted
-to support both Python version *2* and Python version *3*,
-where the **python-** prefix means that the plugin supports
-Python 2
-and the **python3-** prefix supports Python 3.
+With Bareos :sinceVersion:`23: Python API`,
+the support of Python version *2* (which is end-of-life since Jan 1 2020) was removed.
 
-The following six plugins exist:
+The following plugins exist:
 
 .. table:: Bareos Python plugins
    :widths: auto
 
-   ===============  =========== ============
-    Python Version  Python 2    Python 3
-   ===============  =========== ============
-    |fd|            python-fd   python3-fd
-    |sd|            python-sd   python3-sd
-    |dir|           python-dir  python3-dir
-   ===============  =========== ============
+   ===============  ============
+    Python Version  Python 3
+   ===============  ============
+    |fd|            python3-fd
+    |sd|            python3-sd
+    |dir|           python3-dir
+   ===============  ============
 
 For implementation details see :ref:`section-Python Plugin API`.
 
@@ -66,10 +62,6 @@ Switching to use the Python 3 plugin, the following needs to be changed:
 
   * Set `Plugin Names = "python3"` to make sure the Python3 plugin is loaded.
   * Adapt the Plugin setting in the fileset to use Python3: `Plugin = "python3:module_name=..."`
-
-.. warning::
-
-   It is not possible to load the python2 and python3 plugins at the same time.
 
 
 Recovering old backups

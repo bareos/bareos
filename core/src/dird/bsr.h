@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,8 +102,8 @@ bool SendBootstrapFile(JobControlRecord* jcr,
                        bootstrap_info& info);
 void CloseBootstrapFile(bootstrap_info& info);
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
-                      int32_t FirstIndex,
-                      int32_t LastIndex,
+                      uint32_t& FirstIndex,
+                      uint32_t& LastIndex,
                       std::string& buffer);
 
 } /* namespace directordaemon */

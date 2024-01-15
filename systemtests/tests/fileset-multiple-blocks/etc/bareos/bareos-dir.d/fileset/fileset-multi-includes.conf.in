@@ -2,28 +2,28 @@ FileSet {
   Name = "fileset-multi-includes"
   Include {
      Options {
-        signature = MD5
+        Signature = XXH128
      }
      File=@tmpdir@/data-multi-includes/data1
   }
   Include {
      Options {
-        signature = MD5
-        compression = GZIP
+        Signature = XXH128
+        Compression = GZIP
      }
      File=@tmpdir@/data-multi-includes/data2
   }
   Include {
      Options {
-        signature = MD5
-        compression = GZIP9
+        Signature = XXH128
+        Compression = GZIP9
      }
      File=@tmpdir@/data-multi-includes/data3
   }
   Include {
      Options {
-        signature = MD5
-        compression = LZ4
+        Signature = XXH128
+        Compression = LZ4
      }
      File=@tmpdir@/data-multi-includes/data4
   }

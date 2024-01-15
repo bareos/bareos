@@ -41,6 +41,7 @@
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
 #include "lib/crypto.h"
+#include "include/exit_codes.h"
 
 ConfigurationParser* my_config = nullptr;
 
@@ -171,12 +172,12 @@ int main(int argc, char* argv[])
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
     fflush(stdout);
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   // read the config file
-  my_config = InitTmonConfig(cl.configfile_, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitTmonConfig(cl.configfile_, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (cl.export_config_) {
     my_config->DumpResources(PrintMessage, NULL);
@@ -184,7 +185,7 @@ int main(int argc, char* argv[])
   }
 
   if (InitCrypto() != 0) {
-    Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("Cryptography library initialization failed.\n"));
   }
 
   if (cl.do_connection_test_only_) {

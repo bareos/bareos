@@ -80,7 +80,7 @@ static inline bool ValidateClient(JobControlRecord* jcr)
       return true;
     default:
       Jmsg(jcr, M_FATAL, 0,
-           _("Client %s has illegal backup protocol %s for Native backup\n"),
+           T_("Client %s has illegal backup protocol %s for Native backup\n"),
            jcr->dir_impl->res.client->resource_name_,
            AuthenticationProtocolTypeToString(
                jcr->dir_impl->res.client->Protocol));
@@ -139,10 +139,11 @@ static inline bool ValidateStorage(JobControlRecord* jcr)
       case APT_NATIVE:
         continue;
       default:
-        Jmsg(jcr, M_FATAL, 0,
-             _("Storage %s has illegal backup protocol %s for Native backup\n"),
-             store->resource_name_,
-             AuthenticationProtocolTypeToString(store->Protocol));
+        Jmsg(
+            jcr, M_FATAL, 0,
+            T_("Storage %s has illegal backup protocol %s for Native backup\n"),
+            store->resource_name_,
+            AuthenticationProtocolTypeToString(store->Protocol));
         return false;
     }
   }
@@ -161,10 +162,10 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
   if (jcr->dir_impl->jr.PoolId == 0) { return false; }
 
   // If pool storage specified, use it instead of job storage
-  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, _("Pool resource"));
+  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, T_("Pool resource"));
   if (!jcr->dir_impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
-         _("No Storage specification found in Job or Pool.\n"));
+         T_("No Storage specification found in Job or Pool.\n"));
     return false;
   }
 
@@ -307,7 +308,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
     // On Full mode, if no previous base job, no accurate things
     if (GetBaseJobids(jcr, &jobids)) {
       jcr->HasBase = true;
-      Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Using BaseJobId(s): %s\n"),
            jobids.GetAsString().c_str());
     } else {
       return true;
@@ -318,7 +319,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 
     // We are in Incr/Diff, but no Full to build the accurate list...
     if (jobids.empty()) {
-      Jmsg(jcr, M_FATAL, 0, _("Cannot find previous jobids.\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("Cannot find previous jobids.\n"));
       return false; /* fail */
     }
   }
@@ -326,7 +327,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   // Don't send and store the checksum if fileset doesn't require it
   jcr->dir_impl->use_accurate_chksum = IsChecksumNeededByFileset(jcr);
   if (jcr->JobId) { /* display the message only for real jobs */
-    Jmsg(jcr, M_INFO, 0, _("Sending Accurate information.\n"));
+    Jmsg(jcr, M_INFO, 0, T_("Sending Accurate information.\n"));
   }
 
   // To be able to allocate the right size for htable
@@ -474,7 +475,7 @@ static bool ConfigureMessageThread(JobControlRecord* jcr)
  */
 bool DoNativeBackup(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %llu, Job=%s\n"), jcr->JobId,
+  Jmsg(jcr, M_INFO, 0, T_("Start Backup JobId %llu, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
@@ -486,14 +487,14 @@ bool DoNativeBackup(JobControlRecord* jcr)
   }
 
   if (CheckHardquotas(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, _("Quota Exceeded. Job terminated.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("Quota Exceeded. Job terminated.\n"));
     return false;
   }
 
   if (CheckSoftquotas(jcr)) {
     Dmsg0(10, "Quota exceeded\n");
     Jmsg(jcr, M_FATAL, 0,
-         _("Soft Quota exceeded / Grace Time expired. Job terminated.\n"));
+         T_("Soft Quota exceeded / Grace Time expired. Job terminated.\n"));
     return false;
   }
 
@@ -519,8 +520,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
   if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Client \"%s\" doesn't support passive client mode. "
-           "Please upgrade your client or disable compat mode.\n"),
+         T_("Client \"%s\" doesn't support passive client mode. "
+            "Please upgrade your client or disable compat mode.\n"),
          jcr->dir_impl->res.client->resource_name_);
     CloseFdConnection(jcr);
     TerminateBackupWithError(jcr);
@@ -663,7 +664,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
         jcr->setJobStatusWithPriorityCheck(jcr->dir_impl->FDJobStatus);
         Dmsg1(100, "FDStatus=%c\n", (char)jcr->getJobStatus());
       } else {
-        Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Job message: %s\n"),
+        Jmsg(jcr, M_WARNING, 0, T_("Unexpected Client Job message: %s\n"),
              fd->msg);
       }
       if (jcr->IsJobCanceled()) { break; }
@@ -672,7 +673,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
 
     if (IsBnetError(fd)) {
       int i = 0;
-      Jmsg(jcr, M_FATAL, 0, _("Network error with FD during %s: ERR=%s\n"),
+      Jmsg(jcr, M_FATAL, 0, T_("Network error with FD during %s: ERR=%s\n"),
            job_type_to_str(jcr->getJobType()), fd->bstrerror());
       while (i++ < 10 && jcr->dir_impl->res.job->RescheduleIncompleteJobs
              && jcr->IsJobCanceled()) {
@@ -708,7 +709,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
     jcr->dir_impl->VSS = VSS;
     jcr->dir_impl->Encrypt = Encrypt;
   } else {
-    Jmsg(jcr, M_FATAL, 0, _("No Job status returned from FD.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("No Job status returned from FD.\n"));
   }
 
   // Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok,
@@ -745,7 +746,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s\n"),
+         T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -753,7 +754,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Client record for Job report: ERR=%s\n"),
+         T_("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());
   }
 
@@ -761,17 +762,17 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
-      TermMsg = _("Backup OK");
+      TermMsg = T_("Backup OK");
       break;
     case JS_Incomplete:
-      TermMsg = _("Backup failed -- incomplete");
+      TermMsg = T_("Backup failed -- incomplete");
       break;
     case JS_Warnings:
-      TermMsg = _("Backup OK -- with warnings");
+      TermMsg = T_("Backup OK -- with warnings");
       break;
     case JS_FatalError:
     case JS_ErrorTerminated:
-      TermMsg = _("*** Backup Error ***");
+      TermMsg = T_("*** Backup Error ***");
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
@@ -781,7 +782,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
       }
       break;
     case JS_Canceled:
-      TermMsg = _("Backup Canceled");
+      TermMsg = T_("Backup Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
         if (jcr->dir_impl->SD_msg_chan_started) {
@@ -791,7 +792,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"),
+      sprintf(term_code, T_("Inappropriate term code: %c\n"),
               jcr->getJobStatus());
       break;
   }
@@ -828,8 +829,8 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
       VolCount = jcr->db->GetJobVolumeParameters(jcr, jcr->JobId, &VolParams);
       if (VolCount == 0) {
         Jmsg(jcr, M_ERROR, 0,
-             _("Could not get Job Volume Parameters to "
-               "update Bootstrap file. ERR=%s\n"),
+             T_("Could not get Job Volume Parameters to "
+                "update Bootstrap file. ERR=%s\n"),
              jcr->db->strerror());
         if (jcr->dir_impl->SDJobFiles != 0) {
           jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -859,8 +860,8 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         if (status) {
           BErrNo err;
           Jmsg(jcr, M_ERROR, 0,
-               _("Error running program when updating bootstrap file: "
-                 "%s: ERR=%s\n"),
+               T_("Error running program when updating bootstrap file: "
+                  "%s: ERR=%s\n"),
                fname, err.bstrerror(status));
           jcr->setJobStatus(JS_ErrorTerminated);
         }
@@ -870,8 +871,8 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
     } else {
       BErrNo be;
       Jmsg(jcr, M_ERROR, 0,
-           _("Could not open WriteBootstrap file:\n"
-             "%s: ERR=%s\n"),
+           T_("Could not open WriteBootstrap file:\n"
+              "%s: ERR=%s\n"),
            fname, be.bstrerror());
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     }
@@ -893,8 +894,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    char sdt[50], edt[50], schedt[50], gdt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], compress[50];
    char ec6[30], ec7[30], ec8[30], elapsed[50];
-   char fd_term_msg[100], sd_term_msg[100];
-   double kbps, compression;
+   double kbps;
    utime_t RunTime;
    MediaDbRecord mr;
    PoolMem temp,
@@ -941,32 +941,34 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       }
       bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
       if (!jcr->db->GetMediaRecord(jcr, &mr)) {
-         Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s\n"),
+         Jmsg(jcr, M_WARNING, 0, T_("Error getting Media record for Volume \"%s\": ERR=%s\n"),
               mr.VolumeName, jcr->db->strerror());
       }
    }
 
-   if (jcr->ReadBytes == 0) {
+   if (jcr->ReadBytes == 0 || !FindUsedCompressalgos(&compress_algo_list, jcr)) {
+     // compress_algo_list is guaranteed to be emtpy
       bstrncpy(compress, "None", sizeof(compress));
    } else {
-      compression = (double)100 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
-      if (compression < 0.5) {
-         bstrncpy(compress, "None", sizeof(compress));
-      } else {
-         Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
-         FindUsedCompressalgos(&compress_algo_list, jcr);
-      }
+     double compression = 100.0 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
+     if (compression < -1 && jcr->is_JobLevel(L_FULL)) {
+       Jmsg(jcr, M_INFO, 0,
+	    T_("Compression inflated the full backup data by more than 1%%."
+	       " We suggest to use a different algorithm or to disable "
+	       "compression.\n"));
+     }
+     Bsnprintf(compress, sizeof(compress), "%.1f %%", compression);
    }
 
-   JobstatusToAscii(jcr->dir_impl->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
-   JobstatusToAscii(jcr->dir_impl->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
+   std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
+   std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
 
    switch (jcr->getJobProtocol()) {
    case PT_NDMP_BAREOS:
-      Mmsg(level_info, _(
+      Mmsg(level_info, T_(
            "  Backup Level:           %s%s\n"),
            JobLevelToString(jcr->getJobLevel()), jcr->dir_impl->since);
-      Mmsg(statistics, _(
+      Mmsg(statistics, T_(
            "  NDMP Files Written:     %s\n"
            "  SD Files Written:       %s\n"
            "  NDMP Bytes Written:     %s (%sB)\n"
@@ -979,10 +981,10 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
            edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec6));
       break;
    case PT_NDMP_NATIVE:
-      Mmsg(level_info, _(
+      Mmsg(level_info, T_(
            "  Backup Level:           %s%s\n"),
            JobLevelToString(jcr->getJobLevel()), jcr->dir_impl->since);
-      Mmsg(statistics, _(
+      Mmsg(statistics, T_(
            "  NDMP Files Written:     %s\n"
            "  NDMP Bytes Written:     %s (%sB)\n"),
            edit_uint64_with_commas(jcr->dir_impl->jr.JobFiles, ec1),
@@ -991,19 +993,19 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       break;
    default:
       if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-         Mmsg(level_info, _(
+         Mmsg(level_info, T_(
               "  Backup Level:           Virtual Full\n"));
-         Mmsg(statistics, _(
+         Mmsg(statistics, T_(
               "  SD Files Written:       %s\n"
               "  SD Bytes Written:       %s (%sB)\n"),
               edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec2),
               edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec5),
               edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec6));
       } else {
-         Mmsg(level_info, _(
+         Mmsg(level_info, T_(
               "  Backup Level:           %s%s\n"),
               JobLevelToString(jcr->getJobLevel()), jcr->dir_impl->since);
-         Mmsg(statistics, _(
+         Mmsg(statistics, T_(
               "  FD Files Written:       %s\n"
               "  SD Files Written:       %s\n"
               "  FD Bytes Written:       %s (%sB)\n"
@@ -1025,7 +1027,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       } else {
          bstrncpy(gdt, "Soft Quota not exceeded", sizeof(gdt));
       }
-      Mmsg(quota_info, _(
+      Mmsg(quota_info, T_(
            "  Quota Used:             %s (%sB)\n"
            "  Burst Quota:            %s (%sB)\n"
            "  Soft Quota:             %s (%sB)\n"
@@ -1048,16 +1050,16 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       break;
    default:
       if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-         Mmsg(daemon_status, _(
+         Mmsg(daemon_status, T_(
               "  SD Errors:              %d\n"
               "  SD termination status:  %s\n"
               "  Accurate:               %s\n"),
            jcr->dir_impl->SDErrors,
-           sd_term_msg,
-           jcr->accurate ? _("yes") : _("no"));
+           sd_term_msg.c_str(),
+           jcr->accurate ? T_("yes") : T_("no"));
       } else {
          if (jcr->HasBase) {
-            Mmsg(client_options, _(
+            Mmsg(client_options, T_(
                  "  Software Compression:   %s%s\n"
                  "  Base files/Used files:  %lld/%lld (%.2f%%)\n"
                  "  VSS:                    %s\n"
@@ -1068,31 +1070,31 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
                  jcr->nb_base_files,
                  jcr->nb_base_files_used,
                  jcr->nb_base_files_used * 100.0 / jcr->nb_base_files,
-                 jcr->dir_impl->VSS ? _("yes") : _("no"),
-                 jcr->dir_impl->Encrypt ? _("yes") : _("no"),
-                 jcr->accurate ? _("yes") : _("no"));
+                 jcr->dir_impl->VSS ? T_("yes") : T_("no"),
+                 jcr->dir_impl->Encrypt ? T_("yes") : T_("no"),
+                 jcr->accurate ? T_("yes") : T_("no"));
          } else {
-            Mmsg(client_options, _(
+            Mmsg(client_options, T_(
                  "  Software Compression:   %s%s\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
                  "  Accurate:               %s\n"),
                  compress,
                  compress_algo_list.c_str(),
-                 jcr->dir_impl->VSS ? _("yes") : _("no"),
-                 jcr->dir_impl->Encrypt ? _("yes") : _("no"),
-                 jcr->accurate ? _("yes") : _("no"));
+                 jcr->dir_impl->VSS ? T_("yes") : T_("no"),
+                 jcr->dir_impl->Encrypt ? T_("yes") : T_("no"),
+                 jcr->accurate ? T_("yes") : T_("no"));
          }
 
-         Mmsg(daemon_status, _(
+         Mmsg(daemon_status, T_(
               "  Non-fatal FD errors:    %d\n"
               "  SD Errors:              %d\n"
               "  FD termination status:  %s\n"
               "  SD termination status:  %s\n"),
            jcr->JobErrors,
            jcr->dir_impl->SDErrors,
-           fd_term_msg,
-           sd_term_msg);
+           fd_term_msg.c_str(),
+           sd_term_msg.c_str());
 
          if (me->secure_erase_cmdline) {
             Mmsg(temp,"  Dir Secure Erase Cmd:   %s\n", me->secure_erase_cmdline);
@@ -1112,7 +1114,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
 
 // Bmicrosleep(15, 0);                /* for debugging SIGHUP */
 
-   Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
+   Jmsg(jcr, msg_type, 0, T_("%s %s %s (%s):\n"
         "  Build OS:               %s\n"
         "  JobId:                  %d\n"
         "  Job:                    %s\n"
@@ -1127,6 +1129,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "  End time:               %s\n"
         "  Elapsed time:           %s\n"
         "  Priority:               %d\n"
+        "  Allow Mixed Priority:   %s\n"
         "%s"                                         /* FD/SD Statistics */
         "%s"                                         /* Quota info */
         "  Rate:                   %.1f KB/s\n"
@@ -1155,6 +1158,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         edt,
         edit_utime(RunTime, elapsed, sizeof(elapsed)),
         jcr->JobPriority,
+        jcr->allow_mixed_priority ? "yes" : "no",
         statistics.c_str(),
         quota_info.c_str(),
         kbps,

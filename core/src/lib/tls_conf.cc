@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,17 +22,13 @@
 #include "include/bareos.h"
 #include "lib/tls_conf.h"
 
-bool TlsResource::IsTlsConfigured() const
-{
-  return tls_enable_ || tls_require_;
-}
+bool TlsResource::IsTlsConfigured() const { return tls_enable_; }
 
 TlsPolicy TlsResource::GetPolicy() const
 {
-  TlsPolicy result = TlsPolicy::kBnetTlsNone;
-  if (tls_enable_) { result = TlsPolicy::kBnetTlsEnabled; }
-  if (tls_require_) { result = TlsPolicy::kBnetTlsRequired; }
-  return result;
+  if (!tls_enable_) { return TlsPolicy::kBnetTlsNone; }
+  if (!tls_require_) { return TlsPolicy::kBnetTlsEnabled; }
+  return TlsPolicy::kBnetTlsRequired;
 }
 
 int TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const

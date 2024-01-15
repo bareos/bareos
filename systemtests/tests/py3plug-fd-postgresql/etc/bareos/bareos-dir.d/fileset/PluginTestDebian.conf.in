@@ -1,0 +1,16 @@
+FileSet {
+  Name = "PluginTestDebian"
+  Description = "Test the Python Plugin functionality on Debian "
+  Include {
+    Options {
+      signature = XXH128
+    }
+    Plugin = "@python_module_name@"
+             ":module_path=@current_test_directory@/python-modules"
+             ":module_name=bareos-fd-postgresql"
+             ":db_host=/run/postgresql/"
+             ":db_port=5433"
+             ":wal_archive_dir=/var/tmp/postgresql/wal_archives"
+             ":start_fast=True"
+  }
+}

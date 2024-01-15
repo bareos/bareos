@@ -3,7 +3,7 @@
 #
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -34,12 +34,14 @@ else
     export PYTHONPATH=${CMAKE_SOURCE_DIR}/restapi/
 fi
 
+LSOF_CMD="lsof -n -iTCP:$REST_API_PORT -sTCP:LISTEN"
+
 start()
 {
     printf "Starting bareos-restapi: "
-
-    if lsof -i:$REST_API_PORT >/dev/null; then
-        printf " FAILED (port $REST_API_PORT already in use)\n"
+    if LSOF=$(${LSOF_CMD}); then
+        printf " FAILED: port $REST_API_PORT already in use\n"
+        printf " %s\n" "${LSOF}"
         exit 1
     fi
 
@@ -84,16 +86,16 @@ status()
   printf "bareos-restapi: "
   if ! lsof -i:$REST_API_PORT >/dev/null; then
     printf "not running\n"
-    exit 1
+    return 1
   fi
-  PORTPID=$(lsof -t -i:$REST_API_PORT)
+  PORTPID=$(${LSOF_CMD} -t)
   PID=$(cat api.pid)
   if [ "$PORTPID" != "$PID" ]; then
     printf "running with unexpected PID (expected PID=$PID, running PID=$PORTPID)\n"
-    exit 1
+    return 1
   fi
   printf "running (PORT=${REST_API_PORT}, PID=$PID)\n"
-  exit 0
+  return 0
 }
 
 case "$1" in
@@ -111,8 +113,19 @@ case "$1" in
       start
       ;;
 
+  forcestart)
+      status || true
+      stop >/dev/null 2>&1 || true
+      if PID=$(${LSOF_CMD} -t); then
+        kill $PID
+        sleep 1
+      fi
+      start
+      ;;
+
    status)
       status
+      exit $?
       ;;
 
    *)

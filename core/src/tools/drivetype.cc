@@ -29,6 +29,7 @@
 #include <unistd.h>
 #endif
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "findlib/find.h"
 #include "findlib/drivetype.h"
 
@@ -36,28 +37,28 @@
 char* optarg {};
 #endif
 
-static void usage()
+static void usage(int exit_code)
 {
   fprintf(stderr,
-          _("\n"
-            "Usage: Drivetype [-v] path ...\n"
-            "\n"
-            "       Print the drive type a given file/directory is on.\n"
-            "       The following options are supported:\n"
-            "\n"
-            "       -l     print local fixed hard drive\n"
-            "       -a     display information on all drives\n"
-            "       -v     print both path and file system type.\n"
-            "       -?     print this message.\n"
-            "\n"));
+          T_("\n"
+             "Usage: Drivetype [-v] path ...\n"
+             "\n"
+             "       Print the drive type a given file/directory is on.\n"
+             "       The following options are supported:\n"
+             "\n"
+             "       -l     print local fixed hard drive\n"
+             "       -a     display information on all drives\n"
+             "       -v     print both path and file system type.\n"
+             "       -?     print this message.\n"
+             "\n"));
 
-  exit(1);
+  exit(exit_code);
 }
 
 int DisplayDrive(char* drive, bool display_local, int verbose)
 {
   char dt[100];
-  int status = 0;
+  int status = BEXIT_SUCCESS;
 
   if (Drivetype(drive, dt, sizeof(dt))) {
     if (display_local) { /* in local mode, display only harddrive */
@@ -68,8 +69,8 @@ int DisplayDrive(char* drive, bool display_local, int verbose)
       puts(dt);
     }
   } else if (!display_local) { /* local mode is used by FileSet scripts */
-    fprintf(stderr, _("%s: unknown\n"), drive);
-    status = 1;
+    fprintf(stderr, T_("%s: unknown\n"), drive);
+    status = BEXIT_FAILURE;
   }
   return status;
 }
@@ -77,7 +78,6 @@ int DisplayDrive(char* drive, bool display_local, int verbose)
 int main(int argc, char* const* argv)
 {
   int verbose = 0;
-  int status = 0;
   int ch, i;
   bool display_local = false;
   bool display_all = false;
@@ -101,8 +101,10 @@ int main(int argc, char* const* argv)
         display_all = true;
         break;
       case '?':
+        usage(BEXIT_SUCCESS);
+        break;
       default:
-        usage();
+        usage(BEXIT_FAILURE);
     }
   }
   argc -= optind;
@@ -110,19 +112,20 @@ int main(int argc, char* const* argv)
 
   OSDependentInit();
 
-  if (argc < 1 && display_all) {
+  if (display_all) {
     /* Try all letters */
     for (drive = 'A'; drive <= 'Z'; drive++) {
       Bsnprintf(buf, sizeof(buf), "%c:/", drive);
       DisplayDrive(buf, display_local, verbose);
     }
-    exit(status);
+    exit(BEXIT_SUCCESS);
   }
 
-  if (argc < 1) { usage(); }
+  if (argc < 1) { usage(BEXIT_FAILURE); }
 
+  int exit_status = BEXIT_SUCCESS;
   for (i = 0; i < argc; --argc, ++argv) {
-    status += DisplayDrive(*argv, display_local, verbose);
+    exit_status = DisplayDrive(*argv, display_local, verbose);
   }
-  exit(status);
+  exit(exit_status);
 }

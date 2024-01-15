@@ -144,7 +144,7 @@ To use the plugin you need to configure it in the fileset as a plugin resource. 
      Enable VSS = no
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
        }
        Plugin = "mssqlvdi:instance=default:database=myDatabase:username=bareos:password=bareos"
      }
@@ -674,8 +674,8 @@ This can be done by using :config:option:`dir/job/RunScript`\  directives inside
         Name = "postgres"
         Include {
             Options {
-                signature = MD5
-                compression = gzip
+                Signature = XXH128
+                Compression = LZ4
             }
             # database dump file
             File = "/var/tmp/postgresql_dump.sql"
@@ -700,8 +700,8 @@ Instead of creating a temporary database dump file, the bpipe plugin can be used
      Name = "postgresql-all"
      Include {
        Options {
-         signature = MD5
-         compression = gzip
+         Signature = XXH128
+         Compression = LZ4
        }
        Plugin = "bpipe:file=/POSTGRESQL/dump.sql:reader=su postgres -c pg_dumpall:writer=su postgres -c psql"
      }
@@ -720,8 +720,8 @@ This can also be used, to backup a database that is running on a remote host:
      Include {
        Plugin = "bpipe:file=/POSTGRESQL/dump.sql:reader=pg_dumpall -h <hostname> -U <username> -W <password>:writer=psql -h <hostname> -U <username> -W <password>"
        Options {
-         signature = MD5
-         compression = gzip
+         Signature = XXH128
+         Compression = LZ4
        }
      }
    }
@@ -785,8 +785,8 @@ This can be done by using :config:option:`dir/job/RunScript`\  directives, for e
      Name = "Database"
      Include {
        Options {
-         signature = MD5
-         compression = gzip
+         Signature = XXH128
+         Compression = LZ4
        }
      # database dump file
      File = "/var/lib/bareos/mysql_dump.sql"
@@ -810,8 +810,8 @@ Instead of creating a temporary database dump file, the bpipe plugin can be used
      Include {
        Plugin = "bpipe:file=/MYSQL/dump.sql:reader=mysqldump --user=<user> --password=<password> --opt --all-databases:writer=mysql --user=<user> --password=<password>"
        Options {
-         signature = MD5
-         compression = gzip
+         Signature = XXH128
+         Compression = LZ4
        }
      }
    }
@@ -826,8 +826,8 @@ This can also be used, to backup a database that is running on a remote host:
      Include {
        Plugin = "bpipe:file=/MYSQL/dump.sql:reader=mysqldump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=mysql --host=<hostname> --user=<user> --password=<password>"
        Options {
-         signature = MD5
-         compression = gzip
+         Signature = XXH128
+         Compression = LZ4
        }
      }
    }
@@ -842,8 +842,8 @@ If you do not want a direct restore of your data in your plugin directive, as sh
      Include {
        Plugin = "bpipe:file=/MYSQL/dump.sql:reader=mysqldump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=/usr/lib/bareos/scripts/bpipe-restore.sh"
        Options {
-         signature = MD5
-         compression = gzip
+         Signature = XXH128
+         Compression = LZ4
        }
      }
    }
@@ -891,8 +891,8 @@ Configure the plugin in the |dir|:
        Name = "mysql"
        Include {
          Options {
-           signature = MD5
-           compression = lz4
+           Signature = XXH128
+           Compression = LZ4
          }
          Plugin = "python3"
                   ":module_name=bareos_mysql_dump"

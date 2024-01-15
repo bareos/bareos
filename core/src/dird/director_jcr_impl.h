@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@ class ClientResource;
 class PoolResource;
 class FilesetResource;
 class CatalogResource;
+struct runtime_job_status_t;
 }  // namespace directordaemon
 
 namespace storagedaemon {
@@ -78,6 +79,7 @@ struct Resources {
   directordaemon::PoolResource* next_pool{};    /**< Next Pool used for migration/copy and virtual backup */
   directordaemon::FilesetResource* fileset{};   /**< FileSet resource */
   directordaemon::CatalogResource* catalog{};   /**< Catalog resource */
+  directordaemon::runtime_job_status_t* rjs{};  /**< Runtime Job Status. May point to the rjs of another resource (e.g. for consolidation vf jobs this points to the rjs of the parent consolidation job's resource) */
   MessagesResource* messages{};   /**< Default message handler */
   POOLMEM* pool_source{};         /**< Where pool came from */
   POOLMEM* npool_source{};        /**< Where next pool came from */
@@ -146,6 +148,7 @@ struct DirectorJcrImpl {
   bool IgnoreLevelPoolOverrides{};       /**< Set if a cmdline pool was specified */
   bool IgnoreClientConcurrency{};       /**< Set in migration jobs */
   bool IgnoreStorageConcurrency{};      /**< Set in migration jobs */
+  int32_t max_concurrent_jobs{};        /**< Maximum concurrent jobs */
   bool spool_data{};                    /**< Spool data in SD */
   bool acquired_resource_locks{};       /**< Set if resource locks acquired */
   bool term_wait_inited{};              /**< Set when cond var inited */

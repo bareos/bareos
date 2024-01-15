@@ -30,6 +30,7 @@
 #include <unistd.h>
 #endif
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "filed/dir_cmd.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
@@ -96,7 +97,7 @@ int main(int argc, char* argv[])
   AddDebugOptions(fd_app);
 
   bool foreground = false;
-  CLI::Option* foreground_option = fd_app.add_flag(
+  [[maybe_unused]] CLI::Option* foreground_option = fd_app.add_flag(
       "-f,--foreground", foreground, "Run in foreground (for debugging).");
 
   std::string user;
@@ -112,20 +113,15 @@ int main(int argc, char* argv[])
                   "Print kaboom output (for debugging)");
 
   bool test_config = false;
-  auto testconfig_option = fd_app.add_flag(
+  [[maybe_unused]] auto testconfig_option = fd_app.add_flag(
       "-t,--test-config", test_config, "Test - read configuration and exit.");
-
-#if !defined(HAVE_WIN32)
+#ifndef HAVE_WIN32
   fd_app
       .add_option("-p,--pid-file", pidfile_path,
                   "Full path to pidfile (default: none)")
       ->excludes(foreground_option)
       ->excludes(testconfig_option)
       ->type_name("<file>");
-#else
-  // to silence unused variable error on windows
-  (void)testconfig_option;
-  (void)foreground_option;
 #endif
 
   fd_app.add_flag("-r,--restore-only", restore_only_mode, "Restore only mode.");
@@ -147,10 +143,10 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(fd_app);
 
-  CLI11_PARSE(fd_app, argc, argv);
+  ParseBareosApp(fd_app, argc, argv);
 
   if (user.empty() && keep_readall_caps) {
-    Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("-k option has no meaning without -u option.\n"));
   }
 
   int pidfile_fd = -1;
@@ -171,8 +167,8 @@ int main(int argc, char* argv[])
     drop(uid, gid, keep_readall_caps);
   } else if (uid || gid) {
     Emsg2(M_ERROR_TERM, 0,
-          _("The commandline options indicate to run as specified user/group, "
-            "but program was not started with required root privileges.\n"));
+          T_("The commandline options indicate to run as specified user/group, "
+             "but program was not started with required root privileges.\n"));
   }
 
   if (!no_signals) {
@@ -189,27 +185,27 @@ int main(int argc, char* argv[])
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
-  my_config = InitFdConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
 
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   if (!CheckResources()) {
-    Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"),
+    Emsg1(M_ERROR, 0, T_("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
-    TerminateFiled(1);
+    TerminateFiled(BEXIT_CONFIG_ERROR);
   }
 
   if (my_config->HasWarnings()) {
     // messaging not initialized, so Jmsg with  M_WARNING doesn't work
-    fprintf(stderr, _("There are configuration warnings:\n"));
+    fprintf(stderr, T_("There are configuration warnings:\n"));
     for (auto& warning : my_config->GetWarnings()) {
       fprintf(stderr, " * %s\n", warning.c_str());
     }
@@ -221,7 +217,7 @@ int main(int argc, char* argv[])
   }
 
   if (InitCrypto() != 0) {
-    Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
+    Emsg0(M_ERROR, 0, T_("Cryptography library initialization failed.\n"));
     TerminateFiled(1);
   }
 
@@ -249,9 +245,8 @@ int main(int argc, char* argv[])
   // start socket server to listen for new connections.
   StartSocketServer(me->FDaddrs);
 
-  TerminateFiled(0);
-
-  exit(0);
+  TerminateFiled(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 namespace filedaemon {
@@ -261,8 +256,8 @@ void TerminateFiled(int sig)
   static bool already_here = false;
 
   if (already_here) {
-    Bmicrosleep(2, 0); /* yield */
-    exit(1);           /* prevent loops */
+    Bmicrosleep(2, 0);   /* yield */
+    exit(BEXIT_FAILURE); /* prevent loops */
   }
   already_here = true;
   debug_level = 0; /* turn off debug */

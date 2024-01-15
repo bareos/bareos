@@ -2,8 +2,9 @@ FileSet {
   Name = FS_TESTJOB
   Include {
     Options {
-      Signature = MD5
-      xattrsupport = no           # Prevent problems on FreeBSD
+      Signature = XXH128
+      XattrSupport = No           # Prevent problems on FreeBSD
+      HardLinks = Yes
     }
     File = "<@tmpdir@/file-list"
   }

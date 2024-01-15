@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,8 +29,6 @@
 #include "include/bareos.h"
 #include "lib/edit.h"
 #include <math.h>
-
-#define DEFAULT_FORMAT_LENGTH 27
 
 // We assume ASCII input and don't worry about overflow
 uint64_t str_to_uint64(const char* str)
@@ -77,7 +75,7 @@ int64_t str_to_int64(const char* str)
 
 /*
  * Edit an integer number with commas, the supplied buffer must be at least
- * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * min_buffer_size bytes long. The incoming number is always widened to 64
  * bits.
  */
 char* edit_uint64_with_commas(uint64_t val, char* buf)
@@ -90,7 +88,7 @@ char* edit_uint64_with_commas(uint64_t val, char* buf)
 /*
  * Edit an integer into "human-readable" format with four or fewer significant
  * digits followed by a suffix that indicates the scale factor. The buf array
- * inherits a DEFAULT_FORMAT_LENGTH byte minimum length requirement from
+ * inherits a min_buffer_size byte minimum length requirement from
  * edit_unit64_with_commas(), although the output string is limited to eight
  * characters.
  */
@@ -114,14 +112,14 @@ char* edit_uint64_with_suffix(uint64_t val, char* buf)
   }
 
   if (commas >= suffixes) { commas = suffixes - 1; }
-  Bsnprintf(buf, DEFAULT_FORMAT_LENGTH, "%s %s", mbuf, suffix[commas]);
+  Bsnprintf(buf, edit::min_buffer_size, "%s %s", mbuf, suffix[commas]);
 
   return buf;
 }
 
 /*
  * Edit an integer number, the supplied buffer must be at least
- * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * min_buffer_size bytes long. The incoming number is always widened to 64
  * bits. Replacement for sprintf(buf, "%" llu, val)
  */
 char* edit_uint64(uint64_t val, char* buf)
@@ -138,44 +136,48 @@ char* edit_uint64(uint64_t val, char* buf)
       val /= 10;
     }
   }
-  bstrncpy(buf, &mbuf[i + 1], DEFAULT_FORMAT_LENGTH);
+  bstrncpy(buf, &mbuf[i + 1], edit::min_buffer_size);
 
   return buf;
 }
 
 /*
  * Edit an integer number, the supplied buffer must be at least
- * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * min_buffer_size bytes long. The incoming number is always widened to 64
  * bits. Replacement for sprintf(buf, "%" llu, val)
  */
 char* edit_int64(int64_t val, char* buf)
 {
+  if (val == 0) {
+    bstrncpy(buf, "0", edit::min_buffer_size);
+    return buf;
+  } else if (val == std::numeric_limits<int64_t>::min()) {
+    bstrncpy(buf, "-9223372036854775808", edit::min_buffer_size);
+    return buf;
+  }
+
   char mbuf[50];
   bool negative = false;
   mbuf[sizeof(mbuf) - 1] = 0;
   int i = sizeof(mbuf) - 2; /* Edit backward */
 
-  if (val == 0) {
-    mbuf[i--] = '0';
-  } else {
-    if (val < 0) {
-      negative = true;
-      val = -val;
-    }
-    while (val != 0) {
-      mbuf[i--] = "0123456789"[val % 10];
-      val /= 10;
-    }
+  if (val < 0) {
+    negative = true;
+    val = -val;
+  }
+  while (val != 0) {
+    mbuf[i--] = "0123456789"[val % 10];
+    val /= 10;
   }
   if (negative) { mbuf[i--] = '-'; }
-  bstrncpy(buf, &mbuf[i + 1], DEFAULT_FORMAT_LENGTH);
+  bstrncpy(buf, &mbuf[i + 1], edit::min_buffer_size);
 
   return buf;
 }
 
 /*
  * Edit an integer number with commas, the supplied buffer must be at least
- * DEFAULT_FORMAT_LENGTH bytes long. The incoming number is always widened to 64
+ * min_buffer_size bytes long. The incoming number is always widened to 64
  * bits.
  */
 char* edit_int64_with_commas(int64_t val, char* buf)
@@ -636,7 +638,7 @@ bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
   const char* accept = "!()[]|+?*.:_-'/"; /* Special characters to accept */
 
   if (!acl) {
-    Mmsg(msg, _("Empty acl not allowed.\n"));
+    Mmsg(msg, T_("Empty acl not allowed.\n"));
     return false;
   }
 
@@ -645,18 +647,18 @@ bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
     if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
       continue;
     }
-    Mmsg(msg, _("Illegal character \"%c\" in acl.\n"), *p);
+    Mmsg(msg, T_("Illegal character \"%c\" in acl.\n"), *p);
     return false;
   }
 
   len = p - acl;
   if (len >= MAX_NAME_LENGTH) {
-    Mmsg(msg, _("Acl too long.\n"));
+    Mmsg(msg, T_("Acl too long.\n"));
     return false;
   }
 
   if (len == 0) {
-    Mmsg(msg, _("Acl must be at least one character long.\n"));
+    Mmsg(msg, T_("Acl must be at least one character long.\n"));
     return false;
   }
 

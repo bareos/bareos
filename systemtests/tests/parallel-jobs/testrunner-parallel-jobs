@@ -43,12 +43,9 @@ run_bconsole
 
 backup_jobids=($(grep 'Job queued.' $parallelbackuplog | sed -n -e 's/^.*JobId=//p'))
 
-rm -rf $tmp/restore1
-rm -rf $tmp/restore2
-rm -rf $tmp/restore3
-rm -rf $tmp/restore4
-rm -rf $tmp/restore5
-rm -rf $tmp/restore6
+num_jobs=${#backup_jobids[@]}
+
+find "$tmp" -type d -name "restore*" -exec rm -rf {} +
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $parallelrestorelog
@@ -65,17 +62,17 @@ END_OF_DATA
 
 run_bconsole
 
-if [[ $(grep -c "Termination:.*Backup OK" "$parallelbackuplog") -ne "6" ]]; then
+if [[ $(grep -c "Termination:.*Backup OK" "$parallelbackuplog") -ne "$num_jobs" ]]; then
     echo "Not all backups jobs finished successfully."
     estat=1
 fi
 
-if [[ $(grep -c "Termination:.*Restore OK" "$parallelrestorelog") -ne "6" ]]; then
+if [[ $(grep -c "Termination:.*Restore OK" "$parallelrestorelog") -ne "$num_jobs" ]]; then
     echo "Not all restore jobs finished successfully."
     estat=2
 fi
 
-for i in {1..6}; do
+for i in $(seq 1 "$num_jobs"); do
     restoredir="$tmp/restore$i"
     check_restore_diff "${BackupDirectory}" "$restoredir"
 done

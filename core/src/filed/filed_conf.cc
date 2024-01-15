@@ -92,6 +92,7 @@ static ResourceItem cli_items[] = {
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client, scripts_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL},
+  {"MaximumWorkersPerJob", CFG_TYPE_PINT32, ITEM(res_client, MaxWorkersPerJob), 0, CFG_ITEM_DEFAULT, "2", NULL, NULL},
   {"Messages", CFG_TYPE_RES, ITEM(res_client, messages), R_MSGS, 0, NULL, NULL, NULL},
   {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_client, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
@@ -111,12 +112,12 @@ static ResourceItem cli_items[] = {
   {"AllowBandwidthBursting", CFG_TYPE_BOOL, ITEM(res_client, allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_client, allowed_script_dirs), 0, 0, NULL, NULL, NULL},
   {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_client, allowed_job_cmds), 0, 0, NULL, NULL, NULL},
-  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_client, jcr_watchdog_time), 0, 0, NULL, NULL, NULL},
+  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_client, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
   {"AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client, lmdb_threshold), 0, 0, NULL, NULL, NULL},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
-  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
+  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -186,10 +187,10 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int)
     }
   }
   if (i != 0) {
-    scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -405,7 +406,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     default:
-      printf(_("Unknown resource type %d\n"), type);
+      printf(T_("Unknown resource type %d\n"), type);
       break;
   }
   if (next_resource) { FreeResource(next_resource, type); }
@@ -424,9 +425,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
+      if (!items[i].IsPresent()) {
         Emsg2(M_ABORT, 0,
-              _("%s item is required in %s resource, but not found.\n"),
+              T_("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[type].name);
       }
     }
@@ -442,7 +443,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         DirectorResource* p = dynamic_cast<DirectorResource*>(
             my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
         if (!p) {
-          Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
+          Emsg1(M_ABORT, 0, T_("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_
@@ -456,7 +457,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         ClientResource* p = dynamic_cast<ClientResource*>(
             my_config->GetResWithName(R_CLIENT, res_client->resource_name_));
         if (!p) {
-          Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"),
+          Emsg1(M_ABORT, 0, T_("Cannot find Client resource %s\n"),
                 res_client->resource_name_);
         } else {
           p->plugin_names = res_client->plugin_names;
@@ -473,7 +474,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       }
       default:
-        Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
+        Emsg1(M_ERROR, 0, T_("Unknown resource type %d\n"), type);
         error = 1;
         break;
     }

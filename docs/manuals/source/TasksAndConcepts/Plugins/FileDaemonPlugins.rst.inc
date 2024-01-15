@@ -19,7 +19,6 @@ File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`
 .. include:: Plugins/FileDaemonPlugins/MariaDBmariabackupPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/MSSqlPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/MySQLPlugin.rst.inc
-.. include:: Plugins/FileDaemonPlugins/OVirtPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/PerconaXtraBackupPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/PostgreSQLPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/PythonFdPlugin.rst.inc

@@ -29,8 +29,8 @@ FileSet {
     Name = "client-data"
         Include  {
             Options {
-                compression = LZ4
-                signature = MD5
+                Signature = XXH128
+                Compression = LZ4
             }
             Plugin = "python:"
                      "module_path=/usr/lib/bareos/plugins:"
@@ -64,8 +64,18 @@ Command (with or without full path) to *pg_dump* tool. Default: *pg_dump*
 #### pg_dump_options
 Options to be used with the *pg_dump* tool. Default: *--no-owner --no-acl*
 
+#### pg_host
+Specifies the host name of the machine on which the server is running.
+If the value begins with a slash,
+it is used as the directory for the Unix-domain socket.
+
+#### pg_port
+Specifies the TCP port
+or the local Unix-domain socket file extension
+on which the server is listening for connections.
+
 #### pg_user
-Username of the system user running the *psql* and *pg_dump* tools. Default: *postgres*
+Specifies the user that will be used to run the *psql* and *pg_dump* tools.  If this option is not set, the default is *postgres*. If this option is set to the empty string (`pg_user=''`), then the user running *bareos-fd* is used.  Default: *postgres*
 
 #### databases
 Comma separated list of database names to backup, if unset all databases (except 'postgres', 'template1' and 'template0') are dumped. Default: unset

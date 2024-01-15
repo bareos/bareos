@@ -87,128 +87,128 @@ const char* stream_to_ascii(int stream)
 
   switch (stream & STREAMMASK_TYPE) {
     case STREAM_UNIX_ATTRIBUTES:
-      return _("Unix attributes");
+      return T_("Unix attributes");
     case STREAM_FILE_DATA:
-      return _("File data");
+      return T_("File data");
     case STREAM_MD5_DIGEST:
-      return _("MD5 digest");
+      return T_("MD5 digest");
     case STREAM_GZIP_DATA:
-      return _("GZIP data");
+      return T_("GZIP data");
     case STREAM_COMPRESSED_DATA:
-      return _("Compressed data");
+      return T_("Compressed data");
     case STREAM_UNIX_ATTRIBUTES_EX:
-      return _("Extended attributes");
+      return T_("Extended attributes");
     case STREAM_SPARSE_DATA:
-      return _("Sparse data");
+      return T_("Sparse data");
     case STREAM_SPARSE_GZIP_DATA:
-      return _("GZIP sparse data");
+      return T_("GZIP sparse data");
     case STREAM_SPARSE_COMPRESSED_DATA:
-      return _("Compressed sparse data");
+      return T_("Compressed sparse data");
     case STREAM_PROGRAM_NAMES:
-      return _("Program names");
+      return T_("Program names");
     case STREAM_PROGRAM_DATA:
-      return _("Program data");
+      return T_("Program data");
     case STREAM_SHA1_DIGEST:
-      return _("SHA1 digest");
+      return T_("SHA1 digest");
     case STREAM_WIN32_DATA:
-      return _("Win32 data");
+      return T_("Win32 data");
     case STREAM_WIN32_GZIP_DATA:
-      return _("Win32 GZIP data");
+      return T_("Win32 GZIP data");
     case STREAM_WIN32_COMPRESSED_DATA:
-      return _("Win32 compressed data");
+      return T_("Win32 compressed data");
     case STREAM_MACOS_FORK_DATA:
-      return _("MacOS Fork data");
+      return T_("MacOS Fork data");
     case STREAM_HFSPLUS_ATTRIBUTES:
-      return _("HFS+ attribs");
+      return T_("HFS+ attribs");
     case STREAM_UNIX_ACCESS_ACL:
-      return _("Standard Unix ACL attribs");
+      return T_("Standard Unix ACL attribs");
     case STREAM_UNIX_DEFAULT_ACL:
-      return _("Default Unix ACL attribs");
+      return T_("Default Unix ACL attribs");
     case STREAM_SHA256_DIGEST:
-      return _("SHA256 digest");
+      return T_("SHA256 digest");
     case STREAM_SHA512_DIGEST:
-      return _("SHA512 digest");
+      return T_("SHA512 digest");
     case STREAM_XXH128_DIGEST:
-      return _("XXH128 digest");
+      return T_("XXH128 digest");
     case STREAM_SIGNED_DIGEST:
-      return _("Signed digest");
+      return T_("Signed digest");
     case STREAM_ENCRYPTED_FILE_DATA:
-      return _("Encrypted File data");
+      return T_("Encrypted File data");
     case STREAM_ENCRYPTED_WIN32_DATA:
-      return _("Encrypted Win32 data");
+      return T_("Encrypted Win32 data");
     case STREAM_ENCRYPTED_SESSION_DATA:
-      return _("Encrypted session data");
+      return T_("Encrypted session data");
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
-      return _("Encrypted GZIP data");
+      return T_("Encrypted GZIP data");
     case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
-      return _("Encrypted compressed data");
+      return T_("Encrypted compressed data");
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
-      return _("Encrypted Win32 GZIP data");
+      return T_("Encrypted Win32 GZIP data");
     case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-      return _("Encrypted Win32 Compressed data");
+      return T_("Encrypted Win32 Compressed data");
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
-      return _("Encrypted MacOS fork data");
+      return T_("Encrypted MacOS fork data");
     case STREAM_ACL_AIX_TEXT:
-      return _("AIX Specific ACL attribs");
+      return T_("AIX Specific ACL attribs");
     case STREAM_ACL_DARWIN_ACCESS_ACL:
-      return _("Darwin Specific ACL attribs");
+      return T_("Darwin Specific ACL attribs");
     case STREAM_ACL_FREEBSD_DEFAULT_ACL:
-      return _("FreeBSD Specific Default ACL attribs");
+      return T_("FreeBSD Specific Default ACL attribs");
     case STREAM_ACL_FREEBSD_ACCESS_ACL:
-      return _("FreeBSD Specific Access ACL attribs");
+      return T_("FreeBSD Specific Access ACL attribs");
     case STREAM_ACL_HPUX_ACL_ENTRY:
-      return _("HPUX Specific ACL attribs");
+      return T_("HPUX Specific ACL attribs");
     case STREAM_ACL_IRIX_DEFAULT_ACL:
-      return _("Irix Specific Default ACL attribs");
+      return T_("Irix Specific Default ACL attribs");
     case STREAM_ACL_IRIX_ACCESS_ACL:
-      return _("Irix Specific Access ACL attribs");
+      return T_("Irix Specific Access ACL attribs");
     case STREAM_ACL_LINUX_DEFAULT_ACL:
-      return _("Linux Specific Default ACL attribs");
+      return T_("Linux Specific Default ACL attribs");
     case STREAM_ACL_LINUX_ACCESS_ACL:
-      return _("Linux Specific Access ACL attribs");
+      return T_("Linux Specific Access ACL attribs");
     case STREAM_ACL_TRU64_DEFAULT_ACL:
-      return _("TRU64 Specific Default ACL attribs");
+      return T_("TRU64 Specific Default ACL attribs");
     case STREAM_ACL_TRU64_ACCESS_ACL:
-      return _("TRU64 Specific Access ACL attribs");
+      return T_("TRU64 Specific Access ACL attribs");
     case STREAM_ACL_SOLARIS_ACLENT:
-      return _("Solaris Specific POSIX ACL attribs");
+      return T_("Solaris Specific POSIX ACL attribs");
     case STREAM_ACL_SOLARIS_ACE:
-      return _("Solaris Specific NFSv4/ZFS ACL attribs");
+      return T_("Solaris Specific NFSv4/ZFS ACL attribs");
     case STREAM_ACL_AFS_TEXT:
-      return _("AFS Specific ACL attribs");
+      return T_("AFS Specific ACL attribs");
     case STREAM_ACL_AIX_AIXC:
-      return _("AIX Specific POSIX ACL attribs");
+      return T_("AIX Specific POSIX ACL attribs");
     case STREAM_ACL_AIX_NFS4:
-      return _("AIX Specific NFSv4 ACL attribs");
+      return T_("AIX Specific NFSv4 ACL attribs");
     case STREAM_ACL_FREEBSD_NFS4_ACL:
-      return _("FreeBSD Specific NFSv4/ZFS ACL attribs");
+      return T_("FreeBSD Specific NFSv4/ZFS ACL attribs");
     case STREAM_ACL_HURD_DEFAULT_ACL:
-      return _("GNU Hurd Specific Default ACL attribs");
+      return T_("GNU Hurd Specific Default ACL attribs");
     case STREAM_ACL_HURD_ACCESS_ACL:
-      return _("GNU Hurd Specific Access ACL attribs");
+      return T_("GNU Hurd Specific Access ACL attribs");
     case STREAM_XATTR_HURD:
-      return _("GNU Hurd Specific Extended attribs");
+      return T_("GNU Hurd Specific Extended attribs");
     case STREAM_XATTR_IRIX:
-      return _("IRIX Specific Extended attribs");
+      return T_("IRIX Specific Extended attribs");
     case STREAM_XATTR_TRU64:
-      return _("TRU64 Specific Extended attribs");
+      return T_("TRU64 Specific Extended attribs");
     case STREAM_XATTR_AIX:
-      return _("AIX Specific Extended attribs");
+      return T_("AIX Specific Extended attribs");
     case STREAM_XATTR_OPENBSD:
-      return _("OpenBSD Specific Extended attribs");
+      return T_("OpenBSD Specific Extended attribs");
     case STREAM_XATTR_SOLARIS_SYS:
-      return _(
+      return T_(
           "Solaris Specific Extensible attribs or System Extended attribs");
     case STREAM_XATTR_SOLARIS:
-      return _("Solaris Specific Extended attribs");
+      return T_("Solaris Specific Extended attribs");
     case STREAM_XATTR_DARWIN:
-      return _("Darwin Specific Extended attribs");
+      return T_("Darwin Specific Extended attribs");
     case STREAM_XATTR_FREEBSD:
-      return _("FreeBSD Specific Extended attribs");
+      return T_("FreeBSD Specific Extended attribs");
     case STREAM_XATTR_LINUX:
-      return _("Linux Specific Extended attribs");
+      return T_("Linux Specific Extended attribs");
     case STREAM_XATTR_NETBSD:
-      return _("NetBSD Specific Extended attribs");
+      return T_("NetBSD Specific Extended attribs");
     default:
       snprintf(buf, 20, "%d", stream);
       return (const char*)buf;
@@ -350,7 +350,7 @@ bool processWin32BackupAPIBlock(BareosFilePacket* bfd,
   /* set "NextHeader" relative to the beginning of the next block */
   plugin_private_context->liNextHeader -= dwSize;
 
-  return TRUE;
+  return true;
 }
 
 /* ===============================================================
@@ -1135,10 +1135,26 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
     // plugin does read/write
     if (!bfd->do_io_in_core) { return plugin_bread(bfd, buf, count); }
 
+  char* ptr = static_cast<char*>(buf);
+
   Dmsg1(400, "bread handled in core via bfd->filedes=%d\n", bfd->filedes);
-  ssize_t status = read(bfd->filedes, buf, count);
+  ASSERT(static_cast<ssize_t>(count) >= 0);
+  ssize_t bytes_read = 0;
+  while (bytes_read < static_cast<ssize_t>(count)) {
+    ssize_t status = read(bfd->filedes, ptr + bytes_read, count - bytes_read);
+    if (status < 0) {
+      // error while reading
+      bytes_read = status;
+      break;
+    } else if (status == 0) {
+      // no more data left
+      break;
+    } else {
+      bytes_read += status;
+    }
+  }
   bfd->BErrNo = errno;
-  return status;
+  return bytes_read;
 }
 
 ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
@@ -1147,10 +1163,27 @@ ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
     // plugin does read/write
     if (!bfd->do_io_in_core) { return plugin_bwrite(bfd, buf, count); }
 
+  const char* ptr = static_cast<const char*>(buf);
+
   Dmsg1(400, "bwrite handled in core via bfd->filedes=%d\n", bfd->filedes);
-  ssize_t status = write(bfd->filedes, buf, count);
+  ASSERT(static_cast<ssize_t>(count) >= 0);
+  ssize_t bytes_written = 0;
+  while (bytes_written < static_cast<ssize_t>(count)) {
+    ssize_t status
+        = write(bfd->filedes, ptr + bytes_written, count - bytes_written);
+    if (status < 0) {
+      // error while reading
+      bytes_written = status;
+      break;
+    } else if (status == 0) {
+      // no more data left
+      break;
+    } else {
+      bytes_written += status;
+    }
+  }
   bfd->BErrNo = errno;
-  return status;
+  return bytes_written;
 }
 
 bool IsBopen(BareosFilePacket* bfd) { return bfd->filedes >= 0; }

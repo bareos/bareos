@@ -21,6 +21,7 @@ working_dir=${working}
 messagesfile=${working_dir}/bareos-dir.conmsg
 tmp=${current_test_directory}/tmp
 export BackupDirectory="${tmp}/data"
+export RestoreDirectory="${tmp}/bareos-restores"
 systemtests_s3_use_https=@systemtests_s3_use_https@
 
 
@@ -110,11 +111,6 @@ export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 export PHP_EXECUTABLE=@PHP@
 export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
-#
-# oVirt Plugin Test
-#
-
-export OVIRT_SERVER=@ovirt_server@
 PATH=\
 ../../../core/src/console/Debug:\
 ../../../core/src/dird/Debug:\
@@ -123,7 +119,6 @@ PATH=\
 ../../../core/src/tests/Debug:\
 ../../../core/src/tools/Debug:\
 $PATH
-
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
 # If there are multiple version, select the first.

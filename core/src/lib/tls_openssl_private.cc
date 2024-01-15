@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,19 +40,19 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <array>
+#include <unordered_map>
 
-/* static private */
-std::map<const SSL_CTX*, PskCredentials>
-    TlsOpenSslPrivate::psk_client_credentials_;
-std::mutex TlsOpenSslPrivate::psk_client_credentials_mutex_;
-std::mutex TlsOpenSslPrivate::file_access_mutex_;
+#include "lib/thread_util.h"
 
-/* static private */
+/* PskCredentials lookup map for all connections */
+static synchronized<std::unordered_map<const SSL_CTX*, PskCredentials>>
+    client_cred;
+static std::mutex file_access_mutex_;
+
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
  */
-const std::string TlsOpenSslPrivate::tls_default_ciphers_{
+static constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
-
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
 {
@@ -71,14 +71,14 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
 #endif
 
   if (!openssl_ctx_) {
-    OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
+    OpensslPostErrors(M_FATAL, T_("Error initializing SSL context"));
     return;
   }
 
   openssl_conf_ctx_ = SSL_CONF_CTX_new();
 
   if (!openssl_conf_ctx_) {
-    OpensslPostErrors(M_FATAL, _("Error initializing SSL conf context"));
+    OpensslPostErrors(M_FATAL, T_("Error initializing SSL conf context"));
     return;
   }
 
@@ -106,9 +106,7 @@ TlsOpenSslPrivate::~TlsOpenSslPrivate()
   /* the openssl_ctx object is the factory that creates
    * openssl objects, so delete this at the end */
   if (openssl_ctx_) {
-    psk_client_credentials_mutex_.lock();
-    psk_client_credentials_.erase(openssl_ctx_);
-    psk_client_credentials_mutex_.unlock();
+    client_cred.lock()->erase(openssl_ctx_);
     SSL_CTX_free(openssl_ctx_);
     openssl_ctx_ = nullptr;
   }
@@ -118,7 +116,7 @@ bool TlsOpenSslPrivate::init()
 {
   if (!openssl_ctx_) {
     OpensslPostErrors(M_FATAL,
-                      _("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
+                      T_("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
     return false;
   }
 
@@ -131,7 +129,7 @@ bool TlsOpenSslPrivate::init()
         = SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
 
     if (err) {
-      std::string err{_("Error setting OpenSSL Protocol options:\n")};
+      std::string err{T_("Error setting OpenSSL Protocol options:\n")};
       std::array<char, 256> buffer;
       ERR_error_string(ERR_get_error(), buffer.data());
       err += buffer.data();
@@ -145,12 +143,25 @@ bool TlsOpenSslPrivate::init()
 
   SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  if (enable_ktls_) { SSL_CTX_set_options(openssl_ctx_, SSL_OP_ENABLE_KTLS); }
+#endif
+
   if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
 
   if (SSL_CTX_set_cipher_list(openssl_ctx_, cipherlist_.c_str()) != 1) {
-    Dmsg0(100, _("Error setting cipher list, no valid ciphers available\n"));
+    OpensslPostErrors(M_ERROR, "Error setting cipher list");
     return false;
   }
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
+  // use the default tls 1.3 cipher suites if nothing is set
+  if (!ciphersuites_.empty()
+      && SSL_CTX_set_ciphersuites(openssl_ctx_, ciphersuites_.c_str()) != 1) {
+    OpensslPostErrors(M_ERROR, "Error setting cipher suite");
+    return false;
+  }
+#endif
 
   if (pem_callback_ == nullptr) {
     pem_callback_ = CryptoDefaultPemCallback;
@@ -170,13 +181,13 @@ bool TlsOpenSslPrivate::init()
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_load_verify_locations(openssl_ctx_, ca_certfile, ca_certdir)) {
       OpensslPostErrors(M_FATAL,
-                        _("Error loading certificate verification stores"));
+                        T_("Error loading certificate verification stores"));
       return false;
     }
   } else if (verify_peer_) {
     /* At least one CA is required for peer verification */
-    Dmsg0(100, _("Either a certificate file or a directory must be"
-                 " specified as a verification store\n"));
+    Dmsg0(100, T_("Either a certificate file or a directory must be"
+                  " specified as a verification store\n"));
   }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) \
@@ -190,7 +201,7 @@ bool TlsOpenSslPrivate::init()
   if (!certfile_.empty()) {
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_use_certificate_chain_file(openssl_ctx_, certfile_.c_str())) {
-      OpensslPostErrors(M_FATAL, _("Error loading certificate file"));
+      OpensslPostErrors(M_FATAL, T_("Error loading certificate file"));
       return false;
     }
   }
@@ -199,7 +210,7 @@ bool TlsOpenSslPrivate::init()
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SSL_CTX_use_PrivateKey_file(openssl_ctx_, keyfile_.c_str(),
                                      SSL_FILETYPE_PEM)) {
-      OpensslPostErrors(M_FATAL, _("Error loading private key"));
+      OpensslPostErrors(M_FATAL, T_("Error loading private key"));
       return false;
     }
   }
@@ -208,19 +219,19 @@ bool TlsOpenSslPrivate::init()
     BIO* bio;
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!(bio = BIO_new_file(dhfile_.c_str(), "r"))) {
-      OpensslPostErrors(M_FATAL, _("Unable to open DH parameters file"));
+      OpensslPostErrors(M_FATAL, T_("Unable to open DH parameters file"));
       return false;
     }
     ALLOW_DEPRECATED(DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL));
     BIO_free(bio);
     if (!dh) {
       OpensslPostErrors(M_FATAL,
-                        _("Unable to load DH parameters from specified file"));
+                        T_("Unable to load DH parameters from specified file"));
       return false;
     }
     if (!SSL_CTX_set_tmp_dh(openssl_ctx_, dh)) {
       OpensslPostErrors(M_FATAL,
-                        _("Failed to set TLS Diffie-Hellman parameters"));
+                        T_("Failed to set TLS Diffie-Hellman parameters"));
       ALLOW_DEPRECATED(DH_free(dh));
       return false;
     }
@@ -238,7 +249,7 @@ bool TlsOpenSslPrivate::init()
 
   openssl_ = SSL_new(openssl_ctx_);
   if (!openssl_) {
-    OpensslPostErrors(M_FATAL, _("Error creating new SSL object"));
+    OpensslPostErrors(M_FATAL, T_("Error creating new SSL object"));
     return false;
   }
 
@@ -248,7 +259,7 @@ bool TlsOpenSslPrivate::init()
 
   BIO* bio = BIO_new(BIO_s_socket());
   if (!bio) {
-    OpensslPostErrors(M_FATAL, _("Error creating file descriptor-based BIO"));
+    OpensslPostErrors(M_FATAL, T_("Error creating file descriptor-based BIO"));
     return false;
   }
 
@@ -275,8 +286,8 @@ int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok,
     X509_NAME_oneline(X509_get_subject_name(cert), subject, 256);
 
     Jmsg5(NULL, M_ERROR, 0,
-          _("Error with certificate at depth: %d, issuer = %s,"
-            " subject = %s, ERR=%d:%s\n"),
+          T_("Error with certificate at depth: %d, issuer = %s,"
+             " subject = %s, ERR=%d:%s\n"),
           depth, issuer, subject, err, X509_verify_cert_error_string(err));
   }
 
@@ -324,7 +335,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
           }
         }
         OpensslPostErrors(bsock->get_jcr(), M_FATAL,
-                          _("TLS read/write failure."));
+                          T_("TLS read/write failure."));
         goto cleanup;
       case SSL_ERROR_WANT_READ:
         WaitForReadableFd(bsock->fd_, 10000, false);
@@ -338,7 +349,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
       default:
         /* Socket Error Occured */
         OpensslPostErrors(bsock->get_jcr(), M_FATAL,
-                          _("TLS read/write failure."));
+                          T_("TLS read/write failure."));
         goto cleanup;
     }
 
@@ -391,7 +402,7 @@ bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
         goto cleanup;
       case SSL_ERROR_ZERO_RETURN:
         /* TLS connection was cleanly shut down */
-        OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
+        OpensslPostErrors(bsock->get_jcr(), M_FATAL, T_("Connect failure"));
         status = false;
         goto cleanup;
       case SSL_ERROR_WANT_READ:
@@ -402,7 +413,7 @@ bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
         break;
       default:
         /* Socket Error Occurred */
-        OpensslPostErrors(bsock->get_jcr(), M_FATAL, _("Connect failure"));
+        OpensslPostErrors(bsock->get_jcr(), M_FATAL, T_("Connect failure"));
         status = false;
         goto cleanup;
     }
@@ -417,7 +428,35 @@ cleanup:
   bsock->timer_start = 0;
   bsock->SetKillable(true);
 
+  if (enable_ktls_) {
+    // old openssl versions might return -1 as well; so check for > 0 instead
+    bool ktls_send = KtlsSendStatus();
+    bool ktls_recv = KtlsRecvStatus();
+    Dmsg1(150, "kTLS used for Recv: %s\n", ktls_recv ? "yes" : "no");
+    Dmsg1(150, "kTLS used for Send: %s\n", ktls_send ? "yes" : "no");
+  }
+
   return status;
+}
+
+bool TlsOpenSslPrivate::KtlsSendStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_send(SSL_get_wbio(openssl_)) > 0;
+#else
+  return false;
+#endif
+}
+
+bool TlsOpenSslPrivate::KtlsRecvStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_recv(SSL_get_rbio(openssl_)) > 0;
+#else
+  return false;
+#endif
 }
 
 int TlsOpenSslPrivate::tls_pem_callback_dispatch(char* buf,
@@ -435,10 +474,7 @@ void TlsOpenSslPrivate::ClientContextInsertCredentials(
   if (!openssl_ctx_) { /* do not register nullptr */
     Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
   } else {
-    psk_client_credentials_mutex_.lock();
-    TlsOpenSslPrivate::psk_client_credentials_.insert(
-        std::pair<const SSL_CTX*, PskCredentials>(openssl_ctx_, credentials));
-    psk_client_credentials_mutex_.unlock();
+    client_cred.lock()->emplace(openssl_ctx_, credentials);
   }
 }
 
@@ -498,22 +534,18 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL* ssl,
   }
 
   PskCredentials credentials;
-  bool found = false;
-
-  psk_client_credentials_mutex_.lock();
-  if (psk_client_credentials_.find(openssl_ctx)
-      != psk_client_credentials_.end()) {
-    credentials = TlsOpenSslPrivate::psk_client_credentials_.at(openssl_ctx);
-    found = true;
+  {
+    auto locked = client_cred.lock();
+    if (auto iter = locked->find(openssl_ctx); iter != locked->end()) {
+      credentials = iter->second;
+    } else {
+      Dmsg0(100,
+            "Error, TLS-PSK CALLBACK not set because SSL_CTX is not "
+            "registered.\n");
+      return 0;
+    }
   }
-  psk_client_credentials_mutex_.unlock();
 
-  if (!found) {
-    Dmsg0(
-        100,
-        "Error, TLS-PSK CALLBACK not set because SSL_CTX is not registered.\n");
-    return 0;
-  }
   int ret = Bsnprintf(identity, max_identity_len, "%s",
                       credentials.get_identity().c_str());
 
@@ -589,6 +621,12 @@ void TlsOpenSsl::SetVerifyPeer(const bool& verify_peer)
   d_->verify_peer_ = verify_peer;
 }
 
+void TlsOpenSsl::SetEnableKtls(bool ktls)
+{
+  Dmsg1(100, "Set ktls:\t<%s>\n", ktls ? "true" : "false");
+  d_->enable_ktls_ = ktls;
+}
+
 void TlsOpenSsl::SetTcpFileDescriptor(const int& fd)
 {
   Dmsg1(100, "Set tcp filedescriptor: <%d>\n", fd);
@@ -599,6 +637,12 @@ void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
 {
   Dmsg1(100, "Set cipherlist:\t<%s>\n", cipherlist.c_str());
   d_->cipherlist_ = cipherlist;
+}
+
+void TlsOpenSsl::SetCipherSuites(const std::string& ciphersuites)
+{
+  Dmsg1(100, "Set ciphersuites:\t<%s>\n", ciphersuites.c_str());
+  d_->ciphersuites_ = ciphersuites;
 }
 
 void TlsOpenSsl::SetProtocol(const std::string& protocol)

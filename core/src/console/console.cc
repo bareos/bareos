@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "console/auth_pam.h"
@@ -129,20 +130,20 @@ struct cmdstruct {
   const char* help;
 };
 static struct cmdstruct commands[] = {
-    {N_("input"), InputCmd, _("input from file")},
-    {N_("output"), OutputCmd, _("output to file")},
-    {N_("quit"), QuitCmd, _("quit")},
-    {N_("tee"), TeeCmd, _("output to file and terminal")},
-    {N_("sleep"), SleepCmd, _("sleep specified time")},
-    {N_("time"), TimeCmd, _("print current time")},
-    {N_("version"), Versioncmd, _("print Console's version")},
-    {N_("echo"), EchoCmd, _("echo command string")},
-    {N_("exec"), ExecCmd, _("execute an external command")},
-    {N_("exit"), QuitCmd, _("exit = quit")},
-    {N_("zed_keys"), ZedKeyscmd,
-     _("zed_keys = use zed keys instead of bash keys")},
-    {N_("help"), HelpCmd, _("help listing")},
-    {N_("separator"), EolCmd, _("set command separator")},
+    {NT_("input"), InputCmd, T_("input from file")},
+    {NT_("output"), OutputCmd, T_("output to file")},
+    {NT_("quit"), QuitCmd, T_("quit")},
+    {NT_("tee"), TeeCmd, T_("output to file and terminal")},
+    {NT_("sleep"), SleepCmd, T_("sleep specified time")},
+    {NT_("time"), TimeCmd, T_("print current time")},
+    {NT_("version"), Versioncmd, T_("print Console's version")},
+    {NT_("echo"), EchoCmd, T_("echo command string")},
+    {NT_("exec"), ExecCmd, T_("execute an external command")},
+    {NT_("exit"), QuitCmd, T_("exit = quit")},
+    {NT_("zed_keys"), ZedKeyscmd,
+     T_("zed_keys = use zed keys instead of bash keys")},
+    {NT_("help"), HelpCmd, T_("help listing")},
+    {NT_("separator"), EolCmd, T_("set command separator")},
 };
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
@@ -166,14 +167,14 @@ static int Do_a_command(FILE* input, BareosSocket* UA_sock)
   }
   len = strlen(cmd);
   for (i = 0; i < comsize; i++) { /* search for command */
-    if (bstrncasecmp(cmd, _(commands[i].key), len)) {
+    if (bstrncasecmp(cmd, T_(commands[i].key), len)) {
       status = (*commands[i].func)(input, UA_sock); /* go execute command */
       found = 1;
       break;
     }
   }
   if (!found) {
-    PmStrcat(UA_sock->msg, _(": is an invalid command\n"));
+    PmStrcat(UA_sock->msg, T_(": is an invalid command\n"));
     UA_sock->message_length = strlen(UA_sock->msg);
     ConsoleOutput(UA_sock->msg);
   }
@@ -561,7 +562,7 @@ static int EolCmd(FILE*, BareosSocket*)
   } else if (argc == 1) {
     eol = '\0';
   } else {
-    ConsoleOutput(_("Illegal separator character.\n"));
+    ConsoleOutput(T_("Illegal separator character.\n"));
   }
   return 1;
 }
@@ -690,7 +691,7 @@ static bool SelectDirector(const char* director,
     }
 
     if (!director_resource_tmp) { /* Can't find Director used as argument */
-      ConsoleOutputFormat(_("Can't find %s in Director list\n"), director);
+      ConsoleOutputFormat(T_("Can't find %s in Director list\n"), director);
       return 0;
     }
   }
@@ -698,31 +699,32 @@ static bool SelectDirector(const char* director,
   if (!director_resource_tmp) { /* prompt for director */
     UA_sock = new BareosSocketTCP;
   try_again:
-    ConsoleOutput(_("Available Directors:\n"));
+    ConsoleOutput(T_("Available Directors:\n"));
 
     numdir = 0;
     foreach_res (director_resource_tmp, R_DIRECTOR) {
-      ConsoleOutputFormat(_("%2d:  %s at %s:%d\n"), 1 + numdir++,
+      ConsoleOutputFormat(T_("%2d:  %s at %s:%d\n"), 1 + numdir++,
                           director_resource_tmp->resource_name_,
                           director_resource_tmp->address,
                           director_resource_tmp->DIRport);
     }
 
-    if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock, 600)
+    if (GetCmd(stdin, T_("Select Director by entering a number: "), UA_sock,
+               600)
         < 0) {
       WSACleanup(); /* Cleanup Windows sockets */
       return 0;
     }
     if (!Is_a_number(UA_sock->msg)) {
       ConsoleOutputFormat(
-          _("%s is not a number. You must enter a number between "
-            "1 and %d\n"),
+          T_("%s is not a number. You must enter a number between "
+             "1 and %d\n"),
           UA_sock->msg, numdir);
       goto try_again;
     }
     item = atoi(UA_sock->msg);
     if (item < 0 || item > numdir) {
-      ConsoleOutputFormat(_("You must enter a number between 1 and %d\n"),
+      ConsoleOutputFormat(T_("You must enter a number between 1 and %d\n"),
                           numdir);
       goto try_again;
     }
@@ -778,13 +780,13 @@ static BStringList ReadPamCredentialsFile(
   std::ifstream s(pam_credentials_filename);
   std::string user, pw;
   if (!s.is_open()) {
-    Emsg0(M_ERROR_TERM, 0, _("Could not open PAM credentials file.\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("Could not open PAM credentials file.\n"));
     return BStringList();
   } else {
     std::getline(s, user);
     std::getline(s, pw);
     if (user.empty() || pw.empty()) {
-      Emsg0(M_ERROR_TERM, 0, _("Could not read user or password.\n"));
+      Emsg0(M_ERROR_TERM, 0, T_("Could not read user or password.\n"));
       return BStringList();
     }
   }
@@ -879,7 +881,7 @@ int main(int argc, char* argv[])
               use_pam_credentials_file = true;
               fclose(f);
             } else { /* file cannot be opened, i.e. does not exist */
-              Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
+              Emsg0(M_ERROR_TERM, 0, T_("Could not open file for -p.\n"));
             }
 
             return true;
@@ -919,7 +921,7 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(console_app);
 
-  CLI11_PARSE(console_app, argc, argv);
+  ParseBareosApp(console_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateConsole); }
 
@@ -938,27 +940,27 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitConsConfig(configfile, M_ERROR_TERM);
+    my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
-  my_config = InitConsConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, NULL);
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   if (InitCrypto() != 0) {
-    Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+    Emsg0(M_ERROR_TERM, 0, T_("Cryptography library initialization failed.\n"));
   }
 
   if (!CheckResources()) {
-    Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"),
+    Emsg1(M_ERROR_TERM, 0, T_("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
   }
 
@@ -971,8 +973,8 @@ int main(int argc, char* argv[])
   }
 
   if (test_config) {
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   (void)WSA_Init(); /* Initialize Windows sockets */
@@ -983,7 +985,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  ConsoleOutputFormat(_("Connecting to Director %s:%d\n"),
+  ConsoleOutputFormat(T_("Connecting to Director %s:%d\n"),
                       director_resource->address, director_resource->DIRport);
 
   utime_t heart_beat;
@@ -1001,7 +1003,7 @@ int main(int argc, char* argv[])
   JobControlRecord jcr;
   UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
   if (!UA_sock) {
-    ConsoleOutput(_("Failed to connect to Director. Giving up.\n"));
+    ConsoleOutput(T_("Failed to connect to Director. Giving up.\n"));
     TerminateConsole(0);
     return 1;
   }
@@ -1012,21 +1014,21 @@ int main(int argc, char* argv[])
 #if defined(HAVE_PAM)
     if (!ExaminePamAuthentication(use_pam_credentials_file,
                                   pam_credentials_filename)) {
-      ConsoleOutput(_("PAM authentication failed. Giving up.\n"));
+      ConsoleOutput(T_("PAM authentication failed. Giving up.\n"));
       TerminateConsole(0);
       return 1;
     }
     response_args.clear();
     if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
                                                     response_args)) {
-      ConsoleOutput(_("PAM authentication failed. Giving up.\n"));
+      ConsoleOutput(T_("PAM authentication failed. Giving up.\n"));
       TerminateConsole(0);
       return 1;
     }
 #else
     ConsoleOutput(
-        _("PAM authentication requested by Director, however this console "
-          "does not have this feature. Giving up.\n"));
+        T_("PAM authentication requested by Director, however this console "
+           "does not have this feature. Giving up.\n"));
     TerminateConsole(0);
     return 1;
 #endif /* HAVE_PAM */
@@ -1055,7 +1057,7 @@ int main(int argc, char* argv[])
 
   Dmsg0(40, "Opened connection with Director daemon\n");
 
-  ConsoleOutput(_("\nEnter a period (.) to cancel a command.\n"));
+  ConsoleOutput(T_("\nEnter a period (.) to cancel a command.\n"));
 
 #if defined(HAVE_WIN32)
   char* env = getenv("USERPROFILE");
@@ -1099,8 +1101,8 @@ int main(int argc, char* argv[])
 
   if (history_file.size()) { ConsoleUpdateHistory(history_file.c_str()); }
 
-  TerminateConsole(0);
-  return 0;
+  TerminateConsole(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 static void TerminateConsole(int sig)
@@ -1108,7 +1110,7 @@ static void TerminateConsole(int sig)
   static bool already_here = false;
 
   if (already_here) { /* avoid recursive temination problems */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   already_here = true;
   StopWatchdog();
@@ -1119,7 +1121,7 @@ static void TerminateConsole(int sig)
   ConTerm();
   WSACleanup(); /* Cleanup Windows sockets */
 
-  if (sig != 0) { exit(1); }
+  if (sig != 0) { exit(BEXIT_FAILURE); }
   return;
 }
 
@@ -1136,8 +1138,8 @@ static int CheckResources()
   if (numdir == 0) {
     const std::string& configfile = my_config->get_base_config_path();
     Emsg1(M_FATAL, 0,
-          _("No Director resource defined in %s\n"
-            "Without that I don't how to speak to the Director :-(\n"),
+          T_("No Director resource defined in %s\n"
+             "Without that I don't how to speak to the Director :-(\n"),
           configfile.c_str());
     OK = false;
   }
@@ -1163,17 +1165,17 @@ static int InputCmd(FILE*, BareosSocket*)
   FILE* fd;
 
   if (argc > 2) {
-    ConsoleOutput(_("Too many arguments on input command.\n"));
+    ConsoleOutput(T_("Too many arguments on input command.\n"));
     return 1;
   }
   if (argc == 1) {
-    ConsoleOutput(_("First argument to input command must be a filename.\n"));
+    ConsoleOutput(T_("First argument to input command must be a filename.\n"));
     return 1;
   }
   fd = fopen(argk[1], "rb");
   if (!fd) {
     BErrNo be;
-    ConsoleOutputFormat(_("Cannot open file %s for input. ERR=%s\n"), argk[1],
+    ConsoleOutputFormat(T_("Cannot open file %s for input. ERR=%s\n"), argk[1],
                         be.bstrerror());
     return 1;
   }
@@ -1204,7 +1206,7 @@ static int DoOutputcmd(FILE*, BareosSocket*)
   const char* mode = "a+b";
 
   if (argc > 3) {
-    ConsoleOutput(_("Too many arguments on output/tee command.\n"));
+    ConsoleOutput(T_("Too many arguments on output/tee command.\n"));
     return 1;
   }
   if (argc == 1) {
@@ -1215,7 +1217,7 @@ static int DoOutputcmd(FILE*, BareosSocket*)
   file = fopen(argk[1], mode);
   if (!file) {
     BErrNo be;
-    ConsoleOutputFormat(_("Cannot open file %s for output. ERR=%s\n"), argk[1],
+    ConsoleOutputFormat(T_("Cannot open file %s for output. ERR=%s\n"), argk[1],
                         be.bstrerror(errno));
     return 1;
   }
@@ -1232,14 +1234,15 @@ static int ExecCmd(FILE*, BareosSocket*)
   int wait = 0;
 
   if (argc > 3) {
-    ConsoleOutput(_("Too many arguments. Enclose command in double quotes.\n"));
+    ConsoleOutput(
+        T_("Too many arguments. Enclose command in double quotes.\n"));
     return 1;
   }
   if (argc == 3) { wait = atoi(argk[2]); }
   bpipe = OpenBpipe(argk[1], wait, "r");
   if (!bpipe) {
     BErrNo be;
-    ConsoleOutputFormat(_("Cannot popen(\"%s\", \"r\"): ERR=%s\n"), argk[1],
+    ConsoleOutputFormat(T_("Cannot popen(\"%s\", \"r\"): ERR=%s\n"), argk[1],
                         be.bstrerror(errno));
     return 1;
   }
@@ -1251,7 +1254,7 @@ static int ExecCmd(FILE*, BareosSocket*)
   if (status != 0) {
     BErrNo be;
     be.SetErrno(status);
-    ConsoleOutputFormat(_("Autochanger error: ERR=%s\n"), be.bstrerror());
+    ConsoleOutputFormat(T_("Autochanger error: ERR=%s\n"), be.bstrerror());
   }
   return 1;
 }

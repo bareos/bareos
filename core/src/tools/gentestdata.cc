@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "CLI/App.hpp"
-#include "CLI/Formatter.hpp"
-#include "CLI/Config.hpp"
+#include "lib/cli.h"
 #include <random>
 #include <cstring>
 

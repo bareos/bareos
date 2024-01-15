@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
 set -e
 set -u
 
-# change to root dir
+# avoid misleading PostgreSQL warning 'could not change directory to ...'
 cd /
 
 #
@@ -59,7 +59,7 @@ if [ -n "${sql_definitions}" ]; then
 fi
 
 retval=0
-PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
+PAGER="" PGOPTIONS="--client-min-messages=warning" psql -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
 if [ $retval -eq 0 ]; then
    info "Creation ${db_name} tables succeeded."
 else

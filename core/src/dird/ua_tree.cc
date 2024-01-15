@@ -74,44 +74,44 @@ struct cmdstruct {
 };
 
 static struct cmdstruct commands[] = {
-    {NT_("abort"), QuitCmd, _("abort and do not do restore"), true},
+    {NT_("abort"), QuitCmd, T_("abort and do not do restore"), true},
     {NT_("add"), markcmd,
-     _("add dir/file to be restored recursively, wildcards allowed"), true},
-    {NT_("cd"), cdcmd, _("change current directory"), true},
-    {NT_("count"), countcmd, _("count marked files in and below the cd"),
+     T_("add dir/file to be restored recursively, wildcards allowed"), true},
+    {NT_("cd"), cdcmd, T_("change current directory"), true},
+    {NT_("count"), countcmd, T_("count marked files in and below the cd"),
      false},
     {NT_("delete"), Unmarkcmd,
-     _("delete dir/file to be restored recursively in dir"), true},
-    {NT_("dir"), dircmd, _("long list current directory, wildcards allowed"),
+     T_("delete dir/file to be restored recursively in dir"), true},
+    {NT_("dir"), dircmd, T_("long list current directory, wildcards allowed"),
      false},
     {NT_(".dir"), DotDircmd,
-     _("long list current directory, wildcards allowed"), false},
-    {NT_("done"), donecmd, _("leave file selection mode"), true},
-    {NT_("estimate"), Estimatecmd, _("estimate restore size"), false},
-    {NT_("exit"), donecmd, _("same as done command"), true},
-    {NT_("find"), findcmd, _("find files, wildcards allowed"), false},
-    {NT_("help"), HelpCmd, _("print help"), false},
-    {NT_("ls"), lscmd, _("list current directory, wildcards allowed"), false},
-    {NT_(".ls"), DotLscmd, _("list current directory, wildcards allowed"),
+     T_("long list current directory, wildcards allowed"), false},
+    {NT_("done"), donecmd, T_("leave file selection mode"), true},
+    {NT_("estimate"), Estimatecmd, T_("estimate restore size"), false},
+    {NT_("exit"), donecmd, T_("same as done command"), true},
+    {NT_("find"), findcmd, T_("find files, wildcards allowed"), false},
+    {NT_("help"), HelpCmd, T_("print help"), false},
+    {NT_("ls"), lscmd, T_("list current directory, wildcards allowed"), false},
+    {NT_(".ls"), DotLscmd, T_("list current directory, wildcards allowed"),
      false},
     {NT_(".lsdir"), DotLsdircmd,
-     _("list subdir in current directory, wildcards allowed"), false},
-    {NT_("lsmark"), Lsmarkcmd, _("list the marked files in and below the cd"),
+     T_("list subdir in current directory, wildcards allowed"), false},
+    {NT_("lsmark"), Lsmarkcmd, T_("list the marked files in and below the cd"),
      false},
-    {NT_(".lsmark"), DotLsmarkcmd, _("list the marked files in"), false},
+    {NT_(".lsmark"), DotLsmarkcmd, T_("list the marked files in"), false},
     {NT_("mark"), markcmd,
-     _("mark dir/file to be restored recursively, wildcards allowed"), true},
+     T_("mark dir/file to be restored recursively, wildcards allowed"), true},
     {NT_("markdir"), Markdircmd,
-     _("mark directory name to be restored (no files)"), true},
-    {NT_("pwd"), pwdcmd, _("print current working directory"), false},
-    {NT_(".pwd"), DotPwdcmd, _("print current working directory"), false},
+     T_("mark directory name to be restored (no files)"), true},
+    {NT_("pwd"), pwdcmd, T_("print current working directory"), false},
+    {NT_(".pwd"), DotPwdcmd, T_("print current working directory"), false},
     {NT_("unmark"), Unmarkcmd,
-     _("unmark dir/file to be restored recursively in dir"), true},
+     T_("unmark dir/file to be restored recursively in dir"), true},
     {NT_("unmarkdir"), UnMarkdircmd,
-     _("unmark directory name only no recursion"), true},
-    {NT_("quit"), QuitCmd, _("quit and do not do restore"), true},
-    {NT_(".help"), DotHelpcmd, _("print help"), false},
-    {NT_("?"), HelpCmd, _("print help"), false},
+     T_("unmark directory name only no recursion"), true},
+    {NT_("quit"), QuitCmd, T_("quit and do not do restore"), true},
+    {NT_(".help"), DotHelpcmd, T_("print help"), false},
+    {NT_("?"), HelpCmd, T_("print help"), false},
 };
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
@@ -134,18 +134,18 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   user = ua->UA_sock;
 
   ua->SendMsg(
-      _("\nYou are now entering file selection mode where you add (mark) and\n"
-        "remove (unmark) files to be restored. No files are initially added, "
-        "unless\n"
-        "you used the \"all\" keyword on the command line.\n"
-        "Enter \"done\" to leave this mode.\n\n"));
+      T_("\nYou are now entering file selection mode where you add (mark) and\n"
+         "remove (unmark) files to be restored. No files are initially added, "
+         "unless\n"
+         "you used the \"all\" keyword on the command line.\n"
+         "Enter \"done\" to leave this mode.\n\n"));
   user->signal(BNET_START_RTREE);
 
   // Enter interactive command handler allowing selection of individual files.
   tree->node = (TREE_NODE*)tree->root;
   cwd = tree_getpath(tree->node);
   if (cwd) {
-    ua->SendMsg(_("cwd is: %s\n"), cwd);
+    ua->SendMsg(T_("cwd is: %s\n"), cwd);
     FreePoolMemory(cwd);
   }
 
@@ -158,7 +158,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
     ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv,
                   MAX_CMD_ARGS);
     if (ua->argc == 0) {
-      ua->WarningMsg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
+      ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
                      ua->cmd);
       if (ua->api) { user->signal(BNET_CMD_FAILED); }
       continue;
@@ -184,7 +184,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
         /* Some unknow dot command -- probably .messages, ignore it */
         continue;
       }
-      ua->WarningMsg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
+      ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
                      ua->cmd);
       if (ua->api) { user->signal(BNET_CMD_FAILED); }
       continue;
@@ -265,8 +265,8 @@ int InsertTreeHandler(void* ctx, int, char** row)
 
       } else {
         tree->ua->WarningMsg(
-            _("Something is wrong with the Delta sequence of %s, "
-              "skipping new parts. Current sequence is %d\n"),
+            T_("Something is wrong with the Delta sequence of %s, "
+               "skipping new parts. Current sequence is %d\n"),
             row[1], node->delta_seq);
 
         Dmsg3(0,
@@ -317,21 +317,17 @@ int InsertTreeHandler(void* ctx, int, char** row)
         entry->node = node;
         tree->root->hardlinks.insert(entry->key, entry);
       } else {
-        // See if we are optimizing for speed or size.
-        if (!me->optimize_for_size && me->optimize_for_speed) {
-          // Hardlink to known file index: lookup original file
-          uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
-          HL_ENTRY* first_hl
-              = (HL_ENTRY*)tree->root->hardlinks.lookup(file_key);
+        // Hardlink to known file index: lookup original file
+        uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
+        HL_ENTRY* first_hl = (HL_ENTRY*)tree->root->hardlinks.lookup(file_key);
 
-          if (first_hl && first_hl->node) {
-            // Then add hardlink entry to linked node.
-            entry = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(
-                sizeof(HL_ENTRY));
-            entry->key = (((uint64_t)JobId) << 32) + FileIndex;
-            entry->node = first_hl->node;
-            tree->root->hardlinks.insert(entry->key, entry);
-          }
+        if (first_hl && first_hl->node) {
+          // Then add hardlink entry to linked node.
+          entry
+              = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+          entry->key = (((uint64_t)JobId) << 32) + FileIndex;
+          entry->node = first_hl->node;
+          tree->root->hardlinks.insert(entry->key, entry);
         }
       }
     }
@@ -379,56 +375,23 @@ static int SetExtract(UaContext* ua,
       while (node->parent && !node->parent->extract_dir) {
         node = node->parent;
         node->extract_dir = true;
+        if (node->type != TN_NEWDIR && node->type != TN_ROOT) { count += 1; }
       }
     }
   } else {
-    if (extract) {
-      uint64_t key = 0;
-      bool is_hardlinked = false;
+    if (extract && node->hard_link) {
+      // Every hardlink is in hashtable, and it points to linked file.
+      uint64_t key = (((uint64_t)node->JobId) << 32) + node->FileIndex;
 
-      // See if we are optimizing for speed or size.
-      if (!me->optimize_for_size && me->optimize_for_speed) {
-        if (node->hard_link) {
-          // Every hardlink is in hashtable, and it points to linked file.
-          key = (((uint64_t)node->JobId) << 32) + node->FileIndex;
-          is_hardlinked = true;
-        }
-      } else {
-        FileDbRecord fdbr;
-        POOLMEM* cwd;
-
-        /* Ordinary file, we get the full path, look up the attributes, decode
-         * them, and if we are hard linked to a file that was saved, we must
-         * load that file too. */
-        cwd = tree_getpath(node);
-        if (cwd) {
-          fdbr.FileId = 0;
-          fdbr.JobId = node->JobId;
-
-          if (node->hard_link
-              && ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
-            int32_t LinkFI;
-            struct stat statp;
-
-            DecodeStat(fdbr.LStat, &statp, sizeof(statp),
-                       &LinkFI); /* decode stat pkt */
-            key = (((uint64_t)node->JobId) << 32)
-                  + LinkFI; /* lookup by linked file's fileindex */
-            is_hardlinked = true;
-          }
-          FreePoolMemory(cwd);
-        }
-      }
-
-      if (is_hardlinked) {
-        /* If we point to a hard linked file, find that file in hardlinks
-         * hashmap, and mark it to be restored as well. */
-        HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
-        if (entry && entry->node) {
-          n = entry->node;
-          n->extract = true;
-          n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
-        }
+      /* If we point to a hard linked file, find that file in hardlinks
+       * hashmap, and mark it to be restored as well. */
+      HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
+      if (entry && entry->node) {
+        n = entry->node;
+        // if this is our first time marking it, then add to the count
+        if (!n->extract) { count += 1; }
+        n->extract = true;
+        n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
       }
     }
   }
@@ -464,7 +427,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
                            given_file_pattern, &fnl);
 
       if (!tree_cwd(given_path_pattern, tree->root, tree->node)) {
-        ua->WarningMsg(_("Invalid path %s given.\n"), given_path_pattern);
+        ua->WarningMsg(T_("Invalid path %s given.\n"), given_path_pattern);
         FreePoolMemory(given_file_pattern);
         FreePoolMemory(given_path_pattern);
         continue;
@@ -529,7 +492,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
 static int markcmd(UaContext* ua, TreeContext* tree)
 {
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(_("No files marked.\n"));
+    ua->SendMsg(T_("No files marked.\n"));
     return 1;
   }
 
@@ -538,11 +501,11 @@ static int markcmd(UaContext* ua, TreeContext* tree)
   int count = MarkElements(ua, tree);
 
   if (count == 0) {
-    ua->SendMsg(_("No files marked.\n"));
+    ua->SendMsg(T_("No files marked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(_("1 file marked.\n"));
+    ua->SendMsg(T_("1 file marked.\n"));
   } else {
-    ua->SendMsg(_("%s files marked.\n"), edit_uint64_with_commas(count, ec1));
+    ua->SendMsg(T_("%s files marked.\n"), edit_uint64_with_commas(count, ec1));
   }
 
   return 1;
@@ -555,7 +518,7 @@ static int Markdircmd(UaContext* ua, TreeContext* tree)
   char ec1[50];
 
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(_("No files marked.\n"));
+    ua->SendMsg(T_("No files marked.\n"));
     return 1;
   }
   for (int i = 1; i < ua->argc; i++) {
@@ -570,11 +533,11 @@ static int Markdircmd(UaContext* ua, TreeContext* tree)
     }
   }
   if (count == 0) {
-    ua->SendMsg(_("No directories marked.\n"));
+    ua->SendMsg(T_("No directories marked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(_("1 directory marked.\n"));
+    ua->SendMsg(T_("1 directory marked.\n"));
   } else {
-    ua->SendMsg(_("%s directories marked.\n"),
+    ua->SendMsg(T_("%s directories marked.\n"),
                 edit_uint64_with_commas(count, ec1));
   }
   return 1;
@@ -593,7 +556,7 @@ static int countcmd(UaContext* ua, TreeContext* tree)
       if (node->extract || node->extract_dir) { num_extract++; }
     }
   }
-  ua->SendMsg(_("%s total files/dirs. %s marked to be restored.\n"),
+  ua->SendMsg(T_("%s total files/dirs. %s marked to be restored.\n"),
               edit_uint64_with_commas(total, ec1),
               edit_uint64_with_commas(num_extract, ec2));
   return 1;
@@ -605,7 +568,7 @@ static int findcmd(UaContext* ua, TreeContext* tree)
   POOLMEM* cwd;
 
   if (ua->argc == 1) {
-    ua->SendMsg(_("No file specification given.\n"));
+    ua->SendMsg(T_("No file specification given.\n"));
     return 1; /* make it non-fatal */
   }
 
@@ -802,7 +765,7 @@ static int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
   char* pcwd;
 
   if (!TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(_("Node %s has no children.\n"), tree->node->fname);
+    ua->SendMsg(T_("Node %s has no children.\n"), tree->node->fname);
     return 1;
   }
 
@@ -909,8 +872,8 @@ static int Estimatecmd(UaContext* ua, TreeContext* tree)
       }
     }
   }
-  ua->SendMsg(_("%d total files; %d marked to be restored; %s bytes.\n"), total,
-              num_extract, edit_uint64_with_commas(total_bytes, ec1));
+  ua->SendMsg(T_("%d total files; %d marked to be restored; %s bytes.\n"),
+              total, num_extract, edit_uint64_with_commas(total_bytes, ec1));
   return 1;
 }
 
@@ -918,11 +881,11 @@ static int HelpCmd(UaContext* ua, TreeContext*)
 {
   unsigned int i;
 
-  ua->SendMsg(_("  Command    Description\n  =======    ===========\n"));
+  ua->SendMsg(T_("  Command    Description\n  =======    ===========\n"));
   for (i = 0; i < comsize; i++) {
     // List only non-dot commands
     if (commands[i].key[0] != '.') {
-      ua->SendMsg("  %-10s %s\n", _(commands[i].key), _(commands[i].help));
+      ua->SendMsg("  %-10s %s\n", T_(commands[i].key), T_(commands[i].help));
     }
   }
   ua->SendMsg("\n");
@@ -941,7 +904,7 @@ static int cdcmd(UaContext* ua, TreeContext* tree)
 
   if (ua->argc != 2) {
     ua->ErrorMsg(
-        _("Too few or too many arguments. Try using double quotes.\n"));
+        T_("Too few or too many arguments. Try using double quotes.\n"));
     return 1;
   }
 
@@ -957,7 +920,7 @@ static int cdcmd(UaContext* ua, TreeContext* tree)
     }
 
     if (!node) {
-      ua->WarningMsg(_("Invalid path given.\n"));
+      ua->WarningMsg(T_("Invalid path given.\n"));
     } else {
       tree->node = node;
     }
@@ -977,7 +940,7 @@ static int pwdcmd(UaContext* ua, TreeContext* tree)
     if (ua->api) {
       ua->SendMsg("%s", cwd);
     } else {
-      ua->SendMsg(_("cwd is: %s\n"), cwd);
+      ua->SendMsg(T_("cwd is: %s\n"), cwd);
     }
     FreePoolMemory(cwd);
   }
@@ -1006,7 +969,7 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
   bool restore_cwd = false;
 
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(_("No files unmarked.\n"));
+    ua->SendMsg(T_("No files unmarked.\n"));
     return 1;
   }
 
@@ -1028,7 +991,7 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
       // First change the CWD to the correct PATH.
       node = tree_cwd(path, tree->root, tree->node);
       if (!node) {
-        ua->WarningMsg(_("Invalid path %s given.\n"), path);
+        ua->WarningMsg(T_("Invalid path %s given.\n"), path);
         FreePoolMemory(file);
         FreePoolMemory(path);
         continue;
@@ -1055,19 +1018,20 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
   }
 
   if (count == 0) {
-    ua->SendMsg(_("No files unmarked.\n"));
+    ua->SendMsg(T_("No files unmarked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(_("1 file unmarked.\n"));
+    ua->SendMsg(T_("1 file unmarked.\n"));
   } else {
     char ed1[50];
-    ua->SendMsg(_("%s files unmarked.\n"), edit_uint64_with_commas(count, ed1));
+    ua->SendMsg(T_("%s files unmarked.\n"),
+                edit_uint64_with_commas(count, ed1));
   }
 
   // Restore the CWD when we changed it.
   if (restore_cwd && cwd) {
     node = tree_cwd(cwd, tree->root, tree->node);
     if (!node) {
-      ua->WarningMsg(_("Invalid path %s given.\n"), cwd);
+      ua->WarningMsg(T_("Invalid path %s given.\n"), cwd);
     } else {
       tree->node = node;
     }
@@ -1084,7 +1048,7 @@ static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
   int count = 0;
 
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(_("No directories unmarked.\n"));
+    ua->SendMsg(T_("No directories unmarked.\n"));
     return 1;
   }
 
@@ -1101,11 +1065,11 @@ static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
   }
 
   if (count == 0) {
-    ua->SendMsg(_("No directories unmarked.\n"));
+    ua->SendMsg(T_("No directories unmarked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(_("1 directory unmarked.\n"));
+    ua->SendMsg(T_("1 directory unmarked.\n"));
   } else {
-    ua->SendMsg(_("%d directories unmarked.\n"), count);
+    ua->SendMsg(T_("%d directories unmarked.\n"), count);
   }
   return 1;
 }

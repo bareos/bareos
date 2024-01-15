@@ -1,199 +1,62 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Breaking changes
-- The following deprecated configuration options have been removed, make sure to update your configuration accordingly:
-   * Director daemon
-     * Pid Directory
-     
-   * File daemon
-     * Pid Directory
-     * Compatible
-     
-   * Storage daemon
-     * Pid Directory
-     * Compatible
-
 ### Changed
-- VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1352]
-- devtools: add `pr-tool` to automate PR review and merge [PR #935]
-- build: replace sprintf by snprintf due to upgraded MacOS compiler, change linking of googletest [PR #1361]
-- storage daemon: fix crash on volume swap [PR #1356]
-- core: make resource/configuration locking safer [PR #1325]
-- json generation: Fix some leaks and an integer overflow [PR #1130]
-- tray-monitor: build against Qt6 when present [PR #1011]
-- systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1339]
-- stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1348]
-- webui: enable sorting on version column [PR #1365]
-- dird: skip disabled clients in status command [PR #1367]
-- bsmtp: fix and update code, and change CLI parsing to CLI11 [PR #1316]
-- ua_restore: Add additional client info for restore report [PR #1374]
-- restore: fix failed restores showing Restore ok with warning [PR #1387]
-- FreeBSD: build cleanup [PR #1336]
-- improvements to pr-tool [PR #1389]
-- file checksums: add new signature algorithm xxh128 [PR #1359]
-- stored: remove warning for maximum block size for tapes [PR #1375]
-- ua_restore: enable restore from archive [PR #1372]
-- testfind: reuse filedaemon logic [PR #1234]
-- dird: enable default options in `fileset` config when no options are explicitly specified [PR #1357]
-- introduce php-cs-fixer and apply PSR-12 guidelines [PR #1403]
-- berrno_test.cc: accept both 271E and 273E [PR #1407]
-- Sanitizers: add ASAN options to avoid crashes [PR #1410]
-- dird: cats: adapt `purge` command to delete jobs with specific jobstatus and/or from specific pool [PR #1349]
-- filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
-- webui: remove some development leftovers and artefacts [PR #1422]
-- dird: allow to disable TLS-PSK downgrades [PR #1398]
-- core: fixes for gcc-13 support [PR #1424]
-- webui: update localization [PR #1414]
-- webui: improve localization process [PR #1429]
-- webui: add machine-readable copyright file [PR #1419]
-- webui: add config resource graph to analytics (experimental) [PR #1412]
-- dird: keep copy and migration control/administrative jobs [PR #1421]
-- scripts: config-lib improve get_local_hostname fallback [PR #1402]
-- dird: deprecate client `Autoprune`, `JobRetention`, and `FileRetention` [PR #1425]
-- daemons: remove deprecated `Pid Directory` config option, and update `Maximum Concurrent Jobs` default value to 1 [PR #1426]
-- build: switch to FreeBSD 12.4 [PR #1440]
-- webui: create internal api module [PR #1447]
-- webui: make restore merge options configurable [PR #1445]
-- webui: update German translation [PR #1437]
-- build: fix for gcc 13.1.1 [PR #1459]
-- packaging: systemd unit: set a limit of restart [PR #1450]
-- python-bareos: add missing `dirname` variable [PR #1460]
-- build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1469]
-- cleanup: remove some unused functions and shrink number of includes in bareos.h [PR #1433]
-- core: fix schema public with PostgreSQL 15 [PR #1449]
-- pr-tool: handling POEditor commits and optional github ci tests [PR #1434]
-- VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1473]
-- stored: change default block size to 1 MiB [PR #1396]
-- webui: re-add show update status for clients [PR #1371]
-- build: add Debian 12 [PR #1477]
-- pr-tool: Add options to be used in CI runs [PR #1488]
-- VMware Plugin: improve snapshot cleanup [PR #1484]
-- packaging: cleanup SUSE webui dependencies [PR #1493]
-- vss: remove dependency on live system during backup [PR #1452]
-- build: adapt matrix and pkglist for changes to CI [PR #1490]
+- github actions: PyPi: install setuptools [PR #1589]
+- restore: add fileregex parameter [PR #1587]
+- scripts: force cd / for all PostgreSQL scripts [PR #1607]
+- Improve python plugin configuration [PR #1605]
+- macOS: fix linking problem for macOS >= 14 [PR #1592]
+- dird: remove optimize_for_size/optimize_for_speed [PR #1612]
+- build: introduce Fedora 39 [PR #1614]
+- libcloud: modularize systemtest [PR #1609]
+- filedaemon: remove ovirt plugin [PR #1617]
+- vadp-dumper: fix multithreaded backup/restore issues [PR #1593]
+- VMware Plugin: Run bareos_vadp_dumper with optimized parameters to increase backup performance [PR #1630]
+- pkglists: update SUSE to have vmware packages [PR #1632]
+- backup report: show negative compression [PR #1598]
+- core: add build patch for `sprintf` in macos builds [PR #1636]
+- python-bareos: use socket.create_connection() to allow AF_INET6 [PR #1646]
+- Improve FreeBSD build [PR #1538]
+- core: sql_* add leading space to sql construct [PR #1656]
 
 ### Removed
-- remove no longer used pkglists [PR #1335]
-- core: remove deprecated make_catalog_backup.pl [PR #1378]
-- cats: remove remains of deprecated databases [PR #1377]
-- dird: filed: stored: remove deprecated `maxconnections` option from configuration [PR #1340]
-- cats: remove dynamic catalog backends [PR #1392]
-
-### Changed
-- cats: fix issue where `startfile` field gets wrongly updated [PR #1346]
-- Python Plugins: Avoid pop(0) performance impact [PR #1351]
-
-### Fixed
-- Fix gcc warnings in ndmjob program [PR #1343]
-- filed: avoid reading from ephemeral buffer [PR #1373]
-- checkpoints: fix performance drop on big volume restores [PR #1345]
-- VMware Plugin: fix restore to different vmname [PR #1390]
-- vmware_cbt_tool.py: pyVmomi 8.x compatibility [PR #1386]
-- Fix problem with reoccuring files in always incremental [PR #1395]
-- bsmtp bls bextract: fixes for command line parsing [PR #1455]
-- daemons: update network handling when IP protocols unavailable [PR #1454]
-- Improve handling of catalog requests that try to reduce VolFiles, VolBlocks and VolBytes [PR #1431]
-- filed: fix off-by-one error when resizing acl buffer [PR #1479]
-- Consolidate: fix for consolidate job's client name not being correctly shown [PR #1474]
-- scripts: config-lib improve setup_sd_user [PR #1448]
+- plugins: remove old deprecated postgres plugin [PR #1606]
 
 ### Documentation
-- add explanation about binary version numbers [PR #1354]
-- docs: improve bareos-webui documentation [PR #1366]
-- docs: catalog maintenance improvements [PR #1379]
-- doc: improve plugin, webui, virtualfull chapters [PR #1401]
-- docs: move and update localization documentation [PR #1415]
-- check-sources: update check-sources ignores [PR #1439]
-- docs: replace GZIP compression by LZ4 and MD5/SHA1 signature by XXH128 [PR #1453]
-- docs: Windows add Antivirus section [PR #1468]
+- docs: improvements for droplet, jobdefs [PR #1581]
 
-[PR #935]: https://github.com/bareos/bareos/pull/935
-[PR #1011]: https://github.com/bareos/bareos/pull/1011
-[PR #1130]: https://github.com/bareos/bareos/pull/1130
-[PR #1234]: https://github.com/bareos/bareos/pull/1234
-[PR #1316]: https://github.com/bareos/bareos/pull/1316
-[PR #1325]: https://github.com/bareos/bareos/pull/1325
-[PR #1335]: https://github.com/bareos/bareos/pull/1335
-[PR #1336]: https://github.com/bareos/bareos/pull/1336
-[PR #1339]: https://github.com/bareos/bareos/pull/1339
-[PR #1340]: https://github.com/bareos/bareos/pull/1340
-[PR #1341]: https://github.com/bareos/bareos/pull/1341
-[PR #1343]: https://github.com/bareos/bareos/pull/1343
-[PR #1345]: https://github.com/bareos/bareos/pull/1345
-[PR #1346]: https://github.com/bareos/bareos/pull/1346
-[PR #1348]: https://github.com/bareos/bareos/pull/1348
-[PR #1349]: https://github.com/bareos/bareos/pull/1349
-[PR #1351]: https://github.com/bareos/bareos/pull/1351
-[PR #1352]: https://github.com/bareos/bareos/pull/1352
-[PR #1354]: https://github.com/bareos/bareos/pull/1354
-[PR #1356]: https://github.com/bareos/bareos/pull/1356
-[PR #1357]: https://github.com/bareos/bareos/pull/1357
-[PR #1359]: https://github.com/bareos/bareos/pull/1359
-[PR #1361]: https://github.com/bareos/bareos/pull/1361
-[PR #1365]: https://github.com/bareos/bareos/pull/1365
-[PR #1366]: https://github.com/bareos/bareos/pull/1366
-[PR #1367]: https://github.com/bareos/bareos/pull/1367
-[PR #1371]: https://github.com/bareos/bareos/pull/1371
-[PR #1372]: https://github.com/bareos/bareos/pull/1372
-[PR #1373]: https://github.com/bareos/bareos/pull/1373
-[PR #1374]: https://github.com/bareos/bareos/pull/1374
-[PR #1375]: https://github.com/bareos/bareos/pull/1375
-[PR #1377]: https://github.com/bareos/bareos/pull/1377
-[PR #1378]: https://github.com/bareos/bareos/pull/1378
-[PR #1379]: https://github.com/bareos/bareos/pull/1379
-[PR #1386]: https://github.com/bareos/bareos/pull/1386
-[PR #1387]: https://github.com/bareos/bareos/pull/1387
-[PR #1389]: https://github.com/bareos/bareos/pull/1389
-[PR #1390]: https://github.com/bareos/bareos/pull/1390
-[PR #1392]: https://github.com/bareos/bareos/pull/1392
-[PR #1395]: https://github.com/bareos/bareos/pull/1395
-[PR #1396]: https://github.com/bareos/bareos/pull/1396
-[PR #1398]: https://github.com/bareos/bareos/pull/1398
-[PR #1401]: https://github.com/bareos/bareos/pull/1401
-[PR #1402]: https://github.com/bareos/bareos/pull/1402
-[PR #1403]: https://github.com/bareos/bareos/pull/1403
-[PR #1407]: https://github.com/bareos/bareos/pull/1407
-[PR #1410]: https://github.com/bareos/bareos/pull/1410
-[PR #1412]: https://github.com/bareos/bareos/pull/1412
-[PR #1414]: https://github.com/bareos/bareos/pull/1414
-[PR #1415]: https://github.com/bareos/bareos/pull/1415
-[PR #1419]: https://github.com/bareos/bareos/pull/1419
-[PR #1421]: https://github.com/bareos/bareos/pull/1421
-[PR #1422]: https://github.com/bareos/bareos/pull/1422
-[PR #1424]: https://github.com/bareos/bareos/pull/1424
-[PR #1425]: https://github.com/bareos/bareos/pull/1425
-[PR #1426]: https://github.com/bareos/bareos/pull/1426
-[PR #1429]: https://github.com/bareos/bareos/pull/1429
-[PR #1431]: https://github.com/bareos/bareos/pull/1431
-[PR #1433]: https://github.com/bareos/bareos/pull/1433
-[PR #1434]: https://github.com/bareos/bareos/pull/1434
-[PR #1437]: https://github.com/bareos/bareos/pull/1437
-[PR #1439]: https://github.com/bareos/bareos/pull/1439
-[PR #1440]: https://github.com/bareos/bareos/pull/1440
-[PR #1445]: https://github.com/bareos/bareos/pull/1445
-[PR #1447]: https://github.com/bareos/bareos/pull/1447
-[PR #1448]: https://github.com/bareos/bareos/pull/1448
-[PR #1449]: https://github.com/bareos/bareos/pull/1449
-[PR #1450]: https://github.com/bareos/bareos/pull/1450
-[PR #1452]: https://github.com/bareos/bareos/pull/1452
-[PR #1453]: https://github.com/bareos/bareos/pull/1453
-[PR #1454]: https://github.com/bareos/bareos/pull/1454
-[PR #1455]: https://github.com/bareos/bareos/pull/1455
-[PR #1459]: https://github.com/bareos/bareos/pull/1459
-[PR #1460]: https://github.com/bareos/bareos/pull/1460
-[PR #1468]: https://github.com/bareos/bareos/pull/1468
-[PR #1469]: https://github.com/bareos/bareos/pull/1469
-[PR #1473]: https://github.com/bareos/bareos/pull/1473
-[PR #1474]: https://github.com/bareos/bareos/pull/1474
-[PR #1477]: https://github.com/bareos/bareos/pull/1477
-[PR #1479]: https://github.com/bareos/bareos/pull/1479
-[PR #1484]: https://github.com/bareos/bareos/pull/1484
-[PR #1488]: https://github.com/bareos/bareos/pull/1488
-[PR #1490]: https://github.com/bareos/bareos/pull/1490
-[PR #1493]: https://github.com/bareos/bareos/pull/1493
+### Fixed
+- dird: fix `purge oldest volume` [PR #1628]
+- Fix continuation on colons in plugin baseclass [PR #1637]
+- plugins: fix cancel handling crash [PR #1595]
+- Fix bareos_tasks plugin for pgsql [PR #1659]
+
+[PR #1538]: https://github.com/bareos/bareos/pull/1538
+[PR #1581]: https://github.com/bareos/bareos/pull/1581
+[PR #1587]: https://github.com/bareos/bareos/pull/1587
+[PR #1589]: https://github.com/bareos/bareos/pull/1589
+[PR #1592]: https://github.com/bareos/bareos/pull/1592
+[PR #1593]: https://github.com/bareos/bareos/pull/1593
+[PR #1595]: https://github.com/bareos/bareos/pull/1595
+[PR #1598]: https://github.com/bareos/bareos/pull/1598
+[PR #1605]: https://github.com/bareos/bareos/pull/1605
+[PR #1606]: https://github.com/bareos/bareos/pull/1606
+[PR #1607]: https://github.com/bareos/bareos/pull/1607
+[PR #1609]: https://github.com/bareos/bareos/pull/1609
+[PR #1612]: https://github.com/bareos/bareos/pull/1612
+[PR #1614]: https://github.com/bareos/bareos/pull/1614
+[PR #1617]: https://github.com/bareos/bareos/pull/1617
+[PR #1628]: https://github.com/bareos/bareos/pull/1628
+[PR #1630]: https://github.com/bareos/bareos/pull/1630
+[PR #1632]: https://github.com/bareos/bareos/pull/1632
+[PR #1636]: https://github.com/bareos/bareos/pull/1636
+[PR #1637]: https://github.com/bareos/bareos/pull/1637
+[PR #1646]: https://github.com/bareos/bareos/pull/1646
+[PR #1656]: https://github.com/bareos/bareos/pull/1656
+[PR #1659]: https://github.com/bareos/bareos/pull/1659
 [unreleased]: https://github.com/bareos/bareos/tree/master

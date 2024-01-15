@@ -5,5 +5,4 @@ Client {
   Password = "@fd_password@"          # password for FileDaemon
   FD PORT = @fd_port@
   TLS Enable = no
-  TLS Require = no
 }

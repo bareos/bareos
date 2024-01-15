@@ -134,14 +134,14 @@ bool BareosSocketTCP::connect(JobControlRecord* jcr,
       i = 60 * 5; /* complain again in 5 minutes */
       if (verbose)
         Qmsg4(jcr, M_WARNING, 0,
-              _("Could not connect to %s on %s:%d. ERR=%s\n"
-                "Retrying ...\n"),
+              T_("Could not connect to %s on %s:%d. ERR=%s\n"
+                 "Retrying ...\n"),
               name, host, port, be.bstrerror());
     }
     Bmicrosleep(retry_interval, 0);
     now = time(NULL);
     if (begin_time + max_retry_time <= now) {
-      Qmsg4(jcr, M_FATAL, 0, _("Unable to connect to %s on %s:%d. ERR=%s\n"),
+      Qmsg4(jcr, M_FATAL, 0, T_("Unable to connect to %s on %s:%d. ERR=%s\n"),
             name, host, port, be.bstrerror());
       goto bail_out;
     }
@@ -196,7 +196,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
   if ((addr_list = BnetHost2IpAddrs(host, 0, &errstr)) == NULL) {
     // Note errstr is not malloc'ed
     Qmsg2(jcr, M_ERROR, 0,
-          _("BnetHost2IpAddrs() for host \"%s\" failed: ERR=%s\n"), host,
+          T_("BnetHost2IpAddrs() for host \"%s\" failed: ERR=%s\n"), host,
           errstr);
     Dmsg2(100, "BnetHost2IpAddrs() for host %s failed: ERR=%s\n", host, errstr);
     *fatal = 1;
@@ -252,7 +252,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
 #endif
         default:
           *fatal = 1;
-          Pmsg3(000, _("Socket open error. proto=%d port=%d. ERR=%s\n"),
+          Pmsg3(000, T_("Socket open error. proto=%d port=%d. ERR=%s\n"),
                 ipaddr->GetFamily(), ipaddr->GetPortHostOrder(),
                 be.bstrerror());
           break;
@@ -267,7 +267,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
         BErrNo be;
         save_errno = errno;
         *fatal = 1;
-        Pmsg2(000, _("Source address bind error. proto=%d. ERR=%s\n"),
+        Pmsg2(000, T_("Source address bind error. proto=%d. ERR=%s\n"),
               src_addr->GetFamily(), be.bstrerror());
         if (sockfd >= 0) {
           socketClose(sockfd);
@@ -305,13 +305,27 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
     return false;
   }
 
+#ifdef HAVE_LINUX_OS
+#  ifdef TCP_ULP
+  // without this you cannot enable ktls on linux
+  if (setsockopt(sockfd, SOL_TCP, TCP_ULP, "tls", sizeof("tls")) < 0) {
+    BErrNo be;
+    Dmsg1(20,
+          "Cannot set TCP_ULP on socket: %s;\n"
+          "Is the tls module not loaded?  "
+          "kTLS will not work without it.",
+          be.bstrerror());
+  }
+#  endif
+#endif
+
   /* Keep socket from timing out from inactivity
    * Do this a second time out of paranoia */
   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value,
                  sizeof(value))
       < 0) {
     BErrNo be;
-    Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
+    Qmsg1(jcr, M_WARNING, 0, T_("Cannot set SO_KEEPALIVE on socket: %s\n"),
           be.bstrerror());
   }
 
@@ -335,7 +349,7 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
                  sizeof(value))
       < 0) {
     BErrNo be;
-    Qmsg1(jcr, M_WARNING, 0, _("Failed to set SO_KEEPALIVE on socket: %s\n"),
+    Qmsg1(jcr, M_WARNING, 0, T_("Failed to set SO_KEEPALIVE on socket: %s\n"),
           be.bstrerror());
     return false;
   }
@@ -366,7 +380,7 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
         < 0) {
       BErrNo be;
       Qmsg2(jcr, M_WARNING, 0,
-            _("Failed to set TCP_KEEPIDLE = %d on socket: %s\n"),
+            T_("Failed to set TCP_KEEPIDLE = %d on socket: %s\n"),
             keepalive_start, be.bstrerror());
       return false;
     }
@@ -376,7 +390,7 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
         < 0) {
       BErrNo be;
       Qmsg2(jcr, M_WARNING, 0,
-            _("Failed to set TCP_KEEPINTVL = %d on socket: %s\n"),
+            T_("Failed to set TCP_KEEPINTVL = %d on socket: %s\n"),
             keepalive_interval, be.bstrerror());
       return false;
     }
@@ -413,12 +427,12 @@ bool BareosSocketTCP::SendPacket(int32_t* hdr, int32_t pktsiz)
     if (rc < 0) {
       if (!suppress_error_msgs_) {
         Qmsg5(jcr_, M_ERROR, 0,
-              _("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
+              T_("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
               message_length, who_, host_, port_, this->bstrerror());
       }
     } else {
       Qmsg5(jcr_, M_ERROR, 0,
-            _("Wrote %d bytes to %s:%s:%d, but only %d accepted.\n"),
+            T_("Wrote %d bytes to %s:%s:%d, but only %d accepted.\n"),
             message_length, who_, host_, port_, rc);
     }
     ok = false;
@@ -454,7 +468,7 @@ bool BareosSocketTCP::send()
 
   if (errors) {
     if (!suppress_error_msgs_) {
-      Qmsg4(jcr_, M_ERROR, 0, _("Socket has errors=%d on call to %s:%s:%d\n"),
+      Qmsg4(jcr_, M_ERROR, 0, T_("Socket has errors=%d on call to %s:%s:%d\n"),
             errors.load(), who_, host_, port_);
     }
     return false;
@@ -463,7 +477,7 @@ bool BareosSocketTCP::send()
   if (IsTerminated()) {
     if (!suppress_error_msgs_) {
       Qmsg4(jcr_, M_ERROR, 0,
-            _("Socket is terminated=%d on call to %s:%s:%d\n"), IsTerminated(),
+            T_("Socket is terminated=%d on call to %s:%s:%d\n"), IsTerminated(),
             who_, host_, port_);
     }
     return false;
@@ -552,7 +566,7 @@ int32_t BareosSocketTCP::recv()
   if (nbytes != header_length) {
     ++errors;
     b_errno = EIO;
-    Qmsg5(jcr_, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
+    Qmsg5(jcr_, M_ERROR, 0, T_("Read expected %d got %d from %s:%s:%d\n"),
           header_length, nbytes, who_, host_, port_);
     nbytes = BNET_ERROR;
     goto get_out;
@@ -571,9 +585,10 @@ int32_t BareosSocketTCP::recv()
   // If signal or packet size too big
   if (pktsiz < 0 || pktsiz > max_packet_size) {
     if (pktsiz > 0) { /* if packet too big */
-      Qmsg3(jcr_, M_FATAL, 0,
-            _("Packet size too big from \"%s:%s:%d. Terminating connection.\n"),
-            who_, host_, port_);
+      Qmsg3(
+          jcr_, M_FATAL, 0,
+          T_("Packet size too big from \"%s:%s:%d. Terminating connection.\n"),
+          who_, host_, port_);
       pktsiz = BNET_TERMINATE; /* hang up */
     }
     if (pktsiz == BNET_TERMINATE) { SetTerminated(); }
@@ -601,7 +616,7 @@ int32_t BareosSocketTCP::recv()
       b_errno = errno;
     }
     ++errors;
-    Qmsg4(jcr_, M_ERROR, 0, _("Read error from %s:%s:%d: ERR=%s\n"), who_,
+    Qmsg4(jcr_, M_ERROR, 0, T_("Read error from %s:%s:%d: ERR=%s\n"), who_,
           host_, port_, this->bstrerror());
     nbytes = BNET_ERROR;
     goto get_out;
@@ -612,7 +627,7 @@ int32_t BareosSocketTCP::recv()
   if (nbytes != pktsiz) {
     b_errno = EIO;
     ++errors;
-    Qmsg5(jcr_, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
+    Qmsg5(jcr_, M_ERROR, 0, T_("Read expected %d got %d from %s:%s:%d\n"),
           pktsiz, nbytes, who_, host_, port_);
     nbytes = BNET_ERROR;
     goto get_out;
@@ -675,7 +690,7 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
   start_size = dbuf_size;
   if ((msg = ReallocPoolMemory(msg, dbuf_size + 100)) == NULL) {
     Qmsg0(get_jcr(), M_FATAL, 0,
-          _("Could not malloc BareosSocket data buffer\n"));
+          T_("Could not malloc BareosSocket data buffer\n"));
     return false;
   }
 
@@ -693,13 +708,13 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
                           sizeof(dbuf_size))
                < 0)) {
       BErrNo be;
-      Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
+      Qmsg1(get_jcr(), M_ERROR, 0, T_("sockopt error: %s\n"), be.bstrerror());
       dbuf_size -= TAPE_BSIZE;
     }
     Dmsg1(200, "set network buffer size=%d\n", dbuf_size);
     if (dbuf_size != start_size) {
       Qmsg1(get_jcr(), M_WARNING, 0,
-            _("Warning network buffer = %d bytes not max size.\n"), dbuf_size);
+            T_("Warning network buffer = %d bytes not max size.\n"), dbuf_size);
     }
   }
   if (size != 0) {
@@ -714,13 +729,13 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
                           sizeof(dbuf_size))
                < 0)) {
       BErrNo be;
-      Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
+      Qmsg1(get_jcr(), M_ERROR, 0, T_("sockopt error: %s\n"), be.bstrerror());
       dbuf_size -= TAPE_BSIZE;
     }
     Dmsg1(900, "set network buffer size=%d\n", dbuf_size);
     if (dbuf_size != start_size) {
       Qmsg1(get_jcr(), M_WARNING, 0,
-            _("Warning network buffer = %d bytes not max size.\n"), dbuf_size);
+            T_("Warning network buffer = %d bytes not max size.\n"), dbuf_size);
     }
   }
 
@@ -741,14 +756,14 @@ int BareosSocketTCP::SetNonblocking()
   // Get current flags
   if ((oflags = fcntl(fd_, F_GETFL, 0)) < 0) {
     BErrNo be;
-    Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_GETFL error. ERR=%s\n"),
+    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_GETFL error. ERR=%s\n"),
           be.bstrerror());
   }
 
   // Set O_NONBLOCK flag
   if ((fcntl(fd_, F_SETFL, oflags | O_NONBLOCK)) < 0) {
     BErrNo be;
-    Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"),
+    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_SETFL error. ERR=%s\n"),
           be.bstrerror());
   }
 
@@ -779,14 +794,14 @@ int BareosSocketTCP::SetBlocking()
   // Get current flags
   if ((oflags = fcntl(fd_, F_GETFL, 0)) < 0) {
     BErrNo be;
-    Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_GETFL error. ERR=%s\n"),
+    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_GETFL error. ERR=%s\n"),
           be.bstrerror());
   }
 
   // Set O_NONBLOCK flag
   if ((fcntl(fd_, F_SETFL, oflags & ~O_NONBLOCK)) < 0) {
     BErrNo be;
-    Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"),
+    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_SETFL error. ERR=%s\n"),
           be.bstrerror());
   }
 
@@ -810,7 +825,7 @@ void BareosSocketTCP::RestoreBlocking(int flags)
 #ifndef HAVE_WIN32
   if ((fcntl(fd_, F_SETFL, flags)) < 0) {
     BErrNo be;
-    Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"),
+    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_SETFL error. ERR=%s\n"),
           be.bstrerror());
   }
 
@@ -989,7 +1004,7 @@ int32_t BareosSocketTCP::write_nbytes(char* ptr, int32_t nbytes)
     if (nwritten != nbytes) {
       BErrNo be;
       b_errno = errno;
-      Qmsg1(jcr(), M_FATAL, 0, _("Attr spool write error. ERR=%s\n"),
+      Qmsg1(jcr(), M_FATAL, 0, T_("Attr spool write error. ERR=%s\n"),
             be.bstrerror());
       Dmsg2(400, "nwritten=%d nbytes=%d.\n", nwritten, nbytes);
       errno = b_errno;

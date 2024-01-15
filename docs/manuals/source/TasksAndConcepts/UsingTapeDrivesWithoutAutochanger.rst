@@ -3,9 +3,9 @@
 Using Tape Drives without Autochanger
 =====================================
 
-.. index
+.. index::
    single: Strategy; Backup
-   single: Backup Strategies
+   single: Backup; Strategies
 
 Although Recycling and Backing Up to Disk Volume have been discussed in previous chapters, this chapter is meant to give you an overall view of possible backup strategies and to explain their advantages and disadvantages.
 
@@ -220,7 +220,7 @@ For example, his bareos-dir.conf file looks like the following:
    # List of files to be backed up
    FileSet {
      Name = "Full Set"
-     Include = signature=MD5 {
+     Include = Signature=XXH128 {
        /
        /data
      }
@@ -249,7 +249,7 @@ For example, his bareos-dir.conf file looks like the following:
    # This is the backup of the catalog
    FileSet {
      Name = "Catalog"
-     Include = signature=MD5 {
+     Include = Signature=XXH128 {
         /var/lib/bareos/bareos.sql
      }
    }

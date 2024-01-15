@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,12 @@ at_exit() {
   fi
 }
 trap at_exit EXIT
+
+add_prefix() {
+  while IFS= read -r -d $'\0' path; do
+    echo -ne "./$path\0"
+  done
+}
 
 git="${GIT:-$(command -v git)}"
 cmake="${CMAKE:-$(command -v cmake)}"
@@ -122,6 +128,7 @@ fi
 
 (echo -ne 'cmake/BareosVersion.cmake\0'; "$git" ls-files -z) | \
 "$sort" -u -z | \
+add_prefix | \
 "$tar" "${args[@]}" -cf - --files-from - | \
 "$xz" --threads=0 -c -6 > "${archive_file}"
 

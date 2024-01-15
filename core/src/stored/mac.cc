@@ -91,11 +91,12 @@ static bool response(JobControlRecord* jcr,
   }
   if (IsBnetError(sd)) {
     Jmsg2(jcr, M_FATAL, 0,
-          _("Comm error with SD. bad response to %s. ERR=%s\n"), cmd,
+          T_("Comm error with SD. bad response to %s. ERR=%s\n"), cmd,
           BnetStrerror(sd));
   } else {
-    Jmsg3(jcr, M_FATAL, 0, _("Bad response to %s command. Wanted %s, got %s\n"),
-          cmd, resp, sd->msg);
+    Jmsg3(jcr, M_FATAL, 0,
+          T_("Bad response to %s command. Wanted %s, got %s\n"), cmd, resp,
+          sd->msg);
   }
   return false;
 }
@@ -154,7 +155,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         /* write the SOS Label with the existing timestamp infos */
         if (!WriteSessionLabel(jcr->sd_impl->dcr, SOS_LABEL)) {
-          Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
+          Jmsg1(jcr, M_FATAL, 0, T_("Write session label failed. ERR=%s\n"),
                 dev->bstrerror());
           jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           retval = false;
@@ -222,7 +223,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
       Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
             dev->print_name(), dev->bstrerror());
-      Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
+      Jmsg2(jcr, M_FATAL, 0, T_("Fatal append error on device %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
       goto bail_out;
     }
@@ -326,7 +327,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
   if (send_eod) {
     if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
       if (!jcr->IsJobCanceled()) {
-        Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+        Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());
       }
       return false;
@@ -337,7 +338,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
   if (send_header) {
     if (!sd->fsend("%ld %d 0", rec->FileIndex, rec->Stream)) {
       if (!jcr->IsJobCanceled()) {
-        Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+        Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());
       }
       return false;
@@ -356,7 +357,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
     sd->msg = msgsave;
     sd->message_length = 0;
     if (!jcr->IsJobCanceled()) {
-      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
     return false;
@@ -381,10 +382,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   // Check autodeflation.
   switch (jcr->sd_impl->read_dcr->autodeflate) {
-    case AutoXflateMode::IO_DIRECTION_IN:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ:
+    case IODirection::READ_WRITE:
       Dmsg0(200, "Clearing autodeflate on read_dcr\n");
-      jcr->sd_impl->read_dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+      jcr->sd_impl->read_dcr->autodeflate = IODirection::NONE;
       break;
     default:
       break;
@@ -392,10 +393,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   if (jcr->sd_impl->dcr) {
     switch (jcr->sd_impl->dcr->autodeflate) {
-      case AutoXflateMode::IO_DIRECTION_OUT:
-      case AutoXflateMode::IO_DIRECTION_INOUT:
+      case IODirection::WRITE:
+      case IODirection::READ_WRITE:
         Dmsg0(200, "Clearing autodeflate on write dcr\n");
-        jcr->sd_impl->dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+        jcr->sd_impl->dcr->autodeflate = IODirection::NONE;
         break;
       default:
         break;
@@ -404,10 +405,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   // Check autoinflation.
   switch (jcr->sd_impl->read_dcr->autoinflate) {
-    case AutoXflateMode::IO_DIRECTION_IN:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ:
+    case IODirection::READ_WRITE:
       Dmsg0(200, "Clearing autoinflate on read_dcr\n");
-      jcr->sd_impl->read_dcr->autoinflate = AutoXflateMode::IO_DIRECTION_NONE;
+      jcr->sd_impl->read_dcr->autoinflate = IODirection::NONE;
       break;
     default:
       break;
@@ -415,10 +416,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   if (jcr->sd_impl->dcr) {
     switch (jcr->sd_impl->dcr->autoinflate) {
-      case AutoXflateMode::IO_DIRECTION_OUT:
-      case AutoXflateMode::IO_DIRECTION_INOUT:
+      case IODirection::WRITE:
+      case IODirection::READ_WRITE:
         Dmsg0(200, "Clearing autoinflate on write dcr\n");
-        jcr->sd_impl->dcr->autoinflate = AutoXflateMode::IO_DIRECTION_NONE;
+        jcr->sd_impl->dcr->autoinflate = IODirection::NONE;
         break;
       default:
         break;
@@ -458,7 +459,7 @@ bool DoMacRun(JobControlRecord* jcr)
   Dmsg0(20, "Start read data.\n");
 
   if (jcr->sd_impl->NumReadVolumes == 0) {
-    Jmsg(jcr, M_FATAL, 0, _("No Volume names found for %s.\n"), Type);
+    Jmsg(jcr, M_FATAL, 0, T_("No Volume names found for %s.\n"), Type);
     goto bail_out;
   }
 
@@ -470,7 +471,7 @@ bool DoMacRun(JobControlRecord* jcr)
     BareosSocket* sd;
 
     if (!jcr->sd_impl->read_dcr) {
-      Jmsg(jcr, M_FATAL, 0, _("Read device not properly initialized.\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("Read device not properly initialized.\n"));
       goto bail_out;
     }
 
@@ -490,12 +491,22 @@ bool DoMacRun(JobControlRecord* jcr)
           jcr->sd_impl->read_dcr->dev->file,
           jcr->sd_impl->read_dcr->dev->block_num);
 
+    // Let SD plugins setup the record translation on read dcr
+    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
+                            jcr->sd_impl->read_dcr)
+        != bRC_OK) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("bSdEventSetupRecordTranslation call failed for read dcr!\n"));
+      ok = false;
+      goto bail_out;
+    }
+
     jcr->sendJobStatus(JS_Running);
 
     // Set network buffering.
     sd = jcr->store_bsock;
     if (!sd->SetBufferSize(me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
-      Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size SD->SD.\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("Cannot set buffer size SD->SD.\n"));
       ok = false;
       goto bail_out;
     }
@@ -508,14 +519,14 @@ bool DoMacRun(JobControlRecord* jcr)
     if (BgetMsg(sd) >= 0) {
       Dmsg1(110, "<stored: %s", sd->msg);
       if (sscanf(sd->msg, OK_start_replicate, &jcr->sd_impl->Ticket) != 1) {
-        Jmsg(jcr, M_FATAL, 0, _("Bad response to start replicate: %s\n"),
+        Jmsg(jcr, M_FATAL, 0, T_("Bad response to start replicate: %s\n"),
              sd->msg);
         goto bail_out;
       }
       Dmsg1(110, "Got Ticket=%d\n", jcr->sd_impl->Ticket);
     } else {
       Jmsg(jcr, M_FATAL, 0,
-           _("Bad response from stored to start replicate command\n"));
+           T_("Bad response from stored to start replicate command\n"));
       goto bail_out;
     }
 
@@ -541,7 +552,7 @@ bool DoMacRun(JobControlRecord* jcr)
      * signal the remote we are done. */
     if (!sd->signal(BNET_EOD) || !sd->signal(BNET_EOD)) {
       if (!jcr->IsJobCanceled()) {
-        Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+        Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());
       }
       goto bail_out;
@@ -567,7 +578,7 @@ bool DoMacRun(JobControlRecord* jcr)
     sd->signal(BNET_TERMINATE);
   } else {
     if (!jcr->sd_impl->read_dcr) {
-      Jmsg(jcr, M_FATAL, 0, _("Read device not properly initialized.\n"));
+      Jmsg(jcr, M_FATAL, 0, T_("Read device not properly initialized.\n"));
       goto bail_out;
     }
 
@@ -587,6 +598,26 @@ bool DoMacRun(JobControlRecord* jcr)
 
     Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->sd_impl->dcr->dev->file,
           jcr->sd_impl->dcr->dev->block_num);
+
+    // Let SD plugins setup the record translation on read dcr
+    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
+                            jcr->sd_impl->read_dcr)
+        != bRC_OK) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("bSdEventSetupRecordTranslation call failed for read dcr!\n"));
+      ok = false;
+      goto bail_out;
+    }
+
+    // Let SD plugins setup the record translation on write dcr
+    if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
+                            jcr->sd_impl->dcr)
+        != bRC_OK) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("bSdEventSetupRecordTranslation call failed for write dcr!\n"));
+      ok = false;
+      goto bail_out;
+    }
 
     jcr->sendJobStatus(JS_Running);
 
@@ -638,7 +669,8 @@ bail_out:
         // Print only if ok and not cancelled to avoid spurious messages
 
         if (ok && !jcr->IsJobCanceled()) {
-          Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
+          Jmsg1(jcr, M_FATAL, 0,
+                T_("Error writing end session label. ERR=%s\n"),
                 dev->bstrerror());
         }
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -649,9 +681,9 @@ bail_out:
       }
       // Flush out final partial block of this session
       if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
-        Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
+        Jmsg2(jcr, M_FATAL, 0, T_("Fatal append error on device %s: ERR=%s\n"),
               dev->print_name(), dev->bstrerror());
-        Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
+        Dmsg0(100, T_("Set ok=FALSE after WriteBlockToDevice.\n"));
         ok = false;
       }
       Dmsg2(200, "Flush block to device pos %u:%u\n", dev->file,
@@ -670,7 +702,7 @@ bail_out:
     if (job_elapsed <= 0) { job_elapsed = 1; }
 
     Jmsg(jcr, M_INFO, 0,
-         _("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
+         T_("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
          job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
          edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec1));
 

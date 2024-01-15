@@ -35,11 +35,6 @@
 
 /* Bareos common configuration defines */
 
-#undef TRUE
-#undef FALSE
-#define TRUE 1
-#define FALSE 0
-
 #ifdef HAVE_TLS
 #  define have_tls 1
 #else
@@ -60,21 +55,19 @@
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
  */
-#define ASSERT(x)                                    \
-  if (!(x)) {                                        \
-    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
-    Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
-    abort();                                         \
+#define ASSERT(x)                                     \
+  if (!(x)) {                                         \
+    Emsg1(M_ERROR, 0, T_("Failed ASSERT: %s\n"), #x); \
+    Pmsg1(000, T_("Failed ASSERT: %s\n"), #x);        \
+    abort();                                          \
   }
 
 // Allow printing of NULL pointers
-#define NPRT(x) (x) ? (x) : _("*None*")
+#define NPRT(x) (x) ? (x) : T_("*None*")
 #define NSTDPRNT(x) x.empty() ? "*None*" : x.c_str()
 #define NPRTB(x) (x) ? (x) : ""
 
 #if defined(HAVE_WIN32)
-// Reduce compiler warnings from Windows vss code
-#  define uuid(x)
 
 void InitWinAPIWrapper();
 
@@ -92,34 +85,19 @@ void InitWinAPIWrapper();
 #ifdef ENABLE_NLS
 #  include <libintl.h>
 #  include <locale.h>
-#  ifndef _
-#    define _(s) gettext((s))
-#  endif /* _ */
-#  ifndef N_
-#    define N_(s) (s)
-#  endif /* N_ */
+#  ifndef T_
+#    define T_(s) gettext((s))
+#  endif /* T_ */
 #else    /* !ENABLE_NLS */
-#  undef _
-#  undef N_
+#  undef T_
 #  undef textdomain
 #  undef bindtextdomain
 #  undef setlocale
 
-#  ifndef _
-#    define _(s) (s)
-#  endif
-#  ifndef N_
-#    define N_(s) (s)
-#  endif
-#  ifndef textdomain
-#    define textdomain(d)
-#  endif
-#  ifndef bindtextdomain
-#    define bindtextdomain(p, d)
-#  endif
-#  ifndef setlocale
-#    define setlocale(p, d)
-#  endif
+#  define T_(s) (s)
+#  define textdomain(d)
+#  define bindtextdomain(p, d)
+#  define setlocale(p, d)
 #endif /* ENABLE_NLS */
 
 
@@ -171,7 +149,7 @@ void InitWinAPIWrapper();
 #define AUTH_TIMEOUT 60 * 10
 
 // Default network buffer size
-#define DEFAULT_NETWORK_BUFFER_SIZE (64 * 1024)
+inline constexpr std::size_t DEFAULT_NETWORK_BUFFER_SIZE = 256 * 1024;
 
 // Tape label types -- stored in catalog
 #define B_BAREOS_LABEL 0
@@ -256,12 +234,12 @@ typedef uint16_t slot_flags_t;
 
 #include <limits>
 
-constexpr slot_number_t kInvalidSlotNumber
+inline constexpr slot_number_t kInvalidSlotNumber
     = std::numeric_limits<slot_number_t>::max();
-constexpr slot_number_t kInvalidDriveNumber
+inline constexpr slot_number_t kInvalidDriveNumber
     = std::numeric_limits<drive_number_t>::max();
 
-constexpr int kInvalidFiledescriptor = -1;
+inline constexpr int kInvalidFiledescriptor = -1;
 
 inline bool IsSlotNumberValid(slot_number_t slot)
 {

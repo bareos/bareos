@@ -3,7 +3,8 @@ FileSet {
   Description = "fileset just to backup some files for selftest"
   Include {
     Options {
-      Signature = MD5 # calculate md5 checksum per file
+      Signature = XXH128
+      HardLinks = Yes
       fstype = ext2
       fstype = ext3
       fstype = ext4
@@ -15,6 +16,5 @@ FileSet {
       fstype = btrfs
     }
     File=<@tmpdir@/file-list
-
   }
 }

@@ -58,31 +58,32 @@ static void HandleSessionRecord(Device* dev,
   *sessrec = empty_SESSION_LABEL;
   switch (rec->FileIndex) {
     case PRE_LABEL:
-      rtype = _("Fresh Volume Label");
+      rtype = T_("Fresh Volume Label");
       break;
     case VOL_LABEL:
-      rtype = _("Volume Label");
+      rtype = T_("Volume Label");
       UnserVolumeLabel(dev, rec);
       break;
     case SOS_LABEL:
-      rtype = _("Begin Session");
+      rtype = T_("Begin Session");
       UnserSessionLabel(sessrec, rec);
       break;
     case EOS_LABEL:
-      rtype = _("End Session");
+      rtype = T_("End Session");
       break;
     case EOM_LABEL:
-      rtype = _("End of Media");
+      rtype = T_("End of Media");
       break;
     default:
-      Bsnprintf(buf, sizeof(buf), _("Unknown code %d\n"), rec->FileIndex);
+      Bsnprintf(buf, sizeof(buf), T_("Unknown code %d\n"), rec->FileIndex);
       rtype = buf;
       break;
   }
-  Dmsg5(debuglevel,
-        _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
-        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-        rec->data_len);
+  Dmsg5(
+      debuglevel,
+      T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
+      rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
+      rec->data_len);
 }
 
 static char* rec_state_bits_to_str(DeviceRecord* rec)
@@ -91,21 +92,21 @@ static char* rec_state_bits_to_str(DeviceRecord* rec)
 
   buf[0] = 0;
   if (BitIsSet(REC_NO_HEADER, rec->state_bits)) {
-    bstrncat(buf, _("Nohdr,"), sizeof(buf));
+    bstrncat(buf, T_("Nohdr,"), sizeof(buf));
   }
 
-  if (IsPartialRecord(rec)) { bstrncat(buf, _("partial,"), sizeof(buf)); }
+  if (IsPartialRecord(rec)) { bstrncat(buf, T_("partial,"), sizeof(buf)); }
 
   if (BitIsSet(REC_BLOCK_EMPTY, rec->state_bits)) {
-    bstrncat(buf, _("empty,"), sizeof(buf));
+    bstrncat(buf, T_("empty,"), sizeof(buf));
   }
 
   if (BitIsSet(REC_NO_MATCH, rec->state_bits)) {
-    bstrncat(buf, _("Nomatch,"), sizeof(buf));
+    bstrncat(buf, T_("Nomatch,"), sizeof(buf));
   }
 
   if (BitIsSet(REC_CONTINUATION, rec->state_bits)) {
-    bstrncat(buf, _("cont,"), sizeof(buf));
+    bstrncat(buf, T_("cont,"), sizeof(buf));
   }
 
   if (buf[0]) { buf[strlen(buf) - 1] = 0; }
@@ -200,12 +201,12 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
         break;
       case DeviceControlRecord::ReadStatus::EndOfTape:
         Jmsg(jcr, M_INFO, 0,
-             _("End of Volume at file %u on device %s, Volume \"%s\"\n"),
+             T_("End of Volume at file %u on device %s, Volume \"%s\"\n"),
              dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
 
         VolumeUnused(dcr); /* mark volume unused */
         if (!mount_cb(dcr)) {
-          Jmsg(jcr, M_INFO, 0, _("End of all volumes.\n"));
+          Jmsg(jcr, M_INFO, 0, T_("End of all volumes.\n"));
           if (RecordCb) {
             /* Create EOT Label so that Media record may
              *  be properly updated because this is the last
@@ -251,7 +252,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
           DisplayTapeErrorStatus(jcr, dcr->dev);
           if (forge_on || jcr->sd_impl->ignore_label_errors) {
             dcr->dev->fsr(1); /* try skipping bad record */
-            Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
+            Pmsg0(000, T_("Did fsr in attemp to skip bad record.\n"));
             continue;
           }
           *status = false;

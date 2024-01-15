@@ -12,5 +12,4 @@ Client {
   Working Directory =  "@working_dir@"
   FD Port = @fd_port@
   TLS Enable = no
-  TLS Require = no
 }

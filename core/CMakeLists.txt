@@ -202,9 +202,16 @@ set(CMAKE_CTEST_COMMAND ctest -V)
 include(CTest)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
-  set(Readline_ROOT_DIR /usr/local/opt/readline)
-  set(Intl_ROOT_DIR /usr/local/opt/gettext)
+  set(HAVE_DARWIN_OS 1)
+  if(DEFINED ENV{HOMEBREW_PREFIX})
+    set(HOMEBREW_PREFIX "$ENV{HOMEBREW_PREFIX}")
+  else()
+    set(HOMEBREW_PREFIX "/usr/local")
+  endif()
+
+  set(OPENSSL_ROOT_DIR ${HOMEBREW_PREFIX}/opt/openssl@3)
+  set(Readline_ROOT_DIR ${HOMEBREW_PREFIX}/opt/readline)
+  set(Intl_ROOT_DIR ${HOMEBREW_PREFIX}/opt/gettext)
 endif()
 
 if(NOT MSVC)
@@ -342,16 +349,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(HAVE_DARWIN_OS 1)
   # set(CMAKE_INCLUDE_PATH  "${OPENSSL_INCLUDE_DIR}:${CMAKE_INCLUDE_PATH}")
-  set(CMAKE_INCLUDE_PATH "/usr/local/opt/:${CMAKE_INCLUDE_PATH}")
-  link_directories(/usr/local/lib)
+  set(CMAKE_INCLUDE_PATH "${HOMEBREW_PREFIX}/opt/:${CMAKE_INCLUDE_PATH}")
+  link_directories(${HOMEBREW_PREFIX}/lib)
 
-  include_directories(/usr/local/opt/gettext/include)
+  include_directories(${HOMEBREW_PREFIX}/opt/gettext/include)
   link_libraries(
-    /usr/local/opt/gettext/lib/libintl.a iconv "-framework CoreFoundation"
+    ${HOMEBREW_PREFIX}/opt/gettext/lib/libintl.a iconv
+    "-framework CoreFoundation" "-framework CoreServices"
   )
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
@@ -372,7 +378,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(HAVE_WIN32 1)
 
-  set(Python2_LIBRARIES python27.dll)
   set(Python3_LIBRARIES python38.dll)
 
   if(${WINDOWS_BITS} MATCHES "32")
@@ -381,9 +386,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(cross-prefix x86_64-w64-mingw32)
   endif()
 
-  if(NOT MSVC)
-    set(Python2_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
-    set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
+  set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
+
+  set(PostgreSQL_LIBRARY libpq.dll)
+  set(PostgreSQL_INCLUDE_DIR "")
+  set(PostgreSQL_TYPE_INCLUDE_DIR "")
 
     set(PostgreSQL_LIBRARY libpq.dll)
     set(PostgreSQL_INCLUDE_DIR "")
@@ -440,10 +447,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     )
   endif()
 
-  # c++17 removed register keyword
-  set(Python2_CCSHARED -Wno-register)
-
-  set(Python2_SITEARCH ${plugindir})
   set(Python3_SITEARCH ${plugindir})
 endif()
 
@@ -751,8 +754,6 @@ endif()
 # info what the config files need to be installed PLUGINS  ############
 set(PLUGINS python-ldap)
 
-list(APPEND PLUGINS python-ovirt)
-
 if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
 endif()
@@ -806,10 +807,10 @@ endif()
 
 include(BareosConfigureFile)
 
-add_subdirectory(scripts)
-add_subdirectory(manpages)
 add_subdirectory(platforms)
 add_subdirectory(src)
+add_subdirectory(scripts)
+add_subdirectory(manpages)
 
 include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
@@ -910,7 +911,6 @@ message("   Build ndmjob binary:          ${build_ndmjob} ")
 message("   enable-lockmgr:               ${lockmgr} ")
 message("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
 message("   webui:                        ${ENABLE_WEBUI} ")
-message("   test-plugin support:          ${HAVE_TEST_PLUGIN} ")
 message("   client-only:                  ${build_client_only} ")
 message("   Plugin support:               ${have_plugins} ")
 message("   AFS support:                  ${have_afs} ")
@@ -930,9 +930,6 @@ message(
 )
 message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
-)
-message(
-  "   Python2 support:              ${Python2_FOUND} ${Python2_VERSION} ${Python2_INCLUDE_DIRS} ${Python2_EXECUTABLE}"
 )
 message(
   "   Python3 support:              ${Python3_FOUND} ${Python3_VERSION} ${Python3_INCLUDE_DIRS} ${Python3_EXECUTABLE}"

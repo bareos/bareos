@@ -1,0 +1,13 @@
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+      Signature = XXH128
+      HardLinks = Yes
+      Compression = LZ4  # Compress data as it's sent to SD
+    }
+   #File = "@sbindir@"
+    File=<@tmpdir@/file-list
+  }
+}

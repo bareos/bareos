@@ -84,14 +84,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # archivedir
   if(NOT DEFINED archivedir)
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-      # windows install scripts replace the string "/var/lib/bareos/storage"
-      set(archivedir "/var/lib/${CMAKE_PROJECT_NAME}/storage")
-    else()
-      set(archivedir
-          "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
-      )
-    endif()
+    set(archivedir
+        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+    )
   endif()
 
   # backenddir
@@ -514,10 +509,6 @@ if(DEFINED traymonitor)
   set(HAVE_TRAYMONITOR 1)
 endif()
 
-if(DEFINED test-plugin)
-  set(HAVE_TEST_PLUGIN 1)
-endif()
-
 if(NOT DEFINED coverage)
   set(coverage OFF)
 endif()
@@ -544,7 +535,9 @@ set(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
 set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
 set(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
 
-set(ENABLE_NLS 1)
+if(NOT DEFINED ENABLE_NLS)
+  set(ENABLE_NLS 1)
+endif()
 
 if(HAVE_WIN32)
 

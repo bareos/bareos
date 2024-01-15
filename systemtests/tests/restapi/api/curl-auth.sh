@@ -3,7 +3,7 @@
 #
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,7 @@
 
 . $(dirname "$BASH_SOURCE")/../environment-local
 
-USERNAME=${1:-admin-tls}
+USERNAME=${1:-admin-notls}
 PASSWORD=${2:-secret}
 
-curl --silent -X POST "${REST_API_URL}/token" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "username=admin-tls&password=secret" | grep access_token | cut -d '"' -f 4
+curl --silent -X POST "${REST_API_URL}/token" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "username=${USERNAME}&password=${PASSWORD}" | grep access_token | cut -d '"' -f 4

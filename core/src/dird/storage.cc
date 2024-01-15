@@ -80,7 +80,7 @@ void CopyRwstorage(JobControlRecord* jcr,
 void SetRwstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
 {
   if (!store) {
-    Jmsg(jcr, M_FATAL, 0, _("No storage specified.\n"));
+    Jmsg(jcr, M_FATAL, 0, T_("No storage specified.\n"));
     return;
   }
   if (jcr->JobReads()) { SetRstorage(jcr, store); }
@@ -266,7 +266,7 @@ void SetPairedStorage(JobControlRecord* jcr)
         }
       } else {
         Jmsg(jcr, M_FATAL, 0,
-             _("No write storage, don't know how to setup paired storage\n"));
+             T_("No write storage, don't know how to setup paired storage\n"));
       }
       break;
     case JT_RESTORE:
@@ -302,7 +302,7 @@ void SetPairedStorage(JobControlRecord* jcr)
         }
       } else {
         Jmsg(jcr, M_FATAL, 0,
-             _("No read storage, don't know how to setup paired storage\n"));
+             T_("No read storage, don't know how to setup paired storage\n"));
       }
       break;
     case JT_MIGRATE:
@@ -337,12 +337,12 @@ void SetPairedStorage(JobControlRecord* jcr)
         }
       } else {
         Jmsg(jcr, M_FATAL, 0,
-             _("No read storage, don't know how to setup paired storage\n"));
+             T_("No read storage, don't know how to setup paired storage\n"));
       }
       break;
     default:
       Jmsg(jcr, M_FATAL, 0,
-           _("Unknown Job Type %s, don't know how to setup paired storage\n"),
+           T_("Unknown Job Type %s, don't know how to setup paired storage\n"),
            job_type_to_str(jcr->getJobType()));
       break;
   }
@@ -398,7 +398,7 @@ void FreePairedStorage(JobControlRecord* jcr)
         break;
       default:
         Jmsg(jcr, M_FATAL, 0,
-             _("Unknown Job Type %s, don't know how to free paired storage\n"),
+             T_("Unknown Job Type %s, don't know how to free paired storage\n"),
              job_type_to_str(jcr->getJobType()));
         break;
     }
@@ -419,8 +419,8 @@ bool HasPairedStorage(JobControlRecord* jcr)
         }
       } else {
         Jmsg(jcr, M_FATAL, 0,
-             _("No write storage, don't know how to check for paired "
-               "storage\n"));
+             T_("No write storage, don't know how to check for paired "
+                "storage\n"));
         return false;
       }
       break;
@@ -432,15 +432,15 @@ bool HasPairedStorage(JobControlRecord* jcr)
           if (!store->paired_storage) { return false; }
         }
       } else {
-        Jmsg(
-            jcr, M_FATAL, 0,
-            _("No read storage, don't know how to check for paired storage\n"));
+        Jmsg(jcr, M_FATAL, 0,
+             T_("No read storage, don't know how to check for paired "
+                "storage\n"));
         return false;
       }
       break;
     default:
       Jmsg(jcr, M_FATAL, 0,
-           _("Unknown Job Type %s, don't know how to free paired storage\n"),
+           T_("Unknown Job Type %s, don't know how to free paired storage\n"),
            job_type_to_str(jcr->getJobType()));
       return false;
   }
@@ -461,7 +461,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
 
   if (!(ustore.store = (StorageResource*)my_config->GetResWithName(
             R_STORAGE, info.storage))) {
-    Jmsg(jcr, M_FATAL, 0, _("Could not get storage resource '%s'.\n"),
+    Jmsg(jcr, M_FATAL, 0, T_("Could not get storage resource '%s'.\n"),
          info.storage);
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
@@ -497,7 +497,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
 
   // Failed to IncReadStore()
   FreeRstorage(jcr);
-  Jmsg(jcr, M_FATAL, 0, _("Could not acquire read storage lock for \"%s\""),
+  Jmsg(jcr, M_FATAL, 0, T_("Could not acquire read storage lock for \"%s\""),
        info.storage);
   return false;
 }

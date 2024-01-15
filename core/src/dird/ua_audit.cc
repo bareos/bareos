@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,34 +68,34 @@ static inline void LogAuditEventAclMsg(UaContext* ua,
 
   switch (acl) {
     case Job_ACL:
-      acl_type_name = _("for Job");
+      acl_type_name = T_("for Job");
       break;
     case Client_ACL:
-      acl_type_name = _("for Client");
+      acl_type_name = T_("for Client");
       break;
     case Storage_ACL:
-      acl_type_name = _("for Storage");
+      acl_type_name = T_("for Storage");
       break;
     case Schedule_ACL:
-      acl_type_name = _("for Schedule");
+      acl_type_name = T_("for Schedule");
       break;
     case Pool_ACL:
-      acl_type_name = _("for Pool");
+      acl_type_name = T_("for Pool");
       break;
     case Command_ACL:
-      acl_type_name = _("for Command");
+      acl_type_name = T_("for Command");
       break;
     case FileSet_ACL:
-      acl_type_name = _("for Fileset");
+      acl_type_name = T_("for Fileset");
       break;
     case Catalog_ACL:
-      acl_type_name = _("for Catalog");
+      acl_type_name = T_("for Catalog");
       break;
     case Where_ACL:
-      acl_type_name = _("for Where restore location");
+      acl_type_name = T_("for Where restore location");
       break;
     case PluginOptions_ACL:
-      acl_type_name = _("for Plugin Options");
+      acl_type_name = T_("for Plugin Options");
       break;
     default:
       acl_type_name = "";
@@ -110,7 +110,7 @@ void UaContext::LogAuditEventAclFailure(int acl, const char* item)
   if (!me->auditing) { return; }
 
   LogAuditEventAclMsg(
-      this, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
+      this, T_("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
 }
 
 void UaContext::LogAuditEventAclSuccess(int acl, const char* item)
@@ -118,7 +118,7 @@ void UaContext::LogAuditEventAclSuccess(int acl, const char* item)
   if (!me->auditing) { return; }
 
   LogAuditEventAclMsg(
-      this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
+      this, T_("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
 }
 
 // Log an audit event
@@ -133,7 +133,7 @@ void UaContext::LogAuditEventCmdline()
       = user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), user_name, host,
+  Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] cmdline %s\n"), user_name, host,
         cmd);
 }
 
@@ -154,7 +154,7 @@ void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
       = user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] info message %s\n"), user_name,
+  Emsg3(M_AUDIT, 0, T_("Console [%s] from [%s] info message %s\n"), user_name,
         host, message.c_str());
 }
 

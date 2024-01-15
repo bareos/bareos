@@ -129,7 +129,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
   if (!plugin->plugin_handle) {
     const char* error = dlerror();
 
-    Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
+    Jmsg(NULL, M_ERROR, 0, T_("dlopen plugin %s failed: ERR=%s\n"),
          plugin_pathname, NPRT(error));
     Dmsg2(debuglevel, "dlopen plugin %s failed: ERR=%s\n", plugin_pathname,
           NPRT(error));
@@ -143,7 +143,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
   loadPlugin = (t_loadPlugin)dlsym(plugin->plugin_handle, "loadPlugin");
   if (!loadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
+         T_("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
          plugin_pathname, NPRT(dlerror()));
     Dmsg2(debuglevel, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
           plugin_pathname, NPRT(dlerror()));
@@ -157,7 +157,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
       = (t_unloadPlugin)dlsym(plugin->plugin_handle, "unloadPlugin");
   if (!plugin->unloadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
-         _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
+         T_("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
          plugin_pathname, NPRT(dlerror()));
     Dmsg2(debuglevel, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
           plugin_pathname, NPRT(dlerror()));
@@ -252,7 +252,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
     if (!(dp = opendir(plugin_dir))) {
       BErrNo be;
       Jmsg(NULL, M_ERROR_TERM, 0,
-           _("Failed to open Plugin directory %s: ERR=%s\n"), plugin_dir,
+           T_("Failed to open Plugin directory %s: ERR=%s\n"), plugin_dir,
            be.bstrerror());
       Dmsg2(debuglevel, "Failed to open Plugin directory %s: ERR=%s\n",
             plugin_dir, be.bstrerror());
@@ -269,7 +269,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
       if (result == NULL) {
 #endif
         if (!found) {
-          Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"),
+          Jmsg(NULL, M_WARNING, 0, T_("Failed to find any plugins in %s\n"),
                plugin_dir);
           Dmsg1(debuglevel, "Failed to find any plugins in %s\n", plugin_dir);
         }

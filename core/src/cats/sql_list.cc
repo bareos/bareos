@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,15 +71,15 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
   DbLocker _{this};
 
   if (!SqlQuery(query, QF_STORE_RESULT)) {
-    Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
+    Mmsg(errmsg, T_("Query failed: %s\n"), sql_strerror());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;
   }
 
   if ((collapse == CollapseMode::Collapse) && (SqlNumRows() > 1)) {
     Mmsg(errmsg,
-         _("Query returned %d rows. In collapsed mode, only one row is "
-           "accepted.\n"),
+         T_("Query returned %d rows. In collapsed mode, only one row is "
+            "accepted.\n"),
          SqlNumRows());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;
@@ -179,7 +179,7 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
   } else {
     Mmsg(cmd,
          "SELECT ClientId,Name,FileRetention,JobRetention "
-         "FROM Client %s ORDER BY ClientId",
+         "FROM Client %s ORDER BY ClientId ",
          clientfilter.c_str());
   }
 
@@ -271,14 +271,14 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
            "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
            "JobMedia.EndBlock "
            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-           "AND JobMedia.JobId=%s",
+           "AND JobMedia.JobId=%s ",
            edit_int64(JobId, ed1));
     } else {
       Mmsg(cmd,
            "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
            "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
            "JobMedia.EndBlock "
-           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
+           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId ");
     }
 
   } else {
@@ -286,12 +286,12 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
       Mmsg(cmd,
            "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-           "AND JobMedia.JobId=%s",
+           "AND JobMedia.JobId=%s ",
            edit_int64(JobId, ed1));
     } else {
       Mmsg(cmd,
            "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
-           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
+           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId ");
     }
   }
   if (!QUERY_DB(jcr, cmd)) { return; }
@@ -318,13 +318,13 @@ void BareosDb::ListVolumesOfJobid(JobControlRecord* jcr,
     Mmsg(cmd,
          "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName "
          "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-         "AND JobMedia.JobId=%s",
+         "AND JobMedia.JobId=%s ",
          edit_int64(JobId, ed1));
   } else {
     Mmsg(cmd,
          "SELECT DISTINCT Media.VolumeName "
          "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-         "AND JobMedia.JobId=%s",
+         "AND JobMedia.JobId=%s ",
          edit_int64(JobId, ed1));
   }
   if (!QUERY_DB(jcr, cmd)) { return; }
@@ -357,16 +357,16 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
        "FROM Job "
        "JOIN JobMedia USING (JobId) "
        "JOIN Media USING (MediaId) "
-       "WHERE Job.Type = '%c' %s ORDER BY Job.PriorJobId DESC %s",
+       "WHERE Job.Type = '%c' %s ORDER BY Job.PriorJobId DESC %s ",
        (char)JT_JOB_COPY, str_jobids.c_str(), range);
 
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   if (SqlNumRows()) {
     if (JobIds && JobIds[0]) {
-      send->Decoration(_("These JobIds have copies as follows:\n"));
+      send->Decoration(T_("These JobIds have copies as follows:\n"));
     } else {
-      send->Decoration(_("The catalog contains copies as follows:\n"));
+      send->Decoration(T_("The catalog contains copies as follows:\n"));
     }
 
     send->ArrayStart("copies");
@@ -399,7 +399,7 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
          "LEFT JOIN Client USING (ClientId) "
          "WHERE Job.Type != 'C' "
          "%s"
-         "ORDER BY Log.LogId DESC %s",
+         "ORDER BY Log.LogId DESC %s ",
          client_filter.c_str(), range);
   } else {
     Mmsg(cmd,
@@ -411,8 +411,8 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
          "LEFT JOIN Client USING (ClientId) "
          "WHERE Job.Type != 'C' "
          "%s"
-         "ORDER BY Log.LogId DESC %s"
-         ") AS sub ORDER BY LogId ASC",
+         "ORDER BY Log.LogId DESC %s "
+         ") AS sub ORDER BY LogId ASC ",
          client_filter.c_str(), range);
   }
 
@@ -504,7 +504,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               const char* range,
                               const char* clientname,
                               std::vector<char> jobstatuslist,
-                              int joblevel,
+                              std::vector<char> joblevels,
                               std::vector<char> jobtypes,
                               const char* volumename,
                               const char* poolname,
@@ -520,7 +520,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   PoolMem temp(PM_MESSAGE), selection(PM_MESSAGE), criteria(PM_MESSAGE);
 
   if (jr->JobId > 0) {
-    temp.bsprintf("AND Job.JobId=%s", edit_int64(jr->JobId, ed1));
+    temp.bsprintf("AND Job.JobId=%s ", edit_int64(jr->JobId, ed1));
     PmStrcat(selection, temp.c_str());
   }
 
@@ -542,8 +542,9 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
-  if (joblevel) {
-    temp.bsprintf("AND Job.Level = '%c' ", joblevel);
+  if (!joblevels.empty()) {
+    std::string levels = CreateDelimitedStringForSqlQueries(joblevels, ',');
+    temp.bsprintf("AND Job.Level in (%s) ", levels.c_str());
     PmStrcat(selection, temp.c_str());
   }
 
@@ -653,7 +654,7 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
        "ON (BaseFiles.FileId = File.FileId) "
        "WHERE BaseFiles.JobId = %s"
        ") AS F, Path "
-       "WHERE Path.PathId=F.PathId",
+       "WHERE Path.PathId=F.PathId ",
        edit_int64(jobid, ed1), ed1);
 
   sendit->ArrayStart("filenames");
@@ -677,7 +678,7 @@ void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
        "FROM BaseFiles, File, Path "
        "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
        "AND BaseFiles.FileId = File.FileId "
-       "AND Path.PathId=File.PathId",
+       "AND Path.PathId=File.PathId ",
        edit_int64(jobid, ed1));
 
   sendit->ArrayStart("files");
@@ -703,7 +704,7 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
          "CreateTime, FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
-         "AND Job.Name='%s'%s",
+         "AND Job.Name='%s' %s",
          esc, range);
   } else if (jr->Job[0] != 0) {
     EscapeString(jcr, esc, jr->Job, strlen(jr->Job));
@@ -712,7 +713,7 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
          "CreateTime, FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
-         "AND Job.Name='%s'%s",
+         "AND Job.Name='%s' %s",
          esc, range);
   } else if (jr->JobId != 0) {
     Mmsg(cmd,
@@ -720,19 +721,19 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
          "CreateTime, FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
-         "AND Job.JobId='%s'%s",
+         "AND Job.JobId='%s' %s",
          edit_int64(jr->JobId, esc), range);
   } else if (jr->FileSetId != 0) {
     Mmsg(cmd,
          "SELECT FileSetId, FileSet, MD5, CreateTime, FileSetText "
          "FROM FileSet "
-         "WHERE  FileSetId=%s",
+         "WHERE FileSetId=%s ",
          edit_int64(jr->FileSetId, esc));
   } else { /* all records */
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
          "CreateTime, FileSetText "
-         "FROM FileSet ORDER BY FileSetId ASC%s",
+         "FROM FileSet ORDER BY FileSetId ASC %s",
          range);
   }
 

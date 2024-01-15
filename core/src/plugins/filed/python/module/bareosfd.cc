@@ -35,20 +35,12 @@
 
 #include "include/version_hex.h"
 
-#if PY_VERSION_HEX < VERSION_HEX(3, 0, 0)
-#  define LOGPREFIX "python-fd-mod: "
-#else
-#  define LOGPREFIX "python3-fd-mod: "
-#endif
-
+#define LOGPREFIX "python3-fd-mod: "
 
 #include "filed/fd_plugins.h"
 
-#include "plugins/include/python3compat.h"
-
 #define BAREOSFD_MODULE
 #include "bareosfd.h"
-#include "plugins/include/python3compat.h"
 #include "include/filetypes.h"
 #include "lib/edit.h"
 
@@ -292,9 +284,14 @@ static inline bool PySavePacketToNative(
 
         plugin_priv_ctx->fname = strdup(fileName_AsUTF8);
         sp->fname = plugin_priv_ctx->fname;
+      } else {
+        PyErr_SetString(PyExc_TypeError,
+                        "fname needs to be of type string \"utf-8\"");
+        return false;
       }
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_RuntimeError, "fname is empty");
+      return false;
     }
 
     // Optional field.
@@ -305,6 +302,10 @@ static inline bool PySavePacketToNative(
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
         plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
         sp->link = plugin_priv_ctx->link;
+      } else {
+        PyErr_SetString(PyExc_TypeError,
+                        "if given, link needs to be of type string \"utf-8\"");
+        return false;
       }
     }
 
@@ -312,7 +313,8 @@ static inline bool PySavePacketToNative(
     if (pSavePkt->statp) {
       PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp->statp);
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_RuntimeError, "PyStatPacketToNative() failed");
+      return false;
     }
 
     sp->type = pSavePkt->type;
@@ -321,16 +323,19 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
+        return false;
       }
-
       if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
         memcpy(sp->flags, flags, sizeof(sp->flags));
       } else {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "PyByteArray_AsString(flags) failed");
+        return false;
       }
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
+      return false;
     }
 
     // Special code for handling restore objects.
@@ -339,9 +344,12 @@ static inline bool PySavePacketToNative(
       if (pSavePkt->object_len > 0) {
         /* As this has to linger as long as the backup is running we save it
          * in our plugin context. */
-        if (pSavePkt->object_name && pSavePkt->object
-            && PyUnicode_Check(pSavePkt->object_name)
-            && PyByteArray_Check(pSavePkt->object)) {
+        bool object_name_exists = pSavePkt->object_name;
+        bool object_name_is_unicode = PyUnicode_Check(pSavePkt->object_name);
+        bool object_exists = pSavePkt->object;
+        bool object_is_bytearray = PyByteArray_Check(pSavePkt->object);
+        if (object_name_exists && object_name_is_unicode && object_exists
+            && object_is_bytearray) {
           char* buf;
 
           if (plugin_priv_ctx->object_name) {
@@ -360,43 +368,57 @@ static inline bool PySavePacketToNative(
             memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
             sp->object = plugin_priv_ctx->object;
           } else {
-            goto bail_out;
+            return false;
           }
         } else {
-          goto bail_out;
+          std::string err_string{};
+          if (!object_name_exists) { err_string = "object name missing"; };
+          if (!object_name_is_unicode) {
+            err_string = "object name must be unicode type";
+          };
+          if (!object_exists) { err_string = "object missing"; };
+          if (!object_is_bytearray) {
+            err_string = "object needs to be of type bytearray";
+          };
+
+          PyErr_SetString(PyExc_RuntimeError, err_string.c_str());
+          return false;
         }
       } else {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError, "pSavePkt->object_len is <=0");
+        return false;
       }
     } else {
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
+      sp->save_time = pSavePkt->save_time;
     }
   } else {
     sp->no_read = pSavePkt->no_read;
     sp->delta_seq = pSavePkt->delta_seq;
+    sp->save_time = pSavePkt->save_time;
 
     if (PyByteArray_Check(pSavePkt->flags)) {
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
+        return false;
       }
 
       if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
         memcpy(sp->flags, flags, sizeof(sp->flags));
       } else {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "PyByteArray_AsString(flags) failed");
+        return false;
       }
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
+      return false;
     }
   }
-
   return true;
-
-bail_out:
-  return false;
 }
 
 /**
@@ -421,7 +443,11 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
     PyObject* pRetVal;
 
     pSavePkt = NativeToPySavePacket(sp);
-    if (!pSavePkt) { goto bail_out; }
+    if (!pSavePkt) {
+      Dmsg(plugin_ctx, debuglevel,
+           LOGPREFIX "Failed to convert save packet to python.\n");
+      goto bail_out;
+    }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, (PyObject*)pSavePkt, NULL);
     if (!pRetVal) {
@@ -431,7 +457,10 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
       retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
-      if (!PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
+      if (retval == bRC_OK
+          && !PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
+        Dmsg(plugin_ctx, debuglevel,
+             LOGPREFIX "Failed to convert save packet to native.\n");
         Py_DECREF((PyObject*)pSavePkt);
         goto bail_out;
       }
@@ -447,7 +476,7 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
 bail_out:
   if (PyErr_Occurred()) { PyErrorHandler(plugin_ctx, M_FATAL); }
 
-  return retval;
+  return bRC_Error;
 }
 
 /**
@@ -544,6 +573,15 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, io_pkt* io)
       }
 
       if (!(buf = PyByteArray_AsString(pIoPkt->buf))) { return false; }
+      memcpy(io->buf, buf, io->status);
+    } else if (PyBytes_Check(pIoPkt->buf)) {
+      char* buf;
+
+      if (PyBytes_Size(pIoPkt->buf) > io->count || io->status > io->count) {
+        return false;
+      }
+
+      if (!(buf = PyBytes_AsString(pIoPkt->buf))) { return false; }
       memcpy(io->buf, buf, io->status);
     }
   }
@@ -1242,7 +1280,7 @@ bail_out:
  */
 static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
 {
-  int var;
+  bVariable var;
   PluginContext* plugin_ctx = plugin_context;
   PyObject* pRetVal = NULL;
 
@@ -1252,13 +1290,13 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
   switch (var) {
     case bVarFDName:
     case bVarWorkingDir:
+    case bVarUsedConfig:
     case bVarExePath:
     case bVarVersion:
     case bVarDistName: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
@@ -1268,13 +1306,11 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarLevel:
     case bVarType:
     case bVarJobStatus:
-    case bVarSinceTime:
     case bVarAccurate:
     case bVarPrefixLinks: {
       int value = 0;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         pRetVal = PyLong_FromLong(value);
       }
@@ -1287,10 +1323,23 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarRegexWhere: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
+      }
+      break;
+    }
+    case bVarSinceTime: {
+      pRetVal = PyLong_FromLong(static_cast<plugin_private_context*>(
+                                    plugin_ctx->plugin_private_context)
+                                    ->since);
+      break;
+    }
+    case bVarCheckChanges: {
+      bool value{false};
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
+          == bRC_OK) {
+        pRetVal = value ? Py_True : Py_False;
       }
       break;
     }
@@ -1314,7 +1363,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
  */
 static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
 {
-  int var;
+  bVariable var;
   PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
   PyObject* pyValue;
@@ -1325,22 +1374,22 @@ static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
-    case bVarLevel: {
-      int value = 0;
-
-      value = PyLong_AsLong(pyValue);
-      if (value) {
-        retval = bareos_core_functions->setBareosValue(plugin_ctx,
-                                                       (bVariable)var, &value);
-      }
+    case bVarSinceTime: {
+      static_cast<plugin_private_context*>(plugin_ctx->plugin_private_context)
+          ->since
+          = PyLong_AsLong(pyValue);
+      retval = bRC_OK;
+      break;
+    }
+    case bVarCheckChanges: {
+      bool value = (pyValue == Py_True);
+      retval = bareos_core_functions->setBareosValue(plugin_ctx, var, &value);
       break;
     }
     case bVarFileSeen: {
       const char* value = PyUnicode_AsUTF8(pyValue);
       if (value) {
-        retval = bareos_core_functions->setBareosValue(
-            plugin_ctx, (bVariable)var,
-            static_cast<void*>(const_cast<char*>(value)));
+        retval = bareos_core_functions->setBareosValue(plugin_ctx, var, value);
       }
       break;
     }

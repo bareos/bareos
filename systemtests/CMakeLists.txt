@@ -190,7 +190,7 @@ else()
   set(TEST_INFO_TEXT "running system tests on the sourcetree")
 endif()
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(MINIO)
   execute_process(
     COMMAND "${CMAKE_BINARY_DIR}/systemtests/scripts/generate_minio_certs.sh"
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/systemtests/tls/minio/"
@@ -243,7 +243,6 @@ set(WEBUI_TESTS_BROKEN
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 find_program(PYTHON NAMES python python3 python2)
-check_pymodule_available(2 selenium) # sets PYMODULE_2_SELENIUM_FOUND to TRUE or
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 

@@ -181,6 +181,9 @@ class BareosSocket {
   virtual void RestoreBlocking(int flags) = 0;
   virtual bool ConnectionReceivedTerminateSignal() = 0;
   // Returns: 1 if data available, 0 if timeout, -1 if error
+  static inline constexpr int DataAvailable = 1;
+  static inline constexpr int Timeout = 0;
+  static inline constexpr int Error = -1;
   virtual int WaitData(int sec, int usec = 0) = 0;
   virtual int WaitDataIntr(int sec, int usec = 0) = 0;
   bool fsend(const char*, ...);

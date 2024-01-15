@@ -37,6 +37,7 @@ set(DIRD_OBJECTS_SRCS
     catreq.cc
     check_catalog.cc
     consolidate.cc
+    console_connection_lease.cc
     dbcheck_utils.cc
     dird_globals.cc
     dir_plugins.cc

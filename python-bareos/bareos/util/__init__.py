@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,5 +24,6 @@ Bareos utility classes.
 from bareos.util.bareosbase64 import BareosBase64
 from bareos.util.password import Password
 from bareos.util.path import Path
+from bareos.util.version import Version
 
-__all__ = ["BareosBase64", "Password", "Path"]
+__all__ = ["BareosBase64", "Password", "Path", "Version"]

@@ -1,0 +1,78 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Check whether suite selection works correctly
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+function check_tls()
+{
+  output=$(echo "exit" | sbin/bconsole-tls-suites -c etc/bareos/"$1")
+  if ! [ "$?" = "0" ]; then
+      echo "unexpected error while connecting with '$1'"
+      exit 3
+  fi
+  echo "$output" | grep "Encryption:" | sed 's/ Encryption: //'
+}
+
+function test_con()
+{
+	response=$(check_tls bconsole-"$1".conf)
+	cipher=$(echo "$response" | cut -d' ' -f1)
+	tls=$(echo "$response" | cut -d' ' -f2)
+
+	if ! [ "$tls" = "TLSv1.3" ]; then
+	    echo "expected 'TLSv1.3' got '$tls'"
+	    exit 1
+	fi
+
+	if ! [ "$cipher" = "$1" ]; then
+	    echo "expected '$1' got '$cipher'"
+	    exit 2
+	fi
+
+	echo "$1: ok"
+}
+
+start_test
+
+# we do not support sha384 at the moment
+#test_con TLS_AES_256_GCM_SHA384
+test_con TLS_CHACHA20_POLY1305_SHA256
+test_con TLS_AES_128_GCM_SHA256
+test_con TLS_AES_128_CCM_8_SHA256
+test_con TLS_AES_128_CCM_SHA256
+
+end_test

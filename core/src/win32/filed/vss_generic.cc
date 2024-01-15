@@ -78,10 +78,6 @@ using namespace std;
 class IXMLDOMDocument;
 #  endif
 
-// Reduce compiler warnings from Windows vss code
-#  undef uuid
-#  define uuid(x)
-
 #  define VSSClientGeneric VSSClientVista
 #  include "Win2003/vss.h"
 #  include "Win2003/vswriter.h"
@@ -669,7 +665,7 @@ void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord* jcr)
 {
   if (VMPs) {
     Jmsg(jcr, M_INFO, 0,
-         _("Volume Mount Points found: %d, added to snapshotset: %d\n"), VMPs,
+         T_("Volume Mount Points found: %d, added to snapshotset: %d\n"), VMPs,
          VMP_snapshots);
   }
 }

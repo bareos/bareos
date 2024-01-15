@@ -142,8 +142,8 @@ struct JobDbRecord {
   char cRealEndTime[MAX_TIME_LENGTH]{0};
 
   // Extra stuff not in DB
-  int limit = 0;  /**< limit records to display */
-  int offset = 0; /**< offset records to display */
+  uint64_t limit = 0;  /**< limit records to display */
+  uint64_t offset = 0; /**< offset records to display */
   faddr_t rec_addr = 0;
   uint32_t FileIndex = 0; /**< added during Verify */
 };
@@ -468,8 +468,8 @@ class pathid_cache;
 #define QUERY_INITIAL_HASH_SIZE 1024
 #define QUERY_HTABLE_PAGES 128
 
-// Current database version number for all drivers
-#define BDB_VERSION 2210
+// Current database version number schema = 2000 + 10 * Major + Minor
+#define BDB_VERSION 2230
 
 typedef char** SQL_ROW;
 
@@ -614,6 +614,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr);
   bool CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pool_dbr);
+  int DeleteNullJobmediaRecords(JobControlRecord* jcr, std::uint32_t jobid);
   bool CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jr);
   bool CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr);
   bool CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr);
@@ -779,7 +780,7 @@ class BareosDb : public BareosDbQueryEnum {
                       const char* range,
                       const char* clientname,
                       std::vector<char> jobstatusarray,
-                      int joblevel,
+                      std::vector<char> joblevels,
                       std::vector<char> jobtypes,
                       const char* volumename,
                       const char* poolname,

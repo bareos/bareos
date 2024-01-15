@@ -5,4 +5,5 @@ Storage {
   Device = FileStorage
   Media Type = File
   SD Port = @sd_port@
+  Tls Enable = No
 }

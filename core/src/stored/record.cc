@@ -77,7 +77,7 @@ const char* FI_to_ascii(char* buf, int fi)
       return "EOB_LABEL";
       break;
     default:
-      sprintf(buf, _("unknown: %d"), fi);
+      sprintf(buf, T_("unknown: %d"), fi);
       return buf;
   }
 }
@@ -165,7 +165,7 @@ static const char* record_compression_to_str(PoolMem& resultbuffer,
           break;
         default:
           tmp.bsprintf(
-              _("Compression algorithm 0x%x found, but not supported!\n"),
+              T_("Compression algorithm 0x%x found, but not supported!\n"),
               comp_magic);
           resultbuffer.strcat(tmp);
           break;
@@ -601,13 +601,8 @@ static inline ssize_t WriteHeaderToBlock(DeviceBlock* block,
 
   SerBegin(block->bufp, WRITE_RECHDR_LENGTH);
 
-  if (BLOCK_VER == 1) {
-    ser_uint32(rec->VolSessionId);
-    ser_uint32(rec->VolSessionTime);
-  } else {
-    block->VolSessionId = rec->VolSessionId;
-    block->VolSessionTime = rec->VolSessionTime;
-  }
+  block->VolSessionId = rec->VolSessionId;
+  block->VolSessionTime = rec->VolSessionTime;
 
   ser_int32(rec->FileIndex);
   ser_int32(Stream);
@@ -683,7 +678,7 @@ bool DeviceControlRecord::WriteRecord()
   jcr->JobBytes += after_rec->data_len; /* increment bytes this job */
   if (jcr->sd_impl->RemainingQuota
       && jcr->JobBytes > jcr->sd_impl->RemainingQuota) {
-    Jmsg0(jcr, M_FATAL, 0, _("Quota Exceeded. Job Terminated.\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("Quota Exceeded. Job Terminated.\n"));
     goto bail_out;
   }
 
@@ -776,7 +771,7 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
         if (n < 0) {
           /* The continuation header wouldn't fit, which is impossible
            * unless something is broken */
-          Emsg0(M_ABORT, 0, _("couldn't write continuation header\n"));
+          Emsg0(M_ABORT, 0, T_("couldn't write continuation header\n"));
         }
 
         /* After successfully writing a continuation header, we always start
@@ -802,7 +797,7 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
           if (n < 0) {
             /* error appending data to block should be impossible
              * unless something is broken */
-            Emsg0(M_ABORT, 0, _("data write error\n"));
+            Emsg0(M_ABORT, 0, T_("data write error\n"));
           }
 
           rec->remainder -= n;
@@ -821,7 +816,7 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
         return true;
 
       default:
-        Emsg1(M_ABORT, 0, _("Something went wrong. Unknown state %d.\n"),
+        Emsg1(M_ABORT, 0, T_("Something went wrong. Unknown state %d.\n"),
               rec->state);
         rec->state = st_none;
         return true;
@@ -971,7 +966,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     SetBit(REC_BLOCK_EMPTY, rec->state_bits);
     EmptyBlock(dcr->block);
     Jmsg2(dcr->jcr, M_WARNING, 0,
-          _("Sanity check failed. maxlen=%d datalen=%d. Block discarded.\n"),
+          T_("Sanity check failed. maxlen=%d datalen=%d. Block discarded.\n"),
           MAX_BLOCK_LENGTH, data_bytes);
     return false;
   }

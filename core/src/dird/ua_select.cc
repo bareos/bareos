@@ -56,16 +56,16 @@ bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg)
 
   yes_in_arg = FindArg(ua, NT_("yes"));
   for (;;) {
-    ua->InfoMsg(_("The current %s retention period is: %s\n"), msg,
+    ua->InfoMsg(T_("The current %s retention period is: %s\n"), msg,
                 edit_utime(*ret, ed1, sizeof(ed1)));
     if (yes_in_arg != -1) { return true; }
 
-    if (!GetCmd(ua, _("Continue? (yes/mod/no): "))) { return false; }
+    if (!GetCmd(ua, T_("Continue? (yes/mod/no): "))) { return false; }
 
-    if (Bstrcasecmp(ua->cmd, _("mod"))) {
-      if (!GetCmd(ua, _("Enter new retention period: "))) { return false; }
+    if (Bstrcasecmp(ua->cmd, T_("mod"))) {
+      if (!GetCmd(ua, T_("Enter new retention period: "))) { return false; }
       if (!DurationToUtime(ua->cmd, ret)) {
-        ua->ErrorMsg(_("Invalid period.\n"));
+        ua->ErrorMsg(T_("Invalid period.\n"));
         continue;
       }
       continue;
@@ -139,7 +139,7 @@ int FindArgWithValue(UaContext* ua, const char* keyword)
  */
 int DoKeywordPrompt(UaContext* ua, const char* msg, const char** list)
 {
-  StartPrompt(ua, _("You have the following choices:\n"));
+  StartPrompt(ua, T_("You have the following choices:\n"));
   for (int i = 0; list[i]; i++) { AddPrompt(ua, list[i]); }
 
   return DoPrompt(ua, "", msg, NULL, 0);
@@ -153,9 +153,9 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
   std::vector<std::string> storage_resource_names;
 
   if (autochanger_only) {
-    StartPrompt(ua, _("The defined Autochanger Storage resources are:\n"));
+    StartPrompt(ua, T_("The defined Autochanger Storage resources are:\n"));
   } else {
-    StartPrompt(ua, _("The defined Storage resources are:\n"));
+    StartPrompt(ua, T_("The defined Storage resources are:\n"));
   }
 
   foreach_res (store, R_STORAGE) {
@@ -174,7 +174,7 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Storage"), _("Select Storage resource"), name,
+  if (DoPrompt(ua, T_("Storage"), T_("Select Storage resource"), name,
                sizeof(name))
       < 0) {
     return NULL;
@@ -191,7 +191,7 @@ FilesetResource* select_fileset_resource(UaContext* ua)
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> fileset_resource_names;
 
-  StartPrompt(ua, _("The defined FileSet resources are:\n"));
+  StartPrompt(ua, T_("The defined FileSet resources are:\n"));
 
   foreach_res (fs, R_FILESET) {
     if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
@@ -206,7 +206,7 @@ FilesetResource* select_fileset_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"), name,
+  if (DoPrompt(ua, T_("FileSet"), T_("Select FileSet resource"), name,
                sizeof(name))
       < 0) {
     return NULL;
@@ -237,12 +237,12 @@ CatalogResource* get_catalog_resource(UaContext* ua)
     }
 
     if (!catalog) {
-      ua->ErrorMsg(_("Could not find a Catalog resource\n"));
+      ua->ErrorMsg(T_("Could not find a Catalog resource\n"));
       return NULL;
     } else if (!ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
       ua->ErrorMsg(
-          _("You must specify a \"use <catalog-name>\" command before "
-            "continuing.\n"));
+          T_("You must specify a \"use <catalog-name>\" command before "
+             "continuing.\n"));
       return NULL;
     }
 
@@ -250,7 +250,7 @@ CatalogResource* get_catalog_resource(UaContext* ua)
   }
 
   if (!catalog) {
-    StartPrompt(ua, _("The defined Catalog resources are:\n"));
+    StartPrompt(ua, T_("The defined Catalog resources are:\n"));
 
     foreach_res (catalog, R_CATALOG) {
       if (ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
@@ -258,7 +258,7 @@ CatalogResource* get_catalog_resource(UaContext* ua)
       }
     }
 
-    if (DoPrompt(ua, _("Catalog"), _("Select Catalog resource"), name,
+    if (DoPrompt(ua, T_("Catalog"), T_("Select Catalog resource"), name,
                  sizeof(name))
         < 0) {
       return NULL;
@@ -276,7 +276,7 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> job_resource_names;
 
-  StartPrompt(ua, _("The defined Job resources are:\n"));
+  StartPrompt(ua, T_("The defined Job resources are:\n"));
 
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
@@ -292,7 +292,7 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name))
+  if (DoPrompt(ua, T_("Job"), T_("Select Job resource"), name, sizeof(name))
       < 0) {
     return NULL;
   }
@@ -309,7 +309,7 @@ JobResource* select_job_resource(UaContext* ua)
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> job_resource_names;
 
-  StartPrompt(ua, _("The defined Job resources are:\n"));
+  StartPrompt(ua, T_("The defined Job resources are:\n"));
 
   foreach_res (job, R_JOB) {
     if (ua->AclAccessOk(Job_ACL, job->resource_name_)) {
@@ -323,7 +323,7 @@ JobResource* select_job_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name))
+  if (DoPrompt(ua, T_("Job"), T_("Select Job resource"), name, sizeof(name))
       < 0) {
     return NULL;
   }
@@ -343,7 +343,7 @@ JobResource* get_restore_job(UaContext* ua)
   if (i >= 0) {
     job = ua->GetJobResWithName(ua->argv[i]);
     if (job && job->JobType == JT_RESTORE) { return job; }
-    ua->ErrorMsg(_("Error: Restore Job resource \"%s\" does not exist.\n"),
+    ua->ErrorMsg(T_("Error: Restore Job resource \"%s\" does not exist.\n"),
                  ua->argv[i]);
   }
 
@@ -357,7 +357,7 @@ JobResource* select_restore_job_resource(UaContext* ua)
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> restore_job_names;
 
-  StartPrompt(ua, _("The defined Restore Job resources are:\n"));
+  StartPrompt(ua, T_("The defined Restore Job resources are:\n"));
 
 
   foreach_res (job, R_JOB) {
@@ -373,7 +373,8 @@ JobResource* select_restore_job_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Job"), _("Select Restore Job"), name, sizeof(name)) < 0) {
+  if (DoPrompt(ua, T_("Job"), T_("Select Restore Job"), name, sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -389,7 +390,7 @@ ClientResource* select_client_resource(UaContext* ua)
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> client_resource_names;
 
-  StartPrompt(ua, _("The defined Client resources are:\n"));
+  StartPrompt(ua, T_("The defined Client resources are:\n"));
 
   foreach_res (client, R_CLIENT) {
     if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
@@ -403,8 +404,8 @@ ClientResource* select_client_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Client"), _("Select Client (File daemon) resource"), name,
-               sizeof(name))
+  if (DoPrompt(ua, T_("Client"), T_("Select Client (File daemon) resource"),
+               name, sizeof(name))
       < 0) {
     return NULL;
   }
@@ -422,7 +423,7 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> client_resource_names;
 
-  StartPrompt(ua, _("The defined Client resources are:\n"));
+  StartPrompt(ua, T_("The defined Client resources are:\n"));
 
   foreach_res (client, R_CLIENT) {
     if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
@@ -438,7 +439,8 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Client"), _("Select Client resource"), name, sizeof(name))
+  if (DoPrompt(ua, T_("Client"), T_("Select Client resource"), name,
+               sizeof(name))
       < 0) {
     return NULL;
   }
@@ -464,7 +466,7 @@ ClientResource* get_client_resource(UaContext* ua)
       client = ua->GetClientResWithName(ua->argv[i]);
       if (client) { return client; }
 
-      ua->ErrorMsg(_("Error: Client resource %s does not exist.\n"),
+      ua->ErrorMsg(T_("Error: Client resource %s does not exist.\n"),
                    ua->argv[i]);
 
       break;
@@ -482,7 +484,7 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> schedule_resource_names;
 
-  StartPrompt(ua, _("The defined Schedule resources are:\n"));
+  StartPrompt(ua, T_("The defined Schedule resources are:\n"));
 
   foreach_res (sched, R_SCHEDULE) {
     if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
@@ -498,7 +500,7 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Schedule"), _("Select Schedule resource"), name,
+  if (DoPrompt(ua, T_("Schedule"), T_("Select Schedule resource"), name,
                sizeof(name))
       < 0) {
     return NULL;
@@ -523,7 +525,7 @@ bool GetClientDbr(UaContext* ua, ClientDbRecord* cr)
 {
   if (cr->Name[0]) { /* If name already supplied */
     if (ua->db->GetClientRecord(ua->jcr, cr)) { return true; }
-    ua->ErrorMsg(_("Could not find Client %s: ERR=%s"), cr->Name,
+    ua->ErrorMsg(T_("Could not find Client %s: ERR=%s"), cr->Name,
                  ua->db->strerror());
   }
 
@@ -534,7 +536,7 @@ bool GetClientDbr(UaContext* ua, ClientDbRecord* cr)
       if (!ua->AclAccessOk(Client_ACL, ua->argv[i])) { break; }
       bstrncpy(cr->Name, ua->argv[i], sizeof(cr->Name));
       if (!ua->db->GetClientRecord(ua->jcr, cr)) {
-        ua->ErrorMsg(_("Could not find Client \"%s\": ERR=%s"), ua->argv[i],
+        ua->ErrorMsg(T_("Could not find Client \"%s\": ERR=%s"), ua->argv[i],
                      ua->db->strerror());
         cr->ClientId = 0;
         break;
@@ -565,20 +567,21 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
 
   cr->ClientId = 0;
   if (!ua->db->GetClientIds(ua->jcr, &num_clients, &ids)) {
-    ua->ErrorMsg(_("Error obtaining client ids. ERR=%s\n"), ua->db->strerror());
+    ua->ErrorMsg(T_("Error obtaining client ids. ERR=%s\n"),
+                 ua->db->strerror());
     if (ids) { free(ids); }
     return false;
   }
 
   if (num_clients <= 0) {
     ua->ErrorMsg(
-        _("No clients defined. You must run a job before using this "
-          "command.\n"));
+        T_("No clients defined. You must run a job before using this "
+           "command.\n"));
     if (ids) { free(ids); }
     return false;
   }
 
-  StartPrompt(ua, _("Defined Clients:\n"));
+  StartPrompt(ua, T_("Defined Clients:\n"));
   for (int i = 0; i < num_clients; i++) {
     ocr.ClientId = ids[i];
     if (!ua->db->GetClientRecord(ua->jcr, &ocr)
@@ -589,7 +592,7 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
   }
   if (ids) { free(ids); }
 
-  if (DoPrompt(ua, _("Client"), _("Select the Client"), name, sizeof(name))
+  if (DoPrompt(ua, T_("Client"), T_("Select the Client"), name, sizeof(name))
       < 0) {
     return false;
   }
@@ -598,7 +601,7 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
   bstrncpy(ocr.Name, name, sizeof(ocr.Name));
 
   if (!ua->db->GetClientRecord(ua->jcr, &ocr)) {
-    ua->ErrorMsg(_("Could not find Client \"%s\": ERR=%s"), name,
+    ua->ErrorMsg(T_("Could not find Client \"%s\": ERR=%s"), name,
                  ua->db->strerror());
     return false;
   }
@@ -627,7 +630,7 @@ bool GetStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
         && ua->AclAccessOk(Pool_ACL, sr->Name)) {
       return true;
     }
-    ua->ErrorMsg(_("Could not find Storage \"%s\": ERR=%s"), sr->Name,
+    ua->ErrorMsg(T_("Could not find Storage \"%s\": ERR=%s"), sr->Name,
                  ua->db->strerror());
   }
 
@@ -657,7 +660,7 @@ bool GetPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
         && ua->AclAccessOk(Pool_ACL, pr->Name)) {
       return true;
     }
-    ua->ErrorMsg(_("Could not find Pool \"%s\": ERR=%s"), pr->Name,
+    ua->ErrorMsg(T_("Could not find Pool \"%s\": ERR=%s"), pr->Name,
                  ua->db->strerror());
   }
 
@@ -684,7 +687,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
         && ua->AclAccessOk(Pool_ACL, ua->argv[i])) {
       bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
       if (!ua->db->GetPoolRecord(ua->jcr, pr)) {
-        ua->ErrorMsg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i],
+        ua->ErrorMsg(T_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i],
                      ua->db->strerror());
         pr->PoolId = 0;
         break;
@@ -695,20 +698,20 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 
   pr->PoolId = 0;
   if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
-    ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
+    ua->ErrorMsg(T_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
     if (ids) { free(ids); }
     return 0;
   }
 
   if (num_pools <= 0) {
     ua->ErrorMsg(
-        _("No pools defined. Use the \"create\" command to create one.\n"));
+        T_("No pools defined. Use the \"create\" command to create one.\n"));
     if (ids) { free(ids); }
     return false;
   }
 
-  StartPrompt(ua, _("Defined Pools:\n"));
-  if (bstrcmp(argk, NT_("recyclepool"))) { AddPrompt(ua, _("*None*")); }
+  StartPrompt(ua, T_("Defined Pools:\n"));
+  if (bstrcmp(argk, NT_("recyclepool"))) { AddPrompt(ua, T_("*None*")); }
 
   for (int i = 0; i < num_pools; i++) {
     opr.PoolId = ids[i];
@@ -720,7 +723,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   }
   if (ids) { free(ids); }
 
-  if (DoPrompt(ua, _("Pool"), _("Select the Pool"), name, sizeof(name)) < 0) {
+  if (DoPrompt(ua, T_("Pool"), T_("Select the Pool"), name, sizeof(name)) < 0) {
     return false;
   }
 
@@ -729,11 +732,11 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   /* *None* is only returned when selecting a recyclepool, and in that case
    * the calling code is only interested in opr.Name, so then we can leave
    * pr as all zero. */
-  if (!bstrcmp(name, _("*None*"))) {
+  if (!bstrcmp(name, T_("*None*"))) {
     bstrncpy(opr.Name, name, sizeof(opr.Name));
 
     if (!ua->db->GetPoolRecord(ua->jcr, &opr)) {
-      ua->ErrorMsg(_("Could not find Pool \"%s\": ERR=%s"), name,
+      ua->ErrorMsg(T_("Could not find Pool \"%s\": ERR=%s"), name,
                    ua->db->strerror());
       return false;
     }
@@ -758,7 +761,7 @@ bool SelectPoolForMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr)
   }
 
   if (!ua->AclAccessOk(Pool_ACL, pr->Name, true)) {
-    ua->ErrorMsg(_("No access to Pool \"%s\"\n"), pr->Name);
+    ua->ErrorMsg(T_("No access to Pool \"%s\"\n"), pr->Name);
     return false;
   }
 
@@ -781,7 +784,7 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
         && ua->AclAccessOk(Storage_ACL, ua->argv[i])) {
       bstrncpy(sr->Name, ua->argv[i], sizeof(sr->Name));
       if (!ua->db->GetStorageRecord(ua->jcr, sr)) {
-        ua->ErrorMsg(_("Could not find Storage \"%s\": ERR=%s"), ua->argv[i],
+        ua->ErrorMsg(T_("Could not find Storage \"%s\": ERR=%s"), ua->argv[i],
                      ua->db->strerror());
         sr->StorageId = 0;
         break;
@@ -792,20 +795,20 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
 
   sr->StorageId = 0;
   if (!ua->db->GetStorageIds(ua->jcr, &num_storages, &ids)) {
-    ua->ErrorMsg(_("Error obtaining storage ids. ERR=%s\n"),
+    ua->ErrorMsg(T_("Error obtaining storage ids. ERR=%s\n"),
                  ua->db->strerror());
     if (ids) { free(ids); }
     return 0;
   }
 
   if (num_storages <= 0) {
-    ua->ErrorMsg(_("No storages defined.\n"));
+    ua->ErrorMsg(T_("No storages defined.\n"));
     if (ids) { free(ids); }
     return false;
   }
 
-  StartPrompt(ua, _("Defined Storages:\n"));
-  if (bstrcmp(argk, NT_("recyclestorage"))) { AddPrompt(ua, _("*None*")); }
+  StartPrompt(ua, T_("Defined Storages:\n"));
+  if (bstrcmp(argk, NT_("recyclestorage"))) { AddPrompt(ua, T_("*None*")); }
 
   for (int i = 0; i < num_storages; i++) {
     osr.StorageId = ids[i];
@@ -817,7 +820,7 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
   }
   if (ids) { free(ids); }
 
-  if (DoPrompt(ua, _("Storage"), _("Select the Storage"), name, sizeof(name))
+  if (DoPrompt(ua, T_("Storage"), T_("Select the Storage"), name, sizeof(name))
       < 0) {
     return false;
   }
@@ -827,11 +830,11 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
   /* *None* is only returned when selecting a recyclestorage, and in that case
    * the calling code is only interested in osr.Name, so then we can leave
    * sr as all zero. */
-  if (!bstrcmp(name, _("*None*"))) {
+  if (!bstrcmp(name, T_("*None*"))) {
     bstrncpy(osr.Name, name, sizeof(osr.Name));
 
     if (!ua->db->GetStorageRecord(ua->jcr, &osr)) {
-      ua->ErrorMsg(_("Could not find Storage \"%s\": ERR=%s"), name,
+      ua->ErrorMsg(T_("Could not find Storage \"%s\": ERR=%s"), name,
                    ua->db->strerror());
       return false;
     }
@@ -890,9 +893,9 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
     ua->db->ListMediaRecords(ua->jcr, mr, NULL, false, ua->send, HORZ_LIST);
 
     ua->SendMsg(
-        _("Enter the volume name or MediaId of the volume prefixed with an "
-          "asterisk (*).\n"));
-    if (!GetCmd(ua, _("E.g. \"full-0001\" or \"*42\": "))) { goto bail_out; }
+        T_("Enter the volume name or MediaId of the volume prefixed with an "
+           "asterisk (*).\n"));
+    if (!GetCmd(ua, T_("E.g. \"full-0001\" or \"*42\": "))) { goto bail_out; }
 
     if (ua->cmd[0] == '*' && Is_a_number(ua->cmd + 1)) {
       mr->MediaId = str_to_int64(ua->cmd + 1);
@@ -922,7 +925,7 @@ PoolResource* select_pool_resource(UaContext* ua)
   char name[MAX_NAME_LENGTH];
   std::vector<std::string> pool_resource_names;
 
-  StartPrompt(ua, _("The defined Pool resources are:\n"));
+  StartPrompt(ua, T_("The defined Pool resources are:\n"));
 
   foreach_res (pool, R_POOL) {
     if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
@@ -937,7 +940,7 @@ PoolResource* select_pool_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Pool"), _("Select Pool resource"), name, sizeof(name))
+  if (DoPrompt(ua, T_("Pool"), T_("Select Pool resource"), name, sizeof(name))
       < 0) {
     return NULL;
   }
@@ -961,7 +964,7 @@ PoolResource* get_pool_resource(UaContext* ua)
   if (i >= 0 && ua->AclAccessOk(Pool_ACL, ua->argv[i])) {
     pool = ua->GetPoolResWithName(ua->argv[i]);
     if (pool) { return pool; }
-    ua->ErrorMsg(_("Error: Pool resource \"%s\" does not exist.\n"),
+    ua->ErrorMsg(T_("Error: Pool resource \"%s\" does not exist.\n"),
                  ua->argv[i]);
   }
 
@@ -971,10 +974,9 @@ PoolResource* get_pool_resource(UaContext* ua)
 // List all jobs and ask user to select one
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
-  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, std::vector<char>{}, 0,
-                         std::vector<char>{}, NULL, NULL, 0, 0, 0, ua->send,
-                         HORZ_LIST);
-  if (!GetPint(ua, _("Enter the JobId to select: "))) { return 0; }
+  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, {}, {}, {}, nullptr, nullptr, 0,
+                         0, 0, ua->send, HORZ_LIST);
+  if (!GetPint(ua, T_("Enter the JobId to select: "))) { return 0; }
 
   jr->JobId = ua->int64_val;
   if (!ua->db->GetJobRecord(ua->jcr, jr)) {
@@ -1011,7 +1013,7 @@ int GetJobDbr(UaContext* ua, JobDbRecord* jr)
       continue;
     }
     if (!ua->db->GetJobRecord(ua->jcr, jr)) {
-      ua->ErrorMsg(_("Could not find Job \"%s\": ERR=%s"), ua->argv[i],
+      ua->ErrorMsg(T_("Could not find Job \"%s\": ERR=%s"), ua->argv[i],
                    ua->db->strerror());
       jr->JobId = 0;
       break;
@@ -1173,7 +1175,8 @@ int DoPrompt(UaContext* ua,
     item = 1;
     if (prompt) { bstrncpy(prompt, ua->prompt[1], max_prompt); }
     if (!ua->api && !ua->runscript) {
-      ua->SendMsg(_("Automatically selected %s: %s\n"), automsg, ua->prompt[1]);
+      ua->SendMsg(T_("Automatically selected %s: %s\n"), automsg,
+                  ua->prompt[1]);
     }
     goto done;
   }
@@ -1185,8 +1188,8 @@ int DoPrompt(UaContext* ua,
     ua->SendMsg(FormatPrompts(ua, window_width, min_lines_threshold).c_str());
 
     // Now print error message
-    ua->SendMsg(_("Your request has multiple choices for \"%s\". Selection is "
-                  "not possible in batch mode.\n"),
+    ua->SendMsg(T_("Your request has multiple choices for \"%s\". Selection is "
+                   "not possible in batch mode.\n"),
                 automsg);
     item = -1;
     goto done;
@@ -1211,13 +1214,13 @@ int DoPrompt(UaContext* ua,
   while (1) {
     // First item is the prompt string, not the items
     if (ua->num_prompts == 1) {
-      ua->ErrorMsg(_("Selection list for \"%s\" is empty!\n"), automsg);
+      ua->ErrorMsg(T_("Selection list for \"%s\" is empty!\n"), automsg);
       item = -1; /* list is empty ! */
       break;
     }
     if (ua->num_prompts == 2) {
       item = 1;
-      ua->SendMsg(_("Automatically selected: %s\n"), ua->prompt[1]);
+      ua->SendMsg(T_("Automatically selected: %s\n"), ua->prompt[1]);
       if (prompt) { bstrncpy(prompt, ua->prompt[1], max_prompt); }
       break;
     } else {
@@ -1229,12 +1232,12 @@ int DoPrompt(UaContext* ua,
 
     if (!GetPint(ua, pmsg.c_str())) {
       item = -1; /* error */
-      ua->InfoMsg(_("Selection aborted, nothing done.\n"));
+      ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
       break;
     }
     item = ua->pint32_val;
     if (item < 1 || item >= ua->num_prompts) {
-      ua->WarningMsg(_("Please enter a number between 1 and %d\n"),
+      ua->WarningMsg(T_("Please enter a number between 1 and %d\n"),
                      ua->num_prompts - 1);
       continue;
     }
@@ -1290,7 +1293,7 @@ StorageResource* get_storage_resource(UaContext* ua,
       }
       // Default argument is storage
       if (StoreName) {
-        ua->ErrorMsg(_("Storage name given twice.\n"));
+        ua->ErrorMsg(T_("Storage name given twice.\n"));
         return NULL;
       }
       StoreName = ua->argk[i];
@@ -1306,11 +1309,13 @@ StorageResource* get_storage_resource(UaContext* ua,
       } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
         jobid = str_to_int64(ua->argv[i]);
         if (jobid <= 0) {
-          ua->ErrorMsg(_("Expecting jobid=nn command, got: %s\n"), ua->argk[i]);
+          ua->ErrorMsg(T_("Expecting jobid=nn command, got: %s\n"),
+                       ua->argk[i]);
           return NULL;
         }
         if (!(jcr = get_jcr_by_id(jobid))) {
-          ua->ErrorMsg(_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
+          ua->ErrorMsg(T_("JobId %s is not running.\n"),
+                       edit_int64(jobid, ed1));
           return NULL;
         }
         store = jcr->dir_impl->res.write_storage;
@@ -1319,11 +1324,11 @@ StorageResource* get_storage_resource(UaContext* ua,
       } else if (Bstrcasecmp(ua->argk[i], NT_("job"))
                  || Bstrcasecmp(ua->argk[i], NT_("jobname"))) {
         if (!ua->argv[i]) {
-          ua->ErrorMsg(_("Expecting job=xxx, got: %s.\n"), ua->argk[i]);
+          ua->ErrorMsg(T_("Expecting job=xxx, got: %s.\n"), ua->argk[i]);
           return NULL;
         }
         if (!(jcr = get_jcr_by_partial_name(ua->argv[i]))) {
-          ua->ErrorMsg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Job \"%s\" is not running.\n"), ua->argv[i]);
           return NULL;
         }
         store = jcr->dir_impl->res.write_storage;
@@ -1331,11 +1336,11 @@ StorageResource* get_storage_resource(UaContext* ua,
         break;
       } else if (Bstrcasecmp(ua->argk[i], NT_("ujobid"))) {
         if (!ua->argv[i]) {
-          ua->ErrorMsg(_("Expecting ujobid=xxx, got: %s.\n"), ua->argk[i]);
+          ua->ErrorMsg(T_("Expecting ujobid=xxx, got: %s.\n"), ua->argk[i]);
           return NULL;
         }
         if (!(jcr = get_jcr_by_full_name(ua->argv[i]))) {
-          ua->ErrorMsg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Job \"%s\" is not running.\n"), ua->argv[i]);
           return NULL;
         }
         store = jcr->dir_impl->res.write_storage;
@@ -1353,7 +1358,7 @@ StorageResource* get_storage_resource(UaContext* ua,
     store = ua->GetStoreResWithName(StoreName);
 
     if (!store) {
-      ua->ErrorMsg(_("Storage resource \"%s\": not found\n"), StoreName);
+      ua->ErrorMsg(T_("Storage resource \"%s\": not found\n"), StoreName);
     }
   }
 
@@ -1388,12 +1393,12 @@ drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
       drive = 0;
     } else {
       // Ask user to enter drive number
-      StartPrompt(ua, _("Select Drive:\n"));
+      StartPrompt(ua, T_("Select Drive:\n"));
       for (drive_number_t cnt = 0; cnt < drives; cnt++) {
         Bsnprintf(drivename, sizeof(drivename), "Drive %hd", cnt);
         AddPrompt(ua, drivename);
       }
-      if (DoPrompt(ua, _("Drive"), _("Select drive"), drivename,
+      if (DoPrompt(ua, T_("Drive"), T_("Select drive"), drivename,
                    sizeof(drivename))
           < 0) {
         drive = kInvalidDriveNumber; /* None */
@@ -1422,7 +1427,7 @@ slot_number_t GetStorageSlot(UaContext* ua, StorageResource* store)
   } else if (store && store->autochanger) {
     // Ask user to enter slot number
     ua->cmd[0] = 0;
-    if (!GetCmd(ua, _("Enter autochanger slot: "))) {
+    if (!GetCmd(ua, T_("Enter autochanger slot: "))) {
       slot = -1; /* None */
     } else {
       slot = atoi(ua->cmd);
@@ -1451,7 +1456,7 @@ int GetMediaType(UaContext* ua, char* MediaType, int max_media)
     return 1;
   }
 
-  StartPrompt(ua, _("Media Types defined in conf file:\n"));
+  StartPrompt(ua, T_("Media Types defined in conf file:\n"));
 
   foreach_res (store, R_STORAGE) {
     if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
@@ -1459,7 +1464,7 @@ int GetMediaType(UaContext* ua, char* MediaType, int max_media)
     }
   }
 
-  return (DoPrompt(ua, _("Media Type"), _("Select the Media Type"), MediaType,
+  return (DoPrompt(ua, T_("Media Type"), T_("Select the Media Type"), MediaType,
                    max_media)
           < 0)
              ? 0
@@ -1550,16 +1555,16 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         JobId_t JobId = str_to_int64(ua->argv[i]);
         if (!JobId) { continue; }
         if (!(jcr = get_jcr_by_id(JobId))) {
-          ua->ErrorMsg(_("JobId %s is not running. Use Job name to %s "
-                         "inactive jobs.\n"),
-                       ua->argv[i], _(reason));
+          ua->ErrorMsg(T_("JobId %s is not running. Use Job name to %s "
+                          "inactive jobs.\n"),
+                       ua->argv[i], T_(reason));
           continue;
         }
       } else if (Bstrcasecmp(ua->argk[i], NT_("job"))) {
         if (!ua->argv[i]) { continue; }
         if (!(jcr = get_jcr_by_partial_name(ua->argv[i]))) {
           ua->WarningMsg(
-              _("Warning Job %s is not running. Continuing anyway ...\n"),
+              T_("Warning Job %s is not running. Continuing anyway ...\n"),
               ua->argv[i]);
           continue;
         }
@@ -1567,7 +1572,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         if (!ua->argv[i]) { continue; }
         if (!(jcr = get_jcr_by_full_name(ua->argv[i]))) {
           ua->WarningMsg(
-              _("Warning Job %s is not running. Continuing anyway ...\n"),
+              T_("Warning Job %s is not running. Continuing anyway ...\n"),
               ua->argv[i]);
           continue;
         }
@@ -1577,7 +1582,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         if (jcr->dir_impl->res.job
             && !ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_,
                                 true)) {
-          ua->ErrorMsg(_("Unauthorized command from this console.\n"));
+          ua->ErrorMsg(T_("Unauthorized command from this console.\n"));
           goto bail_out;
         }
 
@@ -1610,9 +1615,9 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
 
     if (njobs == 0) { /* No authorized */
       if (tjobs == 0) {
-        ua->SendMsg(_("No Jobs running.\n"));
+        ua->SendMsg(T_("No Jobs running.\n"));
       } else {
-        ua->SendMsg(_("None of your jobs are running.\n"));
+        ua->SendMsg(T_("None of your jobs are running.\n"));
       }
       goto bail_out;
     }
@@ -1643,8 +1648,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
 
           if (selection_criterium == none) {
             ua->ErrorMsg(
-                _("Illegal state either created, blocked, waiting or "
-                  "running\n"));
+                T_("Illegal state either created, blocked, waiting or "
+                   "running\n"));
             goto bail_out;
           }
         }
@@ -1686,18 +1691,18 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         }
 
         InsertSelectedJobid(selected_jobids, jcr->JobId);
-        ua->SendMsg(_("Selected Job %d for cancelling\n"), jcr->JobId);
+        ua->SendMsg(T_("Selected Job %d for cancelling\n"), jcr->JobId);
       }
 
       if (selected_jobids->empty()) {
-        ua->SendMsg(_("No Jobs selected.\n"));
+        ua->SendMsg(T_("No Jobs selected.\n"));
         goto bail_out;
       }
 
       /* Only ask for confirmation when not in batch mode and there is no yes
        * on the cmdline. */
       if (!ua->batch && FindArg(ua, NT_("yes")) == -1) {
-        if (!GetYesno(ua, _("Confirm cancel (yes/no): ")) || !ua->pint32_val) {
+        if (!GetYesno(ua, T_("Confirm cancel (yes/no): ")) || !ua->pint32_val) {
           goto bail_out;
         }
       }
@@ -1706,7 +1711,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       char JobName[MAX_NAME_LENGTH];
 
       // Interactivly select a Job.
-      StartPrompt(ua, _("Select Job:\n"));
+      StartPrompt(ua, T_("Select Job:\n"));
       foreach_jcr (jcr) {
         char ed1[50];
         if (jcr->JobId == 0) { /* This is us */
@@ -1715,25 +1720,27 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         if (!ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_)) {
           continue; /* Skip not authorized */
         }
-        Bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"),
+        Bsnprintf(buf, sizeof(buf), T_("JobId=%s Job=%s"),
                   edit_int64(jcr->JobId, ed1), jcr->Job);
         AddPrompt(ua, buf);
       }
       endeach_jcr(jcr);
 
-      Bsnprintf(temp, sizeof(temp), _("Choose Job to %s"), _(reason));
-      if (DoPrompt(ua, _("Job"), temp, buf, sizeof(buf)) < 0) { goto bail_out; }
+      Bsnprintf(temp, sizeof(temp), T_("Choose Job to %s"), T_(reason));
+      if (DoPrompt(ua, T_("Job"), temp, buf, sizeof(buf)) < 0) {
+        goto bail_out;
+      }
 
       if (bstrcmp(reason, "cancel")) {
         if (ua->api && njobs == 1) {
           char nbuf[1000];
 
-          Bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf,
-                    _("Confirm cancel?"));
+          Bsnprintf(nbuf, sizeof(nbuf), T_("Cancel: %s\n\n%s"), buf,
+                    T_("Confirm cancel?"));
           if (!GetYesno(ua, nbuf) || !ua->pint32_val) { goto bail_out; }
         } else {
           if (njobs == 1) {
-            if (!GetYesno(ua, _("Confirm cancel (yes/no): "))
+            if (!GetYesno(ua, T_("Confirm cancel (yes/no): "))
                 || !ua->pint32_val) {
               goto bail_out;
             }
@@ -1744,7 +1751,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       sscanf(buf, "JobId=%d Job=%127s", &njobs, JobName);
       jcr = get_jcr_by_full_name(JobName);
       if (!jcr) {
-        ua->WarningMsg(_("Job \"%s\" not found.\n"), JobName);
+        ua->WarningMsg(T_("Job \"%s\" not found.\n"), JobName);
         goto bail_out;
       }
 
@@ -1800,40 +1807,40 @@ bool GetUserSlotList(UaContext* ua,
       // Check for range
       h = strchr(p, '-'); /* range? */
       if (h == p) {
-        msg = _("Negative numbers not permitted\n");
+        msg = T_("Negative numbers not permitted\n");
         goto bail_out;
       }
       if (h) {
         *h++ = 0;
         if (!IsAnInteger(h)) {
-          msg = _("Range end is not integer.\n");
+          msg = T_("Range end is not integer.\n");
           goto bail_out;
         }
         SkipSpaces(&p);
         if (!IsAnInteger(p)) {
-          msg = _("Range start is not an integer.\n");
+          msg = T_("Range start is not an integer.\n");
           goto bail_out;
         }
         beg = atoi(p);
         end = atoi(h);
         if (end < beg) {
-          msg = _("Range end not bigger than start.\n");
+          msg = T_("Range end not bigger than start.\n");
           goto bail_out;
         }
       } else {
         SkipSpaces(&p);
         if (!IsAnInteger(p)) {
-          msg = _("Input value is not an integer.\n");
+          msg = T_("Input value is not an integer.\n");
           goto bail_out;
         }
         beg = end = atoi(p);
       }
       if (beg <= 0 || end <= 0) {
-        msg = _("Values must be be greater than zero.\n");
+        msg = T_("Values must be be greater than zero.\n");
         goto bail_out;
       }
       if (end > num_slots) {
-        msg = _("Slot too large.\n");
+        msg = T_("Slot too large.\n");
         goto bail_out;
       }
 
@@ -1890,12 +1897,12 @@ bool GetUserJobTypeListSelection(UaContext* ua,
   if ((argument = FindArgWithValue(ua, NT_("jobtype"))) >= 0) {
     bstrncpy(jobtype_argument, ua->argv[argument], sizeof(jobtype_argument));
   } else if (ask_user) {
-    StartPrompt(ua, _("Jobtype:\n"));
+    StartPrompt(ua, T_("Jobtype:\n"));
     for (int i = 0; jobtypes[i].type_name; i++) {
       AddPrompt(ua, jobtypes[i].type_name);
     }
 
-    if (DoPrompt(ua, _("JobType"), _("Select Job Type"), jobtype_argument,
+    if (DoPrompt(ua, T_("JobType"), T_("Select Job Type"), jobtype_argument,
                  sizeof(jobtype_argument))
         < 0) {
       return false;
@@ -1915,7 +1922,7 @@ bool GetUserJobTypeListSelection(UaContext* ua,
   for (auto& jobtype : split_jobtypes) {
     int type = GetParsedJobType(jobtype);
     if (type == -1) {
-      ua->WarningMsg(_("Illegal jobtype %s\n"), jobtype.c_str());
+      ua->WarningMsg(T_("Illegal jobtype %s\n"), jobtype.c_str());
       return false;
     }
     passed_jobtypes.push_back(type);
@@ -1961,17 +1968,22 @@ bool GetUserJobStatusSelection(UaContext* ua, std::vector<char>& jobstatuslist)
   return true;
 }
 
-bool GetUserJobLevelSelection(UaContext* ua, int* joblevel)
+bool GetUserJobLevelSelection(UaContext* ua, std::vector<char>& joblevel_list)
 {
   int i;
 
-  if ((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0) {
-    if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A'
-        && ua->argv[i][0] <= 'z') {
-      *joblevel = ua->argv[i][0];
-    } else {
-      /* invalid joblevel */
-      return false;
+  if (((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0)
+      || ((i = FindArgWithValue(ua, NT_("level"))) >= 0)) {
+    std::vector<std::string> joblevelinput_list
+        = split_string(ua->argv[i], ',');
+
+    for (const auto& level : joblevelinput_list) {
+      if (level.size() == 1 && level[0] >= 'A' && level[0] <= 'z') {
+        joblevel_list.push_back(level[0]);
+      } else {
+        /* invalid joblevel */
+        return false;
+      }
     }
   }
   return true;

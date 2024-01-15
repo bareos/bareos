@@ -24,7 +24,6 @@ function deletefiles(){
 deletefiles;
 
 "${rscripts}/bareos" stop >/dev/null
-#${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
 
 exit 0

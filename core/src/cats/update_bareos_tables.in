@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,10 @@
 #
 set -e
 set -u
+
+# avoid misleading PostgreSQL warning 'could not change directory to ...'
+cd /
+
 #
 # Source the Bareos config functions.
 #
@@ -100,21 +104,25 @@ do
        -e "s/@DB_USER@/${db_user}/" \
        "${sql_definitions}" > "${temp_sql_schema}"
 
-    info "Upgrading database schema from version ${start_version} to ${end_version}"
-    retval=0
-    PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
-    if [ "${retval}" -eq 0 ] && [ "${end_version}" -eq 2210 ]; then
-        if ! alter_sequence_result="$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT')" ; then
-            warn "WARNING: Failed to update sequence basefiles_baseid_seq ${alter_sequence_result}"
-        fi
-    fi
-
+   info "Upgrading database schema from version ${start_version} to ${end_version}"
+   retval=0
+   PAGER="" PGOPTIONS="--client-min-messages=warning" psql -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
    rm -f "${temp_sql_schema}"
 
    if [ ${retval} -ne 0 ]; then
       error "Failed to upgrade database schema from version ${start_version} to ${end_version}"
       exit ${retval}
    fi
+   #
+   # return value of psql is does says OK when transaction was rolled back.
+   # So we verify that the version was set to what we expect.
+   #
+   DBVERSION_AFTER=$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;")
+   if [ "${DBVERSION_AFTER}" -ne "${end_version}" ]; then
+      error "Failed to upgrade database schema from version ${DBVERSION} to ${end_version}, is still on ${DBVERSION_AFTER}"
+      exit 1
+   fi
+
 done
 
 exit ${retval}

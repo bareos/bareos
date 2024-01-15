@@ -105,7 +105,7 @@ static ResourceItem store_items[] = {
   {"NdmpAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store, NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL},
   {"NdmpPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL},
   {"AutoXFlateOnReplication", CFG_TYPE_BOOL, ITEM(res_store, autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false", "13.4.0-", NULL},
-  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store, jcr_watchdog_time), 0, 0, NULL, NULL, NULL},
+  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
   {"CollectDeviceStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_dev_stats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"CollectJobStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_job_stats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", NULL, NULL},
@@ -113,7 +113,7 @@ static ResourceItem store_items[] = {
   {"FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store, filedevice_concurrent_read), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
-  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store, log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL},
+  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -168,10 +168,12 @@ static ResourceItem dev_items[] = {
   {"CloseOnPoll", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_CLOSEONPOLL, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"BlockPositioning", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_POSITIONBLOCKS, CFG_ITEM_DEFAULT, "on", NULL, NULL},
   {"UseMtiocget", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_MTIOCGET, CFG_ITEM_DEFAULT, "on", NULL, NULL},
-  {"CheckLabels", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_CHECKLABELS, CFG_ITEM_DEFAULT, "off", NULL, NULL},
+  {"CheckLabels", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_CHECKLABELS, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"RequiresMount", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_REQMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"OfflineOnUnmount", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_OFFLINEUNMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"BlockChecksum", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_BLOCKCHECKSUM, CFG_ITEM_DEFAULT, "on", NULL, NULL},
+  {"AccessMode", CFG_TYPE_IODIRECTION, ITEM(res_dev, access_mode), 0, CFG_ITEM_DEFAULT, "readwrite", NULL, "Access mode specifies whether "
+  "this device can be reserved for reading, writing or for both modes (default)."},
   {"AutoSelect", CFG_TYPE_BOOL, ITEM(res_dev, autoselect), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
   {"ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_dev, changer_name), 0, 0, NULL, NULL, NULL},
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_dev, changer_command), 0, 0, NULL, NULL, NULL},
@@ -198,7 +200,7 @@ static ResourceItem dev_items[] = {
   {"MountPoint", CFG_TYPE_STRNAME, ITEM(res_dev, mount_point), 0, 0, NULL, NULL, NULL},
   {"MountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, mount_command), 0, 0, NULL, NULL, NULL},
   {"UnmountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, unmount_command), 0, 0, NULL, NULL, NULL},
-  {"LabelType", CFG_TYPE_LABEL, ITEM(res_dev, label_type), 0, 0, NULL, NULL, NULL},
+  {"LabelType", CFG_TYPE_LABEL, ITEM(res_dev, label_type), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
   {"NoRewindOnClose", CFG_TYPE_BOOL, ITEM(res_dev, norewindonclose), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
   {"DriveTapeAlertEnabled", CFG_TYPE_BOOL, ITEM(res_dev, drive_tapealert_enabled), 0, 0, NULL, NULL, NULL},
   {"DriveCryptoEnabled", CFG_TYPE_BOOL, ITEM(res_dev, drive_crypto_enabled), 0, 0, NULL, NULL, NULL},
@@ -248,13 +250,15 @@ static struct s_kw authentication_methods[]
 
 struct s_io_kw {
   const char* name;
-  AutoXflateMode token;
+  IODirection token;
 };
 
-static s_io_kw io_directions[] = {{"in", AutoXflateMode::IO_DIRECTION_IN},
-                                  {"out", AutoXflateMode::IO_DIRECTION_OUT},
-                                  {"both", AutoXflateMode::IO_DIRECTION_INOUT},
-                                  {nullptr, AutoXflateMode::IO_DIRECTION_NONE}};
+static s_io_kw io_directions[] = {
+    {"in", IODirection::READ},         {"read", IODirection::READ},
+    {"readonly", IODirection::READ},   {"out", IODirection::WRITE},
+    {"write", IODirection::WRITE},     {"writeonly", IODirection::WRITE},
+    {"both", IODirection::READ_WRITE}, {"readwrite", IODirection::READ_WRITE},
+    {nullptr, IODirection::READ_WRITE}};
 
 static s_kw compression_algorithms[]
     = {{"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
@@ -275,11 +279,11 @@ static void StoreAuthenticationType(LEX* lc, ResourceItem* item, int index, int)
     }
   }
   if (i != 0) {
-    scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"),
+    scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
               lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -316,8 +320,8 @@ static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
   my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
   if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
     scan_err2(lc,
-              _("Maximum Block Size configured value %u is greater than "
-                "allowed maximum: %u"),
+              T_("Maximum Block Size configured value %u is greater than "
+                 "allowed maximum: %u"),
               GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
   }
 }
@@ -330,16 +334,16 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int)
   LexGetToken(lc, BCT_NAME);
   for (i = 0; io_directions[i].name; i++) {
     if (Bstrcasecmp(lc->str, io_directions[i].name)) {
-      SetItemVariable<AutoXflateMode>(*item, io_directions[i].token);
+      SetItemVariable<IODirection>(*item, io_directions[i].token);
       i = 0;
       break;
     }
   }
   if (i != 0) {
-    scan_err1(lc, _("Expected a IO direction keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a IO direction keyword, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -361,11 +365,11 @@ static void StoreCompressionalgorithm(LEX* lc,
     }
   }
   if (i != 0) {
-    scan_err1(lc, _("Expected a Compression algorithm keyword, got: %s"),
+    scan_err1(lc, T_("Expected a Compression algorithm keyword, got: %s"),
               lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -490,14 +494,14 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
         /* 0 is the general default. However, for this device_type, only 1
          * works. So we set it to this value. */
         Jmsg1(nullptr, M_WARNING, 0,
-              _("device %s is set to the default 'Maximum Concurrent Jobs' = "
-                "1.\n"),
+              T_("device %s is set to the default 'Maximum Concurrent Jobs' = "
+                 "1.\n"),
               d->archive_device_string);
         d->max_concurrent_jobs = 1;
       } else if (d->max_concurrent_jobs > 1) {
         Jmsg2(nullptr, M_ERROR_TERM, 0,
-              _("device %s is configured with 'Maximum Concurrent Jobs' = %d, "
-                "however only 1 is supported.\n"),
+              T_("device %s is configured with 'Maximum Concurrent Jobs' = %d, "
+                 "however only 1 is supported.\n"),
               d->archive_device_string, d->max_concurrent_jobs);
       }
     }
@@ -516,9 +520,9 @@ static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
       if (stat(d->archive_device_string, &statp) < 0) {
         BErrNo be;
         Jmsg2(nullptr, M_ERROR_TERM, 0,
-              _("Unable to stat path '%s' for device %s: ERR=%s\n"
-                "Consider setting Device Type if device is not available when "
-                "daemon starts.\n"),
+              T_("Unable to stat path '%s' for device %s: ERR=%s\n"
+                 "Consider setting Device Type if device is not available when "
+                 "daemon starts.\n"),
               d->archive_device_string, d->resource_name_, be.bstrerror());
         return;
       }
@@ -604,7 +608,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
     my_config->own_resource_ = me;
     if (!me) {
       Emsg1(exit_code, 0,
-            _("No Storage resource defined in %s. Cannot continue.\n"),
+            T_("No Storage resource defined in %s. Cannot continue.\n"),
             configfile);
       return retval;
     }
@@ -667,7 +671,7 @@ static bool DumpResource_(int type,
       = OutputFormatterResource(&output_formatter);
 
   if (!res) {
-    sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
+    sendit(sock, T_("Warning: no \"%s\" resource (%d) defined.\n"),
            my_config->ResToStr(type), type);
     return false;
   }
@@ -736,15 +740,16 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
-        Emsg2(M_ERROR_TERM, 0,
-              _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
-              items[i].name, resources[type].name);
+      if (!items[i].IsPresent()) {
+        Emsg2(
+            M_ERROR_TERM, 0,
+            T_("\"%s\" item is required in \"%s\" resource, but not found.\n"),
+            items[i].name, resources[type].name);
       }
     }
 
     if (i >= MAX_RES_ITEMS) {
-      Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"),
+      Emsg1(M_ERROR_TERM, 0, T_("Too many items in \"%s\" resource\n"),
             resources[type].name);
     }
   }
@@ -764,7 +769,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         DirectorResource* p
             = dynamic_cast<DirectorResource*>(allocated_resource);
         if (!p) {
-          Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"),
+          Emsg1(M_ERROR_TERM, 0, T_("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_
@@ -775,7 +780,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       case R_STORAGE: {
         StorageResource* p = dynamic_cast<StorageResource*>(allocated_resource);
         if (!p) {
-          Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"),
+          Emsg1(M_ERROR_TERM, 0, T_("Cannot find Storage resource %s\n"),
                 res_store->resource_name_);
         } else {
           p->plugin_names = res_store->plugin_names;
@@ -790,7 +795,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         AutochangerResource* p
             = dynamic_cast<AutochangerResource*>(allocated_resource);
         if (!p) {
-          Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"),
+          Emsg1(M_ERROR_TERM, 0, T_("Cannot find AutoChanger resource %s\n"),
                 res_changer->resource_name_);
         } else {
           p->device_resources = res_changer->device_resources;
@@ -801,14 +806,14 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           int errstat;
           if ((errstat = RwlInit(&p->changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {
             BErrNo be;
-            Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"),
+            Jmsg1(NULL, M_ERROR_TERM, 0, T_("Unable to init lock: ERR=%s\n"),
                   be.bstrerror(errstat));
           }
         }
         break;
       }
       default:
-        printf(_("Unknown resource type %d\n"), type);
+        printf(T_("Unknown resource type %d\n"), type);
         error = 1;
         break;
     }
@@ -953,7 +958,7 @@ static void FreeResource(BareosResource* res, int type)
       break;
     }
     default:
-      Dmsg1(0, _("Unknown resource type %d\n"), type);
+      Dmsg1(0, T_("Unknown resource type %d\n"), type);
       break;
   }
   if (next_ressource) { my_config->FreeResourceCb_(next_ressource, type); }

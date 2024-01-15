@@ -1,0 +1,80 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+
+cat <<END_OF_DATA >"$tmp/make-full"
+@$out /dev/null
+messages
+@$out $log_home/create-full.out
+setdebug level=100 storage=File
+run job=$JobName yes
+wait
+status director
+status client
+status storage=File
+messages
+quit
+END_OF_DATA
+
+cat <<END_OF_DATA >"$tmp/make-incr"
+@$out /dev/null
+messages
+@$out $log_home/create-incremental.out
+run job=$JobName yes
+wait
+status director
+status client
+status storage=File
+messages
+quit
+END_OF_DATA
+
+cat <<END_OF_DATA >"$tmp/restore"
+@$out /dev/null
+messages
+@$out $log_home/restore.out
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restore select yes
+cd $tmp
+markdir data
+mark data/file-1
+done
+wait
+status director
+status client
+status storage=File
+messages
+quit
+END_OF_DATA
+
+truncate -s 5k "${BackupDirectory}"/file-1
+run_bconsole "$tmp/make-full"
+truncate -s 5k "${BackupDirectory}"/file-2
+truncate -s 5k "${BackupDirectory}"/file-3
+run_bconsole "$tmp/make-incr"
+run_bconsole "$tmp/restore"
+
+check_for_zombie_jobs storage=File
+
+expect_not_grep "File count mismatch" \
+		"$log_home/restore.out" \
+		"Regression detected: file count mismatch"
+end_test

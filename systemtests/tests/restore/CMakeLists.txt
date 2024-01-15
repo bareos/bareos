@@ -45,6 +45,11 @@ set_tests_properties(
              "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
+  system:restore:restore-fileregex
+  PROPERTIES FIXTURES_REQUIRED
+             "system:restore:backup-job-fixture;system:restore-fixture"
+)
+set_tests_properties(
   system:restore:restore-dir
   PROPERTIES FIXTURES_REQUIRED
              "system:restore:backup-job-fixture;system:restore-fixture"
@@ -56,6 +61,11 @@ set_tests_properties(
 )
 set_tests_properties(
   system:restore:check-hints
+  PROPERTIES FIXTURES_REQUIRED
+             "system:restore:backup-job-fixture;system:restore-fixture"
+)
+set_tests_properties(
+  system:restore:multi
   PROPERTIES FIXTURES_REQUIRED
              "system:restore:backup-job-fixture;system:restore-fixture"
 )

@@ -416,8 +416,8 @@ bool ChunkedDevice::DequeueChunk()
       new_request->tries++;
       if (retries_ > 0 && new_request->tries >= retries_) {
         Mmsg4(errmsg,
-              _("Unable to flush chunk %d of volume %s to backing store after "
-                "%d tries, setting device %s readonly\n"),
+              T_("Unable to flush chunk %d of volume %s to backing store after "
+                 "%d tries, setting device %s readonly\n"),
               new_request->chunk, new_request->volname, new_request->tries,
               print_name());
         Emsg0(M_ERROR, 0, errmsg);
@@ -1237,10 +1237,10 @@ bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
   dst->status_length = 0;
   if (CheckRemoteConnection()) {
     dst->status_length
-        = PmStrcpy(dst->status, _("Backend connection is working.\n"));
+        = PmStrcpy(dst->status, T_("Backend connection is working.\n"));
   } else {
     dst->status_length
-        = PmStrcpy(dst->status, _("Backend connection is not working.\n"));
+        = PmStrcpy(dst->status, T_("Backend connection is not working.\n"));
   }
   /* See if we are using io-threads or not and the ordered CircularBuffer is
    * created and not empty. */
@@ -1252,7 +1252,7 @@ bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
     if (!cb_->empty()) {
       pending = true;
       dst->status_length
-          = PmStrcat(dst->status, _("Pending IO flush requests:\n"));
+          = PmStrcat(dst->status, T_("Pending IO flush requests:\n"));
 
       // Peek on the ordered circular queue and list all pending requests.
       cb_->peek(storagedaemon::PEEK_LIST, dst, ListIoRequest);
@@ -1261,7 +1261,7 @@ bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
 
   if (!pending) {
     dst->status_length
-        = PmStrcat(dst->status, _("No pending IO flush requests.\n"));
+        = PmStrcat(dst->status, T_("No pending IO flush requests.\n"));
   }
 
   return (dst->status_length > 0);

@@ -3,31 +3,49 @@ FileSet {
   Include {
 
      Options {
-        signature   = MD5
-        wilddir     = @tmpdir@/data-multi-options/*1
-        wild        = @tmpdir@/data-multi-options/*1/*
+        Signature   = MD5
+        Wilddir     = @tmpdir@/data-multi-options/*1
+        Wild        = @tmpdir@/data-multi-options/*1/*
      }
      Options {
-        signature   = MD5
-        compression = GZIP
-        wilddir     = @tmpdir@/data-multi-options/*2
-        wild        = @tmpdir@/data-multi-options/*2/*
+        Signature   = MD5
+        Compression = GZIP
+        Wilddir     = @tmpdir@/data-multi-options/*2
+        Wild        = @tmpdir@/data-multi-options/*2/*
      }
      Options {
-        signature   = MD5
-        compression = GZIP9
-        wilddir     = @tmpdir@/data-multi-options/*3
-        wild        = @tmpdir@/data-multi-options/*3/*
+        Signature   = MD5
+        Compression = GZIP9
+        Wilddir     = @tmpdir@/data-multi-options/*3
+        Wild        = @tmpdir@/data-multi-options/*3/*
      }
      Options {
-        signature   = MD5
-        compression = LZ4
-        wilddir     = @tmpdir@/data-multi-options/*4
-        wild        = @tmpdir@/data-multi-options/*4/*
+        Signature   = SHA1
+        Compression = LZO
+        Wilddir     = @tmpdir@/data-multi-options/*4
+        Wild        = @tmpdir@/data-multi-options/*4/*
      }
      Options {
-        exclude     = yes
-        wilddir     = @tmpdir@/data-multi-options/*
+        Signature   = SHA256
+        Compression = LZ4
+        Wilddir     = @tmpdir@/data-multi-options/*5
+        Wild        = @tmpdir@/data-multi-options/*5/*
+     }
+     Options {
+        Signature   = SHA512
+        Compression = LZ4HC
+        Wilddir     = @tmpdir@/data-multi-options/*6
+        Wild        = @tmpdir@/data-multi-options/*6/*
+     }
+     Options {
+        Signature   = XXH128
+        Compression = LZ4
+        Wilddir     = @tmpdir@/data-multi-options/*7
+        Wild        = @tmpdir@/data-multi-options/*7/*
+     }
+     Options {
+        Exclude     = yes
+        Wilddir     = @tmpdir@/data-multi-options/*
      }
 
      File=@tmpdir@/data-multi-options/

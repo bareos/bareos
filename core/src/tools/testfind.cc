@@ -26,7 +26,7 @@
  */
 
 #include "include/bareos.h"
-
+#include "include/exit_codes.h"
 #include "dird/dird_globals.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
@@ -34,7 +34,7 @@
 
 using namespace directordaemon;
 
-int main(int argc, char* const* argv)
+int main(int argc, char** argv)
 {
   OSDependentInit();
 
@@ -59,18 +59,11 @@ int main(int argc, char* const* argv)
   testfind_app.add_option("-f,--fileset", filesetname,
                           "Specify which FileSet to use.");
 
-  CLI11_PARSE(testfind_app, argc, argv);
+  ParseBareosApp(testfind_app, argc, argv);
 
-  directordaemon::my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
+  directordaemon::my_config = InitDirConfig(configfile.c_str(), M_CONFIG_ERROR);
 
-  if (!directordaemon::my_config) {
-    std::cerr << "Error parsing configuration!\n";
-    exit(2);
-  }
-  if (!directordaemon::my_config->ParseConfig()) {
-    std::cerr << "Error parsing configuration!\n";
-    exit(3);
-  }
+  my_config->ParseConfigOrExit();
 
   FilesetResource* dir_fileset = (FilesetResource*)my_config->GetResWithName(
       R_FILESET, filesetname.c_str());
@@ -85,7 +78,7 @@ int main(int argc, char* const* argv)
     foreach_res (var, R_FILESET) {
       std::cerr << "  " << var->resource_name_ << std::endl;
     }
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   ProcessFileset(dir_fileset, configfile.c_str());
@@ -97,5 +90,5 @@ int main(int argc, char* const* argv)
 
   TermMsg();
 
-  exit(0);
+  return BEXIT_SUCCESS;
 }

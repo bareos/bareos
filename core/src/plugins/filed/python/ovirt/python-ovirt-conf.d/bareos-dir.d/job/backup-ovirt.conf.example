@@ -1,6 +1,0 @@
-Job {
-  Name = "backup-ovirt"
-  JobDefs = "DefaultJob"
-  FileSet = "plugin-ovirt"
-  # Client = "ovirthost-fd"
-}

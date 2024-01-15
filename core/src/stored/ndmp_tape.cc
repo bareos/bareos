@@ -402,7 +402,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
     }
 
     if (rec != rctx->rec) {
-      Dmsg1(400, _("recstream: %d, rctxstream: %d .\n"), rec->maskedStream,
+      Dmsg1(400, T_("recstream: %d, rctxstream: %d .\n"), rec->maskedStream,
             rctx->rec->maskedStream);
     }
 
@@ -412,8 +412,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       case STREAM_FILE_DATA:  // Normal NDMP data.
         if (wanted_data_length < rec->data_len) {
           Jmsg0(jcr, M_FATAL, 0,
-                _("Data read from volume bigger than NDMP databuffer, please "
-                  "increase the NDMP blocksize.\n"));
+                T_("Data read from volume bigger than NDMP databuffer, please "
+                   "increase the NDMP blocksize.\n"));
           return false;
         }
         memcpy(data, rec->data, rec->data_len);
@@ -423,14 +423,15 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
         *data_length = 0;
         return true;
       case STREAM_COMPRESSED_DATA:  // Got compressed data ndmp cannot handle
-        Jmsg0(jcr, M_FATAL, 0,
-              _("Encountered STREAM_COMPRESSED_DATA which cannot be handled by "
-                "NDMP. Make sure read device device will inflate and not "
-                "deflate when reading. "
-                "(IN:[DEV->inflate=yes->deflate=no->SD])\n"));
+        Jmsg0(
+            jcr, M_FATAL, 0,
+            T_("Encountered STREAM_COMPRESSED_DATA which cannot be handled by "
+               "NDMP. Make sure read device device will inflate and not "
+               "deflate when reading. "
+               "(IN:[DEV->inflate=yes->deflate=no->SD])\n"));
         return false;
       default:  // corrupted stream of records, give an EOF
-        Jmsg1(jcr, M_ERROR, 0, _("Encountered an unknown stream type %d\n"),
+        Jmsg1(jcr, M_ERROR, 0, T_("Encountered an unknown stream type %d\n"),
               rec->maskedStream);
         *data_length = 0;
         return true;
@@ -531,7 +532,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   *filesystem++ = '\0';
   if (!(jcr = get_jcr_by_security_key(drive_name))) {
     Jmsg1(NULL, M_FATAL, 0,
-          _("NDMP tape open failed: Security Key not found: %s\n"), drive_name);
+          T_("NDMP tape open failed: Security Key not found: %s\n"),
+          drive_name);
     return NDMP9_NO_DEVICE_ERR;
   }
 
@@ -573,12 +575,12 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   }
 
   if (!dcr) {
-    Jmsg0(jcr, M_FATAL, 0, _("DeviceControlRecord is NULL!!!\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("DeviceControlRecord is NULL!!!\n"));
     return NDMP9_NO_DEVICE_ERR;
   }
 
   if (!dcr->dev) {
-    Jmsg0(jcr, M_FATAL, 0, _("Device is NULL!!!\n"));
+    Jmsg0(jcr, M_FATAL, 0, T_("Device is NULL!!!\n"));
     return NDMP9_NO_DEVICE_ERR;
   }
 
@@ -617,7 +619,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
 
       // Write Begin Session Record
       if (!WriteSessionLabel(dcr, SOS_LABEL)) {
-        Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
+        Jmsg1(jcr, M_FATAL, 0, T_("Write session label failed. ERR=%s\n"),
               dcr->dev->bstrerror());
         goto bail_out;
       }
@@ -638,7 +640,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
      * @NDMP/<filesystem> and save the attributes to the director. */
     Mmsg(virtual_filename, "/@NDMP%s", filesystem);
     if (!BndmpCreateVirtualFile(jcr, virtual_filename.c_str())) {
-      Jmsg0(jcr, M_FATAL, 0, _("Creating virtual file attributes failed.\n"));
+      Jmsg0(jcr, M_FATAL, 0, T_("Creating virtual file attributes failed.\n"));
       goto bail_out;
     }
   } else {
@@ -651,7 +653,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       Dmsg0(20, "Start read data.\n");
 
       if (jcr->sd_impl->NumReadVolumes == 0) {
-        Jmsg(jcr, M_FATAL, 0, _("No Volume names found for restore.\n"));
+        Jmsg(jcr, M_FATAL, 0, T_("No Volume names found for restore.\n"));
         goto bail_out;
       }
 
@@ -685,7 +687,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       // Read the first block and setup record processing.
       if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, NULL,
                                    MountNextReadVolume, &ok)) {
-        Jmsg1(jcr, M_FATAL, 0, _("Read session label failed. ERR=%s\n"),
+        Jmsg1(jcr, M_FATAL, 0, T_("Read session label failed. ERR=%s\n"),
               dcr->dev->bstrerror());
         goto bail_out;
       }
@@ -736,7 +738,7 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
 
   jcr = handle->jcr;
   if (!jcr) {
-    Jmsg0(NULL, M_FATAL, 0, _("JobControlRecord is NULL!!!\n"));
+    Jmsg0(NULL, M_FATAL, 0, T_("JobControlRecord is NULL!!!\n"));
     return NDMP9_DEV_NOT_OPEN_ERR;
   }
 
@@ -822,7 +824,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session* sess,
 
   jcr = handle->jcr;
   if (!jcr) {
-    Jmsg0(NULL, M_FATAL, 0, _("JobControlRecord is NULL!!!\n"));
+    Jmsg0(NULL, M_FATAL, 0, T_("JobControlRecord is NULL!!!\n"));
     return NDMP9_DEV_NOT_OPEN_ERR;
   }
 
@@ -874,7 +876,7 @@ extern "C" ndmp9_error bndmp_tape_read(struct ndm_session* sess,
 
   jcr = handle->jcr;
   if (!jcr) {
-    Jmsg0(NULL, M_FATAL, 0, _("JobControlRecord is NULL!!!\n"));
+    Jmsg0(NULL, M_FATAL, 0, T_("JobControlRecord is NULL!!!\n"));
     return NDMP9_DEV_NOT_OPEN_ERR;
   }
 
@@ -931,7 +933,7 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
   if (job_elapsed <= 0) { job_elapsed = 1; }
 
   Jmsg(jcr, M_INFO, 0,
-       _("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
+       T_("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
        job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
        edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec));
 
@@ -945,7 +947,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid
          * spurious messages */
         if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
-          Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
+          Jmsg1(jcr, M_FATAL, 0,
+                T_("Error writing end session label. ERR=%s\n"),
                 dcr->dev->bstrerror());
         }
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -958,7 +961,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid
          * spurious messages */
         if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
-          Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
+          Jmsg2(jcr, M_FATAL, 0,
+                T_("Fatal append error on device %s: ERR=%s\n"),
                 dcr->dev->print_name(), dcr->dev->bstrerror());
         }
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -1010,8 +1014,8 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser*, void* arg)
   handle = (struct ndmp_session_handle*)arg;
   if (!handle) {
     Emsg0(M_ABORT, 0,
-          _("Illegal call to HandleNdmpConnectionRequest with NULL session "
-            "handle\n"));
+          T_("Illegal call to HandleNdmpConnectionRequest with NULL session "
+             "handle\n"));
     return NULL;
   }
 
@@ -1047,19 +1051,19 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser*, void* arg)
 
   status = ndma_session_initialize(sess);
   if (status) {
-    Emsg0(M_ABORT, 0, _("Cannot initialize new NDMA session\n"));
+    Emsg0(M_ABORT, 0, T_("Cannot initialize new NDMA session\n"));
     goto bail_out;
   }
 
   status = ndma_session_commission(sess);
   if (status) {
-    Emsg0(M_ABORT, 0, _("Cannot commission new NDMA session\n"));
+    Emsg0(M_ABORT, 0, T_("Cannot commission new NDMA session\n"));
     goto bail_out;
   }
 
   conn = ndmconn_initialize(0, (char*)"#C");
   if (!conn) {
-    Emsg0(M_ABORT, 0, _("Cannot initialize new NDMA connection\n"));
+    Emsg0(M_ABORT, 0, T_("Cannot initialize new NDMA connection\n"));
     goto bail_out;
   }
 
@@ -1155,11 +1159,11 @@ extern "C" void* ndmp_thread_server(void* arg)
       BErrNo be;
       char tmp[1024];
 #  ifdef HAVE_WIN32
-      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%u.\n"),
+      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%u.\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
             WSAGetLastError());
 #  else
-      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%s.\n"),
+      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%s.\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
             be.bstrerror());
 #  endif
@@ -1203,7 +1207,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     if ((status = select(maxfd + 1, &sockset, NULL, NULL, NULL)) < 0) {
       BErrNo be; /* capture errno */
       if (errno == EINTR) { continue; }
-      Emsg1(M_FATAL, 0, _("Error in select: %s\n"), be.bstrerror());
+      Emsg1(M_FATAL, 0, T_("Error in select: %s\n"), be.bstrerror());
       break;
     }
 
@@ -1216,7 +1220,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     if ((status = poll(pfds, nfds, -1)) < 0) {
       BErrNo be; /* capture errno */
       if (errno == EINTR) { continue; }
-      Emsg1(M_FATAL, 0, _("Error in poll: %s\n"), be.bstrerror());
+      Emsg1(M_FATAL, 0, T_("Error in poll: %s\n"), be.bstrerror());
       break;
     }
 
@@ -1236,7 +1240,7 @@ extern "C" void* ndmp_thread_server(void* arg)
                        (sockopt_val_t)&turnon, sizeof(turnon))
             < 0) {
           BErrNo be;
-          Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
+          Emsg1(M_WARNING, 0, T_("Cannot set SO_KEEPALIVE on socket: %s\n"),
                 be.bstrerror());
         }
 
@@ -1257,7 +1261,7 @@ extern "C" void* ndmp_thread_server(void* arg)
 
         if (!ntsa->thread_list->CreateAndAddNewThread(my_config, new_handle)) {
           Jmsg1(NULL, M_ABORT, 0,
-                _("Could not add job to ndmp thread list.\n"));
+                T_("Could not add job to ndmp thread list.\n"));
         }
       }
     }
@@ -1269,7 +1273,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   }
 
   if (!ntsa->thread_list->ShutdownAndWaitForThreadsToFinish()) {
-    Emsg1(M_FATAL, 0, _("Could not destroy ndmp thread list.\n"));
+    Emsg1(M_FATAL, 0, T_("Could not destroy ndmp thread list.\n"));
   }
 
   return NULL;
