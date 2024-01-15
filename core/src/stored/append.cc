@@ -159,7 +159,7 @@ class MessageHandler {
 
   BareosSocket* close_and_get_sock()
   {
-    end.store(true);
+    output.close();
     receive_thread.join();
     return fd;
   }
@@ -174,9 +174,6 @@ class MessageHandler {
       , receive_thread{enlist, this}
   {
   }
-
-  bool error_while_reading{false};
-  std::atomic<bool> end{false};
 
   BareosSocket* fd;
   channel::input<result_type> input;
@@ -217,17 +214,22 @@ class MessageHandler {
         fd->msg = nullptr;
 
         if (!input.emplace(std::move(result))) {
-          Dmsg1(20,
-                "Tried to put message into queue; but it did not succeed.\n");
+          if (input.closed()) {
+            Dmsg1(20, "Tried to put message into closed queue.\n");
+          } else {
+            Dmsg1(20,
+                  "Tried to put message into queue; but it did not succeed.\n");
+          }
           cont = false;
         }
       } else if (res == fd->Error) {
         cont = false;
-        error_while_reading = true;
       } else {
         ASSERT(res == fd->Timeout);
+        input.try_update_status();
       }
-      if (end.load()) { cont = false; }
+
+      if (input.closed()) { cont = false; }
     }
 
     input.close();
