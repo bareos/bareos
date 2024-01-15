@@ -497,6 +497,14 @@ void volume::reset()
   update_config();
 }
 
+void volume::truncate()
+{
+  reset();
+  backing->blocks.resize_to_fit();
+  backing->records.resize_to_fit();
+  for (auto& vec : backing->datafiles) { vec.resize_to_fit(); }
+}
+
 void volume::flush()
 {
   backing->blocks.flush();

@@ -200,6 +200,7 @@ class volume {
   // misc
   void reset();
   void flush();
+  void truncate();
   std::size_t blockcount();
 
  private:
