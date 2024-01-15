@@ -47,6 +47,24 @@ struct access {
   using rdwr_t = decltype(rdwr);
 };
 
+namespace {
+template <std::size_t Size> constexpr std::size_t MinGrowthSize()
+{
+  // We want to grow at least 1KiB each time.
+  std::size_t min_growth_size = 1024ull * 1024ull * 2;
+
+  return (min_growth_size + Size - 1) / Size;
+}
+
+template <std::size_t Size> constexpr std::size_t MaxGrowthSize()
+{
+  // We want to grow at most 10MiB each time.
+  std::size_t max_growth_size = 1024ull * 1024ull * 100ull;
+
+  return max_growth_size / Size;
+}
+};  // namespace
+
 template <typename T> class fvec : access {
  public:
   using size_type = std::size_t;
@@ -104,7 +122,9 @@ template <typename T> class fvec : access {
   {
     if (count >= cap) {
       // grow by ~50% each time
-      reserve(cap + (cap >> 1) + 1);
+      auto add = (cap >> 1) + 1;
+      if (add > max_growth_size) { add = max_growth_size; }
+      reserve(cap + add);
     }
     new (&buffer[count]) T(std::forward<Args>(args)...);
     count += 1;
@@ -138,6 +158,12 @@ template <typename T> class fvec : access {
   void reserve(size_type new_cap)
   {
     if (new_cap <= cap) { return; }
+
+    auto diff = new_cap - cap;
+
+    if (diff < min_growth_size) { diff = min_growth_size; }
+
+    new_cap = cap + diff;
 
     grow_file(new_cap * element_size);
 
@@ -196,6 +222,8 @@ template <typename T> class fvec : access {
   size_type cap{0};
   size_type count{0};
   int fd{-1};
+  static constexpr std::size_t min_growth_size = MinGrowthSize<element_size>();
+  static constexpr std::size_t max_growth_size = MaxGrowthSize<element_size>();
 
   template <typename... Args> static std::system_error error(Args&&... args)
   {
