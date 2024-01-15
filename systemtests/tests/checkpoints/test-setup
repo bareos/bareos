@@ -35,6 +35,7 @@ set -u
 setup_data
 
 generate_test_data bigdata
+echo "$tmp/bigdata" >"$tmp/bigdata-list"
 
 bin/bareos start
 bin/bareos status
