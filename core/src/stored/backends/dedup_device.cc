@@ -31,11 +31,13 @@
 #include "dedup_device.h"
 #include "dedup/device_options.h"
 #include "dedup/util.h"
+#include "lib/bsys.h"
 
 #include <unistd.h>
 #include <utility>
 #include <stdexcept>
 #include <cstring>
+#include <filesystem>
 
 namespace storagedaemon {
 
@@ -178,6 +180,7 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
       }
     }
   };
+
   if (!openvol) {
     Emsg0(M_ERROR, 0, T_("Trying to write dedup volume when none are open.\n"));
     return -1;
@@ -307,8 +310,58 @@ boffset_t dedup_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 
 bool dedup_device::d_truncate(DeviceControlRecord* dcr)
 {
-  (void)dcr;
-  return false;
+  if (!openvol) {
+    Emsg0(M_ERROR, 0,
+          T_("Trying to truncate dedup volume when none are open.\n"));
+    return false;
+  }
+
+  std::string path = openvol->path();
+  struct stat s;
+  if (stat(path.c_str(), &s) < 0) {
+    Emsg0(M_ERROR, 0, "Could not stat %s.\n", path.c_str());
+    return false;
+  }
+
+  openvol.reset();
+
+  try {
+    for (auto entry : std::filesystem::directory_iterator{path}) {
+      auto filename = entry.path();
+      Pmsg2(000, "Deleting %s\n", filename.c_str());
+      if (int res = SecureErase(dcr->jcr, filename.c_str()); res < 0) {
+        Emsg0(M_ERROR, 0, T_("Secure erase on file %s returned %d.\n"),
+              filename.c_str(), res);
+        return false;
+      }
+    }
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0, T_("Could not delete volume %s. ERR=%s\n"), path.c_str(),
+          ex.what());
+    return false;
+  }
+
+  std::error_code ec;
+  if (!std::filesystem::remove(path, ec)) {
+    Emsg0(M_ERROR, 0, T_("Could not delete %s. ERR=%s\n"), path.c_str(),
+          ec.message().c_str());
+    return false;
+  }
+
+  try {
+    auto parsed = dedup::device_option_parser::parse(dev_options ?: "");
+    dedup::volume::create_new(s.st_mode, path.c_str(),
+                              parsed.options.blocksize);
+    auto& vol
+        = openvol.emplace(dedup::volume::open_type::ReadWrite, path.c_str());
+    Device::fd = vol.fileno();
+  } catch (const std::exception& ex) {
+    Emsg0(M_ERROR, 0, T_("Could not recreate %s. ERR=%s\n"), path.c_str(),
+          ex.what());
+    return false;
+  }
+
+  return true;
 }
 
 std::size_t dedup_device::current_block()
