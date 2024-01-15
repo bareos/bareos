@@ -34,10 +34,10 @@ set -u
 # Fill ${BackupDirectory} with data.
 setup_data
 
-bin/bareos start
-bin/bareos status
 
-$BAREOS_FILEDAEMON_BINARY -v -c etc/secondclient
+bin/bareos start
+
+bin/bareos status
 
 # make sure, director is up and running.
 print_debug "$(bin/bconsole <<< "status dir")"

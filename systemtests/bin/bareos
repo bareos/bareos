@@ -3,4 +3,45 @@
 
 #shellcheck source=../environment.in
 . ./environment
-"${rscripts}"/bareos "$@"
+
+if [[ $(uname) =~ MINGW64_.* ]]; then
+  exesuffix=".exe"
+else
+  exesuffix=""
+fi
+
+for confdir in etc/bareos*; do
+    BAREOS_STORAGEDAEMON_BINARY_TO_USE=""
+    BAREOS_FILEDAEMON_BINARY_TO_USE=""
+    BAREOS_DIRECTOR_BINARY_TO_USE=""
+    # echo confdir: $confdir
+    daemonsuffix="$(sed 's#etc/bareos##g'<<< $confdir)"
+    #echo daemonsuffix: $daemonsuffix
+    if [ -d "$confdir/bareos-sd.d" ]; then
+      # create binary with correct name
+      if [ -n "$daemonsuffix" ]; then
+        cp -af "${BAREOS_STORAGEDAEMON_BINARY}${exesuffix}" "${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}${exesuffix}"
+      fi
+      BAREOS_STORAGEDAEMON_BINARY_TO_USE="${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}"
+    fi
+
+    if [ -d "$confdir/bareos-fd.d" ]; then
+      # create binary with correct name
+      if [ -n "$daemonsuffix" ]; then
+        cp -af "${BAREOS_FILEDAEMON_BINARY}${exesuffix}" "${BAREOS_FILEDAEMON_BINARY}${daemonsuffix}${exesuffix}"
+      fi
+      BAREOS_FILEDAEMON_BINARY_TO_USE="${BAREOS_FILEDAEMON_BINARY}${daemonsuffix}"
+    fi
+
+    if [ -d "$confdir/bareos-dir.d" ]; then
+      # create binary with correct name
+      if [ -n "$daemonsuffix" ]; then
+        cp -af "${BAREOS_DIRECTOR_BINARY}${exesuffix}" "${BAREOS_DIRECTOR_BINARY}${daemonsuffix}${exesuffix}"
+      fi
+      BAREOS_DIRECTOR_BINARY_TO_USE="${BAREOS_DIRECTOR_BINARY}${daemonsuffix}"
+    fi
+  BAREOS_STORAGEDAEMON_BINARY="$BAREOS_STORAGEDAEMON_BINARY_TO_USE" \
+  BAREOS_FILEDAEMON_BINARY="$BAREOS_FILEDAEMON_BINARY_TO_USE" \
+  BAREOS_DIRECTOR_BINARY="$BAREOS_DIRECTOR_BINARY_TO_USE" \
+  BAREOS_CONFIG_DIR=$(pwd)/"$confdir" "${rscripts}"/bareos "$@"
+done

@@ -11,6 +11,11 @@ export AWK="C:/Program Files/Git/usr/bin/awk.exe"
 export PIDOF="PIDOF-NOTFOUND"
 export PGREP="PGREP-NOTFOUND"
 
+if [ -z "$BAREOS_FILEDAEMON_BINARY" ]; then
+  echo "BAREOS_FILEDAEMON_BINARY undefined, nothing to do"
+  exit 0
+fi
+
 SUBSYSDIR=C:/src/bin/systemtests/subsysdir
 BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-C:/src/bin/systemtests/sbin/bareos-fd}
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}

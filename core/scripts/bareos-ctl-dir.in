@@ -11,6 +11,11 @@ export AWK="@AWK@"
 export PIDOF="PIDOF-NOTFOUND"
 export PGREP="PGREP-NOTFOUND"
 
+if [ -z "$BAREOS_DIRECTOR_BINARY" ]; then
+  echo "BAREOS_DIRECTOR_BINARY undefined, nothing to do"
+  exit 0
+fi
+
 SUBSYSDIR=C:/src/bin/systemtests/subsysdir
 BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY:-C:/src/bin/systemtests/sbin/bareos-dir}"
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
