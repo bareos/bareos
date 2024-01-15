@@ -1,0 +1,80 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# restore some a directory from archives
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+dir="$(pwd)/tmp/data/build/src/tests"
+if [[ -d "$tmp/bareos-restores/$dir" ]]; then
+    rm -r "$tmp/bareos-restores/$dir"
+fi
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+setdebug level=100 storage=File
+@$out $log_home/log1.out
+status director
+status client
+status storage=File
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/restore-dir.out
+restore where=$tmp/bareos-restores/
+11
+1
+$dir
+
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+expect_grep "Start Restore Job" \
+	    "$log_home/restore-dir.out" \
+	    "The restore job was not started."
+
+expect_grep "Restore OK" \
+	    "$log_home/restore-dir.out" \
+	    "Restore job was not successful."
+
+check_restore_diff "$dir"
+end_test
