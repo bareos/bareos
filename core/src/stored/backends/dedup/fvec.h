@@ -213,7 +213,14 @@ template <typename T> class fvec : access {
 
   fvec(int fd, size_type initial_size, int prot) : count{initial_size}, fd{fd}
   {
+    // we cannot ensure alignment bigger than page alignment
     static_assert(element_align <= 4096, "Alignment too big.");
+
+    // check for unaccounted for weirdness
+    static_assert(element_align > 0, "Weird struct");
+    static_assert(element_align <= element_size, "Weird struct");
+    static_assert(element_size % element_align == 0, "Weird struct");
+
     struct stat s;
     if (fstat(fd, &s) != 0) { throw error("fstat"); }
 
