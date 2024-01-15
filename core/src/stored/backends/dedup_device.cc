@@ -230,11 +230,19 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
 
           blocksize += sizeof(record);
 
-          if (auto* record_data = records.get(record.size()); !record_data) {
+          // record might be split, so only take as much as we can
+          auto rsize = std::min(record.size(), records.leftover());
+          if (rsize != record.size()) {
+            Dmsg2(500,
+                  "Found split record. Record size = %llu, but only %llu bytes "
+                  "available.\n",
+                  record.size(), rsize);
+          }
+          if (auto* record_data = records.get(rsize); !record_data) {
             throw std::runtime_error("Could not read record data from stream.");
           } else {
-            openvol->PushRecord(record, record_data, record.size());
-            blocksize += record.size();
+            openvol->PushRecord(record, record_data, rsize);
+            blocksize += rsize;
           }
         }
       }
