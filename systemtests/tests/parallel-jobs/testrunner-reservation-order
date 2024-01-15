@@ -26,7 +26,6 @@ reservationlog="$tmp/reservation-order.out"
 rm -f $reservationlog
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
 messages
 @$out $reservationlog
 run job=${sleeping_job} level=Full yes

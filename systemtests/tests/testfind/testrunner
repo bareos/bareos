@@ -25,18 +25,18 @@ selftest_log="$tmp"/selftest_log.out
 wildcard_log="$tmp"/wildcard_log.out
 error_log="$logdir"/bareos.log
 
-./sbin/testfind-testfind -c etc/bareos -f SelfTest > "$selftest_log"
+sbin/testfind-testfind -c etc/bareos -f SelfTest > "$selftest_log"
 
-expect_grep "Number of files examined: 55" \
+expect_grep "Number of files examined: 6" \
             "$selftest_log" \
             "Number of files is incorrect."
 
 unopenable_dir=${tmp}/data/unopenable_dir
 mkdir -m 000 "$unopenable_dir"
 
-./sbin/testfind-testfind -c etc/bareos -f Wildtest > "$wildcard_log"
+sbin/testfind-testfind -c etc/bareos -f Wildtest > "$wildcard_log"
 
-expect_grep "Number of files examined: 19" \
+expect_grep "Number of files examined: 14" \
             "$wildcard_log" \
             "Number of files is incorrect."
 
