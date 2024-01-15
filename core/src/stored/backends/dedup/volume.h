@@ -24,14 +24,103 @@
 
 #include <cstdlib>
 #include <string>
+#include <optional>
+#include <vector>
 #include "fvec.h"
 
-namespace dedup {
-struct block {};
+#include "lib/network_order.h"
 
-struct record {};
+namespace dedup {
+namespace {
+using net_u64 = network_order::network<std::uint64_t>;
+using net_i64 = network_order::network<std::int64_t>;
+using net_u32 = network_order::network<std::uint32_t>;
+using net_i32 = network_order::network<std::int32_t>;
+using net_u16 = network_order::network<std::uint16_t>;
+using net_u8 = std::uint8_t;
+
+struct open_context {
+  bool read_only;
+  int flags;
+  int dird;
+};
+
+};  // namespace
+struct block {
+  net_u32 CheckSum;       /* Block check sum */
+  net_u32 BlockSize;      /* Block byte size including the header */
+  net_u32 BlockNumber;    /* Block number */
+  char ID[4];             /* Identification and block level */
+  net_u32 VolSessionId;   /* Session Id for Job */
+  net_u32 VolSessionTime; /* Session Time for Job */
+};
+
+struct record {
+  net_i32 FileIndex; /* File index supplied by File daemon */
+  net_i32 Stream;    /* Stream number supplied by File daemon */
+  net_u32 DataSize;  /* size of following data record in bytes */
+  net_u32 FileIdx;
+  net_u64 Size;
+};
 
 struct save_state {};
+
+class config {
+ public:
+  config(const std::vector<char>& serialized);
+  config(std::uint64_t BlockSize)
+      : bfile{"blocks", 0, 0, 0}
+      , rfile{"records", 0, 0, 0}
+      , dfiles{
+            {"aligned.data", 0, BlockSize, 0, false},
+            {"unaligned.data", 0, 1, 1, false},
+        }
+  {
+  }
+
+  struct block_file {
+    std::string relpath;
+    std::uint64_t Start;
+    std::uint64_t End;
+    std::uint32_t Idx;
+  };
+
+  struct record_file {
+    std::string relpath;
+    std::uint64_t Start;
+    std::uint64_t End;
+    std::uint32_t Idx;
+  };
+
+  struct data_file {
+    std::string relpath;
+    std::uint64_t Size;
+    std::uint64_t BlockSize;
+    std::uint32_t Idx;
+    bool ReadOnly;
+  };
+
+  const block_file& blockfile() const { return bfile; }
+  const record_file recordfile() const { return rfile; }
+  const std::vector<data_file>& datafiles() const { return dfiles; }
+
+  std::vector<char> serialize();
+
+ private:
+  block_file bfile;
+  record_file rfile;
+  std::vector<data_file> dfiles;
+};
+
+class data {
+  fvec<char> aligned;
+  fvec<char> unaligned;
+  fvec<record> records;
+  fvec<block> blocks;
+
+ public:
+  data(open_context ctx, const config& conf);
+};
 
 class volume {
  public:
@@ -41,10 +130,7 @@ class volume {
     ReadOnly
   };
 
-  volume(open_type type,
-         int creation_mode,
-         const char* path,
-         std::size_t blocksize);
+  volume(open_type type, const char* path);
 
   const char* path() const { return sys_path.c_str(); }
   int fileno() const { return dird; }
@@ -53,15 +139,16 @@ class volume {
   void abort(save_state) {}
   void commit(save_state) {}
 
+  static void create_new(int creation_mode,
+                         const char* path,
+                         std::size_t blocksize);
+
  private:
   std::string sys_path;
   int dird;
-  std::size_t blocksize;
 
-  fvec<char> aligned;
-  fvec<char> unaligned;
-  fvec<record> records;
-  fvec<block> blocks;
+  std::optional<config> conf;
+  std::optional<data> backing;
 };
 };  // namespace dedup
 

@@ -96,6 +96,7 @@ int dedup_device::d_open(const char* path, int, int mode)
 
   bool read_only = open_mode == DeviceMode::OPEN_READ_ONLY;
 
+
   try {
     auto parsed = dedup::device_option_parser::parse(dev_options ?: "");
 
@@ -103,11 +104,15 @@ int dedup_device::d_open(const char* path, int, int mode)
       Emsg0(M_WARNING, 0, "Dedup device option warning: %s\n", warning.c_str());
     }
 
-    auto& vol = (read_only)
-                    ? openvol.emplace(dedup::volume::open_type::ReadOnly, mode,
-                                      path, parsed.options.blocksize)
-                    : openvol.emplace(dedup::volume::open_type::ReadWrite, mode,
-                                      path, parsed.options.blocksize);
+    if (open_mode == DeviceMode::CREATE_READ_WRITE) {
+      // if the folder already exists, it will do nothing
+      dedup::volume::create_new(mode, path, parsed.options.blocksize);
+    }
+
+    auto& vol
+        = (read_only)
+              ? openvol.emplace(dedup::volume::open_type::ReadOnly, path)
+              : openvol.emplace(dedup::volume::open_type::ReadWrite, path);
 
     return vol.fileno();
   } catch (const std::exception& ex) {
@@ -167,7 +172,8 @@ struct block_header {
   net_u32 VolSessionId;   /* Session Id for Job */
   net_u32 VolSessionTime; /* Session Time for Job */
 
-  std::size_t size() const { return BlockSize.load(); }
+  // actual payload size
+  std::size_t size() const { return BlockSize.load() - sizeof(block_header); }
 };
 
 struct record_header {
@@ -175,6 +181,7 @@ struct record_header {
   net_i32 Stream;    /* Stream number supplied by File daemon */
   net_u32 DataSize;  /* size of following data record in bytes */
 
+  // actual payload size
   std::size_t size() const { return DataSize.load(); }
 };
 
@@ -229,7 +236,7 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
             throw std::runtime_error("Could not read record data from stream.");
           } else {
             // openvol->append_data(record_data, record.size());
-            datawritten += sizeof(record.size());
+            datawritten += record.size();
           }
         }
       }
