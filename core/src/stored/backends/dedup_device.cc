@@ -211,6 +211,8 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
      * data is not necessary anymore. */
 
     if (!ResetOpenVolume()) { return -1; }
+
+    SetEot();
   }
 
   std::size_t datawritten = 0;
@@ -281,7 +283,15 @@ ssize_t dedup_device::d_read(int dird, void* data, size_t size)
   }
 
   try {
-    return openvol->ReadBlock(current_block(), data, size);
+    auto ret = openvol->ReadBlock(current_block(), data, size);
+
+    if (current_block() + 1 == openvol->blockcount()) {
+      SetEot();
+    } else {
+      ClearEot();
+    }
+
+    return ret;
   } catch (const std::exception& ex) {
     Emsg0(M_ERROR, 0,
           T_("Encountered error while trying to read from volume %s. ERR=%s\n"),
@@ -386,14 +396,7 @@ std::size_t dedup_device::current_block()
 
 bool dedup_device::rewind(DeviceControlRecord* dcr)
 {
-  if (!openvol) {
-    Emsg0(M_ERROR, 0,
-          T_("Trying to rewind dedup volume when none are open.\n"));
-    return false;
-  }
-  block_num = 0;
-  file = 0;
-  return UpdatePos(dcr);
+  return Reposition(dcr, 0, 0);
 }
 
 bool dedup_device::UpdatePos(DeviceControlRecord*)
@@ -416,6 +419,14 @@ bool dedup_device::Reposition(DeviceControlRecord* dcr,
         rblock);
   block_num = rblock;
   file = rfile;
+
+
+  if (block_number(file, block_num) == openvol->blockcount()) {
+    SetEot();
+  } else {
+    ClearEot();
+  }
+
   return UpdatePos(dcr);
 }
 
