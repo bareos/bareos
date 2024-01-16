@@ -29,7 +29,7 @@ if(NOT DEFINED prefix)
 endif()
 
 option(USE_RELATIVE_PATHS
-       "Compile with relatives path, required for relocatable binaries." OFF
+       "Compile with relative paths, required for relocatable binaries." OFF
 )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
