@@ -26,6 +26,10 @@
 #include "lib/network_order.h"
 #include "include/bareos.h"
 
+extern "C" {
+#include <unistd.h>
+}
+
 namespace dedup {
 
 using net_u64 = network_order::network<std::uint64_t>;
