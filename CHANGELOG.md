@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Improve FreeBSD build [PR #1643]
 - core: sql_* add leading space to sql construct [PR #1657]
 -   Fix bareos_tasks plugin for pgsql [PR #1660]
+- plugins: postgresql fix missing pg_backup_stop() call [PR #1664]
 
 ### Fixed
 - Fix continuation on colons in plugin baseclass [PR #1638]
@@ -376,4 +377,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1651]: https://github.com/bareos/bareos/pull/1651
 [PR #1657]: https://github.com/bareos/bareos/pull/1657
 [PR #1660]: https://github.com/bareos/bareos/pull/1660
+[PR #1664]: https://github.com/bareos/bareos/pull/1664
 [unreleased]: https://github.com/bareos/bareos/tree/master
