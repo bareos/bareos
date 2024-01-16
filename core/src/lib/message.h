@@ -66,7 +66,7 @@ BAREOS_IMPORT char my_name[];
 BAREOS_IMPORT const char* working_directory;
 BAREOS_IMPORT utime_t daemon_start_time;
 
-BAREOS_IMPORT int console_msg_pending;
+BAREOS_IMPORT bool console_msg_pending;
 BAREOS_IMPORT FILE* con_fd;       /* Console file descriptor */
 BAREOS_IMPORT brwlock_t con_lock; /* Console lock structure */
 

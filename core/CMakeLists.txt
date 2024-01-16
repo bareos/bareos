@@ -386,13 +386,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(cross-prefix x86_64-w64-mingw32)
   endif()
 
-  set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
-
-  set(PostgreSQL_LIBRARY libpq.dll)
-  set(PostgreSQL_INCLUDE_DIR "")
-  set(PostgreSQL_TYPE_INCLUDE_DIR "")
-
-    set(PostgreSQL_LIBRARY libpq.dll)
+  if(NOT MSVC)
+    set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
+  endif()
+  if(MSVC)
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
   endif()
