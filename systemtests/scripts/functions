@@ -778,7 +778,7 @@ check_log()
 
 check_recursive_diff_of_dirs()
 {
-   "$rscripts/diff.pl" -s "$1" -d "$2"
+   perl "$rscripts/diff.pl" -s "$1" -d "$2"
 }
 
 check_restore_diff()
@@ -793,7 +793,7 @@ check_restore_diff()
 
    restorepath="$restoredirectory/${dest}"
    restorepath=$(sed 's#/C:#/c#g'<<< $restorepath)
-   if ! "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
+   if ! perl "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
        dstat=1
    fi
 
@@ -863,7 +863,7 @@ check_restore_files_diff()
 check_restore_bin_diff()
 {
    if test "$debug" -eq 1 ; then
-      "$rscripts/diff.pl" -s "${bin}" -d "${RestoreDirectory}${bin}"
+      perl "$rscripts/diff.pl" -s "${bin}" -d "${RestoreDirectory}${bin}"
       diff -ur "${bin}" "${RestoreDirectory}${bin}"
    else
       diff -ur "${bin}" "${RestoreDirectory}${bin}" >/dev/null 2>&1
@@ -875,7 +875,7 @@ check_restore_bin_diff()
 check_restore_tmp_build_diff()
 {
    if test "$debug" -eq 1 ; then
-      "$rscripts/diff.pl" -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
+      perl "$rscripts/diff.pl" -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
       diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}"
    else
       diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}" >/dev/null 2>&1
