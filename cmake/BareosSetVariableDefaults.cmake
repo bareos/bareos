@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -186,18 +186,21 @@ set(db_name
     "bareos"
     CACHE STRING "Bareos database name"
 )
+mark_as_advanced(db_name)
 
 # db_user
 set(db_user
     "bareos"
     CACHE STRING "Bareos database username"
 )
+mark_as_advanced(db_user)
 
 # db_password
 set(db_password
     ""
     CACHE STRING "Bareos database password"
 )
+mark_as_advanced(db_password)
 
 set(systemtest_db_user
     "regress"
@@ -328,12 +331,15 @@ else()
   )
 endif()
 
-option(scsi-crypto "Enable scsi-crypto" OFF)
-option(lmdb "Enable LMDP" ON)
-option(ndmp "Enable NDMP support" ON)
 option(acl "Enable ACL support" ON)
+option(lmdb "Enable LMDP" ON)
+option(scsi-crypto "Enable scsi-crypto" OFF)
 option(xattr "Enable extended file attributes (xattr) support" ON)
+
+option(ndmp "Enable NDMP support" ON)
 option(build_ndmjob "Building ndmpjob" OFF)
+mark_as_advanced(build_ndmjob)
+
 option(traymonitor "Build bareos-traymonitor" OFF)
 
 option(client-only "Build only the client components" OFF)
@@ -402,6 +408,7 @@ set(smtp_host
 )
 
 option(coverage "coverage" OFF)
+mark_as_advanced(coverage)
 
 # do not destroy bareos-config-lib.sh
 set(DB_NAME "@DB_NAME@")
@@ -429,6 +436,7 @@ set(ENABLE_NLS
     "1"
     CACHE STRING "Enable (1) or disable (0) Native Language Support (NLS)"
 )
+mark_as_advanced(ENABLE_NLS)
 
 if(HAVE_WIN32)
 
