@@ -112,7 +112,11 @@ setup_data()
     set_error "setup_data: $tarfile not found."
     exit 1
    fi
-   $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
+   if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+     $GTAR --directory="$data_dir" -xf "$tarfile" || :  # we expect errors on windows
+   else
+     $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
+   fi
   done
 
  if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
