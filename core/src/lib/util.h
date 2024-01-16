@@ -102,7 +102,7 @@ inline std::size_t hash_combine(std::size_t seed, std::size_t hash)
 //               or std::expected<T, std::string>
 template <typename T> class result {
  public:
-  constexpr result() : data{1, "Not Initialized"} {}
+  constexpr result() : data{std::in_place_index<1>, "Not Initialized"} {}
 
   template <typename Arg0, typename... Args>
   constexpr result(Arg0 arg0, Args... args)
