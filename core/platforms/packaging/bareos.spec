@@ -892,9 +892,6 @@ cmake  .. \
   -Dndmp=yes \
   -Dacl=yes \
   -Dxattr=yes \
-%if 0%{?build_bat}
-  -Dbat=yes \
-%endif
 %if 0%{?build_qt_monitor}
   -Dtraymonitor=yes \
 %endif
