@@ -115,6 +115,22 @@ setup_data()
    $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
   done
 
+ if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+   pushd "$data_dir"
+   rm weird-files/subdir/another-hardlink
+   rm weird-files/hard-file2
+   rm weird-files/normalfile
+   rm 'weird-files/a-file-with-spaces-at-the-end    '
+   rm weird-files/hard-base-file
+   rm weird-files/subdir/a-hardlink
+   rm weird-files/hardlink-to-normalfile
+   rm weird-files/another-hardlink-to-normalfile
+   rm weird-files/' '
+   rm weird-files/'  '
+   rm weird-files/'0 '
+   popd
+ fi
+
   return 0
 }
 
