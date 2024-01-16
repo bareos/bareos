@@ -210,4 +210,15 @@ else
    estat=1
 fi
 
+if (grep -q "WARN" database/log/postgresql-*.log)
+then
+   echo "Error: Database WARNING found in postgresql log"
+   estat=1
+fi
+if (grep -q "ERR" database/log/postgresql-*.log)
+then
+   echo "Error: Database ERRORS found in postgresql log"
+   estat=1
+fi
+
 end_test
