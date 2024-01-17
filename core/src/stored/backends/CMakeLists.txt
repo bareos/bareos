@@ -67,6 +67,9 @@ else()
     bareossd-dedup PRIVATE dedup_device.cc dedup/device_options.cc
                            dedup/volume.cc util.cc
   )
+  target_link_libraries(
+    bareossd-dedup PRIVATE $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>
+  )
 endif()
 
 if(HAVE_DARWIN_OS)
