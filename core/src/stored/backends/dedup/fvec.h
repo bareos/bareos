@@ -166,27 +166,38 @@ template <typename T> class fvec : access {
 
     new_cap = cap + diff;
 
-    grow_file(new_cap * element_size);
+    auto size = cap * element_size;
+    auto new_size = new_cap * element_size;
+    grow_file(new_size);
 
 #ifdef MREMAP_MAYMOVE
-    auto res = mremap(std::exchange(buffer, nullptr), cap * element_size,
-                      new_cap * element_size, MREMAP_MAYMOVE, nullptr);
+    auto res = mremap(std::exchange(buffer, nullptr), size, new_size,
+                      MREMAP_MAYMOVE, nullptr);
+
+    if (res == MAP_FAILED) {
+      throw error("mremap (size = " + std::to_string(size)
+                  + ", new size = " + std::to_string(new_size) + ")");
+    }
+    if (res == nullptr) { throw error("mremap returned nullptr."); }
 #else
     // freebsd does not support MREMAP_MAYMOVE (or maybe mremap in general)
-    if (munmap(std::exchange(buffer, nullptr), cap * element_size) < 0) {
-      throw error("munmap");
+    if (munmap(std::exchange(buffer, nullptr), size) < 0) {
+      throw error("munmap (size = " + std::to_string(size) + ")");
     }
 
     auto res = reinterpret_cast<T*>(
-        mmap(nullptr, new_cap * element_size, prot, MAP_SHARED, fd, 0));
+        mmap(nullptr, new_size, prot, MAP_SHARED, fd, 0));
+
+    if (res == MAP_FAILED) {
+      throw error("mmap (size = " + std::to_string(new_size)
+                  + ", prot = " + std::to_string(prot)
+                  + ", fd = " + std::to_string(fd) + ")");
+    }
+    if (res == nullptr) { throw error("mmap returned nullptr."); }
 #endif
 
-    if (res != nullptr && res != MAP_FAILED) {
-      buffer = reinterpret_cast<T*>(res);
-      cap = new_cap;
-    } else {
-      throw error("mremap");
-    }
+    buffer = reinterpret_cast<T*>(res);
+    cap = new_cap;
   }
 
   // think of (arr, size) as a span; then the name makes sense
@@ -213,13 +224,17 @@ template <typename T> class fvec : access {
   void resize_to_fit()
   {
     cap = count;
-    if (ftruncate(fd, cap * element_size) != 0) { throw error("ftruncate"); }
+    auto new_size = cap * element_size;
+    if (ftruncate(fd, new_size) != 0) {
+      throw error("ftruncate (new size = " + std::to_string(new_size) + ")");
+    }
   }
 
   void flush()
   {
-    if (msync(buffer, cap * element_size, MS_SYNC) < 0) {
-      throw error("msync");
+    auto size = cap * element_size;
+    if (msync(buffer, size, MS_SYNC) < 0) {
+      throw error("msync (size = " + std::to_string(size) + ")");
     }
   }
 
@@ -247,7 +262,9 @@ template <typename T> class fvec : access {
   {
     if (auto err = posix_fallocate(fd, 0, new_size); err != 0) {
       // posix_fallocate does not set errno
-      throw std::system_error(err, std::generic_category(), "posix_fallocate");
+      throw std::system_error(
+          err, std::generic_category(),
+          "posix_fallocate (new size = " + std::to_string(new_size) + ")");
     }
   }
 
@@ -263,7 +280,9 @@ template <typename T> class fvec : access {
     static_assert(element_size % element_align == 0, "Weird struct");
 
     struct stat s;
-    if (fstat(fd, &s) != 0) { throw error("fstat"); }
+    if (fstat(fd, &s) != 0) {
+      throw error("fstat (fd = " + std::to_string(fd) + ")");
+    }
 
     cap = s.st_size / element_size;
 
@@ -280,9 +299,13 @@ template <typename T> class fvec : access {
       cap = new_cap;
     }
 
-    buffer = reinterpret_cast<T*>(
-        mmap(nullptr, cap * element_size, prot, MAP_SHARED, fd, 0));
-    if (buffer == MAP_FAILED) { throw error("mmap"); }
+    auto size = cap * element_size;
+    buffer = reinterpret_cast<T*>(mmap(nullptr, size, prot, MAP_SHARED, fd, 0));
+    if (buffer == MAP_FAILED) {
+      throw error("mmap (size = " + std::to_string(size)
+                  + ", prot = " + std::to_string(prot)
+                  + ", fd = " + std::to_string(fd) + ")");
+    }
     if (buffer == nullptr) {
       // this should not happen
       throw std::runtime_error("mmap returned nullptr.");
