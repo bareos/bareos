@@ -1,0 +1,3 @@
+@backenddir@/libbareossd-dedup.so*
+@configtemplatedir@/bareos-dir.d/storage/dedup.conf.example
+@configtemplatedir@/bareos-sd.d/device/dedup.conf.example
