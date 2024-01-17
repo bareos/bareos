@@ -15,6 +15,9 @@ export TestName
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+skip_if_windows "perl compare functions do not work on windows now"
+
 #shellcheck source=functions
 . functions
 
