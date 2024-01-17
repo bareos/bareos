@@ -1,0 +1,3 @@
+/usr/local/lib64/bareos/backends/libbareossd-dedup.so*
+/usr/local/etc/bareos/bareos-dir.d/storage/dedup.conf.example
+/usr/local/etc/bareos/bareos-sd.d/device/dedup.conf.example
