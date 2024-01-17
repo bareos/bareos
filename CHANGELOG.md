@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [23.0.1] - 2024-01-17
 
 ### Changed
@@ -379,3 +381,4 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1657]: https://github.com/bareos/bareos/pull/1657
 [PR #1660]: https://github.com/bareos/bareos/pull/1660
 [PR #1664]: https://github.com/bareos/bareos/pull/1664
+[unreleased]: https://github.com/bareos/bareos/tree/master
