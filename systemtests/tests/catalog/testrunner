@@ -5,15 +5,16 @@ set -u
 #
 TestName="$(basename "$(pwd)")"
 export TestName
-
-skip_if_windows
-
 #shellcheck source=../environment.in
 . ./environment
 
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+#TODO: get this work on windows
+skip_if_windows "catalog backup does not work yet on windows"
+
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 

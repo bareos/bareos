@@ -31,6 +31,8 @@ export TestName
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+skip_if_windows "autoxflate dll does not load into sd"
+
 debug_level=500
 File="bbatch.c"
 

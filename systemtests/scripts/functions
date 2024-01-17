@@ -845,7 +845,8 @@ check_restore_only_files_diff()
    #
    differences=0
    for i in "$@"; do
-     if ! diff -ur "$i" "${RestoreDirectory}/$i"; then
+     restoresubdir=$(sed 's#C:/#C/#g' <<< "$i")
+     if ! diff -ur "$i" "${RestoreDirectory}/${restoresubdir}" ; then
        differences="$(( differences + 1 ))"
        dstat=1
      fi
@@ -866,7 +867,7 @@ check_restore_files_diff()
    #
 
    # get list of all restored files
-   RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed "s%^${RestoreDirectory}%%")"
+   RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed -e "s%^${RestoreDirectory}%%" -e 's#^/C#C:#g')"
    # remove all files given as parameter from the list
    for i in "$@"; do
      RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "$i")" || true

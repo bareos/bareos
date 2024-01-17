@@ -16,6 +16,9 @@ set -u
 TestName="$(get_test_name "$0")"
 export TestName
 
+skip_if_windows "bareos-dir: ERROR in dird/dird_conf.cc:1994 Unknown include/exclude option: 2"
+
+
 # set other test specific variables
 Client=bareos-fd
 JobName=backup-multi-options

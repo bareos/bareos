@@ -10,8 +10,6 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-skip_if_windows
-
 JobName=BackupCatalog
 
 #shellcheck source=../environment.in
@@ -19,6 +17,8 @@ JobName=BackupCatalog
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+skip_if_windows "catalog backup does not work yet on windows"
 
 start_test
 

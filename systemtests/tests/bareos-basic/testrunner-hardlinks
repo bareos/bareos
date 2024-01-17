@@ -14,10 +14,10 @@ JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
 
-skip_if_not_windows "hardlink handling on windows does not behave as on linux"
-
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+skip_if_windows "hardlink handling on windows does not behave as on linux"
 
 start_test
 
