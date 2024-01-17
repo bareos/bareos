@@ -14,7 +14,6 @@ myname=$(basename "$0")
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-
 OS=$(uname)
 if [[ $OS =~ MINGW64_.* ]]; then
   expected_files=4

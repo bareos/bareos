@@ -119,19 +119,20 @@ setup_data()
    fi
   done
 
+# TODO: make this also work on windows
  if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
    pushd "$data_dir"
-   rm weird-files/subdir/another-hardlink
-   rm weird-files/hard-file2
-   rm weird-files/normalfile
    rm 'weird-files/a-file-with-spaces-at-the-end    '
-   rm weird-files/hard-base-file
-   rm weird-files/subdir/a-hardlink
-   rm weird-files/hardlink-to-normalfile
-   rm weird-files/another-hardlink-to-normalfile
-   rm weird-files/' '
    rm weird-files/'  '
+   rm weird-files/' '
    rm weird-files/'0 '
+   rm weird-files/another-hardlink-to-normalfile
+   rm weird-files/hard-base-file
+   rm weird-files/hard-file2
+   rm weird-files/hardlink-to-normalfile
+   rm weird-files/normalfile
+   rm weird-files/subdir/a-hardlink
+   rm weird-files/subdir/another-hardlink
    popd
  fi
 
@@ -1144,6 +1145,18 @@ skip_if_root()
 USER=$(whoami)
 if [ "$USER" == "root"  ]; then
  echo "${TestName} test skipped: test cannot be run as user root."
+ exit 77;
+fi
+}
+
+skip_if_windows()
+{
+if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+ if [ -z "${1+x}" ]; then
+   echo "${TestName} test skipped on windows."
+ else
+   echo "${TestName} test skipped on windows: $1."
+ fi
  exit 77;
 fi
 }

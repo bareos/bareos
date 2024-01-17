@@ -17,15 +17,10 @@ JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
 
-OS=$(uname)
-if [[ $OS =~ MINGW64_.* ]];
-then
-  echo "Test $TestName does not work on windows, sparse files need special flag (fsutil sparse setflag <filename>)"
-  exit 77
-fi
-
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+skip_if_windows "sparse files need special flag (fsutil sparse setflag <filename>)"
+
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 

@@ -30,6 +30,7 @@ export TestName
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+skip_if_windows
 
 debug_level=500
 File="bbatch.c"

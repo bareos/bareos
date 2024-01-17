@@ -10,12 +10,7 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-OS=$(uname)
-if [[ $OS =~ MINGW64_.* ]];
-then
-  echo "Test $TestName does not work on windows"
-  exit 77
-fi
+skip_if_windows
 
 JobName=BackupCatalog
 
