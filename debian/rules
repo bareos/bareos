@@ -32,16 +32,8 @@ define CONFIGURE_COMMON
   -Dsubsysdir=/var/lock \
   -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
   -Dwebuiconfdir=/etc/bareos-webui \
-  -Dbatch-insert=yes \
-  -Ddynamic-cats-backends=yes \
-  -Ddynamic-storage-backends=yes \
   -Dscsi-crypto=yes \
-  -Dlmdb=yes \
   -Dndmp=yes \
-  -Dacl=yes \
-  -Dxattr=yes \
-  -Dpostgresql=yes \
-  -Dopenssl=yes \
   -Ddir-user=$(DIRECTOR_DAEMON_USER) \
   -Ddir-group=$(DAEMON_GROUP) \
   -Dsd-user=$(STORAGE_DAEMON_USER) \
@@ -73,7 +65,7 @@ ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS
 	dh_auto_configure -- $(CONFIGURE_COMMON) -DBUILD_UNIVERSAL_CLIENT=yes
 else
 	echo "configure full configuration"
-	dh_auto_configure -- $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes
+	dh_auto_configure -- $(CONFIGURE_COMMON) -Dtraymonitor=yes
 endif
 	cmake --build cmake-build/ -- generate-debian-control
 

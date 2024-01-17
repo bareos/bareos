@@ -309,17 +309,20 @@ set(hostname
 )
 
 option(python "Use Python" ON)
+mark_as_advanced(python)
 
 # batch-insert
-if((NOT DEFINED batch-insert) OR (${batch-insert}))
-  set(batch-insert ON)
+option(batch-insert "Enable database batch inserts" ON)
+mark_as_advanced(batch-insert)
+if(${batch-insert})
   set(HAVE_POSTGRESQL_BATCH_FILE_INSERT 1)
   set(USE_BATCH_FILE_INSERT 1)
 endif()
 
 # dynamic-storage-backends
-if(NOT DEFINED dynamic-storage-backends OR dynamic-storage-backends)
-  set(dynamic-storage-backends ON)
+option(dynamic-storage-backends "Enable dynamic storage backends" ON)
+mark_as_advanced(dynamic-storage-backends)
+if(dynamic-storage-backends)
   set(HAVE_DYNAMIC_SD_BACKENDS
       1
       CACHE INTERNAL ""
@@ -332,9 +335,12 @@ else()
 endif()
 
 option(acl "Enable ACL support" ON)
+mark_as_advanced(acl)
 option(lmdb "Enable LMDP" ON)
+mark_as_advanced(lmdb)
 option(scsi-crypto "Enable scsi-crypto" OFF)
 option(xattr "Enable extended file attributes (xattr) support" ON)
+mark_as_advanced(xattr)
 
 option(ndmp "Enable NDMP support" ON)
 option(build_ndmjob "Building ndmpjob" OFF)
@@ -372,6 +378,7 @@ endif()
 
 option(systemd "Enable systemd support" OFF)
 option(openssl "Enable openssl support" ON)
+mark_as_advanced(openssl)
 
 # ports
 set(dir_port

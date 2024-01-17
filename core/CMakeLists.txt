@@ -354,7 +354,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   set(HAVE_AIX_OS 1)
-  set(lmdb 0FF)
+  set(lmdb OFF)
   link_libraries(intl)
 endif()
 
