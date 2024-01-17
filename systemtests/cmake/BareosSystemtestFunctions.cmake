@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -186,14 +186,19 @@ function(configurefilestosystemtest srcbasedir dirname globexpression
   endif()
   set(COUNT 1)
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname})
-  file(GLOB_RECURSE ALL_FILES
-       "${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}"
+  file(
+    GLOB_RECURSE ALL_FILES
+    RELATIVE "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}"
   )
-  foreach(CURRENT_FILE ${ALL_FILES})
+  foreach(TARGET_FILE ${ALL_FILES})
     math(EXPR COUNT "${COUNT}+1")
-    string(REPLACE "${CMAKE_SOURCE_DIR}/" "" TARGET_FILE ${CURRENT_FILE})
-    string(REGEX REPLACE ".in$" "" TARGET_FILE ${TARGET_FILE}) # do not mess
-                                                               # with .ini files
+    set(CURRENT_FILE "${CMAKE_SOURCE_DIR}/")
+    string(APPEND CURRENT_FILE ${TARGET_FILE})
+
+    # do not mess with .ini files
+    string(REGEX REPLACE ".in$" "" TARGET_FILE "${TARGET_FILE}")
+
     string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
     get_filename_component(DIR_NAME ${TARGET_FILE} DIRECTORY)
 
