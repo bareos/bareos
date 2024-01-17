@@ -33,6 +33,7 @@ extern "C" {
 #include <system_error>
 #include <limits>
 #include <cstring>
+#include <utility>
 
 namespace dedup {
 struct access {
@@ -167,8 +168,18 @@ template <typename T> class fvec : access {
 
     grow_file(new_cap * element_size);
 
-    auto res = mremap(buffer, cap * element_size, new_cap * element_size,
-                      MREMAP_MAYMOVE, nullptr);
+#ifdef MREMAP_MAYMOVE
+    auto res = mremap(std::exchange(buffer, nullptr), cap * element_size,
+                      new_cap * element_size, MREMAP_MAYMOVE, nullptr);
+#else
+    // freebsd does not support MREMAP_MAYMOVE (or maybe mremap in general)
+    if (munmap(std::exchange(buffer, nullptr), cap * element_size) < 0) {
+      throw error("munmap");
+    }
+
+    auto res = reinterpret_cast<T*>(
+        mmap(nullptr, new_cap * element_size, prot, MAP_SHARED, fd, 0));
+#endif
 
     if (res != nullptr && res != MAP_FAILED) {
       buffer = reinterpret_cast<T*>(res);
@@ -222,6 +233,7 @@ template <typename T> class fvec : access {
   size_type cap{0};
   size_type count{0};
   int fd{-1};
+  int prot;
   static constexpr std::size_t min_growth_size = MinGrowthSize<element_size>();
   static constexpr std::size_t max_growth_size = MaxGrowthSize<element_size>();
 
@@ -239,7 +251,8 @@ template <typename T> class fvec : access {
     }
   }
 
-  fvec(int fd, size_type initial_size, int prot) : count{initial_size}, fd{fd}
+  fvec(int fd, size_type initial_size, int prot)
+      : count{initial_size}, fd{fd}, prot{prot}
   {
     // we cannot ensure alignment bigger than page alignment
     static_assert(element_align <= 4096, "Alignment too big.");
