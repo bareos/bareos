@@ -262,9 +262,18 @@ template <typename T> class fvec : access {
   {
     if (auto err = posix_fallocate(fd, 0, new_size); err != 0) {
       // posix_fallocate does not set errno
-      throw std::system_error(
-          err, std::generic_category(),
-          "posix_fallocate (new size = " + std::to_string(new_size) + ")");
+      if (err == EINVAL || err == EOPNOTSUPP) {
+        // some filesystems do not support posix_fallocate.  In these cases
+        // we fall back to ftruncate
+        if (ftruncate(fd, new_size) != 0) {
+          throw error("ftruncate/allocate (new size = "
+                      + std::to_string(new_size) + ")");
+        }
+      } else {
+        throw std::system_error(
+            err, std::generic_category(),
+            "posix_fallocate (new size = " + std::to_string(new_size) + ")");
+      }
     }
   }
 
