@@ -51,19 +51,16 @@ std::vector<int> gen_rand_ints(std::size_t count)
 
 struct fvec_fixture : public testing::Test {
  protected:
-  static std::unique_ptr<FILE, file_closer> backing;
-  static std::vector<int> rand_ints;
+  std::unique_ptr<FILE, file_closer> backing;
+  std::vector<int> rand_ints;
 
-  static void SetUpTestSuite()
+  void SetUp() override
   {
     backing = std::unique_ptr<FILE, file_closer>(std::tmpfile());
-    rand_ints = std::move(gen_rand_ints(100));
+    rand_ints = gen_rand_ints(100);
   }
-  static void TeardownTestSuite() { rand_ints.clear(); }
+  void TearDown() override { rand_ints.clear(); }
 };
-
-std::unique_ptr<FILE, file_closer> fvec_fixture::backing{};
-std::vector<int> fvec_fixture::rand_ints;
 
 std::size_t file_size(int fd)
 {
@@ -79,8 +76,10 @@ TEST_F(fvec_fixture, Creation)
 
   try {
     fvec<int> v(access::rdwr, fd);
-  } catch (std::system_error& ec) {
+  } catch (const std::system_error& ec) {
     FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
+  } catch (const std::exception& ec) {
+    FAIL() << "Error: " << ec.what() << "\n";
   }
 }
 
@@ -93,8 +92,10 @@ TEST_F(fvec_fixture, Pushing)
     for (auto i : rand_ints) { v.push_back(i); }
 
     EXPECT_EQ(v.size(), rand_ints.size());
-  } catch (std::system_error& ec) {
+  } catch (const std::system_error& ec) {
     FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
+  } catch (const std::exception& ec) {
+    FAIL() << "Error: " << ec.what() << "\n";
   }
 }
 
@@ -102,6 +103,11 @@ TEST_F(fvec_fixture, PushConsistency)
 {
   try {
     int fd = fileno(backing.get());
+
+    {
+      fvec<int> v(access::rdwr, fd, 0);
+      for (auto i : rand_ints) { v.push_back(i); }
+    }
 
     fvec<int> v(access::rdonly, fd, rand_ints.size());
 
@@ -111,8 +117,10 @@ TEST_F(fvec_fixture, PushConsistency)
       EXPECT_EQ(v[i], rand_ints[i]);
     }
 
-  } catch (std::system_error& ec) {
+  } catch (const std::system_error& ec) {
     FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
+  } catch (const std::exception& ec) {
+    FAIL() << "Error: " << ec.what() << "\n";
   }
 }
 
@@ -122,13 +130,22 @@ TEST_F(fvec_fixture, Clear)
     int fd = fileno(backing.get());
 
     {
-      fvec<int> v(access::rdwr, fd, rand_ints.size());
-      EXPECT_EQ(v.size(), rand_ints.size());
-      v.clear();
-      EXPECT_EQ(v.size(), 0);
+      fvec<int> v(access::rdwr, fd, 0);
+      for (auto i : rand_ints) { v.push_back(i); }
     }
-  } catch (std::system_error& ec) {
+
+    fvec<int> v(access::rdwr, fd, rand_ints.size());
+    EXPECT_EQ(v.size(), rand_ints.size());
+    v.clear();
+    EXPECT_EQ(v.size(), 0);
+
+    v.resize_to_fit();
+
+    EXPECT_EQ(file_size(fd), v.size() * sizeof(int));
+  } catch (const std::system_error& ec) {
     FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
+  } catch (const std::exception& ec) {
+    FAIL() << "Error: " << ec.what() << "\n";
   }
 }
 
@@ -149,7 +166,9 @@ TEST_F(fvec_fixture, PushWithChecks)
       EXPECT_EQ(v.capacity() * v.element_size, file_size(fd));
     }
 
-  } catch (std::system_error& ec) {
+  } catch (const std::system_error& ec) {
     FAIL() << "Error: " << ec.code() << " - " << ec.what() << "\n";
+  } catch (const std::exception& ec) {
+    FAIL() << "Error: " << ec.what() << "\n";
   }
 }
