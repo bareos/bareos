@@ -36,5 +36,4 @@ export TestName
 setup_data
 
 bin/bareos start
-
 bin/bareos status
