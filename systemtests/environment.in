@@ -1,9 +1,6 @@
-if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
-  # MSVC: where are the binaries written?
-  BUILD_BINARY_SUBDIR="${CMAKE_CONFIG_TYPE}"
-  export BUILD_BINARY_SUBDIR=${BUILD_BINARY_SUBDIR}
-else
-  BUILD_BINARY_SUBDIR=""
+# CMAKE_CONFIG_TYPE is required on windows, on other OS it needs to be empty
+if [[! "$(uname -s)" =~ MINGW64_NT ]]; then
+  CMAKE_CONFIG_TYPE=""
 fi
 
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
@@ -122,12 +119,12 @@ export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
 
 PATH=\
-../../../core/src/console/${BUILD_BINARY_SUBDIR}:\
-../../../core/src/dird/${BUILD_BINARY_SUBDIR}:\
-../../../core/src/filed/${BUILD_BINARY_SUBDIR}:\
-../../../core/src/stored/${BUILD_BINARY_SUBDIR}:\
-../../../core/src/tests/${BUILD_BINARY_SUBDIR}:\
-../../../core/src/tools/${BUILD_BINARY_SUBDIR}:\
+../../../core/src/console/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/dird/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/filed/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/stored/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/tests/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/tools/${CMAKE_CONFIG_TYPE}:\
 $PATH
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
