@@ -1,5 +1,5 @@
 # CMAKE_CONFIG_TYPE is required on windows, on other OS it needs to be empty
-if [[! "$(uname -s)" =~ MINGW64_NT ]]; then
+if [[ ! "$(uname -s)" =~ MINGW64_NT ]]; then
   CMAKE_CONFIG_TYPE=""
 fi
 
