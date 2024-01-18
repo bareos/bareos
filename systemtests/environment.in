@@ -1,4 +1,8 @@
 
+# MSVC: where are the binaries written?
+BUILD_BINARY_SUBDIR="${CMAKE_CONFIG_TYPE}"
+export BUILD_BINARY_SUBDIR=${BUILD_BINARY_SUBDIR}
+
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
 PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
@@ -61,15 +65,17 @@ export BAREOS_WEBUI_PORT=@php_port@
 export MINIO_PORT=@minio_port@
 
 export CMAKE_BINARY_DIR
-export BAREOS_DIRECTOR_BINARY=@BAREOS_DIR_BINARY@
-export BAREOS_FILEDAEMON_BINARY=@BAREOS_FD_BINARY@
-export BAREOS_STORAGEDAEMON_BINARY=@BAREOS_SD_BINARY@
-export BAREOS_BSCAN_BINARY=@BSCAN_BINARY@
-export BAREOS_BLS_BINARY=@BLS_BINARY@
-export BAREOS_BCONSOLE_BINARY=@BCONSOLE_BINARY@
-export BAREOS_BEXTRACT_BINARY=@BEXTRACT_BINARY@
-export BAREOS_DBCHECK_BINARY=@BAREOS_DBCHECK_BINARY@
-export BAREOS_BCOPY_BINARY=@BCOPY_BINARY@
+
+export BAREOS_DIRECTOR_BINARY=$(dirname "@BAREOS_DIR_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_DIR_BINARY@")
+export BAREOS_FILEDAEMON_BINARY=$(dirname "@BAREOS_FD_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_FD_BINARY@")
+export BAREOS_STORAGEDAEMON_BINARY=$(dirname "@BAREOS_SD_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_SD_BINARY@")
+
+export BAREOS_BSCAN_BINARY=$(dirname "@BSCAN_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BSCAN_BINARY@")
+export BAREOS_BLS_BINARY=$(DIRNAME "@BLS_BINARY@")/$CMAKE_CONFIG_TYPE/$(BASENAME "@BLS_BINARY@")
+export BAREOS_BCONSOLE_BINARY=$(DIRNAME "@BCONSOLE_BINARY@")/$CMAKE_CONFIG_TYPE/$(BASENAME "@BCONSOLE_BINARY@")
+export BAREOS_BEXTRACT_BINARY=$(DIRNAME "@BEXTRACT_BINARY@")/$CMAKE_CONFIG_TYPE/$(BASENAME "@BEXTRACT_BINARY@")
+export BAREOS_DBCHECK_BINARY=$(DIRNAME "@DBCHECK_BINARY@")/$CMAKE_CONFIG_TYPE/$(BASENAME "@DBCHECK_BINARY@")
+export BAREOS_BCOPY_BINARY=$(DIRNAME "@BCOPY_BINARY@")/$CMAKE_CONFIG_TYPE/$(BASENAME "@BCOPY_BINARY@")
 
 export archivedir
 
@@ -111,13 +117,14 @@ export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 export PHP_EXECUTABLE=@PHP@
 export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
+
 PATH=\
-../../../core/src/console/Debug:\
-../../../core/src/dird/Debug:\
-../../../core/src/filed/Debug:\
-../../../core/src/stored/Debug:\
-../../../core/src/tests/Debug:\
-../../../core/src/tools/Debug:\
+../../../core/src/console/${BUILD_BINARY_SUBDIR}:\
+../../../core/src/dird/${BUILD_BINARY_SUBDIR}:\
+../../../core/src/filed/${BUILD_BINARY_SUBDIR}:\
+../../../core/src/stored/${BUILD_BINARY_SUBDIR}:\
+../../../core/src/tests/${BUILD_BINARY_SUBDIR}:\
+../../../core/src/tools/${BUILD_BINARY_SUBDIR}:\
 $PATH
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
@@ -125,10 +132,8 @@ $PATH
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
 else
-  if [[ $(uname) =~ MINGW64_.* ]]; then
-    PG_CYGPATH=$(cygpath "@POSTGRES_BIN_PATH@")
-    export PATH="$PG_CYGPATH:$PATH"
-  fi
+  PG_CYGPATH=$(cygpath "@POSTGRES_BIN_PATH@")
+  export PATH="$PG_CYGPATH:$PATH"
   export PATH=/sbin:/usr/sbin:$PATH
 fi
 export PYTHONPATH=@pythonpath@

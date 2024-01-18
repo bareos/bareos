@@ -86,18 +86,13 @@ endmacro()
 # create and set the BINARY_NAME_TO_TEST variable to the full path of it
 macro(find_compiled_binary_and_set_binary_name_to_test_variable_for binary_name)
 
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set (BINARY_SUBDIR "Debug/")
-  else()
-    set (BINARY_SUBDIR "")
-  endif()
   if (TARGET ${binary_name})
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
     get_target_property(
       "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
     )
     set("${binary_name_to_test_upcase}"
-      "${${binary_name_to_test_upcase}}/${BINARY_SUBDIR}${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
+      "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
     )
     message(
       "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
@@ -311,14 +306,27 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     string(REPLACE "-" "_" binary_name ${binary_name})
     string(TOUPPER ${binary_name} binary_name_upcase)
     string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
+
     if (NOT ${${binary_name_to_test_upcase}} STREQUAL "")
-      set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
-      # message(STATUS "create symlink ${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX}")
-      create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}${CMAKE_EXECUTABLE_SUFFIX})
-      # else()
-      # message(STATUS ${${binary_name_to_test_upcase}} is empty) 
+
+      foreach (build_config "" "Debug" "Release")
+        set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
+
+        get_filename_component(src_binary_path "${${binary_name_to_test_upcase}}" PATH)
+        get_filename_component(src_file_name  "${${binary_name_to_test_upcase}}" NAME)
+
+        get_filename_component(dst_binary_path "${${bareos_XXX_binary}}" PATH)
+        get_filename_component(dst_file_name  "${${bareos_XXX_binary}}" NAME)
+
+        if (EXISTS  ${src_binary_path}/${build_config}/${src_file_name})
+          #message(STATUS "create symlink  ${src_binary_path}/${build_config}/${src_file_name}  ${dst_binary_path}/${build_config}/${dst_file_name}")
+          create_symlink(${src_binary_path}/${build_config}/${src_file_name}  ${dst_binary_path}/${build_config}/${dst_file_name})
+        endif()
+      endforeach()
+
     endif()
   endforeach()
+
   create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
 
   if(TARGET bareos_vadp_dumper)
@@ -409,6 +417,11 @@ macro(prepare_testdir_for_daemon_run)
 
   set(CURRENT_SBIN_DIR ${current_test_directory}/sbin)
   file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR})
+
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Debug)
+    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Release)
+  endif()
 
   link_binaries_to_test_to_current_sbin_dir_with_individual_filename()
 endmacro()
@@ -537,10 +550,6 @@ function(add_systemtest name file)
       COMMAND ${BASH_EXE} ${file}
       WORKING_DIRECTORY ${directory}
     )
-      #if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-      #  set_property(TEST ${name} PROPERTY ENVIRONMENT
-      #  "PATH=%PATH%\;$CMAKE_BINARY_DIR\\core\\src\\dird\\Debug")
-      # endif()
     set_tests_properties(
       ${name} PROPERTIES TIMEOUT "${SYSTEMTEST_TIMEOUT}" COST 1.0
                          SKIP_RETURN_CODE 77
