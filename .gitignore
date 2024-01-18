@@ -62,6 +62,9 @@ core/scripts/bareos-config-lib.sh
 core/scripts/bareos-ctl-dir
 core/scripts/bareos-ctl-fd
 core/scripts/bareos-ctl-sd
+core/scripts/bareos-ctl-dir-win
+core/scripts/bareos-ctl-fd-win
+core/scripts/bareos-ctl-sd-win
 core/scripts/bareos-explorer
 core/scripts/bareos-glusterfind-wrapper
 core/scripts/bconsole
