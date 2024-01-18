@@ -1,0 +1,83 @@
+#! /bin/sh
+#
+# bareos-ctl-sd  This shell script takes care of starting and stopping
+#		 the Bareos Storage daemon
+#
+# description: Backup Archiving REcovery Open Sourced.
+#
+export PSCMD="@PSCMD@"
+export PS="ps"
+export AWK="@AWK@"
+export PIDOF="@PIDOF@"
+export PGREP="@PGREP@"
+
+SUBSYSDIR=@subsysdir@
+BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-@sbindir@/bareos-sd}
+if [ -z "$BAREOS_STORAGEDAEMON_BINARY" ]; then
+  #echo "BAREOS_STORAGEDAEMON_BINARY undefined, nothing to do"
+  exit 0
+fi
+
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
+BAREOS_SD_PORT=${BAREOS_SD_PORT:-}
+BAREOS_SD_USER=${BAREOS_SD_USER:-}
+BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-}
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-C:/src/bin/systemtests/scripts}
+
+
+srv_name=$(basename "${BAREOS_STORAGEDAEMON_BINARY}" .exe)
+srv_sbindir=$(dirname "${BAREOS_STORAGEDAEMON_BINARY}")
+srv_rundir=$(dirname "$srv_sbindir")
+srv_configdir=${BAREOS_CONFIG_DIR}
+
+
+#
+# Source the generic functions.
+#
+. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
+
+
+case "$1" in
+    start)
+          exec 3>&1 4>&2 >/dev/null 2>&1
+
+          nssm install $srv_name $(cygpath -w "${BAREOS_STORAGEDAEMON_BINARY}")
+          nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
+          nssm set $srv_name AppDirectory  "$(cygpath -w ${srv_rundir})"
+          nssm set $srv_name AppExit Default Restart
+          nssm set $srv_name AppNoConsole 1
+          nssm set $srv_name DisplayName $srv_name
+          nssm set $srv_name ObjectName LocalSystem
+          nssm set $srv_name Start SERVICE_AUTO_START
+          nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
+          nssm set $srv_name AppEnvironmentExtra PATH="${CMAKE_BINARY_DIR}/core/src/stored/Debug;%PATH%"
+          exec 1>&3 2>&4
+          nssm start $srv_name
+        ;;
+
+    stop)
+      if nssm list | dos2unix | grep -q "$srv_name"; then
+        nssm stop $srv_name confirm
+        nssm remove $srv_name confirm
+      fi
+        ;;
+
+    restart)
+        $0 stop
+        sleep 5
+        $0 start
+        ;;
+
+    status)
+        echo -n "$srv_name: "
+        nssm status $srv_name
+        exit $?
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

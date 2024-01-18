@@ -5,61 +5,56 @@
 #
 # description: Backup Archiving REcovery Open Sourced.
 #
+
 export PSCMD="@PSCMD@"
 export PS="ps"
-export AWK="C:/Program Files/Git/usr/bin/awk.exe"
-export PIDOF="PIDOF-NOTFOUND"
-export PGREP="PGREP-NOTFOUND"
+export AWK="@AWK@"
+export PIDOF="@PIDOF@"
+export PGREP="@PGREP@"
 
-if [ -z "$BAREOS_STORAGEDAEMON_BINARY" ]; then
-  #echo "BAREOS_STORAGEDAEMON_BINARY undefined, nothing to do"
-  exit 0
-fi
-
-SUBSYSDIR=C:/src/bin/systemtests/subsysdir
-BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-C:/src/bin/systemtests/sbin/bareos-sd}
-export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
-BAREOS_SD_PORT=${BAREOS_SD_PORT:-}
-BAREOS_SD_USER=${BAREOS_SD_USER:-}
-BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-}
-BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-C:/src/bin/systemtests/scripts}
-
-
-srv_name=$(basename "${BAREOS_STORAGEDAEMON_BINARY}" .exe)
-srv_sbindir=$(dirname "${BAREOS_STORAGEDAEMON_BINARY}")
-srv_rundir=$(dirname "$srv_sbindir")
-srv_configdir=${BAREOS_CONFIG_DIR}
-
+SUBSYSDIR=@subsysdir@
+BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-@sbindir@/bareos-sd}
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_SD_PORT=${BAREOS_SD_PORT:-@sd_port@}
+BAREOS_SD_USER=${BAREOS_SD_USER:-@sd_user@}
+BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-@sd_group@}
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 
 #
 # Source the generic functions.
 #
-. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
-
+. @scriptdir@/bareos-ctl-funcs
 
 case "$1" in
     start)
-          exec 3>&1 4>&2 >/dev/null 2>&1
+        if [ -x ${BAREOS_STORAGEDAEMON_BINARY} ]; then
+            echo "Starting the Bareos Storage daemon"
+            OPTIONS=''
+            if [ "${BAREOS_SD_USER}" != '' ]; then
+                OPTIONS="${OPTIONS} -u ${BAREOS_SD_USER}"
+            fi
 
-          nssm install $srv_name $(cygpath -w "${BAREOS_STORAGEDAEMON_BINARY}")
-          nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
-          nssm set $srv_name AppDirectory  "$(cygpath -w ${srv_rundir})"
-          nssm set $srv_name AppExit Default Restart
-          nssm set $srv_name AppNoConsole 1
-          nssm set $srv_name DisplayName $srv_name
-          nssm set $srv_name ObjectName LocalSystem
-          nssm set $srv_name Start SERVICE_AUTO_START
-          nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
-          nssm set $srv_name AppEnvironmentExtra PATH="${CMAKE_BINARY_DIR}/core/src/stored/Debug;%PATH%"
-          exec 1>&3 2>&4
-          nssm start $srv_name
+            if [ "${BAREOS_SD_GROUP}" != '' ]; then
+                OPTIONS="${OPTIONS} -g ${BAREOS_SD_GROUP}"
+            fi
+
+            if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
+                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+            fi
+
+            if [ "x${VALGRIND_SD}" = "x1" ]; then
+                valgrind --leak-check=full ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+            else
+                ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+            fi
+        fi
         ;;
 
     stop)
-      if nssm list | dos2unix | grep -q "$srv_name"; then
-        nssm stop $srv_name confirm
-        nssm remove $srv_name confirm
-      fi
+        if [ -x ${BAREOS_STORAGEDAEMON_BINARY} ]; then
+            printf "Stopping the Bareos Storage daemon: "
+            killproc ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
+        fi
         ;;
 
     restart)
@@ -69,8 +64,7 @@ case "$1" in
         ;;
 
     status)
-        echo -n "$srv_name: "
-        nssm status $srv_name
+        [ -x ${BAREOS_STORAGEDAEMON_BINARY} ] && status ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
         exit $?
         ;;
 
