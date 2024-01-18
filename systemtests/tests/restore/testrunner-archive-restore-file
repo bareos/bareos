@@ -2,7 +2,7 @@
 set -e
 set -o pipefail
 set -u
-set -x
+
 #
 # restore some single files from archives
 #

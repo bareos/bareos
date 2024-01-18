@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 set -u
+set -x
 #
 # Check whether multiple file=/dir= are handled
 # correctly during restore.
