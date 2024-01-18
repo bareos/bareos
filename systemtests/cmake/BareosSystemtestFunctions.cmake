@@ -57,6 +57,13 @@ macro(create_systemtests_directory)
 
   configurefilestosystemtest("core/src" "console" "*.in" @ONLY "")
 
+  # install special windows start scripts
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    file(RENAME  ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd-win ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd)
+    file(RENAME  ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd-win ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd)
+    file(RENAME  ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir-win ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir)
+  endif()
+
   file(MAKE_DIRECTORY ${subsysdir})
   file(MAKE_DIRECTORY ${sbindir})
   file(MAKE_DIRECTORY ${bindir})
