@@ -11,7 +11,6 @@ export AWK="@AWK@"
 export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
-SUBSYSDIR=@subsysdir@
 BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-@sbindir@/bareos-sd}
 if [ -z "$BAREOS_STORAGEDAEMON_BINARY" ]; then
   #echo "BAREOS_STORAGEDAEMON_BINARY undefined, nothing to do"
@@ -19,10 +18,7 @@ if [ -z "$BAREOS_STORAGEDAEMON_BINARY" ]; then
 fi
 
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
-BAREOS_SD_PORT=${BAREOS_SD_PORT:-}
-BAREOS_SD_USER=${BAREOS_SD_USER:-}
-BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-}
-BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-C:/src/bin/systemtests/scripts}
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 
 
 srv_name=$(basename "${BAREOS_STORAGEDAEMON_BINARY}" .exe)
@@ -39,8 +35,19 @@ srv_configdir=${BAREOS_CONFIG_DIR}
 
 case "$1" in
     start)
+      echo "
+          nssm install $srv_name $(cygpath -w "${BAREOS_STORAGEDAEMON_BINARY}")
+          nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
+          nssm set $srv_name AppDirectory  "$(cygpath -w ${srv_rundir})"
+          nssm set $srv_name AppExit Default Restart
+          nssm set $srv_name AppNoConsole 1
+          nssm set $srv_name DisplayName $srv_name
+          nssm set $srv_name ObjectName LocalSystem
+          nssm set $srv_name Start SERVICE_AUTO_START
+          nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
+          nssm set $srv_name AppEnvironmentExtra PATH="${CMAKE_BINARY_DIR}/core/src/stored/Debug;%PATH%"
           exec 3>&1 4>&2 >/dev/null 2>&1
-
+          "
           nssm install $srv_name $(cygpath -w "${BAREOS_STORAGEDAEMON_BINARY}")
           nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
           nssm set $srv_name AppDirectory  "$(cygpath -w ${srv_rundir})"

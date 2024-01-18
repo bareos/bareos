@@ -16,7 +16,7 @@ for confdir in etc/bareos*; do
     BAREOS_DIRECTOR_BINARY_TO_USE=""
     # echo confdir: $confdir
     daemonsuffix="$(sed 's#etc/bareos##g'<<< $confdir)"
-    #echo daemonsuffix: $daemonsuffix
+    echo daemonsuffix: $daemonsuffix
     if [ -d "$confdir/bareos-sd.d" ]; then
       # create binary with correct name
       if [ -n "$daemonsuffix" ]; then

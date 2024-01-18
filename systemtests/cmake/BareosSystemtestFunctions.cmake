@@ -319,8 +319,8 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
         get_filename_component(dst_file_name  "${${bareos_XXX_binary}}" NAME)
 
         if (EXISTS  ${src_binary_path}/${build_config}/${src_file_name})
-          #message(STATUS "create symlink  ${src_binary_path}/${build_config}/${src_file_name}  ${dst_binary_path}/${build_config}/${dst_file_name}")
-          create_symlink(${src_binary_path}/${build_config}/${src_file_name}  ${dst_binary_path}/${build_config}/${dst_file_name})
+          message(STATUS "create symlink  ${src_binary_path}/${build_config}/${src_file_name} ${dst_binary_path}/${build_config}/${dst_file_name}")
+          create_symlink(${src_binary_path}/${build_config}/${src_file_name} ${dst_binary_path}/${build_config}/${dst_file_name})
         endif()
       endforeach()
 
