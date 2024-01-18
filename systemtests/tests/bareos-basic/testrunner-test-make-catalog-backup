@@ -112,6 +112,8 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 list filesets
 END_OF_DATA
 
+start_bareos
+
 run_bconsole
 check_for_zombie_jobs storage=File
 
