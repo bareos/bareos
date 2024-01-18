@@ -13,7 +13,7 @@ export TestName
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
-  
+
 skip_if_windows "mark full file does not work in bconsole if 'C:/' is in path"
 
 #shellcheck source=functions
@@ -24,15 +24,18 @@ start_test
 file1="$(pwd)/tmp/data/build/src/tests/cats_test.c"
 file2="$(pwd)/tmp/data/build/src/tests/bregtest.c"
 file3="$(pwd)/tmp/data/build/src/tests/bbatch.c"
+
 for f in "$file1" "$file2" "$file3" ; do
     if [[ -f "$tmp/bareos-restores/$f" ]]; then
       rm "$tmp/bareos-restores/$f"
     fi;
 done
-      
-filename1="$(cygpath -w -m $file1)"
-filename2="$(cygpath -w -m $file2)"
-filename3="$(cygpath -w -m $file3)"
+
+if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+  filename1="$(cygpath -w -m $file1)"
+  filename2="$(cygpath -w -m $file2)"
+  filename3="$(cygpath -w -m $file3)"
+fi
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null

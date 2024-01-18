@@ -23,7 +23,9 @@ if [[ -d "$tmp/bareos-restores/$dir" ]]; then
     rm -r "$tmp/bareos-restores/$dir"
 fi
 
-dir="$(cygpath -w -m $dir)"
+if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+  dir="$(cygpath -w -m $dir)"
+fi
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
