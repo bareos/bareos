@@ -205,6 +205,7 @@ if(MINIO)
   endif()
 endif()
 
+
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   configure_file(
     "CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
@@ -213,6 +214,15 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     "ctest_custom_pretest.sh.in"
     "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY
   )
+else()
+  configure_file(
+    "CTestCustom-win.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
+  )
+  configure_file(
+    "ctest_custom_pretest-win.sh.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY
+  )
+
 endif()
 
 #

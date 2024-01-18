@@ -273,7 +273,7 @@ BAREOS_IMPORT std::size_t NumJobsRun();
 BAREOS_IMPORT void b_free_jcr(const char* file,
                               int line,
                               JobControlRecord* jcr);
-void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
+BAREOS_IMPORT void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 
 // Used to display specific job information after a fatal signal
