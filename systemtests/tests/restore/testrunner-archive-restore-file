@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 set -u
+set -x
 #
 # restore some single files from archives
 #
@@ -34,6 +35,10 @@ if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
   filename1="$(cygpath -w -m $file1)"
   filename2="$(cygpath -w -m $file2)"
   filename3="$(cygpath -w -m $file3)"
+else
+  filename1="$file1"
+  filename2="$file2"
+  filename3="$file3"
 fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
