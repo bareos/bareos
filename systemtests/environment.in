@@ -132,8 +132,10 @@ $PATH
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
 else
-  PG_CYGPATH=$(cygpath "@POSTGRES_BIN_PATH@")
-  export PATH="$PG_CYGPATH:$PATH"
+  if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+    PG_CYGPATH=$(cygpath "@POSTGRES_BIN_PATH@")
+    export PATH="$PG_CYGPATH:$PATH"
+  fi
   export PATH=/sbin:/usr/sbin:$PATH
 fi
 export PYTHONPATH=@pythonpath@
