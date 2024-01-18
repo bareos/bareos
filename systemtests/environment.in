@@ -1,7 +1,11 @@
 
-# MSVC: where are the binaries written?
-BUILD_BINARY_SUBDIR="${CMAKE_CONFIG_TYPE}"
-export BUILD_BINARY_SUBDIR=${BUILD_BINARY_SUBDIR}
+if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+  # MSVC: where are the binaries written?
+  BUILD_BINARY_SUBDIR="${CMAKE_CONFIG_TYPE}"
+  export BUILD_BINARY_SUBDIR=${BUILD_BINARY_SUBDIR}
+else
+  BUILD_BINARY_SUBDIR=""
+endif
 
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
