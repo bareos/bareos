@@ -74,7 +74,7 @@ expect_grep "Restore OK" \
 	    "$tmp/restore-O1V1.out" \
 	    "Restore from O1V1 did not succeed."
 
-conf="${BAREOS_CONFIG_DIR}"
+conf="${BAREOS_CONFIG_DIR}/../bareos-sd1"
 
 if ! is_file_compressed "1D1" "O1V1" "${File}"; then
     echo "O1D1 is not compressed"
