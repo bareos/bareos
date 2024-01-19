@@ -467,7 +467,7 @@ start_fd() {
 
 start_sd() {
  ${rscripts}/bareos-ctl-sd start
-} 
+}
 
 
 start_bareos()

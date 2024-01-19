@@ -53,9 +53,12 @@ function check_output_file {
     exit_error "\"$1\" does not contain the expected text"
   fi
 }
+#../../scripts/cleanup
+#../../scripts/setup
 
 start_test
-${BAREOS_UNITTESTS_BINARY_DIR}/Debug/messages_resource > "$stdout_file" 2> "$stderr_file" || exit_error
+
+${BAREOS_UNITTESTS_BINARY_DIR}/${CMAKE_CONFIG_TYPE}/messages_resource > "$stdout_file" 2> "$stderr_file" || exit_error
 
 check_output_file "$console_messages_file"
 check_output_file "$syslog_file"
