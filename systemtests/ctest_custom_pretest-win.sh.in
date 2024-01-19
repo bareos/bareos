@@ -1,0 +1,59 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -u
+echo "PRETEST: running $0 script"
+echo "PRETEST: @TEST_INFO_TEXT@"
+echo "PRETEST: checking for executable ${CMAKE_CURRENT_BINARY_DIR}/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe
+if [ ! -x "${CMAKE_CURRENT_BINARY_DIR}/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe" ]; then
+    echo "PRETEST:  ERROR: could not find director executable. Forgot to build?"
+    exit 1
+fi
+
+hostname=@hostname@
+echo -n "PRETEST: checking configured hostname ($hostname) ... "
+if [ "$hostname" != "localhost" \
+  -a "$hostname" != "127.0.0.1" \
+  -a "$hostname" != "::1" ]; then
+  if [ "$hostname" != "$(hostname)" ]; then
+    echo "current hostname is different ($(hostname))"
+    echo "   please run cmake again, probably after removing CMakeCache.txt"
+  fi
+fi
+echo "OK"
+
+echo -n "PRETEST: checking postgresql connection ... "
+if ! psql postgres <<< "SELECT version()" 2>&1 >/dev/null; then
+  echo "could not connect postgresql server"
+  exit 1
+else
+  echo "OK"
+fi
+
+nr_killed=0
+for pidfile in $(find . -name \*.pid); do
+  ((nr_killed=nr_killed+1))
+  kill -9 "$(cat "$pidfile")" >/dev/null 2>&1 || :
+  rm -f "$pidfile"
+done
+if [ $nr_killed -gt 0 ]; then
+  echo "PRETEST: killed $nr_killed dangling systemtest processes"
+fi
