@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -415,9 +415,12 @@ JobControlRecord* create_new_director_session(BareosSocket* dir)
   return jcr;
 }
 
-void* process_director_commands(void* p_jcr)
+void* process_fd_initiated_director_commands(void* p_jcr)
 {
   JobControlRecord* jcr = (JobControlRecord*)p_jcr;
+
+  SetJcrInThreadSpecificData(jcr);
+
   return process_director_commands(jcr, jcr->dir_bsock);
 }
 
@@ -509,8 +512,9 @@ static bool StartProcessDirectorCommands(JobControlRecord* jcr)
   int result = 0;
   pthread_t thread;
 
-  if ((result = pthread_create(&thread, nullptr, process_director_commands,
-                               (void*)jcr))
+  if ((result
+       = pthread_create(&thread, nullptr,
+                        process_fd_initiated_director_commands, (void*)jcr))
       != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"),
