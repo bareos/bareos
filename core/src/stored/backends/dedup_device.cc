@@ -168,6 +168,8 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
 
     void commit()
     {
+      // CommitBlock only moves save if it succeeded.  Otherwise (so on error)
+      // we can still call abort with it.
       vol->CommitBlock(std::move(save));
       vol = nullptr;
     }
