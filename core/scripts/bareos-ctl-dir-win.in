@@ -24,6 +24,7 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 srv_name=$(basename "${BAREOS_DIRECTOR_BINARY}" .exe)
 srv_sbindir=$(dirname "${BAREOS_DIRECTOR_BINARY}")
 srv_rundir=$(dirname "$srv_sbindir")
+srv_rundir=$(dirname "$srv_rundir")
 srv_configdir=${BAREOS_CONFIG_DIR}
 
 
@@ -36,7 +37,6 @@ srv_configdir=${BAREOS_CONFIG_DIR}
 case "$1" in
     start)
           exec 3>&1 4>&2 >/dev/null 2>&1
-
           nssm install $srv_name $(cygpath -w "${BAREOS_DIRECTOR_BINARY}")
           nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
           nssm set $srv_name AppDirectory  "$(cygpath -w ${srv_rundir})"
@@ -46,7 +46,7 @@ case "$1" in
           nssm set $srv_name ObjectName LocalSystem
           nssm set $srv_name Start SERVICE_AUTO_START
           nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
-          nssm set $srv_name AppEnvironmentExtra PATH="${CMAKE_BINARY_DIR}/core/src/dird/Debug;%PATH%"
+          nssm set $srv_name AppEnvironmentExtra PATH="${CMAKE_BINARY_DIR}/core/src/dird/${CMAKE_CONFIG_TYPE};%PATH%"
           exec 1>&3 2>&4
           nssm start $srv_name
         ;;
