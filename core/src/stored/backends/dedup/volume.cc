@@ -62,6 +62,9 @@ config config_from_data(
   for (auto [bsize, idx] : backing.bsize_to_idx) {
     auto dfile = backing.idx_to_dfile.at(idx);
     auto& df = backing.datafiles.at(dfile);
+
+    if (df.size() % bsize != 0) { throw std::runtime_error("bad data file"); }
+
     dfs.push_back(config::data_file{
         .relpath = data_names.at(idx),
         .Size = df.size(),
@@ -391,10 +394,9 @@ void volume::PushRecord(record_header header,
 
   auto& vec = backing->datafiles[backing->idx_to_dfile[idx]];
 
-  auto start = vec.size();
-  vec.reserve_extra(header.DataSize);
-  vec.append_range(data, size);
-  backing->records.push_back(to_dedup(header, idx, start, size));
+  auto* start = vec.alloc_uninit(header.DataSize);
+  std::memcpy(start, data, size);
+  backing->records.push_back(to_dedup(header, idx, (start - vec.data()), size));
 
   if (size != header.DataSize) {
     urid rec_id = {
@@ -407,7 +409,7 @@ void volume::PushRecord(record_header header,
     unfinished.emplace(rec_id, record_space{
                                    .FileIdx = idx,
                                    .Size = SafeCast(header.DataSize - size),
-                                   .Continue = start + size,
+                                   .Continue = (start - vec.data()) + size,
                                });
   }
 }
