@@ -200,6 +200,14 @@ template <typename T> class fvec : access {
     cap = new_cap;
   }
 
+  T* alloc_uninit(std::size_t num)
+  {
+    reserve_extra(num);
+    count += num;
+
+    return buffer + (count - num);
+  }
+
   // think of (arr, size) as a span; then the name makes sense
   void append_range(const T* arr, std::size_t size)
   {
