@@ -412,7 +412,7 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
 }
 
 // Global routine to free a jcr
-BAREOS_IMPORT void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
+void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
 {
   Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
         line);

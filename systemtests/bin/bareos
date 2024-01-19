@@ -20,7 +20,8 @@ for confdir in etc/bareos*; do
     if [ -d "$confdir/bareos-sd.d" ]; then
       # create binary with correct name
       if [ -n "$daemonsuffix" ]; then
-        cp -af "${BAREOS_STORAGEDAEMON_BINARY}${exesuffix}" "${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}${exesuffix}"
+        cp -af "${BAREOS_STORAGEDAEMON_BINARY}" "${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}"
+#        cp -af "${BAREOS_STORAGEDAEMON_BINARY}${exesuffix}" "${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}${exesuffix}"
       fi
       BAREOS_STORAGEDAEMON_BINARY_TO_USE="${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}"
     fi
