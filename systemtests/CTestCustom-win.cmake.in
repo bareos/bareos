@@ -17,4 +17,4 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set(CTEST_CUSTOM_PRE_TEST bash.exe @CMAKE_CURRENT_BINARY_DIR@/ctest_custom_pretest.sh)
+set(CTEST_CUSTOM_PRE_TEST "bash.exe @CMAKE_CURRENT_BINARY_DIR@/ctest_custom_pretest.sh")

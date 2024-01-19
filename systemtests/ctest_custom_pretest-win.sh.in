@@ -22,8 +22,8 @@ set -e
 set -u
 echo "PRETEST: running $0 script"
 echo "PRETEST: @TEST_INFO_TEXT@"
-echo "PRETEST: checking for executable ${CMAKE_CURRENT_BINARY_DIR}/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe
-if [ ! -x "${CMAKE_CURRENT_BINARY_DIR}/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe" ]; then
+echo "PRETEST: checking for executable @CMAKE_BINARY_DIR@/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe"
+if [ ! -x "@CMAKE_BINARY_DIR@/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe" ]; then
     echo "PRETEST:  ERROR: could not find director executable. Forgot to build?"
     exit 1
 fi
