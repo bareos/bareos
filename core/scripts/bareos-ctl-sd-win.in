@@ -11,7 +11,6 @@ export AWK="@AWK@"
 export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
-BAREOS_STORAGEDAEMON_BINARY=${BAREOS_STORAGEDAEMON_BINARY:-@sbindir@/bareos-sd}
 if [ -z "$BAREOS_STORAGEDAEMON_BINARY" ]; then
   #echo "BAREOS_STORAGEDAEMON_BINARY undefined, nothing to do"
   exit 0

@@ -11,7 +11,6 @@ export AWK="@AWK@"
 export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
-BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-@sbindir@/bareos-fd}
 if [ -z "$BAREOS_FILEDAEMON_BINARY" ]; then
   #echo "BAREOS_FILEDAEMON_BINARY undefined, nothing to do"
   exit 0
