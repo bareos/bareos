@@ -46,8 +46,7 @@ dump_config()
     print_debug "*** start $DESC"
 
     "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc > $tmp/bareos-dir-xc-${ext}.conf
-
-    ${rscripts}/bareos-ctl-dir start
+    BAREOS_CONFIG_DIR="${configfile}" ${rscripts}/bareos-ctl-dir start
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log-${ext}.out
@@ -74,7 +73,7 @@ END_OF_DATA
     remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.json"
 
     ${rscripts}/bareos-ctl-dir stop
-    ${rscripts}/bareos-ctl-dir status
+    #${rscripts}/bareos-ctl-dir status
 
     print_debug "*** end   $DESC"
 }
