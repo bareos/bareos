@@ -48,10 +48,12 @@ else
   echo "OK"
 fi
 
-echo -n "PRETEST: stopping and removing existing nssm services  "
+echo "PRETEST: stopping and removing existing nssm services"
 for service in $(nssm list | grep bareos_ | dos2unix);
 do
   nssm stop $service
   nssm remove $service confirm
+  echo -n "."
 done
+echo
 
