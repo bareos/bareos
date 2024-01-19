@@ -323,7 +323,7 @@ save_state volume::BeginBlock(block_header header)
   return s;
 }
 
-void volume::CommitBlock(save_state s)
+void volume::CommitBlock(save_state&& s)
 {
   if (!current_block) {
     throw std::runtime_error("Cannot commit block that was not started.");
@@ -334,6 +334,15 @@ void volume::CommitBlock(save_state s)
 
   update_config();
 
+  // this looks weird but this is why:
+  // if the commit fails for some reason, we need to ensure that the caller
+  // can still abort the block (so we cannot move s immediately)
+  // but if the commit succeeded we do not want the caller to still have access
+  // to the save state (so we want to move it).
+  // To solve this dilemma, we take an rvalue reference and move out of it
+  // once everything is done (this is now).
+  save_state discard = std::move(s);
+  static_cast<void>(discard);
   current_block.reset();
 }
 
