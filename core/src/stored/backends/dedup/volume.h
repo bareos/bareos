@@ -190,7 +190,7 @@ class volume {
 
   // writing interface
   save_state BeginBlock(block_header header);
-  void CommitBlock(save_state save);
+  void CommitBlock(save_state&& save);
   void AbortBlock(save_state save);
   void PushRecord(record_header header, const char* data, std::size_t size);
 
