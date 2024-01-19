@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,10 +47,10 @@ const char* bind_error_message = "Bad file number";
 #elif defined HAVE_WIN32
 const char* open_error_message
     = "No such file or directory (errno=2 | win_error=0x00000002)";
-const char* win_open_error_message = "File not found.\r\n";
+const char* win_open_error_message = "File not found (0x00000002)";
 const char* socket_error_message
     = "No such file or directory (errno=2 | win_error=0x0000276D)";
-const char* win_socket_error_message = "Windows error 0x0000276D";
+const char* win_socket_error_message = "Unknown windows error (0x0000276D)";
 const char* bind_error_message
     = "No such file or directory (errno=2 | win_error=0x000027";
 #else
