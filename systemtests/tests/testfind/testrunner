@@ -31,7 +31,7 @@ error_log="$logdir"/bareos.log
 
 sbin/testfind-testfind -c etc/bareos -f SelfTest > "$selftest_log"
 
-expect_grep "Number of files examined: 55" \
+expect_grep "Number of files examined: 61" \
             "$selftest_log" \
             "Number of files is incorrect."
 
@@ -40,7 +40,7 @@ mkdir -m 000 "$unopenable_dir"
 
 sbin/testfind-testfind -c etc/bareos -f Wildtest > "$wildcard_log"
 
-expect_grep "Number of files examined: 19" \
+expect_grep "Number of files examined: 21" \
             "$wildcard_log" \
             "Number of files is incorrect."
 
