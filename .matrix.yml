@@ -3,6 +3,102 @@ JENKINS_TESTTYPES:
   - univention-bareos
 
 OS:
+  Sanitize:
+    "F39":
+      TYPE: scripted
+      IMAGE: fedora39
+      BUILD_SCRIPT: bareos/devtools/build-and-test-with-sanitize.sh
+      FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
+      ARCH:
+        - x86_64
+  ULC_deb:
+    "OpenSSL_1.1":
+      TYPE: scripted
+      IMAGE: "ubuntu18.04"
+      BUILD_SCRIPT: CD/deb/build-ulc.sh
+      FINISH_SCRIPT: CD/deb/finish-ulc.sh
+      ARCH:
+        - x86_64
+  xUbuntu:
+    "22.04":
+      TYPE: deb
+      IMAGE: "ubuntu22.04"
+      ARCH:
+        - x86_64
+    "20.04":
+      TYPE: deb
+      IMAGE: "ubuntu20.04"
+      ARCH:
+        - x86_64
+  SUSE:
+    "15":
+      TYPE: rpm
+      IMAGE: sle154
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP3, SLE-15_SP4, openSUSE-Leap_15.4, SLE-15_SP5, openSUSE-Leap_15.5 ]
+      ARCH:
+      - x86_64
+  SLE:
+    "12_SP5":
+      TYPE: rpm
+      IMAGE: sles12sp5
+      ARCH:
+      - x86_64
+  Fedora:
+    "39":
+      TYPE: rpm
+      IMAGE: fedora39
+      ARCH:
+      - x86_64
+    "38":
+      TYPE: rpm
+      IMAGE: fedora38
+      ARCH:
+      - x86_64
+  Debian:
+    "12":
+      TYPE: deb
+      IMAGE: "debian12"
+      ARCH:
+        - x86_64
+    "11":
+      TYPE: deb
+      IMAGE: "debian11"
+      ARCH:
+        - x86_64
+    "10":
+      TYPE: deb
+      IMAGE: "debian10"
+      ARCH:
+        - x86_64
+  EL:
+    "9":
+      TYPE: rpm
+      IMAGE: rhel9
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
+      ARCH:
+      - x86_64
+    "8":
+      TYPE: rpm
+      IMAGE: rhel8
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
+      ARCH:
+      - x86_64
+    "7":
+      TYPE: rpm
+      IMAGE: rhel7
+      CUSTOM_TEST_IMAGES: [ CentOS, RHEL ]
+      ARCH:
+      - x86_64
+  FreeBSD:
+    "13.2":
+      TYPE: freebsd
+      ARCH:
+        - amd64
+  MacOS:
+    "10.13.6":
+      TYPE: macos
+      ARCH:
+        - x64
   win:
     native:
       TYPE: win-native
