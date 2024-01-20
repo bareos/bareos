@@ -35,7 +35,7 @@ case "$1" in
       ;;
 
    status)
-      if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ] && [ -n "${BAREOS_FILEDAEMON_BINARY}" ]; then
+      if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ] && [ -n "${BAREOS_DIRECTOR_BINARY}" ]; then
          ${BAREOS_SCRIPTDIR}/bareos-ctl-dir status
          status_dir=$?
       fi
@@ -43,7 +43,7 @@ case "$1" in
          ${BAREOS_SCRIPTDIR}/bareos-ctl-sd status
          status_sd=$?
       fi
-      if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && [ -n "${BAREOS_DIRECTOR_BINARY}" ]; then
+      if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && [ -n "${BAREOS_FILEDAEMON_BINARY}" ]; then
          ${BAREOS_SCRIPTDIR}/bareos-ctl-fd status
          status_fd=$?
       fi
