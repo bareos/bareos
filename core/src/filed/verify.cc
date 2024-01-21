@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,8 +44,6 @@ namespace filedaemon {
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
-#else
-const bool have_darwin_os = false;
 #endif
 
 static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool);
