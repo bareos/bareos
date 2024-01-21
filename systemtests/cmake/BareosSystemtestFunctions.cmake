@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -318,7 +318,7 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
         get_filename_component(dst_binary_path "${${bareos_XXX_binary}}" PATH)
         get_filename_component(dst_file_name  "${${bareos_XXX_binary}}" NAME)
 
-        if (EXISTS  ${src_binary_path}/${build_config}/${src_file_name})
+        if (EXISTS  ${src_binary_path}/${build_config})
           message(STATUS "create symlink  ${src_binary_path}/${build_config}/${src_file_name} ${dst_binary_path}/${build_config}/${dst_file_name}")
           create_symlink(${src_binary_path}/${build_config}/${src_file_name} ${dst_binary_path}/${build_config}/${dst_file_name})
         endif()
