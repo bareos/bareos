@@ -426,13 +426,6 @@ endif()
 
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    if(CMAKE_SIZEOF_VOID_P MATCHES "8")
-      string(REPLACE "Program Files (x86)" "Program Files"
-        CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-    endif()
-  endif()
-
   if(MSVC)
     add_definitions(
       -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -D_WIN32_WINNT=${WINDOWS_VERSION}

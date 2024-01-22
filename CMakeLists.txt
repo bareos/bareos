@@ -22,6 +22,12 @@ cmake_minimum_required(VERSION 3.17)
 cmake_policy(VERSION 3.17...3.19)
 
 project(bareos NONE)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  string(REPLACE "Program Files (x86)" "Program Files"
+    CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
@@ -29,6 +35,8 @@ add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
+
+
 
 set(default_build_type "Debug")
 
@@ -137,7 +145,9 @@ if(BUILD_BAREOS_BINARIES)
   if(NOT client-only)
     add_subdirectory(systemtests)
   endif()
-  add_subdirectory(contrib)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    add_subdirectory(contrib)
+  endif()
 endif()
 
 if(docs
