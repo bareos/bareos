@@ -18,14 +18,14 @@
 #   02110-1301, USA.
 
 
-# Windows: copy over all dlls our binaries depend on into the test dir
+# Windows: copy over all dlls our binaries depend on into the binary dir
 macro(BareosCopyDllsToBinDir)
   if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(DLLS_TO_COPY_MANUALLY C:/vcpkg/installed/x64-windows/bin/jansson.dll C:/vcpkg/installed/x64-windows/bin/lzo2.dll)
     get_property(current_targets DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} PROPERTY BUILDSYSTEM_TARGETS)
     foreach(TGT ${current_targets})
     get_target_property(targettype ${TGT} TYPE)
-    message(STATUS "Type of ${TGT} is ${targettype}")
+    #message(STATUS "Type of ${TGT} is ${targettype}")
       if ( ${targettype} MATCHES "EXECUTABLE")
       add_custom_command(TARGET ${TGT} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TGT}> $<TARGET_RUNTIME_DLLS:${TGT}>;${DLLS_TO_COPY_MANUALLY}

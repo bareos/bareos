@@ -309,7 +309,12 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
 
     if (NOT ${${binary_name_to_test_upcase}} STREQUAL "")
 
-      foreach (build_config "" "Debug" "Release")
+        if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+         set (build_configs "Debug" "Release")
+        else()
+         set (build_configs "")
+        endif()
+        foreach(build_config ${build_configs})
         set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
 
         get_filename_component(src_binary_path "${${binary_name_to_test_upcase}}" PATH)
@@ -318,10 +323,10 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
         get_filename_component(dst_binary_path "${${bareos_XXX_binary}}" PATH)
         get_filename_component(dst_file_name  "${${bareos_XXX_binary}}" NAME)
 
-        if (EXISTS  ${src_binary_path}/${build_config})
+        # if (EXISTS  ${src_binary_path}/${build_config}) We cannot determine this at this point as the binaries do not yet exist
           message(STATUS "create symlink  ${src_binary_path}/${build_config}/${src_file_name} ${dst_binary_path}/${build_config}/${dst_file_name}")
           create_symlink(${src_binary_path}/${build_config}/${src_file_name} ${dst_binary_path}/${build_config}/${dst_file_name})
-        endif()
+          # endif()
       endforeach()
 
     endif()
@@ -510,11 +515,12 @@ macro(create_symlink target link)
   if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
     file(CREATE_LINK ${target} ${link} SYMBOLIC)
   else()
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link}
-    )
+   execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link}
+  )
   endif()
 endmacro()
+
 
 function(add_disabled_systemtest PREFIX TEST_NAME)
   set(FULL_TEST_NAME "${PREFIX}${TEST_NAME}")

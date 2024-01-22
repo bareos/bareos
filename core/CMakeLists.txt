@@ -426,6 +426,13 @@ endif()
 
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    if(CMAKE_SIZEOF_VOID_P MATCHES "8")
+      string(REPLACE "Program Files (x86)" "Program Files"
+        CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+    endif()
+  endif()
+
   if(MSVC)
     add_definitions(
       -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -D_WIN32_WINNT=${WINDOWS_VERSION}
@@ -602,11 +609,6 @@ message(STATUS "BORLAND: " ${BORLAND})
 # Microsoft compiler
 message(STATUS "MSVC: " ${MSVC})
 message(STATUS "MSVC_IDE: " ${MSVC_IDE})
-message(STATUS "MSVC60: " ${MSVC60})
-message(STATUS "MSVC70: " ${MSVC70})
-message(STATUS "MSVC71: " ${MSVC71})
-message(STATUS "MSVC80: " ${MSVC80})
-message(STATUS "CMAKE_COMPILER_2005: " ${CMAKE_COMPILER_2005})
 
 # set this to true if you don't want to rebuild the object files if the rules
 # have changed, but not the actual source files or headers (e.g. if you changed
