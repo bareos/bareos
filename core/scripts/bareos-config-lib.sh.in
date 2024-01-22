@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -986,9 +986,9 @@ replace()
     grep -l "${SEARCH}" "${BAREOS_CONFIG_DIR}"/*.conf "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf 2>/dev/null | while read -r file
     do
         if [ -f "${file}" ]; then
-            if grep "${SEARCH}" "$file"; then
+            if grep -q "${SEARCH}" "$file"; then
                 # do a log-message only if file will be changed, not always
-                if grep "_PASSWORD_XXX" "${SEARCH}"; then
+                if echo "${SEARCH}" | grep -q "_PASSWORD_"; then
                   info "replacing '${SEARCH}' in ${file}"
                 else
                   info "replacing '${SEARCH}' with '${REPLACE}' in ${file}"
