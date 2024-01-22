@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -94,16 +94,27 @@ const char* BErrNo::bstrerror()
 void BErrNo::FormatWin32Message()
 {
 #ifdef HAVE_WIN32
-  LPVOID msg;
+  char* msg;
   int windows_error_code = GetLastError();
-  if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
-                        | FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL, windows_error_code,
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0,
-                    NULL)) {
-    PmStrcpy(buf_, (const char*)msg);
+
+  if (auto len = FormatMessage(
+          FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
+              | FORMAT_MESSAGE_IGNORE_INSERTS,
+          NULL, windows_error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          (LPTSTR)&msg, 0, NULL);
+      len != 0) {
+    // the formated message often ends in .\r\n
+    // we want to trim this since our own error messages already append
+    // '.\n' to the end.
+    while (len > 0 && isspace(msg[len - 1])) { len -= 1; }
+
+    if (len > 0 && msg[len - 1] == '.') { len -= 1; }
+
+    msg[len] = '\0';
+
+    Mmsg(buf_, "%s (0x%08X)", msg, windows_error_code);
   } else {
-    Mmsg(buf_, "Windows error 0x%08X", windows_error_code);
+    Mmsg(buf_, "Unknown windows error (0x%08X)", windows_error_code);
   }
   LocalFree(msg);
 #endif

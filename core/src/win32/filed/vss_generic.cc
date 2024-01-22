@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,8 @@
  */
 
 #ifdef WIN32_VSS
+
+#  include <unordered_set>
 
 #  include "include/bareos.h"
 #  include "include/jcr.h"
@@ -534,6 +536,176 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
       errno = b_errno_win32;
       return false;
     }
+
+#  define VSS_CALL(Obj, Name, ...)                                 \
+    do {                                                           \
+      HRESULT hr = (Obj)->Name(__VA_ARGS__);                       \
+      if (FAILED(hr)) {                                            \
+        Dmsg1(0,                                                   \
+              "VSSClientGeneric::Initialize: "                     \
+              "IVssBackupComponents->" #Name " returned 0x%08X\n", \
+              hr);                                                 \
+        JmsgVssApiStatus(jcr_, M_FATAL, hr, #Name);                \
+        errno = b_errno_win32;                                     \
+        return false;                                              \
+      }                                                            \
+    } while (0)
+
+    UINT cWriters;
+    VSS_CALL(pVssObj, GetWriterMetadataCount, &cWriters);
+
+    VSS_ID idInstance;
+    IVssExamineWriterMetadata* pMetadata;
+
+    std::unordered_set<std::string> excluded_files;
+    std::unordered_set<std::string> included_files;
+    // NOTE(ssura): this is not correct yet
+    // see
+    // https://learn.microsoft.com/en-us/windows/win32/vss/generating-a-backup-set
+    // for more info.  Basically the path that the following GetPath calls
+    // return might not be a correct path at all.  We need to iterate
+    // over it to get the correct paths, i.e. with Find[First|Next]File.
+    // This is currently only used for debugging so it should be ok!
+
+    for (UINT i = 0; i < cWriters; ++i) {
+      Dmsg1(500, "VSS Writer: %u\n", i);
+      VSS_CALL(pVssObj, GetWriterMetadata, i, &idInstance, &pMetadata);
+
+      UINT cIncludeFiles, cExcludeFiles, cComponents;
+
+      VSS_CALL(pMetadata, GetFileCounts, &cIncludeFiles, &cExcludeFiles,
+               &cComponents);
+
+      IVssWMFiledesc* pFileDesc;
+
+      // NOTE(ssura): Include files are not supported on windows yet
+      // see
+      // https://learn.microsoft.com/en-us/windows/win32/api/vsbackup/nf-vsbackup-ivssexaminewritermetadata-getincludefile
+
+      for (UINT exclude = 0; exclude < cExcludeFiles; ++exclude) {
+        VSS_CALL(pMetadata, GetExcludeFile, exclude, &pFileDesc);
+
+        BSTR bstrPath;
+
+        VSS_CALL(pFileDesc, GetPath, &bstrPath);
+
+        char* path = BSTR_2_str(bstrPath);
+
+        if (auto [_, inserted] = excluded_files.emplace(path); inserted) {
+          Dmsg1(500, "Excluded path: %s\n", path);
+        }
+
+        free(path);
+
+        SysFreeString(bstrPath);
+
+        pFileDesc->Release();
+      }
+
+      // NOTE(ssura): components are file groups
+      //              exclude trumps component
+      //              Components may have dependencies on other components.
+      //              Currently this is not supported.
+
+      // NOTE(ssura): a selectable component is _optional_ and can be
+      //              included _optionally_.  A non selectable
+      //              component is mandatory to include, if its parent is
+      //              included!
+      // See:
+      // https://learn.microsoft.com/en-us/windows/win32/vss/working-with-selectability-for-backup
+      //              We do not handle this here for now.
+
+      for (UINT comp = 0; comp < cComponents; ++comp) {
+        IVssWMComponent* pComponent;
+        VSS_CALL(pMetadata, GetComponent, comp, &pComponent);
+        PVSSCOMPONENTINFO pInfo;
+        VSS_CALL(pComponent, GetComponentInfo, &pInfo);
+
+        auto cFileCount = pInfo->cFileCount;
+        auto cDatabases = pInfo->cDatabases;
+        auto cLogFiles = pInfo->cLogFiles;
+        auto cDependencies = pInfo->cDependencies;
+
+        char* name = BSTR_2_str(pInfo->bstrComponentName);
+        Dmsg1(500, "Start component: %s\n", name);
+        free(name);
+
+        BSTR bstrPath;
+        for (UINT file = 0; file < cFileCount; ++file) {
+          VSS_CALL(pComponent, GetFile, file, &pFileDesc);
+          VSS_CALL(pFileDesc, GetPath, &bstrPath);
+
+          char* path = BSTR_2_str(bstrPath);
+          if (auto it = included_files.find(path);
+              excluded_files.find(path) == excluded_files.end()
+              && it == included_files.end()) {
+            Dmsg1(1000, "File: %s\n", path);
+            included_files.emplace_hint(it, path);
+          }
+          free(path);
+
+          SysFreeString(bstrPath);
+          pFileDesc->Release();
+        }
+        for (UINT file = 0; file < cDatabases; ++file) {
+          VSS_CALL(pComponent, GetDatabaseFile, file, &pFileDesc);
+          VSS_CALL(pFileDesc, GetPath, &bstrPath);
+
+          char* path = BSTR_2_str(bstrPath);
+          if (auto it = included_files.find(path);
+              excluded_files.find(path) == excluded_files.end()
+              && it == included_files.end()) {
+            Dmsg1(1000, "DB File: %s\n", path);
+            included_files.emplace_hint(it, path);
+          }
+          free(path);
+
+          SysFreeString(bstrPath);
+          pFileDesc->Release();
+        }
+
+        for (UINT file = 0; file < cLogFiles; ++file) {
+          VSS_CALL(pComponent, GetDatabaseLogFile, file, &pFileDesc);
+          VSS_CALL(pFileDesc, GetPath, &bstrPath);
+
+          char* path = BSTR_2_str(bstrPath);
+          if (auto it = included_files.find(path);
+              excluded_files.find(path) == excluded_files.end()
+              && it == included_files.end()) {
+            Dmsg1(1000, "DB Log File: %s\n", path);
+            included_files.emplace_hint(it, path);
+          }
+          free(path);
+
+          SysFreeString(bstrPath);
+          pFileDesc->Release();
+        }
+
+        for (UINT dep = 0; dep < cDependencies; ++dep) {
+          IVssWMDependency* pDepedency;
+          VSS_CALL(pComponent, GetDependency, dep, &pDepedency);
+          BSTR bstrComponentName;
+          VSS_CALL(pDepedency, GetComponentName, &bstrComponentName);
+
+          char* name = BSTR_2_str(bstrComponentName);
+          Dmsg1(500, "Depedency: %s\n", name);
+          free(name);
+
+          SysFreeString(bstrComponentName);
+          pDepedency->Release();
+        }
+
+        Dmsg1(500, "End component\n");
+
+        VSS_CALL(pComponent, FreeComponentInfo, pInfo);
+        pComponent->Release();
+      }
+
+      pMetadata->Release();
+    }
+
+    Dmsg1(150, "VSS: Found %llu files to exclude and %llu files to include.\n",
+          excluded_files.size(), included_files.size());
   }
 
   // We are during restore now?
