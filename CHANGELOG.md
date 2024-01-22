@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: sql_* add leading space to sql construct [PR #1656]
 - plugins: postgresql fix missing pg_backup_stop() call [PR #1655]
 - filed: fix vss during client initiated connections [PR #1665]
+- bareos-config: fix output of deploy_config [PR #1672]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -63,4 +64,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1656]: https://github.com/bareos/bareos/pull/1656
 [PR #1659]: https://github.com/bareos/bareos/pull/1659
 [PR #1665]: https://github.com/bareos/bareos/pull/1665
+[PR #1672]: https://github.com/bareos/bareos/pull/1672
 [unreleased]: https://github.com/bareos/bareos/tree/master
