@@ -23,7 +23,7 @@ Unicode false
 
 RequestExecutionLevel admin
 
-!addplugindir C:/bareos-addons/nsi-dlls
+!addplugindir C:\bareos-addons\nsi-dlls
 
 #SilentInstall silentlog
 
@@ -166,8 +166,8 @@ ${StrRep}
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON   "win32/bareos.ico"
-!define MUI_UNICON "win32/bareos.ico"
+!define MUI_ICON   "win32\bareos.ico"
+!define MUI_UNICON "win32\bareos.ico"
 #!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 #!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_COMPONENTSPAGE_SMALLDESC
@@ -545,22 +545,11 @@ SectionIn 1 2 3 4
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   SetOutPath "$INSTDIR"
-  File  win32\bareos-config-deploy.bat
-  File  sbin\bareos-fd.exe
-  File  lib\bareos\bareos.dll
-  File  lib\bareos\bareosfastlz.dll
-  File  lib\bareos\bareosfind.dll
-  File  lib\bareos\bareoslmdb.dll
-  File  lib\bareos\bareossql.dll
-  File  jans*.dll
-  File  intl*.dll
-  File  lzo*.dll
-  File  pthread*.dll
+  File "${CMAKE_SOURCE_DIR}\core\platforms\win32\bareos-config-deploy.bat"
+  File "${CMAKE_BINARY_DIR}\core\src\filed\${CMAKE_CONFIG_TYPE}\*.dll"
 
   # for password generation
-#  File "openssl.exe"
   File C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe
-#  File "sed.exe"
   File "C:\Program Files\Git\usr\bin\sed.exe"
   File "C:\Program Files\Git\usr\bin\msys-2.0.dll"
   File "C:\Program Files\Git\usr\bin\msys-intl-8.dll"
@@ -699,12 +688,12 @@ SectionIn 2 3
   CreateDirectory "$APPDATA\${PRODUCT_NAME}\scripts"
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "bin\bareos-dir.exe"
-  File "bin\bareos-dbcheck.exe"
-  File "bin\bsmtp.exe"
-  File "sbin\testfind.exe"
-  File "bin\bregex.exe"
-  File "bin\bwild.exe"
+  File "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}\*.dll"
+  File "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}\bareos-dir.exe"
+  File "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}\bareos-dbcheck.exe"
+  File "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}\bsmtp.exe"
+  File "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}\bregex.exe"
+  File "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}\bwild.exe"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
@@ -860,8 +849,8 @@ SectionIn 1 2 3
 
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
-  File "bin\bareos-tray-monitor.exe"
 
+  File "${CMAKE_BINARY_DIR}\core\src\qt-tray-monitor\${CMAKE_CONFIG_TYPE}\bareos-tray-monitor.exe"
   File "${CMAKE_BINARY_DIR}\core\src\qt-tray-monitor\${CMAKE_CONFIG_TYPE}\*.dll"
 
   #
@@ -970,8 +959,8 @@ SectionIn 2 3
   SetOverwrite ifnewer
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
 
-  File "sbin\bconsole.exe"
-  File C:\vcpkg\installed\x64-windows\debug\bin\readline.dll
+  File "${CMAKE_BINARY_DIR}\core\src\console\${CMAKE_CONFIG_TYPE}\bconsole.exe"
+  File "${CMAKE_BINARY_DIR}\core\src\console\${CMAKE_CONFIG_TYPE}\*.dll"
   !insertmacro InstallConfFile "bconsole.conf"
   #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
@@ -1480,22 +1469,20 @@ done:
   ClearErrors
 
   InitPluginsDir
-  File "/oname=$PLUGINSDIR\storagedialog.ini"   "win32\storagedialog.ini"
-  File "/oname=$PLUGINSDIR\clientdialog.ini"    "win32\clientdialog.ini"
-  File "/oname=$PLUGINSDIR\directordialog.ini"  "win32\directordialog.ini"
-  File "/oname=$PLUGINSDIR\databasedialog.ini"  "win32\databasedialog.ini"
-  File "/oname=$PLUGINSDIR\sed.exe"             "C:\Program Files\Git\usr\bin\sed.exe"
+  SetOutPath $PLUGINSDIR
+  File  "${CMAKE_SOURCE_DIR}\core\platforms\win32\*.ini"
+  File  "C:\Program Files\Git\usr\bin\sed.exe"
 
-  File "/oname=$PLUGINSDIR\openssl.exe"         "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
-  File "/oname=$PLUGINSDIR\iconv-2.dll"         "C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll"
-  File "/oname=$PLUGINSDIR\intl-8.dll"          "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
-  File "/oname=$PLUGINSDIR\pthreadVC3d.dll"     "C:\vcpkg\packages\pthreads_x64-windows\debug\bin\pthreadVC3d.dll"
-  File "/oname=$PLUGINSDIR\pthreadVCE3d.dll"    "C:\vcpkg\packages\pthreads_x64-windows\debug\bin\pthreadVCE3d.dll"
+  File "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
+  File "C:\vcpkg\packages\pthreads_x64-windows\debug\bin\pthreadVC3d.dll"
+  File "C:\vcpkg\packages\pthreads_x64-windows\debug\bin\pthreadVCE3d.dll"
 # the following don't work, why?
 ;  File "/oname=$PLUGINSDIR\pthreadVC3.dll"      "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll
 ;  File "/oname=$PLUGINSDIR\pthreadVCE3.dll"     "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
-  File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\vcpkg\installed\x64-windows\debug\bin\libcrypto-3-x64.dll"
-  File "/oname=$PLUGINSDIR\libssl-3-x64.dll"    "C:\vcpkg\installed\x64-windows\debug\bin\libssl-3-x64.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\libcrypto-3-x64.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\libssl-3-x64.dll"
 
   #
   #
@@ -1510,7 +1497,7 @@ done:
 #  File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 #  File "/oname=$PLUGINSDIR\libssp-0.dll" "libssp-0.dll"
 #
-  File "/oname=$PLUGINSDIR\bconsole.conf" "etc\bareos\bconsole.conf"
+  File "etc\bareos\bconsole.conf"
 
   File "/oname=$PLUGINSDIR\postgresql-create.sql" "lib\bareos\scripts\ddl\creates\postgresql.sql"
   File "/oname=$PLUGINSDIR\postgresql-drop.sql" "lib\bareos\scripts\ddl\drops\postgresql.sql"
