@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -394,20 +394,18 @@ bool IsConnectFromClientAllowed(JobControlRecord* jcr)
 bool UseWaitingClient(JobControlRecord* jcr, int timeout)
 {
   bool result = false;
-  Connection* connection = NULL;
-  ConnectionPool* connections = get_client_connections();
+  auto& connections = get_client_connections();
 
   if (!IsConnectFromClientAllowed(jcr)) {
     Dmsg1(120, "Connection from client \"%s\" to director is not allowed.\n",
           jcr->dir_impl->res.client->resource_name_);
   } else {
-    connection = connections->remove(jcr->dir_impl->res.client->resource_name_,
-                                     timeout);
+    auto connection = take_by_name(
+        connections, jcr->dir_impl->res.client->resource_name_, timeout);
     if (connection) {
-      jcr->file_bsock = connection->bsock();
-      jcr->dir_impl->FDVersion = connection->protocol_version();
-      jcr->authenticated = connection->authenticated();
-      delete (connection);
+      jcr->file_bsock = connection->socket.release();
+      jcr->dir_impl->FDVersion = connection->protocol_version;
+      jcr->authenticated = connection->authenticated;
       Jmsg(jcr, M_INFO, 0, T_("Using Client Initiated Connection (%s).\n"),
            jcr->dir_impl->res.client->resource_name_);
       result = true;

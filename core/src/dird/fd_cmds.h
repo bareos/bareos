@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,12 +54,12 @@ bool SendRestoreObjects(JobControlRecord* jcr, JobId_t JobId, bool send_global);
 bool CancelFileDaemonJob(UaContext* ua, JobControlRecord* jcr);
 void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd);
 void DoClientResolve(UaContext* ua, ClientResource* client);
-void* HandleFiledConnection(ConnectionPool* connections,
+void* HandleFiledConnection(connection_pool& connections,
                             BareosSocket* fd,
                             char* client_name,
                             int fd_protocol_version);
 
-ConnectionPool* get_client_connections();
+connection_pool& get_client_connections();
 bool IsConnectingToClientAllowed(ClientResource* res);
 bool IsConnectingToClientAllowed(JobControlRecord* jcr);
 bool IsClientTlsRequired(JobControlRecord* jcr);
