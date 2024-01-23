@@ -681,6 +681,12 @@ struct serializable_data_file {
 };
 
 struct config_header {
+  enum version : std::uint64_t
+  {
+    v0,  // for testing purposes if needed
+    v1,
+  };
+  net_u64 version;
   net<std::uint32_t> string_size{};
   net<std::uint32_t> num_blockfiles{};
   net<std::uint32_t> num_recordfiles{};
@@ -694,6 +700,7 @@ std::vector<char> config::serialize(const config& conf)
   std::vector<char> serial;
 
   config_header hdr;
+  hdr.version = config_header::version::v1;
 
   std::vector<serializable_block_file> bfs;
   for (auto bfile : conf.bfiles) { bfs.emplace_back(bfile, serial); }
@@ -744,15 +751,14 @@ config config::make_default(std::uint64_t BlockSize)
   };
 }
 
-config config::deserialize(const char* data, std::size_t size)
+namespace {
+config deserialize_config_v1(chunked_reader stream, config_header& hdr)
 {
   config conf;
 
-  chunked_reader stream(data, size);
-
-  config_header hdr;
-  if (!stream.read(&hdr, sizeof(hdr))) {
-    throw std::runtime_error("config file to small.");
+  if (hdr.version != config_header::version::v1) {
+    throw std::runtime_error(
+        "Internal error: trying to deserialize wrong config version.");
   }
 
   if (hdr.num_blockfiles != 1) {
@@ -798,5 +804,26 @@ config config::deserialize(const char* data, std::size_t size)
   if (!stream.finished()) { throw std::runtime_error("config file to big."); }
 
   return conf;
+}
+};  // namespace
+
+config config::deserialize(const char* data, std::size_t size)
+{
+  chunked_reader stream(data, size);
+
+  config_header hdr;
+  if (!stream.read(&hdr, sizeof(hdr))) {
+    throw std::runtime_error("config file to small.");
+  }
+
+  switch (hdr.version.load()) {
+    case config_header::version::v1: {
+      return deserialize_config_v1(std::move(stream), hdr);
+    } break;
+    default: {
+      throw std::runtime_error("bad config version (version = "
+                               + std::to_string(hdr.version.load()) + ")");
+    }
+  }
 }
 };  // namespace dedup
