@@ -52,7 +52,7 @@ static char hello_client[] = "Hello Client %127s calling";
 static ThreadList thread_list;
 static std::atomic<bool> server_running;
 static pthread_t tcp_server_tid;
-static ConnectionPool* client_connections = NULL;
+static connection_pool client_connections{};
 
 static std::atomic<BnetServerState> server_state(BnetServerState::kUndefined);
 
@@ -65,7 +65,7 @@ struct s_addr_port {
 #define MIN_MSG_LEN 15
 #define MAX_MSG_LEN (int)sizeof(name) + 25
 
-ConnectionPool* get_client_connections() { return client_connections; }
+connection_pool& get_client_connections() { return client_connections; }
 
 static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
@@ -127,7 +127,7 @@ static void* UserAgentShutdownCallback(void* bsock)
 
 static void CleanupConnectionPool()
 {
-  if (client_connections) { client_connections->cleanup(); }
+  cleanup_connection_pool(client_connections);
 }
 
 extern "C" void* connect_thread(void* arg)
@@ -175,10 +175,6 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
 {
   int status;
 
-  if (client_connections == nullptr) {
-    client_connections = new ConnectionPool();
-  }
-
   server_state.store(BnetServerState::kUndefined);
 
   if ((status
@@ -197,10 +193,7 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
   } while (--tries);
 
   if (server_state != BnetServerState::kStarted) {
-    if (client_connections) {
-      delete (client_connections);
-      client_connections = nullptr;
-    }
+    client_connections.lock()->clear();
     return false;
   }
   return true;
@@ -248,9 +241,6 @@ void StopSocketServer()
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
     server_running = false;
   }
-  if (client_connections) {
-    delete (client_connections);
-    client_connections = nullptr;
-  }
+  client_connections.lock()->clear();
 }
 } /* namespace directordaemon */

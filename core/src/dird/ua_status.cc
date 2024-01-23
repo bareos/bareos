@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1265,28 +1265,25 @@ static void ListTerminatedJobs(UaContext* ua)
 
 static void ListConnectedClients(UaContext* ua)
 {
-  Connection* connection = NULL;
-  alist<Connection*>* connections = NULL;
   const char* separator = "====================";
   char dt[MAX_TIME_LENGTH];
 
   ua->send->Decoration("\n");
   ua->send->Decoration("Client Initiated Connections (waiting for jobs):\n");
-  connections = get_client_connections()->get_as_alist();
+  auto conn_info = get_connection_info(get_client_connections());
   ua->send->Decoration("%-20s%-20s%-20s%-40s\n", "Connect time", "Protocol",
                        "Authenticated", "Name");
   ua->send->Decoration("%-20s%-20s%-20s%-20s%-20s\n", separator, separator,
                        separator, separator, separator);
   ua->send->ArrayStart("client-connection");
-  foreach_alist (connection, connections) {
+  for (auto& info : conn_info) {
     ua->send->ObjectStart();
-    bstrftime_nc(dt, sizeof(dt), connection->ConnectTime());
+    bstrftime_nc(dt, sizeof(dt), info.connect_time);
     ua->send->ObjectKeyValue("ConnectTime", dt, "%-20s");
-    ua->send->ObjectKeyValue("protocol_version", connection->protocol_version(),
+    ua->send->ObjectKeyValue("protocol_version", info.protocol_version,
                              "%-20d");
-    ua->send->ObjectKeyValue("authenticated", connection->authenticated(),
-                             "%-20d");
-    ua->send->ObjectKeyValue("name", connection->name(), "%-40s");
+    ua->send->ObjectKeyValue("authenticated", info.authenticated, "%-20d");
+    ua->send->ObjectKeyValue("name", info.name.c_str(), "%-40s");
     ua->send->ObjectEnd();
     ua->send->Decoration("\n");
   }
