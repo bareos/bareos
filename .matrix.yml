@@ -37,6 +37,7 @@ OS:
     "12_SP5":
       TYPE: rpm
       IMAGE: sles12sp5
+      CUSTOM_TEST_IMAGES: []
       ARCH:
       - x86_64
   Fedora:

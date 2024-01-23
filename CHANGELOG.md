@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - bareos-config: fix output of deploy_config [PR #1673]
+- Disable automated package-tests for SLES 12 [PR #1675]
 
 ## [23.0.1] - 2024-01-17
 
@@ -385,4 +386,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1660]: https://github.com/bareos/bareos/pull/1660
 [PR #1664]: https://github.com/bareos/bareos/pull/1664
 [PR #1673]: https://github.com/bareos/bareos/pull/1673
+[PR #1675]: https://github.com/bareos/bareos/pull/1675
 [unreleased]: https://github.com/bareos/bareos/tree/master
