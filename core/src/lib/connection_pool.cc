@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,222 +28,90 @@
 #include "lib/bsys.h"
 #include "lib/bsock.h"
 
-// Connection
-Connection::Connection(const char* name,
+#include <algorithm>
+
+// connection
+connection::connection(std::string_view name,
                        int protocol_version,
                        BareosSocket* socket,
                        bool authenticated)
+    : connection_info{std::string{name}, protocol_version, authenticated,
+                      time(nullptr)}
+    , socket{socket}
 {
-  tid_ = pthread_self();
-  connect_time_ = time(nullptr);
-  in_use_ = false;
-  authenticated_ = authenticated;
-  bstrncpy(name_, name, sizeof(name_));
-  protocol_version_ = protocol_version;
-  socket_ = socket;
-  pthread_mutex_init(&mutex_, nullptr);
 }
 
-Connection::~Connection() { pthread_mutex_destroy(&mutex_); }
-
-// Check if connection is still active.
-bool Connection::check(int timeout_data)
+void connection::socket_closer::operator()(BareosSocket* socket)
 {
-  int data_available = 0;
-  bool ok = true;
+  if (socket) {
+    socket->close();
+    delete socket;
+  }
+}
+
+namespace {
+bool check_connection(BareosSocket* socket, int timeout)
+{
+  if (!socket) { return false; }
+  // idea: send a status command and check for a return value
 
   // Returns: 1 if data available, 0 if timeout, -1 if error
-  data_available = socket_->WaitDataIntr(timeout_data);
+  int data_available = socket->WaitDataIntr(timeout);
 
-  // Use lock to prevent that data is read for job thread.
-  lock();
   if (data_available < 0) {
-    ok = false;
-  } else if ((data_available > 0) && (!in_use_)) {
-    if (socket_->recv() <= 0) { ok = false; }
-
-    if (socket_->IsError()) { ok = false; }
+    return false;
+  } else if (data_available > 0) {
+    if (socket->recv() <= 0) { return false; }
+    if (socket->IsError()) { return false; }
   }
-  unlock();
 
-  if (!ok) { socket_->close(); }
-
-  return ok;
-}
-
-// Request to take over the connection (socket) from another thread.
-bool Connection::take()
-{
-  bool result = false;
-  lock();
-  if (!in_use_) {
-    in_use_ = true;
-    result = true;
-  }
-  unlock();
-
-  return result;
-}
-
-// Connection Pool
-ConnectionPool::ConnectionPool()
-{
-  connections_ = new alist<Connection*>(10, false);
-  // Initialize mutex and condition variable objects.
-  pthread_mutex_init(&add_mutex_, nullptr);
-  pthread_cond_init(&add_cond_var_, nullptr);
-}
-
-ConnectionPool::~ConnectionPool()
-{
-  delete (connections_);
-  pthread_mutex_destroy(&add_mutex_);
-  pthread_cond_destroy(&add_cond_var_);
-}
-
-void ConnectionPool::cleanup()
-{
-  Connection* connection = nullptr;
-  int i = 0;
-  for (i = connections_->size() - 1; i >= 0; i--) {
-    connection = connections_->get(i);
-    Dmsg2(800, "checking connection %s (%d)\n", connection->name(), i);
-    if (!connection->check()) {
-      Dmsg2(120, "connection %s (%d) is terminated => removed\n",
-            connection->name(), i);
-      connections_->remove(i);
-      delete (connection);
-    }
-  }
-}
-
-alist<Connection*>* ConnectionPool::get_as_alist()
-{
-  cleanup();
-  return connections_;
-}
-
-bool ConnectionPool::add(Connection* connection)
-{
-  cleanup();
-  Dmsg1(120, "add connection: %s\n", connection->name());
-  lock_mutex(add_mutex_);
-  connections_->append(connection);
-  pthread_cond_broadcast(&add_cond_var_);
-  unlock_mutex(add_mutex_);
   return true;
 }
 
-Connection* ConnectionPool::add_connection(const char* name,
-                                           int fd_protocol_version,
-                                           BareosSocket* socket,
-                                           bool authenticated)
+void remove_inactive(std::vector<connection>& vec, int timeout)
 {
-  Connection* connection
-      = new Connection(name, fd_protocol_version, socket, authenticated);
-  if (!add(connection)) {
-    delete (connection);
-    return nullptr;
+  vec.erase(std::remove_if(vec.begin(), vec.end(),
+                           [timeout](auto& conn) {
+                             return !check_connection(conn.socket.get(),
+                                                      timeout);
+                           }),
+            vec.end());
+}
+};  // namespace
+
+std::optional<connection> take_by_name(connection_pool& pool,
+                                       std::string_view v,
+                                       int timeout)
+{
+  auto locked = pool.lock();
+  auto& vec = locked.get();
+  remove_inactive(vec, timeout);
+  if (auto it
+      = std::find_if(vec.begin(), vec.end(),
+                     [v](auto& connection) { return v == connection.name; });
+      it != vec.end()) {
+    auto conn = std::move(*it);
+    vec.erase(it);
+    return conn;
   }
-  return connection;
+  return std::nullopt;
 }
 
-Connection* ConnectionPool::get_connection(const char* name)
+std::vector<connection_info> get_connection_info(connection_pool& pool,
+                                                 int timeout)
 {
-  Connection* connection = nullptr;
-  if (!name) { return nullptr; }
-  foreach_alist (connection, connections_) {
-    if (connection->check() && connection->authenticated()
-        && connection->bsock() && (!connection->in_use())
-        && bstrcmp(name, connection->name())) {
-      Dmsg1(120, "found connection from client %s\n", connection->name());
-      return connection;
-    }
-  }
-  return nullptr;
+  auto locked = pool.lock();
+  auto& vec = locked.get();
+  remove_inactive(vec, timeout);
+
+  // connections are subclasses of connection_info, so we can create a copy
+  // of just the connection_info part with implicit casting like so:
+  return {vec.begin(), vec.end()};
 }
 
-Connection* ConnectionPool::get_connection(const char* name, timespec& timeout)
+void cleanup_connection_pool(connection_pool& pool, int timeout)
 {
-  Connection* connection = nullptr;
-  int errstat = 0;
-
-  if (!name) { return nullptr; }
-
-  while ((!connection) && (errstat == 0)) {
-    connection = get_connection(name);
-    if (!connection) {
-      Dmsg0(120, "waiting for new connections.\n");
-      errstat = WaitForNewConnection(timeout);
-      if (errstat == ETIMEDOUT) {
-        Dmsg0(120, "timeout while waiting for new connections.\n");
-      }
-    }
-  }
-
-  return connection;
-}
-
-int ConnectionPool::WaitForNewConnection(timespec& timeout)
-{
-  int errstat;
-
-  lock_mutex(add_mutex_);
-  errstat = pthread_cond_timedwait(&add_cond_var_, &add_mutex_, &timeout);
-  unlock_mutex(add_mutex_);
-  if (errstat == 0) {
-    Dmsg0(120, "new connection available.\n");
-  } else if (errstat == ETIMEDOUT) {
-    Dmsg0(120, "timeout.\n");
-  } else {
-    Emsg1(M_ERROR, 0, "error: %d\n", errstat);
-  }
-  return errstat;
-}
-
-bool ConnectionPool::remove(Connection* connection)
-{
-  bool removed = false;
-  for (int i = connections_->size() - 1; i >= 0; i--) {
-    if (connections_->get(i) == connection) {
-      connections_->remove(i);
-      removed = true;
-      Dmsg0(120, "removed connection.\n");
-      break;
-    }
-  }
-  return removed;
-}
-
-Connection* ConnectionPool::remove(const char* name, int timeout_in_seconds)
-{
-  bool done = false;
-  Connection* result = nullptr;
-  Connection* connection = nullptr;
-  struct timespec timeout;
-
-  ConvertTimeoutToTimespec(timeout, timeout_in_seconds);
-
-  Dmsg2(120, "waiting for connection from client %s. Timeout: %ds.\n", name,
-        timeout_in_seconds);
-
-  while (!done) {
-    connection = get_connection(name, timeout);
-    if (!connection) {
-      // nullptr is returned only on timeout (or other internal errors).
-      return nullptr;
-    }
-    if (connection->take()) {
-      result = connection;
-      remove(connection);
-      done = true;
-    } else {
-      /*
-       * As we can not take it, we assume it is already taken by another thread.
-       * In any case, we remove it, to prevent to get stuck in this while loop.
-       */
-      remove(connection);
-    }
-  }
-  return result;
+  auto locked = pool.lock();
+  auto& vec = locked.get();
+  remove_inactive(vec, timeout);
 }
