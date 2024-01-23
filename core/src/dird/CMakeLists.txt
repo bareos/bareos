@@ -189,7 +189,10 @@ target_link_libraries(
                          CLI11::CLI11
 )
 
-install(TARGETS bareos-dir bareos-dbcheck DESTINATION "${sbindir}")
+install(TARGETS bareos-dir bareos-dbcheck
+  RUNTIME COMPONENT Runtime
+  LIBRARY COMPONENT Runtime
+  DESTINATION "${sbindir}")
 
 install(FILES query.sql DESTINATION "${scriptdir}")
 

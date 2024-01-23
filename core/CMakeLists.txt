@@ -982,3 +982,11 @@ endif()
 configure_file(
   "CTestScript.cmake.in" "${CMAKE_BINARY_DIR}/CTestScript.cmake" @ONLY
 )
+
+install(
+  CODE "
+  include(\"${PROJECT_SOURCE_DIR}/cmake/BareosInstallRequiredDlls.cmake\")
+  bareos_install_required_dlls(\"${CMAKE_BINARY_DIR}/required_dlls\")
+  "
+)
+BareosCopyDllsToBinDir()
