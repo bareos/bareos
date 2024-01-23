@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Improve FreeBSD build [PR #1644]
 - core: sql_* add leading space to sql construct [PR #1658]
 - core: add build patch for `sprintf` in macos builds [PR #1652]
+- bareos-config: fix output of deploy_config [PR #1674]
 
 ## [22.1.3] - 2023-12-13
 
@@ -628,4 +629,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1644]: https://github.com/bareos/bareos/pull/1644
 [PR #1652]: https://github.com/bareos/bareos/pull/1652
 [PR #1658]: https://github.com/bareos/bareos/pull/1658
+[PR #1674]: https://github.com/bareos/bareos/pull/1674
 [unreleased]: https://github.com/bareos/bareos/tree/master
