@@ -983,10 +983,12 @@ configure_file(
   "CTestScript.cmake.in" "${CMAKE_BINARY_DIR}/CTestScript.cmake" @ONLY
 )
 
-install(
-  CODE "
-  include(\"${PROJECT_SOURCE_DIR}/cmake/BareosInstallRequiredDlls.cmake\")
-  bareos_install_required_dlls(\"${CMAKE_BINARY_DIR}/required_dlls\")
-  "
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  install(
+    CODE "
+    include(\"${PROJECT_SOURCE_DIR}/cmake/BareosInstallRequiredDlls.cmake\")
+    bareos_install_required_dlls(\"${CMAKE_BINARY_DIR}/required_dlls\" \"${CMAKE_INSTALL_PREFIX}\")
+    "
 )
+endif()
 BareosCopyDllsToBinDir()

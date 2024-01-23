@@ -17,8 +17,20 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-function (bareos_install_required_dlls required_dlls_file)
+
+function (bareos_install_required_dlls required_dlls_file target_sbin_directory)
+  cmake_policy(SET CMP0007 NEW)
   message(STATUS "install_required_dlls(): ${required_dlls_file}")
   file(READ ${required_dlls_file} REQUIRED_DLLS)
-  message(STATUS "${REQUIRED_DLLS}")
+  string(REGEX REPLACE "[\r\n ]" ";" REQUIRED_DLLS ${REQUIRED_DLLS})
+  list(REMOVE_DUPLICATES REQUIRED_DLLS)
+  list(SORT REQUIRED_DLLS)
+  #message(STATUS "NO DUPS: ${REQUIRED_DLLS}")
+  #list(REMOVE_ITEM REQUIRED_DLLS "")
+  #message(STATUS "NO EMPTY ELEMENT: ${REQUIRED_DLLS}")
+  foreach (library ${REQUIRED_DLLS})
+    message(STATUS "INSTALL${library} -> ${target_sbin_directory}")
+    file(INSTALL "${library}" DESTINATION "${target_sbin_directory}")
+  endforeach()
+  #message(FATAL_ERROR "${REQUIRED_DLLS}")
 endfunction()
