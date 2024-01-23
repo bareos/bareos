@@ -23,7 +23,7 @@ Unicode false
 
 RequestExecutionLevel admin
 
-!addplugindir ../nsisplugins
+!addplugindir C:/bareos-addons/nsi-dlls
 
 #SilentInstall silentlog
 
@@ -553,21 +553,6 @@ SectionIn 1 2 3 4
   File  lib\bareos\bareoslmdb.dll
   File  lib\bareos\bareossql.dll
 
-  File C:\vcpkg\installed\x64-windows\debug\bin\libcrypto*.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\libssl*.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\zlibd1.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\lzo2.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\jansson_d.dll
-  File C:\vcpkg\installed\x64-windows\bin\jansson.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\libxml2.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\libpq.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll
-  #File C:\vcpkg\installed\x64-windows\debug\bin\bz2.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\bz2d.dll
-
   # for password generation
 #  File "openssl.exe"
   File C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe
@@ -580,10 +565,10 @@ SectionIn 1 2 3 4
 #  File "test_*.exe"
 
 # debug dlls
-  File C:\Windows\SysWOW64\vcruntime140d.dll
-  File C:\Windows\SysWOW64\ucrtbased.dll
-  File C:\Windows\SysWOW64\msvcp140d.dll
-  File "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\14.34.31931\debug_nonredist\x64\Microsoft.VC143.DebugCRT\vcruntime140_1d.dll"
+#  File C:\Windows\SysWOW64\vcruntime140d.dll
+#  File C:\Windows\SysWOW64\ucrtbased.dll
+#  File C:\Windows\SysWOW64\msvcp140d.dll
+#  File "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\14.34.31931\debug_nonredist\x64\Microsoft.VC143.DebugCRT\vcruntime140_1d.dll"
 
 
   # install configuration as templates
@@ -872,18 +857,10 @@ SectionIn 1 2 3
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
   File "bin\bareos-tray-monitor.exe"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\libpng16d.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Cored.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Guid.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Widgetsd.dll"
-#  File "C:\vcpkg\installed\x64-windows\debug\bin\*.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\freetyped.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
-  File C:\vcpkg\packages\harfbuzz_x64-windows\debug\bin\harfbuzz.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\pcre2-16d.dll
+  File "Qt6*.dll"
 #
   SetOutPath "$INSTDIR\platforms"
-  File C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindowsd.dll 
+#  File C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindowsd.dll
 #
 #
 #  # install configuration as templates
@@ -899,7 +876,7 @@ Section "Bareos Webui" SEC_WEBUI
    SetShellVarContext all
    SetOutPath "$INSTDIR"
    SetOverwrite ifnewer
-   File  "C:\downloads\nssm-2.24\win64\nssm.exe"
+   File  "C:\ProgramData\Chocolatey\bin\nssm.exe"
 
    SetOutPath "$INSTDIR\bareos-webui\php"
    File /r "C:\downloads\php\*.*"
