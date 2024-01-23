@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- bareos-config: fix output of deploy_config [PR #1673]
+
 ## [23.0.1] - 2024-01-17
 
 ### Changed
@@ -381,4 +384,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1657]: https://github.com/bareos/bareos/pull/1657
 [PR #1660]: https://github.com/bareos/bareos/pull/1660
 [PR #1664]: https://github.com/bareos/bareos/pull/1664
+[PR #1673]: https://github.com/bareos/bareos/pull/1673
 [unreleased]: https://github.com/bareos/bareos/tree/master
