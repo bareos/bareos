@@ -861,8 +861,10 @@ SectionIn 1 2 3
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
   File "bin\bareos-tray-monitor.exe"
-  File "Qt6*.dll"
-#
+
+  File "${CMAKE_BINARY_DIR}\core\src\qt-tray-monitor\${CMAKE_CONFIG_TYPE}\*.dll"
+
+  #
   SetOutPath "$INSTDIR\platforms"
 #  File C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindowsd.dll
 #

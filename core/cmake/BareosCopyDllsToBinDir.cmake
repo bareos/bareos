@@ -33,8 +33,6 @@ macro(BareosCopyDllsToBinDir)
       if (${targettype} MATCHES "EXECUTABLE" OR ${targettype} MATCHES "SHARED_LIBRARY")
         add_custom_command(TARGET ${TGT} POST_BUILD
           COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TGT}> $<TARGET_RUNTIME_DLLS:${TGT}>;${DLLS_TO_COPY_MANUALLY}
-          COMMAND echo $<TARGET_RUNTIME_DLLS:${TGT}> >> "${FNAME}"
-          COMMAND echo ${DLLS_TO_COPY_MANUALLY} >> "${FNAME}"
           COMMAND_EXPAND_LISTS
          )
       endif()

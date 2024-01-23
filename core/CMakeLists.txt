@@ -986,9 +986,11 @@ configure_file(
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   install(
     CODE "
-    include(\"${PROJECT_SOURCE_DIR}/cmake/BareosInstallRequiredDlls.cmake\")
-    bareos_install_required_dlls(\"${CMAKE_BINARY_DIR}/required_dlls\" \"${CMAKE_INSTALL_PREFIX}\")
-    "
-)
+    file(GLOB_RECURSE ALL_DLLS \"C:/src/bareos-rebase/b\" \"*.dll\")
+    list(FILTER ALL_DLLS INCLUDE REGEX \"\${CMAKE_INSTALL_CONFIG_NAME}\")
+    foreach(dll \${ALL_DLLS})
+      file(INSTALL \${dll} DESTINATION \"\${CMAKE_INSTALL_PREFIX}\")
+    endforeach()
+    ")
 endif()
 BareosCopyDllsToBinDir()
