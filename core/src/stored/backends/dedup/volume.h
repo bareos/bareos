@@ -62,26 +62,17 @@ struct block {
   net_u64 Begin;          /* start record index of this block */
 };
 
-struct record {
-  net_i32 FileIndex; /* File index supplied by File daemon */
-  net_i32 Stream;    /* Stream number supplied by File daemon */
-  net_u32 DataSize;  /* size of following data record in bytes */
-  net_u32 Padding;   /* unused */
-  net_u32 FileIdx;   /* wich data file has the record */
-  net_u32 Size;      /* payload size(*) of record */
-  net_u64 Begin;     /* offset into datafile from where to start reading */
-
-  // (*) Size and DataSize can be completely different in cases where the
-  //     record is split across.  The first record has DataSize set to the
-  //     the combined size, so Size can be much smaller.
-  //     Probably redundant when BlockSize is given
+struct part {
+  net_u32 FileIdx; /* wich data file has the record */
+  net_u32 Size;    /* payload size of record */
+  net_u64 Begin;   /* offset into datafile from where to start reading */
 };
 
 class volume;
 
 struct save_state {
   std::size_t block_size{0};
-  std::size_t record_size{0};
+  std::size_t part_size{0};
   std::vector<std::size_t> data_sizes;
 
   save_state() = default;
@@ -99,7 +90,7 @@ struct config {
     std::uint32_t Idx;
   };
 
-  struct record_file {
+  struct part_file {
     std::string relpath;
     std::uint64_t Start;
     std::uint64_t End;
@@ -115,7 +106,7 @@ struct config {
   };
 
   std::vector<block_file> bfiles;
-  std::vector<record_file> rfiles;
+  std::vector<part_file> pfiles;
   std::vector<data_file> dfiles;
 
   static std::vector<char> serialize(const config& conf);
@@ -131,7 +122,7 @@ class data {
   using bsize_map
       = std::map<std::uint64_t, std::uint32_t, std::greater<std::uint64_t>>;
 
-  fvec<record> records;
+  fvec<part> parts;
   fvec<block> blocks;
   std::vector<fvec<char>> datafiles;
   std::unordered_map<std::uint32_t, std::size_t> idx_to_dfile;
@@ -192,7 +183,7 @@ class volume {
   save_state BeginBlock(block_header header);
   void CommitBlock(save_state&& save);
   void AbortBlock(save_state save);
-  void PushRecord(record_header header, const char* data, std::size_t size);
+  void PushRecord(record_header rec, const char* data, std::size_t size);
 
   // reading interface
   std::size_t ReadBlock(std::size_t blocknum, void* data, std::size_t datasize);
@@ -216,14 +207,16 @@ class volume {
 
   std::optional<block_header> current_block;
 
-  struct record_space {
+  struct reserved_part {
     std::uint32_t FileIdx; /* in which data file was the space reserved */
     std::uint32_t Size;    /* Size left of reserved space */
     std::uint64_t
         Continue; /* offset into datafile from where to continue writing */
   };
 
-  std::unordered_map<urid, record_space, urid_hash> unfinished;
+  std::unordered_map<urid, std::vector<reserved_part>, urid_hash> unfinished;
+
+  std::vector<reserved_part> reserve_parts(record_header header);
 };
 };  // namespace dedup
 
