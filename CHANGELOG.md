@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos-config: fix output of deploy_config [PR #1673]
 - Disable automated package-tests for SLES 12 [PR #1675]
 - filed: fix vss during client initiated connections [PR #1666]
+- Make BareosDirPluginPrometheusExporter.py work with python3 [PR #1679]
 
 ## [23.0.1] - 2024-01-17
 
@@ -389,4 +390,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1666]: https://github.com/bareos/bareos/pull/1666
 [PR #1673]: https://github.com/bareos/bareos/pull/1673
 [PR #1675]: https://github.com/bareos/bareos/pull/1675
+[PR #1679]: https://github.com/bareos/bareos/pull/1679
 [unreleased]: https://github.com/bareos/bareos/tree/master
