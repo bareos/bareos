@@ -166,8 +166,8 @@ ${StrRep}
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON   "win32\bareos.ico"
-!define MUI_UNICON "win32\bareos.ico"
+!define MUI_ICON   "bareos.ico"
+!define MUI_UNICON "bareos.ico"
 #!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 #!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_COMPONENTSPAGE_SMALLDESC
@@ -545,7 +545,7 @@ SectionIn 1 2 3 4
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   SetOutPath "$INSTDIR"
-  File "${CMAKE_SOURCE_DIR}\core\platforms\win32\bareos-config-deploy.bat"
+  File "bareos-config-deploy.bat"
   File "${CMAKE_BINARY_DIR}\core\src\filed\${CMAKE_CONFIG_TYPE}\*.dll"
 
   # for password generation
@@ -566,14 +566,14 @@ SectionIn 1 2 3 4
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
-  File /r etc\bareos\bareos-fd.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\*.*
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
-  File etc\bareos\tray-monitor.d\client\FileDaemon-local.conf
+  File ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\client\FileDaemon-local.conf
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
-  File "win32\fillup.sed"
+  File "fillup.sed"
 
 SectionEnd
 
