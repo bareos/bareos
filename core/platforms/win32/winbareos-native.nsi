@@ -454,7 +454,7 @@ skipmsgbox:
 
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
+OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}-${CMAKE_CONFIG_TYPE}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -1115,32 +1115,35 @@ Section -ConfigureConfiguration
 
 
 
-#  Install system binaries:      /usr/x86_64-w64-mingw32/sys-root/mingw/sbin
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/sbin#$BareosInstdir#g$\r$\n"
+#  Install system binaries:      /.*/sbin
+  FileWrite $R1 "s#C:/.*/sbin#$BareosInstdir#g$\r$\n"
 
-#  Install binaries:             /usr/x86_64-w64-mingw32/sys-root/mingw/bin
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/bin#$BareosInstdir#g$\r$\n"
+#  Install binaries:             /.*/bin
+  FileWrite $R1 "s#C:/.*/bin#$BareosInstdir#g$\r$\n"
 
-#  Archive directory:            /usr/i686-w64-mingw32/sys-root/mingw/var/lib/bareos/storage
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
+#  Archive directory:            /.*/var/lib/bareos/storage
+  FileWrite $R1 "s#C:/.*/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
 
-#  Working directory:            /usr/i686-w64-mingw32/sys-root/mingw/var/lib/bareos
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
+# Log directory:                /.*/var/log/bareos
+  FileWrite $R1 "s#C:/.*/var/log/bareos#$BareosAppdata/logs#g$\r$\n"
 
-# Log directory:                /usr/i686-w64-mingw32/sys-root/mingw/var/log/bareos
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/log/bareos#$BareosAppdata/logs#g$\r$\n"
+#  Backend directory:            /.*/lib/bareos/backends
+  FileWrite $R1 "s#C:/.*/lib/bareos/backends#$BareosInstdir#g$\r$\n"
 
-#  Backend directory:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/backends
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/backends#$BareosInstdir#g$\r$\n"
+#  Install Bareos config dir:    /.*/etc/bareos
+  FileWrite $R1 "s#C:/.*/etc/bareos#$BareosAppdata#g$\r$\n"
 
-#  Install Bareos config dir:    /usr/x86_64-w64-mingw32/sys-root/mingw/etc/bareos
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/etc/bareos#$BareosAppdata#g$\r$\n"
+#  Plugin directory:             /.*/lib/bareos/plugins
+  FileWrite $R1 "s#C:/.*/lib/bareos/plugins#$BareosInstdir/Plugins#g$\r$\n"
 
-#  Plugin directory:             /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/plugins
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/plugins#$BareosInstdir/Plugins#g$\r$\n"
+#  Scripts directory:            /.*/lib/bareos/scripts
+  FileWrite $R1 "s#C:/.*/lib/bareos/scripts#$BareosAppdata/scripts#g$\r$\n"
 
-#  Scripts directory:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/scripts
-  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/scripts#$BareosAppdata/scripts#g$\r$\n"
+# Catalog Dump
+  FileWrite $R1 "s#C:/.*/lib/bareos/bareos.sql#$BareosAppdata/working/bareos.sql#g$\r$\n"
+
+  #  Working directory:            /.*/var/lib/bareos
+  FileWrite $R1 "s#C:/.*/var/lib/bareos#$BareosAppdata/working$\r$\n"
 
   FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
 
