@@ -546,13 +546,15 @@ SectionIn 1 2 3 4
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   SetOutPath "$INSTDIR"
   File "bareos-config-deploy.bat"
-  File "${CMAKE_BINARY_DIR}\core\src\filed\${CMAKE_CONFIG_TYPE}\*.dll"
+  !cd "${CMAKE_BINARY_DIR}\core\src\filed\${CMAKE_CONFIG_TYPE}"
+  File "*.dll"
 
   # for password generation
   File C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe
-  File "C:\Program Files\Git\usr\bin\sed.exe"
-  File "C:\Program Files\Git\usr\bin\msys-2.0.dll"
-  File "C:\Program Files\Git\usr\bin\msys-intl-8.dll"
+  !cd "C:\Program Files\Git\usr\bin"
+  File "sed.exe"
+  File "msys-2.0.dll"
+  File "msys-intl-8.dll"
 
   # install unittests
 #  File "test_*.exe"
@@ -573,6 +575,7 @@ SectionIn 1 2 3 4
   File ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\client\FileDaemon-local.conf
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
+  !cd "${CMAKE_SOURCE_DIR}\core\platforms\win32"
   File "fillup.sed"
 
 SectionEnd
@@ -584,13 +587,8 @@ SectionIn 1 2 3 4
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  #File "bpipe-fd.dll"
-  #File "mssqlvdi-fd.dll"
-  #File "python-fd.dll"
-  File "lib\bareos\plugins\*-fd.dll"
-
-  File "lib\bareos\plugins\BareosFd*.py"
-  File "lib\bareos\plugins\bareos-fd*.py"
+  !cd "${CMAKE_BINARY_DIR}\core\src\plugins\filed\${CMAKE_CONFIG_TYPE}"
+  File "*-fd.dll"
 SectionEnd
 
 
@@ -626,22 +624,23 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "lib\bareos\bareossd.dll"
-  File "sbin\bareos-sd.exe"
-  File "sbin\btape.exe"
-  File "sbin\bls.exe"
-  File "sbin\bextract.exe"
-  File "sbin\bscan.exe"
+  !cd "${CMAKE_BINARY_DIR}\core\src\stored\${CMAKE_CONFIG_TYPE}"
+  File "bareossd.dll"
+  File "bareos-sd.exe"
+  File "btape.exe"
+  File "bls.exe"
+  File "bextract.exe"
+  File "bscan.exe"
 
   CreateDirectory "C:\bareos-storage"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-sd.d"
-  File /r etc\bareos\bareos-sd.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\*.*
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
-  File etc\bareos\tray-monitor.d\storage\StorageDaemon-local.conf
+  File "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\storage\StorageDaemon-local.conf"
 
 SectionEnd
 
@@ -650,10 +649,8 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  File "lib\bareos\plugins\*-sd.dll"
-#ODO: install via make install
-#  File "lib\bareos\plugins\BareosSd*.py"
-#  File "lib\plugins\bareos-sd*.py"
+  !cd "${CMAKE_BINARY_DIR}\core\src\plugins\stored\${CMAKE_CONFIG_TYPE}"
+  File "*-sd.dll"
 SectionEnd
 
 
@@ -688,20 +685,22 @@ SectionIn 2 3
   CreateDirectory "$APPDATA\${PRODUCT_NAME}\scripts"
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}\*.dll"
-  File "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}\bareos-dir.exe"
-  File "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}\bareos-dbcheck.exe"
-  File "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}\bsmtp.exe"
-  File "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}\bregex.exe"
-  File "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}\bwild.exe"
+  !cd "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}"
+  File "*.dll"
+  File "bareos-dir.exe"
+  File "bareos-dbcheck.exe"
+  !cd "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}"
+  File "bsmtp.exe"
+  File "bregex.exe"
+  File "bwild.exe"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
-  File /r etc\bareos\bareos-dir.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\*.*
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
-  File etc\bareos\tray-monitor.d\director\Director-local.conf
+  File "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf"
 
 SectionEnd
 
@@ -858,9 +857,9 @@ SectionIn 1 2 3
 #  File C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindowsd.dll
 #
 #
-#  # install configuration as templates
+  # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
-  File etc\bareos\tray-monitor.d\monitor\bareos-mon.conf
+  File "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\monitor\bareos-mon.conf"
 SectionEnd
 
 
@@ -877,7 +876,7 @@ Section "Bareos Webui" SEC_WEBUI
    File /r "C:\downloads\php\*.*"
 
    SetOutPath "$INSTDIR\bareos-webui"
-   File /r "share\bareos-webui\*.*"
+   File /r "${CMAKE_SOURCE_DIR}\webui\*.*"
 
 #IfSilent skip_vc_redist_check
 #   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
@@ -958,9 +957,9 @@ SectionIn 2 3
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
-
-  File "${CMAKE_BINARY_DIR}\core\src\console\${CMAKE_CONFIG_TYPE}\bconsole.exe"
-  File "${CMAKE_BINARY_DIR}\core\src\console\${CMAKE_CONFIG_TYPE}\*.dll"
+  !cd "${CMAKE_BINARY_DIR}\core\src\console\${CMAKE_CONFIG_TYPE}"
+  File "bconsole.exe"
+  File "*.dll"
   !insertmacro InstallConfFile "bconsole.conf"
   #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
@@ -1497,20 +1496,20 @@ done:
 #  File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 #  File "/oname=$PLUGINSDIR\libssp-0.dll" "libssp-0.dll"
 #
-  File "etc\bareos\bconsole.conf"
-
-  File "/oname=$PLUGINSDIR\postgresql-create.sql" "lib\bareos\scripts\ddl\creates\postgresql.sql"
-  File "/oname=$PLUGINSDIR\postgresql-drop.sql" "lib\bareos\scripts\ddl\drops\postgresql.sql"
-  File "/oname=$PLUGINSDIR\postgresql-grant.sql" "lib\bareos\scripts\ddl\grants\postgresql.sql"
-  # File "/oname=$PLUGINSDIR\postgresql.sql" ".\ddl\updates\postgresql.sql"
+  File ${CMAKE_SOURCE_DIR}\core\src\console\bconsole.conf
+  !cd ${CMAKE_SOURCE_DIR}\core\src\cats\ddl
+  File "/oname=$PLUGINSDIR\postgresql-create.sql" "creates\postgresql.sql"
+  File "/oname=$PLUGINSDIR\postgresql-drop.sql" "drops\postgresql.sql"
+  File "/oname=$PLUGINSDIR\postgresql-grant.sql" "grants\postgresql.sql"
 
   # webui
   File "/oname=$PLUGINSDIR\php.ini" "C:\downloads\php\php.ini-production"
-  File "/oname=$PLUGINSDIR\global.php" "share\bareos-webui\config\autoload\global.php"
-  File "/oname=$PLUGINSDIR\directors.ini" "etc\bareos-webui\directors.ini"
-  File "/oname=$PLUGINSDIR\configuration.ini" "etc\bareos-webui\configuration.ini"
-  File "/oname=$PLUGINSDIR\webui-admin.conf" "etc\bareos\bareos-dir.d\profile\webui-admin.conf"
-  File "/oname=$PLUGINSDIR\admin.conf"  "etc\bareos\bareos-dir.d\console\admin.conf.example"
+  !cd ${CMAKE_SOURCE_DIR}
+  File "/oname=$PLUGINSDIR\global.php" "webui\config\autoload\global.php"
+  File "/oname=$PLUGINSDIR\directors.ini" "webui\install\directors.ini"
+  File "/oname=$PLUGINSDIR\configuration.ini" "webui\install\configuration.ini"
+  File "/oname=$PLUGINSDIR\webui-admin.conf" "webui\install\bareos\bareos-dir.d\profile\webui-admin.conf"
+  File "/oname=$PLUGINSDIR\admin.conf"  "webui\install\bareos\bareos-dir.d\console\admin.conf.example"
 
   # make first section mandatory
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
