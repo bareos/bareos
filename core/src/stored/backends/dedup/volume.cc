@@ -35,14 +35,14 @@ namespace dedup {
 namespace {
 config config_from_data(
     const std::unordered_map<std::uint32_t, std::string>& block_names,
-    const std::unordered_map<std::uint32_t, std::string>& record_names,
+    const std::unordered_map<std::uint32_t, std::string>& part_names,
     const std::unordered_map<std::uint32_t, std::string>& data_names,
     const data& backing)
 {
   config new_conf;
 
   auto& bfs = new_conf.bfiles;
-  auto& rfs = new_conf.rfiles;
+  auto& pfs = new_conf.pfiles;
   auto& dfs = new_conf.dfiles;
 
   bfs.push_back(config::block_file{
@@ -52,10 +52,10 @@ config config_from_data(
       .Idx = 0,
   });
 
-  rfs.push_back(config::record_file{
-      .relpath = record_names.at(0),
+  pfs.push_back(config::part_file{
+      .relpath = part_names.at(0),
       .Start = 0,
-      .End = backing.records.size(),
+      .End = backing.parts.size(),
       .Idx = 0,
   });
 
@@ -76,6 +76,7 @@ config config_from_data(
 
   return new_conf;
 }
+
 std::uint32_t SafeCast(std::size_t size)
 {
   constexpr std::size_t max = std::numeric_limits<std::uint32_t>::max();
@@ -157,21 +158,6 @@ block to_dedup(block_header header, std::uint64_t Begin, std::uint32_t Count)
       .Begin = Begin,
   };
 }
-record to_dedup(record_header header,
-                std::uint32_t FileIdx,
-                std::uint64_t Begin,
-                std::uint32_t Size)
-{
-  return record{
-      .FileIndex = header.FileIndex,
-      .Stream = header.Stream,
-      .DataSize = header.DataSize,
-      .Padding = 0,
-      .FileIdx = FileIdx,
-      .Size = Size,
-      .Begin = Begin,
-  };
-}
 block_header from_dedup(block b)
 {
   return block_header{
@@ -182,26 +168,6 @@ block_header from_dedup(block b)
       .VolSessionId = b.VolSessionId,
       .VolSessionTime = b.VolSessionTime,
   };
-}
-record_header from_dedup(record r)
-{
-  return record_header{
-      .FileIndex = r.FileIndex,
-      .Stream = r.Stream,
-      .DataSize = r.DataSize,
-  };
-}
-
-auto FindDataIdx(const data::bsize_map& map, std::uint64_t size)
-{
-  for (auto [bsize, idx] : map) {
-    if (size % bsize == 0) { return idx; }
-  }
-
-  throw std::runtime_error(
-      "Could not find an appropriate data file for "
-      "record of size "
-      + std::to_string(size));
 }
 };  // namespace
 
@@ -231,7 +197,7 @@ volume::volume(open_type type, const char* path) : sys_path{path}
   auto conf = config::deserialize(content.data(), content.size());
 
   for (auto& bf : conf.bfiles) { block_names[bf.Idx] = bf.relpath; }
-  for (auto& rf : conf.rfiles) { record_names[rf.Idx] = rf.relpath; }
+  for (auto& pf : conf.pfiles) { record_names[pf.Idx] = pf.relpath; }
   for (auto& df : conf.dfiles) { data_names[df.Idx] = df.relpath; }
 
   backing.emplace(
@@ -249,23 +215,23 @@ data::data(open_context ctx, const config& conf)
     throw std::runtime_error("bad config (num blockfiles ("
                              + std::to_string(conf.bfiles.size()) + ") != 1)");
   }
-  if (conf.rfiles.size() != 1) {
+  if (conf.pfiles.size() != 1) {
     throw std::runtime_error("bad config (num recordfiles ("
-                             + std::to_string(conf.rfiles.size()) + ") != 1)");
+                             + std::to_string(conf.pfiles.size()) + ") != 1)");
   }
 
   auto& bf = conf.bfiles[0];
   if (bf.Start != 0) { throw std::runtime_error("blockfile start != 0."); }
 
-  auto& rf = conf.rfiles[0];
-  if (rf.Start != 0) { throw std::runtime_error("recordfile start != 0."); }
+  auto& pf = conf.pfiles[0];
+  if (pf.Start != 0) { throw std::runtime_error("recordfile start != 0."); }
 
   raii_fd bfd = OpenRelative(ctx, bf.relpath.c_str());
-  raii_fd rfd = OpenRelative(ctx, rf.relpath.c_str());
+  raii_fd pfd = OpenRelative(ctx, pf.relpath.c_str());
   blocks = decltype(blocks){ctx.read_only, bfd.fileno(), bf.End};
-  records = decltype(records){ctx.read_only, rfd.fileno(), rf.End};
+  parts = decltype(parts){ctx.read_only, pfd.fileno(), pf.End};
   fds.emplace_back(std::move(bfd));
-  fds.emplace_back(std::move(rfd));
+  fds.emplace_back(std::move(pfd));
 
   for (auto& df : conf.dfiles) {
     raii_fd& fd = fds.emplace_back(OpenRelative(ctx, df.relpath.c_str()));
@@ -314,7 +280,7 @@ save_state volume::BeginBlock(block_header header)
   save_state s;
 
   s.block_size = backing->blocks.size();
-  s.record_size = backing->records.size();
+  s.part_size = backing->parts.size();
 
   for (auto& vec : backing->datafiles) { s.data_sizes.push_back(vec.size()); }
 
@@ -328,8 +294,8 @@ void volume::CommitBlock(save_state&& s)
   if (!current_block) {
     throw std::runtime_error("Cannot commit block that was not started.");
   }
-  auto start = s.record_size;
-  auto count = backing->records.size() - s.record_size;
+  auto start = s.part_size;
+  auto count = backing->parts.size() - s.part_size;
   backing->blocks.push_back(to_dedup(current_block.value(), start, count));
 
   update_config();
@@ -349,7 +315,7 @@ void volume::CommitBlock(save_state&& s)
 void volume::AbortBlock(save_state s)
 {
   backing->blocks.resize_uninitialized(s.block_size);
-  backing->records.resize_uninitialized(s.record_size);
+  backing->parts.resize_uninitialized(s.part_size);
   ASSERT(s.data_sizes.size() == backing->datafiles.size());
 
   for (std::size_t i = 0; i < s.data_sizes.size(); ++i) {
@@ -357,6 +323,47 @@ void volume::AbortBlock(save_state s)
   }
 
   if (current_block) { current_block.reset(); }
+}
+
+auto volume::reserve_parts(record_header header) -> std::vector<reserved_part>
+{
+  if (header.Stream < 0) {
+    // this header might be a continuation header
+    urid rec_id = {
+        .VolSessionId = current_block->VolSessionId,
+        .VolSessionTime = current_block->VolSessionTime,
+        .FileIndex = header.FileIndex,
+        .Stream = -header.Stream,
+    };
+
+    if (auto found = unfinished.find(rec_id); found != unfinished.end()) {
+      auto res = std::move(found->second);
+      unfinished.erase(found);
+      return res;
+    }
+  }
+
+  std::vector<reserved_part> reserved_parts;
+  std::size_t full_size = header.DataSize;
+
+  for (auto [bsize, idx] : backing->bsize_to_idx) {
+    auto copy_size = (full_size / bsize) * bsize;
+
+    if (copy_size > 0) {
+      auto& vec = backing->datafiles[backing->idx_to_dfile[idx]];
+      auto* start = vec.alloc_uninit(copy_size);
+      reserved_parts.push_back(reserved_part{
+          .FileIdx = idx,
+          .Size = SafeCast(copy_size),
+          .Continue = static_cast<std::uint64_t>(start - vec.data())});
+    }
+
+    full_size -= copy_size;
+
+    if (full_size == 0) break;
+  }
+
+  return reserved_parts;
 }
 
 void volume::PushRecord(record_header header,
@@ -368,46 +375,50 @@ void volume::PushRecord(record_header header,
         "Cannot write record to volume when no block was started.");
   }
 
-  if (header.Stream < 0) {
-    // this header might be a continuation header
-    urid rec_id = {
-        .VolSessionId = current_block->VolSessionId,
-        .VolSessionTime = current_block->VolSessionTime,
-        .FileIndex = header.FileIndex,
-        .Stream = -header.Stream,
-    };
-
-    if (auto found = unfinished.find(rec_id); found != unfinished.end()) {
-      auto idx = found->second.FileIdx;
-      auto& vec = backing->datafiles[backing->idx_to_dfile[idx]];
-      auto start = found->second.Continue;
-
-      if (found->second.Size < size) {
-        throw std::runtime_error("Trying to append " + std::to_string(size)
-                                 + " bytes to a record, but only "
-                                 + std::to_string(found->second.Size)
-                                 + " bytes are left.");
-      }
-
-      auto* ptr = vec.data() + start;
-      std::memcpy(ptr, data, size);
-
-      found->second.Size -= size;
-      found->second.Continue += size;
-
-      if (found->second.Size == 0) { unfinished.erase(found); }
+  // first write the header ...
+  {
+    auto it = backing->bsize_to_idx.find(1);
+    if (it == backing->bsize_to_idx.end()) {
+      throw std::runtime_error(
+          "Bad dedup volume: no data file with blocksize 1.");
     }
+
+    auto& vec = backing->datafiles[backing->idx_to_dfile[it->second]];
+
+    char* start = vec.alloc_uninit(sizeof(header));
+    std::memcpy(start, &header, sizeof(header));
+    backing->parts.push_back(part{.FileIdx = it->second,
+                                  .Size = SafeCast(sizeof(header)),
+                                  .Begin = (start - vec.data())});
   }
 
-  auto idx = FindDataIdx(backing->bsize_to_idx, header.DataSize);
 
-  auto& vec = backing->datafiles[backing->idx_to_dfile[idx]];
+  // ... then reserve space for the data ...
+  auto reserved_parts = reserve_parts(header);
 
-  auto* start = vec.alloc_uninit(header.DataSize);
-  std::memcpy(start, data, size);
-  backing->records.push_back(to_dedup(header, idx, (start - vec.data()), size));
+  // ... and then we finally write the data where it belongs
+  while (size > 0) {
+    auto& p = reserved_parts.front();
 
-  if (size != header.DataSize) {
+    auto& vec = backing->datafiles[backing->idx_to_dfile[p.FileIdx]];
+
+    auto copy_size = std::min(SafeCast(size), p.Size);
+
+    std::memcpy(vec.data() + p.Continue, data, copy_size);
+    backing->parts.push_back(
+        part{.FileIdx = p.FileIdx, .Size = copy_size, .Begin = p.Continue});
+
+    data += copy_size;
+    size -= copy_size;
+
+    p.Continue += copy_size;
+    p.Size -= copy_size;
+
+    if (p.Size == 0) { reserved_parts.erase(reserved_parts.begin()); }
+  }
+
+  if (reserved_parts.size()) {
+    // something is left over -> add unfinished entry
     urid rec_id = {
         .VolSessionId = current_block->VolSessionId,
         .VolSessionTime = current_block->VolSessionTime,
@@ -415,11 +426,7 @@ void volume::PushRecord(record_header header,
         .Stream = header.Stream,
     };
 
-    unfinished.emplace(rec_id, record_space{
-                                   .FileIdx = idx,
-                                   .Size = SafeCast(header.DataSize - size),
-                                   .Continue = (start - vec.data()) + size,
-                               });
+    unfinished.emplace(rec_id, std::move(reserved_parts));
   }
 }
 
@@ -473,14 +480,14 @@ void volume::create_new(int creation_mode,
       throw std::system_error(errno, std::generic_category(), errctx);
     }
   }
-  for (auto& rfile : conf.rfiles) {
+  for (auto& pfile : conf.pfiles) {
     if (raii_fd record_fd
-        = openat(dird.fileno(), rfile.relpath.c_str(), flags, creation_mode);
+        = openat(dird.fileno(), pfile.relpath.c_str(), flags, creation_mode);
         !record_fd) {
       std::string errctx = "Cannot open '";
       errctx += path;
       errctx += "/";
-      errctx += rfile.relpath;
+      errctx += pfile.relpath;
       errctx += "'";
       throw std::system_error(errno, std::generic_category(), errctx);
     }
@@ -502,7 +509,7 @@ void volume::create_new(int creation_mode,
 void volume::reset()
 {
   backing->blocks.clear();
-  backing->records.clear();
+  backing->parts.clear();
   for (auto& vec : backing->datafiles) { vec.clear(); }
 
   update_config();
@@ -512,14 +519,14 @@ void volume::truncate()
 {
   reset();
   backing->blocks.resize_to_fit();
-  backing->records.resize_to_fit();
+  backing->parts.resize_to_fit();
   for (auto& vec : backing->datafiles) { vec.resize_to_fit(); }
 }
 
 void volume::flush()
 {
   backing->blocks.flush();
-  backing->records.flush();
+  backing->parts.flush();
   for (auto& vec : backing->datafiles) { vec.flush(); }
 }
 
@@ -543,11 +550,11 @@ std::size_t volume::ReadBlock(std::size_t blocknum,
   auto begin = block.Begin.load();
   auto end = begin + block.Count;
 
-  if (backing->records.size() < end) {
-    throw std::runtime_error("Trying to read records [" + std::to_string(begin)
+  if (backing->parts.size() < end) {
+    throw std::runtime_error("Trying to read parts [" + std::to_string(begin)
                              + ", " + std::to_string(end) + ") but only "
-                             + std::to_string(backing->records.size())
-                             + " records exist.");
+                             + std::to_string(backing->parts.size())
+                             + " parts exist.");
   }
 
   block_header header = from_dedup(block);
@@ -555,10 +562,10 @@ std::size_t volume::ReadBlock(std::size_t blocknum,
   if (!stream.write(&header, sizeof(header))) { return 0; }
 
   for (auto cur = begin; cur != end; ++cur) {
-    auto record = backing->records[cur];
-    auto rheader = from_dedup(record);
+    auto part = backing->parts[cur];
+    // auto rheader = from_dedup(record);
 
-    auto didx = record.FileIdx.load();
+    auto didx = part.FileIdx.load();
 
     auto dfile = backing->idx_to_dfile.find(didx);
     if (dfile == backing->idx_to_dfile.end()) {
@@ -567,10 +574,10 @@ std::size_t volume::ReadBlock(std::size_t blocknum,
                                + "; known file indices are ...");
     }
 
-    if (!stream.write(&rheader, sizeof(rheader))) { return 0; }
+    // if (!stream.write(&rheader, sizeof(rheader))) { return 0; }
 
-    auto dbegin = record.Begin.load();
-    auto dsize = record.Size.load();
+    auto dbegin = part.Begin.load();
+    auto dsize = part.Size.load();
 
     auto& vec = backing->datafiles[dfile->second];
 
@@ -634,23 +641,23 @@ struct serializable_block_file {
     return {RelPath.unserialize(string_area), Start, End, Idx};
   }
 };
-struct serializable_record_file {
+struct serializable_part_file {
   net_string RelPath;
-  net<decltype(config::record_file::Start)> Start;
-  net<decltype(config::record_file::End)> End;
-  net<decltype(config::record_file::Idx)> Idx;
+  net<decltype(config::part_file::Start)> Start;
+  net<decltype(config::part_file::End)> End;
+  net<decltype(config::part_file::Idx)> Idx;
 
-  serializable_record_file() = default;
-  serializable_record_file(const config::record_file& rf,
-                           std::vector<char>& string_area)
-      : RelPath(string_area, rf.relpath.data(), rf.relpath.size())
-      , Start{rf.Start}
-      , End{rf.End}
-      , Idx{rf.Idx}
+  serializable_part_file() = default;
+  serializable_part_file(const config::part_file& pf,
+                         std::vector<char>& string_area)
+      : RelPath(string_area, pf.relpath.data(), pf.relpath.size())
+      , Start{pf.Start}
+      , End{pf.End}
+      , Idx{pf.Idx}
   {
   }
 
-  config::record_file unserialize(std::string_view string_area)
+  config::part_file unserialize(std::string_view string_area)
   {
     return {RelPath.unserialize(string_area), Start, End, Idx};
   }
@@ -689,7 +696,7 @@ struct config_header {
   net_u64 version;
   net<std::uint32_t> string_size{};
   net<std::uint32_t> num_blockfiles{};
-  net<std::uint32_t> num_recordfiles{};
+  net<std::uint32_t> num_partfiles{};
   net<std::uint32_t> num_datafiles{};
 };
 };  // namespace
@@ -704,8 +711,8 @@ std::vector<char> config::serialize(const config& conf)
 
   std::vector<serializable_block_file> bfs;
   for (auto bfile : conf.bfiles) { bfs.emplace_back(bfile, serial); }
-  std::vector<serializable_record_file> rfs;
-  for (auto rfile : conf.rfiles) { rfs.emplace_back(rfile, serial); }
+  std::vector<serializable_part_file> pfs;
+  for (auto pfile : conf.pfiles) { pfs.emplace_back(pfile, serial); }
   std::vector<serializable_data_file> dfs;
   for (auto dfile : conf.dfiles) { dfs.emplace_back(dfile, serial); }
 
@@ -716,10 +723,10 @@ std::vector<char> config::serialize(const config& conf)
     serial.insert(serial.end(), as_char, as_char + sizeof(bf));
     hdr.num_blockfiles = hdr.num_blockfiles + 1;
   }
-  for (auto& rf : rfs) {
-    auto* as_char = reinterpret_cast<const char*>(&rf);
-    serial.insert(serial.end(), as_char, as_char + sizeof(rf));
-    hdr.num_recordfiles = hdr.num_recordfiles + 1;
+  for (auto& pf : pfs) {
+    auto* as_char = reinterpret_cast<const char*>(&pf);
+    serial.insert(serial.end(), as_char, as_char + sizeof(pf));
+    hdr.num_partfiles = hdr.num_partfiles + 1;
   }
   for (auto& df : dfs) {
     auto* as_char = reinterpret_cast<const char*>(&df);
@@ -741,8 +748,8 @@ config config::make_default(std::uint64_t BlockSize)
     .bfiles = {
       {"blocks", 0, 0, 0},
     },
-    .rfiles = {
-      {"records", 0, 0, 0},
+    .pfiles = {
+      {"parts", 0, 0, 0},
     },
     .dfiles = {
       {"aligned.data", 0, BlockSize, 0, false},
@@ -764,8 +771,8 @@ config deserialize_config_v1(chunked_reader stream, config_header& hdr)
   if (hdr.num_blockfiles != 1) {
     throw std::runtime_error("bad config file (num blockfiles != 1)");
   }
-  if (hdr.num_recordfiles != 1) {
-    throw std::runtime_error("bad config file (num recordfiles != 1)");
+  if (hdr.num_partfiles != 1) {
+    throw std::runtime_error("bad config file (num partfiles != 1)");
   }
   if (hdr.num_datafiles != 2) {
     throw std::runtime_error("bad config file (num datafiles != 2)");
@@ -784,12 +791,12 @@ config deserialize_config_v1(chunked_reader stream, config_header& hdr)
     conf.bfiles.push_back(bf.unserialize(string_area));
   }
   {
-    serializable_record_file rf;
-    if (!stream.read(&rf, sizeof(rf))) {
+    serializable_part_file pf;
+    if (!stream.read(&pf, sizeof(pf))) {
       throw std::runtime_error("config file to small.");
     }
 
-    conf.rfiles.push_back(rf.unserialize(string_area));
+    conf.pfiles.push_back(pf.unserialize(string_area));
   }
 
   for (std::size_t i = 0; i < hdr.num_datafiles; ++i) {
