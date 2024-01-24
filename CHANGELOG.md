@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - filed: fix vss during client initiated connections [PR #1665]
 - bareos-config: fix output of deploy_config [PR #1672]
 - Disable automated package-tests for SLES 12 [PR #1671]
+- Make BareosDirPluginPrometheusExporter.py work with python3 [PR #1647]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -61,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1636]: https://github.com/bareos/bareos/pull/1636
 [PR #1637]: https://github.com/bareos/bareos/pull/1637
 [PR #1646]: https://github.com/bareos/bareos/pull/1646
+[PR #1647]: https://github.com/bareos/bareos/pull/1647
 [PR #1655]: https://github.com/bareos/bareos/pull/1655
 [PR #1656]: https://github.com/bareos/bareos/pull/1656
 [PR #1659]: https://github.com/bareos/bareos/pull/1659
