@@ -180,20 +180,27 @@ template <typename T> class fvec : access {
     }
     if (res == nullptr) { throw error("mremap returned nullptr."); }
 #else
-    // freebsd does not support MREMAP_MAYMOVE (or maybe mremap in general)
-    if (munmap(std::exchange(buffer, nullptr), size) < 0) {
-      throw error("munmap (size = " + std::to_string(size) + ")");
-    }
-
-    auto res = reinterpret_cast<T*>(
-        mmap(nullptr, new_size, prot, MAP_SHARED, fd, 0));
-
+    // mremap is linux specific.  On other systems we
+    // try to extend the mapping if possible ...
+    auto res = mmap(buffer + size, new_size - size, prot,
+                    MAP_SHARED | MAP_FIXED, fd, size);
     if (res == MAP_FAILED) {
-      throw error("mmap (size = " + std::to_string(new_size)
-                  + ", prot = " + std::to_string(prot)
-                  + ", fd = " + std::to_string(fd) + ")");
+      // ... otherwise we do an unmap + mmap
+
+      if (munmap(std::exchange(buffer, nullptr), size) < 0) {
+        throw error("munmap (size = " + std::to_string(size) + ")");
+      }
+
+      res = reinterpret_cast<T*>(
+          mmap(nullptr, new_size, prot, MAP_SHARED, fd, 0));
+
+      if (res == MAP_FAILED) {
+        throw error("mmap (size = " + std::to_string(new_size)
+                    + ", prot = " + std::to_string(prot)
+                    + ", fd = " + std::to_string(fd) + ")");
+      }
+      if (res == nullptr) { throw error("mmap returned nullptr."); }
     }
-    if (res == nullptr) { throw error("mmap returned nullptr."); }
 #endif
 
     buffer = reinterpret_cast<T*>(res);
