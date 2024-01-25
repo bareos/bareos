@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
@@ -61,7 +62,8 @@ setup(
     description="Client library and tools for Bareos console access.",
     long_description=open("README.rst").read(),
     long_description_content_type="text/x-rst",
-    python_requires=">=2.7",
+    # RHEL7: python-3.6
+    python_requires=">=3.6",
     extras_require={"TLS-PSK": ["sslpsk"], "configfile": ["configargparse"]},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
