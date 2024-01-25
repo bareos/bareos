@@ -86,12 +86,19 @@ std::optional<connection> take_by_name(connection_pool& pool,
   auto locked = pool.lock();
   auto& vec = locked.get();
   remove_inactive(vec, timeout);
+
+  // search from last to first
+  // this is necessary for cases where the same client connected multiple times
+  // we want to always take the last connection because that one is the most
+  // likely to be still alive
   if (auto it
-      = std::find_if(vec.begin(), vec.end(),
+      = std::find_if(vec.rbegin(), vec.rend(),
                      [v](auto& connection) { return v == connection.name; });
-      it != vec.end()) {
+      it != vec.rend()) {
     auto conn = std::move(*it);
-    vec.erase(it);
+    // std::next(it).base() points to the same element as it,
+    // i.e. *it == *next(it).base()
+    vec.erase(std::next(it).base());
     return conn;
   }
   return std::nullopt;
