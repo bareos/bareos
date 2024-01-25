@@ -562,11 +562,11 @@ SectionIn 1 2 3 4
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
-  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\*.in
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
-  File ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\client\FileDaemon-local.conf
+  File /oname=FileDaemon-local.conf ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\client\FileDaemon-local.conf.in
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
   !cd "${CMAKE_SOURCE_DIR}\core\platforms\win32"
@@ -630,11 +630,11 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-sd.d"
-  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\*.in
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
-  File "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\storage\StorageDaemon-local.conf"
+  File /oname=StorageDaemon-local.conf "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\storage\StorageDaemon-local.conf.in"
 
 SectionEnd
 
@@ -690,11 +690,11 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
-  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\*.in
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
-  File "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf"
+  File /oname=Director-local.conf "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf.in"
 
 SectionEnd
 
@@ -802,9 +802,8 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-
-  #File "python-dir.dll"
-  #TODO: install plugins
+  !cd "${CMAKE_BINARY_DIR}\core\src\plugins\dird\${CMAKE_CONFIG_TYPE}"
+  File "*-dir.dll"
 #  File "lib\bareos\plugins\*-dir.dll"
 #  File "lib\bareos\plugins\BareosDir*.py"
 #  File "lib\bareos\plugins\bareos-dir*.py"
@@ -857,7 +856,7 @@ SectionIn 1 2 3
 #
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
-  File "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\monitor\bareos-mon.conf"
+  File /oname=bareos-mon.conf "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\monitor\bareos-mon.conf.in"
 SectionEnd
 
 
@@ -1073,14 +1072,55 @@ Section -ConfigureConfiguration
   # move to end of file
   FileSeek $R1 0 END
 
+#@archivedir@
+  FileWrite $R1 "s#@archivedir@#C:/bareos-storage#g$\r$\n"
+
+#@basename@
+  FileWrite $R1 "s#@basename@-dir#$DirectorName#g$\r$\n"
+  FileWrite $R1 "s#@basename@#$HostName#g$\r$\n"
+
+#@bindir@
+  FileWrite $R1 "s#@bindir@n#$BareosInstdir#g$\r$\n"
+
+#@confdir@
+  FileWrite $R1 "s#@confdir@#$BareosAppdata#g$\r$\n"
+
+#@db_name@
+  FileWrite $R1 "s#@db_name@#Bareos#g$\r$\n"
+#@db_password@
+#@db_port@
+#@db_user@
+#@dir_password@
+#@dir_port@
+#@fd_password@
+#@fd_port@
+#@hostname@
+#@job_email@
+  FileWrite $R1 "s#@job_email@#root@localhost#g$\r$\n"
+#@logdir@
+  FileWrite $R1 "s#@logdir@#$BareosAppdata/logs#g$\r$\n"
+#@mon_dir_password@
+#@mon_fd_password@
+#@mon_sd_password@
+#@plugindir@
+  FileWrite $R1 "s#@plugindir@#$BareosInstdir/Plugins#g$\r$\n"
+#@sbindir@
+  FileWrite $R1 "s#@sbindir@#$BareosInstdir#g$\r$\n"
+#@scriptdir@
+  FileWrite $R1 "s#@scriptdir@#$BareosAppdata/scripts#g$\r$\n"
+#@smtp_host@
+  FileWrite $R1 "s#@smtp_host@#localhost#g$\r$\n"
+#@workingdir@
+  FileWrite $R1 "s#@workingdir@#$BareosAppdata/working$\r$\n"
+  
+  FileWrite $R1 "s#@backenddir@#$BareosInstdir#g$\r$\n"
+
   FileWrite $R1 "s#@basename@-fd#$ClientName#g$\r$\n"
   FileWrite $R1 "s#localhost-fd#$ClientName#g$\r$\n"
   FileWrite $R1 "s#bareos-dir#$DirectorName#g$\r$\n"
   FileWrite $R1 "s#bareos-mon#$HostName-mon#g$\r$\n"
   FileWrite $R1 "s#@basename@-sd#$StorageDaemonName#g$\r$\n"
 
-  # add "Working Directory" directive
-  FileWrite $R1 "s#QueryFile = #Working Directory = $\"$BareosAppdata/working$\"\n  QueryFile = #g$\r$\n"
 
 
   #
@@ -1098,7 +1138,6 @@ Section -ConfigureConfiguration
 
   # FileWrite $R1 "s#@DISTVER@##g$\r$\n"
   # FileWrite $R1 "s#@TAPEDRIVE@##g$\r$\n"
-  FileWrite $R1 "s#@basename@#$HostName#g$\r$\n"
   # FileWrite $R1 "s#@db_name@##g$\r$\n"
   FileWrite $R1 "s#@db_password@#$DbPassword#g$\r$\n"
   FileWrite $R1 "s#@db_port@#$DbPort#g$\r$\n"
@@ -1111,44 +1150,10 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#@mon_fd_password@#$ClientMonitorPassword#g$\r$\n"
   FileWrite $R1 "s#@mon_sd_password@#StorageMonitorPassword#g$\r$\n"
   FileWrite $R1 "s#@sd_password@#$StoragePassword#g$\r$\n"
-  # FileWrite $R1 "s#@smtp_host@#localhost#g$\r$\n"
-
-
-
-#  Install system binaries:      /.*/sbin
-  FileWrite $R1 "s#C:/.*/sbin#$BareosInstdir#g$\r$\n"
-
-#  Install binaries:             /.*/bin
-  FileWrite $R1 "s#C:/.*/bin#$BareosInstdir#g$\r$\n"
-
-#  Archive directory:            /.*/var/lib/bareos/storage
-  FileWrite $R1 "s#C:/.*/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
-
-# Log directory:                /.*/var/log/bareos
-  FileWrite $R1 "s#C:/.*/var/log/bareos#$BareosAppdata/logs#g$\r$\n"
-
-#  Backend directory:            /.*/lib/bareos/backends
-  FileWrite $R1 "s#C:/.*/lib/bareos/backends#$BareosInstdir#g$\r$\n"
-
-#  Install Bareos config dir:    /.*/etc/bareos
-  FileWrite $R1 "s#C:/.*/etc/bareos#$BareosAppdata#g$\r$\n"
-
-#  Plugin directory:             /.*/lib/bareos/plugins
-  FileWrite $R1 "s#C:/.*/lib/bareos/plugins#$BareosInstdir/Plugins#g$\r$\n"
-
-#  Scripts directory:            /.*/lib/bareos/scripts
-  FileWrite $R1 "s#C:/.*/lib/bareos/scripts#$BareosAppdata/scripts#g$\r$\n"
-
 # Catalog Dump
-  FileWrite $R1 "s#C:/.*/lib/bareos/bareos.sql#$BareosAppdata/working/bareos.sql#g$\r$\n"
-
-  #  Working directory:            /.*/var/lib/bareos
-  FileWrite $R1 "s#C:/.*/var/lib/bareos#$BareosAppdata/working$\r$\n"
+  FileWrite $R1 "s#@working_dir@/@db_name@.sql/#$BareosAppdata/working/bareos.sql#g$\r$\n"
 
   FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
-
-
-
   FileClose $R1
 
   nsExec::ExecToLog '"$INSTDIR\bareos-config-deploy.bat" "$INSTDIR\defaultconfigs" "$APPDATA\${PRODUCT_NAME}"'
@@ -1497,7 +1502,7 @@ done:
 #  File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 #  File "/oname=$PLUGINSDIR\libssp-0.dll" "libssp-0.dll"
 #
-  File ${CMAKE_SOURCE_DIR}\core\src\console\bconsole.conf
+  File /oname=bconsole.conf ${CMAKE_SOURCE_DIR}\core\src\console\bconsole.conf.in
   !cd ${CMAKE_SOURCE_DIR}\core\src\cats\ddl
   File "/oname=$PLUGINSDIR\postgresql-create.sql" "creates\postgresql.sql"
   File "/oname=$PLUGINSDIR\postgresql-drop.sql" "drops\postgresql.sql"
