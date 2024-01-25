@@ -198,6 +198,9 @@ template <typename T> class fvec : access {
 
     buffer = reinterpret_cast<T*>(res);
     cap = new_cap;
+#ifdef MADV_HUGEPAGE
+    madvise(buffer, cap * element_size, MADV_HUGEPAGE);
+#endif
   }
 
   T* alloc_uninit(std::size_t num)
@@ -316,6 +319,9 @@ template <typename T> class fvec : access {
       // this should not happen
       throw std::runtime_error("mmap returned nullptr.");
     }
+#ifdef MADV_HUGEPAGE
+    madvise(buffer, cap * element_size, MADV_HUGEPAGE);
+#endif
   }
 };
 
