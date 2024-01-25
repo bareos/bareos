@@ -30,16 +30,16 @@ else()
   set_tests_properties(
     system:dedup:restore-file
     PROPERTIES FIXTURES_REQUIRED
-               "system:dedup:backup-job-fixture;system:restore-fixture"
+               "system:dedup:backup-job-fixture;system:dedup-fixture"
   )
   set_tests_properties(
     system:dedup:restore-dir
     PROPERTIES FIXTURES_REQUIRED
-               "system:dedup:backup-job-fixture;system:restore-fixture"
+               "system:dedup:backup-job-fixture;system:dedup-fixture"
   )
   set_tests_properties(
     system:dedup:full-restore
     PROPERTIES FIXTURES_REQUIRED
-               "system:dedup:backup-job-fixture;system:restore-fixture"
+               "system:dedup:backup-job-fixture;system:dedup-fixture"
   )
 endif()
