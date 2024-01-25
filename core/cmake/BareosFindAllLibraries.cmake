@@ -25,10 +25,10 @@ endif()
 option(ENABLE_PYTHON "Enable Python support" ON)
 
 
-if(NOT ENABLE_PYTHON OR MSVC)
+if(NOT ENABLE_PYTHON)
   set(HAVE_PYTHON 0)
   set(Python3_FOUND 0)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows" AND NOT MSVC)
   set(HAVE_PYTHON 1)
   set(Python3_FOUND 1)
   set(Python3_EXT_SUFFIX ".pyd")
