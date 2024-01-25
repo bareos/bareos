@@ -378,8 +378,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(HAVE_WIN32 1)
 
-  set(Python3_LIBRARIES python38.dll)
-
+  if(NOT MSVC)
+    set(Python3_LIBRARIES python38.dll)
+  endif()
   if(${WINDOWS_BITS} MATCHES "32")
     set(cross-prefix i686-w64-mingw32)
   else()

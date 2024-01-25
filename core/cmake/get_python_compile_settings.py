@@ -57,12 +57,12 @@ for var in ("CFLAGS", "CCSHARED", "INCLUDEPY", "LDFLAGS"):
     value = sysconfig.get_config_var(var)
     if (value):
         value = value.replace(os.sep, '/')
-    print(
-        'message(STATUS "Python{0}_{1} is {2}")'.format(
-            sys.version_info[0], var, value
+        print(
+            'message(STATUS "Python{0}_{1} is {2}")'.format(
+                sys.version_info[0], var, value
+            )
         )
-    )
-    print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))
+        print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))
 
 for var in ("EXT_SUFFIX",):
     value = sysconfig.get_config_var(var)
