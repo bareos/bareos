@@ -4,4 +4,6 @@ Client {
   Address = @hostname@
   Password = "@fd_password@"          # password for FileDaemon
   FD PORT = @fd_port@
+
+  Passive = Yes
 }
