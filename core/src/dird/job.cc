@@ -400,8 +400,9 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
     Dmsg1(120, "Connection from client \"%s\" to director is not allowed.\n",
           jcr->dir_impl->res.client->resource_name_);
   } else {
-    auto connection = take_by_name(
-        connections, jcr->dir_impl->res.client->resource_name_, timeout);
+    auto connection
+        = connections.take_by_name(jcr->dir_impl->res.client->resource_name_,
+                                   std::chrono::seconds{timeout});
     if (connection) {
       jcr->file_bsock = connection->socket.release();
       jcr->dir_impl->FDVersion = connection->protocol_version;

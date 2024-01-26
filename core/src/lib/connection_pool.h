@@ -34,6 +34,7 @@
 #include <string>
 #include <string_view>
 #include <optional>
+#include <chrono>
 #include "lib/thread_util.h"
 
 class BareosSocket;
@@ -65,14 +66,19 @@ struct connection : public connection_info {
   sock_ptr socket{};
 };
 
-using connection_pool = synchronized<std::vector<connection>>;
+struct connection_pool {
+  synchronized<std::vector<connection>, std::timed_mutex> conns;
+  std::condition_variable_any element_added;
 
-std::optional<connection> take_by_name(connection_pool& pool,
-                                       std::string_view v,
-                                       int timeout);
+  void add_authenticated_connection(connection con);
+  void clear();
 
-std::vector<connection_info> get_connection_info(connection_pool& pool,
-                                                 int timeout = 0);
+  std::optional<connection> take_by_name(std::string_view v,
+                                         std::chrono::seconds timeout
+                                         = std::chrono::seconds{0});
 
-void cleanup_connection_pool(connection_pool& pool, int timeout = 0);
+  void cleanup(std::chrono::seconds timeout = std::chrono::seconds{0});
+  std::vector<connection_info> info();
+};
+
 #endif  // BAREOS_LIB_CONNECTION_POOL_H_

@@ -1270,7 +1270,7 @@ static void ListConnectedClients(UaContext* ua)
 
   ua->send->Decoration("\n");
   ua->send->Decoration("Client Initiated Connections (waiting for jobs):\n");
-  auto conn_info = get_connection_info(get_client_connections());
+  auto conn_info = get_client_connections().info();
   ua->send->Decoration("%-20s%-20s%-20s%-40s\n", "Connect time", "Protocol",
                        "Authenticated", "Name");
   ua->send->Decoration("%-20s%-20s%-20s%-20s%-20s\n", separator, separator,

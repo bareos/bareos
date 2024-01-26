@@ -29,6 +29,8 @@
 #include "lib/bsock.h"
 
 #include <algorithm>
+#include <chrono>
+#include <thread>
 
 // connection
 connection::connection(std::string_view name,
@@ -79,46 +81,69 @@ void remove_inactive(std::vector<connection>& vec, int timeout)
 }
 };  // namespace
 
-std::optional<connection> take_by_name(connection_pool& pool,
-                                       std::string_view v,
-                                       int timeout)
+std::optional<connection> connection_pool::take_by_name(
+    std::string_view v,
+    std::chrono::seconds timeout)
 {
-  auto locked = pool.lock();
-  auto& vec = locked.get();
-  remove_inactive(vec, timeout);
+  std::chrono::time_point endpoint = std::chrono::system_clock::now() + timeout;
 
-  // search from last to first
-  // this is necessary for cases where the same client connected multiple times
-  // we want to always take the last connection because that one is the most
-  // likely to be still alive
-  if (auto it
-      = std::find_if(vec.rbegin(), vec.rend(),
-                     [v](auto& connection) { return v == connection.name; });
-      it != vec.rend()) {
-    auto conn = std::move(*it);
-    // std::next(it).base() points to the same element as it,
-    // i.e. *it == *next(it).base()
-    vec.erase(std::next(it).base());
-    return conn;
+  if (std::optional opt = conns.try_lock(endpoint)) {
+    auto& locked = opt.value();
+    for (;;) {
+      auto& vec = locked.get();
+      remove_inactive(vec, 0);
+
+      // search from last to first
+      // this is necessary for cases where the same client connected multiple
+      // times we want to always take the last connection because that one is
+      // the most likely to be still alive
+      if (auto it = std::find_if(
+              vec.rbegin(), vec.rend(),
+              [v](auto& connection) { return v == connection.name; });
+          it != vec.rend()) {
+        auto conn = std::move(*it);
+        // std::next(it).base() points to the same element as it,
+        // i.e. *it == *next(it).base()
+        vec.erase(std::next(it).base());
+        return conn;
+      }
+
+      if (locked.wait_until(element_added, endpoint)
+          == std::cv_status::timeout) {
+        break;
+      }
+    }
   }
+
   return std::nullopt;
 }
 
-std::vector<connection_info> get_connection_info(connection_pool& pool,
-                                                 int timeout)
+std::vector<connection_info> connection_pool::info()
 {
-  auto locked = pool.lock();
+  auto locked = conns.lock();
   auto& vec = locked.get();
-  remove_inactive(vec, timeout);
 
   // connections are subclasses of connection_info, so we can create a copy
   // of just the connection_info part with implicit casting like so:
   return {vec.begin(), vec.end()};
 }
 
-void cleanup_connection_pool(connection_pool& pool, int timeout)
+void connection_pool::add_authenticated_connection(connection conn)
 {
-  auto locked = pool.lock();
-  auto& vec = locked.get();
-  remove_inactive(vec, timeout);
+  auto locked = conns.lock();
+  locked->emplace_back(std::move(conn));
+  element_added.notify_all();
+}
+
+void connection_pool::clear() { conns.lock()->clear(); }
+
+void connection_pool::cleanup(std::chrono::seconds timeout)
+{
+  std::chrono::time_point endpoint = std::chrono::system_clock::now() + timeout;
+
+  if (std::optional opt = conns.try_lock(endpoint)) {
+    auto& locked = opt.value();
+    auto& vec = locked.get();
+    remove_inactive(vec, 0);
+  }
 }
