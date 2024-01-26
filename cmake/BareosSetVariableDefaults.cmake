@@ -132,27 +132,27 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(subsysdir "${workingdir}")
   endif()
 
-else if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   # libdir
   if(NOT DEFINED libdir)
-    set(libdir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+    set(libdir ${CMAKE_INSTALL_PREFIX})
   endif()
 
   # includedir
   if(NOT DEFINED includedir)
-    set(includedir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+    set(includedir ${CMAKE_INSTALL_PREFIX})
   endif()
 
   # bindir
   if(NOT DEFINED bindir)
-    set(bindir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+    set(bindir ${CMAKE_INSTALL_PREFIX})
     message(STATUS "set bindir to default ${bindir}")
   endif()
 
   # sbindir
   if(NOT DEFINED sbindir)
-    set(sbindir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+    set(sbindir ${CMAKE_INSTALL_PREFIX})
     message(STATUS "set sbindir to default ${sbindir}")
   endif()
 
@@ -169,7 +169,7 @@ else if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   # configtemplatedir
   if(NOT DEFINED configtemplatedir)
-    set(configtemplatedir "${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME}/defaultconfigs")
+    set(configtemplatedir "${CMAKE_INSTALL_PREFIX}/defaultconfigs")
   endif()
 
   # mandir
@@ -191,7 +191,7 @@ else if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   # backenddir
   if(NOT DEFINED backenddir)
-    set(backenddir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME}/backends)
+    set(backenddir ${CMAKE_INSTALL_PREFIX}/backends)
   endif()
 
   # scriptdir
@@ -209,7 +209,7 @@ else if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   # plugindir
   if(NOT DEFINED plugindir)
-    set(plugindir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME}/plugins)
+    set(plugindir ${CMAKE_INSTALL_PREFIX}/plugins)
   endif()
 
   # bsrdir
