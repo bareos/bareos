@@ -70,12 +70,11 @@ bool check_connection(BareosSocket* socket, int timeout)
   return true;
 }
 
-void remove_inactive(std::vector<connection>& vec, int timeout)
+void remove_inactive(std::vector<connection>& vec)
 {
   vec.erase(std::remove_if(vec.begin(), vec.end(),
-                           [timeout](auto& conn) {
-                             return !check_connection(conn.socket.get(),
-                                                      timeout);
+                           [](auto& conn) {
+                             return !check_connection(conn.socket.get(), 0);
                            }),
             vec.end());
 }
@@ -91,7 +90,7 @@ std::optional<connection> connection_pool::take_by_name(
     auto& locked = opt.value();
     for (;;) {
       auto& vec = locked.get();
-      remove_inactive(vec, 0);
+      remove_inactive(vec);
 
       // search from last to first
       // this is necessary for cases where the same client connected multiple
@@ -122,6 +121,7 @@ std::vector<connection_info> connection_pool::info()
 {
   auto locked = conns.lock();
   auto& vec = locked.get();
+  remove_inactive(vec);
 
   // connections are subclasses of connection_info, so we can create a copy
   // of just the connection_info part with implicit casting like so:
@@ -131,7 +131,9 @@ std::vector<connection_info> connection_pool::info()
 void connection_pool::add_authenticated_connection(connection conn)
 {
   auto locked = conns.lock();
-  locked->emplace_back(std::move(conn));
+  auto& vec = locked.get();
+  remove_inactive(vec);
+  vec.emplace_back(std::move(conn));
   element_added.notify_all();
 }
 
@@ -144,6 +146,6 @@ void connection_pool::cleanup(std::chrono::seconds timeout)
   if (std::optional opt = conns.try_lock(endpoint)) {
     auto& locked = opt.value();
     auto& vec = locked.get();
-    remove_inactive(vec, 0);
+    remove_inactive(vec);
   }
 }
