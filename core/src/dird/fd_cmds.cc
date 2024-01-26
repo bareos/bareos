@@ -1101,7 +1101,7 @@ void* HandleFiledConnection(connection_pool& connections,
 
   Dmsg1(20, "Connected to file daemon %s\n", client_name);
 
-  connections.lock()->emplace_back(std::move(conn));
+  connections.add_authenticated_connection(std::move(conn));
 
   RunOnIncomingConnectInterval(client_name).Run();
 
