@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -48,6 +48,7 @@ add_subdirectory(fileset-multiple-blocks)
 add_subdirectory(filesets)
 add_subdirectory(gfapi-fd)
 add_subdirectory(glusterfs-backend)
+add_subdirectory(heartbeat-interval)
 add_subdirectory(list-backups)
 add_subdirectory(messages)
 add_subdirectory(multiplied-device)

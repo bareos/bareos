@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -75,6 +75,11 @@ endif()
 if(NOT HAVE_WIN32)
   add_library(example-plugin-fd MODULE example/example-plugin-fd.cc)
   set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
+endif()
+
+if(NOT HAVE_WIN32)
+  add_library(spam-plugin-fd MODULE spam/spam.cc)
+  set_target_properties(spam-plugin-fd PROPERTIES PREFIX "")
 endif()
 
 option(ENABLE_GFAPI_FD "Build gfapi-fd plugin if possible" ON)

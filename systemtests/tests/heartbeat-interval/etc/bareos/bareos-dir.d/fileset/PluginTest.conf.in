@@ -1,0 +1,7 @@
+FileSet {
+  Name = "PluginTest"
+  Description = "Another fileset."
+  Include {
+    Plugin = "spam-plugin"
+  }
+}
