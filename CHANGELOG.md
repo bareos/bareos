@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core: add build patch for `sprintf` in macos builds [PR #1653]
 - Disable automated package-tests for SLES 12 [PR #1677]
 - filed: fix vss during client initiated connections [PR #1668]
+- Improve FreeBSD dependencies [PR #1682]
 
 ## [21.1.8] - 2023-10-23
 
@@ -714,4 +715,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1653]: https://github.com/bareos/bareos/pull/1653
 [PR #1668]: https://github.com/bareos/bareos/pull/1668
 [PR #1677]: https://github.com/bareos/bareos/pull/1677
+[PR #1682]: https://github.com/bareos/bareos/pull/1682
 [unreleased]: https://github.com/bareos/bareos/tree/master
