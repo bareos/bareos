@@ -562,7 +562,7 @@ SectionIn 1 2 3 4
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
-  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\*.conf
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
@@ -630,7 +630,7 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-sd.d"
-  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\*.conf
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
@@ -690,7 +690,7 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
-  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\*.*
+  File /r ${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\*.conf
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
@@ -1143,7 +1143,7 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#C:/.*/lib/bareos/bareos.sql#$BareosAppdata/working/bareos.sql#g$\r$\n"
 
   #  Working directory:            /.*/var/lib/bareos
-  FileWrite $R1 "s#C:/.*/var/lib/bareos#$BareosAppdata/working$\r$\n"
+  FileWrite $R1 "s#C:/.*/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
 
   FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
 
