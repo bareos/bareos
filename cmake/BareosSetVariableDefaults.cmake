@@ -132,7 +132,107 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(subsysdir "${workingdir}")
   endif()
 
-else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+else if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+  # libdir
+  if(NOT DEFINED libdir)
+    set(libdir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+  endif()
+
+  # includedir
+  if(NOT DEFINED includedir)
+    set(includedir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+  endif()
+
+  # bindir
+  if(NOT DEFINED bindir)
+    set(bindir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+    message(STATUS "set bindir to default ${bindir}")
+  endif()
+
+  # sbindir
+  if(NOT DEFINED sbindir)
+    set(sbindir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME})
+    message(STATUS "set sbindir to default ${sbindir}")
+  endif()
+
+  # sysconfdir
+  if(NOT DEFINED sysconfdir)
+    set(sysconfdir "C:/ProgramData/${CMAKE_PROJECT_NAME}")
+  endif()
+  set(SYSCONFDIR "\"${sysconfdir}\"")
+
+  # confdir
+  if(NOT DEFINED confdir)
+    set(confdir "C:/ProgramData/${CMAKE_PROJECT_NAME}")
+  endif()
+
+  # configtemplatedir
+  if(NOT DEFINED configtemplatedir)
+    set(configtemplatedir "${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME}/defaultconfigs")
+  endif()
+
+  # mandir
+  if(NOT DEFINED mandir)
+    set(mandir ${CMAKE_INSTALL_MANDIR})
+  endif()
+
+  # docdir
+  if(NOT DEFINED docdir)
+    set(docdir default_for_docdir)
+  endif()
+
+  # archivedir
+  if(NOT DEFINED archivedir)
+    set(archivedir
+      "C:/bareos-storage"
+    )
+  endif()
+
+  # backenddir
+  if(NOT DEFINED backenddir)
+    set(backenddir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME}/backends)
+  endif()
+
+  # scriptdir
+  if(NOT DEFINED scriptdir)
+    set(scriptdir "C:/ProgramData/${CMAKE_PROJECT_NAME}/scripts")
+  endif()
+
+  # workingdir
+  if(NOT DEFINED workingdir)
+    set(workingdir
+      "C:/ProgramData/${CMAKE_PROJECT_NAME}/working"
+    )
+  endif()
+  set(working_dir "${workingdir}")
+
+  # plugindir
+  if(NOT DEFINED plugindir)
+    set(plugindir ${CMAKE_INSTALL_PREFIX}/${CMAKE_PROJECT_NAME}/plugins)
+  endif()
+
+  # bsrdir
+  if(NOT DEFINED bsrdir)
+    set(bsrdir ${workingdir})
+  endif()
+
+  # logdir
+  if(NOT DEFINED logdir)
+    set(logdir "C:/ProgramData/${CMAKE_PROJECT_NAME}/log")
+  endif()
+
+  # datarootdir
+  if(NOT DEFINED datarootdir)
+    set(datarootdir "C:/ProgramData/${CMAKE_PROJECT_NAME}")
+  endif()
+
+  # subsysdir
+  if(NOT DEFINED subsysdir)
+    set(subsysdir "${workingdir}")
+  endif()
+
+else() # Not Windows and not Darwin
 
   # libdir
   if(NOT DEFINED libdir)
@@ -232,7 +332,7 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(subsysdir "${workingdir}")
   endif()
 
-endif() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+endif() # Windows or Darwin or other
 
 set(PYTHON_MODULE_PATH
     "${plugindir}"
