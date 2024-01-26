@@ -54,9 +54,15 @@ class locked {
   const T& operator*() const { return *data; }
   const T* operator->() const { return data; }
 
-  template <typename Pred> void wait(std::condition_variable& cv, Pred&& p)
+  template <typename CondVar, typename P> void wait(CondVar& cv, P&& pred)
   {
-    cv.wait(lock, [this, p = std::move(p)] { return p(*data); });
+    cv.wait(lock, [this, pred = std::move(pred)] { return pred(*data); });
+  }
+
+  template <typename CondVar, typename TimePoint>
+  std::cv_status wait_until(CondVar& cv, TimePoint tp)
+  {
+    return cv.wait_until(lock, tp);
   }
 
  private:
