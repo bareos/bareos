@@ -42,21 +42,21 @@ class BareosSocket;
 struct connection_info {
   std::string name{};
   int protocol_version{};
-  bool authenticated{};
   time_t connect_time{};
 };
 
 struct connection : public connection_info {
   struct socket_closer {
-    void operator()(BareosSocket*);
+    void operator()(BareosSocket* socket);
   };
   using sock_ptr = std::unique_ptr<BareosSocket, socket_closer>;
 
   connection() = default;
-  connection(std::string_view name,
-             int protocol_version,
-             BareosSocket* socket,
-             bool authenticated = true);
+  connection(std::string_view name, int protocol_version, BareosSocket* socket)
+      : connection_info{std::string{name}, protocol_version, time(nullptr)}
+      , socket{socket}
+  {
+  }
 
   connection(const connection&) = delete;
   connection& operator=(const connection&) = delete;

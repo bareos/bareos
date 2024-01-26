@@ -1282,7 +1282,7 @@ static void ListConnectedClients(UaContext* ua)
     ua->send->ObjectKeyValue("ConnectTime", dt, "%-20s");
     ua->send->ObjectKeyValue("protocol_version", info.protocol_version,
                              "%-20d");
-    ua->send->ObjectKeyValue("authenticated", info.authenticated, "%-20d");
+    ua->send->ObjectKeyValue("authenticated", true, "%-20d");
     ua->send->ObjectKeyValue("name", info.name.c_str(), "%-40s");
     ua->send->ObjectEnd();
     ua->send->Decoration("\n");
