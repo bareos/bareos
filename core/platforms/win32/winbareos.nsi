@@ -18,6 +18,7 @@
 ;   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ;   02110-1301, USA.
 
+
 Unicode false
 
 RequestExecutionLevel admin
@@ -576,14 +577,11 @@ SectionIn 1 2 3 4
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
-  File /oname="myself.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\client\myself.conf.in"
-  File /oname="bareos-dir.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\director\bareos-dir.conf.in"
-  File /oname="bareos-mon.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\director\bareos-mon.conf.in"
-  File /oname="Standard.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-fd.d\messages\Standard.conf"
+  File /r config\bareos-fd.d\*.*
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
-  File /oname="FileDaemon-local.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\client\FileDaemon-local.conf.in"
+  File config\tray-monitor.d\client\FileDaemon-local.conf
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
   File "config\fillup.sed"
@@ -650,15 +648,11 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-sd.d"
-  File /oname="FileStorage.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\device\FileStorage.conf.in"
-  File /oname="bareos-dir.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\director\bareos-dir.conf.in"
-  File /oname="bareos-mon.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\director\bareos-mon.conf.in"
-  File /oname="Standard.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\messages\Standard.conf"
-  File /oname="bareos-sd.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-sd.d\storage\bareos-sd.conf.in"
+  File /r config\bareos-sd.d\*.*
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
-  File /oname="StorageDaemon-local.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\storage\StorageDaemon-local.conf.in"
+  File config\tray-monitor.d\storage\StorageDaemon-local.conf
 
 SectionEnd
 
@@ -713,32 +707,11 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
-  File /oname="MyCatalog.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\catalog\MyCatalog.conf.in"
-  File /oname="bareos-fd.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\client\bareos-fd.conf.in"
-  File /oname="bareos-mon.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\console\bareos-mon.conf.in"
-  File /oname="bareos-dir.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\director\bareos-dir.conf.in"
-  File /oname="Catalog.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\fileset\Catalog.conf.in"
-  File /oname="LinuxAll.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\fileset\LinuxAll.conf.in"
-  File /oname="SelfTest.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\fileset\SelfTest.conf.in"
-  File /oname="Windows All Drives.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\fileset\Windows All Drives.conf"
-  File /oname="backup-bareos-fd.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\job\backup-bareos-fd.conf.in"
-  File /oname="BackupCatalog.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\job\BackupCatalog.conf.in"
-  File /oname="RestoreFiles.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\job\RestoreFiles.conf.in"
-  File /oname="DefaultJob.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\jobdefs\DefaultJob.conf.in"
-  File /oname="Daemon.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\messages\Daemon.conf.in"
-  File /oname="Standard.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\messages\Standard.conf.in"
-  File /oname="Differential.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\pool\Differential.conf"
-  File /oname="Full.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\pool\Full.conf"
-  File /oname="Incremental.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\pool\Incremental.conf"
-  File /oname="Scratch.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\pool\Scratch.conf"
-  File /oname="operator.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\profile\operator.conf"
-  File /oname="WeeklyCycle.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\schedule\WeeklyCycle.conf"
-  File /oname="WeeklyCycleAfterBackup.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\schedule\WeeklyCycleAfterBackup.conf"
-  File /oname="File.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\bareos-dir.d\storage\File.conf.in"
+  File /r config\bareos-dir.d\*.*
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
-  File /oname="Director-local.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf.in"
+  File config\tray-monitor.d\director\Director-local.conf
 
 SectionEnd
 
@@ -906,7 +879,7 @@ SectionIn 1 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
-  File /oname="bareos-mon.conf" "${CMAKE_SOURCE_DIR}\core\src\defaultconfigs\tray-monitor.d\monitor\bareos-mon.conf.in"
+  File config\tray-monitor.d\monitor\bareos-mon.conf
 SectionEnd
 
 
