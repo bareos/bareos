@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,9 +54,15 @@ class locked {
   const T& operator*() const { return *data; }
   const T* operator->() const { return data; }
 
-  template <typename Pred> void wait(std::condition_variable& cv, Pred&& p)
+  template <typename CondVar, typename P> void wait(CondVar& cv, P&& pred)
   {
-    cv.wait(lock, [this, p = std::move(p)] { return p(*data); });
+    cv.wait(lock, [this, pred = std::move(pred)] { return pred(*data); });
+  }
+
+  template <typename CondVar, typename TimePoint>
+  std::cv_status wait_until(CondVar& cv, TimePoint tp)
+  {
+    return cv.wait_until(lock, tp);
   }
 
  private:
