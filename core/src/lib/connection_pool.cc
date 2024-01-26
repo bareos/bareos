@@ -32,17 +32,6 @@
 #include <chrono>
 #include <thread>
 
-// connection
-connection::connection(std::string_view name,
-                       int protocol_version,
-                       BareosSocket* socket,
-                       bool authenticated)
-    : connection_info{std::string{name}, protocol_version, authenticated,
-                      time(nullptr)}
-    , socket{socket}
-{
-}
-
 void connection::socket_closer::operator()(BareosSocket* socket)
 {
   if (socket) {

@@ -407,7 +407,7 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
     if (connection) {
       jcr->file_bsock = connection->socket.release();
       jcr->dir_impl->FDVersion = connection->protocol_version;
-      jcr->authenticated = connection->authenticated;
+      jcr->authenticated = true;
       Jmsg(jcr, M_INFO, 0, _("Using Client Initiated Connection (%s).\n"),
            jcr->dir_impl->res.client->resource_name_);
       result = true;
