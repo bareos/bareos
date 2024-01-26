@@ -125,10 +125,7 @@ static void* UserAgentShutdownCallback(void* bsock)
   return nullptr;
 }
 
-static void CleanupConnectionPool()
-{
-  cleanup_connection_pool(client_connections);
-}
+static void CleanupConnectionPool() { client_connections.cleanup(); }
 
 extern "C" void* connect_thread(void* arg)
 {
@@ -168,7 +165,7 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
   } while (--tries);
 
   if (server_state != BnetServerState::kStarted) {
-    client_connections.lock()->clear();
+    client_connections.clear();
     return false;
   }
   return true;
@@ -181,6 +178,6 @@ void StopSocketServer()
     delete sock_fds;
     sock_fds = nullptr;
   }
-  client_connections.lock()->clear();
+  client_connections.clear();
 }
 } /* namespace directordaemon */
