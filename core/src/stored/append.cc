@@ -41,6 +41,8 @@
 #include "lib/berrno.h"
 #include "lib/berrno.h"
 
+#include <algorithm>
+
 namespace storagedaemon {
 
 /* Responses sent to the daemon */
