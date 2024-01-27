@@ -40,6 +40,8 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 
+#include <algorithm>
+
 namespace directordaemon {
 
 /* Forward referenced functions */
