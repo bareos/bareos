@@ -31,6 +31,7 @@
  */
 
 #include "include/bareos.h"
+#include <algorithm>
 
 #if HAVE_POSTGRESQL
 
