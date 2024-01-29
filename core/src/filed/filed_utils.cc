@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@
 
 namespace filedaemon {
 
-static bool InitPublicPrivateKeys(const std::string& configfile)
+static bool InitPublicPrivateKeys(const char* configfile)
 {
   bool OK = true;
   const char* filepath = nullptr;
@@ -40,7 +40,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
       Emsg2(M_FATAL, 0,
             T_("Failed to load public certificate for File"
                " daemon \"%s\" in %s.\n"),
-            me->resource_name_, configfile.c_str());
+            me->resource_name_, configfile);
       OK = false;
     }
 
@@ -49,7 +49,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
       Emsg2(M_FATAL, 0,
             T_("Failed to load private key for File"
                " daemon \"%s\" in %s.\n"),
-            me->resource_name_, configfile.c_str());
+            me->resource_name_, configfile);
       OK = false;
     }
   }
@@ -79,7 +79,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
               Emsg3(M_FATAL, 0,
                     T_("Failed to load private key from file %s for File"
                        " daemon \"%s\" in %s.\n"),
-                    filepath, me->resource_name_, configfile.c_str());
+                    filepath, me->resource_name_, configfile);
               OK = false;
             }
           }
@@ -88,7 +88,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
           Emsg3(M_FATAL, 0,
                 T_("Failed to load trusted signer certificate"
                    " from file %s for File daemon \"%s\" in %s.\n"),
-                filepath, me->resource_name_, configfile.c_str());
+                filepath, me->resource_name_, configfile);
           OK = false;
         }
       }
@@ -119,7 +119,7 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
           Emsg3(M_FATAL, 0,
                 T_("Failed to load master key certificate"
                    " from file %s for File daemon \"%s\" in %s.\n"),
-                filepath, me->resource_name_, configfile.c_str());
+                filepath, me->resource_name_, configfile);
           OK = false;
         }
       }
@@ -186,7 +186,7 @@ bool CheckResources()
     }
 
     if (OK && (me->pki_encrypt || me->pki_sign)) {
-      OK = InitPublicPrivateKeys(configfile);
+      OK = InitPublicPrivateKeys(configfile.c_str());
     }
   }
 

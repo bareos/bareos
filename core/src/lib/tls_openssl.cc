@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -139,9 +139,8 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
     char data[256]; /* nullterminated by X509_NAME_get_text_by_NID */
     if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data))
         > 0) {
-      std::string cn;
+      const std::string_view d(data);
       for (const std::string& cn : verify_list) {
-        std::string d(data);
         Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data,
               cn.c_str());
         if (d.compare(cn) == 0) { auth_success = true; }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -412,17 +412,14 @@ void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct)
 
 void DumpPlugins(alist<Plugin*>* plugin_list, FILE* fp)
 {
-  int i{};
   Plugin* plugin{};
   fprintf(fp, "Attempt to dump plugins. Hook count=%d\n",
           dbg_plugin_hook_count);
 
   if (!plugin_list) { return; }
-  foreach_alist_index (i, plugin, plugin_list) {
+  foreach_alist (plugin, plugin_list) {
     for (int i = 0; i < dbg_plugin_hook_count; i++) {
-      //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
       fprintf(fp, "Plugin %p name=\"%s\"\n", plugin, plugin->file);
-      //       fct(plugin, fp);
     }
   }
 }

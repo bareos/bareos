@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,44 +47,46 @@ enum HIGH_FILE_NUMBERS
   billion = 1'000'000'000
 };
 
-void InitContexts(UaContext* ua, TreeContext* tree)
+void InitContexts(UaContext* t_ua, TreeContext* t_tree)
 {
-  ua->cmd = GetPoolMemory(PM_FNAME);
-  ua->args = GetPoolMemory(PM_FNAME);
-  ua->errmsg = GetPoolMemory(PM_FNAME);
-  ua->verbose = true;
-  ua->automount = true;
-  ua->send = new OutputFormatter(sprintit, ua, filterit, ua);
+  t_ua->cmd = GetPoolMemory(PM_FNAME);
+  t_ua->args = GetPoolMemory(PM_FNAME);
+  t_ua->errmsg = GetPoolMemory(PM_FNAME);
+  t_ua->verbose = true;
+  t_ua->automount = true;
+  t_ua->send = new OutputFormatter(sprintit, t_ua, filterit, t_ua);
 
-  tree->root = new_tree(1);
-  tree->ua = ua;
-  tree->all = false;
-  tree->FileEstimate = 100;
-  tree->DeltaCount = 1;
-  tree->node = (TREE_NODE*)tree->root;
+  t_tree->root = new_tree(1);
+  t_tree->ua = t_ua;
+  t_tree->all = false;
+  t_tree->FileEstimate = 100;
+  t_tree->DeltaCount = 1;
+  t_tree->node = (TREE_NODE*)t_tree->root;
 }
 
-int FakeCdCmd(UaContext* ua, TreeContext* tree, std::string path)
+int FakeCdCmd(UaContext* t_ua, TreeContext* t_tree, std::string path)
 {
   std::string command = "cd " + path;
-  PmStrcpy(ua->cmd, command.c_str());
-  ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
-  return cdcmd(ua, tree);
+  PmStrcpy(t_ua->cmd, command.c_str());
+  ParseArgsOnly(t_ua->cmd, t_ua->args, &t_ua->argc, t_ua->argk, t_ua->argv,
+                MAX_CMD_ARGS);
+  return cdcmd(t_ua, t_tree);
 }
 
-int FakeMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
+int FakeMarkCmd(UaContext* t_ua, TreeContext* t_tree, std::string path)
 {
   std::string command = "mark " + path;
-  PmStrcpy(ua->cmd, command.c_str());
+  PmStrcpy(t_ua->cmd, command.c_str());
 
-  ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
-  return MarkElements(ua, tree);
+  ParseArgsOnly(t_ua->cmd, t_ua->args, &t_ua->argc, t_ua->argk, t_ua->argv,
+                MAX_CMD_ARGS);
+  return MarkElements(t_ua, t_tree);
 }
 
-void PopulateTree(int quantity, TreeContext* tree)
+void PopulateTree(int quantity, TreeContext* t_tree)
 {
   me = new DirectorResource;
-  InitContexts(&ua, tree);
+  InitContexts(&ua, t_tree);
 
   char* filename = GetPoolMemory(PM_FNAME);
   char* path = GetPoolMemory(PM_FNAME);
@@ -111,7 +113,7 @@ void PopulateTree(int quantity, TreeContext* tree)
       char row7[] = "0";
       char* row[] = {row0, row1, row2, row3, row4, row5, row6, row7};
 
-      InsertTreeHandler(tree, 0, row);
+      InsertTreeHandler(t_tree, 0, row);
     }
   }
 }

@@ -52,9 +52,11 @@ struct connection : public connection_info {
   using sock_ptr = std::unique_ptr<BareosSocket, socket_closer>;
 
   connection() = default;
-  connection(std::string_view name, int protocol_version, BareosSocket* socket)
-      : connection_info{std::string{name}, protocol_version, time(nullptr)}
-      , socket{socket}
+  connection(std::string_view t_name,
+             int t_protocol_version,
+             BareosSocket* t_socket)
+      : connection_info{std::string{t_name}, t_protocol_version, time(nullptr)}
+      , socket{t_socket}
   {
   }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -625,19 +625,19 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   // days or hours given?
   utime_t now = (utime_t)time(NULL);
   time_t schedtime = 0;
-  int argument;
-  argument = FindArgWithValue(ua, NT_("days"));
-  int days = 0;
-  if (argument > 0) {
-    days = str_to_int64(ua->argv[argument]);
-    schedtime = now - secs_in_day * days; /* Days in the past */
+  {
+    int days = 0;
+    if (int argument = FindArgWithValue(ua, NT_("days")); argument >= 0) {
+      days = str_to_int64(ua->argv[argument]);
+      schedtime = now - secs_in_day * days; /* Days in the past */
+    }
   }
-
-  argument = FindArgWithValue(ua, NT_("hours"));
-  int hours = 0;
-  if (argument > 0) {
-    hours = str_to_int64(ua->argv[argument]);
-    schedtime = now - secs_in_hour * hours; /* Hours in the past */
+  {
+    int hours = 0;
+    if (int argument = FindArgWithValue(ua, NT_("hours")); argument >= 0) {
+      hours = str_to_int64(ua->argv[argument]);
+      schedtime = now - secs_in_hour * hours; /* Hours in the past */
+    }
   }
 
   std::string query_range;
@@ -645,8 +645,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   SetQueryRange(query_range, ua, &jr);
 
   char* clientname = nullptr;
-  argument = FindArgWithValue(ua, NT_("client"));
-  if (argument >= 0) {
+  if (int argument = FindArgWithValue(ua, NT_("client")); argument >= 0) {
     if (ua->GetClientResWithName(ua->argv[argument])) {
       clientname = ua->argv[argument];
     } else {
@@ -689,18 +688,22 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
            || Bstrcasecmp(ua->argk[1], NT_("jobname")))
           && ua->argv[1])) {
     // List jobs or List job=xxx
-    argument = FindArgWithValue(ua, NT_("jobname"));
-    if (argument < 0) { argument = FindArgWithValue(ua, NT_("job")); }
-    if (argument >= 0) {
-      jr.JobId = 0;
-      bstrncpy(jr.Name, ua->argv[argument], MAX_NAME_LENGTH);
+    {
+      int argument = FindArgWithValue(ua, NT_("jobname"));
+      if (argument < 0) { argument = FindArgWithValue(ua, NT_("job")); }
+      if (argument >= 0) {
+        jr.JobId = 0;
+        bstrncpy(jr.Name, ua->argv[argument], MAX_NAME_LENGTH);
+      }
     }
 
-    argument = FindArgWithValue(ua, NT_("volume"));
-    if (argument >= 0) { volumename = ua->argv[argument]; }
+    if (int argument = FindArgWithValue(ua, NT_("volume")); argument >= 0) {
+      volumename = ua->argv[argument];
+    }
 
-    argument = FindArgWithValue(ua, NT_("pool"));
-    if (argument >= 0) { poolname = ua->argv[argument]; }
+    if (int argument = FindArgWithValue(ua, NT_("pool")); argument >= 0) {
+      poolname = ua->argv[argument];
+    }
 
     switch (llist) {
       case VERT_LIST:
@@ -752,8 +755,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       if (jobid > 0) {
         jr.JobId = jobid;
 
-        argument = FindArgWithValue(ua, NT_("pool"));
-        if (argument >= 0) { poolname = ua->argv[argument]; }
+        if (int argument = FindArgWithValue(ua, NT_("pool")); argument >= 0) {
+          poolname = ua->argv[argument];
+        }
 
         switch (llist) {
           case VERT_LIST:
@@ -814,8 +818,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     int filesetid = 0;
 
     // List FileSet
-    argument = FindArgWithValue(ua, NT_("filesetid"));
-    if (argument > 0) { filesetid = str_to_int64(ua->argv[argument]); }
+    if (int argument = FindArgWithValue(ua, NT_("filesetid")); argument >= 0) {
+      filesetid = str_to_int64(ua->argv[argument]);
+    }
 
     jobid = GetJobidFromCmdline(ua);
     if (jobid > 0 || filesetid > 0) {
@@ -964,8 +969,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List next volume
     days = 1;
 
-    argument = FindArgWithValue(ua, NT_("days"));
-    if (argument >= 0) {
+    if (int argument = FindArgWithValue(ua, NT_("days")); argument >= 0) {
       days = atoi(ua->argv[argument]);
       if ((days < 0) || (days > kDefaultNumberOfDays)) {
         ua->WarningMsg(T_("Ignoring invalid value for days. Max is %d.\n"),
@@ -976,8 +980,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     ListNextvol(ua, days);
   } else if (Bstrcasecmp(ua->argk[1], NT_("copies"))) {
     // List copies
-    argument = FindArgWithValue(ua, NT_("jobid"));
-    if (argument >= 0) {
+    if (int argument = FindArgWithValue(ua, NT_("jobid")); argument >= 0) {
       if (Is_a_number_list(ua->argv[argument])) {
         ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(),
                                   ua->argv[argument], ua->send, llist);

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -484,7 +484,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         /* See if there is anything on the dir stack to pop off and continue
          * reading that directory. */
         if (!p_ctx->dir_stack->empty()) {
-          struct dir_stack_entry* entry;
+          struct dir_stack_entry* stack_entry;
 
           // Change the GLFS cwd back one dir.
           status = glfs_chdir(p_ctx->glfs, "..");
@@ -500,10 +500,10 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
           glfs_getcwd(p_ctx->glfs, p_ctx->cwd, SizeofPoolMemory(p_ctx->cwd));
 
           // Pop the previous directory handle and continue processing that.
-          entry = (struct dir_stack_entry*)p_ctx->dir_stack->pop();
-          memcpy(&p_ctx->statp, &entry->statp, sizeof(p_ctx->statp));
-          p_ctx->gdir = entry->gdir;
-          free(entry);
+          stack_entry = (struct dir_stack_entry*)p_ctx->dir_stack->pop();
+          memcpy(&p_ctx->statp, &stack_entry->statp, sizeof(p_ctx->statp));
+          p_ctx->gdir = stack_entry->gdir;
+          free(stack_entry);
         } else {
           return bRC_OK;
         }

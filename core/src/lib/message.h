@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,7 @@ class MessagesResource;
 extern int debug_level;
 extern bool dbg_timestamp; /* print timestamp in debug output */
 extern bool prt_kaboom;    /* Print kaboom output */
-extern int verbose;
+extern int g_verbose;
 extern char my_name[];
 extern const char* working_directory;
 extern utime_t daemon_start_time;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -460,16 +460,16 @@ static void MultiplyDevice(DeviceResource& multiplied_device_resource)
   }
 }
 
-static void MultiplyConfiguredDevices(ConfigurationParser& my_config)
+static void MultiplyConfiguredDevices(ConfigurationParser& config)
 {
   BareosResource* p = nullptr;
-  while ((p = my_config.GetNextRes(R_DEVICE, p))) {
+  while ((p = config.GetNextRes(R_DEVICE, p))) {
     DeviceResource& d = dynamic_cast<DeviceResource&>(*p);
     if (d.count > 1) { MultiplyDevice(d); }
   }
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& config)
 {
   std::map<int, std::string> map{
       {R_DIRECTOR, "R_DIRECTOR"},
@@ -480,14 +480,14 @@ static void ConfigBeforeCallback(ConfigurationParser& my_config)
       {R_DEVICE, "R_DEVICE"},
       {R_AUTOCHANGER, "R_AUTOCHANGER"},
       {R_CLIENT, "R_CLIENT"}}; /* needed for network dump */
-  my_config.InitializeQualifiedResourceNameTypeConverter(map);
+  config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
-static void CheckDropletDevices(ConfigurationParser& my_config)
+static void CheckDropletDevices(ConfigurationParser& config)
 {
   BareosResource* p = nullptr;
 
-  while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
+  while ((p = config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d && d->device_type == DeviceType::B_DROPLET_DEV) {
       if (d->max_concurrent_jobs == 0) {
@@ -508,11 +508,11 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
   }
 }
 
-static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
+static void GuessMissingDeviceTypes(ConfigurationParser& config)
 {
   BareosResource* p = nullptr;
 
-  while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
+  while ((p = config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d && d->device_type == DeviceType::B_UNKNOWN_DEV) {
       struct stat statp;
@@ -543,15 +543,15 @@ static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
   }
 }
 
-static void CheckAndLoadDeviceBackends(ConfigurationParser& my_config)
+static void CheckAndLoadDeviceBackends(ConfigurationParser& config)
 {
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   auto storage_res
-      = dynamic_cast<StorageResource*>(my_config.GetNextRes(R_STORAGE, NULL));
+      = dynamic_cast<StorageResource*>(config.GetNextRes(R_STORAGE, NULL));
 #endif
 
   BareosResource* p = nullptr;
-  while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
+  while ((p = config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d) {
       to_lower(d->device_type);
@@ -578,18 +578,18 @@ static void CheckAndLoadDeviceBackends(ConfigurationParser& my_config)
   }
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config)
+static void ConfigReadyCallback(ConfigurationParser& config)
 {
-  MultiplyConfiguredDevices(my_config);
-  GuessMissingDeviceTypes(my_config);
-  CheckAndLoadDeviceBackends(my_config);
-  CheckDropletDevices(my_config);
+  MultiplyConfiguredDevices(config);
+  GuessMissingDeviceTypes(config);
+  CheckAndLoadDeviceBackends(config);
+  CheckDropletDevices(config);
 }
 
-ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
+ConfigurationParser* InitSdConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
+      t_configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
       exit_code, R_NUM, resources, default_config_filename.c_str(),
       "bareos-sd.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
       DumpResource, FreeResource);
@@ -597,7 +597,7 @@ ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
   return config;
 }
 
-bool ParseSdConfig(const char* configfile, int exit_code)
+bool ParseSdConfig(const char* t_configfile, int exit_code)
 {
   bool retval;
 
@@ -609,7 +609,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
     if (!me) {
       Emsg1(exit_code, 0,
             T_("No Storage resource defined in %s. Cannot continue.\n"),
-            configfile);
+            t_configfile);
       return retval;
     }
   }
@@ -621,8 +621,6 @@ bool ParseSdConfig(const char* configfile, int exit_code)
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  ResourceTable* resources = my_config->resource_definitions_;
-
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bareos-sd"));
@@ -634,9 +632,10 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* bareos_sd = json_object();
   json_object_set_new(resource, "bareos-sd", bareos_sd);
 
-  for (int r = 0; resources[r].name; r++) {
-    ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set_new(bareos_sd, resource.name, json_items(resource.items));
+  for (int r = 0; my_config->resource_definitions_[r].name; r++) {
+    ResourceTable& resource_table = my_config->resource_definitions_[r];
+    json_object_set_new(bareos_sd, resource_table.name,
+                        json_items(resource_table.items));
   }
 
   char* const json_str = json_dumps(json, JSON_INDENT(2));

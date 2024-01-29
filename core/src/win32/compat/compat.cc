@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -132,10 +132,10 @@ struct thread_conversion_cache {
 
 static class VssPathConverter {
  public:
-  void SetConversions(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW)
+  void SetConversions(t_pVSSPathConvert t_Convert, t_pVSSPathConvertW ConvertW)
   {
     std::unique_lock write_lock(rw_mut);  // unique write lock
-    convert_fn = Convert;
+    convert_fn = t_Convert;
     convert_w_fn = ConvertW;
   }
 
@@ -2779,11 +2779,11 @@ HANDLE CreateChildProcess(const char* cmdline,
 
   if (bFuncRetn == 0) {
     ErrorExit("CreateProcess failed\n");
-    const char* err = errorString();
+    const char* err_str = errorString();
 
     Dmsg3(debuglevel, "CreateProcess(%s, %s, ...)=%s\n", comspec,
-          cmdLine.c_str(), err);
-    LocalFree((void*)err);
+          cmdLine.c_str(), err_str);
+    LocalFree((void*)err_str);
 
     return INVALID_HANDLE_VALUE;
   }

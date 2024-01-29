@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,7 +93,7 @@ ConfigurationParser::ConfigurationParser(
     LEX_ERROR_HANDLER* ScanError,
     LEX_WARNING_HANDLER* scan_warning,
     INIT_RES_HANDLER* init_res,
-    STORE_RES_HANDLER* StoreRes,
+    STORE_RES_HANDLER* store_res,
     PRINT_RES_HANDLER* print_res,
     int32_t err_type,
     int32_t r_num,
@@ -113,7 +113,7 @@ ConfigurationParser::ConfigurationParser(
   scan_error_ = ScanError;
   scan_warning_ = scan_warning;
   init_res_ = init_res;
-  store_res_ = StoreRes;
+  store_res_ = store_res;
   print_res_ = print_res;
   err_type_ = err_type;
   r_num_ = r_num;

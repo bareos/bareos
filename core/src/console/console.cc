@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -72,14 +72,14 @@ extern "C" void GotSigtout(int sig);
 extern "C" void GotSigtin(int sig);
 
 static char* configfile = NULL;
-static BareosSocket* UA_sock = NULL;
+static BareosSocket* g_UA_sock = NULL;
 static bool stop = false;
 static int timeout = 0;
-static int argc;
-static int numdir;
-static POOLMEM* args;
-static char* argk[MAX_CMD_ARGS];
-static char* argv[MAX_CMD_ARGS];
+static int g_argc;
+static int g_numdir;
+static POOLMEM* g_args;
+static char* g_argk[MAX_CMD_ARGS];
+static char* g_argv[MAX_CMD_ARGS];
 static bool file_selection = false;
 
 #if defined(HAVE_PAM)
@@ -157,9 +157,9 @@ static int Do_a_command(FILE* input, BareosSocket* UA_sock)
   status = 1;
 
   Dmsg1(120, "Command: %s\n", UA_sock->msg);
-  if (argc == 0) { return 1; }
+  if (g_argc == 0) { return 1; }
 
-  cmd = argk[0] + 1;
+  cmd = g_argk[0] + 1;
   if (*cmd == '#') { /* comment */
     return 1;
   }
@@ -225,7 +225,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       at_prompt = false;
       // @ => internal command for us
       if (UA_sock->msg[0] == '@') {
-        ParseArgs(UA_sock->msg, args, &argc, argk, argv, MAX_CMD_ARGS);
+        ParseArgs(UA_sock->msg, g_args, &g_argc, g_argk, g_argv, MAX_CMD_ARGS);
         if (!Do_a_command(input, UA_sock)) { break; }
         continue;
       }
@@ -399,10 +399,10 @@ void GetArguments(const char* what)
   if (rc != 0) { return; }
 
   buf = GetPoolMemory(PM_MESSAGE);
-  UA_sock->fsend(".help item=%s", what);
-  while (UA_sock->recv() > 0) {
-    StripTrailingJunk(UA_sock->msg);
-    match_kw(&preg, UA_sock->msg, UA_sock->message_length, buf);
+  g_UA_sock->fsend(".help item=%s", what);
+  while (g_UA_sock->recv() > 0) {
+    StripTrailingJunk(g_UA_sock->msg);
+    match_kw(&preg, g_UA_sock->msg, g_UA_sock->message_length, buf);
   }
   FreePoolMemory(buf);
   regfree(&preg);
@@ -413,10 +413,10 @@ static void GetItems(const char* what)
 {
   init_items();
 
-  UA_sock->fsend("%s", what);
-  while (UA_sock->recv() > 0) {
-    StripTrailingJunk(UA_sock->msg);
-    items->list.append(strdup(UA_sock->msg));
+  g_UA_sock->fsend("%s", what);
+  while (g_UA_sock->recv() > 0) {
+    StripTrailingJunk(g_UA_sock->msg);
+    items->list.append(strdup(g_UA_sock->msg));
   }
 }
 
@@ -555,9 +555,10 @@ static char** readline_completion(const char* text, int start, int)
 static char eol = '\0';
 static int EolCmd(FILE*, BareosSocket*)
 {
-  if ((argc > 1) && (strchr("!$%&'()*+,-/:;<>?[]^`{|}~", argk[1][0]) != NULL)) {
-    eol = argk[1][0];
-  } else if (argc == 1) {
+  if ((g_argc > 1)
+      && (strchr("!$%&'()*+,-/:;<>?[]^`{|}~", g_argk[1][0]) != NULL)) {
+    eol = g_argk[1][0];
+  } else if (g_argc == 1) {
     eol = '\0';
   } else {
     ConsoleOutput(T_("Illegal separator character.\n"));
@@ -773,9 +774,9 @@ static bool SelectDirector(const char* director,
 
 #if defined(HAVE_PAM)
 static BStringList ReadPamCredentialsFile(
-    const std::string& pam_credentials_filename)
+    const std::string& t_pam_credentials_filename)
 {
-  std::ifstream s(pam_credentials_filename);
+  std::ifstream s(t_pam_credentials_filename);
   std::string user, pw;
   if (!s.is_open()) {
     Emsg0(M_ERROR_TERM, 0, T_("Could not open PAM credentials file.\n"));
@@ -794,21 +795,21 @@ static BStringList ReadPamCredentialsFile(
 }
 
 static bool ExaminePamAuthentication(
-    bool use_pam_credentials_file,
-    const std::string& pam_credentials_filename)
+    bool t_use_pam_credentials_file,
+    const std::string& t_pam_credentials_filename)
 {
-  if (!UA_sock->tls_conn && !force_send_pam_credentials_unencrypted) {
+  if (!g_UA_sock->tls_conn && !force_send_pam_credentials_unencrypted) {
     ConsoleOutput("Canceled because password would be sent unencrypted!\n");
     return false;
   }
-  if (use_pam_credentials_file) {
-    BStringList args(ReadPamCredentialsFile(pam_credentials_filename));
-    if (args.empty()) { return false; }
-    UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, args);
+  if (t_use_pam_credentials_file) {
+    BStringList data(ReadPamCredentialsFile(t_pam_credentials_filename));
+    if (data.empty()) { return false; }
+    g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, data);
   } else {
-    UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive,
-                                          std::string());
-    if (!ConsolePamAuthenticate(stdin, UA_sock)) {
+    g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive,
+                                            std::string());
+    if (!ConsolePamAuthenticate(stdin, g_UA_sock)) {
       TerminateConsole(0);
       return false;
     }
@@ -828,7 +829,7 @@ int main(int argc, char* argv[])
   MyNameIs(argc, argv, "bconsole");
   InitMsg(NULL, NULL);
   working_directory = "/tmp";
-  args = GetPoolMemory(PM_FNAME);
+  g_args = GetPoolMemory(PM_FNAME);
 
   CLI::App console_app;
   InitCLIApp(console_app, "The Bareos Console.", 2000);
@@ -999,14 +1000,14 @@ int main(int argc, char* argv[])
   BStringList response_args;
 
   JobControlRecord jcr;
-  UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
-  if (!UA_sock) {
+  g_UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
+  if (!g_UA_sock) {
     ConsoleOutput(T_("Failed to connect to Director. Giving up.\n"));
     TerminateConsole(0);
     return 1;
   }
 
-  UA_sock->OutputCipherMessageString(ConsoleOutput);
+  g_UA_sock->OutputCipherMessageString(ConsoleOutput);
 
   if (response_id == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)
@@ -1017,8 +1018,8 @@ int main(int argc, char* argv[])
       return 1;
     }
     response_args.clear();
-    if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
-                                                    response_args)) {
+    if (!g_UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
+                                                      response_args)) {
       ConsoleOutput(T_("PAM authentication failed. Giving up.\n"));
       TerminateConsole(0);
       return 1;
@@ -1038,7 +1039,8 @@ int main(int argc, char* argv[])
   }
 
   response_args.clear();
-  if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id, response_args)) {
+  if (!g_UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
+                                                    response_args)) {
     Dmsg0(200, "Could not receive the response message\n");
     TerminateConsole(0);
     return 1;
@@ -1067,11 +1069,11 @@ int main(int argc, char* argv[])
   if (env) {
     FILE* fp;
 
-    PmStrcpy(UA_sock->msg, env);
-    PmStrcat(UA_sock->msg, "/.bconsolerc");
-    fp = fopen(UA_sock->msg, "rb");
+    PmStrcpy(g_UA_sock->msg, env);
+    PmStrcat(g_UA_sock->msg, "/.bconsolerc");
+    fp = fopen(g_UA_sock->msg, "rb");
     if (fp) {
-      ReadAndProcessInput(fp, UA_sock);
+      ReadAndProcessInput(fp, g_UA_sock);
       fclose(fp);
     }
   }
@@ -1090,11 +1092,11 @@ int main(int argc, char* argv[])
     }
   }
 
-  ReadAndProcessInput(stdin, UA_sock);
+  ReadAndProcessInput(stdin, g_UA_sock);
 
-  if (UA_sock) {
-    UA_sock->signal(BNET_TERMINATE); /* send EOF */
-    UA_sock->close();
+  if (g_UA_sock) {
+    g_UA_sock->signal(BNET_TERMINATE); /* send EOF */
+    g_UA_sock->close();
   }
 
   if (history_file.size()) { ConsoleUpdateHistory(history_file.c_str()); }
@@ -1115,7 +1117,7 @@ static void TerminateConsole(int sig)
   delete my_config;
   my_config = NULL;
   CleanupCrypto();
-  FreePoolMemory(args);
+  FreePoolMemory(g_args);
   ConTerm();
   WSACleanup(); /* Cleanup Windows sockets */
 
@@ -1130,15 +1132,15 @@ static int CheckResources()
 
   ResLocker _{my_config};
 
-  numdir = 0;
-  foreach_res (director, R_DIRECTOR) { numdir++; }
+  g_numdir = 0;
+  foreach_res (director, R_DIRECTOR) { g_numdir++; }
 
-  if (numdir == 0) {
-    const std::string& configfile = my_config->get_base_config_path();
+  if (g_numdir == 0) {
+    const std::string& configfile_name = my_config->get_base_config_path();
     Emsg1(M_FATAL, 0,
           T_("No Director resource defined in %s\n"
              "Without that I don't how to speak to the Director :-(\n"),
-          configfile.c_str());
+          configfile_name.c_str());
     OK = false;
   }
 
@@ -1162,22 +1164,22 @@ static int InputCmd(FILE*, BareosSocket*)
 {
   FILE* fd;
 
-  if (argc > 2) {
+  if (g_argc > 2) {
     ConsoleOutput(T_("Too many arguments on input command.\n"));
     return 1;
   }
-  if (argc == 1) {
+  if (g_argc == 1) {
     ConsoleOutput(T_("First argument to input command must be a filename.\n"));
     return 1;
   }
-  fd = fopen(argk[1], "rb");
+  fd = fopen(g_argk[1], "rb");
   if (!fd) {
     BErrNo be;
-    ConsoleOutputFormat(T_("Cannot open file %s for input. ERR=%s\n"), argk[1],
-                        be.bstrerror());
+    ConsoleOutputFormat(T_("Cannot open file %s for input. ERR=%s\n"),
+                        g_argk[1], be.bstrerror());
     return 1;
   }
-  ReadAndProcessInput(fd, UA_sock);
+  ReadAndProcessInput(fd, g_UA_sock);
   fclose(fd);
   return 1;
 }
@@ -1203,20 +1205,20 @@ static int DoOutputcmd(FILE*, BareosSocket*)
   FILE* file;
   const char* mode = "a+b";
 
-  if (argc > 3) {
+  if (g_argc > 3) {
     ConsoleOutput(T_("Too many arguments on output/tee command.\n"));
     return 1;
   }
-  if (argc == 1) {
+  if (g_argc == 1) {
     CloseTeeFile();
     return 1;
   }
-  if (argc == 3) { mode = argk[2]; }
-  file = fopen(argk[1], mode);
+  if (g_argc == 3) { mode = g_argk[2]; }
+  file = fopen(g_argk[1], mode);
   if (!file) {
     BErrNo be;
-    ConsoleOutputFormat(T_("Cannot open file %s for output. ERR=%s\n"), argk[1],
-                        be.bstrerror(errno));
+    ConsoleOutputFormat(T_("Cannot open file %s for output. ERR=%s\n"),
+                        g_argk[1], be.bstrerror(errno));
     return 1;
   }
   SetTeeFile(file);
@@ -1231,16 +1233,16 @@ static int ExecCmd(FILE*, BareosSocket*)
   int status;
   int wait = 0;
 
-  if (argc > 3) {
+  if (g_argc > 3) {
     ConsoleOutput(
         T_("Too many arguments. Enclose command in double quotes.\n"));
     return 1;
   }
-  if (argc == 3) { wait = atoi(argk[2]); }
-  bpipe = OpenBpipe(argk[1], wait, "r");
+  if (g_argc == 3) { wait = atoi(g_argk[2]); }
+  bpipe = OpenBpipe(g_argk[1], wait, "r");
   if (!bpipe) {
     BErrNo be;
-    ConsoleOutputFormat(T_("Cannot popen(\"%s\", \"r\"): ERR=%s\n"), argk[1],
+    ConsoleOutputFormat(T_("Cannot popen(\"%s\", \"r\"): ERR=%s\n"), g_argk[1],
                         be.bstrerror(errno));
     return 1;
   }
@@ -1260,7 +1262,7 @@ static int ExecCmd(FILE*, BareosSocket*)
 /* @echo xxx yyy */
 static int EchoCmd(FILE*, BareosSocket*)
 {
-  for (int i = 1; i < argc; i++) { ConsoleOutputFormat("%s ", argk[i]); }
+  for (int i = 1; i < g_argc; i++) { ConsoleOutputFormat("%s ", g_argk[i]); }
   ConsoleOutput("\n");
   return 1;
 }
@@ -1281,7 +1283,7 @@ static int HelpCmd(FILE*, BareosSocket*)
 /* @sleep secs */
 static int SleepCmd(FILE*, BareosSocket*)
 {
-  if (argc > 1) { sleep(atoi(argk[1])); }
+  if (g_argc > 1) { sleep(atoi(g_argk[1])); }
   return 1;
 }
 

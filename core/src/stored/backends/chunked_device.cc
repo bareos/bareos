@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -206,7 +206,6 @@ void ChunkedDevice::StopThreads()
 // Set the inflight flag for a chunk.
 bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
 {
-  int fd;
   PoolMem inflight_file(PM_FNAME);
 
   Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname,
@@ -216,12 +215,13 @@ bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
   Dmsg3(100, "Creating inflight file %s for volume %s, chunk %d\n",
         inflight_file.c_str(), request->volname, request->chunk);
 
-  fd = ::open(inflight_file.c_str(), O_CREAT | O_EXCL | O_WRONLY, 0640);
-  if (fd >= 0) {
+  int inflight_fd
+      = ::open(inflight_file.c_str(), O_CREAT | O_EXCL | O_WRONLY, 0640);
+  if (inflight_fd >= 0) {
     lock_mutex(mutex);
     inflight_chunks_++;
     unlock_mutex(mutex);
-    ::close(fd);
+    ::close(inflight_fd);
   } else {
     return false;
   }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -250,8 +250,8 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
     }
     if (bs->msg[0] == 'S') { /* Status change */
       int JobStatus;
-      char Job[MAX_NAME_LENGTH];
-      if (sscanf(bs->msg, Job_status, &Job, &JobStatus) == 2) {
+      char unused_job_buf[MAX_NAME_LENGTH];
+      if (sscanf(bs->msg, Job_status, &unused_job_buf, &JobStatus) == 2) {
         SetJcrSdJobStatus(jcr, JobStatus); /* current status */
       } else {
         Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), bs->msg);

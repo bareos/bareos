@@ -952,7 +952,6 @@ static void ListRunningJobs(UaContext* ua)
   int njobs = 0;
   const char* msg;
   char* emsg; /* edited message */
-  char dt[MAX_TIME_LENGTH];
   char level[10];
   bool pool_mem = false;
 
@@ -963,6 +962,7 @@ static void ListRunningJobs(UaContext* ua)
       /* this is a console or other control job. We only show console
        * jobs in the status output.
        */
+      char dt[MAX_TIME_LENGTH];
       if (jcr->is_JobType(JT_CONSOLE) && !ua->api) {
         bstrftime_nc(dt, sizeof(dt), jcr->start_time);
         ua->SendMsg(T_("Console connected at %s\n"), dt);

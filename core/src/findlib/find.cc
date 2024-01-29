@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -361,11 +361,11 @@ bool AcceptFile(FindFilesPacket* ff)
   // Now apply the Exclude { } directive
   for (i = 0; i < fileset->exclude_list.size(); i++) {
     dlistString* node;
-    findIncludeExcludeItem* incexe
+    findIncludeExcludeItem* exclude_item
         = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
 
-    for (j = 0; j < incexe->opts_list.size(); j++) {
-      findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
+    for (j = 0; j < exclude_item->opts_list.size(); j++) {
+      findFOPTS* fo = (findFOPTS*)exclude_item->opts_list.get(j);
       fnm_flags = BitIsSet(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
       for (k = 0; k < fo->wild.size(); k++) {
         if (fnmatch((char*)fo->wild.get(k), ff->fname, fnmode | fnm_flags)
@@ -375,11 +375,11 @@ bool AcceptFile(FindFilesPacket* ff)
         }
       }
     }
-    fnm_flags = (incexe->current_opts != NULL
-                 && BitIsSet(FO_IGNORECASE, incexe->current_opts->flags))
+    fnm_flags = (exclude_item->current_opts != NULL
+                 && BitIsSet(FO_IGNORECASE, exclude_item->current_opts->flags))
                     ? FNM_CASEFOLD
                     : 0;
-    foreach_dlist (node, &incexe->name_list) {
+    foreach_dlist (node, &exclude_item->name_list) {
       char* fname = node->c_str();
 
       if (fnmatch(fname, ff->fname, fnmode | fnm_flags) == 0) {

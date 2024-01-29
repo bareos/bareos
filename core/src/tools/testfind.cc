@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,9 +46,9 @@ int main(int argc, char** argv)
   CLI::App testfind_app;
   InitCLIApp(testfind_app, "The Bareos Testfind Tool.", 2000);
 
-  std::string configfile = ConfigurationParser::GetDefaultConfigDir();
+  std::string configfile_path = ConfigurationParser::GetDefaultConfigDir();
   testfind_app
-      .add_option("-c,--config", configfile,
+      .add_option("-c,--config", configfile_path,
                   "Use <path> as configuration file or directory.")
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
@@ -61,7 +61,8 @@ int main(int argc, char** argv)
 
   ParseBareosApp(testfind_app, argc, argv);
 
-  directordaemon::my_config = InitDirConfig(configfile.c_str(), M_CONFIG_ERROR);
+  directordaemon::my_config
+      = InitDirConfig(configfile_path.c_str(), M_CONFIG_ERROR);
 
   my_config->ParseConfigOrExit();
 
@@ -81,7 +82,7 @@ int main(int argc, char** argv)
     exit(BEXIT_FAILURE);
   }
 
-  ProcessFileset(dir_fileset, configfile.c_str());
+  ProcessFileset(dir_fileset, configfile_path.c_str());
 
   if (my_config) {
     delete my_config;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -318,26 +318,26 @@ int main(int argc, char* argv[])
 static int CheckResources()
 {
   bool OK = true;
-  const std::string& configfile = my_config->get_base_config_path();
+  const std::string& configfile_name = my_config->get_base_config_path();
 
   if (my_config->GetNextRes(R_STORAGE, (BareosResource*)me) != nullptr) {
     Jmsg1(nullptr, M_ERROR, 0,
           T_("Only one Storage resource permitted in %s\n"),
-          configfile.c_str());
+          configfile_name.c_str());
     OK = false;
   }
 
   if (my_config->GetNextRes(R_DIRECTOR, nullptr) == nullptr) {
     Jmsg1(nullptr, M_ERROR, 0,
           T_("No Director resource defined in %s. Cannot continue.\n"),
-          configfile.c_str());
+          configfile_name.c_str());
     OK = false;
   }
 
   if (my_config->GetNextRes(R_DEVICE, nullptr) == nullptr) {
     Jmsg1(nullptr, M_ERROR, 0,
           T_("No Device resource defined in %s. Cannot continue.\n"),
-          configfile.c_str());
+          configfile_name.c_str());
     OK = false;
   }
 
@@ -346,7 +346,7 @@ static int CheckResources()
     if (!me->messages) {
       Jmsg1(nullptr, M_ERROR, 0,
             T_("No Messages resource defined in %s. Cannot continue.\n"),
-            configfile.c_str());
+            configfile_name.c_str());
       OK = false;
     }
   }
@@ -354,7 +354,7 @@ static int CheckResources()
   if (!me->working_directory) {
     Jmsg1(nullptr, M_ERROR, 0,
           T_("No Working Directory defined in %s. Cannot continue.\n"),
-          configfile.c_str());
+          configfile_name.c_str());
     OK = false;
   }
 
@@ -374,7 +374,7 @@ static int CheckResources()
       Jmsg(nullptr, M_FATAL, 0,
            T_("LabelMedia enabled is incompatible with tape crypto on Device "
               "\"%s\" in %s.\n"),
-           device_resource->resource_name_, configfile.c_str());
+           device_resource->resource_name_, configfile_name.c_str());
       OK = false;
     }
   }
@@ -435,9 +435,9 @@ static void CleanUpOldFiles()
   if (name_max < 1024) { name_max = 1024; }
 
   if (!(dp = opendir(me->working_directory))) {
-    BErrNo be;
+    BErrNo be2;
     Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n",
-          me->working_directory, be.bstrerror());
+          me->working_directory, be2.bstrerror());
     goto get_out1;
   }
 

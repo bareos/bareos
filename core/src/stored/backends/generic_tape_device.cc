@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1345,17 +1345,17 @@ int generic_tape_device::d_open(const char* pathname, int flags, int mode)
   return ::open(pathname, flags, mode);
 }
 
-ssize_t generic_tape_device::d_read(int fd, void* buffer, size_t count)
+ssize_t generic_tape_device::d_read(int t_fd, void* buffer, size_t count)
 {
-  return ::read(fd, buffer, count);
+  return ::read(t_fd, buffer, count);
 }
 
-ssize_t generic_tape_device::d_write(int fd, const void* buffer, size_t count)
+ssize_t generic_tape_device::d_write(int t_fd, const void* buffer, size_t count)
 {
-  return ::write(fd, buffer, count);
+  return ::write(t_fd, buffer, count);
 }
 
-int generic_tape_device::d_close(int fd) { return ::close(fd); }
+int generic_tape_device::d_close(int t_fd) { return ::close(t_fd); }
 
 int generic_tape_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 

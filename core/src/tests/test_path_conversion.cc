@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -244,8 +244,8 @@ INSTANTIATE_TEST_CASE_P(
     ShadowCopy,
     Regression,
     ::testing::Values(VssStatus::Enabled, VssStatus::Disabled),
-    [](const testing::TestParamInfo<Regression::ParamType>& info)
-        -> std::string { return std::string(VssStatusName(info.param)); });
+    [](const testing::TestParamInfo<Regression::ParamType>& t_info)
+        -> std::string { return std::string(VssStatusName(t_info.param)); });
 
 extern std::wstring ReplaceSlashes(std::wstring_view path);
 

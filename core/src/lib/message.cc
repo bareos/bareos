@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@
 
 // globals
 const char* working_directory = NULL; /* working directory path stored here */
-int verbose = 0;                      /* increase User messages */
+int g_verbose = 0;                    /* increase User messages */
 int debug_level = 0;                  /* debug level */
 bool dbg_timestamp = false;           /* print timestamp in debug output */
 bool prt_kaboom = false;              /* Print kaboom output */

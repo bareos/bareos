@@ -539,13 +539,13 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
 
 #  define VSS_CALL(Obj, Name, ...)                                 \
     do {                                                           \
-      HRESULT hr = (Obj)->Name(__VA_ARGS__);                       \
-      if (FAILED(hr)) {                                            \
+      HRESULT _vss_call_hr = (Obj)->Name(__VA_ARGS__);             \
+      if (FAILED(_vss_call_hr)) {                                  \
         Dmsg1(0,                                                   \
               "VSSClientGeneric::Initialize: "                     \
               "IVssBackupComponents->" #Name " returned 0x%08X\n", \
-              hr);                                                 \
-        JmsgVssApiStatus(jcr_, M_FATAL, hr, #Name);                \
+              _vss_call_hr);                                       \
+        JmsgVssApiStatus(jcr_, M_FATAL, _vss_call_hr, #Name);      \
         errno = b_errno_win32;                                     \
         return false;                                              \
       }                                                            \
@@ -687,9 +687,9 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
           BSTR bstrComponentName;
           VSS_CALL(pDepedency, GetComponentName, &bstrComponentName);
 
-          char* name = BSTR_2_str(bstrComponentName);
-          Dmsg1(500, "Depedency: %s\n", name);
-          free(name);
+          char* name2 = BSTR_2_str(bstrComponentName);
+          Dmsg1(500, "Depedency: %s\n", name2);
+          free(name2);
 
           SysFreeString(bstrComponentName);
           pDepedency->Release();

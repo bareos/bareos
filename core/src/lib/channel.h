@@ -55,7 +55,7 @@ template <typename T> class queue {
   std::size_t max_size;
 
  public:
-  explicit queue(std::size_t max_size) : max_size(max_size) {}
+  explicit queue(std::size_t t_max_size) : max_size(t_max_size) {}
   queue(const queue&) = delete;
   queue& operator=(const queue&) = delete;
   queue(queue&&) = delete;
@@ -68,8 +68,8 @@ template <typename T> class queue {
     std::condition_variable* update;
 
    public:
-    handle(locked_type locked, std::condition_variable* update)
-        : locked{std::move(locked)}, update(update)
+    handle(locked_type t_locked, std::condition_variable* t_update)
+        : locked{std::move(t_locked)}, update(t_update)
     {
     }
     handle(const handle&) = delete;
@@ -105,8 +105,8 @@ template <typename T> class queue {
     auto locked = shared.lock();
     ASSERT(!locked->out_dead);
 
-    locked.wait(in_update, [](const auto& queue) {
-      return queue.data.size() > 0 || queue.in_dead;
+    locked.wait(in_update, [](const auto& t_queue) {
+      return t_queue.data.size() > 0 || t_queue.in_dead;
     });
 
     if (locked->data.size() == 0) {
@@ -138,8 +138,8 @@ template <typename T> class queue {
   result_type input_lock()
   {
     auto locked = shared.lock();
-    locked.wait(out_update, [max_size = max_size](const auto& queue) {
-      return queue.data.size() < max_size || queue.out_dead;
+    locked.wait(out_update, [max_size = max_size](const auto& t_queue) {
+      return t_queue.data.size() < max_size || t_queue.out_dead;
     });
     ASSERT(!locked->in_dead);
 
@@ -184,7 +184,8 @@ template <typename T> class input {
   using result_type = typename queue<T>::result_type;
 
  public:
-  explicit input(std::shared_ptr<queue<T>> shared) : shared{std::move(shared)}
+  explicit input(std::shared_ptr<queue<T>> t_shared)
+      : shared{std::move(t_shared)}
   {
   }
   // after move only operator= and ~in are allowed to be called
@@ -274,7 +275,8 @@ template <typename T> class output {
   };
 
  public:
-  explicit output(std::shared_ptr<queue<T>> shared) : shared{std::move(shared)}
+  explicit output(std::shared_ptr<queue<T>> t_shared)
+      : shared{std::move(t_shared)}
   {
   }
   // after move only operator= and ~out are allowed to be called

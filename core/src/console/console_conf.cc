@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -246,11 +246,11 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   return (error == 0);
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& t_config)
 {
   std::map<int, std::string> map{{R_DIRECTOR, "R_DIRECTOR"},
                                  {R_CONSOLE, "R_CONSOLE"}};
-  my_config.InitializeQualifiedResourceNameTypeConverter(map);
+  t_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
 static void ConfigReadyCallback(ConfigurationParser&) {}
@@ -279,10 +279,10 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* bconsole = json_object();
   json_object_set_new(json_resource_object, "bconsole", bconsole);
 
-  ResourceTable* resources = my_config->resource_definitions_;
-  for (; resources->name; ++resources) {
-    json_object_set_new(bconsole, resources->name,
-                        json_items(resources->items));
+  ResourceTable* resource_definition = my_config->resource_definitions_;
+  for (; resource_definition->name; ++resource_definition) {
+    json_object_set_new(bconsole, resource_definition->name,
+                        json_items(resource_definition->items));
   }
 
   char* const json_str = json_dumps(json, JSON_INDENT(2));

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -495,23 +495,23 @@ bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser* config,
   return true;
 }
 
-void BareosSocket::ParameterizeTlsCert(Tls* tls_conn_init,
+void BareosSocket::ParameterizeTlsCert(Tls* conn_init,
                                        TlsResource* tls_resource)
 {
-  tls_conn_init->Setca_certfile_(tls_resource->tls_cert_.ca_certfile_);
-  tls_conn_init->SetCaCertdir(tls_resource->tls_cert_.ca_certdir_);
-  tls_conn_init->SetCrlfile(tls_resource->tls_cert_.crlfile_);
-  tls_conn_init->SetCertfile(tls_resource->tls_cert_.certfile_);
-  tls_conn_init->SetKeyfile(tls_resource->tls_cert_.keyfile_);
+  conn_init->Setca_certfile_(tls_resource->tls_cert_.ca_certfile_);
+  conn_init->SetCaCertdir(tls_resource->tls_cert_.ca_certdir_);
+  conn_init->SetCrlfile(tls_resource->tls_cert_.crlfile_);
+  conn_init->SetCertfile(tls_resource->tls_cert_.certfile_);
+  conn_init->SetKeyfile(tls_resource->tls_cert_.keyfile_);
   /*      tls_conn_init->SetPemCallback(TlsPemCallback);
    * --> Feature not implemented: Console Callback */
   /*      tls_conn_init->SetPemUserdata(tls_resource->tls_cert_.pem_message_);
    * --> Feature not implemented: SetPemUserdata */
-  tls_conn_init->SetDhFile(tls_resource->tls_cert_.dhfile_);
-  tls_conn_init->SetCipherList(tls_resource->cipherlist_);
-  tls_conn_init->SetCipherSuites(tls_resource->ciphersuites_);
-  tls_conn_init->SetVerifyPeer(tls_resource->tls_cert_.verify_peer_);
-  tls_conn_init->SetEnableKtls(tls_resource->enable_ktls_);
+  conn_init->SetDhFile(tls_resource->tls_cert_.dhfile_);
+  conn_init->SetCipherList(tls_resource->cipherlist_);
+  conn_init->SetCipherSuites(tls_resource->ciphersuites_);
+  conn_init->SetVerifyPeer(tls_resource->tls_cert_.verify_peer_);
+  conn_init->SetEnableKtls(tls_resource->enable_ktls_);
 }
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(

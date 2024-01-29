@@ -95,7 +95,7 @@ TEST(setdevice, scan_command_line)
 
   for (const auto& c : wrong_command_lines) {
     ParseArgs(c.c_str(), ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
-    auto result = SetDeviceCommand::ScanCommandLine(ua.get());
-    EXPECT_TRUE(result.empty());
+    auto res = SetDeviceCommand::ScanCommandLine(ua.get());
+    EXPECT_TRUE(res.empty());
   }
 }

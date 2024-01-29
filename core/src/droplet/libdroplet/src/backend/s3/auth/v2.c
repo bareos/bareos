@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2024 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -90,16 +90,14 @@ static dpl_status_t dpl_s3_make_signature_v2(dpl_ctx_t* ctx,
 
   // x-amz headers
   if (headers != NULL) {
-    int bucket;
     dpl_dict_var_t* var;
     dpl_vec_t* vec;
-    int i;
 
     vec = dpl_vec_new(2, 2);
     if (NULL == vec) return DPL_ENOMEM;
 
-    for (bucket = 0; bucket < headers->n_buckets; bucket++) {
-      for (var = headers->buckets[bucket]; var; var = var->prev) {
+    for (int i = 0; i < headers->n_buckets; i++) {
+      for (var = headers->buckets[i]; var; var = var->prev) {
         if (!strncmp(var->key, "x-amz-", 6) && strcmp(var->key, "x-amz-date")) {
           assert(DPL_VALUE_STRING == var->val->type);
           ret = dpl_vec_add(vec, var);
@@ -113,7 +111,7 @@ static dpl_status_t dpl_s3_make_signature_v2(dpl_ctx_t* ctx,
 
     dpl_vec_sort(vec, var_cmp);
 
-    for (i = 0; i < vec->n_items; i++) {
+    for (int i = 0; i < vec->n_items; i++) {
       var = (dpl_dict_var_t*)dpl_vec_get(vec, i);
       if (var == NULL) continue;
 

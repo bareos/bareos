@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,9 +35,9 @@
 using namespace filedaemon;
 
 void ProcessFileset(directordaemon::FilesetResource* director_fileset,
-                    const char* configfile)
+                    const char* t_configfile)
 {
-  my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
+  my_config = InitFdConfig(t_configfile, M_CONFIG_ERROR);
   my_config->ParseConfigOrExit();
 
   me = static_cast<ClientResource*>(my_config->GetNextRes(R_CLIENT, nullptr));

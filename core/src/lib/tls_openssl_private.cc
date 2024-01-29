@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -129,12 +129,12 @@ bool TlsOpenSslPrivate::init()
         = SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
 
     if (err) {
-      std::string err{T_("Error setting OpenSSL Protocol options:\n")};
+      std::string err_str{T_("Error setting OpenSSL Protocol options:\n")};
       std::array<char, 256> buffer;
       ERR_error_string(ERR_get_error(), buffer.data());
-      err += buffer.data();
-      err += "\n";
-      Dmsg1(100, err.c_str());
+      err_str += buffer.data();
+      err_str += "\n";
+      Dmsg1(100, err_str.c_str());
       return false;
     }
   }

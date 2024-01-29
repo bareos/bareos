@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,10 +37,10 @@ class PromptsFormatting : public ::testing::Test {
 
   void TearDown() override { FreeUaContext(ua); }
 
-  void PopulateUaWithPrompts(UaContext* ua, const char** list)
+  void PopulateUaWithPrompts(UaContext* t_ua, const char** list)
   {
-    StartPrompt(ua, "start");
-    for (int i = 0; list[i]; ++i) { AddPrompt(ua, list[i]); }
+    StartPrompt(t_ua, "start");
+    for (int i = 0; list[i]; ++i) { AddPrompt(t_ua, list[i]); }
   }
 
   int window_width{80};

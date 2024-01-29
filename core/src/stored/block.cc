@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -262,7 +262,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
             T_("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". "
                "Buffer discarded.\n"),
             dev->file, dev->block_num, BLKHDR1_ID, Id);
-      if (block->read_errors == 0 || verbose >= 2) {
+      if (block->read_errors == 0 || g_verbose >= 2) {
         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       }
       block->read_errors++;
@@ -280,7 +280,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
             T_("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". "
                "Buffer discarded.\n"),
             dev->file, dev->block_num, BLKHDR2_ID, Id);
-      if (block->read_errors == 0 || verbose >= 2) {
+      if (block->read_errors == 0 || g_verbose >= 2) {
         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       }
       block->read_errors++;
@@ -294,7 +294,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
            "discarded.\n"),
         dev->file, dev->block_num, BLKHDR2_ID, Id);
     Dmsg1(50, "%s", dev->errmsg);
-    if (block->read_errors == 0 || verbose >= 2) {
+    if (block->read_errors == 0 || g_verbose >= 2) {
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     }
     block->read_errors++;
@@ -310,7 +310,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
           T_("Volume data error at %u:%u! Block length %u is insane (too "
              "large), probably due to a bad archive.\n"),
           dev->file, dev->block_num, block_len);
-    if (block->read_errors == 0 || verbose >= 2) {
+    if (block->read_errors == 0 || g_verbose >= 2) {
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     }
     block->read_errors++;
@@ -339,7 +339,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
                "Block checksum mismatch in block=%u len=%d: calc=%x blk=%x\n"),
             dev->file, dev->block_num, (unsigned)BlockNumber, block_len,
             BlockCheckSum, CheckSum);
-      if (block->read_errors == 0 || verbose >= 2) {
+      if (block->read_errors == 0 || g_verbose >= 2) {
         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
         DumpBlock(block, "with checksum error");
       }

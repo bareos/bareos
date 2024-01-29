@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -105,20 +105,20 @@ static inline ULONG Read32BitUnsigned(const unsigned char* pValue)
 
 static inline LONGLONG Read64BitSigned(const unsigned char* pValue)
 {
-  return (LONGLONG)(
-      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
-      | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
-      | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
-      | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
+  return (
+      LONGLONG)(((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
+                | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
+                | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
+                | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
 }
 
 static inline ULONGLONG Read64BitUnsigned(const unsigned char* pValue)
 {
-  return (LONGLONG)(
-      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
-      | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
-      | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
-      | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
+  return (
+      LONGLONG)(((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
+                | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
+                | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
+                | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
 }
 
 typedef struct _TAPE_POSITION_INFO {
@@ -265,20 +265,20 @@ int win32_tape_device::d_open(const char* pathname, int, int)
   return (int)idxFile + 3;
 }
 
-ssize_t win32_tape_device::d_read(int fd, void* buffer, size_t count)
+ssize_t win32_tape_device::d_read(int t_fd, void* buffer, size_t count)
 {
   if (buffer == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
-      || TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (t_fd < 3 || t_fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[t_fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
 
-  PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[fd - 3];
+  PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[t_fd - 3];
 
   DWORD bytes_read;
   BOOL bResult;
@@ -329,20 +329,20 @@ ssize_t win32_tape_device::d_read(int fd, void* buffer, size_t count)
   }
 }
 
-ssize_t win32_tape_device::d_write(int fd, const void* buffer, size_t count)
+ssize_t win32_tape_device::d_write(int t_fd, const void* buffer, size_t count)
 {
   if (buffer == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
-      || TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (t_fd < 3 || t_fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[t_fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
 
-  PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[fd - 3];
+  PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[t_fd - 3];
   DWORD bytes_written;
   BOOL bResult;
 
@@ -383,15 +383,15 @@ ssize_t win32_tape_device::d_write(int fd, const void* buffer, size_t count)
   }
 }
 
-int win32_tape_device::d_close(int fd)
+int win32_tape_device::d_close(int t_fd)
 {
-  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
-      || TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (t_fd < 3 || t_fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[t_fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
 
-  PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[fd - 3];
+  PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[t_fd - 3];
   if (!CloseHandle(pHandleInfo->OSHandle)) {
     pHandleInfo->OSHandle = INVALID_HANDLE_VALUE;
     errno = EBADF;
@@ -947,8 +947,9 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
         && dwBytesReturned >= (offsetof(SCSI_PASS_THROUGH, ScsiStatus)
                                + sizeof(ScsiPassThrough->ScsiStatus))) {
       if (ScsiPassThrough->ScsiStatus == SCSISTAT_GOOD) {
-        PREAD_POSITION_RESULT pPosResult = (PREAD_POSITION_RESULT)(
-            (PUCHAR)ScsiPassThrough + ScsiPassThrough->DataBufferOffset);
+        PREAD_POSITION_RESULT pPosResult
+            = (PREAD_POSITION_RESULT)((PUCHAR)ScsiPassThrough
+                                      + ScsiPassThrough->DataBufferOffset);
 
         switch (pass) {
           case 0: {

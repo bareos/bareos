@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2024 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -38,10 +38,10 @@
 
 /** @file */
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+// #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt, ...)
 
-//#define DEBUG
+// #define DEBUG
 
 /**
  * this function doesn't modify str
@@ -153,12 +153,10 @@ static char* read_line(dpl_conn_t* conn)
   found_nl = 0;
 
   while (conn->cc && !found_nl) {
-    /*
-     * copies buf from the current pos into the line until
+    /* copies buf from the current pos into the line until
      * buf is totally read
      * or the line is full
-     * or we found a newline
-     */
+     * or we found a newline */
     while (conn->read_buf_pos < conn->cc && line_pos < conn->block_size * size
            && conn->read_buf[conn->read_buf_pos] != '\n') {
       // DPRINTF("%c\n", conn->read_buf[conn->read_buf_pos]);
@@ -332,13 +330,11 @@ static dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t* conn,
     if (MODE_SINGLE_DATA_CHUNK == mode) {
       DPRINTF("chunk_len=%ld chunk_off=%ld\n", chunk_len, chunk_off);
 
-      /*
-       * Two types of chunk read:
+      /* Two types of chunk read:
        *  1) We have chunk length (through chunked transfer encoding or
        *  Content-length)
        *  2) We have a 'Connection: close' header, and want to ensure that
-       *  a potential unannounced body is read
-       */
+       *  a potential unannounced body is read */
       if (chunk_off < chunk_len || connclose) {
         chunk_remain = chunk_len ? chunk_len - chunk_off : -1;
 
@@ -360,7 +356,7 @@ static dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t* conn,
             continue;
           }
 
-          int ret;
+          int ret3;
 
           if (0 == conn->ctx->use_https) {
             errno = 0;
@@ -368,9 +364,9 @@ static dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t* conn,
                             ? MSG_WAITALL
                             : 0;
 
-            ret = recv(conn->fd, conn->read_buf, conn->read_buf_size, flags);
-            if (ret >= 0) {
-              conn->cc = ret;
+            ret3 = recv(conn->fd, conn->read_buf, conn->read_buf_size, flags);
+            if (ret3 >= 0) {
+              conn->cc = ret3;
               ready = 1;
             } else {
               switch (errno) {
@@ -390,12 +386,12 @@ static dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t* conn,
               }
             }
           } else {
-            ret = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
-            if (ret > 0) {
-              conn->cc = ret;
+            ret3 = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
+            if (ret3 > 0) {
+              conn->cc = ret3;
               ready = 1;
             } else {
-              switch (SSL_get_error(conn->ssl, ret)) {
+              switch (SSL_get_error(conn->ssl, ret3)) {
                 case SSL_ERROR_WANT_READ:
                 case SSL_ERROR_WANT_WRITE:
                   // retry
@@ -434,10 +430,8 @@ static dpl_status_t dpl_read_http_reply_buffered(dpl_conn_t* conn,
           ret = DPL_FAILURE;
           goto end;
         }
-        /*
-         * With connclose, no other buffer than body should reach the
-         * read_buf, consume all
-         */
+        /* With connclose, no other buffer than body should reach the
+         * read_buf, consume all */
         conn->read_buf_pos = connclose ? 0 : chunk_cc;
         chunk_off += chunk_cc;
 
