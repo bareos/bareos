@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
+- Remove EOL platforms [PR #1684]
 
 ### Documentation
 - docs: improvements for droplet, jobdefs [PR #1581]
@@ -69,4 +70,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1665]: https://github.com/bareos/bareos/pull/1665
 [PR #1671]: https://github.com/bareos/bareos/pull/1671
 [PR #1672]: https://github.com/bareos/bareos/pull/1672
+[PR #1684]: https://github.com/bareos/bareos/pull/1684
 [unreleased]: https://github.com/bareos/bareos/tree/master
