@@ -33,13 +33,6 @@ OS:
       CUSTOM_TEST_IMAGES: [ SLE-15_SP3, SLE-15_SP4, openSUSE-Leap_15.4, SLE-15_SP5, openSUSE-Leap_15.5 ]
       ARCH:
       - x86_64
-  SLE:
-    "12_SP5":
-      TYPE: rpm
-      IMAGE: sles12sp5
-      CUSTOM_TEST_IMAGES: []
-      ARCH:
-      - x86_64
   Fedora:
     "39":
       TYPE: rpm
@@ -62,11 +55,6 @@ OS:
       IMAGE: "debian11"
       ARCH:
         - x86_64
-    "10":
-      TYPE: deb
-      IMAGE: "debian10"
-      ARCH:
-        - x86_64
   EL:
     "9":
       TYPE: rpm
@@ -78,12 +66,6 @@ OS:
       TYPE: rpm
       IMAGE: rhel8
       CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
-      ARCH:
-      - x86_64
-    "7":
-      TYPE: rpm
-      IMAGE: rhel7
-      CUSTOM_TEST_IMAGES: [ CentOS, RHEL ]
       ARCH:
       - x86_64
   FreeBSD:
