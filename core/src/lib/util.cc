@@ -39,6 +39,7 @@
 #include <vector>
 
 #include <openssl/rand.h>
+#include <openssl/err.h>
 
 // Various BAREOS Utility subroutines
 
@@ -761,66 +762,32 @@ int DoShellExpansion(char* name, int name_len)
 }
 #endif
 
-/*
- * MAKESESSIONKEY  --  Generate session key with optional start
- *                     key.  If mode is TRUE, the key will be
- *                     translated to a string, otherwise it is
- *                     returned as 16 binary bytes.
- *
- *  from SpeakFreely by John Walker
- */
-void MakeSessionKey(char* key, char*, int mode)
+/* Create a new session key. key needs to be able to hold at least
+ * 120 bytes (keys are 40 bytes long, but errors might be longer).
+ * If successful, key contains the generated key, otherwise key will
+ * contain an error message. */
+bool MakeSessionKey(char key[120])
 {
   unsigned char s[16];
-  RAND_bytes(s, sizeof(s));
 
-  if (mode) {
-    for (int j = 0; j < 16; j++) {
-      unsigned char rb = s[j];
+  if (RAND_bytes(s, sizeof(s)) != 1) {
+    auto err = ERR_get_error();
+    ERR_error_string(err, key);
+    return false;
+  }
+
+  for (int j = 0; j < 16; j++) {
+    unsigned char rb = s[j];
 
 #define Rad16(x) ((x) + 'A')
-      *key++ = Rad16((rb >> 4) & 0xF);
-      *key++ = Rad16(rb & 0xF);
+    *key++ = Rad16((rb >> 4) & 0xF);
+    *key++ = Rad16(rb & 0xF);
 #undef Rad16
-      if (j & 1) { *key++ = '-'; }
-    }
-    *--key = 0;
-  } else {
-    for (int j = 0; j < 16; j++) { key[j] = s[j]; }
+    if (j & 1) { *key++ = '-'; }
   }
-}
-#undef nextrand
+  *--key = 0;
 
-void EncodeSessionKey(char* encode, char* session, char* key, int maxlen)
-{
-  int i;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      encode[i] = '-';
-    } else {
-      encode[i] = ((session[i] - 'A' + key[i]) & 0xF) + 'A';
-    }
-  }
-  encode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s encode=%s\n", session, key, encode);
-}
-
-void DecodeSessionKey(char* decode, char* session, char* key, int maxlen)
-{
-  int i, x;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      decode[i] = '-';
-    } else {
-      x = (session[i] - 'A' - key[i]) & 0xF;
-      if (x < 0) { x += 16; }
-      decode[i] = x + 'A';
-    }
-  }
-  decode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s decode=%s\n", session, key, decode);
+  return true;
 }
 
 /*
