@@ -154,7 +154,11 @@ bool job_cmd(JobControlRecord* jcr)
   Dmsg1(50, "Quota set as %llu\n", quota);
 
   // Pass back an authorization key for the File daemon
-  MakeSessionKey(auth_key);
+  if (!MakeSessionKey(auth_key)) {
+    Jmsg2(jcr, M_FATAL, 0, "Could not generate authentication key: %s.\n",
+          auth_key);
+    return false;
+  }
   jcr->sd_auth_key = strdup(auth_key);
   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
   memset(auth_key, 0, sizeof(auth_key));
@@ -251,7 +255,11 @@ bool nextRunCmd(JobControlRecord* jcr)
       jcr->authenticated = false;
 
       // Pass back a new authorization key for the File daemon
-      MakeSessionKey(auth_key);
+      if (!MakeSessionKey(auth_key)) {
+        Jmsg1(jcr, M_FATAL, 0, "Could not generate authentication key: %s.\n",
+              auth_key);
+        return false;
+      }
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
       jcr->sd_auth_key = strdup(auth_key);
       dir->fsend(OK_nextrun, auth_key);
