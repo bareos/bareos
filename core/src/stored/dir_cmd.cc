@@ -219,9 +219,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   JobControlRecord* jcr;
   unsigned int cnt = 0;
 
-  foreach_jcr (jcr) {
-    cnt++;
-  }
+  foreach_jcr (jcr) { cnt++; }
   endeach_jcr(jcr);
 
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
@@ -558,10 +556,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
     ReleaseDeviceCond();
   }
 
-  /*
-   * See if the Job has a certain protocol.
-   * When canceling a NDMP job make sure we call the end_of_ndmp_* functions.
-   */
+  /* See if the Job has a certain protocol.
+   * When canceling a NDMP job make sure we call the end_of_ndmp_* functions. */
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
       switch (jcr->getJobType()) {
@@ -632,14 +628,12 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   bool ok = false;
   slot_number_t slot;
 
-  /*
-   * Determine the length of the temporary buffers.
+  /* Determine the length of the temporary buffers.
    * If the total length of the incoming message is less
    * then MAX_NAME_LENGTH we can use that as the upper limit.
    * If the incomming message is bigger then MAX_NAME_LENGTH
    * limit the temporary buffer to MAX_NAME_LENGTH bytes as
-   * we use a sscanf %127s for reading the temorary buffer.
-   */
+   * we use a sscanf %127s for reading the temorary buffer. */
   len = dir->message_length + 1;
   if (len > MAX_NAME_LENGTH) { len = MAX_NAME_LENGTH; }
 
@@ -1362,10 +1356,8 @@ static bool ChangerCmd(JobControlRecord* jcr)
   const char* cmd = NULL;
   bool ok = false;
   bool is_transfer = false;
-  /*
-   * A safe_cmd may call autochanger script but does not load/unload
-   *    slots so it can be done at the same time that the drive is open.
-   */
+  /* A safe_cmd may call autochanger script but does not load/unload
+   *    slots so it can be done at the same time that the drive is open. */
   bool safe_cmd = false;
 
   if (sscanf(dir->msg, "autochanger listall %127s", devname.c_str()) == 1) {
@@ -1749,7 +1741,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
              &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
-    Jmsg(jcr, M_FATAL, 0, T_("Bad passiveclientcmd command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
 
@@ -1826,7 +1818,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   Dmsg1(100, "PluginOptionsCmd: %s", cpy.c_str());
   if (sscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
-    Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, _("Bad pluginoptionscmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
 

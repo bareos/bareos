@@ -660,27 +660,6 @@ const char* job_level_to_str(int level)
   return str;
 }
 
-const char* volume_status_to_str(const char* status)
-{
-  int pos;
-  const char* vs[] = {NT_("Append"), _("Append"),      NT_("Archive"),
-                      _("Archive"),  NT_("Disabled"),  _("Disabled"),
-                      NT_("Full"),   _("Full"),        NT_("Used"),
-                      _("Used"),     NT_("Cleaning"),  _("Cleaning"),
-                      NT_("Purged"), _("Purged"),      NT_("Recycle"),
-                      _("Recycle"),  NT_("Read-Only"), _("Read-Only"),
-                      NT_("Error"),  _("Error"),       NULL,
-                      NULL};
-
-  if (status) {
-    for (pos = 0; vs[pos]; pos += 2) {
-      if (bstrcmp(vs[pos], status)) { return vs[pos + 1]; }
-    }
-  }
-
-  return _("Invalid volume status");
-}
-
 // Encode the mode bits into a 10 character string like LS does
 char* encode_mode(mode_t mode, char* buf)
 {
@@ -765,66 +744,23 @@ int DoShellExpansion(char* name, int name_len)
 }
 #endif
 
-/*
- * MAKESESSIONKEY  --  Generate session key with optional start
- *                     key.  If mode is TRUE, the key will be
- *                     translated to a string, otherwise it is
- *                     returned as 16 binary bytes.
- *
- *  from SpeakFreely by John Walker
- */
-void MakeSessionKey(char* key, char*, int mode)
+/* Create a new session key. key needs to be able to hold at least
+ * 32 + 7 (separator) + 1 (null) = 40 bytes. */
+void MakeSessionKey(char key[40])
 {
   unsigned char s[16];
   RAND_bytes(s, sizeof(s));
 
-  if (mode) {
-    for (int j = 0; j < 16; j++) {
-      unsigned char rb = s[j];
+  for (int j = 0; j < 16; j++) {
+    char low = (s[j] & 0x0F);
+    char high = (s[j] & 0xF0) >> 4;
 
-#define Rad16(x) ((x) + 'A')
-      *key++ = Rad16((rb >> 4) & 0xF);
-      *key++ = Rad16(rb & 0xF);
-#undef Rad16
-      if (j & 1) { *key++ = '-'; }
-    }
-    *--key = 0;
-  } else {
-    for (int j = 0; j < 16; j++) { key[j] = s[j]; }
+    *key++ = 'A' + low;
+    *key++ = 'A' + high;
+
+    if (j & 1) { *key++ = '-'; }
   }
-}
-#undef nextrand
-
-void EncodeSessionKey(char* encode, char* session, char* key, int maxlen)
-{
-  int i;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      encode[i] = '-';
-    } else {
-      encode[i] = ((session[i] - 'A' + key[i]) & 0xF) + 'A';
-    }
-  }
-  encode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s encode=%s\n", session, key, encode);
-}
-
-void DecodeSessionKey(char* decode, char* session, char* key, int maxlen)
-{
-  int i, x;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      decode[i] = '-';
-    } else {
-      x = (session[i] - 'A' - key[i]) & 0xF;
-      if (x < 0) { x += 16; }
-      decode[i] = x + 'A';
-    }
-  }
-  decode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s decode=%s\n", session, key, decode);
+  *--key = 0;
 }
 
 /*
