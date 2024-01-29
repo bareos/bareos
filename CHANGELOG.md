@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos-config: fix output of deploy_config [PR #1674]
 - Disable automated package-tests for SLES 12 [PR #1676]
 - filed: fix vss during client initiated connections [PR #1667]
+- Improve FreeBSD dependencies [PR #1681]
 
 ## [22.1.3] - 2023-12-13
 
@@ -634,4 +635,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1667]: https://github.com/bareos/bareos/pull/1667
 [PR #1674]: https://github.com/bareos/bareos/pull/1674
 [PR #1676]: https://github.com/bareos/bareos/pull/1676
+[PR #1681]: https://github.com/bareos/bareos/pull/1681
 [unreleased]: https://github.com/bareos/bareos/tree/master
