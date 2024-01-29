@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,6 @@ bool job_cmd(JobControlRecord* jcr)
 {
   int32_t JobId;
   char auth_key[MAX_NAME_LENGTH];
-  char seed[MAX_NAME_LENGTH];
   char spool_size[MAX_NAME_LENGTH];
   BareosSocket* dir = jcr->dir_bsock;
   PoolMem job_name, client_name, job, fileset_name, fileset_md5, backup_format;
@@ -155,8 +154,7 @@ bool job_cmd(JobControlRecord* jcr)
   Dmsg1(50, "Quota set as %llu\n", quota);
 
   // Pass back an authorization key for the File daemon
-  Bsnprintf(seed, sizeof(seed), "%p%d", jcr, JobId);
-  MakeSessionKey(auth_key, seed, 1);
+  MakeSessionKey(auth_key);
   jcr->sd_auth_key = strdup(auth_key);
   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
   memset(auth_key, 0, sizeof(auth_key));
@@ -240,7 +238,6 @@ bool DoJobRun(JobControlRecord* jcr)
 bool nextRunCmd(JobControlRecord* jcr)
 {
   char auth_key[MAX_NAME_LENGTH];
-  char seed[MAX_NAME_LENGTH];
   BareosSocket* dir = jcr->dir_bsock;
   struct timeval tv;
   struct timezone tz;
@@ -254,8 +251,7 @@ bool nextRunCmd(JobControlRecord* jcr)
       jcr->authenticated = false;
 
       // Pass back a new authorization key for the File daemon
-      Bsnprintf(seed, sizeof(seed), "%p%d", jcr, jcr->JobId);
-      MakeSessionKey(auth_key, seed, 1);
+      MakeSessionKey(auth_key);
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
       jcr->sd_auth_key = strdup(auth_key);
       dir->fsend(OK_nextrun, auth_key);
