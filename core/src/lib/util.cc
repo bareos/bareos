@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include <openssl/rand.h>
 
 // Various BAREOS Utility subroutines
 
@@ -771,76 +773,24 @@ int DoShellExpansion(char* name, int name_len)
  *
  *  from SpeakFreely by John Walker
  */
-void MakeSessionKey(char* key, char* seed, int mode)
+void MakeSessionKey(char* key, char*, int mode)
 {
-  int j, k;
-  MD5_CTX md5c;
-  unsigned char md5key[16], md5key1[16];
-  char s[1024];
-  constexpr int32_t ss = sizeof(s);
+  unsigned char s[16];
+  RAND_bytes(s, sizeof(s));
 
-  s[0] = 0;
-  if (seed != NULL) { bstrncat(s, seed, sizeof(s)); }
-
-  /* The following creates a seed for the session key generator
-   * based on a collection of volatile and environment-specific
-   * information unlikely to be vulnerable (as a whole) to an
-   * exhaustive search attack.  If one of these items isn't
-   * available on your machine, replace it with something
-   * equivalent or, if you like, just delete it. */
-#if defined(HAVE_WIN32)
-  {
-    LARGE_INTEGER li;
-    DWORD length;
-    FILETIME ft;
-
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetCurrentProcessId());
-    (void)!getcwd(s + strlen(s), 256);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetTickCount());
-    QueryPerformanceCounter(&li);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)li.LowPart);
-    GetSystemTimeAsFileTime(&ft);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwLowDateTime);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwHighDateTime);
-    length = 256;
-    GetComputerName(s + strlen(s), &length);
-    length = 256;
-    GetUserName(s + strlen(s), &length);
-  }
-#else
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getpid());
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getppid());
-  (void)!getcwd(s + strlen(s), 256);
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)clock());
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)time(NULL));
-#  if defined(Solaris)
-  sysinfo(SI_HW_SERIAL, s + strlen(s), 12);
-#  endif
-  gethostname(s + strlen(s), 256);
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());
-#endif
-  ALLOW_DEPRECATED(MD5_Init(&md5c); MD5_Update(&md5c, (uint8_t*)s, strlen(s));
-                   MD5_Final(md5key, &md5c);
-                   Bsnprintf(s + strlen(s), ss, "%lu",
-                             (uint32_t)((time(NULL) + 65121) ^ 0x375F));
-                   MD5_Init(&md5c); MD5_Update(&md5c, (uint8_t*)s, strlen(s));
-                   MD5_Final(md5key1, &md5c);)
-
-#define nextrand (md5key[j] ^ md5key1[j])
   if (mode) {
-    for (j = k = 0; j < 16; j++) {
-      unsigned char rb = nextrand;
+    for (int j = 0; j < 16; j++) {
+      unsigned char rb = s[j];
 
 #define Rad16(x) ((x) + 'A')
-      key[k++] = Rad16((rb >> 4) & 0xF);
-      key[k++] = Rad16(rb & 0xF);
+      *key++ = Rad16((rb >> 4) & 0xF);
+      *key++ = Rad16(rb & 0xF);
 #undef Rad16
-      if (j & 1) { key[k++] = '-'; }
+      if (j & 1) { *key++ = '-'; }
     }
-    key[--k] = 0;
+    *--key = 0;
   } else {
-    for (j = 0; j < 16; j++) { key[j] = nextrand; }
+    for (int j = 0; j < 16; j++) { key[j] = s[j]; }
   }
 }
 #undef nextrand
