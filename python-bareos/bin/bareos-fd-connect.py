@@ -19,7 +19,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-import bareos.util.argparse as argparse
+from bareos.util import argparse
 import bareos.bsock
 from bareos.bsock.filedaemon import FileDaemon
 import logging
