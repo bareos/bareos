@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,11 +22,14 @@ set(DESTSTARTDIR "${sysconfdir}/init.d/")
 
 message(STATUS "installing startfiles to ${DESTSTARTDIR}")
 
+include(BareosConfigureFile)
+bareos_configure_file(FILES set_dbconfig_vars.sh.in)
+
 # logrotate
 
 # dbconfig
 install(
-  FILES "${CMAKE_CURRENT_LIST_DIR}/../debian/set_dbconfig_vars.sh"
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/set_dbconfig_vars.sh"
   DESTINATION "${scriptdir}/"
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE

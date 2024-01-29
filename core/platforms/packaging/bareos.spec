@@ -1021,9 +1021,9 @@ rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
 # install systemd service files
 %if 0%{?systemd_support}
 install -d -m 755 %{buildroot}%{_unitdir}
-install -m 644 core/platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
-install -m 644 core/platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
-install -m 644 core/platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
+install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
+install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
+install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
 %if 0%{?suse_version}
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-dir
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd

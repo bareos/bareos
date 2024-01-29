@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,14 +18,17 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+bareos_configure_file(GLOB_RECURSE "resources/*.in")
+
 install(
-  FILES resources/com.bareos.bareos-fd.plist
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/resources/com.bareos.bareos-fd.plist
   DESTINATION "${scriptdir}"
   COMPONENT filedaemon
 )
 
 install(
-  FILES resources/uninstall-bareos
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/resources/uninstall-bareos
   DESTINATION "${scriptdir}"
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
@@ -49,13 +52,13 @@ set(CPACK_PACKAGE_DESCRIPTION_FILE
 
 set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/bareos-logo.png")
 
-set(CPACK_PRODUCTBUILD_RESOURCES_DIR "${CMAKE_CURRENT_LIST_DIR}/resources")
+set(CPACK_PRODUCTBUILD_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 
 set(CPACK_RESOURCE_FILE_WELCOME
-    "${CMAKE_CURRENT_LIST_DIR}/resources/welcome.txt"
+    "${CMAKE_CURRENT_BINARY_DIR}/resources/welcome.txt"
 )
 set(CPACK_RESOURCE_FILE_README
-    "${CMAKE_CURRENT_LIST_DIR}/resources/ReadMe.html"
+    "${CMAKE_CURRENT_BINARY_DIR}/resources/ReadMe.html"
 )
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/AGPL-3.0.txt")
 
@@ -66,10 +69,10 @@ set(CPACK_GENERATOR "productbuild")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 set(CPACK_PREFLIGHT_FILEDAEMON_SCRIPT
-    "${CMAKE_CURRENT_LIST_DIR}/resources/preinstall"
+    "${CMAKE_CURRENT_BINARY_DIR}/resources/preinstall"
 )
 set(CPACK_POSTFLIGHT_FILEDAEMON_SCRIPT
-    "${CMAKE_CURRENT_LIST_DIR}/resources/postinstall"
+    "${CMAKE_CURRENT_BINARY_DIR}/resources/postinstall"
 )
 set(CPACK_SET_DESTDIR TRUE)
 
