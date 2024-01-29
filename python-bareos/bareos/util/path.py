@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,8 +20,6 @@
 """
 Handle file paths.
 """
-
-from copy import copy
 
 
 class Path(object):
@@ -55,7 +53,7 @@ class Path(object):
         self.path = None
 
     def set_path(self, path):
-        if path == None:
+        if path is None:
             self.__set_defaults()
         elif isinstance(path, str):
             self.path_orig = path
@@ -76,10 +74,9 @@ class Path(object):
             pass
 
     def get(self, index=None):
-        if index == None:
+        if index is None:
             return self.path
-        else:
-            return self.path[index]
+        return self.path[index]
 
     def shift(self):
         """
