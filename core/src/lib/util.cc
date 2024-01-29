@@ -45,6 +45,7 @@
 #include <vector>
 
 #include <openssl/rand.h>
+#include <openssl/err.h>
 
 // Various BAREOS Utility subroutines
 
@@ -692,11 +693,18 @@ int DoShellExpansion(char* name, int name_len)
 #endif
 
 /* Create a new session key. key needs to be able to hold at least
- * 32 + 7 (separator) + 1 (null) = 40 bytes. */
-void MakeSessionKey(char key[40])
+ * 120 bytes (keys are 40 bytes long, but errors might be longer).
+ * If successful, key contains the generated key, otherwise key will
+ * contain an error message. */
+bool MakeSessionKey(char key[120])
 {
   unsigned char s[16];
-  RAND_bytes(s, sizeof(s));
+
+  if (RAND_bytes(s, sizeof(s)) != 1) {
+    auto err = ERR_get_error();
+    ERR_error_string(err, key);
+    return false;
+  }
 
   for (int j = 0; j < 16; j++) {
     char low = (s[j] & 0x0F);
@@ -708,6 +716,8 @@ void MakeSessionKey(char key[40])
     if (j & 1) { *key++ = '-'; }
   }
   *--key = 0;
+
+  return true;
 }
 
 /*

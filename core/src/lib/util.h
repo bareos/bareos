@@ -67,7 +67,7 @@ const char* job_type_to_str(int type);
 const char* job_replace_to_str(int relace);
 const char* job_status_to_str(int stat);
 const char* job_level_to_str(int level);
-void MakeSessionKey(char key[40]);
+bool MakeSessionKey(char key[120]);
 POOLMEM* edit_job_codes(JobControlRecord* jcr,
                         char* omsg,
                         const char* imsg,
