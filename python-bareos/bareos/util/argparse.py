@@ -17,19 +17,28 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-have_configargparse = False
+"""
+ArgumentParser wrapper.
+
+Uses configargparse, if available,
+otherwise, falls back to argparse.
+"""
+
+HAVE_CONFIG_ARG_PARSE_MODULE = False
 try:
     import configargparse as argparse
 
-    have_configargparse = True
+    HAVE_CONFIG_ARG_PARSE_MODULE = True
 except ImportError:
     import argparse
 
 
 class ArgumentParser(argparse.ArgumentParser):
+    """ArgumentParser wrapper"""
+
     def __init__(self, *args, **kwargs):
-        super(ArgumentParser, self).__init__(*args, **kwargs)
-        if have_configargparse:
+        super().__init__(*args, **kwargs)
+        if HAVE_CONFIG_ARG_PARSE_MODULE:
             self.add_argument(
                 "-c", "--config", is_config_file=True, help="Config file path."
             )
