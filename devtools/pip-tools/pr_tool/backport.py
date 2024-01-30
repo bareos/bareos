@@ -320,6 +320,10 @@ def publish(*, repo, dry_run=False):
         return False
 
     original_data = get_pr_info(str(original_pr), ["title", "labels"])
+    if not original_data:
+        logging.critical("Could not retrieve information for PR %s", original_pr)
+        return False
+
     labels = munge_labels(original_data["labels"], base_branch)
 
     template_file = resources.files(__package__).joinpath('backport_pr_template.md')
