@@ -150,7 +150,7 @@ def generate_commit_lines(original_pr, title, commits):
 
 def parse_commit_lines(lines):
     commit_lines = [
-        l.partition(" ") for l in lines if not l.startswith("#") and l.strip() != ""
+        l.lstrip().partition(" ") for l in lines if not l.strip().startswith("#") and l.strip() != ""
     ]
     todo = []
     for commit, space, descr in commit_lines:
@@ -175,6 +175,8 @@ def cherry_pick_impl(*, repo, original_pr, commits, title, select_all=False):
             lines = fp.readlines()
 
     todo = parse_commit_lines(lines)
+    if not todo:
+        return False
     if len(todo) == 0:
         logging.info("No commits selected. Nothing to do.")
         return True
