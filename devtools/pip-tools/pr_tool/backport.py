@@ -66,13 +66,25 @@ def get_branch_by_name(repo, name):
 
 
 def resolve_target_branch(repo, git_remote, branch_name):
-    if branch_name is None:
-        branch_name = repo.active_branch.name
-    local_branch = get_branch_by_name(repo, branch_name)
+    if branch_name is not None:
+        local_branch = get_branch_by_name(repo, branch_name)
+        if not local_branch:
+            logging.error("Branch %s not found", branch_name)
+            return None
+    else:
+        try:
+            local_branch = repo.active_branch
+        except TypeError as e:
+            logging.error(e)
+            return None
+
     remote_branch = local_branch.tracking_branch()
+    if remote_branch is None:
+        logging.error("%s does not track a remote branch", local_branch.name)
+        return None
     if remote_branch.remote_name != git_remote.name:
         logging.error(
-            "%s does not track a branch on remote %s", branch_name, git_remote
+            "%s does not track a branch on remote %s", local_branch.name, git_remote
         )
         return None
     logging.info("Remote branch is '%s'", remote_branch.remote_head)
