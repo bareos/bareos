@@ -49,7 +49,11 @@ def git_editor(repo, file):
 def find_user_remote(repo, username):
     expected_url = f"git@github.com:{username}/bareos.git"
     for remote in repo.remotes:
-        if expected_url == list(remote.urls)[0]:
+        remote_urls = list(remote.urls)
+        if len(remote_urls) > 1:
+            logging.warning("ignoring remote '%s' with multiple urls", remote.name)
+            continue
+        if expected_url == remote_urls[0]:
             return remote
     return None
 
