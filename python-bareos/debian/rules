@@ -4,4 +4,4 @@
 export PYBUILD_NAME = bareos
 
 %:
-	dh $@ --with python2,python3 --buildsystem=pybuild
+	dh $@ --with python3 --buildsystem=pybuild

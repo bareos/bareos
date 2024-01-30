@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+#
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,9 +19,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
-from __future__ import print_function
-import argparse
+from bareos.util import argparse
 import bareos.bsock
 import bareos.exceptions
 import logging
@@ -34,6 +33,8 @@ def getArguments():
     )
     bareos.bsock.DirectorConsole.argparser_add_default_command_line_arguments(argparser)
     args = argparser.parse_args()
+    if args.debug:
+        print(argparser.format_values())
     return args
 
 
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     logger.debug("options: %s" % (bareos_args))
     try:
         director = bareos.bsock.DirectorConsole(**bareos_args)
-    except (bareos.exceptions.Error) as e:
+    except bareos.exceptions.Error as e:
         print(str(e))
         sys.exit(1)
 

@@ -2,22 +2,12 @@ Source: python-bareos
 Maintainer: Bareos Team <packager@bareos.com>
 Section: python
 Priority: optional
-Build-Depends: debhelper (>= 7.4.3),
-  python-all (>= 2.6.6-3) <bullseye> <buster> <stretch> <xenial> <bionic>,
-  python-setuptools (>= 0.6b3) <bullseye> <buster> <stretch> <xenial> <bionic>,
-  python3-all, python3-setuptools
+Build-Depends: debhelper (>= 7.4.3), python3-all, python3-setuptools
 Standards-Version: 3.9.1
-
-Package: python-bareos
-Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
-Description: Backup Archiving REcovery Open Sourced - python module (Python 2)
- This packages contains a python module to interact with a Bareos backup system.
- It also includes some tools based on this module.
 
 Package: python3-bareos
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}
+Depends: ${misc:Depends}, ${python3:Depends}, python3-configargparse
 Description: Backup Archiving REcovery Open Sourced - python module (Python 3)
  This packages contains a python module to interact with a Bareos backup system.
  It also includes some tools based on this module.

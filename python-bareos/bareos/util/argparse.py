@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,13 +18,27 @@
 #   02110-1301, USA.
 
 """
-Bareos utility classes.
+ArgumentParser wrapper.
+
+Uses configargparse, if available,
+otherwise, falls back to argparse.
 """
 
-from bareos.util.argparse import ArgumentParser
-from bareos.util.bareosbase64 import BareosBase64
-from bareos.util.password import Password
-from bareos.util.path import Path
-from bareos.util.version import Version
+HAVE_CONFIG_ARG_PARSE_MODULE = False
+try:
+    import configargparse as argparse
 
-__all__ = ["ArgumentParser", "BareosBase64", "Password", "Path", "Version"]
+    HAVE_CONFIG_ARG_PARSE_MODULE = True
+except ImportError:
+    import argparse
+
+
+class ArgumentParser(argparse.ArgumentParser):
+    """ArgumentParser wrapper"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if HAVE_CONFIG_ARG_PARSE_MODULE:
+            self.add_argument(
+                "-c", "--config", is_config_file=True, help="Config file path."
+            )

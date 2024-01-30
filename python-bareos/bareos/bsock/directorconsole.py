@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -61,8 +61,9 @@ class DirectorConsole(LowLevel):
            >>> director = DirectorConsole(**bareos_args)
 
         Args:
-          argparser (ArgParser): ArgParser instance.
+          argparser (ArgParser or ConfigArgParser): (Config)ArgParser instance.
         """
+
         argparser.add_argument(
             "--name",
             default="*UserAgent*",

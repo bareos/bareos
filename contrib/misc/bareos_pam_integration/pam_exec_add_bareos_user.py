@@ -7,8 +7,7 @@ It can be used to auto-create users that do already exist as PAM users as Bareos
 Requires Bareos >= 19.2.4.
 """
 
-from __future__ import print_function
-import argparse
+from bareos.util import argparse
 import bareos.bsock
 import bareos.exceptions
 import logging
