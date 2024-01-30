@@ -202,6 +202,9 @@ def cherry_pick_impl(*, repo, original_pr, commits, title, select_all=False):
 def create(*, pr, into, repo, upstream, select_all=False):
     # determine which remote the user's fork is on
     origin = find_user_remote(repo, whoami())
+    if not origin:
+        logging.critical("Cannot find a git remote for your GitHub fork")
+        return False
 
     pr_data = get_pr_info(str(pr), ["title", "labels", "headRefName", "commits"])
     if not pr_data:
