@@ -165,7 +165,7 @@ def cherry_pick_impl(*, repo, original_pr, commits, title, select_all=False):
     lines = generate_commit_lines(original_pr, title, commits)
 
     if not select_all:
-        with NamedTemporaryFile("r+") as fp:
+        with NamedTemporaryFile("w+") as fp:
             fp.writelines(lines)
             fp.flush()
             fp.seek(0)
@@ -329,7 +329,7 @@ def publish(*, repo, dry_run=False):
     template_file = resources.files(__package__).joinpath('backport_pr_template.md')
     template_vars = {"original_pr": original_pr, "base_branch": base_branch}
     with template_file.open('r', encoding="utf-8") as template_fp:
-        with NamedTemporaryFile("r+", suffix=".md") as body_fp:
+        with NamedTemporaryFile("w+", suffix=".md") as body_fp:
             _fill_template(template_fp, body_fp, template_vars)
             if not git_editor(repo, body_fp.name):
                 logging.critical("Editor returned non-zero. Abort.")
