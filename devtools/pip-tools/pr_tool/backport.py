@@ -250,9 +250,9 @@ def get_pr_info(pr_spec, fields):
         data = Gh().pr.view(pr_spec, json=fields)
     except InvokationError as e:
         if "no pull requests found for branch" in e.args[0]:
-            return False
+            return None
         if "Could not resolve to a PullRequest with the number of" in e.args[0]:
-            return False
+            return None
         raise
     return data
 
