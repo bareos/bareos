@@ -345,6 +345,8 @@ def get_changelog_section(pr):
         return "Fixed"
     if "removal" in labels:
         return "Removed"
+    if "feature" in labels:
+        return "Added"
     return guess_section(pr["title"])
 
 
