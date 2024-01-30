@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -78,9 +78,11 @@ local_db_start_server() {
 local_db_create_superuser_role() {
   if [ $UID -eq 0 ]; then
     su postgres -c "${POSTGRES_BIN_PATH}/psql -h \"$1\" -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'"
+    su postgres -c "${POSTGRES_BIN_PATH}/psql -h \"$1\" -d postgres -c 'CREATE DATABASE root WITH OWNER root'"
   else
     # create role and db root for podman test.
     ${POSTGRES_BIN_PATH}/psql -h "$1" -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'
+    ${POSTGRES_BIN_PATH}/psql -h "$1" -d postgres -c 'CREATE DATABASE root WITH OWNER root'
   fi
 }
 

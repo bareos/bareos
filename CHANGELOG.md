@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: fix vss during client initiated connections [PR #1666]
 - Make BareosDirPluginPrometheusExporter.py work with python3 [PR #1679]
 - Improve FreeBSD dependencies [PR #1680]
+- python-bareos: integrate usage of config files [PR #1690]
 
 ## [23.0.1] - 2024-01-17
 
@@ -393,4 +394,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1675]: https://github.com/bareos/bareos/pull/1675
 [PR #1679]: https://github.com/bareos/bareos/pull/1679
 [PR #1680]: https://github.com/bareos/bareos/pull/1680
+[PR #1690]: https://github.com/bareos/bareos/pull/1690
 [unreleased]: https://github.com/bareos/bareos/tree/master

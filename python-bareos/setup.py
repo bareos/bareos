@@ -1,7 +1,8 @@
 #!/usr/bin/python
+#
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -61,11 +62,9 @@ setup(
     description="Client library and tools for Bareos console access.",
     long_description=open("README.rst").read(),
     long_description_content_type="text/x-rst",
-    # Python 2.6 is used by RHEL/Centos 6.
-    # When RHEL/Centos 6 is no longer supported (End of 2020),
-    # Python 2.6 will no longer be supported by python-bareos.
-    python_requires=">=2.6",
-    extras_require={"TLS-PSK": ["sslpsk"]},
+    # RHEL7: python-3.6
+    python_requires=">=3.6",
+    extras_require={"TLS-PSK": ["sslpsk"], "configfile": ["configargparse"]},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: GNU Affero General Public License v3",

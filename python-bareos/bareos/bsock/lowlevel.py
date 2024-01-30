@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -71,7 +71,7 @@ class LowLevel(object):
     def argparser_get_bareos_parameter(args):
         """Extract arguments.
 
-        This method is usally used together with the method :py:func:`argparser_add_default_command_line_arguments`.
+        This method is usually used together with the method :py:func:`argparser_add_default_command_line_arguments`.
 
         Args:
            args (ArgParser.Namespace): Arguments retrieved by :py:func:`ArgumentParser.parse_args`.
