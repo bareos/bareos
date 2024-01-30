@@ -22,7 +22,7 @@
 import logging
 import re
 
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, ArgumentTypeError
 from os import environ, chdir
 from pprint import pprint
 from sys import stdout, stderr
@@ -43,6 +43,12 @@ from check_sources.main import main_program as check_sources
 from . import backport
 from .github import Gh
 
+
+def positive_int(val):
+    intval = int(val)
+    if intval <= 0:
+        raise ArgumentTypeError(f"'{val}' is not a positive integer")
+    return intval
 
 class Mark:
     PASS = " ✓ "
@@ -424,8 +430,7 @@ def parse_cmdline_args():
         "pr",
         metavar="<pr number>",
         help="GitHub PR number of the PR to backport from",
-        type=int,
-        choices=range(1, 1000000),
+        type=positive_int,
     )
     backport_create_parser.add_argument(
         "--into",
