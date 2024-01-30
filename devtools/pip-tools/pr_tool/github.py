@@ -72,10 +72,7 @@ class Gh:
         environ["NO_COLOR"] = "1"
         environ["GH_NO_UPDATE_NOTIFIER"] = "1"
         environ["GH_PROMPT_DISABLED"] = "1"
-        if cmd:
-            self.cmd = cmd
-        else:
-            self.cmd = ["gh"]
+        self.cmd = cmd if cmd is not None else ["gh"]
         self.dryrun = dryrun
 
     def __getattr__(self, name):
