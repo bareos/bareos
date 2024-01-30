@@ -871,41 +871,24 @@ cmake  .. \
   -Dprefix=%{_prefix}\
   -Dlibdir=%{library_dir} \
   -Dsbindir=%{_sbindir} \
-  -Dsbin-perm=755 \
   -Dsysconfdir=%{_sysconfdir} \
   -Dconfdir=%{_sysconfdir}/bareos \
   -Dmandir=%{_mandir} \
-  -Ddocdir=%{_docdir}/%{name} \
   -Darchivedir=/var/lib/%{name}/storage \
   -Dbackenddir=%{backend_dir} \
   -Dscriptdir=%{script_dir} \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
-  -Dbsrdir=%{bsr_dir} \
   -Dlogdir=/var/log/bareos \
   -Dsubsysdir=%{_subsysdir} \
-%if 0%{?python_plugins}
-  -Dpython=yes \
-%endif
-  -Dreadline=yes \
-  -Dbatch-insert=yes \
-  -Ddynamic-cats-backends=yes \
-  -Ddynamic-storage-backends=yes \
   -Dscsi-crypto=yes \
-  -Dlmdb=yes \
   -Dndmp=yes \
-  -Dacl=yes \
-  -Dxattr=yes \
-%if 0%{?build_bat}
-  -Dbat=yes \
-%endif
 %if 0%{?build_qt_monitor}
   -Dtraymonitor=yes \
 %endif
 %if 0%{?client_only}
   -Dclient-only=yes \
 %endif
-  -Dpostgresql=yes \
   -Ddir-user=%{director_daemon_user} \
   -Ddir-group=%{daemon_group} \
   -Dsd-user=%{storage_daemon_user} \
@@ -918,13 +901,11 @@ cmake  .. \
   -Dmon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
   -Dmon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
   -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
-  -Dopenssl=yes \
   -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
 %if 0%{?systemd_support}
   -Dsystemd=yes \
 %endif
-  -Dincludes=yes \
 %if !0%{?webui}
   -DENABLE_WEBUI=no \
 %endif

@@ -22,6 +22,7 @@
 #include "dird/reload.h"
 
 #include <cassert>
+#include <atomic>
 
 namespace directordaemon {
 
@@ -35,9 +36,10 @@ namespace directordaemon {
 bool CheckResources()
 {
   JobResource* job;
-  const std::string& configfile = my_config->get_base_config_path();
 
   ResLocker _{my_config};
+
+  const std::string& configfile = my_config->get_base_config_path();
 
   job = (JobResource*)my_config->GetNextRes(R_JOB, nullptr);
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
@@ -215,17 +217,18 @@ bail_out:
 
 bool DoReloadConfig()
 {
-  static bool is_reloading = false;
+  // NOTE(ssura): ATOMIC_FLAG_INIT is needed until we switch to
+  //              C++20; but it can be kept even after that.
+  static std::atomic_flag is_reloading = ATOMIC_FLAG_INIT;
   bool reloaded = false;
 
 
-  if (is_reloading) {
+  if (is_reloading.test_and_set()) {
     /* Note: don't use Jmsg here, as it could produce a race condition
      * on multiple parallel reloads */
     Qmsg(nullptr, M_ERROR, 0, T_("Already reloading. Request ignored.\n"));
     return false;
   }
-  is_reloading = true;
 
   StopStatisticsThread();
 
@@ -261,7 +264,8 @@ bool DoReloadConfig()
   SetWorkingDirectory(me->working_directory);
   StartStatisticsThread();
   UnlockJobs();
-  is_reloading = false;
+
+  is_reloading.clear();
   return reloaded;
 }
 

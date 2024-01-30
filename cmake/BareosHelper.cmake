@@ -1,7 +1,6 @@
-#!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,22 +17,16 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+include(CMakePrintHelpers)
 
-set -e
-set -u
-
-sudo apt-get -qq update
-# qt5 should be used. Remove qt4-dev to avoid confusion.
-sudo apt-get remove libqt4-dev
-dpkg-checkbuilddeps 2> /tmp/dpkg-builddeps || true
-if [ "${BUILD_WEBUI:-}" ]; then
-    sudo -H pip install --upgrade pip 'urllib3>=1.22'
-    sudo -H pip install sauceclient selenium
-fi
-cat /tmp/dpkg-builddeps
-sed -e "s/^.*:.*:\s//" -e "s/\s([^)]*)//g" -e "s/|/ /g" -e "s/ /\n/g" /tmp/dpkg-builddeps > /tmp/build_depends
-sudo apt-get -q --assume-yes install fakeroot
-cat /tmp/build_depends | while read pkg; do
-  echo "installing $pkg"
-  sudo apt-get -q --assume-yes install $pkg || true
-done
+function(print_variables regex)
+  if(NOT "${regex}" STREQUAL "")
+    get_cmake_property(_variableNames VARIABLES)
+    message("Variables matching '${regex}':")
+    foreach(_variableName ${_variableNames})
+      if(_variableName MATCHES "${regex}")
+        message("   ${_variableName}=${${_variableName}}")
+      endif()
+    endforeach()
+  endif()
+endfunction()

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,211 +28,153 @@ if(NOT DEFINED prefix)
   set(prefix ${CMAKE_DEFAULT_PREFIX})
 endif()
 
+option(USE_RELATIVE_PATHS
+       "Compile with relative paths, required for relocatable binaries." OFF
+)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(HAVE_EXTENDED_ACL 1)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(USE_RELATIVE_PATHS)
 
-  # libdir
-  if(NOT DEFINED libdir)
-    set(libdir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # includedir
-  if(NOT DEFINED includedir)
-    set(includedir ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # bindir
-  if(NOT DEFINED bindir)
-    set(bindir ${CMAKE_INSTALL_BINDIR})
-    message(STATUS "set bindir to default ${bindir}")
-  endif()
-
-  # sbindir
-  if(NOT DEFINED sbindir)
-    set(sbindir ${CMAKE_INSTALL_SBINDIR})
-    message(STATUS "set sbindir to default ${sbindir}")
-  endif()
-
-  # sysconfdir
-  if(NOT DEFINED sysconfdir)
-    set(sysconfdir ${CMAKE_INSTALL_SYSCONFDIR})
-  endif()
+  set(bindir
+      "${CMAKE_INSTALL_BINDIR}"
+      CACHE STRING "bin directory"
+  )
+  set(sbindir
+      "${CMAKE_INSTALL_SBINDIR}"
+      CACHE STRING "sbin directory"
+  )
+  set(libdir
+      "${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "lib directory"
+  )
+  set(backenddir
+      "${libdir}/backends"
+      CACHE STRING "directory for Bareos backends"
+  )
+  set(plugindir
+      "${libdir}/plugins"
+      CACHE STRING "directory for Bareos plugins"
+  )
+  set(scriptdir
+      "lib/${CMAKE_PROJECT_NAME}/scripts"
+      CACHE STRING "directory for Bareos helper scripts"
+  )
+  set(sysconfdir
+      "${CMAKE_INSTALL_SYSCONFDIR}"
+      CACHE STRING "system configuration directory"
+  )
   set(SYSCONFDIR "\"${sysconfdir}\"")
-
-  # confdir
-  if(NOT DEFINED confdir)
-    set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # configtemplatedir
-  if(NOT DEFINED configtemplatedir)
-    set(configtemplatedir "lib/${CMAKE_PROJECT_NAME}/defaultconfigs")
-  endif()
-
-  # mandir
-  if(NOT DEFINED mandir)
-    set(mandir ${CMAKE_INSTALL_MANDIR})
-  endif()
-
-  # docdir
-  if(NOT DEFINED docdir)
-    set(docdir default_for_docdir)
-  endif()
-
-  # archivedir
-  if(NOT DEFINED archivedir)
-    set(archivedir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
-    )
-  endif()
-
-  # backenddir
-  if(NOT DEFINED backenddir)
-    set(backenddir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
-  endif()
-
-  # scriptdir
-  if(NOT DEFINED scriptdir)
-    set(scriptdir "lib/${CMAKE_PROJECT_NAME}/scripts")
-  endif()
-
-  # workingdir
-  if(NOT DEFINED workingdir)
-    set(workingdir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
-    )
-  endif()
+  set(confdir
+      "${sysconfdir}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos configuration directory"
+  )
+  set(configtemplatedir
+      "${confdir}"
+      CACHE STRING "directory for Bareos configuration templates (optional)"
+  )
+  set(includedir
+      "${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "include directory"
+  )
+  set(mandir
+      ${CMAKE_INSTALL_MANDIR}
+      CACHE STRING "man(uals) directory"
+  )
+  set(workingdir
+      "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos working directory"
+  )
   set(working_dir "${workingdir}")
+  set(archivedir
+      "${workingdir}/storage"
+      CACHE STRING "Bareos archive directory"
+  )
+  set(subsysdir
+      "${workingdir}"
+      CACHE STRING "subsys directory"
+  )
+  set(logdir
+      "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "log directory"
+  )
+  set(datarootdir
+      "${CMAKE_INSTALL_DATAROOTDIR}"
+      CACHE STRING "data root directory"
+  )
 
-  # plugindir
-  if(NOT DEFINED plugindir)
-    set(plugindir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-  endif()
+else() # if(USE_RELATIVE_PATHS)
 
-  # bsrdir
-  if(NOT DEFINED bsrdir)
-    set(bsrdir ${workingdir})
-  endif()
-
-  # logdir
-  if(NOT DEFINED logdir)
-    set(logdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # datarootdir
-  if(NOT DEFINED datarootdir)
-    set(datarootdir "${CMAKE_INSTALL_DATAROOTDIR}")
-  endif()
-
-  # subsysdir
-  if(NOT DEFINED subsysdir)
-    set(subsysdir "${workingdir}")
-  endif()
-
-else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-  # libdir
-  if(NOT DEFINED libdir)
-    set(libdir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # includedir
-  if(NOT DEFINED includedir)
-    set(includedir ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
-  endif()
-
-  # bindir
-  if(NOT DEFINED bindir)
-    set(bindir ${CMAKE_INSTALL_FULL_BINDIR})
-    message(STATUS "set bindir to default ${bindir}")
-  endif()
-
-  # sbindir
-  if(NOT DEFINED sbindir)
-    set(sbindir ${CMAKE_INSTALL_FULL_SBINDIR})
-    message(STATUS "set sbindir to default ${sbindir}")
-  endif()
-
-  # sysconfdir
-  if(NOT DEFINED sysconfdir)
-    set(sysconfdir ${CMAKE_INSTALL_FULL_SYSCONFDIR})
-  endif()
+  set(bindir
+      "${CMAKE_INSTALL_FULL_BINDIR}"
+      CACHE STRING "bin directory"
+  )
+  set(sbindir
+      "${CMAKE_INSTALL_FULL_SBINDIR}"
+      CACHE STRING "sbin directory"
+  )
+  set(libdir
+      "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "lib directory"
+  )
+  set(backenddir
+      "${libdir}/backends"
+      CACHE STRING "directory for Bareos backends"
+  )
+  set(plugindir
+      "${libdir}/plugins"
+      CACHE STRING "directory for Bareos plugins"
+  )
+  set(scriptdir
+      "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts"
+      CACHE STRING "directory for Bareos helper scripts"
+  )
+  set(sysconfdir
+      "${CMAKE_INSTALL_FULL_SYSCONFDIR}"
+      CACHE STRING "system configuration directory"
+  )
   set(SYSCONFDIR "\"${sysconfdir}\"")
-
-  # confdir
-  if(NOT DEFINED confdir)
-    set(confdir "${sysconfdir}/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # configtemplatedir
-  if(NOT DEFINED configtemplatedir)
-    set(configtemplatedir "${confdir}")
-  endif()
-
-  # mandir
-  if(NOT DEFINED mandir)
-    set(mandir ${CMAKE_INSTALL_FULL_MANDIR})
-  endif()
-
-  # docdir
-  if(NOT DEFINED docdir)
-    set(docdir default_for_docdir)
-  endif()
-
-  # archivedir
-  if(NOT DEFINED archivedir)
-    set(archivedir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
-    )
-  endif()
-
-  # backenddir
-  if(NOT DEFINED backenddir)
-    set(backenddir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/backends)
-  endif()
-
-  # scriptdir
-  if(NOT DEFINED scriptdir)
-    set(scriptdir "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_PROJECT_NAME}/scripts")
-  endif()
-
-  # workingdir
-  if(NOT DEFINED workingdir)
-    set(workingdir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
-    )
-  endif()
+  set(confdir
+      "${sysconfdir}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos configuration directory"
+  )
+  set(configtemplatedir
+      "${confdir}"
+      CACHE STRING "directory for Bareos configuration templates (optional)"
+  )
+  set(includedir
+      "${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "include directory"
+  )
+  set(mandir
+      ${CMAKE_INSTALL_FULL_MANDIR}
+      CACHE STRING "man(uals) directory"
+  )
+  set(workingdir
+      "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "Bareos working directory"
+  )
   set(working_dir "${workingdir}")
+  set(archivedir
+      "${workingdir}/storage"
+      CACHE STRING "Bareos archive directory"
+  )
+  set(subsysdir
+      "${workingdir}"
+      CACHE STRING "subsys directory"
+  )
+  set(logdir
+      "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}"
+      CACHE STRING "log directory"
+  )
+  set(datarootdir
+      "${CMAKE_INSTALL_FULL_DATAROOTDIR}"
+      CACHE STRING "data root directory"
+  )
 
-  # plugindir
-  if(NOT DEFINED plugindir)
-    set(plugindir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-  endif()
-
-  # bsrdir
-  if(NOT DEFINED bsrdir)
-    set(bsrdir ${workingdir})
-  endif()
-
-  # logdir
-  if(NOT DEFINED logdir)
-    set(logdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
-  endif()
-
-  # datarootdir
-  if(NOT DEFINED datarootdir)
-    set(datarootdir "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
-  endif()
-
-  # subsysdir
-  if(NOT DEFINED subsysdir)
-    set(subsysdir "${workingdir}")
-  endif()
-
-endif() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+endif() # if(USE_RELATIVE_PATHS)
 
 set(PYTHON_MODULE_PATH
     "${plugindir}"
@@ -240,19 +182,25 @@ set(PYTHON_MODULE_PATH
 )
 
 # db_name
-if(NOT DEFINED db_name)
-  set(db_name "bareos")
-endif()
+set(db_name
+    "bareos"
+    CACHE STRING "Bareos database name"
+)
+mark_as_advanced(db_name)
 
 # db_user
-if(NOT DEFINED db_user)
-  set(db_user "bareos")
-endif()
+set(db_user
+    "bareos"
+    CACHE STRING "Bareos database username"
+)
+mark_as_advanced(db_user)
 
 # db_password
-if(NOT DEFINED db_password)
-  set(db_password "")
-endif()
+set(db_password
+    ""
+    CACHE STRING "Bareos database password"
+)
+mark_as_advanced(db_password)
 
 set(systemtest_db_user
     "regress"
@@ -265,124 +213,116 @@ set(systemtest_db_password
 )
 
 # dir-user
-if(NOT DEFINED dir-user)
-  set(dir-user "")
-endif()
+set(dir-user
+    ""
+    CACHE STRING "Bareos Director user"
+)
 set(dir_user "${dir-user}")
 
 # dir-group
-if(NOT DEFINED dir-group)
-  set(dir-group "")
-endif()
+set(dir-group
+    ""
+    CACHE STRING "Bareos Director group"
+)
 set(dir_group ${dir-group})
 
 # sd-user
-if(NOT DEFINED sd-user)
-  set(sd-user "")
-endif()
+set(sd-user
+    ""
+    CACHE STRING "Bareos Storage Daemon user"
+)
 set(sd_user ${sd-user})
 
 # sd-group
-if(NOT DEFINED sd-group)
-  set(sd-group "")
-endif()
+set(sd-group
+    ""
+    CACHE STRING "Bareos Storage Daemon group"
+)
 set(sd_group ${sd-group})
 
 # fd-user
-if(NOT DEFINED fd-user)
-  set(fd-user "")
-endif()
+set(fd-user
+    ""
+    CACHE STRING "Bareos File Daemon user"
+)
 set(fd_user ${fd-user})
 
 # fd-group
-if(NOT DEFINED fd-group)
-  set(fd-group "")
-endif()
+set(fd-group
+    ""
+    CACHE STRING "Bareos File Daemon group"
+)
 set(fd_group ${fd-group})
 
 # dir-password
-if(NOT DEFINED dir-password)
-  set(dir-password "bareos")
-endif()
+set(dir-password
+    ""
+    CACHE STRING "Bareos Director password"
+)
 set(dir_password ${dir-password})
 
-# fd-password
-if(NOT DEFINED fd-password)
-  set(fd-password "")
-endif()
-set(fd_password ${fd-password})
-
 # sd-password
-if(NOT DEFINED sd-password)
-  set(sd-password "")
-endif()
+set(sd-password
+    ""
+    CACHE STRING "Bareos Storage Daemon password"
+)
 set(sd_password ${sd-password})
 
+# fd-password
+set(fd-password
+    ""
+    CACHE STRING "Bareos File Daemon password"
+)
+set(fd_password ${fd-password})
+
 # mon-dir-password
-if(NOT DEFINED mon-dir-password)
-  set(mon-dir-password "")
-endif()
+set(mon-dir-password
+    ""
+    CACHE STRING "Bareos Director monitor password"
+)
 set(mon_dir_password ${mon-dir-password})
 
 # mon-fd-password
-if(NOT DEFINED mon-fd-password)
-  set(mon-fd-password "")
-endif()
+set(mon-fd-password
+    ""
+    CACHE STRING "Bareos File Daemon monitor password"
+)
 set(mon_fd_password ${mon-fd-password})
 
 # mon-sd-password
-if(NOT DEFINED mon-sd-password)
-  set(mon-sd-password "")
-endif()
+set(mon-sd-password
+    ""
+    CACHE STRING "Bareos Storage Daemon monitor password"
+)
 set(mon_sd_password ${mon-sd-password})
 
 # basename
-if(NOT DEFINED basename)
-  set(basename localhost)
-endif()
+set(basename
+    "localhost"
+    CACHE STRING "basename"
+)
 
 # hostname
-if(NOT DEFINED hostname)
-  set(hostname localhost)
-endif()
+set(hostname
+    "localhost"
+    CACHE STRING "hostname"
+)
 
-# ##############################################################################
-# rights
-# ##############################################################################
-# sbin-perm
-if(NOT DEFINED sbin-perm)
-  set(sbin-perm 755)
-endif()
-
-# ##############################################################################
-# bool
-# ##############################################################################
-# python
-if(NOT DEFINED python)
-  set(python ON)
-endif()
-
-# lockmgr
-if(NOT DEFINED lockmgr)
-  set(lockmgr OFF)
-  set(LOCKMGR 0)
-endif()
-
-# readline
-if(NOT DEFINED readline)
-  set(readline ON)
-endif()
+option(python "Use Python" ON)
+mark_as_advanced(python)
 
 # batch-insert
-if((NOT DEFINED batch-insert) OR (${batch-insert}))
-  set(batch-insert ON)
+option(batch-insert "Enable database batch inserts" ON)
+mark_as_advanced(batch-insert)
+if(${batch-insert})
   set(HAVE_POSTGRESQL_BATCH_FILE_INSERT 1)
   set(USE_BATCH_FILE_INSERT 1)
 endif()
 
 # dynamic-storage-backends
-if(NOT DEFINED dynamic-storage-backends OR dynamic-storage-backends)
-  set(dynamic-storage-backends ON)
+option(dynamic-storage-backends "Enable dynamic storage backends" ON)
+mark_as_advanced(dynamic-storage-backends)
+if(dynamic-storage-backends)
   set(HAVE_DYNAMIC_SD_BACKENDS
       1
       CACHE INTERNAL ""
@@ -394,50 +334,27 @@ else()
   )
 endif()
 
-# scsi-crypto
-if(NOT DEFINED scsi-crypto)
-  set(scsi-crypto OFF)
-endif()
+option(acl "Enable ACL support" ON)
+mark_as_advanced(acl)
+option(lmdb "Enable LMDP" ON)
+mark_as_advanced(lmdb)
+option(scsi-crypto "Enable scsi-crypto" OFF)
+option(xattr "Enable extended file attributes (xattr) support" ON)
+mark_as_advanced(xattr)
 
-# lmdb
-if(NOT DEFINED lmdb)
-  set(lmdb ON)
-endif()
+option(ndmp "Enable NDMP support" ON)
+option(build_ndmjob "Building ndmpjob" OFF)
+mark_as_advanced(build_ndmjob)
 
-# ndmp
-if(NOT DEFINED ndmp)
-  set(ndmp ON)
-endif()
+option(traymonitor "Build bareos-traymonitor" OFF)
 
-# acl
-if(NOT DEFINED acl)
-  set(acl ON)
-endif()
-
-# xattr
-if(NOT DEFINED xattr)
-  set(xattr ON)
-endif()
-
-# build_ndmjob
-if(NOT DEFINED build_ndmjob)
-  set(build_ndmjob OFF)
-endif()
-
-# traymonitor
-if(NOT DEFINED traymonitor)
-  set(HAVE_TRAYMONITOR 0)
-endif()
-
-# client-only
-if(NOT DEFINED client-only)
-  set(client-only OFF)
-  set(build_client_only OFF)
-  set(postgresql ON)
-else()
-  set(client-only ON)
+option(client-only "Build only the client components" OFF)
+if(client-only)
   set(build_client_only ON)
   set(postgresql OFF)
+else()
+  set(build_client_only OFF)
+  set(postgresql ON)
 endif()
 
 if(NOT postgresql)
@@ -459,33 +376,23 @@ if(NOT client-only)
   endif()
 endif()
 
-# systemd
-if(NOT DEFINED systemd)
-  set(systemd OFF)
-endif()
-
-# includes
-if(NOT DEFINED includes)
-  set(includes ON)
-endif()
-
-# openssl
-if(NOT DEFINED openssl)
-  set(openssl ON)
-endif()
+option(systemd "Enable systemd support" OFF)
+option(openssl "Enable openssl support" ON)
+mark_as_advanced(openssl)
 
 # ports
-if(NOT DEFINED dir_port)
-  set(dir_port "9101")
-endif()
-
-if(NOT DEFINED fd_port)
-  set(fd_port "9102")
-endif()
-
-if(NOT DEFINED sd_port)
-  set(sd_port "9103")
-endif()
+set(dir_port
+    "9101"
+    CACHE STRING "Bareos Director TCP listen port"
+)
+set(fd_port
+    "9102"
+    CACHE STRING "Bareos File Daemon TCP listen port"
+)
+set(sd_port
+    "9103"
+    CACHE STRING "Bareos Storage Daemon TCP listen port"
+)
 
 if(DEFINED baseport)
   math(EXPR dir_port "${baseport}+0")
@@ -493,25 +400,22 @@ if(DEFINED baseport)
   math(EXPR sd_port "${baseport}+2")
 endif()
 
-if(NOT DEFINED job_email)
-  set(job_email "root")
-endif()
+# email
+set(job_email
+    "root"
+    CACHE STRING "Email address for job mails"
+)
+set(dump_email
+    "root"
+    CACHE STRING "Email address for tracebacks"
+)
+set(smtp_host
+    "localhost"
+    CACHE STRING "SMTP host"
+)
 
-if(NOT DEFINED dump_email)
-  set(dump_email "root")
-endif()
-
-if(NOT DEFINED smtp_host)
-  set(smtp_host "localhost")
-endif()
-
-if(DEFINED traymonitor)
-  set(HAVE_TRAYMONITOR 1)
-endif()
-
-if(NOT DEFINED coverage)
-  set(coverage OFF)
-endif()
+option(coverage "coverage" OFF)
+mark_as_advanced(coverage)
 
 # do not destroy bareos-config-lib.sh
 set(DB_NAME "@DB_NAME@")
@@ -535,9 +439,11 @@ set(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
 set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
 set(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
 
-if(NOT DEFINED ENABLE_NLS)
-  set(ENABLE_NLS 1)
-endif()
+set(ENABLE_NLS
+    "1"
+    CACHE STRING "Enable (1) or disable (0) Native Language Support (NLS)"
+)
+mark_as_advanced(ENABLE_NLS)
 
 if(HAVE_WIN32)
 
@@ -549,7 +455,7 @@ if(HAVE_WIN32)
     set(WINDOWS_BITS 64)
   endif()
 
-endif()
+endif() # HAVE_WIN32
 
 if(DEFINED do-static-code-checks)
   set(DO_STATIC_CODE_CHECKS ${do-static-code-checks})
@@ -647,3 +553,8 @@ if(NOT DEFINED gfapi_fd_testvolume)
       PARENT_SCOPE
   )
 endif()
+
+set(DUMP_VARS
+    ""
+    CACHE STRING "Dump all variables that matches this regex."
+)

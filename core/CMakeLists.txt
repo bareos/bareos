@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@ endif()
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
 include(GNUInstallDirs)
+include(BareosHelper)
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
@@ -353,7 +354,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   set(HAVE_AIX_OS 1)
-  set(lmdb 0FF)
+  set(lmdb OFF)
   link_libraries(intl)
 endif()
 
@@ -751,9 +752,6 @@ else()
   endif()
 endif()
 
-set(support_systemd "")
-set(have_cmocka "")
-
 set(PATH_BAREOS_BACKENDDIR \"${backenddir}\")
 set(PATH_BAREOS_WORKINGDIR \"${workingdir}\")
 
@@ -790,7 +788,7 @@ string(TIMESTAMP NOW "%Y-%m-%d %H:%M:%S")
 
 # give configure output
 message(" ")
-message("Configuration on ${NOW} : ")
+message("Configuration on ${NOW}: ")
 message(" ")
 
 message(
@@ -812,7 +810,6 @@ message("   Log directory:                ${logdir} ")
 message("   Scripts directory:            ${scriptdir} ")
 message("   Archive directory:            ${archivedir} ")
 message("   Working directory:            ${workingdir} ")
-message("   BSR directory:                ${bsrdir} ")
 message("   Subsys directory:             ${subsysdir} ")
 message("   Man directory:                ${mandir} ")
 message("   Data directory:               ${datarootdir} ")
@@ -878,8 +875,7 @@ message(
 message("   LMDB support:                 ${lmdb} ")
 message("   NDMP support:                 ${ndmp} ")
 message("   Build ndmjob binary:          ${build_ndmjob} ")
-message("   enable-lockmgr:               ${lockmgr} ")
-message("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
+message("   Build tray-monitor:           ${traymonitor} ")
 message("   webui:                        ${ENABLE_WEBUI} ")
 message("   client-only:                  ${build_client_only} ")
 message("   Plugin support:               ${have_plugins} ")
@@ -950,6 +946,9 @@ if(HAVE_WIN32)
   message("   WINDOWS_BITS:                 ${WINDOWS_BITS}")
   message("   WINEPATH environment:         $ENV{WINEPATH}")
 endif()
+
+print_variables("${DUMP_VARS}")
+
 # REPEAT_UNTIL requires cmake 3.17+
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
   set(REPEAT_UNTIL "REPEAT UNTIL_PASS:2")
