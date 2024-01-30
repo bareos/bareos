@@ -203,8 +203,10 @@ def create(*, pr, into, repo, upstream, select_all=False):
     # determine which remote the user's fork is on
     origin = find_user_remote(repo, whoami())
 
-    gh = Gh()
-    pr_data = gh.pr.view(str(pr), json=["title", "labels", "headRefName", "commits"])
+    pr_data = get_pr_info(str(pr), ["title", "labels", "headRefName", "commits"])
+    if not pr_data:
+        logging.critical("Cannot get information for PR %s. Does it exist?", pr)
+        return False
 
     short_headref_name = pr_data["headRefName"].split("/")[-1]
     short_baseref_name = into
@@ -245,6 +247,8 @@ def get_pr_info(pr_spec, fields):
         data = Gh().pr.view(pr_spec, json=fields)
     except InvokationError as e:
         if "no pull requests found for branch" in e.args[0]:
+            return False
+        if "Could not resolve to a PullRequest with the number of" in e.args[0]:
             return False
         raise
     return data
