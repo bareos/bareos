@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Added
+- add openssl 3 ulc [PR #1694]
+
 ### Changed
 - bareos-config: fix output of deploy_config [PR #1673]
 - Disable automated package-tests for SLES 12 [PR #1675]
@@ -395,4 +398,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1679]: https://github.com/bareos/bareos/pull/1679
 [PR #1680]: https://github.com/bareos/bareos/pull/1680
 [PR #1690]: https://github.com/bareos/bareos/pull/1690
+[PR #1694]: https://github.com/bareos/bareos/pull/1694
 [unreleased]: https://github.com/bareos/bareos/tree/master
