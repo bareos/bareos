@@ -868,10 +868,10 @@ Section "Bareos Webui" SEC_WEBUI
    SetShellVarContext all
    SetOutPath "$INSTDIR"
    SetOverwrite ifnewer
-   File  "C:\ProgramData\Chocolatey\bin\nssm.exe"
+   File  "C:\ProgramData\Chocolatey\lib\nssm\tools\nssm.exe"
 
    SetOutPath "$INSTDIR\bareos-webui\php"
-   File /r "C:\downloads\php\*.*"
+   File /r "${PHP_BASE_DIR}\php\*.*"
 
    SetOutPath "$INSTDIR\bareos-webui"
    File /r "${CMAKE_SOURCE_DIR}\webui\*.*"
@@ -916,18 +916,30 @@ Section "Bareos Webui" SEC_WEBUI
 
 
    ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
-   ExecWait '$INSTDIR\nssm.exe set     bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
+   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
+
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
+   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
+
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
+   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
+
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
+   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
 
    # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
    # see https://nssm.cc/usage -> quoting issues
    ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
       -S $WebUIListenAddress:$WebUIListenPort \
-      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
+      -c $\"$APPDATA\${PRODUCT_NAME}\php.ini$\" \
       -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
+
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"'
+   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
+
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"'
+   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
 
    WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
                      "Description" "Bareos Webui php service"
@@ -1079,11 +1091,6 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#bareos-mon#$HostName-mon#g$\r$\n"
   FileWrite $R1 "s#@basename@-sd#$StorageDaemonName#g$\r$\n"
 
-  # add "Working Directory" directive
-  FileWrite $R1 "s#QueryFile = #Working Directory = $\"$BareosAppdata/working$\"\n  QueryFile = #g$\r$\n"
-
-
-  #
   # catalog backup scripts
   #
   FileWrite $R1 "s#make_catalog_backup#make_catalog_backup.bat#g$\r$\n"
@@ -1112,42 +1119,7 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#@mon_sd_password@#StorageMonitorPassword#g$\r$\n"
   FileWrite $R1 "s#@sd_password@#$StoragePassword#g$\r$\n"
   # FileWrite $R1 "s#@smtp_host@#localhost#g$\r$\n"
-
-
-
-#  Install system binaries:      /.*/sbin
-  FileWrite $R1 "s#C:/.*/sbin#$BareosInstdir#g$\r$\n"
-
-#  Install binaries:             /.*/bin
-  FileWrite $R1 "s#C:/.*/bin#$BareosInstdir#g$\r$\n"
-
-#  Archive directory:            /.*/var/lib/bareos/storage
-  FileWrite $R1 "s#C:/.*/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
-
-# Log directory:                /.*/var/log/bareos
-  FileWrite $R1 "s#C:/.*/var/log/bareos#$BareosAppdata/logs#g$\r$\n"
-
-#  Backend directory:            /.*/lib/bareos/backends
-  FileWrite $R1 "s#C:/.*/lib/bareos/backends#$BareosInstdir#g$\r$\n"
-
-#  Install Bareos config dir:    /.*/etc/bareos
-  FileWrite $R1 "s#C:/.*/etc/bareos#$BareosAppdata#g$\r$\n"
-
-#  Plugin directory:             /.*/lib/bareos/plugins
-  FileWrite $R1 "s#C:/.*/lib/bareos/plugins#$BareosInstdir/Plugins#g$\r$\n"
-
-#  Scripts directory:            /.*/lib/bareos/scripts
-  FileWrite $R1 "s#C:/.*/lib/bareos/scripts#$BareosAppdata/scripts#g$\r$\n"
-
-# Catalog Dump
-  FileWrite $R1 "s#C:/.*/lib/bareos/bareos.sql#$BareosAppdata/working/bareos.sql#g$\r$\n"
-
-  #  Working directory:            /.*/var/lib/bareos
-  FileWrite $R1 "s#C:/.*/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
-
   FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
-
-
 
   FileClose $R1
 
@@ -1504,7 +1476,7 @@ done:
   File "/oname=$PLUGINSDIR\postgresql-grant.sql" "grants\postgresql.sql"
 
   # webui
-  File "/oname=$PLUGINSDIR\php.ini" "C:\downloads\php\php.ini-production"
+  File "/oname=$PLUGINSDIR\php.ini" "${PHP_BASE_DIR}\php\php.ini-production"
   !cd ${CMAKE_SOURCE_DIR}
   File "/oname=$PLUGINSDIR\global.php" "webui\config\autoload\global.php"
   File "/oname=$PLUGINSDIR\directors.ini" "webui\install\directors.ini"

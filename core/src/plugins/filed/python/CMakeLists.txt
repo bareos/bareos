@@ -54,7 +54,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     TEST bareosfd-python3-module-tester
     PROPERTY
       ENVIRONMENT
-      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
+      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules/${CMAKE_CONFIG_TYPE}:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
       "LSAN_OPTIONS=fast_unwind_on_malloc=0 suppressions=${CMAKE_CURRENT_SOURCE_DIR}/test/lsan-suppressions.txt"
   )
 endif()
@@ -99,7 +99,7 @@ if(Python3_FOUND)
     TEST bareosfd-python3-module
     PROPERTY
       ENVIRONMENT
-      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules${CMAKE_CONFIG_TYPE}:${CMAKE_CURRENT_SOURCE_DIR}/test"
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
       "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
   )
