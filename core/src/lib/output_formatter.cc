@@ -1024,7 +1024,10 @@ void OutputFormatter::JsonFinalizeResult(bool result)
       Dmsg0(100, ErrorMsg.c_str());
       JsonSendErrorMessage(ErrorMsg.c_str());
     }
-    free(string);
+    json_malloc_t my_alloc;
+    json_free_t my_free;
+    json_get_alloc_funcs(&my_alloc, &my_free);
+    my_free(string);
   }
 
   /* cleanup and reinitialize */
