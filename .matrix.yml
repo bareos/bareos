@@ -10,7 +10,14 @@ OS:
   ULC_deb:
     "OpenSSL_1.1":
       TYPE: scripted
-      IMAGE: "ubuntu18.04"
+      IMAGE: "ubuntu20.04"
+      BUILD_SCRIPT: CD/deb/build-ulc.sh
+      FINISH_SCRIPT: CD/deb/finish-ulc.sh
+      ARCH:
+        - x86_64
+    "OpenSSL_3.0":
+      TYPE: scripted
+      IMAGE: "ubuntu22.04"
       BUILD_SCRIPT: CD/deb/build-ulc.sh
       FINISH_SCRIPT: CD/deb/finish-ulc.sh
       ARCH:
