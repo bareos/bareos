@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- add openssl 3 ulc [PR #1683]
+
 ### Changed
 - github actions: PyPi: install setuptools [PR #1589]
 - restore: add fileregex parameter [PR #1587]
@@ -76,5 +79,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1671]: https://github.com/bareos/bareos/pull/1671
 [PR #1672]: https://github.com/bareos/bareos/pull/1672
 [PR #1678]: https://github.com/bareos/bareos/pull/1678
+[PR #1683]: https://github.com/bareos/bareos/pull/1683
 [PR #1684]: https://github.com/bareos/bareos/pull/1684
 [unreleased]: https://github.com/bareos/bareos/tree/master
