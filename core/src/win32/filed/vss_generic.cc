@@ -564,7 +564,14 @@ bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
     return false;
   }
 
-  return hrReturned == VSS_S_ASYNC_FINISHED;
+  if (hrReturned != VSS_S_ASYNC_FINISHED) {
+        Jmsg(jcr_, M_WARNING, 0,
+             "WaitAndCheckForAsyncOperation: QueryStatus did not return ASYNC_FINISHED: %lu\n",
+	     hrReturned);
+    return false;
+  }
+  return true;
+ // Add all drive letters that need to be snapshotted.
 }
 
 // Add all drive letters that need to be snapshotted.
