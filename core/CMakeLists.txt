@@ -729,7 +729,7 @@ endif()
 
 include(BareosConfigureFile)
 bareos_configure_file(
-  GLOB_RECURSE "${CMAKE_SOURCE_DIR}/debian/*.in" "src/*.in" "scripts/*.in"
+  GLOB_RECURSE "${CMAKE_SOURCE_DIR}/debian/*.in" "src/*.in"
   IN_TREE
 )
 
