@@ -211,8 +211,8 @@ function(configurefilestosystemtest srcbasedir dirname globexpression
         ${configure_option}
       )
     else()
-      create_symlink(
-        ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+      file(CREATE_LINK ${CURRENT_FILE}
+           ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE} SYMBOLIC
       )
     endif()
   endforeach()
@@ -300,26 +300,30 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
     # message( "creating symlink ${${bareos_XXX_binary}}  ->
     # ${${binary_name_to_test_upcase}}" )
-    create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
+    file(CREATE_LINK ${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}
+         SYMBOLIC
+    )
   endforeach()
-  create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
+  file(CREATE_LINK ${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback
+       SYMBOLIC
+  )
 
   if(TARGET bareos_vadp_dumper)
     if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      create_symlink(
-        "/usr/sbin/bareos_vadp_dumper_wrapper.sh"
-        "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh"
+      file(CREATE_LINK "/usr/sbin/bareos_vadp_dumper_wrapper.sh"
+           "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh" SYMBOLIC
       )
     else()
-      create_symlink(
+      file(
+        CREATE_LINK
         "${CMAKE_SOURCE_DIR}/core/src/vmware/vadp_dumper/bareos_vadp_dumper_wrapper.sh"
         "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh"
+        SYMBOLIC
       )
 
     endif()
-    create_symlink(
-      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper-${TEST_NAME}"
-      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper"
+    file(CREATE_LINK "${CURRENT_SBIN_DIR}/bareos_vadp_dumper-${TEST_NAME}"
+         "${CURRENT_SBIN_DIR}/bareos_vadp_dumper" SYMBOLIC
     )
   endif()
 endmacro()
@@ -382,12 +386,11 @@ macro(prepare_testdir_for_daemon_run)
   # create a bin/bareos and bin/bconsole script in every testdir for start/stop
   # and bconsole
   file(MAKE_DIRECTORY "${current_test_directory}/bin")
-  create_symlink(
-    "${PROJECT_SOURCE_DIR}/bin/bconsole"
-    "${current_test_directory}/bin/bconsole"
+  file(CREATE_LINK "${PROJECT_SOURCE_DIR}/bin/bconsole"
+       "${current_test_directory}/bin/bconsole" SYMBOLIC
   )
-  create_symlink(
-    "${PROJECT_SOURCE_DIR}/bin/bareos" "${current_test_directory}/bin/bareos"
+  file(CREATE_LINK "${PROJECT_SOURCE_DIR}/bin/bareos"
+       "${current_test_directory}/bin/bareos" SYMBOLIC
   )
 
   set(CURRENT_SBIN_DIR ${current_test_directory}/sbin)
@@ -467,23 +470,12 @@ macro(prepare_test test_subdir)
 
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
-    create_symlink(
-      ${CMAKE_SOURCE_DIR}/core/scripts/mtx-changer.conf
-      ${current_test_directory}/etc/bareos/mtx-changer.conf
+    file(CREATE_LINK ${CMAKE_SOURCE_DIR}/core/scripts/mtx-changer.conf
+         ${current_test_directory}/etc/bareos/mtx-changer.conf SYMBOLIC
     )
   endif()
 
   prepare_test_python()
-endmacro()
-
-macro(create_symlink target link)
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
-    file(CREATE_LINK ${target} ${link} SYMBOLIC)
-  else()
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link}
-    )
-  endif()
 endmacro()
 
 function(add_disabled_systemtest PREFIX TEST_NAME)
@@ -541,8 +533,8 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
   # Multiple tests in this directory.
   #
   if(NOT EXISTS "${test_dir}/test-setup")
-    create_symlink(
-      "${PROJECT_BINARY_DIR}/scripts/start_bareos.sh" "${test_dir}/test-setup"
+    file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/start_bareos.sh"
+         "${test_dir}/test-setup" SYMBOLIC
     )
   endif()
   add_systemtest("${test_basename}:setup" "${test_dir}/test-setup")
@@ -600,8 +592,8 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
   endforeach()
 
   if(NOT EXISTS ${test_dir}/test-cleanup)
-    create_symlink(
-      "${PROJECT_BINARY_DIR}/scripts/cleanup" "${test_dir}/test-cleanup"
+    file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/cleanup"
+         "${test_dir}/test-cleanup" SYMBOLIC
     )
   endif()
   add_systemtest(${test_basename}:cleanup "${test_dir}/test-cleanup")
