@@ -18,6 +18,7 @@
 #   02110-1301, USA.
 
 include(BareosDisableWarnings)
+include(BareosConfigureFile)
 
 if(Python3_FOUND)
   add_library(python3-fd MODULE python-fd.cc)
@@ -114,6 +115,8 @@ if(Python3_FOUND)
   )
   set_property(TEST python-simple-test-example PROPERTY DISABLED true)
 endif()
+
+bareos_configure_file(GLOB_RECURSE "ldap/python-ldap-conf.d/*" COPY)
 
 set(PYFILES
     pyfiles/BareosFdPluginBaseclass.py

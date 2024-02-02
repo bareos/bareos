@@ -114,7 +114,9 @@ set(DIRD_OBJECTS_SRCS
 
 if(HAVE_WIN32)
   bareos_configure_file(FILES ../win32/dird/dirdres.rc.in)
-  list(APPEND DIRD_OBJECTS_SRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dirdres.rc)
+  list(APPEND DIRD_OBJECTS_SRCS
+       ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dirdres.rc
+  )
 endif()
 
 if(HAVE_PAM)
@@ -202,7 +204,7 @@ message("using PLUGINS: ${PLUGINS}")
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(PLUGINS \"${PLUGINS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
+install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")")
 
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
 

@@ -215,7 +215,7 @@ install(TARGETS bareos-sd bls bextract bscan btape bcopy
 
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
+install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")")
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 
 install(DIRECTORY DESTINATION "${archivedir}")

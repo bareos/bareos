@@ -67,7 +67,9 @@ set(SOURCES
 
 if(HAVE_WIN32)
   bareos_configure_file(FILES ../win32/qt-tray-monitor/traymon.rc.in)
-  list(APPEND SOURCES ${CMAKE_CURRENT_BINARY_DIR}/../win32/qt-tray-monitor/traymon.rc)
+  list(APPEND SOURCES
+       ${CMAKE_CURRENT_BINARY_DIR}/../win32/qt-tray-monitor/traymon.rc
+  )
 endif()
 
 if(HAVE_WIN32)
@@ -95,7 +97,7 @@ bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
+install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")")
 
 install(
   SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake
