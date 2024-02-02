@@ -101,9 +101,9 @@ Please request a quote by sending the report via email to <a href="mailto:sales@
 </div>
 
 <?php
-   if ($this->directorOutput) {
-      echo '<a class="btn btn-primary" href="/director/backupunitreport">Download Backup Unit Report (JSON)</a>';
-   }
+    if ($this->directorOutput) {
+        echo '<a class="btn btn-primary" href="' . $this->url('director', array('action' => 'backupunitreport')) . '">' . $this->translate('Download Backup Unit Report (JSON)') . '</a>';
+    }
 ?>
 
 <?php endif; ?>
