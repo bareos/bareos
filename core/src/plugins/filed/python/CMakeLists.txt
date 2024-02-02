@@ -91,15 +91,39 @@ if(Python3_FOUND)
   target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
 
   add_test(NAME bareosfd-python3-module
-           COMMAND ${Python3_EXECUTABLE}
-                   ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
   )
 
   set_property(
     TEST bareosfd-python3-module
     PROPERTY
       ENVIRONMENT
-      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules${CMAKE_CONFIG_TYPE}:${CMAKE_CURRENT_SOURCE_DIR}/test"
+      "PATH=$<SHELL_PATH:${CMAKE_CURRENT_BINARY_DIR}/python3modules/$<CONFIG>>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/cats>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/console>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/dird>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/fastlz>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/filed>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/findlib>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/lib>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/lmdb>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/dird>\\;\
+"
+      "PYTHONPATH=$<SHELL_PATH:${CMAKE_CURRENT_BINARY_DIR}/python3modules/$<CONFIG>>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/cats>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/console>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/dird>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/fastlz>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/filed>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/findlib>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/lib>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/lmdb>\\;\
+$<SHELL_PATH:${CMAKE_BINARY_DIR}/core/src/dird>\\;\
+"
+
+
+#      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules/$<CONFIG>\\;${CMAKE_BINARY_DIR}/core/src/cats\\;${CMAKE_BINARY_DIR}/core/src/console\\;${CMAKE_BINARY_DIR}/core/src/dird\\;${CMAKE_BINARY_DIR}/core/src/fastlz\\;${CMAKE_BINARY_DIR}/core/src/filed\\;${CMAKE_BINARY_DIR}/core/src/findlib\\;${CMAKE_BINARY_DIR}/core/src/lib\\;${CMAKE_BINARY_DIR}/core/src/lmdb\\;${CMAKE_BINARY_DIR}/core/src/plugins/dird\\;"
+
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
       "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
   )
