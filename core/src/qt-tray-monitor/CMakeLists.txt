@@ -88,6 +88,9 @@ if(TARGET Qt6::Widgets)
   target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Widgets)
 endif()
 
+include(BareosConfigureFile)
+bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
+
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
@@ -97,10 +100,10 @@ install(
   SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake
 )
 
-install(FILES bareos-tray-monitor.desktop
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-tray-monitor.desktop
         DESTINATION ${datarootdir}/applications/
 )
-install(FILES bareos-tray-monitor.desktop
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-tray-monitor.desktop
         DESTINATION ${sysconfdir}/xdg/autostart/
 )
 install(

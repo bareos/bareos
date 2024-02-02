@@ -53,7 +53,6 @@ core/src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf
 core/src/defaultconfigs/tray-monitor.d/director/Director-local.conf
 core/src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf
 core/src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf
-core/src/qt-tray-monitor/bareos-tray-monitor.desktop
 core/src/tests/configs/bareos-configparser-tests/bareos-sd-CFG_TYPE_STR_VECTOR_OF_DIRS.conf
 core/src/tests/configs/bareos-configparser-tests/bareos-sd.d/storage/bareos-sd.conf
 core/src/tests/configs/catalog/bareos-dir.d/catalog/MyCatalog.conf
