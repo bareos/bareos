@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+
 if(HAVE_WIN32)
   include_directories(
     ${PROJECT_SOURCE_DIR}/src/win32/generic
@@ -94,29 +96,36 @@ set(SDSRCS
 )
 
 if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/stored/storedres.rc.in)
   list(APPEND SDSRCS ../win32/generic/main.cc ../win32/generic/service.cc
-       ../win32/stored/storedres.rc
+       ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/storedres.rc
   )
 endif()
 
 set(BTAPESRCS btape.cc)
 if(HAVE_WIN32)
-  list(APPEND BTAPESRCS ../win32/stored/btaperes.rc)
+  bareos_configure_file(FILES ../win32/stored/btaperes.rc.in)
+  list(APPEND BTAPESRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/btaperes.rc)
 endif()
 
 set(BLSSRCS bls.cc)
 if(HAVE_WIN32)
-  list(APPEND BLSSRCS ../win32/stored/blsres.rc)
+  bareos_configure_file(FILES ../win32/stored/blsres.rc.in)
+  list(APPEND BLSSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/blsres.rc)
 endif()
 
 set(BEXTRACTSRS bextract.cc)
 if(HAVE_WIN32)
-  list(APPEND BEXTRACTSRS ../win32/stored/bextractres.rc)
+  bareos_configure_file(FILES ../win32/stored/bextractres.rc.in)
+  list(APPEND BEXTRACTSRS
+       ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bextractres.rc
+  )
 endif()
 
 set(BSCANSRCS bscan.cc)
 if(HAVE_WIN32)
-  list(APPEND BSCANSRCS ../win32/stored/bscanres.rc)
+  bareos_configure_file(FILES ../win32/stored/bscanres.rc.in)
+  list(APPEND BSCANSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bscanres.rc)
 endif()
 
 set(BCOPYSRCS bcopy.cc)

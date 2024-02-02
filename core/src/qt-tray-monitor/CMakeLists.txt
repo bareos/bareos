@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+include(BareosConfigureFile)
 
 if(HAVE_WIN32)
   add_definitions(-D_STAT_DEFINED=1)
@@ -65,7 +66,8 @@ set(SOURCES
 )
 
 if(HAVE_WIN32)
-  list(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
+  bareos_configure_file(FILES ../win32/qt-tray-monitor/traymon.rc.in)
+  list(APPEND SOURCES ${CMAKE_CURRENT_BINARY_DIR}/../win32/qt-tray-monitor/traymon.rc)
 endif()
 
 if(HAVE_WIN32)
@@ -88,7 +90,6 @@ if(TARGET Qt6::Widgets)
   target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Widgets)
 endif()
 
-include(BareosConfigureFile)
 bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
 
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")

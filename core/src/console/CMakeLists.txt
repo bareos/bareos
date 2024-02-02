@@ -17,11 +17,16 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+include(BareosConfigureFile)
+
 set(BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc
               console_output.cc
 )
 if(HAVE_WIN32)
-  list(APPEND BCONSSRCS ../win32/console/consoleres.rc)
+  bareos_configure_file(FILES ../win32/console/consoleres.rc.in)
+  list(APPEND BCONSSRCS
+       ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
+  )
 endif()
 
 include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
@@ -40,7 +45,6 @@ target_link_libraries(
   bconsole PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
 )
 
-include(BareosConfigureFile)
 bareos_configure_file(FILES bconsole.conf.in)
 
 install(

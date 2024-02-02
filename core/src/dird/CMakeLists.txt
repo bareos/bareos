@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+
 if(NOT ENABLE_JANSSON)
   message(FATAL_ERROR "Bareos Director requires Jansson support")
 endif()
@@ -111,7 +113,8 @@ set(DIRD_OBJECTS_SRCS
 )
 
 if(HAVE_WIN32)
-  list(APPEND DIRD_OBJECTS_SRCS ../win32/dird/dirdres.rc)
+  bareos_configure_file(FILES ../win32/dird/dirdres.rc.in)
+  list(APPEND DIRD_OBJECTS_SRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dirdres.rc)
 endif()
 
 if(HAVE_PAM)
@@ -131,7 +134,8 @@ set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
 )
 
 if(HAVE_WIN32)
-  list(APPEND DBCHKSRCS ../win32/dird/dbcheckres.rc)
+  bareos_configure_file(FILES ../win32/dird/dbcheckres.rc.in)
+  list(APPEND DBCHKSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dbcheckres.rc)
 endif()
 
 set(DIRD_RESTYPES
