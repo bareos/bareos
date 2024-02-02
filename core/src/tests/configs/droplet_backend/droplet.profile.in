@@ -6,4 +6,4 @@ pricing_dir = ""
 aws_auth_sign_version = 4       # Currently, AWS S3 uses version 4. The Ceph S3 gateway uses version 2.
 aws_region = eu-central-1
 backend = posix
-base_path = @CMAKE_CURRENT_BINARY_DIR@/src/tests
+base_path = @CMAKE_CURRENT_BINARY_DIR@

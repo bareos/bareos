@@ -1,7 +1,7 @@
 /*
   BAREOS® - Backup Archiving REcovery Open Sourced
 
-  Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+  Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
   This program is Free Software; you can redistribute it and/or
   modify it under the terms of version three of the GNU Affero General Public
@@ -83,8 +83,8 @@ static void StopScheduler(std::chrono::milliseconds timeout)
 
 TEST_F(SchedulerTest, terminate)
 {
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler/scheduler-hourly");
+  std::string path_to_config_file
+      = std::string("configs/scheduler/scheduler-hourly");
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -177,8 +177,8 @@ TEST_F(SchedulerTest, hourly)
 {
   if (debug) { std::cout << "Start test" << std::endl; }
 
-  std::string path_to_config_file{std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler/scheduler-hourly")};
+  std::string path_to_config_file{
+      std::string("configs/scheduler/scheduler-hourly")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -286,33 +286,27 @@ enum
 TEST_F(SchedulerTest, on_time)
 {
   std::vector<uint8_t> wdays{kMonday, kMonday, kMonday};
-  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
-                 "/configs/scheduler/scheduler-on-time",
-                 wdays);
+  TestWithConfig("configs/scheduler/scheduler-on-time", wdays);
 }
 
 TEST_F(SchedulerTest, on_time_noday)
 {
   std::vector<uint8_t> wdays{kThursday, kFriday, kSaturday};
-  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
-                 "/configs/scheduler/scheduler-on-time-noday",
-                 wdays);
+  TestWithConfig("configs/scheduler/scheduler-on-time-noday", wdays);
 }
 
 TEST_F(SchedulerTest, on_time_noday_noclient)
 {
   std::vector<uint8_t> wdays{kThursday, kFriday, kSaturday};
-  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
-                 "/configs/scheduler/scheduler-on-time-noday-noclient",
-                 wdays);
+  TestWithConfig("configs/scheduler/scheduler-on-time-noday-noclient", wdays);
 }
 
 TEST_F(SchedulerTest, add_job_with_no_run_resource_to_queue)
 {
   if (debug) { std::cout << "Start test" << std::endl; }
 
-  std::string path_to_config_file{std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests")};
+  std::string path_to_config_file{
+      std::string("configs/bareos-configparser-tests")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,8 +57,7 @@ static DeviceResource* GetMultipliedDeviceResource(
 TEST(sd, MultipliedDeviceTest_ConfigParameter)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -84,8 +83,7 @@ static uint32_t CountAllDeviceResources(ConfigurationParser& my_config)
 TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -146,8 +144,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
 TEST(sd, MultipliedDeviceTest_CheckNames_1)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -209,8 +206,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
 TEST(sd, MultipliedDeviceTest_CheckNames_2)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -257,8 +253,7 @@ static uint32_t CheckAutochangerInAllDevices(ConfigurationParser& my_config)
 TEST(sd, MultipliedDeviceTest_CheckNameOfAutomaticallyAttachedAutochanger)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -301,8 +296,7 @@ TEST(sd,
      MultipliedDeviceTest_CheckNameOfDevicesAutomaticallyAttachedToAutochanger)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -317,8 +311,7 @@ TEST(sd,
 TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -336,8 +329,7 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
 TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
 {
   InitGlobals();
-  std::string path_to_config
-      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config = "configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();

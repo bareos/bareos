@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,8 +37,7 @@ static void test_starting_statistics_thread(std::string path_to_config)
 TEST_F(DirStatisticsThread, default_collect_statistics)
 {
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/statistics_thread/dir_statistics_thread/default_config");
+      "configs/statistics_thread/dir_statistics_thread/default_config");
 
   test_starting_statistics_thread(path_to_config);
 }
@@ -46,8 +45,7 @@ TEST_F(DirStatisticsThread, default_collect_statistics)
 TEST_F(DirStatisticsThread, only_interval_set)
 {
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/statistics_thread/dir_statistics_thread/only_collect_set");
+      "configs/statistics_thread/dir_statistics_thread/only_collect_set");
 
   test_starting_statistics_thread(path_to_config);
 }
@@ -55,8 +53,7 @@ TEST_F(DirStatisticsThread, only_interval_set)
 TEST_F(DirStatisticsThread, only_collect_set)
 {
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/statistics_thread/dir_statistics_thread/only_interval_set");
+      "configs/statistics_thread/dir_statistics_thread/only_interval_set");
 
   test_starting_statistics_thread(path_to_config);
 }

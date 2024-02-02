@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,8 +30,7 @@
 TEST(Pruning, ExcludeRunningJobsFromList)
 {
   InitDirGlobals();
-  std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/pruning/");
+  std::string path_to_config = std::string("configs/pruning/");
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return; }
 
@@ -57,8 +56,7 @@ TEST(Pruning, ExcludeRunningJobsFromList)
 TEST(Pruning, TransformJobidsTobedeleted)
 {
   InitDirGlobals();
-  std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/pruning/");
+  std::string path_to_config = std::string("configs/pruning/");
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return; }
 

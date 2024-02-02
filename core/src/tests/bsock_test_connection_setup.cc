@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -155,15 +155,13 @@ TEST(bsock, console_director_connection_test_tls_psk)
 {
   InitOpenSsl();
   do_connection_test(
-      std::string(RELATIVE_PROJECT_SOURCE_DIR
-                  "/configs/console-director/tls_psk_default_enabled/"),
+      std::string("configs/console-director/tls_psk_default_enabled/"),
       TlsPolicy::kBnetTlsEnabled);
 }
 
 TEST(bsock, console_director_connection_test_cleartext)
 {
   InitOpenSsl();
-  do_connection_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
-                                 "/configs/console-director/tls_disabled/"),
+  do_connection_test(std::string("configs/console-director/tls_disabled/"),
                      TlsPolicy::kBnetTlsNone);
 }

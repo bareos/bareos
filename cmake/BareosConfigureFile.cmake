@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,8 +42,18 @@ function(bareos_configure_file)
         set(out_file "${CMAKE_CURRENT_BINARY_DIR}/${in_file}")
       endif()
     endif()
-    string(REGEX REPLACE ".in\$" "" out_file "${out_file}")
-    message(STATUS "creating file ${out_file}")
-    configure_file(${in_file} ${out_file} @ONLY)
+    if(${out_file} MATCHES ".*\.in$")
+      string(REGEX REPLACE ".in\$" "" out_file "${out_file}")
+      message(STATUS "creating file ${out_file}")
+      configure_file(${in_file} ${out_file} @ONLY)
+    else()
+      get_filename_component(out_dir ${out_file} DIRECTORY)
+      if(NOT EXISTS "${out_dir}")
+        message(STATUS "creating directory ${out_dir}")
+        file(MAKE_DIRECTORY "${out_dir}")
+      endif()
+      message(STATUS "creating symlinking ${out_file}")
+      file(CREATE_LINK "${in_file}" "${out_file}" SYMBOLIC)
+    endif()
   endforeach()
 endfunction()

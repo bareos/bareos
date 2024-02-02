@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,8 +30,7 @@ TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
 {
   InitDirGlobals();
   std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/dir_fd_connection/dir_to_fd_connection_no/");
+      = std::string("configs/dir_fd_connection/dir_to_fd_connection_no/");
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
 
@@ -51,8 +50,7 @@ TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
 {
   InitDirGlobals();
   std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/dir_fd_connection/dir_fd_no_tls_downgrade/");
+      = std::string("configs/dir_fd_connection/dir_fd_no_tls_downgrade/");
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   InitMsg(nullptr, nullptr);
@@ -75,8 +73,7 @@ TEST(DirectorToClientConnection, DowngradesToClearTextWhenTlsNotRequired)
 {
   InitDirGlobals();
   std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/dir_fd_connection/dir_fd_allow_tls_downgrade/");
+      = std::string("configs/dir_fd_connection/dir_fd_allow_tls_downgrade/");
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   InitMsg(nullptr, nullptr);

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,8 +60,8 @@ class ConfigParser_Dir : public ::testing::Test {
 
 TEST_F(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
 {
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  std::string path_to_config_file
+      = std::string("configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 
@@ -101,8 +101,8 @@ TEST_F(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
 
 TEST_F(ConfigParser_Dir, bareos_configparser_tests)
 {
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  std::string path_to_config_file
+      = std::string("configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
   my_config->DumpResources(PrintMessage, NULL);
@@ -137,8 +137,8 @@ TEST_F(ConfigParser_Dir, bareos_configparser_tests)
 
 TEST_F(ConfigParser_Dir, foreach_res_and_reload)
 {
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  std::string path_to_config_file
+      = std::string("configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 
@@ -193,8 +193,8 @@ TEST_F(ConfigParser_Dir, foreach_res_and_reload)
 
 TEST_F(ConfigParser_Dir, runscript_test)
 {
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/runscript-tests/bareos-dir.conf");
+  std::string path_to_config_file
+      = std::string("configs/runscript-tests/bareos-dir.conf");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 
@@ -212,9 +212,8 @@ void test_config_directive_type(
   OSDependentInit();
 
   std::string path_to_config_file
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/bareos-configparser-tests/bareos-dir-")
-        + test_name + std::string(".conf");
+      = std::string("configs/bareos-configparser-tests/bareos-dir-") + test_name
+        + std::string(".conf");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 
