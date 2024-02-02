@@ -40,6 +40,9 @@ target_link_libraries(
   bconsole PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
 )
 
+include(BareosConfigureFile)
+bareos_configure_file(FILES bconsole.conf.in)
+
 install(
   TARGETS bconsole
   DESTINATION "${bindir}"
@@ -54,7 +57,7 @@ install(
 install(
   CODE "
   include(\"${PROJECT_SOURCE_DIR}/cmake/BareosInstallConfigFiles.cmake\")
-  bareos_install_single_config_file(\"${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf\" \"${configtemplatedir}\" \".\")
+  bareos_install_single_config_file(\"${CMAKE_CURRENT_BINARY_DIR}/bconsole.conf\" \"${configtemplatedir}\" \".\")
 "
 )
 

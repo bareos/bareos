@@ -28,7 +28,6 @@ core/src/cats/grant_bareos_privileges
 core/src/cats/make_bareos_tables
 core/src/cats/make_catalog_backup
 core/src/cats/update_bareos_tables
-core/src/console/bconsole.conf
 core/src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf
 core/src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf
 core/src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf
