@@ -185,7 +185,8 @@ class DirectorController extends AbstractActionController
         $response->getHeaders()->addHeaderLine('Content-Disposition', 'attachment; filename="bareos-backup-unit-report.json"');
 
         if (isset($result)) {
-            $response->setContent(JSON::prettyPrint(JSON::encode($result)));
+            $json_backupunitreport = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            $response->setContent($json_backupunitreport);
         }
 
         return $response;
