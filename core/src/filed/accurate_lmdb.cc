@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -414,7 +414,7 @@ bool BareosAccurateFilelistLmdb::SendBaseFileList()
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
       payload = (accurate_payload*)data.mv_data;
       if (BitIsSet(payload->filenr, seen_bitmap_)) {
-        Dmsg1(debuglevel, "base file fname=%s\n", key.mv_data);
+        Dmsg1(debuglevel, "base file fname=%s\n", (char*)key.mv_data);
         DecodeStat(payload->lstat, &ff_pkt->statp, sizeof(struct stat),
                    &LinkFIc); /* decode catalog stat */
         ff_pkt->fname = (char*)key.mv_data;
@@ -480,7 +480,7 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
         continue;
       }
 
-      Dmsg1(debuglevel, "deleted fname=%s\n", key.mv_data);
+      Dmsg1(debuglevel, "deleted fname=%s\n", (char*)key.mv_data);
       DecodeStat(payload->lstat, &statp, sizeof(struct stat),
                  &LinkFIc); /* decode catalog stat */
       ff_pkt->fname = (char*)key.mv_data;

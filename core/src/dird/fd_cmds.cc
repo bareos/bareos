@@ -885,7 +885,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
         || stream == STREAM_UNIX_ATTRIBUTES_EX) {
       if (jcr->cached_attribute) {
         Dmsg3(debuglevel, "Cached attr. Stream=%d fname=%s\n", ar->Stream,
-              ar->fname, ar->attr);
+              ar->fname);
         if (!jcr->db->CreateFileAttributesRecord(jcr, ar)) {
           Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error. %s"),
                 jcr->db->strerror());

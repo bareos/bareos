@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -321,8 +321,7 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
 
   std::vector<DBId_t> media_ids_in_pool;
   if (ua->db->GetMediaIdsInPool(pool_record, &media_ids_in_pool)) {
-    ua->WarningMsg(T_("No Medias found for pool %s.\n"), pool_record->Name,
-                   client->catalog->resource_name_);
+    ua->WarningMsg(T_("No Media found for pool %s.\n"), pool_record->Name);
   }
   for (auto mediaid : media_ids_in_pool) {
     MediaDbRecord mr;
@@ -430,8 +429,7 @@ void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
   std::string jobids_to_delete_string
       = PrepareJobidsTobedeleted(ua, deletion_list);
   if (deletion_list.empty()) {
-    ua->SendMsg(T_("No jobids found to be purged\n"), deletion_list.size(),
-                jobids_to_delete_string.c_str());
+    ua->SendMsg(T_("No jobids found to be purged\n"));
     return;
   }
   ua->SendMsg(T_("Purging the following %d JobIds: %s\n"), deletion_list.size(),

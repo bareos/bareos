@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -543,7 +543,7 @@ retry_fetch:
       Dmsg1(50, "Volume %s is on unwanted_volume_list, skipping\n", row[1]);
       num_rows--;
       if (num_rows <= 0) {
-        Dmsg1(50, "No more volumes in result, bailing out\n", row[1]);
+        Dmsg1(50, "No more volumes in result, bailing out\n");
         SqlFreeResult();
         Dmsg1(050, "Rtn numrows=%d\n", num_rows);
         return num_rows;

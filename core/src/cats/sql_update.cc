@@ -437,7 +437,7 @@ void BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
       Mmsg(cmd,
            "UPDATE Media SET InChanger=0, Slot=0 WHERE "
            "Slot=%d AND StorageId=%s",
-           mr->Slot, edit_int64(mr->StorageId, ed1), mr->VolumeName);
+           mr->Slot, edit_int64(mr->StorageId, ed1));
     }
     Dmsg1(100, "%s\n", cmd);
     UPDATE_DB(jcr, cmd);

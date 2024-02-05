@@ -284,7 +284,7 @@ inline bool IsSlotNumberValid(slot_number_t slot)
 
 /**
  * As of C++11 varargs macros are part of the standard.
- * We keep the kludgy versions for backwards compatability for now
+ * We keep the kludgy versions for backwards compatibility for now
  * but they're going to go away soon.
  */
 /** Debug Messages that are printed */

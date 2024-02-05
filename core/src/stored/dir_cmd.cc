@@ -411,7 +411,8 @@ static bool SetdebugCmd(JobControlRecord* jcr)
     return dir->fsend(OKsetdebugv1, level, GetTrace(), GetTimestamp(),
                       tracefilename.c_str());
   } else {
-    Dmsg3(50, "level=%d trace=%d\n", level, GetTrace(), tracefilename.c_str());
+    Dmsg3(50, "level=%d trace=%d tracefilename=%s\n", level, GetTrace(),
+          tracefilename.c_str());
     return dir->fsend(OKsetdebugv0, level, tracefilename.c_str());
   }
 }

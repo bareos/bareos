@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1623,7 +1623,7 @@ bool SetDeviceCommand::Cmd(UaContext* ua, const char*)
   auto arguments = ScanCommandLine(ua);
 
   if (arguments.empty()) {
-    ua->SendCmdUsage("");
+    ua->SendCmdUsage(" ");
     return false;
   }
 
