@@ -43,9 +43,5 @@ Options:
         Storage Daemon Device resource). 
 
     -b,--blocksize UINT:SIZE [b, kb(=1024b), ...]:POSITIVE
-        Excludes: --record-based
 
     -v,--verbose
-
-    -r,--record-based
-        Excludes: --blocksize

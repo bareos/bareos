@@ -89,7 +89,6 @@ std::size_t real_size{0};
 std::size_t num_records{0};
 std::unordered_set<dedup_unit> dedup_units;
 bool verbose_status{false};
-bool record_based_dedup{false};
 bool enable_decompression{false};
 
 void OutputStatus()
@@ -108,7 +107,7 @@ void OutputStatus()
 }
 
 bool RecordCallback(storagedaemon::DeviceControlRecord* dcr,
-		    storagedaemon::DeviceRecord* record)
+                    storagedaemon::DeviceRecord* record)
 {
   num_records += 1;
 
@@ -123,10 +122,7 @@ bool RecordCallback(storagedaemon::DeviceControlRecord* dcr,
   }
 
   total_size += size;
-  if (record_based_dedup) {
-    const std::uint8_t* data = reinterpret_cast<const std::uint8_t*>(buf);
-    if (dedup_units.emplace(data, size).second) { real_size += size; }
-  } else if (size % block_size == 0) {
+  if (size % block_size == 0) {
     auto num_units = size / block_size;
 
     for (std::size_t unit = 0; unit < num_units; ++unit) {
@@ -275,15 +271,11 @@ int main(int argc, const char* argv[])
       ->required();
 
   bool k_is_1000 = false;
-  auto* blksize = app.add_option("-b,--blocksize", block_size)
-                      ->transform(CLI::AsSizeValue{k_is_1000})
-                      ->check(CLI::PositiveNumber);
+  app.add_option("-b,--blocksize", block_size)
+      ->transform(CLI::AsSizeValue{k_is_1000})
+      ->check(CLI::PositiveNumber);
 
   app.add_flag("-v,--verbose", verbose_status);
-  auto* recbased = app.add_flag("-r,--record-based", record_based_dedup);
-
-  blksize->excludes(recbased);
-  recbased->excludes(blksize);
 
   CLI11_PARSE(app, argc, argv);
 
