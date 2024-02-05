@@ -186,8 +186,8 @@ class BareosSocket {
   static inline constexpr int Error = -1;
   virtual int WaitData(int sec, int usec = 0) = 0;
   virtual int WaitDataIntr(int sec, int usec = 0) = 0;
-  bool fsend(const char*, ...);
-  bool vfsend(const char* fmt, va_list ap);
+  bool fsend(const char*, ...) PRINTF_LIKE(2, 3);
+  bool vfsend(const char* fmt, va_list ap) PRINTF_LIKE(2, 0);
   bool send(const char* msg_in, uint32_t nbytes);
   void SetKillable(bool killable);
   bool signal(int signal);

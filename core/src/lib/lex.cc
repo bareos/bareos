@@ -70,6 +70,7 @@ int ScanToNextNotEol(LEX* lc)
 }
 
 // Format a scanner error message
+PRINTF_LIKE(4, 5)
 static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -114,6 +115,7 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 }
 
 // Format a scanner warning message
+PRINTF_LIKE(4, 5)
 static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;

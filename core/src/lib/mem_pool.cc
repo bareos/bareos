@@ -66,10 +66,10 @@ constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
-[[noreturn]] static void MemPoolErrorMessage(const char* file,
-                                             int line,
-                                             const char* fmt,
-                                             ...)
+[[noreturn]] PRINTF_LIKE(3, 4) static void MemPoolErrorMessage(const char* file,
+                                                               int line,
+                                                               const char* fmt,
+                                                               ...)
 {
   char buf[256];
   va_list arg_ptr;

@@ -89,13 +89,13 @@ static bRC bareosJobMsg(PluginContext* ctx,
                         int type,
                         utime_t mtime,
                         const char* fmt,
-                        ...);
+                        ...) PRINTF_LIKE(6, 7);
 static bRC bareosDebugMsg(PluginContext* ctx,
                           const char* fname,
                           int line,
                           int level,
                           const char* fmt,
-                          ...);
+                          ...) PRINTF_LIKE(5, 6);
 static void* bareosMalloc(PluginContext* ctx,
                           const char* fname,
                           int line,

@@ -35,6 +35,7 @@
 #include "lib/util.h"
 #include "lib/lex.h"
 #include "lib/bpipe.h"
+#include "include/compiler_macro.h"
 
 #include <functional>
 #include <memory>
@@ -182,6 +183,14 @@ struct DatatypeName {
   const char* description;
 };
 
+PRINTF_LIKE(2, 3)
+static inline bool dummy_sendit(void* user, const char* fmt, ...)
+{
+  (void)user;
+  (void)fmt;
+  return true;
+}
+
 typedef void(INIT_RES_HANDLER)(ResourceItem* item, int pass);
 typedef void(STORE_RES_HANDLER)(LEX* lc,
                                 ResourceItem* item,
@@ -194,7 +203,6 @@ typedef void(PRINT_RES_HANDLER)(ResourceItem& item,
                                 bool inherited,
                                 bool verbose);
 
-
 class QualifiedResourceNameTypeConverter;
 
 class ConfigurationParser {
@@ -202,6 +210,8 @@ class ConfigurationParser {
   friend class ConfigParserStateMachine;
 
  public:
+  using sender = decltype(dummy_sendit);
+
   std::string cf_;                             /* Config file parameter */
   LEX_ERROR_HANDLER* scan_error_{nullptr};     /* Error handler if non-null */
   LEX_WARNING_HANDLER* scan_warning_{nullptr}; /* Warning handler if non-null */
@@ -268,12 +278,12 @@ class ConfigurationParser {
                     std::function<void()> ResourceSpecificInitializer);
   bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
   bool RemoveResource(int rcode, const char* name);
-  bool DumpResources(bool sendit(void* sock, const char* fmt, ...),
+  bool DumpResources(sender* sendit,
                      void* sock,
                      const std::string& res_type_name,
                      const std::string& res_name,
                      bool hide_sensitive_data = false);
-  void DumpResources(bool sendit(void* sock, const char* fmt, ...),
+  void DumpResources(sender* sendit,
                      void* sock,
                      bool hide_sensitive_data = false);
   int GetResourceCode(const char* resource_type);
@@ -460,7 +470,7 @@ class ConfigResourcesContainer {
 };
 
 
-bool PrintMessage(void* sock, const char* fmt, ...);
+bool PrintMessage(void* sock, const char* fmt, ...) PRINTF_LIKE(2, 3);
 bool IsTlsConfigured(TlsResource* tls_resource);
 
 const char* GetName(ResourceItem& item, s_kw* keywords);
