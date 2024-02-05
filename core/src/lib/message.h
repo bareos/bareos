@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,8 +45,11 @@ class JobControlRecord;
 typedef std::optional<std::string> (*job_code_callback_t)(JobControlRecord*,
                                                           const char*);
 
-void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
-void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
+void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
+    __attribute__((format(printf, 4, 5)));
+void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
+    __attribute__((format(printf, 4, 5)));
+
 bool GetTrace(void);
 const char* get_basename(const char* pathname);
 void SetLogTimestampFormat(const char* format);
@@ -75,7 +78,8 @@ void InitMsg(JobControlRecord* jcr,
              job_code_callback_t job_code_callback = NULL);
 void TermMsg(void);
 void CloseMsg(JobControlRecord* jcr);
-void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
+void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
+    __attribute__((format(printf, 4, 5)));
 void DispatchMessage(JobControlRecord* jcr,
                      int type,
                      utime_t mtime,

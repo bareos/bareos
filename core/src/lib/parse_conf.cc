@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -584,11 +584,11 @@ bool ConfigurationParser::DumpResources(bool sendit(void* sock,
   return result;
 }
 
-void ConfigurationParser::DumpResources(bool sendit(void* sock,
-                                                    const char* fmt,
-                                                    ...),
-                                        void* sock,
-                                        bool hide_sensitive_data)
+void ConfigurationParser::DumpResources(
+    bool sendit(void* sock, const char* fmt, ...)
+        __attribute__((format(printf, 2, 3))),
+    void* sock,
+    bool hide_sensitive_data)
 {
   for (int i = 0; i <= r_num_ - 1; i++) {
     if (config_resources_container_->configuration_resources_[i]) {

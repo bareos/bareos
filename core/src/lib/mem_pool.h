@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -117,8 +117,9 @@ class PoolMem {
   int strcat(const char* str);
   void toLower();
   size_t strlen() { return ::strlen(mem); }
-  int bsprintf(const char* fmt, ...);
-  int Bvsprintf(const char* fmt, va_list arg_ptr);
+  int bsprintf(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+  int Bvsprintf(const char* fmt, va_list arg_ptr)
+      __attribute__((format(printf, 2, 0)));
 };
 
 int PmStrcat(POOLMEM*& dest_pm, const char* str);
