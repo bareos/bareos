@@ -25,6 +25,8 @@
 #include "lib/output_formatter.h"
 #include "dird/dird_conf.h"
 
+#include "include/compiler_macro.h"
+
 #include <unordered_map>
 
 namespace directordaemon {
@@ -39,10 +41,10 @@ static std::vector<std::pair<const char*, int>> show_cmd_available_resources = {
 
 class RunResource;
 
-bool bsendmsg(void* ua_ctx, const char* fmt, ...);
+bool bsendmsg(void* ua_ctx, const char* fmt, ...) PRINTF_LIKE(2, 3);
 of_filter_state filterit(void* ctx, void* data, of_filter_tuple* tuple);
 bool printit(void* ctx, const char* msg);
-bool sprintit(void* ctx, const char* fmt, ...);
+bool sprintit(void* ctx, const char* fmt, ...) PRINTF_LIKE(2, 3);
 bool CompleteJcrForJob(JobControlRecord* jcr,
                        JobResource* job,
                        PoolResource* pool);

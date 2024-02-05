@@ -23,6 +23,9 @@
 #ifndef BAREOS_LIB_VAR_H_
 #define BAREOS_LIB_VAR_H_
 
+#include <stdarg.h>
+#include "include/compiler_macro.h"
+
 /* Error codes */
 typedef enum
 {
@@ -138,12 +141,12 @@ var_rc_t var_formatv(var_t* var,
                      char** dst_ptr,
                      int force_expand,
                      const char* fmt,
-                     va_list ap);
+                     va_list ap) PRINTF_LIKE(4, 0);
 var_rc_t var_format(var_t* var,
                     char** dst_ptr,
                     int force_expand,
                     const char* fmt,
-                    ...);
+                    ...) PRINTF_LIKE(4, 5);
 const char* var_strerror(var_t* var, var_rc_t rc);
 
 #endif  // BAREOS_LIB_VAR_H_

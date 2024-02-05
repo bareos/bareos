@@ -51,6 +51,7 @@
 #include "lib/message_queue_item.h"
 #include "lib/thread_specific_data.h"
 #include "lib/bpipe.h"
+#include "include/compiler_macro.h"
 
 // globals
 const char* working_directory = NULL; /* working directory path stored here */
@@ -103,7 +104,7 @@ static const char* bstrrpath(const char* start, const char* end)
   return end;
 }
 
-static void DeliveryError(const char* fmt, ...)
+PRINTF_LIKE(1, 2) static void DeliveryError(const char* fmt, ...)
 {
   va_list ap;
   int i, len, maxlen;

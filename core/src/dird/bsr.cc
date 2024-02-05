@@ -122,6 +122,7 @@ static bool GetStorageDevice(char* device, char* storage)
 }
 
 // Print a BootStrapRecord entry into a memory buffer.
+PRINTF_LIKE(2, 3)
 static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
 {
   va_list arg_ptr;

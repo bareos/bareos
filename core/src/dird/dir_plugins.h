@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,7 @@
 #  define _LARGE_FILES 1
 #endif
 
+#include "include/compiler_macro.h"
 #include <sys/types.h>
 #include "include/config.h"
 #include "include/bc_types.h"
@@ -140,13 +141,13 @@ typedef struct s_dirbareosFuncs {
                     int type,
                     utime_t mtime,
                     const char* fmt,
-                    ...);
+                    ...) PRINTF_LIKE(6, 7);
   bRC (*DebugMessage)(PluginContext* ctx,
                       const char* file,
                       int line,
                       int level,
                       const char* fmt,
-                      ...);
+                      ...) PRINTF_LIKE(5, 6);
 } CoreFunctions;
 
 // Bareos Core Routines -- not used within a plugin

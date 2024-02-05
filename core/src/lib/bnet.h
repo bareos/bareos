@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,11 +23,13 @@
 
 #include "tls.h"
 #include "lib/address_conf.h"
+#include "include/compiler_macro.h"
+
 template <typename T> class dlist;
 
 int32_t BnetRecv(BareosSocket* bsock);
 bool BnetSend(BareosSocket* bsock);
-bool BnetFsend(BareosSocket* bs, const char* fmt, ...);
+bool BnetFsend(BareosSocket* bs, const char* fmt, ...) PRINTF_LIKE(2, 3);
 bool BnetSetBufferSize(BareosSocket* bs, uint32_t size, int rw);
 bool BnetSig(BareosSocket* bs, int sig);
 bool BnetTlsServer(BareosSocket* bsock,

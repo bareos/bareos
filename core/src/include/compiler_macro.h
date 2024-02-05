@@ -102,4 +102,12 @@
 #  define IGNORE_INT_PTR_CAST_OFF
 #endif
 
+
+#if defined(HAVE_MSVC)
+#  define PRINTF_LIKE(fmt_pos, arg_pos)
+#else
+#  define PRINTF_LIKE(fmt_pos, arg_pos) \
+    __attribute__((format(printf, fmt_pos, arg_pos)))
+#endif
+
 #endif  // BAREOS_INCLUDE_COMPILER_MACRO_H_
