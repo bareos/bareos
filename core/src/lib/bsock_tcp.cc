@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -528,7 +528,7 @@ int32_t BareosSocketTCP::recv()
   message_length = 0;
   if (errors || IsTerminated()) { return BNET_HARDEOF; }
 
-  if (mutex_) { mutex_->lock(); }
+  LockMutex();
 
   read_seqno++;                /* bump sequence number */
   timer_start = watchdog_time; /* set start wait time */
@@ -627,7 +627,7 @@ int32_t BareosSocketTCP::recv()
    * debugging. */
 
 get_out:
-  if (mutex_) { mutex_->unlock(); }
+  UnlockMutex();
 
   return nbytes; /* return actual length of message */
 }
