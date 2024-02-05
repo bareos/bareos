@@ -56,7 +56,7 @@ static void FreeResource(BareosResource* sres, int type);
 static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void DumpResource(int type,
                          BareosResource* reshdr,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
@@ -662,7 +662,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
 static bool DumpResource_(int type,
                           BareosResource* res,
-                          bool sendit(void* sock, const char* fmt, ...),
+                          ConfigurationParser::sender* sendit,
                           void* sock,
                           bool hide_sensitive_data,
                           bool verbose)
@@ -721,7 +721,7 @@ static bool DumpResource_(int type,
 
 static void DumpResource(int type,
                          BareosResource* res,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,6 +95,19 @@ enum lex_state
 
 class Bpipe; /* forward reference */
 
+struct s_lex_context;
+
+typedef void(LEX_ERROR_HANDLER)(const char* file,
+                                int line,
+                                s_lex_context* lc,
+                                const char* msg,
+                                ...) PRINTF_LIKE(4, 5);
+typedef void(LEX_WARNING_HANDLER)(const char* file,
+                                  int line,
+                                  s_lex_context* lc,
+                                  const char* msg,
+                                  ...) PRINTF_LIKE(4, 5);
+
 /* Lexical context */
 typedef struct s_lex_context {
   struct s_lex_context* next; /* pointer to next lexical context */
@@ -124,32 +137,14 @@ typedef struct s_lex_context {
     uint32_t pint32_val;
     uint64_t pint64_val;
   } u2;
-  void (*ScanError)(const char* file,
-                    int line,
-                    struct s_lex_context* lc,
-                    const char* msg,
-                    ...);
-  void (*scan_warning)(const char* file,
-                       int line,
-                       struct s_lex_context* lc,
-                       const char* msg,
-                       ...);
+
+  LEX_ERROR_HANDLER* ScanError;
+  LEX_WARNING_HANDLER* scan_warning;
   int err_type; /* message level for ScanError (M_..) */
   int error_counter;
   void* caller_ctx; /* caller private data */
   Bpipe* bpipe;     /* set if we are piping */
 } LEX;
-
-typedef void(LEX_ERROR_HANDLER)(const char* file,
-                                int line,
-                                LEX* lc,
-                                const char* msg,
-                                ...);
-typedef void(LEX_WARNING_HANDLER)(const char* file,
-                                  int line,
-                                  LEX* lc,
-                                  const char* msg,
-                                  ...);
 
 // Lexical scanning errors in parsing conf files
 #define scan_err0(lc, msg) lc->ScanError(__FILE__, __LINE__, lc, msg)

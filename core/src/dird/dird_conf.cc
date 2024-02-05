@@ -93,7 +93,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* ures,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
@@ -3686,7 +3686,7 @@ ConfigurationParser* InitDirConfig(const char* t_configfile, int exit_code)
 // Dump contents of resource
 static void DumpResource(int type,
                          BareosResource* res,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)
