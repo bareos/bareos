@@ -390,11 +390,18 @@ endif()
 include(FindIntl)
 
 set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length -Wno-error=format-overflow"
+    "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
 )
 set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length -Wno-error=format-overflow"
+    "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
 )
+
+check_c_compiler_flag("-Wformat-overflow" CC_SUPPORTS_Wformat_overflow)
+check_cxx_compiler_flag("-Wformat-overflow" CXX_SUPPORTS_Wformat_overflow)
+if(CC_SUPPORTS_Wformat_overflow AND CXX_SUPPORTS_Wformat_overflow)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=format-overflow")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=format-overflow")
+endif()
 
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
