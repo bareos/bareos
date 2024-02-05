@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python-bareos: integrate usage of config files [PR #1678]
 - cmake: cleanup [PR #1661]
 - bnet-server-tcp: split socket creation from listening for unittests [PR #1649]
+- webui: Backup Unit Report fixes [PR #1696]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -83,4 +84,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1678]: https://github.com/bareos/bareos/pull/1678
 [PR #1683]: https://github.com/bareos/bareos/pull/1683
 [PR #1684]: https://github.com/bareos/bareos/pull/1684
+[PR #1696]: https://github.com/bareos/bareos/pull/1696
 [unreleased]: https://github.com/bareos/bareos/tree/master
