@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,7 @@ static char hello_client[] = "Hello Client %127s calling";
 
 /* Global variables */
 static ThreadList thread_list;
-static alist<s_sockfd*>* sock_fds = NULL;
+static std::atomic<bool> server_running;
 static pthread_t tcp_server_tid;
 static ConnectionPool* client_connections = NULL;
 
@@ -134,10 +134,34 @@ extern "C" void* connect_thread(void* arg)
 {
   SetJcrInThreadSpecificData(nullptr);
 
-  sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
-  BnetThreadServerTcp((dlist<IPADDR>*)arg, sock_fds, thread_list,
-                      HandleConnectionRequest, my_config, &server_state,
-                      UserAgentShutdownCallback, CleanupConnectionPool);
+  auto bound_sockets = OpenAndBindSockets((dlist<IPADDR>*)arg);
+  if (bound_sockets.size()) {
+    server_running = true;
+    BnetThreadServerTcp(std::move(bound_sockets), thread_list,
+                        HandleConnectionRequest, my_config, &server_state,
+                        UserAgentShutdownCallback, CleanupConnectionPool);
+
+  } else {
+    server_state = BnetServerState::kError;
+  }
+
+  return NULL;
+}
+
+extern "C" void* connect_with_bound_thread(void* arg)
+{
+  SetJcrInThreadSpecificData(nullptr);
+
+  auto bound_sockets = std::move(*(std::vector<s_sockfd>*)arg);
+  if (bound_sockets.size()) {
+    server_running = true;
+    BnetThreadServerTcp(std::move(bound_sockets), thread_list,
+                        HandleConnectionRequest, my_config, &server_state,
+                        UserAgentShutdownCallback, CleanupConnectionPool);
+
+  } else {
+    server_state = BnetServerState::kError;
+  }
 
   return NULL;
 }
@@ -182,12 +206,47 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
   return true;
 }
 
+bool StartSocketServer(std::vector<s_sockfd>&& bound_sockets)
+{
+  int status;
+
+  if (client_connections == nullptr) {
+    client_connections = new ConnectionPool();
+  }
+
+  server_state.store(BnetServerState::kUndefined);
+
+  if ((status
+       = pthread_create(&tcp_server_tid, nullptr, connect_with_bound_thread,
+                        (void*)&bound_sockets))
+      != 0) {
+    BErrNo be;
+    Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"),
+          be.bstrerror(status));
+  }
+
+  int tries = 200; /* consider bind() tries in BnetThreadServerTcp */
+  int wait_ms = 100;
+  do {
+    Bmicrosleep(0, wait_ms * 1000);
+    if (server_state.load() != BnetServerState::kUndefined) { break; }
+  } while (--tries);
+
+  if (server_state != BnetServerState::kStarted) {
+    if (client_connections) {
+      delete (client_connections);
+      client_connections = nullptr;
+    }
+    return false;
+  }
+  return true;
+}
+
 void StopSocketServer()
 {
-  if (sock_fds) {
+  if (server_running) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    delete sock_fds;
-    sock_fds = nullptr;
+    server_running = false;
   }
   if (client_connections) {
     delete (client_connections);

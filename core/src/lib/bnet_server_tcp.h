@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,7 @@
 
 #include <atomic>
 #include <functional>
+#include <vector>
 
 constexpr int kListenBacklog = 50;
 
@@ -41,14 +42,37 @@ enum class BnetServerState
 
 template <typename T> class dlist;
 
+void close_socket(int fd);
+
 struct s_sockfd {
-  int fd;
-  int port;
+  int fd{-1};
+  int port{0};
+
+  s_sockfd() = default;
+
+  s_sockfd(const s_sockfd&) = delete;
+  s_sockfd& operator=(const s_sockfd&) = delete;
+  s_sockfd(s_sockfd&& other) { *this = std::move(other); }
+  s_sockfd& operator=(s_sockfd&& other)
+  {
+    std::swap(other.fd, fd);
+    std::swap(other.port, port);
+    return *this;
+  }
+
+  ~s_sockfd()
+  {
+    if (fd > 0) {
+      close_socket(fd);
+      fd = -1;
+    }
+  }
 };
 
+std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list);
+
 void BnetThreadServerTcp(
-    dlist<IPADDR>* addr_list,
-    alist<s_sockfd*>* sockfds,
+    std::vector<s_sockfd> bound_sockets,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,

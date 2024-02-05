@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,12 +22,16 @@
 #ifndef BAREOS_DIRD_SOCKET_SERVER_H_
 #define BAREOS_DIRD_SOCKET_SERVER_H_
 
+#include <vector>
+#include "lib/bnet_server_tcp.h"
+
 template <typename T> class dlist;
 class IPADDR;
 
 namespace directordaemon {
 
 bool StartSocketServer(dlist<IPADDR>* addrs);
+bool StartSocketServer(std::vector<s_sockfd>&& bound_sockets);
 void StopSocketServer();
 
 } /* namespace directordaemon */
