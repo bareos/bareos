@@ -389,8 +389,12 @@ endif()
 
 include(FindIntl)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
+set(CMAKE_C_FLAGS
+    "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
+)
+set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
+)
 
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
