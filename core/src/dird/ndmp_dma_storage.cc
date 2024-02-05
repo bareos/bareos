@@ -166,8 +166,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
   for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
        devinfo != store->runtime_storage_status->ndmp_deviceinfo.end();
        devinfo++) {
-    Jmsg(jcr, M_INFO, 0, " %s\n", devinfo->device.c_str(),
-         devinfo->model.c_str());
+    Jmsg(jcr, M_INFO, 0, " %s\n", devinfo->device.c_str());
   }
   return true;
 }

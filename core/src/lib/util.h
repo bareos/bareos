@@ -28,6 +28,7 @@
 #include <variant>
 #include <chrono>
 #include <optional>
+#include <type_traits>
 
 #if defined(HAVE_WIN32)
 #  include "bregex.h"
@@ -158,5 +159,10 @@ class timer {
   std::optional<time_point> end{};
   std::string formatted{};
 };
+
+template <class Enum> inline constexpr auto to_underlying(Enum e)
+{
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
 
 #endif  // BAREOS_LIB_UTIL_H_

@@ -840,7 +840,7 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
     if (bfd->fh == INVALID_HANDLE_VALUE) {
       return plugin_bread(bfd, buf, count);
     }
-    Dmsg1(400, "bread handled in core via bfd->fh=%d\n", bfd->fh);
+    Dmsg1(400, "bread handled in core via bfd->fh=%p\n", bfd->fh);
   }
   if (bfd->use_backup_api) {
     if (!p_BackupRead(bfd->fh, (BYTE*)buf, count, &bfd->rw_bytes,
@@ -873,7 +873,7 @@ ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
     if (bfd->fh == INVALID_HANDLE_VALUE) {
       return plugin_bwrite(bfd, buf, count);
     }
-    Dmsg1(400, "bwrite handled in core via bfd->fh=%d\n", bfd->fh);
+    Dmsg1(400, "bwrite handled in core via bfd->fh=%p\n", bfd->fh);
   }
 
 
@@ -1024,8 +1024,8 @@ int bopen(BareosFilePacket* bfd,
           mode_t mode,
           dev_t rdev)
 {
-  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %u\n", fname, flags,
-        (mode & ~S_IFMT), rdev);
+  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %llu\n", fname,
+        flags, (mode & ~S_IFMT), static_cast<long long unsigned>(rdev));
 
   if (bfd->cmd_plugin && plugin_bopen) {
     Dmsg1(400, "call plugin_bopen fname=%s\n", fname);

@@ -352,7 +352,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(HAVE_DYNAMIC_SD_BACKENDS 0)
 
 else()
-  add_definitions("-D_FILE_OFFSET_BITS=64")
+  add_compile_definitions("_FILE_OFFSET_BITS=64")
 endif()
 
 include(FindIntl)

@@ -714,7 +714,7 @@ bool SendBootstrapFile(JobControlRecord* jcr,
   Dmsg1(400, "SendBootstrapFile: %s\n", jcr->RestoreBootstrap);
   if (!jcr->RestoreBootstrap) { return false; }
 
-  sock->fsend(bootstrap);
+  sock->fsend("%s", bootstrap);
   pos = ftello(bs);
 
   while (fgets(ua->cmd, UA_CMD_SIZE, bs)) {

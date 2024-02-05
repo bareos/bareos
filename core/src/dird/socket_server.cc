@@ -43,10 +43,10 @@
 
 namespace directordaemon {
 
-static char hello_client_with_version[]
+constexpr const char hello_client_with_version[]
     = "Hello Client %127s FdProtocolVersion=%d calling";
 
-static char hello_client[] = "Hello Client %127s calling";
+constexpr const char hello_client[] = "Hello Client %127s calling";
 
 /* Global variables */
 static ThreadList thread_list;

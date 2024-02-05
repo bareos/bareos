@@ -134,7 +134,7 @@ bool TlsOpenSslPrivate::init()
       ERR_error_string(ERR_get_error(), buffer.data());
       err_str += buffer.data();
       err_str += "\n";
-      Dmsg1(100, err_str.c_str());
+      Dmsg1(100, "%s", err_str.c_str());
       return false;
     }
   }
@@ -609,13 +609,13 @@ void TlsOpenSsl::SetKeyfile(const std::string& keyfile_)
 
 void TlsOpenSsl::SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback)
 {
-  Dmsg1(100, "Set pem_callback to address: <%#x>\n", pem_callback);
+  Dmsg1(100, "Set pem_callback to address: <%p>\n", pem_callback);
   d_->pem_callback_ = pem_callback;
 }
 
 void TlsOpenSsl::SetPemUserdata(void* pem_userdata)
 {
-  Dmsg1(100, "Set pem_userdata to address: <%#x>\n", pem_userdata);
+  Dmsg1(100, "Set pem_userdata to address: <%p>\n", pem_userdata);
   d_->pem_userdata_ = pem_userdata;
 }
 

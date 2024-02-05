@@ -310,7 +310,7 @@ LEX* lex_open_file(LEX* lf,
       return NULL;
     }
 
-    Dmsg2(100, "glob %s: %i files\n", filename, fileglob.gl_pathc);
+    Dmsg2(100, "glob %s: %" PRIuz " files\n", filename, fileglob.gl_pathc);
     for (size_t i = 0; i < fileglob.gl_pathc; i++) {
       filename_expanded = fileglob.gl_pathv[i];
       if ((fd = fopen(filename_expanded, "rb")) == NULL) {

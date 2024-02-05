@@ -448,7 +448,7 @@ static void UpdateAllVols(UaContext* ua)
     pr.PoolId = ids[i];
     if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
       ua->WarningMsg(T_("Updating all pools, but skipped PoolId=%d. ERR=%s\n"),
-                     ua->db->strerror());
+                     pr.PoolId, ua->db->strerror());
       continue;
     }
 
@@ -958,8 +958,8 @@ static bool UpdateJob(UaContext* ua)
       return false;
     }
     delta_start = StartTime - jr.StartTime;
-    Dmsg3(200, "ST=%lld jr.ST=%lld delta=%lld\n", StartTime,
-          (utime_t)jr.StartTime, delta_start);
+    Dmsg3(200, "ST=%" PRId64 " jr.ST=%lld delta=%" PRId64 "\n", StartTime,
+          static_cast<long long>(jr.StartTime), delta_start);
     jr.StartTime = (time_t)StartTime;
     jr.SchedTime += (time_t)delta_start;
     jr.EndTime += (time_t)delta_start;

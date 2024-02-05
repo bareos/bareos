@@ -39,6 +39,56 @@
 #include "find.h"
 #include "findlib/find_one.h"
 #include "lib/util.h"
+#include <string>
+
+static void join(std::string& s, const char* sep, const char* app)
+{
+  if (s.size()) { s += sep; }
+  s += app;
+}
+
+static std::string fopts_as_str(char (&flags)[FOPTS_BYTES])
+{
+  std::string s;
+  const char* sep = "|";
+
+  if (BitIsSet(FO_PORTABLE_DATA, flags)) { join(s, sep, "PORTABLE"); }
+  if (BitIsSet(FO_MD5, flags)) { join(s, sep, "MD5"); }
+  if (BitIsSet(FO_COMPRESS, flags)) { join(s, sep, ""); }
+  if (BitIsSet(FO_NO_RECURSION, flags)) { join(s, sep, "NO_RECURSION"); }
+  if (BitIsSet(FO_MULTIFS, flags)) { join(s, sep, "MULTIFS"); }
+  if (BitIsSet(FO_SPARSE, flags)) { join(s, sep, "SPARSE"); }
+  if (BitIsSet(FO_IF_NEWER, flags)) { join(s, sep, "IF_NEWER"); }
+  if (BitIsSet(FO_NOREPLACE, flags)) { join(s, sep, "NOREPLACE"); }
+  if (BitIsSet(FO_READFIFO, flags)) { join(s, sep, "READFIFO"); }
+  if (BitIsSet(FO_SHA1, flags)) { join(s, sep, "SHA1"); }
+  if (BitIsSet(FO_PORTABLE, flags)) { join(s, sep, "PORTABLE"); }
+  if (BitIsSet(FO_MTIMEONLY, flags)) { join(s, sep, "MTIMEONLY"); }
+  if (BitIsSet(FO_KEEPATIME, flags)) { join(s, sep, "KEEPATIME"); }
+  if (BitIsSet(FO_EXCLUDE, flags)) { join(s, sep, "EXCLUDE"); }
+  if (BitIsSet(FO_ACL, flags)) { join(s, sep, "ACL"); }
+  if (BitIsSet(FO_NO_HARDLINK, flags)) { join(s, sep, "NO_HARDLINK"); }
+  if (BitIsSet(FO_IGNORECASE, flags)) { join(s, sep, "IGNORECASE"); }
+  if (BitIsSet(FO_HFSPLUS, flags)) { join(s, sep, "HFSPLUS"); }
+  if (BitIsSet(FO_WIN32DECOMP, flags)) { join(s, sep, "WIN32DECOMP"); }
+  if (BitIsSet(FO_SHA256, flags)) { join(s, sep, "SHA256"); }
+  if (BitIsSet(FO_SHA512, flags)) { join(s, sep, "SHA512"); }
+  if (BitIsSet(FO_ENCRYPT, flags)) { join(s, sep, "ENCRYPT"); }
+  if (BitIsSet(FO_NOATIME, flags)) { join(s, sep, "NOATIME"); }
+  if (BitIsSet(FO_ENHANCEDWILD, flags)) { join(s, sep, "ENHANCEDWILD"); }
+  if (BitIsSet(FO_CHKCHANGES, flags)) { join(s, sep, "CHKCHANGES"); }
+  if (BitIsSet(FO_STRIPPATH, flags)) { join(s, sep, "STRIPPATH"); }
+  if (BitIsSet(FO_HONOR_NODUMP, flags)) { join(s, sep, "HONOR_NODUMP"); }
+  if (BitIsSet(FO_XATTR, flags)) { join(s, sep, "XATTR"); }
+  if (BitIsSet(FO_DELTA, flags)) { join(s, sep, "DELTA"); }
+  if (BitIsSet(FO_PLUGIN, flags)) { join(s, sep, "PLUGIN"); }
+  if (BitIsSet(FO_OFFSETS, flags)) { join(s, sep, "OFFSETS"); }
+  if (BitIsSet(FO_NO_AUTOEXCL, flags)) { join(s, sep, "NO_AUTOEXCL"); }
+  if (BitIsSet(FO_FORCE_ENCRYPT, flags)) { join(s, sep, "FORCE_ENCRYPT"); }
+  if (BitIsSet(FO_XXH128, flags)) { join(s, sep, "XXH128"); }
+
+  return s;
+}
 
 #if defined(HAVE_DARWIN_OS)
 /* the MacOS linker wants symbols for the destructors of these two types, so we
@@ -168,8 +218,9 @@ int FindFiles(JobControlRecord* jcr,
         }
       }
 
-      Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
-            ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+      Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%s>\n",
+            ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts,
+            fopts_as_str(ff->flags).c_str());
 
       foreach_dlist (node, &incexe->name_list) {
         char* fname = node->c_str();

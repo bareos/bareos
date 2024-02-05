@@ -82,7 +82,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
        * all the parent dirs have already been done */
       goto bail_out;
     } else {
-      Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %llu",
+      Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %" PRIu64,
            pathid);
 
       if (!QUERY_DB(jcr, cmd)) { goto bail_out; /* Query failed, just leave */ }
@@ -104,7 +104,8 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
         ppathid_cache.insert(pathid);
 
         Mmsg(cmd,
-             "INSERT INTO PathHierarchy (PathId, PPathId) VALUES (%llu,%llu)",
+             "INSERT INTO PathHierarchy (PathId, PPathId) VALUES (%" PRIu64
+             ",%" PRIu64 ")",
              pathid, (uint64_t)parent.PathId);
         if (!INSERT_DB(jcr, cmd)) {
           goto bail_out; /* Can't insert the record, just leave */
@@ -303,7 +304,7 @@ bool BareosDb::BvfsUpdatePathHierarchyCache(JobControlRecord* jcr,
       goto bail_out;
     }
 
-    Dmsg1(dbglevel, "Updating cache for %lld\n", (uint64_t)JobId);
+    Dmsg1(dbglevel, "Updating cache for %" PRIu32 "\n", JobId);
     if (!UpdatePathHierarchyCache(jcr, ppathid_cache, JobId)) {
       retval = false;
     }
@@ -500,7 +501,7 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
   PoolMem query(PM_MESSAGE);
   PoolMem filter(PM_MESSAGE);
 
-  Dmsg3(dbglevel, "GetAllFileVersions(%lld, %s, %s)\n", (uint64_t)pathid, fname,
+  Dmsg3(dbglevel, "GetAllFileVersions(%" PRIdbid ", %s, %s)\n", pathid, fname,
         client);
 
   if (see_copies) {
@@ -549,7 +550,7 @@ bool Bvfs::ls_dirs()
   PoolMem sub_dirs_query(PM_MESSAGE);
   PoolMem union_query(PM_MESSAGE);
 
-  Dmsg1(dbglevel, "ls_dirs(%lld)\n", (uint64_t)pwd_id);
+  Dmsg1(dbglevel, "ls_dirs(%" PRIdbid ")\n", pwd_id);
 
   if (*jobids == 0) { return false; }
 
@@ -603,7 +604,7 @@ bool Bvfs::ls_files()
   PoolMem filter(PM_MESSAGE);
   PoolMem query(PM_MESSAGE);
 
-  Dmsg1(dbglevel, "ls_files(%lld)\n", (uint64_t)pwd_id);
+  Dmsg1(dbglevel, "ls_files(%" PRIdbid ")\n", pwd_id);
   if (*jobids == 0) { return false; }
 
   if (!pwd_id) { ChDir(get_root()); }
@@ -724,7 +725,7 @@ bool Bvfs::compute_restore_list(char* fileid,
 
   /* Add a directory content */
   while (GetNextIdFromList(&dirid, &id) == 1) {
-    Mmsg(tmp, "SELECT Path FROM Path WHERE PathId=%lld", id);
+    Mmsg(tmp, "SELECT Path FROM Path WHERE PathId=%" PRId64, id);
 
     if (!db->SqlQuery(tmp.c_str(), GetPathHandler, (void*)&tmp2)) {
       Dmsg0(dbglevel, "Can't search for path\n");
@@ -732,7 +733,7 @@ bool Bvfs::compute_restore_list(char* fileid,
       goto bail_out;
     }
     if (bstrcmp(tmp2.c_str(), "")) { /* path not found */
-      Dmsg3(dbglevel, "Path not found %lld q=%s s=%s\n", id, tmp.c_str(),
+      Dmsg3(dbglevel, "Path not found %" PRId64 " q=%s s=%s\n", id, tmp.c_str(),
             tmp2.c_str());
       break;
     }
@@ -795,15 +796,14 @@ bool Bvfs::compute_restore_list(char* fileid,
         query.strcat(tmp.c_str());
       }
       Mmsg(tmp,
-           "SELECT Job.JobId, JobTDate, FileIndex, Name, "
-           "PathId, FileId "
-           "FROM File JOIN Job USING (JobId) WHERE JobId = %lld "
-           "AND FileIndex IN (%lld",
+           "SELECT Job.JobId, JobTDate, FileIndex, Name, PathId, FileId"
+           " FROM File JOIN Job USING (JobId) WHERE JobId = %" PRId64
+           " AND FileIndex IN (%" PRId64,
            jobid, id);
       prev_jobid = jobid;
 
     } else { /* same job, add new findex */
-      Mmsg(tmp2, ", %lld", id);
+      Mmsg(tmp2, ", %" PRId64, id);
       tmp.strcat(tmp2.c_str());
     }
   }

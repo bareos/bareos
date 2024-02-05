@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,7 +71,7 @@
  * M_AUDIT       Auditing message
  * M_MOUNT       Mount requests
  */
-enum
+enum : int32_t
 {
   // Keep M_ABORT=1 for dlist.h
   M_ABORT = 1,

@@ -186,14 +186,14 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
           = incrementals_total - job->AlwaysIncrementalKeepNumber;
 
       jcr->dir_impl->jr.limit = max_incrementals_to_consolidate + 1;
-      Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n",
+      Dmsg3(10, "total: %d, to_consolidate: %d, limit: %" PRIu64 ".\n",
             incrementals_total, max_incrementals_to_consolidate,
             jcr->dir_impl->jr.limit);
       jobids_ctx.clear();
       jcr->db->AccurateGetJobids(jcr, &jcr->dir_impl->jr, &jobids_ctx);
       const int32_t incrementals_to_consolidate = jobids_ctx.size() - 1;
-      Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.size(),
-            jobids_ctx.GetAsString().c_str());
+      Dmsg2(10, "%" PRIuz " consolidate ids after limit: %s.\n",
+            jobids_ctx.size(), jobids_ctx.GetAsString().c_str());
       if (incrementals_to_consolidate < 1) {
         Jmsg(jcr, M_INFO, 0,
              T_("%s: After limited query: less incrementals than required, "

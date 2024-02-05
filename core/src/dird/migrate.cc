@@ -71,7 +71,7 @@
 namespace directordaemon {
 
 /* Commands sent to other storage daemon */
-static char replicatecmd[]
+constexpr const char replicatecmd[]
     = "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
 // Get Job names in Pool
@@ -798,7 +798,7 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       }
 
       pool_bytes = ctx.value;
-      Dmsg2(dbglevel, "highbytes=%lld pool=%lld\n",
+      Dmsg2(dbglevel, "highbytes=%" PRIu64 " pool=%" PRIu64 "\n",
             jcr->dir_impl->res.rpool->MigrationHighBytes, pool_bytes);
 
       if (pool_bytes < (int64_t)jcr->dir_impl->res.rpool->MigrationHighBytes) {
@@ -1413,7 +1413,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
          connection_target_address, write_storage->SDport, tls_need,
          mig_jcr->sd_auth_key);
 
-    if (!jcr->store_bsock->fsend(command.c_str())) { goto bail_out; }
+    if (!jcr->store_bsock->fsend("%s", command.c_str())) { goto bail_out; }
 
     if (jcr->store_bsock->recv() <= 0) { goto bail_out; }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -127,9 +127,9 @@ bool CryptoSessionSend(JobControlRecord* jcr, BareosSocket* sd)
   POOLMEM* msgsave;
 
   /** Send our header */
-  Dmsg2(100, "Send hdr fi=%ld stream=%d\n", jcr->JobFiles,
+  Dmsg2(100, "Send hdr fi=%d stream=%d\n", jcr->JobFiles,
         STREAM_ENCRYPTED_SESSION_DATA);
-  sd->fsend("%ld %d 0", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
+  sd->fsend("%d %d 0", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
 
   msgsave = sd->msg;
   sd->msg = jcr->fd_impl->crypto.pki_session_encoded;

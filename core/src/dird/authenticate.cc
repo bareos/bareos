@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,14 +55,15 @@ static const int debuglevel = 50;
  * Commands sent to Storage daemon and File daemon and received from the User
  * Agent
  */
-static char hello[] = "Hello Director %s calling\n";
+constexpr const char hello[] = "Hello Director %s calling\n";
 
 // Response from Storage daemon
-static char OKhello[] = "3000 OK Hello\n";
-static char FDOKhello[] = "2000 OK Hello\n";
-static char FDOKnewHello[] = "2000 OK Hello %d\n";
+constexpr const char OKhello[] = "3000 OK Hello\n";
+constexpr const char FDOKhello[] = "2000 OK Hello\n";
+constexpr const char FDOKnewHello[] = "2000 OK Hello %d\n";
 
-static char dir_not_authorized_message[] = "1999 You are not authorized.\n";
+constexpr const char dir_not_authorized_message[]
+    = "1999 You are not authorized.\n";
 
 bool AuthenticateWithStorageDaemon(BareosSocket* sd,
                                    JobControlRecord* jcr,
@@ -169,8 +170,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
     const char* fmt
         = T_("Unable to authenticate with File daemon at \"%s:%d\"\n");
     snprintf(msg.data(), msg.size(), fmt, fd->host(), fd->port());
-    Dmsg0(debuglevel, msg.data());
-    Jmsg(jcr, M_FATAL, 0, msg.data());
+    Dmsg0(debuglevel, "%s", msg.data());
+    Jmsg(jcr, M_FATAL, 0, "%s", msg.data());
     return false;
   }
 

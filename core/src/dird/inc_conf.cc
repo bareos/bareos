@@ -996,10 +996,10 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
     // store the pointer from res_incexe in each appropriate container
     if (item->code == 0) { /* include */
       res_fs->include_items.push_back(res_incexe);
-      Dmsg1(900, "num_includes=%d\n", res_fs->include_items.size());
+      Dmsg1(900, "num_includes=%" PRIuz "\n", res_fs->include_items.size());
     } else { /* exclude */
       res_fs->exclude_items.push_back(res_incexe);
-      Dmsg1(900, "num_excludes=%d\n", res_fs->exclude_items.size());
+      Dmsg1(900, "num_excludes=%" PRIuz "\n", res_fs->exclude_items.size());
     }
     res_incexe = nullptr;
   }

@@ -1301,9 +1301,9 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     if (OK) {
       for (TREE_NODE* node = FirstTreeNode(tree.root); node;
            node = NextTreeNode(node)) {
-        Dmsg2(400, "FI=%d node=0x%x\n", node->FileIndex, node);
+        Dmsg2(400, "FI=%" PRIu32 " node=%p\n", node->FileIndex, node);
         if (node->extract || node->extract_dir) {
-          Dmsg3(400, "JobId=%lld type=%d FI=%d\n", (uint64_t)node->JobId,
+          Dmsg3(400, "JobId=%" PRIu32 " type=%d FI=%" PRId32 "\n", node->JobId,
                 node->type, node->FileIndex);
           /* TODO: optimize bsr insertion when jobid are non sorted */
           AddDeltaListFindex(rx, node->delta_list);
