@@ -51,7 +51,6 @@ using namespace filedaemon;
 
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
-extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 
 static std::string pidfile_path{};

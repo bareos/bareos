@@ -31,6 +31,8 @@
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_SYSLOG_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_SYSLOG_H_
 
+#include "include/compiler_macro.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -90,7 +92,7 @@ extern "C" {
 #define LOG_NDELAY 0x08 /* don't delay open */
 #define LOG_NOWAIT 0x10 /* if forking to log on console, don't wait() */
 
-void syslog(int type, const char* fmt, ...);
+void syslog(int type, const char* fmt, ...) PRINTF_LIKE(2, 3);
 void openlog(const char* app, int, int);
 void closelog(void);
 

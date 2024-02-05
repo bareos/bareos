@@ -32,6 +32,7 @@
 #define BAREOS_INCLUDE_BACONFIG_H_
 
 #include "lib/message.h"
+#include "include/compiler_macro.h"
 
 /* Bareos common configuration defines */
 
@@ -416,36 +417,40 @@ inline bool IsSlotNumberValid(slot_number_t slot)
 class PoolMem;
 
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-int Mmsg(POOLMEM*& msgbuf, const char* fmt, ...);
-int Mmsg(PoolMem& msgbuf, const char* fmt, ...);
-int Mmsg(PoolMem*& msgbuf, const char* fmt, ...);
-int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...);
+int Mmsg(POOLMEM*& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
+int Mmsg(PoolMem& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
+int Mmsg(PoolMem*& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
+int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
 
 class JobControlRecord;
-void d_msg(const char* file, int line, int level, const char* fmt, ...);
-void p_msg(const char* file, int line, int level, const char* fmt, ...);
-void p_msg_fb(const char* file, int line, int level, const char* fmt, ...);
+void d_msg(const char* file, int line, int level, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
+void p_msg(const char* file, int line, int level, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
+void p_msg_fb(const char* file, int line, int level, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
 void e_msg(const char* file,
            int line,
            int type,
            int level,
            const char* fmt,
-           ...);
+           ...) PRINTF_LIKE(5, 6);
 void j_msg(const char* file,
            int line,
            JobControlRecord* jcr,
            int type,
            utime_t mtime,
            const char* fmt,
-           ...);
+           ...) PRINTF_LIKE(6, 7);
 void q_msg(const char* file,
            int line,
            JobControlRecord* jcr,
            int type,
            utime_t mtime,
            const char* fmt,
-           ...);
-int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
+           ...) PRINTF_LIKE(6, 7);
+int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
 
 #include "lib/bsys.h"
 #include "lib/scan.h"

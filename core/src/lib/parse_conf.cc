@@ -590,9 +590,7 @@ bool ConfigurationParser::DumpResources(bool sendit(void* sock,
   return result;
 }
 
-void ConfigurationParser::DumpResources(bool sendit(void* sock,
-                                                    const char* fmt,
-                                                    ...),
+void ConfigurationParser::DumpResources(sender* sendit,
                                         void* sock,
                                         bool hide_sensitive_data)
 {
