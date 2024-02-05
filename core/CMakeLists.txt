@@ -390,10 +390,10 @@ endif()
 include(FindIntl)
 
 set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
+    "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length -Wno-error=format-overflow"
 )
 set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
+    "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length -Wno-error=format-overflow"
 )
 
 include(BareosSetVariableDefaults)
