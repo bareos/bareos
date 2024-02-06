@@ -168,7 +168,6 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     memset(&rctx, 0, sizeof(ReserveContext));
     rctx.jcr = jcr;
     jcr->sd_impl->read_dcr = dcr;
-    jcr->sd_impl->reserve_msgs = new alist<const char*>(10, not_owned_by_alist);
     rctx.any_drive = true;
     rctx.device_name = vol->device;
     director_storage store(false, "", vol->MediaType, dcr->pool_name,
@@ -178,7 +177,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
     // Search for a new device
     status = SearchResForDevice(rctx);
-    ReleaseReserveMessages(jcr); /* release queued messages */
+    ClearReserveMessages(jcr); /* release queued messages */
     UnlockReservations();
 
     if (status == 1) { /* found new device to use */

@@ -96,7 +96,7 @@ struct StoredJcrImpl {
   alist<const char*>* plugin_options{};        /**< Specific Plugin Options sent by DIR */
   std::vector<storagedaemon::director_storage> write_store{};           /**< List of write storage devices sent by DIR */
   std::vector<storagedaemon::director_storage> read_store{};            /**< List of read devices sent by DIR */
-  alist<const char*>* reserve_msgs{};          /**< Reserve fail messages */
+  std::vector<std::string> reserve_msgs{};          /**< Reserve fail messages */
   bool acquired_storage{};        /**< Did we acquire our reserved storage already or not */
   bool PreferMountedVols{};       /**< Prefer mounted vols rather than new */
   bool insert_jobmedia_records{}; /**< Need to insert job media records */
