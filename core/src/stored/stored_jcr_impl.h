@@ -27,6 +27,7 @@
 #include "stored/read_ctx.h"
 #include "stored/stored_conf.h"
 #include "lib/thread_util.h"
+#include "stored/reserve.h"
 
 #define SD_APPEND 1
 #define SD_READ 0
@@ -39,7 +40,7 @@ struct VolumeList;
 class DeviceControlRecord;
 class DirectorResource;
 struct BootStrapRecord;
-class DirectorStorage;
+struct director_storage;
 
 struct ReadSession {
   READ_CTX* rctx{};
@@ -93,8 +94,8 @@ struct StoredJcrImpl {
   bool spool_data{};              /**< Set to spool data */
   storagedaemon::DirectorResource* director{}; /**< Director resource */
   alist<const char*>* plugin_options{};        /**< Specific Plugin Options sent by DIR */
-  alist<storagedaemon::DirectorStorage*>* write_store{};           /**< List of write storage devices sent by DIR */
-  alist<storagedaemon::DirectorStorage*>* read_store{};            /**< List of read devices sent by DIR */
+  std::vector<storagedaemon::director_storage> write_store{};           /**< List of write storage devices sent by DIR */
+  std::vector<storagedaemon::director_storage> read_store{};            /**< List of read devices sent by DIR */
   alist<const char*>* reserve_msgs{};          /**< Reserve fail messages */
   bool acquired_storage{};        /**< Did we acquire our reserved storage already or not */
   bool PreferMountedVols{};       /**< Prefer mounted vols rather than new */
