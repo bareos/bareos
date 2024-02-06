@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: fix vss during client initiated connections [PR #1667]
 - Improve FreeBSD dependencies [PR #1681]
 - macOS build workflow (for Bareos-22) [PR #1691]
+- webui: Backup Unit Report fixes [PR #1699]
 
 ## [22.1.3] - 2023-12-13
 
@@ -638,4 +639,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1676]: https://github.com/bareos/bareos/pull/1676
 [PR #1681]: https://github.com/bareos/bareos/pull/1681
 [PR #1691]: https://github.com/bareos/bareos/pull/1691
+[PR #1699]: https://github.com/bareos/bareos/pull/1699
 [unreleased]: https://github.com/bareos/bareos/tree/master

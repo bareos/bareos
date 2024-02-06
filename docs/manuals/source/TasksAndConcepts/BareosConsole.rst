@@ -69,21 +69,21 @@ The maximum command line length is limited to 511 characters, so if you are scri
 Exit the Console Program
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Command; bconsole; exit>`\
+.. index::
+   single: Command; bconsole; exit
 
 Normally, you simply enter quit or exit and the Console program will terminate. However, it waits until the Director acknowledges the command. If the Director is already doing a lengthy command (e.g. prune), it may take some time. If you want to immediately terminate the Console program, enter the .quit command.
 
 There is currently no way to interrupt a Console command once issued (i.e. Ctrl-C does not work). However, if you are at a prompt that is asking you to select one of several possibilities and you would like to abort the command, you can enter a period (.), and in most cases, you will either be returned to the main command prompt or if appropriate the previous prompt (in the case of nested prompts). In a few places such as where it is asking for a Volume name, the period will be taken to be the
 Volume name. In that case, you will most likely be able to cancel at the next prompt.
 
+.. _scripting:
+
 Running the Console from a Shell Script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Console; Running from a Shell>`\
-
-.. _scripting:
-
-
+.. index::
+   single: Console; Running from a Shell
 
 You can automate many Console tasks by running the console program from a shell script. For example, if you have created a file containing the following commands:
 
@@ -1324,8 +1324,13 @@ status scheduler
    days=number
       of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria. days= can be combined with the other selection criteria.
 
+
+.. _status-subscription:
+
 status subscriptions
-   In case you have a service contract for Bareos, the command :bcommand:`status subscriptions`  can help you to keep the overview over the subscriptions that are used.
+   In case you have a service contract for Bareos,
+   the command :bcommand:`status subscriptions` (:sinceVersion:`21: status subscriptions`)
+   can help you to keep the overview over the subscriptions that are used.
 
    Using the console command :bcommand:`status subscriptions`, the status of the subscriptions can be checked any time interactively:
 
@@ -1412,12 +1417,13 @@ time
 trace
    :index:`\ <single: Console; Command; trace>`\  Turn on/off trace to file.
 
-truncate
-   :index:`\ <single: Console; Command; truncate>`\  :index:`\ <single: Disk; Freeing disk space>`\  :index:`\ <single: Disk; Freeing disk space>`\
 
 .. _bcommandTruncate:
 
-
+truncate
+   .. index::
+      single: Console; Command; truncate
+      single: Disk; Freeing disk space
 
    If the status of a volume is **Purged**, it normally still contains data, even so it can not easily be accessed.
 
