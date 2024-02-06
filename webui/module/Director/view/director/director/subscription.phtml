@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2022-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2022-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -101,9 +101,9 @@ Please request a quote by sending the report via email to <a href="mailto:sales@
 </div>
 
 <?php
-   if ($this->directorOutput) {
-      echo '<a class="btn btn-primary" href="/director/backupunitreport">Download Backup Unit Report (JSON)</a>';
-   }
+    if ($this->directorOutput) {
+        echo '<a class="btn btn-primary" href="' . $this->url('director', array('action' => 'backupunitreport')) . '">' . $this->translate('Download Backup Unit Report (JSON)') . '</a>';
+    }
 ?>
 
 <?php endif; ?>
