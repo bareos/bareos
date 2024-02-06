@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -151,7 +151,6 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   if (dcr->media_type[0]
       && !bstrcmp(dcr->media_type, dev->device_resource->media_type)) {
     ReserveContext rctx;
-    DirectorStorage* store;
     int status;
 
     Jmsg3(jcr, M_INFO, 0,
@@ -172,14 +171,9 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     jcr->sd_impl->reserve_msgs = new alist<const char*>(10, not_owned_by_alist);
     rctx.any_drive = true;
     rctx.device_name = vol->device;
-    store = new DirectorStorage;
-    memset(store, 0, sizeof(DirectorStorage));
-    store->name[0] = 0; /* No dir name */
-    bstrncpy(store->media_type, vol->MediaType, sizeof(store->media_type));
-    bstrncpy(store->pool_name, dcr->pool_name, sizeof(store->pool_name));
-    bstrncpy(store->pool_type, dcr->pool_type, sizeof(store->pool_type));
-    store->append = false;
-    rctx.store = store;
+    director_storage store(false, "", vol->MediaType, dcr->pool_name,
+                           dcr->pool_type);
+    rctx.store = &store;
     CleanDevice(dcr); /* clean up the dcr */
 
     // Search for a new device
@@ -207,8 +201,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
       bstrncpy(dcr->media_type, vol->MediaType, sizeof(dcr->media_type));
       dcr->VolCatInfo.Slot = vol->Slot;
       dcr->VolCatInfo.InChanger = vol->Slot > 0;
-      bstrncpy(dcr->pool_name, store->pool_name, sizeof(dcr->pool_name));
-      bstrncpy(dcr->pool_type, store->pool_type, sizeof(dcr->pool_type));
+      bstrncpy(dcr->pool_name, store.pool_name.c_str(), sizeof(dcr->pool_name));
+      bstrncpy(dcr->pool_type, store.pool_type.c_str(), sizeof(dcr->pool_type));
     } else {
       /* error */
       Jmsg1(jcr, M_FATAL, 0,
