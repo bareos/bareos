@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,4 +34,10 @@ file(WRITE control "${HEADER}")
 foreach(snippet @DEBIAN_CONTROL_SNIPPETS@)
   file(READ "control.${snippet}" content)
   file(APPEND control "${content}\n\n")
+endforeach()
+
+set(SRC_DIR @CMAKE_BINARY_DIR@/debian)
+set(DST_DIR @CMAKE_SOURCE_DIR@/debian)
+foreach(templated_file @DEBIAN_TEMPLATED_FILE_LIST@)
+  file(COPY "${SRC_DIR}/${templated_file}" DESTINATION "${DST_DIR}")
 endforeach()

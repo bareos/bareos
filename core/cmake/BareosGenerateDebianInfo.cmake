@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -96,6 +96,16 @@ else()
   endif()
 
 endif()
+
+include(BareosConfigureFile)
+bareos_configure_file(GLOB "${CMAKE_SOURCE_DIR}/debian/*.in")
+
+file(GLOB templated_file_path_list "${CMAKE_BINARY_DIR}/debian/*")
+set(DEBIAN_TEMPLATED_FILE_LIST "")
+foreach(templated_file_path ${templated_file_path_list})
+  get_filename_component(templated_file ${templated_file_path} NAME)
+  list(APPEND DEBIAN_TEMPLATED_FILE_LIST "${templated_file}")
+endforeach()
 
 configure_file(
   ${CMAKE_SOURCE_DIR}/core/cmake/generate-debian-control.cmake.in

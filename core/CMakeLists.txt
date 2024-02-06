@@ -728,8 +728,6 @@ else()
 endif()
 
 include(BareosConfigureFile)
-bareos_configure_file(GLOB_RECURSE "${CMAKE_SOURCE_DIR}/debian/*.in" IN_TREE)
-
 bareos_configure_file(
   GLOB_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/src/defaultconfigs/*" COPY
 )

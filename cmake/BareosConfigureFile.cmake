@@ -21,7 +21,7 @@
 # to its template or into the corresponding CMAKE_CURRENT_BINARY_DIR
 
 function(bareos_configure_file)
-  cmake_parse_arguments(ARG "IN_TREE;COPY" "" "FILES;GLOB_RECURSE" ${ARGN})
+  cmake_parse_arguments(ARG "IN_TREE;COPY" "" "FILES;GLOB;GLOB_RECURSE" ${ARGN})
   set(file_list "")
   if(ARG_FILES)
     list(APPEND file_list ${ARG_FILES})
@@ -29,6 +29,10 @@ function(bareos_configure_file)
 
   if(ARG_GLOB_RECURSE)
     file(GLOB_RECURSE glob_lst ${ARG_GLOB_RECURSE})
+    list(APPEND file_list ${glob_lst})
+  endif()
+  if(ARG_GLOB)
+    file(GLOB glob_lst ${ARG_GLOB})
     list(APPEND file_list ${glob_lst})
   endif()
   foreach(in_file ${file_list})
