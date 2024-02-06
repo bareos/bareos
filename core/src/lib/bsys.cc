@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -977,7 +977,7 @@ bool PathCreate(const char* apath, mode_t mode)
 
   if (stat(apath, &statp) == 0) { /* Does dir exist? */
     if (!S_ISDIR(statp.st_mode)) {
-      Emsg1(M_ERROR, 0, "%s exists but is not a directory.\n", path);
+      Emsg1(M_ERROR, 0, "%s exists but is not a directory.\n", apath);
       return false;
     }
     return true;
