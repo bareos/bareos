@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,18 +38,29 @@
 #ifndef BAREOS_STORED_RESERVE_H_
 #define BAREOS_STORED_RESERVE_H_
 
-template <typename T> class alist;
+#include <vector>
+#include <string>
+#include <string_view>
 
 namespace storagedaemon {
 
-class DirectorStorage {
- public:
-  alist<const char*>* device;
+struct director_storage {
   bool append;
-  char name[MAX_NAME_LENGTH];
-  char media_type[MAX_NAME_LENGTH];
-  char pool_name[MAX_NAME_LENGTH];
-  char pool_type[MAX_NAME_LENGTH];
+  std::vector<std::string> device_names{};
+  std::string name{}, media_type{}, pool_name{}, pool_type{};
+
+  director_storage(bool append_,
+                   std::string_view sname_,
+                   std::string_view mtype_,
+                   std::string_view pname_,
+                   std::string_view ptype_)
+      : append{append_}
+      , name{sname_}
+      , media_type{mtype_}
+      , pool_name{pname_}
+      , pool_type{ptype_}
+  {
+  }
 };
 
 /* Reserve context */
@@ -57,7 +68,7 @@ class ReserveContext {
  public:
   JobControlRecord* jcr;
   const char* device_name;
-  DirectorStorage* store;
+  director_storage* store;
   DeviceResource* device_resource;
   Device* low_use_drive;            /**< Low use drive candidate */
   int num_writers;                  /**< for selecting low use drive */
