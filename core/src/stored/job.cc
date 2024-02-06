@@ -439,28 +439,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
 
   if (jcr->sd_impl->plugin_options) { delete jcr->sd_impl->plugin_options; }
 
-  if (jcr->sd_impl->read_store) {
-    DirectorStorage* store = nullptr;
-    foreach_alist (store, jcr->sd_impl->read_store) {
-      delete store->device;
-      delete store;
-    }
-    delete jcr->sd_impl->read_store;
-    jcr->sd_impl->read_store = NULL;
-  }
-
-  if (jcr->sd_impl->write_store) {
-    DirectorStorage* store = nullptr;
-    foreach_alist (store, jcr->sd_impl->write_store) {
-      delete store->device;
-      delete store;
-    }
-    delete jcr->sd_impl->write_store;
-    jcr->sd_impl->write_store = NULL;
-  }
-
   FreePlugins(jcr); /* release instantiated plugins */
-
 
   if (jcr->JobId != 0) {
     WriteStateFile(me->working_directory, "bareos-sd",
