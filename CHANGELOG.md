@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Improve FreeBSD dependencies [PR #1681]
 - macOS build workflow (for Bareos-22) [PR #1691]
 - webui: Backup Unit Report fixes [PR #1699]
+- windows: fix calculation of "job_metadata.xml" object size [PR #1704]
 
 ## [22.1.3] - 2023-12-13
 
@@ -640,4 +641,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1681]: https://github.com/bareos/bareos/pull/1681
 [PR #1691]: https://github.com/bareos/bareos/pull/1691
 [PR #1699]: https://github.com/bareos/bareos/pull/1699
+[PR #1704]: https://github.com/bareos/bareos/pull/1704
 [unreleased]: https://github.com/bareos/bareos/tree/master
