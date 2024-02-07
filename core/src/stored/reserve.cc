@@ -174,55 +174,15 @@ void DeviceControlRecord::UnreserveDevice()
   dev->Unlock();
 }
 
-/**
- * We get the following type of information:
- *
- * use storage=xxx media_type=yyy pool_name=xxx pool_type=yyy append=1 copy=0
- * strip=0 use device=zzz use device=aaa use device=bbb use storage=xxx
- * media_type=yyy pool_name=xxx pool_type=yyy append=0 copy=0 strip=0 use
- * device=bbb
- */
-static bool UseDeviceCmd(JobControlRecord* jcr)
+bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
 {
-  PoolMem StoreName, dev_name, media_type, pool_name, pool_type;
-  BareosSocket* dir = jcr->dir_bsock;
-  int32_t append;
-  bool ok;
-  int32_t Copy, Stripe;
   ReserveContext rctx;
-
   memset(&rctx, 0, sizeof(ReserveContext));
   rctx.jcr = jcr;
+  rctx.append = append;
 
-  /* If there are multiple devices, the director sends us
-   * use_device for each device that it wants to use. */
-  do {
-    Dmsg1(debuglevel, "<dird: %s", dir->msg);
-    ok = sscanf(dir->msg, use_storage, StoreName.c_str(), media_type.c_str(),
-                pool_name.c_str(), pool_type.c_str(), &append, &Copy, &Stripe)
-         == 7;
-    if (!ok) { break; }
-    auto& storages
-        = append ? jcr->sd_impl->write_store : jcr->sd_impl->read_store;
-
-    rctx.append = append;
-    UnbashSpaces(StoreName);
-    UnbashSpaces(media_type);
-    UnbashSpaces(pool_name);
-    UnbashSpaces(pool_type);
-    auto& storage
-        = storages.emplace_back(append, StoreName.c_str(), media_type.c_str(),
-                                pool_name.c_str(), pool_type.c_str());
-
-    // Now get all devices
-    while (dir->recv() >= 0) {
-      Dmsg1(debuglevel, "<dird device: %s", dir->msg);
-      ok = sscanf(dir->msg, use_device, dev_name.c_str()) == 1;
-      if (!ok) { break; }
-      UnbashSpaces(dev_name);
-      storage.device_names.emplace_back(dev_name.c_str());
-    }
-  } while (ok && dir->recv() >= 0);
+  bool ok = true;
+  BareosSocket* dir = jcr->dir_bsock;
 
   InitJcrDeviceWaitTimers(jcr);
   jcr->sd_impl->dcr = new StorageDaemonDeviceControlRecord;
@@ -248,7 +208,6 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     int wait_for_device_retries = 0;
     int repeat = 0;
     bool fail = false;
-    rctx.notify_dir = true;
 
     // Put new dcr in proper location
     if (rctx.append) {
@@ -328,7 +287,11 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, T_("Device reservation failed for JobId=%d: %s\n"),
            jcr->JobId, jcr->errmsg);
-      dir->fsend(NO_device, dev_name.c_str());
+      const char* dev_name = "no dev";
+      for (auto& storage : jcr->sd_impl->dirstores) {
+        for (auto& name : storage.device_names) { dev_name = name.c_str(); }
+      }
+      dir->fsend(NO_device, dev_name);
 
       Dmsg1(debuglevel, ">dird: %s", dir->msg);
     }
@@ -342,6 +305,75 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
 
   ClearReserveMessages(jcr);
   return ok;
+}
+
+/**
+ * We get the following type of information:
+ *
+ * use storage=xxx media_type=yyy pool_name=xxx pool_type=yyy append=1 copy=0
+ * strip=0 use device=zzz use device=aaa use device=bbb use storage=xxx
+ * media_type=yyy pool_name=xxx pool_type=yyy append=0 copy=0 strip=0 use
+ * device=bbb
+ */
+static bool UseDeviceCmd(JobControlRecord* jcr)
+{
+  PoolMem StoreName, dev_name, media_type, pool_name, pool_type;
+  BareosSocket* dir = jcr->dir_bsock;
+  int32_t append;
+  bool ok = true;
+  int32_t Copy, Stripe;
+
+  /* If there are multiple devices, the director sends us
+   * use_device for each device that it wants to use. */
+  do {
+    Dmsg1(debuglevel, "<dird: %s", dir->msg);
+    auto res
+        = sscanf(dir->msg, use_storage, StoreName.c_str(), media_type.c_str(),
+                 pool_name.c_str(), pool_type.c_str(), &append, &Copy, &Stripe);
+
+    if (res != 7) { ok = false; }
+
+    if (!ok) { break; }
+
+    auto& storages = jcr->sd_impl->dirstores;
+
+    UnbashSpaces(StoreName);
+    UnbashSpaces(media_type);
+    UnbashSpaces(pool_name);
+    UnbashSpaces(pool_type);
+    auto& storage
+        = storages.emplace_back(append, StoreName.c_str(), media_type.c_str(),
+                                pool_name.c_str(), pool_type.c_str());
+
+    // Now get all devices
+    while (dir->recv() >= 0) {
+      Dmsg1(debuglevel, "<dird device: %s", dir->msg);
+      ok = sscanf(dir->msg, use_device, dev_name.c_str()) == 1;
+      if (!ok) { break; }
+      UnbashSpaces(dev_name);
+      storage.device_names.emplace_back(dev_name.c_str());
+    }
+
+  } while (ok && dir->recv() >= 0);
+
+  if (!ok) {
+    PmStrcpy(jcr->errmsg, dir->msg);
+    UnbashSpaces(jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, T_("Failed command: %s\n"), jcr->errmsg);
+    dir->fsend(BAD_use, jcr->errmsg);
+    Dmsg1(debuglevel, ">dird: %s", dir->msg);
+    return false;
+  }
+
+  if (append) {
+    PmStrcpy(dev_name, "JustInTime Device");
+    BashSpaces(dev_name);
+    ok = dir->fsend(OK_device, dev_name.c_str()); /* Return fake device name */
+    Dmsg1(debuglevel, ">dird: %s", dir->msg);
+    return ok;
+  } else {
+    return TryReserveAfterUse(jcr, false);
+  }
 }
 
 /**
@@ -380,8 +412,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
   bool ok = false;
   DeviceControlRecord* dcr = jcr->sd_impl->dcr;
 
-  auto& storages
-      = rctx.append ? jcr->sd_impl->write_store : jcr->sd_impl->read_store;
+  auto& storages = jcr->sd_impl->dirstores;
   Dmsg5(debuglevel,
         "Start find_suit_dev PrefMnt=%d exact=%d suitable=%d chgronly=%d "
         "any=%d\n",
@@ -412,6 +443,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
       Dmsg1(debuglevel, "vol=%s OK for this job\n", vol->vol_name);
       for (auto& store : storages) {
         int status;
+        if (rctx.append != store.append) { continue; }
         rctx.store = &store;
         for (auto& device_name : store.device_names) {
           // Found a device, try to use it
@@ -476,6 +508,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
    * For each storage device that the user specified, we
    * search and see if there is a resource for that device. */
   for (auto& store : storages) {
+    if (rctx.append != store.append) { continue; }
     rctx.store = &store;
     for (auto& device_name : store.device_names) {
       int status;
@@ -532,7 +565,7 @@ int SearchResForDevice(ReserveContext& rctx)
         }
 
         // Debug code
-        if (rctx.store->append == SD_APPEND) {
+        if (rctx.store->append) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                 rctx.device_resource->resource_name_,
                 rctx.jcr->sd_impl->dcr->dev->NumReserved());
@@ -559,7 +592,7 @@ int SearchResForDevice(ReserveContext& rctx)
           continue;
         }
         // Debug code
-        if (rctx.store->append == SD_APPEND) {
+        if (rctx.store->append) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                 rctx.device_resource->resource_name_,
                 rctx.jcr->sd_impl->dcr->dev->NumReserved());
@@ -590,7 +623,7 @@ int SearchResForDevice(ReserveContext& rctx)
           }
 
           // Debug code
-          if (rctx.store->append == SD_APPEND) {
+          if (rctx.store->append) {
             Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                   rctx.device_resource->resource_name_,
                   rctx.jcr->sd_impl->dcr->dev->NumReserved());
@@ -690,7 +723,7 @@ static int ReserveDevice(ReserveContext& rctx)
   bstrncpy(dcr->pool_type, rctx.store->pool_type.c_str(), name_len);
   bstrncpy(dcr->media_type, rctx.store->media_type.c_str(), name_len);
   bstrncpy(dcr->dev_name, rctx.device_name, name_len);
-  if (rctx.store->append == SD_APPEND) {
+  if (rctx.store->append) {
     Dmsg2(debuglevel, "call reserve for append: have_vol=%d vol=%s\n",
           rctx.have_volume, rctx.VolumeName);
     ok = ReserveDeviceForAppend(dcr, rctx);
@@ -758,19 +791,17 @@ static int ReserveDevice(ReserveContext& rctx)
             dcr->pool_name, ok);
     }
   }
-  if (!ok) { goto bail_out; }
-
-  if (rctx.notify_dir) {
+  if (!ok) {
+    goto bail_out;
+  } else {
     PoolMem dev_name;
     BareosSocket* dir = rctx.jcr->dir_bsock;
     PmStrcpy(dev_name, rctx.device_resource->resource_name_);
     BashSpaces(dev_name);
     ok = dir->fsend(OK_device, dev_name.c_str()); /* Return real device name */
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
-  } else {
-    ok = true;
+    return ok ? 1 : -1;
   }
-  return ok ? 1 : -1;
 
 bail_out:
   rctx.have_volume = false;
