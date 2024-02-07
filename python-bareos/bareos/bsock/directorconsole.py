@@ -22,7 +22,6 @@ Send and receive the response to Bareos Director Daemon Console interface.
 """
 
 from bareos.bsock.connectiontype import ConnectionType
-from bareos.bsock.constants import Constants
 from bareos.bsock.lowlevel import LowLevel
 from bareos.bsock.protocolmessageids import ProtocolMessageIds
 from bareos.bsock.protocolmessages import ProtocolMessages
@@ -64,14 +63,16 @@ class DirectorConsole(LowLevel):
           argparser (ArgParser or ConfigArgParser): (Config)ArgParser instance.
         """
 
-        argparser.add_argument(
+        group = argparser.add_argument_group(title="Bareos Director connection options")
+
+        group.add_argument(
             "--name",
             default="*UserAgent*",
             help='use this to access a specific Bareos director named console. Otherwise it connects to the default console ("*UserAgent*").',
             dest="BAREOS_name",
         )
 
-        argparser.add_argument(
+        group.add_argument(
             "-p",
             "--password",
             help="Password to authenticate to a Bareos Director console.",
@@ -79,7 +80,7 @@ class DirectorConsole(LowLevel):
             dest="BAREOS_password",
         )
 
-        argparser.add_argument(
+        group.add_argument(
             "--port",
             default=9101,
             help="Bareos Director network port.",
@@ -87,50 +88,48 @@ class DirectorConsole(LowLevel):
         )
 
         # argparser.add_argument('--dirname', help="Bareos Director name")
-        argparser.add_argument(
+        group.add_argument(
             "--address",
             default="localhost",
             help="Bareos Director network address.",
             dest="BAREOS_address",
         )
 
-        argparser.add_argument(
+        group.add_argument(
             "--timeout",
             type=int,
             help="Timeout (in seconds) for the connection to the Bareos Director.",
             dest="BAREOS_timeout",
         )
 
-        argparser.add_argument(
+        group.add_argument(
             "--protocolversion",
             default=ProtocolVersions.last,
             type=int,
-            help="Specify the Bareos console protocol version. Default: {0} (current).".format(
-                ProtocolVersions.last
-            ),
+            help="Specify the Bareos console protocol version. Default: %(default)s (current).",
             dest="BAREOS_protocolversion",
         )
 
-        argparser.add_argument(
+        group.add_argument(
             "--pam-username",
             help="Username to authenticate against PAM on top off the normal authentication.",
             dest="BAREOS_pam_username",
         )
 
-        argparser.add_argument(
+        group.add_argument(
             "--pam-password",
             help="Password to authenticate against PAM on top off the normal authentication.",
             dest="BAREOS_pam_password",
         )
 
-        argparser.add_argument(
+        group.add_argument(
             "--tls-psk-require",
             help="Allow only encrypted connections. Default: False.",
             action="store_true",
             dest="BAREOS_tls_psk_require",
         )
 
-        TlsVersionParser().add_argument(argparser)
+        TlsVersionParser().add_argument(group)
 
     def __init__(
         self,
