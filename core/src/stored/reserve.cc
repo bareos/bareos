@@ -367,6 +367,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
 
   if (append) {
     PmStrcpy(dev_name, "JustInTime Device");
+    jcr->sd_impl->dcr = nullptr;  // signal to rest of storage daemon that no
+                                  // device was reserved.
     BashSpaces(dev_name);
     ok = dir->fsend(OK_device, dev_name.c_str()); /* Return fake device name */
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
