@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include <openssl/rand.h>
 
 // Various BAREOS Utility subroutines
 
@@ -658,27 +660,6 @@ const char* job_level_to_str(int level)
   return str;
 }
 
-const char* volume_status_to_str(const char* status)
-{
-  int pos;
-  const char* vs[] = {NT_("Append"), _("Append"),      NT_("Archive"),
-                      _("Archive"),  NT_("Disabled"),  _("Disabled"),
-                      NT_("Full"),   _("Full"),        NT_("Used"),
-                      _("Used"),     NT_("Cleaning"),  _("Cleaning"),
-                      NT_("Purged"), _("Purged"),      NT_("Recycle"),
-                      _("Recycle"),  NT_("Read-Only"), _("Read-Only"),
-                      NT_("Error"),  _("Error"),       NULL,
-                      NULL};
-
-  if (status) {
-    for (pos = 0; vs[pos]; pos += 2) {
-      if (bstrcmp(vs[pos], status)) { return vs[pos + 1]; }
-    }
-  }
-
-  return _("Invalid volume status");
-}
-
 // Encode the mode bits into a 10 character string like LS does
 char* encode_mode(mode_t mode, char* buf)
 {
@@ -763,118 +744,23 @@ int DoShellExpansion(char* name, int name_len)
 }
 #endif
 
-/*
- * MAKESESSIONKEY  --  Generate session key with optional start
- *                     key.  If mode is TRUE, the key will be
- *                     translated to a string, otherwise it is
- *                     returned as 16 binary bytes.
- *
- *  from SpeakFreely by John Walker
- */
-void MakeSessionKey(char* key, char* seed, int mode)
+/* Create a new session key. key needs to be able to hold at least
+ * 32 + 7 (separator) + 1 (null) = 40 bytes. */
+void MakeSessionKey(char key[40])
 {
-  int j, k;
-  MD5_CTX md5c;
-  unsigned char md5key[16], md5key1[16];
-  char s[1024];
-  constexpr int32_t ss = sizeof(s);
+  unsigned char s[16];
+  RAND_bytes(s, sizeof(s));
 
-  s[0] = 0;
-  if (seed != NULL) { bstrncat(s, seed, sizeof(s)); }
+  for (int j = 0; j < 16; j++) {
+    char low = (s[j] & 0x0F);
+    char high = (s[j] & 0xF0) >> 4;
 
-  /* The following creates a seed for the session key generator
-   * based on a collection of volatile and environment-specific
-   * information unlikely to be vulnerable (as a whole) to an
-   * exhaustive search attack.  If one of these items isn't
-   * available on your machine, replace it with something
-   * equivalent or, if you like, just delete it. */
-#if defined(HAVE_WIN32)
-  {
-    LARGE_INTEGER li;
-    DWORD length;
-    FILETIME ft;
+    *key++ = 'A' + low;
+    *key++ = 'A' + high;
 
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetCurrentProcessId());
-    (void)!getcwd(s + strlen(s), 256);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetTickCount());
-    QueryPerformanceCounter(&li);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)li.LowPart);
-    GetSystemTimeAsFileTime(&ft);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwLowDateTime);
-    Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)ft.dwHighDateTime);
-    length = 256;
-    GetComputerName(s + strlen(s), &length);
-    length = 256;
-    GetUserName(s + strlen(s), &length);
+    if (j & 1) { *key++ = '-'; }
   }
-#else
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getpid());
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getppid());
-  (void)!getcwd(s + strlen(s), 256);
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)clock());
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)time(NULL));
-#  if defined(Solaris)
-  sysinfo(SI_HW_SERIAL, s + strlen(s), 12);
-#  endif
-  gethostname(s + strlen(s), 256);
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());
-#endif
-  ALLOW_DEPRECATED(MD5_Init(&md5c); MD5_Update(&md5c, (uint8_t*)s, strlen(s));
-                   MD5_Final(md5key, &md5c);
-                   Bsnprintf(s + strlen(s), ss, "%lu",
-                             (uint32_t)((time(NULL) + 65121) ^ 0x375F));
-                   MD5_Init(&md5c); MD5_Update(&md5c, (uint8_t*)s, strlen(s));
-                   MD5_Final(md5key1, &md5c);)
-
-#define nextrand (md5key[j] ^ md5key1[j])
-  if (mode) {
-    for (j = k = 0; j < 16; j++) {
-      unsigned char rb = nextrand;
-
-#define Rad16(x) ((x) + 'A')
-      key[k++] = Rad16((rb >> 4) & 0xF);
-      key[k++] = Rad16(rb & 0xF);
-#undef Rad16
-      if (j & 1) { key[k++] = '-'; }
-    }
-    key[--k] = 0;
-  } else {
-    for (j = 0; j < 16; j++) { key[j] = nextrand; }
-  }
-}
-#undef nextrand
-
-void EncodeSessionKey(char* encode, char* session, char* key, int maxlen)
-{
-  int i;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      encode[i] = '-';
-    } else {
-      encode[i] = ((session[i] - 'A' + key[i]) & 0xF) + 'A';
-    }
-  }
-  encode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s encode=%s\n", session, key, encode);
-}
-
-void DecodeSessionKey(char* decode, char* session, char* key, int maxlen)
-{
-  int i, x;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      decode[i] = '-';
-    } else {
-      x = (session[i] - 'A' - key[i]) & 0xF;
-      if (x < 0) { x += 16; }
-      decode[i] = x + 'A';
-    }
-  }
-  decode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s decode=%s\n", session, key, decode);
+  *--key = 0;
 }
 
 /*
