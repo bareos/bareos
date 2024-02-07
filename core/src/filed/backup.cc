@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1456,7 +1456,7 @@ static void CloseVssBackupSession(JobControlRecord* jcr)
       ff_pkt->LinkFI = 0;
       ff_pkt->object_name = (char*)"job_metadata.xml";
       ff_pkt->object = BSTR_2_str(metadata);
-      ff_pkt->object_len = (wcslen(metadata) + 1) * sizeof(wchar_t);
+      ff_pkt->object_len = strlen(ff_pkt->object) + 1;
       ff_pkt->object_index = (int)time(NULL);
       SaveFile(jcr, ff_pkt, true);
     }
