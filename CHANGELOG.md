@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: Backup Unit Report fixes [PR #1696]
 - windows: fix calculation of "job_metadata.xml" object size [PR #1695]
 - stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1688]
+- bareos-triggerjob: fix parameter handling [PR #1708]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -89,4 +90,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1688]: https://github.com/bareos/bareos/pull/1688
 [PR #1695]: https://github.com/bareos/bareos/pull/1695
 [PR #1696]: https://github.com/bareos/bareos/pull/1696
+[PR #1708]: https://github.com/bareos/bareos/pull/1708
 [unreleased]: https://github.com/bareos/bareos/tree/master
