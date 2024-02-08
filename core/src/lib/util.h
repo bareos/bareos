@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -67,7 +67,7 @@ const char* job_type_to_str(int type);
 const char* job_replace_to_str(int relace);
 const char* job_status_to_str(int stat);
 const char* job_level_to_str(int level);
-void MakeSessionKey(char* key, char* seed, int mode);
+bool MakeSessionKey(char key[120]);
 POOLMEM* edit_job_codes(JobControlRecord* jcr,
                         char* omsg,
                         const char* imsg,

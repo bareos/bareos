@@ -54,4 +54,13 @@ check_for_zombie_jobs storage=File
 
 check_two_logs
 check_restore_diff ${BackupDirectory}
+
+expect_grep "bareos-sd JobId 1: Connected File Daemon at" \
+	    "$tmp/log1.out" \
+	    "Client was not passive during backup"
+
+expect_grep "bareos-sd JobId 2: Connected File Daemon at" \
+	    "$tmp/log2.out" \
+	    "Client was not passive during restore"
+
 end_test

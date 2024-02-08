@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -394,7 +394,8 @@ static bool SetdebugCmd(JobControlRecord* jcr)
     scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
   }
   if ((scan != 3 && scan != 2) || level < 0) {
-    dir->fsend(BADcmd, "setdebug", dir->msg);
+    std::string cpy{dir->msg};
+    dir->fsend(BADcmd, "setdebug", cpy.c_str());
     return false;
   }
 
@@ -432,7 +433,8 @@ static bool SetdeviceCmd(JobControlRecord* jcr)
   int scan = sscanf(dir->msg, setdevice_autoselect, device_name.data(),
                     &autoselect_value);
   if (scan != 2) {
-    dir->fsend(BADcmd, "setdevice", dir->msg);
+    std::string cpy{dir->msg};
+    dir->fsend(BADcmd, "setdevice", cpy.c_str());
     return false;
   }
 
@@ -1579,7 +1581,8 @@ class ReplicateCmdConnectState {
         || state_ == ReplicateCmdState::kError) {
       if (!jcr_) { return; }
       if (jcr_->dir_bsock) {
-        jcr_->dir_bsock->fsend(BADcmd, "replicate", jcr_->dir_bsock->msg);
+        std::string cpy{jcr_->dir_bsock->msg};
+        jcr_->dir_bsock->fsend(BADcmd, "replicate", cpy.c_str());
       }
       jcr_->store_bsock = nullptr;
     }
@@ -1605,7 +1608,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
              &tls_policy, sd_auth_key.c_str())
       != 6) {
-    dir->fsend(BADcmd, "replicate", dir->msg);
+    std::string cpy{dir->msg};
+    dir->fsend(BADcmd, "replicate", cpy.c_str());
     return false;
   }
 
@@ -1700,11 +1704,13 @@ static bool PassiveCmd(JobControlRecord* jcr)
   char filed_addr[MAX_NAME_LENGTH];
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* fd; /* file daemon bsock */
+  std::string cpy{dir->msg};
 
-  Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
-  if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &tls_policy)
+  Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
+  if (sscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
+             &tls_policy)
       != 3) {
-    PmStrcpy(jcr->errmsg, dir->msg);
+    PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad passiveclientcmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
@@ -1769,7 +1775,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   return dir->fsend(OKpassive);
 
 bail_out:
-  dir->fsend(BADcmd, "passive client");
+  dir->fsend(BADcmd, "passive client", cpy.c_str());
   return false;
 }
 
@@ -1777,10 +1783,11 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
   char plugin_options[2048];
+  std::string cpy{dir->msg};
 
-  Dmsg1(100, "PluginOptionsCmd: %s", dir->msg);
-  if (sscanf(dir->msg, pluginoptionscmd, plugin_options) != 1) {
-    PmStrcpy(jcr->errmsg, dir->msg);
+  Dmsg1(100, "PluginOptionsCmd: %s", cpy.c_str());
+  if (sscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
+    PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
@@ -1795,7 +1802,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   return dir->fsend(OKpluginoptions);
 
 bail_out:
-  dir->fsend(BADcmd, "plugin options");
+  dir->fsend(BADcmd, "plugin options", cpy.c_str());
   return false;
 }
 
