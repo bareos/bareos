@@ -36,12 +36,6 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 include(GNUInstallDirs)
 include(BareosHelper)
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
-
 # switch on CXX 17 Support
 #
 set(CMAKE_CXX_STANDARD 17)
@@ -569,7 +563,7 @@ message(STATUS "CMAKE_SUPPRESS_REGENERATION: " ${CMAKE_SUPPRESS_REGENERATION})
 # there are also two variables exactly for this purpose:
 
 # wheter or not
-message(STATUS "CCACHE_FOUND: " ${CCACHE_FOUND})
+message(STATUS "CCACHE: " ${CCACHE_PROGRAM})
 
 # Choose the type of build.  Example: SET(CMAKE_BUILD_TYPE Debug)
 message(STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
