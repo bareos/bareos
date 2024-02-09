@@ -34,6 +34,7 @@
 #include "stored/stored_jcr_impl.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
+#include "stored/fd_comm.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "include/jcr.h"
@@ -42,11 +43,6 @@ namespace storagedaemon {
 
 /* Forward referenced subroutines */
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
-
-/* Responses sent to the File daemon */
-constexpr const char* OK_data = "3000 OK data\n";
-constexpr const char* FD_error = "3000 error\n";
-constexpr const char* rec_header = "rechdr %ld %ld %ld %ld %ld";
 
 /**
  * Read Data and send to File Daemon

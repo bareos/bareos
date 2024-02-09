@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,7 @@ int DbIntHandler(void* ctx, int, char** row)
 {
   uint32_t* val = (uint32_t*)ctx;
 
-  Dmsg1(800, "int_handler starts with row pointing at %x\n", row);
+  Dmsg1(800, "int_handler starts with row pointing at %llx\n", (uintptr_t)row);
 
   if (row[0]) {
     Dmsg1(800, "int_handler finds '%s'\n", row[0]);

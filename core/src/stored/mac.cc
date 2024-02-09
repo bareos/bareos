@@ -46,6 +46,7 @@
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "lib/comm.h"
 
 namespace storagedaemon {
 
@@ -79,7 +80,7 @@ static bool found_first_sos_label = false;
  */
 static bool response(JobControlRecord* jcr,
                      BareosSocket* sd,
-                     char* resp,
+                     const char* resp,
                      const char* cmd)
 {
   if (sd->errors) { return false; }
@@ -337,7 +338,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   // Send a header when needed.
   if (send_header) {
-    if (!sd->fsend("%ld %d 0", rec->FileIndex, rec->Stream)) {
+    if (!sd->fsend(communication::stream_start, rec->FileIndex, rec->Stream)) {
       if (!jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());

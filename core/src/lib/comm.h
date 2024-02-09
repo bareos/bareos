@@ -18,18 +18,15 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#ifndef BAREOS_LIB_COMM_H_
+#define BAREOS_LIB_COMM_H_
 
-#ifndef BAREOS_DIRD_GETMSG_H_
-#define BAREOS_DIRD_GETMSG_H_
+#include <cinttypes>
 
-namespace directordaemon {
+namespace communication {
 
-bool response(JobControlRecord* jcr,
-              BareosSocket* fd,
-              const char* resp,
-              const char* cmd,
-              e_prtmsg PrintMessage);
+inline constexpr const char* stream_start = "%" PRId32 " %" PRId32 " 0";
 
-} /* namespace directordaemon */
+}  // namespace communication
 
-#endif  // BAREOS_DIRD_GETMSG_H_
+#endif  // BAREOS_LIB_COMM_H_

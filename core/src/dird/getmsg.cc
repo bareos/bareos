@@ -283,7 +283,7 @@ static char* find_msg_start(char* msg)
  */
 bool response(JobControlRecord* jcr,
               BareosSocket* bs,
-              char* resp,
+              const char* resp,
               const char* cmd,
               e_prtmsg PrintMessage)
 {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1022,7 +1022,7 @@ int bopen(BareosFilePacket* bfd,
           mode_t mode,
           dev_t rdev)
 {
-  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %u\n", fname, flags,
+  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %lu\n", fname, flags,
         (mode & ~S_IFMT), rdev);
 
   if (bfd->cmd_plugin && plugin_bopen) {

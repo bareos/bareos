@@ -44,6 +44,8 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/serial.h"
+#include "dird/comm.h"
+#include <cinttypes>
 
 namespace storagedaemon {
 
@@ -297,7 +299,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
 
   // Lock during Volume update
   lock_mutex(vol_info_mutex);
-  Dmsg1(debuglevel, "Update cat VolBytes=%lld\n", vol->VolCatBytes);
+  Dmsg1(debuglevel, "Update cat VolBytes=%" PRIu64 "\n", vol->VolCatBytes);
 
   // Just labeled or relabeled the tape
   if (label == is_labeloperation::True) {
@@ -313,7 +315,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
       vol->VolCatMounts, vol->VolCatErrors, vol->VolCatWrites,
       edit_uint64(vol->VolCatMaxBytes, ed2),
       edit_uint64(vol->VolLastWritten, ed6), vol->VolCatStatus, vol->Slot,
-      label, InChanger, /* bool in structure */
+      to_underlying(label), InChanger, /* bool in structure */
       edit_int64(vol->VolReadTime, ed3), edit_int64(vol->VolWriteTime, ed4),
       edit_uint64(vol->VolFirstWritten, ed5));
   Dmsg1(debuglevel, ">dird %s", dir->msg);
@@ -630,7 +632,8 @@ bool StorageDaemonDeviceControlRecord::DirAskToUpdateFileList()
 bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord()
 {
   BareosSocket* dir = jcr->dir_bsock;
-  return dir->fsend(Update_jobrecord, jcr->Job, jcr->JobFiles, jcr->JobBytes);
+  return dir->fsend(directordaemon::Update_jobrecord, jcr->Job, jcr->JobFiles,
+                    jcr->JobBytes);
 }
 
 

@@ -54,6 +54,7 @@
 #include "lib/edit.h"
 #include "lib/util.h"
 #include "lib/version.h"
+#include <cinttypes>
 
 namespace directordaemon {
 
@@ -80,7 +81,8 @@ constexpr const char* OKbootstrap = "3000 OK bootstrap\n";
 
 static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
 {
-  char replace, *where, *cmd;
+  char replace, *where;
+  const char* cmd;
   char empty = '\0';
 
   // Build the restore command
@@ -428,7 +430,8 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
 
   if (jcr->dir_impl->ExpectedFiles != jcr->JobFiles) {
     Jmsg(jcr, M_WARNING, 0,
-         T_("File count mismatch: expected=%lu , restored=%lu\n"),
+         T_("File count mismatch: expected=%" PRIu32 " , restored=%" PRIu32
+            "\n"),
          jcr->dir_impl->ExpectedFiles, jcr->JobFiles);
     if (TermCode == JS_Terminated) { TermCode = JS_Warnings; }
   }

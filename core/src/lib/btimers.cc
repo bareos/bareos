@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -173,8 +173,9 @@ btimer_t* StartBsockTimer(BareosSocket* bsock, uint32_t wait)
   wid->wd->interval = wait;
   RegisterWatchdog(wid->wd);
 
-  Dmsg4(debuglevel, "Start bsock timer %p tid=%s for %d secs at %d\n", wid,
-        edit_pthread(wid->tid, ed1, sizeof(ed1)), wait, time(NULL));
+  Dmsg4(debuglevel, "Start bsock timer %p tid=%s for %d secs at %llu\n", wid,
+        edit_pthread(wid->tid, ed1, sizeof(ed1)), wait,
+        static_cast<long long unsigned>(time(NULL)));
 
   return wid;
 }
@@ -189,8 +190,9 @@ void StopBsockTimer(btimer_t* wid)
     return;
   }
 
-  Dmsg3(debuglevel, "Stop bsock timer %p tid=%s at %d.\n", wid,
-        edit_pthread(wid->tid, ed1, sizeof(ed1)), time(NULL));
+  Dmsg3(debuglevel, "Stop bsock timer %p tid=%s at %llu.\n", wid,
+        edit_pthread(wid->tid, ed1, sizeof(ed1)),
+        static_cast<long long unsigned>(time(NULL)));
   StopBtimer(wid);
 }
 
@@ -215,9 +217,10 @@ static void CallbackThreadTimer(watchdog_t* self)
   char ed1[50];
   btimer_t* wid = (btimer_t*)self->data;
 
-  Dmsg4(debuglevel, "thread timer %p kill %s tid=%p at %d.\n", self,
+  Dmsg4(debuglevel, "thread timer %p kill %s tid=%p at %llu.\n", self,
         wid->type == TYPE_BSOCK ? "bsock" : "thread",
-        edit_pthread(wid->tid, ed1, sizeof(ed1)), time(NULL));
+        edit_pthread(wid->tid, ed1, sizeof(ed1)),
+        static_cast<long long unsigned>(time(NULL)));
   if (wid->jcr) {
     Dmsg2(debuglevel, "killed JobId=%u Job=%s\n", wid->jcr->JobId,
           wid->jcr->Job);

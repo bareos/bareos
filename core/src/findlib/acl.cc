@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,6 +68,7 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "find.h"
+#include "lib/comm.h"
 
 #if !defined(HAVE_ACL) && !defined(HAVE_AFS_ACL)
 /**
@@ -103,7 +104,7 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
   if (acl_data->u.build->content_length <= 0) { return bacl_exit_ok; }
 
   // Send header
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
+  if (!sd->fsend(communication::stream_start, jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return bacl_exit_fatal;

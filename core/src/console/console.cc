@@ -552,7 +552,7 @@ static char** readline_completion(const char* text, int start, int)
   return (matches);
 }
 
-inline constexpr char eol = '\0';
+static char eol = '\0';
 static int EolCmd(FILE*, BareosSocket*)
 {
   if ((argc > 1) && (strchr("!$%&'()*+,-/:;<>?[]^`{|}~", argk[1][0]) != NULL)) {

@@ -52,6 +52,7 @@
 #include "lib/serial.h"
 #include "lib/compression.h"
 #include "lib/version.h"
+#include "stored/fd_comm.h"
 
 #ifdef HAVE_WIN32
 #  include "win32/findlib/win32.h"
@@ -92,9 +93,6 @@ const bool have_xattr = true;
 #else
 const bool have_xattr = false;
 #endif
-
-// Data received from Storage Daemon
-constexpr const char* rec_header = "rechdr %ld %ld %ld %ld %ld";
 
 // Forward referenced functions
 #if defined(HAVE_LIBZ)
@@ -494,8 +492,8 @@ void DoRestore(JobControlRecord* jcr)
     rctx.prev_stream = rctx.stream;
 
     // First we expect a Stream Record Header
-    if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
-               &rctx.full_stream, &rctx.size)
+    if (sscanf(sd->msg, storagedaemon::rec_header, &VolSessionId,
+               &VolSessionTime, &file_index, &rctx.full_stream, &rctx.size)
         != 5) {
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
@@ -556,7 +554,7 @@ void DoRestore(JobControlRecord* jcr)
 
         Dmsg3(100, "File %s\nattrib=%s\nattribsEx=%s\n", attr->fname,
               attr->attr, attr->attrEx);
-        Dmsg3(100, "=== message_length=%d attrExlen=%d msg=%s\n",
+        Dmsg3(100, "=== message_length=%d attrExlen=%zu msg=%s\n",
               sd->message_length, strlen(attr->attrEx), sd->msg);
 
         attr->data_stream = DecodeStat(attr->attr, &attr->statp,
@@ -1044,12 +1042,12 @@ ok_out:
         edit_uint64(jcr->JobBytes, ec1));
   if (have_acl && jcr->fd_impl->acl_data->u.parse->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         T_("Encountered %ld acl errors while doing restore\n"),
+         T_("Encountered %" PRIu32 " acl errors while doing restore\n"),
          jcr->fd_impl->acl_data->u.parse->nr_errors);
   }
   if (have_xattr && jcr->fd_impl->xattr_data->u.parse->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         T_("Encountered %ld xattr errors while doing restore\n"),
+         T_("Encountered %" PRIu32 " xattr errors while doing restore\n"),
          jcr->fd_impl->xattr_data->u.parse->nr_errors);
   }
   if (non_support_data > 1 || non_support_attr > 1) {

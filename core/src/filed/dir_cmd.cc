@@ -125,7 +125,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
                                          bool verbose);
 static bool response(JobControlRecord* jcr,
                      BareosSocket* sd,
-                     char* resp,
+                     const char* resp,
                      const char* cmd);
 static void FiledFreeJcr(JobControlRecord* jcr);
 static bool OpenSdReadSession(JobControlRecord* jcr);
@@ -2406,7 +2406,7 @@ static void FiledFreeJcr(JobControlRecord* jcr)
  */
 bool response(JobControlRecord* jcr,
               BareosSocket* sd,
-              char* resp,
+              const char* resp,
               const char* cmd)
 {
   if (sd->errors) { return false; }

@@ -49,6 +49,7 @@
 #include "lib/message_queue_item.h"
 #include "lib/thread_specific_data.h"
 #include "lib/bpipe.h"
+#include "dird/comm.h"
 
 // globals
 const char* working_directory = NULL; /* working directory path stored here */
@@ -72,7 +73,7 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
-constexpr const char* log_timestamp_format = "%d-%b %H:%M";
+static const char* log_timestamp_format = "%d-%b %H:%M";
 static void (*message_callback)(int type, const char* msg) = NULL;
 static FILE* trace_fd = NULL;
 #if defined(HAVE_WIN32)
@@ -821,8 +822,8 @@ void DispatchMessage(JobControlRecord* jcr,
         case MessageDestinationCode::kDirector:
           Dmsg1(850, "DIRECTOR for following msg: %s", msg);
           if (jcr && jcr->dir_bsock && !jcr->dir_bsock->errors) {
-            jcr->dir_bsock->fsend("Jmsg Job=%s type=%d level=%lld %s", jcr->Job,
-                                  type, mtime, msg);
+            jcr->dir_bsock->fsend(directordaemon::JobMessage, jcr->Job, type,
+                                  mtime, msg);
           } else {
             Dmsg1(800, "no jcr for following msg: %s", msg);
           }

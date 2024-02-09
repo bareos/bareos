@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <chrono>
 #include <variant>
+#include <type_traits>
 
 #if defined(HAVE_WIN32)
 #  include "bregex.h"
@@ -140,5 +141,10 @@ template <typename T> class result {
   // to std::string.
   std::variant<T, PoolMem> data;
 };
+
+template <class Enum> inline constexpr auto to_underlying(Enum e)
+{
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
 
 #endif  // BAREOS_LIB_UTIL_H_

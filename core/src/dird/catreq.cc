@@ -45,6 +45,7 @@
 #include "lib/edit.h"
 #include "lib/util.h"
 #include "lib/serial.h"
+#include "dird/comm.h"
 
 namespace directordaemon {
 
@@ -54,40 +55,6 @@ namespace directordaemon {
  */
 
 // Requests from the Storage daemon
-constexpr const char* Find_media
-    = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s "
-      "unwanted_volumes=%s\n";
-constexpr const char* Get_Vol_Info
-    = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
-constexpr const char* Update_media
-    = "CatReq Job=%127s UpdateMedia VolName=%s"
-      " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
-      " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
-      " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
-      " VolFirstWritten=%lld\n";
-constexpr const char* Create_job_media
-    = "CatReq Job=%127s CreateJobMedia "
-      " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
-      " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
-
-constexpr const char* Update_filelist = "Catreq Job=%127s UpdateFileList\n";
-
-constexpr const char* Update_jobrecord
-    = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
-constexpr const char* Delete_nulljobmediarecord
-    = "CatReq Job=%127s DeleteNullJobmediaRecords jobid=%u\n";
-
-// Responses sent to Storage daemon
-constexpr const char* OK_media
-    = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
-      " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
-      " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
-      " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
-      " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
-      " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
-constexpr const char* OK_create = "1000 OK CreateJobMedia\n";
-constexpr const char* OK_delete = "1000 OK DeleteNullJobmediaRecords\n";
-
 static int SendVolumeInfoToStorageDaemon(JobControlRecord* jcr,
                                          BareosSocket* sd,
                                          MediaDbRecord* mr)
@@ -252,7 +219,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       mr.LabelDate = jcr->start_time;
       mr.set_label_date = true;
       if (mr.InitialWrite == 0) { mr.InitialWrite = jcr->start_time; }
-      Dmsg2(400, "label=%d labeldate=%d\n", label, mr.LabelDate);
+      Dmsg2(400, "label=%d labeldate=%lld\n", label,
+            (long long int)mr.LabelDate);
     } else {
       // Sanity check for VolFiles to be increasing
       if (sdmr.VolFiles < mr.VolFiles) {
@@ -275,7 +243,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       // Sanity check for VolBytes to be increasing
       if (sdmr.VolBytes < mr.VolBytes) {
         Jmsg(jcr, M_INFO, 0,
-             T_("Ignoring Volume Bytes at %lld being set to %lld"
+             T_("Ignoring Volume Bytes at %" PRIu64 " being set to %" PRIu64
                 " for Volume \"%s\".\n"),
              mr.VolBytes, sdmr.VolBytes, mr.VolumeName);
         sdmr.VolBytes = mr.VolBytes;
@@ -294,8 +262,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
      * However, do so only if we are writing the tape, i.e.
      * the number of VolWrites has increased. */
     if (jcr->dir_impl->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
-      Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId,
-            jcr->dir_impl->res.write_storage->StorageId);
+      Dmsg2(050, "Update StorageId old=%" PRIdbid " new=%" PRId64 "\n",
+            mr.StorageId, jcr->dir_impl->res.write_storage->StorageId);
       // Update StorageId after write
       SetStorageidInMr(jcr->dir_impl->res.write_storage, &mr);
     } else {

@@ -18,18 +18,18 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#ifndef BAREOS_STORED_FD_COMM_H_
+#define BAREOS_STORED_FD_COMM_H_
 
-#ifndef BAREOS_DIRD_GETMSG_H_
-#define BAREOS_DIRD_GETMSG_H_
+#include <cinttypes>
 
-namespace directordaemon {
+namespace storagedaemon {
 
-bool response(JobControlRecord* jcr,
-              BareosSocket* fd,
-              const char* resp,
-              const char* cmd,
-              e_prtmsg PrintMessage);
+inline constexpr const char* OK_data = "3000 OK data\n";
+inline constexpr const char* FD_error = "3000 error\n";
+inline constexpr const char* rec_header
+    = "rechdr %" PRIu32 " %" PRIu32 " %" PRId32 " %" PRId32 " %" PRIu32 "";
 
-} /* namespace directordaemon */
+} /* namespace storagedaemon */
 
-#endif  // BAREOS_DIRD_GETMSG_H_
+#endif  // BAREOS_STORED_FD_COMM_H_
