@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,9 +54,9 @@ namespace directordaemon {
 /* Forward referenced functions */
 static char* find_msg_start(char* msg);
 
-static char Job_status[] = "Status Job=%127s JobStatus=%d\n";
+constexpr const char* Job_status = "Status Job=%127s JobStatus=%d\n";
 
-static char OK_msg[] = "1000 OK\n";
+constexpr const char* OK_msg = "1000 OK\n";
 
 static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
 {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,30 +51,30 @@
 namespace directordaemon {
 
 /* Commands sent to Storage daemon */
-static char readlabelcmd[] = "readlabel %s Slot=%hd drive=%hd\n";
-static char changerlistallcmd[] = "autochanger listall %s \n";
-static char changerlistcmd[] = "autochanger list %s \n";
-static char changerslotscmd[] = "autochanger slots %s\n";
-static char changerdrivescmd[] = "autochanger drives %s\n";
-static char changertransfercmd[] = "autochanger transfer %s %hd %hd \n";
-static char changervolopslotcmd[] = "%s %s drive=%hd slot=%hd\n";
-static char changervolopcmd[] = "%s %s drive=%hd\n";
-static char canceljobcmd[] = "cancel Job=%s\n";
-static char dotstatuscmd[] = ".status %s\n";
-static char statuscmd[] = "status %s\n";
-static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
-static char pluginoptionscmd[] = "pluginoptions %s\n";
-static char getSecureEraseCmd[] = "getSecureEraseCmd\n";
+constexpr const char* readlabelcmd = "readlabel %s Slot=%hd drive=%hd\n";
+constexpr const char* changerlistallcmd = "autochanger listall %s \n";
+constexpr const char* changerlistcmd = "autochanger list %s \n";
+constexpr const char* changerslotscmd = "autochanger slots %s\n";
+constexpr const char* changerdrivescmd = "autochanger drives %s\n";
+constexpr const char* changertransfercmd = "autochanger transfer %s %hd %hd \n";
+constexpr const char* changervolopslotcmd = "%s %s drive=%hd slot=%hd\n";
+constexpr const char* changervolopcmd = "%s %s drive=%hd\n";
+constexpr const char* canceljobcmd = "cancel Job=%s\n";
+constexpr const char* dotstatuscmd = ".status %s\n";
+constexpr const char* statuscmd = "status %s\n";
+constexpr const char* bandwidthcmd = "setbandwidth=%lld Job=%s\n";
+constexpr const char* pluginoptionscmd = "pluginoptions %s\n";
+constexpr const char* getSecureEraseCmd = "getSecureEraseCmd\n";
 
 /* Responses received from Storage daemon */
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKpluginoptions[] = "2000 OK plugin options\n";
-static char OKSecureEraseCmd[] = "2000 OK SDSecureEraseCmd %s\n";
+constexpr const char* OKBandwidth = "2000 OK Bandwidth\n";
+constexpr const char* OKpluginoptions = "2000 OK plugin options\n";
+constexpr const char* OKSecureEraseCmd = "2000 OK SDSecureEraseCmd %s\n";
 
 /* Commands received from storage daemon that need scanning */
-static char readlabelresponse[] = "3001 Volume=%s Slot=%hd";
-static char changerslotsresponse[] = "slots=%hd\n";
-static char changerdrivesresponse[] = "drives=%hd\n";
+constexpr const char* readlabelresponse = "3001 Volume=%s Slot=%hd";
+constexpr const char* changerslotsresponse = "slots=%hd\n";
+constexpr const char* changerdrivesresponse = "drives=%hd\n";
 
 static void TerminateAndCloseJcrStoreSocket(JobControlRecord* jcr)
 {

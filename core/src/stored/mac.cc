@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,19 +50,20 @@
 namespace storagedaemon {
 
 // Responses sent to the Director
-static char Job_end[]
+constexpr const char* Job_end
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 // Responses received from Storage Daemon
-static char OK_start_replicate[] = "3000 OK start replicate ticket = %d\n";
-static char OK_data[] = "3000 OK data\n";
-static char OK_replicate[] = "3000 OK replicate data\n";
-static char OK_end_replicate[] = "3000 OK end replicate\n";
+constexpr const char* OK_start_replicate
+    = "3000 OK start replicate ticket = %d\n";
+constexpr const char* OK_data = "3000 OK data\n";
+constexpr const char* OK_replicate = "3000 OK replicate data\n";
+constexpr const char* OK_end_replicate = "3000 OK end replicate\n";
 
 // Commands sent to Storage Daemon
-static char start_replicate[] = "start replicate\n";
-static char ReplicateData[] = "replicate data %d\n";
-static char end_replicate[] = "end replicate\n";
+constexpr const char* start_replicate = "start replicate\n";
+constexpr const char* ReplicateData = "replicate data %d\n";
+constexpr const char* end_replicate = "end replicate\n";
 
 
 /* get information from first original SOS label for our job */

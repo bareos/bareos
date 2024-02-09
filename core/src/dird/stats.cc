@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,14 +42,15 @@
 namespace directordaemon {
 
 // Commands received from storage daemon that need scanning
-static char DevStats[]
+constexpr const char* DevStats
     = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
       "NumWaiting=%lu, NumWriters=%lu, "
       "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
       "VolFiles=%llu, "
       "VolBlocks=%llu";
-static char TapeAlerts[] = "Tapealerts [%lld]: Device=%s TapeAlert=%llu";
-static char JobStats[]
+constexpr const char* TapeAlerts
+    = "Tapealerts [%lld]: Device=%s TapeAlert=%llu";
+constexpr const char* JobStats
     = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
 
 static bool quit = false;

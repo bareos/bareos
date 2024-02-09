@@ -70,8 +70,8 @@ static void StatusSlots(UaContext* ua, StorageResource* store);
 static void StatusContentApi(UaContext* ua, StorageResource* store);
 static void StatusContentJson(UaContext* ua, StorageResource* store);
 
-static char OKdotstatus[] = "1000 OK .status\n";
-static char DotStatusJob[] = "JobId=%s JobStatus=%c JobErrors=%d\n";
+constexpr const char* OKdotstatus = "1000 OK .status\n";
+constexpr const char* DotStatusJob = "JobId=%s JobStatus=%c JobErrors=%d\n";
 
 static void ClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 {

@@ -94,7 +94,7 @@ const bool have_xattr = false;
 #endif
 
 // Data received from Storage Daemon
-static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
+constexpr const char* rec_header = "rechdr %ld %ld %ld %ld %ld";
 
 // Forward referenced functions
 #if defined(HAVE_LIBZ)

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -48,10 +48,10 @@ static void ListStatusHeader(StatusPacket* sp);
 static const char* JobLevelToString(int level);
 
 /* Static variables */
-static char qstatus[] = ".status %s\n";
+constexpr const char* qstatus = ".status %s\n";
 
-static char OKqstatus[] = "2000 OK .status\n";
-static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
+constexpr const char* OKqstatus = "2000 OK .status\n";
+constexpr const char* DotStatusJob = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 #if defined(HAVE_WIN32)
 static int privs = 0;

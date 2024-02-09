@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,7 +51,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Imported variables */
 
 /* Static variables */
-static char serrmsg[] = "3900 Invalid command\n";
+constexpr const char* serrmsg = "3900 Invalid command\n";
 
 /* Imported functions */
 
@@ -74,15 +74,16 @@ static struct s_sd_cmds sd_cmds[] = {
 };
 
 // Responses sent to the Remote Storage daemon
-static char NO_open[] = "3901 Error replicate session already open\n";
-static char NOT_opened[] = "3902 Error replicate session not opened\n";
-static char ERROR_replicate[] = "3903 Error replicate data\n";
-static char OK_end_replicate[] = "3000 OK end replicate\n";
-static char OK_start_replicate[] = "3000 OK start replicate ticket = %d\n";
+constexpr const char* NO_open = "3901 Error replicate session already open\n";
+constexpr const char* NOT_opened = "3902 Error replicate session not opened\n";
+constexpr const char* ERROR_replicate = "3903 Error replicate data\n";
+constexpr const char* OK_end_replicate = "3000 OK end replicate\n";
+constexpr const char* OK_start_replicate
+    = "3000 OK start replicate ticket = %d\n";
 
 // Responses sent to the Director
-static char Job_start[] = "3010 Job %s start\n";
-static char Job_end[]
+constexpr const char* Job_start = "3010 Job %s start\n";
+constexpr const char* Job_end
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**

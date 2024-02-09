@@ -60,15 +60,16 @@
 namespace directordaemon {
 
 /* Commands sent to File daemon */
-static char backupcmd[] = "backup FileIndex=%ld\n";
-static char storaddrcmd[] = "storage address=%s port=%d ssl=%d\n";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
+constexpr const char* backupcmd = "backup FileIndex=%ld\n";
+constexpr const char* storaddrcmd = "storage address=%s port=%d ssl=%d\n";
+constexpr const char* passiveclientcmd
+    = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-static char OKbackup[] = "2000 OK backup\n";
-static char OKstore[] = "2000 OK storage\n";
-static char OKpassiveclient[] = "2000 OK passive client\n";
-static char EndJob[]
+constexpr const char* OKbackup = "2000 OK backup\n";
+constexpr const char* OKstore = "2000 OK storage\n";
+constexpr const char* OKpassiveclient = "2000 OK passive client\n";
+constexpr const char* EndJob
     = "2800 End Job TermCode=%d JobFiles=%u "
       "ReadBytes=%llu JobBytes=%llu Errors=%u "
       "VSS=%d Encrypt=%d\n";

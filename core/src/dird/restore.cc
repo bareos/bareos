@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,22 +58,25 @@
 namespace directordaemon {
 
 /* Commands sent to File daemon */
-static char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
-static char restorecmdR[] = "restore replace=%c prelinks=%d regexwhere=%s\n";
-static char storaddrcmd[]
+constexpr const char* restorecmd = "restore replace=%c prelinks=%d where=%s\n";
+constexpr const char* restorecmdR
+    = "restore replace=%c prelinks=%d regexwhere=%s\n";
+constexpr const char* storaddrcmd
     = "storage address=%s port=%d ssl=%d Authorization=%s\n";
-static char setauthorizationcmd[] = "setauthorization Authorization=%s\n";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
+constexpr const char* setauthorizationcmd
+    = "setauthorization Authorization=%s\n";
+constexpr const char* passiveclientcmd
+    = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-static char OKrestore[] = "2000 OK restore\n";
-static char OKstore[] = "2000 OK storage\n";
-static char OKstoreend[] = "2000 OK storage end\n";
-static char OKAuthorization[] = "2000 OK Authorization\n";
-static char OKpassiveclient[] = "2000 OK passive client\n";
+constexpr const char* OKrestore = "2000 OK restore\n";
+constexpr const char* OKstore = "2000 OK storage\n";
+constexpr const char* OKstoreend = "2000 OK storage end\n";
+constexpr const char* OKAuthorization = "2000 OK Authorization\n";
+constexpr const char* OKpassiveclient = "2000 OK passive client\n";
 
 /* Responses received from the Storage daemon */
-static char OKbootstrap[] = "3000 OK bootstrap\n";
+constexpr const char* OKbootstrap = "3000 OK bootstrap\n";
 
 static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
 {

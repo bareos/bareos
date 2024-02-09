@@ -64,30 +64,31 @@ namespace directordaemon {
 const int debuglevel = 400;
 
 /* Commands sent to File daemon */
-static char filesetcmd[] = "fileset%s\n"; /* set full fileset */
-static char jobcmd[] = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
-static char jobcmdssl[]
+constexpr const char* filesetcmd = "fileset%s\n"; /* set full fileset */
+constexpr const char* jobcmd
+    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
+constexpr const char* jobcmdssl
     = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
 /* Note, mtime_only is not used here -- implemented as file option */
-static char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
-static char runscriptcmd[]
+constexpr const char* levelcmd = "level = %s%s%s mtime_only=%d %s%s\n";
+constexpr const char* runscriptcmd
     = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
-static char runbeforenowcmd[] = "RunBeforeNow\n";
-static char restoreobjectendcmd[] = "restoreobject end\n";
-static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
-static char pluginoptionscmd[] = "pluginoptions %s\n";
-static char getSecureEraseCmd[] = "getSecureEraseCmd\n";
+constexpr const char* runbeforenowcmd = "RunBeforeNow\n";
+constexpr const char* restoreobjectendcmd = "restoreobject end\n";
+constexpr const char* bandwidthcmd = "setbandwidth=%lld Job=%s\n";
+constexpr const char* pluginoptionscmd = "pluginoptions %s\n";
+constexpr const char* getSecureEraseCmd = "getSecureEraseCmd\n";
 
 /* Responses received from File daemon */
-static char OKinc[] = "2000 OK include\n";
-static char OKjob[] = "2000 OK Job";
-static char OKlevel[] = "2000 OK level\n";
-static char OKRunScript[] = "2000 OK RunScript\n";
-static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKPluginOptions[] = "2000 OK PluginOptions\n";
-static char OKgetSecureEraseCmd[] = "2000 OK FDSecureEraseCmd %s\n";
+constexpr const char* OKinc = "2000 OK include\n";
+constexpr const char* OKjob = "2000 OK Job";
+constexpr const char* OKlevel = "2000 OK level\n";
+constexpr const char* OKRunScript = "2000 OK RunScript\n";
+constexpr const char* OKRunBeforeNow = "2000 OK RunBeforeNow\n";
+constexpr const char* OKRestoreObject = "2000 OK ObjectRestored\n";
+constexpr const char* OKBandwidth = "2000 OK Bandwidth\n";
+constexpr const char* OKPluginOptions = "2000 OK PluginOptions\n";
+constexpr const char* OKgetSecureEraseCmd = "2000 OK FDSecureEraseCmd %s\n";
 
 /* External functions */
 extern DirectorResource* director;

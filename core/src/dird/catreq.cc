@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,39 +54,39 @@ namespace directordaemon {
  */
 
 // Requests from the Storage daemon
-static char Find_media[]
+constexpr const char* Find_media
     = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s "
       "unwanted_volumes=%s\n";
-static char Get_Vol_Info[]
+constexpr const char* Get_Vol_Info
     = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
-static char Update_media[]
+constexpr const char* Update_media
     = "CatReq Job=%127s UpdateMedia VolName=%s"
       " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
       " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
       " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
       " VolFirstWritten=%lld\n";
-static char Create_job_media[]
+constexpr const char* Create_job_media
     = "CatReq Job=%127s CreateJobMedia "
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
 
-static char Update_filelist[] = "Catreq Job=%127s UpdateFileList\n";
+constexpr const char* Update_filelist = "Catreq Job=%127s UpdateFileList\n";
 
-static char Update_jobrecord[]
+constexpr const char* Update_jobrecord
     = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
-static char Delete_nulljobmediarecord[]
+constexpr const char* Delete_nulljobmediarecord
     = "CatReq Job=%127s DeleteNullJobmediaRecords jobid=%u\n";
 
 // Responses sent to Storage daemon
-static char OK_media[]
+constexpr const char* OK_media
     = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
       " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
       " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
       " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
       " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
       " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
-static char OK_create[] = "1000 OK CreateJobMedia\n";
-static char OK_delete[] = "1000 OK DeleteNullJobmediaRecords\n";
+constexpr const char* OK_create = "1000 OK CreateJobMedia\n";
+constexpr const char* OK_delete = "1000 OK DeleteNullJobmediaRecords\n";
 
 static int SendVolumeInfoToStorageDaemon(JobControlRecord* jcr,
                                          BareosSocket* sd,

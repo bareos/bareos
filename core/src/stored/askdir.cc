@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,31 +51,32 @@ static const int debuglevel = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests sent to the Director */
-static char Find_media[]
+constexpr const char* Find_media
     = "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s "
       "unwanted_volumes=%s\n";
-static char Get_Vol_Info[] = "CatReq Job=%s GetVolInfo VolName=%s write=%d\n";
-static char Update_media[]
+constexpr const char* Get_Vol_Info
+    = "CatReq Job=%s GetVolInfo VolName=%s write=%d\n";
+constexpr const char* Update_media
     = "CatReq Job=%s UpdateMedia VolName=%s"
       " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%s VolMounts=%u"
       " VolErrors=%u VolWrites=%u MaxVolBytes=%s EndTime=%s VolStatus=%s"
       " Slot=%d relabel=%d InChanger=%d VolReadTime=%s VolWriteTime=%s"
       " VolFirstWritten=%s\n";
-static char Create_job_media[]
+constexpr const char* Create_job_media
     = "CatReq Job=%s CreateJobMedia"
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
 
-static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
+constexpr const char* Update_filelist = "Catreq Job=%s UpdateFileList\n";
 
-static char Update_jobrecord[]
+constexpr const char* Update_jobrecord
     = "Catreq Job=%s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
 
-static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
+constexpr const char* FileAttributes = "UpdCat Job=%s FileAttributes ";
 
 
 /* Responses received from the Director */
-static char OK_media[]
+constexpr const char* OK_media
     = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
       " VolBlocks=%lu VolBytes=%lld VolMounts=%lu VolErrors=%lu VolWrites=%lu"
       " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
@@ -83,7 +84,7 @@ static char OK_media[]
       " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
       " LabelType=%ld MediaId=%lld EncryptionKey=%127s"
       " MinBlocksize=%lu MaxBlocksize=%lu\n";
-static char OK_create[] = "1000 OK CreateJobMedia\n";
+constexpr const char* OK_create = "1000 OK CreateJobMedia\n";
 
 /**
  * Common routine for:

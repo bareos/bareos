@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,17 +64,17 @@ static void PopReserveMessages(JobControlRecord* jcr);
 // void SwitchDevice(DeviceControlRecord *dcr, Device *dev);
 
 /* Requests from the Director daemon */
-static char use_storage[]
+constexpr const char* use_storage
     = "use storage=%127s media_type=%127s "
       "pool_name=%127s pool_type=%127s append=%d copy=%d stripe=%d\n";
-static char use_device[] = "use device=%127s\n";
+constexpr const char* use_device = "use device=%127s\n";
 
 /* Responses sent to Director daemon */
-static char OK_device[] = "3000 OK use device device=%s\n";
-static char NO_device[]
+constexpr const char* OK_device = "3000 OK use device device=%s\n";
+constexpr const char* NO_device
     = "3924 Device \"%s\" not in SD Device"
       " resources or no matching Media Type.\n";
-static char BAD_use[] = "3913 Bad use command: %s\n";
+constexpr const char* BAD_use = "3913 Bad use command: %s\n";
 
 bool use_cmd(JobControlRecord* jcr)
 {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,11 +49,11 @@ namespace storagedaemon {
 extern void* start_heap;
 
 /* Static variables */
-static char statuscmd[] = "status %s\n";
-static char dotstatuscmd[] = ".status %127s\n";
+constexpr const char* statuscmd = "status %s\n";
+constexpr const char* dotstatuscmd = ".status %127s\n";
 
-static char OKdotstatus[] = "3000 OK .status\n";
-static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
+constexpr const char* OKdotstatus = "3000 OK .status\n";
+constexpr const char* DotStatusJob = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 /* Forward referenced functions */
 static void SendBlockedStatus(Device* dev, StatusPacket* sp);

@@ -48,7 +48,7 @@ namespace storagedaemon {
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests from the Director daemon */
-static char jobcmd[]
+constexpr const char* jobcmd
     = "JobId=%d job=%127s job_name=%127s client_name=%127s "
       "type=%d level=%d FileSet=%127s NoAttr=%d SpoolAttr=%d FileSetMD5=%127s "
       "SpoolData=%d PreferMountedVols=%d SpoolSize=%127s "
@@ -56,10 +56,11 @@ static char jobcmd[]
       "Protocol=%d BackupFormat=%127s\n";
 
 /* Responses sent to Director daemon */
-static char OK_job[] = "3000 OK Job SDid=%u SDtime=%u Authorization=%s\n";
-static char OK_nextrun[] = "3000 OK Job Authorization=%s\n";
-static char BAD_job[] = "3915 Bad Job command. stat=%d CMD: %s\n";
-static char Job_end[]
+constexpr const char* OK_job
+    = "3000 OK Job SDid=%u SDtime=%u Authorization=%s\n";
+constexpr const char* OK_nextrun = "3000 OK Job Authorization=%s\n";
+constexpr const char* BAD_job = "3915 Bad Job command. stat=%d CMD: %s\n";
+constexpr const char* Job_end
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**

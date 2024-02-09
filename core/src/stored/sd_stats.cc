@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,15 +38,16 @@
 
 namespace storagedaemon {
 
-static char OKstats[] = "2000 OK statistics\n";
-static char DevStats[]
+constexpr const char* OKstats = "2000 OK statistics\n";
+constexpr const char* DevStats
     = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
       "NumWaiting=%ld, NumWriters=%ld, "
       "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
       "VolFiles=%llu, "
       "VolBlocks=%llu\n";
-static char TapeAlerts[] = "Tapealerts [%lld]: Device=%s TapeAlert=%llu\n";
-static char JobStats[]
+constexpr const char* TapeAlerts
+    = "Tapealerts [%lld]: Device=%s TapeAlert=%llu\n";
+constexpr const char* JobStats
     = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s\n";
 
 /* Static globals */
