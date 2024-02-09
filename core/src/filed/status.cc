@@ -127,7 +127,7 @@ static void ListStatusHeader(StatusPacket* sp)
 #endif
 
   len = Mmsg(msg,
-             T_(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
+             T_(" Sizeof: boffset_t=%zu size_t=%zu debug=%d trace=%d "
                 "bwlimit=%skB/s\n"),
              sizeof(boffset_t), sizeof(size_t), debug_level, GetTrace(),
              edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
@@ -216,7 +216,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
 
     found = true;
     if (njcr->store_bsock) {
-      len = Mmsg(msg, "    SDReadSeqNo=%lld fd=%d\n",
+      len = Mmsg(msg, "    SDReadSeqNo=%" PRIu64 " fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {
@@ -285,7 +285,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
     }
 
     if (njcr->store_bsock) {
-      len = Mmsg(msg, " SDReadSeqNo=%lld\n fd=%d\n",
+      len = Mmsg(msg, " SDReadSeqNo=%" PRIu64 "\n fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {
@@ -438,7 +438,7 @@ bool QstatusCmd(JobControlRecord* jcr)
   UnbashSpaces(cmd);
 
   if (bstrcmp(cmd, "current")) {
-    dir->fsend(OKqstatus, cmd);
+    dir->fsend(OKqstatus);
     foreach_jcr (njcr) {
       if (njcr->JobId != 0) {
         dir->fsend(DotStatusJob, njcr->JobId, njcr->getJobStatus(),
@@ -447,7 +447,7 @@ bool QstatusCmd(JobControlRecord* jcr)
     }
     endeach_jcr(njcr);
   } else if (bstrcmp(cmd, "last")) {
-    dir->fsend(OKqstatus, cmd);
+    dir->fsend(OKqstatus);
     if (RecentJobResultsList::Count() > 0) {
       RecentJobResultsList::JobResult job
           = RecentJobResultsList::GetMostRecentJobResult();

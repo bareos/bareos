@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -161,9 +161,10 @@ void SchedulerPrivate::WaitForJobsToRun()
       time_t wait_interval{std::min(time_adapter->default_wait_interval_,
                                     next_job.runtime - now)};
       Dmsg2(local_debuglevel,
-            "Scheduler: WaitForJobsToRun is sleeping for %d seconds. Next "
+            "Scheduler: WaitForJobsToRun is sleeping for %lld seconds. Next "
             "job: %s.",
-            wait_interval, next_job.job->resource_name_);
+            static_cast<long long>(wait_interval),
+            next_job.job->resource_name_);
 
       time_adapter->time_source_->SleepFor(seconds(wait_interval));
     }

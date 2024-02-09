@@ -60,7 +60,7 @@
 namespace directordaemon {
 
 /* Commands sent to File daemon */
-constexpr const char* backupcmd = "backup FileIndex=%ld\n";
+constexpr const char* backupcmd = "backup FileIndex=%" PRIu32 "\n";
 constexpr const char* storaddrcmd = "storage address=%s port=%d ssl=%d\n";
 constexpr const char* passiveclientcmd
     = "passive client address=%s port=%d ssl=%d\n";
@@ -1062,7 +1062,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
          if (jcr->HasBase) {
             Mmsg(client_options, T_(
                  "  Software Compression:   %s%s\n"
-                 "  Base files/Used files:  %lld/%lld (%.2f%%)\n"
+                 "  Base files/Used files:  %" PRIu64 "/%" PRIu64 "(%.2f%%)\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
                  "  Accurate:               %s\n"),

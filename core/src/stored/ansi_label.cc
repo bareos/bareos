@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -330,7 +330,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
         if (status != sizeof(label)) {
           BErrNo be;
           Jmsg3(jcr, M_FATAL, 0,
-                T_("Could not write ANSI VOL1 label. Wanted size=%d got=%d "
+                T_("Could not write ANSI VOL1 label. Wanted size=%zu got=%d "
                    "ERR=%s\n"),
                 sizeof(label), status, be.bstrerror());
           return false;

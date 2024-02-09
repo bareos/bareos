@@ -262,7 +262,7 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
         client->resource_name_, client->catalog->resource_name_);
   } else {
     ua->InfoMsg(
-        T_("Found Files in %d Jobs for client \"%s\" in catalog \"%s\".\n"),
+        T_("Found Files in %zu Jobs for client \"%s\" in catalog \"%s\".\n"),
         del.size(), client->resource_name_, client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(T_("Purge canceled.\n"));
@@ -306,14 +306,14 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
     ua->WarningMsg(T_("No Jobs found for pool %s to purge from %s catalog.\n"),
                    pool_record->Name, client->catalog->resource_name_);
   } else {
-    ua->InfoMsg(T_("Found %d Jobs for pool \"%s\" in catalog \"%s\".\n"),
+    ua->InfoMsg(T_("Found %zu Jobs for pool \"%s\" in catalog \"%s\".\n"),
                 delete_list.size(), pool_record->Name,
                 client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(T_("Purge canceled.\n"));
     } else {
       PurgeJobListFromCatalog(ua, delete_list);
-      ua->InfoMsg(T_("%d Job%s on Pool \"%s\" purged from catalog.\n"),
+      ua->InfoMsg(T_("%zu Job%s on Pool \"%s\" purged from catalog.\n"),
                   delete_list.size(), delete_list.size() <= 1 ? "" : "s",
                   pool_record->Name);
     }
@@ -380,14 +380,14 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
         T_("No Jobs found for client %s to purge from %s catalog.\n"),
         client->resource_name_, client->catalog->resource_name_);
   } else {
-    ua->InfoMsg(T_("Found %d Jobs for client \"%s\" in catalog \"%s\".\n"),
+    ua->InfoMsg(T_("Found %zu Jobs for client \"%s\" in catalog \"%s\".\n"),
                 delete_list.size(), client->resource_name_,
                 client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(T_("Purge canceled.\n"));
     } else {
       PurgeJobListFromCatalog(ua, delete_list);
-      ua->InfoMsg(T_("%d Job%s on client \"%s\" purged from catalog.\n"),
+      ua->InfoMsg(T_("%zu Job%s on client \"%s\" purged from catalog.\n"),
                   delete_list.size(), delete_list.size() <= 1 ? "" : "s",
                   client->resource_name_);
     }
@@ -424,7 +424,7 @@ std::string PrepareJobidsTobedeleted(UaContext* ua,
 // Delete given jobids (all records) from the catalog.
 void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
 {
-  Dmsg1(150, "num_ids=%d\n", deletion_list.size());
+  Dmsg1(150, "num_ids=%zu\n", deletion_list.size());
 
   std::string jobids_to_delete_string
       = PrepareJobidsTobedeleted(ua, deletion_list);
@@ -432,8 +432,8 @@ void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
     ua->SendMsg(T_("No jobids found to be purged\n"));
     return;
   }
-  ua->SendMsg(T_("Purging the following %d JobIds: %s\n"), deletion_list.size(),
-              jobids_to_delete_string.c_str());
+  ua->SendMsg(T_("Purging the following %zu JobIds: %s\n"),
+              deletion_list.size(), jobids_to_delete_string.c_str());
   PurgeJobsFromCatalog(ua, jobids_to_delete_string.c_str());
 }
 
@@ -511,7 +511,8 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
 
     Mmsg(query,
          "SELECT DISTINCT JobMedia.JobId FROM JobMedia, Job "
-         "WHERE JobMedia.MediaId=%lu "
+         "WHERE JobMedia.MediaId=%" PRIdbid
+         " "
          "AND Job.JobId = JobMedia.JobId "
          "AND Job.JobStatus in (%s)",
          mr->MediaId, jobStatuses.c_str());
@@ -534,13 +535,13 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
     ua->WarningMsg(T_("No Jobs found for media %s to purge from %s catalog.\n"),
                    mr->VolumeName, client->catalog->resource_name_);
   } else {
-    ua->InfoMsg(T_("Found %d Jobs for media \"%s\" in catalog \"%s\".\n"),
+    ua->InfoMsg(T_("Found %zu Jobs for media \"%s\" in catalog \"%s\".\n"),
                 lst.size(), mr->VolumeName, client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ", true)) {
       ua->InfoMsg(T_("Purge canceled.\n"));
     } else {
       PurgeJobsFromCatalog(ua, jobids.c_str());
-      ua->InfoMsg(T_("%d Jobs%s on Volume \"%s\" purged from catalog.\n"),
+      ua->InfoMsg(T_("%zu Jobs%s on Volume \"%s\" purged from catalog.\n"),
                   lst.size(), lst.size() <= 1 ? "" : "s", mr->VolumeName);
     }
   }
@@ -573,7 +574,8 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
   PoolMem query(PM_MESSAGE);
   struct s_count_ctx cnt;
   cnt.count = 0;
-  Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%lu LIMIT 1", mr->MediaId);
+  Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%" PRIdbid " LIMIT 1",
+       mr->MediaId);
   if (!ua->db->SqlQuery(query.c_str(), DelCountHandler,
                         static_cast<void*>(&cnt))) {
     ua->ErrorMsg("%s", ua->db->strerror());
@@ -777,7 +779,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
                              sd);
       }
     } else {
-      Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr_temp.MediaId);
+      Dmsg1(0, "Can't find MediaId=%" PRIdbid "\n", mr_temp.MediaId);
     }
   }
 

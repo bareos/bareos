@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,6 +63,7 @@
 #include "lib/bsock.h"
 #include "include/jcr.h"
 #include "lib/serial.h"
+#include "stored/fd_comm.h"
 
 static std::string error_message_disabling_xattributes{
     T_("Disabling restore of XATTRs on this filesystem, "
@@ -106,7 +107,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   }
 
   // Send header
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
+  if (!sd->fsend(storagedaemon::stream_start, jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;

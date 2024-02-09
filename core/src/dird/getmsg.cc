@@ -223,17 +223,17 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
     /* Here we expact a CatReq message
      *   CatReq Job=nn Catalog-Request-Message */
     if (bs->msg[0] == 'C') { /* Catalog request */
-      Dmsg2(900, "Catalog req jcr 0x%x: %s", jcr, bs->msg);
+      Dmsg2(900, "Catalog req jcr %p: %s", jcr, bs->msg);
       CatalogRequest(jcr, bs);
       continue;
     }
     if (bs->msg[0] == 'U') { /* SD sending attributes */
-      Dmsg2(900, "Catalog upd jcr 0x%x: %s", jcr, bs->msg);
+      Dmsg2(900, "Catalog upd jcr %p: %s", jcr, bs->msg);
       CatalogUpdate(jcr, bs);
       continue;
     }
     if (bs->msg[0] == 'B') { /* SD sending file spool attributes */
-      Dmsg2(100, "Blast attributes jcr 0x%x: %s", jcr, bs->msg);
+      Dmsg2(100, "Blast attributes jcr %p: %s", jcr, bs->msg);
       char filename[256];
       if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s", Job, filename)
           != 2) {

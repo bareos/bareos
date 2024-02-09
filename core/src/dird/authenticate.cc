@@ -170,8 +170,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
     const char* fmt
         = T_("Unable to authenticate with File daemon at \"%s:%d\"\n");
     snprintf(msg.data(), msg.size(), fmt, fd->host(), fd->port());
-    Dmsg0(debuglevel, msg.data());
-    Jmsg(jcr, M_FATAL, 0, msg.data());
+    Dmsg0(debuglevel, "%s", msg.data());
+    Jmsg(jcr, M_FATAL, 0, "%s", msg.data());
     return false;
   }
 

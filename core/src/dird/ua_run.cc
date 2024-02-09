@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -317,7 +317,7 @@ bool reRunCmd(UaContext* ua, const char*)
 
     dbid_list ids;
     PoolMem query(PM_MESSAGE);
-    Mmsg(query, select.c_str());
+    PmStrcpy(query, select.c_str());
     ua->db->GetQueryDbids(ua->jcr, query, ids);
 
     if (!ids.size()) {
@@ -485,7 +485,7 @@ try_again:
   if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd))
       || bstrncasecmp(ua->cmd, T_("yes"), strlen(ua->cmd))) {
     JobId_t JobId;
-    Dmsg1(800, "Calling RunJob job=%x\n", jcr->dir_impl->res.job);
+    Dmsg1(800, "Calling RunJob job=%p\n", jcr->dir_impl->res.job);
 
   start_job:
     Dmsg3(100, "JobId=%u using pool %s priority=%d\n", (int)jcr->JobId,

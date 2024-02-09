@@ -25,8 +25,6 @@
 
 namespace communication {
 
-inline constexpr const char* stream_start = "%" PRId32 " %" PRId32 " 0";
-
 }  // namespace communication
 
 #endif  // BAREOS_LIB_COMM_H_

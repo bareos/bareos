@@ -112,7 +112,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
 
   if (Bstrcasecmp(ua->argk[1], "dir")) {
     if (Bstrcasecmp(ua->argk[2], "current")) {
-      ua->SendMsg(OKdotstatus, ua->argk[2]);
+      ua->SendMsg(OKdotstatus);
       foreach_jcr (njcr) {
         if (njcr->JobId != 0
             && ua->AclAccessOk(Job_ACL,
@@ -123,7 +123,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
       }
       endeach_jcr(njcr);
     } else if (Bstrcasecmp(ua->argk[2], "last")) {
-      ua->SendMsg(OKdotstatus, ua->argk[2]);
+      ua->SendMsg(OKdotstatus);
       if (RecentJobResultsList::Count() > 0) {
         RecentJobResultsList::JobResult job
             = RecentJobResultsList::GetMostRecentJobResult();
@@ -772,7 +772,7 @@ start_again:
               T_("Overrides"));
   ua->SendMsg(
       "==============================================================\n");
-  ua->SendMsg(overview.c_str());
+  ua->SendMsg("%s", overview.c_str());
   ua->SendMsg("====\n");
 }
 

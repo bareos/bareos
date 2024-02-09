@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1301,9 +1301,9 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     if (OK) {
       for (TREE_NODE* node = FirstTreeNode(tree.root); node;
            node = NextTreeNode(node)) {
-        Dmsg2(400, "FI=%d node=0x%x\n", node->FileIndex, node);
+        Dmsg2(400, "FI=%" PRIu32 "node=%p\n", node->FileIndex, node);
         if (node->extract || node->extract_dir) {
-          Dmsg3(400, "JobId=%lld type=%d FI=%d\n", (uint64_t)node->JobId,
+          Dmsg3(400, "JobId=%" PRId64 "type=%d FI=%d\n", (uint64_t)node->JobId,
                 node->type, node->FileIndex);
           /* TODO: optimize bsr insertion when jobid are non sorted */
           AddDeltaListFindex(rx, node->delta_list);

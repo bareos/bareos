@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -248,8 +248,8 @@ int InsertTreeHandler(void* ctx, int, char** row)
   node->fhinfo = str_to_int64(row[6]);
   node->fhnode = str_to_int64(row[7]);
   Dmsg8(150,
-        "node=0x%p JobId=%s FileIndex=%s Delta=%s node.delta=%d LinkFI=%d, "
-        "fhinfo=%d, fhnode=%d\n",
+        "node=%p JobId=%s FileIndex=%s Delta=%s node.delta=%d LinkFI=%d, "
+        "fhinfo=%" PRIu64 ", fhnode=%" PRIu64 "\n",
         node, row[3], row[2], row[5], node->delta_seq, LinkFI, node->fhinfo,
         node->fhnode);
 

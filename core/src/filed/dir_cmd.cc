@@ -257,7 +257,8 @@ constexpr const char* append_data = "append data %d\n";
 constexpr const char* append_end = "append end session %d\n";
 constexpr const char* append_close = "append close session %d\n";
 constexpr const char* read_open
-    = "read open session = %s %ld %ld %ld %ld %ld %ld\n";
+    = "read open session = %s %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32
+      " %" PRIu32 " %" PRIu32 "\n";
 constexpr const char* read_data = "read data %d\n";
 constexpr const char* read_close = "read close session %d\n";
 
@@ -1308,7 +1309,7 @@ static bool LevelCmd(JobControlRecord* jcr)
     }
 
     since_time = str_to_uint64(buf); /* this is the since time */
-    Dmsg2(100, "since_time=%lld prev_job=%s\n", since_time,
+    Dmsg2(100, "since_time=%" PRId64 " prev_job=%s\n", since_time,
           jcr->fd_impl->PrevJob);
     /* Sync clocks by polling him for the time. We take 10 samples of his time
      * throwing out the first two. */
@@ -1346,13 +1347,14 @@ static bool LevelCmd(JobControlRecord* jcr)
         type = M_INFO;
       }
       Jmsg(jcr, type, 0,
-           T_("DIR and FD clocks differ by %lld seconds, FD automatically "
+           T_("DIR and FD clocks differ by %" PRId64
+              " seconds, FD automatically "
               "compensating.\n"),
            adj);
     }
     dir->signal(BNET_EOD);
 
-    Dmsg2(100, "adj=%lld since_time=%lld\n", adj, since_time);
+    Dmsg2(100, "adj=%" PRId64 " since_time=%" PRId64 "\n", adj, since_time);
     jcr->fd_impl->incremental
         = true; /* set incremental or decremental backup */
     jcr->fd_impl->since_time = since_time; /* set since time */
@@ -1549,7 +1551,7 @@ static void LogFlagStatus(JobControlRecord* jcr,
 
   std::string m = flag_text;
   m += found ? "is enabled\n" : "is disabled\n";
-  Jmsg(jcr, M_INFO, 0, m.c_str());
+  Jmsg(jcr, M_INFO, 0, "%s", m.c_str());
 }
 #endif
 
@@ -1583,7 +1585,7 @@ static inline void ClearFlagInFileset(JobControlRecord* jcr,
     }
   }
 
-  if (cleared_flag) { Jmsg(jcr, M_WARNING, 0, warning); }
+  if (cleared_flag) { Jmsg(jcr, M_WARNING, 0, "%s", warning); }
 }
 
 /**
@@ -1737,7 +1739,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
   if (sscanf(dir->msg, "backup FileIndex=%ld\n", &FileIndex) == 1) {
     jcr->JobFiles = FileIndex;
-    Dmsg1(100, "JobFiles=%ld\n", jcr->JobFiles);
+    Dmsg1(100, "JobFiles=%" PRIu32 "\n", jcr->JobFiles);
   }
 
   /* Validate some options given to the backup make sense for the compiled in
@@ -2314,8 +2316,11 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
     Jmsg(jcr, M_FATAL, 0, T_("Improper calling sequence.\n"));
     return false;
   }
-  Dmsg4(120, "VolSessId=%ld VolsessT=%ld SF=%ld EF=%ld\n", jcr->VolSessionId,
-        jcr->VolSessionTime, jcr->fd_impl->StartFile, jcr->fd_impl->EndFile);
+  Dmsg4(120,
+        "VolSessId=%" PRIu32 " VolsessT=%" PRIu32 " SF=%" PRIu32 " EF=%" PRIu32
+        "\n",
+        jcr->VolSessionId, jcr->VolSessionTime, jcr->fd_impl->StartFile,
+        jcr->fd_impl->EndFile);
   Dmsg2(120, "JobId=%d vol=%s\n", jcr->JobId, "DummyVolume");
   // Open Read Session with Storage daemon
   sd->fsend(read_open, "DummyVolume", jcr->VolSessionId, jcr->VolSessionTime,
@@ -2411,7 +2416,7 @@ bool response(JobControlRecord* jcr,
 {
   if (sd->errors) { return false; }
   if (BgetMsg(sd) > 0) {
-    Dmsg0(110, sd->msg);
+    Dmsg0(110, "%s", sd->msg);
     if (bstrcmp(sd->msg, resp)) { return true; }
   }
   if (jcr->IsJobCanceled()) {

@@ -44,6 +44,7 @@
 #include "lib/bsock.h"
 #include "lib/plugins.h"
 #include "lib/parse_conf.h"
+#include "stored/fd_comm.h"
 
 // Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosFilePacket* bfd,
@@ -1036,7 +1037,7 @@ bail_out:
 bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 {
   int status;
-  int index = jcr->JobFiles;
+  auto index = jcr->JobFiles;
   save_pkt* sp = (save_pkt*)jcr->fd_impl->plugin_sp;
 
   if (!sp) {
@@ -1049,7 +1050,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
   Dmsg1(debuglevel, "SendPluginName=%s\n", sp->cmd);
 
   // Send stream header
-  if (!sd->fsend("%ld %d 0", index, STREAM_PLUGIN_NAME)) {
+  if (!sd->fsend(storagedaemon::stream_start, index, STREAM_PLUGIN_NAME)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return false;
@@ -1058,10 +1059,11 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 
   if (start) {
     // Send data -- not much
-    status = sd->fsend("%ld 1 %d %s%c", index, sp->portable, sp->cmd, 0);
+    status = sd->fsend(storagedaemon::plugin_start, index, sp->portable,
+                       sp->cmd, 0);
   } else {
     // Send end of data
-    status = sd->fsend("%ld 0", jcr->JobFiles);
+    status = sd->fsend(storagedaemon::plugin_end, jcr->JobFiles);
   }
   if (!status) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
@@ -1706,7 +1708,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         T_("Plugin size incorrect. Plugin=%s wanted=%zu got=%" PRIu32 "\n"),
          plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }

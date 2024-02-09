@@ -210,20 +210,24 @@ extern "C" void* statistics_thread(void*)
                        &dsr.VolCatFiles, &dsr.VolCatBlocks)
                 == 13) {
               Dmsg5(200,
-                    "New Devstats [%lld]: Device=%s Read=%llu, Write=%llu, "
-                    "SpoolSize=%llu,\n",
-                    dsr.SampleTime, DevName.c_str(), dsr.ReadBytes,
-                    dsr.WriteBytes, dsr.SpoolSize);
+                    "New Devstats [%lld]: Device=%s Read=%" PRIu64
+                    ", Write=%" PRIu64
+                    ", "
+                    "SpoolSize=%" PRIu64 ",\n",
+                    static_cast<long long>(dsr.SampleTime), DevName.c_str(),
+                    dsr.ReadBytes, dsr.WriteBytes, dsr.SpoolSize);
               Dmsg4(200,
-                    "NumWaiting=%lu, NumWriters=%lu, ReadTime=%lld, "
-                    "WriteTime=%lld,\n",
+                    "NumWaiting=%" PRIu32 ", NumWriters=%" PRIu32
+                    ", ReadTime=%" PRIu64
+                    ", "
+                    "WriteTime=%" PRIu64 ",\n",
                     dsr.NumWaiting, dsr.NumWriters, dsr.ReadTime,
                     dsr.WriteTime);
-              Dmsg4(
-                  200,
-                  "MediaId=%ld, VolBytes=%llu, VolFiles=%llu, VolBlocks=%llu\n",
-                  dsr.MediaId, dsr.VolCatBytes, dsr.VolCatFiles,
-                  dsr.VolCatBlocks);
+              Dmsg4(200,
+                    "MediaId=%" PRIdbid ", VolBytes=%" PRIu64
+                    ", VolFiles=%" PRIu64 ", VolBlocks=%" PRIu64 "\n",
+                    dsr.MediaId, dsr.VolCatBytes, dsr.VolCatFiles,
+                    dsr.VolCatBlocks);
 
               if (!LookupDevice(jcr, DevName.c_str(), StorageId,
                                 &dsr.DeviceId)) {
@@ -243,8 +247,9 @@ extern "C" void* statistics_thread(void*)
                 == 3) {
               UnbashSpaces(DevName);
 
-              Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
-                    tsr.SampleTime, DevName.c_str(), tsr.AlertFlags);
+              Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %" PRIu64 "\n",
+                    static_cast<long long>(tsr.SampleTime), DevName.c_str(),
+                    tsr.AlertFlags);
 
               if (!LookupDevice(jcr, DevName.c_str(), StorageId,
                                 &tsr.DeviceId)) {
@@ -265,10 +270,11 @@ extern "C" void* statistics_thread(void*)
               UnbashSpaces(DevName);
 
               Dmsg5(200,
-                    "New Jobstats [%lld]: JobId %ld, JobFiles %lu, JobBytes "
-                    "%llu, DevName %s\n",
-                    jsr.SampleTime, jsr.JobId, jsr.JobFiles, jsr.JobBytes,
-                    DevName.c_str());
+                    "New Jobstats [%lld]: JobId %u, JobFiles %" PRIu32
+                    ", JobBytes "
+                    "%" PRIu64 ", DevName %s\n",
+                    static_cast<long long>(jsr.SampleTime), jsr.JobId,
+                    jsr.JobFiles, jsr.JobBytes, DevName.c_str());
 
               if (!LookupDevice(jcr, DevName.c_str(), StorageId,
                                 &jsr.DeviceId)) {

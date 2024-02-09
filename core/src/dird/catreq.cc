@@ -303,7 +303,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   bail_out:
 
     Dmsg1(400, ">CatReq response: %s", bs->msg);
-    Dmsg1(400, "Leave catreq jcr 0x%x\n", jcr);
+    Dmsg1(400, "Leave catreq jcr %p\n", jcr);
     return;
   } else if (sscanf(bs->msg, Create_job_media, &Job, &jm.FirstIndex,
                     &jm.LastIndex, &jm.StartFile, &jm.EndFile, &jm.StartBlock,
@@ -371,7 +371,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   }
 
   Dmsg1(400, ">CatReq response: %s", bs->msg);
-  Dmsg1(400, "Leave catreq jcr 0x%x\n", jcr);
+  Dmsg1(400, "Leave catreq jcr %p\n", jcr);
 
   return;
 }
@@ -611,7 +611,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
 
           BinToBase64(digestbuf, sizeof(digestbuf), fname, len, true);
 
-          Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
+          Dmsg3(400, "DigestLen=%zu Digest=%s type=%d\n", strlen(digestbuf),
                 digestbuf, Stream);
 
           if (jcr->cached_attribute) {
@@ -709,7 +709,8 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
       nbytes = read(spool_fd, msg, message_length);
       if (nbytes != (size_t)message_length) {
         BErrNo be;
-        Dmsg2(400, "nbytes=%d message_length=%d\n", nbytes, message_length);
+        Dmsg2(400, "nbytes=%zu message_length=%" PRId32 "\n", nbytes,
+              message_length);
         Qmsg1(jcr, M_FATAL, 0, T_("read attr spool error. ERR=%s\n"),
               be.bstrerror());
         goto bail_out;

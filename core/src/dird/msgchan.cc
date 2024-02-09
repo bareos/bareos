@@ -57,7 +57,8 @@ constexpr const char* jobcmd
     = "JobId=%s job=%s job_name=%s client_name=%s "
       "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
       "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
-      "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
+      "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%" PRIu64
+      " "
       "Protocol=%d BackupFormat=%s\n";
 constexpr const char* use_storage
     = "use storage=%s media_type=%s pool_name=%s "
@@ -107,7 +108,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
-  sd->fsend(bootstrap);
+  sd->fsend("%s", bootstrap);
   while (fgets(buf, sizeof(buf), bs)) { sd->fsend("%s", buf); }
   sd->signal(BNET_EOD);
   fclose(bs);
@@ -353,7 +354,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   // Retrieve available quota 0 bytes means dont perform the check
 
   uint64_t remainingquota = FetchRemainingQuotas(jcr);
-  Dmsg1(50, "Remainingquota: %llu\n", remainingquota);
+  Dmsg1(50, "Remainingquota: %" PRIu64 "\n", remainingquota);
 
   char ed1[30];
   char ed2[30];

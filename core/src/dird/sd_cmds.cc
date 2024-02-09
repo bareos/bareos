@@ -62,7 +62,7 @@ constexpr const char* changervolopcmd = "%s %s drive=%hd\n";
 constexpr const char* canceljobcmd = "cancel Job=%s\n";
 constexpr const char* dotstatuscmd = ".status %s\n";
 constexpr const char* statuscmd = "status %s\n";
-constexpr const char* bandwidthcmd = "setbandwidth=%lld Job=%s\n";
+constexpr const char* bandwidthcmd = "setbandwidth=%" PRId64 " Job=%s\n";
 constexpr const char* pluginoptionscmd = "pluginoptions %s\n";
 constexpr const char* getSecureEraseCmd = "getSecureEraseCmd\n";
 
@@ -481,14 +481,15 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
             "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=%s "
             "to SD list.\n",
             vl->element_address, vl->bareos_slot_number,
-            vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type,
-            NPRT(vl->VolName));
+            vl->currently_loaded_slot_number, to_underlying(vl->slot_type),
+            to_underlying(vl->slot_status), NPRT(vl->VolName));
     } else {
       Dmsg5(100,
             "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=NULL "
             "to SD list.\n",
             vl->element_address, vl->bareos_slot_number,
-            vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type);
+            vl->currently_loaded_slot_number, to_underlying(vl->slot_type),
+            to_underlying(vl->slot_status));
     }
 
     vol_list->binary_insert(vl, StorageCompareVolListEntry);
@@ -704,7 +705,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   if (ua->jcr->store_bsock) {
     std::string cipher_string = ua->jcr->store_bsock->GetCipherMessageString();
     cipher_string += '\n';
-    ua->SendMsg(cipher_string.c_str());
+    ua->SendMsg("%s", cipher_string.c_str());
   }
 
   Dmsg0(20, T_("Connected to storage daemon\n"));

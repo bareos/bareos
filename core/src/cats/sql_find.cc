@@ -382,7 +382,7 @@ bool BareosDb::FindJobById(JobControlRecord* jcr, std::string id)
   Dmsg1(100, "Query: %s\n", query.c_str());
   if (!QUERY_DB(jcr, query.c_str())) { return false; }
   if (SqlFetchRow() == NULL) {
-    Mmsg1(errmsg, T_("No Job found with id: %d.\n"), id.c_str());
+    Mmsg1(errmsg, T_("No Job found with id: %s.\n"), id.c_str());
     SqlFreeResult();
     return false;
   } else {

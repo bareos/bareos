@@ -72,10 +72,11 @@ static inline void delay()
   unlock_mutex(mutex);
 }
 
-static inline void AuthenticateFailed(JobControlRecord* jcr, PoolMem& message)
+static inline void AuthenticateFailed(JobControlRecord* jcr,
+                                      const char* message)
 {
-  Dmsg0(debuglevel, message.c_str());
-  Jmsg0(jcr, M_FATAL, 0, message.c_str());
+  Dmsg0(debuglevel, "%s", message);
+  Jmsg0(jcr, M_FATAL, 0, "%s", message);
   delay();
 }
 
@@ -99,7 +100,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
     errormsg.bsprintf(T_("Bad Hello command from Director at %s. Len=%d.\n"),
                       who, dir->message_length);
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
@@ -111,7 +112,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     dir->msg[100] = 0;
     errormsg.bsprintf(T_("Bad Hello command from Director at %s: %s\n"), who,
                       dir->msg);
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
@@ -125,14 +126,14 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     errormsg.bsprintf(
         T_("Connection from unknown Director %s at %s rejected.\n"),
         dirname.c_str(), who);
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
   if (!director->conn_from_dir_to_fd) {
     errormsg.bsprintf(T_("Connection from Director %s rejected.\n"),
                       dirname.c_str());
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
@@ -141,7 +142,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     dir->fsend("%s", Dir_sorry);
     errormsg.bsprintf(T_("Unable to authenticate Director %s.\n"),
                       dirname.c_str());
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 

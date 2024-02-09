@@ -1036,7 +1036,7 @@ static void PropagateResource(ResourceItem* items,
           def_svalue = (char**)((char*)(source) + offset);
           svalue = (char**)((char*)dest + offset);
           if (*svalue) {
-            Pmsg1(000, T_("Hey something is wrong. p=0x%lu\n"), *svalue);
+            Pmsg1(000, T_("Hey something is wrong. p=%p\n"), *svalue);
           }
           *svalue = *def_svalue;
           dest->SetMemberPresent(items[i].name);
@@ -1504,7 +1504,7 @@ static std::string PrintConfigRun(RunResource* run)
   }
 
   if (run->MaxRunSchedTime) {
-    Mmsg(temp, "maxrunschedtime=%d ", run->MaxRunSchedTime);
+    Mmsg(temp, "maxrunschedtime=%" PRIu64, run->MaxRunSchedTime);
     PmStrcat(run_str, temp.c_str());
   }
 

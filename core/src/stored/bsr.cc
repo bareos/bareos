@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -418,7 +418,7 @@ static int MatchAll(BootStrapRecord* bsr,
 
   if (!MatchVoladdr(bsr, bsr->voladdr, rec, 1)) {
     if (bsr->voladdr) {
-      Dmsg3(dbglevel, "Fail on Addr=%llu. bsr=%llu,%llu\n",
+      Dmsg3(dbglevel, "Fail on Addr=%" PRIu64 ". bsr=%" PRIu64 ",%" PRIu64 "\n",
             GetRecordAddress(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
     }
     goto no_match;
@@ -622,8 +622,9 @@ static int MatchVoladdr(BootStrapRecord* bsr,
 
   uint64_t addr = GetRecordAddress(rec);
   Dmsg6(dbglevel,
-        "MatchVoladdr: saddr=%llu eaddr=%llu recaddr=%llu sfile=%u efile=%u "
-        "recfile=%u\n",
+        "MatchVoladdr: saddr=%" PRIu64 " eaddr=%" PRIu64 " recaddr=%" PRIu64
+        " "
+        "sfile=%" PRIu64 " efile=%" PRIu64 " recfile=%" PRIu64 "\n",
         voladdr->saddr, voladdr->eaddr, addr, voladdr->saddr >> 32,
         voladdr->eaddr >> 32, addr >> 32);
 

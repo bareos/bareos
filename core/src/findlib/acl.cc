@@ -68,7 +68,7 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "find.h"
-#include "lib/comm.h"
+#include "stored/fd_comm.h"
 
 #if !defined(HAVE_ACL) && !defined(HAVE_AFS_ACL)
 /**
@@ -104,7 +104,7 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
   if (acl_data->u.build->content_length <= 0) { return bacl_exit_ok; }
 
   // Send header
-  if (!sd->fsend(communication::stream_start, jcr->JobFiles, stream)) {
+  if (!sd->fsend(storagedaemon::stream_start, jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return bacl_exit_fatal;

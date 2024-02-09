@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -992,10 +992,10 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
     // store the pointer from res_incexe in each appropriate container
     if (item->code == 0) { /* include */
       res_fs->include_items.push_back(res_incexe);
-      Dmsg1(900, "num_includes=%d\n", res_fs->include_items.size());
+      Dmsg1(900, "num_includes=%zu\n", res_fs->include_items.size());
     } else { /* exclude */
       res_fs->exclude_items.push_back(res_incexe);
-      Dmsg1(900, "num_excludes=%d\n", res_fs->exclude_items.size());
+      Dmsg1(900, "num_excludes=%zu\n", res_fs->exclude_items.size());
     }
     res_incexe = nullptr;
   }
