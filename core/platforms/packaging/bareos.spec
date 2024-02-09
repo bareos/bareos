@@ -809,7 +809,7 @@ This package contains the tray monitor (QT based).
 %prep
 # this is a hack so we always build in "bareos" and not in "bareos-version"
 %setup -c -n bareos
-mv bareos-*/* .
+[ -d bareos-* ] && mv bareos-*/* .
 %if 0%{?contrib}
 %replace_python_shebang contrib/misc/bsmc/bin/bsmc
 %replace_python_shebang contrib/misc/triggerjob/bareos-triggerjob.py
