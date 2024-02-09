@@ -43,3 +43,5 @@ if(HAVE_WIN32)
 endif()
 
 install(TARGETS bareoslmdb DESTINATION ${libdir})
+
+include(DebugEdit)

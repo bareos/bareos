@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -72,3 +72,5 @@ if(Python3_FOUND)
       "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
   )
 endif()
+
+include(DebugEdit)
