@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -920,11 +920,11 @@ int main(int argc, char* argv[])
         exit(BEXIT_SUCCESS);
       }
 
-      db_name = catalog->db_name;
-      user = catalog->db_user;
-      password = catalog->db_password.value;
+      db_name = catalog->db_name ?: "";
+      user = catalog->db_user ?: "";
+      password = catalog->db_password.value ?: "";
+      db_driver = catalog->db_driver ?: "";
       if (catalog->db_address) { dbhost = catalog->db_address; }
-      db_driver = catalog->db_driver;
       if (!dbhost.empty() && dbhost[0] == 0) { dbhost = ""; }
       dbport = catalog->db_port;
     }
