@@ -114,46 +114,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   endif()
 endif()
 
-option(DEBUG_PREFIX_MAP
-       "remap absolute debug paths to relative if compiler supports it" ON
-)
-check_c_compiler_flag(
-  -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. c_compiler_debug_prefix_map
-)
-check_cxx_compiler_flag(
-  -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.
-  cxx_compiler_debug_prefix_map
-)
-if(DEBUG_PREFIX_MAP
-   AND c_compiler_debug_prefix_map
-   AND cxx_compiler_debug_prefix_map
-)
-  set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
-endif()
-
-check_c_compiler_flag(
-  -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. c_compiler_macro_prefix_map
-)
-check_cxx_compiler_flag(
-  -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.
-  cxx_compiler_macro_prefix_map
-)
-if(c_compiler_macro_prefix_map)
-  set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
-endif()
-if(cxx_compiler_macro_prefix_map)
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
-endif()
-
 check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
 if(compiler_has_invalid_offsetof)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")

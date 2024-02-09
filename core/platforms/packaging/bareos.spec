@@ -867,7 +867,6 @@ cmake  .. \
   -DSYSCONF_INSTALL_DIR:PATH=/etc \
   -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
   -DBUILD_SHARED_LIBS:BOOL=ON \
-  -DDEBUG_PREFIX_MAP:BOOL=OFF \
   -Dprefix=%{_prefix}\
   -Dlibdir=%{library_dir} \
   -Dsbindir=%{_sbindir} \

@@ -16,7 +16,6 @@ STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | sed 's/Version: //g')
 
 define CONFIGURE_COMMON
-  -DDEBUG_PREFIX_MAP:BOOL=OFF \
   -Dsbindir=/usr/sbin \
   -Dbindir=/usr/bin \
   -Dlibdir=/usr/lib/bareos \
