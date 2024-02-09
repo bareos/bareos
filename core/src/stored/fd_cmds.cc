@@ -382,11 +382,14 @@ static bool ReadOpenSession(JobControlRecord* jcr)
       return false;
     }
     Dmsg4(100,
-          "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
+          "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%" PRId32
+          " VolSessT=%" PRIu32 "\n",
           jcr->JobId, jcr->sd_impl->read_dcr->VolumeName,
           jcr->sd_impl->read_session.read_VolSessionId,
           jcr->sd_impl->read_session.read_VolSessionTime);
-    Dmsg4(100, "  StartF=%ld EndF=%ld StartB=%ld EndB=%ld\n",
+    Dmsg4(100,
+          "  StartF=%" PRIu32 " EndF=%" PRIu32 " StartB=%" PRIu32
+          " EndB=%" PRIu32 "\n",
           jcr->sd_impl->read_session.read_StartFile,
           jcr->sd_impl->read_session.read_EndFile,
           jcr->sd_impl->read_session.read_StartBlock,

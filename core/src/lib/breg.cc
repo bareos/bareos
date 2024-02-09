@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -213,7 +213,7 @@ char* BareosRegex::replace(const char* fname)
     result = CheckPoolMemorySize(result, len);
     EditSubst(fname, regs);
     success = true;
-    Dmsg2(500, "bregexp: len = %i, result_len = %i\n", len, strlen(result));
+    Dmsg2(500, "bregexp: len = %i, result_len = %zu\n", len, strlen(result));
 
   } else { /* error in substitution */
     Dmsg0(100, "bregexp: error in substitution\n");

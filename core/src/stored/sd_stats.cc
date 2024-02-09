@@ -156,7 +156,7 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   dev_stats->device_tapealerts->append(tape_alert);
   unlock_mutex(mutex);
 
-  Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
+  Dmsg3(200, "New stats [%" PRId64 "]: Device %s TapeAlert %" PRIu64 "\n",
         tape_alert->timestamp, dev_stats->DevName, tape_alert->flags);
 }
 
@@ -231,13 +231,18 @@ static inline void UpdateDeviceStatistics(const char* devname,
   unlock_mutex(mutex);
 
   Dmsg5(200,
-        "New stats [%lld]: Device %s Read %llu, Write %llu, Spoolsize %llu,\n",
+        "New stats [%" PRId64
+        "]: Device %s Read %llu, Write %llu, Spoolsize %llu,\n",
         dev_stat->timestamp, dev_stats->DevName, dev_stat->DevReadBytes,
         dev_stat->DevWriteBytes, dev_stat->spool_size);
-  Dmsg4(200, "NumWaiting %ld, NumWriters %ld, ReadTime=%lld, WriteTime=%lld,\n",
+  Dmsg4(200,
+        "NumWaiting %d, NumWriters %d, ReadTime=%" PRId64 ", WriteTime=%" PRId64
+        ",\n",
         dev_stat->num_waiting, dev_stat->num_writers, dev_stat->DevReadTime,
         dev_stat->DevWriteTime);
-  Dmsg4(200, "MediaId=%ld VolBytes=%llu, VolFiles=%llu, VolBlocks=%llu\n",
+  Dmsg4(200,
+        "MediaId=%" PRIdbid "VolBytes=%" PRIu64 ", VolFiles=%" PRIu64
+        ", VolBlocks=%" PRIu64 "\n",
         dev_stat->MediaId, dev_stat->VolCatBytes, dev_stat->VolCatFiles,
         dev_stat->VolCatBlocks);
 }

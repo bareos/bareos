@@ -911,11 +911,26 @@ void CleanupJcrChain()
   }
 }
 
+static void TimeoutConnection(JobControlRecord* jcr,
+                              BareosSocket* bs,
+                              time_t current,
+                              time_t timeout)
+{
+  time_t timer_start = bs->timer_start;
+  if (timer_start && (current - timer_start) > timeout) {
+    bs->timer_start = 0; /* turn off timer */
+    bs->SetTimedOut();
+    Qmsg(jcr, M_ERROR, 0,
+         T_("Watchdog sending kill after %lld secs to thread stalled reading "
+            "Storage daemon.\n"),
+         static_cast<long long>(current - timer_start));
+    jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+  }
+}
+
 static void JcrTimeoutCheck(watchdog_t* /* self */)
 {
   JobControlRecord* jcr;
-  BareosSocket* bs;
-  time_t timer_start;
 
   Dmsg0(debuglevel, "Start JobControlRecord timeout checks\n");
 
@@ -923,46 +938,16 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
    * blocked for more than specified max time.
    */
   foreach_jcr (jcr) {
-    Dmsg2(debuglevel, "JcrTimeoutCheck JobId=%u jcr=0x%x\n", jcr->JobId, jcr);
+    Dmsg2(debuglevel, "JcrTimeoutCheck JobId=%u jcr=%p\n", jcr->JobId, jcr);
     if (jcr->JobId == 0) { continue; }
-    bs = jcr->store_bsock;
-    if (bs) {
-      timer_start = bs->timer_start;
-      if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
-        bs->timer_start = 0; /* turn off timer */
-        bs->SetTimedOut();
-        Qmsg(jcr, M_ERROR, 0,
-             T_("Watchdog sending kill after %d secs to thread stalled reading "
-                "Storage daemon.\n"),
-             watchdog_time - timer_start);
-        jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
-      }
+    if (auto* bs = jcr->store_bsock) {
+      TimeoutConnection(jcr, bs, watchdog_time, watch_dog_timeout);
     }
-    bs = jcr->file_bsock;
-    if (bs) {
-      timer_start = bs->timer_start;
-      if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
-        bs->timer_start = 0; /* turn off timer */
-        bs->SetTimedOut();
-        Qmsg(jcr, M_ERROR, 0,
-             T_("Watchdog sending kill after %d secs to thread stalled reading "
-                "File daemon.\n"),
-             watchdog_time - timer_start);
-        jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
-      }
+    if (auto* bs = jcr->file_bsock) {
+      TimeoutConnection(jcr, bs, watchdog_time, watch_dog_timeout);
     }
-    bs = jcr->dir_bsock;
-    if (bs) {
-      timer_start = bs->timer_start;
-      if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
-        bs->timer_start = 0; /* turn off timer */
-        bs->SetTimedOut();
-        Qmsg(jcr, M_ERROR, 0,
-             T_("Watchdog sending kill after %d secs to thread stalled reading "
-                "Director.\n"),
-             watchdog_time - timer_start);
-        jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
-      }
+    if (auto* bs = jcr->dir_bsock) {
+      TimeoutConnection(jcr, bs, watchdog_time, watch_dog_timeout);
     }
   }
   endeach_jcr(jcr);

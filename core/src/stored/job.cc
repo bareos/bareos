@@ -152,7 +152,7 @@ bool job_cmd(JobControlRecord* jcr)
   PmStrcpy(jcr->sd_impl->backup_format, backup_format);
   jcr->authenticated = false;
 
-  Dmsg1(50, "Quota set as %llu\n", quota);
+  Dmsg1(50, "Quota set as %" PRIu64 "\n", quota);
 
   // Pass back an authorization key for the File daemon
   if (!MakeSessionKey(auth_key)) {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -305,7 +305,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
     dev_errno = errno;
     Mmsg2(errmsg, T_("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(),
           be.bstrerror());
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
 
     return false;
   }

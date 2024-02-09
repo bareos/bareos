@@ -158,8 +158,8 @@ void MessagesResource::AddToNewChain(MessageDestinationCode dest_code,
   Dmsg6(850,
         "add new d=%p msgtype=%d destcode=%d where=%s mailcmd=%s "
         "timestampformat=%s\n",
-        d, msg_type, dest_code, NSTDPRNT(where), NSTDPRNT(d->mail_cmd_),
-        NSTDPRNT(d->timestamp_format_));
+        d, msg_type, to_underlying(dest_code), NSTDPRNT(where),
+        NSTDPRNT(d->mail_cmd_), NSTDPRNT(d->timestamp_format_));
 }
 
 void MessagesResource::AddMessageDestination(
@@ -185,7 +185,7 @@ void MessagesResource::RemoveMessageDestination(
     if (BitIsSet(msg_type, d->msg_types_) && (dest_code == d->dest_code_)
         && ((where.empty() && d->where_.empty()) || (where == d->where_))) {
       Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n", d, msg_type,
-            dest_code);
+            to_underlying(dest_code));
       ClearBit(msg_type, d->msg_types_);
       Dmsg0(850, "Return RemoveMessageDestination\n");
       return;

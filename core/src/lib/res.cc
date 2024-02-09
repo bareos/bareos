@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -689,7 +689,7 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
     if (pass == 2) {
-      Dmsg4(900, "Append %s to vector %p size=%d %s\n", lc->str, list,
+      Dmsg4(900, "Append %s to vector %p size=%zu %s\n", lc->str, list,
             list->size(), item->name);
 
       /* See if we need to drop the default value.

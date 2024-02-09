@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -188,8 +188,8 @@ bool RegisterWatchdog(watchdog_t* wd)
   wd_lock();
   wd->next_fire = watchdog_time + wd->interval;
   wd_queue->append(wd);
-  Dmsg3(800, "Registered watchdog %p, interval %d%s\n", wd, wd->interval,
-        wd->one_shot ? " one shot" : "");
+  Dmsg3(800, "Registered watchdog %p, interval %" PRId64 "%s\n", wd,
+        wd->interval, wd->one_shot ? " one shot" : "");
   wd_unlock();
   ping_watchdog();
 
@@ -271,7 +271,8 @@ extern "C" void* watchdog_thread(void*)
     foreach_dlist (p, wd_queue) {
       if (p->next_fire <= watchdog_time) {
         /* Run the callback */
-        Dmsg2(3400, "Watchdog callback p=0x%p fire=%d\n", p, p->next_fire);
+        Dmsg2(3400, "Watchdog callback p=0x%p fire=%" PRId64 "\n", p,
+              p->next_fire);
         p->callback(p);
 
         /* Reschedule (or move to inactive list if it's a one-shot timer) */
@@ -296,7 +297,8 @@ extern "C" void* watchdog_thread(void*)
       timeout.tv_sec++;
     }
 
-    Dmsg1(1900, "pthread_cond_timedwait %d\n", timeout.tv_sec - tv.tv_sec);
+    Dmsg1(1900, "pthread_cond_timedwait %lld\n",
+          static_cast<long long>(timeout.tv_sec - tv.tv_sec));
     /* Note, this unlocks mutex during the sleep */
     lock_mutex(timer_mutex);
     pthread_cond_timedwait(&timer, &timer_mutex, &timeout);

@@ -318,7 +318,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
     if (!found) { /* command not found */
       PoolMem err_msg;
       Mmsg(err_msg, "%s %s\n", derrmsg, dir->msg);
-      dir->fsend(err_msg.c_str());
+      dir->fsend("%s", err_msg.c_str());
       break;
     }
   }
@@ -550,8 +550,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
   pthread_cond_signal(&jcr->sd_impl->job_end_wait); /* wake waiting job */
   jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
 
-  dir->fsend(T_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId,
-             jcr->Job, reason);
+  dir->fsend(T_("3000 JobId=%" PRIu32 " Job=\"%s\" marked to be %s.\n"),
+             jcr->JobId, jcr->Job, reason);
   FreeJcr(jcr);
 
 bail_out:

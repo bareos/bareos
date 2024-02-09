@@ -967,7 +967,7 @@ bool DotstatusCmd(JobControlRecord* jcr)
   Dmsg1(200, "cmd=%s\n", cmd.c_str());
 
   if (Bstrcasecmp(cmd.c_str(), "current")) {
-    dir->fsend(OKdotstatus, cmd.c_str());
+    dir->fsend(OKdotstatus);
     foreach_jcr (njcr) {
       if (njcr->JobId != 0) {
         dir->fsend(DotStatusJob, njcr->JobId, njcr->getJobStatus(),

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -755,8 +755,7 @@ bool OutputFormatter::ProcessTextBuffer()
     if (!retval) {
       /* If send failed, include short messages in error messages.
        * As messages can get quite long, don't show long messages. */
-      ErrorMsg.bsprintf("Failed to send message (length=%lld). ",
-                        string_length);
+      ErrorMsg.bsprintf("Failed to send message (length=%zu). ", string_length);
       if (string_length < max_message_length_shown_in_error) {
         ErrorMsg.strcat("Message: ");
         ErrorMsg.strcat(result_message_plain->c_str());
@@ -764,7 +763,7 @@ bool OutputFormatter::ProcessTextBuffer()
       } else {
         ErrorMsg.strcat("Maybe result message to long?\n");
       }
-      Dmsg0(100, ErrorMsg.c_str());
+      Dmsg0(100, "%s", ErrorMsg.c_str());
     }
     result_message_plain->strcpy("");
   }
@@ -864,7 +863,7 @@ bool OutputFormatter::JsonKeyValueAddBool(const char* key, bool value)
   lkey.toLower();
   json_obj = (json_t*)result_stack_json->last();
   if (json_obj == NULL) {
-    Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
+    Emsg2(M_ERROR, 0, "No json object defined to add %s: %b\n", key, value);
   }
 
 #  if JANSSON_VERSION_HEX >= 0x020400
@@ -891,7 +890,8 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, uint64_t value)
   lkey.toLower();
   json_obj = (json_t*)result_stack_json->last();
   if (json_obj == NULL) {
-    Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
+    Emsg2(M_ERROR, 0, "No json object defined to add %s: %" PRIu64 "\n", key,
+          value);
   }
   json_object_set_new(json_obj, lkey.c_str(), json_integer(value));
 
@@ -906,7 +906,7 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
   lkey.toLower();
   json_obj = (json_t*)result_stack_json->last();
   if (json_obj == NULL) {
-    Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
+    Emsg2(M_ERROR, 0, "No json object defined to add %s: %s\n", key, value);
     return false;
   }
   json_object_set_new(json_obj, lkey.c_str(), json_string(value));
@@ -1007,12 +1007,12 @@ void OutputFormatter::JsonFinalizeResult(bool result)
     Emsg0(M_ERROR, 0, "Failed to generate json string.\n");
   } else {
     size_t string_length = strlen(string);
-    Dmsg1(800, "message length (json): %lld\n", string_length);
+    Dmsg1(800, "message length (json): %zu\n", string_length);
     // send json string, on failure, send json error message
     if (!send_func(send_ctx, "%s", string)) {
       /* If send failed, include short messages in error messages.
        * As messages can get quite long, don't show long messages. */
-      ErrorMsg.bsprintf("Failed to send json message (length=%lld). ",
+      ErrorMsg.bsprintf("Failed to send json message (length=%zu). ",
                         string_length);
       if (string_length < max_message_length_shown_in_error) {
         ErrorMsg.strcat("Message: ");
@@ -1021,7 +1021,7 @@ void OutputFormatter::JsonFinalizeResult(bool result)
       } else {
         ErrorMsg.strcat("Maybe result message to long?\n");
       }
-      Dmsg0(100, ErrorMsg.c_str());
+      Dmsg0(100, "%s", ErrorMsg.c_str());
       JsonSendErrorMessage(ErrorMsg.c_str());
     }
     free(string);

@@ -733,7 +733,8 @@ bail_out:
   GeneratePluginEvent(jcr, bSdEventJobEnd);
   dir->fsend(Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
-  Dmsg4(100, Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles, ec1);
+  Dmsg4(100, Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles, ec1,
+        jcr->JobErrors);
 
   dir->signal(BNET_EOD); /* send EOD to Director daemon */
   FreePlugins(jcr);      /* release instantiated plugins */
