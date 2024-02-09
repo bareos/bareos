@@ -46,7 +46,7 @@
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
-#include "lib/comm.h"
+#include "stored/fd_comm.h"
 
 namespace storagedaemon {
 
@@ -57,7 +57,6 @@ constexpr const char* Job_end
 // Responses received from Storage Daemon
 constexpr const char* OK_start_replicate
     = "3000 OK start replicate ticket = %d\n";
-constexpr const char* OK_data = "3000 OK data\n";
 constexpr const char* OK_replicate = "3000 OK replicate data\n";
 constexpr const char* OK_end_replicate = "3000 OK end replicate\n";
 
@@ -338,7 +337,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   // Send a header when needed.
   if (send_header) {
-    if (!sd->fsend(communication::stream_start, rec->FileIndex, rec->Stream)) {
+    if (!sd->fsend(storagedaemon::stream_start, rec->FileIndex, rec->Stream)) {
       if (!jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());

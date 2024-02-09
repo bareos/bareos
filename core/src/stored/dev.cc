@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,6 +88,34 @@
 #endif
 
 namespace storagedaemon {
+
+static void join(std::string& s, const char* sep, const char* add)
+{
+  if (s.size()) { s += sep; }
+  s += add;
+}
+
+static std::string state_to_str(char (&state)[ST_BYTES])
+{
+  const char* sep = " | ";
+  std::string s;
+  if (BitIsSet(ST_LABEL, state)) { join(s, sep, "LABEL"); }
+  if (BitIsSet(ST_ALLOCATED, state)) { join(s, sep, "ALLOCATED"); }
+  if (BitIsSet(ST_APPENDREADY, state)) { join(s, sep, "APPENDREADY"); }
+  if (BitIsSet(ST_READREADY, state)) { join(s, sep, "READREADY"); }
+  if (BitIsSet(ST_EOT, state)) { join(s, sep, "EOT"); }
+  if (BitIsSet(ST_WEOT, state)) { join(s, sep, "WEOT"); }
+  if (BitIsSet(ST_EOF, state)) { join(s, sep, "EOF"); }
+  if (BitIsSet(ST_NEXTVOL, state)) { join(s, sep, "NEXTVOL"); }
+  if (BitIsSet(ST_SHORT, state)) { join(s, sep, "SHORT"); }
+  if (BitIsSet(ST_MOUNTED, state)) { join(s, sep, "MOUNTED"); }
+  if (BitIsSet(ST_MEDIA, state)) { join(s, sep, "MEDIA"); }
+  if (BitIsSet(ST_OFFLINE, state)) { join(s, sep, "OFFLINE"); }
+  if (BitIsSet(ST_PART_SPOOLED, state)) { join(s, sep, "PART_SPOOLED"); }
+  if (BitIsSet(ST_CRYPTOKEY, state)) { join(s, sep, "CRYPTOKEY"); }
+
+  return s;
+}
 
 static void InitiateDevice(JobControlRecord* jcr, Device* dev);
 
@@ -244,7 +272,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
     dev->dev_errno = errstat;
     Mmsg1(dev->errmsg, T_("Unable to init mutex: ERR=%s\n"),
           be.bstrerror(errstat));
-    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+    Jmsg0(jcr, M_ERROR_TERM, 0, "%s", dev->errmsg);
   }
 
   if ((errstat = pthread_cond_init(&dev->wait, NULL)) != 0) {
@@ -252,7 +280,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
     dev->dev_errno = errstat;
     Mmsg1(dev->errmsg, T_("Unable to init cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
-    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+    Jmsg0(jcr, M_ERROR_TERM, 0, "%s", dev->errmsg);
   }
 
   if ((errstat = pthread_cond_init(&dev->wait_next_vol, NULL)) != 0) {
@@ -260,7 +288,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
     dev->dev_errno = errstat;
     Mmsg1(dev->errmsg, T_("Unable to init cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
-    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+    Jmsg0(jcr, M_ERROR_TERM, 0, "%s", dev->errmsg);
   }
 
   if ((errstat = pthread_mutex_init(&dev->spool_mutex, NULL)) != 0) {
@@ -268,7 +296,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
     dev->dev_errno = errstat;
     Mmsg1(dev->errmsg, T_("Unable to init spool mutex: ERR=%s\n"),
           be.bstrerror(errstat));
-    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+    Jmsg0(jcr, M_ERROR_TERM, 0, "%s", dev->errmsg);
   }
 
   if ((errstat = dev->InitAcquireMutex()) != 0) {
@@ -276,7 +304,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
     dev->dev_errno = errstat;
     Mmsg1(dev->errmsg, T_("Unable to init acquire mutex: ERR=%s\n"),
           be.bstrerror(errstat));
-    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+    Jmsg0(jcr, M_ERROR_TERM, 0, "%s", dev->errmsg);
   }
 
   if ((errstat = dev->InitReadAcquireMutex()) != 0) {
@@ -284,7 +312,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
     dev->dev_errno = errstat;
     Mmsg1(dev->errmsg, T_("Unable to init read acquire mutex: ERR=%s\n"),
           be.bstrerror(errstat));
-    Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+    Jmsg0(jcr, M_ERROR_TERM, 0, "%s", dev->errmsg);
   }
 
   dev->ClearOpened();
@@ -502,7 +530,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
     VolCatInfo = dcr->VolCatInfo; /* structure assign */
   }
 
-  Dmsg4(100, "open dev: type=%d archive_device_string=%s vol=%s mode=%s\n",
+  Dmsg4(100, "open dev: type=%s archive_device_string=%s vol=%s mode=%s\n",
         device_type.c_str(), print_name(), getVolCatName(), mode_to_str(omode));
 
   ClearBit(ST_LABEL, state);
@@ -526,7 +554,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
   // Reset any important state info
   CopySetBits(ST_MAX, preserve, state);
 
-  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd);
+  Dmsg2(100, "preserve=%s fd=%d\n", state_to_str(preserve).c_str(), fd);
 
   return fd >= 0;
 }
@@ -700,7 +728,7 @@ bool Device::eod(DeviceControlRecord* dcr)
   file_addr = 0;
 
   pos = d_lseek(dcr, (boffset_t)0, SEEK_END);
-  Dmsg1(200, "====== Seek to %lld\n", pos);
+  Dmsg1(200, "====== Seek to %lld\n", static_cast<long long>(pos));
 
   if (pos >= 0) {
     UpdatePos(dcr);
@@ -712,7 +740,7 @@ bool Device::eod(DeviceControlRecord* dcr)
   BErrNo be;
   Mmsg2(errmsg, T_("lseek error on %s. ERR=%s.\n"), print_name(),
         be.bstrerror());
-  Dmsg0(100, errmsg);
+  Dmsg0(100, "%s", errmsg);
 
   return false;
 }
@@ -828,7 +856,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
   if (!IsOpen()) {
     dev_errno = EBADF;
     Mmsg0(errmsg, T_("Bad call to Reposition. Device not open\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 

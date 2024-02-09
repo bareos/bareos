@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -615,7 +615,7 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
   char buf1[100], buf2[100];
 
   rec = new_record();
-  Dmsg1(130, "session_label record=%x\n", rec);
+  Dmsg1(130, "session_label record=%p\n", rec);
   if (label != SOS_LABEL && label != EOS_LABEL) {
     Jmsg1(jcr, M_ABORT, 0, T_("Bad Volume session label = %d\n"), label);
   }
@@ -1015,7 +1015,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     return false;
   }
 
-  Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n", dev->fd,
+  Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%p\n", dev->fd,
         dev);
 
   // Let any stored plugin know that we are (re)writing the label.

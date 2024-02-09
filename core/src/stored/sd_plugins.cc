@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -460,7 +460,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         T_("Plugin size incorrect. Plugin=%s wanted=%zu got=%" PRIu32 "\n"),
          plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }
@@ -754,7 +754,7 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
         break;
       case bsdVarJobBytes:
         *((uint64_t*)value) = jcr->JobBytes;
-        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobBytes=%d\n",
+        Dmsg1(debuglevel, "sd-plugin: return bsdVarJobBytes=%" PRIu64 "\n",
               jcr->JobBytes);
         break;
       default:

@@ -639,7 +639,8 @@ static int MatchVoladdr(BootStrapRecord* bsr,
   if (voladdr->done && done) {
     bsr->done = true;
     bsr->root->Reposition = true;
-    Dmsg2(dbglevel, "bsr done from voladdr rec=%llu voleaddr=%llu\n", addr,
+    Dmsg2(dbglevel,
+          "bsr done from voladdr rec=%" PRIu64 " voleaddr=%" PRIu64 "\n", addr,
           voladdr->eaddr);
   }
   return 0;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -308,10 +308,10 @@ read_volume:
     /* OK, at this point, we have a valid Bareos label, but
      * we need to position to the end of the volume, since we are
      * just now putting it into append mode. */
-    Dmsg1(
-        100,
-        "Device previously written, moving to end of data. Expect %lld bytes\n",
-        dev->VolCatInfo.VolCatBytes);
+    Dmsg1(100,
+          "Device previously written, moving to end of data. Expect %" PRIu64
+          " bytes\n",
+          dev->VolCatInfo.VolCatBytes);
     Jmsg(jcr, M_INFO, 0,
          T_("Volume \"%s\" previously written, moving to end of data.\n"),
          VolumeName);
@@ -686,8 +686,8 @@ bool DeviceControlRecord::is_eod_valid()
                 "The sizes do not match! Volume=%s Catalog=%s\n"),
              VolumeName, edit_uint64(pos, ed1),
              edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
-        Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
-        Dmsg0(050, jcr->errmsg);
+        Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
+        Dmsg0(050, "%s", jcr->errmsg);
         MarkVolumeInError();
         return false;
       }

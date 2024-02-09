@@ -976,7 +976,7 @@ bool DotstatusCmd(JobControlRecord* jcr)
     }
     endeach_jcr(njcr);
   } else if (Bstrcasecmp(cmd.c_str(), "last")) {
-    dir->fsend(OKdotstatus, cmd.c_str());
+    dir->fsend(OKdotstatus);
     if (RecentJobResultsList::Count() > 0) {
       RecentJobResultsList::JobResult job
           = RecentJobResultsList::GetMostRecentJobResult();
