@@ -223,6 +223,14 @@
           "platform_specific": true,
           "equals": true
         },
+        "JustInTimeReservation": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "No",
+          "equals": true,
+          "versions": "24.0.0-",
+          "description": "The storage daemon will only reserve devices when it receives data that needs to be written.  This option also means that no session label gets written if the job is empty."
+        },
         "PluginDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
