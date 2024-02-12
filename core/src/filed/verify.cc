@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -204,6 +204,14 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
   jcr->unlock();
 
+  /* Path needs to be stripped just like during the
+   * backup. The director catalog only knows about the
+   * stripped paths. */
+  if (!IS_FT_OBJECT(ff_pkt->type)
+      && ff_pkt->type != FT_DELETED) { /* already stripped */
+    StripPath(ff_pkt);
+  }
+
   /* Send file attributes to Director
    *   File_index
    *   Stream
@@ -232,6 +240,11 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   }
   Dmsg2(20, "filed>dir: attribs len=%d: msg=%s\n", dir->message_length,
         dir->msg);
+
+  if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED) {
+    UnstripPath(ff_pkt);
+  }
+
   if (!status) {
     Jmsg(jcr, M_FATAL, 0, T_("Network error in send to Director: ERR=%s\n"),
          BnetStrerror(dir));
