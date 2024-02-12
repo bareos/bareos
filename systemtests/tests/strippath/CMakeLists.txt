@@ -30,3 +30,8 @@ set_tests_properties(
   PROPERTIES FIXTURES_SETUP "system:strippath:02-restore" FIXTURES_REQUIRED
              "system:strippath:01-setup;system:strippath-fixture"
 )
+set_tests_properties(
+  system:strippath:03-verify
+  PROPERTIES FIXTURES_SETUP "system:strippath:03-verify" FIXTURES_REQUIRED
+             "system:strippath:01-setup;system:strippath-fixture"
+)
