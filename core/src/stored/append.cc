@@ -332,6 +332,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   char buf1[100];
   char ec[50];
 
+  int64_t current_volumeid = 0;
+  uint32_t current_block_number = 0;
+
+  if (jcr->sd_impl->dcr) {
+    // if the device was already reserved, we will now try to acquire it
+    SetupDCR(jcr, current_volumeid, current_block_number);
+  }
+
   // Tell daemon to send data
   if (!bs->fsend(OK_data)) {
     BErrNo be;
@@ -361,10 +369,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   CheckpointHandler checkpoint_handler(me->checkpoint_interval);
 
   std::vector<ProcessedFile> processed_files{};
-  int64_t current_volumeid = 0;
 
   ProcessedFile file_currently_processed;
-  uint32_t current_block_number = 0;
 
   MessageHandler handler(std::exchange(bs, nullptr));
 

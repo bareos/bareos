@@ -365,7 +365,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     return false;
   }
 
-  if (append) {
+  if (me->just_in_time_reservation && append) {
     PmStrcpy(dev_name, "JustInTime Device");
     jcr->sd_impl->dcr = nullptr;  // signal to rest of storage daemon that no
                                   // device was reserved.
@@ -374,7 +374,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
     return ok;
   } else {
-    return TryReserveAfterUse(jcr, false);
+    return TryReserveAfterUse(jcr, append);
   }
 }
 

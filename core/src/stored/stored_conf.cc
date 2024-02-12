@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,6 +84,9 @@ static ResourceItem store_items[] = {
   {"BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL},
 #endif
+  {"JustInTimeReservation", CFG_TYPE_BOOL, ITEM(res_store, just_in_time_reservation), 0, CFG_ITEM_DEFAULT, "No", "24.0.0-",
+   "The storage daemon will only reserve devices when it receives data that needs to be written."
+   "  This option also means that no session label gets written if the job is empty."},
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_store, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_store, scripts_directory), 0, 0, NULL, NULL, NULL},
