@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -418,7 +418,7 @@ bool BareosAccurateFilelistLmdb::SendBaseFileList()
         DecodeStat(payload->lstat, &ff_pkt->statp, sizeof(struct stat),
                    &LinkFIc); /* decode catalog stat */
         ff_pkt->fname = (char*)key.mv_data;
-        EncodeAndSendAttributes(jcr_, ff_pkt, stream);
+        EncodeAndSendAttributes(jcr_, ff_pkt, stream, false);
       }
     }
     mdb_cursor_close(cursor);
@@ -486,7 +486,7 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
       ff_pkt->fname = (char*)key.mv_data;
       ff_pkt->statp.st_mtime = statp.st_mtime;
       ff_pkt->statp.st_ctime = statp.st_ctime;
-      EncodeAndSendAttributes(jcr_, ff_pkt, stream);
+      EncodeAndSendAttributes(jcr_, ff_pkt, stream, false);
     }
     mdb_cursor_close(cursor);
   } else {
