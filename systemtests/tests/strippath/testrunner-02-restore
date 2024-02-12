@@ -5,8 +5,6 @@ set -u
 
 TestName=02-restore
 
-JobName=backup-bareos-fd
-
 #shellcheck source=../environment.in
 . ./environment
 
@@ -27,7 +25,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 
 check_for_zombie_jobs storage=File
 

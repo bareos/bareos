@@ -1,0 +1,9 @@
+Job {
+  Name = "verify-disktocatalog-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "SelfTestStripPath"
+  Type = Verify
+  Level = DiskToCatalog
+  Verify Job = "backup-bareos-fd"
+}

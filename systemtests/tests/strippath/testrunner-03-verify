@@ -5,58 +5,16 @@ set -u
 
 TestName=03-verify
 
-JobName=backup-bareos-fd
-
 #shellcheck source=../environment.in
 . ./environment
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-# Create verify job
-cat <<END_OF_DATA > "$config_directory_dir_additional_test_config/strippath-verify-job.conf"
-Job {
-  Name = "verify-initcatalog-bareos-fd"
-  JobDefs = "DefaultJob"
-  Client = "bareos-fd"
-  FileSet = "SelfTestStripPath"
-  Type = Verify
-  Level = InitCatalog
-}
-Job {
-  Name = "verify-catalog-bareos-fd"
-  JobDefs = "DefaultJob"
-  Client = "bareos-fd"
-  FileSet = "SelfTestStripPath"
-  Type = Verify
-  Level = Catalog
-}
-Job {
-  Name = "verify-disktocatalog-bareos-fd"
-  JobDefs = "DefaultJob"
-  Client = "bareos-fd"
-  FileSet = "SelfTestStripPath"
-  Type = Verify
-  Level = DiskToCatalog
-  Verify Job = "$JobName"
-}
-Job {
-  Name = "verify-volumetocatalog-bareos-fd"
-  JobDefs = "DefaultJob"
-  Client = "bareos-fd"
-  FileSet = "SelfTestStripPath"
-  Type = Verify
-  Level = VolumeToCatalog
-}
-END_OF_DATA
-
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
-messages
-@$out $tmp/reload.out
-reload
 messages
 @$out $tmp/verify-initcatalog.out
 run job="verify-initcatalog-bareos-fd" yes
@@ -77,7 +35,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 
 check_for_zombie_jobs storage=File
 
