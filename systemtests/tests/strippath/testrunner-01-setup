@@ -2,11 +2,8 @@
 set -e
 set -o pipefail
 set -u
-#
-# Run a simple backup, set it to archive and do a copy.
-#
-TestName="$(basename "$(pwd)")"
-export TestName
+
+TestName=01-setup
 
 JobName=backup-bareos-fd
 
@@ -15,10 +12,6 @@ JobName=backup-bareos-fd
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
-
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -31,10 +24,10 @@ strip_count="${#strip_count}"
 # Clear additional configs
 rm -f  "${config_directory_dir_additional_test_config}"/*
 
-# Create fileset with strip path setting
-cat <<END_OF_DATA > "$config_directory_dir_additional_test_config/strippath-backup-job.conf"
+# Create fileset and job with strip path setting
+cat <<END_OF_DATA > "$config_directory_dir_additional_test_config/strippath-fileset-job.conf"
 FileSet {
-  Name = "SelfTest"
+  Name = "SelfTestStripPath"
   Description = "fileset just to backup some files for selftest"
   Include {
     Options {
@@ -44,6 +37,12 @@ FileSet {
     }
     File = "${BackupDirectory}"
   }
+}
+Job {
+  Name = "backup-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "SelfTestStripPath"
 }
 END_OF_DATA
 
@@ -56,20 +55,10 @@ messages
 reload
 messages
 @$out $tmp/backup.out
-setdebug level=100 storage=File
-setdebug level=10 client=bareos-fd
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
-status director
-status client
-status storage=File
 wait
-messages
-@$out $tmp/file-list.out
-list files jobid=1
-@$out $tmp/restore.out
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores/${BackupDirectory} select all done yes
-wait
+update volume=TestVolume001 volstatus=Used
 messages
 quit
 END_OF_DATA
@@ -78,10 +67,12 @@ run_bareos "$@"
 
 check_for_zombie_jobs storage=File
 
-expect_grep "Start Restore Job" \
-	    "$tmp/restore.out" \
-	    "Required restore job was not started."
+expect_grep 'Catalog record for Volume "TestVolume001", Slot 0 successfully created.' \
+	    "$tmp/backup.out" \
+	    "TestVolume001 was not created." 
 
-check_restore_diff "${BackupDirectory}"
+expect_grep 'Termination:.*Backup OK' \
+	    "$tmp/backup.out" \
+	    "Backup did not succeed."
 
 end_test

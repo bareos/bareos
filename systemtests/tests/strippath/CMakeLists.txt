@@ -19,3 +19,14 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+
+set_tests_properties(
+  system:strippath:01-setup
+  PROPERTIES FIXTURES_SETUP "system:strippath:01-setup" FIXTURES_REQUIRED
+             "system:strippath-fixture"
+)
+set_tests_properties(
+  system:strippath:02-restore
+  PROPERTIES FIXTURES_SETUP "system:strippath:02-restore" FIXTURES_REQUIRED
+             "system:strippath:01-setup;system:strippath-fixture"
+)
