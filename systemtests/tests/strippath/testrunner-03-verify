@@ -6,7 +6,6 @@ set -u
 TestName=03-verify
 
 JobName=backup-bareos-fd
-VerifyJobName=verify-bareos-fd
 
 #shellcheck source=../environment.in
 . ./environment
@@ -17,13 +16,37 @@ VerifyJobName=verify-bareos-fd
 # Create verify job
 cat <<END_OF_DATA > "$config_directory_dir_additional_test_config/strippath-verify-job.conf"
 Job {
-  Name = "$VerifyJobName"
+  Name = "verify-initcatalog-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "SelfTestStripPath"
+  Type = Verify
+  Level = InitCatalog
+}
+Job {
+  Name = "verify-catalog-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "SelfTestStripPath"
+  Type = Verify
+  Level = Catalog
+}
+Job {
+  Name = "verify-disktocatalog-bareos-fd"
   JobDefs = "DefaultJob"
   Client = "bareos-fd"
   FileSet = "SelfTestStripPath"
   Type = Verify
   Level = DiskToCatalog
   Verify Job = "$JobName"
+}
+Job {
+  Name = "verify-volumetocatalog-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "SelfTestStripPath"
+  Type = Verify
+  Level = VolumeToCatalog
 }
 END_OF_DATA
 
@@ -35,8 +58,20 @@ messages
 @$out $tmp/reload.out
 reload
 messages
-@$out $tmp/verify.out
-run job=$VerifyJobName yes
+@$out $tmp/verify-initcatalog.out
+run job="verify-initcatalog-bareos-fd" yes
+wait
+messages
+@$out $tmp/verify-catalog.out
+run job="verify-catalog-bareos-fd" jobid=3 yes
+wait
+messages
+@$out $tmp/verify-disktocatalog.out
+run job="verify-disktocatalog-bareos-fd" yes
+wait
+messages
+@$out $tmp/verify-volumetocatalog.out
+run job="verify-volumetocatalog-bareos-fd" yes
 wait
 messages
 quit
@@ -47,7 +82,19 @@ run_bareos "$@"
 check_for_zombie_jobs storage=File
 
 expect_grep 'Termination:.*Verify OK' \
-	    "$tmp/verify.out" \
-	    "Verify job failed or unexpectedly found differences."
+	    "$tmp/verify-initcatalog.out" \
+	    "Verify Init job failed."
+
+expect_grep 'Termination:.*Verify OK' \
+	    "$tmp/verify-catalog.out" \
+	    "Verify Catalog job failed or unexpectedly found differences."
+
+expect_grep 'Termination:.*Verify OK' \
+	    "$tmp/verify-disktocatalog.out" \
+	    "Verify DiskToCatalog job failed or unexpectedly found differences."
+
+expect_grep 'Termination:.*Verify OK' \
+	    "$tmp/verify-volumetocatalog.out" \
+	    "Verify VolumeToCatalog job failed or unexpectedly found differences."
 
 end_test
