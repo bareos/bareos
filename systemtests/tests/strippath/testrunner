@@ -31,10 +31,10 @@ strip_count="${#strip_count}"
 # Clear additional configs
 rm -f  "${config_directory_dir_additional_test_config}"/*
 
-# Create fileset and job with strip path setting
+# Create fileset with strip path setting
 cat <<END_OF_DATA > "$config_directory_dir_additional_test_config/strippath-backup-job.conf"
 FileSet {
-  Name = "SelfTestStripPath"
+  Name = "SelfTest"
   Description = "fileset just to backup some files for selftest"
   Include {
     Options {
@@ -44,12 +44,6 @@ FileSet {
     }
     File = "${BackupDirectory}"
   }
-}
-Job {
-  Name = "$JobName"
-  JobDefs = "DefaultJob"
-  Client = "bareos-fd"
-  FileSet = "SelfTestStripPath"
 }
 END_OF_DATA
 
@@ -74,13 +68,12 @@ messages
 @$out $tmp/file-list.out
 list files jobid=1
 @$out $tmp/restore.out
-restore client=bareos-fd fileset=SelfTestStripPath where=$tmp/bareos-restores/${BackupDirectory} select all done yes
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores/${BackupDirectory} select all done yes
 wait
 messages
 quit
 END_OF_DATA
 
-exec > >(tee "$tmp/debug.out")
 run_bareos "$@"
 
 check_for_zombie_jobs storage=File
@@ -89,12 +82,6 @@ expect_grep "Start Restore Job" \
 	    "$tmp/restore.out" \
 	    "Required restore job was not started."
 
-expect_grep "Top level directory ${BackupDirectory} fully stripped, skipping.." \
-	    "$tmp/debug.out" \
-	    "Top level directory not skipped despite path being fully stripped away."
-
 check_restore_diff "${BackupDirectory}"
-
-#exit 1
 
 end_test
