@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1789,9 +1789,12 @@ void StripPath(FindFilesPacket* ff_pkt)
    * is a different link string, attempt to strip the link. If it fails,
    * back them both back. Do not strip symlinks. I.e. if either stripping
    * fails don't strip anything. */
-  if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
-    UnstripPath(ff_pkt);
-    goto rtn;
+  if ((ff_pkt->type != FT_DIREND && ff_pkt->type != FT_REPARSE)
+      || ff_pkt->fname == ff_pkt->link) {
+    if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
+      UnstripPath(ff_pkt);
+      goto rtn;
+    }
   }
 
   // Strip links but not symlinks
