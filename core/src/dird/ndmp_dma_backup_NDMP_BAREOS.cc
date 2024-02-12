@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -385,8 +385,10 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   if (jcr->store_bsock) {
     jcr->store_bsock->fsend("finish");
     WaitForStorageDaemonTermination(jcr);
-    jcr->db_batch->WriteBatchFileRecords(
-        jcr); /* used by bulk batch file insert */
+    if (jcr->batch_started) {
+      jcr->db_batch->WriteBatchFileRecords(
+          jcr); /* used by bulk batch file insert */
+    }
   }
 
   /* If we do incremental backups it can happen that the backup is empty if
