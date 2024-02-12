@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -367,8 +367,10 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors */
   WaitForStorageDaemonTermination(jcr);
   jcr->setJobStatusWithPriorityCheck(jcr->dir_impl->SDJobStatus);
-  jcr->db_batch->WriteBatchFileRecords(
-      jcr); /* used by bulk batch file insert */
+  if (jcr->batch_started) {
+    jcr->db_batch->WriteBatchFileRecords(
+        jcr); /* used by bulk batch file insert */
+  }
   if (!jcr->is_JobStatus(JS_Terminated)) { return false; }
 
   NativeVbackupCleanup(jcr, jcr->getJobStatus(), JobLevel_of_first_job);

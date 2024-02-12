@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -407,7 +407,7 @@ bool DoVerify(JobControlRecord* jcr)
       jcr->dir_impl->SDJobStatus = JS_Terminated;
       GetAttributesAndPutInCatalog(jcr);
       jcr->db->EndTransaction(jcr); /* Terminate any open transaction */
-      jcr->db_batch->WriteBatchFileRecords(jcr);
+      if (jcr->batch_started) { jcr->db_batch->WriteBatchFileRecords(jcr); }
       break;
     default:
       Jmsg1(jcr, M_FATAL, 0, T_("Unimplemented verify level %d\n"), JobLevel);
