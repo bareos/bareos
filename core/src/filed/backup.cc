@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,7 +88,9 @@ static int send_data(JobControlRecord* jcr,
                      FindFilesPacket* ff_pkt,
                      DIGEST* digest,
                      DIGEST* signature_digest);
-
+bool EncodeAndSendAttributes(JobControlRecord* jcr,
+                             FindFilesPacket* ff_pkt,
+                             int& data_stream);
 #if defined(WIN32_VSS)
 static void CloseVssBackupSession(JobControlRecord* jcr);
 #endif
@@ -504,7 +506,7 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
  *          0 if error
  *         -1 to ignore file/directory (not used here)
  */
-int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
+int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   bool do_read = false;
   bool plugin_started = false;
@@ -695,9 +697,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   }
 
   // Send attributes -- must be done after binit()
-  if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream, top_level)) {
-    goto bail_out;
-  }
+  if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream)) { goto bail_out; }
 
   // Meta data only for restore object
   if (IS_FT_OBJECT(ff_pkt->type)) { goto good_rtn; }
@@ -1559,8 +1559,7 @@ bail_out:
 
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
-                             int& data_stream,
-                             bool top_level)
+                             int& data_stream)
 {
   BareosSocket* sd = jcr->store_bsock;
   PoolMem attribs(PM_NAME), attribsExBuf(PM_NAME);
@@ -1609,18 +1608,6 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     return false;
   }
 
-  if (!IS_FT_OBJECT(ff_pkt->type)
-      && ff_pkt->type != FT_DELETED) { /* already stripped */
-    if (StripPath(ff_pkt) == -1 && ff_pkt->type == FT_DIREND && top_level) {
-      /* Skip saving top level directories (i.e. those specified
-       * in the fileset includes) if the path would be exactly
-       * stripped away. */
-      Dmsg1(10, "Top level directory %s fully stripped, skipping..\n",
-            ff_pkt->fname);
-      return false;
-    }
-  }
-
   /* Send Attributes header to Storage daemon
    *    <file-index> <stream> <info> */
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
@@ -1654,6 +1641,10 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    *
    * For a directory, link is the same as fname, but with trailing
    * slash. For a linked file, link is the link. */
+  if (!IS_FT_OBJECT(ff_pkt->type)
+      && ff_pkt->type != FT_DELETED) { /* already stripped */
+    StripPath(ff_pkt);
+  }
   switch (ff_pkt->type) {
     case FT_JUNCTION:
     case FT_LNK:
@@ -1774,17 +1765,12 @@ static bool do_strip(int count, char* in)
  * for dealing with snapshots, by removing the snapshot directory, or
  * in handling vendor migrations where files have been restored with
  * a vendor product into a subdirectory.
- *
- * Returns: 1 if stripping succeeded
- *          0 if nothing stripped
- *         -1 if stripping failed because path would be exactly stripped
- *         -2 if stripping failed otherwise
  */
-int StripPath(FindFilesPacket* ff_pkt)
+void StripPath(FindFilesPacket* ff_pkt)
 {
   if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
     Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
-    return 0;
+    return;
   }
 
   if (!ff_pkt->fname_save) {
@@ -1799,32 +1785,23 @@ int StripPath(FindFilesPacket* ff_pkt)
           strlen(ff_pkt->link));
   }
 
-  int result = 1;
-
   /* Strip path. If it doesn't succeed put it back. If it does, and there
    * is a different link string, attempt to strip the link. If it fails,
    * back them both back. Do not strip symlinks. I.e. if either stripping
    * fails don't strip anything. */
   if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
-    // Path was exactly stripped if it's just a single path separator
-    result = ff_pkt->fname[0] == '/' && ff_pkt->fname[1] == 0 ? -1 : -2;
     UnstripPath(ff_pkt);
     goto rtn;
   }
 
   // Strip links but not symlinks
   if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-    if (!do_strip(ff_pkt->StripPath, ff_pkt->link)) {
-      result = -2;
-      UnstripPath(ff_pkt);
-    }
+    if (!do_strip(ff_pkt->StripPath, ff_pkt->link)) { UnstripPath(ff_pkt); }
   }
 
 rtn:
   Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname_save,
         ff_pkt->fname, ff_pkt->link);
-
-  return result;
 }
 
 void UnstripPath(FindFilesPacket* ff_pkt)
