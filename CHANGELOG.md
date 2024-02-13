@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - python-bareos: integrate usage of config files [PR #1690]
 - webui: Backup Unit Report fixes [PR #1698]
 - windows: fix calculation of "job_metadata.xml" object size [PR #1703]
+- stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1700]
 
 ## [23.0.1] - 2024-01-17
 
@@ -402,5 +403,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1690]: https://github.com/bareos/bareos/pull/1690
 [PR #1694]: https://github.com/bareos/bareos/pull/1694
 [PR #1698]: https://github.com/bareos/bareos/pull/1698
+[PR #1700]: https://github.com/bareos/bareos/pull/1700
 [PR #1703]: https://github.com/bareos/bareos/pull/1703
 [unreleased]: https://github.com/bareos/bareos/tree/master
