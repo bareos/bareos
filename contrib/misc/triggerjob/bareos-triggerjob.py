@@ -1,24 +1,51 @@
 #!/usr/bin/env python
 
-from bareos.util import argparse
-import bareos.bsock
+#   BAREOS - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
 import logging
 import sys
+import bareos.bsock
+from bareos.util import argparse
 
 
 def get_job_names(director):
+    """Get list of job names"""
     result = director.call(".jobs")["jobs"]
     jobs = [job["name"] for job in result]
     return jobs
 
 
 def get_connected_clients(director):
+    """Get list of connected clients (via client initiated connections)"""
     result = director.call("status director")["client-connection"]
     clients = [client["name"] for client in result]
     return clients
 
 
 def trigger(director, jobnames, clients, hours):
+    """
+    trigger all jobs that are named "backup-<CLIENTNAME>"
+    for all clients that are connected via client initiated connection
+    and did run a successful backup for more than <hours> hours.
+    """
+
     for client in clients:
         jobname = "backup-{}".format(client)
         if not jobname in jobnames:
@@ -44,7 +71,9 @@ def trigger(director, jobnames, clients, hours):
                 print("{}: backup triggered, jobid={}".format(jobname, jobid))
 
 
-def getArguments():
+def get_arguments():
+    """argparse setup"""
+
     epilog = """
     bareos-triggerjob is a Python script that allows you to perform a backup for a connected client if a definable time has passed since the last backup.
 
@@ -57,12 +86,20 @@ def getArguments():
     """
 
     argparser = argparse.ArgumentParser(
-        description=u"Trigger Bareos jobs.", epilog=epilog
+        description="Trigger Bareos jobs.", epilog=epilog
     )
     argparser.add_argument(
         "-d", "--debug", action="store_true", help="enable debugging output"
     )
-    bareos.bsock.DirectorConsole.argparser_add_default_command_line_arguments(argparser)
+    argparser.add_argument(
+        "--hours",
+        type=int,
+        default=24,
+        help="Minimum time (in hours) since the last successful backup. Default: %(default)s",
+    )
+    bareos.bsock.DirectorConsoleJson.argparser_add_default_command_line_arguments(
+        argparser
+    )
     args = argparser.parse_args()
     return args
 
@@ -73,24 +110,14 @@ if __name__ == "__main__":
     )
     logger = logging.getLogger()
 
-    args = getArguments()
+    args = get_arguments()
     if args.debug:
         logger.setLevel(logging.DEBUG)
 
+    bareos_args = bareos.bsock.DirectorConsoleJson.argparser_get_bareos_parameter(args)
     try:
-        options = ["address", "port", "dirname", "name"]
-        parameter = {}
-        for i in options:
-            if hasattr(args, i) and getattr(args, i) != None:
-                logger.debug("%s: %s" % (i, getattr(args, i)))
-                parameter[i] = getattr(args, i)
-            else:
-                logger.debug('%s: ""' % (i))
-        logger.debug("options: %s" % (parameter))
-        password = bareos.bsock.Password(args.password)
-        parameter["password"] = password
-        director = bareos.bsock.DirectorConsoleJson(**parameter)
-    except RuntimeError as e:
+        director = bareos.bsock.DirectorConsoleJson(**bareos_args)
+    except bareos.exceptions.Error as e:
         print(str(e))
         sys.exit(1)
     logger.debug("authentication successful")
