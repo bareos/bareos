@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,62 +29,56 @@
 #define BAREOS_LIB_CONNECTION_POOL_H_
 
 #include <atomic>
+#include <memory>
+#include <vector>
+#include <string>
+#include <string_view>
+#include <optional>
+#include <chrono>
+#include "lib/thread_util.h"
 
-template <typename T> class alist;
 class BareosSocket;
 
-class Connection {
- public:
-  Connection(const char* name,
-             int protocol_version,
-             BareosSocket* socket,
-             bool authenticated = true);
-  ~Connection();
-
-  const char* name() { return name_; }
-  int protocol_version() { return protocol_version_; }
-  BareosSocket* bsock() { return socket_; }
-  bool authenticated() { return authenticated_; }
-  bool in_use() { return in_use_; }
-  time_t ConnectTime() { return connect_time_; }
-
-  bool check(int timeout = 0);
-  bool take();
-
- private:
-  void lock() { lock_mutex(mutex_); }
-  void unlock() { unlock_mutex(mutex_); }
-  pthread_t tid_;
-  BareosSocket* socket_;
-  char name_[MAX_NAME_LENGTH];
-  int protocol_version_;
-  bool authenticated_;
-  std::atomic<bool> in_use_;
-  time_t connect_time_;
-  pthread_mutex_t mutex_;
+struct connection_info {
+  std::string name{};
+  int protocol_version{};
+  time_t connect_time{};
 };
 
-class ConnectionPool {
- public:
-  ConnectionPool();
-  ~ConnectionPool();
+struct connection : public connection_info {
+  struct socket_closer {
+    void operator()(BareosSocket* socket);
+  };
+  using sock_ptr = std::unique_ptr<BareosSocket, socket_closer>;
 
-  Connection* add_connection(const char* name,
-                             int protocol_version,
-                             BareosSocket* socket,
-                             bool authenticated = true);
-  Connection* remove(const char* name, int timeout_in_seconds = 0);
-  alist<Connection*>* get_as_alist();
-  void cleanup();
+  connection() = default;
+  connection(std::string_view name, int protocol_version, BareosSocket* socket)
+      : connection_info{std::string{name}, protocol_version, time(nullptr)}
+      , socket{socket}
+  {
+  }
 
- private:
-  alist<Connection*>* connections_;
-  int WaitForNewConnection(timespec& timeout);
-  bool add(Connection* connection);
-  bool remove(Connection* connection);
-  Connection* get_connection(const char* name);
-  Connection* get_connection(const char* name, timespec& timeout);
-  pthread_mutex_t add_mutex_;
-  pthread_cond_t add_cond_var_;
+  connection(const connection&) = delete;
+  connection& operator=(const connection&) = delete;
+  connection(connection&&) = default;
+  connection& operator=(connection&&) = default;
+
+  sock_ptr socket{};
 };
+
+struct connection_pool {
+  synchronized<std::vector<connection>, std::timed_mutex> conns;
+  std::condition_variable_any element_added;
+
+  void add_authenticated_connection(connection con);
+  void clear();
+
+  std::optional<connection> take_by_name(std::string_view v,
+                                         std::chrono::seconds timeout
+                                         = std::chrono::seconds{0});
+
+  void cleanup(std::chrono::seconds timeout = std::chrono::seconds{0});
+  std::vector<connection_info> info();
+};
+
 #endif  // BAREOS_LIB_CONNECTION_POOL_H_
