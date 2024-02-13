@@ -59,25 +59,25 @@
 namespace directordaemon {
 
 /* Commands sent to File daemon */
-constexpr const char* restorecmd = "restore replace=%c prelinks=%d where=%s\n";
-constexpr const char* restorecmdR
+constexpr const char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
+constexpr const char restorecmdR[]
     = "restore replace=%c prelinks=%d regexwhere=%s\n";
-constexpr const char* storaddrcmd
+constexpr const char storaddrcmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%s\n";
-constexpr const char* setauthorizationcmd
+constexpr const char setauthorizationcmd[]
     = "setauthorization Authorization=%s\n";
-constexpr const char* passiveclientcmd
+constexpr const char passiveclientcmd[]
     = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-constexpr const char* OKrestore = "2000 OK restore\n";
-constexpr const char* OKstore = "2000 OK storage\n";
-constexpr const char* OKstoreend = "2000 OK storage end\n";
-constexpr const char* OKAuthorization = "2000 OK Authorization\n";
-constexpr const char* OKpassiveclient = "2000 OK passive client\n";
+constexpr const char OKrestore[] = "2000 OK restore\n";
+constexpr const char OKstore[] = "2000 OK storage\n";
+constexpr const char OKstoreend[] = "2000 OK storage end\n";
+constexpr const char OKAuthorization[] = "2000 OK Authorization\n";
+constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
 
 /* Responses received from the Storage daemon */
-constexpr const char* OKbootstrap = "3000 OK bootstrap\n";
+constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
 
 static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
 {

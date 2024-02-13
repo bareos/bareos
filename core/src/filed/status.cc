@@ -48,10 +48,10 @@ static void ListStatusHeader(StatusPacket* sp);
 static const char* JobLevelToString(int level);
 
 /* Static variables */
-constexpr const char* qstatus = ".status %s\n";
+constexpr const char qstatus[] = ".status %s\n";
 
-constexpr const char* OKqstatus = "2000 OK .status\n";
-constexpr const char* DotStatusJob = "JobId=%d JobStatus=%c JobErrors=%d\n";
+constexpr const char OKqstatus[] = "2000 OK .status\n";
+constexpr const char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 #if defined(HAVE_WIN32)
 static int privs = 0;

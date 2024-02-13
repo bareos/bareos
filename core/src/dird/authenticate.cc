@@ -55,14 +55,14 @@ static const int debuglevel = 50;
  * Commands sent to Storage daemon and File daemon and received from the User
  * Agent
  */
-constexpr const char* hello = "Hello Director %s calling\n";
+constexpr const char hello[] = "Hello Director %s calling\n";
 
 // Response from Storage daemon
-constexpr const char* OKhello = "3000 OK Hello\n";
-constexpr const char* FDOKhello = "2000 OK Hello\n";
-constexpr const char* FDOKnewHello = "2000 OK Hello %d\n";
+constexpr const char OKhello[] = "3000 OK Hello\n";
+constexpr const char FDOKhello[] = "2000 OK Hello\n";
+constexpr const char FDOKnewHello[] = "2000 OK Hello %d\n";
 
-constexpr const char* dir_not_authorized_message
+constexpr const char dir_not_authorized_message[]
     = "1999 You are not authorized.\n";
 
 bool AuthenticateWithStorageDaemon(BareosSocket* sd,

@@ -57,7 +57,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
 
-constexpr const char* OKbootstrap = "3000 OK bootstrap\n";
+constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
 
 /**
  * Walk the tree of selected files for restore and lookup the

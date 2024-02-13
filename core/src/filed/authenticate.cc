@@ -53,9 +53,9 @@ const int debuglevel = 50;
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
  */
-constexpr const char* OK_hello = "2000 OK Hello 54\n";
+constexpr const char OK_hello[] = "2000 OK Hello 54\n";
 
-constexpr const char* Dir_sorry = "2999 Authentication failed.\n";
+constexpr const char Dir_sorry[] = "2999 Authentication failed.\n";
 
 /**
  * To prevent DOS attacks,

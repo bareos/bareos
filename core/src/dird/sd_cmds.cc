@@ -51,30 +51,31 @@
 namespace directordaemon {
 
 /* Commands sent to Storage daemon */
-constexpr const char* readlabelcmd = "readlabel %s Slot=%hd drive=%hd\n";
-constexpr const char* changerlistallcmd = "autochanger listall %s \n";
-constexpr const char* changerlistcmd = "autochanger list %s \n";
-constexpr const char* changerslotscmd = "autochanger slots %s\n";
-constexpr const char* changerdrivescmd = "autochanger drives %s\n";
-constexpr const char* changertransfercmd = "autochanger transfer %s %hd %hd \n";
-constexpr const char* changervolopslotcmd = "%s %s drive=%hd slot=%hd\n";
-constexpr const char* changervolopcmd = "%s %s drive=%hd\n";
-constexpr const char* canceljobcmd = "cancel Job=%s\n";
-constexpr const char* dotstatuscmd = ".status %s\n";
-constexpr const char* statuscmd = "status %s\n";
-constexpr const char* bandwidthcmd = "setbandwidth=%" PRId64 " Job=%s\n";
-constexpr const char* pluginoptionscmd = "pluginoptions %s\n";
-constexpr const char* getSecureEraseCmd = "getSecureEraseCmd\n";
+constexpr const char readlabelcmd[] = "readlabel %s Slot=%hd drive=%hd\n";
+constexpr const char changerlistallcmd[] = "autochanger listall %s \n";
+constexpr const char changerlistcmd[] = "autochanger list %s \n";
+constexpr const char changerslotscmd[] = "autochanger slots %s\n";
+constexpr const char changerdrivescmd[] = "autochanger drives %s\n";
+constexpr const char changertransfercmd[]
+    = "autochanger transfer %s %hd %hd \n";
+constexpr const char changervolopslotcmd[] = "%s %s drive=%hd slot=%hd\n";
+constexpr const char changervolopcmd[] = "%s %s drive=%hd\n";
+constexpr const char canceljobcmd[] = "cancel Job=%s\n";
+constexpr const char dotstatuscmd[] = ".status %s\n";
+constexpr const char statuscmd[] = "status %s\n";
+constexpr const char bandwidthcmd[] = "setbandwidth=%" PRId64 " Job=%s\n";
+constexpr const char pluginoptionscmd[] = "pluginoptions %s\n";
+constexpr const char getSecureEraseCmd[] = "getSecureEraseCmd\n";
 
 /* Responses received from Storage daemon */
-constexpr const char* OKBandwidth = "2000 OK Bandwidth\n";
-constexpr const char* OKpluginoptions = "2000 OK plugin options\n";
-constexpr const char* OKSecureEraseCmd = "2000 OK SDSecureEraseCmd %s\n";
+constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+constexpr const char OKpluginoptions[] = "2000 OK plugin options\n";
+constexpr const char OKSecureEraseCmd[] = "2000 OK SDSecureEraseCmd %s\n";
 
 /* Commands received from storage daemon that need scanning */
-constexpr const char* readlabelresponse = "3001 Volume=%s Slot=%hd";
-constexpr const char* changerslotsresponse = "slots=%hd\n";
-constexpr const char* changerdrivesresponse = "drives=%hd\n";
+constexpr const char readlabelresponse[] = "3001 Volume=%s Slot=%hd";
+constexpr const char changerslotsresponse[] = "slots=%hd\n";
+constexpr const char changerdrivesresponse[] = "drives=%hd\n";
 
 static void TerminateAndCloseJcrStoreSocket(JobControlRecord* jcr)
 {

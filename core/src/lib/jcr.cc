@@ -81,7 +81,7 @@ static int watch_dog_timeout = 0;
 static std::mutex jcr_chain_mutex;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-constexpr const char* Job_status = "Status Job=%s JobStatus=%d\n";
+constexpr const char Job_status[] = "Status Job=%s JobStatus=%d\n";
 
 void LockJobs() { lock_mutex(job_start_mutex); }
 

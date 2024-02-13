@@ -38,8 +38,8 @@
 
 namespace storagedaemon {
 
-constexpr const char* OKstats = "2000 OK statistics\n";
-constexpr const char* DevStats
+constexpr const char OKstats[] = "2000 OK statistics\n";
+constexpr const char DevStats[]
     = "Devicestats [%" PRId64 "]: Device=%s Read=%" PRIu64 ", Write=%" PRIu64
       ", SpoolSize=%" PRIu64
       ", "
@@ -50,9 +50,9 @@ constexpr const char* DevStats
       "VolFiles=%" PRIu64
       ", "
       "VolBlocks=%" PRIu64 "\n";
-constexpr const char* TapeAlerts
+constexpr const char TapeAlerts[]
     = "Tapealerts [%" PRId64 "]: Device=%s TapeAlert=%" PRIu64 "\n";
-constexpr const char* JobStats
+constexpr const char JobStats[]
     = "Jobstats [%" PRId64 "]: JobId=%" PRIu32 ", JobFiles=%" PRIu32
       ", JobBytes=%" PRIu64 ", DevName=%s\n";
 

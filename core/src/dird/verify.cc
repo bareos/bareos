@@ -56,16 +56,16 @@
 namespace directordaemon {
 
 /* Commands sent to File daemon */
-constexpr const char* verifycmd = "verify level=%s\n";
-constexpr const char* storaddrcmd
+constexpr const char verifycmd[] = "verify level=%s\n";
+constexpr const char storaddrcmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%s\n";
-constexpr const char* passiveclientcmd
+constexpr const char passiveclientcmd[]
     = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-constexpr const char* OKverify = "2000 OK verify\n";
-constexpr const char* OKstore = "2000 OK storage\n";
-constexpr const char* OKpassiveclient = "2000 OK passive client\n";
+constexpr const char OKverify[] = "2000 OK verify\n";
+constexpr const char OKstore[] = "2000 OK storage\n";
+constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
 
 /* Forward referenced functions */
 static void PrtFname(JobControlRecord* jcr);

@@ -71,7 +71,7 @@
 namespace directordaemon {
 
 /* Commands sent to other storage daemon */
-constexpr const char* replicatecmd
+constexpr const char replicatecmd[]
     = "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
 // Get Job names in Pool

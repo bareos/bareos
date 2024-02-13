@@ -43,12 +43,12 @@ const int debuglevel = 50;
 
 /* Commands sent to Storage daemon and File daemon and received
  *  from the User Agent */
-constexpr const char* SDFDhello = "Hello Director %s calling\n";
+constexpr const char SDFDhello[] = "Hello Director %s calling\n";
 
 /* Response from SD */
-constexpr const char* SDOKhello = "3000 OK Hello\n";
+constexpr const char SDOKhello[] = "3000 OK Hello\n";
 /* Response from FD */
-constexpr const char* FDOKhello = "2000 OK Hello";
+constexpr const char FDOKhello[] = "2000 OK Hello";
 
 static std::map<AuthenticationResult, std::string>
     authentication_error_to_string_map{

@@ -31,8 +31,8 @@
 #include "lib/bget_msg.h"
 #include "lib/bsock.h"
 
-constexpr const char* OK_msg = "2000 OK\n";
-constexpr const char* TERM_msg = "2999 Terminate\n";
+constexpr const char OK_msg[] = "2000 OK\n";
+constexpr const char TERM_msg[] = "2999 Terminate\n";
 
 #define messagelevel 500
 

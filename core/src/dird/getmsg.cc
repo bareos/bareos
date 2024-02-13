@@ -54,9 +54,9 @@ namespace directordaemon {
 /* Forward referenced functions */
 static char* find_msg_start(char* msg);
 
-constexpr const char* Job_status = "Status Job=%127s JobStatus=%d\n";
+constexpr const char Job_status[] = "Status Job=%127s JobStatus=%d\n";
 
-constexpr const char* OK_msg = "1000 OK\n";
+constexpr const char OK_msg[] = "1000 OK\n";
 
 static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
 {

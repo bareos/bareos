@@ -42,15 +42,15 @@
 namespace directordaemon {
 
 // Commands received from storage daemon that need scanning
-constexpr const char* DevStats
+constexpr const char DevStats[]
     = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
       "NumWaiting=%lu, NumWriters=%lu, "
       "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
       "VolFiles=%llu, "
       "VolBlocks=%llu";
-constexpr const char* TapeAlerts
+constexpr const char TapeAlerts[]
     = "Tapealerts [%lld]: Device=%s TapeAlert=%llu";
-constexpr const char* JobStats
+constexpr const char JobStats[]
     = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
 
 static bool quit = false;

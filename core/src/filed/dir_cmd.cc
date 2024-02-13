@@ -176,91 +176,91 @@ static struct s_fd_dir_cmds cmds[] = {
 };
 
 // Commands send to director
-constexpr const char* hello_client
+constexpr const char hello_client[]
     = "Hello Client %s FdProtocolVersion=%d calling\n";
 
 // Responses received from the director
-constexpr const char* OKversion = "1000 OK: %s Version: %s (%u %s %u)";
+constexpr const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
 
 // Commands received from director that need scanning
-constexpr const char* setauthorizationcmd
+constexpr const char setauthorizationcmd[]
     = "setauthorization Authorization=%100s";
-constexpr const char* setbandwidthcmd = "setbandwidth=%lld Job=%127s";
-constexpr const char* setdebugv0cmd = "setdebug=%d trace=%d";
-constexpr const char* setdebugv1cmd = "setdebug=%d trace=%d hangup=%d";
-constexpr const char* setdebugv2cmd
+constexpr const char setbandwidthcmd[] = "setbandwidth=%lld Job=%127s";
+constexpr const char setdebugv0cmd[] = "setdebug=%d trace=%d";
+constexpr const char setdebugv1cmd[] = "setdebug=%d trace=%d hangup=%d";
+constexpr const char setdebugv2cmd[]
     = "setdebug=%d trace=%d hangup=%d timestamp=%d";
-constexpr const char* storaddrv0cmd = "storage address=%s port=%d ssl=%d";
-constexpr const char* storaddrv1cmd
+constexpr const char storaddrv0cmd[] = "storage address=%s port=%d ssl=%d";
+constexpr const char storaddrv1cmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%100s";
-constexpr const char* sessioncmd = "session %127s %ld %ld %ld %ld %ld %ld\n";
-constexpr const char* restorecmd = "restore replace=%c prelinks=%d where=%s\n";
-constexpr const char* restorecmd1 = "restore replace=%c prelinks=%d where=\n";
-constexpr const char* restorecmdR
+constexpr const char sessioncmd[] = "session %127s %ld %ld %ld %ld %ld %ld\n";
+constexpr const char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
+constexpr const char restorecmd1[] = "restore replace=%c prelinks=%d where=\n";
+constexpr const char restorecmdR[]
     = "restore replace=%c prelinks=%d regexwhere=%s\n";
-constexpr const char* restoreobjcmd
+constexpr const char restoreobjcmd[]
     = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d,%s";
-constexpr const char* restoreobjcmd1
+constexpr const char restoreobjcmd1[]
     = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
-constexpr const char* endrestoreobjectcmd = "restoreobject end\n";
-constexpr const char* pluginoptionscmd = "pluginoptions %s";
-constexpr const char* verifycmd = "verify level=%30s";
-constexpr const char* Estimatecmd = "estimate listing=%d";
-constexpr const char* runscriptcmd
+constexpr const char endrestoreobjectcmd[] = "restoreobject end\n";
+constexpr const char pluginoptionscmd[] = "pluginoptions %s";
+constexpr const char verifycmd[] = "verify level=%30s";
+constexpr const char Estimatecmd[] = "estimate listing=%d";
+constexpr const char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-constexpr const char* resolvecmd = "resolve %s";
+constexpr const char resolvecmd[] = "resolve %s";
 
 // Responses sent to Director
-constexpr const char* errmsg = "2999 Invalid command\n";
-constexpr const char* invalid_cmd
+constexpr const char errmsg[] = "2999 Invalid command\n";
+constexpr const char invalid_cmd[]
     = "2997 Invalid command for a Director with Monitor directive enabled.\n";
-constexpr const char* OkAuthorization = "2000 OK Authorization\n";
-constexpr const char* OKBandwidth = "2000 OK Bandwidth\n";
-constexpr const char* OKinc = "2000 OK include\n";
-constexpr const char* OKest = "2000 OK estimate files=%s bytes=%s\n";
-constexpr const char* OKlevel = "2000 OK level\n";
-constexpr const char* OKbackup = "2000 OK backup\n";
-constexpr const char* OKbootstrap = "2000 OK bootstrap\n";
-constexpr const char* OKverify = "2000 OK verify\n";
-constexpr const char* OKrestore = "2000 OK restore\n";
-constexpr const char* OKsecureerase = "2000 OK FDSecureEraseCmd %s\n";
-constexpr const char* OKsession = "2000 OK session\n";
-constexpr const char* OKstore = "2000 OK storage\n";
-constexpr const char* OKstoreend = "2000 OK storage end\n";
-constexpr const char* OKjob = "2000 OK Job %s (%s) %s,%s";
-constexpr const char* OKsetdebugv0
+constexpr const char OkAuthorization[] = "2000 OK Authorization\n";
+constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+constexpr const char OKinc[] = "2000 OK include\n";
+constexpr const char OKest[] = "2000 OK estimate files=%s bytes=%s\n";
+constexpr const char OKlevel[] = "2000 OK level\n";
+constexpr const char OKbackup[] = "2000 OK backup\n";
+constexpr const char OKbootstrap[] = "2000 OK bootstrap\n";
+constexpr const char OKverify[] = "2000 OK verify\n";
+constexpr const char OKrestore[] = "2000 OK restore\n";
+constexpr const char OKsecureerase[] = "2000 OK FDSecureEraseCmd %s\n";
+constexpr const char OKsession[] = "2000 OK session\n";
+constexpr const char OKstore[] = "2000 OK storage\n";
+constexpr const char OKstoreend[] = "2000 OK storage end\n";
+constexpr const char OKjob[] = "2000 OK Job %s (%s) %s,%s";
+constexpr const char OKsetdebugv0[]
     = "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
-constexpr const char* OKsetdebugv1
+constexpr const char OKsetdebugv1[]
     = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
-constexpr const char* BADjob = "2901 Bad Job\n";
-constexpr const char* EndJob
+constexpr const char BADjob[] = "2901 Bad Job\n";
+constexpr const char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
       " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
-constexpr const char* OKRunBeforeNow = "2000 OK RunBeforeNow\n";
-constexpr const char* OKRunScript = "2000 OK RunScript\n";
-constexpr const char* FailedRunScript = "2905 Failed RunScript\n";
-constexpr const char* BADcmd = "2902 Bad %s\n";
-constexpr const char* OKRestoreObject = "2000 OK ObjectRestored\n";
-constexpr const char* OKPluginOptions = "2000 OK PluginOptions\n";
-constexpr const char* BadPluginOptions = "2905 Bad PluginOptions command.\n";
+constexpr const char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
+constexpr const char OKRunScript[] = "2000 OK RunScript\n";
+constexpr const char FailedRunScript[] = "2905 Failed RunScript\n";
+constexpr const char BADcmd[] = "2902 Bad %s\n";
+constexpr const char OKRestoreObject[] = "2000 OK ObjectRestored\n";
+constexpr const char OKPluginOptions[] = "2000 OK PluginOptions\n";
+constexpr const char BadPluginOptions[] = "2905 Bad PluginOptions command.\n";
 
 // Responses received from Storage Daemon
-constexpr const char* OK_end = "3000 OK end\n";
-constexpr const char* OK_close = "3000 OK close Status = %d\n";
-constexpr const char* OK_open = "3000 OK open ticket = %d\n";
-constexpr const char* OK_data = "3000 OK data\n";
-constexpr const char* OK_append = "3000 OK append data\n";
+constexpr const char OK_end[] = "3000 OK end\n";
+constexpr const char OK_close[] = "3000 OK close Status = %d\n";
+constexpr const char OK_open[] = "3000 OK open ticket = %d\n";
+constexpr const char OK_data[] = "3000 OK data\n";
+constexpr const char OK_append[] = "3000 OK append data\n";
 
 // Commands sent to Storage Daemon
-constexpr const char* append_open = "append open session\n";
-constexpr const char* append_data = "append data %d\n";
-constexpr const char* append_end = "append end session %d\n";
-constexpr const char* append_close = "append close session %d\n";
-constexpr const char* read_open
+constexpr const char append_open[] = "append open session\n";
+constexpr const char append_data[] = "append data %d\n";
+constexpr const char append_end[] = "append end session %d\n";
+constexpr const char append_close[] = "append close session %d\n";
+constexpr const char read_open[]
     = "read open session = %s %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32
       " %" PRIu32 " %" PRIu32 "\n";
-constexpr const char* read_data = "read data %d\n";
-constexpr const char* read_close = "read close session %d\n";
+constexpr const char read_data[] = "read data %d\n";
+constexpr const char read_close[] = "read close session %d\n";
 
 // See if we are allowed to execute the command issued.
 static bool ValidateCommand(JobControlRecord* jcr,

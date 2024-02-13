@@ -25,18 +25,18 @@
 
 namespace storagedaemon {
 
-inline constexpr const char* OK_data = "3000 OK data\n";
-inline constexpr const char* FD_error = "3000 error\n";
-inline constexpr const char* rec_header
+inline constexpr const char OK_data[] = "3000 OK data\n";
+inline constexpr const char FD_error[] = "3000 error\n";
+inline constexpr const char rec_header[]
     = "rechdr %" PRIu32 " %" PRIu32 " %" PRId32 " %" PRId32 " %" PRIu32 "";
 
 /* '<FileIdx> <stream> 0' */
-inline constexpr const char* stream_start = "%" PRIu32 " %" PRId32 " 0";
+inline constexpr const char stream_start[] = "%" PRIu32 " %" PRId32 " 0";
 
 /* '<FileIdx> 1 <portable?> <cmd><0>' */
-inline constexpr const char* plugin_start = "%" PRIu32 " 1 %d %s%c";
+inline constexpr const char plugin_start[] = "%" PRIu32 " 1 %d %s%c";
 /* '<FileIdx> 0' */
-inline constexpr const char* plugin_end = "%" PRIu32 " 0";
+inline constexpr const char plugin_end[] = "%" PRIu32 " 0";
 
 } /* namespace storagedaemon */
 
