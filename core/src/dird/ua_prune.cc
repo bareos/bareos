@@ -876,8 +876,7 @@ int GetPruneListForVolume(UaContext* ua,
   int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
   if (NumJobsToBePruned > 0) {
     ua->SendMsg(T_("Volume \"%s\" has Volume Retention of %" PRId64
-                   "sec. and has %d jobs "
-                   "that will be pruned\n"),
+                   " sec. and has %d jobs that will be pruned\n"),
                 mr->VolumeName, VolRetention, NumJobsToBePruned);
   }
   return NumJobsToBePruned;

@@ -1348,8 +1348,7 @@ static bool LevelCmd(JobControlRecord* jcr)
       }
       Jmsg(jcr, type, 0,
            T_("DIR and FD clocks differ by %" PRId64
-              " seconds, FD automatically "
-              "compensating.\n"),
+              " seconds, FD automatically compensating.\n"),
            adj);
     }
     dir->signal(BNET_EOD);

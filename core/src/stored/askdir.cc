@@ -71,9 +71,6 @@ constexpr const char* Create_job_media
 
 constexpr const char* Update_filelist = "Catreq Job=%s UpdateFileList\n";
 
-constexpr const char* Update_jobrecord
-    = "Catreq Job=%s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
-
 constexpr const char* FileAttributes = "UpdCat Job=%s FileAttributes ";
 
 

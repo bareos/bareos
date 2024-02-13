@@ -849,8 +849,8 @@ static bool JobCheckMaxrunschedtime(JobControlRecord* jcr)
   }
   if ((watchdog_time - jcr->initial_sched_time)
       < jcr->dir_impl->MaxRunSchedTime) {
-    Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %" PRId64 "not expired\n", jcr,
-          jcr->Job, jcr->dir_impl->MaxRunSchedTime);
+    Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %" PRId64 " not expired\n",
+          jcr, jcr->Job, jcr->dir_impl->MaxRunSchedTime);
     return false;
   }
 

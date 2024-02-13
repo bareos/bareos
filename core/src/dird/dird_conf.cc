@@ -1504,7 +1504,7 @@ static std::string PrintConfigRun(RunResource* run)
   }
 
   if (run->MaxRunSchedTime) {
-    Mmsg(temp, "maxrunschedtime=%" PRIu64, run->MaxRunSchedTime);
+    Mmsg(temp, "maxrunschedtime=%" PRIu64 " ", run->MaxRunSchedTime);
     PmStrcat(run_str, temp.c_str());
   }
 

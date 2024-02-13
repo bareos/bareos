@@ -244,7 +244,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
         }
         Jmsg(jcr, M_WARNING, 0,
              T_("Softquota Exceeded and Grace Period expired.\n"));
-        Jmsg(jcr, M_INFO, 0, T_("Setting Burst Quota to %" PRIu64 "Bytes.\n"),
+        Jmsg(jcr, M_INFO, 0, T_("Setting Burst Quota to %" PRIu64 " Bytes.\n"),
              jcr->dir_impl->jr.JobSumTotalBytes);
         jcr->dir_impl->res.client->QuotaLimit
             = jcr->dir_impl->jr.JobSumTotalBytes;
@@ -261,7 +261,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
           }
           Jmsg(jcr, M_WARNING, 0,
                T_("Soft Quota exceeded and Grace Period expired.\n"));
-          Jmsg(jcr, M_INFO, 0, T_("Setting Burst Quota to %" PRIu64 "Bytes.\n"),
+          Jmsg(jcr, M_INFO, 0,
+               T_("Setting Burst Quota to %" PRIu64 " Bytes.\n"),
                jcr->dir_impl->jr.JobSumTotalBytes);
           jcr->dir_impl->res.client->QuotaLimit
               = jcr->dir_impl->jr.JobSumTotalBytes;
