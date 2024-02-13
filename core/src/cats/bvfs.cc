@@ -796,11 +796,9 @@ bool Bvfs::compute_restore_list(char* fileid,
         query.strcat(tmp.c_str());
       }
       Mmsg(tmp,
-           "SELECT Job.JobId, JobTDate, FileIndex, Name, "
-           "PathId, FileId "
-           "FROM File JOIN Job USING (JobId) WHERE JobId = %" PRId64
-           " "
-           "AND FileIndex IN (%" PRId64,
+           "SELECT Job.JobId, JobTDate, FileIndex, Name, PathId, FileId"
+           " FROM File JOIN Job USING (JobId) WHERE JobId = %" PRId64
+           " AND FileIndex IN (%" PRId64,
            jobid, id);
       prev_jobid = jobid;
 

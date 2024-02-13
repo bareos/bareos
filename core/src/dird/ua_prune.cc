@@ -458,7 +458,7 @@ static bool prune_set_filter(UaContext* ua,
 
   now = (utime_t)time(NULL);
   edit_int64(now - period, ed1);
-  Dmsg3(150, "now=%" PRId64 "period=%" PRId64 "JobTDate=%s\n", now, period,
+  Dmsg3(150, "now=%" PRId64 " period=%" PRId64 " JobTDate=%s\n", now, period,
         ed1);
   Mmsg(tmp, " AND JobTDate < %s ", ed1);
   PmStrcat(*add_where, tmp.c_str());

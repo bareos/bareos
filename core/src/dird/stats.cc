@@ -211,16 +211,12 @@ extern "C" void* statistics_thread(void*)
                 == 13) {
               Dmsg5(200,
                     "New Devstats [%lld]: Device=%s Read=%" PRIu64
-                    ", Write=%" PRIu64
-                    ", "
-                    "SpoolSize=%" PRIu64 ",\n",
+                    ", Write=%" PRIu64 ", SpoolSize=%" PRIu64 ",\n",
                     static_cast<long long>(dsr.SampleTime), DevName.c_str(),
                     dsr.ReadBytes, dsr.WriteBytes, dsr.SpoolSize);
               Dmsg4(200,
                     "NumWaiting=%" PRIu32 ", NumWriters=%" PRIu32
-                    ", ReadTime=%" PRIu64
-                    ", "
-                    "WriteTime=%" PRIu64 ",\n",
+                    ", ReadTime=%" PRIu64 ", WriteTime=%" PRIu64 ",\n",
                     dsr.NumWaiting, dsr.NumWriters, dsr.ReadTime,
                     dsr.WriteTime);
               Dmsg4(200,
@@ -271,8 +267,7 @@ extern "C" void* statistics_thread(void*)
 
               Dmsg5(200,
                     "New Jobstats [%lld]: JobId %u, JobFiles %" PRIu32
-                    ", JobBytes "
-                    "%" PRIu64 ", DevName %s\n",
+                    ", JobBytes %" PRIu64 ", DevName %s\n",
                     static_cast<long long>(jsr.SampleTime), jsr.JobId,
                     jsr.JobFiles, jsr.JobBytes, DevName.c_str());
 

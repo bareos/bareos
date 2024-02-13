@@ -101,8 +101,7 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   Mmsg(cmd,
        "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
        "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%" PRIu32
-       ","
-       "VolSessionTime=%" PRIu32 " WHERE JobId=%s",
+       ", VolSessionTime=%" PRIu32 " WHERE JobId=%s",
        (char)(jcr->getJobStatus()), (char)(jr->JobLevel), dt,
        edit_int64(jr->ClientId, ed1), edit_uint64(JobTDate, ed2),
        edit_int64(jr->PoolId, ed3), edit_int64(jr->FileSetId, ed4),

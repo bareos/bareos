@@ -2103,12 +2103,10 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
   stat_repr = PyObject_Repr(self->statp);
   Mmsg(buf,
        "RestorePacket(stream=%d, data_stream=%" PRId32 ", type=%" PRId32
-       ", file_index=%" PRId32
-       ", "
-       "linkFI=%" PRId32 ", uid=%" PRIu32
-       ", statp=\"%s\", attrEx=\"%s\", ofname=\"%s\", "
-       "olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d, "
-       "create_status=%d)",
+       ", file_index=%" PRId32 ", linkFI=%" PRId32 ", uid=%" PRIu32
+       ", statp=\"%s\", attrEx=\"%s\", ofname=\"%s\""
+       ", olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d"
+       ", create_status=%d)",
        self->stream, self->data_stream, self->type, self->file_index,
        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx,
        self->ofname, self->olname, self->where, self->RegexWhere, self->replace,
@@ -2175,11 +2173,9 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
 
   Mmsg(buf,
        "IoPacket(func=%d, count=%" PRId32 ", flags=%" PRId32
-       ", mode=%04o, "
-       "buf=\"%s\", fname=\"%s\", status=%" PRId32 ", io_errno=%" PRId32
-       ", lerror=%" PRId32
-       ", "
-       "whence=%" PRId32 ", offset=%" PRId64 ", win32=%d, filedes=%d)",
+       ", mode=%04o, buf=\"%s\", fname=\"%s\", status=%" PRId32
+       ", io_errno=%" PRId32 ", lerror=%" PRId32 ", whence=%" PRId32
+       ", offset=%" PRId64 ", win32=%d, filedes=%d)",
        self->func, self->count, self->flags, (self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
        self->io_errno, self->lerror, self->whence, self->offset, self->win32,
