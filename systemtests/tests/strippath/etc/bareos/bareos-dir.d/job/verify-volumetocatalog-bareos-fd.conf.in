@@ -1,0 +1,8 @@
+Job {
+  Name = "verify-volumetocatalog-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "SelfTestStripPath"
+  Type = Verify
+  Level = VolumeToCatalog
+}

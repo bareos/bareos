@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bareos-triggerjob: fix parameter handling [PR #1708]
 - fvec: add mmap based vector  [PR #1662]
 - core: fix various data races (connection_pool/heartbeat_thread) [PR #1685]
+- filed: skip stripped top level directories [PR #1686]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -91,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1683]: https://github.com/bareos/bareos/pull/1683
 [PR #1684]: https://github.com/bareos/bareos/pull/1684
 [PR #1685]: https://github.com/bareos/bareos/pull/1685
+[PR #1686]: https://github.com/bareos/bareos/pull/1686
 [PR #1688]: https://github.com/bareos/bareos/pull/1688
 [PR #1695]: https://github.com/bareos/bareos/pull/1695
 [PR #1696]: https://github.com/bareos/bareos/pull/1696

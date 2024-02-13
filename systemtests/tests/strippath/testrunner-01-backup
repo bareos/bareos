@@ -1,0 +1,42 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=01-setup
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/backup.out
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+wait
+update volume=TestVolume001 volstatus=Used
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$@"
+
+check_for_zombie_jobs storage=File
+
+expect_grep 'Catalog record for Volume "TestVolume001", Slot 0 successfully created.' \
+	    "$tmp/backup.out" \
+	    "TestVolume001 was not created." 
+
+expect_grep 'Termination:.*Backup OK' \
+	    "$tmp/backup.out" \
+	    "Backup did not succeed."
+
+end_test

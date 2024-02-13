@@ -1789,9 +1789,12 @@ void StripPath(FindFilesPacket* ff_pkt)
    * is a different link string, attempt to strip the link. If it fails,
    * back them both back. Do not strip symlinks. I.e. if either stripping
    * fails don't strip anything. */
-  if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
-    UnstripPath(ff_pkt);
-    goto rtn;
+  if ((ff_pkt->type != FT_DIREND && ff_pkt->type != FT_REPARSE)
+      || ff_pkt->fname == ff_pkt->link) {
+    if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
+      UnstripPath(ff_pkt);
+      goto rtn;
+    }
   }
 
   // Strip links but not symlinks
