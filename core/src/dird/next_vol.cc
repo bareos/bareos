@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -357,7 +357,8 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   }
 }
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+// Only one thread at a time can pull from the scratch pool
+static pthread_mutex_t scratch_volume_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 bool GetScratchVolume(JobControlRecord* jcr,
                       bool InChanger,
@@ -370,7 +371,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
   bool found = false;
 
   // Only one thread at a time can pull from the scratch pool
-  lock_mutex(mutex);
+  lock_mutex(scratch_volume_mutex);
 
   /* Get Pool record for Scratch Pool
    * choose between ScratchPoolId and Scratch
@@ -447,7 +448,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
   }
 
 bail_out:
-  unlock_mutex(mutex);
+  unlock_mutex(scratch_volume_mutex);
   return ok;
 }
 } /* namespace directordaemon */
