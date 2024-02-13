@@ -68,6 +68,9 @@ constexpr const char Create_job_media[]
     = "CatReq Job=%s CreateJobMedia"
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
+inline constexpr const char Update_jobrecord[]
+    = "Catreq Job=%s UpdateJobRecord JobFiles=%" PRIu32 " JobBytes=%" PRIu64
+      "\n";
 
 constexpr const char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
 
@@ -629,8 +632,7 @@ bool StorageDaemonDeviceControlRecord::DirAskToUpdateFileList()
 bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord()
 {
   BareosSocket* dir = jcr->dir_bsock;
-  return dir->fsend(directordaemon::Update_jobrecord, jcr->Job, jcr->JobFiles,
-                    jcr->JobBytes);
+  return dir->fsend(Update_jobrecord, jcr->Job, jcr->JobFiles, jcr->JobBytes);
 }
 
 
