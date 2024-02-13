@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
 #include "lib/address_conf.h"
 #include "lib/watchdog.h"
 #include "lib/berrno.h"
+#include <algorithm>
 
 static bool create_and_bind_v4socket(int test_fd, int port)
 {
