@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - windows: fix calculation of "job_metadata.xml" object size [PR #1695]
 - stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1688]
 - bareos-triggerjob: fix parameter handling [PR #1708]
+- fvec: add mmap based vector  [PR #1662]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -80,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1656]: https://github.com/bareos/bareos/pull/1656
 [PR #1659]: https://github.com/bareos/bareos/pull/1659
 [PR #1661]: https://github.com/bareos/bareos/pull/1661
+[PR #1662]: https://github.com/bareos/bareos/pull/1662
 [PR #1665]: https://github.com/bareos/bareos/pull/1665
 [PR #1670]: https://github.com/bareos/bareos/pull/1670
 [PR #1671]: https://github.com/bareos/bareos/pull/1671
