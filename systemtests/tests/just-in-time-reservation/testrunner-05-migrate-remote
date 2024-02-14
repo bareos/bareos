@@ -1,0 +1,126 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+runner_name="$(basename "$0")"
+log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+migrate_log="$log_home/migration_log.out"
+query_results="$log_home/query_results.out"
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/setup.out
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+END_OF_DATA
+
+run_bconsole
+
+copy_job_id=$(grep ".*|.*C.*|.*" "$log_home/jobs.out" | cut -d'|' -f2 | sed 's/[[:space:]]//g')
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $migrate_log
+label volume=RemoteVol storage=RemoteFile pool=CopyMigrate
+run migrate yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+expect_grep "Termination:.*Migration OK" \
+            "$migrate_log" \
+            "Copy job did not finish well."
+
+expect_grep "BeforeJob: prevjobid=\*None\* newjobid=\*None\*" \
+            "$migrate_log" \
+            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
+expect_grep "AfterJob: prevjobid=\*None\* newjobid=\*None\*" \
+            "$migrate_log" \
+            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
+expect_grep "New Backup JobId" \
+            "$migrate_log" \
+            "No new backup jobid was created."
+
+new_job_id=$(grep "New Backup JobId:" "$migrate_log" | sed -n -e 's/^.*JobId:[[:space:]]*//p')
+
+expect_grep "BeforeJob: prevjobid=${copy_job_id} newjobid=${new_job_id}" \
+            "$migrate_log" \
+            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
+expect_grep "AfterJob: prevjobid=${copy_job_id} newjobid=${new_job_id}" \
+            "$migrate_log" \
+            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $query_results
+sqlquery
+SELECT type FROM job WHERE jobid=${copy_job_id};
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+expect_grep "|.*M.*|" \
+            "$query_results" \
+            "Copy job is not marked as migrated."
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $query_results
+sqlquery
+SELECT type FROM job WHERE jobid=${new_job_id};
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+expect_grep "|.*B.*|" \
+            "$query_results" \
+            "Migrated job is not marked as backup job."
+
+
+check_for_zombie_jobs storage=File
+
+end_test
