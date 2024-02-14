@@ -43,6 +43,8 @@
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
 
+#include <cinttypes>
+
 namespace storagedaemon {
 
 const int debuglevel = 150;
@@ -370,6 +372,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     jcr->sd_impl->dcr = nullptr;  // signal to rest of storage daemon that no
                                   // device was reserved.
     BashSpaces(dev_name);
+    Jmsg(jcr, M_INFO, 0, "Using just in time reservation for job %" PRIu32 "\n",
+         jcr->JobId);
     ok = dir->fsend(OK_device, dev_name.c_str()); /* Return fake device name */
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
     return ok;
