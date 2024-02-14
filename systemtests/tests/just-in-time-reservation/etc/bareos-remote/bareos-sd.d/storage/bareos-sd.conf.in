@@ -11,4 +11,6 @@ Storage {
   Working Directory =  "@working_dir@"
   SD Port = @sd2_port@
   @sd_backend_config@
+
+  Just In Time Reservation = Yes
 }
