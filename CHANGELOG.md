@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix continuation on colons in plugin baseclass [PR #1637]
 - plugins: fix cancel handling crash [PR #1595]
 - Fix bareos_tasks plugin for pgsql [PR #1659]
+- core: Fix compile errors on GCC 14 [PR #1687]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -93,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1684]: https://github.com/bareos/bareos/pull/1684
 [PR #1685]: https://github.com/bareos/bareos/pull/1685
 [PR #1686]: https://github.com/bareos/bareos/pull/1686
+[PR #1687]: https://github.com/bareos/bareos/pull/1687
 [PR #1688]: https://github.com/bareos/bareos/pull/1688
 [PR #1695]: https://github.com/bareos/bareos/pull/1695
 [PR #1696]: https://github.com/bareos/bareos/pull/1696

@@ -42,6 +42,7 @@
 #include "lib/berrno.h"
 #include "lib/crypto.h"
 
+#include <algorithm>
 #include <thread>
 #include <variant>
 #include <deque>
