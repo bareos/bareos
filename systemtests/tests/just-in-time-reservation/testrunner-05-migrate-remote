@@ -88,6 +88,10 @@ expect_grep "New Backup JobId" \
 
 new_job_id=$(grep "New Backup JobId:" "$migrate_log" | sed -n -e 's/^.*JobId:[[:space:]]*//p')
 
+expect_grep "Using just in time reservation for job" \
+            "$migrate_log" \
+            "Migration job did not use just in time reservation."
+
 expect_grep "BeforeJob: prevjobid=${copy_job_id} newjobid=${new_job_id}" \
             "$migrate_log" \
             "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
