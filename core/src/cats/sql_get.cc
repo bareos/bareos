@@ -31,6 +31,7 @@
  */
 
 #include "include/bareos.h"
+#include <algorithm>
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 

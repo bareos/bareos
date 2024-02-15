@@ -19,6 +19,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - windows: fix calculation of "job_metadata.xml" object size [PR #1704]
 - stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1701]
 
+### Fixed
+- core: Fix compile errors on GCC 14 [PR #1714]
+
 ## [22.1.3] - 2023-12-13
 
 ### Changed
@@ -644,4 +647,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1699]: https://github.com/bareos/bareos/pull/1699
 [PR #1701]: https://github.com/bareos/bareos/pull/1701
 [PR #1704]: https://github.com/bareos/bareos/pull/1704
+[PR #1714]: https://github.com/bareos/bareos/pull/1714
 [unreleased]: https://github.com/bareos/bareos/tree/master
