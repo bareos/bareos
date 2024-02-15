@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -150,7 +150,9 @@ def generate_commit_lines(original_pr, title, commits):
 
 def parse_commit_lines(lines):
     commit_lines = [
-        l.lstrip().partition(" ") for l in lines if not l.strip().startswith("#") and l.strip() != ""
+        l.lstrip().partition(" ")
+        for l in lines
+        if not l.strip().startswith("#") and l.strip() != ""
     ]
     todo = []
     for commit, space, descr in commit_lines:
@@ -326,9 +328,9 @@ def publish(*, repo, dry_run=False):
 
     labels = munge_labels(original_data["labels"], base_branch)
 
-    template_file = resources.files(__package__).joinpath('backport_pr_template.md')
+    template_file = resources.files(__package__).joinpath("backport_pr_template.md")
     template_vars = {"original_pr": original_pr, "base_branch": base_branch}
-    with template_file.open('r', encoding="utf-8") as template_fp:
+    with template_file.open("r", encoding="utf-8") as template_fp:
         with NamedTemporaryFile("w+", suffix=".md") as body_fp:
             _fill_template(template_fp, body_fp, template_vars)
             if not git_editor(repo, body_fp.name):

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -49,6 +49,7 @@ def positive_int(val):
     if intval <= 0:
         raise ArgumentTypeError(f"'{val}' is not a positive integer")
     return intval
+
 
 class Mark:
     PASS = " ✓ "
