@@ -3,7 +3,7 @@
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2015-2015 Planets Communications B.V.
-# Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,21 @@ def _safe_encode(data):
     return data
 
 
+def _log_ldap_err(e, loglevel, txt):
+    desc = ""
+    info = ""
+    msg = e.args[0]
+    if "desc" in msg:
+        desc = msg["desc"]
+    if "info" in msg:
+        info = msg["info"]
+
+    bareosfd.JobMessage(
+        loglevel,
+        "{}: {} {}\n".format(txt, desc, info),
+    )
+
+
 @BareosPlugin
 class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """
@@ -60,8 +75,9 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def __init__(self, plugindef):
         bareosfd.DebugMessage(
             100,
-            "Constructor called in module %s with plugindef=%s\n"
-            % (__name__, plugindef),
+            "Constructor called in module {} with plugindef={}\n".format(
+                __name__, plugindef
+            ),
         )
         super(BareosFdPluginLDAP, self).__init__(plugindef, ["uri", "basedn"])
         self.ldap = BareosLDAPWrapper()
@@ -72,7 +88,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         Parses the plugin arguments and validates the options.
         """
         bareosfd.DebugMessage(
-            100, "parse_plugin_definition() was called in module %s\n" % (__name__)
+            100, "parse_plugin_definition() was called in module {}\n".format(__name__)
         )
         super(BareosFdPluginLDAP, self).parse_plugin_definition(plugindef)
 
@@ -108,7 +124,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def start_restore_file(self, cmd):
         bareosfd.DebugMessage(
-            100, "BareosFdPluginLDAP:start_restore_file() called with %s\n" % (cmd)
+            100, "BareosFdPluginLDAP:start_restore_file() called with {}\n".format(cmd)
         )
 
         # It can happen that this is the first entry point on a restore
@@ -126,7 +142,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         to get the actual DN of the LDAP record
         """
         bareosfd.DebugMessage(
-            100, "BareosFdPluginLDAP:create_file() called with %s\n" % (restorepkt)
+            100, "BareosFdPluginLDAP:create_file() called with {}\n".format(restorepkt)
         )
         if restorepkt.type == bareosfd.FT_DIREND:
             restorepkt.create_status = bareosfd.CF_SKIP
@@ -136,7 +152,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "Request to restore illegal filetype %s\n" % (restorepkt.type),
+                "Request to restore illegal filetype {}\n".format(restorepkt.type),
             )
             return bareosfd.bRC_Error
 
@@ -144,7 +160,9 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io(self, IOP):
         bareosfd.DebugMessage(
-            100, "BareosFdPluginLDAP:plugin_io() called with function %s\n" % (IOP.func)
+            100,
+            "BareosFdPluginLDAP:plugin_io() called"
+            "with function {}\n".format(IOP.func),
         )
 
         if IOP.func == bareosfd.IO_OPEN:
@@ -245,23 +263,18 @@ class BareosLDAPWrapper:
         except ldap.INVALID_CREDENTIALS:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "Failed to bind to LDAP uri due to invalid credentials %s\n"
-                % (options["uri"]),
+                "Failed to bind to LDAP uri due to invalid credentials {}\n".format(
+                    options["uri"]
+                ),
             )
 
             return bareosfd.bRC_Error
         except ldap.LDAPError as e:
-            if type(e.message) == dict and "desc" in e.message:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Failed to bind to LDAP uri %s: %s %s\n"
-                    % (options["uri"], e.message["desc"], e.message["info"]),
-                )
-            else:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Failed to bind to LDAP uri %s: %s\n" % (options["uri"], e),
-                )
+            _log_ldap_err(
+                e,
+                bareosfd.M_FATAL,
+                "Failed to bind to LDAP uri {}".format(options["uri"]),
+            )
 
             return bareosfd.bRC_Error
 
@@ -299,18 +312,12 @@ class BareosLDAPWrapper:
                 options["basedn"], searchScope, searchFilter, attributeFilter
             )
         except ldap.LDAPError as e:
-            if type(e.message) == dict and "desc" in e.message:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Failed to execute LDAP search on LDAP uri %s: %s\n"
-                    % (options["uri"], e.message["desc"]),
-                )
-            else:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Failed to execute LDAP search on LDAP uri %s: %s\n"
-                    % (options["uri"], e),
-                )
+            _log_ldap_err(
+                e,
+                bareosfd.M_FATAL,
+                "Failed to execute LDAP search"
+                " on LDAP uri {}".format(options["uri"]),
+            )
 
             return bareosfd.bRC_Error
 
@@ -384,10 +391,15 @@ class BareosLDAPWrapper:
                 # if there is nothing return an error.
                 try:
                     res_type, res_data, res_msgid, res_controls = next(self.resultset)
-                    self.ldap_entries = collections.deque(res_data)
-                except ldap.NO_SUCH_OBJECT:
+                    if res_type == ldap.RES_SEARCH_ENTRY:
+                        self.ldap_entries = collections.deque(res_data)
+                except ldap.NO_SUCH_OBJECT as e:
+                    _log_ldap_err(e, bareosfd.M_FATAL, "error searching base DN")
                     return bareosfd.bRC_Error
                 except StopIteration:
+                    bareosfd.JobMessage(
+                        bareosfd.M_FATAL, "premature end of LDAP result set\n"
+                    )
                     return bareosfd.bRC_Error
 
             # Get the next entry from the result set.
@@ -473,7 +485,10 @@ class BareosLDAPWrapper:
                 try:
                     # Get the next result set
                     res_type, res_data, res_msgid, res_controls = next(self.resultset)
-                    self.ldap_entries = collections.deque(res_data)
+                    if res_type == ldap.RES_SEARCH_ENTRY:
+                        self.ldap_entries = collections.deque(res_data)
+                    else:
+                        self.ldap_entries = collections.deque()
 
                     # We expect something to be in the result set but better check
                     if self.ldap_entries:
@@ -499,7 +514,7 @@ class BareosLDAPWrapper:
             if self.dn != dn:
                 bareosfd.JobMessage(
                     bareosfd.M_INFO,
-                    "Restoring original DN %s as %s\n" % (dn, self.dn),
+                    "Restoring original DN {} as {}\n".format(dn, self.dn),
                 )
 
             if dn:
@@ -514,24 +529,19 @@ class BareosLDAPWrapper:
                             self.ld.delete_s(self.dn)
                             self.ld.add_s(self.dn, add_ldif)
                         except ldap.LDAPError as e:
-                            if type(e.message) == dict and "desc" in e.message:
-                                bareosfd.JobMessage(
-                                    bareosfd.M_ERROR,
-                                    "Failed to restore LDAP DN %s: %s\n"
-                                    % (self.dn, e.message["desc"]),
-                                )
-                            else:
-                                bareosfd.JobMessage(
-                                    bareosfd.M_ERROR,
-                                    "Failed to restore LDAP DN %s: %s\n" % (self.dn, e),
-                                )
+                            _log_ldap_err(
+                                e,
+                                bareosfd.M_ERROR,
+                                "Failed to restore LDAP DN {}".format(self.dn),
+                            )
+
                             self.ldif = None
                             return bareosfd.bRC_Error
                 else:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
-                        "Failed to restore LDAP DN %s no writable binding to LDAP exists\n"
-                        % (self.dn),
+                        "Failed to restore LDAP DN {}"
+                        " no writable binding to LDAP exists\n".format(self.dn),
                     )
                     self.ldif = None
                     return bareosfd.bRC_Error
