@@ -20,6 +20,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1700]
 - bareos-triggerjob: fix parameter handling [PR #1709]
 
+### Fixed
+- core: Fix compile errors on GCC 14 [PR #1693]
+
 ## [23.0.1] - 2024-01-17
 
 ### Changed
@@ -402,6 +405,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1679]: https://github.com/bareos/bareos/pull/1679
 [PR #1680]: https://github.com/bareos/bareos/pull/1680
 [PR #1690]: https://github.com/bareos/bareos/pull/1690
+[PR #1693]: https://github.com/bareos/bareos/pull/1693
 [PR #1694]: https://github.com/bareos/bareos/pull/1694
 [PR #1698]: https://github.com/bareos/bareos/pull/1698
 [PR #1700]: https://github.com/bareos/bareos/pull/1700
