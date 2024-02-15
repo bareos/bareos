@@ -32,6 +32,8 @@ from git import RemoteReference
 from git.exc import GitCommandError
 from .github import Gh, InvokationError, whoami
 
+logger = logging.getLogger("backport")
+
 
 class UnmanagedBranchException(Exception):
     pass
@@ -51,7 +53,7 @@ def find_user_remote(repo, username):
     for remote in repo.remotes:
         remote_urls = list(remote.urls)
         if len(remote_urls) > 1:
-            logging.warning("ignoring remote '%s' with multiple urls", remote.name)
+            logger.warning("ignoring remote '%s' with multiple urls", remote.name)
             continue
         if expected_url == remote_urls[0]:
             return remote
@@ -69,25 +71,33 @@ def resolve_target_branch(repo, git_remote, branch_name):
     if branch_name is not None:
         local_branch = get_branch_by_name(repo, branch_name)
         if not local_branch:
-            logging.error("Branch %s not found", branch_name)
+            logger.error("Branch %s not found", branch_name)
             return None
     else:
         try:
             local_branch = repo.active_branch
         except TypeError as e:
-            logging.error(e)
+            logger.error(e)
             return None
 
     remote_branch = local_branch.tracking_branch()
     if remote_branch is None:
-        logging.error("%s does not track a remote branch", local_branch.name)
-        return None
-    if remote_branch.remote_name != git_remote.name:
-        logging.error(
-            "%s does not track a branch on remote %s", local_branch.name, git_remote
+        logger.error("%s does not track a remote branch", local_branch.name)
+        logger.error(
+            "You can change the tracking branch using 'git branch --set-upstream-to %s/<target-branch>'",
+            git_remote,
         )
         return None
-    logging.info("Remote branch is '%s'", remote_branch.remote_head)
+    if remote_branch.remote_name != git_remote.name:
+        logger.error(
+            "%s does not track a branch on remote %s", local_branch.name, git_remote
+        )
+        logger.error(
+            "You can change the tracking branch using 'git branch --set-upstream-to %s/<target-branch>'",
+            git_remote,
+        )
+        return None
+    logger.info("Remote branch is '%s'", remote_branch.remote_head)
     return remote_branch.remote_head
 
 
@@ -108,7 +118,7 @@ def cherry_pick(*, repo, upstream, select_all=False, allow_reset=False):
     try:
         original_pr, base_branch_name = get_pr_metadata(repo=repo)
     except UnmanagedBranchException as e:
-        logging.critical(e)
+        logger.critical(e)
         return False
 
     upstream.fetch([base_branch_name, f"refs/pull/{original_pr}/head"])
@@ -116,10 +126,10 @@ def cherry_pick(*, repo, upstream, select_all=False, allow_reset=False):
     base_commit = upstream.refs[base_branch_name]
     if repo.head.commit != base_commit:
         if allow_reset:
-            logging.info("Resetting HEAD to %s", base_commit)
+            logger.info("Resetting HEAD to %s", base_commit)
             repo.head.reset(base_commit, working_tree=True, index=True)
         else:
-            logging.critical(
+            logger.critical(
                 "Your HEAD does not match %s. Either rerun with --reset or reset manually first.",
                 base_commit,
             )
@@ -157,7 +167,7 @@ def parse_commit_lines(lines):
     todo = []
     for commit, space, descr in commit_lines:
         if space != " " or not descr.endswith("\n"):
-            logging.critical("Cannot parse '%s%s%s', abort.", commit, space, descr)
+            logger.critical("Cannot parse '%s%s%s', abort.", commit, space, descr)
             return False
         todo.append(commit)
     return todo
@@ -172,7 +182,7 @@ def cherry_pick_impl(*, repo, original_pr, commits, title, select_all=False):
             fp.flush()
             fp.seek(0)
             if not git_editor(repo, fp.name):
-                logging.critical("Editor returned non-zero. Ignoring selection.")
+                logger.critical("Editor returned non-zero. Ignoring selection.")
                 return False
             lines = fp.readlines()
 
@@ -180,12 +190,12 @@ def cherry_pick_impl(*, repo, original_pr, commits, title, select_all=False):
     if not todo:
         return False
     if len(todo) == 0:
-        logging.info("No commits selected. Nothing to do.")
+        logger.info("No commits selected. Nothing to do.")
         return True
 
-    logging.debug("Canceling any ongoing cherry-pick.")
+    logger.debug("Canceling any ongoing cherry-pick.")
     repo.git.cherry_pick("--quit")
-    logging.info("Cherry-picking commits %s", todo)
+    logger.info("Cherry-picking commits %s", todo)
     try:
         res = repo.git.cherry_pick("-x", todo)
         print(res)
@@ -205,19 +215,19 @@ def create(*, pr, into, repo, upstream, select_all=False):
     # determine which remote the user's fork is on
     origin = find_user_remote(repo, whoami())
     if not origin:
-        logging.critical("Cannot find a git remote for your GitHub fork")
+        logger.critical("Cannot find a git remote for your GitHub fork")
         return False
 
     pr_data = get_pr_info(str(pr), ["title", "labels", "headRefName", "commits"])
     if not pr_data:
-        logging.critical("Cannot get information for PR %s. Does it exist?", pr)
+        logger.critical("Cannot get information for PR %s. Does it exist?", pr)
         return False
 
     short_headref_name = pr_data["headRefName"].split("/")[-1]
     short_baseref_name = into
     working_branch_name = f"backport/{short_baseref_name}/{short_headref_name}"
     if get_branch_by_name(repo, working_branch_name):
-        logging.critical("Branch '%s' already exists.", working_branch_name)
+        logger.critical("Branch '%s' already exists.", working_branch_name)
         return False
 
     # make sure we have the required branches and commits up-to-date
@@ -279,24 +289,24 @@ def check_branch_and_get_spec(*, repo, local_branch, dry_run):
 
     backport_data = get_pr_info(gh_branch_spec, ["number", "title", "url"])
     if backport_data:
-        logging.critical(
+        logger.critical(
             "This branch is already associated with PR #%s %s",
             backport_data["number"],
             backport_data["title"],
         )
-        logging.critical("See %s", backport_data["url"])
+        logger.critical("See %s", backport_data["url"])
         if not dry_run:
             return None
 
     if not remote_branch.is_valid():
         if dry_run:
-            logging.warning("Remote branch is not valid. Not pushing during dry-run!")
+            logger.warning("Remote branch is not valid. Not pushing during dry-run!")
         else:
-            logging.warning("Remote branch is not valid. Pushing now!")
+            logger.warning("Remote branch is not valid. Pushing now!")
             remote = repo.remote(name=remote_branch.remote_name)
             remote.push(repo.head.ref)
     elif local_branch.commit != remote_branch.commit:
-        logging.critical("Remote branch is not up-to-date. Did you forget to push?")
+        logger.critical("Remote branch is not up-to-date. Did you forget to push?")
         if not dry_run:
             return None
     return gh_branch_spec
@@ -312,7 +322,7 @@ def publish(*, repo, dry_run=False):
     try:
         original_pr, base_branch = get_pr_metadata(repo=repo)
     except UnmanagedBranchException as e:
-        logging.critical(e)
+        logger.critical(e)
         return False
 
     gh_branch_spec = check_branch_and_get_spec(
@@ -323,7 +333,7 @@ def publish(*, repo, dry_run=False):
 
     original_data = get_pr_info(str(original_pr), ["title", "labels"])
     if not original_data:
-        logging.critical("Could not retrieve information for PR %s", original_pr)
+        logger.critical("Could not retrieve information for PR %s", original_pr)
         return False
 
     labels = munge_labels(original_data["labels"], base_branch)
@@ -334,7 +344,7 @@ def publish(*, repo, dry_run=False):
         with NamedTemporaryFile("w+", suffix=".md") as body_fp:
             _fill_template(template_fp, body_fp, template_vars)
             if not git_editor(repo, body_fp.name):
-                logging.critical("Editor returned non-zero. Abort.")
+                logger.critical("Editor returned non-zero. Abort.")
                 return False
             new_pr = {
                 "title": original_data["title"],
