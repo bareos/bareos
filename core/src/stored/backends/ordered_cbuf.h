@@ -26,6 +26,11 @@
 #ifndef BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
 #define BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
 
+#include <cstdint>
+#include <pthread.h>
+#include <lib/dlink.h>
+template <typename T> class dlist;
+
 #define OQSIZE 10 /* # of pointers in the queue */
 
 namespace storagedaemon {

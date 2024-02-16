@@ -28,10 +28,16 @@
 #ifndef BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 
+#include <sys/types.h>
+#include "stored/dev.h"
+#include "ordered_cbuf.h"
+
 template <typename T> class alist;
 
-#include "ordered_cbuf.h"
 namespace storagedaemon {
+
+class DeviceControlRecord;
+struct DeviceStatusInformation;
 
 // Let io-threads check for work every 300 seconds.
 #define DEFAULT_RECHECK_INTERVAL 300
