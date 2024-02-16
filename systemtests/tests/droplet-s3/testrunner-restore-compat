@@ -39,9 +39,10 @@ start_test
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
-@$out $tmp/restore.log
+@$out $tmp/restore-compat.log
 wait
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+.sql query="update Media set MediaType='AlternateStorage'"
+restore client=bareos-fd fileset=SelfTest storage=AlternateStorage where=$tmp/bareos-restores select all done
 yes
 wait
 messages
@@ -49,9 +50,9 @@ quit
 END_OF_DATA
 
 run_bconsole "$@"
-check_for_zombie_jobs storage=droplet
+check_for_zombie_jobs storage=AlternateStorage
 
-check_log "$tmp/restore.log"
+check_log "$tmp/restore-compat.log"
 check_restore_diff "${BackupDirectory}"
 
 end_test

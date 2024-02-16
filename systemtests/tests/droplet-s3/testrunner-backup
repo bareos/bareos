@@ -42,19 +42,19 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $tmp/backup.log
-setdebug level=100 storage=File
-label volume=TestVolume001 storage=File pool=Full
+setdebug level=100 storage=droplet
+label volume=TestVolume001 storage=droplet pool=Full
 run job=$JobName yes
 status director
 status client
-status storage=File
+status storage=droplet
 wait
 messages
 quit
 END_OF_DATA
 
 run_bconsole "$@"
-check_for_zombie_jobs storage=File
+check_for_zombie_jobs storage=droplet
 
 check_log "$tmp/backup.log"
 
