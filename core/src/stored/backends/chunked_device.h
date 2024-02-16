@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,10 +28,16 @@
 #ifndef BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 
+#include <sys/types.h>
+#include "stored/dev.h"
+#include "ordered_cbuf.h"
+
 template <typename T> class alist;
 
-#include "ordered_cbuf.h"
 namespace storagedaemon {
+
+class DeviceControlRecord;
+struct DeviceStatusInformation;
 
 // Let io-threads check for work every 300 seconds.
 #define DEFAULT_RECHECK_INTERVAL 300
