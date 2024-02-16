@@ -1,5 +1,5 @@
 Storage {
-  Name = File
+  Name = droplet
   Address = localhost
   Password = "@sd_password@"
   Device = S3_ObjectStorage
