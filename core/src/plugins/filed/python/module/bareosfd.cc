@@ -1936,14 +1936,13 @@ static PyObject* PyStatPacket_repr(PyStatPacket* self)
   PoolMem buf(PM_MESSAGE);
 
   Mmsg(buf,
-       "StatPacket(dev=%" PRIu32 ", ino=%" PRIu64
-       ", mode=%04o, nlink=%d, "
-       "uid=%" PRIu32 ", gid=%" PRIu32 ", rdev=%" PRIu32 ", size=%" PRIu64
-       ", "
-       "atime=%ld, mtime=%ld, ctime=%ld, blksize=%" PRIu32 ", blocks=%" PRIu64
-       ")",
+       "StatPacket(dev=%" PRIu32 ", ino=%" PRIu64 ", mode=%04o, nlink=%" PRId16
+       ", uid=%" PRIu32 ", gid=%" PRIu32 ", rdev=%" PRIu32 ", size=%" PRIu64
+       ", atime=%lld, mtime=%lld, ctime=%lld, blksize=%" PRIu32
+       ", blocks=%" PRIu64 ")",
        self->dev, self->ino, (self->mode & ~S_IFMT), self->nlink, self->uid,
-       self->gid, self->rdev, self->size, self->atime, self->mtime, self->ctime,
+       self->gid, self->rdev, self->size, static_cast<long long>(self->atime),
+       static_cast<long long>(self->mtime), static_cast<long long>(self->ctime),
        self->blksize, self->blocks);
 
   s = PyUnicode_FromString(buf.c_str());
