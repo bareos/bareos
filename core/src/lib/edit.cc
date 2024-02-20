@@ -291,6 +291,16 @@ static std::pair<std::uint64_t, const char*> parse_number_with_mod(
   return {total, str};
 }
 
+// returns wether the string only contains junk characters
+static bool IsJunk(const char* str)
+{
+  for (auto* head = str; *head; ++head) {
+    if (!b_isjunkchar(*head)) { return false; }
+  }
+
+  return true;
+}
+
 /*
  * Convert a string duration to utime_t (64 bit seconds)
  * Returns false: if error
@@ -314,7 +324,8 @@ bool DurationToUtime(const char* str, utime_t* value)
                                 3600 * 24 * 365,
                                 0};
 
-  if (auto [total, rest] = parse_number_with_mod(str, mod, mult); *rest == 0) {
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult);
+      IsJunk(rest)) {
     *value = static_cast<utime_t>(total);
     return true;
   } else {
@@ -396,7 +407,8 @@ static bool strunit_to_uint64(const char* str,
 
   };
 
-  if (auto [total, rest] = parse_number_with_mod(str, mod, mult); *rest == 0) {
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult);
+      IsJunk(rest)) {
     *value = total;
     return true;
   } else {

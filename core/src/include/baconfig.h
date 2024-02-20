@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,6 +177,10 @@ inline constexpr std::size_t DEFAULT_NETWORK_BUFFER_SIZE = 256 * 1024;
 #define B_ISALPHA(c) (isascii((int)(c)) && isalpha((int)(c)))
 #define B_ISUPPER(c) (isascii((int)(c)) && isupper((int)(c)))
 #define B_ISDIGIT(c) (isascii((int)(c)) && isdigit((int)(c)))
+inline constexpr bool b_isjunkchar(int c)
+{
+  return (c == '\n' || c == '\r' || c == ' ');
+}
 
 /** For multiplying by 10 with shift and addition */
 #define B_TIMES10(d) ((d << 3) + (d << 1))
@@ -186,7 +190,7 @@ typedef void(HANDLER)();
 typedef int(INTHANDLER)();
 
 #ifndef S_ISLNK
-#  define S_ISLNK(m) (((m)&S_IFM) == S_IFLNK)
+#  define S_ISLNK(m) (((m) & S_IFM) == S_IFLNK)
 #endif
 
 /** Added by KES to deal with Win32 systems */
