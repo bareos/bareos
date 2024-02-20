@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,8 @@
 
 #ifndef BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_
 #define BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_
+
+#include <optional>
 
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
@@ -123,7 +125,7 @@ struct DirectorJcrImpl {
   uint32_t FileIndex{};           /**< Last FileIndex processed */
   utime_t MaxRunSchedTime{};      /**< Max run time in seconds from Initial Scheduled time */
   JobDbRecord jr;                 /**< Job DB record for current job */
-  JobDbRecord previous_jr;        /**< Previous job database record */
+  std::optional<JobDbRecord> previous_jr;        /**< Previous job database record */
   JobControlRecord* mig_jcr{};    /**< JobControlRecord for migration/copy job */
   char FSCreateTime[MAX_TIME_LENGTH]{}; /**< FileSet CreateTime as returned from DB */
   char since[MAX_TIME_LENGTH]{};        /**< Since time */

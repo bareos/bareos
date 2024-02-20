@@ -1167,12 +1167,14 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       /* Lookup the Job record of the previous Job and store it in
        * jcr->dir_impl_->previous_jr. */
       if (jcr->dir_impl->PrevJob[0]) {
-        bstrncpy(jcr->dir_impl->previous_jr.Job, jcr->dir_impl->PrevJob,
-                 sizeof(jcr->dir_impl->previous_jr.Job));
-        if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
+        JobDbRecord jr{};
+        bstrncpy(jr.Job, jcr->dir_impl->PrevJob, sizeof(jr.Job));
+        if (!jcr->db->GetJobRecord(jcr, &jr)) {
           Jmsg(jcr, M_FATAL, 0,
                T_("Could not get job record for previous Job. ERR=%s\n"),
                jcr->db->strerror());
+        } else {
+          jcr->dir_impl->previous_jr = std::move(jr);
         }
       }
 
@@ -1790,15 +1792,20 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr)
   UaContext* ua;
   int files;
 
+  if (!jcr->dir_impl->previous_jr) {
+    files = -1;
+    goto bail_out;
+  }
+
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
-  rx.bsr->JobId = jcr->dir_impl->previous_jr.JobId;
+  rx.bsr->JobId = jcr->dir_impl->previous_jr->JobId;
   ua = new_ua_context(jcr);
   if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
     files = -1;
     goto bail_out;
   }
-  for (uint32_t fi = 1; fi <= jcr->dir_impl->previous_jr.JobFiles; fi++) {
+  for (uint32_t fi = 1; fi <= jcr->dir_impl->previous_jr->JobFiles; fi++) {
     rx.bsr->fi->Add(fi);
   }
   jcr->dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
