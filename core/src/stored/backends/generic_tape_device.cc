@@ -973,7 +973,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
     dev->dev_errno = errno; /* save errno */
     Mmsg2(dev->errmsg, T_("Unable to set eotmodel on device %s: ERR=%s\n"),
           dev->print_name(), be.bstrerror(dev->dev_errno));
-    Jmsg(dcr->jcr, M_FATAL, 0, dev->errmsg);
+    Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
   }
 #  endif
   return;
