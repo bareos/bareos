@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,7 @@ void StripTrailingJunk(char* cmd)
 
   // Strip trailing junk from command
   p = cmd + strlen(cmd) - 1;
-  while ((p >= cmd) && (*p == '\n' || *p == '\r' || *p == ' ')) { *p-- = 0; }
+  while ((p >= cmd) && b_isjunkchar(*p)) { *p-- = 0; }
 }
 
 // Strip any trailing newline characters from the string
@@ -272,13 +272,11 @@ void SplitPathAndFilename(const char* fname,
   int slen;
   int len = slen = strlen(fname);
 
-  /*
-   * Find path without the filename.
+  /* Find path without the filename.
    * I.e. everything after the last / is a "filename".
    * OK, maybe it is a directory name, but we treat it like
    * a filename. If we don't find a / then the whole name
-   * must be a path name (e.g. c:).
-   */
+   * must be a path name (e.g. c:). */
   f = fname + len - 1;
   /* "strip" any trailing slashes */
   while (slen > 1 && IsPathSeparator(*f)) {
