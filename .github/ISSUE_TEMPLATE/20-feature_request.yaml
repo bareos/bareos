@@ -1,0 +1,56 @@
+name: Feature
+description: |
+    Suggest a new feature for next Bareos
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for using Bareos!
+
+        If you are looking for support, please check out our documentation or consider asking a question on mailing list:
+
+          - https://doc.bareos.org/
+          - https://groups.google.com/u/1/g/bareos-users
+  - type: markdown
+    attributes:
+      value: |
+        Before filling the form fields, please consider the following:
+        - Ensure that you have searched the [existing issues](https://github.com/bareos/bareos/issues)
+        - Read the [troubleshooting guide](https://docs.bareos.org/Appendix/Troubleshooting.html)
+        - Read the [debugging chapter](https://docs.bareos.org/Appendix/Debugging.html)
+  - type: textarea
+    attributes:
+      label: Use case
+      description: |
+        Please tell us the problem you are running into that led to you wanting a new feature.
+
+        Is your feature request related to a problem? Please give a clear and concise description of what the problem is.
+
+        Describe the alternative solutions you've considered. Is there something similar that already solves this?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposal
+      description: |
+        Briefly but precisely describe what you would like Bareos to be able to do.
+
+        Consider attaching something showing what you are imagining:
+         * images
+         * videos
+         * code samples
+         * configuration samples
+
+        Does this have to be provided by Bareos directly, or can it be provided by a package in `bareos/contrib`? If so, maybe consider implementing and publishing such a package rather than filing an issue.
+
+        Please consult our [Developer Guide](https://docs.bareos.org/DeveloperGuide.html)
+    validations:
+      required: true
+  - type: textarea
+    id: tracking_issues
+    attributes:
+      label: Tracking Issues
+      description: List of issues associated with this feature.
+    validations:
+      required: false
