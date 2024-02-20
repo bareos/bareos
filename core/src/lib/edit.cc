@@ -239,9 +239,11 @@ static std::optional<modifier_parse_result> GetModifier(const char* input)
   return modifier_parse_result{number, mod, rest_input};
 }
 
-static std::optional<double> parse_number_with_mod(const char* str,
-                                                   const char* const mods[],
-                                                   const double mults[])
+// returns the number as well as the rest of the string that was not parsed.
+static std::pair<double, const char*> parse_number_with_mod(
+    const char* str,
+    const char* const mods[],
+    const double mults[])
 {
   double total = 0.0;
 
@@ -250,7 +252,7 @@ static std::optional<double> parse_number_with_mod(const char* str,
     std::string_view modifier;
     const char* rest;
     if (auto res = GetModifier(str); !res) {
-      return std::nullopt;
+      return {total, str};
     } else {
       number = res->number;
       modifier = res->modifier;
@@ -270,13 +272,14 @@ static std::optional<double> parse_number_with_mod(const char* str,
       }
       if (!found) {
         Dmsg1(900, "Unknown modifier: %*s\n", modifier.size(), modifier.data());
-        return std::nullopt;
+        return {total, str};
       }
     }
 
     str = rest;
   }
-  return total;
+
+  return {total, str};
 }
 
 /*
@@ -302,8 +305,8 @@ bool DurationToUtime(const char* str, utime_t* value)
                                 3600 * 24 * 365,
                                 0};
 
-  if (auto res = parse_number_with_mod(str, mod, mult)) {
-    *value = (utime_t)res.value();
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult); *rest == 0) {
+    *value = static_cast<utime_t>(total);
     return true;
   } else {
     return false;
@@ -384,8 +387,8 @@ static bool strunit_to_uint64(const char* str,
 
   };
 
-  if (auto res = parse_number_with_mod(str, mod, mult)) {
-    *value = static_cast<std::uint64_t>(res.value());
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult); *rest == 0) {
+    *value = static_cast<std::uint64_t>(total);
     return true;
   } else {
     return false;
