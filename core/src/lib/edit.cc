@@ -243,7 +243,8 @@ static std::optional<modifier_parse_result> GetModifier(const char* input)
 }
 
 // mults needs to be at least as big as mods; mods needs to be NULL terminated.
-static std::optional<std::uint64_t> parse_number_with_mod(
+// returns the number as well as the rest of the string that was not parsed.
+static std::pair<std::uint64_t, const char*> parse_number_with_mod(
     const char* str,
     const char* const mods[],
     const double mults[])
@@ -255,7 +256,7 @@ static std::optional<std::uint64_t> parse_number_with_mod(
     std::string_view modifier;
     const char* rest;
     if (auto res = GetModifier(str); !res) {
-      return std::nullopt;
+      return {total, str};
     } else {
       number = res->number;
       modifier = res->modifier;
@@ -280,13 +281,14 @@ static std::optional<std::uint64_t> parse_number_with_mod(
       if (!found) {
         Dmsg1(900, "Unknown modifier: \"%.*s\"\n", modifier.size(),
               modifier.data());
-        return std::nullopt;
+        return {total, str};
       }
     }
 
     str = rest;
   }
-  return total;
+
+  return {total, str};
 }
 
 /*
@@ -312,8 +314,8 @@ bool DurationToUtime(const char* str, utime_t* value)
                                 3600 * 24 * 365,
                                 0};
 
-  if (auto res = parse_number_with_mod(str, mod, mult)) {
-    *value = (utime_t)res.value();
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult); *rest == 0) {
+    *value = static_cast<utime_t>(total);
     return true;
   } else {
     return false;
@@ -394,8 +396,8 @@ static bool strunit_to_uint64(const char* str,
 
   };
 
-  if (auto res = parse_number_with_mod(str, mod, mult)) {
-    *value = res.value();
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult); *rest == 0) {
+    *value = total;
     return true;
   } else {
     return false;
