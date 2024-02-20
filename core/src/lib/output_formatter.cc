@@ -863,7 +863,8 @@ bool OutputFormatter::JsonKeyValueAddBool(const char* key, bool value)
   lkey.toLower();
   json_obj = (json_t*)result_stack_json->last();
   if (json_obj == NULL) {
-    Emsg2(M_ERROR, 0, "No json object defined to add %s: %b\n", key, value);
+    Emsg2(M_ERROR, 0, "No json object defined to add %s: %s\n", key,
+          value ? "true" : "false");
   }
 
 #  if JANSSON_VERSION_HEX >= 0x020400

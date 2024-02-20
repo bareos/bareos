@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -596,7 +596,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
       if (p_ctx->basedir
           && !bstrncmp(p_ctx->basedir, p_ctx->next_filename,
                        strlen(p_ctx->basedir))) {
-        Dmsg(ctx, debuglevel, "gfapi-fd: next file %s not under basedir %d\n",
+        Dmsg(ctx, debuglevel, "gfapi-fd: next file %s not under basedir %s\n",
              p_ctx->next_filename, p_ctx->basedir);
         continue;
       }
@@ -711,8 +711,9 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         break;
       default:
         Jmsg(ctx, M_FATAL,
-             "gfapi-fd: Unknown filetype encountered %ld for %s\n",
-             p_ctx->statp.st_mode & S_IFMT, p_ctx->next_filename);
+             "gfapi-fd: Unknown filetype encountered %llu for %s\n",
+             static_cast<long long unsigned>(p_ctx->statp.st_mode & S_IFMT),
+             p_ctx->next_filename);
         return bRC_Error;
     }
 
