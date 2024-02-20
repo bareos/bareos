@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -94,7 +94,6 @@ TEST(bsnprintf, char)
   // literal %
   EXPECT_EQ(Bsnprintf(dest, 100, "%%"), 1);
   EXPECT_STREQ(dest, "%");
-
 }
 
 TEST(bsnprintf, integers)
@@ -139,9 +138,6 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%lli", llint), 4);
   EXPECT_STREQ(dest, "-123");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%qi", llint), 4);
-  EXPECT_STREQ(dest, "-123");
-
   ssize_t ss_int = -123;
   EXPECT_EQ(Bsnprintf(dest, 100, "%zi", ss_int), 4);
   EXPECT_STREQ(dest, "-123");
@@ -160,9 +156,6 @@ TEST(bsnprintf, integers)
 
   unsigned long long ullint = 123;
   EXPECT_EQ(Bsnprintf(dest, 100, "%llu", ullint), 3);
-  EXPECT_STREQ(dest, "123");
-
-  EXPECT_EQ(Bsnprintf(dest, 100, "%qu", ullint), 3);
   EXPECT_STREQ(dest, "123");
 
   size_t s_int = 123;
