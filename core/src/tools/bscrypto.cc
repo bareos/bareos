@@ -260,7 +260,7 @@ int main(int argc, char* const* argv)
       && (generate_passphrase || show_keydata || dump_cache || populate_cache
           || reset_cache)) {
     fprintf(stderr, T_("Don't mix operations which are incompatible "
-                      "e.g. generate/show vs set/clear etc.\n"));
+                       "e.g. generate/show vs set/clear etc.\n"));
     TerminateBscrypto(1);
   }
 
@@ -342,7 +342,8 @@ int main(int argc, char* const* argv)
     passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
     if (!passphrase) { TerminateBscrypto(1); }
 
-    Dmsg1(10, T_("Generated passphrase = %s\n"), passphrase);
+    Dmsg1(10, T_("Generated passphrase = %.*s\n"), DEFAULT_PASSPHRASE_LENGTH,
+          passphrase);
 
     // See if we need to wrap the passphrase.
     if (wrapped_keys) {
@@ -454,20 +455,22 @@ int main(int argc, char* const* argv)
          * if the decoded string will fit we need to alocate some more bytes
          * for the decoded buffer to be sure it will fit. */
         length = DEFAULT_PASSPHRASE_LENGTH + 4;
-        passphrase = (char*)malloc(length);
-        memset(passphrase, 0, length);
-
+        passphrase = (char*)calloc(length, 1);
         Base64ToBin(passphrase, length, keydata, strlen(keydata));
       } else {
         length = DEFAULT_PASSPHRASE_LENGTH;
-        passphrase = (char*)malloc(length);
-        memset(passphrase, 0, length);
-        bstrncpy(passphrase, keydata, length + 1);
+        passphrase = (char*)calloc(length, 1);
+        // do not use bstrncpy here since it copies a 31 characters and appends
+        // a terminating NUL whereas passphrase is not a cstring and consists
+        // of 32 copied characters of keydata
+        length = strnlen(keydata, length);
+        memcpy(passphrase, keydata, length);
       }
     }
 
-    Dmsg1(10, "Unwrapped passphrase = %s\n", passphrase);
-    fprintf(stdout, T_("%s\n"), passphrase);
+    Dmsg1(10, "Unwrapped passphrase = %.*s\n", DEFAULT_PASSPHRASE_LENGTH,
+          passphrase);
+    fprintf(stdout, T_("%.*s\n"), DEFAULT_PASSPHRASE_LENGTH, passphrase);
 
     free(passphrase);
     TerminateBscrypto(0);
