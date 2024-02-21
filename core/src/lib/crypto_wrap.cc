@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,7 +55,7 @@
  * @plain: plaintext key to be wrapped, n * 64 bit
  * @cipher: wrapped key, (n + 1) * 64 bit
  */
-void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
+void AesWrap(const uint8_t* kek, int n, const uint8_t* plain, uint8_t* cipher)
 {
   uint8_t *a, *r, b[16];
   int i, j;
@@ -74,14 +74,12 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
   ALLOW_DEPRECATED(AES_set_encrypt_key(kek, 128, &key));
 #  endif
 
-  /*
-   * 2) Calculate intermediate values.
+  /* 2) Calculate intermediate values.
    * For j = 0 to 5
    *     For i=1 to n
    *      B = AES(K, A | R[i])
    *      A = MSB(64, B) ^ t where t = (n*j)+i
-   *      R[i] = LSB(64, B)
-   */
+   *      R[i] = LSB(64, B) */
   for (j = 0; j <= 5; j++) {
     r = cipher + 8;
     for (i = 1; i <= n; i++) {
@@ -110,7 +108,7 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
  * @cipher: wrapped key to be unwrapped, (n + 1) * 64 bit
  * @plain: plaintext key, n * 64 bit
  */
-int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
+int AesUnwrap(const uint8_t* kek, int n, const uint8_t* cipher, uint8_t* plain)
 {
   uint8_t a[8], *r, b[16];
   int i, j;
@@ -127,14 +125,12 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
   ALLOW_DEPRECATED(AES_set_decrypt_key(kek, 128, &key));
 #  endif
 
-  /*
-   * 2) Compute intermediate values.
+  /* 2) Compute intermediate values.
    * For j = 5 to 0
    *     For i = n to 1
    *      B = AES-1(K, (A ^ t) | R[i]) where t = n*j+i
    *      A = MSB(64, B)
-   *      R[i] = LSB(64, B)
-   */
+   *      R[i] = LSB(64, B) */
   for (j = 5; j >= 0; j--) {
     r = plain + (n - 1) * 8;
     for (i = n; i >= 1; i--) {
@@ -151,12 +147,10 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
     }
   }
 
-  /*
-   * 3) Output results.
+  /* 3) Output results.
    *
    * These are already in @plain due to the location of temporary
-   * variables. Just verify that the IV matches with the expected value.
-   */
+   * variables. Just verify that the IV matches with the expected value. */
   for (i = 0; i < 8; i++) {
     if (a[i] != 0xa6) { return -1; }
   }

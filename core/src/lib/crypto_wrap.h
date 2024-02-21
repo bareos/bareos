@@ -2,7 +2,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +22,9 @@
 #ifndef BAREOS_LIB_CRYPTO_WRAP_H_
 #define BAREOS_LIB_CRYPTO_WRAP_H_
 
-void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher);
-int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain);
+#include <cinttypes>
+
+void AesWrap(const uint8_t* kek, int n, const uint8_t* plain, uint8_t* cipher);
+int AesUnwrap(const uint8_t* kek, int n, const uint8_t* cipher, uint8_t* plain);
 
 #endif  // BAREOS_LIB_CRYPTO_WRAP_H_
