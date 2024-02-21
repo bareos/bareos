@@ -7,8 +7,8 @@ wait_for_jobs_to_terminate ()
 {
   status_of_what=$1
   max_wait_in_seconds=$2
-  count=max_wait_in_seconds
-  while (( --count >= 0 )); do
+  start_time=$SECONDS
+  while (( SECONDS - start_time <= max_wait_in_seconds )); do
     if  "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "status ${status_of_what}" | grep "No Jobs running.";
     then
       break

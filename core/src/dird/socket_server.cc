@@ -130,24 +130,6 @@ static void CleanupConnectionPool()
   if (client_connections) { client_connections->cleanup(); }
 }
 
-extern "C" void* connect_thread(void* arg)
-{
-  SetJcrInThreadSpecificData(nullptr);
-
-  auto bound_sockets = OpenAndBindSockets((dlist<IPADDR>*)arg);
-  if (bound_sockets.size()) {
-    server_running = true;
-    BnetThreadServerTcp(std::move(bound_sockets), thread_list,
-                        HandleConnectionRequest, my_config, &server_state,
-                        UserAgentShutdownCallback, CleanupConnectionPool);
-
-  } else {
-    server_state = BnetServerState::kError;
-  }
-
-  return NULL;
-}
-
 extern "C" void* connect_with_bound_thread(void* arg)
 {
   SetJcrInThreadSpecificData(nullptr);
@@ -171,44 +153,16 @@ extern "C" void* connect_with_bound_thread(void* arg)
  * command thread. This routine creates the thread and then
  * returns.
  */
-bool StartSocketServer(dlist<IPADDR>* addrs)
-{
-  if (!client_connections) { client_connections.reset(new connection_pool{}); }
-
-  if (int status
-      = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void*)addrs);
-      status != 0) {
-    BErrNo be;
-    Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"),
-          be.bstrerror(status));
-  }
-
-  int tries = 200; /* consider bind() tries in BnetThreadServerTcp */
-  int wait_ms = 100;
-  do {
-    Bmicrosleep(0, wait_ms * 1000);
-    if (server_state.load() != BnetServerState::kUndefined) { break; }
-  } while (--tries);
-
-  if (server_state != BnetServerState::kStarted) {
-    client_connections->clear();
-    return false;
-  }
-  return true;
-}
-
 bool StartSocketServer(std::vector<s_sockfd>&& bound_sockets)
 {
-  int status;
-
   if (!client_connections) { client_connections.reset(new connection_pool()); }
 
   server_state.store(BnetServerState::kUndefined);
 
-  if ((status
-       = pthread_create(&tcp_server_tid, nullptr, connect_with_bound_thread,
-                        (void*)&bound_sockets))
-      != 0) {
+  if (int status
+      = pthread_create(&tcp_server_tid, nullptr, connect_with_bound_thread,
+                       (void*)&bound_sockets);
+      status != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, T_("Cannot create UA thread: %s\n"),
           be.bstrerror(status));
@@ -226,6 +180,13 @@ bool StartSocketServer(std::vector<s_sockfd>&& bound_sockets)
     return false;
   }
   return true;
+}
+
+bool StartSocketServer(dlist<IPADDR>* addrs)
+{
+  auto bound_sockets = OpenAndBindSockets(addrs);
+
+  return StartSocketServer(std::move(bound_sockets));
 }
 
 void StopSocketServer()

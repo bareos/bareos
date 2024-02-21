@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -776,7 +776,7 @@ static bRC plugin_has_all_arguments(PluginContext* ctx)
   bRC retval = bRC_OK;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  if (!p_ctx) { retval = bRC_Error; }
+  if (!p_ctx) { return bRC_Error; }
 
   if (!p_ctx->fname) {
     Jmsg(ctx, M_FATAL, T_("bpipe-fd: Plugin File argument not specified.\n"));

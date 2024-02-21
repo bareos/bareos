@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -840,7 +840,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_STORAGE_CLASS;
       sysmd_.storage_class = dpl_storage_class(temp.c_str());
       if (sysmd_.storage_class == -1) {
-        Mmsg2(errmsg, T_("Illegal storage_class argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal storage_class argument %s for device %s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
