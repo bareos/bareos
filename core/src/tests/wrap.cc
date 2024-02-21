@@ -27,9 +27,12 @@
 #  include "include/bareos.h"
 #endif
 
+#include <cstdio>
+#include <cinttypes>
+#include <vector>
 #include <openssl/evp.h>
 #include <openssl/err.h>
-#include <cstdio>
+#include <openssl/rand.h>
 #include "lib/crypto_wrap.h"
 
 void OpenSSLPostErrors(const char* errstring)
@@ -44,8 +47,6 @@ void OpenSSLPostErrors(const char* errstring)
     std::fprintf(stderr, "%s: ERR=%s\n", errstring, buf);
   }
 }
-
-constexpr int cipher_size = 256;
 
 /* A 64 bit IV */
 unsigned char iv[] = {0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6, 0xa6};
@@ -81,10 +82,10 @@ bool OpenSSLAesWrap(const uint8_t* kek,
   }
   total_len += len;
 
-  if (total_len >= cipher_size) {
+  if (total_len > (n + 1) * 8) {
     fprintf(stderr,
             "Written to much data to cipher (%d written vs %d capacity)\n",
-            total_len, cipher_size);
+            total_len, (n + 1) * 8);
     return false;
   }
 
@@ -124,10 +125,10 @@ bool OpenSSLAesUnwrap(const uint8_t* kek,
   }
   total_len += len;
 
-  if (total_len >= cipher_size) {
+  if (total_len > n * 8) {
     fprintf(stderr,
-            "Written to much data to cipher (%d written vs %d capacity)\n",
-            total_len, cipher_size);
+            "Written to much data to plain (%d written vs %d capacity)\n",
+            total_len, n * 8);
     return false;
   }
 
@@ -136,56 +137,104 @@ bool OpenSSLAesUnwrap(const uint8_t* kek,
   return true;
 }
 
+std::vector<uint8_t> MakePayload()
+{
+  std::vector<uint8_t> payload;
+
+  // needs to be divisible by 8
+  payload.resize(64);
+
+  if (RAND_bytes(payload.data(), payload.size()) != 1) {
+    OpenSSLPostErrors("RAND_bytes()");
+    return {};
+  }
+
+  printf("--- BEGIN PAYLOAD ---\n");
+  for (std::size_t i = 0; i < payload.size(); i += 8) {
+    printf("%02x%02x%02x%02x%02x%02x%02x%02x\n", payload[i + 0], payload[i + 1],
+           payload[i + 2], payload[i + 3], payload[i + 4], payload[i + 5],
+           payload[i + 6], payload[i + 7]);
+  }
+  printf("--- END PAYLOAD ---\n");
+
+  return payload;
+}
+
+std::vector<uint8_t> MakeWrappedPayload(uint8_t* key)
+{
+  std::vector<uint8_t> payload = MakePayload();
+
+  if (payload.size() == 0 || payload.size() % 8 != 0) { return {}; }
+
+  std::vector<uint8_t> wrapped;
+  wrapped.resize(payload.size() + 8);
+
+  if (!OpenSSLAesWrap(key, payload.size() / 8, payload.data(),
+                      wrapped.data())) {
+    return {};
+  }
+
+  return wrapped;
+}
+
 /* A 256 bit key */
 uint8_t key[]
     = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x31,
        0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x31};
 
-/* Message to be encrypted */
-const uint8_t plaintext[] = "The quick brown fox jumps over the lazy";
-
-static_assert((sizeof(plaintext) / 8) * 8 == sizeof(plaintext));
-static_assert(sizeof(plaintext) + 8 <= cipher_size);
-
 TEST(Aes, our)
 {
-  uint8_t our_cipher[cipher_size] = {};
-  uint8_t our_plain[cipher_size] = {};
-  AesWrap(key, sizeof(plaintext) / 8, plaintext, our_cipher);
-  AesUnwrap(key, sizeof(plaintext) / 8, our_cipher, our_plain);
+  auto payload = MakePayload();
 
-  for (int i = 0; i < (int)sizeof(plaintext); ++i) {
-    EXPECT_EQ((unsigned)our_plain[i], (unsigned)plaintext[i])
+  ASSERT_NE(payload.size(), 0);
+  ASSERT_EQ(payload.size() % 8, 0);
+
+  auto our_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
+  auto our_decipher = std::make_unique<uint8_t[]>(payload.size());
+  AesWrap(key, payload.size() / 8, payload.data(), our_cipher.get());
+  AesUnwrap(key, payload.size() / 8, our_cipher.get(), our_decipher.get());
+
+  for (std::size_t i = 0; i < payload.size(); ++i) {
+    EXPECT_EQ((unsigned)our_decipher[i], (unsigned)payload[i])
         << "at index " << i << ".";
   }
 }
 
 TEST(Aes, openssl)
 {
-  uint8_t openssl_cipher[cipher_size] = {};
-  uint8_t openssl_plain[cipher_size] = {};
-  ASSERT_TRUE(
-      OpenSSLAesWrap(key, sizeof(plaintext) / 8, plaintext, openssl_cipher));
-  ASSERT_TRUE(OpenSSLAesUnwrap(key, sizeof(plaintext) / 8, openssl_cipher,
-                               openssl_plain));
+  auto payload = MakePayload();
 
-  for (int i = 0; i < (int)sizeof(plaintext); ++i) {
-    EXPECT_EQ((unsigned)openssl_plain[i], (unsigned)plaintext[i])
+  ASSERT_NE(payload.size(), 0);
+  ASSERT_EQ(payload.size() % 8, 0);
+
+  auto openssl_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
+  auto openssl_decipher = std::make_unique<uint8_t[]>(payload.size());
+  AesWrap(key, payload.size() / 8, payload.data(), openssl_cipher.get());
+  AesUnwrap(key, payload.size() / 8, openssl_cipher.get(),
+            openssl_decipher.get());
+
+  for (std::size_t i = 0; i < payload.size(); ++i) {
+    EXPECT_EQ((unsigned)openssl_decipher[i], (unsigned)payload[i])
         << "at index " << i << ".";
   }
 }
 
 TEST(Aes, wrap)
 {
-  uint8_t openssl_cipher[cipher_size] = {};
-  uint8_t our_cipher[cipher_size] = {};
+  auto payload = MakePayload();
 
-  ASSERT_TRUE(
-      OpenSSLAesWrap(key, sizeof(plaintext) / 8, plaintext, openssl_cipher));
-  AesWrap(key, sizeof(plaintext) / 8, plaintext, our_cipher);
+  ASSERT_NE(payload.size(), 0);
+  ASSERT_EQ(payload.size() % 8, 0);
 
-  for (int i = 0; i < cipher_size; ++i) {
+  auto openssl_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
+  auto our_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
+
+  ASSERT_TRUE(OpenSSLAesWrap(key, payload.size() / 8, payload.data(),
+                             openssl_cipher.get()));
+  AesWrap(key, payload.size() / 8, payload.data(), our_cipher.get());
+
+  for (std::size_t i = 0; i < payload.size() + 8; ++i) {
     EXPECT_EQ((unsigned)openssl_cipher[i], (unsigned)our_cipher[i])
         << "at index " << i << ".";
   }
@@ -193,20 +242,24 @@ TEST(Aes, wrap)
 
 TEST(Aes, unwrap)
 {
-  uint8_t cipher[cipher_size] = {};
-  unsigned char openssl_plain[128] = {};
-  unsigned char our_plain[128] = {};
+  auto wrapped = MakeWrappedPayload(key);
 
-  static_assert(sizeof(our_plain) >= sizeof(plaintext));
+  ASSERT_NE(wrapped.size(), 0);
+  ASSERT_EQ(wrapped.size() % 8, 0);
 
-  ASSERT_TRUE(OpenSSLAesWrap(key, sizeof(plaintext) / 8, plaintext, cipher));
+  auto payload_size = wrapped.size() - 8;
 
-  ASSERT_TRUE(
-      OpenSSLAesUnwrap(key, sizeof(plaintext) / 8, cipher, openssl_plain));
-  ASSERT_EQ(AesUnwrap(key, sizeof(plaintext) / 8, cipher, our_plain), 0);
+  auto openssl_decipher = std::make_unique<uint8_t[]>(payload_size);
+  auto our_decipher = std::make_unique<uint8_t[]>(payload_size);
 
-  for (int i = 0; i < 128; ++i) {
-    EXPECT_EQ((unsigned)openssl_plain[i], (unsigned)our_plain[i])
+
+  ASSERT_TRUE(OpenSSLAesUnwrap(key, payload_size / 8, wrapped.data(),
+                               openssl_decipher.get()));
+  ASSERT_EQ(
+      AesUnwrap(key, payload_size / 8, wrapped.data(), our_decipher.get()), 0);
+
+  for (std::size_t i = 0; i < payload_size; ++i) {
+    EXPECT_EQ((unsigned)openssl_decipher[i], (unsigned)our_decipher[i])
         << "at index " << i << ".";
   }
 }
