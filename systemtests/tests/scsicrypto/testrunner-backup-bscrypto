@@ -33,14 +33,13 @@ reset_eject_drive() {
 }
 
 # Prepare KEK and initial tests
-# ltodrive="/dev/tape/by-id/scsi-350223344ab000100-nst"
-# changer="/dev/tape/by-id/scsi-SSTK_L700_XYZZY_A-changer"
 ltodrive="${TAPE_DEVICES0[${USE_TAPE_DEVICE}]}"
 changer="${CHANGER_DEVICE0}"
 keyfile="etc/bareos/.ltocrypt-keyfile"
 mybsc="sbin/bscrypto-${TestName}"
 backup_log="$tmp/${TestName}-backup.out"
-export ltodrive changer keyfile mybsc backup_log
+restore_log="$tmp/${TestName}-restore.out"
+export ltodrive changer keyfile mybsc backup_log restore_log
 
 start_test
 
@@ -85,28 +84,37 @@ if [ "${drive_state}" != "Disabled Disabled" ];then
   export estat=1
   exit 1
 fi
-# Expected output like in 21.1.6
+# Expected output like in 21.1.6 mhvtl
 #Drive encryption status:
 #   Encryption Mode: Disabled
 #   Decryption Mode: Disabled
 #   Raw Decryption Mode Disabled (RDMD): Disabled
 #   Volume Contains Encrypted Logical Blocks (VCELB): Disabled
-#   Logical Block encryption parameters: No report
+#   Logical Block encryption parameters: No report 
+# or with quadstor vtl
+#   Logical Block encryption parameters: Drive Managed
 
 # Check that tape is not encrypted.
 tape_state="$(${mybsc} -v "${ltodrive}" | awk -F ':' '/Encryption Status:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
-if [ "${tape_state}" != "Illegal logical block" ];then
-  printf "Tape state [%s] differs from expected [Illegal logical block] \n" "${tape_state}"
+if ( [ "${tape_state}" != "Illegal logical block" ] && [ "$tape_state" != "Unavailable" ] );then
+  printf "Tape state [%s] differs from expected [Illegal logical block] or [Unavailable] \n" "${tape_state}"
   export estat=1
   exit 1
 fi
 # Expected output like in 21.1.6
-#Volume encryption status:
+# mhvtl
+# Volume encryption status:
 #   Compression Status: Unknown
 #   Encryption Status: Illegal logical block
 #   Raw Decryption Mode Disabled Status (RDMDS): Disabled
 #   Encryption Mode External Status (EMES): Disabled
 
+# quadstore vtl
+# Volume encryption status:
+#   Compression Status: Unavailable
+#   Encryption Status: Unavailable
+#   Raw Decryption Mode Disabled Status (RDMDS): Disabled
+#   Encryption Mode External Status (EMES): Disabled
 
 # Additionals tests can take place here to prove low level scsicrypto is working.
 # + Set the key to drive and volume
@@ -124,22 +132,45 @@ setdebug level=100 trace=1 timestamp=1 all
 update slots
 label barcodes encrypt slot=1-4 drive=0 pool=Scratch storage=Tape-0 yes
 wait
-umount storage=Tape-0 drive=0
 list media
 run job=backup-bareos-fd Level=Full pool=Full storage=Tape-0 spooldata=yes yes
 wait
 setdebug level=0 all
 status director
 status client
-status storage=Tape-0
+wait
+release storage=Tape-0 drive=0
+update slots
+wait
+status slots storage=Tape-0
 wait
 messages
-release storage=Tape-0 drive=0
-umount storage=Tape-0 drive=0
-update slots
 END_OF_DATA
 
 run_bareos "$@"
+
+volume=$(awk '/^.*Volume name\(s\):.*/ {print $3}' ${backup_log})
+
+# Test a restore
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $restore_log
+setdebug level=100 trace=1 timestamp=1 all
+update slots
+restore client=bareos-fd where=$tmp/bareos-restores select all done yes
+wait
+messages
+release storage=Tape-0 drive=0
+update slots
+wait
+status slots storage=Tape-0
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
 
 # check_for_zombie_jobs storage=Tape-0
 stop_bareos
@@ -165,6 +196,12 @@ expect_grep "Decryption Mode: Mixed" \
             "$backup_log" \
             "Decryption mode wrong or not found."
 
+expect_grep "Restore OK" \
+            "$restore_log" \
+            "Restore job failed."
+
+check_restore_diff "${BackupDirectory}"
+
 # Check if crypto cache is there and readable.
 # Clear cache it seems to always failed, need to find why
 if ! "${mybsc}" -c "${ltodrive}"; then
@@ -181,9 +218,9 @@ if ! "${mybsc}" -D "${crypto_cache}" > "${crypto_cache_log}";  then
   export estat=1
   exit 1
 fi
-expect_grep "E01001L8" \
+expect_grep "${volume}" \
             "${crypto_cache_log}" \
-            "Volume E01001L8 not found in cache dump".
+            "Volume ${volume} not found in cache dump".
 # With wrapped key volume in crypto cache we should be able
 # to check the drive and volume encryption status
 # How?
@@ -195,7 +232,8 @@ export confdir=$(pwd)/etc/bareos
 /usr/sbin/mtx -f "${changer}" load 1 0 ||:
 /usr/bin/mt -f "${ltodrive}" rewind ||:
 bls_lj_log=$tmp/bls-Ljoutput.log
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${bls_lj_log}"
+tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V ${volume} ${tape_device} > "${bls_lj_log}"
 expect_grep "JobId             : 1" \
             "$bls_lj_log" \
             "BLS jobid not found."
@@ -204,8 +242,8 @@ expect_grep "Crypto cache read 1 entries" \
             "bls: no crypto cache entry found."
 
 bls_log=$tmp/bls-output.log
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${bls_log}"
-expect_grep "bls JobId 0: Ready to read from volume \"E01001L8\" on device \"tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst\"" \
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V ${volume} ${tape_device} > "${bls_log}"
+expect_grep "bls JobId 0: Ready to read from volume \"${volume}\" on device \"tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst\"" \
             "${bls_log}" \
             "BLS failed to read volume."
 
@@ -213,15 +251,12 @@ restore_directory=${tmp}/bareos-restores
 mkdir -p "${restore_directory}" ||:
 bextract_log="${tmp}/bextract-output.log"
 # Test volume extraction
-sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst "${restore_directory}" > "${bextract_log}"
+sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V ${volume} ${tape_device} "${restore_directory}" > "${bextract_log}"
 expect_grep "Crypto cache read 1 entries" \
             "${bextract_log}" \
             "bextract: no crypto cache entry found."
 
 check_restore_diff "${BackupDirectory}"
 
-#keep log copy for debug
-#cp "$backup_log" "log/$(basename ${backup_log})"
-
 end_test
-exit 0
+
