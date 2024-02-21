@@ -515,6 +515,10 @@ bareos_add_test(
   channel LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
 )
 
+bareos_add_test(
+  wrap LINK_LIBRARIES bareos GTest::gtest_main ${OPENSSL_LIBRARIES}
+)
+
 if(NOT HAVE_WIN32)
   bareos_add_test(fvec LINK_LIBRARIES GTest::gtest_main)
 endif()
