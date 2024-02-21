@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -342,7 +342,8 @@ int main(int argc, char* const* argv)
     passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
     if (!passphrase) { TerminateBscrypto(1); }
 
-    Dmsg1(10, T_("Generated passphrase = %s\n"), passphrase);
+    Dmsg1(10, T_("Generated passphrase = %.*s\n"), DEFAULT_PASSPHRASE_LENGTH,
+          passphrase);
 
     // See if we need to wrap the passphrase.
     if (wrapped_keys) {
@@ -450,20 +451,22 @@ int main(int argc, char* const* argv)
          * if the decoded string will fit we need to alocate some more bytes
          * for the decoded buffer to be sure it will fit. */
         length = DEFAULT_PASSPHRASE_LENGTH + 4;
-        passphrase = (char*)malloc(length);
-        memset(passphrase, 0, length);
-
+        passphrase = (char*)calloc(length, 1);
         Base64ToBin(passphrase, length, keydata, strlen(keydata));
       } else {
         length = DEFAULT_PASSPHRASE_LENGTH;
-        passphrase = (char*)malloc(length);
-        memset(passphrase, 0, length);
-        bstrncpy(passphrase, keydata, length + 1);
+        passphrase = (char*)calloc(length, 1);
+        // do not use bstrncpy here since it copies a 31 characters and appends
+        // a terminating NUL whereas passphrase is not a cstring and consists
+        // of 32 copied characters of keydata
+        length = strnlen(keydata, length);
+        memcpy(passphrase, keydata, length);
       }
     }
 
-    Dmsg1(10, "Unwrapped passphrase = %s\n", passphrase);
-    fprintf(stdout, T_("%s\n"), passphrase);
+    Dmsg1(10, "Unwrapped passphrase = %.*s\n", DEFAULT_PASSPHRASE_LENGTH,
+          passphrase);
+    fprintf(stdout, T_("%.*s\n"), DEFAULT_PASSPHRASE_LENGTH, passphrase);
 
     free(passphrase);
     TerminateBscrypto(0);
