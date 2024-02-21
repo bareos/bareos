@@ -135,7 +135,8 @@ bool RegisterTimer(TimerThread::Timer* t)
     wd_copy = *t;
   }
 
-  Dmsg3(800, "Registered timer interval %zu%s\n", wd_copy.interval.count(),
+  Dmsg3(800, "Registered timer interval %lld%s\n",
+        static_cast<long long>(wd_copy.interval.count()),
         wd_copy.single_shot ? " one shot" : "");
 
   WakeTimer();
@@ -193,10 +194,11 @@ static void SleepUntil(std::chrono::steady_clock::time_point next_timer_run)
 
 static void LogMessage(TimerThread::Timer* p)
 {
-  Dmsg2(3400, "Timer callback p=%p scheduled_run_timepoint=%zd secs\n", p,
-        std::chrono::duration_cast<std::chrono::seconds>(
-            p->scheduled_run_timepoint.time_since_epoch())
-            .count());
+  Dmsg2(
+      3400, "Timer callback p=%p scheduled_run_timepoint=%lld secs\n", p,
+      static_cast<long long>(std::chrono::duration_cast<std::chrono::seconds>(
+                                 p->scheduled_run_timepoint.time_since_epoch())
+                                 .count()));
 }
 
 static bool RunOneItem(TimerThread::Timer* p,
