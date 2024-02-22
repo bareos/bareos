@@ -53,7 +53,8 @@ case "$1" in
     stop)
         if [ -x ${BAREOS_STORAGEDAEMON_BINARY} ]; then
             printf "Stopping the Bareos Storage daemon: "
-            killproc ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT}
+	    shift # shift away the stop
+            killproc ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT} "${@}"
         fi
         ;;
 

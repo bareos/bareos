@@ -473,15 +473,21 @@ run_bareos()
 
 run_bconsole()
 {
-   bconsole_file="${1:-${tmp}/bconcmds}"
-   if [ -f "$bconsole_file" ]; then
-      if test "$debug" -eq 1 ; then
-        "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file"
-      else
-        "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null
-      fi
-   fi
-   return $?
+    bconsole_file="${1:-${tmp}/bconcmds}"
+    local error_code=0
+    if [ -f "$bconsole_file" ]; then
+	# 'cmd || ec=$?' is used to prevent "set -e" from killing the script
+	# before we had the chance to kill the daemons (in case of timeout)
+	if test "$debug" -eq 1 ; then
+            timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" || error_code=$?
+	else
+            timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null || error_code=$?
+	fi
+    fi
+    if (( error_code == 124 )); then
+	bin/bareos stop -SEGV
+    fi
+    return "$error_code"
 }
 
 run_btape()
