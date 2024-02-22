@@ -1022,8 +1022,8 @@ int bopen(BareosFilePacket* bfd,
           mode_t mode,
           dev_t rdev)
 {
-  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %lu\n", fname, flags,
-        (mode & ~S_IFMT), rdev);
+  Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %llu\n", fname,
+        flags, (mode & ~S_IFMT), static_cast<long long unsigned>(rdev));
 
   if (bfd->cmd_plugin && plugin_bopen) {
     Dmsg1(400, "call plugin_bopen fname=%s\n", fname);

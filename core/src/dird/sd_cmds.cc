@@ -431,9 +431,10 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
           }
           vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
           if (vl->element_address >= INDEX_MAX_DRIVES) {
-            ua->ErrorMsg(T_("Drive number %hd greater then "
-                            "INDEX_MAX_DRIVES(%hd) please increase define\n"),
-                         vl->bareos_slot_number, INDEX_MAX_DRIVES);
+            ua->ErrorMsg(
+                T_("Drive number %" PRIu16 " greater then "
+                   "INDEX_MAX_DRIVES(%" PRIu16 ") please increase define\n"),
+                vl->bareos_slot_number, INDEX_MAX_DRIVES);
             free(vl);
             continue;
           }
