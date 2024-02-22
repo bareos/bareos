@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -70,10 +70,8 @@ static inline bool FindInAclList(alist<const char*>* list,
 
   // See if we have an empty list.
   if (!list) {
-    /*
-     * Empty list for Where => empty where accept anything.
-     * For any other list, reject everything.
-     */
+    /* Empty list for Where => empty where accept anything.
+     * For any other list, reject everything. */
     if (len == 0 && acl == Where_ACL) {
       Dmsg0(1400, "Empty Where_ACL allowing restore anywhere\n");
       retval = true;
@@ -93,10 +91,8 @@ static inline bool FindInAclList(alist<const char*>* list,
         goto bail_out;
       }
 
-      /*
-       * If we didn't get an exact match see if we can use the pattern as a
-       * regex.
-       */
+      /* If we didn't get an exact match see if we can use the pattern as a
+       * regex. */
       if (is_regex(list_value + 1)) {
         int match_length;
 
@@ -111,8 +107,9 @@ static inline bool FindInAclList(alist<const char*>* list,
 
         if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
           // Make sure its not a partial match but a full match.
-          Dmsg2(1400, "Found match start offset %d end offset %d\n",
-                pmatch[0].rm_so, pmatch[0].rm_eo);
+          Dmsg2(1400, "Found match start offset %lld end offset %lld\n",
+                static_cast<long long>(pmatch[0].rm_so),
+                static_cast<long long>(pmatch[0].rm_eo));
           if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
             Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl,
                   list_value);
@@ -137,10 +134,8 @@ static inline bool FindInAclList(alist<const char*>* list,
         goto bail_out;
       }
 
-      /*
-       * If we didn't get an exact match see if we can use the pattern as a
-       * regex.
-       */
+      /* If we didn't get an exact match see if we can use the pattern as a
+       * regex. */
       if (is_regex(list_value)) {
         int match_length;
 
@@ -155,8 +150,9 @@ static inline bool FindInAclList(alist<const char*>* list,
 
         if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
           // Make sure its not a partial match but a full match.
-          Dmsg2(1400, "Found match start offset %d end offset %d\n",
-                pmatch[0].rm_so, pmatch[0].rm_eo);
+          Dmsg2(1400, "Found match start offset %lld end offset %lld\n",
+                static_cast<long long>(pmatch[0].rm_so),
+                static_cast<long long>(pmatch[0].rm_eo));
           if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
             Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl,
                   list_value);
@@ -205,10 +201,8 @@ bool UaContext::AclAccessOk(int acl,
 
   retval = FindInAclList(user_acl->ACL_lists[acl], acl, item, len);
 
-  /*
-   * If we didn't find a matching ACL try to use the profiles this console is
-   * connected to.
-   */
+  /* If we didn't find a matching ACL try to use the profiles this console is
+   * connected to. */
   if (!retval && user_acl->profiles && user_acl->profiles->size()) {
     ProfileResource* profile = nullptr;
 
@@ -306,11 +300,9 @@ bool UaContext::IsResAllowed(BareosResource* res)
 
   acl = RcodeToAcltype(res->rcode_);
   if (acl == -1) {
-    /*
-     * For all resources for which we don't know an explicit mapping
+    /* For all resources for which we don't know an explicit mapping
      * to the right ACL we check if the Command ACL has access to the
-     * configure command just as we do for suppressing sensitive data.
-     */
+     * configure command just as we do for suppressing sensitive data. */
     return AclAccessOk(Command_ACL, "configure", false);
   }
 
@@ -330,11 +322,9 @@ BareosResource* UaContext::GetResWithName(int rcode,
 
   acl = RcodeToAcltype(rcode);
   if (acl == -1) {
-    /*
-     * For all resources for which we don't know an explicit mapping
+    /* For all resources for which we don't know an explicit mapping
      * to the right ACL we check if the Command ACL has access to the
-     * configure command just as we do for suppressing sensitive data.
-     */
+     * configure command just as we do for suppressing sensitive data. */
     if (!AclAccessOk(Command_ACL, "configure", false)) { goto bail_out; }
   } else {
     if (!AclAccessOk(acl, name, audit_event)) { goto bail_out; }
