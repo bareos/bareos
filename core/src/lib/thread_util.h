@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,9 +54,15 @@ class locked {
   const T& operator*() const { return *data; }
   const T* operator->() const { return data; }
 
-  template <typename Pred> void wait(std::condition_variable& cv, Pred&& p)
+  template <typename CondVar, typename P> void wait(CondVar& cv, P&& pred)
   {
-    cv.wait(lock, [this, p = std::move(p)] { return p(*data); });
+    cv.wait(lock, [this, pred = std::move(pred)] { return pred(*data); });
+  }
+
+  template <typename CondVar, typename TimePoint>
+  std::cv_status wait_until(CondVar& cv, TimePoint tp)
+  {
+    return cv.wait_until(lock, tp);
   }
 
  private:
@@ -71,8 +77,12 @@ using read_locked = locked<const T, std::shared_mutex, std::shared_lock>;
 template <typename T>
 using write_locked = locked<T, std::shared_mutex, std::unique_lock>;
 
-template <typename T> class synchronized {
+
+template <typename T, typename Mutex = std::mutex> class synchronized {
  public:
+  using unique_locked = locked<T, Mutex, std::unique_lock>;
+  using const_unique_locked = locked<const T, Mutex, std::unique_lock>;
+
   template <typename... Args>
   synchronized(Args... args) : data{std::forward<Args>(args)...}
   {
@@ -87,22 +97,29 @@ template <typename T> class synchronized {
     std::unique_lock _{mut};
   }
 
-  [[nodiscard]] unique_locked<T> lock() { return {mut, &data}; }
+  [[nodiscard]] unique_locked lock() { return {mut, &data}; }
 
-  [[nodiscard]] std::optional<unique_locked<T>> try_lock()
+  template <typename... Args>
+  [[nodiscard]] std::optional<unique_locked> try_lock(Args... args)
   {
-    std::unique_lock l(mut, std::try_to_lock);
+    static_assert(sizeof...(Args) > 0);
+    std::unique_lock l(mut, std::forward<Args>(args)...);
     if (l.owns_lock()) {
-      return unique_locked<T>{std::move(l), &data};
+      return unique_locked{std::move(l), &data};
     } else {
       return std::nullopt;
     }
   }
 
-  [[nodiscard]] unique_locked<const T> lock() const { return {mut, &data}; }
+  [[nodiscard]] std::optional<unique_locked> try_lock()
+  {
+    return try_lock(std::try_to_lock);
+  }
+
+  [[nodiscard]] const_unique_locked lock() const { return {mut, &data}; }
 
  private:
-  mutable std::mutex mut{};
+  mutable Mutex mut{};
   T data;
 };
 

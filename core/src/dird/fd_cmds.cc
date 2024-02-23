@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1073,34 +1073,14 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
   return;
 }
 
-class SocketGuard {
- public:
-  ~SocketGuard()
-  {
-    if (owns_) {
-      fd_->close();
-      delete fd_;
-    }
-  }
-
-  explicit SocketGuard(BareosSocket* fd) : fd_{fd} {}
-  void Release() { owns_ = false; }
-
- private:
-  bool owns_{true};
-  BareosSocket* fd_;
-};
-
-void* HandleFiledConnection(ConnectionPool* connections,
+void* HandleFiledConnection(connection_pool& connections,
                             BareosSocket* fd,
                             char* client_name,
                             int fd_protocol_version)
 {
-  ClientResource* client_resource;
-  Connection* connection = NULL;
-  SocketGuard socket_guard{fd};
+  connection conn{client_name, fd_protocol_version, fd};
 
-  client_resource
+  auto client_resource
       = (ClientResource*)my_config->GetResWithName(R_CLIENT, client_name);
   if (!client_resource) {
     Emsg1(M_WARNING, 0,
@@ -1121,18 +1101,12 @@ void* HandleFiledConnection(ConnectionPool* connections,
 
   Dmsg1(20, "Connected to file daemon %s\n", client_name);
 
-  connection
-      = connections->add_connection(client_name, fd_protocol_version, fd, true);
-  if (!connection) {
-    Emsg0(M_ERROR, 0, "Failed to add connection to pool.\n");
-    return NULL;
-  }
+  connections.add_authenticated_connection(std::move(conn));
 
   RunOnIncomingConnectInterval(client_name).Run();
 
   /* The connection is now kept in the connection_pool.
    * This thread is no longer required and will end now. */
-  socket_guard.Release();
   return NULL;
 }
 } /* namespace directordaemon */
