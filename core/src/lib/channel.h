@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -209,6 +209,18 @@ template <typename T> class input {
     }
 
     return false;
+  }
+
+  void try_update_status()
+  {
+    if (did_close) { return; }
+
+    bool should_close = false;
+    if (auto result = shared->try_input_lock()) {
+      if (std::get_if<channel_closed>(&result.value())) { should_close = true; }
+    }
+
+    if (should_close) { close(); }
   }
 
   void close()
