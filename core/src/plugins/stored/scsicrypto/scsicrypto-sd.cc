@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -342,15 +342,14 @@ static bRC do_set_scsi_encryption_key(void* value)
       memcpy(WrappedVolEncrKey, VolEncrKey, MAX_NAME_LENGTH);
       memset(VolEncrKey, 0, MAX_NAME_LENGTH);
 
-      if (AesUnwrap((unsigned char*)director->keyencrkey.value,
-                    DEFAULT_PASSPHRASE_LENGTH / 8,
-                    (unsigned char*)WrappedVolEncrKey,
-                    (unsigned char*)VolEncrKey)
-          != 0) {
+      if (auto error = AesUnwrap((unsigned char*)director->keyencrkey.value,
+                                 DEFAULT_PASSPHRASE_LENGTH / 8,
+                                 (unsigned char*)WrappedVolEncrKey,
+                                 (unsigned char*)VolEncrKey)) {
         Emsg1(M_ERROR, 0,
               "scsicrypto-sd: Failed to unwrap encryption key using %s, "
-              "probably wrong KeyEncryptionKey in config\n",
-              director->keyencrkey.value);
+              "probably wrong KeyEncryptionKey in config (ERR=%s)\n",
+              director->keyencrkey.value, error->c_str());
         return bRC_Error;
       }
     }

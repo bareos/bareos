@@ -23,8 +23,29 @@
 #define BAREOS_LIB_CRYPTO_WRAP_H_
 
 #include <cinttypes>
+#include <string>
+#include <optional>
 
-void AesWrap(const uint8_t* kek, int n, const uint8_t* plain, uint8_t* cipher);
-int AesUnwrap(const uint8_t* kek, int n, const uint8_t* cipher, uint8_t* plain);
+/*
+ * @kek: key encryption key (KEK)
+ * @n: length of the wrapped key in 64-bit units; e.g., 2 = 128-bit = 16 bytes
+ * @plain: plaintext key to be wrapped, n * 64 bit
+ * @cipher: wrapped key, (n + 1) * 64 bit
+ */
+std::optional<std::string> AesWrap(const uint8_t* kek,
+                                   int n,
+                                   const uint8_t* plain,
+                                   uint8_t* cipher);
+
+/*
+ * @kek: key encryption key (KEK)
+ * @n: length of the wrapped key in 64-bit units; e.g., 2 = 128-bit = 16 bytes
+ * @cipher: wrapped key to be unwrapped, (n + 1) * 64 bit
+ * @plain: plaintext key, n * 64 bit
+ */
+std::optional<std::string> AesUnwrap(const uint8_t* kek,
+                                     int n,
+                                     const uint8_t* cipher,
+                                     uint8_t* plain);
 
 #endif  // BAREOS_LIB_CRYPTO_WRAP_H_
