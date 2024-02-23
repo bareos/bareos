@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -312,8 +312,14 @@ int main(int argc, char* const* argv)
       length = DEFAULT_PASSPHRASE_LENGTH + 8;
       wrapped_passphrase = (char*)malloc(length);
       memset(wrapped_passphrase, 0, length);
-      AesWrap((unsigned char*)wrapdata, DEFAULT_PASSPHRASE_LENGTH / 8,
-              (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase);
+      if (auto error = AesWrap(
+              (unsigned char*)wrapdata, DEFAULT_PASSPHRASE_LENGTH / 8,
+              (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase)) {
+        fprintf(stderr, T_("Cannot wrap passphrase ERR=%s\n"), error->c_str());
+        free(passphrase);
+        retval = 1;
+        goto bail_out;
+      }
 
       free(passphrase);
       passphrase = wrapped_passphrase;
@@ -414,14 +420,13 @@ int main(int argc, char* const* argv)
       passphrase = (char*)malloc(length);
       memset(passphrase, 0, length);
 
-      if (AesUnwrap((unsigned char*)wrapdata, length / 8,
-                    (unsigned char*)wrapped_passphrase,
-                    (unsigned char*)passphrase)
-          == -1) {
+      if (auto error = AesUnwrap((unsigned char*)wrapdata, length / 8,
+                                 (unsigned char*)wrapped_passphrase,
+                                 (unsigned char*)passphrase)) {
         fprintf(stderr,
                 T_("Failed to aes unwrap the keydata read from %s using the "
-                   "wrap data from %s, aborting...\n"),
-                keyfile, wrap_keyfile);
+                   "wrap data from %s ERR=%s, aborting...\n"),
+                keyfile, wrap_keyfile, error->c_str());
         free(wrapped_passphrase);
         goto bail_out;
       }
