@@ -83,7 +83,7 @@ template <> struct std::hash<dedup_unit> {
 namespace {
 std::string device_name;
 storagedaemon::DirectorResource* dir = nullptr;
-std::size_t block_size{64 * 1024};
+std::size_t block_size{4 * 1024};
 std::size_t total_size{0};
 std::size_t real_size{0};
 std::size_t num_records{0};
@@ -122,20 +122,18 @@ bool RecordCallback(storagedaemon::DeviceControlRecord* dcr,
   }
 
   total_size += size;
-  if (size % block_size == 0) {
-    auto num_units = size / block_size;
+  auto num_units = size / block_size;
 
-    for (std::size_t unit = 0; unit < num_units; ++unit) {
-      const std::uint8_t* start
-          = reinterpret_cast<const std::uint8_t*>(buf) + unit * block_size;
-      if (dedup_units.emplace(start, block_size).second) {
-        real_size += block_size;
-      }
+  for (std::size_t unit = 0; unit < num_units; ++unit) {
+    const std::uint8_t* start
+        = reinterpret_cast<const std::uint8_t*>(buf) + unit * block_size;
+    if (dedup_units.emplace(start, block_size).second) {
+      real_size += block_size;
     }
-  } else {
-    // cannot dedup this record
-    real_size += size;
   }
+
+  real_size += size % block_size;
+
   if (verbose_status && (num_records % 100000 == 0)) { OutputStatus(); }
   return true;
 }
