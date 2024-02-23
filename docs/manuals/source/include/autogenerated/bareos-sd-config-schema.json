@@ -729,8 +729,9 @@
         },
         "MaximumNetworkBufferSize": {
           "datatype": "PINT32",
-          "code": 0,
-          "equals": true
+          "code": 8,
+          "equals": true,
+          "description": "Replaced by MaximumNetworkBufferSize (SD->Storage)."
         },
         "VolumePollInterval": {
           "datatype": "TIME",

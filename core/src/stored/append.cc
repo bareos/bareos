@@ -333,9 +333,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     // first we set the buffer size; this is only done with advance reservation
     // since it does not make sense to do it after data starts arriving
 
-    if (!bs->SetBufferSize(
-            jcr->sd_impl->dcr->device_resource->max_network_buffer_size,
-            BNET_SETBUF_WRITE)) {
+    if (!bs->SetBufferSize(me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
       Jmsg0(jcr, M_FATAL, 0, T_("Unable to set network buffer size.\n"));
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       return false;
