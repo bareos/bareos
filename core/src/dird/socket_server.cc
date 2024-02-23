@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@ static char hello_client[] = "Hello Client %127s calling";
 static ThreadList thread_list;
 static alist<s_sockfd*>* sock_fds = NULL;
 static pthread_t tcp_server_tid;
-static ConnectionPool* client_connections = NULL;
+static std::unique_ptr<connection_pool> client_connections{nullptr};
 
 static std::atomic<BnetServerState> server_state(BnetServerState::kUndefined);
 
@@ -65,7 +65,7 @@ struct s_addr_port {
 #define MIN_MSG_LEN 15
 #define MAX_MSG_LEN (int)sizeof(name) + 25
 
-ConnectionPool* get_client_connections() { return client_connections; }
+connection_pool& get_client_connections() { return *client_connections.get(); }
 
 static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
@@ -110,7 +110,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
       || (sscanf(bs->msg, hello_client, name) == 1)) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-    return HandleFiledConnection(client_connections, bs, name,
+    return HandleFiledConnection(*client_connections.get(), bs, name,
                                  fd_protocol_version);
   }
   return HandleUserAgentClientRequest(bs);
@@ -149,17 +149,11 @@ extern "C" void* connect_thread(void* arg)
  */
 bool StartSocketServer(dlist<IPADDR>* addrs)
 {
-  int status;
+  if (!client_connections) { client_connections.reset(new connection_pool{}); }
 
-  if (client_connections == nullptr) {
-    client_connections = new ConnectionPool();
-  }
-
-  server_state.store(BnetServerState::kUndefined);
-
-  if ((status
-       = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void*)addrs))
-      != 0) {
+  if (int status
+      = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void*)addrs);
+      status != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
   }
@@ -172,10 +166,7 @@ bool StartSocketServer(dlist<IPADDR>* addrs)
   } while (--tries);
 
   if (server_state != BnetServerState::kStarted) {
-    if (client_connections) {
-      delete (client_connections);
-      client_connections = nullptr;
-    }
+    client_connections->clear();
     return false;
   }
   return true;
@@ -189,8 +180,8 @@ void StopSocketServer()
     sock_fds = nullptr;
   }
   if (client_connections) {
-    delete (client_connections);
-    client_connections = nullptr;
+    // client_connections can be NULL if the socket server was never started.
+    client_connections->clear();
   }
 }
 } /* namespace directordaemon */

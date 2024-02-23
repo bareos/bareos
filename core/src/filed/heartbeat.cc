@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -112,16 +112,15 @@ extern "C" void* sd_heartbeat_thread(void* arg)
 /* Startup the heartbeat thread -- see above */
 void StartHeartbeatMonitor(JobControlRecord* jcr)
 {
-  /*
-   * If no signals are set, do not start the heartbeat because
+  /* If no signals are set, do not start the heartbeat because
    * it gives a constant stream of TIMEOUT_SIGNAL signals that
-   * make debugging impossible.
-   */
+   * make debugging impossible. */
   if (!no_signals) {
     jcr->fd_impl->hb_bsock = NULL;
     jcr->fd_impl->hb_running = false;
     jcr->fd_impl->hb_initialized_once = false;
     jcr->fd_impl->hb_dir_bsock = NULL;
+    jcr->dir_bsock->SetLocking();
     pthread_create(&jcr->fd_impl->heartbeat_id, NULL, sd_heartbeat_thread,
                    (void*)jcr);
   }
