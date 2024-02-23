@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,7 @@
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "include/jcr.h"
+#include "stored/stored_globals.h"
 
 namespace storagedaemon {
 
@@ -62,8 +63,7 @@ bool DoReadData(JobControlRecord* jcr)
 
   Dmsg0(20, "Start read data.\n");
 
-  if (!BnetSetBufferSize(fd, dcr->device_resource->max_network_buffer_size,
-                         BNET_SETBUF_WRITE)) {
+  if (!BnetSetBufferSize(fd, me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
     return false;
   }
 
