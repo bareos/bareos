@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,7 +84,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
       Dmsg1(100, "Read device got: ERR=%s\n", be.bstrerror());
       Mmsg2(jcr->errmsg, T_("Read error on device %s in ANSI label. ERR=%s\n"),
             dev->archive_device_string, be.bstrerror());
-      Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       dev->VolCatInfo.VolCatErrors++;
       return VOL_IO_ERROR;
     }
