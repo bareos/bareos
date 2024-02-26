@@ -398,6 +398,7 @@ void DoRestore(JobControlRecord* jcr)
   BareosSocket* sd;
   uint32_t VolSessionId, VolSessionTime;
   int32_t file_index;
+  int32_t prev_file_index = 0;
   char ec1[50];      /* Buffer printing huge values */
   uint32_t buf_size; /* client buffer size */
   int status;
@@ -532,6 +533,18 @@ void DoRestore(JobControlRecord* jcr)
       rctx.fork_size = -1;
       rctx.fork_addr = 0;
     }
+
+    // these are all the streams that begin a new object
+    if (rctx.stream != STREAM_UNIX_ATTRIBUTES
+        && rctx.stream != STREAM_UNIX_ATTRIBUTES_EX
+        && rctx.stream != STREAM_PLUGIN_NAME && prev_file_index != file_index) {
+      Jmsg(jcr, M_FATAL, 0,
+           "Expected to write data to stream %d of file %d,"
+           " but this file was never created. Current file is: %d.\n",
+           rctx.stream, file_index, prev_file_index);
+      goto bail_out;
+    }
+    prev_file_index = file_index;
 
     // File Attributes stream
     switch (rctx.stream) {
