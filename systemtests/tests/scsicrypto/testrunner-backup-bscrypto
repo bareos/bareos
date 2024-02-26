@@ -22,6 +22,15 @@ on_error() {
 }
 trap 'on_error' ERR
 
+# Prepare KEK and initial tests
+ltodrive="${TAPE_DEVICES0[${USE_TAPE_DEVICE}]}"
+changer="${CHANGER_DEVICE0}"
+keyfile="etc/bareos/.ltocrypt-keyfile"
+mybsc="sbin/bscrypto-${TestName}"
+backup_log="$tmp/${TestName}-backup.out"
+restore_log="$tmp/${TestName}-restore.out"
+export ltodrive changer keyfile mybsc backup_log restore_log
+
 reset_eject_drive() {
   # cleanup before bareos tests
   /usr/bin/mt -f "${ltodrive}" rewind ||:
@@ -31,15 +40,6 @@ reset_eject_drive() {
   /usr/sbin/mtx -f "${changer}" unload 1 0 ||:
   /usr/sbin/mtx -f "${changer}" inventory ||:
 }
-
-# Prepare KEK and initial tests
-ltodrive="${TAPE_DEVICES0[${USE_TAPE_DEVICE}]}"
-changer="${CHANGER_DEVICE0}"
-keyfile="etc/bareos/.ltocrypt-keyfile"
-mybsc="sbin/bscrypto-${TestName}"
-backup_log="$tmp/${TestName}-backup.out"
-restore_log="$tmp/${TestName}-restore.out"
-export ltodrive changer keyfile mybsc backup_log restore_log
 
 start_test
 
@@ -71,6 +71,10 @@ sed -i "s \(^}$\) Key\ Encryption\ Key\ =\ \"${gen_kek}\"\n\1 g" etc/bareos/bare
 echo -n "configured global KEK: "
 sbin/bareos_dir-scsicrypto --config etc/bareos --xc Director | grep -w KeyEncryptionKey
 
+# We stop and restart daemon to take KEK into account.
+stop_bareos
+start_bareos
+
 # Load first tape in, ignore errors
 echo Checking drive and volume state
 /usr/sbin/mtx -f "${changer}" load 1 0 ||:
@@ -78,12 +82,6 @@ sleep 1
 /usr/sbin/mtx -f "${changer}" status
 
 # Check that drive is not encrypted.
-drive_state="$(${mybsc} -e "${ltodrive}" | awk -F ':' '/[De,En]cryption Mode:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
-if [ "${drive_state}" != "Disabled Disabled" ];then
-  printf "Drive state [%s] differs from expected [Disabled Disabled] \n" "${drive_state}"
-  export estat=1
-  exit 1
-fi
 # Expected output like in 21.1.6 mhvtl
 #Drive encryption status:
 #   Encryption Mode: Disabled
@@ -93,14 +91,15 @@ fi
 #   Logical Block encryption parameters: No report 
 # or with quadstor vtl
 #   Logical Block encryption parameters: Drive Managed
-
-# Check that tape is not encrypted.
-tape_state="$(${mybsc} -v "${ltodrive}" | awk -F ':' '/Encryption Status:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
-if ( [ "${tape_state}" != "Illegal logical block" ] && [ "$tape_state" != "Unavailable" ] );then
-  printf "Tape state [%s] differs from expected [Illegal logical block] or [Unavailable] \n" "${tape_state}"
+#@TODO here we need to understand why we didn't retrieve this state on second run
+drive_state="$(${mybsc} -e "${ltodrive}" | awk -F ':' '/[De,En]cryption Mode:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
+if [ "${drive_state}" != "Disabled Disabled" ];then
+  printf "Drive state [%s] differs from expected [Disabled Disabled] \n" "${drive_state}"
   export estat=1
   exit 1
 fi
+
+# Check that tape is not encrypted.
 # Expected output like in 21.1.6
 # mhvtl
 # Volume encryption status:
@@ -108,13 +107,19 @@ fi
 #   Encryption Status: Illegal logical block
 #   Raw Decryption Mode Disabled Status (RDMDS): Disabled
 #   Encryption Mode External Status (EMES): Disabled
-
 # quadstore vtl
 # Volume encryption status:
 #   Compression Status: Unavailable
 #   Encryption Status: Unavailable
 #   Raw Decryption Mode Disabled Status (RDMDS): Disabled
 #   Encryption Mode External Status (EMES): Disabled
+
+tape_state="$(${mybsc} -v "${ltodrive}" | awk -F ':' '/Encryption Status:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
+if ( [ "${tape_state}" != "Illegal logical block" ] && [ "$tape_state" != "Unavailable" ] );then
+  printf "Tape state [%s] differs from expected [Illegal logical block] or [Unavailable] \n" "${tape_state}"
+  export estat=1
+  exit 1
+fi
 
 # Additionals tests can take place here to prove low level scsicrypto is working.
 # + Set the key to drive and volume
