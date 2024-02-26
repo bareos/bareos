@@ -1,0 +1,64 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+# Consolidating zero-file incremental backups
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/extra.out
+messages
+.api 2
+@$out $tmp/consolidate-empty-incrementals:incr.out
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+@$out $tmp/consolidate-empty-incrementals:consolidate.out
+run job=Consolidate yes
+wait
+.api 1
+@$out $tmp/consolidate-empty-incrementals:messages.out
+messages
+END_OF_DATA
+run_bconsole
+
+# take the last 3 jobs (needed in case of test restart)
+
+jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals:incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
+
+expect_grep "purging empty jobids ${jobids}" \
+            "$tmp/consolidate-empty-incrementals:messages.out" \
+            "Removal of expected empty jobs was not successful."
+
+end_test
