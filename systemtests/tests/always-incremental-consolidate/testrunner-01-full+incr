@@ -1,0 +1,74 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/extra.out
+messages
+@$out $tmp/full+incr:start.out
+.api 2
+run job=$JobName level=Full yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-1'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-2'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-3'"
+run job=$JobName level=Incremental yes
+wait
+run job=Consolidate yes
+.api 1
+wait
+@$out $tmp/full+incr:messages.out
+messages
+status director
+status client
+status storage=File
+list jobs
+END_OF_DATA
+run_bconsole
+
+jobids=$(grep "jobid" "$tmp/full+incr:start.out" | sed 's/["jobid:]//g' | tail -n5)
+fincrs=$(head -n3 <<< "$jobids" | xargs | tr ' ' ',')
+cons=$(tail -n1 <<< "$jobids" | xargs)
+
+expect_not_grep "^  Termination: *Backup Canceled" \
+		"${tmp}/full+incr:messages.out" \
+		"Some job was canceled"
+
+expect_grep "purged JobIds ${fincrs} as they were consolidated into Job $((cons+1))" \
+            "$tmp/full+incr:messages.out" \
+            "consolidation of expected jobs did not happen."
+
+end_test
