@@ -1,0 +1,85 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+# Check whether consolidate job priority is also applied to jobs.
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/extra.out
+messages
+@$out $tmp/jobs.out
+run job=$JobName level=Full yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-16'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-17'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-18'"
+run job=$JobName level=Incremental yes
+wait
+@$out $tmp/aibackups.out
+messages
+@$out $tmp/consolidatevfs.out
+run job=Consolidate yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+expect_grep "Priority:[[:space:]]*10" \
+            "$tmp"/aibackups.out \
+            "always incremental backup doesn't have priority set to 10."
+
+expect_grep "Allow Mixed Priority:[[:space:]]*no" \
+            "$tmp"/aibackups.out \
+            "always incremental backup doesn't have allow mixed priority set to false."
+
+expect_grep "Priority:[[:space:]]*5" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have the same priority as consolidate job (expected 5)."
+
+expect_grep "Allow Mixed Priority:[[:space:]]*yes" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have same allow mixed priority value as consolidate job (expected true)."
+
+expect_not_grep "Spooling data" \
+                "$tmp"/aibackups.out \
+                "always incremental backup spooling is not set to false."
+
+expect_grep "Spooling data" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have same spooling value as consolidate job (expected true)."
+
+end_test
