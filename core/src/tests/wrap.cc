@@ -210,7 +210,9 @@ TEST(Aes, old)
   auto our_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
   auto our_decipher = std::make_unique<uint8_t[]>(payload.size());
   OldAesWrap(key, payload.size() / 8, payload.data(), our_cipher.get());
-  OldAesUnwrap(key, payload.size() / 8, our_cipher.get(), our_decipher.get());
+  ASSERT_NE(OldAesUnwrap(key, payload.size() / 8, our_cipher.get(),
+                         our_decipher.get()),
+            -1);
 
   for (std::size_t i = 0; i < payload.size(); ++i) {
     EXPECT_EQ((unsigned)our_decipher[i], (unsigned)payload[i])
@@ -227,9 +229,16 @@ TEST(Aes, openssl)
 
   auto openssl_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
   auto openssl_decipher = std::make_unique<uint8_t[]>(payload.size());
-  AesWrap(key, payload.size() / 8, payload.data(), openssl_cipher.get());
-  AesUnwrap(key, payload.size() / 8, openssl_cipher.get(),
-            openssl_decipher.get());
+  {
+    auto result = AesWrap(key, payload.size() / 8, payload.data(),
+                          openssl_cipher.get());
+    ASSERT_FALSE(!!result) << result->c_str();
+  }
+  {
+    auto result = AesUnwrap(key, payload.size() / 8, openssl_cipher.get(),
+                            openssl_decipher.get());
+    ASSERT_FALSE(!!result) << result->c_str();
+  }
 
   for (std::size_t i = 0; i < payload.size(); ++i) {
     EXPECT_EQ((unsigned)openssl_decipher[i], (unsigned)payload[i])
@@ -247,9 +256,11 @@ TEST(Aes, wrap)
   auto openssl_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
   auto our_cipher = std::make_unique<uint8_t[]>(payload.size() + 8);
 
-  ASSERT_EQ(
-      AesWrap(key, payload.size() / 8, payload.data(), openssl_cipher.get()),
-      std::nullopt);
+  {
+    auto result = AesWrap(key, payload.size() / 8, payload.data(),
+                          openssl_cipher.get());
+    ASSERT_FALSE(!!result) << result->c_str();
+  }
   OldAesWrap(key, payload.size() / 8, payload.data(), our_cipher.get());
 
   for (std::size_t i = 0; i < payload.size() + 8; ++i) {
@@ -270,9 +281,11 @@ TEST(Aes, unwrap)
   auto openssl_decipher = std::make_unique<uint8_t[]>(payload_size);
   auto our_decipher = std::make_unique<uint8_t[]>(payload_size);
 
-  ASSERT_EQ(
-      AesUnwrap(key, payload_size / 8, wrapped.data(), openssl_decipher.get()),
-      std::nullopt);
+  {
+    auto result = AesUnwrap(key, payload_size / 8, wrapped.data(),
+                            openssl_decipher.get());
+    ASSERT_FALSE(!!result) << result->c_str();
+  }
   ASSERT_EQ(
       OldAesUnwrap(key, payload_size / 8, wrapped.data(), our_decipher.get()),
       0);
