@@ -244,7 +244,11 @@ static bool SetupDCR(JobControlRecord* jcr,
                      std::int64_t& volid,
                      uint32_t& blocknum)
 {
-  if (!jcr->sd_impl->dcr) { TryReserveAfterUse(jcr, true); }
+  if (!jcr->sd_impl->dcr) {
+    TryReserveAfterUse(jcr, true);
+    Jmsg(jcr, M_INFO, 0, T_("Using Device %s to write.\n"),
+         jcr->sd_impl->dcr->dev->print_name());
+  }
 
   if (!jcr->sd_impl->dcr) {
     Jmsg0(jcr, M_FATAL, 0, T_("DeviceControlRecord is NULL!!!\n"));
