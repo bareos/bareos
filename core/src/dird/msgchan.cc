@@ -176,6 +176,7 @@ bool ReserveReadDevice(JobControlRecord* jcr,
       ok = false;
     }
     if (ok) {
+      UnbashSpaces(device_name.c_str());
       Jmsg(jcr, M_INFO, 0, T_("Using Device \"%s\" to read.\n"),
            device_name.c_str());
     }
@@ -253,6 +254,7 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
       ok = false;
     }
     if (ok) {
+      UnbashSpaces(device_name.c_str());
       Jmsg(jcr, M_INFO, 0, T_("Using Device \"%s\" to write.\n"),
            device_name.c_str());
     }
