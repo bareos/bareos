@@ -39,6 +39,8 @@ set(SYSTEMTEST_LDAP_PASSWORD
 if(TARGET python3-fd)
   check_pymodule_available(3 ldap)
   if(PYMODULE_3_LDAP_FOUND AND SYSTEMTEST_LDAP_ADDRESS)
+    string(REPLACE ":" "\\\\:" SYSTEMTEST_LDAP_ADDRESS_ESCAPED ${SYSTEMTEST_LDAP_ADDRESS})
+    cmake_print_variables(SYSTEMTEST_LDAP_ADDRESS_ESCAPED)
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   else()
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
