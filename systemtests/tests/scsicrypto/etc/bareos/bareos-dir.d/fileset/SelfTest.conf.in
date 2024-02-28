@@ -4,6 +4,7 @@ FileSet {
   Include {
     Options {
       Signature = MD5 # calculate md5 checksum per file
+      Hard Links = Yes
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list
