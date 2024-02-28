@@ -193,12 +193,6 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
   SetupNewDcrDevice(jcr, new_dcr, NULL, NULL);
   if (rctx.append) { new_dcr->SetWillWrite(); }
 
-  if (!new_dcr) {
-    dir->fsend(T_("3939 Could not get dcr\n"));
-    Dmsg1(debuglevel, ">dird: %s", dir->msg);
-    ok = false;
-  }
-
   /* At this point, we have a list of all the Director's Storage resources
    * indicated for this Job, which include Pool, PoolType, storage name, and
    * Media type.
