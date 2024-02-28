@@ -50,9 +50,7 @@ namespace storagedaemon {
 const int debuglevel = 150;
 
 /* Global static variables */
-static int reservations_lock_count = 0;
-
-static brwlock_t reservation_lock;
+static std::mutex* reservation_mutex;
 
 /* Forward referenced functions */
 static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx);
@@ -95,44 +93,21 @@ bool use_cmd(JobControlRecord* jcr)
  */
 void InitReservationsLock()
 {
-  int errstat;
-  if ((errstat = RwlInit(&reservation_lock)) != 0) {
-    BErrNo be;
-    Emsg1(M_ABORT, 0, T_("Unable to initialize reservation lock. ERR=%s\n"),
-          be.bstrerror(errstat));
-  }
+  reservation_mutex = new std::mutex;
 
   InitVolListLock();
 }
 
 void TermReservationsLock()
 {
-  RwlDestroy(&reservation_lock);
+  delete reservation_mutex;
   TermVolListLock();
 }
 
 // This applies to a drive and to Volumes
-void LockReservations()
-{
-  int errstat;
-  reservations_lock_count++;
-  if ((errstat = RwlWritelock(&reservation_lock)) != 0) {
-    BErrNo be;
-    Emsg2(M_ABORT, 0, "RwlWritelock failure. stat=%d: ERR=%s\n", errstat,
-          be.bstrerror(errstat));
-  }
-}
+void LockReservations() { reservation_mutex->lock(); }
 
-void UnlockReservations()
-{
-  int errstat;
-  reservations_lock_count--;
-  if ((errstat = RwlWriteunlock(&reservation_lock)) != 0) {
-    BErrNo be;
-    Emsg2(M_ABORT, 0, "RwlWriteunlock failure. stat=%d: ERR=%s\n", errstat,
-          be.bstrerror(errstat));
-  }
-}
+void UnlockReservations() { reservation_mutex->unlock(); }
 
 void DeviceControlRecord::SetReserved()
 {
