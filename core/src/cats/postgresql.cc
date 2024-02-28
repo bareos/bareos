@@ -238,6 +238,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
 
   SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
   SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
+  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
 
   /* Tell PostgreSQL we are using standard conforming strings
    * and avoid warnings such as:
