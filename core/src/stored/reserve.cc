@@ -180,17 +180,12 @@ void DeviceControlRecord::UnreserveDevice()
 
 bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
 {
-  ReserveContext rctx;
-  memset(&rctx, 0, sizeof(ReserveContext));
-  rctx.jcr = jcr;
-  rctx.append = append;
-
   BareosSocket* dir = jcr->dir_bsock;
 
   InitJcrDeviceWaitTimers(jcr);
   auto* new_dcr = new StorageDaemonDeviceControlRecord;
   SetupNewDcrDevice(jcr, new_dcr, NULL, NULL);
-  if (rctx.append) { new_dcr->SetWillWrite(); }
+  if (append) { new_dcr->SetWillWrite(); }
 
   /* At this point, we have a list of all the Director's Storage resources
    * indicated for this Job, which include Pool, PoolType, storage name, and
@@ -206,11 +201,16 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
   bool found = true;
 
   // Put new dcr in proper location
-  if (rctx.append) {
-    rctx.jcr->sd_impl->dcr = new_dcr;
+  if (append) {
+    jcr->sd_impl->dcr = new_dcr;
   } else {
-    rctx.jcr->sd_impl->read_dcr = new_dcr;
+    jcr->sd_impl->read_dcr = new_dcr;
   }
+
+  ReserveContext rctx;
+  memset(&rctx, 0, sizeof(ReserveContext));
+  rctx.jcr = jcr;
+  rctx.append = append;
 
   for (; !fail && !jcr->IsJobCanceled();) {
     std::unique_lock reservation_lock(*reservation_mutex);
