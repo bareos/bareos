@@ -189,12 +189,11 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
   BareosSocket* dir = jcr->dir_bsock;
 
   InitJcrDeviceWaitTimers(jcr);
-  jcr->sd_impl->dcr = new StorageDaemonDeviceControlRecord;
-  SetupNewDcrDevice(jcr, jcr->sd_impl->dcr, NULL, NULL);
-  if (rctx.append) { jcr->sd_impl->dcr->SetWillWrite(); }
+  auto* new_dcr = new StorageDaemonDeviceControlRecord;
+  SetupNewDcrDevice(jcr, new_dcr, NULL, NULL);
+  if (rctx.append) { new_dcr->SetWillWrite(); }
 
-  if (!jcr->sd_impl->dcr) {
-    BareosSocket* dir = jcr->dir_bsock;
+  if (!new_dcr) {
     dir->fsend(T_("3939 Could not get dcr\n"));
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
     ok = false;
@@ -215,9 +214,9 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
 
     // Put new dcr in proper location
     if (rctx.append) {
-      rctx.jcr->sd_impl->dcr = jcr->sd_impl->dcr;
+      rctx.jcr->sd_impl->dcr = new_dcr;
     } else {
-      rctx.jcr->sd_impl->read_dcr = jcr->sd_impl->dcr;
+      rctx.jcr->sd_impl->read_dcr = new_dcr;
     }
 
     LockReservations();
@@ -418,7 +417,8 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
   bool ok = false;
-  DeviceControlRecord* dcr = jcr->sd_impl->dcr;
+  DeviceControlRecord* dcr
+      = rctx.append ? jcr->sd_impl->dcr : jcr->sd_impl->read_dcr;
 
   auto& storages = jcr->sd_impl->dirstores;
   Dmsg5(debuglevel,
