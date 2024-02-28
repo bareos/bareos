@@ -10,17 +10,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Improve FreeBSD build [PR #1644]
 - core: sql_* add leading space to sql construct [PR #1658]
 - core: add build patch for `sprintf` in macos builds [PR #1652]
-- bareos-config: fix output of deploy_config [PR #1674]
 - Disable automated package-tests for SLES 12 [PR #1676]
-- filed: fix vss during client initiated connections [PR #1667]
 - Improve FreeBSD dependencies [PR #1681]
 - macOS build workflow (for Bareos-22) [PR #1691]
+
+### Fixed
+- bareos-config: fix output of deploy_config [PR #1674]
+- filed: fix vss during client initiated connections [PR #1667]
 - webui: Backup Unit Report fixes [PR #1699]
 - windows: fix calculation of "job_metadata.xml" object size [PR #1704]
 - stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1701]
 - core: fix various data races (connection_pool/heartbeat_thread) [PR #1712]
-
-### Fixed
 - core: Fix compile errors on GCC 14 [PR #1714]
 
 ## [22.1.3] - 2023-12-13
