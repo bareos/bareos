@@ -212,8 +212,8 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
     rctx.jcr->sd_impl->read_dcr = new_dcr;
   }
 
-  LockReservations();
   for (; !fail && !jcr->IsJobCanceled();) {
+    std::unique_lock reservation_lock(*reservation_mutex);
     ClearReserveMessages(jcr);
     rctx.suitable_device = false;
     rctx.have_volume = false;
@@ -255,7 +255,7 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
     if ((found = FindSuitableDeviceForJob(jcr, rctx))) { break; }
 
     // during WaitForDevice()
-    UnlockReservations();
+    reservation_lock.unlock();
 
     /* The idea of looping on repeat a few times it to ensure
      * that if there is some subtle timing problem between two
@@ -270,10 +270,8 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
       Dmsg0(debuglevel, "Fail. !suitable_device || !WaitForDevice\n");
       fail = true;
     }
-    LockReservations();
     dir->signal(BNET_HEARTBEAT); /* Inform Dir that we are alive */
   }
-  UnlockReservations();
 
   if (!found) {
     /* If we get here, there are no suitable devices available, which
