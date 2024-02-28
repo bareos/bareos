@@ -51,7 +51,7 @@ if ! ${mybsc} -g "${keyfile}"; then
 fi
 # Read keyfile and compare to previously generated
 gen_kek="$(cat ${keyfile})"
-read_kek=$($mybsc -k ${keyfile}) 
+read_kek="$($mybsc -k ${keyfile})"
 if [ "${gen_kek}" != "$read_kek" ];then
   printf "Created KEK [%s] differ from Read KEK [%s] failure. \n" "${gen_kek}" "${read_kek}"
   export estat=1
@@ -186,26 +186,19 @@ expect_grep "Backup OK" \
             "$backup_log" \
             "Backup job failed."
 
-#expect_grep "Spooling data ..." \
-#            "$backup_log" \
-#            "Spooling not triggered."
+expect_grep "Restore OK" \
+            "$restore_log" \
+            "Restore job failed."
 
-#expect_grep "Committing spooled data" \
-#            "$backup_log" \
-#            "Despooling not triggered."
-
-# Not sure this can be found into joblog
+# todo find a way to detect if encryption is used
+# maybe in the trace log
 #expect_grep "Encryption Mode: Encrypt" \
 #            "$backup_log" \
 #            "Encryption mode wrong or not found."
 #
 #expect_grep "Decryption Mode: Mixed" \
-#            "$backup_log" \
+#            "$restore_log" \
 #            "Decryption mode wrong or not found."
-
-expect_grep "Restore OK" \
-            "$restore_log" \
-            "Restore job failed."
 
 check_restore_diff "${BackupDirectory}"
 
@@ -220,7 +213,7 @@ fi
 # Dump cache
 crypto_cache_log=$tmp/crypto_cache.log
 crypto_cache="${working_dir}/bareos-sd.${BAREOS_STORAGE_PORT}.cryptoc"
-if ! "${mybsc}" --dump-cache "${crypto_cache}" > "${crypto_cache_log}";  then
+if ! "${mybsc}" -d10 --dt --dump-cache "${crypto_cache}" > "${crypto_cache_log}";  then
   printf "Dumping crypto cache failed \n"
   export estat=1
   exit 1
@@ -240,6 +233,13 @@ expect_grep "${volume}" \
 # no data can be read from the volume.
 # Otherwise it mean we wrote clear data on it !!!
 
+# for the moment we don't have tools that works with encrypted tapes.
+# the drive and volume status by bscsicrypto after using bls.
+# show a key has been loaded by doesn't seems to work.
+
+# We need to fix this key loading compared to scscicrypto plugin.
+
+# 28-fév-2024 16:58:27.584641 bextract (200): scsicrypto/scsicrypto-sd.cc:359-0 scsicrypto-sd: Loading new crypto key ���tD/jS٫0�|̊�l �P�E!1!OW��H��$�iD
 
 # Test volume content listing
 # export confdir for mtx-changer
