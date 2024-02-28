@@ -8,14 +8,16 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - github actions: update/fix publish to PyPI workflows [PR #1586]
 - github actions: PyPi: install setuptools [PR #1591]
-- autoxflate: fix autoxflate on replication [PR #1596]
-- macOS: fix linking problem for macOS >= 14 [PR #1624]
 - pkglists: update SUSE to have vmware packages [PR #1635]
 - Improve FreeBSD build [PR #1645]
 - core: add build patch for `sprintf` in macos builds [PR #1653]
 - Disable automated package-tests for SLES 12 [PR #1677]
-- filed: fix vss during client initiated connections [PR #1668]
 - Improve FreeBSD dependencies [PR #1682]
+
+### Fixed
+- autoxflate: fix autoxflate on replication [PR #1596]
+- macOS: fix linking problem for macOS >= 14 [PR #1624]
+- filed: fix vss during client initiated connections [PR #1668]
 - stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1702]
 - windows: fix calculation of "job_metadata.xml" object size [PR #1705]
 
