@@ -249,23 +249,6 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
     dir->signal(BNET_HEARTBEAT); /* Inform Dir that we are alive */
   }
 
-  if (!found) {
-    /* If we get here, there are no suitable devices available, which
-     * means nothing configured.  If a device is suitable but busy
-     * with another Volume, we will not come here. */
-    UnbashSpaces(dir->msg);
-    PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, T_("Device reservation failed for JobId=%d: %s\n"),
-         jcr->JobId, jcr->errmsg);
-    const char* dev_name = "no dev";
-    for (auto& storage : jcr->sd_impl->dirstores) {
-      for (auto& name : storage.device_names) { dev_name = name.c_str(); }
-    }
-    dir->fsend(NO_device, dev_name);
-
-    Dmsg1(debuglevel, ">dird: %s", dir->msg);
-  }
-
   ClearReserveMessages(jcr);
   return found;
 }
@@ -332,15 +315,32 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     PmStrcpy(dev_name, "JustInTime Device");
     jcr->sd_impl->dcr = nullptr;  // signal to rest of storage daemon that no
                                   // device was reserved.
-    BashSpaces(dev_name);
     Jmsg(jcr, M_INFO, 0, "Using just in time reservation for job %" PRIu32 "\n",
          jcr->JobId);
-    ok = dir->fsend(OK_device, dev_name.c_str()); /* Return fake device name */
-    Dmsg1(debuglevel, ">dird: %s", dir->msg);
-    return ok;
   } else {
-    return TryReserveAfterUse(jcr, append);
+    ok = TryReserveAfterUse(jcr, append);
+    if (ok) {
+      auto* dcr = append ? jcr->sd_impl->dcr : jcr->sd_impl->read_dcr;
+      PmStrcpy(dev_name, dcr->dev->device_resource->resource_name_);
+    }
   }
+
+  if (ok) {
+    BashSpaces(dev_name);
+    ok = dir->fsend(OK_device, dev_name.c_str()); /* Return real device name */
+    Dmsg1(debuglevel, ">dird: %s", dir->msg);
+  } else {
+    /* If we get here, there are no suitable devices available, which
+     * means nothing configured.  If a device is suitable but busy
+     * with another Volume, we will not come here. */
+    UnbashSpaces(dir->msg);
+    PmStrcpy(jcr->errmsg, dir->msg);
+    Jmsg(jcr, M_FATAL, 0, T_("Device reservation failed for JobId=%d: %s\n"),
+         jcr->JobId, jcr->errmsg);
+    dir->fsend(NO_device, dev_name.c_str());
+    Dmsg1(debuglevel, ">dird: %s", dir->msg);
+  }
+  return ok;
 }
 
 /**
@@ -760,13 +760,7 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
   if (!ok) {
     goto bail_out;
   } else {
-    PoolMem dev_name;
-    BareosSocket* dir = jcr->dir_bsock;
-    PmStrcpy(dev_name, rctx.device_resource->resource_name_);
-    BashSpaces(dev_name);
-    ok = dir->fsend(OK_device, dev_name.c_str()); /* Return real device name */
-    Dmsg1(debuglevel, ">dird: %s", dir->msg);
-    return ok ? 1 : -1;
+    return 1;
   }
 
 bail_out:
