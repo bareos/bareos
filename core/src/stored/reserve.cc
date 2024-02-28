@@ -179,7 +179,9 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
   if (append) {
     jcr->sd_impl->dcr = new_dcr;
   } else {
-    jcr->sd_impl->read_dcr = new_dcr;
+    // a lot of code seemingly assumes that read_dcr is just a secondary
+    // dcr, even in read situations.  As such we also need to that here.
+    jcr->sd_impl->dcr = jcr->sd_impl->read_dcr = new_dcr;
   }
 
   ReserveContext rctx;
