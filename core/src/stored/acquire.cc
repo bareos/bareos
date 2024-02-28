@@ -166,7 +166,6 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
     LockReservations();
     memset(&rctx, 0, sizeof(ReserveContext));
-    rctx.jcr = jcr;
     jcr->sd_impl->read_dcr = dcr;
     rctx.any_drive = true;
     rctx.device_name = vol->device;
@@ -176,7 +175,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     CleanDevice(dcr); /* clean up the dcr */
 
     // Search for a new device
-    status = SearchResForDevice(rctx);
+    status = SearchResForDevice(jcr, rctx);
     ClearReserveMessages(jcr); /* release queued messages */
     UnlockReservations();
 

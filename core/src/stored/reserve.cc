@@ -54,7 +54,7 @@ static std::mutex* reservation_mutex;
 
 /* Forward referenced functions */
 static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx);
-static int ReserveDevice(ReserveContext& rctx);
+static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx);
 static bool ReserveDeviceForRead(DeviceControlRecord* dcr);
 static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
                                    ReserveContext& rctx);
@@ -184,7 +184,6 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
 
   ReserveContext rctx;
   memset(&rctx, 0, sizeof(ReserveContext));
-  rctx.jcr = jcr;
   rctx.append = append;
 
   for (; !fail && !jcr->IsJobCanceled();) {
@@ -436,7 +435,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           // Try reserving this device and volume
           Dmsg2(debuglevel, "try vol=%s on device=%s\n", rctx.VolumeName,
                 device_name.c_str());
-          status = ReserveDevice(rctx);
+          status = ReserveDevice(jcr, rctx);
           if (status == 1) { /* found available device */
             Dmsg1(debuglevel, "Suitable device found=%s\n",
                   device_name.c_str());
@@ -480,7 +479,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
     for (auto& device_name : store.device_names) {
       int status;
       rctx.device_name = device_name.c_str();
-      status = SearchResForDevice(rctx);
+      status = SearchResForDevice(jcr, rctx);
       if (status == 1) { /* found available device */
         Dmsg1(debuglevel, "available device found=%s\n", device_name.c_str());
         ok = true;
@@ -506,7 +505,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
  * Search for a particular storage device with particular storage
  * characteristics (MediaType).
  */
-int SearchResForDevice(ReserveContext& rctx)
+int SearchResForDevice(JobControlRecord* jcr, ReserveContext& rctx)
 {
   int status;
   AutochangerResource* changer;
@@ -526,7 +525,7 @@ int SearchResForDevice(ReserveContext& rctx)
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
         }
-        status = ReserveDevice(rctx);
+        status = ReserveDevice(jcr, rctx);
         if (status != 1) { /* Try another device */
           continue;
         }
@@ -535,11 +534,11 @@ int SearchResForDevice(ReserveContext& rctx)
         if (rctx.store->append) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                 rctx.device_resource->resource_name_,
-                rctx.jcr->sd_impl->dcr->dev->NumReserved());
+                jcr->sd_impl->dcr->dev->NumReserved());
         } else {
           Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
                 rctx.device_resource->resource_name_,
-                rctx.jcr->sd_impl->read_dcr->dev->NumReserved());
+                jcr->sd_impl->read_dcr->dev->NumReserved());
         }
         return status;
       }
@@ -554,7 +553,7 @@ int SearchResForDevice(ReserveContext& rctx)
 
       // Find resource, and make sure we were able to open it
       if (bstrcmp(rctx.device_name, rctx.device_resource->resource_name_)) {
-        status = ReserveDevice(rctx);
+        status = ReserveDevice(jcr, rctx);
         if (status != 1) { /* Try another device_resource */
           continue;
         }
@@ -562,11 +561,11 @@ int SearchResForDevice(ReserveContext& rctx)
         if (rctx.store->append) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                 rctx.device_resource->resource_name_,
-                rctx.jcr->sd_impl->dcr->dev->NumReserved());
+                jcr->sd_impl->dcr->dev->NumReserved());
         } else {
           Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
                 rctx.device_resource->resource_name_,
-                rctx.jcr->sd_impl->read_dcr->dev->NumReserved());
+                jcr->sd_impl->read_dcr->dev->NumReserved());
         }
         return status;
       }
@@ -584,7 +583,7 @@ int SearchResForDevice(ReserveContext& rctx)
 
         if (bstrcmp(rctx.store->media_type.c_str(),
                     rctx.device_resource->media_type)) {
-          status = ReserveDevice(rctx);
+          status = ReserveDevice(jcr, rctx);
           if (status != 1) { /* Try another device_resource */
             continue;
           }
@@ -593,11 +592,11 @@ int SearchResForDevice(ReserveContext& rctx)
           if (rctx.store->append) {
             Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                   rctx.device_resource->resource_name_,
-                  rctx.jcr->sd_impl->dcr->dev->NumReserved());
+                  jcr->sd_impl->dcr->dev->NumReserved());
           } else {
             Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
                   rctx.device_resource->resource_name_,
-                  rctx.jcr->sd_impl->read_dcr->dev->NumReserved());
+                  jcr->sd_impl->read_dcr->dev->NumReserved());
           }
           return status;
         }
@@ -615,7 +614,7 @@ int SearchResForDevice(ReserveContext& rctx)
  *          0 -- must wait
  *         -1 -- fatal error
  */
-static int ReserveDevice(ReserveContext& rctx)
+static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
 {
   bool ok;
   DeviceControlRecord* dcr;
@@ -643,18 +642,17 @@ static int ReserveDevice(ReserveContext& rctx)
 
   // Make sure device_resource exists -- i.e. we can stat() it
   if (!rctx.device_resource->dev) {
-    rctx.device_resource->dev
-        = FactoryCreateDevice(rctx.jcr, rctx.device_resource);
+    rctx.device_resource->dev = FactoryCreateDevice(jcr, rctx.device_resource);
   }
   if (!rctx.device_resource->dev) {
     if (rctx.device_resource->changer_res) {
-      Jmsg(rctx.jcr, M_WARNING, 0,
+      Jmsg(jcr, M_WARNING, 0,
            T_("\n"
               "     Device \"%s\" in changer \"%s\" requested by DIR could not "
               "be opened or does not exist.\n"),
            rctx.device_resource->resource_name_, rctx.device_name);
     } else {
-      Jmsg(rctx.jcr, M_WARNING, 0,
+      Jmsg(jcr, M_WARNING, 0,
            T_("\n"
               "     Device \"%s\" requested by DIR could not be opened or does "
               "not exist.\n"),
@@ -667,17 +665,16 @@ static int ReserveDevice(ReserveContext& rctx)
   Dmsg1(debuglevel, "try reserve %s\n", rctx.device_resource->resource_name_);
 
   if (rctx.store->append) {
-    SetupNewDcrDevice(rctx.jcr, rctx.jcr->sd_impl->dcr,
-                      rctx.device_resource->dev, NULL);
-    dcr = rctx.jcr->sd_impl->dcr;
+    SetupNewDcrDevice(jcr, jcr->sd_impl->dcr, rctx.device_resource->dev, NULL);
+    dcr = jcr->sd_impl->dcr;
   } else {
-    SetupNewDcrDevice(rctx.jcr, rctx.jcr->sd_impl->read_dcr,
-                      rctx.device_resource->dev, NULL);
-    dcr = rctx.jcr->sd_impl->read_dcr;
+    SetupNewDcrDevice(jcr, jcr->sd_impl->read_dcr, rctx.device_resource->dev,
+                      NULL);
+    dcr = jcr->sd_impl->read_dcr;
   }
 
   if (!dcr) {
-    BareosSocket* dir = rctx.jcr->dir_bsock;
+    BareosSocket* dir = jcr->dir_bsock;
 
     dir->fsend(T_("3926 Could not get dcr for device: %s\n"), rctx.device_name);
     Dmsg1(debuglevel, ">dird: %s", dir->msg);
@@ -696,7 +693,7 @@ static int ReserveDevice(ReserveContext& rctx)
     ok = ReserveDeviceForAppend(dcr, rctx);
     if (!ok) { goto bail_out; }
 
-    rctx.jcr->sd_impl->dcr = dcr;
+    jcr->sd_impl->dcr = dcr;
     Dmsg5(debuglevel, "Reserved=%d dev_name=%s mediatype=%s pool=%s ok=%d\n",
           dcr->dev->NumReserved(), dcr->dev_name, dcr->media_type,
           dcr->pool_name, ok);
@@ -751,7 +748,7 @@ static int ReserveDevice(ReserveContext& rctx)
   } else {
     ok = ReserveDeviceForRead(dcr);
     if (ok) {
-      rctx.jcr->sd_impl->read_dcr = dcr;
+      jcr->sd_impl->read_dcr = dcr;
       Dmsg5(debuglevel,
             "Read reserved=%d dev_name=%s mediatype=%s pool=%s ok=%d\n",
             dcr->dev->NumReserved(), dcr->dev_name, dcr->media_type,
@@ -762,7 +759,7 @@ static int ReserveDevice(ReserveContext& rctx)
     goto bail_out;
   } else {
     PoolMem dev_name;
-    BareosSocket* dir = rctx.jcr->dir_bsock;
+    BareosSocket* dir = jcr->dir_bsock;
     PmStrcpy(dev_name, rctx.device_resource->resource_name_);
     BashSpaces(dev_name);
     ok = dir->fsend(OK_device, dev_name.c_str()); /* Return real device name */

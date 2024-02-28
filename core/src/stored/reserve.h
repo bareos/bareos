@@ -66,7 +66,6 @@ struct director_storage {
 /* Reserve context */
 class ReserveContext {
  public:
-  JobControlRecord* jcr;
   const char* device_name;
   director_storage* store;
   DeviceResource* device_resource;
@@ -83,7 +82,6 @@ class ReserveContext {
   char VolumeName[MAX_NAME_LENGTH]; /**< Vol name suggested by DIR */
 };
 
-
 void InitReservationsLock();
 void TermReservationsLock();
 void LockReservations();
@@ -94,7 +92,7 @@ void UnlockVolumes();
 void LockReadVolumes();
 void UnlockReadVolumes();
 void UnreserveDevice(DeviceControlRecord* dcr);
-int SearchResForDevice(ReserveContext& rctx);
+int SearchResForDevice(JobControlRecord* jcr, ReserveContext& rctx);
 void ClearReserveMessages(JobControlRecord* jcr);
 
 bool use_cmd(JobControlRecord* jcr);
