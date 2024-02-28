@@ -7,23 +7,23 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - add openssl 3 ulc [PR #1694]
+- fvec: add mmap based vector  [PR #1706]
 
 ### Changed
-- bareos-config: fix output of deploy_config [PR #1673]
 - Disable automated package-tests for SLES 12 [PR #1675]
-- filed: fix vss during client initiated connections [PR #1666]
 - Make BareosDirPluginPrometheusExporter.py work with python3 [PR #1679]
 - Improve FreeBSD dependencies [PR #1680]
 - python-bareos: integrate usage of config files [PR #1690]
+
+### Fixed
+- bareos-config: fix output of deploy_config [PR #1673]
+- filed: fix vss during client initiated connections [PR #1666]
 - webui: Backup Unit Report fixes [PR #1698]
 - windows: fix calculation of "job_metadata.xml" object size [PR #1703]
 - stored: fix storage daemon crash if passive client is unreachable, create better session keys [PR #1700]
 - bareos-triggerjob: fix parameter handling [PR #1709]
-- fvec: add mmap based vector  [PR #1706]
-- core: fix various data races (connection_pool/heartbeat_thread) [PR #1711]
-
-### Fixed
 - core: Fix compile errors on GCC 14 [PR #1693]
+- core: fix various data races (connection_pool/heartbeat_thread) [PR #1711]
 
 ## [23.0.1] - 2024-01-17
 
