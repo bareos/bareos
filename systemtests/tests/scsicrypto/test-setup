@@ -70,3 +70,6 @@ fi
 # Fill ${BackupDirectory} with data.
 setup_data
 
+if [ -f "etc/bareos/.ltocrypt-keyfile" ]; then
+  rm -f "etc/bareos/.ltocrypt-keyfile"
+fi
