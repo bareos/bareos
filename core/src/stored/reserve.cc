@@ -62,6 +62,8 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
                                    ReserveContext& rctx);
 static bool UseDeviceCmd(JobControlRecord* jcr);
 static void QueueReserveMessage(JobControlRecord* jcr);
+static bool FindSuitableDeviceForJob(JobControlRecord* jcr,
+                                     ReserveContext& rctx);
 
 /* Requests from the Director daemon */
 static char use_storage[]

@@ -94,7 +94,6 @@ void UnlockVolumes();
 void LockReadVolumes();
 void UnlockReadVolumes();
 void UnreserveDevice(DeviceControlRecord* dcr);
-bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx);
 int SearchResForDevice(ReserveContext& rctx);
 void ClearReserveMessages(JobControlRecord* jcr);
 
