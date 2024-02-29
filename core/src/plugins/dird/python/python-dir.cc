@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -269,6 +269,9 @@ static bRC freePlugin(PluginContext* plugin_ctx)
   // Stop any sub interpreter started per plugin instance.
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
+  if (plugin_priv_ctx->module_path) { free(plugin_priv_ctx->module_path); }
+
+  if (plugin_priv_ctx->module_name) { free(plugin_priv_ctx->module_name); }
 
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
