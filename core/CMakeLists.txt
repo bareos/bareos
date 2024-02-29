@@ -389,8 +389,18 @@ endif()
 
 include(FindIntl)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # our cross compiler is too old to understand %zX format specifiers
+  set(CMAKE_C_FLAGS
+      "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
+  )
+  set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-error=format -Wno-error=format-security -Wno-error=format-extra-args -Wno-error=format-zero-length"
+  )
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
+endif()
 
 check_c_compiler_flag("-Wformat-overflow" CC_SUPPORTS_Wformat_overflow)
 check_cxx_compiler_flag("-Wformat-overflow" CXX_SUPPORTS_Wformat_overflow)
