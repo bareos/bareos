@@ -44,7 +44,6 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/serial.h"
-#include "dird/comm.h"
 #include <cinttypes>
 
 namespace storagedaemon {
