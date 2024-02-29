@@ -39,7 +39,6 @@
 #include "lib/base64.h"
 #include "lib/crypto.h"
 #include "lib/compression.h"
-#include "stored/fd_comm.h"
 
 namespace filedaemon {
 
@@ -94,8 +93,10 @@ void DoVerifyVolume(JobControlRecord* jcr)
   // Get a record from the Storage daemon
   while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // First we expect a Stream Record Header
-    if (sscanf(sd->msg, storagedaemon::rec_header, &VolSessionId,
-               &VolSessionTime, &file_index, &stream, &size)
+    if (sscanf(sd->msg,
+               "rechdr %" SCNu32 " %" SCNu32 " %" SCNd32 " %" SCNd32
+               " %" SCNu32,
+               &VolSessionId, &VolSessionTime, &file_index, &stream, &size)
         != 5) {
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;

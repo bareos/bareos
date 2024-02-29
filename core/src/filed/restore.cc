@@ -52,7 +52,6 @@
 #include "lib/serial.h"
 #include "lib/compression.h"
 #include "lib/version.h"
-#include "stored/fd_comm.h"
 
 #ifdef HAVE_WIN32
 #  include "win32/findlib/win32.h"
@@ -492,8 +491,11 @@ void DoRestore(JobControlRecord* jcr)
     rctx.prev_stream = rctx.stream;
 
     // First we expect a Stream Record Header
-    if (sscanf(sd->msg, storagedaemon::rec_header, &VolSessionId,
-               &VolSessionTime, &file_index, &rctx.full_stream, &rctx.size)
+    if (sscanf(sd->msg,
+               "rechdr %" SCNu32 " %" SCNu32 " %" SCNd32 " %" SCNd32
+               " %" SCNu32,
+               &VolSessionId, &VolSessionTime, &file_index, &rctx.full_stream,
+               &rctx.size)
         != 5) {
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;

@@ -44,7 +44,6 @@
 #include "lib/bsock.h"
 #include "lib/plugins.h"
 #include "lib/parse_conf.h"
-#include "stored/fd_comm.h"
 
 // Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosFilePacket* bfd,
@@ -1050,7 +1049,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
   Dmsg1(debuglevel, "SendPluginName=%s\n", sp->cmd);
 
   // Send stream header
-  if (!sd->fsend(storagedaemon::stream_start, index, STREAM_PLUGIN_NAME)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", index, STREAM_PLUGIN_NAME)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return false;
@@ -1059,11 +1058,11 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 
   if (start) {
     // Send data -- not much
-    status = sd->fsend(storagedaemon::plugin_start, index, sp->portable,
-                       sp->cmd, 0);
+    status
+        = sd->fsend("%" PRIu32 " 1 %d %s%c", index, sp->portable, sp->cmd, 0);
   } else {
     // Send end of data
-    status = sd->fsend(storagedaemon::plugin_end, jcr->JobFiles);
+    status = sd->fsend("%" PRIu32 " 0", jcr->JobFiles);
   }
   if (!status) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),

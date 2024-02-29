@@ -34,12 +34,14 @@
 #include "stored/stored_jcr_impl.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
-#include "stored/fd_comm.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "include/jcr.h"
 
 namespace storagedaemon {
+
+inline constexpr const char OK_data[] = "3000 OK data\n";
+inline constexpr const char FD_error[] = "3000 error\n";
 
 /* Forward referenced subroutines */
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
@@ -120,8 +122,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         stream_to_ascii(ec2, rec->Stream, rec->FileIndex), rec->data_len);
 
   // Send record header to File daemon
-  if (!fd->fsend(rec_header, rec->VolSessionId, rec->VolSessionTime,
-                 rec->FileIndex, rec->Stream, rec->data_len)) {
+  if (!fd->fsend("rechdr %" PRIu32 " %" PRIu32 " %" PRId32 " %" PRId32
+                 " %" PRIu32,
+                 rec->VolSessionId, rec->VolSessionTime, rec->FileIndex,
+                 rec->Stream, rec->data_len)) {
     Pmsg1(000, T_(">filed: Error Hdr=%s"), fd->msg);
     Jmsg1(jcr, M_FATAL, 0, T_("Error sending to File daemon. ERR=%s\n"),
           fd->bstrerror());

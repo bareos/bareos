@@ -56,7 +56,6 @@
 #include "lib/network_order.h"
 
 #include <cstring>
-#include "stored/fd_comm.h"
 
 namespace filedaemon {
 
@@ -260,7 +259,7 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
   }
 
   Dmsg1(300, "Saving Finder Info for \"%s\"\n", bsctx.ff_pkt->fname);
-  sd->fsend(storagedaemon::stream_start, bsctx.jcr->JobFiles,
+  sd->fsend("%" PRIu32 " %" PRId32 " 0", bsctx.jcr->JobFiles,
             STREAM_HFSPLUS_ATTRIBUTES);
   Dmsg1(300, "filed>stored:header %s", sd->msg);
   PmMemcpy(sd->msg, bsctx.ff_pkt->hfsinfo.fndrinfo, 32);
@@ -387,7 +386,7 @@ static inline bool TerminateSigningDigest(b_save_ctx& bsctx)
   }
 
   // Send our header
-  sd->fsend(storagedaemon::stream_start, bsctx.jcr->JobFiles,
+  sd->fsend("%" PRIu32 " %" PRId32 " 0", bsctx.jcr->JobFiles,
             STREAM_SIGNED_DIGEST);
   Dmsg1(300, "filed>stored:header %s", sd->msg);
 
@@ -415,7 +414,7 @@ static inline bool TerminateDigest(b_save_ctx& bsctx)
   bool retval = false;
   BareosSocket* sd = bsctx.jcr->store_bsock;
 
-  sd->fsend(storagedaemon::stream_start, bsctx.jcr->JobFiles,
+  sd->fsend("%" PRIu32 " %" PRId32 " 0", bsctx.jcr->JobFiles,
             bsctx.digest_stream);
   Dmsg1(300, "filed>stored:header %s", sd->msg);
 
@@ -822,7 +821,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   // Check if original file has a digest, and send it
   if (ff_pkt->type == FT_LNKSAVED && ff_pkt->digest) {
     Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
-    sd->fsend(storagedaemon::stream_start, jcr->JobFiles,
+    sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles,
               ff_pkt->digest_stream);
 
     sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
@@ -1472,7 +1471,7 @@ static int send_data(JobControlRecord* jcr,
 
   /* Send Data header to Storage daemon
    *    <file-index> <stream> <info> */
-  if (!sd->fsend(storagedaemon::stream_start, jcr->JobFiles, stream)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, stream)) {
     if (!jcr->IsJobCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
@@ -1618,7 +1617,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
   /* Send Attributes header to Storage daemon
    *    <file-index> <stream> <info> */
-  if (!sd->fsend(storagedaemon::stream_start, jcr->JobFiles, attr_stream)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, attr_stream)) {
     if (!jcr->IsJobCanceled() && !jcr->IsIncomplete()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
