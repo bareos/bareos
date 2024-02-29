@@ -133,7 +133,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $backup_log
-setdebug level=500 trace=1 timestamp=1 storage=Tape-0
+setdebug level=250 trace=1 timestamp=1 storage=Tape-0
 update slots
 label barcodes encrypt slot=1-4 drive=0 pool=Scratch storage=Tape-0 yes
 wait
@@ -161,7 +161,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $restore_log
-setdebug level=500 trace=1 timestamp=1 storage=Tape-0
+setdebug level=250 trace=1 timestamp=1 storage=Tape-0
 update slots
 restore client=bareos-fd where=$tmp/bareos-restores select all done yes
 wait
@@ -204,7 +204,7 @@ check_restore_diff "${BackupDirectory}"
 
 # Check if crypto cache is there and readable.
 # Again clear the key from the drive
-if ! "${mybsc}" --clear-encryption "${ltodrive}"; then
+if ! "${mybsc}" -d250 --dt --clear-encryption "${ltodrive}"; then
   printf "Clearing KEK failed \n"
   export estat=1
   exit 1
@@ -213,7 +213,7 @@ fi
 # Dump cache
 crypto_cache_log=$tmp/crypto_cache.log
 crypto_cache="${working_dir}/bareos-sd.${BAREOS_STORAGE_PORT}.cryptoc"
-if ! "${mybsc}" -d10 --dt --dump-cache "${crypto_cache}" > "${crypto_cache_log}";  then
+if ! "${mybsc}" -d250 --dt --dump-cache "${crypto_cache}" > "${crypto_cache_log}";  then
   printf "Dumping crypto cache failed \n"
   export estat=1
   exit 1
@@ -239,7 +239,11 @@ expect_grep "${volume}" \
 
 # We need to fix this key loading compared to scscicrypto plugin.
 
-# 28-fév-2024 16:58:27.584641 bextract (200): scsicrypto/scsicrypto-sd.cc:359-0 scsicrypto-sd: Loading new crypto key ���tD/jS٫0�|̊�l �P�E!1!OW��H��$�iD
+# when used by the tools the key in log output is not similar than during backup/restore
+# 29-fév-2024 13:36:39.422351 bareos-sd (200): scsicrypto/scsicrypto-sd.cc:359-2 scsicrypto-sd: Loading new crypto key [Eya3t/(z|3B+)5G8mAmAR2<Rfh4p(d#
+# versus
+# 29-fév-2024 14:09:47.125765 bls (200): scsicrypto/scsicrypto-sd.cc:359-0 scsicrypto-sd: Loading new crypto key ˯�TQ�����e�g���K�▒�(&v����������Bo
+# 29-fév-2024 14:14:11.315839 bextract (200): scsicrypto/scsicrypto-sd.cc:359-0 scsicrypto-sd: Loading new crypto key ˯�TQ�����e�g���K�▒�(&v����������Bo
 
 # Test volume content listing
 # export confdir for mtx-changer
@@ -249,7 +253,7 @@ export confdir=$(pwd)/etc/bareos
 /usr/bin/mt -f "${ltodrive}" rewind ||:
 bls_lj_log=$tmp/bls-label_job_output.log
 tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V ${volume} ${tape_device} > "${bls_lj_log}"
+sbin/bls-"${TestName}" -d250 -v -c "$(pwd)/etc/bareos" -L -j -V ${volume} ${tape_device} > "${bls_lj_log}"
 
 expect_grep "Crypto cache read 1 entries" \
             "$bls_lj_log" \
