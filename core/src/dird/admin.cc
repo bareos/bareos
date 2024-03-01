@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,8 +54,6 @@ bool DoAdminInit(JobControlRecord* jcr)
 bool do_admin(JobControlRecord* jcr)
 {
   jcr->dir_impl->jr.JobId = jcr->JobId;
-
-  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
   Jmsg(jcr, M_INFO, 0, T_("Start Admin JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
