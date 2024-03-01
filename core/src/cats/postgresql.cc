@@ -216,7 +216,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     // If no connect, try once more in case it is a timing problem
     if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
 
-    // free memeroy if not successful
+    // free memory if not successful
     PQfinish(db_handle_);
     db_handle_ = nullptr;
 
@@ -612,12 +612,13 @@ retry_query:
 
           if (PQstatus(db_handle_) == CONNECTION_OK) {
             // Reset the connection settings.
-            PQclear(PQexec(db_handle_, "SET datestyle TO 'ISO, YMD'"));
-            PQclear(PQexec(db_handle_, "SET cursor_tuple_fraction=1"));
-            PQclear(PQexec(db_handle_, "SET client_min_messages TO WARNING"));
             // prevent leak
             if (result_) { PQclear(result_); }
-            result_ = PQexec(db_handle_, "SET standard_conforming_strings=on");
+            result_ = PQexec(db_handle_,
+                             "SET datestyle TO 'ISO, YMD';"
+                             "SET cursor_tuple_fraction=1;"
+                             "SET standard_conforming_strings=on;"
+                             "SET client_min_messages TO WARNING;");
 
             switch (PQresultStatus(result_)) {
               case PGRES_COMMAND_OK:
