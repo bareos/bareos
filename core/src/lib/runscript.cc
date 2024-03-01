@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -236,7 +236,6 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
   switch (cmd_type) {
     case SHELL_CMD:
       bpipe = OpenBpipe(ecmd, 0, "r");
-      FreePoolMemory(ecmd);
 
       if (bpipe == NULL) {
         BErrNo be;
@@ -270,12 +269,14 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
       }
       break;
   }
+  FreePoolMemory(ecmd);
   return true;
 
 bail_out:
   /* cancel running job properly */
   if (fail_on_error) { jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated); }
   Dmsg1(100, "runscript failed. fail_on_error=%d\n", fail_on_error);
+  FreePoolMemory(ecmd);
   return false;
 }
 
