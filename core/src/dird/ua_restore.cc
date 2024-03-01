@@ -1396,6 +1396,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
   // Select Client from the Catalog
   if (!GetClientDbr(ua, &cr)) { goto bail_out; }
+  if (rx->ClientName) { free(rx->ClientName); }
   rx->ClientName = strdup(cr.Name);
 
   // Get FileSet
