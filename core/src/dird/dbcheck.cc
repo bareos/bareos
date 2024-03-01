@@ -509,6 +509,11 @@ static void eliminate_orphaned_storage_records()
   printf(T_("Checking for orphaned Storage entries.\n"));
   fflush(stdout);
 
+  if (!my_config) {
+    std::cout << "No configuration is loaded. Skipping ..." << std::endl;
+    return;
+  }
+
   std::vector<std::string> orphaned_storage_names_list
       = get_orphaned_storages_names(db);
 
@@ -931,6 +936,8 @@ int main(int argc, char* argv[])
 
   // Drop temporary index idx_tmp_name
   DropTmpIdx("idxPIchk", "File");
+
+  FreeIdList(&id_list);
 
   db->CloseDatabase(nullptr);
   CloseMsg(nullptr);
