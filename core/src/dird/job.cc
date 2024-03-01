@@ -1551,6 +1551,7 @@ void DirdFreeJcr(JobControlRecord* jcr)
   FreeAndNullPoolMemory(jcr->dir_impl->FDSecureEraseCmd);
   FreeAndNullPoolMemory(jcr->dir_impl->SDSecureEraseCmd);
   FreeAndNullPoolMemory(jcr->dir_impl->vf_jobids);
+  if (jcr->dir_impl->plugin_options) { free(jcr->dir_impl->plugin_options); }
 
   // Delete lists setup to hold storage pointers
   FreeRwstorage(jcr);
