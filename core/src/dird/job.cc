@@ -174,7 +174,6 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     goto bail_out;
   }
   Dmsg0(150, "DB opened\n");
-  if (!jcr->dir_impl->fname) { jcr->dir_impl->fname = GetPoolMemory(PM_FNAME); }
 
   if (!jcr->dir_impl->res.pool_source) {
     jcr->dir_impl->res.pool_source = GetPoolMemory(PM_MESSAGE);
@@ -1499,7 +1498,6 @@ void DirdFreeJcrPointers(JobControlRecord* jcr)
   FreeAndNullPoolMemory(jcr->JobIds);
   FreeAndNullPoolMemory(jcr->dir_impl->client_uname);
   FreeAndNullPoolMemory(jcr->attr);
-  FreeAndNullPoolMemory(jcr->dir_impl->fname);
 }
 
 /**
@@ -1544,7 +1542,6 @@ void DirdFreeJcr(JobControlRecord* jcr)
   }
 
   FreeAndNullPoolMemory(jcr->starttime_string);
-  FreeAndNullPoolMemory(jcr->dir_impl->fname);
   FreeAndNullPoolMemory(jcr->dir_impl->res.pool_source);
   FreeAndNullPoolMemory(jcr->dir_impl->res.npool_source);
   FreeAndNullPoolMemory(jcr->dir_impl->res.rpool_source);
@@ -1632,7 +1629,6 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
       break;
   }
 
-  if (!jcr->dir_impl->fname) { jcr->dir_impl->fname = GetPoolMemory(PM_FNAME); }
   if (!jcr->dir_impl->res.pool_source) {
     jcr->dir_impl->res.pool_source = GetPoolMemory(PM_MESSAGE);
     PmStrcpy(jcr->dir_impl->res.pool_source, T_("unknown source"));
