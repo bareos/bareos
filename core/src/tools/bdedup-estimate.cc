@@ -21,8 +21,6 @@
 
 #define STORAGE_DAEMON
 
-#include "lib/cli.h"
-#include "lib/version.h"
 #include "lib/crypto.h"
 #include "stored/butil.h"
 #include "stored/device_control_record.h"
@@ -39,6 +37,9 @@
 #include "lib/edit.h"
 #include "stored/acquire.h"
 #include "lib/compression.h"
+
+#include "lib/cli.h"
+#include "lib/version.h"
 
 #include <cassert>
 #include <array>
