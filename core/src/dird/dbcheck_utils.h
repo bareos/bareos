@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,6 +68,7 @@ int NameListHandler(void* ctx, int num_fields, char** row);
 int MakeNameList(BareosDb* db, const char* query, s_name_ctx* name_list);
 void PrintNameList(s_name_ctx* name_list);
 void FreeNameList(s_name_ctx* name_list);
+void FreeIdList(s_id_ctx* id_list);
 
 std::vector<int> get_deletable_storageids(
     BareosDb* db,
