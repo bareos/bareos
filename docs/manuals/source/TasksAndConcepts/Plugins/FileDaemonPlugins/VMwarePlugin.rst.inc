@@ -23,6 +23,8 @@ Status
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
+Since :sinceVersion:`23.0.3: VMware Plugin` the NVRAM of VMs is backed up and restored when recreating a VM to ensure it can boot without issues even when EFI enabled.
+
 Since :sinceVersion:`23.0.0: VMware Plugin` the performance is improved and the cleanup of snapshots is enhanced.
 
 Since :sinceVersion:`22.0.0: VMware Plugin` it also backs up the VM configuration metadata so that it can recreate deleted VMs and then restore the VM disks.
