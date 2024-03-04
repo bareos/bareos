@@ -50,7 +50,7 @@ namespace storagedaemon {
 const int debuglevel = 150;
 
 /* Global static variables */
-static std::mutex* reservation_mutex;
+static std::mutex* reservation_mutex = nullptr;
 
 /* Forward referenced functions */
 static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx);
@@ -93,6 +93,10 @@ bool use_cmd(JobControlRecord* jcr)
  */
 void InitReservationsLock()
 {
+  // in a normal daemon this should never happen, but some tools do this
+  // whenever they create a new jcr, so we have to guard against it!
+  if (reservation_mutex) { return; }
+
   reservation_mutex = new std::mutex;
 
   InitVolListLock();
@@ -100,7 +104,9 @@ void InitReservationsLock()
 
 void TermReservationsLock()
 {
+  ASSERT(reservation_mutex);
   delete reservation_mutex;
+  reservation_mutex = nullptr;
   TermVolListLock();
 }
 
