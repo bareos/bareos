@@ -667,19 +667,13 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
   Dmsg1(debuglevel, "try reserve %s\n", rctx.device_resource->resource_name_);
 
   if (rctx.store->append) {
-    SetupNewDcrDevice(jcr, jcr->sd_impl->dcr, rctx.device_resource->dev, NULL);
     dcr = jcr->sd_impl->dcr;
   } else {
-    SetupNewDcrDevice(jcr, jcr->sd_impl->read_dcr, rctx.device_resource->dev,
-                      NULL);
     dcr = jcr->sd_impl->read_dcr;
   }
 
-  if (!dcr) {
-    Jmsg(jcr, M_ERROR, 0, "", T_("Could not get dcr for device: %s\n"),
-         rctx.device_name);
-    return -1;
-  }
+  ASSERT(dcr);
+  SetupNewDcrDevice(jcr, dcr, rctx.device_resource->dev, NULL);
 
   if (rctx.store->append) { dcr->SetWillWrite(); }
 
