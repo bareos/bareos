@@ -637,6 +637,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     // Release the device -- and send final Vol info to DIR and unlock it.
     ReleaseDevice(jcr->sd_impl->dcr);
   } else {
+    Jmsg(jcr, M_INFO, 0,
+         "Because no backup data was received, no device was reserved. As such "
+         "no Session Labels were written for this job.\n");
     Dmsg0(50, "No data for job %d => no data written.\n", jcr->JobId);
   }
 
