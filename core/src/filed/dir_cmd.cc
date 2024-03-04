@@ -410,11 +410,12 @@ void* process_fd_initiated_director_commands(void* p_jcr)
 void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 {
   bool found;
-  bool quit = false;
+  // quit if not authenticated
+  bool quit = !jcr->authenticated;
 
   /**********FIXME******* add command handler error code */
 
-  while (jcr->authenticated && (!quit)) {
+  while (!quit) {
     // Read command
     if (dir->recv() < 0) { break; /* connection terminated */ }
 
