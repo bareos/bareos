@@ -354,10 +354,6 @@ if(NOT client-only)
     LINK_LIBRARIES dird_objects bareos bareosfind testing_common bareossql
                    GTest::gtest_main
   )
-  set_tests_properties(
-    gtest:ConfigParser_Dir.bareos_configparser_tests
-    PROPERTIES LABELS broken_with_enabled_sanitzers
-  )
   bareos_add_test(
     test_crc32
     ADDITIONAL_SOURCES ../stored/crc32/crc32.cc

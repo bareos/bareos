@@ -35,6 +35,7 @@
 #include <thread>
 #include <condition_variable>
 #include <chrono>
+#include <memory>
 using namespace std::chrono_literals;
 
 namespace directordaemon {
@@ -62,7 +63,9 @@ TEST_F(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
 {
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests");
-  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  std::unique_ptr<ConfigurationParser> dir_conf{
+      InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM)};
+  my_config = dir_conf.get();
   my_config->ParseConfig();
 
   ScheduleResource* even_schedule
@@ -103,7 +106,9 @@ TEST_F(ConfigParser_Dir, bareos_configparser_tests)
 {
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests");
-  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  std::unique_ptr<ConfigurationParser> dir_conf{
+      InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM)};
+  my_config = dir_conf.get();
   my_config->ParseConfig();
   my_config->DumpResources(PrintMessage, NULL);
 
@@ -132,14 +137,15 @@ TEST_F(ConfigParser_Dir, bareos_configparser_tests)
     my_config->DumpResources(PrintMessage, NULL);
     ASSERT_NE(nullptr, me);
   }
-  delete my_config;
 }
 
 TEST_F(ConfigParser_Dir, foreach_res_and_reload)
 {
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests");
-  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  std::unique_ptr<ConfigurationParser> dir_conf{
+      InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM)};
+  my_config = dir_conf.get();
   my_config->ParseConfig();
 
   [[maybe_unused]] auto do_reload = [](bool keep_config) {
@@ -187,20 +193,18 @@ TEST_F(ConfigParser_Dir, foreach_res_and_reload)
   std::thread t1{do_foreach_res}, t2{reload_loop};
   t1.join();
   t2.join();
-
-  delete my_config;
 }  // namespace directordaemon
 
 TEST_F(ConfigParser_Dir, runscript_test)
 {
   std::string path_to_config_file
       = std::string("configs/runscript-tests/bareos-dir.conf");
-  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  std::unique_ptr<ConfigurationParser> dir_conf{
+      InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM)};
+  my_config = dir_conf.get();
   my_config->ParseConfig();
 
   my_config->DumpResources(PrintMessage, NULL);
-
-  delete my_config;
 }
 
 void test_config_directive_type(
@@ -214,7 +218,9 @@ void test_config_directive_type(
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests/bareos-dir-") + test_name
         + std::string(".conf");
-  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  std::unique_ptr<ConfigurationParser> dir_conf{
+      InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM)};
+  my_config = dir_conf.get();
   my_config->ParseConfig();
 
   my_config->DumpResources(PrintMessage, NULL);
@@ -226,8 +232,6 @@ void test_config_directive_type(
   EXPECT_STREQ(dir_resource_name, my_res->resource_name_);
 
   test_func(my_res);
-
-  delete my_config;
 }
 
 
