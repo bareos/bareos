@@ -245,9 +245,13 @@ static bool SetupDCR(JobControlRecord* jcr,
                      uint32_t& blocknum)
 {
   if (!jcr->sd_impl->dcr) {
-    TryReserveAfterUse(jcr, true);
-    Jmsg(jcr, M_INFO, 0, T_("Using Device %s to write.\n"),
-         jcr->sd_impl->dcr->dev->print_name());
+    if (TryReserveAfterUse(jcr, true)) {
+      Jmsg(jcr, M_INFO, 0, T_("Using Device %s to write.\n"),
+           jcr->sd_impl->dcr->dev->print_name());
+    } else {
+      Jmsg(jcr, M_FATAL, 0, T_("Could not reserve any device for this job.\n"));
+      return false;
+    }
   }
 
   if (!jcr->sd_impl->dcr) {
@@ -343,7 +347,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       return false;
     }
 
-    SetupDCR(jcr, current_volumeid, current_block_number);
+    if (!SetupDCR(jcr, current_volumeid, current_block_number)) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Unable to setup pre reserved dcr for this job.\n"));
+      return false;
+    }
   }
 
   // Tell daemon to send data
