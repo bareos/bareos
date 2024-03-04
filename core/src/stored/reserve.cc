@@ -676,10 +676,8 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
   }
 
   if (!dcr) {
-    BareosSocket* dir = jcr->dir_bsock;
-
-    dir->fsend(T_("3926 Could not get dcr for device: %s\n"), rctx.device_name);
-    Dmsg1(debuglevel, ">dird: %s", dir->msg);
+    Jmsg(jcr, M_ERROR, 0, "", T_("Could not get dcr for device: %s\n"),
+         rctx.device_name);
     return -1;
   }
 
