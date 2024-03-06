@@ -14,6 +14,7 @@ clang-format = "*"
 importlib-resources = "*"
 python-magic = "*"
 enlighten = "*"
+pyyaml = "*"
 
 [requires]
 python_version = "3"
