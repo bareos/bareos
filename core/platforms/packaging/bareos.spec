@@ -809,7 +809,7 @@ This package contains the tray monitor (QT based).
 %prep
 # this is a hack so we always build in "bareos" and not in "bareos-version"
 %setup -c -n bareos
-mv bareos-*/* .
+[ -d bareos-* ] && mv bareos-*/* .
 %if 0%{?contrib}
 %replace_python_shebang contrib/misc/bsmc/bin/bsmc
 %replace_python_shebang contrib/misc/triggerjob/bareos-triggerjob.py
@@ -867,7 +867,6 @@ cmake  .. \
   -DSYSCONF_INSTALL_DIR:PATH=/etc \
   -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
   -DBUILD_SHARED_LIBS:BOOL=ON \
-  -DDEBUG_PREFIX_MAP:BOOL=OFF \
   -Dprefix=%{_prefix}\
   -Dlibdir=%{library_dir} \
   -Dsbindir=%{_sbindir} \

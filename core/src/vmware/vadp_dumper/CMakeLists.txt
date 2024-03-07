@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,3 +42,5 @@ install(
               WORLD_READ WORLD_EXECUTE
   DESTINATION "${CMAKE_INSTALL_SBINDIR}"
 )
+
+include(DebugEdit)

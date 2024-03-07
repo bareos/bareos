@@ -36,12 +36,6 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 include(GNUInstallDirs)
 include(BareosHelper)
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
-
 # switch on CXX 17 Support
 #
 set(CMAKE_CXX_STANDARD 17)
@@ -112,46 +106,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   if(${compiler_error_format_security})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
   endif()
-endif()
-
-option(DEBUG_PREFIX_MAP
-       "remap absolute debug paths to relative if compiler supports it" ON
-)
-check_c_compiler_flag(
-  -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. c_compiler_debug_prefix_map
-)
-check_cxx_compiler_flag(
-  -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.
-  cxx_compiler_debug_prefix_map
-)
-if(DEBUG_PREFIX_MAP
-   AND c_compiler_debug_prefix_map
-   AND cxx_compiler_debug_prefix_map
-)
-  set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
-endif()
-
-check_c_compiler_flag(
-  -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=. c_compiler_macro_prefix_map
-)
-check_cxx_compiler_flag(
-  -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.
-  cxx_compiler_macro_prefix_map
-)
-if(c_compiler_macro_prefix_map)
-  set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
-endif()
-if(cxx_compiler_macro_prefix_map)
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fmacro-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
-  )
 endif()
 
 check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
@@ -609,7 +563,7 @@ message(STATUS "CMAKE_SUPPRESS_REGENERATION: " ${CMAKE_SUPPRESS_REGENERATION})
 # there are also two variables exactly for this purpose:
 
 # wheter or not
-message(STATUS "CCACHE_FOUND: " ${CCACHE_FOUND})
+message(STATUS "CCACHE: " ${CCACHE_PROGRAM})
 
 # Choose the type of build.  Example: SET(CMAKE_BUILD_TYPE Debug)
 message(STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
