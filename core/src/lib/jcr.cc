@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -197,7 +197,6 @@ JobControlRecord::JobControlRecord()
   job_end_callbacks.init(1, false);
   sched_time = time(nullptr);
   initial_sched_time = sched_time;
-  InitMutex();
   IncUseCount();
   VolumeName = GetPoolMemory(PM_FNAME);
   VolumeName[0] = 0;
@@ -274,7 +273,10 @@ static void FreeCommonJcr(JobControlRecord* jcr,
   RemoveJcrFromThreadSpecificData(jcr);
   jcr->SetKillable(false);
 
-  jcr->DestroyMutex();
+  if (!is_destructor_call) {
+    // mutex should normally be cleaned up by destructor
+    jcr->DestroyMutex();
+  }
 
   if (jcr->msg_queue) {
     delete jcr->msg_queue;
@@ -424,7 +426,7 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
 
 void JobControlRecord::SetKillable(bool killable)
 {
-  lock();
+  std::unique_lock l(mutex_);
 
   my_thread_killable_ = killable;
   if (killable) {
@@ -432,13 +434,11 @@ void JobControlRecord::SetKillable(bool killable)
   } else {
     memset(&my_thread_id, 0, sizeof(my_thread_id));
   }
-
-  unlock();
 }
 
 void JobControlRecord::MyThreadSendSignal(int sig)
 {
-  lock();
+  std::unique_lock l(mutex_);
 
   if (IsKillable() && !pthread_equal(my_thread_id, pthread_self())) {
     Dmsg1(800, "Send kill to jid=%d\n", JobId);
@@ -446,8 +446,6 @@ void JobControlRecord::MyThreadSendSignal(int sig)
   } else if (!IsKillable()) {
     Dmsg1(10, "Warning, can't send kill to jid=%d\n", JobId);
   }
-
-  unlock();
 }
 
 
