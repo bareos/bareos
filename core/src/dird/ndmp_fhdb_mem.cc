@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -576,9 +576,10 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
 {
   NIS* nis = (NIS*)ixlog->ctx;
 
-  nis->jcr->lock();
-  nis->jcr->JobFiles++;
-  nis->jcr->unlock();
+  {
+    std::unique_lock l(nis->jcr->mutex_guard());
+    nis->jcr->JobFiles++;
+  }
 
   if (nis->save_filehist) {
     int attr_size;

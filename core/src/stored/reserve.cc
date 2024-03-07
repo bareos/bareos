@@ -1124,24 +1124,21 @@ static void QueueReserveMessage(JobControlRecord* jcr)
   int i;
   const char* msg;
 
-  jcr->lock();
+  std::unique_lock l(jcr->mutex_guard());
 
   auto msgs = jcr->sd_impl->reserve_msgs;
-  if (!msgs) { goto bail_out; }
+  if (!msgs) { return; }
   // Look for duplicate message.  If found, do not insert
   for (i = msgs->size() - 1; i >= 0; i--) {
     msg = msgs->get(i);
-    if (!msg) { goto bail_out; }
+    if (!msg) { return; }
 
     // Comparison based on 4 digit message number
-    if (bstrncmp(msg, jcr->errmsg, 4)) { goto bail_out; }
+    if (bstrncmp(msg, jcr->errmsg, 4)) { return; }
   }
 
   // Message unique, so insert it.
   jcr->sd_impl->reserve_msgs->push(strdup(jcr->errmsg));
-
-bail_out:
-  jcr->unlock();
 }
 
 // Pop and release any reservations messages
@@ -1149,25 +1146,22 @@ static void PopReserveMessages(JobControlRecord* jcr)
 {
   char* msg;
 
-  jcr->lock();
+  std::unique_lock l(jcr->mutex_guard());
+
   auto msgs = jcr->sd_impl->reserve_msgs;
-  if (!msgs) { goto bail_out; }
+  if (!msgs) { return; }
   while ((msg = (char*)msgs->pop())) { free(msg); }
-bail_out:
-  jcr->unlock();
 }
 
 // Also called from acquire.c
 void ReleaseReserveMessages(JobControlRecord* jcr)
 {
   PopReserveMessages(jcr);
-  jcr->lock();
-  if (!jcr->sd_impl->reserve_msgs) { goto bail_out; }
+
+  std::unique_lock l(jcr->mutex_guard());
+  if (!jcr->sd_impl->reserve_msgs) { return; }
   delete jcr->sd_impl->reserve_msgs;
   jcr->sd_impl->reserve_msgs = NULL;
-
-bail_out:
-  jcr->unlock();
 }
 
 } /* namespace storagedaemon */

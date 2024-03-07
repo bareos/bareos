@@ -199,10 +199,11 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
              ff_pkt->LinkFI, 0);
   encode_attribsEx(jcr, attribsEx.c_str(), ff_pkt);
 
-  jcr->lock();
-  jcr->JobFiles++; /* increment number of files sent */
-  PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
-  jcr->unlock();
+  {
+    std::unique_lock l(jcr->mutex_guard());
+    jcr->JobFiles++; /* increment number of files sent */
+    PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
+  }
 
   /* Path needs to be stripped just like during the
    * backup. The director catalog only knows about the

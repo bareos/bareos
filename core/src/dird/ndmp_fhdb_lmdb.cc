@@ -159,9 +159,10 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
   NIS* nis;
   nis = (NIS*)ixlog->ctx;
 
-  nis->jcr->lock();
-  nis->jcr->JobFiles++;
-  nis->jcr->unlock();
+  {
+    std::unique_lock l(nis->jcr->mutex_guard());
+    nis->jcr->JobFiles++;
+  }
 
   if (nis->save_filehist) {
     int result;
