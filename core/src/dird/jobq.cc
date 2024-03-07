@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -205,17 +205,6 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   time_t wtime = jcr->sched_time - time(NULL);
   pthread_t id;
   wait_pkt* sched_pkt;
-
-  if (!jcr->dir_impl->term_wait_inited) {
-    // Initialize termination condition variable
-    if ((status = pthread_cond_init(&jcr->dir_impl->term_wait, NULL)) != 0) {
-      BErrNo be;
-      Jmsg1(jcr, M_FATAL, 0, T_("Unable to init job cond variable: ERR=%s\n"),
-            be.bstrerror(status));
-      return status;
-    }
-    jcr->dir_impl->term_wait_inited = true;
-  }
 
   Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr,
         jcr->UseCount());
