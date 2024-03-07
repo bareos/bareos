@@ -139,37 +139,30 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 {
   int errstat;
 
-  std::unique_lock l(jcr->mutex_guard());
+  {
+    std::unique_lock l(jcr->mutex_guard());
 
-  // See if we should suppress all output.
-  if (!suppress_output) {
-    InitMsg(jcr, jcr->dir_impl->res.messages, job_code_callback_director);
-  } else {
-    jcr->suppress_output = true;
+    // See if we should suppress all output.
+    if (!suppress_output) {
+      InitMsg(jcr, jcr->dir_impl->res.messages, job_code_callback_director);
+    } else {
+      jcr->suppress_output = true;
+    }
+
+    // Initialize nextrun ready condition variable
+    if ((errstat = pthread_cond_init(&jcr->dir_impl->nextrun_ready, NULL))
+        != 0) {
+      BErrNo be;
+      Jmsg1(jcr, M_FATAL, 0,
+            T_("Unable to init job nextrun cond variable: ERR=%s\n"),
+            be.bstrerror(errstat));
+      goto bail_out;
+    }
+    jcr->dir_impl->nextrun_ready_inited = true;
+
+    CreateUniqueJobName(jcr, jcr->dir_impl->res.job->resource_name_);
+    jcr->setJobStatusWithPriorityCheck(JS_Created);
   }
-
-  // Initialize termination condition variable
-  if ((errstat = pthread_cond_init(&jcr->dir_impl->term_wait, NULL)) != 0) {
-    BErrNo be;
-    Jmsg1(jcr, M_FATAL, 0, T_("Unable to init job cond variable: ERR=%s\n"),
-          be.bstrerror(errstat));
-    goto bail_out;
-  }
-  jcr->dir_impl->term_wait_inited = true;
-
-  // Initialize nextrun ready condition variable
-  if ((errstat = pthread_cond_init(&jcr->dir_impl->nextrun_ready, NULL)) != 0) {
-    BErrNo be;
-    Jmsg1(jcr, M_FATAL, 0,
-          T_("Unable to init job nextrun cond variable: ERR=%s\n"),
-          be.bstrerror(errstat));
-    goto bail_out;
-  }
-  jcr->dir_impl->nextrun_ready_inited = true;
-
-  CreateUniqueJobName(jcr, jcr->dir_impl->res.job->resource_name_);
-  jcr->setJobStatusWithPriorityCheck(JS_Created);
-  l.unlock();
 
   // Open database
   Dmsg0(100, "Open database\n");
@@ -1520,11 +1513,6 @@ void DirdFreeJcr(JobControlRecord* jcr)
   }
 
   DirdFreeJcrPointers(jcr);
-
-  if (jcr->dir_impl->term_wait_inited) {
-    pthread_cond_destroy(&jcr->dir_impl->term_wait);
-    jcr->dir_impl->term_wait_inited = false;
-  }
 
   if (jcr->dir_impl->nextrun_ready_inited) {
     pthread_cond_destroy(&jcr->dir_impl->nextrun_ready);

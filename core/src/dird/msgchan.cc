@@ -50,8 +50,6 @@
 
 namespace directordaemon {
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 /* Commands sent to Storage daemon */
 static char jobcmd[]
     = "JobId=%s job=%s job_name=%s client_name=%s "
@@ -445,9 +443,8 @@ extern "C" void MsgThreadCleanup(void* arg)
   }
 
   pthread_cond_broadcast(
-      &jcr->dir_impl->nextrun_ready); /* wakeup any waiting threads */
-  pthread_cond_broadcast(
-      &jcr->dir_impl->term_wait); /* wakeup any waiting threads */
+      &jcr->dir_impl->nextrun_ready);    /* wakeup any waiting threads */
+  jcr->dir_impl->term_wait.notify_all(); /* wakeup any waiting threads */
   Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId,
         jcr->UseCount());
   jcr->db->ThreadCleanup(); /* remove thread specific data */
@@ -523,19 +520,16 @@ void WaitForStorageDaemonTermination(JobControlRecord* jcr)
 {
   int cancel_count = 0;
   /* Now wait for Storage daemon to Terminate our message thread */
-  while (!jcr->dir_impl->sd_msg_thread_done) {
-    struct timeval tv;
-    struct timezone tz;
-    struct timespec timeout;
+  std::unique_lock l(jcr->mutex_guard());
 
-    gettimeofday(&tv, &tz);
-    timeout.tv_nsec = 0;
-    timeout.tv_sec = tv.tv_sec + 5; /* wait 5 seconds */
+  /* Give SD 30 seconds to clean up after cancel */
+  auto timeout = std::chrono::system_clock::now() + std::chrono::seconds(30);
+  while (!jcr->dir_impl->sd_msg_thread_done) {
     Dmsg0(400, "I'm waiting for message thread termination.\n");
-    lock_mutex(mutex);
-    pthread_cond_timedwait(&jcr->dir_impl->term_wait, &mutex, &timeout);
-    unlock_mutex(mutex);
-    if (jcr->IsJobCanceled()) {
+    if (jcr->dir_impl->term_wait.wait_until(l, timeout)
+        == std::cv_status::timeout) {
+      break;
+    } else if (jcr->IsJobCanceled()) {
       if (jcr->dir_impl->SD_msg_chan_started) {
         jcr->store_bsock->SetTimedOut();
         jcr->store_bsock->SetTerminated();
@@ -543,9 +537,8 @@ void WaitForStorageDaemonTermination(JobControlRecord* jcr)
       }
       cancel_count++;
     }
-    /* Give SD 30 seconds to clean up after cancel */
-    if (cancel_count == 6) { break; }
   }
+
   jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 }
 
