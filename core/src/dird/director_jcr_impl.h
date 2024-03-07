@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,8 @@
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/job_trigger.h"
 
+#include <condition_variable>
+
 typedef struct s_tree_root TREE_ROOT;
 
 class ConfigResourcesContainer;
@@ -39,6 +41,7 @@ class ClientResource;
 class PoolResource;
 class FilesetResource;
 class CatalogResource;
+struct runtime_job_status_t;
 }  // namespace directordaemon
 
 namespace storagedaemon {
@@ -78,6 +81,7 @@ struct Resources {
   directordaemon::PoolResource* next_pool{};    /**< Next Pool used for migration/copy and virtual backup */
   directordaemon::FilesetResource* fileset{};   /**< FileSet resource */
   directordaemon::CatalogResource* catalog{};   /**< Catalog resource */
+  directordaemon::runtime_job_status_t* rjs{};  /**< Runtime Job Status. May point to the rjs of another resource (e.g. for consolidation vf jobs this points to the rjs of the parent consolidation job's resource) */
   MessagesResource* messages{};   /**< Default message handler */
   POOLMEM* pool_source{};         /**< Where pool came from */
   POOLMEM* npool_source{};        /**< Where next pool came from */
@@ -103,7 +107,7 @@ struct DirectorJcrImpl {
   std::shared_ptr<ConfigResourcesContainer> job_config_resources_container_;
   pthread_t SD_msg_chan{};        /**< Message channel thread id */
   bool SD_msg_chan_started{};     /**< Message channel thread started */
-  pthread_cond_t term_wait = PTHREAD_COND_INITIALIZER;      /**< Wait for job termination */
+  std::condition_variable term_wait{}; /**< Wait for job termination */
   pthread_cond_t nextrun_ready = PTHREAD_COND_INITIALIZER;  /**< Wait for job next run to become ready */
   Resources res;                  /**< Resources assigned */
   TREE_ROOT* restore_tree_root{}; /**< Selected files to restore (some protocols need this info) */
@@ -146,9 +150,9 @@ struct DirectorJcrImpl {
   bool IgnoreLevelPoolOverrides{};       /**< Set if a cmdline pool was specified */
   bool IgnoreClientConcurrency{};       /**< Set in migration jobs */
   bool IgnoreStorageConcurrency{};      /**< Set in migration jobs */
+  int32_t max_concurrent_jobs{};        /**< Maximum concurrent jobs */
   bool spool_data{};                    /**< Spool data in SD */
   bool acquired_resource_locks{};       /**< Set if resource locks acquired */
-  bool term_wait_inited{};              /**< Set when cond var inited */
   bool nextrun_ready_inited{};          /**< Set when cond var inited */
   bool fn_printed{};                    /**< Printed filename */
   bool needs_sd{};                      /**< Set if SD needed by Job */
