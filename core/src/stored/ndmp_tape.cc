@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -545,7 +545,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   /* There is a native storage daemon session waiting for the FD to connect.
    * In NDMP terms this is the same as a FD connecting so wake any waiting
    * threads.  */
-  pthread_cond_signal(&jcr->sd_impl->job_start_wait);
+  *jcr->sd_impl->client_available.lock() = true;
+  jcr->sd_impl->job_start_wait.notify_one();
 
   /* Save the JobControlRecord to ndm_session binding so everything furher
    * knows which JobControlRecord belongs to which NDMP session. We have

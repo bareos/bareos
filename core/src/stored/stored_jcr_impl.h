@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
 
 #include "stored/read_ctx.h"
 #include "stored/stored_conf.h"
+#include "lib/thread_util.h"
 
 #define SD_APPEND 1
 #define SD_READ 0
@@ -68,8 +69,9 @@ struct DeviceWaitTimes {
 struct StoredJcrImpl {
   JobControlRecord* next_dev{}; /**< Next JobControlRecord attached to device */
   JobControlRecord* prev_dev{}; /**< Previous JobControlRecord attached to device */
-  pthread_cond_t job_start_wait = PTHREAD_COND_INITIALIZER; /**< Wait for FD to start Job */
   pthread_cond_t job_end_wait = PTHREAD_COND_INITIALIZER;   /**< Wait for Job to end */
+  synchronized<bool> client_available;
+  std::condition_variable job_start_wait; /**< Wait for Client (FD/SD) to start Job */
   storagedaemon::DeviceControlRecord* read_dcr{}; /**< Device context for reading */
   storagedaemon::DeviceControlRecord* dcr{};      /**< Device context record */
   POOLMEM* job_name{};            /**< Base Job name (not unique) */
