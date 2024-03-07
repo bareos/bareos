@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -129,6 +129,22 @@ int FindArgWithValue(UaContext* ua, const char* keyword)
   }
 
   return -1;
+}
+
+/**
+ * Given a single keyword, find it in the argument list, check if it has a
+ * value and return the pointer to the value.
+ *
+ * Returns: pointer to value
+ *          nullptr if no such key or key has no value
+ */
+const char* GetArgValue(UaContext* ua, const char* keyword)
+{
+  if (int i = FindArgWithValue(ua, keyword); i >= 0) {
+    return ua->argv[i];
+  } else {
+    return nullptr;
+  }
 }
 
 /**
