@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - filed: skip stripped top level directories [PR #1686]
 - jcr: fix some compiler warnings [PR #1648]
 - build: Fix debugsource RPM package generation [PR #1713]
+- Bugfix: Clean up error handling in LDAP plugin, fix dependencies [PR #1717]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -105,4 +106,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1696]: https://github.com/bareos/bareos/pull/1696
 [PR #1708]: https://github.com/bareos/bareos/pull/1708
 [PR #1713]: https://github.com/bareos/bareos/pull/1713
+[PR #1717]: https://github.com/bareos/bareos/pull/1717
 [unreleased]: https://github.com/bareos/bareos/tree/master
