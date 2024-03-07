@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,7 +84,7 @@ typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 /* clang-format off */
 class JobControlRecord {
  private:
-  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
+  std::mutex mutex_; /**< Jcr mutex */
   std::atomic<int32_t> _use_count{};                   /**< Use count */
   std::atomic<int32_t> JobStatus{}; /**< ready, running, blocked, terminated */
   int32_t JobType_{};            /**< Backup, restore, verify ... */
@@ -99,8 +99,8 @@ class JobControlRecord {
   JobControlRecord& operator=(const JobControlRecord& other) = delete;
   JobControlRecord& operator=(const JobControlRecord&& other) = delete;
 
-  void lock() { lock_mutex(mutex); }
-  void unlock() { unlock_mutex(mutex); }
+  [[nodiscard]] std::mutex& mutex_guard() { return mutex_; }
+
   void IncUseCount(void)
   {
     ++_use_count;
@@ -110,8 +110,6 @@ class JobControlRecord {
     --_use_count;
   }
   int32_t UseCount() const { return _use_count; }
-  void InitMutex(void) { pthread_mutex_init(&mutex, NULL); }
-  void DestroyMutex(void) { pthread_mutex_destroy(&mutex); }
   bool IsJobCanceled() { return JobCanceled(this); }
   bool IsCanceled() { return JobCanceled(this); }
   bool IsTerminatedOk() { return JobTerminatedSuccessfully(this); }

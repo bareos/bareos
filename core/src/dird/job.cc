@@ -140,7 +140,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 {
   int errstat;
 
-  jcr->lock();
+  std::unique_lock l(jcr->mutex_guard());
 
   // See if we should suppress all output.
   if (!suppress_output) {
@@ -154,7 +154,6 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
-    jcr->unlock();
     goto bail_out;
   }
   jcr->dir_impl->term_wait_inited = true;
@@ -165,14 +164,13 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     Jmsg1(jcr, M_FATAL, 0,
           _("Unable to init job nextrun cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
-    jcr->unlock();
     goto bail_out;
   }
   jcr->dir_impl->nextrun_ready_inited = true;
 
   CreateUniqueJobName(jcr, jcr->dir_impl->res.job->resource_name_);
   jcr->setJobStatusWithPriorityCheck(JS_Created);
-  jcr->unlock();
+  l.unlock();
 
   // Open database
   Dmsg0(100, "Open database\n");
@@ -651,13 +649,12 @@ static void* job_thread(void* arg)
 
 void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig)
 {
-  jcr->lock();
+  std::unique_lock l(jcr->mutex_guard());
   if (!jcr->dir_impl->sd_msg_thread_done && jcr->dir_impl->SD_msg_chan_started
       && !pthread_equal(jcr->dir_impl->SD_msg_chan, pthread_self())) {
     Dmsg1(800, "Send kill to SD msg chan jid=%d\n", jcr->JobId);
     pthread_kill(jcr->dir_impl->SD_msg_chan, sig);
   }
-  jcr->unlock();
 }
 
 /**

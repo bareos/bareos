@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -195,10 +195,11 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
              ff_pkt->LinkFI, 0);
   encode_attribsEx(jcr, attribsEx.c_str(), ff_pkt);
 
-  jcr->lock();
-  jcr->JobFiles++; /* increment number of files sent */
-  PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
-  jcr->unlock();
+  {
+    std::unique_lock l(jcr->mutex_guard());
+    jcr->JobFiles++; /* increment number of files sent */
+    PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
+  }
 
   /* Send file attributes to Director
    *   File_index

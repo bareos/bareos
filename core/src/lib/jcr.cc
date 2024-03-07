@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -203,7 +203,6 @@ JobControlRecord::JobControlRecord()
   job_end_callbacks.init(1, false);
   sched_time = time(nullptr);
   initial_sched_time = sched_time;
-  InitMutex();
   IncUseCount();
   VolumeName = GetPoolMemory(PM_FNAME);
   VolumeName[0] = 0;
@@ -265,8 +264,7 @@ static void RemoveJcr(JobControlRecord* jcr)
   Dmsg0(debuglevel, "Leave RemoveJcr\n");
 }
 
-static void FreeCommonJcr(JobControlRecord* jcr,
-                          bool is_destructor_call = false)
+static void FreeCommonJcr(JobControlRecord* jcr)
 {
   Dmsg1(100, "FreeCommonJcr: %p \n", jcr);
 
@@ -274,8 +272,6 @@ static void FreeCommonJcr(JobControlRecord* jcr,
 
   RemoveJcrFromThreadSpecificData(jcr);
   jcr->SetKillable(false);
-
-  jcr->DestroyMutex();
 
   if (jcr->msg_queue) {
     delete jcr->msg_queue;
@@ -345,11 +341,9 @@ static void FreeCommonJcr(JobControlRecord* jcr,
     FreePoolMemory(jcr->comment);
     jcr->comment = nullptr;
   }
-
-  if (!is_destructor_call) { free(jcr); }
 }
 
-static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
+static void JcrCleanup(JobControlRecord* jcr)
 {
   DequeueMessages(jcr);
   CallJobEndCallbacks(jcr);
@@ -376,14 +370,14 @@ static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 
   if (jcr->daemon_free_jcr) { jcr->daemon_free_jcr(jcr); }
 
-  FreeCommonJcr(jcr, is_destructor_call);
+  FreeCommonJcr(jcr);
   CloseMsg(nullptr);  // flush any daemon messages
 }
 
 JobControlRecord::~JobControlRecord()
 {
   Dmsg0(100, "Destruct JobControlRecord\n");
-  JcrCleanup(this, true);
+  JcrCleanup(this);
   Dmsg0(debuglevel, "JobControlRecord Destructor finished\n");
 }
 
@@ -418,14 +412,17 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
   Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
         line);
 
-  if (RunJcrGarbageCollector(jcr)) { JcrCleanup(jcr); }
+  if (RunJcrGarbageCollector(jcr)) {
+    std::destroy_at(jcr);
+    free(jcr);
+  }
 
   Dmsg0(debuglevel, "Exit FreeJcr\n");
 }
 
 void JobControlRecord::SetKillable(bool killable)
 {
-  lock();
+  std::unique_lock l(mutex_);
 
   my_thread_killable = killable;
   if (killable) {
@@ -433,13 +430,11 @@ void JobControlRecord::SetKillable(bool killable)
   } else {
     memset(&my_thread_id, 0, sizeof(my_thread_id));
   }
-
-  unlock();
 }
 
 void JobControlRecord::MyThreadSendSignal(int sig)
 {
-  lock();
+  std::unique_lock l(mutex_);
 
   if (IsKillable() && !pthread_equal(my_thread_id, pthread_self())) {
     Dmsg1(800, "Send kill to jid=%d\n", JobId);
@@ -447,8 +442,6 @@ void JobControlRecord::MyThreadSendSignal(int sig)
   } else if (!IsKillable()) {
     Dmsg1(10, "Warning, can't send kill to jid=%d\n", JobId);
   }
-
-  unlock();
 }
 
 
