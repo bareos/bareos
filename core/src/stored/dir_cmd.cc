@@ -254,16 +254,6 @@ void* HandleDirectorConnection(BareosSocket* dir)
   jcr->dir_bsock = dir; /* save Director bsock */
   jcr->dir_bsock->SetJcr(jcr);
 
-  // Initialize Start Job condition variable
-  errstat = pthread_cond_init(&jcr->sd_impl->job_start_wait, NULL);
-  if (errstat != 0) {
-    BErrNo be;
-    Jmsg1(jcr, M_FATAL, 0,
-          T_("Unable to init job start cond variable: ERR=%s\n"),
-          be.bstrerror(errstat));
-    goto bail_out;
-  }
-
   // Initialize End Job condition variable
   errstat = pthread_cond_init(&jcr->sd_impl->job_end_wait, NULL);
   if (errstat != 0) {
@@ -495,8 +485,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
   if (!jcr->authenticated
       && (oldStatus == JS_WaitFD || oldStatus == JS_WaitSD)) {
-    pthread_cond_signal(
-        &jcr->sd_impl->job_start_wait); /* wake waiting thread */
+    jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting thread */
   }
 
   if (jcr->file_bsock) {
@@ -506,7 +495,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   } else {
     if (oldStatus != JS_WaitSD) {
       // Still waiting for FD to connect, release it
-      pthread_cond_signal(&jcr->sd_impl->job_start_wait); /* wake waiting job */
+      jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */
       Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
     }
   }
@@ -1765,6 +1754,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
     utime_t now;
 
     Dmsg0(110, "Authenticated with FD.\n");
+    *jcr->sd_impl->client_available.lock() = true;
 
     // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
