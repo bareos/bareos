@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,8 +45,6 @@
 #include "include/jcr.h"
 
 namespace storagedaemon {
-
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Imported variables */
 
@@ -127,7 +125,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
   } else {
-    jcr->authenticated = true;
+    *jcr->sd_impl->client_available.lock() = true;
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
           jcr->Job);
   }
@@ -136,7 +134,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
-  pthread_cond_signal(&jcr->sd_impl->job_start_wait); /* wake waiting job */
+  jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */
   FreeJcr(jcr);
 
   return NULL;
@@ -209,7 +207,6 @@ static void DoSdCommands(JobControlRecord* jcr)
 bool DoListenRun(JobControlRecord* jcr)
 {
   char ec1[30];
-  int errstat = 0;
   BareosSocket* dir = jcr->dir_bsock;
 
   jcr->sendJobStatus(JS_WaitSD); /* wait for SD to connect */
@@ -220,15 +217,13 @@ bool DoListenRun(JobControlRecord* jcr)
 
   /* Wait for the Storage daemon to contact us to start the Job, when he does,
    * we will be released. */
-  lock_mutex(mutex);
-  while (!jcr->authenticated && !jcr->IsJobCanceled()) {
-    errstat = pthread_cond_wait(&jcr->sd_impl->job_start_wait, &mutex);
-    if (errstat == EINVAL || errstat == EPERM) { break; }
-    Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
+  {
+    auto locked = jcr->sd_impl->client_available.lock();
+    locked.wait(jcr->sd_impl->job_start_wait, [jcr](bool started) {
+      return started || jcr->IsJobCanceled();
+    });
   }
-  Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
-        jcr->IsJobCanceled(), errstat);
-  unlock_mutex(mutex);
+  Dmsg3(50, "Auth=%d canceled=%d\n", jcr->authenticated, jcr->IsJobCanceled());
 
   if (!jcr->authenticated || !jcr->store_bsock) {
     Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
