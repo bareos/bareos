@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: fix various data races (connection_pool/heartbeat_thread) [PR #1685]
 - filed: skip stripped top level directories [PR #1686]
 - jcr: fix some compiler warnings [PR #1648]
+- build: Fix debugsource RPM package generation [PR #1713]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -103,4 +104,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1695]: https://github.com/bareos/bareos/pull/1695
 [PR #1696]: https://github.com/bareos/bareos/pull/1696
 [PR #1708]: https://github.com/bareos/bareos/pull/1708
+[PR #1713]: https://github.com/bareos/bareos/pull/1713
 [unreleased]: https://github.com/bareos/bareos/tree/master
