@@ -247,7 +247,6 @@ static void eliminate_duplicate_paths()
                        strlen(name_list.name[i]));
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
                 esc_name);
-      if (g_verbose > 1) { printf("%s\n", buf); }
       if (!MakeIdList(db, buf, &id_list)) { exit(BEXIT_FAILURE); }
       if (g_verbose) {
         printf(T_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
@@ -258,10 +257,8 @@ static void eliminate_duplicate_paths()
         Bsnprintf(buf, sizeof(buf), "UPDATE File SET PathId=%s WHERE PathId=%s",
                   edit_int64(id_list.Id[0], ed1),
                   edit_int64(id_list.Id[j], ed2));
-        if (g_verbose > 1) { printf("%s\n", buf); }
         db->SqlQuery(buf, nullptr, nullptr);
         Bsnprintf(buf, sizeof(buf), "DELETE FROM Path WHERE PathId=%s", ed2);
-        if (g_verbose > 2) { printf("%s\n", buf); }
         db->SqlQuery(buf, nullptr, nullptr);
       }
     }
@@ -320,7 +317,6 @@ static void eliminate_orphaned_file_records()
         "WHERE Job.JobId IS NULL LIMIT 300000";
 
   printf(T_("Checking for orphaned File entries. This may take some time!\n"));
-  if (g_verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
@@ -362,7 +358,6 @@ static void eliminate_orphaned_path_records()
   db->FillQuery(query, BareosDb::SQL_QUERY::get_orphaned_paths_0);
 
   printf(T_("Checking for orphaned Path entries. This may take some time!\n"));
-  if (g_verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
   if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
@@ -399,7 +394,6 @@ static void eliminate_orphaned_fileset_records()
       = "SELECT FileSet.FileSetId,Job.FileSetId FROM FileSet "
         "LEFT OUTER JOIN Job USING(FileSetId) "
         "WHERE Job.FileSetId IS NULL";
-  if (g_verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d orphaned FileSet records.\n"), id_list.num_ids);
@@ -440,7 +434,6 @@ static void eliminate_orphaned_client_records()
       = "SELECT Client.ClientId,Client.Name FROM Client "
         "LEFT OUTER JOIN Job USING(ClientId) "
         "WHERE Job.ClientId IS NULL";
-  if (g_verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d orphaned Client records.\n"), id_list.num_ids);
@@ -480,7 +473,6 @@ static void eliminate_orphaned_job_records()
       = "SELECT Job.JobId,Job.Name FROM Job "
         "LEFT OUTER JOIN Client USING(ClientId) "
         "WHERE Client.Name IS NULL";
-  if (g_verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d orphaned Job records.\n"), id_list.num_ids);
@@ -553,7 +545,6 @@ static void eliminate_admin_records()
   query
       = "SELECT Job.JobId FROM Job "
         "WHERE Job.Type='D'";
-  if (g_verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d Admin Job records.\n"), id_list.num_ids);
@@ -586,7 +577,6 @@ static void eliminate_restore_records()
   query
       = "SELECT Job.JobId FROM Job "
         "WHERE Job.Type='R'";
-  if (g_verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d Restore Job records.\n"), id_list.num_ids);
@@ -620,7 +610,6 @@ static void repair_bad_filenames()
   query
       = "SELECT FileId,Name from File "
         "WHERE Name LIKE '%/'";
-  if (g_verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d bad Filename records.\n"), id_list.num_ids);
@@ -662,7 +651,6 @@ static void repair_bad_filenames()
       }
       Bsnprintf(buf, sizeof(buf), "UPDATE File SET Name='%s' WHERE FileId=%s",
                 esc_name, edit_int64(id_list.Id[i], ed1));
-      if (g_verbose > 1) { printf("%s\n", buf); }
       db->SqlQuery(buf, nullptr, nullptr);
     }
     FreePoolMemory(name);
@@ -677,7 +665,6 @@ static void repair_bad_paths()
 
   printf(T_("Checking for Paths without a trailing slash\n"));
   db->FillQuery(query, BareosDb::SQL_QUERY::get_bad_paths_0);
-  if (g_verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
   if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   printf(T_("Found %d bad Path records.\n"), id_list.num_ids);
@@ -716,7 +703,6 @@ static void repair_bad_paths()
       db->EscapeString(nullptr, esc_name, name, len);
       Bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
                 esc_name, edit_int64(id_list.Id[i], ed1));
-      if (g_verbose > 1) { printf("%s\n", buf); }
       db->SqlQuery(buf, nullptr, nullptr);
     }
     fflush(stdout);
