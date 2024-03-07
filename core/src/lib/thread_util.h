@@ -59,6 +59,13 @@ class locked {
     cv.wait(lock, [this, pred = std::move(pred)] { return pred(*data); });
   }
 
+  template <typename CondVar, typename TimePoint, typename P>
+  bool wait_until(CondVar& cv, TimePoint tp, P&& pred)
+  {
+    return cv.wait_until(
+        lock, tp, [this, pred = std::move(pred)] { return pred(*data); });
+  }
+
   template <typename CondVar, typename TimePoint>
   std::cv_status wait_until(CondVar& cv, TimePoint tp)
   {
