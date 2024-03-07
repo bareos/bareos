@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -207,10 +207,11 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                edit_uint64_with_commas(njcr->fd_impl->num_files_examined, b1));
     sp->send(msg, len);
     if (njcr->JobFiles > 0) {
-      njcr->lock();
-      len = Mmsg(msg, T_("    Processing file: %s\n"),
-                 njcr->fd_impl->last_fname);
-      njcr->unlock();
+      {
+        std::unique_lock l(njcr->mutex_guard());
+        len = Mmsg(msg, T_("    Processing file: %s\n"),
+                   njcr->fd_impl->last_fname);
+      }
       sp->send(msg, len);
     }
 
@@ -278,9 +279,10 @@ static void ListRunningJobsApi(StatusPacket* sp)
                edit_uint64(njcr->fd_impl->num_files_examined, b1));
     sp->send(msg, len);
     if (njcr->JobFiles > 0) {
-      njcr->lock();
-      len = Mmsg(msg, " Processing file=%s\n", njcr->fd_impl->last_fname);
-      njcr->unlock();
+      {
+        std::unique_lock l(njcr->mutex_guard());
+        len = Mmsg(msg, " Processing file=%s\n", njcr->fd_impl->last_fname);
+      }
       sp->send(msg, len);
     }
 

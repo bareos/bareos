@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -583,10 +583,14 @@ void DoRestore(JobControlRecord* jcr)
         if (status == CF_CORE) {
           status = CreateFile(jcr, attr, &rctx.bfd, jcr->fd_impl->replace);
         }
-        jcr->lock();
-        PmStrcpy(jcr->fd_impl->last_fname, attr->ofname);
-        jcr->fd_impl->last_type = attr->type;
-        jcr->unlock();
+
+        {
+          // NOTE: This should probably be a lock in jcr->fd_impl instead
+          std::unique_lock l(jcr->mutex_guard());
+          PmStrcpy(jcr->fd_impl->last_fname, attr->ofname);
+          jcr->fd_impl->last_type = attr->type;
+        }
+
         Dmsg2(130, "Outfile=%s CreateFile status=%d\n", attr->ofname, status);
         switch (status) {
           case CF_ERROR:

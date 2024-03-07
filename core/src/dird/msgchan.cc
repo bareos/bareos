@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -436,10 +436,14 @@ extern "C" void MsgThreadCleanup(void* arg)
   JobControlRecord* jcr = (JobControlRecord*)arg;
 
   jcr->db->EndTransaction(jcr); /* Terminate any open transaction */
-  jcr->lock();
-  jcr->dir_impl->sd_msg_thread_done = true;
-  jcr->dir_impl->SD_msg_chan_started = false;
-  jcr->unlock();
+
+  {
+    std::unique_lock l(jcr->mutex_guard());
+
+    jcr->dir_impl->sd_msg_thread_done = true;
+    jcr->dir_impl->SD_msg_chan_started = false;
+  }
+
   pthread_cond_broadcast(
       &jcr->dir_impl->nextrun_ready); /* wakeup any waiting threads */
   pthread_cond_broadcast(
