@@ -407,43 +407,51 @@ void* process_fd_initiated_director_commands(void* p_jcr)
   return process_director_commands(jcr, jcr->dir_bsock);
 }
 
+static s_fd_dir_cmds* SelectCommandByName(const char* name)
+{
+  for (auto candidate = &cmds[0]; candidate->cmd; ++candidate) {
+    if (bstrncmp(candidate->cmd, name, strlen(candidate->cmd))) {
+      return candidate;
+    }
+  }
+
+  return nullptr;
+}
+
 void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 {
   // only do the cleanup if dir is not authenticated
   if (jcr->authenticated) {
-    bool quit = 0;
-
     /**********FIXME******* add command handler error code */
 
-    while (!quit) {
+    for (;;) {
       // Read command
       if (dir->recv() < 0) { break; /* connection terminated */ }
-
       dir->msg[dir->message_length] = 0;
       Dmsg1(100, "<dird: %s\n", dir->msg);
-      bool found = false;
-      for (int i = 0; cmds[i].cmd; i++) {
-        if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
-          found = true; /* indicate command found */
-          if ((!cmds[i].monitoraccess) && (jcr->fd_impl->director->monitor)) {
-            Dmsg1(100, "Command \"%s\" is invalid.\n", cmds[i].cmd);
-            dir->fsend(invalid_cmd);
-            dir->signal(BNET_EOD);
-            break;
-          }
-          Dmsg1(100, "Executing %s command.\n", cmds[i].cmd);
 
-          if (!cmds[i].func(jcr)) { /* do command */
-            quit = true;            /* error or fully terminated, get out */
-            Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
-          }
-          break;
-        }
-      }
-      if (!found) { /* command not found */
+      auto* to_execute = SelectCommandByName(dir->msg);
+
+      if (!to_execute) {
+        Dmsg1(100, "Command \"%s\" not found.\n", dir->msg);
         dir->fsend(errmsg);
-        quit = true;
         break;
+      }
+
+      /* if director is a monitor but the command does not allow monitor access,
+       * we reject the command and stop. */
+      if (!to_execute->monitoraccess && jcr->fd_impl->director->monitor) {
+        Dmsg1(100, "Command \"%s\" is invalid.\n", to_execute->cmd);
+        dir->fsend(invalid_cmd);
+        dir->signal(BNET_EOD);
+        break;
+      }
+
+      Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
+
+      if (!to_execute->func(jcr)) { /* do command */
+        Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
+        break; /* error or fully terminated, get out */
       }
     }
 
@@ -452,11 +460,11 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
     // Run the after job
     if (jcr->fd_impl->RunScripts) {
-      RunScripts(
-                 jcr, jcr->fd_impl->RunScripts, "ClientAfterJob",
-                 (jcr->fd_impl->director && jcr->fd_impl->director->allowed_script_dirs)
-                 ? jcr->fd_impl->director->allowed_script_dirs
-                 : me->allowed_script_dirs);
+      RunScripts(jcr, jcr->fd_impl->RunScripts, "ClientAfterJob",
+                 (jcr->fd_impl->director
+                  && jcr->fd_impl->director->allowed_script_dirs)
+                     ? jcr->fd_impl->director->allowed_script_dirs
+                     : me->allowed_script_dirs);
     }
 
     if (jcr->JobId) { /* send EndJob if running a job */
