@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -451,6 +451,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateFileAttributes(
  */
 bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
 {
+  int poll_mode = dev->poll;
   int status = W_TIMEOUT;
   bool got_vol = false;
 
@@ -517,6 +518,8 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
   }
 
 get_out:
+  dev->poll = poll_mode;  // we do not want to change the poll
+                          // mode in this function
   jcr->sendJobStatus(JS_Running);
   Dmsg0(debuglevel, "leave dir_ask_sysop_to_mount_create_appendable_volume\n");
 
