@@ -19,3 +19,12 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+
+set_tests_properties(
+  system:parallel-jobs:parallel-jobs
+  PROPERTIES FIXTURES_SETUP "system:parallel-jobs:parallel-jobs-fixture"
+)
+set_tests_properties(
+  system:parallel-jobs:reservation-order
+  PROPERTIES DEPENDS "system:parallel-jobs:parallel-jobs-fixture"
+)
