@@ -495,6 +495,7 @@ run_bconsole()
 	fi
     fi
     if (( error_code == 124 )); then
+        timeout 10s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "messages" || :
 	traceback "${BAREOS_FILEDAEMON_BINARY}" || :
 	traceback "${BAREOS_STORAGEDAEMON_BINARY}" || :
 	traceback "${BAREOS_DIRECTOR_BINARY}" || :
