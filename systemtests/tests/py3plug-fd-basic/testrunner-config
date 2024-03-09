@@ -2,7 +2,6 @@
 set -e
 set -o pipefail
 set -u
-set -x
 check_option() {
   expect_grep \
     "effective configuration: $1 = '$2'" \
