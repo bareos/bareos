@@ -2,7 +2,7 @@
 set -e
 set -o pipefail
 set -u
-
+set -x
 check_option() {
   expect_grep \
     "effective configuration: $1 = '$2'" \
@@ -37,18 +37,22 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 messages
 @$out $tmp/config-test-nofile.out
 run job=$JobName fileset=PluginConfigTestNoFile yes
+@sleep 1
 wait
 messages
 @$out $tmp/config-test-defaults-file.out
 run job=$JobName fileset=PluginConfigTestDefaultsFile yes
+@sleep 1
 wait
 messages
 @$out $tmp/config-test-override-file.out
 run job=$JobName fileset=PluginConfigTestOverridesFile yes
+@sleep 1
 wait
 messages
 @$out $tmp/config-test-both-files.out
 run job=$JobName fileset=PluginConfigTestBothFiles yes
+@sleep 1
 wait
 messages
 END_OF_DATA
