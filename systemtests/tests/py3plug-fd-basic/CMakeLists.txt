@@ -18,16 +18,9 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-
 if(TARGET python3-fd)
   create_systemtest(${SYSTEMTEST_PREFIX} "${BASENAME}")
-  set_tests_properties(system:py3plug-fd-basic:setup PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
-  set_tests_properties(system:py3plug-fd-basic:cancel-check PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
-  set_tests_properties(system:py3plug-fd-basic:cancel-check-no-wait PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
-  set_tests_properties(system:py3plug-fd-basic:config PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
-  set_tests_properties(system:py3plug-fd-basic:forcebackup PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
-  set_tests_properties(system:py3plug-fd-basic:jobmsg PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
-  set_tests_properties(system:py3plug-fd-basic:cleanup PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} "${BASENAME}" DISABLED)
 endif()
+set(CMAKE_DIRECTORY_LABELS UNRELIABLE_ON_TESTINGFULL).
