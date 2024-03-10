@@ -951,7 +951,7 @@ print_variables("${DUMP_VARS}")
 
 # REPEAT_UNTIL requires cmake 3.17+
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
-  set(REPEAT_UNTIL "REPEAT UNTIL_PASS:2")
+  set(CTEST_REPEAT "REPEAT AFTER_TIMEOUT:2")
 endif()
 
 configure_file(

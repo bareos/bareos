@@ -159,7 +159,7 @@ create_systemtests_directory()
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 
 set(SYSTEMTEST_TIMEOUT
-    "300"
+    "150"
     CACHE STRING "Timeout for systemtests (in seconds)"
 )
 
