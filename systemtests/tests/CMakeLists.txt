@@ -91,5 +91,3 @@ add_subdirectory(virtualfull-basic)
 add_subdirectory(virtualfull-bscan)
 add_subdirectory(virtualfull-deletedfiles)
 add_subdirectory(xattr)
-
-set_tests_properties(system:py3plug-fd-basic PROPERTIES LABELS UNRELIABLE_ON_TESTINGFULL)
