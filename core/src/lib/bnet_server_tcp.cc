@@ -376,10 +376,9 @@ void BnetThreadServerTcp(
         // without this you cannot enable ktls on linux
         if (setsockopt(newsockfd, SOL_TCP, TCP_ULP, "tls", sizeof("tls")) < 0) {
           BErrNo be;
-          Dmsg1(20,
-                "Cannot set TCP_ULP on socket: %s;\n"
-                "Is the tls module not loaded?  "
-                "kTLS will not work without it.",
+          Dmsg1(250,
+                "Cannot set TCP_ULP on socket: ERR=%s.\n"
+                "Is the tls module not loaded?  kTLS will not work without it.",
                 be.bstrerror());
         }
 #  endif

@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -88,6 +88,7 @@ rmdir ${tmp}/data/weird-files/big-X
 rmdir ${tmp}/data/weird-files/subdir
 mkdir -p ${tmp}/data/empty_subdir/
 touch ${tmp}/data/empty_subdir/empty_subdir
+touch "${tmp}/data/weird-files/*dir*/*dir*"
 ${S3} sync "${BackupDirectory}" s3://${bucket_name}
 # create directly an empty directory in the s3 (would be a plus) but
 # unfortunately doesn't work
