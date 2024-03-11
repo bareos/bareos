@@ -60,11 +60,11 @@ if(ndmp_data_agent_address)
         "failed to get IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT"
       )
     endif()
+  set_tests_properties(system:ndmp PROPERTIES TIMEOUT 180)
   else()
     create_systemtest(
       ${SYSTEMTEST_PREFIX} "ndmp" DISABLED COMMENT "ip command not found"
     )
-  set_tests_properties(system:ndmp PROPERTIES TIMEOUT 180)
   endif()
 else()
   create_systemtest(
