@@ -29,7 +29,7 @@ while "${SUDO}" mount | grep "${tmp}/data" >/dev/null 2>&1; do
     echo "could not umount glustrfs ${tmp}/data"
     exit 1
   }
-  "${SUDO}" umount "${tmp}/data"
+  "${SUDO}" umount "${gfapi_fd_host}:/testvol"
   echo -n "."
   sleep 1
 done
