@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=02-restore
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/file-list.out
+list files jobid=1
+@$out $tmp/restore.out
+restore client=bareos-fd fileset=SelfTestStripPath where=$tmp/bareos-restores/${BackupDirectory} select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$@"
+
+check_for_zombie_jobs storage=File
+
+expect_grep "Start Restore Job" \
+	    "$tmp/restore.out" \
+	    "Required restore job was not started."
+
+check_restore_diff "${BackupDirectory}"
+
+end_test
