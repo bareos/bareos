@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - add openssl 3 ulc [PR #1683]
+- Add backport tool [PR #1639]
 
 ### Changed
 - github actions: PyPi: install setuptools [PR #1589]
@@ -43,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: fix various data races (connection_pool/heartbeat_thread) [PR #1685]
 - filed: skip stripped top level directories [PR #1686]
 - jcr: fix some compiler warnings [PR #1648]
+- build: Fix debugsource RPM package generation [PR #1713]
+- Bugfix: Clean up error handling in LDAP plugin, fix dependencies [PR #1717]
+- crypto_wrap: replace aes wrap with openssl aes wrap algorithm [PR #1718]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -78,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1632]: https://github.com/bareos/bareos/pull/1632
 [PR #1636]: https://github.com/bareos/bareos/pull/1636
 [PR #1637]: https://github.com/bareos/bareos/pull/1637
+[PR #1639]: https://github.com/bareos/bareos/pull/1639
 [PR #1646]: https://github.com/bareos/bareos/pull/1646
 [PR #1647]: https://github.com/bareos/bareos/pull/1647
 [PR #1648]: https://github.com/bareos/bareos/pull/1648
@@ -101,4 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1695]: https://github.com/bareos/bareos/pull/1695
 [PR #1696]: https://github.com/bareos/bareos/pull/1696
 [PR #1708]: https://github.com/bareos/bareos/pull/1708
+[PR #1713]: https://github.com/bareos/bareos/pull/1713
+[PR #1717]: https://github.com/bareos/bareos/pull/1717
+[PR #1718]: https://github.com/bareos/bareos/pull/1718
 [unreleased]: https://github.com/bareos/bareos/tree/master

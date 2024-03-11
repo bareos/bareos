@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,9 @@ else()
     message(STATUS "QT5Widgets NOT found, checking for Qt4 ...")
     find_package(Qt4)
     if(NOT Qt4_FOUND)
-      message(FATAL_ERROR "Both Qt5 and Qt4 not found, cannot build tray-monitor")
+      message(
+        FATAL_ERROR "Both Qt5 and Qt4 not found, cannot build tray-monitor"
+      )
     endif()
   endif()
 endif()
@@ -106,3 +108,5 @@ install(
   DESTINATION ${datarootdir}/pixmaps/
   RENAME bareos-tray-monitor.png
 )
+
+include(DebugEdit)

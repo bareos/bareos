@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -206,8 +206,13 @@ static bool GenerateNewEncryptionKey(UaContext* ua, MediaDbRecord* mr)
     length = DEFAULT_PASSPHRASE_LENGTH + 8;
     wrapped_passphrase = (char*)malloc(length);
     memset(wrapped_passphrase, 0, length);
-    AesWrap((unsigned char*)me->keyencrkey.value, DEFAULT_PASSPHRASE_LENGTH / 8,
-            (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase);
+    if (auto error = AesWrap(
+            (unsigned char*)me->keyencrkey.value, DEFAULT_PASSPHRASE_LENGTH / 8,
+            (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase)) {
+      ua->ErrorMsg(T_("Failed to wrap passphrase ERR=%s.\n"), error->c_str());
+      free(passphrase);
+      return false;
+    }
 
     free(passphrase);
     passphrase = wrapped_passphrase;

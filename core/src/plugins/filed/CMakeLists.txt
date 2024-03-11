@@ -94,3 +94,5 @@ if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
   target_link_libraries(gfapi-fd gfapi)
   target_include_directories(gfapi-fd PRIVATE ${GFAPI_INCLUDE_DIRS})
 endif()
+
+include(DebugEdit)

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -168,11 +168,13 @@ void DoVerifyVolume(JobControlRecord* jcr)
         } else {
           *lname = 0;
         }
-        jcr->lock();
-        jcr->JobFiles++;
-        jcr->fd_impl->num_files_examined++;
-        PmStrcpy(jcr->fd_impl->last_fname, fname); /* last file examined */
-        jcr->unlock();
+
+        {
+          std::unique_lock l(jcr->mutex_guard());
+          jcr->JobFiles++;
+          jcr->fd_impl->num_files_examined++;
+          PmStrcpy(jcr->fd_impl->last_fname, fname); /* last file examined */
+        }
 
         /* Send file attributes to Director
          *   File_index
@@ -258,11 +260,11 @@ void DoVerifyVolume(JobControlRecord* jcr)
               dir->msg);
         break;
 
-      case STREAM_RESTORE_OBJECT:
-        jcr->lock();
+      case STREAM_RESTORE_OBJECT: {
+        std::unique_lock l(jcr->mutex_guard());
         jcr->JobFiles++;
         jcr->fd_impl->num_files_examined++;
-        jcr->unlock();
+      }
 
         Dmsg2(400, "send inx=%d STREAM_RESTORE_OBJECT-%d\n", jcr->JobFiles,
               STREAM_RESTORE_OBJECT);

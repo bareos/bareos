@@ -137,7 +137,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
   } else {
     utime_t now;
 
-    jcr->authenticated = true;
+    *jcr->sd_impl->client_available.lock() = true;
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
           jcr->Job);
 
@@ -146,7 +146,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
     UpdateJobStatistics(jcr, now);
   }
 
-  pthread_cond_signal(&jcr->sd_impl->job_start_wait); /* wake waiting job */
+  jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */
   FreeJcr(jcr);
 
   return NULL;

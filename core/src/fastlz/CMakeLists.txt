@@ -34,3 +34,5 @@ set_target_properties(
   bareosfastlz PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                           SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
+
+include(DebugEdit)
