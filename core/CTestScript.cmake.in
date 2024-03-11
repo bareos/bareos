@@ -20,7 +20,7 @@ set(CTEST_SOURCE_DIRECTORY @CMAKE_SOURCE_DIR@)
 set(CTEST_BINARY_DIRECTORY @CMAKE_BINARY_DIR@)
 
 ctest_start("Continuous")
-gtest_test(EXCLUDE_LABEL broken
+ctest_test(EXCLUDE_LABEL broken
            PARALLEL_LEVEL 5
            @CTEST_REPEAT@
            )
