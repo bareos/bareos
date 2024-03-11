@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - filed: skip stripped top level directories [PR #1726]
+- Require python3 explicit [PR #1729]
 
 ## [23.0.2] - 2024-02-28
 
@@ -422,4 +423,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1709]: https://github.com/bareos/bareos/pull/1709
 [PR #1711]: https://github.com/bareos/bareos/pull/1711
 [PR #1726]: https://github.com/bareos/bareos/pull/1726
+[PR #1729]: https://github.com/bareos/bareos/pull/1729
 [unreleased]: https://github.com/bareos/bareos/tree/master
