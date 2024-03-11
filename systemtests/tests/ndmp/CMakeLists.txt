@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -64,6 +64,7 @@ if(ndmp_data_agent_address)
     create_systemtest(
       ${SYSTEMTEST_PREFIX} "ndmp" DISABLED COMMENT "ip command not found"
     )
+  set_tests_properties(system:ndmp PROPERTIES TIMEOUT 180)
   endif()
 else()
   create_systemtest(

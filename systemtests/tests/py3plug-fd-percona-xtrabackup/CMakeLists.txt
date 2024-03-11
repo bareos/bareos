@@ -29,6 +29,7 @@ if(TARGET python3-fd
    AND MYSQL_CLIENT_BINARY
 )
   create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-percona-xtrabackup")
+  set_tests_properties(system:py3plug-fd-percona-xtrabackup PROPERTIES TIMEOUT 180)
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX}
