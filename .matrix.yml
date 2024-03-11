@@ -2,7 +2,7 @@ OS:
   EL:
     "9":
       TYPE: rpm
-      gMAGE: rhel9
+      IMAGE: rhel9
       CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
       ARCH:
       - x86_64
