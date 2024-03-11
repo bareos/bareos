@@ -122,8 +122,6 @@ class JobControlRecord {
     --use_count_;
   }
   int32_t UseCount() const { return use_count_; }
-  void InitMutex(void) {  new (&mutex_) std::mutex; }
-  void DestroyMutex(void) { std::destroy_at(&mutex_); }
   bool IsJobCanceled() { return  JobStatus_ == JS_Canceled
                               || JobStatus_ == JS_ErrorTerminated
                               || JobStatus_ == JS_FatalError; }

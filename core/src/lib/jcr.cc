@@ -263,8 +263,7 @@ static void RemoveJcr(JobControlRecord* jcr)
   Dmsg0(debuglevel, "Leave RemoveJcr\n");
 }
 
-static void FreeCommonJcr(JobControlRecord* jcr,
-                          bool is_destructor_call = false)
+static void FreeCommonJcr(JobControlRecord* jcr)
 {
   Dmsg1(100, "FreeCommonJcr: %p \n", jcr);
 
@@ -272,11 +271,6 @@ static void FreeCommonJcr(JobControlRecord* jcr,
 
   RemoveJcrFromThreadSpecificData(jcr);
   jcr->SetKillable(false);
-
-  if (!is_destructor_call) {
-    // mutex should normally be cleaned up by destructor
-    jcr->DestroyMutex();
-  }
 
   if (jcr->msg_queue) {
     delete jcr->msg_queue;
@@ -346,11 +340,9 @@ static void FreeCommonJcr(JobControlRecord* jcr,
     FreePoolMemory(jcr->comment);
     jcr->comment = nullptr;
   }
-
-  if (!is_destructor_call) { free(jcr); }
 }
 
-static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
+static void JcrCleanup(JobControlRecord* jcr)
 {
   DequeueMessages(jcr);
   CallJobEndCallbacks(jcr);
@@ -377,14 +369,14 @@ static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
 
   if (jcr->daemon_free_jcr) { jcr->daemon_free_jcr(jcr); }
 
-  FreeCommonJcr(jcr, is_destructor_call);
+  FreeCommonJcr(jcr);
   CloseMsg(nullptr);  // flush any daemon messages
 }
 
 JobControlRecord::~JobControlRecord()
 {
   Dmsg0(100, "Destruct JobControlRecord\n");
-  JcrCleanup(this, true);
+  JcrCleanup(this);
   Dmsg0(debuglevel, "JobControlRecord Destructor finished\n");
 }
 
@@ -419,7 +411,10 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
   Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
         line);
 
-  if (RunJcrGarbageCollector(jcr)) { JcrCleanup(jcr); }
+  if (RunJcrGarbageCollector(jcr)) {
+    std::destroy_at(jcr);
+    free(jcr);
+  }
 
   Dmsg0(debuglevel, "Exit FreeJcr\n");
 }
