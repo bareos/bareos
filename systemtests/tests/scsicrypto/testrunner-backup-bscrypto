@@ -78,7 +78,11 @@ start_bareos
 # Load first tape in, ignore errors
 echo Checking drive and volume state
 # Remove any leftover key from previous run
-${mybsc} --clear-encryption ${ltodrive}
+if ! ${mybsc} --clear-encryption ${ltodrive};then
+  printf "clearing encryption on ${ltodrive} failed\n"
+  export estat=1
+  exit 1
+fi
 /usr/sbin/mtx -f "${changer}" load 1 0 ||:
 sleep 1
 /usr/sbin/mtx -f "${changer}" status
