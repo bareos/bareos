@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,7 +71,7 @@ void ReservationTest::SetUp()
   OSDependentInit();
 
   /* configfile is a global char* from stored_globals.h */
-  configfile = strdup(RELATIVE_PROJECT_SOURCE_DIR "/configs/sd_reservation/");
+  configfile = strdup("configs/sd_reservation/");
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
   /* we do not run CheckResources() here, so take care the test configration

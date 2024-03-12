@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 # create include dirs needed when compiling python modules
 
 set(pymod_include_dirs ${PROJECT_SOURCE_DIR}/src)
+list(APPEND pymod_include_dirs ${PROJECT_BINARY_DIR}/src)
 
 # FreeBSD
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")

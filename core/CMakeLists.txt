@@ -728,6 +728,9 @@ else()
 endif()
 
 include(BareosConfigureFile)
+bareos_configure_file(
+  GLOB_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/src/defaultconfigs/*" COPY
+)
 
 add_subdirectory(platforms)
 add_subdirectory(src)

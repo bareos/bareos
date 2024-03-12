@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - crypto_wrap: replace aes wrap with openssl aes wrap algorithm [PR #1718]
 - dbcheck: fix dbcheck crash if password is not set in catalog resource [PR #1710]
 - Require python3 explicit [PR #1719]
+- cmake: put generated files into CMAKE_BINARY_DIR [PR #1707]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -107,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1688]: https://github.com/bareos/bareos/pull/1688
 [PR #1695]: https://github.com/bareos/bareos/pull/1695
 [PR #1696]: https://github.com/bareos/bareos/pull/1696
+[PR #1707]: https://github.com/bareos/bareos/pull/1707
 [PR #1708]: https://github.com/bareos/bareos/pull/1708
 [PR #1710]: https://github.com/bareos/bareos/pull/1710
 [PR #1713]: https://github.com/bareos/bareos/pull/1713

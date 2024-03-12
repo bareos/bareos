@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,9 +18,20 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+bareos_configure_file(
+  FILES bareos-fd.service.in bareos-sd.service.in bareos-dir.service.in
+)
+
 message(STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE})
 message(STATUS "installing systemd files to  ${SYSTEMD_UNITDIR}")
 
-install(FILES "bareos-sd.service" DESTINATION ${SYSTEMD_UNITDIR})
-install(FILES "bareos-fd.service" DESTINATION ${SYSTEMD_UNITDIR})
-install(FILES "bareos-dir.service" DESTINATION ${SYSTEMD_UNITDIR})
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-sd.service"
+        DESTINATION ${SYSTEMD_UNITDIR}
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-fd.service"
+        DESTINATION ${SYSTEMD_UNITDIR}
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-dir.service"
+        DESTINATION ${SYSTEMD_UNITDIR}
+)

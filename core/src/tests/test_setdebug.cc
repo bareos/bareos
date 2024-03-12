@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,8 +62,8 @@ static void DoStorageSetdebug(UaContext*, StorageResource* store, int, int, int)
 void SetdebugTest::SetUpTestCase()
 {
   OSDependentInit();
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  std::string path_to_config_file
+      = std::string("configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
   ASSERT_TRUE(my_config->ParseConfig());

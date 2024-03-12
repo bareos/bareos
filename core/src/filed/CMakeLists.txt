@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+
 if(HAVE_WIN32)
   include_directories(
     ${PROJECT_SOURCE_DIR}/src/win32/generic
@@ -59,7 +61,8 @@ if(HAVE_WIN32)
 endif()
 
 if(HAVE_WIN32)
-  list(APPEND FDSRCS ../win32/filed/filedres.rc)
+  bareos_configure_file(FILES ../win32/filed/filedres.rc.in)
+  list(APPEND FDSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc)
 endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
@@ -109,7 +112,7 @@ install(CODE "set(BACKENDS \"${BACKENDS}\")" COMPONENT filedaemon)
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")"
         COMPONENT filedaemon
 )
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")" COMPONENT filedaemon)
+install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")" COMPONENT filedaemon)
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake
         COMPONENT filedaemon
 )

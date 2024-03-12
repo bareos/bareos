@@ -18,9 +18,12 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+
 set(BSMTPSRCS bsmtp.cc)
 if(HAVE_WIN32)
-  list(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
+  bareos_configure_file(FILES ../win32/tools/bsmtpres.rc.in)
+  list(APPEND BSMTPSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bsmtpres.rc)
 endif()
 add_executable(bsmtp ${BSMTPSRCS})
 target_link_libraries(bsmtp bareos CLI11::CLI11)
@@ -33,14 +36,18 @@ target_link_libraries(fstype bareos bareosfind)
 
 set(BREGEXSRCS bregex.cc)
 if(HAVE_WIN32)
-  list(APPEND BREGEXSRCS ../win32/tools/bregexres.rc)
+  bareos_configure_file(FILES ../win32/tools/bregexres.rc.in)
+  list(APPEND BREGEXSRCS
+       ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bregexres.rc
+  )
 endif()
 add_executable(bregex ${BREGEXSRCS})
 target_link_libraries(bregex bareos bareosfind CLI11::CLI11)
 
 set(BWILDSRCS bwild.cc)
 if(HAVE_WIN32)
-  list(APPEND BWILDSRCS ../win32/tools/bwildres.rc)
+  bareos_configure_file(FILES ../win32/tools/bwildres.rc.in)
+  list(APPEND BWILDSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bwildres.rc)
 endif()
 add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos CLI11::CLI11)

@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+include(BareosConfigureFile)
 
 if(HAVE_WIN32)
   add_definitions(-D_STAT_DEFINED=1)
@@ -65,7 +66,10 @@ set(SOURCES
 )
 
 if(HAVE_WIN32)
-  list(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
+  bareos_configure_file(FILES ../win32/qt-tray-monitor/traymon.rc.in)
+  list(APPEND SOURCES
+       ${CMAKE_CURRENT_BINARY_DIR}/../win32/qt-tray-monitor/traymon.rc
+  )
 endif()
 
 if(HAVE_WIN32)
@@ -88,19 +92,21 @@ if(TARGET Qt6::Widgets)
   target_link_libraries(bareos-tray-monitor PRIVATE Qt6::Widgets)
 endif()
 
+bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
+
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
+install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")")
 
 install(
   SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake
 )
 
-install(FILES bareos-tray-monitor.desktop
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-tray-monitor.desktop
         DESTINATION ${datarootdir}/applications/
 )
-install(FILES bareos-tray-monitor.desktop
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-tray-monitor.desktop
         DESTINATION ${sysconfdir}/xdg/autostart/
 )
 install(

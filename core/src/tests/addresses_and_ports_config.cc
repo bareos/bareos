@@ -165,8 +165,7 @@ class AddressesAndPortsConfigurationSetup : public ::testing::Test {
 TEST_F(AddressesAndPortsConfigurationSetup, default_config_values)
 {
   std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/addresses-and-ports/default-dir-values/");
+      = std::string("configs/addresses-and-ports/default-dir-values/");
 
   std::vector<std::string> expected_addresses{"host[ipv6;::;9101]",
                                               "host[ipv4;0.0.0.0;9101]"};
@@ -178,8 +177,7 @@ TEST_F(AddressesAndPortsConfigurationSetup, default_config_values)
 TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_port_set)
 {
   std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/addresses-and-ports/old-style/dir-port-set/");
+      = std::string("configs/addresses-and-ports/old-style/dir-port-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;29998]",
                                               "host[ipv6;::;29998]"};
@@ -191,9 +189,8 @@ TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_port_set)
 
 TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_v4address_set)
 {
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/addresses-and-ports/old-style/dir-v4address-set/");
+  std::string path_to_config
+      = std::string("configs/addresses-and-ports/old-style/dir-v4address-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;9101]"};
 
@@ -202,9 +199,8 @@ TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_v4address_set)
 
 TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_v6address_set)
 {
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/addresses-and-ports/old-style/dir-v6address-set/");
+  std::string path_to_config
+      = std::string("configs/addresses-and-ports/old-style/dir-v6address-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv6;::1;9101]"};
 
@@ -222,8 +218,7 @@ TEST_F(AddressesAndPortsConfigurationSetup,
        OLD_STYLE_dir_v4port_and_address_set)
 {
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/addresses-and-ports/old-style/dir-v4port-and-address-set/");
+      "configs/addresses-and-ports/old-style/dir-v4port-and-address-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29997]"};
 
@@ -236,8 +231,7 @@ TEST_F(AddressesAndPortsConfigurationSetup,
        OLD_STYLE_dir_v4address_and_port_set)
 {
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/addresses-and-ports/old-style/dir-v4address-and-port-set/");
+      "configs/addresses-and-ports/old-style/dir-v4address-and-port-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29996]"};
 
@@ -247,8 +241,7 @@ TEST_F(AddressesAndPortsConfigurationSetup,
 TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_v6_address_set)
 {
   std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/addresses-and-ports/new-style/dir-v6-address/");
+      = std::string("configs/addresses-and-ports/new-style/dir-v6-address/");
 
   std::vector<std::string> expected_addresses{"host[ipv6;::;29995]"};
 
@@ -258,8 +251,7 @@ TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_v6_address_set)
 TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_v6_and_v4_address_set)
 {
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/addresses-and-ports/new-style/dir-v6-and-v4-addresses/");
+      "configs/addresses-and-ports/new-style/dir-v6-and-v4-addresses/");
 
   std::vector<std::string> expected_addresses{"host[ipv6;::;29994]",
                                               "host[ipv4;127.0.0.1;29994]"};
@@ -269,9 +261,8 @@ TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_v6_and_v4_address_set)
 
 TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_ip_v4_address_set)
 {
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/addresses-and-ports/new-style/dir-ip-v4-address/");
+  std::string path_to_config
+      = std::string("configs/addresses-and-ports/new-style/dir-ip-v4-address/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;29992]"};
 
@@ -280,9 +271,8 @@ TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_ip_v4_address_set)
 
 TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_ip_v6_address_set)
 {
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR
-      "/configs/addresses-and-ports/new-style/dir-ip-v6-address/");
+  std::string path_to_config
+      = std::string("configs/addresses-and-ports/new-style/dir-ip-v6-address/");
 
   std::vector<std::string> expected_addresses{"host[ipv6;::;29993]"};
 

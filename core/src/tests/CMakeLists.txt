@@ -18,6 +18,9 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+bareos_configure_file(GLOB_RECURSE "configs/*")
+
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
@@ -164,24 +167,16 @@ if(HAVE_WIN32)
     comdlg32
     advapi32
   )
-  set(RELATIVE_PROJECT_SOURCE_DIR "Z:${CMAKE_CURRENT_SOURCE_DIR}")
   set(TEST_ORIGINAL_FILE_DIR Z:${CMAKE_CURRENT_SOURCE_DIR}/statefile)
   set(TEST_TEMP_DIR Z:${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp/write-test)
   set(CERTDIR Z:${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 else() # NOT HAVE_WIN32
-  file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}
-       ${CMAKE_CURRENT_SOURCE_DIR}
-  )
   set(TEST_ORIGINAL_FILE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/statefile)
   set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp/write-test)
   set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 endif() # HAVE_WIN32
-
-add_compile_definitions(
-  RELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\"
-)
 
 set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
 

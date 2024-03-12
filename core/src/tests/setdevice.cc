@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,8 +63,8 @@ static bool sprintit(void*, const char* fmt, ...)
 TEST(setdevice, scan_command_line)
 {
   OSDependentInit();
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  std::string path_to_config_file
+      = std::string("configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
 
   std::unique_ptr<JobControlRecord, decltype(&Test_FreeJcr)> jcr(

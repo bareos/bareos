@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+include(BareosConfigureFile)
+bareos_configure_file(GLOB_RECURSE "*.d/*" COPY)
 
 list(APPEND CMAKE_INSTALL_RPATH ${backenddir})
 

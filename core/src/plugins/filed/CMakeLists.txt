@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosConfigureFile)
+
 if(HAVE_WIN32)
   include_directories(
     ${PROJECT_SOURCE_DIR}/src/win32
@@ -84,6 +86,7 @@ endif()
 
 option(ENABLE_GFAPI_FD "Build gfapi-fd plugin if possible" ON)
 if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
+  bareos_configure_file(GLOB_RECURSE "gfapi/gfapi-conf.d/*" COPY)
   add_library(gfapi-fd MODULE gfapi/gfapi-fd.cc)
   set_target_properties(gfapi-fd PROPERTIES PREFIX "")
   install(

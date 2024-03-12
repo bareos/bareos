@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,8 +36,8 @@ TEST(ConfigParser, test_console_config)
 {
   OSDependentInit();
 
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  std::string path_to_config_file
+      = std::string("configs/bareos-configparser-tests");
 
   my_config = InitConsConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();

@@ -84,7 +84,7 @@ jobs:
         ls -la cmake-build/*.pkg
         mkdir -p "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
         mv cmake-build/*.pkg "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
-        cp core/src/include/config.h "${{ env.artifact_dir }}"
+        cp cmake-build/core/src/include/config.h "${{ env.artifact_dir }}"
         find cmake-build/core/src -type f -perm +0111 -exec otool -L {} ";" > "${{ env.artifact_dir }}/libdepends.txt"
       env:
         CFLAGS: -I/usr/local/include
