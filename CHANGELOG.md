@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dbcheck: fix dbcheck crash if password is not set in catalog resource [PR #1710]
 - Require python3 explicit [PR #1719]
 - cmake: put generated files into CMAKE_BINARY_DIR [PR #1707]
+- increase warning level on C/C++ compiler [PR #1689]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -106,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1686]: https://github.com/bareos/bareos/pull/1686
 [PR #1687]: https://github.com/bareos/bareos/pull/1687
 [PR #1688]: https://github.com/bareos/bareos/pull/1688
+[PR #1689]: https://github.com/bareos/bareos/pull/1689
 [PR #1695]: https://github.com/bareos/bareos/pull/1695
 [PR #1696]: https://github.com/bareos/bareos/pull/1696
 [PR #1707]: https://github.com/bareos/bareos/pull/1707
