@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -295,10 +295,9 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
   // without this you cannot enable ktls on linux
   if (setsockopt(sockfd, SOL_TCP, TCP_ULP, "tls", sizeof("tls")) < 0) {
     BErrNo be;
-    Dmsg1(20,
-          "Cannot set TCP_ULP on socket: %s;\n"
-          "Is the tls module not loaded?  "
-          "kTLS will not work without it.",
+    Dmsg1(250,
+          "Cannot set TCP_ULP on socket: ERR=%s.\n"
+          "Is the tls module not loaded?  kTLS will not work without it.",
           be.bstrerror());
   }
 #  endif

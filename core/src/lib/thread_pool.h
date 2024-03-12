@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -101,7 +101,7 @@ struct thread_pool {
 
   ~thread_pool()
   {
-    for (auto sync : units) { sync->lock()->close(); }
+    for (auto& sync : units) { sync->lock()->close(); }
 
     for (auto& thread : threads) { thread.join(); }
   }
@@ -173,29 +173,34 @@ struct thread_pool {
     std::optional<task> fun;
   };
 
-  std::vector<synchronized<work_unit>*> units;
+  std::vector<std::unique_ptr<synchronized<work_unit>>> units;
   std::vector<std::thread> threads{};
 
   void add_thread()
   {
-    auto* sync = new synchronized<work_unit>();
-    units.push_back(sync);
+    // sync will live at least as long as threads, so its ok to *NOT* use
+    // a shared ptr here.
+    auto& sync
+        = units.emplace_back(std::make_unique<synchronized<work_unit>>());
     threads.emplace_back(
         [](thread_pool* pool, synchronized<work_unit>* unit) {
           pool->pool_work(*unit);
         },
-        this, sync);
+        this, sync.get());
   }
 
   void pool_work(synchronized<work_unit>& unit)
   {
     auto locked = unit.lock();
     for (;;) {
+      // the state is either WAITING/CLOSED or WORKING
       locked.wait(locked->state_changed,
                   [](const work_unit& w) { return !w.is_waiting(); });
 
+      // state is either CLOSED or WORKING
       if (locked->is_closed()) { return; }
 
+      // state is WORKING
       locked->do_work();
     }
   }
