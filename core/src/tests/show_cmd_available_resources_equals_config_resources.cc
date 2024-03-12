@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,16 +37,17 @@ using namespace directordaemon;
 
 TEST(available_resources_equals_config_resources, check_contents)
 {
-  std::unique_ptr<ConfigurationParser> my_config(
+  std::unique_ptr<ConfigurationParser> test_config(
       InitDirConfig(nullptr, M_ERROR_TERM));
 
   std::set<uint32_t> set_of_config_resources;
 
-  for (int i = 0; my_config->resource_definitions_[i].name; i++) {
-    if (my_config->resource_definitions_[i].rcode != R_DEVICE) {
+  for (int i = 0; test_config->resource_definitions_[i].name; i++) {
+    if (test_config->resource_definitions_[i].rcode != R_DEVICE) {
       /* skip R_DEVICE, as these are special resources, not shown by the show
        * command. */
-      set_of_config_resources.insert(my_config->resource_definitions_[i].rcode);
+      set_of_config_resources.insert(
+          test_config->resource_definitions_[i].rcode);
     }
   }
 

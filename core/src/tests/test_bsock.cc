@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -401,7 +401,7 @@ TEST(bsock, create_bareos_socket_unique_ptr)
     {
       std::unique_ptr<BareosSocketTCPMock, std::function<void(BareosSocket*)>>
           p1(new BareosSocketTCPMock(test_variable),
-             [](BareosSocket* p) { delete p; });
+             [](BareosSocket* ptr) { delete ptr; });
       EXPECT_NE(p1.get(), nullptr);
       p = std::move(p1);
       EXPECT_EQ(p1.get(), nullptr);

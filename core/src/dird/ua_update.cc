@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -988,7 +988,6 @@ static void UpdateSlots(UaContext* ua)
   UnifiedStorageResource store;
   vol_list_t* vl;
   changer_vol_list_t* vol_list = NULL;
-  MediaDbRecord mr;
   char* slot_list;
   bool scan;
   slot_number_t max_slots;
@@ -1060,6 +1059,7 @@ static void UpdateSlots(UaContext* ua)
             vl->bareos_slot_number);
     }
     ClearBit(vl->bareos_slot_number - 1, slot_list); /* clear Slot */
+    MediaDbRecord mr;
     SetStorageidInMr(store.store, &mr);
     mr.Slot = vl->bareos_slot_number;
     mr.InChanger = 1;

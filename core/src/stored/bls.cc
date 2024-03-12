@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -281,17 +281,17 @@ int main(int argc, char* argv[])
   return BEXIT_SUCCESS;
 }
 
-static void do_close(JobControlRecord* jcr)
+static void do_close(JobControlRecord* t_jcr)
 {
   FreeAttr(attr);
   FreeRecord(rec);
-  CleanDevice(jcr->sd_impl->dcr);
+  CleanDevice(t_jcr->sd_impl->dcr);
   delete dev;
-  FreeDeviceControlRecord(jcr->sd_impl->dcr);
+  FreeDeviceControlRecord(t_jcr->sd_impl->dcr);
 
-  CleanupCompression(jcr);
-  FreePlugins(jcr);
-  FreeJcr(jcr);
+  CleanupCompression(t_jcr);
+  FreePlugins(t_jcr);
+  FreeJcr(t_jcr);
   UnloadSdPlugins();
 }
 
@@ -346,7 +346,7 @@ static void DoBlocks(char*)
     Dmsg5(100, "Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
           block->BlockNumber, block->block_len, block->BlockVer,
           block->VolSessionId, block->VolSessionTime);
-    if (verbose == 1) {
+    if (g_verbose == 1) {
       ReadRecordFromBlock(dcr, rec);
       Pmsg9(-1,
             T_("File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u "
@@ -356,7 +356,7 @@ static void DoBlocks(char*)
             rec->VolSessionTime,
             stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
       rec->remainder = 0;
-    } else if (verbose > 1) {
+    } else if (g_verbose > 1) {
       DumpBlock(block, "");
     } else {
       printf(T_("Block: %d size=%d\n"), block->BlockNumber, block->block_len);
@@ -366,10 +366,10 @@ static void DoBlocks(char*)
 }
 
 // We are only looking for labels or in particular Job Session records
-static bool jobs_cb(DeviceControlRecord* dcr, DeviceRecord* rec)
+static bool jobs_cb(DeviceControlRecord* t_dcr, DeviceRecord* t_rec)
 {
-  if (rec->FileIndex < 0) { DumpLabelRecord(dcr->dev, rec, verbose); }
-  rec->remainder = 0;
+  if (t_rec->FileIndex < 0) { DumpLabelRecord(t_dcr->dev, t_rec, g_verbose); }
+  t_rec->remainder = 0;
   return true;
 }
 
@@ -388,21 +388,21 @@ static void do_ls(char*)
 }
 
 // Called here for each record from ReadRecords()
-static bool RecordCb(DeviceControlRecord*, DeviceRecord* rec)
+static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
 {
   PoolMem record_str(PM_MESSAGE);
 
-  if (rec->FileIndex < 0) {
-    GetSessionRecord(dev, rec, &sessrec);
+  if (t_rec->FileIndex < 0) {
+    GetSessionRecord(dev, t_rec, &sessrec);
     return true;
   }
 
   // File Attributes stream
-  switch (rec->maskedStream) {
+  switch (t_rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
-      if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
-                                  attr)) {
+      if (!UnpackAttributesRecord(jcr, t_rec->Stream, t_rec->data,
+                                  t_rec->data_len, attr)) {
         if (!forge_on) {
           Emsg0(M_ERROR_TERM, 0, T_("Cannot continue.\n"));
         } else {
@@ -417,45 +417,47 @@ static bool RecordCb(DeviceControlRecord*, DeviceRecord* rec)
       BuildAttrOutputFnames(jcr, attr);
 
       if (FileIsIncluded(ff, attr->fname) && !FileIsExcluded(ff, attr->fname)) {
-        if (!verbose) {
+        if (!g_verbose) {
           PrintLsOutput(jcr, attr);
         } else {
-          Pmsg1(-1, "%s\n", record_to_str(record_str, jcr, rec));
+          Pmsg1(-1, "%s\n", record_to_str(record_str, jcr, t_rec));
         }
         num_files++;
       }
       break;
     default:
-      if (verbose) { Pmsg1(-1, "%s\n", record_to_str(record_str, jcr, rec)); }
+      if (g_verbose) {
+        Pmsg1(-1, "%s\n", record_to_str(record_str, jcr, t_rec));
+      }
       break;
   }
 
   /* debug output of record */
-  DumpRecord("", rec);
+  DumpRecord("", t_rec);
 
   return true;
 }
 
-static void GetSessionRecord(Device* dev,
-                             DeviceRecord* rec,
-                             Session_Label* sessrec)
+static void GetSessionRecord(Device* t_dev,
+                             DeviceRecord* t_rec,
+                             Session_Label* t_sessrec)
 {
   const char* rtype;
   Session_Label empty_Session_Label;
-  *sessrec = empty_Session_Label;
+  *t_sessrec = empty_Session_Label;
   jcr->JobId = 0;
-  switch (rec->FileIndex) {
+  switch (t_rec->FileIndex) {
     case PRE_LABEL:
       rtype = T_("Fresh Volume Label");
       break;
     case VOL_LABEL:
       rtype = T_("Volume Label");
-      UnserVolumeLabel(dev, rec);
+      UnserVolumeLabel(t_dev, t_rec);
       break;
     case SOS_LABEL:
       rtype = T_("Begin Job Session");
-      UnserSessionLabel(sessrec, rec);
-      jcr->JobId = sessrec->JobId;
+      UnserSessionLabel(t_sessrec, t_rec);
+      jcr->JobId = t_sessrec->JobId;
       break;
     case EOS_LABEL:
       rtype = T_("End Job Session");
@@ -475,18 +477,18 @@ static void GetSessionRecord(Device* dev,
       break;
     default:
       rtype = T_("Unknown");
-      Dmsg1(10, "FI rtype=%d unknown\n", rec->FileIndex);
+      Dmsg1(10, "FI rtype=%d unknown\n", t_rec->FileIndex);
       break;
   }
   Dmsg5(10,
         "%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n",
-        rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-        rec->data_len);
-  if (verbose) {
+        rtype, t_rec->VolSessionId, t_rec->VolSessionTime, t_rec->Stream,
+        t_rec->data_len);
+  if (g_verbose) {
     Pmsg5(-1,
           T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d "
              "DataLen=%d\n"),
-          rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
-          rec->data_len);
+          rtype, t_rec->VolSessionId, t_rec->VolSessionTime, t_rec->Stream,
+          t_rec->data_len);
   }
 }

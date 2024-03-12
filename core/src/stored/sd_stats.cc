@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -105,6 +105,20 @@ struct job_statistics_t {
 
 static dlist<device_statistics_t>* device_statistics = NULL;
 static dlist<job_statistics_t>* job_statistics = NULL;
+
+static bool have_jcr_for_jobid(JobId_t jobid)
+{
+  bool found = false;
+  JobControlRecord* jcr;
+  foreach_jcr (jcr) {
+    if (jcr->JobId == jobid) {
+      found = true;
+      break;
+    }
+  }
+  endeach_jcr(jcr);
+  return found;
+}
 
 static inline void setup_statistics()
 {
@@ -512,8 +526,6 @@ bool StatsCmd(JobControlRecord* jcr)
   }
 
   if (job_statistics) {
-    bool found;
-    JobControlRecord* jcr;
     job_statistics_t *job_stats, *next_job_stats;
 
     job_stats = (job_statistics_t*)job_statistics->first();
@@ -551,16 +563,7 @@ bool StatsCmd(JobControlRecord* jcr)
       // If the Job doesn't exist anymore remove it from the job_statistics.
       next_job_stats = job_statistics->next(job_stats);
 
-      found = false;
-      foreach_jcr (jcr) {
-        if (jcr->JobId == job_stats->JobId) {
-          found = true;
-          break;
-        }
-      }
-      endeach_jcr(jcr);
-
-      if (!found) {
+      if (!have_jcr_for_jobid(job_stats->JobId)) {
         lock_mutex(mutex);
         Dmsg1(200, "Removing jobid %d from job_statistics\n", job_stats->JobId);
         job_statistics->remove(job_stats);

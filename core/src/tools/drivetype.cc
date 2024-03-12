@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,7 +49,7 @@ static void usage(int exit_code)
   exit(exit_code);
 }
 
-int DisplayDrive(char* drive, bool display_local, int verbose)
+int DisplayDrive(char* drive, bool display_local, bool verbose)
 {
   char dt[100];
   int status = BEXIT_SUCCESS;
@@ -71,7 +71,7 @@ int DisplayDrive(char* drive, bool display_local, int verbose)
 
 int main(int argc, char* const* argv)
 {
-  int verbose = 0;
+  bool verbose_flag = false;
   int ch, i;
   bool display_local = false;
   bool display_all = false;
@@ -86,7 +86,7 @@ int main(int argc, char* const* argv)
   while ((ch = getopt(argc, argv, "alv?")) != -1) {
     switch (ch) {
       case 'v':
-        verbose = 1;
+        verbose_flag = true;
         break;
       case 'l':
         display_local = true;
@@ -110,7 +110,7 @@ int main(int argc, char* const* argv)
     /* Try all letters */
     for (drive = 'A'; drive <= 'Z'; drive++) {
       Bsnprintf(buf, sizeof(buf), "%c:/", drive);
-      DisplayDrive(buf, display_local, verbose);
+      DisplayDrive(buf, display_local, verbose_flag);
     }
     exit(BEXIT_SUCCESS);
   }
@@ -119,7 +119,7 @@ int main(int argc, char* const* argv)
 
   int exit_status = BEXIT_SUCCESS;
   for (i = 0; i < argc; --argc, ++argv) {
-    exit_status = DisplayDrive(*argv, display_local, verbose);
+    exit_status = DisplayDrive(*argv, display_local, verbose_flag);
   }
   exit(exit_status);
 }

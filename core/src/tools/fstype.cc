@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@ static void usage(int exit_status)
 int main(int argc, char* const* argv)
 {
   char fs[1000];
-  int verbose = 0;
+  bool verbose_flag = false;
   int exit_status = BEXIT_SUCCESS;
   int ch, i;
 
@@ -64,7 +64,7 @@ int main(int argc, char* const* argv)
   while ((ch = getopt(argc, argv, "v?")) != -1) {
     switch (ch) {
       case 'v':
-        verbose = 1;
+        verbose_flag = true;
         break;
       case '?':
         usage(BEXIT_SUCCESS);
@@ -82,7 +82,7 @@ int main(int argc, char* const* argv)
 
   for (i = 0; i < argc; --argc, ++argv) {
     if (fstype(*argv, fs, sizeof(fs))) {
-      if (verbose) {
+      if (verbose_flag) {
         printf("%s: %s\n", *argv, fs);
       } else {
         puts(fs);

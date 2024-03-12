@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -209,7 +209,7 @@ bool BareosDb::QueryDB(const char* file,
     msg_(file, line, errmsg, T_("query %s failed:\n%s\n"), select_cmd,
          sql_strerror());
     j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
-    if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
+    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
     return false;
   }
 
@@ -232,7 +232,7 @@ int BareosDb::InsertDB(const char* file,
     msg_(file, line, errmsg, T_("insert %s failed:\n%s\n"), select_cmd,
          sql_strerror());
     j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
-    if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
+    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
     return -1;
   }
   num_rows = SqlAffectedRows();
@@ -240,7 +240,7 @@ int BareosDb::InsertDB(const char* file,
     char ed1[30];
     msg_(file, line, errmsg, T_("Insertion problem: affected_rows=%s\n"),
          edit_uint64(num_rows, ed1));
-    if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
+    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
     return num_rows;
   }
   changes++;
@@ -261,7 +261,7 @@ int BareosDb::UpdateDB(const char* file,
     msg_(file, line, errmsg, T_("update %s failed:\n%s\n"), UpdateCmd,
          sql_strerror());
     j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
-    if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd); }
+    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd); }
     return -1;
   }
 
@@ -284,7 +284,7 @@ int BareosDb::DeleteDB(const char* file,
     msg_(file, line, errmsg, T_("delete %s failed:\n%s\n"), DeleteCmd,
          sql_strerror());
     j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
-    if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", DeleteCmd); }
+    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", DeleteCmd); }
     return -1;
   }
   changes++;

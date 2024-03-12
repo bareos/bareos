@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -610,28 +610,28 @@ static void UpdateAttribute(JobControlRecord* jcr,
         } else {
           // Update digest in catalog
           char digestbuf[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
-          int len = 0;
+          int digest_len = 0;
           int type = CRYPTO_DIGEST_NONE;
 
           switch (Stream) {
             case STREAM_MD5_DIGEST:
-              len = CRYPTO_DIGEST_MD5_SIZE;
+              digest_len = CRYPTO_DIGEST_MD5_SIZE;
               type = CRYPTO_DIGEST_MD5;
               break;
             case STREAM_SHA1_DIGEST:
-              len = CRYPTO_DIGEST_SHA1_SIZE;
+              digest_len = CRYPTO_DIGEST_SHA1_SIZE;
               type = CRYPTO_DIGEST_SHA1;
               break;
             case STREAM_SHA256_DIGEST:
-              len = CRYPTO_DIGEST_SHA256_SIZE;
+              digest_len = CRYPTO_DIGEST_SHA256_SIZE;
               type = CRYPTO_DIGEST_SHA256;
               break;
             case STREAM_SHA512_DIGEST:
-              len = CRYPTO_DIGEST_SHA512_SIZE;
+              digest_len = CRYPTO_DIGEST_SHA512_SIZE;
               type = CRYPTO_DIGEST_SHA512;
               break;
             case STREAM_XXH128_DIGEST:
-              len = CRYPTO_DIGEST_XXH128_SIZE;
+              digest_len = CRYPTO_DIGEST_XXH128_SIZE;
               type = CRYPTO_DIGEST_XXH128;
               break;
             default:
@@ -641,7 +641,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
                    Stream);
           }
 
-          BinToBase64(digestbuf, sizeof(digestbuf), fname, len, true);
+          BinToBase64(digestbuf, sizeof(digestbuf), fname, digest_len, true);
 
           Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
                 digestbuf, Stream);

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -365,13 +365,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   return (error == 0);
 }
 
-static void ConfigBeforeCallback(ConfigurationParser& my_config)
+static void ConfigBeforeCallback(ConfigurationParser& config)
 {
   std::map<int, std::string> map{
       {R_MONITOR, "R_MONITOR"}, {R_DIRECTOR, "R_DIRECTOR"},
       {R_CLIENT, "R_CLIENT"},   {R_STORAGE, "R_STORAGE"},
       {R_CONSOLE, "R_CONSOLE"}, {R_CONSOLE_FONT, "R_CONSOLE_FONT"}};
-  my_config.InitializeQualifiedResourceNameTypeConverter(map);
+  config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
 static void ConfigReadyCallback(ConfigurationParser&) {}
@@ -391,8 +391,6 @@ ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  ResourceTable* resource_definitions = my_config->resource_definitions_;
-
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bareos-tray-monitor"));
@@ -404,10 +402,10 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* bareos_tray_monitor = json_object();
   json_object_set_new(resource, "bareos-tray-monitor", bareos_tray_monitor);
 
-  for (int r = 0; resource_definitions[r].name; r++) {
-    ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set_new(bareos_tray_monitor, resource.name,
-                        json_items(resource.items));
+  for (int r = 0; my_config->resource_definitions_[r].name; r++) {
+    ResourceTable& resource_table = my_config->resource_definitions_[r];
+    json_object_set_new(bareos_tray_monitor, resource_table.name,
+                        json_items(resource_table.items));
   }
 
   char* const json_str = json_dumps(json, JSON_INDENT(2));

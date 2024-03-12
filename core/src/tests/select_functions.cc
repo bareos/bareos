@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,9 +62,9 @@ class JobTypeSelection : public testing::Test {
   void SetUp() override { ua = directordaemon::new_ua_context(&jcr); }
 
   void TearDown() override { FreeUaContext(ua); }
-  void FakeListCommand(directordaemon::UaContext* ua, std::string arguments)
+  void FakeListCommand(directordaemon::UaContext* t_ua, std::string arguments)
   {
-    FakeCmd(ua, "list jobs " + arguments);
+    FakeCmd(t_ua, "list jobs " + arguments);
   }
   void FakeListJobTypeCommand(std::string argument_value)
   {
@@ -198,9 +198,9 @@ class JobStatusSelection : public testing::Test {
   void SetUp() override { ua = directordaemon::new_ua_context(&jcr); }
 
   void TearDown() override { FreeUaContext(ua); }
-  void FakeListCommand(directordaemon::UaContext* ua, std::string arguments)
+  void FakeListCommand(directordaemon::UaContext* t_ua, std::string arguments)
   {
-    FakeCmd(ua, "list jobs " + arguments);
+    FakeCmd(t_ua, "list jobs " + arguments);
   }
   void FakeListJobStatusCommand(std::string argument_value)
   {

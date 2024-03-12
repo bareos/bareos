@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -70,9 +70,9 @@ static void DoExtract(char* devname,
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
 static Device* dev = nullptr;
-static DeviceControlRecord* dcr;
-static BareosFilePacket bfd;
-static JobControlRecord* jcr;
+static DeviceControlRecord* g_dcr;
+static BareosFilePacket g_bfd;
+static JobControlRecord* g_jcr;
 static FindFilesPacket* ff;
 static bool extract = false;
 static int non_support_data = 0;
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
   OSDependentInit();
 
   ff = init_find_files();
-  binit(&bfd);
+  binit(&g_bfd);
 
   CLI::App bextract_app;
   InitCLIApp(bextract_app, "The Bareos Extraction tool.", 2000);
@@ -345,7 +345,7 @@ static inline void PopDelayedDataStreams()
       case STREAM_ACL_FREEBSD_NFS4_ACL:
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
-        parse_acl_streams(jcr, &acl_data, dds->stream, dds->content,
+        parse_acl_streams(g_jcr, &acl_data, dds->stream, dds->content,
                           dds->content_length);
         free(dds->content);
         break;
@@ -359,12 +359,12 @@ static inline void PopDelayedDataStreams()
       case STREAM_XATTR_FREEBSD:
       case STREAM_XATTR_LINUX:
       case STREAM_XATTR_NETBSD:
-        ParseXattrStreams(jcr, &xattr_data, dds->stream, dds->content,
+        ParseXattrStreams(g_jcr, &xattr_data, dds->stream, dds->content,
                           dds->content_length);
         free(dds->content);
         break;
       default:
-        Jmsg(jcr, M_WARNING, 0,
+        Jmsg(g_jcr, M_WARNING, 0,
              T_("Unknown stream=%d ignored. This shouldn't happen!\n"),
              dds->stream);
         break;
@@ -383,7 +383,7 @@ static inline void PopDelayedDataStreams()
 static void ClosePreviousStream(void)
 {
   PopDelayedDataStreams();
-  SetAttributes(jcr, attr, &bfd);
+  SetAttributes(g_jcr, attr, &g_bfd);
 }
 
 static void DoExtract(char* devname,
@@ -396,17 +396,19 @@ static void DoExtract(char* devname,
 
   EnableBackupPrivileges(nullptr, 1);
 
-  dcr = new DeviceControlRecord;
-  jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
-                 true); /* read device */
-  if (!jcr) { exit(BEXIT_FAILURE); }
-  dev = jcr->sd_impl->read_dcr->dev;
+  g_dcr = new DeviceControlRecord;
+  g_jcr = SetupJcr("bextract", devname, bsr, director, g_dcr, VolumeName,
+                   true); /* read device */
+  if (!g_jcr) { exit(BEXIT_FAILURE); }
+  dev = g_jcr->sd_impl->read_dcr->dev;
   if (!dev) { exit(BEXIT_FAILURE); }
-  dcr = jcr->sd_impl->read_dcr;
+  g_dcr = g_jcr->sd_impl->read_dcr;
 
   // Let SD plugins setup the record translation
-  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
-    Jmsg(jcr, M_FATAL, 0, T_("bSdEventSetupRecordTranslation call failed!\n"));
+  if (GeneratePluginEvent(g_jcr, bSdEventSetupRecordTranslation, g_dcr)
+      != bRC_OK) {
+    Jmsg(g_jcr, M_FATAL, 0,
+         T_("bSdEventSetupRecordTranslation call failed!\n"));
   }
 
   // Make sure where directory exists and that it is a directory
@@ -419,26 +421,26 @@ static void DoExtract(char* devname,
     Emsg1(M_ERROR_TERM, 0, T_("%s must be a directory.\n"), where);
   }
 
-  free(jcr->where);
-  jcr->where = strdup(where);
-  attr = new_attr(jcr);
+  free(g_jcr->where);
+  g_jcr->where = strdup(where);
+  attr = new_attr(g_jcr);
 
-  jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
+  g_jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
 
   uint32_t decompress_buf_size;
 
-  SetupDecompressionBuffers(jcr, &decompress_buf_size);
+  SetupDecompressionBuffers(g_jcr, &decompress_buf_size);
   if (decompress_buf_size > 0) {
     // See if we need to create a new compression buffer or make sure the
     // existing is big enough.
-    if (!jcr->compress.inflate_buffer) {
-      jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
-      jcr->compress.inflate_buffer_size = decompress_buf_size;
+    if (!g_jcr->compress.inflate_buffer) {
+      g_jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
+      g_jcr->compress.inflate_buffer_size = decompress_buf_size;
     } else {
-      if (decompress_buf_size > jcr->compress.inflate_buffer_size) {
-        jcr->compress.inflate_buffer = ReallocPoolMemory(
-            jcr->compress.inflate_buffer, decompress_buf_size);
-        jcr->compress.inflate_buffer_size = decompress_buf_size;
+      if (decompress_buf_size > g_jcr->compress.inflate_buffer_size) {
+        g_jcr->compress.inflate_buffer = ReallocPoolMemory(
+            g_jcr->compress.inflate_buffer, decompress_buf_size);
+        g_jcr->compress.inflate_buffer_size = decompress_buf_size;
       }
     }
   }
@@ -446,11 +448,11 @@ static void DoExtract(char* devname,
   acl_data.last_fname = GetPoolMemory(PM_FNAME);
   xattr_data.last_fname = GetPoolMemory(PM_FNAME);
 
-  ReadRecords(dcr, RecordCb, MountNextReadVolume);
+  ReadRecords(g_dcr, RecordCb, MountNextReadVolume);
 
   /* If output file is still open, it was the last one in the
    * archive since we just hit an end of file, so close the file. */
-  if (IsBopen(&bfd)) { ClosePreviousStream(); }
+  if (IsBopen(&g_bfd)) { ClosePreviousStream(); }
   FreeAttr(attr);
 
   FreePoolMemory(acl_data.last_fname);
@@ -462,15 +464,15 @@ static void DoExtract(char* devname,
   }
 
 
-  CleanDevice(jcr->sd_impl->dcr);
+  CleanDevice(g_jcr->sd_impl->dcr);
 
   delete dev;
 
-  FreeDeviceControlRecord(dcr);
+  FreeDeviceControlRecord(g_dcr);
 
-  CleanupCompression(jcr);
-  FreePlugins(jcr);
-  FreeJcr(jcr);
+  CleanupCompression(g_jcr);
+  FreePlugins(g_jcr);
+  FreeJcr(g_jcr);
   UnloadSdPlugins();
 
 
@@ -517,7 +519,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
        * close the output file.
        */
       if (extract) {
-        if (!IsBopen(&bfd)) {
+        if (!IsBopen(&g_bfd)) {
           Emsg0(M_ERROR, 0,
                 T_("Logic error output file should be open but is not.\n"));
         }
@@ -553,7 +555,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         }
 
         extract = false;
-        status = CreateFile(jcr, attr, &bfd, REPLACE_ALWAYS);
+        status = CreateFile(jcr, attr, &g_bfd, REPLACE_ALWAYS);
         switch (status) {
           case CF_ERROR:
           case CF_SKIP:
@@ -593,7 +595,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           unser_uint64(faddr);
           if (fileAddr != faddr) {
             fileAddr = faddr;
-            if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
+            if (blseek(&g_bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
               BErrNo be;
               Emsg2(M_ERROR_TERM, 0, T_("Seek error on %s: %s\n"), attr->ofname,
                     be.bstrerror());
@@ -605,7 +607,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         }
         total += wsize;
         Dmsg2(8, "Write %u bytes, total=%u\n", wsize, total);
-        StoreData(&bfd, wbuf, wsize);
+        StoreData(&g_bfd, wbuf, wsize);
         fileAddr += wsize;
       }
       break;
@@ -632,7 +634,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
           if (fileAddr != faddr) {
             fileAddr = faddr;
-            if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
+            if (blseek(&g_bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
               BErrNo be;
 
               Emsg3(M_ERROR, 0, T_("Seek to %s error on %s: ERR=%s\n"),
@@ -650,7 +652,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
                            false)) {
           Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n",
                 wsize, total);
-          StoreData(&bfd, wbuf, wsize);
+          StoreData(&g_bfd, wbuf, wsize);
           total += wsize;
           fileAddr += wsize;
           Dmsg2(100, "Compress len=%d uncompressed=%d\n", rec->data_len, wsize);
@@ -734,7 +736,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     default:
       // If extracting, weird stream (not 1 or 2), close output file anyway
       if (extract) {
-        if (!IsBopen(&bfd)) {
+        if (!IsBopen(&g_bfd)) {
           Emsg0(M_ERROR, 0,
                 T_("Logic error output file should be open but is not.\n"));
         }

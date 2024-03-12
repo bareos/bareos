@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,7 +138,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
 
             // Store new Volume name
             q = dev->VolHdr.VolumeName;
-            for (int i = 0; *p != ' ' && i < 6; i++) { *q++ = *p++; }
+            for (int j = 0; *p != ' ' && j < 6; j++) { *q++ = *p++; }
             *q = 0;
             Dmsg0(100, "Call reserve_volume\n");
             //  why is this reserve_volume() needed???? KES

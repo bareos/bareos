@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,11 +109,11 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
     if (name_max < 1024) { name_max = 1024; }
 
     if (!(dp = opendir(device_resource->mount_point))) {
-      BErrNo be;
+      BErrNo be2;
       dcr->dev->dev_errno = errno;
       Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
             device_resource->mount_point, dcr->dev->print_name(),
-            be.bstrerror());
+            be2.bstrerror());
       goto get_out;
     }
 
@@ -219,17 +219,17 @@ int unix_file_device::d_open(const char* pathname, int flags, int mode)
   return ::open(pathname, flags, mode);
 }
 
-ssize_t unix_file_device::d_read(int fd, void* buffer, size_t count)
+ssize_t unix_file_device::d_read(int t_fd, void* buffer, size_t count)
 {
-  return ::read(fd, buffer, count);
+  return ::read(t_fd, buffer, count);
 }
 
-ssize_t unix_file_device::d_write(int fd, const void* buffer, size_t count)
+ssize_t unix_file_device::d_write(int t_fd, const void* buffer, size_t count)
 {
-  return ::write(fd, buffer, count);
+  return ::write(t_fd, buffer, count);
 }
 
-int unix_file_device::d_close(int fd) { return ::close(fd); }
+int unix_file_device::d_close(int t_fd) { return ::close(t_fd); }
 
 int unix_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1788,7 +1788,6 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
                                        bool inherited,
                                        bool verbose)
 {
-  PoolMem value;
   PoolMem temp;
   bool print_item = false;
 
@@ -1857,6 +1856,7 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
       s_password* password = GetItemVariablePointer<s_password*>(item);
 
       if (password && password->value != NULL) {
+        PoolMem value;
         if (hide_sensitive_data) {
           Mmsg(value, "****************");
         } else {

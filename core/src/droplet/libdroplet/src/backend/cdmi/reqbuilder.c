@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2024 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -39,7 +39,7 @@
 
 /** @file */
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+// #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt, ...)
 
 const char* dpl_cdmi_who_str(dpl_ace_who_t who)
@@ -215,7 +215,7 @@ dpl_status_t dpl_cdmi_add_sysmd_to_req(const dpl_sysmd_t* sysmd, dpl_req_t* req)
 
     for (i = 0; i < n_aces; i++) {
       const char* str;
-      char buf[256];
+      char buf2[256];
       dpl_value_t row_value;
 
       tmp_dict2 = dpl_dict_new(13);
@@ -236,25 +236,25 @@ dpl_status_t dpl_cdmi_add_sysmd_to_req(const dpl_sysmd_t* sysmd, dpl_req_t* req)
         goto end;
       }
 
-      snprintf(buf, sizeof(buf), "0x%08x", acesp[i].type);
+      snprintf(buf2, sizeof(buf2), "0x%08x", acesp[i].type);
 
-      ret2 = dpl_dict_add(tmp_dict2, "acetype", buf, 0);
+      ret2 = dpl_dict_add(tmp_dict2, "acetype", buf2, 0);
       if (DPL_SUCCESS != ret2) {
         ret = ret2;
         goto end;
       }
 
-      snprintf(buf, sizeof(buf), "0x%08x", acesp[i].flag);
+      snprintf(buf2, sizeof(buf2), "0x%08x", acesp[i].flag);
 
-      ret2 = dpl_dict_add(tmp_dict2, "aceflags", buf, 0);
+      ret2 = dpl_dict_add(tmp_dict2, "aceflags", buf2, 0);
       if (DPL_SUCCESS != ret2) {
         ret = ret2;
         goto end;
       }
 
-      snprintf(buf, sizeof(buf), "0x%08x", acesp[i].access_mask);
+      snprintf(buf2, sizeof(buf2), "0x%08x", acesp[i].access_mask);
 
-      ret2 = dpl_dict_add(tmp_dict2, "acemask", buf, 0);
+      ret2 = dpl_dict_add(tmp_dict2, "acemask", buf2, 0);
       if (DPL_SUCCESS != ret2) {
         ret = ret2;
         goto end;

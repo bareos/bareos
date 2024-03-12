@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,13 +44,13 @@ class XxhashDigest : public Digest {
   XxhashDigestState state{};
 
  public:
-  XxhashDigest(JobControlRecord* jcr, crypto_digest_t type);
+  XxhashDigest(JobControlRecord* t_jcr, crypto_digest_t t_type);
   virtual bool Update(const uint8_t* data, uint32_t length) override;
   virtual bool Finalize(uint8_t* data, uint32_t* length) override;
 };
 
-XxhashDigest::XxhashDigest(JobControlRecord* jcr, crypto_digest_t type)
-    : Digest(jcr, type)
+XxhashDigest::XxhashDigest(JobControlRecord* t_jcr, crypto_digest_t t_type)
+    : Digest(t_jcr, t_type)
 {
   if (XXH3_128bits_reset(*state) == XXH_ERROR) { throw DigestInitException{}; }
 }

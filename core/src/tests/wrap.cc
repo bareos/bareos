@@ -298,36 +298,37 @@ TEST(Aes, unwrap)
 
 TEST(Aes, test_val)
 {
-  uint8_t kek[] = {
+  uint8_t test_kek[] = {
       0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
       0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
   };
 
-  uint8_t key[] = {
+  uint8_t test_key[] = {
       0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
       0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
   };
 
-  uint8_t wrapped[] = {
+  uint8_t test_wrapped[] = {
       0x1F, 0xA6, 0x8B, 0x0A, 0x81, 0x12, 0xB4, 0x47, 0xAE, 0xF3, 0x4B, 0xD8,
       0xFB, 0x5A, 0x7B, 0x82, 0x9D, 0x3E, 0x86, 0x23, 0x71, 0xD2, 0xCF, 0xE5,
   };
 
-  uint8_t out[sizeof(wrapped)];
-  uint8_t out2[sizeof(key)];
+  uint8_t out[sizeof(test_wrapped)];
+  uint8_t out2[sizeof(test_key)];
 
-  auto payload_size = sizeof(key);
+  auto payload_size = sizeof(test_key);
 
-  OldAesWrap(kek, payload_size / 8, key, out);
+  OldAesWrap(test_kek, payload_size / 8, test_key, out);
 
   for (std::size_t i = 0; i < (payload_size + 8); ++i) {
-    EXPECT_EQ((unsigned)wrapped[i], (unsigned)out[i])
+    EXPECT_EQ((unsigned)test_wrapped[i], (unsigned)out[i])
         << "at index " << i << ".";
   }
 
-  OldAesUnwrap(kek, payload_size / 8, out, out2);
+  OldAesUnwrap(test_kek, payload_size / 8, out, out2);
 
   for (std::size_t i = 0; i < payload_size; ++i) {
-    EXPECT_EQ((unsigned)key[i], (unsigned)out2[i]) << "at index " << i << ".";
+    EXPECT_EQ((unsigned)test_key[i], (unsigned)out2[i])
+        << "at index " << i << ".";
   }
 }

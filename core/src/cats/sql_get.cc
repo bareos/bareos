@@ -606,7 +606,6 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
-      char ed1[30];
       Mmsg1(errmsg, T_("More than one Pool!: %s\n"),
             edit_uint64(num_rows, ed1));
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -696,8 +695,6 @@ bool BareosDb::GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
-      char ed1[30];
-
       Mmsg1(errmsg, T_("More than one Storage!: %s\n"),
             edit_uint64(num_rows, ed1));
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -865,7 +862,6 @@ int BareosDb::GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
-      char ed1[30];
       Mmsg1(errmsg, T_("Error got %s FileSets but expected only one!\n"),
             edit_uint64(num_rows, ed1));
       SqlDataSeek(num_rows - 1);
@@ -1095,7 +1091,6 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   }
 
   if (QUERY_DB(jcr, cmd)) {
-    char ed1[50];
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("More than one Volume!: %s\n"),

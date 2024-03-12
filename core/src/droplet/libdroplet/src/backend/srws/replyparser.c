@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2024 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -35,7 +35,7 @@
 #include "dropletp.h"
 #include <droplet/srws/replyparser.h>
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+// #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt, ...)
 
 struct mdparse_data {
@@ -115,13 +115,12 @@ dpl_status_t dpl_srws_get_metadatum_from_header(
   char* orig;
   int orig_len;
   struct mdparse_data arg;
-  int value_len;
 
   if (!strcmp(header, DPL_SRWS_X_BIZ_USERMD)) {
     DPRINTF("val=%s\n", value);
 
     // decode base64
-    value_len = strlen(value);
+    int value_len = strlen(value);
     if (value_len == 0) return DPL_EINVAL;
 
     orig_len = DPL_BASE64_ORIG_LENGTH(value_len);

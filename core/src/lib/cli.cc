@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -106,19 +106,19 @@ class BareosCliFormatter : public CLI::Formatter {
 
   std::ostream& format_paragraph(std::ostream& out,
                                  const std::string& text,
-                                 const std::string& indent) const
+                                 const std::string& t_indent) const
   {
     std::istringstream text_iss(text);
 
     std::string word;
-    unsigned characters_written = indent.size();
+    unsigned characters_written = t_indent.size();
 
-    out << indent;
+    out << t_indent;
     while (text_iss >> word) {
       if (word.size() + characters_written > max_line_length) {
         out << "\n";
-        out << indent;
-        characters_written = indent.size();
+        out << t_indent;
+        characters_written = t_indent.size();
       }
       out << word << " ";
       characters_written += word.size() + 1;
@@ -191,7 +191,7 @@ void AddDebugOptions(CLI::App& app)
 
 void AddVerboseOption(CLI::App& app)
 {
-  app.add_flag("-v,--verbose", verbose, "Verbose user messages.");
+  app.add_flag("-v,--verbose", g_verbose, "Verbose user messages.");
 }
 
 void AddUserAndGroupOptions(CLI::App& app,

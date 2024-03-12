@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -170,8 +170,8 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%zi", ss_int), 4);
   EXPECT_STREQ(dest, "-123");
 
-  unsigned int uint = 123;
-  EXPECT_EQ(Bsnprintf(dest, 100, "%u", uint), 3);
+  unsigned int uns_int = 123;
+  EXPECT_EQ(Bsnprintf(dest, 100, "%u", uns_int), 3);
   EXPECT_STREQ(dest, "123");
 
   unsigned short usint = 123;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -244,9 +244,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
   if (rctx.append) { jcr->sd_impl->dcr->SetWillWrite(); }
 
   if (!jcr->sd_impl->dcr) {
-    BareosSocket* dir = jcr->dir_bsock;
-    dir->fsend(T_("3939 Could not get dcr\n"));
-    Dmsg1(debuglevel, ">dird: %s", dir->msg);
+    jcr->dir_bsock->fsend(T_("3939 Could not get dcr\n"));
+    Dmsg1(debuglevel, ">dird: %s", jcr->dir_bsock->msg);
     ok = false;
   }
 

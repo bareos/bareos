@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,9 +63,9 @@ static std::vector<std::size_t> bufsizes(std::size_t count)
   return sizes;
 }
 
-int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
+int unix_tape_device::d_ioctl(int t_fd, ioctl_req_t request, char* op)
 {
-  return ::ioctl(fd, request, op);
+  return ::ioctl(t_fd, request, op);
 }
 
 unix_tape_device::unix_tape_device()
@@ -73,9 +73,9 @@ unix_tape_device::unix_tape_device()
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
-ssize_t unix_tape_device::d_read(int fd, void* buffer, size_t count)
+ssize_t unix_tape_device::d_read(int t_fd, void* buffer, size_t count)
 {
-  ssize_t ret = ::read(fd, buffer, count);
+  ssize_t ret = ::read(t_fd, buffer, count);
   /* If the driver fails to `read()` with `ENOMEM`, then the provided buffer
    * was too small. By re-reading with a temporary buffer that is enlarged
    * step-by-step, we can read the block and return the first `count` bytes.
@@ -95,7 +95,7 @@ ssize_t unix_tape_device::d_read(int fd, void* buffer, size_t count)
       }
       block_num++;  // re-increment the block counter bsr() just decremented
       std::vector<char> tmpbuf(bufsize);
-      if (auto tmpret = ::read(fd, tmpbuf.data(), tmpbuf.size());
+      if (auto tmpret = ::read(t_fd, tmpbuf.data(), tmpbuf.size());
           tmpret != -1) {
         memcpy(buffer, tmpbuf.data(), count);
         ret = std::min(tmpret, static_cast<ssize_t>(count));

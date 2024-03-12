@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -282,9 +282,9 @@ SchedulerPrivate::SchedulerPrivate()
 }
 
 SchedulerPrivate::SchedulerPrivate(
-    std::unique_ptr<SchedulerTimeAdapter> time_adapter,
+    std::unique_ptr<SchedulerTimeAdapter> t_time_adapter,
     std::function<void(JobControlRecord*)> ExecuteJobCallback)
-    : time_adapter{std::move(time_adapter)}
+    : time_adapter{std::move(t_time_adapter)}
     , ExecuteJobCallback_{std::move(std::move(ExecuteJobCallback))}
 {
   // constructor used for tests to inject mocked time adapter and callbacks

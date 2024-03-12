@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -141,7 +141,10 @@ struct Digest {
   JobControlRecord* jcr;
   crypto_digest_t type;
 
-  Digest(JobControlRecord* jcr, crypto_digest_t type) : jcr(jcr), type(type) {}
+  Digest(JobControlRecord* t_jcr, crypto_digest_t t_type)
+      : jcr(t_jcr), type(t_type)
+  {
+  }
   virtual ~Digest() = default;
   virtual bool Update(const uint8_t* data, uint32_t length) = 0;
   virtual bool Finalize(uint8_t* data, uint32_t* length) = 0;

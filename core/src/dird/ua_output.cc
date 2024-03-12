@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -346,27 +346,23 @@ bool list_cmd(UaContext* ua, const char* cmd)
 
 static int GetJobidFromCmdline(UaContext* ua)
 {
-  int i, jobid;
+  int jobid;
   JobDbRecord jr;
   ClientDbRecord cr;
 
-  i = FindArgWithValue(ua, NT_("ujobid"));
-  if (i >= 0) {
-    bstrncpy(jr.Job, ua->argv[i], MAX_NAME_LENGTH);
+  if (const char* ujobid = GetArgValue(ua, NT_("ujobid"))) {
+    bstrncpy(jr.Job, ujobid, MAX_NAME_LENGTH);
     jr.JobId = 0;
     if (ua->db->GetJobRecord(ua->jcr, &jr)) {
       jobid = jr.JobId;
     } else {
       return -1;
     }
+  } else if (const char* jobid_str = GetArgValue(ua, NT_("jobid"))) {
+    jr.JobId = str_to_int64(jobid_str);
   } else {
-    i = FindArgWithValue(ua, NT_("jobid"));
-    if (i >= 0) {
-      jr.JobId = str_to_int64(ua->argv[i]);
-    } else {
-      jobid = 0;
-      goto bail_out;
-    }
+    jobid = 0;
+    goto bail_out;
   }
 
   if (ua->db->GetJobRecord(ua->jcr, &jr)) {
@@ -460,24 +456,22 @@ static void SetQueryRange(std::string& query_range,
   }
 
   // Apply any limit
-  int i = FindArgWithValue(ua, NT_("limit"));
-  if (i >= 0) {
+  if (const char* limit = GetArgValue(ua, NT_("limit"))) {
     try {
-      jr->limit = std::stoull(ua->argv[i]);
+      jr->limit = std::stoull(limit);
     } catch (...) {
-      Dmsg1(50, "Could not convert %s to limit value.\n", ua->argv[i]);
+      Dmsg1(50, "Could not convert %s to limit value.\n", limit);
       jr->limit = 0;
     }
     ua->send->AddLimitFilterTuple(jr->limit);
     query_range.append(" LIMIT " + std::to_string(jr->limit));
 
     // offset is only valid, if limit is given
-    i = FindArgWithValue(ua, NT_("offset"));
-    if (i >= 0) {
+    if (const char* offset = GetArgValue(ua, NT_("offset"))) {
       try {
-        jr->offset = std::stoull(ua->argv[i]);
+        jr->offset = std::stoull(offset);
       } catch (...) {
-        Dmsg1(50, "Could not convert %s to offset value.\n", ua->argv[i]);
+        Dmsg1(50, "Could not convert %s to offset value.\n", offset);
         jr->offset = 0;
       }
       ua->send->AddOffsetFilterTuple(jr->offset);
@@ -529,12 +523,11 @@ static bool ListMedia(UaContext* ua,
        * Is a specific pool wanted? */
 
       PoolDbRecord pr;
-      int i = FindArgWithValue(ua, NT_("pool"));
-      if (i >= 0) {
-        bstrncpy(pr.Name, ua->argv[i], sizeof(pr.Name));
+      if (const char* pool = GetArgValue(ua, NT_("pool"))) {
+        bstrncpy(pr.Name, pool, sizeof(pr.Name));
 
         if (!GetPoolDbr(ua, &pr)) {
-          ua->ErrorMsg(T_("Pool %s doesn't exist.\n"), ua->argv[i]);
+          ua->ErrorMsg(T_("Pool %s doesn't exist.\n"), pool);
           return true;
         }
 
@@ -584,7 +577,7 @@ static bool ListMedia(UaContext* ua,
           }
 
           ua->send->ObjectStart("volumes");
-          for (i = 0; i < num_pools; i++) {
+          for (int i = 0; i < num_pools; i++) {
             pr.PoolId = ids[i];
             if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
               if (ua->AclAccessOk(Pool_ACL, pr.Name, false)) {
@@ -625,18 +618,12 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   // days or hours given?
   utime_t now = (utime_t)time(NULL);
   time_t schedtime = 0;
-  int argument;
-  argument = FindArgWithValue(ua, NT_("days"));
-  int days = 0;
-  if (argument > 0) {
-    days = str_to_int64(ua->argv[argument]);
+  if (const char* value = GetArgValue(ua, NT_("days"))) {
+    int days = str_to_int64(value);
     schedtime = now - secs_in_day * days; /* Days in the past */
   }
-
-  argument = FindArgWithValue(ua, NT_("hours"));
-  int hours = 0;
-  if (argument > 0) {
-    hours = str_to_int64(ua->argv[argument]);
+  if (const char* value = GetArgValue(ua, NT_("hours"))) {
+    int hours = str_to_int64(value);
     schedtime = now - secs_in_hour * hours; /* Hours in the past */
   }
 
@@ -644,11 +631,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   JobDbRecord jr;
   SetQueryRange(query_range, ua, &jr);
 
-  char* clientname = nullptr;
-  argument = FindArgWithValue(ua, NT_("client"));
-  if (argument >= 0) {
-    if (ua->GetClientResWithName(ua->argv[argument])) {
-      clientname = ua->argv[argument];
+  const char* clientname = nullptr;
+  if (const char* value = GetArgValue(ua, NT_("client"))) {
+    if (ua->GetClientResWithName(value)) {
+      clientname = value;
     } else {
       ua->ErrorMsg(T_("invalid client parameter\n"));
       return false;
@@ -679,9 +665,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
   ListCmdOptions optionslist(ua);
 
-  char* volumename = nullptr;
-  char* poolname = nullptr;
-  int jobid;
+  int jobid{0};
 
   // Select what to do based on the first argument.
   if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
@@ -689,18 +673,14 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
            || Bstrcasecmp(ua->argk[1], NT_("jobname")))
           && ua->argv[1])) {
     // List jobs or List job=xxx
-    argument = FindArgWithValue(ua, NT_("jobname"));
-    if (argument < 0) { argument = FindArgWithValue(ua, NT_("job")); }
-    if (argument >= 0) {
+    if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
+                           || (value = GetArgValue(ua, NT_("job")))) {
       jr.JobId = 0;
-      bstrncpy(jr.Name, ua->argv[argument], MAX_NAME_LENGTH);
+      bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
     }
 
-    argument = FindArgWithValue(ua, NT_("volume"));
-    if (argument >= 0) { volumename = ua->argv[argument]; }
-
-    argument = FindArgWithValue(ua, NT_("pool"));
-    if (argument >= 0) { poolname = ua->argv[argument]; }
+    const char* volumename = GetArgValue(ua, NT_("volume"));
+    const char* poolname = GetArgValue(ua, NT_("pool"));
 
     switch (llist) {
       case VERT_LIST:
@@ -752,8 +732,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       if (jobid > 0) {
         jr.JobId = jobid;
 
-        argument = FindArgWithValue(ua, NT_("pool"));
-        if (argument >= 0) { poolname = ua->argv[argument]; }
+        const char* poolname = GetArgValue(ua, NT_("pool"));
 
         switch (llist) {
           case VERT_LIST:
@@ -784,10 +763,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
         SetQueryRange(query_range, ua, &jr);
 
-        ua->db->ListJobRecords(
-            ua->jcr, &jr, query_range.c_str(), clientname, jobstatuslist,
-            joblevel_list, jobtypes, volumename, poolname, schedtime,
-            optionslist.last, optionslist.count, ua->send, llist);
+        ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
+                               jobstatuslist, joblevel_list, jobtypes, nullptr,
+                               poolname, schedtime, optionslist.last,
+                               optionslist.count, ua->send, llist);
       }
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
@@ -814,8 +793,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     int filesetid = 0;
 
     // List FileSet
-    argument = FindArgWithValue(ua, NT_("filesetid"));
-    if (argument > 0) { filesetid = str_to_int64(ua->argv[argument]); }
+    if (const char* value = GetArgValue(ua, NT_("filesetid"))) {
+      filesetid = str_to_int64(value);
+    }
 
     jobid = GetJobidFromCmdline(ua);
     if (jobid > 0 || filesetid > 0) {
@@ -912,7 +892,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetQueryRange(query_range, ua, &jr);
 
     ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
-
   } else if (Bstrcasecmp(ua->argk[1], NT_("clients"))) {
     // List CLIENTS
     SetAclFilter(ua, 1, Client_ACL);
@@ -964,9 +943,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List next volume
     days = 1;
 
-    argument = FindArgWithValue(ua, NT_("days"));
-    if (argument >= 0) {
-      days = atoi(ua->argv[argument]);
+    if (const char* value = GetArgValue(ua, NT_("days"))) {
+      days = atoi(value);
       if ((days < 0) || (days > kDefaultNumberOfDays)) {
         ua->WarningMsg(T_("Ignoring invalid value for days. Max is %d.\n"),
                        kDefaultNumberOfDays);
@@ -976,11 +954,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     ListNextvol(ua, days);
   } else if (Bstrcasecmp(ua->argk[1], NT_("copies"))) {
     // List copies
-    argument = FindArgWithValue(ua, NT_("jobid"));
-    if (argument >= 0) {
-      if (Is_a_number_list(ua->argv[argument])) {
-        ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(),
-                                  ua->argv[argument], ua->send, llist);
+    if (const char* value = GetArgValue(ua, NT_("jobid"))) {
+      if (Is_a_number_list(value)) {
+        ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), value, ua->send,
+                                  llist);
       }
     } else {
       ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), NULL, ua->send,
@@ -1135,12 +1112,10 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
                                                  UaContext* ua,
                                                  bool listall)
 {
-  int fileset;
-
   PmStrcpy(selection, "");
-  fileset = FindArgWithValue(ua, "fileset");
-  if ((fileset >= 0 && Bstrcasecmp(ua->argv[fileset], "any"))
-      || (listall && fileset < 0)) {
+  if (const char* fileset = GetArgValue(ua, "fileset");
+      (fileset != nullptr && Bstrcasecmp(fileset, "any"))
+      || (fileset == nullptr && listall)) {
     FilesetResource* fs;
     PoolMem temp(PM_MESSAGE);
 
@@ -1156,16 +1131,14 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
       PmStrcat(selection, temp.c_str());
     }
     PmStrcat(selection, ") ");
-
-  } else if (fileset >= 0) {
-    if (!ua->AclAccessOk(FileSet_ACL, ua->argv[fileset], true)) {
+  } else if (fileset != nullptr) {
+    if (!ua->AclAccessOk(FileSet_ACL, fileset, true)) {
       ua->ErrorMsg(T_("Access to specified FileSet not allowed.\n"));
       return false;
     } else {
-      selection.bsprintf("AND FileSet='%s' ", ua->argv[fileset]);
+      selection.bsprintf("AND FileSet='%s' ", fileset);
     }
   }
-
   return true;
 }
 
@@ -1173,16 +1146,15 @@ static bool ParseListBackupsCmd(UaContext* ua,
                                 const char* range,
                                 e_list_type llist)
 {
-  int pos, client;
   PoolMem temp(PM_MESSAGE), selection(PM_MESSAGE), criteria(PM_MESSAGE);
 
-  client = FindArgWithValue(ua, "client");
-  if (client < 0) {
+  const char* client = GetArgValue(ua, "client");
+  if (!client) {
     ua->ErrorMsg(T_("missing parameter: client\n"));
     return false;
   }
 
-  if (!ua->AclAccessOk(Client_ACL, ua->argv[client], true)) {
+  if (!ua->AclAccessOk(Client_ACL, client, true)) {
     ua->ErrorMsg(T_("Access to specified Client not allowed.\n"));
     return false;
   }
@@ -1190,7 +1162,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
   /* allow jobtypes 'B' for Backup and 'A' or 'a' for archive (update job
    * doesn't enforce a valid jobtype, so people have 'a' in their catalogs */
   selection.bsprintf("AND Job.Type IN('B', 'A', 'a') AND Client.Name='%s' ",
-                     ua->argv[client]);
+                     client);
 
   // Build a selection pattern based on the jobstatus and level arguments.
   parse_jobstatus_selection_param(temp, ua, "AND JobStatus IN ('T','W') ");
@@ -1204,11 +1176,10 @@ static bool ParseListBackupsCmd(UaContext* ua,
 
   // Build a criteria pattern if the order and/or limit argument are given.
   PmStrcpy(criteria, "");
-  if ((pos = FindArgWithValue(ua, "order")) >= 0) {
-    if (bstrncasecmp(ua->argv[pos], "ascending", strlen(ua->argv[pos]))) {
+  if (const char* order = GetArgValue(ua, "order")) {
+    if (bstrncasecmp(order, "ascending", strlen(order))) {
       PmStrcat(criteria, " ASC");
-    } else if (bstrncasecmp(ua->argv[pos], "descending",
-                            strlen(ua->argv[pos]))) {
+    } else if (bstrncasecmp(order, "descending", strlen(order))) {
       PmStrcat(criteria, " DESC");
     } else {
       return false;
@@ -1231,23 +1202,21 @@ static bool ParseListBackupsCmd(UaContext* ua,
 
 static bool ListNextvol(UaContext* ua, int ndays)
 {
-  int i;
-  JobResource* job;
+  JobResource* job{nullptr};
   JobControlRecord* jcr;
   UnifiedStorageResource store;
   RunResource* run;
   utime_t runtime;
   bool found = false;
 
-  i = FindArgWithValue(ua, "job");
-  if (i <= 0) {
-    if ((job = select_job_resource(ua)) == NULL) { return false; }
-  } else {
-    job = ua->GetJobResWithName(ua->argv[i]);
+  if (const char* job_name = GetArgValue(ua, "job")) {
+    job = ua->GetJobResWithName(job_name);
     if (!job) {
-      Jmsg(ua->jcr, M_ERROR, 0, T_("%s is not a job name.\n"), ua->argv[i]);
-      if ((job = select_job_resource(ua)) == NULL) { return false; }
+      Jmsg(ua->jcr, M_ERROR, 0, T_("%s is not a job name.\n"), job_name);
     }
+  }
+  if (!job) {
+    if ((job = select_job_resource(ua)) == NULL) { return false; }
   }
 
   jcr = NewDirectorJcr(DirdFreeJcr);

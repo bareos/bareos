@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -476,16 +476,20 @@ const char* DatatypeToDescription(int type);
  * we then keep for the lifetime of the loop.
  */
 inline std::shared_ptr<ConfigResourcesContainer> _init_foreach_res_(
-    ConfigurationParser* my_config,
+    ConfigurationParser* config,
     void* var)
 {
   memset(var, 0, sizeof(void*));
-  return my_config->GetResourcesContainer();
+  return config->GetResourcesContainer();
 }
+
 // Loop through each resource of type, returning in var
-#define foreach_res(var, type)                                    \
-  for (auto _config_table_ = _init_foreach_res_(my_config, &var); \
-       ((var)                                                     \
+#define _foreach_res_join_name(sym1, sym2) _foreach_res_join_impl(sym1, sym2)
+#define _foreach_res_join_impl(sym1, sym2) sym1##sym2
+#define foreach_res(var, type)                                              \
+  for (auto _foreach_res_join_name(_foreach_res_config_table_, __COUNTER__) \
+       = _init_foreach_res_(my_config, &var);                               \
+       ((var)                                                               \
         = static_cast<decltype(var)>(my_config->GetNextRes((type), var)));)
 
 class ResLocker {

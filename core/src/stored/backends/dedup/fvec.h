@@ -83,20 +83,20 @@ template <typename T> class fvec : access {
 
   fvec() = default;
 
-  fvec(rdonly_t, int fd, size_type initial_size = 0)
-      : fvec(fd, initial_size, PROT_READ)
+  fvec(rdonly_t, int t_fd, size_type t_initial_size = 0)
+      : fvec(t_fd, t_initial_size, PROT_READ)
   {
   }
 
-  fvec(rdwr_t, int fd, size_type initial_size = 0)
-      : fvec(fd, initial_size, PROT_READ | PROT_WRITE)
+  fvec(rdwr_t, int t_fd, size_type t_initial_size = 0)
+      : fvec(t_fd, t_initial_size, PROT_READ | PROT_WRITE)
   {
   }
 
-  fvec(bool readonly, int fd, size_type initial_size = 0)
-      : fvec(fd,
-             initial_size,
-             readonly ? (PROT_READ) : (PROT_READ | PROT_WRITE))
+  fvec(bool t_readonly, int t_fd, size_type t_initial_size = 0)
+      : fvec(t_fd,
+             t_initial_size,
+             t_readonly ? (PROT_READ) : (PROT_READ | PROT_WRITE))
   {
   }
 
@@ -284,8 +284,8 @@ template <typename T> class fvec : access {
     }
   }
 
-  fvec(int fd, size_type initial_size, int prot)
-      : count{initial_size}, fd{fd}, prot{prot}
+  fvec(int t_fd, size_type t_initial_size, int t_prot)
+      : count{t_initial_size}, fd{t_fd}, prot{t_prot}
   {
     // we cannot ensure alignment bigger than page alignment
     static_assert(element_align <= 4096, "Alignment too big.");
@@ -296,8 +296,8 @@ template <typename T> class fvec : access {
     static_assert(element_size % element_align == 0, "Weird struct");
 
     struct stat s;
-    if (fstat(fd, &s) != 0) {
-      throw error("fstat (fd = " + std::to_string(fd) + ")");
+    if (fstat(t_fd, &s) != 0) {
+      throw error("fstat (fd = " + std::to_string(t_fd) + ")");
     }
 
     cap = s.st_size / element_size;
@@ -316,11 +316,12 @@ template <typename T> class fvec : access {
     }
 
     auto size = cap * element_size;
-    buffer = reinterpret_cast<T*>(mmap(nullptr, size, prot, MAP_SHARED, fd, 0));
+    buffer = reinterpret_cast<T*>(
+        mmap(nullptr, size, t_prot, MAP_SHARED, t_fd, 0));
     if (buffer == MAP_FAILED) {
       throw error("mmap (size = " + std::to_string(size)
-                  + ", prot = " + std::to_string(prot)
-                  + ", fd = " + std::to_string(fd) + ")");
+                  + ", prot = " + std::to_string(t_prot)
+                  + ", fd = " + std::to_string(t_fd) + ")");
     }
     if (buffer == nullptr) {
       // this should not happen

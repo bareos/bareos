@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,8 +84,8 @@ int main(int argc, char* argv[])
       .add_option(
           "-c,--config",
           [](std::vector<std::string> val) {
-            if (configfile != nullptr) { free(configfile); }
-            configfile = strdup(val.front().c_str());
+            if (g_filed_configfile != nullptr) { free(g_filed_configfile); }
+            g_filed_configfile = strdup(val.front().c_str());
             return true;
           },
           "Use <path> as configuration file or directory.")
@@ -179,14 +179,14 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitFdConfig(configfile, M_ERROR_TERM);
+    my_config = InitFdConfig(g_filed_configfile, M_ERROR_TERM);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
     exit(BEXIT_SUCCESS);
   }
 
-  my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
+  my_config = InitFdConfig(g_filed_configfile, M_CONFIG_ERROR);
   my_config->ParseConfigOrExit();
 
   if (export_config) {
@@ -270,7 +270,7 @@ void TerminateFiled(int sig)
                  GetFirstPortHostOrder(me->FDaddrs));
   DeletePidFile(pidfile_path);
 
-  if (configfile != nullptr) { free(configfile); }
+  if (g_filed_configfile != nullptr) { free(g_filed_configfile); }
 
   if (my_config) {
     delete my_config;

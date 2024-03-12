@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,8 +87,7 @@ static int PamConversationCallback(int num_msg,
   PamData* pam_data = static_cast<PamData*>(appdata_ptr);
 
   bool error = false;
-  int i = 0;
-  for (; i < num_msg && !error; i++) {
+  for (int i = 0; i < num_msg && !error; i++) {
     switch (msgm[i]->msg_style) {
       case PAM_PROMPT_ECHO_OFF:
       case PAM_PROMPT_ECHO_ON:

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,7 +64,7 @@
  * always true.  Original instances of "(short)x" were replaced by
  * SHORT(x), where SHORT is #defined below.  */
 
-#define SHORT(x) ((x)&0x8000 ? (x)-0x10000 : (x))
+#define SHORT(x) ((x) & 0x8000 ? (x)-0x10000 : (x))
 
 /* The stack implementation is taken from an idea by Andrew Kuchling.
  * It's a doubly linked list of arrays. The advantages of this over a
@@ -911,16 +911,20 @@ static int ReOptimize(regex_t* bufp)
     pattern[(offset) + 1] = (disp >> 8) & 0xff; \
   }
 
-#define INSERT_JUMP(pos, type, addr)                                       \
-  {                                                                        \
-    int a, p = (pos), t = (type), ad = (addr);                             \
-    for (a = pattern_offset - 1; a >= p; a--) pattern[a + 3] = pattern[a]; \
-    pattern[p] = t;                                                        \
-    PUT_ADDR(p + 1, ad);                                                   \
-    pattern_offset += 3;                                                   \
+#define INSERT_JUMP(pos, type, addr)                                     \
+  {                                                                      \
+    int _insert_jump_a, _insert_jump_p = (pos), _insert_jump_t = (type), \
+                        _insert_jump_ad = (addr);                        \
+    for (_insert_jump_a = pattern_offset - 1;                            \
+         _insert_jump_a >= _insert_jump_p; _insert_jump_a--)             \
+      pattern[_insert_jump_a + 3] = pattern[_insert_jump_a];             \
+    pattern[_insert_jump_p] = _insert_jump_t;                            \
+    PUT_ADDR(_insert_jump_p + 1, _insert_jump_ad);                       \
+    pattern_offset += 3;                                                 \
   }
 
-#define SETBIT(buf, offset, bit) (buf)[(offset) + (bit) / 8] |= (1 << ((bit)&7))
+#define SETBIT(buf, offset, bit) \
+  (buf)[(offset) + (bit) / 8] |= (1 << ((bit) & 7))
 
 #define SET_FIELDS               \
   {                              \
@@ -1400,10 +1404,8 @@ int regexec(regex_t* preg,
   status = ReSearch(preg, (unsigned char*)string, len, 0, len, &regs);
   if (status >= 0) { re_registers_to_regmatch(&regs, pmatch, nmatch); }
 
-  /*
-   * status is the start position in the string base 0 where
-   * the pattern was found or negative if not found.
-   */
+  /* status is the start position in the string base 0 where
+   * the pattern was found or negative if not found. */
   return status < 0 ? -1 : 0;
 }
 

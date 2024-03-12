@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
    Copyright (C) 2015-2015 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -966,8 +966,6 @@ static inline bool read_meta_data_key(char* key)
 
   // Should we clone metadata to new VMDK file ?
   if (write_diskHandle) {
-    VixError err;
-
     err = VixDiskLib_WriteMetadata(write_diskHandle, key, buffer);
     if (VIX_FAILED(err)) {
       char* error_txt;
@@ -1270,9 +1268,9 @@ struct vec {
   using pointer = VixDiskLibBlock*;
   using reference = VixDiskLibBlock&;
 
-  vec(size_t capacity = 200)
-      : capacity{capacity}
-      , data{reinterpret_cast<pointer>(malloc(sizeof(value_type) * capacity))}
+  vec(size_t t_capacity = 200)
+      : capacity{t_capacity}
+      , data{reinterpret_cast<pointer>(malloc(sizeof(value_type) * t_capacity))}
   {
   }
 
@@ -1438,11 +1436,11 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
       if (boffset < start_offset + offset_length
           && boffset + blength > start_offset) {
         uint64 offset = std::max(boffset, start_offset);
-        uint64 length = std::min(blength, offset_length);
+        uint64 min_length = std::min(blength, offset_length);
 
-        saved_len += length;
+        saved_len += min_length;
 
-        if (!process_single_cbt(buffer, offset, length)) { goto bail_out; }
+        if (!process_single_cbt(buffer, offset, min_length)) { goto bail_out; }
       }
 
       if (boffset + blength <= start_offset + offset_length) {

@@ -1155,9 +1155,9 @@ static std::future<result<std::size_t>> MakeSendThread(
       [prom = std::move(promise), out = std::move(out), sd]() mutable {
         std::size_t accumulated = 0;
         for (;;) {
-          std::optional fut = out.get();
-          if (!fut) { break; }
-          result p = fut->get();
+          std::optional out_fut = out.get();
+          if (!out_fut) { break; }
+          result p = out_fut->get();
           if (p.holds_error()) {
             prom.set_value(std::move(p.error_unchecked()));
             return;

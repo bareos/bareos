@@ -29,8 +29,10 @@
 template <typename T, typename Mutex, template <typename> typename Lock>
 class locked {
  public:
-  locked(Mutex& mut, T* data) : lock{mut}, data(data) {}
-  locked(Lock<Mutex> lock, T* data) : lock{std::move(lock)}, data(data) {}
+  locked(Mutex& t_mut, T* t_data) : lock{t_mut}, data(t_data) {}
+  locked(Lock<Mutex> t_lock, T* t_data) : lock{std::move(t_lock)}, data(t_data)
+  {
+  }
 
   locked(const locked&) = delete;
   locked& operator=(const locked&) = delete;

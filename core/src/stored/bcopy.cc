@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,7 +69,7 @@ static bool list_records{};
 static uint32_t records{};
 static uint32_t jobs{};
 static DeviceBlock* out_block{};
-static Session_Label sessrec{};
+static Session_Label g_sessrec{};
 
 int main(int argc, char* argv[])
 {
@@ -96,9 +96,9 @@ int main(int argc, char* argv[])
       ->check(CLI::ExistingFile)
       ->type_name("<bootstrap>");
 
-  std::string configfile;
+  std::string configFile;
   bcopy_app
-      .add_option("-c,--config", configfile,
+      .add_option("-c,--config", configFile,
                   "Use <path> as configuration file or directory.")
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
@@ -168,8 +168,8 @@ int main(int argc, char* argv[])
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configfile.c_str(), M_CONFIG_ERROR);
-  ParseSdConfig(configfile.c_str(), M_CONFIG_ERROR);
+  my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
+  ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
       Emsg2(
           M_ERROR_TERM, 0,
           T_("No Director resource named %s defined in %s. Cannot continue.\n"),
-          DirectorName.c_str(), configfile.c_str());
+          DirectorName.c_str(), configFile.c_str());
     }
   }
 
@@ -282,9 +282,9 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
   }
   // Check for Start or End of Session Record
   if (rec->FileIndex < 0) {
-    GetSessionRecord(in_dcr->dev, rec, &sessrec);
+    GetSessionRecord(in_dcr->dev, rec, &g_sessrec);
 
-    if (verbose > 1) { DumpLabelRecord(in_dcr->dev, rec, true); }
+    if (g_verbose > 1) { DumpLabelRecord(in_dcr->dev, rec, true); }
     switch (rec->FileIndex) {
       case PRE_LABEL:
         Pmsg0(000, T_("Volume is prelabeled. This volume cannot be copied.\n"));
@@ -295,7 +295,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
       case SOS_LABEL:
         if (bsr && rec->match_stat < 1) {
           /* Skipping record, because does not match BootStrapRecord filter */
-          if (verbose) {
+          if (g_verbose) {
             Pmsg0(-1, T_("Copy skipped. Record does not match BootStrapRecord "
                          "filter.\n"));
           }
@@ -392,7 +392,7 @@ static void GetSessionRecord(Device* dev,
         "%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n",
         rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream,
         rec->data_len);
-  if (verbose) {
+  if (g_verbose) {
     Pmsg5(-1,
           T_("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d "
              "DataLen=%d\n"),

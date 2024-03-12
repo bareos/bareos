@@ -46,16 +46,16 @@ TEST(ConfigParser_SD, test_stored_config)
   delete my_config;
 }
 
-void test_CFG_TYPE_STR_VECTOR_OF_DIRS(StorageResource* me)
+void test_CFG_TYPE_STR_VECTOR_OF_DIRS(StorageResource* res)
 {
-  EXPECT_EQ(me->backend_directories.size(), 9);
+  EXPECT_EQ(res->backend_directories.size(), 9);
   /*  WIN32:
    *  cmake uses some value for PATH_BAREOS_BACKENDDIR,
    *  which ends up in the configuration files
    *  but this is later overwritten in the Director Daemon with ".".
    *  Therefore we skip this test. */
 #if !defined(HAVE_WIN32)
-  EXPECT_EQ(me->backend_directories.at(0), PATH_BAREOS_BACKENDDIR);
+  EXPECT_EQ(res->backend_directories.at(0), PATH_BAREOS_BACKENDDIR);
 #endif
 }
 
@@ -79,11 +79,11 @@ TEST(ConfigParser_SD, CFG_TYPE_STR_VECTOR_OF_DIRS)
 
   std::string sd_resource_name = "bareos-sd";
 
-  StorageResource* me
+  StorageResource* my_res
       = static_cast<StorageResource*>(my_config->GetNextRes(R_STORAGE, NULL));
-  EXPECT_EQ(sd_resource_name, me->resource_name_);
+  EXPECT_EQ(sd_resource_name, my_res->resource_name_);
 
-  test_CFG_TYPE_STR_VECTOR_OF_DIRS(me);
+  test_CFG_TYPE_STR_VECTOR_OF_DIRS(my_res);
 
   TermMsg();
 

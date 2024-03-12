@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
 This program is Free Software; you can redistribute it and/or
 modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@ const unsigned short default_port = 9101;
 std::vector<std::string> CreateAddressesFromAddAddress(
     IPADDR::i_type type,
     int family,
-    unsigned short default_port,
+    unsigned short t_default_port,
     const char* hostname_str,
     const char* port_str)
 {
@@ -37,7 +37,7 @@ std::vector<std::string> CreateAddressesFromAddAddress(
   char buf[1024];
   dlist<IPADDR>* addresses = nullptr;
 
-  AddAddress(&addresses, type, htons(default_port), family, hostname_str,
+  AddAddress(&addresses, type, htons(t_default_port), family, hostname_str,
              port_str, buf, sizeof(buf));
 
   IPADDR* addr = nullptr;

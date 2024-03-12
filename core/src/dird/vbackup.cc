@@ -447,17 +447,18 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
     Jmsg(jcr, M_INFO, 0,
          "Replicating deleted files from jobids %s to jobid %d\n",
          jcr->dir_impl->vf_jobids, jcr->JobId);
-    PoolMem q1(PM_MESSAGE);
+    PoolMem inner_query(PM_MESSAGE);
     jcr->db->FillQuery(
-        q1, BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob,
+        inner_query,
+        BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob,
         jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids,
         jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
-    std::string query
+    std::string outer_query
         = "INSERT INTO File (FileIndex, JobId, PathId, LStat, MD5, Name) "s
           + "SELECT FileIndex, "s + std::to_string(jcr->JobId) + " AS JobId, "s
-          + "PathId, LStat, MD5, Name FROM ("s + q1.c_str() + ") T "s
+          + "PathId, LStat, MD5, Name FROM ("s + inner_query.c_str() + ") T "s
           + "WHERE FileIndex = 0"s;
-    if (!jcr->db->SqlQuery(query.c_str())) {
+    if (!jcr->db->SqlQuery(outer_query.c_str())) {
       Jmsg(jcr, M_WARNING, 0, "Error replicating deleted files: ERR=%s\n",
            jcr->db->strerror());
     }

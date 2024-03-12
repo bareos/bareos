@@ -120,18 +120,18 @@ int ndmca_op_recover_files(struct ndm_session* sess)
 
   if (rc == 0) {
     if (ca->recover_log_file_count > 0) {
-      struct ndm_control_agent* ca = sess->control_acb;
-      int n_nlist = ca->job.nlist_tab.n_nlist;
+      struct ndm_control_agent* ca2 = sess->control_acb;
+      int n_nlist = ca2->job.nlist_tab.n_nlist;
 
       ndmalogf(sess, 0, 0, "LOG_FILE messages: %d OK, %d ERROR, total %d of %d",
-               ca->recover_log_file_ok, ca->recover_log_file_error,
-               ca->recover_log_file_count, n_nlist);
-      if (ca->recover_log_file_ok < n_nlist) {
+               ca2->recover_log_file_ok, ca2->recover_log_file_error,
+               ca2->recover_log_file_count, n_nlist);
+      if (ca2->recover_log_file_ok < n_nlist) {
         ndmalogf(sess, 0, 0,
                  "LOG_FILE messages: WARNING OK(%d) < (%d)Expected in namelist",
-                 ca->recover_log_file_ok, n_nlist);
+                 ca2->recover_log_file_ok, n_nlist);
       }
-      if (ca->recover_log_file_ok < ca->recover_log_file_count) { rc = 1; }
+      if (ca2->recover_log_file_ok < ca2->recover_log_file_count) { rc = 1; }
     } else {
       ndmalogf(sess, 0, 1, "DATA did not report any LOG_FILE messages");
     }

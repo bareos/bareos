@@ -32,11 +32,11 @@
 #include <chrono>
 #include <thread>
 
-void connection::socket_closer::operator()(BareosSocket* socket)
+void connection::socket_closer::operator()(BareosSocket* t_socket)
 {
-  if (socket) {
-    socket->close();
-    delete socket;
+  if (t_socket) {
+    t_socket->close();
+    delete t_socket;
   }
 }
 
