@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -393,7 +393,7 @@ static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
     if (mod[i] == NULL) { return false; }
   }
 
-  Dmsg2(900, "str=%s: mult=%d\n", str, mult[i]);
+  Dmsg2(900, "str=%s: mult=%" PRIu64 "\n", str, mult[i]);
   errno = 0;
   val = strtod(num_str, NULL);
 

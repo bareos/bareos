@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,6 +71,9 @@ int ScanToNextNotEol(LEX* lc)
 
 // Format a scanner error message
 static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
+    __attribute__((format(printf, 4, 5)));
+
+static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
   int len, maxlen;
@@ -114,6 +117,8 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 }
 
 // Format a scanner warning message
+static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
+    __attribute__((format(printf, 4, 5)));
 static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -308,7 +313,7 @@ LEX* lex_open_file(LEX* lf,
       return NULL;
     }
 
-    Dmsg2(100, "glob %s: %i files\n", filename, fileglob.gl_pathc);
+    Dmsg2(100, "glob %s: %zu files\n", filename, fileglob.gl_pathc);
     for (size_t i = 0; i < fileglob.gl_pathc; i++) {
       filename_expanded = fileglob.gl_pathv[i];
       if ((fd = fopen(filename_expanded, "rb")) == NULL) {

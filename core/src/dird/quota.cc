@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
@@ -46,8 +46,8 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
   // Quotas not being used ?
   if (!jcr->dir_impl->HasQuota) { return 0; }
 
-  Dmsg2(debuglevel, "JobSumTotalBytes for JobId %d is %llu\n", jcr->JobId,
-        jcr->dir_impl->jr.JobSumTotalBytes);
+  Dmsg2(debuglevel, "JobSumTotalBytes for JobId %d is %" PRIu64 "\n",
+        jcr->JobId, jcr->dir_impl->jr.JobSumTotalBytes);
   Dmsg1(debuglevel, "Fetching remaining quotas for JobId %d\n", jcr->JobId);
 
   // If strict quotas on and grace exceeded, enforce the softquota
@@ -87,7 +87,8 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
   }
 
   Dmsg4(debuglevel,
-        "Quota for %s is %llu. Remainder is %llu, QuotaLimit: %llu\n",
+        "Quota for %s is %" PRIu64 ". Remainder is %" PRIu64
+        ", QuotaLimit: %" PRIu64 "\n",
         jcr->dir_impl->jr.Name, jcr->dir_impl->jr.JobSumTotalBytes, remaining,
         jcr->dir_impl->res.client->QuotaLimit);
 
@@ -138,8 +139,8 @@ bool CheckHardquotas(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  Dmsg2(debuglevel, "Quota for JobID: %d is %llu\n", jcr->dir_impl->jr.JobId,
-        jcr->dir_impl->jr.JobSumTotalBytes);
+  Dmsg2(debuglevel, "Quota for JobID: %d is %" PRIu64 "\n",
+        jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.JobSumTotalBytes);
 
 bail_out:
   return retval;
@@ -193,18 +194,18 @@ bool CheckSoftquotas(JobControlRecord* jcr)
     jcr->dir_impl->HasQuota = true;
   }
 
-  Dmsg2(debuglevel, "Quota for %s is %llu\n", jcr->dir_impl->jr.Name,
+  Dmsg2(debuglevel, "Quota for %s is %" PRIu64 "\n", jcr->dir_impl->jr.Name,
         jcr->dir_impl->jr.JobSumTotalBytes);
-  Dmsg2(debuglevel, "QuotaLimit for %s is %llu\n", jcr->dir_impl->jr.Name,
-        jcr->dir_impl->res.client->QuotaLimit);
-  Dmsg2(debuglevel, "HardQuota for %s is %llu\n", jcr->dir_impl->jr.Name,
+  Dmsg2(debuglevel, "QuotaLimit for %s is %" PRIu64 "\n",
+        jcr->dir_impl->jr.Name, jcr->dir_impl->res.client->QuotaLimit);
+  Dmsg2(debuglevel, "HardQuota for %s is %" PRIu64 "\n", jcr->dir_impl->jr.Name,
         jcr->dir_impl->res.client->HardQuota);
-  Dmsg2(debuglevel, "SoftQuota for %s is %llu\n", jcr->dir_impl->jr.Name,
+  Dmsg2(debuglevel, "SoftQuota for %s is %" PRIu64 "\n", jcr->dir_impl->jr.Name,
         jcr->dir_impl->res.client->SoftQuota);
-  Dmsg2(debuglevel, "SoftQuota Grace Period for %s is %d\n",
+  Dmsg2(debuglevel, "SoftQuota Grace Period for %s is %" PRId64 "\n",
         jcr->dir_impl->jr.Name,
         jcr->dir_impl->res.client->SoftQuotaGracePeriod);
-  Dmsg2(debuglevel, "SoftQuota Grace Time for %s is %d\n",
+  Dmsg2(debuglevel, "SoftQuota Grace Time for %s is %" PRId64 "\n",
         jcr->dir_impl->jr.Name, jcr->dir_impl->res.client->GraceTime);
 
   if ((jcr->dir_impl->jr.JobSumTotalBytes + jcr->dir_impl->SDJobBytes)
@@ -213,7 +214,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
      * Check if gracetime has been set */
     if (jcr->dir_impl->res.client->GraceTime == 0
         && jcr->dir_impl->res.client->SoftQuotaGracePeriod) {
-      Dmsg1(debuglevel, "UpdateQuotaGracetime: %d\n", now);
+      Dmsg1(debuglevel, "UpdateQuotaGracetime: %" PRId64 "\n", now);
       if (!jcr->db->UpdateQuotaGracetime(jcr, &jcr->dir_impl->jr)) {
         Jmsg(jcr, M_WARNING, 0, T_("Error setting Quota gracetime: ERR=%s\n"),
              jcr->db->strerror());
@@ -243,7 +244,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
         }
         Jmsg(jcr, M_WARNING, 0,
              T_("Softquota Exceeded and Grace Period expired.\n"));
-        Jmsg(jcr, M_INFO, 0, T_("Setting Burst Quota to %d Bytes.\n"),
+        Jmsg(jcr, M_INFO, 0, T_("Setting Burst Quota to %" PRIu64 " Bytes.\n"),
              jcr->dir_impl->jr.JobSumTotalBytes);
         jcr->dir_impl->res.client->QuotaLimit
             = jcr->dir_impl->jr.JobSumTotalBytes;
@@ -260,7 +261,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
           }
           Jmsg(jcr, M_WARNING, 0,
                T_("Soft Quota exceeded and Grace Period expired.\n"));
-          Jmsg(jcr, M_INFO, 0, T_("Setting Burst Quota to %d Bytes.\n"),
+          Jmsg(jcr, M_INFO, 0,
+               T_("Setting Burst Quota to %" PRIu64 " Bytes.\n"),
                jcr->dir_impl->jr.JobSumTotalBytes);
           jcr->dir_impl->res.client->QuotaLimit
               = jcr->dir_impl->jr.JobSumTotalBytes;

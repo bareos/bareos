@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -135,7 +135,8 @@ bool RegisterTimer(TimerThread::Timer* t)
     wd_copy = *t;
   }
 
-  Dmsg3(800, "Registered timer interval %d%s\n", wd_copy.interval,
+  Dmsg3(800, "Registered timer interval %lld%s\n",
+        static_cast<long long>(wd_copy.interval.count()),
         wd_copy.single_shot ? " one shot" : "");
 
   WakeTimer();
@@ -193,8 +194,11 @@ static void SleepUntil(std::chrono::steady_clock::time_point next_timer_run)
 
 static void LogMessage(TimerThread::Timer* p)
 {
-  Dmsg2(3400, "Timer callback p=0x%p scheduled_run_timepoint=%d\n", p,
-        p->scheduled_run_timepoint);
+  Dmsg2(
+      3400, "Timer callback p=%p scheduled_run_timepoint=%lld secs\n", p,
+      static_cast<long long>(std::chrono::duration_cast<std::chrono::seconds>(
+                                 p->scheduled_run_timepoint.time_since_epoch())
+                                 .count()));
 }
 
 static bool RunOneItem(TimerThread::Timer* p,

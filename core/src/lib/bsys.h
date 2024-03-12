@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,8 @@ bool bstrncmp(const char* s1, const char* s2, int n);
 bool Bstrcasecmp(const char* s1, const char* s2);
 bool bstrncasecmp(const char* s1, const char* s2, int n);
 int cstrlen(const char* str);
-int PoolSprintf(char* pool_buf, const char* fmt, ...);
+int PoolSprintf(char* pool_buf, const char* fmt, ...)
+    __attribute__((format(printf, 2, 3)));
 int CreatePidFile(const char* progname, const char* pidfile_path);
 void WritePidFile(int pidfile_fd,
                   const char* pidfile_path,

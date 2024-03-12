@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -142,6 +142,8 @@ static storagedaemon::BootStrapRecord* new_bsr()
 
 // Format a scanner error message
 static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
+    __attribute__((format(printf, 4, 5)));
+static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
   int len, maxlen;
@@ -176,6 +178,8 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 }
 
 // Format a scanner warning message
+static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
+    __attribute__((format(printf, 4, 5)));
 static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -798,7 +802,8 @@ static inline void DumpVolblock(storagedaemon::BsrVolumeBlock* volblock)
 static inline void DumpVoladdr(storagedaemon::BsrVolumeAddress* voladdr)
 {
   if (voladdr) {
-    Pmsg2(-1, T_("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
+    Pmsg2(-1, T_("VolAddr    : %" PRIu64 "-%" PRIu64 "\n"), voladdr->saddr,
+          voladdr->eaddr);
     DumpVoladdr(voladdr->next);
   }
 }
@@ -884,8 +889,8 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse)
     debug_level = save_debug;
     return;
   }
-  Pmsg1(-1, T_("Next        : 0x%x\n"), bsr->next);
-  Pmsg1(-1, T_("Root bsr    : 0x%x\n"), bsr->root);
+  Pmsg1(-1, T_("Next        : %p\n"), bsr->next);
+  Pmsg1(-1, T_("Root bsr    : %p\n"), bsr->root);
   DumpVolume(bsr->volume);
   DumpSessid(bsr->sessid);
   DumpSesstime(bsr->sesstime);

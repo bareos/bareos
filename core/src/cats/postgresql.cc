@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -696,7 +696,7 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
       Dmsg0(500, "SqlFetchRow freeing space\n");
       free(rows_);
     }
-    Dmsg1(500, "we need space for %d bytes\n", sizeof(char*) * num_fields_);
+    Dmsg1(500, "we need space for %zu bytes\n", sizeof(char*) * num_fields_);
     rows_ = (SQL_ROW)malloc(sizeof(char*) * num_fields_);
     rows_size_ = num_fields_;
 
@@ -802,8 +802,8 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
   if (PQresultStatus(pg_result) == PGRES_TUPLES_OK) {
     Dmsg0(500, "getting value\n");
     id = str_to_uint64(PQgetvalue(pg_result, 0, 0));
-    Dmsg2(500, "got value '%s' which became %d\n", PQgetvalue(pg_result, 0, 0),
-          id);
+    Dmsg2(500, "got value '%s' which became %" PRIu64 "\n",
+          PQgetvalue(pg_result, 0, 0), id);
   } else {
     Dmsg1(50, "Result status failed: %s\n", getkeyval_query);
     Mmsg1(errmsg, T_("error fetching currval: %s\n"),

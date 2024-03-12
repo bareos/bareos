@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,9 @@
 #include "lib/bpipe.h"
 
 // globals
+inline constexpr const char* JobMessage
+    = "Jmsg Job=%s type=%" PRId32 " level=%" PRId64 " %s";
+
 const char* working_directory = NULL; /* working directory path stored here */
 int verbose = 0;                      /* increase User messages */
 int debug_level = 0;                  /* debug level */
@@ -101,6 +104,8 @@ static const char* bstrrpath(const char* start, const char* end)
   return end;
 }
 
+static void DeliveryError(const char* fmt, ...)
+    __attribute__((format(printf, 1, 2)));
 static void DeliveryError(const char* fmt, ...)
 {
   va_list ap;
@@ -819,8 +824,7 @@ void DispatchMessage(JobControlRecord* jcr,
         case MessageDestinationCode::kDirector:
           Dmsg1(850, "DIRECTOR for following msg: %s", msg);
           if (jcr && jcr->dir_bsock && !jcr->dir_bsock->errors) {
-            jcr->dir_bsock->fsend("Jmsg Job=%s type=%d level=%lld %s", jcr->Job,
-                                  type, mtime, msg);
+            jcr->dir_bsock->fsend(JobMessage, jcr->Job, type, mtime, msg);
           } else {
             Dmsg1(800, "no jcr for following msg: %s", msg);
           }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,7 +130,7 @@ bool AccurateFinish(JobControlRecord* jcr)
 
     AccurateFree(jcr);
     if (jcr->is_JobLevel(L_FULL)) {
-      Jmsg(jcr, M_INFO, 0, T_("Space saved with Base jobs: %lld MB\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Space saved with Base jobs: %" PRIu64 " MB\n"),
            jcr->fd_impl->base_size / (1024 * 1024));
     }
   }

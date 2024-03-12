@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,7 +71,7 @@
 namespace directordaemon {
 
 /* Commands sent to other storage daemon */
-static char replicatecmd[]
+constexpr const char replicatecmd[]
     = "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
 // Get Job names in Pool
@@ -798,7 +798,7 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       }
 
       pool_bytes = ctx.value;
-      Dmsg2(dbglevel, "highbytes=%lld pool=%lld\n",
+      Dmsg2(dbglevel, "highbytes=%" PRIu64 " pool=%" PRIu64 "\n",
             jcr->dir_impl->res.rpool->MigrationHighBytes, pool_bytes);
 
       if (pool_bytes < (int64_t)jcr->dir_impl->res.rpool->MigrationHighBytes) {
@@ -1413,7 +1413,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
          connection_target_address, write_storage->SDport, tls_need,
          mig_jcr->sd_auth_key);
 
-    if (!jcr->store_bsock->fsend(command.c_str())) { goto bail_out; }
+    if (!jcr->store_bsock->fsend("%s", command.c_str())) { goto bail_out; }
 
     if (jcr->store_bsock->recv() <= 0) { goto bail_out; }
 

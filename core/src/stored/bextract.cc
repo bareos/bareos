@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -604,7 +604,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           wsize = rec->data_len;
         }
         total += wsize;
-        Dmsg2(8, "Write %u bytes, total=%u\n", wsize, total);
+        Dmsg2(8, "Write %u bytes, total=%ld\n", wsize, total);
         StoreData(&bfd, wbuf, wsize);
         fileAddr += wsize;
       }
@@ -648,7 +648,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         if (DecompressData(jcr, attr->ofname, rec->maskedStream, &wbuf, &wsize,
                            false)) {
-          Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n",
+          Dmsg2(100, "Write uncompressed %d bytes, total before write=%ld\n",
                 wsize, total);
           StoreData(&bfd, wbuf, wsize);
           total += wsize;

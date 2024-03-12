@@ -90,7 +90,8 @@ extern "C" {
 #define LOG_NDELAY 0x08 /* don't delay open */
 #define LOG_NOWAIT 0x10 /* if forking to log on console, don't wait() */
 
-void syslog(int type, const char* fmt, ...);
+void syslog(int type, const char* fmt, ...)
+    __attribute__((format(printf, 2, 3)));
 void openlog(const char* app, int, int);
 void closelog(void);
 

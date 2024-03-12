@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/util.h"
 
 #if HAVE_POSTGRESQL
 
@@ -102,7 +103,7 @@ void BareosDb::FillQueryVaList(PoolMem& query,
   query_template = get_predefined_query(predefined_query);
 
   Dmsg3(debuglevel, "called: %s with query name %s (%d)\n", __PRETTY_FUNCTION__,
-        query_name, predefined_query);
+        query_name, to_underlying(predefined_query));
 
   if (query_template) { query.Bvsprintf(query_template, arg_ptr); }
 

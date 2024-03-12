@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,8 +52,8 @@ bool ConfigParserStateMachine::ParseAllTokens()
   int token;
 
   while ((token = LexGetToken(lexical_parser_, BCT_ALL)) != BCT_EOF) {
-    Dmsg3(900, "parse state=%d parser_pass_number_=%d got token=%s\n", state,
-          parser_pass_number_, lex_tok_to_str(token));
+    Dmsg3(900, "parse state=%d parser_pass_number_=%d got token=%s\n",
+          to_underlying(state), parser_pass_number_, lex_tok_to_str(token));
     switch (state) {
       case ParseState::kInit:
         switch (ParserInitResource(token)) {
@@ -77,7 +77,8 @@ bool ConfigParserStateMachine::ParseAllTokens()
         }
         break;
       default:
-        scan_err1(lexical_parser_, T_("Unknown parser state %d\n"), state);
+        scan_err1(lexical_parser_, T_("Unknown parser state %d\n"),
+                  to_underlying(state));
         return false;
     }
   }

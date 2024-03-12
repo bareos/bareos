@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -101,7 +101,7 @@ char* ChunkedDevice::allocate_chunkbuffer()
 {
   char* buffer = (char*)malloc(current_chunk_->chunk_size);
 
-  Dmsg2(100, "New allocated buffer of %d bytes at %p\n",
+  Dmsg2(100, "New allocated buffer of %zu bytes at %p\n",
         current_chunk_->chunk_size, buffer);
 
   return buffer;
@@ -110,7 +110,7 @@ char* ChunkedDevice::allocate_chunkbuffer()
 // Free a chunk buffer.
 void ChunkedDevice::FreeChunkbuffer(char* buffer)
 {
-  Dmsg2(100, "Freeing buffer of %d bytes at %p\n", current_chunk_->chunk_size,
+  Dmsg2(100, "Freeing buffer of %zu bytes at %p\n", current_chunk_->chunk_size,
         buffer);
 
   free(buffer);
@@ -119,7 +119,7 @@ void ChunkedDevice::FreeChunkbuffer(char* buffer)
 // Free a chunk_io_request.
 void ChunkedDevice::FreeChunkIoRequest(chunk_io_request* request)
 {
-  Dmsg2(100, "Freeing chunk io request of %d bytes at %p\n",
+  Dmsg2(100, "Freeing chunk io request of %zu bytes at %p\n",
         sizeof(chunk_io_request), request);
 
   if (request->release) { FreeChunkbuffer(request->buffer); }
@@ -342,7 +342,7 @@ bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
   new_request->tries = 0;
   new_request->release = request->release;
 
-  Dmsg2(100, "Allocated chunk io request of %d bytes at %p\n",
+  Dmsg2(100, "Allocated chunk io request of %zu bytes at %p\n",
         sizeof(chunk_io_request), new_request);
 
   /* Enqueue the item onto the ordered circular buffer.
@@ -418,7 +418,7 @@ bool ChunkedDevice::DequeueChunk()
                  "%d tries, setting device %s readonly\n"),
               new_request->chunk, new_request->volname, new_request->tries,
               print_name());
-        Emsg0(M_ERROR, 0, errmsg);
+        Emsg0(M_ERROR, 0, "%s", errmsg);
         readonly_ = true;
         goto bail_out;
       }
@@ -668,7 +668,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
 
       bytes_left
           = MIN((ssize_t)count, (current_chunk_->buflen - wanted_offset));
-      Dmsg2(200, "Reading complete %d byte read-request from chunk offset %d\n",
+      Dmsg2(200,
+            "Reading complete %zd byte read-request from chunk offset %zd\n",
             bytes_left, wanted_offset);
 
       if (bytes_left < 0) {
@@ -698,10 +699,11 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
                            (ssize_t)(current_chunk_->buflen - wanted_offset));
 
           if (bytes_left > 0) {
-            Dmsg2(200,
-                  "Reading %d bytes of %d byte read-request from end of chunk "
-                  "at offset %d\n",
-                  bytes_left, count, wanted_offset);
+            Dmsg2(
+                200,
+                "Reading %zd bytes of %zu byte read-request from end of chunk "
+                "at offset %zu\n",
+                bytes_left, count, wanted_offset);
 
             memcpy(((char*)buffer + offset),
                    current_chunk_->buffer + wanted_offset, bytes_left);
@@ -732,9 +734,10 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
                            (ssize_t)(current_chunk_->buflen));
 
           if (bytes_left > 0) {
-            Dmsg2(200,
-                  "Reading %d bytes of %d byte read-request from next chunk\n",
-                  bytes_left, count);
+            Dmsg2(
+                200,
+                "Reading %zd bytes of %zu byte read-request from next chunk\n",
+                bytes_left, count);
 
             memcpy(((char*)buffer + offset), current_chunk_->buffer,
                    bytes_left);
@@ -790,7 +793,8 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
         && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
 
-      Dmsg2(200, "Writing complete %d byte write-request to chunk offset %d\n",
+      Dmsg2(200,
+            "Writing complete %zu byte write-request to chunk offset %zd\n",
             count, wanted_offset);
 
       memcpy(current_chunk_->buffer + wanted_offset, buffer, count);
@@ -821,8 +825,8 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
 
           if (bytes_left > 0) {
             Dmsg2(200,
-                  "Writing %d bytes of %d byte write-request to end of chunk "
-                  "at offset %d\n",
+                  "Writing %zd bytes of %zu byte write-request to end of chunk "
+                  "at offset %zd\n",
                   bytes_left, count, wanted_offset);
 
             memcpy(current_chunk_->buffer + wanted_offset,
@@ -851,7 +855,7 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
                                    + 1));
         if (bytes_left > 0) {
           Dmsg2(200,
-                "Writing %d bytes of %d byte write-request to next chunk\n",
+                "Writing %zd bytes of %zu byte write-request to next chunk\n",
                 bytes_left, count);
 
           memcpy(current_chunk_->buffer, ((char*)buffer + offset), bytes_left);
@@ -1062,14 +1066,14 @@ bool ChunkedDevice::is_written()
   /* compare expected to written volume size */
   size_t remote_volume_size = RemoteVolumeSize();
   Dmsg3(100,
-        "volume: %s, RemoteVolumeSize = %lld, VolCatInfo.VolCatBytes "
-        "= %lld\n",
+        "volume: %s, RemoteVolumeSize = %zu, VolCatInfo.VolCatBytes "
+        "= %" PRIu64 "\n",
         current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
 
   if (remote_volume_size < VolCatInfo.VolCatBytes) {
     Dmsg3(100,
-          "volume %s is pending, as 'remote volume size' = %lld < 'catalog "
-          "volume size' = %lld\n",
+          "volume %s is pending, as 'remote volume size' = %zu < 'catalog "
+          "volume size' = %" PRIu64 "\n",
           current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
     return false;
   }
@@ -1218,7 +1222,7 @@ static int ListIoRequest(void* request, void* data)
   DeviceStatusInformation* dst = (DeviceStatusInformation*)data;
   PoolMem status(PM_MESSAGE);
 
-  status.bsprintf("   /%s/%04d - %ld (try=%d)\n", io_request->volname,
+  status.bsprintf("   /%s/%04d - %" PRIu32 " (try=%d)\n", io_request->volname,
                   io_request->chunk, io_request->wbuflen, io_request->tries);
   dst->status_length = PmStrcat(dst->status, status.c_str());
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -128,12 +128,12 @@ typedef struct s_lex_context {
                     int line,
                     struct s_lex_context* lc,
                     const char* msg,
-                    ...);
+                    ...) __attribute__((format(printf, 4, 5)));
   void (*scan_warning)(const char* file,
                        int line,
                        struct s_lex_context* lc,
                        const char* msg,
-                       ...);
+                       ...) __attribute__((format(printf, 4, 5)));
   int err_type; /* message level for ScanError (M_..) */
   int error_counter;
   void* caller_ctx; /* caller private data */
@@ -144,12 +144,12 @@ typedef void(LEX_ERROR_HANDLER)(const char* file,
                                 int line,
                                 LEX* lc,
                                 const char* msg,
-                                ...);
+                                ...) __attribute__((format(printf, 4, 5)));
 typedef void(LEX_WARNING_HANDLER)(const char* file,
                                   int line,
                                   LEX* lc,
                                   const char* msg,
-                                  ...);
+                                  ...) __attribute__((format(printf, 4, 5)));
 
 // Lexical scanning errors in parsing conf files
 #define scan_err0(lc, msg) lc->ScanError(__FILE__, __LINE__, lc, msg)

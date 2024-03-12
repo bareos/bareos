@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -77,16 +77,16 @@ void unix_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     if (fd < 0) {
       BErrNo be;
       dev_errno = errno;
-      Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-            prt_name, omode, oflags, errno, be.bstrerror());
+      Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
+            prt_name, dev_mode_to_str(omode), oflags, errno, be.bstrerror());
     } else {
       d_close(fd);
       fd = d_open(archive_device_string, oflags, 0); /* open normally */
       if (fd < 0) {
         BErrNo be;
         dev_errno = errno;
-        Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-              prt_name, omode, oflags, errno, be.bstrerror());
+        Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
+              prt_name, dev_mode_to_str(omode), oflags, errno, be.bstrerror());
         break;
       }
       dev_errno = 0;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,6 +66,9 @@ constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
+[[noreturn]] static void MemPoolErrorMessage(const char*, int, const char*, ...)
+    __attribute__((format(printf, 3, 4)));
+
 [[noreturn]] static void MemPoolErrorMessage(const char* file,
                                              int line,
                                              const char* fmt,

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -186,13 +186,13 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
           = incrementals_total - job->AlwaysIncrementalKeepNumber;
 
       jcr->dir_impl->jr.limit = max_incrementals_to_consolidate + 1;
-      Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n",
+      Dmsg3(10, "total: %d, to_consolidate: %d, limit: %" PRIu64 ".\n",
             incrementals_total, max_incrementals_to_consolidate,
             jcr->dir_impl->jr.limit);
       jobids_ctx.clear();
       jcr->db->AccurateGetJobids(jcr, &jcr->dir_impl->jr, &jobids_ctx);
       const int32_t incrementals_to_consolidate = jobids_ctx.size() - 1;
-      Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.size(),
+      Dmsg2(10, "%zu consolidate ids after limit: %s.\n", jobids_ctx.size(),
             jobids_ctx.GetAsString().c_str());
       if (incrementals_to_consolidate < 1) {
         Jmsg(jcr, M_INFO, 0,

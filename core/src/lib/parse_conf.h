@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -460,7 +460,8 @@ class ConfigResourcesContainer {
 };
 
 
-bool PrintMessage(void* sock, const char* fmt, ...);
+bool PrintMessage(void* sock, const char* fmt, ...)
+    __attribute__((format(printf, 2, 3)));
 bool IsTlsConfigured(TlsResource* tls_resource);
 
 const char* GetName(ResourceItem& item, s_kw* keywords);

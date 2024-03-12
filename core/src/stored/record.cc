@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -114,8 +114,8 @@ static const char* record_compression_to_str(PoolMem& resultbuffer,
 
     buf += sizeof(uint64_t);
 
-    Dmsg1(400, "Sparse data stream found: start address=%llu\n", faddr);
-    tmp.bsprintf("Sparse: StartAddress=%llu. ", faddr);
+    Dmsg1(400, "Sparse data stream found: start address=%" PRIu64 "\n", faddr);
+    tmp.bsprintf("Sparse: StartAddress=%" PRIu64 ". ", faddr);
     resultbuffer.strcat(tmp);
   }
 

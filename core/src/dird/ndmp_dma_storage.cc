@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -166,8 +166,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
   for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
        devinfo != store->runtime_storage_status->ndmp_deviceinfo.end();
        devinfo++) {
-    Jmsg(jcr, M_INFO, 0, " %s\n", devinfo->device.c_str(),
-         devinfo->model.c_str());
+    Jmsg(jcr, M_INFO, 0, " %s\n", devinfo->device.c_str());
   }
   return true;
 }

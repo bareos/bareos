@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,7 +104,7 @@ typedef enum
   VOL_LIST_PARTIAL
 } vol_list_type;
 
-enum class slot_type_t
+enum class slot_type_t : short
 {
   kSlotTypeUnknown,
   kSlotTypeDrive,
@@ -113,7 +113,7 @@ enum class slot_type_t
   kSlotTypePicker  /**< Robotics */
 };
 
-enum class slot_status_t
+enum class slot_status_t : short
 {
   kSlotStatusUnknown,
   kSlotStatusEmpty,
@@ -195,9 +195,9 @@ struct runtime_job_status_t {
   int32_t NumConcurrentJobs{}; /**< Number of concurrent jobs running */
 };
 
-#define INDEX_DRIVE_OFFSET 0
-#define INDEX_MAX_DRIVES 100
-#define INDEX_SLOT_OFFSET 100
+inline constexpr slot_number_t INDEX_DRIVE_OFFSET = 0;
+inline constexpr slot_number_t INDEX_MAX_DRIVES = 100;
+inline constexpr slot_number_t INDEX_SLOT_OFFSET = 100;
 
 #define FD_VERSION_1 1
 #define FD_VERSION_2 2

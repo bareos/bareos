@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -134,7 +134,7 @@ bool TlsOpenSslPrivate::init()
       ERR_error_string(ERR_get_error(), buffer.data());
       err += buffer.data();
       err += "\n";
-      Dmsg1(100, err.c_str());
+      Dmsg1(100, "%s", err.c_str());
       return false;
     }
   }
@@ -599,13 +599,13 @@ void TlsOpenSsl::SetKeyfile(const std::string& keyfile_)
 
 void TlsOpenSsl::SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback)
 {
-  Dmsg1(100, "Set pem_callback to address: <%#x>\n", pem_callback);
+  Dmsg1(100, "Set pem_callback to address: <%p>\n", pem_callback);
   d_->pem_callback_ = pem_callback;
 }
 
 void TlsOpenSsl::SetPemUserdata(void* pem_userdata)
 {
-  Dmsg1(100, "Set pem_userdata to address: <%#x>\n", pem_userdata);
+  Dmsg1(100, "Set pem_userdata to address: <%p>\n", pem_userdata);
   d_->pem_userdata_ = pem_userdata;
 }
 

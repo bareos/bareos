@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -85,13 +85,13 @@ static bRC bareosJobMsg(PluginContext* ctx,
                         int type,
                         utime_t mtime,
                         const char* fmt,
-                        ...);
+                        ...) __attribute__((format(printf, 6, 7)));
 static bRC bareosDebugMsg(PluginContext* ctx,
                           const char* fname,
                           int line,
                           int level,
                           const char* fmt,
-                          ...);
+                          ...) __attribute__((format(printf, 5, 6)));
 static void* bareosMalloc(PluginContext* ctx,
                           const char* fname,
                           int line,
@@ -1036,7 +1036,7 @@ bail_out:
 bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 {
   int status;
-  int index = jcr->JobFiles;
+  auto index = jcr->JobFiles;
   save_pkt* sp = (save_pkt*)jcr->fd_impl->plugin_sp;
 
   if (!sp) {
@@ -1049,7 +1049,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
   Dmsg1(debuglevel, "SendPluginName=%s\n", sp->cmd);
 
   // Send stream header
-  if (!sd->fsend("%ld %d 0", index, STREAM_PLUGIN_NAME)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", index, STREAM_PLUGIN_NAME)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return false;
@@ -1058,10 +1058,11 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 
   if (start) {
     // Send data -- not much
-    status = sd->fsend("%ld 1 %d %s%c", index, sp->portable, sp->cmd, 0);
+    status
+        = sd->fsend("%" PRIu32 " 1 %d %s%c", index, sp->portable, sp->cmd, 0);
   } else {
     // Send end of data
-    status = sd->fsend("%ld 0", jcr->JobFiles);
+    status = sd->fsend("%" PRIu32 " 0", jcr->JobFiles);
   }
   if (!status) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
@@ -1706,7 +1707,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         T_("Plugin size incorrect. Plugin=%s wanted=%zu got=%" PRIu32 "\n"),
          plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }

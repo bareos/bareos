@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
 #define BAREOS_INCLUDE_BC_TYPES_H_
 
 #include <stdint.h>
+#include <cinttypes>
 
 #ifdef HAVE_WIN32
 typedef int __daddr_t;
@@ -72,6 +73,7 @@ typedef __int64 ino_t;
  */
 typedef uint64_t FileId_t;
 typedef uint32_t DBId_t; /* general DB id type */
+#define PRIdbid PRIu32
 typedef uint32_t JobId_t;
 
 typedef char POOLMEM;
