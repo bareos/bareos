@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,10 @@ set(SYSTEMTEST_LDAP_PASSWORD
 if(TARGET python3-fd)
   check_pymodule_available(3 ldap)
   if(PYMODULE_3_LDAP_FOUND AND SYSTEMTEST_LDAP_ADDRESS)
+    string(REPLACE ":" "\\\\:" SYSTEMTEST_LDAP_ADDRESS_ESCAPED
+                   ${SYSTEMTEST_LDAP_ADDRESS}
+    )
+    cmake_print_variables(SYSTEMTEST_LDAP_ADDRESS_ESCAPED)
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   else()
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)

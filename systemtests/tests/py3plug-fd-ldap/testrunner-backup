@@ -8,11 +8,14 @@ set -u
 #
 TestName="$(basename "$(pwd)")"
 export TestName
-bucket_name=bareos-test
 
 JobName=backup-bareos-fd
+
 #shellcheck source=../environment.in
 . ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
 
 testdata_opts=( \
   --address  "$SYSTEMTEST_LDAP_ADDRESS" \
@@ -21,27 +24,19 @@ testdata_opts=( \
   --password "$SYSTEMTEST_LDAP_PASSWORD"
 )
 
+start_test
+
 tar xzf ../../data/image.tgz
 ./testdata.py "${testdata_opts[@]}" \
   --clean \
   --populate \
   --dump-backup > backup-data-before.ldif
 
-JobName=backup-bareos-fd
-#shellcheck source=../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
-
-
-start_test
-
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
-label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
 status client
@@ -60,10 +55,9 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 
 check_for_zombie_jobs storage=File
-stop_bareos
 
 check_two_logs
 

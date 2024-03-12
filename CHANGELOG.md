@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: skip stripped top level directories [PR #1726]
 - Require python3 explicit [PR #1729]
 - dbcheck: fix dbcheck crash if password is not set in catalog resource [PR #1730]
+- Bugfix: Clean up error handling in LDAP plugin, fix dependencies [PR #1720]
 
 ## [23.0.2] - 2024-02-28
 
@@ -423,6 +424,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1706]: https://github.com/bareos/bareos/pull/1706
 [PR #1709]: https://github.com/bareos/bareos/pull/1709
 [PR #1711]: https://github.com/bareos/bareos/pull/1711
+[PR #1720]: https://github.com/bareos/bareos/pull/1720
 [PR #1726]: https://github.com/bareos/bareos/pull/1726
 [PR #1729]: https://github.com/bareos/bareos/pull/1729
 [PR #1730]: https://github.com/bareos/bareos/pull/1730
