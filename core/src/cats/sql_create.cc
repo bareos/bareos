@@ -77,6 +77,8 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
 
   /* clang-format off */
+  // this should be something like:
+  // INSERT INTO Job (JobId, ...) VALUES (DEFAULT, ...) RETURNING JobId;
   Mmsg(cmd,
        "INSERT INTO Job (Job,Name,Type,Level,JobStatus,SchedTime,JobTDate,"
        "ClientId,Comment) "

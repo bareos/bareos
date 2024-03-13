@@ -1165,6 +1165,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
                   T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_DIFFERENTIAL);
         pool_updated = true;
+        bstrutime(jcr->starttime_string, sizeof(jcr->starttime_string),
+                  last_diff_time);
       } else {
         if (jcr->dir_impl->res.job->rerun_failed_levels) {
           if (jcr->db->FindFailedJobSince(jcr, &jcr->dir_impl->jr,
@@ -1175,19 +1177,20 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
             Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                       T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
             jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = JobLevel);
-            jcr->dir_impl->jr.JobId = jcr->JobId;
-            pool_updated = true;
-            break;
           }
         }
-
-        bstrncpy(jcr->dir_impl->since, T_(", since="),
-                 sizeof(jcr->dir_impl->since));
-        bstrncat(jcr->dir_impl->since, jcr->starttime_string,
-                 sizeof(jcr->dir_impl->since));
       }
       jcr->dir_impl->jr.JobId = jcr->JobId;
 
+      switch (jcr->getJobLevel()) {
+        case L_DIFFERENTIAL:
+        case L_INCREMENTAL: {
+          bstrncpy(jcr->dir_impl->since, T_(", since="),
+                   sizeof(jcr->dir_impl->since));
+          bstrncat(jcr->dir_impl->since, jcr->starttime_string,
+                   sizeof(jcr->dir_impl->since));
+        } break;
+      }
       /* Lookup the Job record of the previous Job and store it in
        * jcr->dir_impl_->previous_jr. */
       if (jcr->dir_impl->PrevJob[0]) {
