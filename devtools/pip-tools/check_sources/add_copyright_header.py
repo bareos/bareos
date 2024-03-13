@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -238,8 +238,8 @@ def main_program(args, file_name):
     else:
         commits = file_history.get_commits_for(file_path, blame_ignore_revs)
         if commits:
-            first_date = datetime.utcfromtimestamp(commits[-1].authored_date)
-            last_date = datetime.utcfromtimestamp(commits[0].authored_date)
+            first_date = datetime.utcfromtimestamp(commits[-1].committed_date)
+            last_date = datetime.utcfromtimestamp(commits[0].committed_date)
         else:
             logger.error("No commit found for {}".format(file_path))
             return 4
