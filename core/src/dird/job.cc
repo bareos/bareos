@@ -1030,15 +1030,12 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
 bool GetLevelSinceTime(JobControlRecord* jcr)
 {
   int JobLevel;
-  bool have_full;
   bool do_full = false;
   bool do_vfull = false;
   bool do_diff = false;
   bool pool_updated = false;
-  utime_t now;
   utime_t last_full_time = 0;
   utime_t last_diff_time;
-  char prev_job[MAX_NAME_LENGTH];
 
   jcr->dir_impl->since[0] = 0;
 
@@ -1069,20 +1066,20 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
     case L_INCREMENTAL:
       POOLMEM* start_time = GetPoolMemory(PM_MESSAGE);
 
+      JobId_t prev_job{}, last_full{}, last_diff{};
       // Look up start time of last Full job
-      now = (utime_t)time(NULL);
+      utime_t now = (utime_t)time(NULL);
       jcr->dir_impl->jr.JobId = 0; /* flag to return since time */
 
       /* This is probably redundant, but some of the code below
        * uses jcr->starttime_string, so don't remove unless you are sure. */
       if (!jcr->db->FindJobStartTime(jcr, &jcr->dir_impl->jr,
-                                     jcr->starttime_string,
-                                     jcr->dir_impl->PrevJob)) {
+                                     jcr->starttime_string, &prev_job)) {
         do_full = true;
       }
 
-      have_full = jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr,
-                                                start_time, prev_job, L_FULL);
+      bool have_full = jcr->db->FindLastJobStartTime(
+          jcr, &jcr->dir_impl->jr, start_time, &last_full, L_FULL);
       if (have_full) {
         last_full_time = StrToUtime(start_time);
       } else {
@@ -1097,17 +1094,19 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
           && jcr->dir_impl->res.job->MaxDiffInterval > 0) {
         // Lookup last diff job
         if (jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr, start_time,
-                                          prev_job, L_DIFFERENTIAL)) {
+                                          &last_diff, L_DIFFERENTIAL)) {
           last_diff_time = StrToUtime(start_time);
           // If no Diff since Full, use Full time
           if (last_diff_time < last_full_time) {
             last_diff_time = last_full_time;
+            last_diff = last_full;
           }
           Dmsg2(50, "last_diff_time=%lld last_full_time=%lld\n", last_diff_time,
                 last_full_time);
         } else {
           // No last differential, so use last full time
           last_diff_time = last_full_time;
+          last_diff = last_full;
           Dmsg1(50, "No last_diff_time setting to full_time=%lld\n",
                 last_full_time);
         }
@@ -1136,6 +1135,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                   T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_FULL);
+        prev_job = 0;
         pool_updated = true;
       } else if (do_vfull) {
         /* No recent Full job found, and MaxVirtualFull is set so upgrade this
@@ -1149,6 +1149,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
                   JobLevelToString(jcr->getJobLevel()));
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_VIRTUAL_FULL);
         pool_updated = true;
+        prev_job = 0;
 
         /* If we get upgraded to a Virtual Full we will be using a read pool so
          * make sure we have a rpool_source. */
@@ -1165,12 +1166,13 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
                   T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_DIFFERENTIAL);
         pool_updated = true;
-        bstrutime(jcr->starttime_string, sizeof(jcr->starttime_string),
-                  last_diff_time);
+        bstrutime(jcr->starttime_string,
+                  SizeofPoolMemory(jcr->starttime_string), last_diff_time);
+        prev_job = last_diff;
       } else if (jcr->dir_impl->res.job->rerun_failed_levels
                  && jcr->db->FindFailedJobSince(jcr, &jcr->dir_impl->jr,
-                                                jcr->starttime_string,
-                                                JobLevel)) {
+                                                jcr->starttime_string, JobLevel,
+                                                &prev_job)) {
         Jmsg(jcr, M_INFO, 0,
              T_("Prior failed job found in catalog. Upgrading to %s.\n"),
              JobLevelToString(JobLevel));
@@ -1180,20 +1182,18 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       }
       jcr->dir_impl->jr.JobId = jcr->JobId;
 
-      switch (jcr->getJobLevel()) {
-        case L_DIFFERENTIAL:
-        case L_INCREMENTAL: {
-          bstrncpy(jcr->dir_impl->since, T_(", since="),
-                   sizeof(jcr->dir_impl->since));
-          bstrncat(jcr->dir_impl->since, jcr->starttime_string,
-                   sizeof(jcr->dir_impl->since));
-        } break;
-      }
+      jcr->dir_impl->PrevJob[0] = '\0';
       /* Lookup the Job record of the previous Job and store it in
        * jcr->dir_impl_->previous_jr. */
-      if (jcr->dir_impl->PrevJob[0]) {
+
+      if (prev_job) {
+        bstrncat(jcr->dir_impl->since, T_(", since="),
+                 sizeof(jcr->dir_impl->since));
+        bstrncat(jcr->dir_impl->since, jcr->starttime_string,
+                 sizeof(jcr->dir_impl->since));
+
         JobDbRecord jr{};
-        bstrncpy(jr.Job, jcr->dir_impl->PrevJob, sizeof(jr.Job));
+        jr.JobId = prev_job;
         if (!jcr->db->GetJobRecord(jcr, &jr)) {
           Jmsg(jcr, M_FATAL, 0,
                T_("Could not get job record for previous Job. ERR=%s\n"),

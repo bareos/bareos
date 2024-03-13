@@ -131,7 +131,7 @@ struct DirectorJcrImpl {
   std::optional<JobDbRecord> previous_jr;        /**< Previous job database record */
   JobControlRecord* mig_jcr{};    /**< JobControlRecord for migration/copy job */
   char FSCreateTime[MAX_TIME_LENGTH]{}; /**< FileSet CreateTime as returned from DB */
-  char since[MAX_TIME_LENGTH]{};        /**< Since time */
+  char since[30 + MAX_TIME_LENGTH]{};        /**< Since time (may start with '(Upgraded from ??)')*/
   char PrevJob[MAX_NAME_LENGTH]{};      /**< Previous job name assiciated with since time */
   union {
     JobId_t RestoreJobId;               /**< Restore JobId specified by UA */

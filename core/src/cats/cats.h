@@ -666,12 +666,12 @@ class BareosDb : public BareosDbQueryEnum {
   bool FindLastJobStartTime(JobControlRecord* jcr,
                             JobDbRecord* jr,
                             POOLMEM*& stime,
-                            char* job,
+                            JobId_t* job,
                             int JobLevel);
   bool FindJobStartTime(JobControlRecord* jcr,
                         JobDbRecord* jr,
                         POOLMEM*& stime,
-                        char* job);
+                        JobId_t* job);
   bool FindLastJobid(JobControlRecord* jcr, const char* Name, JobDbRecord* jr);
   bool FindJobById(JobControlRecord* jcr, const std::string id);
   int FindNextVolume(JobControlRecord* jcr,
@@ -682,7 +682,8 @@ class BareosDb : public BareosDbQueryEnum {
   bool FindFailedJobSince(JobControlRecord* jcr,
                           JobDbRecord* jr,
                           POOLMEM* stime,
-                          int& JobLevel);
+                          int& JobLevel,
+                          JobId_t* job);
 
   /* sql_get.c */
   bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);

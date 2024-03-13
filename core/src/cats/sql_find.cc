@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,7 +57,7 @@
 bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
                                 JobDbRecord* jr,
                                 POOLMEM*& stime,
-                                char* job)
+                                JobId_t* job)
 {
   SQL_ROW row;
   char ed1[50], ed2[50];
@@ -72,7 +72,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
   if (jr->JobId == 0) {
     /* Differential is since last Full backup */
     Mmsg(cmd,
-         "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
+         "SELECT StartTime, JobId FROM Job WHERE JobStatus IN ('T','W') AND "
          "Type='%c' AND "
          "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
          "ORDER BY StartTime DESC LIMIT 1",
@@ -102,7 +102,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
       SqlFreeResult();
       /* Now edit SQL command for Incremental Job */
       Mmsg(cmd,
-           "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
+           "SELECT StartTime, JobId FROM Job WHERE JobStatus IN ('T','W') AND "
            "Type='%c' AND "
            "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%s "
            "AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
@@ -114,7 +114,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
     }
   } else {
     Dmsg1(100, "Submitting: %s\n", cmd);
-    Mmsg(cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%s",
+    Mmsg(cmd, "SELECT StartTime, JobId FROM Job WHERE Job.JobId=%s",
          edit_int64(jr->JobId, ed1));
   }
 
@@ -133,7 +133,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
   }
   Dmsg2(100, "Got start time: %s, job: %s\n", row[0], row[1]);
   PmStrcpy(stime, row[0]);
-  bstrncpy(job, row[1], MAX_NAME_LENGTH);
+  *job = atoi(row[1]);
 
   SqlFreeResult();
 
@@ -224,7 +224,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
 bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
                                     JobDbRecord* jr,
                                     POOLMEM*& stime,
-                                    char* job,
+                                    JobId_t* job,
                                     int JobLevel)
 {
   SQL_ROW row;
@@ -237,7 +237,7 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
   job[0] = 0;
 
   Mmsg(cmd,
-       "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
+       "SELECT StartTime, JobId FROM Job WHERE JobStatus IN ('T','W') AND "
        "Type='%c' AND "
        "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
        "ORDER BY StartTime DESC LIMIT 1",
@@ -255,7 +255,7 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
   }
   Dmsg1(100, "Got start time: %s\n", row[0]);
   PmStrcpy(stime, row[0]);
-  bstrncpy(job, row[1], MAX_NAME_LENGTH);
+  *job = atoi(row[1]);
 
   SqlFreeResult();
 
@@ -273,7 +273,8 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
 bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
                                   JobDbRecord* jr,
                                   POOLMEM* stime,
-                                  int& JobLevel)
+                                  int& JobLevel,
+                                  JobId_t* job)
 {
   SQL_ROW row;
   char ed1[50], ed2[50];
@@ -284,7 +285,7 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
 
   /* Differential is since last Full backup */
   Mmsg(cmd,
-       "SELECT Level FROM Job WHERE JobStatus NOT IN ('T','W') AND "
+       "SELECT Level, JobId FROM Job WHERE JobStatus NOT IN ('T','W') AND "
        "Type='%c' AND Level IN ('%c','%c') AND Name='%s' AND ClientId=%s "
        "AND FileSetId=%s AND StartTime>'%s' "
        "ORDER BY StartTime DESC LIMIT 1",
@@ -297,6 +298,7 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
     return false;
   }
   JobLevel = (int)*row[0];
+  *job = atoi(row[1]);
   SqlFreeResult();
 
   return true;
