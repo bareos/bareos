@@ -11,6 +11,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dbcheck: fix dbcheck crash if password is not set in catalog resource [PR #1730]
 - Bugfix: Clean up error handling in LDAP plugin, fix dependencies [PR #1720]
 
+### Documentation
+- docs: fix Pool explanation for migration jobs [PR #1735]
+
 ## [23.0.2] - 2024-02-28
 
 ### Added
@@ -428,4 +431,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1726]: https://github.com/bareos/bareos/pull/1726
 [PR #1729]: https://github.com/bareos/bareos/pull/1729
 [PR #1730]: https://github.com/bareos/bareos/pull/1730
+[PR #1735]: https://github.com/bareos/bareos/pull/1735
 [unreleased]: https://github.com/bareos/bareos/tree/master

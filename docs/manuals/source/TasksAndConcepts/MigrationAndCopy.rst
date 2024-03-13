@@ -32,7 +32,7 @@ Jobs can be selected for migration based on a number of criteria such as:
 
 The details of these selection criteria will be defined below.
 
-To run a Migration job, you must first define a Job resource very similar to a Backup Job but with :config:option:`dir/job/Type`\  = Migrate instead of :config:option:`dir/job/Type`\  = Backup. One of the key points to remember is that the Pool that is specified for the migration job is the only pool from which jobs will be migrated, with one exception noted below. In addition, the Pool to which the selected Job or Jobs will be migrated is defined by the
+To run a Migration job, you must first define a Job resource very similar to a Backup Job but with :config:option:`dir/job/Type`\  = Migrate. One of the key points to remember is that the Pool that is specified for the migration job is the only pool from which jobs will be migrated. In addition, the Pool to which the selected Job or Jobs will be migrated is defined by the
 :config:option:`dir/pool/NextPool`\  = ... in the Pool resource specified for the Migration Job.
 
 Bareos permits Pools to contain Volumes of different Media Types. However, when doing migration, this is a very undesirable condition. For migration to work properly, you should use Pools containing only Volumes of the same Media Type for all migration jobs.
@@ -100,7 +100,7 @@ Job Resource
    :config:option:`dir/job/SelectionPattern`\
 
 -  | :config:option:`dir/job/Pool`\
-   | For :config:option:`dir/job/SelectionType`\  other than SQLQuery, this defines what Pool will be examined for finding JobIds to migrate
+   | Defines the Pool that will be examined for finding JobIds to migrate. This Pool also sets the storage for reading the volumes containing the jobs.
 
 -
 
