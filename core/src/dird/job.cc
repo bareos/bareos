@@ -1167,18 +1167,16 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         pool_updated = true;
         bstrutime(jcr->starttime_string, sizeof(jcr->starttime_string),
                   last_diff_time);
-      } else {
-        if (jcr->dir_impl->res.job->rerun_failed_levels) {
-          if (jcr->db->FindFailedJobSince(jcr, &jcr->dir_impl->jr,
-                                          jcr->starttime_string, JobLevel)) {
-            Jmsg(jcr, M_INFO, 0,
-                 T_("Prior failed job found in catalog. Upgrading to %s.\n"),
-                 JobLevelToString(JobLevel));
-            Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
-                      T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
-            jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = JobLevel);
-          }
-        }
+      } else if (jcr->dir_impl->res.job->rerun_failed_levels
+                 && jcr->db->FindFailedJobSince(jcr, &jcr->dir_impl->jr,
+                                                jcr->starttime_string,
+                                                JobLevel)) {
+        Jmsg(jcr, M_INFO, 0,
+             T_("Prior failed job found in catalog. Upgrading to %s.\n"),
+             JobLevelToString(JobLevel));
+        Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
+                  T_(" (upgraded from %s)"), JobLevelToString(JobLevel));
+        jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = JobLevel);
       }
       jcr->dir_impl->jr.JobId = jcr->JobId;
 
