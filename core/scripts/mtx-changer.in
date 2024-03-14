@@ -251,21 +251,23 @@ case $cmd in
       if test ${inventory} -ne 0 ; then
         ${MTX} -f $ctl inventory
       fi
-      ${MTX} -f $ctl status >${TMPFILE}
+      ${MTX} -f $ctl status > "${TMPFILE}"
       rtn=$?
       # can be converted to awk+sed+cut, see below
-      perl -ne '
-/Data Transfer Element (\d+):Empty/ && print "D:$1:E\n";
-/Data Transfer Element (\d+):Full \(Storage Element (\d+) Loaded\)(:VolumeTag =\s*(.+))?/ && print "D:$1:F:$2:$4\n";
-/Storage Element (\d+):Empty/ && print "S:$1:E\n";
-/Storage Element (\d+):Full( :VolumeTag=(.+))?/ && print "S:$1:F:$3\n";
-/Storage Element (\d+) IMPORT.EXPORT:Empty/ && print "I:$1:E\n";
-/Storage Element (\d+) IMPORT.EXPORT:Full( :VolumeTag=(.+))?/ && print "I:$1:F:$3\n";' ${TMPFILE}
+#     perl -ne '
+#/Data Transfer Element (\d+):Empty/ && print "D:$1:E\n";
+#/Data Transfer Element (\d+):Full \(Storage Element (\d+) Loaded\)(:VolumeTag =\s*(.+))?/ && print "D:$1:F:$2:$4\n";
+#/Storage Element (\d+):Empty/ && print "S:$1:E\n";
+#/Storage Element (\d+):Full( :VolumeTag=(.+))?/ && print "S:$1:F:$3\n";
+#/Storage Element (\d+) IMPORT.EXPORT:Empty/ && print "I:$1:E\n";
+#/Storage Element (\d+) IMPORT.EXPORT:Full( :VolumeTag=(.+))?/ && print "I:$1:F:$3\n";' ${TMPFILE}
       # If perl isn't installed, you can use by those commands
 #cat ${TMPFILE} | grep "Data Transfer Element" | awk "{print \"D:\"\$4 \$7 \$9 \$10}" | sed "s/=/:/" | sed "s/Full/F:/" | sed "s/Empty/E/"
+      awk "/Data Transfer Element/ {gsub(\"=\",\":\",\$9);gsub(\"Full\",\"F:\",\$4);gsub(\"Empty\",\"E\",\$4);print \"D:\"\$4 \$7 \$9 \$10}" "${TMPFILE}"
 #cat ${TMPFILE} | grep -v "Data Transfer Element" | grep "Storage Element" | grep -v "IMPORT/EXPORT" | awk "{print \"S:\"\$3 \$4 \$5}" | sed "s/IMPORT\/EXPORT//" | sed "s/Full *:VolumeTag=/F:/" | sed "s/Empty/E/"
+      awk -F ":" "/^ .*Storage Element .*[0-9]:/ {gsub(\"[ ].*Storage Element \",\"\",\$1);gsub(\"Full \",\":F\",\$2);gsub(\"Empty\",\":E\",\$2);gsub(\"VolumeTag=\",\":\",\$3);print \"S:\"\$1 \$2 \$3}" "${TMPFILE}"
 #cat ${TMPFILE} | grep -v "Data Transfer Element" | grep "Storage Element" | grep "IMPORT/EXPORT" | awk "{print \"I:\"\$3 \$4 \$5}" | sed "s/IMPORT\/EXPORT//" | sed "s/Full *:VolumeTag=/F:/" | sed "s/Empty/E/"
-
+      awk -F ":" "/^ .*Storage Element .*[0-9] IMPORT\/EXPORT:/ {gsub(\"[ ].*Storage Element \",\"\",\$1);gsub(\" IMPORT/EXPORT\",\"\",\$1);gsub(\"Full \",\":F\",\$2);gsub(\"Empty\",\":E\",\$2);gsub(\"VolumeTag=\",\":\",\$3);print \"S:\"\$1 \$2 \$3}" "${TMPFILE}"
       rm -f ${TMPFILE} >/dev/null 2>&1
       exit $rtn
       ;;
