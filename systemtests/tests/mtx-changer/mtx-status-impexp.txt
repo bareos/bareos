@@ -1,0 +1,27 @@
+  Storage Changer /dev/sg0:2 Drives, 24 Slots ( 4 Import/Export )
+Data Transfer Element 0:Empty
+Data Transfer Element 1:Empty
+      Storage Element 1:Full :VolumeTag=000001L8                        
+      Storage Element 2:Full :VolumeTag=000002L8                        
+      Storage Element 3:Full :VolumeTag=000003L8                        
+      Storage Element 4:Full :VolumeTag=000004L8                        
+      Storage Element 5:Full :VolumeTag=000005L8                        
+      Storage Element 6:Full :VolumeTag=000006L8                        
+      Storage Element 7:Full :VolumeTag=000007L8                        
+      Storage Element 8:Full :VolumeTag=000008L8                        
+      Storage Element 9:Empty
+      Storage Element 10:Empty
+      Storage Element 11:Empty
+      Storage Element 12:Empty
+      Storage Element 13:Empty
+      Storage Element 14:Empty
+      Storage Element 15:Empty
+      Storage Element 16:Empty
+      Storage Element 17:Empty
+      Storage Element 18:Empty
+      Storage Element 19:Empty
+      Storage Element 20:Empty
+      Storage Element 21 IMPORT/EXPORT:Full :VolumeTag=000021L8                        
+      Storage Element 22 IMPORT/EXPORT:Full :VolumeTag=000022L8                        
+      Storage Element 23 IMPORT/EXPORT:Full :VolumeTag=000023L8                        
+      Storage Element 24 IMPORT/EXPORT:Full :VolumeTag=000024L8                        

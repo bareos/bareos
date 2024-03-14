@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+set -u
+set -o pipefail
+
+#shellcheck source=../../environment.in
+. ./environment
+
+MTX=./mock-mtx
+MTX_RETURNCODE=0
+MTX_MOCK_FILE=mtx-status-empty.txt
+export MTX MTX_RETURNCODE MTX_MOCK_FILE
+
+test_mtx_changer() {
+  echo "Testing mtx-changer with profile $1"
+  MTX_MOCK_FILE="mtx-status-$1.txt"
+  "${rscripts}/mtx-changer" /dev/sg0 listall > "$tmp/listall-$1.out"
+  diff -u "listall-$1.expected" "$tmp/listall-$1.out" | cat -vet
+}
+
+test_mtx_changer empty
+test_mtx_changer notloaded
+test_mtx_changer loaded1
+test_mtx_changer loaded2
+test_mtx_changer loadedboth
+test_mtx_changer impexp
