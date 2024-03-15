@@ -139,19 +139,19 @@ int dedup_device::d_open(const char* path, int, int mode)
       }
     }
 
-    auto& vol
+    auto& opened_volume
         = (read_only)
               ? openvol.emplace(dedup::volume::open_type::ReadOnly, path)
               : openvol.emplace(dedup::volume::open_type::ReadWrite, path);
 
-    return vol.fileno();
+    return opened_volume.fileno();
   } catch (const std::exception& ex) {
     Emsg0(M_ERROR, 0, T_("Could not open volume. ERR=%s\n"), ex.what());
     return -1;
   }
 }
 
-ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
+ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
 {
   using block_header = dedup::block_header;
   using record_header = dedup::record_header;
@@ -161,8 +161,8 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
     dedup::volume* vol;
     dedup::save_state save;
 
-    raii_save_state(dedup::volume& vol, block_header header)
-        : vol{&vol}, save{vol.BeginBlock(header)}
+    raii_save_state(dedup::volume& opened_volume, block_header header)
+        : vol{&opened_volume}, save{vol->BeginBlock(header)}
     {
     }
 
@@ -188,11 +188,11 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
     return -1;
   }
 
-  if (openvol->fileno() != fd) {
+  if (openvol->fileno() != dird) {
     Emsg0(M_ERROR, 0,
           T_("Trying to write dedup volume that is not open "
              "(open = %d, trying to write = %d).\n"),
-          openvol->fileno(), fd);
+          openvol->fileno(), dird);
     return -1;
   }
 
@@ -262,18 +262,18 @@ ssize_t dedup_device::d_write(int fd, const void* data, size_t size)
   }
 }
 
-ssize_t dedup_device::d_read(int fd, void* data, size_t size)
+ssize_t dedup_device::d_read(int dird, void* data, size_t size)
 {
   if (!openvol) {
     Emsg0(M_ERROR, 0, T_("Trying to write dedup volume when none are open.\n"));
     return -1;
   }
 
-  if (openvol->fileno() != fd) {
+  if (openvol->fileno() != dird) {
     Emsg0(M_ERROR, 0,
           T_("Trying to write dedup volume that is not open "
              "(open = %d, trying to write = %d).\n"),
-          openvol->fileno(), fd);
+          openvol->fileno(), dird);
     return -1;
   }
 
@@ -295,18 +295,18 @@ ssize_t dedup_device::d_read(int fd, void* data, size_t size)
   }
 }
 
-int dedup_device::d_close(int fd)
+int dedup_device::d_close(int dird)
 {
   if (!openvol) {
     Emsg0(M_ERROR, 0, T_("Trying to close dedup volume when none are open.\n"));
     return -1;
   }
 
-  if (openvol->fileno() != fd) {
+  if (openvol->fileno() != dird) {
     Emsg0(M_ERROR, 0,
           T_("Trying to close dedup volume that is not open "
              "(open = %d, trying to close = %d).\n"),
-          openvol->fileno(), fd);
+          openvol->fileno(), dird);
     return -1;
   }
 
@@ -372,9 +372,9 @@ bool dedup_device::d_truncate(DeviceControlRecord* dcr)
     auto parsed = dedup::device_option_parser::parse(dev_options ?: "");
     dedup::volume::create_new(s.st_mode, path.c_str(),
                               parsed.options.blocksize);
-    auto& vol
+    auto& opened_volume
         = openvol.emplace(dedup::volume::open_type::ReadWrite, path.c_str());
-    Device::fd = vol.fileno();
+    Device::fd = opened_volume.fileno();
   } catch (const std::exception& ex) {
     Emsg0(M_ERROR, 0, T_("Could not recreate %s. ERR=%s\n"), path.c_str(),
           ex.what());
