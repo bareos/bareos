@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,7 +46,6 @@
 
 namespace storagedaemon {
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Imported variables */
 
@@ -93,10 +92,8 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
 {
   JobControlRecord* jcr;
 
-  /**
-   * With the following Bmicrosleep on, running the
-   * SD under the debugger fails.
-   */
+  /* With the following Bmicrosleep on, running the
+   * SD under the debugger fails. */
   // Bmicrosleep(0, 50000);             /* wait 50 millisecs */
   if (!(jcr = get_jcr_by_full_name(job_name))) {
     Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"),
@@ -217,19 +214,18 @@ bool DoListenRun(JobControlRecord* jcr)
         jcr->sd_auth_key);
   Dmsg2(800, "Wait SD for jid=%d %p\n", jcr->JobId, jcr);
 
-  /*
-   * Wait for the Storage daemon to contact us to start the Job, when he does,
-   * we will be released.
-   */
-  P(mutex);
-  while (!jcr->authenticated && !JobCanceled(jcr)) {
-    errstat = pthread_cond_wait(&jcr->impl->job_start_wait, &mutex);
+  /* Wait for the Storage daemon to contact us to start the Job, when he does,
+   * we will be released. */
+  pthread_mutex_t* mutex = jcr->mutex_guard();
+  Lmgr_p(mutex);
+  while (!jcr->impl->client_connected && !JobCanceled(jcr)) {
+    errstat = pthread_cond_wait(&jcr->impl->job_start_wait, mutex);
     if (errstat == EINVAL || errstat == EPERM) { break; }
     Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
   }
   Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
         JobCanceled(jcr), errstat);
-  V(mutex);
+  Lmgr_v(mutex);
 
   if (!jcr->authenticated || !jcr->store_bsock) {
     Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
