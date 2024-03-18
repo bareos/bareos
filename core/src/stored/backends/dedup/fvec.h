@@ -172,26 +172,31 @@ template <typename T> class fvec : access {
     auto new_size = size + diff;
     grow_file(new_size);
 
+    auto* res = MAP_FAILED;
 #ifdef MREMAP_MAYMOVE
-    auto res = mremap(std::exchange(buffer, nullptr), size, new_size,
-                      MREMAP_MAYMOVE, nullptr);
+    if (buffer != nullptr) {
+      res = mremap(std::exchange(buffer, nullptr), size, new_size,
+                   MREMAP_MAYMOVE, nullptr);
 
-    if (res == MAP_FAILED) {
-      throw error("mremap (size = " + std::to_string(size)
-                  + ", new size = " + std::to_string(new_size) + ")");
+      if (res == MAP_FAILED) {
+        throw error("mremap (size = " + std::to_string(size)
+                    + ", new size = " + std::to_string(new_size) + ")");
+      }
+      if (res == nullptr) { throw error("mremap returned nullptr."); }
+
+      // update buffer
+      buffer = reinterpret_cast<T*>(res);
     }
-    if (res == nullptr) { throw error("mremap returned nullptr."); }
+#endif
 
-    // update buffer
-    buffer = reinterpret_cast<T*>(res);
-#else
+
     // mremap is linux specific.  On other systems we
     // try to extend the mapping if possible ...
-    auto res = MAP_FAILED;
 
-    if (size % page_size == 0) {
+    if ((res == MAP_FAILED) && (size % page_size == 0)) {
       res = mmap(buffer + size, new_size - size, prot, MAP_SHARED | MAP_FIXED,
                  fd, size);
+      // buffer already has the correct value
     }
 
     if (res == MAP_FAILED) {
@@ -213,10 +218,7 @@ template <typename T> class fvec : access {
 
       // update buffer
       buffer = reinterpret_cast<T*>(res);
-    } else {
-      // buffer already has the correct value
     }
-#endif
 
     bytes_allocated = new_size;
 #ifdef MADV_HUGEPAGE
@@ -255,11 +257,35 @@ template <typename T> class fvec : access {
 
   void resize_to_fit()
   {
+    auto size = bytes_allocated;
     auto new_size = count * element_size;
-    auto aligned = page_aligned(new_size);
-    if (ftruncate(fd, aligned) != 0) {
+    if (size == new_size) { return; }
+
+    if (munmap(std::exchange(buffer, nullptr), size) < 0) {
+      throw error("munmap (size = " + std::to_string(size) + ")");
+    }
+
+    bytes_allocated = 0;
+
+    if (ftruncate(fd, new_size) != 0) {
       throw error("ftruncate (new size = " + std::to_string(new_size) + ")");
     }
+
+    if (new_size == 0) { return; }
+
+    auto* res = reinterpret_cast<T*>(
+        mmap(nullptr, new_size, prot, MAP_SHARED, fd, 0));
+
+    if (res == MAP_FAILED) {
+      throw error("mmap (size = " + std::to_string(new_size)
+                  + ", prot = " + std::to_string(prot)
+                  + ", fd = " + std::to_string(fd) + ")");
+    }
+    if (res == nullptr) { throw error("mmap returned nullptr."); }
+
+    // update buffer
+    buffer = reinterpret_cast<T*>(res);
+    bytes_allocated = new_size;
   }
 
   void flush()
