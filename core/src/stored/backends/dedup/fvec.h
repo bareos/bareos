@@ -108,7 +108,7 @@ template <typename T> class fvec : access {
   fvec& operator=(fvec&& other)
   {
     std::swap(buffer, other.buffer);
-    std::swap(cap, other.cap);
+    std::swap(bytes_allocated, other.bytes_allocated);
     std::swap(count, other.count);
     std::swap(fd, other.fd);
 
@@ -121,6 +121,7 @@ template <typename T> class fvec : access {
 
   template <typename... Args> reference emplace_back(Args&&... args)
   {
+    auto cap = capacity();
     if (count >= cap) {
       // grow by ~50% each time
       auto add = (cap >> 1) + 1;
@@ -140,7 +141,7 @@ template <typename T> class fvec : access {
 
   size_type max_size() const { return std::numeric_limits<size_type>::max(); }
 
-  size_type capacity() const { return cap; }
+  size_type capacity() const { return bytes_allocated / element_size; }
 
   pointer data() { return buffer; }
 
@@ -156,18 +157,18 @@ template <typename T> class fvec : access {
 
   const_iterator end() const { return &buffer[count]; }
 
-  void reserve(size_type new_cap)
+  void reserve(size_type min_cap)
   {
-    if (new_cap <= cap) { return; }
+    auto min_new_size = page_aligned(min_cap * element_size);
 
-    auto diff = new_cap - cap;
+    if (min_new_size <= bytes_allocated) { return; }
+
+    auto diff = min_new_size - bytes_allocated;
 
     if (diff < min_growth_size) { diff = min_growth_size; }
 
-    new_cap = cap + diff;
-
-    auto size = cap * element_size;
-    auto new_size = new_cap * element_size;
+    auto size = bytes_allocated;
+    auto new_size = size + diff;
     grow_file(new_size);
 
 #ifdef MREMAP_MAYMOVE
@@ -216,9 +217,9 @@ template <typename T> class fvec : access {
     }
 #endif
 
-    cap = new_cap;
+    bytes_allocated = new_size;
 #ifdef MADV_HUGEPAGE
-    madvise(buffer, cap * element_size, MADV_HUGEPAGE);
+    madvise(buffer, bytes_allocated, MADV_HUGEPAGE);
 #endif
   }
 
@@ -253,16 +254,16 @@ template <typename T> class fvec : access {
 
   void resize_to_fit()
   {
-    cap = count;
-    auto new_size = cap * element_size;
-    if (ftruncate(fd, new_size) != 0) {
+    auto new_size = count * element_size;
+    auto aligned = page_aligned(new_size);
+    if (ftruncate(fd, aligned) != 0) {
       throw error("ftruncate (new size = " + std::to_string(new_size) + ")");
     }
   }
 
   void flush()
   {
-    auto size = cap * element_size;
+    auto size = useful_bytes();
     if (msync(buffer, size, MS_SYNC) < 0) {
       throw error("msync (size = " + std::to_string(size) + ")");
     }
@@ -270,16 +271,24 @@ template <typename T> class fvec : access {
 
   ~fvec()
   {
-    if (buffer) { munmap(buffer, cap * element_size); }
+    if (buffer) { munmap(buffer, bytes_allocated); }
   }
 
  private:
   static constexpr size_type page_size = 4096;
   T* buffer{nullptr};
-  size_type cap{0};
+  size_type bytes_allocated{0};
   size_type count{0};
   int fd{-1};
   int prot;
+
+  size_type page_aligned(size_type size)
+  {
+    auto ceil = (size + page_size - 1) / page_size;
+    return ceil * page_size;
+  }
+  size_type useful_bytes() { return count * element_size; }
+
   static constexpr std::size_t min_growth_size = MinGrowthSize<element_size>();
   static constexpr std::size_t max_growth_size = MaxGrowthSize<element_size>();
 
@@ -313,25 +322,26 @@ template <typename T> class fvec : access {
       throw error("fstat (fd = " + std::to_string(fd) + ")");
     }
 
-    cap = s.st_size / element_size;
+    auto filesize = s.st_size;
+    auto capacity = filesize / element_size;
 
-    if (count > cap) {
+    if (count > capacity) {
       throw std::runtime_error("size > capacity (" + std::to_string(count)
-                               + " > " + std::to_string(cap) + ")");
+                               + " > " + std::to_string(capacity) + ")");
     }
 
-    if (cap == 0) {
+    if (capacity == 0) {
       // mmap errors out if length is zero, as such we need to always ensure
       // that we can map something
       auto new_cap = 1024;
-      grow_file(new_cap * element_size);
-      cap = new_cap;
+      filesize = new_cap * element_size;
+      grow_file(filesize);
     }
 
-    auto size = cap * element_size;
-    buffer = reinterpret_cast<T*>(mmap(nullptr, size, prot, MAP_SHARED, fd, 0));
+    buffer = reinterpret_cast<T*>(
+        mmap(nullptr, filesize, prot, MAP_SHARED, fd, 0));
     if (buffer == MAP_FAILED) {
-      throw error("mmap (size = " + std::to_string(size)
+      throw error("mmap (size = " + std::to_string(filesize)
                   + ", prot = " + std::to_string(prot)
                   + ", fd = " + std::to_string(fd) + ")");
     }
@@ -340,7 +350,7 @@ template <typename T> class fvec : access {
       throw std::runtime_error("mmap returned nullptr.");
     }
 #ifdef MADV_HUGEPAGE
-    madvise(buffer, cap * element_size, MADV_HUGEPAGE);
+    madvise(buffer, filesize, MADV_HUGEPAGE);
 #endif
   }
 };
