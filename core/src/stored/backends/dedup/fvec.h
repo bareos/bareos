@@ -111,6 +111,7 @@ template <typename T> class fvec : access {
     std::swap(bytes_allocated, other.bytes_allocated);
     std::swap(count, other.count);
     std::swap(fd, other.fd);
+    std::swap(prot, other.prot);
 
     return *this;
   }
