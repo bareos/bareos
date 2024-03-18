@@ -1178,7 +1178,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{script_dir}/disk-changer
 %{plugin_dir}/autoxflate-sd.so
 %{backend_dir}/libbareossd-file*.so
-%{backend_dir}/libbareossd-dedup*.so
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
@@ -1206,6 +1205,14 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{backend_dir}/libbareossd-fifo*.so
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/NULL.conf.example
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/NULL.conf.example
+
+%files storage-dedup
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-dedup*.so
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/dedup.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup.conf.example
+%dir %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup/
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup/*.example
 
 %if 0%{?droplet}
 %files storage-droplet
