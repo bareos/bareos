@@ -185,8 +185,13 @@ template <typename T> class fvec : access {
 #else
     // mremap is linux specific.  On other systems we
     // try to extend the mapping if possible ...
-    auto res = mmap(buffer + size, new_size - size, prot,
-                    MAP_SHARED | MAP_FIXED, fd, size);
+    auto res = MAP_FAILED;
+
+    if (size % page_size == 0) {
+      res = mmap(buffer + size, new_size - size, prot, MAP_SHARED | MAP_FIXED,
+                 fd, size);
+    }
+
     if (res == MAP_FAILED) {
       // ... otherwise we do an unmap + mmap
 
@@ -269,6 +274,7 @@ template <typename T> class fvec : access {
   }
 
  private:
+  static constexpr size_type page_size = 4096;
   T* buffer{nullptr};
   size_type cap{0};
   size_type count{0};
