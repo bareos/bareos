@@ -282,7 +282,8 @@ template <typename T> class fvec : access {
   int fd{-1};
   int prot;
 
-  size_type page_aligned(size_type size) {
+  size_type page_aligned(size_type size)
+  {
     auto ceil = (size + page_size - 1) / page_size;
     return ceil * page_size;
   }
@@ -348,8 +349,9 @@ template <typename T> class fvec : access {
       // this should not happen
       throw std::runtime_error("mmap returned nullptr.");
     }
+    bytes_allocated = filesize;
 #ifdef MADV_HUGEPAGE
-    madvise(buffer, filesize, MADV_HUGEPAGE);
+    madvise(buffer, bytes_allocated, MADV_HUGEPAGE);
 #endif
   }
 };
