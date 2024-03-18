@@ -179,6 +179,9 @@ template <typename T> class fvec : access {
                   + ", new size = " + std::to_string(new_size) + ")");
     }
     if (res == nullptr) { throw error("mremap returned nullptr."); }
+
+    // update buffer
+    buffer = reinterpret_cast<T*>(res);
 #else
     // mremap is linux specific.  On other systems we
     // try to extend the mapping if possible ...
@@ -200,10 +203,14 @@ template <typename T> class fvec : access {
                     + ", fd = " + std::to_string(fd) + ")");
       }
       if (res == nullptr) { throw error("mmap returned nullptr."); }
+
+      // update buffer
+      buffer = reinterpret_cast<T*>(res);
+    } else {
+      // buffer already has the correct value
     }
 #endif
 
-    buffer = reinterpret_cast<T*>(res);
     cap = new_cap;
 #ifdef MADV_HUGEPAGE
     madvise(buffer, cap * element_size, MADV_HUGEPAGE);
