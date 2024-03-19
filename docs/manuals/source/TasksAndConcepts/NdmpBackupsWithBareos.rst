@@ -529,7 +529,7 @@ UPDATE
 Example NDMP Fileset to backup a subset of a NDMP filesystem
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-The following fileset is intended to backup all files and directories matching :file:`/ifs/home/users/a*`. It has been tested against Isilon OneFS 7.2.0.1. See `Isilon OneFS Administration Guide <https://www.delltechnologies.com/asset/en-us/products/storage/technical-support/isilon-quick-reference-guide-for-administrators.pdf>`_, section quote{NDMP environment variables} for details about the supported NDMP environment variables. Excludes are not used in this example.
+The following fileset is intended to backup all files and directories matching :file:`/ifs/home/users/a*`. It has been tested against Isilon OneFS 7.2.0.1. See `Isilon OneFS Administration Guide <https://www.dell.com/support/manuals/en-us/isilon-onefs/ifs_pub_administration_guide_gui/introduction-to-this-guide>`_, section quote{NDMP environment variables} for details about the supported NDMP environment variables. Excludes are not used in this example.
 
 .. code-block:: bareosconfig
    :caption: NDMP Fileset Isilon Include/Exclude
@@ -737,8 +737,8 @@ Let us have a look what files are in our backup:
     /ifs/home/admin/.zshrc
 
 The real backup data is stored in the file :file:`/@NDMP/ifs/home%0` (we will
-refer to it as "NDMP main backup file" or "main backup file" later on). One 
-NDMP main backup file is created for every directory specified in the used 
+refer to it as "NDMP main backup file" or "main backup file" later on). One
+NDMP main backup file is created for every directory specified in the used
 Fileset. The other files show the file history and are hard links to the backup
 file.
 
