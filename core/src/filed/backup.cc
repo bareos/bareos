@@ -1594,11 +1594,12 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   Dmsg3(300, "File %s\nattribs=%s\nattribsEx=%s\n", ff_pkt->fname,
         attribs.c_str(), attribsEx);
 
-  jcr->lock();
-  jcr->JobFiles++;                   /* increment number of files sent */
-  ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
-  PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
-  jcr->unlock();
+  {
+    std::unique_lock l(jcr->mutex_guard());
+    jcr->JobFiles++;                   /* increment number of files sent */
+    ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
+    PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
+  }
 
   // Debug code: check if we must hangup
   if (hangup && (jcr->JobFiles > (uint32_t)hangup)) {

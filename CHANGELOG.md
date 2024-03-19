@@ -14,6 +14,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - docs: fix Pool explanation for migration jobs [PR #1735]
 
+### Fixed
+- stored: fix authentication race condition / deadlock [PR #1737]
+
 ## [23.0.2] - 2024-02-28
 
 ### Added
@@ -432,4 +435,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1729]: https://github.com/bareos/bareos/pull/1729
 [PR #1730]: https://github.com/bareos/bareos/pull/1730
 [PR #1735]: https://github.com/bareos/bareos/pull/1735
+[PR #1737]: https://github.com/bareos/bareos/pull/1737
 [unreleased]: https://github.com/bareos/bareos/tree/master

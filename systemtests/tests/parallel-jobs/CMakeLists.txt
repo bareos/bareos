@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,3 +19,12 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+
+set_tests_properties(
+  system:parallel-jobs:parallel-jobs
+  PROPERTIES FIXTURES_SETUP "system:parallel-jobs:parallel-jobs-fixture"
+)
+set_tests_properties(
+  system:parallel-jobs:reservation-order
+  PROPERTIES DEPENDS "system:parallel-jobs:parallel-jobs-fixture"
+)
