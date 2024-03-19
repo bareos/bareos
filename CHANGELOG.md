@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- stored: fix authentication race condition / deadlock [PR #1742]
+
 ## [21.1.9] - 2024-02-28
 
 ### Changed
@@ -725,4 +728,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1682]: https://github.com/bareos/bareos/pull/1682
 [PR #1702]: https://github.com/bareos/bareos/pull/1702
 [PR #1705]: https://github.com/bareos/bareos/pull/1705
+[PR #1742]: https://github.com/bareos/bareos/pull/1742
 [unreleased]: https://github.com/bareos/bareos/tree/master
