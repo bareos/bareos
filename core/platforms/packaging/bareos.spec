@@ -1222,8 +1222,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{backend_dir}/libbareossd-dedup*.so
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/dedup.conf.example
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup.conf.example
-%dir %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup/
-%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup/*.example
 
 %if 0%{?droplet}
 %files storage-droplet
