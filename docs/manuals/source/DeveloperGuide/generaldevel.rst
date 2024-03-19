@@ -36,7 +36,6 @@ Patches
 
 Patches should be sent as a pull-request to the master branch of the GitHub repository.
 A detailed description can be found in the chapter :ref:`git-workflow`.
-If you don't want to sign up to GitHub, you can also send us your patches via E-Mail in **git format-patch** format to the `bareos-devel`_ mailing list.
 
 Please make sure to use the Bareos `Automatic Sourcecode Formatting`_.
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
@@ -45,33 +44,46 @@ Also, include the Bareos copyright notice that can be found in every source file
 Bug Database
 ------------
 
-We have a bug database which is at https://bugs.bareos.org/.
-
+We had an historical bug database located at https://bugs.bareos.org/\ , which is now
+in read-only mode.
+All new bug are now collected using the `github issues`_ component
 The first thing is if you want to take over a bug, rather than just make
-a note, you should assign the bug to yourself. This helps other
+a comment, you should assign the bug to yourself. This helps other
 developers know that you are the principal person to deal with the bug.
-You can do so by going into the bug and clicking on the **Update Issue**
-button. Then you simply go to the **Assigned To** box and select your
-name from the drop down box. To actually update it you must click on the
-**Update Information** button a bit further down on the screen, but if
-you have other things to do such as add a Note, you might wait before
-clicking on the **Update Information** button.
+You can do so by going into the issue and use ``assign yourself`` in ``Assignees`` section.
 
-Generally, we set the **Status** field to either acknowledged,
-confirmed, or feedback when we first start working on the bug. Feedback
-is set when we expect that the user should give us more information.
+Working with labels
+~~~~~~~~~~~~~~~~~~~
 
-Normally, once you are reasonably sure that the bug is fixed, and a
-patch is made and attached to the bug report, and/or in the Git, you can
-close the bug. If you want the user to test the patch, then leave the
-bug open, otherwise close it and set **Resolution** to **Fixed**. We
-generally close bug reports rather quickly, even without confirmation,
+Generally, the label ``bug`` and ``need triage`` are already set when a user add an issue.
+
+The following non exhaustive list, explain what label can be used for sorting and
+qualifying the issue.
+
+- ``bug``: Something isn't working
+- ``need triage``: No one has looked at this issue yet
+- ``documentation``: Improvements or additions to documentation
+- ``duplicate``: This issue or pull request already exists
+- ``enhancement``: New feature or request
+- ``good first issue``: Good for newcomers
+- ``help wanted``: Extra attention is needed
+- ``invalid``: This doesn't seem right
+- ``question``: Further information is requested
+- ``wontfix``: This will not be worked on
+
+Usually issue related to a PR will be closed when the PR will be merged.
+We also have a mechanism that will close any issue still open after a certain days
+of non activity.
+We generally close bug reports rather quickly, even without confirmation,
 especially if we have run tests and can see that for us the problem is
-fixed. However, in doing so, it avoids misunderstandings if you leave a
+fixed or not reproducible.
+However, in doing so, it avoids misunderstandings if you leave a
 note while you are closing the bug that says something to the following
-effect: We are closing this bug because... If for some reason, it does
-not fix your problem, please feel free to reopen it, or to open a new
-bug report describing the problem“.
+effect:
+
+      "We are closing this bug because... If for some reason, it does
+      not fix your problem, please feel free to reopen it, or to open a new
+      bug report describing the problem“.
 
 We do not recommend that you attempt to edit any of the bug notes that
 have been submitted, nor to delete them or make them private. In fact,
@@ -79,66 +91,108 @@ if someone accidentally makes a bug note private, you should ask the
 reason and if at all possible (with his agreement) make the bug note
 public.
 
-If the user has not properly filled in most of the important fields (platform, OS, Product Version, ...) please do not hesitate to politely ask him to do so.
-The same applies to a support request (we answer only bugs), you might give the user a tip, but please politely refer him to the manual, the `bareos-users`_ mailing list and maybe the `commercial support`_.
+
+If the user has not properly filled in most of the important fields
+(platform, OS, Product Version, ...) please do not hesitate to politely ask him to do so.
+The same applies to a support request (we answer only bugs), you might give
+the user a tip, but please politely refer him to the manual, the `bareos-users`_
+mailing list and maybe the `commercial support`_.
 
 .. _bareos-users:       https://groups.google.com/forum/#!forum/bareos-users
 .. _commercial support: https://www.bareos.com/product/support/
+.. _github issues:      https://github.com/bareos/bareos/issues/
+
 
 Reporting security issues
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to report a security-related problem, please take a look at our `security policy`_.
+If you want to report a security-related problem, please take a look
+at our `security policy`_.
 
 .. _security policy: https://github.com/bareos/bareos/security/policy
+
 
 Memory Leaks
 ------------
 
-Use standard C++17 resource management (RAII and smart pointers) to prevent memory leaks in general. If you need to detect memory leaks, you can just use ``valgrind`` to do so.
+Use standard C++17 resource management (RAII and smart pointers) to prevent memory leaks
+in general. If you need to detect memory leaks, you can just use ``valgrind`` to do so.
 
-We also use sanitizers to detect memory leaks. To enable them, ensure you install ``libasan``, ``libubsan``, and ``libtsan`` and then enable sanitizers in the cmake arguments with ``-DENABLE_SANITIZERS=YES``.
+We also use sanitizers to detect memory leaks. To enable them, ensure you install
+``libasan``, ``libubsan``, and ``libtsan`` and then enable sanitizers in the cmake
+arguments with ``-DENABLE_SANITIZERS=YES``.
+
 
 Guiding Principles
 ------------------
 
-All new code should be written in modern C++17 following the `Google C++ Style Guide`_ and the `C++ Core Guidelines`_.
+All new code should be written in modern C++17 following the `Google C++ Style Guide`_
+and the `C++ Core Guidelines`_.
 
-We like simple rather than complex code, but complex code is still better than complicated code.
+We like simple rather than complex code, but complex code is still better than
+complicated code.
 
-Currently there is still a lot of old C++ and C code in the code base and a lot of existing code violates our `do's`_ and `don'ts`_. Therefore our long-term goal is to modernize the code-base to make it easier to understand, easier to maintain and better approachable for new developers.
+Currently there is still a lot of old C++ and C code in the code base and a lot of
+existing code violates our `do's`_ and `don'ts`_. Therefore our long-term goal is to
+modernize the code-base to make it easier to understand, easier to maintain and better
+approachable for new developers.
 
 Boy Scout Rule
 --------------
 
-Before submitting your pull request, please ensure that you have followed the Boy Scout Rule:
+Before submitting your pull request, please ensure that you have followed
+the Boy Scout Rule:
 
 > **"Leave the codebase better than you found it."**
 
-The Boy Scout Rule encourages contributors to make small improvements or clean-ups while working on a task without being explicitly requested. By following this rule, we can collectively improve the quality, readability, and maintainability of the codebase over time.
+The Boy Scout Rule encourages contributors to make small improvements or clean-ups
+while working on a task without being explicitly requested. By following this rule,
+we can collectively improve the quality, readability, and maintainability of the
+codebase over time.
 
 To apply the Boy Scout Rule, consider the following guidelines:
 
-- **Clean up code**: Review the code you are modifying and check if there are any areas that could be improved, such as variable naming, code formatting, or removing unnecessary comments.
-- **Refactor when appropriate**: If you find a block of code that you can refactor to improve its clarity or efficiency, take the initiative to make those changes.
-- **Fix adjacent issues**: If you notice any related issues or bugs while working on your task, address them if it’s within the scope of your current changes. This proactive approach helps prevent future problems.
-- **Update documentation**: If you modify a part of the codebase that affects the existing documentation, ensure that relevant documentation is updated accordingly.
+- **Clean up code**: Review the code you are modifying and check if there are any areas
+  that could be improved, such as variable naming, code formatting, or removing
+  unnecessary comments.
+- **Refactor when appropriate**: If you find a block of code that you can refactor to
+  improve its clarity or efficiency, take the initiative to make those changes.
+- **Fix adjacent issues**: If you notice any related issues or bugs while working on
+  your task, address them if it’s within the scope of your current changes.
+  This proactive approach helps prevent future problems.
+- **Update documentation**: If you modify a part of the codebase that affects the
+  existing documentation, ensure that relevant documentation is updated accordingly.
 
-Remember, the goal of the Boy Scout Rule is to foster continuous improvement and create a more sustainable and maintainable codebase. By leaving the code better than you found it, you contribute to the overall health and longevity of the project.
+Remember, the goal of the Boy Scout Rule is to foster continuous improvement and
+create a more sustainable and maintainable codebase. By leaving the code better
+than you found it, you contribute to the overall health and longevity of the project.
+
 
 Usage of C++ Exceptions
 -----------------------
 
-We encourage developers to use C++ exceptions for the reason of simplicity and readability of the code. In contrast to long if/else constructs C++ exceptions are the state-of-the-art error handling mechanism of this programming language. With exceptions it is easier to transport errors and information about errors from the lowest stack level to the uppermost function.
+We encourage developers to use C++ exceptions for the reason of simplicity and
+readability of the code. In contrast to long if/else constructs C++ exceptions
+are the state-of-the-art error handling mechanism of this programming language.
+With exceptions it is easier to transport errors and information about errors
+from the lowest stack level to the uppermost function.
 
-In order to avoid memory leaks it is very advisable to use RAII or smart pointers for memory allocation. With regard to legacy code it is important to understand how memory management in detail works before throwing exceptions across several stack levels and causing leaks by accident.
+In order to avoid memory leaks it is very advisable to use RAII or smart pointers
+for memory allocation. With regard to legacy code it is important to understand how
+memory management in detail works before throwing exceptions across several stack
+levels and causing leaks by accident.
 
-General advice, many examples and debunked myths about C++ Exceptions can be found here: https://isocpp.org/wiki/faq/exceptions.
+General advice, many examples and debunked myths about C++ Exceptions can be
+found here: https://isocpp.org/wiki/faq/exceptions.
+
 
 Automatic Sourcecode Formatting
 -------------------------------
 
-All C/C++ code should be formatted properly based on the principles mentioned above. Therefore we provide a configuration file for **clang-format** that contains all formatting rules. The filename is ".clang-format" and it is located in the root directory of the bareos repo.
+All C/C++ code should be formatted properly based on the principles mentioned above.
+Therefore we provide a configuration file for **clang-format** that contains all
+formatting rules. The filename is ".clang-format" and it is located in the root
+directory of the bareos repo.
 
 The configuration file will be automatically found and used by clang-format:
 
@@ -165,7 +219,12 @@ https://github.com/bareos/bareos/blob/master/devtools/pip-tools/README.md descri
 Formatting exceptions
 ---------------------
 
-For some parts of code it works best to hand-optimize the formatting. We sometimes do this for larger tables and deeply nested brace initialization. If you need to hand-optimize make sure you add **clang-format off** and **clang-format on** comments so applying **clang-format** on your source will not undo your manual optimization. Please apply common sense and use this exception sparingly.
+For some parts of code it works best to hand-optimize the formatting. We sometimes do
+this for larger tables and deeply nested brace initialization. If you need to
+hand-optimize make sure you add **clang-format off** and **clang-format on** comments
+so applying **clang-format** on your source will not undo your manual optimization.
+Please apply common sense and use this exception sparingly.
+
 
 Sourcecode Comments
 -------------------
@@ -176,13 +235,19 @@ Use ``//`` for single-line comments.
 SQL queries
 -----------
 
-Developers will have to use SQL queries to get data from the database. When you navigate the current code you might get a bit confused as there are different ways to do it:
-First, there are direct queries written within the functions that need them. Second, there are functions within the ``cats`` library containing ready made queries that get called. And finally there are the generated SQL files within the ``cats/dml`` folder that get invoked in certain situations.
+Developers will have to use SQL queries to get data from the database. When you navigate
+the current code you might get a bit confused as there are different ways to do it:
+First, there are direct queries written within the functions that need them. Second,
+there are functions within the ``cats`` library containing ready made queries that get
+called. And finally there are the generated SQL files within the ``cats/dml`` folder
+that get invoked in certain situations.
 
 Until we decide on a unified way to handle sql queries, we advise the following:
 
-- If your queries are trivial, you can put them as a string within the code you are writing, make sure you wrap them in a function, and make sure it can be reused,
-- If you are dealing with long and convoluted queries, write them within the ``cats/dml`` folder and update the related files and enums.
+- If your queries are trivial, you can put them as a string within the code you are
+  writing, make sure you wrap them in a function, and make sure it can be reused,
+- If you are dealing with long and convoluted queries, write them within the ``cats/dml``
+  folder and update the related files and enums.
 
 Do's
 ----
@@ -231,5 +296,6 @@ avoid the ``edit_*()`` functions from ``edit.cc``
   This will also avoid the temporary buffer that is required otherwise.
 
 avoid pool memory allocation
-  The whole allocation library with ``get_pool_memory()`` and friends do not mix with RAII, so we will try to remove them step by step in the future.
+  The whole allocation library with ``get_pool_memory()`` and friends do not mix with
+  RAII, so we will try to remove them step by step in the future.
   Avoid in new code if possible.
