@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -952,7 +952,6 @@ class BareosDb : public BareosDbQueryEnum {
   /* Pure virtual low level methods */
   virtual bool OpenDatabase(JobControlRecord* jcr) = 0;
   virtual void CloseDatabase(JobControlRecord* jcr) = 0;
-  virtual bool ValidateConnection(void) = 0;
   virtual void StartTransaction(JobControlRecord* jcr) = 0;
   virtual void EndTransaction(JobControlRecord* jcr) = 0;
 
