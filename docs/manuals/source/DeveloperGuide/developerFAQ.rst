@@ -42,7 +42,7 @@ I have changes that affect tapes and autochangers, how can I test them?
 
 In order to test tapes, we use :command:`mhvtl` to simulate the presence of tape and autochanger devices.
 
-Documentation is available at https://www.mhvtl.com/
+Documentation is available at https://sites.google.com/site/linuxvtl2/
 
 Some distributions, like openSUSE, offer mhvtl packages that you can download and install using your package manager.
 Otherwise you need to clone the mhvtl repository from https://github.com/markh794/mhvtl.git.

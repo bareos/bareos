@@ -45,7 +45,7 @@ To summarize:
 * Reviewer: approves the PR and someone from Bareos will merge it.
 
 
-.. _Github Flow: https://docs.github.com/en/get-started/quickstart/github-flow
+.. _Github Flow: https://docs.github.com/en/get-started/using-github/github-flow
 
 Releases and Backporting
 ------------------------
