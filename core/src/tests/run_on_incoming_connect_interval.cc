@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -198,7 +198,6 @@ class MockDatabase : public BareosDb {
 
   bool OpenDatabase(JobControlRecord* /*jcr*/) override { return false; }
   void CloseDatabase(JobControlRecord* /*jcr*/) override {}
-  bool ValidateConnection() override { return false; }
   void StartTransaction(JobControlRecord* /*jcr*/) override {}
   void EndTransaction(JobControlRecord* /*jcr*/) override {}
   bool SqlCopyStart(const std::string&,

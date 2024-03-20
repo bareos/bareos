@@ -289,28 +289,6 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
   unlock_mutex(mutex);
 }
 
-bool BareosDbPostgresql::ValidateConnection(void)
-{
-  // Perform a null query to see if the connection is still valid.
-  DbLocker _{this};
-  if (!SqlQueryWithoutHandler("SELECT 1", true)) {
-    // Try resetting the connection.
-    PQreset(db_handle_);
-    if (PQstatus(db_handle_) != CONNECTION_OK) { return false; }
-
-    SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
-    SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
-    SqlQueryWithoutHandler("SET standard_conforming_strings=on");
-
-    // Retry the null query.
-    if (!SqlQueryWithoutHandler("SELECT 1", true)) { return false; }
-  }
-
-  SqlFreeResult();
-
-  return true;
-}
-
 /**
  * Escape strings so that PostgreSQL is happy
  *
@@ -632,6 +610,7 @@ retry_query:
             // Reset the connection settings.
             PQexec(db_handle_, "SET datestyle TO 'ISO, YMD'");
             PQexec(db_handle_, "SET cursor_tuple_fraction=1");
+            PQexec(db_handle_, "SET client_min_messages TO WARNING");
             result_ = PQexec(db_handle_, "SET standard_conforming_strings=on");
 
             switch (PQresultStatus(result_)) {
