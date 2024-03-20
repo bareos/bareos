@@ -198,7 +198,6 @@ class MockDatabase : public BareosDb {
 
   bool OpenDatabase(JobControlRecord* /*jcr*/) override { return false; }
   void CloseDatabase(JobControlRecord* /*jcr*/) override {}
-  bool ValidateConnection() override { return false; }
   void StartTransaction(JobControlRecord* /*jcr*/) override {}
   void EndTransaction(JobControlRecord* /*jcr*/) override {}
   bool SqlCopyStart(const std::string&,

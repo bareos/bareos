@@ -67,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bareos_tasks plugin for pgsql [PR #1659]
 - core: Fix compile errors on GCC 14 [PR #1687]
 - stored: fix authentication race condition / deadlock [PR #1732]
+- Fix warning about missing delcandidates table in director [PR #1721]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -119,6 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1717]: https://github.com/bareos/bareos/pull/1717
 [PR #1718]: https://github.com/bareos/bareos/pull/1718
 [PR #1719]: https://github.com/bareos/bareos/pull/1719
+[PR #1721]: https://github.com/bareos/bareos/pull/1721
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
 [unreleased]: https://github.com/bareos/bareos/tree/master
