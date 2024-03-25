@@ -33,6 +33,7 @@ class JobControlRecord;
 class BareosDbPrivateInterface : public BareosDb {
  protected:
   int status_ = 0;              /**< Status */
+  bool fields_fetched_ = false;         /**< Marker, if field descriptions are already fetched */
   int num_fields_ = 0;          /**< Number of fields returned by last query */
   int rows_size_ = 0;           /**< Size of malloced rows */
   int fields_size_ = 0;         /**< Size of malloced fields */
