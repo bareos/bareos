@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -457,13 +457,19 @@ bool ReadRecords(DeviceControlRecord* dcr,
          * calling the bSdEventReadRecordTranslation plugin event. If no
          * translation has taken place we just point the rec pointer to same
          * DeviceRecord as in the before_rec pointer. */
-        if (dcr->after_rec) {
-          ok = RecordCb(dcr, dcr->after_rec);
-          FreeRecord(dcr->after_rec);
-          dcr->after_rec = nullptr;
+        // callbacks happily overwrite the dcr->*_rec pointers, so we need to
+        // make sure that we actually free the correct thing.
+        auto* brec = dcr->before_rec;
+        auto* arec = dcr->after_rec;
+        if (arec) {
+          ok = RecordCb(dcr, arec);
+          FreeRecord(arec);
+          arec = nullptr;
         } else {
           ok = RecordCb(dcr, dcr->before_rec);
         }
+        dcr->after_rec = arec;
+        dcr->before_rec = brec;
       }
     }
     Dmsg2(debuglevel, "After end recs in block. pos=%u:%u\n", dcr->dev->file,
