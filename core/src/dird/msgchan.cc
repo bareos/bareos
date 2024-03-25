@@ -516,29 +516,50 @@ extern "C" void* msg_thread(void* arg)
   return NULL;
 }
 
-void WaitForStorageDaemonTermination(JobControlRecord* jcr)
+static void WaitForCanceledStorageDaemonTermination(
+    JobControlRecord* jcr,
+    std::unique_lock<std::mutex> l)
 {
-  int cancel_count = 0;
-  /* Now wait for Storage daemon to Terminate our message thread */
-  std::unique_lock l(jcr->mutex_guard());
+  /* we exect jcr to be locked by l */
 
   /* Give SD 30 seconds to clean up after cancel */
   auto timeout = std::chrono::system_clock::now() + std::chrono::seconds(30);
+
   while (!jcr->dir_impl->sd_msg_thread_done) {
-    Dmsg0(400, "I'm waiting for message thread termination.\n");
+    if (jcr->dir_impl->SD_msg_chan_started) {
+      jcr->store_bsock->SetTimedOut();
+      jcr->store_bsock->SetTerminated();
+      SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
+    }
+
     if (jcr->dir_impl->term_wait.wait_until(l, timeout)
         == std::cv_status::timeout) {
+      // we waited for 30 seconds so we just give up now
       break;
-    } else if (jcr->IsJobCanceled()) {
-      if (jcr->dir_impl->SD_msg_chan_started) {
-        jcr->store_bsock->SetTimedOut();
-        jcr->store_bsock->SetTerminated();
-        SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
+    }
+  }
+}
+
+void WaitForStorageDaemonTermination(JobControlRecord* jcr)
+{
+  /* Now wait for Storage daemon to Terminate our message thread */
+  {
+    std::unique_lock l(jcr->mutex_guard());
+    if (jcr->dir_impl->sd_msg_thread_done) { goto bail_out; }
+
+    for (;;) {
+      Dmsg0(400, "I'm waiting for message thread termination.\n");
+      jcr->dir_impl->term_wait.wait_for(l, std::chrono::seconds(6));
+      if (jcr->dir_impl->sd_msg_thread_done) {
+        break;
+      } else if (jcr->IsJobCanceled()) {
+        WaitForCanceledStorageDaemonTermination(jcr, std::move(l));
+        break;
       }
-      cancel_count++;
     }
   }
 
+bail_out:
   jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 }
 
