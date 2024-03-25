@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,6 +93,7 @@ class BareosDbPostgresql : public BareosDb {
   int SqlAffectedRows(void) override;
   uint64_t SqlInsertAutokeyRecord(const char* query,
                                   const char* table_name) override;
+  void SqlUpdateField(int column);
   SQL_FIELD* SqlFetchField(void) override;
   bool SqlFieldIsNotNull(int field_type) override;
   bool SqlFieldIsNumeric(int field_type) override;
@@ -107,14 +108,16 @@ class BareosDbPostgresql : public BareosDb {
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 
-  int status_ = 0;              /**< Status */
-  int num_fields_ = 0;          /**< Number of fields returned by last query */
-  int rows_size_ = 0;           /**< Size of malloced rows */
-  int fields_size_ = 0;         /**< Size of malloced fields */
-  int row_number_ = 0;          /**< Row number from xx_data_seek */
-  int field_number_ = 0;        /**< Field number from SqlFieldSeek */
-  SQL_ROW rows_ = nullptr;      /**< Defined rows */
-  SQL_FIELD* fields_ = nullptr; /**< Defined fields */
+  int status_ = 0; /**< Status */
+  bool fields_fetched_
+      = false;         /**< Marker, if field descriptions are already fetched */
+  int num_fields_ = 0; /**< Number of fields returned by last query */
+  int rows_size_ = 0;  /**< Size of malloced rows */
+  int fields_size_ = 0;             /**< Size of malloced fields */
+  int row_number_ = 0;              /**< Row number from xx_data_seek */
+  int field_number_ = 0;            /**< Field number from SqlFieldSeek */
+  SQL_ROW rows_ = nullptr;          /**< Defined rows */
+  SQL_FIELD* fields_ = nullptr;     /**< Defined fields */
   bool allow_transactions_ = false; /**< Transactions allowed ? */
   bool transaction_ = false;        /**< Transaction started ? */
 
