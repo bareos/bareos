@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,8 +31,10 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx);
 bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
                              Session_Label* sessrec,
                              bool RecordCb(DeviceControlRecord* dcr,
-                                           DeviceRecord* rec),
+                                           DeviceRecord* rec,
+                                           void* user_data),
                              bool mount_cb(DeviceControlRecord* dcr),
+                             void* user_data,
                              bool* status);
 bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
                              READ_CTX* rctx,
@@ -40,6 +42,36 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 bool ReadRecords(DeviceControlRecord* dcr,
                  bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec),
                  bool mount_cb(DeviceControlRecord* dcr));
+
+bool ReadRecords(DeviceControlRecord* dcr,
+                 bool RecordCb(DeviceControlRecord* dcr,
+                               DeviceRecord* rec,
+                               void* user_data),
+                 bool mount_cb(DeviceControlRecord* dcr),
+                 void* user_data);
+
+template <typename T>
+inline bool ReadRecords(DeviceControlRecord* dcr,
+                        bool RecordCb(DeviceControlRecord* dcr,
+                                      DeviceRecord* rec,
+                                      T* user_data),
+                        bool mount_cb(DeviceControlRecord* dcr),
+                        T* user_data)
+{
+  auto capture = [RecordCb, user_data](DeviceControlRecord* inner_dcr,
+                                       DeviceRecord* inner_rec) -> bool {
+    return RecordCb(inner_dcr, inner_rec, user_data);
+  };
+
+  return ReadRecords(
+      dcr,
+      +[](DeviceControlRecord* inner_dcr, DeviceRecord* inner_rec,
+          void* impl) -> bool {
+        auto* lambda = reinterpret_cast<decltype(&capture)>(impl);
+        return (*lambda)(inner_dcr, inner_rec);
+      },
+      mount_cb, reinterpret_cast<void*>(&capture));
+}
 
 } /* namespace storagedaemon */
 
