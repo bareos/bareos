@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,25 +130,24 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         Dmsg0(200, "Found first SOS_LABEL and adopting job info\n");
         found_first_sos_label = true;
 
-        static Session_Label the_label;
-        static Session_Label* label = &the_label;
+        Session_Label sos_label;
 
-        UnserSessionLabel(label, rec);
+        UnserSessionLabel(&sos_label, rec);
 
         if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
-          bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
-          PmStrcpy(jcr->sd_impl->job_name, label->JobName);
-          PmStrcpy(jcr->client_name, label->ClientName);
-          PmStrcpy(jcr->sd_impl->fileset_name, label->FileSetName);
-          PmStrcpy(jcr->sd_impl->fileset_md5, label->FileSetMD5);
+          bstrncpy(jcr->Job, sos_label.Job, sizeof(jcr->Job));
+          PmStrcpy(jcr->sd_impl->job_name, sos_label.JobName);
+          PmStrcpy(jcr->client_name, sos_label.ClientName);
+          PmStrcpy(jcr->sd_impl->fileset_name, sos_label.FileSetName);
+          PmStrcpy(jcr->sd_impl->fileset_md5, sos_label.FileSetMD5);
         }
-        jcr->setJobType(label->JobType);
-        jcr->setJobLevel(label->JobLevel);
-        Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
+        jcr->setJobType(sos_label.JobType);
+        jcr->setJobLevel(sos_label.JobLevel);
+        Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", sos_label.JobLevel);
 
         // make sure this volume wasn't written by bacula 1.26 or earlier
-        ASSERT(label->VerNum >= 11);
-        jcr->sched_time = BtimeToUnix(label->write_btime);
+        ASSERT(sos_label.VerNum >= 11);
+        jcr->sched_time = BtimeToUnix(sos_label.write_btime);
 
         jcr->start_time = jcr->sched_time;
 
@@ -187,6 +186,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     }
     rec->FileIndex = jcr->JobFiles; /* set sequential output FileIndex */
   }
+
 
   // Modify record SessionId and SessionTime to correspond to output.
   rec->VolSessionId = jcr->VolSessionId;
@@ -229,13 +229,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     Dmsg2(200, "===== Wrote block new pos %u:%u\n", dev->file, dev->block_num);
   }
 
-  // Restore packet
-  jcr->sd_impl->dcr->after_rec->VolSessionId
-      = jcr->sd_impl->dcr->after_rec->last_VolSessionId;
-  jcr->sd_impl->dcr->after_rec->VolSessionTime
-      = jcr->sd_impl->dcr->after_rec->last_VolSessionTime;
-
-  if (jcr->sd_impl->dcr->after_rec->FileIndex < 0) {
+  if (rec->FileIndex < 0) {
     retval = true; /* don't send LABELs to Dir */
     goto bail_out;
   }
@@ -257,6 +251,13 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
   retval = true;
 
 bail_out:
+
+  /* Restore packet -- the read record function uses this information
+   * to check if the job changed, so we need to restore it to how it was;
+   * otherwise the record will get zeroed on job change. */
+  rec->VolSessionId = rec->last_VolSessionId;
+  rec->VolSessionTime = rec->last_VolSessionTime;
+
   if (translated_record) {
     FreeRecord(jcr->sd_impl->dcr->after_rec);
     jcr->sd_impl->dcr->after_rec = NULL;
