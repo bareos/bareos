@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2019-2021 Bareos GmbH & Co. KG

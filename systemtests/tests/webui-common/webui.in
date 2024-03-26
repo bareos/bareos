@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # script to start and stop the webui manually
 #
 . ./environment
