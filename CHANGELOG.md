@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Require python3 explicit [PR #1719]
 - cmake: put generated files into CMAKE_BINARY_DIR [PR #1707]
 - increase warning level on C/C++ compiler [PR #1689]
+- VMware Plugin: Backup and Restore NVRAM [PR #1727]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -123,6 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1718]: https://github.com/bareos/bareos/pull/1718
 [PR #1719]: https://github.com/bareos/bareos/pull/1719
 [PR #1721]: https://github.com/bareos/bareos/pull/1721
+[PR #1727]: https://github.com/bareos/bareos/pull/1727
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
 [unreleased]: https://github.com/bareos/bareos/tree/master
