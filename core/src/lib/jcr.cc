@@ -862,8 +862,8 @@ int JobCount()
   int count = 0;
 
   LockJcrChain();
-  for (jcr = (JobControlRecord*)job_control_record_chain->first();
-       (jcr = (JobControlRecord*)job_control_record_chain->next(jcr));) {
+  for (jcr = (JobControlRecord*)job_control_record_chain->first(); jcr;
+       (jcr = (JobControlRecord*)job_control_record_chain->next(jcr))) {
     if (jcr->JobId > 0) { count++; }
   }
   UnlockJcrChain();
