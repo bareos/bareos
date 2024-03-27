@@ -6,6 +6,7 @@
 @dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/messages
 @dir(bareos,bareos,0750) %%ETCDIR%%/bareos-sd.d/storage
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/device/FileStorage.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/autochanger/filechanger.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/director/bareos-dir.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/director/bareos-mon.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/messages/Standard.conf.sample
