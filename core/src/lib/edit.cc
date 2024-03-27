@@ -227,8 +227,9 @@ static std::optional<modifier_parse_result> GetModifier(const char* input)
 
   auto trimmed = TrimLeft(rest);
 
-  auto mod_end = std::find_if(trimmed.begin(), trimmed.end(),
-                              [](auto c) { return !B_ISALPHA(c); });
+  auto mod_end = std::find_if(trimmed.begin(), trimmed.end(), [](auto c) {
+    return B_ISDIGIT(c) || B_ISSPACE(c);
+  });
   auto mod = trimmed.substr(0, mod_end - trimmed.begin());
 
   const char* rest_input = mod.end();
