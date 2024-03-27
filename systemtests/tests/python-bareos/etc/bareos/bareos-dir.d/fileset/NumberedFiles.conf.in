@@ -1,0 +1,11 @@
+FileSet {
+  Name = "NumberedFiles"
+  Description = "fileset to backup some numbered filesjust to backup some files"
+  Include {
+    Options {
+      Signature = XXH128
+      xattrsupport = no
+    }
+    File = "@tmpdir@/backup-data-numbered-files/"
+  }
+}
