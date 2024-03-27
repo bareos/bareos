@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -187,12 +187,12 @@ class SeleniumTest(unittest.TestCase):
             "TRAVIS_TAG",
         ]:
             result[key] = os.environ.get(key)
-        result[
-            "GIT_BRANCH_URL"
-        ] = "https://github.com/bareos/bareos/tree/" + os.environ.get("TRAVIS_BRANCH")
-        result[
-            "GIT_COMMIT_URL"
-        ] = "https://github.com/bareos/bareos/tree/" + os.environ.get("TRAVIS_COMMIT")
+        result["GIT_BRANCH_URL"] = (
+            "https://github.com/bareos/bareos/tree/" + os.environ.get("TRAVIS_BRANCH")
+        )
+        result["GIT_COMMIT_URL"] = (
+            "https://github.com/bareos/bareos/tree/" + os.environ.get("TRAVIS_COMMIT")
+        )
 
         return result
 
@@ -257,9 +257,7 @@ class SeleniumTest(unittest.TestCase):
                     opt.add_argument("--headless")
                     opt.add_argument("--no-sandbox")
 
-                self.driver = webdriver.Chrome(
-                    self.chromedriverpath, options=opt
-                )
+                self.driver = webdriver.Chrome(self.chromedriverpath, options=opt)
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
                 d["loggingPrefs"] = {"browser": "ALL"}
@@ -553,7 +551,7 @@ class SeleniumTest(unittest.TestCase):
         sleep(self.sleeptime)
 
     def select_navbar_element(self, tab, additional_modals=None):
-        tabid = u"menu-topnavbar-{}".format(tab)
+        tabid = "menu-topnavbar-{}".format(tab)
         # (By.CLASS_NAME, 'navbar-toggle')
         # is used, when top navbar is hidden,
         # because of low windows resolution.
@@ -715,7 +713,7 @@ class SeleniumTest(unittest.TestCase):
             )
         except TimeoutException:
             raise ElementTimeoutException("spinner")
-        logger.info(u"waited %ss", (self.get_duration(starttime)))
+        logger.info("waited %ss", (self.get_duration(starttime)))
         return element
 
     def close_alert_and_get_its_text(self, accept=True):
