@@ -198,7 +198,7 @@ bool DoVerify(JobControlRecord* jcr)
       /* Note: negative status is an error, zero status, means
        *  no files were backed up, so skip calling SD and
        *  client. */
-      status = CreateRestoreBootstrapFile(jcr);
+      status = CreateRestoreBootstrapFile(jcr, prev_jr);
       if (status < 0) { /* error */
         return false;
       } else if (status == 0) {            /* No files, nothing to do */
