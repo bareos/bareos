@@ -222,7 +222,6 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         // Get db record of oldest jobid and check its age
         auto prev_jr = JobDbRecord{};
-        // jcr->dir_impl->previous_jr = JobDbRecord{};
         prev_jr.JobId = std::stoul(oldestjobid);
         Dmsg1(10, "Previous JobId=%s\n", oldestjobid.c_str());
 
