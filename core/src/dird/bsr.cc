@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -237,8 +237,8 @@ bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
       bsr->VolCount = 0;    /*   there are no volumes */
       continue;
     }
-    if ((bsr->VolCount = ua->db->GetJobVolumeParameters(ua->jcr, bsr->JobId,
-                                                        &(bsr->VolParams)))
+    if ((bsr->VolCount
+         = ua->db->GetJobVolumeParameters(ua->jcr, bsr->JobId, &bsr->VolParams))
         == 0) {
       ua->ErrorMsg(T_("Unable to get Job Volume Parameters. ERR=%s\n"),
                    ua->db->strerror());

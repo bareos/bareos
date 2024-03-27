@@ -1763,30 +1763,26 @@ void CreateClones(JobControlRecord* jcr)
 }
 
 /**
- * Given: a JobId in jcr->dir_impl_->previous_jr.JobId,
- *  this subroutine writes a bsr file to restore that job.
+ * Creates the restore bsr file for job.  The filename will be written
+ * to jcr->RestoreBootstrap.
  * Returns: -1 on error
  *           number of files if OK
  */
-int CreateRestoreBootstrapFile(JobControlRecord* jcr)
+int CreateRestoreBootstrapFile(JobControlRecord* jcr, const JobDbRecord& job)
 {
-  if (!jcr->dir_impl->previous_jr) { return -1; }
-
   RestoreContext rx;
   UaContext* ua;
   int files;
 
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
-  rx.bsr->JobId = jcr->dir_impl->previous_jr->JobId;
+  rx.bsr->JobId = job.JobId;
   ua = new_ua_context(jcr);
   if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
     files = -1;
     goto bail_out;
   }
-  for (uint32_t fi = 1; fi <= jcr->dir_impl->previous_jr->JobFiles; fi++) {
-    rx.bsr->fi->Add(fi);
-  }
+  for (uint32_t fi = 1; fi <= job.JobFiles; fi++) { rx.bsr->fi->Add(fi); }
   jcr->dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
   if (jcr->dir_impl->ExpectedFiles == 0) {
     files = 0;
