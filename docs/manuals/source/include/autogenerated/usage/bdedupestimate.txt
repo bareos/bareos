@@ -1,0 +1,47 @@
+Usage: bdedupestimate [OPTIONS] devicename
+
+Positionals:
+    devicename TEXT
+        REQUIRED
+        Specify the input device name (either as name of a Bareos Storage 
+        Daemon Device resource or identical to the Archive Device in a Bareos 
+        Storage Daemon Device resource). 
+
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -d,--debug-level <level>
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -V,--volumes <volume> ...
+        REQUIRED
+        List of volumes to be analyzed. 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as configuration file or directory. 
+
+    -D,--director <director>
+        Specify a director name specified in the storage. Configuration file 
+        for the Key Encryption Key selection. 
+
+    -u,--decompress <bool>
+        Specify whether compressed records should get decompressed. Compressed 
+        records are very unlikely to be dedupable. 
+
+    --devicename TEXT
+        REQUIRED
+        Specify the input device name (either as name of a Bareos Storage 
+        Daemon Device resource or identical to the Archive Device in a Bareos 
+        Storage Daemon Device resource). 
+
+    -b,--blocksize UINT:SIZE [b, kb(=1024b), ...]:POSITIVE
+
+    -v,--verbose
