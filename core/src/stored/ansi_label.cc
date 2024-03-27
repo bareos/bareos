@@ -84,7 +84,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
       Dmsg1(100, "Read device got: ERR=%s\n", be.bstrerror());
       Mmsg2(jcr->errmsg, T_("Read error on device %s in ANSI label. ERR=%s\n"),
             dev->archive_device_string, be.bstrerror());
-      Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       dev->VolCatInfo.VolCatErrors++;
       return VOL_IO_ERROR;
     }

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+# Consolidating a zero-file job in the middle of incremental backups
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/extra.log
+messages
+.api 2
+@$out $tmp/zero-file:start.out
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-4'"
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-5'"
+run job=$JobName level=Incremental yes
+wait
+@$out $tmp/zero-file:consolidate.out
+run job=Consolidate yes
+wait
+@$out $tmp/zero-file:messages.out
+.api 1
+status director
+status client
+status storage=File
+messages
+END_OF_DATA
+
+run_bconsole
+
+# get the second to last jobid (taking into account test restarts)
+first_job=$(grep "jobid" "$tmp/zero-file:start.out" | tail -n 3 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+empty_job=$(grep "jobid" "$tmp/zero-file:start.out" | tail -n 2 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+second_job=$(grep "jobid" "$tmp/zero-file:start.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
+cons_job=$(grep "jobid" "$tmp/zero-file:consolidate.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
+
+expect_grep "purging empty jobids ${empty_job}" \
+            "$tmp/zero-file:messages.out" \
+            "Removal of expected empty jobs was not successful"
+
+expect_grep "purged JobIds .*${first_job} as they were consolidated into Job $((cons_job + 1))" \
+            "$tmp/zero-file:messages.out" \
+            "consolidation of expected jobs did not happen."
+expect_not_grep "purged JobIds .*${empty_job}.* as they were consolidated into Job $((cons_job + 1))" \
+		"$tmp/zero-file:messages.out" \
+		"consolidation of empty happened."
+expect_not_grep "purged JobIds .*${second_job}.* as they were consolidated into Job $((cons_job + 1))" \
+		"$tmp/zero-file:messages.out" \
+		"consolidation of last incremental happened."
+
+end_test

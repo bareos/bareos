@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +19,26 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-set -u
+#
+# Run a full backup, followed by 3 accurate incrementals
+# then do a consolidation. The first 3 jobs will got consolidated
+# the last incremental is kept
+# (job->AlwaysIncrementalKeepNumber default is 1)
+#
+# Run a batch of 3 incrementals with no files
+# Run consolidation : jobid with no files will get purged
+#
+# Run a batch of 3 incrementals the second with no files
+# Then a consolidation: VF and last incremental of first run
+# plus first incremental of 3rd run are consolidated when
+# 2nd increment with no files is purged
+# Last incremental is kept as is.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
 
 #shellcheck source=../environment.in
 . ./environment
@@ -30,6 +47,7 @@ set -u
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
+
 
 # Fill ${BackupDirectory} with data.
 setup_data
