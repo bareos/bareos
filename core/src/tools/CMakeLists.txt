@@ -53,7 +53,7 @@ add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos CLI11::CLI11)
 
 add_executable(bscrypto bscrypto.cc)
-target_link_libraries(bscrypto bareos)
+target_link_libraries(bscrypto bareos CLI11::CLI11)
 
 if(NOT HAVE_WIN32)
   add_executable(btestls btestls.cc)
