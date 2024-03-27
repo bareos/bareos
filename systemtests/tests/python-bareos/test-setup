@@ -15,6 +15,11 @@ export TestName="$(get_test_name "$0")"
 
 # Fill ${BackupDirectory} with data.
 setup_data
+# Extra backup data with number of files.
+mkdir -p ${tmp}/backup-data-numbered-files
+for i in `seq 1000 2000`; do
+    echo $i > ${tmp}/backup-data-numbered-files/${i}.txt
+done
 
 # Create a list of paths to backup,
 # containing only simple file types.
