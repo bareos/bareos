@@ -1041,7 +1041,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
           jcr->get_OperationName(), jcr->JobId, edit_int64(prev_jr.JobId, ed1),
           prev_jr.Job);
 
-    if (CreateRestoreBootstrapFile(jcr) < 0) {
+    if (CreateRestoreBootstrapFile(jcr, prev_jr) < 0) {
       Jmsg(jcr, M_FATAL, 0, T_("Create bootstrap file failed.\n"));
       return false;
     }
