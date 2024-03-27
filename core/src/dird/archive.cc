@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,8 +53,6 @@ bool DoArchiveInit(JobControlRecord* jcr)
 bool DoArchive(JobControlRecord* jcr)
 {
   jcr->dir_impl->jr.JobId = jcr->JobId;
-
-  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
   Jmsg(jcr, M_INFO, 0, T_("Start Archive JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);

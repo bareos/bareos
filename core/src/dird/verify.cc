@@ -598,8 +598,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
 
     if (jcr->IsJobCanceled()) { goto bail_out; }
     fname = CheckPoolMemorySize(fname, fd->message_length);
-    jcr->dir_impl->fname
-        = CheckPoolMemorySize(jcr->dir_impl->fname, fd->message_length);
+    jcr->dir_impl->fname.check_size(fd->message_length);
     Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
     if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname))
         != 3) {
@@ -641,16 +640,19 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         PmStrcpy(jcr->dir_impl->fname,
                  fname); /* move filename into JobControlRecord */
 
-        Dmsg2(040, "dird<filed: stream=%d %s\n", stream, jcr->dir_impl->fname);
+        Dmsg2(040, "dird<filed: stream=%d %s\n", stream,
+              jcr->dir_impl->fname.c_str());
         Dmsg1(020, "dird<filed: attr=%s\n", attr);
 
         // Find equivalent record in the database
         fdbr.FileId = 0;
-        if (!jcr->db->GetFileAttributesRecord(jcr, jcr->dir_impl->fname,
+        if (!jcr->db->GetFileAttributesRecord(jcr, jcr->dir_impl->fname.c_str(),
                                               &jcr->dir_impl->previous_jr,
                                               &fdbr)) {
-          Jmsg(jcr, M_INFO, 0, T_("New file: %s\n"), jcr->dir_impl->fname);
-          Dmsg1(020, T_("File not in catalog: %s\n"), jcr->dir_impl->fname);
+          Jmsg(jcr, M_INFO, 0, T_("New file: %s\n"),
+               jcr->dir_impl->fname.c_str());
+          Dmsg1(020, T_("File not in catalog: %s\n"),
+                jcr->dir_impl->fname.c_str());
           jcr->setJobStatusWithPriorityCheck(JS_Differences);
           continue;
         } else {
@@ -660,7 +662,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         }
 
         Dmsg3(400, "Found %s in catalog. inx=%d Opts=%s\n",
-              jcr->dir_impl->fname, file_index, Opts_Digest.c_str());
+              jcr->dir_impl->fname.c_str(), file_index, Opts_Digest.c_str());
         DecodeStat(fdbr.LStat, &statc, sizeof(statc),
                    &LinkFIc); /* decode catalog stat */
         /* Loop over options supplied by user and verify the
@@ -756,7 +758,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               }
               break;
             case '5': /* compare MD5 */
-              Dmsg1(500, "set Do_MD5 for %s\n", jcr->dir_impl->fname);
+              Dmsg1(500, "set Do_MD5 for %s\n", jcr->dir_impl->fname.c_str());
               do_Digest = CRYPTO_DIGEST_MD5;
               break;
             case '1': /* compare SHA1 */
@@ -771,7 +773,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         break;
 
       case STREAM_RESTORE_OBJECT:
-        Dmsg1(400, "RESTORE_OBJECT %s\n", jcr->dir_impl->fname);
+        Dmsg1(400, "RESTORE_OBJECT %s\n", jcr->dir_impl->fname.c_str());
         break;
 
       default:
@@ -859,7 +861,7 @@ static int MissingHandler(void* ctx, int, char** row)
 static void PrtFname(JobControlRecord* jcr)
 {
   if (!jcr->dir_impl->fn_printed) {
-    Jmsg(jcr, M_INFO, 0, T_("File: %s\n"), jcr->dir_impl->fname);
+    Jmsg(jcr, M_INFO, 0, T_("File: %s\n"), jcr->dir_impl->fname.c_str());
     jcr->dir_impl->fn_printed = true;
   }
 }

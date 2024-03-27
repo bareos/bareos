@@ -71,6 +71,11 @@ bool ConfigParserStateMachine::ParseAllTokens()
           case ParseInternalReturnCode::kGetNextToken:
             continue;
           case ParseInternalReturnCode::kError:
+            // delete the inited resource
+            my_config_.FreeResourceCb_(
+                currently_parsed_resource_.allocated_resource_,
+                currently_parsed_resource_.rcode_);
+            currently_parsed_resource_.allocated_resource_ = nullptr;
             return false;
           default:
             ASSERT(false);

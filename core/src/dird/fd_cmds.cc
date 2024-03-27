@@ -893,15 +893,15 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       }
 
       // Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
-      fn = jcr->dir_impl->fname
-          = CheckPoolMemorySize(jcr->dir_impl->fname, fd->message_length);
+      jcr->dir_impl->fname.check_size(fd->message_length);
+      fn = jcr->dir_impl->fname.c_str();
       while (*p != 0) { *fn++ = *p++; /* copy filename */ }
       *fn = *p++;             /* term filename and point p to attribs */
       PmStrcpy(jcr->attr, p); /* save attributes */
       jcr->JobFiles++;
       jcr->dir_impl->FileIndex = file_index;
       ar->attr = jcr->attr;
-      ar->fname = jcr->dir_impl->fname;
+      ar->fname = jcr->dir_impl->fname.c_str();
       ar->FileIndex = file_index;
       ar->Stream = stream;
       ar->link = NULL;
@@ -914,7 +914,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       jcr->cached_attribute = true;
 
       Dmsg2(debuglevel, "dird<filed: stream=%d %s\n", stream,
-            jcr->dir_impl->fname);
+            jcr->dir_impl->fname.c_str());
       Dmsg1(debuglevel, "dird<filed: attr=%s\n", ar->attr);
       jcr->FileId = ar->FileId;
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
