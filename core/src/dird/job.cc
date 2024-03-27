@@ -1788,14 +1788,11 @@ void CreateClones(JobControlRecord* jcr)
  */
 int CreateRestoreBootstrapFile(JobControlRecord* jcr)
 {
+  if (!jcr->dir_impl->previous_jr) { return -1; }
+
   RestoreContext rx;
   UaContext* ua;
   int files;
-
-  if (!jcr->dir_impl->previous_jr) {
-    files = -1;
-    goto bail_out;
-  }
 
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
