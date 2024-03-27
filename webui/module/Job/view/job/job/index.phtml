@@ -123,6 +123,13 @@ $this->headTitle($title);
       <?php echo $this->translate("Duration"); ?>
    </th>
    <th
+      data-field="rate"
+      data-width="100"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Rate"); ?>">
+      <?php echo $this->translate("Rate"); ?>
+   </th>
+   <th
       data-field="jobfiles"
       data-width="100"
       data-filter-control="input"
@@ -388,6 +395,13 @@ $this->headTitle($title);
             {
                field: 'duration',
                sortable: true,
+            },
+            {
+               field: 'rate',
+               sortable: true,
+               formatter: function(value) {
+                  return formatRate(value);
+               }
             },
             {
                field: 'jobfiles',

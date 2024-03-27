@@ -177,6 +177,19 @@ function formatBytes(data) {
    return b;
 }
 
+function formatRate(data) {
+   if(data == 0 || data == null) {
+      var b = "0.00 B/s";
+   }
+   else {
+      var k = 1000;
+      var units = ["B/s", "KB/s", "MB/s", "GB/s", "TB/s", "PB/s", "EB/s", "ZB/s"];
+      var i = Math.floor(Math.log(data) / Math.log(k));
+      var b = parseFloat((data / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+   }
+   return b;
+}
+
 function formatFreeBytes(maxvolbytes, volbytes) {
    if(maxvolbytes == null || maxvolbytes == 0) return "0.00 B";
    if(volbytes == null || volbytes == 0) return "0.00 B";
