@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,8 +49,6 @@
 #include "lib/watchdog.h"
 
 namespace directordaemon {
-
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Commands sent to Storage daemon */
 static char jobcmd[]
@@ -130,15 +128,13 @@ bool ReserveReadDevice(JobControlRecord* jcr,
   bool ok = true;
   int copy = 0;
   int stripe = 0;
-  /*
-   * We have two loops here. The first comes from the
+  /* We have two loops here. The first comes from the
    *  Storage = associated with the Job, and we need
    *  to attach to each one.
    * The inner loop loops over all the alternative devices
    *  associated with each Storage. It selects the first
    *  available one.
-   *
-   */
+   * */
   // Do read side of storage daemon
   if (read_storage) {
     // For the moment, only migrate, copy and vbackup have rpool
@@ -214,15 +210,13 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
   bool ok = true;
   int copy = 0;
   int stripe = 0;
-  /*
-   * We have two loops here. The first comes from the
+  /* We have two loops here. The first comes from the
    *  Storage = associated with the Job, and we need
    *  to attach to each one.
    * The inner loop loops over all the alternative devices
    *  associated with each Storage. It selects the first
    *  available one.
-   *
-   */
+   * */
   // Do write side of storage daemon
   if (write_storage) {
     pool_type = jcr->dir_impl->res.pool->pool_type;
@@ -297,10 +291,8 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
 {
   BareosSocket* sd_socket = jcr->store_bsock;
 
-  /*
-   * Before actually starting a new Job on the SD make sure we send any specific
-   * plugin options for this Job.
-   */
+  /* Before actually starting a new Job on the SD make sure we send any specific
+   * plugin options for this Job. */
   if (!SendStoragePluginOptions(jcr)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Storage daemon rejected Plugin Options command: %s\n"),
@@ -346,12 +338,10 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
     fileset_md5 = "**Dummy**";
   }
 
-  /*
-   * If rescheduling, cancel the previous incarnation of this job
+  /* If rescheduling, cancel the previous incarnation of this job
    * with the SD, which might be waiting on the FD connection.
    * If we do not cancel it the SD will not accept a new connection
-   * for the same jobid.
-   */
+   * for the same jobid. */
   if (jcr->dir_impl->reschedule_count) {
     sd_socket->fsend("cancel Job=%s\n", jcr->Job);
     while (sd_socket->recv() >= 0) { continue; }
@@ -403,10 +393,8 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
     return false;
   }
 
-  /*
-   * request sd to reply the secure erase cmd
-   * or "*None*" if not set
-   */
+  /* request sd to reply the secure erase cmd
+   * or "*None*" if not set */
   if (!SendSecureEraseReqToSd(jcr)) {
     Dmsg1(400, "Unexpected %s Secure Erase Reply\n", "SD");
   }
@@ -444,14 +432,17 @@ extern "C" void MsgThreadCleanup(void* arg)
   JobControlRecord* jcr = (JobControlRecord*)arg;
 
   jcr->db->EndTransaction(jcr); /* Terminate any open transaction */
-  jcr->lock();
-  jcr->dir_impl->sd_msg_thread_done = true;
-  jcr->dir_impl->SD_msg_chan_started = false;
-  jcr->unlock();
+
+  {
+    std::unique_lock l(jcr->mutex_guard());
+
+    jcr->dir_impl->sd_msg_thread_done = true;
+    jcr->dir_impl->SD_msg_chan_started = false;
+  }
+
   pthread_cond_broadcast(
-      &jcr->dir_impl->nextrun_ready); /* wakeup any waiting threads */
-  pthread_cond_broadcast(
-      &jcr->dir_impl->term_wait); /* wakeup any waiting threads */
+      &jcr->dir_impl->nextrun_ready);    /* wakeup any waiting threads */
+  jcr->dir_impl->term_wait.notify_all(); /* wakeup any waiting threads */
   Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId,
         jcr->UseCount());
   jcr->db->ThreadCleanup(); /* remove thread specific data */
@@ -485,10 +476,8 @@ extern "C" void* msg_thread(void* arg)
   n = 0;
   while (!JobCanceled(jcr) && (n = BgetDirmsg(sd)) >= 0) {
     Dmsg1(400, "<stored: %s", sd->msg);
-    /*
-     * Check for "3000 OK Job Authorization="
-     * Returned by a rerun cmd.
-     */
+    /* Check for "3000 OK Job Authorization="
+     * Returned by a rerun cmd. */
     if (sscanf(sd->msg, OK_nextrun, &auth_key) == 1) {
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
       jcr->sd_auth_key = strdup(auth_key);
@@ -500,10 +489,8 @@ extern "C" void* msg_thread(void* arg)
     // Check for "3010 Job <jobid> start"
     if (sscanf(sd->msg, Job_start, Job) == 1) { continue; }
 
-    /*
-     * Check for "3099 Job <JobId> end JobStatus= JobFiles= JobBytes=
-     * JobErrors="
-     */
+    /* Check for "3099 Job <JobId> end JobStatus= JobFiles= JobBytes=
+     * JobErrors=" */
     if (sscanf(sd->msg, Job_end, Job, &JobStatus, &JobFiles, &JobBytes,
                &JobErrors)
         == 5) {
@@ -516,12 +503,10 @@ extern "C" void* msg_thread(void* arg)
     Dmsg1(400, "end loop use=%d\n", jcr->UseCount());
   }
   if (n == BNET_HARDEOF) {
-    /*
-     * A lost connection to the storage daemon is FATAL.
+    /* A lost connection to the storage daemon is FATAL.
      * This is required, as otherwise
      * the job could failed to write data
-     * but still end as JS_Warnings (OK -- with warnings).
-     */
+     * but still end as JS_Warnings (OK -- with warnings). */
     Qmsg(jcr, M_FATAL, 0, _("Director's comm line to SD dropped.\n"));
   }
   if (IsBnetError(sd)) { jcr->dir_impl->SDJobStatus = JS_ErrorTerminated; }
@@ -533,19 +518,16 @@ void WaitForStorageDaemonTermination(JobControlRecord* jcr)
 {
   int cancel_count = 0;
   /* Now wait for Storage daemon to Terminate our message thread */
-  while (!jcr->dir_impl->sd_msg_thread_done) {
-    struct timeval tv;
-    struct timezone tz;
-    struct timespec timeout;
+  std::unique_lock l(jcr->mutex_guard());
 
-    gettimeofday(&tv, &tz);
-    timeout.tv_nsec = 0;
-    timeout.tv_sec = tv.tv_sec + 5; /* wait 5 seconds */
+  /* Give SD 30 seconds to clean up after cancel */
+  auto timeout = std::chrono::system_clock::now() + std::chrono::seconds(30);
+  while (!jcr->dir_impl->sd_msg_thread_done) {
     Dmsg0(400, "I'm waiting for message thread termination.\n");
-    lock_mutex(mutex);
-    pthread_cond_timedwait(&jcr->dir_impl->term_wait, &mutex, &timeout);
-    unlock_mutex(mutex);
-    if (jcr->IsCanceled()) {
+    if (jcr->dir_impl->term_wait.wait_until(l, timeout)
+        == std::cv_status::timeout) {
+      break;
+    } else if (jcr->IsJobCanceled()) {
       if (jcr->dir_impl->SD_msg_chan_started) {
         jcr->store_bsock->SetTimedOut();
         jcr->store_bsock->SetTerminated();
@@ -553,9 +535,8 @@ void WaitForStorageDaemonTermination(JobControlRecord* jcr)
       }
       cancel_count++;
     }
-    /* Give SD 30 seconds to clean up after cancel */
-    if (cancel_count == 6) { break; }
   }
+
   jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 }
 

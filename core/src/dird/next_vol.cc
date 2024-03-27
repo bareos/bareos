@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -81,10 +81,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
         "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",
         (uint32_t)jcr->JobId, (int)mr->PoolId, mr->MediaType);
 
-  /*
-   * If we are using an Autochanger, restrict Volume search to the Autochanger
-   * on the first pass
-   */
+  /* If we are using an Autochanger, restrict Volume search to the Autochanger
+   * on the first pass */
   InChanger = store->autochanger;
 
   // Find the Next Volume for Append
@@ -133,10 +131,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
                   "Vstat=%s\n",
                   ok, index, InChanger, mr->VolStatus);
           }
-          /*
-           * If we are using an Autochanger and have not found
-           * a volume, retry looking for any volume.
-           */
+          /* If we are using an Autochanger and have not found
+           * a volume, retry looking for any volume. */
           if (!ok && InChanger) {
             InChanger = false;
             continue; /* retry again accepting any volume */
@@ -220,10 +216,8 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
   bool expired = false;
   char ed1[50];
 
-  /*
-   * Check limits and expirations if "Append" and it has been used i.e.
-   * mr->VolJobs > 0
-   */
+  /* Check limits and expirations if "Append" and it has been used i.e.
+   * mr->VolJobs > 0 */
   if (bstrcmp(mr->VolStatus, "Append") && mr->VolJobs > 0) {
     // First handle Max Volume Bytes
     if ((mr->MaxVolBytes > 0 && mr->VolBytes >= mr->MaxVolBytes)) {
@@ -320,21 +314,17 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   // At this point, the volume is not valid for writing
   *reason = _("but should be Append, Purged or Recycle");
 
-  /*
-   * What we're trying to do here is see if the current volume is
+  /* What we're trying to do here is see if the current volume is
    * "recyclable" - ie. if we prune all expired jobs off it, is
    * it now possible to reuse it for the job that it is currently
-   * needed for?
-   */
+   * needed for? */
   if (!mr->Recycle) {
     *reason = _("volume has recycling disabled");
     return;
   }
 
-  /*
-   * Check retention period from last written, but recycle to within a minute to
-   * try to catch close calls ...
-   */
+  /* Check retention period from last written, but recycle to within a minute to
+   * try to catch close calls ... */
   if ((mr->LastWritten + mr->VolRetention - 60) < (utime_t)time(NULL)
       && jcr->dir_impl->res.pool->recycle_current_volume
       && (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used"))) {
@@ -365,7 +355,8 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   }
 }
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+// Only one thread at a time can pull from the scratch pool
+static pthread_mutex_t scratch_volume_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 bool GetScratchVolume(JobControlRecord* jcr,
                       bool InChanger,
@@ -378,14 +369,12 @@ bool GetScratchVolume(JobControlRecord* jcr,
   bool found = false;
 
   // Only one thread at a time can pull from the scratch pool
-  lock_mutex(mutex);
+  lock_mutex(scratch_volume_mutex);
 
-  /*
-   * Get Pool record for Scratch Pool
+  /* Get Pool record for Scratch Pool
    * choose between ScratchPoolId and Scratch
    * GetPoolRecord will first try ScratchPoolId,
-   * and then try the pool named Scratch
-   */
+   * and then try the pool named Scratch */
   bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
   spr.PoolId = mr->ScratchPoolId;
   if (jcr->db->GetPoolRecord(jcr, &spr)) {
@@ -398,10 +387,8 @@ bool GetScratchVolume(JobControlRecord* jcr,
              sizeof(smr.VolStatus)); /* want only appendable volumes */
     bstrncpy(smr.MediaType, mr->MediaType, sizeof(smr.MediaType));
 
-    /*
-     * If we do not find a valid Scratch volume, try recycling any existing
-     * purged volumes, then try to take the oldest volume.
-     */
+    /* If we do not find a valid Scratch volume, try recycling any existing
+     * purged volumes, then try to take the oldest volume. */
     SetStorageidInMr(store, &smr); /* put StorageId in new record */
     if (jcr->db->FindNextVolume(jcr, 1, InChanger, &smr, NULL)) {
       found = true;
@@ -414,10 +401,8 @@ bool GetScratchVolume(JobControlRecord* jcr,
     if (found) {
       PoolMem query(PM_MESSAGE);
 
-      /*
-       * Get pool record where the Scratch Volume will go to ensure that we can
-       * add a Volume.
-       */
+      /* Get pool record where the Scratch Volume will go to ensure that we can
+       * add a Volume. */
       PoolDbRecord pr;
       bstrncpy(pr.Name, jcr->dir_impl->res.pool->resource_name_,
                sizeof(pr.Name));
@@ -442,10 +427,8 @@ bool GetScratchVolume(JobControlRecord* jcr,
       // Set default parameters from current pool
       SetPoolDbrDefaultsInMediaDbr(mr, &pr);
 
-      /*
-       * SetPoolDbrDefaultsInMediaDbr set VolStatus to Append, we could have
-       * Recycled media, also, we retain the old RecyclePoolId.
-       */
+      /* SetPoolDbrDefaultsInMediaDbr set VolStatus to Append, we could have
+       * Recycled media, also, we retain the old RecyclePoolId. */
       bstrncpy(mr->VolStatus, smr.VolStatus, sizeof(smr.VolStatus));
       mr->RecyclePoolId = smr.RecyclePoolId;
 
@@ -463,7 +446,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
   }
 
 bail_out:
-  unlock_mutex(mutex);
+  unlock_mutex(scratch_volume_mutex);
   return ok;
 }
 } /* namespace directordaemon */

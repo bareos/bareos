@@ -38,6 +38,7 @@
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
+#include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "include/jcr.h"
 #include "include/protocol_types.h"
@@ -165,39 +166,48 @@ bool job_cmd(JobControlRecord* jcr)
   return true;
 }
 
-bool DoJobRun(JobControlRecord* jcr)
+static void WaitClient(JobControlRecord* jcr, utime_t wait_time)
 {
-  struct timeval tv;
-  struct timezone tz;
-  struct timespec timeout;
-  int errstat = 0;
+  auto timeout
+      = std::chrono::system_clock::now() + std::chrono::seconds(wait_time);
+  auto locked = jcr->sd_impl->client_available.lock();
 
+  locked.wait_until(jcr->sd_impl->job_start_wait, timeout, [jcr](bool started) {
+    return started || jcr->IsJobCanceled();
+  });
+}
+
+static void WaitFD(JobControlRecord* jcr)
+{
   jcr->sendJobStatus(JS_WaitFD); /* wait for FD to connect */
 
-  gettimeofday(&tv, &tz);
-  timeout.tv_nsec = tv.tv_usec * 1000;
-  timeout.tv_sec = tv.tv_sec + me->client_wait;
+  utime_t wait_time = [] {
+    LockRes(my_config);
+    auto ret = me->client_wait;
+    UnlockRes(my_config);
+    return ret;
+  }();
+
+  if (wait_time == 0) {
+    Dmsg3(100, "Client Connect Wait was set to 0; Setting to 1800s instead.\n");
+    wait_time = 1800;
+  }
 
   Dmsg3(50, "%s waiting %d sec for FD to contact SD key=%s\n", jcr->Job,
-        (int)(timeout.tv_sec - time(NULL)), jcr->sd_auth_key);
+        wait_time, jcr->sd_auth_key);
   Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
 
   /* Wait for the File daemon to contact us to start the Job,
-   * when he does, we will be released, unless the 30 minutes
-   * expires. */
-  lock_mutex(mutex);
-  while (!jcr->authenticated && !JobCanceled(jcr)) {
-    errstat = pthread_cond_timedwait(&jcr->sd_impl->job_start_wait, &mutex,
-                                     &timeout);
-    if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
-      break;
-    }
-    Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
-  }
-  Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
-        JobCanceled(jcr), errstat);
-  unlock_mutex(mutex);
-  Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+   * when he does, we will be released, unless the me->client_wait seconds
+   * (default: 1800 seconds = 30 minutes) expires. */
+  WaitClient(jcr, wait_time);
+}
+
+bool DoJobRun(JobControlRecord* jcr)
+{
+  WaitFD(jcr);
+
+  Dmsg2(50, "Auth=%d canceled=%d\n", jcr->authenticated, jcr->IsJobCanceled());
 
   memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
   switch (jcr->getJobProtocol()) {
@@ -214,6 +224,8 @@ bool DoJobRun(JobControlRecord* jcr)
         lock_mutex(mutex);
         pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
         unlock_mutex(mutex);
+      } else {
+        Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
@@ -225,6 +237,8 @@ bool DoJobRun(JobControlRecord* jcr)
       if (jcr->authenticated && !JobCanceled(jcr)) {
         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
         RunJob(jcr); /* Run the job */
+      } else {
+        Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
@@ -238,10 +252,6 @@ bool nextRunCmd(JobControlRecord* jcr)
 {
   char auth_key[MAX_NAME_LENGTH];
   BareosSocket* dir = jcr->dir_bsock;
-  struct timeval tv;
-  struct timezone tz;
-  struct timespec timeout;
-  int errstat = 0;
 
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
@@ -257,29 +267,7 @@ bool nextRunCmd(JobControlRecord* jcr)
       memset(auth_key, 0, sizeof(auth_key));
       Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
 
-      jcr->sendJobStatus(JS_WaitFD); /* wait for FD to connect */
-
-      gettimeofday(&tv, &tz);
-      timeout.tv_nsec = tv.tv_usec * 1000;
-      timeout.tv_sec = tv.tv_sec + me->client_wait;
-
-      Dmsg3(50, "%s waiting %d sec for FD to contact SD key=%s\n", jcr->Job,
-            (int)(timeout.tv_sec - time(NULL)), jcr->sd_auth_key);
-      Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
-
-      lock_mutex(mutex);
-      while (!jcr->authenticated && !JobCanceled(jcr)) {
-        errstat = pthread_cond_timedwait(&jcr->sd_impl->job_start_wait, &mutex,
-                                         &timeout);
-        if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
-          break;
-        }
-        Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
-      }
-      Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
-            JobCanceled(jcr), errstat);
-      unlock_mutex(mutex);
-      Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+      WaitFD(jcr);
 
       if (jcr->authenticated && !JobCanceled(jcr)) {
         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
@@ -293,6 +281,8 @@ bool nextRunCmd(JobControlRecord* jcr)
         lock_mutex(mutex);
         pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
         unlock_mutex(mutex);
+      } else {
+        Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
@@ -422,7 +412,6 @@ void StoredFreeJcr(JobControlRecord* jcr)
     Emsg0(M_FATAL, 0, _("In FreeJcr(), but still attached to device!!!!\n"));
   }
 
-  pthread_cond_destroy(&jcr->sd_impl->job_start_wait);
   pthread_cond_destroy(&jcr->sd_impl->job_end_wait);
 
   // Avoid a double free

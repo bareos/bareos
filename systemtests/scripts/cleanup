@@ -23,6 +23,7 @@ rm -rf /tmp/chrome-user-data-*
 
 "${rscripts}/bareos" stop >/dev/null
 
+tail -n +1 ${working:?}/*.traceback || true
 ${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
 

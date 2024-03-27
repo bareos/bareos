@@ -164,6 +164,7 @@ start_test()
    dstat=0
    # marker for cleanup()
    echo "$STARTDATE" > "${working}/CLEANUPMARKER"
+   bin/bareos status || true
 }
 
 require_root()
@@ -471,17 +472,35 @@ run_bareos()
    return $?
 }
 
+traceback()
+{
+    name="$(basename "$1")"
+    pid=$(pidof "$name")
+    if [ "$pid" != "" ]; then
+	"${rscripts}/btraceback" "$1" "$pid" "${BAREOS_WORKING_DIR}"
+    fi
+}
+
 run_bconsole()
 {
-   bconsole_file="${1:-${tmp}/bconcmds}"
-   if [ -f "$bconsole_file" ]; then
-      if test "$debug" -eq 1 ; then
-        "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file"
-      else
-        "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null
-      fi
-   fi
-   return $?
+    bconsole_file="${1:-${tmp}/bconcmds}"
+    local error_code=0
+    if [ -f "$bconsole_file" ]; then
+	# 'cmd || ec=$?' is used to prevent "set -e" from killing the script
+	# before we had the chance to kill the daemons (in case of timeout)
+	if test "$debug" -eq 1 ; then
+            timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" || error_code=$?
+	else
+            timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null || error_code=$?
+	fi
+    fi
+    if (( error_code == 124 )); then
+        timeout 10s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "messages" || :
+	traceback "${BAREOS_FILEDAEMON_BINARY}" || :
+	traceback "${BAREOS_STORAGEDAEMON_BINARY}" || :
+	traceback "${BAREOS_DIRECTOR_BINARY}" || :
+    fi
+    return "$error_code"
 }
 
 run_btape()

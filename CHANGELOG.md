@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - dbcheck: fix dbcheck crash if password is not set in catalog resource [PR #1731]
 
+### Fixed
+- stored: fix authentication race condition / deadlock [PR #1736]
+
 ## [22.1.4] - 2024-02-28
 
 ### Changed
@@ -657,4 +660,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1712]: https://github.com/bareos/bareos/pull/1712
 [PR #1714]: https://github.com/bareos/bareos/pull/1714
 [PR #1731]: https://github.com/bareos/bareos/pull/1731
+[PR #1736]: https://github.com/bareos/bareos/pull/1736
 [unreleased]: https://github.com/bareos/bareos/tree/master
