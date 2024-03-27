@@ -1,0 +1,20 @@
+Device {
+  Name = DedupDevice
+  Media Type = dedup
+
+  #
+   # Device Options:
+  #    block size=  - Dedup block size of actual device
+  #
+
+  Device Options = "block size=4k"
+
+  Device Type = dedup
+  Label Media = yes                    # lets Bareos label unlabeled media
+  Random Access = no
+  Automatic Mount = yes                # when device opened, read it
+  Removable Media = no
+  Always Open = no
+  Description = "dedup device"
+  Maximum Concurrent Jobs = 1
+}

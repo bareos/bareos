@@ -7,5 +7,6 @@ bareos.com-director
 bareos.com-filedaemon
 bareos.com-filedaemon-python-plugin
 bareos.com-storage
+bareos.com-storage-dedup
 bareos.com-storage-tape
 bareos.com-tools
