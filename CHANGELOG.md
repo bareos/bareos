@@ -71,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: fix authentication race condition / deadlock [PR #1732]
 - Fix warning about missing delcandidates table in director [PR #1721]
 - stored: fix not counting files correctly in mac jobs when autoxflate is enabled [PR #1745]
+- cats: fixes BigSqlQuery header fetching [PR #1746]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -129,4 +130,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
 [PR #1745]: https://github.com/bareos/bareos/pull/1745
+[PR #1746]: https://github.com/bareos/bareos/pull/1746
 [unreleased]: https://github.com/bareos/bareos/tree/master
