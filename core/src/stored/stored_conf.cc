@@ -84,6 +84,9 @@ static ResourceItem store_items[] = {
   {"BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL},
 #endif
+  {"JustInTimeReservation", CFG_TYPE_BOOL, ITEM(res_store, just_in_time_reservation), 0, CFG_ITEM_DEFAULT, "No", "24.0.0-",
+   "The storage daemon will only reserve devices when it receives data that needs to be written."
+   "  This option also means that no session label gets written if the job is empty."},
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_store, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_store, scripts_directory), 0, 0, NULL, NULL, NULL},
@@ -182,7 +185,8 @@ static ResourceItem dev_items[] = {
       "300" /* 5 minutes */, NULL, NULL},
   {"MaximumOpenWait", CFG_TYPE_TIME, ITEM(res_dev, max_open_wait), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */, NULL, NULL},
   {"MaximumOpenVolumes", CFG_TYPE_PINT32, ITEM(res_dev, max_open_vols), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL},
-  {"MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_dev, max_network_buffer_size), 0, 0, NULL, NULL, NULL},
+  {"MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_dev, max_network_buffer_size), CFG_ITEM_DEPRECATED, 0, NULL, NULL,
+   "Replaced by MaximumNetworkBufferSize (SD->Storage)."},
   {"VolumePollInterval", CFG_TYPE_TIME, ITEM(res_dev, vol_poll_interval), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */, NULL, NULL},
   {"MaximumRewindWait", CFG_TYPE_TIME, ITEM(res_dev, max_rewind_wait), 0, CFG_ITEM_DEFAULT,
       "300" /* 5 minutes */, NULL, NULL},
