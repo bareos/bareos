@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Require python3 explicit [PR #1729]
 - dbcheck: fix dbcheck crash if password is not set in catalog resource [PR #1730]
 - Bugfix: Clean up error handling in LDAP plugin, fix dependencies [PR #1720]
+- VMware Plugin: Backup and Restore NVRAM [PR #1733]
 
 ### Documentation
 - docs: fix Pool explanation for migration jobs [PR #1735]
@@ -435,6 +436,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1726]: https://github.com/bareos/bareos/pull/1726
 [PR #1729]: https://github.com/bareos/bareos/pull/1729
 [PR #1730]: https://github.com/bareos/bareos/pull/1730
+[PR #1733]: https://github.com/bareos/bareos/pull/1733
 [PR #1735]: https://github.com/bareos/bareos/pull/1735
 [PR #1737]: https://github.com/bareos/bareos/pull/1737
 [PR #1748]: https://github.com/bareos/bareos/pull/1748
