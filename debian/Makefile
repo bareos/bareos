@@ -11,7 +11,7 @@ copyright: copyright.header ../core/LICENSE copyright.core_exceptions ../webui/c
 	@echo >> copyright
 	@echo >> copyright
 	@# add webui copyright, except the header stanza
-	@sed -n '/^Files: /,$$p' ../webui/copyright >> copyright
+	@sed -n '/^Files:/,$$p' ../webui/copyright >> copyright
 	@cat copyright.license >> copyright
 
 clean:
