@@ -24,10 +24,11 @@ endif()
 
 option(ENABLE_PYTHON "Enable Python support" ON)
 
+
 if(NOT ENABLE_PYTHON)
   set(HAVE_PYTHON 0)
   set(Python3_FOUND 0)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows" AND NOT MSVC)
   set(HAVE_PYTHON 1)
   set(Python3_FOUND 1)
   set(Python3_EXT_SUFFIX ".pyd")
@@ -72,9 +73,7 @@ else()
   endif()
 endif()
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  include(FindPostgreSQL)
-endif()
+include(FindPostgreSQL)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(OPENSSL_USE_STATIC_LIBS 1)
@@ -143,8 +142,9 @@ elseif(
       "vmware options were set but VMware Vix Disklib was not found. Cannot run vmware tests."
   )
 endif()
-
-bareosfindlibraryandheaders("pthread" "pthread.h" "")
+if (NOT MSVC)
+ bareosfindlibraryandheaders("pthread" "pthread.h" "")
+endif()
 bareosfindlibraryandheaders("cap" "sys/capability.h" "")
 bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
 
@@ -187,4 +187,12 @@ if(ENABLE_JANSSON)
   find_package(Jansson)
 endif()
 
-include(thread)
+if (NOT MSVC)
+  include(thread)
+else()
+  find_package(pthread)
+endif()
+if(MSVC)
+  find_package(Intl)
+endif()
+

@@ -46,18 +46,22 @@
 #include "lib/parse_conf.h"
 
 // Function pointers to be set here (findlib)
-extern int (*plugin_bopen)(BareosFilePacket* bfd,
-                           const char* fname,
-                           int flags,
-                           mode_t mode);
-extern int (*plugin_bclose)(BareosFilePacket* bfd);
-extern ssize_t (*plugin_bread)(BareosFilePacket* bfd, void* buf, size_t count);
-extern ssize_t (*plugin_bwrite)(BareosFilePacket* bfd, void* buf, size_t count);
-extern boffset_t (*plugin_blseek)(BareosFilePacket* bfd,
-                                  boffset_t offset,
-                                  int whence);
+BAREOS_IMPORT int (*plugin_bopen)(BareosFilePacket* bfd,
+                                  const char* fname,
+                                  int flags,
+                                  mode_t mode);
+BAREOS_IMPORT int (*plugin_bclose)(BareosFilePacket* bfd);
+BAREOS_IMPORT ssize_t (*plugin_bread)(BareosFilePacket* bfd,
+                                      void* buf,
+                                      size_t count);
+BAREOS_IMPORT ssize_t (*plugin_bwrite)(BareosFilePacket* bfd,
+                                       void* buf,
+                                       size_t count);
+BAREOS_IMPORT boffset_t (*plugin_blseek)(BareosFilePacket* bfd,
+                                         boffset_t offset,
+                                         int whence);
 
-extern char* exepath;
+BAREOS_IMPORT char* exepath;
 
 namespace filedaemon {
 

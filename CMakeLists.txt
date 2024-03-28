@@ -22,6 +22,12 @@ cmake_minimum_required(VERSION 3.17)
 cmake_policy(VERSION 3.17...3.19)
 
 project(bareos NONE)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  string(REPLACE "Program Files (x86)" "Program Files"
+    CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
@@ -30,6 +36,8 @@ add_custom_target(
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
 
+
+
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
@@ -37,6 +45,7 @@ find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
+include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
 
 set(BUILDNAME
@@ -135,10 +144,12 @@ if(BUILD_BAREOS_BINARIES)
   if(ENABLE_WEBUI)
     add_subdirectory(webui)
   endif()
-  if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  if(NOT client-only)
     add_subdirectory(systemtests)
   endif()
-  add_subdirectory(contrib)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    add_subdirectory(contrib)
+  endif()
 endif()
 
 if(docs
@@ -148,3 +159,4 @@ if(docs
   add_subdirectory(docs/manuals)
 endif()
 set(SITE ${BAREOS_PLATFORM}-${DISTVER})
+

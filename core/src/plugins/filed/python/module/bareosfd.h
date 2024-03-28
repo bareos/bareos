@@ -106,7 +106,7 @@ static PyMemberDef PyRestoreObject_members[]
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /* clang-format off */
 static PyTypeObject PyRestoreObjectType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "restore_object",
     .tp_basicsize = sizeof(PyRestoreObject),
     .tp_dealloc   = (destructor)PyRestoreObject_dealloc,
@@ -178,7 +178,7 @@ static PyMemberDef PyStatPacket_members[] = {
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /* clang-format off */
 static PyTypeObject PyStatPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "stat_pkt",
     .tp_basicsize = sizeof(PyStatPacket),
     .tp_dealloc   = (destructor)PyStatPacket_dealloc,
@@ -257,7 +257,7 @@ static PyMemberDef PySavePacket_members[] = {
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /* clang-format off */
 static PyTypeObject PySavePacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "save_pkt",
     .tp_basicsize = sizeof(PySavePacket),
     .tp_dealloc   = (destructor)PySavePacket_dealloc,
@@ -337,7 +337,7 @@ static PyMemberDef PyRestorePacket_members[] = {
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /* clang-format off */
 static PyTypeObject PyRestorePacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "restore_pkt",
     .tp_basicsize = sizeof(PyRestorePacket),
     .tp_dealloc   = (destructor)PyRestorePacket_dealloc,
@@ -410,7 +410,7 @@ static PyMemberDef PyIoPacket_members[]
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /* clang-format off */
 static PyTypeObject PyIoPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "io_pkt",
     .tp_basicsize = sizeof(PyIoPacket),
     .tp_dealloc   = (destructor)PyIoPacket_dealloc,
@@ -450,7 +450,7 @@ static PyMemberDef PyAclPacket_members[]
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /* clang-format off */
 static PyTypeObject PyAclPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "acl_pkt",
     .tp_basicsize = sizeof(PyAclPacket),
     .tp_dealloc   = (destructor)PyAclPacket_dealloc,
@@ -495,7 +495,7 @@ static PyMemberDef PyXattrPacket_members[]
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /* clang-format off */
 static PyTypeObject PyXattrPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "xattr_pkt",
     .tp_basicsize = sizeof(PyXattrPacket),
     .tp_dealloc   = (destructor)PyXattrPacket_dealloc,

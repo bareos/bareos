@@ -26,7 +26,9 @@
  * Configuration file parser for IP-Addresse ipv4 and ipv6
  */
 #include <netdb.h>
-#include <unistd.h>
+#if !defined(_MSC_VER)
+#  include <unistd.h>
+#endif
 
 #include "include/bareos.h"
 #include "lib/address_conf.h"
@@ -35,6 +37,12 @@
 #include "lib/edit.h"
 #include "lib/output_formatter_resource.h"
 #include "lib/berrno.h"
+
+#if !defined(_MSC_VER)
+#  define socketClose(...) close(__VA_ARGS__)
+#else
+#  define socketClose(...) closesocket(__VA_ARGS__)
+#endif
 
 
 #ifdef HAVE_ARPA_NAMESER_H
@@ -375,7 +383,6 @@ bool CheckIfFamilyEnabled(IpFamily family)
           FamilyName(family), be.bstrerror());
     return false;
   }
-
 #ifdef HAVE_WIN32
   ::closesocket(fd);
 #else

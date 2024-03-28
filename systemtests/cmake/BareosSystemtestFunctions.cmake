@@ -57,6 +57,13 @@ macro(create_systemtests_directory)
 
   configurefilestosystemtest("core/src" "console" "*.in" @ONLY "")
 
+  # install special windows start scripts
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    file(RENAME  ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd-win ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd)
+    file(RENAME  ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd-win ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd)
+    file(RENAME  ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir-win ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir)
+  endif()
+
   file(MAKE_DIRECTORY ${subsysdir})
   file(MAKE_DIRECTORY ${sbindir})
   file(MAKE_DIRECTORY ${bindir})
@@ -77,6 +84,27 @@ endmacro()
 
 # find the full path of the given binary when *compiling* the software and
 # create and set the BINARY_NAME_TO_TEST variable to the full path of it
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+macro(find_compiled_binary_and_set_binary_name_to_test_variable_for binary_name)
+
+  if (TARGET ${binary_name})
+    create_variable_binary_name_to_test_for_binary_name(${binary_name})
+    get_target_property(
+      "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
+    )
+    set("${binary_name_to_test_upcase}"
+      "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
+    )
+    message(
+      "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
+    )
+  else()
+    message(
+      "Target ${binary_name} does not exist, skipping"
+    )
+  endif()
+endmacro()
+else()
 macro(find_compiled_binary_and_set_binary_name_to_test_variable_for binary_name)
   create_variable_binary_name_to_test_for_binary_name(${binary_name})
   get_target_property(
@@ -89,7 +117,7 @@ macro(find_compiled_binary_and_set_binary_name_to_test_variable_for binary_name)
     "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
   )
 endmacro()
-
+endif()
 # find the full path of the given binary in the *installed* binaries and create
 # and set the BINARY_NAME_TO_TEST variable to the full path of it
 macro(find_installed_binary_and_set_BINARY_NAME_TO_TEST_variable_for
@@ -178,6 +206,7 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
 
 endmacro()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 function(configurefilestosystemtest srcbasedir dirname globexpression
          configure_option srcdirname
 )
@@ -217,7 +246,47 @@ function(configurefilestosystemtest srcbasedir dirname globexpression
     endif()
   endforeach()
 endfunction()
+else()
+function(configurefilestosystemtest srcbasedir dirname globexpression
+         configure_option srcdirname
+)
+  if(srcdirname STREQUAL "")
+    set(srcdirname "${dirname}")
+  endif()
+  set(COUNT 1)
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname})
+  file(
+    GLOB_RECURSE ALL_FILES
+    RELATIVE "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/${srcbasedir}/${srcdirname}/${globexpression}"
+  )
+  foreach(TARGET_FILE ${ALL_FILES})
+    math(EXPR COUNT "${COUNT}+1")
+    set(CURRENT_FILE "${CMAKE_SOURCE_DIR}/")
+    string(APPEND CURRENT_FILE ${TARGET_FILE})
 
+    # do not mess with .ini files
+    string(REGEX REPLACE ".in$" "" TARGET_FILE "${TARGET_FILE}")
+
+    string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
+    get_filename_component(DIR_NAME ${TARGET_FILE} DIRECTORY)
+
+    if(NOT EXISTS ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+      file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+    endif()
+    if(${CURRENT_FILE} MATCHES ".in$")
+      configure_file(
+        ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+        ${configure_option}
+      )
+    else()
+      create_symlink(
+        ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+      )
+    endif()
+  endforeach()
+endfunction()
+endif()
 # generic function to probe for a python module for the given python version (2
 # or 3)
 function(check_pymodule_available python_version module)
@@ -290,6 +359,59 @@ macro(check_for_pamtest)
   endif()
 endmacro()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
+
+  foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
+    create_variable_binary_name_to_test_for_binary_name(${binary_name})
+    string(REPLACE "-" "_" binary_name ${binary_name})
+    string(TOUPPER ${binary_name} binary_name_upcase)
+    string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
+
+    if (NOT ${${binary_name_to_test_upcase}} STREQUAL "")
+
+        if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+         set (build_configs "Debug" "Release")
+        else()
+         set (build_configs "")
+        endif()
+        foreach(build_config ${build_configs})
+        set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
+
+        get_filename_component(src_binary_path "${${binary_name_to_test_upcase}}" PATH)
+        get_filename_component(src_file_name  "${${binary_name_to_test_upcase}}" NAME)
+
+        get_filename_component(dst_binary_path "${${bareos_XXX_binary}}" PATH)
+        get_filename_component(dst_file_name  "${${bareos_XXX_binary}}" NAME)
+
+        create_symlink(${src_binary_path}/${build_config}/${src_file_name} ${dst_binary_path}/${build_config}/${dst_file_name})
+      endforeach()
+
+    endif()
+  endforeach()
+
+  create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
+
+  if(TARGET bareos_vadp_dumper)
+    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+      create_symlink(
+        "/usr/sbin/bareos_vadp_dumper_wrapper.sh"
+        "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh"
+      )
+    else()
+      create_symlink(
+        "${CMAKE_SOURCE_DIR}/core/src/vmware/vadp_dumper/bareos_vadp_dumper_wrapper.sh"
+        "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh"
+      )
+
+    endif()
+    create_symlink(
+      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper-${TEST_NAME}"
+      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper"
+    )
+  endif()
+endmacro()
+else()
 macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
   foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
@@ -327,6 +449,7 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     )
   endif()
 endmacro()
+endif()
 
 macro(prepare_testdir_for_daemon_run)
 
@@ -395,6 +518,11 @@ macro(prepare_testdir_for_daemon_run)
 
   set(CURRENT_SBIN_DIR ${current_test_directory}/sbin)
   file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR})
+
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Debug)
+    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Release)
+  endif()
 
   link_binaries_to_test_to_current_sbin_dir_with_individual_filename()
 endmacro()
@@ -478,6 +606,16 @@ macro(prepare_test test_subdir)
   prepare_test_python()
 endmacro()
 
+macro(create_symlink target link)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
+    file(CREATE_LINK ${target} ${link} SYMBOLIC)
+  else()
+   execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link}
+  )
+  endif()
+endmacro()
+
 function(add_disabled_systemtest PREFIX TEST_NAME)
   set(FULL_TEST_NAME "${PREFIX}${TEST_NAME}")
   cmake_parse_arguments(PARSE_ARGV 2 ARG "DISABLED" "COMMENT" "")
@@ -507,16 +645,30 @@ function(add_systemtest name file)
       WORKING_DIRECTORY ${directory}
     )
   else()
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    add_test(
+      NAME ${name}
+      COMMAND ${BASH_EXE} ${file}
+      WORKING_DIRECTORY ${directory}
+    )
+    set_tests_properties(
+      ${name} PROPERTIES TIMEOUT "${SYSTEMTEST_TIMEOUT}" COST 1.0
+                         SKIP_RETURN_CODE 77
+    )
+    else()
     add_test(
       NAME ${name}
       COMMAND ${file}
       WORKING_DIRECTORY ${directory}
     )
+    endif() # windows
   endif()
+  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set_tests_properties(
     ${name} PROPERTIES TIMEOUT "${SYSTEMTEST_TIMEOUT}" COST 1.0
                        SKIP_RETURN_CODE 77
   )
+  endif() #windows
 endfunction()
 
 function(add_systemtest_from_directory tests_basedir prefix test_subdir)

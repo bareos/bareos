@@ -22,7 +22,9 @@
 
 #include <pwd.h>
 #include <grp.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "lib/berrno.h"
 

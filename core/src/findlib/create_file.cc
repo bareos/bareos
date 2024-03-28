@@ -26,7 +26,9 @@
  * Create a file, and reset the modes
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"

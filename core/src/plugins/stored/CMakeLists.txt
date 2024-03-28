@@ -37,9 +37,16 @@ add_subdirectory(python)
 
 add_library(autoxflate-sd MODULE autoxflate/autoxflate-sd.cc)
 set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
+
+if (MSVC)
+target_link_libraries(
+  autoxflate-sd bareos bareosfastlz ${ZLIB_LIBRARIES}
+)
+else()
 target_link_libraries(
   autoxflate-sd bareos bareosfastlz $<$<PLATFORM_ID:Windows>:${ZLIB_LIBRARIES}>
 )
+endif()
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
 
 if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)

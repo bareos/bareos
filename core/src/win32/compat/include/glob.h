@@ -34,8 +34,9 @@
  */
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
-#include <_mingw.h>
-
+#ifndef _MSC_VER
+#  include <_mingw.h>
+#endif
 #ifndef RC_INVOKED
 /* POSIX requires glob.h to define the size_t type; we need to
  * get this from GCC, just as sys/types.h does.
@@ -138,7 +139,8 @@ void __mingw_globfree(glob_t*);
 /* ...to which the standard names are then mapped as aliases,
  * via inline function expansion.
  */
-#  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
+//#  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
+#define GLOB_INLINE static inline
 
 GLOB_INLINE int glob(const char* __pattern,
                      int __flags,

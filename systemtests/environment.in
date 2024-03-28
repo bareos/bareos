@@ -1,3 +1,7 @@
+# CMAKE_CONFIG_TYPE is required on windows, on other OS it needs to be empty
+if [[ ! "$(uname -s)" =~ MINGW64_NT ]]; then
+  CMAKE_CONFIG_TYPE=""
+fi
 
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
@@ -60,15 +64,18 @@ export BAREOS_STORAGE2_PORT=@sd2_port@
 export BAREOS_WEBUI_PORT=@php_port@
 export MINIO_PORT=@minio_port@
 
-export BAREOS_DIRECTOR_BINARY=@BAREOS_DIR_BINARY@
-export BAREOS_FILEDAEMON_BINARY=@BAREOS_FD_BINARY@
-export BAREOS_STORAGEDAEMON_BINARY=@BAREOS_SD_BINARY@
-export BAREOS_BSCAN_BINARY=@BSCAN_BINARY@
-export BAREOS_BLS_BINARY=@BLS_BINARY@
-export BAREOS_BCONSOLE_BINARY=@BCONSOLE_BINARY@
-export BAREOS_BEXTRACT_BINARY=@BEXTRACT_BINARY@
-export BAREOS_DBCHECK_BINARY=@BAREOS_DBCHECK_BINARY@
-export BAREOS_BCOPY_BINARY=@BCOPY_BINARY@
+export CMAKE_BINARY_DIR
+
+export BAREOS_DIRECTOR_BINARY=$(dirname "@BAREOS_DIR_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_DIR_BINARY@")
+export BAREOS_FILEDAEMON_BINARY=$(dirname "@BAREOS_FD_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_FD_BINARY@")
+export BAREOS_STORAGEDAEMON_BINARY=$(dirname "@BAREOS_SD_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_SD_BINARY@")
+
+export BAREOS_BSCAN_BINARY=$(dirname "@BSCAN_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BSCAN_BINARY@")
+export BAREOS_BLS_BINARY=$(dirname "@BLS_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BLS_BINARY@")
+export BAREOS_BCONSOLE_BINARY=$(dirname "@BCONSOLE_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BCONSOLE_BINARY@")
+export BAREOS_BEXTRACT_BINARY=$(dirname "@BEXTRACT_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BEXTRACT_BINARY@")
+export BAREOS_DBCHECK_BINARY=$(dirname "@BAREOS_DBCHECK_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_DBCHECK_BINARY@")
+export BAREOS_BCOPY_BINARY=$(dirname "@BCOPY_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BCOPY_BINARY@")
 
 export archivedir
 
@@ -110,13 +117,25 @@ export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 export PHP_EXECUTABLE=@PHP@
 export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
+
+PATH=\
+../../../core/src/console/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/dird/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/filed/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/stored/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/tests/${CMAKE_CONFIG_TYPE}:\
+../../../core/src/tools/${CMAKE_CONFIG_TYPE}:\
+$PATH
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
 # If there are multiple version, select the first.
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
-  export PATH=$POSTGRES_BINARY_DIR:$PATH
 else
+  if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+    PG_CYGPATH=$(cygpath "@POSTGRES_BIN_PATH@")
+    export PATH="$PG_CYGPATH:$PATH"
+  fi
   export PATH=/sbin:/usr/sbin:$PATH
 fi
 export PYTHONPATH=@pythonpath@
@@ -140,7 +159,7 @@ SYSTEMTEST_LDAP_PASSWORD="@SYSTEMTEST_LDAP_PASSWORD@"
 LANG=en_US.UTF-8
 
 # path to real postgres binaries, NOT debian wrappers
-POSTGRES_BIN_PATH=@POSTGRES_BIN_PATH@
+POSTGRES_BIN_PATH="@POSTGRES_BIN_PATH@"
 
 
 XTRABACKUP_BINARY=@XTRABACKUP_BINARY@

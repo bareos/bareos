@@ -899,10 +899,10 @@ int main(int argc, char* argv[])
         exit(BEXIT_SUCCESS);
       }
 
-      db_name = catalog->db_name ?: "";
-      user = catalog->db_user ?: "";
-      password = catalog->db_password.value ?: "";
-      db_driver = catalog->db_driver ?: "";
+      db_name = catalog->db_name ? catalog->db_name : "";
+      user = catalog->db_user ? catalog->db_user : "";
+      password = catalog->db_password.value ? catalog->db_password.value : "";
+      db_driver = catalog->db_driver ? catalog->db_driver : "";
       if (catalog->db_address) { dbhost = catalog->db_address; }
       if (!dbhost.empty() && dbhost[0] == 0) { dbhost = ""; }
       dbport = catalog->db_port;

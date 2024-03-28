@@ -33,7 +33,9 @@
  * - Enabled functions, etc.
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "dird/dir_plugins.h"

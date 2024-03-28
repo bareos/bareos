@@ -19,3 +19,10 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${BASENAME} PROPERTIES TIMEOUT 400 COST 1.0
+  )
+endif()
+

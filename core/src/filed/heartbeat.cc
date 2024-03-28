@@ -75,7 +75,7 @@ void heartbeat_dir::send_heartbeat(BareosSocket* sock, time_t interval)
 heartbeat_dir::~heartbeat_dir()
 {
   stop_requested = true;
-  pthread_kill(thread.native_handle(), TIMEOUT_SIGNAL);
+  pthread_kill(static_cast<pthread_t>(thread.native_handle()), TIMEOUT_SIGNAL);
   thread.join();
 }
 
@@ -135,7 +135,7 @@ void heartbeat_sd_dir::send_heartbeat(BareosSocket* sd,
 heartbeat_sd_dir::~heartbeat_sd_dir()
 {
   stop_requested = true;
-  pthread_kill(thread.native_handle(), TIMEOUT_SIGNAL);
+  pthread_kill(static_cast<pthread_t>(thread.native_handle()), TIMEOUT_SIGNAL);
   thread.join();
 }
 

@@ -22,7 +22,9 @@ set -e
 set -u
 
 . ./environment
-. ./test-config
+[ -e ./tape-config ] && . ./tape-config
+[ -e ./test-config ] && . ./test-config
+
 . ./redirect_output
 
 echo "=== $0 Running ==="

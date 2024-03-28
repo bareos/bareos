@@ -18,9 +18,17 @@
 #   02110-1301, USA.
 
 import unittest
-import bareosfd
 import time
 import types
+import os
+
+#for key, value in os.environ.items():
+#    print(f'{key}: {value}')
+
+print( "PATH", os.environ['PATH'])
+print("PYTHONPATH",os.environ['PYTHONPATH'])
+
+import bareosfd
 
 # print(dir(bareosfd))
 print("bareosfd.iostat_error: ", bareosfd.iostat_error)

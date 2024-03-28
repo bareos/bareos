@@ -27,6 +27,12 @@ JobName=backup-bareos-fd
 
 . ./tape-config
 
+if ! ./unlock_all_drives.sh ${1:-}
+then
+  echo "Could not unlock drives"
+  exit 1
+fi
+
 if ! ./invalidate_tapes.sh ${1:-}
 then
   echo "Could not invalidate tapes"

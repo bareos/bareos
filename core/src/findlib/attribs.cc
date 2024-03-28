@@ -26,7 +26,9 @@
  * other non-Unix systems, or Unix systems with ACLs, ...
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 
 #include "include/bareos.h"
 #include "include/filetypes.h"
@@ -310,8 +312,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
 
   restore_times.actime = attr->statp.st_atime;
   restore_times.modtime = attr->statp.st_mtime;
-
-  if (utime(attr->ofname, &restore_times) < 0 && !suppress_errors) {
+  if (utime(attr->ofname, reinterpret_cast<utimbuf*>(&restore_times)) < 0 && !suppress_errors) {
     BErrNo be;
 
     Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),

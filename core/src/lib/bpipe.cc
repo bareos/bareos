@@ -26,7 +26,9 @@
  */
 
 #include <sys/wait.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "jcr.h"
 #include "lib/berrno.h"

@@ -30,6 +30,10 @@
 #include "filed/filed_globals.h"
 #include "filed/filed_conf.h"
 
+#ifdef _MSC_VER
+#define PATH_MAX MAX_PATH
+#endif
+
 namespace filedaemon {
 
 TEST(ConfigParser, test_filed_config)

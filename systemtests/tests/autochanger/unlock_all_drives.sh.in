@@ -1,0 +1,50 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+set -e
+set -u
+
+. ./environment
+[ -e ./tape-config ] && . ./tape-config
+[ -e ./test-config ] && . ./test-config
+
+. ./redirect_output
+
+echo "=== $0 Running ==="
+
+# loop over all changer devices
+for changer_index in {0..9}; do
+  ch="CHANGER_DEVICE${changer_index}"
+  changer_device="${!ch:-}"
+  [[ -z "${changer_device}" ]] && break
+  echo "Unlocking devices in autochanger ${changer_device}"
+  # loop over all tape devices attached to that changer
+  drive_index=0
+  tape_devices="TAPE_DEVICES${changer_index}[@]"
+  for tape_device in ${!tape_devices}; do
+    if mt -f "${tape_device}" status | grep ONLINE; then
+      echo "  Tape is loaded in ${tape_device}, unlocking"
+      mt -f "${tape_device}" unlock
+    else
+      echo " ${tape_device} is empty, not unlocking"
+    fi
+  done # for tape_device in ${!tape_devices}; do
+done # for changer_index in {0..9}; do
+
+echo "=== $0 Ready ==="

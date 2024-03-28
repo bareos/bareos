@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 set -u
+
 #
 # Run one time the BackupCatalog default configuration job.
 # Restore the dump, drop all tables, then restore them.
@@ -16,6 +17,8 @@ JobName=BackupCatalog
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+skip_if_windows "catalog backup does not work yet on windows"
 
 start_test
 
@@ -108,6 +111,8 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${tmp}/testout2.txt
 list filesets
 END_OF_DATA
+
+start_bareos
 
 run_bconsole
 check_for_zombie_jobs storage=File

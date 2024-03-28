@@ -42,4 +42,6 @@ if(NOT HAVE_WIN32)
     add_subdirectory(systemd)
   endif()
 
+else()  
+    add_subdirectory(win32)
 endif()

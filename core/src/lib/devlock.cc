@@ -48,7 +48,7 @@ DevLock* DevLock::new_devlock()
   lock->mutex = PTHREAD_MUTEX_INITIALIZER;
   lock->read = PTHREAD_COND_INITIALIZER;
   lock->write = PTHREAD_COND_INITIALIZER;
-  lock->writer_id = 0;
+  lock->writer_id = pthread_t();
   lock->priority = 0;
   lock->valid = 0;
   lock->r_active = 0;

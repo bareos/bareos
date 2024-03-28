@@ -25,7 +25,9 @@
  * Volume name. If found, open the file for append.
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"

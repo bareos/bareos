@@ -1,6 +1,6 @@
 #!/bin/bash
 #shellcheck source=../environment.in
-. ./environment
+#. ./environment
 . "${rscripts}/functions"
 
 print_debug "drop database \"${db_name}\" (${DBTYPE})"

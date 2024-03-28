@@ -17,6 +17,8 @@ export TestName
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+skip_if_windows
+
 start_test
 
 sleeping_job="runscriptjob"
@@ -26,7 +28,6 @@ reservationlog="$tmp/reservation-order.out"
 rm -f $reservationlog
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
 messages
 @$out $reservationlog
 run job=${sleeping_job} level=Full yes

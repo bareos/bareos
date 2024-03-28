@@ -19,6 +19,8 @@ JobName=backup-bareos-fd
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+skip_if_windows "sparse files need special flag (fsutil sparse setflag <filename>)"
+
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 

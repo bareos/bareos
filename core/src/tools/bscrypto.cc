@@ -27,7 +27,9 @@
  * using a lowlevel SCSI interface.
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/crypto_cache.h"

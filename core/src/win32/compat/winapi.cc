@@ -221,4 +221,8 @@ void InitWinAPIWrapper()
     hLib = LoadLibraryA("SHFOLDER.DLL");
     if (hLib) { SET_API_POINTER_EX(SHGetFolderPath, SHGetFolderPathA); }
   }
+
+  SetTrace(0);
+  (void)WSA_Init(); /* Initialize Windows sockets */
+
 }

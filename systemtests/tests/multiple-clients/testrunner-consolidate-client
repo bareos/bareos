@@ -39,7 +39,6 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/consolidate.out
 run job=Consolidate yes
 wait
-.api 2
 list jobs job=Consolidate
 wait
 messages
@@ -48,7 +47,10 @@ quit
 END_OF_DATA
 run_bconsole
 
-consolidate_client=$(grep -o '"client": "[^"]*"' tmp/consolidate.out | sed 's/"client": "\(.*\)"/\1/')
+#TODO: .api 2 does not work on windows, exits immediately!
+
+#consolidate_client=$(grep -o '"client": "[^"]*"' tmp/consolidate.out | sed 's/"client": "\(.*\)"/\1/')
+consolidate_client=$(grep client tmp/consolidate.out -A 2 | tail -n1 | awk {'print $6'})
 
 if [ "$consolidate_client" != "bareos-fd" ]; then
   echo "Wrong client for consolidate job!"

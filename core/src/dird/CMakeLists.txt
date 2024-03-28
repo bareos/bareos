@@ -159,10 +159,10 @@ set(DIRD_RESTYPES
 # dird_objects is also used as library for unittests
 add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
 target_link_libraries(
-  dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} Threads::Threads
+  dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} ${THREADS_THREADS}
 )
 
-add_executable(bareos-dir)
+add_executable(bareos-dir WIN32)
 target_sources(bareos-dir PRIVATE dird.cc)
 
 target_link_libraries(
@@ -207,5 +207,5 @@ install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")")
 
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
-
+bareoscopydllstobindir()
 include(DebugEdit)

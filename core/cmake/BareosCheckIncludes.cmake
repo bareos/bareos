@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+if(NOT MSVC)
 include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 
@@ -80,3 +81,4 @@ check_include_files(cam/scsi/scsi_message.h HAVE_CAM_SCSI_SCSI_MESSAGE_H)
 check_include_files(dev/scsipi/scsipi_all.h HAVE_DEV_SCSIPI_SCSIPI_ALL_H)
 
 check_include_files(scsi/uscsi_all.h HAVE_USCSI_ALL_H)
+endif()

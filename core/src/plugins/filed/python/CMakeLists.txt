@@ -55,7 +55,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     TEST bareosfd-python3-module-tester
     PROPERTY
       ENVIRONMENT
-      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
+      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules/${CMAKE_CONFIG_TYPE}:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
       "LSAN_OPTIONS=fast_unwind_on_malloc=0 suppressions=${CMAKE_CURRENT_SOURCE_DIR}/test/lsan-suppressions.txt"
   )
 endif()
@@ -77,7 +77,7 @@ if(Python3_FOUND)
                LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
                LINKER_LANGUAGE CXX
                INCLUDE_DIRECTORIES "${pymod3_include_dirs}"
-               CXX_STANDARD 17
+               CXX_STANDARD 20
   )
   target_compile_options(bareosfd-python3-module PUBLIC -fno-strict-aliasing)
   if(NOT "${Python3_CCSHARED}" STREQUAL "")

@@ -32,7 +32,7 @@
 
 // Microsoft® Component Object Model (COM)
 #include <comutil.h>
-
+#include <array>
 // Microsoft® MSSQL Virtual Device Interface (VDI)
 #include "vdi.h"
 #include "vdierror.h"

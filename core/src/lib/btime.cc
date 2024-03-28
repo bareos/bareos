@@ -47,7 +47,11 @@
 void Blocaltime(const time_t* time, struct tm* tm)
 {
   /* ***FIXME**** localtime_r() should be user configurable */
+#ifdef _MSC_VER
+  localtime_s(tm, time);
+#else
   (void)localtime_r(time, tm);
+#endif
 }
 
 // Formatted time for user display: dd-Mon-yyyy hh:mm

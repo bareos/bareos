@@ -50,6 +50,10 @@
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
 
+#ifdef _MSC_VER
+#define PATH_MAX MAX_PATH
+#endif
+
 // Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosFilePacket* bfd,
                            const char* fname,

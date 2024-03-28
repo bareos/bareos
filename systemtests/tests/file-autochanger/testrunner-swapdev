@@ -12,6 +12,8 @@ export TestName
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+skip_if_windows "stored_conf.cc:570 Backend autochanger_test for device File1 not available."
+
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"

@@ -57,7 +57,7 @@ static bool IsDayOfYearInLastWeek(int year, int day_of_year)
 RunHourValidator::RunHourValidator(time_t time) : time_(time)
 {
   struct tm tm = {};
-  localtime_r(&time_, &tm);
+  Blocaltime(&time_, &tm);
   hour_ = tm.tm_hour;
   mday_ = tm.tm_mday - 1;
   wday_ = tm.tm_wday;

@@ -39,7 +39,7 @@ set_target_properties(
 )
 if(HAVE_WIN32)
   set_target_properties(bareoslmdb PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-  target_link_libraries(bareoslmdb -lntdll)
+  target_link_libraries(bareoslmdb ntdll)
 endif()
 
 install(TARGETS bareoslmdb DESTINATION ${libdir})

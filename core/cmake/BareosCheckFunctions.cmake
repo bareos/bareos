@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+if(NOT MSVC)
 include(CheckFunctionExists)
 
 check_function_exists(backtrace HAVE_BACKTRACE)
@@ -86,3 +87,4 @@ check_function_exists(utimes HAVE_UTIMES)
 check_function_exists(glfs_readdirplus HAVE_GLFS_READDIRPLUS)
 
 check_function_exists(chflags HAVE_CHFLAGS)
+endif()

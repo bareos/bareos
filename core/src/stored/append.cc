@@ -41,6 +41,8 @@
 #include "include/streams.h"
 #include "lib/berrno.h"
 #include "lib/crypto.h"
+#include "lib/berrno.h"
+#include <algorithm>
 
 #include <algorithm>
 #include <thread>
@@ -84,7 +86,7 @@ ProcessedFile::ProcessedFile(int32_t fileindex) : fileindex_(fileindex) {}
 
 void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
 {
-  for_each(attributes_.begin(), attributes_.end(),
+  std::for_each(attributes_.begin(), attributes_.end(),
            [&jcr](ProcessedFileData& attribute) {
              DeviceRecord devicerecord = attribute.GetData();
              SendAttrsToDir(jcr, &devicerecord);
@@ -109,7 +111,7 @@ static bool SaveFullyProcessedFilesAttributes(
     std::vector<ProcessedFile>& processed_files)
 {
   if (!processed_files.empty()) {
-    for_each(
+    std::for_each(
         processed_files.begin(), processed_files.end(),
         [&jcr](ProcessedFile& file) { file.SendAttributesToDirector(jcr); });
     jcr->JobFiles = processed_files.back().GetFileIndex();

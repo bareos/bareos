@@ -15,6 +15,8 @@ export TestName
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+skip_if_windows "task killing is not implemented yet"
+
 start_test
 
 slowjob="slow-backup-bareos-fd"

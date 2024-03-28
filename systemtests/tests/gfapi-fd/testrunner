@@ -24,12 +24,12 @@ umount_glusterfs(){
 #  make sure umount is successful
 tries=60
 echo "umounting glusterfs..."
-while "${SUDO}" mount | grep "${tmp}/data" >/dev/null 2>&1; do
+while "${SUDO}" mount | grep "${gfapi_fd_host}:/testvol" >/dev/null 2>&1; do
   [ $((tries-=1)) -eq 0 ] && {
     echo "could not umount glustrfs ${tmp}/data"
     exit 1
   }
-  "${SUDO}" umount "${tmp}/data"
+  "${SUDO}" umount "${gfapi_fd_host}:/testvol"
   echo -n "."
   sleep 1
 done
@@ -52,8 +52,7 @@ BackupDirectory="${tmp}/data"
 
 
 [ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
-"${SUDO}" mount -t glusterfs ${gfapi_fd_host}:/testvol "${tmp}/data"
-
+"${SUDO}" mount -t glusterfs "${gfapi_fd_host}:/testvol" "${tmp}/data"
 "${SUDO}" rm -Rvf "${tmp}/data/*"
 
 # Use a tgz to setup data to be backed up.
@@ -141,5 +140,7 @@ check_two_logs
 ln -s  "${tmp}" "${tmp}/bareos-restores"
 check_recursive_diff_of_dirs $tmp/data/weird-files  $tmp/data/$tmp/bareos-restores/data/weird-files
 
+mountpoint "${tmp}/data" && "${SUDO}" rm -Rvf "${tmp}/data/*"
 umount_glusterfs
+
 end_test

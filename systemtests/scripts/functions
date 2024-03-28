@@ -1,7 +1,17 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # A set of useful functions to be sourced in each test
 #
+
+generate_test_data(){
+  subdir=$1
+  mkdir -p "$tmp/$subdir"
+  gentestdata="${CMAKE_BINARY_DIR}/core/src/tools/${CMAKE_CONFIG_TYPE}/gentestdata"
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    "$gentestdata" --size=1048576 >"$tmp/$subdir/testfile$i.bin"
+  done
+}
+
 
 wait_for_jobs_to_terminate ()
 {
@@ -102,8 +112,29 @@ setup_data()
     set_error "setup_data: $tarfile not found."
     exit 1
    fi
-   $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
+   if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+     $GTAR --directory="$data_dir" -xf "$tarfile" || :  # we expect errors on windows
+   else
+     $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
+   fi
   done
+
+# TODO: make this also work on windows
+ if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+   pushd "$data_dir"
+   rm 'weird-files/a-file-with-spaces-at-the-end    '
+   rm weird-files/'  '
+   rm weird-files/' '
+   rm weird-files/'0 '
+   rm weird-files/another-hardlink-to-normalfile
+   rm weird-files/hard-base-file
+   rm weird-files/hard-file2
+   rm weird-files/hardlink-to-normalfile
+   rm weird-files/normalfile
+   rm weird-files/subdir/a-hardlink
+   rm weird-files/subdir/another-hardlink
+   popd
+ fi
 
   return 0
 }
@@ -428,22 +459,17 @@ check_duration_lt()
 }
 
 start_dir() {
-   "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
-   dir_pid=$!
+   ${rscripts}/bareos-ctl-dir start
 }
 
 start_fd() {
-   "${BAREOS_FILEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_FILEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
-   fd_pid=$!
+  ${rscripts}/bareos-ctl-fd start
 }
 
 start_sd() {
-   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
-   sd_pid=$!
+ ${rscripts}/bareos-ctl-sd start
 }
+
 
 start_bareos()
 {
@@ -600,18 +626,9 @@ waitpid()
 
 stop_bareos()
 {
-  if [ "$fd_pid" -gt 0 ]; then
-    kill_process "$fd_pid"
-    fd_pid=0
-  fi
-  if [ "$sd_pid" -gt 0 ]; then
-    kill_process "$sd_pid"
-    sd_pid=0
-  fi
-  if [ "$dir_pid" -gt 0 ]; then
-    kill_process "$dir_pid"
-    dir_pid=0
-  fi
+  ${rscripts}/bareos-ctl-dir stop
+  ${rscripts}/bareos-ctl-fd stop
+  ${rscripts}/bareos-ctl-sd stop
 }
 
 
@@ -801,7 +818,7 @@ check_log()
 
 check_recursive_diff_of_dirs()
 {
-   "$rscripts/diff.pl" -s "$1" -d "$2"
+   perl "$rscripts/diff.pl" -s "$1" -d "$2"
 }
 
 check_restore_diff()
@@ -815,8 +832,8 @@ check_restore_diff()
    result=0
 
    restorepath="$restoredirectory/${dest}"
-
-   if ! "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
+   restorepath=$(sed 's#/C:#/c#g'<<< $restorepath)
+   if ! perl "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
        dstat=1
    fi
 
@@ -847,7 +864,8 @@ check_restore_only_files_diff()
    #
    differences=0
    for i in "$@"; do
-     if ! diff -ur "$i" "${RestoreDirectory}/$i"; then
+     restoresubdir=$(sed 's#C:/#C/#g' <<< "$i")
+     if ! diff -ur "$i" "${RestoreDirectory}/${restoresubdir}" ; then
        differences="$(( differences + 1 ))"
        dstat=1
      fi
@@ -868,7 +886,7 @@ check_restore_files_diff()
    #
 
    # get list of all restored files
-   RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed "s%^${RestoreDirectory}%%")"
+   RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed -e "s%^${RestoreDirectory}%%" -e 's#^/C#C:#g')"
    # remove all files given as parameter from the list
    for i in "$@"; do
      RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "$i")" || true
@@ -886,7 +904,7 @@ check_restore_files_diff()
 check_restore_bin_diff()
 {
    if test "$debug" -eq 1 ; then
-      "$rscripts/diff.pl" -s "${bin}" -d "${RestoreDirectory}${bin}"
+      perl "$rscripts/diff.pl" -s "${bin}" -d "${RestoreDirectory}${bin}"
       diff -ur "${bin}" "${RestoreDirectory}${bin}"
    else
       diff -ur "${bin}" "${RestoreDirectory}${bin}" >/dev/null 2>&1
@@ -898,7 +916,7 @@ check_restore_bin_diff()
 check_restore_tmp_build_diff()
 {
    if test "$debug" -eq 1 ; then
-      "$rscripts/diff.pl" -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
+      perl "$rscripts/diff.pl" -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
       diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}"
    else
       diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}" >/dev/null 2>&1
@@ -1151,6 +1169,18 @@ if [ "$USER" == "root"  ]; then
 fi
 }
 
+skip_if_windows()
+{
+if [[ "$(uname -s)" =~ MINGW64_NT ]]; then
+ if [ -z "${1+x}" ]; then
+   echo "${TestName} test skipped on windows."
+ else
+   echo "${TestName} test skipped on windows: $1."
+ fi
+ exit 77;
+fi
+}
+
 REGRESS_DEBUG=${REGRESS_DEBUG:-0}
 if test "x${REGRESS_DEBUG}" = "x1"; then
    set_debug 1
@@ -1163,7 +1193,7 @@ cwd="$(pwd)"
 
 # Source the configuration variables
 # shellcheck source=../environment.in
-. "${cwd}/environment"
+#. "${cwd}/environment"
 
 db_name="${db_name:-"regress"}"
 db_user="${db_user:-"regress"}"

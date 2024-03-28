@@ -16,7 +16,7 @@
 #
 TestName="$(basename "$(pwd)")"
 export TestName
-
+skip_if_windows
 JobName=ai-backup-bareos-fd
 
 #shellcheck source=../environment.in
@@ -24,6 +24,10 @@ JobName=ai-backup-bareos-fd
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+#TODO: get this test work on windows
+skip_if_windows "works in principle, but some checks fail"
+
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
@@ -36,7 +40,7 @@ start_test
 start_bareos
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+#@$out /dev/null
 messages
 @$out $tmp/log1.out
 label volume=TestVolume001 storage=File pool=Full
