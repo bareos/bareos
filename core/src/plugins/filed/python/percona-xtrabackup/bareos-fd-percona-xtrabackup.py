@@ -597,6 +597,8 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                         "Giving up to wait for bareos_xtrabackup_dumper PID %s to terminate\n"
                         % (self.stream.pid),
                     )
+                    # Set return code to 9 because we've tried to terminate subprocess earlier
+                    self.stream.returncode = 9
                     break
             DebugMessage(
                 100,
