@@ -62,7 +62,6 @@ class BareosDbPostgresql : public BareosDb {
   int SqlNumFields(void) override { return num_fields_; }
   bool OpenDatabase(JobControlRecord* jcr) override;
   void CloseDatabase(JobControlRecord* jcr) override;
-  bool ValidateConnection(void) override;
   void EscapeString(JobControlRecord* jcr,
                     char* snew,
                     const char* old,
