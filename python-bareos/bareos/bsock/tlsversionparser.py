@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -57,7 +57,7 @@ class TlsVersionParser:
     def add_argument(self, argparser):
         argparser.add_argument(
             "--tls-version",
-            help="Use a specific TLS protocol version.",
+            help="Use a specific TLS protocol version (only used with the sslpsk module).",
             action=ArgParserTlsVersionAction,
             choices=OrderedDict(sorted(self.tls_version_options.items())),
             dest="BAREOS_tls_version",
