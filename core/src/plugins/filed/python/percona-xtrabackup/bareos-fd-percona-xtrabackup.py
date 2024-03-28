@@ -421,7 +421,6 @@ class BareosFdPercona(BareosFdPluginBaseclass):
 
                     # Cleanup tmpdir
                     shutil.rmtree(self.tempdir)
-                    # Set return code to 9 because we've terminated subprocess earlier
                     self.subprocess_returnCode = bareos_xtrabackup_dumper_returncode
                     self.stream.returncode = bareos_xtrabackup_dumper_returncode
 
