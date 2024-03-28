@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - stored: fix authentication race condition / deadlock [PR #1736]
+- cats: fixes BigSqlQuery header fetching [PR #1750]
 
 ## [22.1.4] - 2024-02-28
 
@@ -661,4 +662,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1714]: https://github.com/bareos/bareos/pull/1714
 [PR #1731]: https://github.com/bareos/bareos/pull/1731
 [PR #1736]: https://github.com/bareos/bareos/pull/1736
+[PR #1750]: https://github.com/bareos/bareos/pull/1750
 [unreleased]: https://github.com/bareos/bareos/tree/master
