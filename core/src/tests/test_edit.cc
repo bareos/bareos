@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -150,15 +150,12 @@ TEST(edit, convert_siunits_to_numbers)
     size_to_uint64(str, &retvalue);
     ASSERT_EQ(retvalue, 1'000'000'000'000'000'000);
   }
-  // size_to_uint64 only checks for first modifier so the following does not
-  // work
-  /*
-    {
-      char str[] = "1 e 1 p 1 t 1 g 1 m 1 k 1";
-      uint64_t retvalue = 0;
-      size_to_uint64(str, &retvalue);
-      ASSERT_EQ(retvalue, 1152921504606846976 + 1125899906842624 + 1099511627776
-    + 1073741824 + 1048576 + 1024 + 1);
-    }
-  */
+  // combined specification
+  {
+    char str[] = "1 e 1 p 1 t 1 g 1 m 1 k 1";
+    uint64_t retvalue = 0;
+    size_to_uint64(str, &retvalue);
+    ASSERT_EQ(retvalue, 1152921504606846976 + 1125899906842624 + 1099511627776
+                            + 1073741824 + 1048576 + 1024 + 1);
+  }
 }
