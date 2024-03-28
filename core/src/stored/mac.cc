@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,9 +65,14 @@ static char ReplicateData[] = "replicate data %d\n";
 static char end_replicate[] = "end replicate\n";
 
 
-/* get information from first original SOS label for our job */
-static bool found_first_sos_label = false;
-
+/* last callback information of our job */
+struct cb_data {
+  bool found_first_sos_label{false};
+  uint32_t last_VolSessionId{0};
+  uint32_t last_VolSessionTime{0};
+  int32_t last_FileIndex{0};
+  int32_t last_Stream{0};
+};
 
 /**
  * Get response from Storage daemon to a command we sent.
@@ -109,7 +114,9 @@ static bool response(JobControlRecord* jcr,
  * Returns: true if OK
  *           false if error
  */
-static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
+static bool CloneRecordInternally(DeviceControlRecord* dcr,
+                                  DeviceRecord* rec,
+                                  cb_data* data)
 {
   bool retval = false;
   bool translated_record = false;
@@ -127,29 +134,28 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   if (rec->FileIndex < 0) {
     if (rec->FileIndex == SOS_LABEL) {
-      if (!found_first_sos_label) {
+      if (!data->found_first_sos_label) {
         Dmsg0(200, "Found first SOS_LABEL and adopting job info\n");
-        found_first_sos_label = true;
+        data->found_first_sos_label = true;
 
-        static Session_Label the_label;
-        static Session_Label* label = &the_label;
+        Session_Label sos_label;
 
-        UnserSessionLabel(label, rec);
+        UnserSessionLabel(&sos_label, rec);
 
         if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
-          bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
-          PmStrcpy(jcr->sd_impl->job_name, label->JobName);
-          PmStrcpy(jcr->client_name, label->ClientName);
-          PmStrcpy(jcr->sd_impl->fileset_name, label->FileSetName);
-          PmStrcpy(jcr->sd_impl->fileset_md5, label->FileSetMD5);
+          bstrncpy(jcr->Job, sos_label.Job, sizeof(jcr->Job));
+          PmStrcpy(jcr->sd_impl->job_name, sos_label.JobName);
+          PmStrcpy(jcr->client_name, sos_label.ClientName);
+          PmStrcpy(jcr->sd_impl->fileset_name, sos_label.FileSetName);
+          PmStrcpy(jcr->sd_impl->fileset_md5, sos_label.FileSetMD5);
         }
-        jcr->setJobType(label->JobType);
-        jcr->setJobLevel(label->JobLevel);
-        Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
+        jcr->setJobType(sos_label.JobType);
+        jcr->setJobLevel(sos_label.JobLevel);
+        Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", sos_label.JobLevel);
 
         // make sure this volume wasn't written by bacula 1.26 or earlier
-        ASSERT(label->VerNum >= 11);
-        jcr->sched_time = BtimeToUnix(label->write_btime);
+        ASSERT(sos_label.VerNum >= 11);
+        jcr->sched_time = BtimeToUnix(sos_label.write_btime);
 
         jcr->start_time = jcr->sched_time;
 
@@ -178,16 +184,17 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
    *  JobFiles, which we then use as the output FileIndex. */
   if (rec->FileIndex >= 0) {
     // If something changed, increment FileIndex
-    if (rec->VolSessionId != rec->last_VolSessionId
-        || rec->VolSessionTime != rec->last_VolSessionTime
-        || rec->FileIndex != rec->last_FileIndex) {
+    if (rec->VolSessionId != data->last_VolSessionId
+        || rec->VolSessionTime != data->last_VolSessionTime
+        || rec->FileIndex != data->last_FileIndex) {
       jcr->JobFiles++;
-      rec->last_VolSessionId = rec->VolSessionId;
-      rec->last_VolSessionTime = rec->VolSessionTime;
-      rec->last_FileIndex = rec->FileIndex;
+      data->last_VolSessionId = rec->VolSessionId;
+      data->last_VolSessionTime = rec->VolSessionTime;
+      data->last_FileIndex = rec->FileIndex;
     }
     rec->FileIndex = jcr->JobFiles; /* set sequential output FileIndex */
   }
+
 
   // Modify record SessionId and SessionTime to correspond to output.
   rec->VolSessionId = jcr->VolSessionId;
@@ -230,13 +237,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     Dmsg2(200, "===== Wrote block new pos %u:%u\n", dev->file, dev->block_num);
   }
 
-  // Restore packet
-  jcr->sd_impl->dcr->after_rec->VolSessionId
-      = jcr->sd_impl->dcr->after_rec->last_VolSessionId;
-  jcr->sd_impl->dcr->after_rec->VolSessionTime
-      = jcr->sd_impl->dcr->after_rec->last_VolSessionTime;
-
-  if (jcr->sd_impl->dcr->after_rec->FileIndex < 0) {
+  if (rec->FileIndex < 0) {
     retval = true; /* don't send LABELs to Dir */
     goto bail_out;
   }
@@ -258,6 +259,13 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
   retval = true;
 
 bail_out:
+
+  /* Restore packet -- the read record function uses this information
+   * to check if the job changed, so we need to restore it to how it was;
+   * otherwise the record will get zeroed on job change. */
+  rec->VolSessionId = data->last_VolSessionId;
+  rec->VolSessionTime = data->last_VolSessionTime;
+
   if (translated_record) {
     FreeRecord(jcr->sd_impl->dcr->after_rec);
     jcr->sd_impl->dcr->after_rec = NULL;
@@ -274,7 +282,9 @@ bail_out:
  * Returns: true if OK
  *           false if error
  */
-static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
+static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr,
+                                  DeviceRecord* rec,
+                                  cb_data* data)
 {
   POOLMEM* msgsave;
   JobControlRecord* jcr = dcr->jcr;
@@ -286,13 +296,13 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
   if (rec->FileIndex < 0) { return true; }
 
   // See if this is the first record being processed.
-  if (rec->last_FileIndex == 0) {
+  if (data->last_FileIndex == 0) {
     /* Initialize the last counters so we can compare
      * things in the next run through here. */
-    rec->last_VolSessionId = rec->VolSessionId;
-    rec->last_VolSessionTime = rec->VolSessionTime;
-    rec->last_FileIndex = rec->FileIndex;
-    rec->last_Stream = rec->Stream;
+    data->last_VolSessionId = rec->VolSessionId;
+    data->last_VolSessionTime = rec->VolSessionTime;
+    data->last_FileIndex = rec->FileIndex;
+    data->last_Stream = rec->Stream;
     jcr->JobFiles = 1;
 
     // Need to send both a new header only.
@@ -300,19 +310,19 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
     send_header = true;
   } else {
     // See if we are changing file or stream type.
-    if (rec->VolSessionId != rec->last_VolSessionId
-        || rec->VolSessionTime != rec->last_VolSessionTime
-        || rec->FileIndex != rec->last_FileIndex
-        || rec->Stream != rec->last_Stream) {
+    if (rec->VolSessionId != data->last_VolSessionId
+        || rec->VolSessionTime != data->last_VolSessionTime
+        || rec->FileIndex != data->last_FileIndex
+        || rec->Stream != data->last_Stream) {
       /* See if we are changing the FileIndex e.g.
        * start processing the next file in the backup stream. */
-      if (rec->FileIndex != rec->last_FileIndex) { jcr->JobFiles++; }
+      if (rec->FileIndex != data->last_FileIndex) { jcr->JobFiles++; }
 
       // Keep track of the new state.
-      rec->last_VolSessionId = rec->VolSessionId;
-      rec->last_VolSessionTime = rec->VolSessionTime;
-      rec->last_FileIndex = rec->FileIndex;
-      rec->last_Stream = rec->Stream;
+      data->last_VolSessionId = rec->VolSessionId;
+      data->last_VolSessionTime = rec->VolSessionTime;
+      data->last_FileIndex = rec->FileIndex;
+      data->last_Stream = rec->Stream;
 
       // Need to send both a EOD and a new header.
       send_eod = true;
@@ -544,9 +554,10 @@ bool DoMacRun(JobControlRecord* jcr)
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
 
+    cb_data data{};
     // Read all data and send it to remote SD.
     ok = ReadRecords(jcr->sd_impl->read_dcr, CloneRecordToRemoteSd,
-                     MountNextReadVolume);
+                     MountNextReadVolume, &data);
 
     /* Send the last EOD to close the last data transfer and a next EOD to
      * signal the remote we are done. */
@@ -640,9 +651,10 @@ bool DoMacRun(JobControlRecord* jcr)
     SetStartVolPosition(jcr->sd_impl->dcr);
     jcr->JobFiles = 0;
 
+    cb_data data{};
     // Read all data and make a local clone of it.
     ok = ReadRecords(jcr->sd_impl->read_dcr, CloneRecordInternally,
-                     MountNextReadVolume);
+                     MountNextReadVolume, &data);
   }
 
 bail_out:

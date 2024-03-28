@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - stored: fix authentication race condition / deadlock [PR #1737]
+- stored: fix not counting files correctly in mac jobs when autoxflate is enabled [PR #1748]
 
 ## [23.0.2] - 2024-02-28
 
@@ -436,4 +437,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1730]: https://github.com/bareos/bareos/pull/1730
 [PR #1735]: https://github.com/bareos/bareos/pull/1735
 [PR #1737]: https://github.com/bareos/bareos/pull/1737
+[PR #1748]: https://github.com/bareos/bareos/pull/1748
 [unreleased]: https://github.com/bareos/bareos/tree/master

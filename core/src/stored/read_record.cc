@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -187,8 +187,10 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx)
 bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
                              Session_Label* sessrec,
                              bool RecordCb(DeviceControlRecord* dcr,
-                                           DeviceRecord* rec),
+                                           DeviceRecord* rec,
+                                           void* user_data),
                              bool mount_cb(DeviceControlRecord* dcr),
+                             void* user_data,
                              bool* status)
 {
   JobControlRecord* jcr = dcr->jcr;
@@ -214,7 +216,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
             trec = new_record();
             trec->FileIndex = EOT_LABEL;
             trec->File = dcr->dev->file;
-            *status = RecordCb(dcr, trec);
+            *status = RecordCb(dcr, trec, user_data);
             if (jcr->sd_impl->read_session.mount_next_volume) {
               jcr->sd_impl->read_session.mount_next_volume = false;
               dcr->dev->ClearEot();
@@ -232,7 +234,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
         trec = new_record();
         ReadRecordFromBlock(dcr, trec);
         HandleSessionRecord(dcr->dev, trec, sessrec);
-        if (RecordCb) { RecordCb(dcr, trec); }
+        if (RecordCb) { RecordCb(dcr, trec, user_data); }
 
         FreeRecord(trec);
         PositionDeviceToFirstFile(jcr, dcr);
@@ -382,8 +384,11 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
  * You must not change any values in the DeviceRecord packet
  */
 bool ReadRecords(DeviceControlRecord* dcr,
-                 bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec),
-                 bool mount_cb(DeviceControlRecord* dcr))
+                 bool RecordCb(DeviceControlRecord* dcr,
+                               DeviceRecord* rec,
+                               void* user_data),
+                 bool mount_cb(DeviceControlRecord* dcr),
+                 void* user_data)
 {
   JobControlRecord* jcr = dcr->jcr;
   READ_CTX* rctx;
@@ -402,7 +407,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
 
     // Read the next block into our buffers.
     if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, RecordCb, mount_cb,
-                                 &ok)) {
+                                 user_data, &ok)) {
       break;
     }
 
@@ -432,7 +437,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
         /* Note, we pass *all* labels to the callback routine. If
          *  he wants to know if they matched the bsr, then he must
          *  check the match_stat in the record */
-        ok = RecordCb(dcr, rctx->rec);
+        ok = RecordCb(dcr, rctx->rec, user_data);
       } else {
         Dmsg6(debuglevel,
               "OK callback. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
@@ -458,13 +463,19 @@ bool ReadRecords(DeviceControlRecord* dcr,
          * calling the bSdEventReadRecordTranslation plugin event. If no
          * translation has taken place we just point the rec pointer to same
          * DeviceRecord as in the before_rec pointer. */
-        if (dcr->after_rec) {
-          ok = RecordCb(dcr, dcr->after_rec);
-          FreeRecord(dcr->after_rec);
-          dcr->after_rec = nullptr;
+        // callbacks happily overwrite the dcr->*_rec pointers, so we need to
+        // make sure that we actually free the correct thing.
+        auto* brec = dcr->before_rec;
+        auto* arec = dcr->after_rec;
+        if (arec) {
+          ok = RecordCb(dcr, arec, user_data);
+          FreeRecord(arec);
+          arec = nullptr;
         } else {
-          ok = RecordCb(dcr, dcr->before_rec);
+          ok = RecordCb(dcr, dcr->before_rec, user_data);
         }
+        dcr->after_rec = arec;
+        dcr->before_rec = brec;
       }
     }
     Dmsg2(debuglevel, "After end recs in block. pos=%u:%u\n", dcr->dev->file,
@@ -477,6 +488,25 @@ bool ReadRecords(DeviceControlRecord* dcr,
   PrintBlockReadErrors(jcr, dcr->block);
 
   return ok;
+}
+
+static bool NoUserData(DeviceControlRecord* dcr,
+                       DeviceRecord* rec,
+                       void* user_data)
+{
+  auto* RecordCb
+      = reinterpret_cast<bool (*)(DeviceControlRecord* dcr, DeviceRecord* rec)>(
+          user_data);
+
+  return RecordCb(dcr, rec);
+}
+
+bool ReadRecords(DeviceControlRecord* dcr,
+                 bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec),
+                 bool mount_cb(DeviceControlRecord* dcr))
+{
+  return ReadRecords(dcr, &NoUserData, mount_cb,
+                     reinterpret_cast<void*>(RecordCb));
 }
 
 } /* namespace storagedaemon */

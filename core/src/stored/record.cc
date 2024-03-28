@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -519,10 +519,6 @@ void DumpRecord(const char* tag, const DeviceRecord* rec)
   Dmsg2(100, "%-14s %p\n", "bsr", rec->bsr);
   Dmsg2(100, "%-14s %p\n", "data", rec->data);
   Dmsg2(100, "%-14s %d\n", "match_stat", rec->match_stat);
-  Dmsg2(100, "%-14s %u\n", "last_VolSessionId", rec->last_VolSessionId);
-  Dmsg2(100, "%-14s %u\n", "last_VolSessionTime", rec->last_VolSessionTime);
-  Dmsg2(100, "%-14s %d\n", "last_FileIndex", rec->last_FileIndex);
-  Dmsg2(100, "%-14s %d\n", "last_Stream", rec->last_Stream);
   Dmsg2(100, "%-14s %s\n", "own_mempool", rec->own_mempool ? "true" : "false");
 }
 
