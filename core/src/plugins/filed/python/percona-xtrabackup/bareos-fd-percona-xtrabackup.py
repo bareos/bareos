@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -402,7 +402,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
         elif IOP.func == IO_CLOSE:
             DebugMessage(100, "plugin_io: called with IO_CLOSE\n")
 
-            if self.jobType == 'B':
+            if self.jobType == "B":
                 DebugMessage(
                     100,
                     "plugin_io: calling end_dumper() to wait for PID %s to terminate\n"
@@ -411,12 +411,12 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 bareos_xtrabackup_dumper_returncode = self.end_dumper()
                 if bareos_xtrabackup_dumper_returncode != 0:
                     JobMessage(
-                            M_FATAL,
-                            (
-                                "plugin_io[IO_CLOSE]: bareos_xtrabackup_dumper returncode:"
-                                " %s\n"
-                            )
-                            % (bareos_xtrabackup_dumper_returncode),
+                        M_FATAL,
+                        (
+                            "plugin_io[IO_CLOSE]: bareos_xtrabackup_dumper returncode:"
+                            " %s\n"
+                        )
+                        % (bareos_xtrabackup_dumper_returncode),
                     )
 
                     # Cleanup tmpdir
@@ -429,7 +429,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 else:
                     self.subprocess_returnCode = bareos_xtrabackup_dumper_returncode
 
-            elif self.jobType == 'R':
+            elif self.jobType == "R":
                 self.subprocess_returnCode = self.stream.poll()
                 if self.subprocess_returnCode is None:
                     # Subprocess is open, we wait until it finishes and get results
@@ -563,6 +563,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 % (self.max_to_lsn, ROP.jobid),
             )
         return bRC_OK
+
     def end_dumper(self):
         """
         Wait for bareos_xtrabackup_dumper to terminate
@@ -575,15 +576,15 @@ class BareosFdPercona(BareosFdPluginBaseclass):
         while self.stream.poll() is None:
             if int(time.time()) - start_time > timeout:
                 DebugMessage(
-                        100,
-                        "Timeout wait for bareos_xtrabackup_dumper PID %s to terminate\n"
-                        % (self.stream.pid),
+                    100,
+                    "Timeout wait for bareos_xtrabackup_dumper PID %s to terminate\n"
+                    % (self.stream.pid),
                 )
                 if not sent_sigterm:
                     DebugMessage(
-                            100,
-                            "sending SIGTERM to bareos_xtrabackup_dumper PID %s\n"
-                            % (self.stream.pid),
+                        100,
+                        "sending SIGTERM to bareos_xtrabackup_dumper PID %s\n"
+                        % (self.stream.pid),
                     )
                     os.kill(self.stream.pid, signal.SIGTERM)
                     sent_sigterm = True
@@ -593,25 +594,26 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                     continue
                 else:
                     DebugMessage(
-                            100,
-                            "Giving up to wait for bareos_xtrabackup_dumper PID %s to terminate\n"
-                            % (self.stream.pid),
+                        100,
+                        "Giving up to wait for bareos_xtrabackup_dumper PID %s to terminate\n"
+                        % (self.stream.pid),
                     )
                     break
             DebugMessage(
-                    100,
-                    "Waiting for bareos_xtrabackup_dumper PID %s to terminate\n"
-                    % (self.stream.pid),
+                100,
+                "Waiting for bareos_xtrabackup_dumper PID %s to terminate\n"
+                % (self.stream.pid),
             )
             time.sleep(1)
 
         bareos_xtrabackup_dumper_returncode = self.stream.returncode
         DebugMessage(
-                100,
-                "end_dumper() bareos_xtrabackup_dumper returncode: %s\n"
-                % (bareos_xtrabackup_dumper_returncode),
+            100,
+            "end_dumper() bareos_xtrabackup_dumper returncode: %s\n"
+            % (bareos_xtrabackup_dumper_returncode),
         )
 
         return bareos_xtrabackup_dumper_returncode
+
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
