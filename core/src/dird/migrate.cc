@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1018,37 +1018,38 @@ bool DoMigrationInit(JobControlRecord* jcr)
     Dmsg1(dbglevel, "At Job start previous jobid=%u\n",
           jcr->dir_impl->MigrateJobId);
 
-    jcr->dir_impl->previous_jr.JobId = jcr->dir_impl->MigrateJobId;
-    Dmsg1(dbglevel, "Previous jobid=%d\n",
-          (int)jcr->dir_impl->previous_jr.JobId);
+    {
+      JobDbRecord jr{};
+      jr.JobId = jcr->dir_impl->MigrateJobId;
+      Dmsg1(dbglevel, "Previous jobid=%d\n", jr.JobId);
 
-    if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
-      Jmsg(jcr, M_FATAL, 0,
-           T_("Could not get job record for JobId %s to %s. ERR=%s\n"),
-           edit_int64(jcr->dir_impl->previous_jr.JobId, ed1),
-           jcr->get_ActionName(), jcr->db->strerror());
-      return false;
+      if (!jcr->db->GetJobRecord(jcr, &jr)) {
+        Jmsg(jcr, M_FATAL, 0,
+             T_("Could not get job record for JobId %s to %s. ERR=%s\n"),
+             edit_int64(jr.JobId, ed1), jcr->get_ActionName(),
+             jcr->db->strerror());
+        return false;
+      }
+      jcr->dir_impl->previous_jr.emplace(std::move(jr));
     }
 
-    Jmsg(jcr, M_INFO, 0, T_("%s using JobId=%s Job=%s\n"),
-         jcr->get_OperationName(),
-         edit_int64(jcr->dir_impl->previous_jr.JobId, ed1),
-         jcr->dir_impl->previous_jr.Job);
-    Dmsg4(dbglevel, "%s JobId=%d  using JobId=%s Job=%s\n",
-          jcr->get_OperationName(), jcr->JobId,
-          edit_int64(jcr->dir_impl->previous_jr.JobId, ed1),
-          jcr->dir_impl->previous_jr.Job);
+    auto& prev_jr = jcr->dir_impl->previous_jr.value();
 
-    if (CreateRestoreBootstrapFile(jcr) < 0) {
+    Jmsg(jcr, M_INFO, 0, T_("%s using JobId=%s Job=%s\n"),
+         jcr->get_OperationName(), edit_int64(prev_jr.JobId, ed1), prev_jr.Job);
+    Dmsg4(dbglevel, "%s JobId=%d  using JobId=%s Job=%s\n",
+          jcr->get_OperationName(), jcr->JobId, edit_int64(prev_jr.JobId, ed1),
+          prev_jr.Job);
+
+    if (CreateRestoreBootstrapFile(jcr, prev_jr) < 0) {
       Jmsg(jcr, M_FATAL, 0, T_("Create bootstrap file failed.\n"));
       return false;
     }
 
-    if (jcr->dir_impl->previous_jr.JobId == 0
-        || jcr->dir_impl->ExpectedFiles == 0) {
+    if (prev_jr.JobId == 0 || jcr->dir_impl->ExpectedFiles == 0) {
       jcr->setJobStatusWithPriorityCheck(JS_Terminated);
       Dmsg1(dbglevel, "JobId=%d expected files == 0\n", (int)jcr->JobId);
-      if (jcr->dir_impl->previous_jr.JobId == 0) {
+      if (prev_jr.JobId == 0) {
         Jmsg(jcr, M_INFO, 0, T_("No previous Job found to %s.\n"),
              jcr->get_ActionName());
       } else {
@@ -1065,8 +1066,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
 
     job = (JobResource*)my_config->GetResWithName(R_JOB,
                                                   jcr->dir_impl->jr.Name);
-    prev_job = (JobResource*)my_config->GetResWithName(
-        R_JOB, jcr->dir_impl->previous_jr.Name);
+    prev_job = (JobResource*)my_config->GetResWithName(R_JOB, prev_jr.Name);
 
     if (!job) {
       Jmsg(jcr, M_FATAL, 0, T_("Job resource not found for \"%s\".\n"),
@@ -1076,7 +1076,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
 
     if (!prev_job) {
       Jmsg(jcr, M_FATAL, 0, T_("Previous Job resource not found for \"%s\".\n"),
-           jcr->dir_impl->previous_jr.Name);
+           prev_jr.Name);
       return false;
     }
 
@@ -1108,8 +1108,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     // Create a migration jcr
     mig_jcr = NewDirectorJcr(DirdFreeJcr);
     jcr->dir_impl->mig_jcr = mig_jcr;
-    memcpy(&mig_jcr->dir_impl->previous_jr, &jcr->dir_impl->previous_jr,
-           sizeof(mig_jcr->dir_impl->previous_jr));
+    mig_jcr->dir_impl->previous_jr = prev_jr;
 
     /* Turn the mig_jcr into a "real" job that takes on the aspects of
      * the previous backup job "prev_job". We only don't want it to
@@ -1143,8 +1142,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     mig_jcr->cjcr = jcr;
 
     // Now reset the job record from the previous job
-    memcpy(&mig_jcr->dir_impl->jr, &jcr->dir_impl->previous_jr,
-           sizeof(mig_jcr->dir_impl->jr));
+    mig_jcr->dir_impl->jr = prev_jr;
 
     // Update the jr to reflect the new values of PoolId and JobId.
     mig_jcr->dir_impl->jr.PoolId = jcr->dir_impl->jr.PoolId;
@@ -1175,7 +1173,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
         jcr->dir_impl->res.read_storage, jcr->dir_impl->res.write_storage);
 
     // set the JobLevel to what the original job was
-    mig_jcr->setJobLevel(mig_jcr->dir_impl->previous_jr.JobLevel);
+    mig_jcr->setJobLevel(mig_jcr->dir_impl->previous_jr->JobLevel);
 
 
     Dmsg4(dbglevel, "mig_jcr: Name=%s JobId=%d Type=%c Level=%c\n",
@@ -1222,14 +1220,17 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
   ASSERT(mig_jcr);
 
+  auto prev_id
+      = jcr->dir_impl->previous_jr ? jcr->dir_impl->previous_jr->JobId : 0;
   // Make sure this job was not already migrated
-  if (jcr->dir_impl->previous_jr.JobType != JT_BACKUP
-      && jcr->dir_impl->previous_jr.JobType != JT_JOB_COPY
-      && jcr->dir_impl->previous_jr.JobType != JT_ARCHIVE) {
+  if (jcr->dir_impl->previous_jr
+      && jcr->dir_impl->previous_jr->JobType != JT_BACKUP
+      && jcr->dir_impl->previous_jr->JobType != JT_JOB_COPY
+      && jcr->dir_impl->previous_jr->JobType != JT_ARCHIVE) {
     Jmsg(jcr, M_INFO, 0,
          T_("JobId %s already %s probably by another Job. %s stopped.\n"),
-         edit_int64(jcr->dir_impl->previous_jr.JobId, ed1),
-         jcr->get_ActionName(true), jcr->get_OperationName());
+         edit_int64(prev_id, ed1), jcr->get_ActionName(true),
+         jcr->get_OperationName());
     jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     MigrationCleanup(jcr, jcr->getJobStatus());
     return true;
@@ -1238,8 +1239,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   if (SameStorage(jcr)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("JobId %s cannot %s using the same read and write storage.\n"),
-         edit_int64(jcr->dir_impl->previous_jr.JobId, ed1),
-         jcr->get_OperationName());
+         edit_int64(prev_id, ed1), jcr->get_OperationName());
     jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     MigrationCleanup(jcr, jcr->getJobStatus());
     return true;
@@ -1528,7 +1528,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
 
   std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
-  if (jcr->dir_impl->previous_jr.JobId != 0) {
+  if (jcr->dir_impl->previous_jr) {
     // Copy/Migrate worker Job.
     if (RunTime <= 0) {
       kbps = 0;
@@ -1571,8 +1571,8 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
             "  Termination:            %s\n\n"),
          BAREOS, my_name, kBareosVersionStrings.Full,
          kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
-         edit_uint64(jcr->dir_impl->previous_jr.JobId, ec6),
-         jcr->dir_impl->previous_jr.Job,
+         edit_uint64(jcr->dir_impl->previous_jr->JobId, ec6),
+         jcr->dir_impl->previous_jr->Job,
          mig_jcr ? edit_uint64(mig_jcr->dir_impl->jr.JobId, ec7) : T_("*None*"),
          edit_uint64(jcr->dir_impl->jr.JobId, ec8), jcr->dir_impl->jr.Job,
          JobLevelToString(jcr->getJobLevel()),
@@ -1648,10 +1648,10 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
 
   /* Check if we actually did something.
    * mig_jcr is jcr of the newly migrated job. */
-  if (mig_jcr) {
+  if (mig_jcr && jcr->dir_impl->previous_jr) {
     char old_jobid[50], new_jobid[50];
 
-    edit_uint64(jcr->dir_impl->previous_jr.JobId, old_jobid);
+    edit_uint64(jcr->dir_impl->previous_jr->JobId, old_jobid);
     edit_uint64(mig_jcr->dir_impl->jr.JobId, new_jobid);
 
     // use the PriorJobId field to store the migrated jobid in order to keep
@@ -1673,7 +1673,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
       mig_jcr->VolSessionTime = jcr->VolSessionTime;
     }
     mig_jcr->dir_impl->jr.RealEndTime = 0;
-    mig_jcr->dir_impl->jr.PriorJobId = jcr->dir_impl->previous_jr.JobId;
+    mig_jcr->dir_impl->jr.PriorJobId = jcr->dir_impl->previous_jr->JobId;
 
     if (jcr->is_JobStatus(JS_Terminated)
         && (jcr->JobErrors || jcr->dir_impl->SDErrors)) {
@@ -1686,9 +1686,9 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
     Mmsg(query,
          "UPDATE Job SET StartTime='%s',EndTime='%s',"
          "JobTDate=%s WHERE JobId=%s",
-         jcr->dir_impl->previous_jr.cStartTime,
-         jcr->dir_impl->previous_jr.cEndTime,
-         edit_uint64(jcr->dir_impl->previous_jr.JobTDate, ec1), new_jobid);
+         jcr->dir_impl->previous_jr->cStartTime,
+         jcr->dir_impl->previous_jr->cEndTime,
+         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1), new_jobid);
     jcr->db->SqlQuery(query.c_str());
 
     if (jcr->IsTerminatedOk()) {

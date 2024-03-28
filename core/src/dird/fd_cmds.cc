@@ -421,8 +421,9 @@ bool SendPreviousRestoreObjects(JobControlRecord* jcr)
   switch (JobLevel) {
     case L_DIFFERENTIAL:
     case L_INCREMENTAL:
-      if (jcr->dir_impl->previous_jr.JobId > 0) {
-        if (!SendRestoreObjects(jcr, jcr->dir_impl->previous_jr.JobId, false)) {
+      if (jcr->dir_impl->previous_jr) {
+        if (!SendRestoreObjects(jcr, jcr->dir_impl->previous_jr->JobId,
+                                false)) {
           return false;
         }
       }

@@ -3141,8 +3141,8 @@ std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
       }
       break;
     case 'O': /* Migration/copy job prev jobid */
-      if (jcr && jcr->dir_impl && jcr->dir_impl->previous_jr.JobId) {
-        return std::to_string(jcr->dir_impl->previous_jr.JobId);
+      if (jcr && jcr->dir_impl && jcr->dir_impl->previous_jr) {
+        return std::to_string(jcr->dir_impl->previous_jr->JobId);
       } else {
         return none;
       }

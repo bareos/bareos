@@ -41,7 +41,8 @@ bool SendBwlimitToFd(JobControlRecord* jcr, const char* Job);
 bool SendSecureEraseReqToFd(JobControlRecord* jcr);
 bool SendPreviousRestoreObjects(JobControlRecord* jcr);
 int GetAttributesAndPutInCatalog(JobControlRecord* jcr);
-void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId);
+void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
+                                      JobDbRecord* prev_jr);
 int put_file_into_catalog(JobControlRecord* jcr,
                           long file_index,
                           char* fname,
