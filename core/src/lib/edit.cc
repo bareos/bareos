@@ -241,12 +241,13 @@ static std::optional<modifier_parse_result> GetModifier(const char* input)
 }
 
 // returns the number as well as the rest of the string that was not parsed.
-static std::pair<double, const char*> parse_number_with_mod(
+// mults needs to be at least as big as mods; mods needs to be NULL terminated.
+static std::pair<std::uint64_t, const char*> parse_number_with_mod(
     const char* str,
     const char* const mods[],
     const double mults[])
 {
-  double total = 0.0;
+  std::uint64_t total = 0;
 
   while (*str) {
     double number;
@@ -261,12 +262,16 @@ static std::pair<double, const char*> parse_number_with_mod(
     }
 
     if (modifier.size() == 0) {
-      total += number;
+      total += static_cast<std::uint64_t>(number);
     } else {
       bool found = false;
       for (int i = 0; mods[i]; ++i) {
         if (bstrncasecmp(modifier.data(), mods[i], modifier.size())) {
-          total += number * mults[i];
+          // without the static_cast, this will first cast total to double,
+          // then add the doubles, and then finally cast back to uint64,
+          // which we do not want!  doubles lose precision to quickly:
+          // 1 exabyte + 1 == 1 exabyte for doubles
+          total += static_cast<std::uint64_t>(number * mults[i]);
           found = true;
           break;
         }
@@ -401,7 +406,7 @@ static bool strunit_to_uint64(const char* str,
 
   if (auto [total, rest] = parse_number_with_mod(str, mod, mult);
       IsJunk(rest)) {
-    *value = static_cast<std::uint64_t>(total);
+    *value = total;
     return true;
   } else {
     return false;
