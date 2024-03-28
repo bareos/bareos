@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -155,10 +155,8 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
     retval = bstrcmp(row[0], "SQL_ASCII");
 
     if (retval) {
-      /*
-       * If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
-       * too
-       */
+      /* If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
+       * too */
       SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'");
     } else {
       // Something is wrong with database encoding
@@ -241,11 +239,9 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
   SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
 
-  /*
-   * Tell PostgreSQL we are using standard conforming strings
+  /* Tell PostgreSQL we are using standard conforming strings
    * and avoid warnings such as:
-   *  WARNING:  nonstandard use of \\ in a string literal
-   */
+   *  WARNING:  nonstandard use of \\ in a string literal */
   SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
   // Check that encoding is SQL_ASCII
@@ -434,10 +430,8 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
     jcr->ar = (AttributesDbRecord*)malloc(sizeof(AttributesDbRecord));
   }
 
-  /*
-   * This is turned off because transactions break
-   * if multiple simultaneous jobs are run.
-   */
+  /* This is turned off because transactions break
+   * if multiple simultaneous jobs are run. */
   if (!allow_transactions_) { return; }
 
   DbLocker _{this};
@@ -591,6 +585,7 @@ retry_query:
   num_rows_ = -1;
   row_number_ = -1;
   field_number_ = -1;
+  fields_fetched_ = false;
 
   if (result_) {
     PQclear(result_); /* hmm, someone forgot to free?? */
@@ -626,11 +621,9 @@ retry_query:
       }
 
       if (try_reconnect_ && !transaction_) {
-        /*
-         * Only try reconnecting when no transaction is pending.
+        /* Only try reconnecting when no transaction is pending.
          * Reconnecting within a transaction will lead to an aborted
-         * transaction anyway so we better follow our old error path.
-         */
+         * transaction anyway so we better follow our old error path. */
         if (retry) {
           PQreset(db_handle_);
 
@@ -684,6 +677,7 @@ void BareosDbPostgresql::SqlFreeResult(void)
     free(fields_);
     fields_ = NULL;
   }
+  fields_fetched_ = false;
   num_rows_ = num_fields_ = 0;
 }
 
@@ -766,8 +760,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
 
   changes++;
 
-  /*
-   * Obtain the current value of the sequence that
+  /* Obtain the current value of the sequence that
    * provides the serial value for primary key of the table.
    *
    * currval is local to our session.  It is not affected by
@@ -781,8 +774,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
    * Except for basefiles which has a primary key on baseid.
    * Therefore, we need to special case that one table.
    *
-   * everything else can use the PostgreSQL formula.
-   */
+   * everything else can use the PostgreSQL formula. */
   if (Bstrcasecmp(table_name, "basefiles")) {
     bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
   } else {
@@ -826,15 +818,46 @@ bail_out:
   return id;
 }
 
+void BareosDbPostgresql::SqlUpdateField(int i)
+{
+  Dmsg1(500, "filling field %d\n", i);
+  fields_[i].name = PQfname(result_, i);
+  fields_[i].type = PQftype(result_, i);
+  fields_[i].flags = 0;
+
+  // For a given column, find the max length.
+  int max_length = 0;
+  int this_length = 0;
+  for (int j = 0; j < num_rows_; j++) {
+    if (PQgetisnull(result_, j, i)) {
+      this_length = 4; /* "NULL" */
+    } else {
+      this_length = cstrlen(PQgetvalue(result_, j, i));
+    }
+
+    if (max_length < this_length) { max_length = this_length; }
+  }
+  fields_[i].max_length = max_length;
+
+  Dmsg4(500,
+        "SqlUpdateField finds field '%s' has length='%d' type='%d' and "
+        "IsNull=%d\n",
+        fields_[i].name, fields_[i].max_length, fields_[i].type,
+        fields_[i].flags);
+}
+
 SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
 {
-  int i, j;
-  int max_length;
-  int this_length;
-
   Dmsg0(500, "SqlFetchField starts\n");
 
+  if (field_number_ >= num_fields_) {
+    Dmsg1(100, "requesting field number %d, but only %d fields given\n",
+          field_number_, num_fields_);
+    return nullptr;
+  }
+
   if (!fields_ || fields_size_ < num_fields_) {
+    fields_fetched_ = false;
     if (fields_) {
       free(fields_);
       fields_ = NULL;
@@ -842,32 +865,11 @@ SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
     Dmsg1(500, "allocating space for %d fields\n", num_fields_);
     fields_ = (SQL_FIELD*)malloc(sizeof(SQL_FIELD) * num_fields_);
     fields_size_ = num_fields_;
+  }
 
-    for (i = 0; i < num_fields_; i++) {
-      Dmsg1(500, "filling field %d\n", i);
-      fields_[i].name = PQfname(result_, i);
-      fields_[i].type = PQftype(result_, i);
-      fields_[i].flags = 0;
-
-      // For a given column, find the max length.
-      max_length = 0;
-      for (j = 0; j < num_rows_; j++) {
-        if (PQgetisnull(result_, j, i)) {
-          this_length = 4; /* "NULL" */
-        } else {
-          this_length = cstrlen(PQgetvalue(result_, j, i));
-        }
-
-        if (max_length < this_length) { max_length = this_length; }
-      }
-      fields_[i].max_length = max_length;
-
-      Dmsg4(500,
-            "SqlFetchField finds field '%s' has length='%d' type='%d' and "
-            "IsNull=%d\n",
-            fields_[i].name, fields_[i].max_length, fields_[i].type,
-            fields_[i].flags);
-    }
+  if (!fields_fetched_) {
+    for (int i = 0; i < num_fields_; i++) { SqlUpdateField(i); }
+    fields_fetched_ = true;
   }
 
   // Increment field number for the next time around
