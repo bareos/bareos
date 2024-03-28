@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,6 +75,7 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
   int SqlAffectedRows(void) override;
   uint64_t SqlInsertAutokeyRecord(const char* query,
                                   const char* table_name) override;
+  void SqlUpdateField(int column);
   SQL_FIELD* SqlFetchField(void) override;
   bool SqlFieldIsNotNull(int field_type) override;
   bool SqlFieldIsNumeric(int field_type) override;
