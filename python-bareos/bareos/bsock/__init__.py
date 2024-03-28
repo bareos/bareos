@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,14 +17,14 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-"""Module to access a http://www.bareos.org backup system.
+"""Module to access a https://www.bareos.com backup system.
 
 .. note::
 
    By default, the Bareos Director (>= 18.2.4) uses TLS-PSK when communicating through the network.
 
    Unfortunately the Python core module ``ssl``
-   does not support TLS-PSK.
+   does support TLS-PSK only with Python >= 3.13.
    For testing this module should be used without TLS.
    The section `Transport Encryption (TLS-PSK)`_ describes
    how to use TLS-PSK and about the limitations.
@@ -44,7 +44,7 @@ Create some named consoles for testing:
 
 This creates a console user with name `user1` and the profile `operator`.
 The `operator` profile is a default profile that comes with the Bareos Director.
-It does allow most commands. It only deny some dangerous commands (see ``show profile=operator``),
+It does allow most commands, but deny some dangerous commands (see ``show profile=operator``),
 so it is well suited for this purpose.
 Futhermore, TLS enforcement is disabled for this console user.
 
@@ -142,21 +142,21 @@ Transport Encryption (TLS-PSK)
 
 Since Bareos >= 18.2.4, Bareos supports TLS-PSK (Transport-Layer-Security Pre-Shared-Key) to secure its network connections and uses this by default.
 
-Unfortenatly, the Python core module `ssl` does not support TLS-PSK.
-There is limited support by the extra module `sslpsk` (see https://github.com/drbild/sslpsk).
+Unfortunately the Python core module ``ssl`` does support TLS-PSK only with Python >= 3.13.
+For some older versions of Python,
+the extra module `sslpsk` (see https://github.com/drbild/sslpsk) offers limited support.
 
 Fallback To Unencrypted Connections
 -----------------------------------
 
-In order to work in most cases, even if ``sslpsk`` is not available,
-the `DirectorConsole` uses a fallback.
+In order to work in most cases, the `DirectorConsole` uses a fallback.
 If connecting via TLS-PSK fails, it falls back to the old, unencrypted protocol version.
 In this case, a warning is issued, but the connection will work nevertheless:
 
 .. code:: python
 
    >>> import bareos.bsock
-   /.../bareos/bsock/lowlevel.py:39: UserWarning: Connection encryption via TLS-PSK is not available, as the module sslpsk is not installed.
+   /.../bareos/bsock/lowlevel.py:39: UserWarning: Connection encryption via TLS-PSK is not available (TLS-PSK is not available in the ssl module and the extra module sslpsk is not installed).
    >>> directorconsole=bareos.bsock.DirectorConsole(address='localhost', port=9101, name='user-tls', password='secret')
    socket error: Conversation terminated (-4)
    Failed to connect using protocol version 2. Trying protocol version 1.
@@ -172,7 +172,7 @@ To enforce a encrypted connection, use the ``tls_psk_require=True`` parameter:
    >>> directorconsole=bareos.bsock.DirectorConsole(address='localhost', port=9101, name='user-tls', password='secret', tls_psk_require=True)
    Traceback (most recent call last):
    ...
-   bareos.exceptions.ConnectionError: TLS-PSK is required, but sslpsk module not loaded/available.
+   bareos.exceptions.ConnectionError: TLS-PSK is required, but not available.
 
 
 In this case, an exception is raised, if the connection can not be established via TLS-PSK.

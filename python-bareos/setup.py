@@ -47,6 +47,19 @@ def get_version():
     return __version__
 
 
+def get_long_description():
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    with open("README.rst") as readme_file:
+        description = readme_file.read()
+    with open(os.path.join(base_dir, "bareos", "bsock", "__init__.py")) as bsock_file:
+        bsock_content = bsock_file.read().strip()
+    # bsock_description = re.sub(r'.*"""(.*?)""".*', r'\1', bsock_content, flags=re.DOTALL)
+    bsock_description = re.sub(
+        r'.*(\.\. note::.*?)""".*', r"\n\n\1", bsock_content, flags=re.DOTALL
+    )
+    return description + bsock_description
+
+
 setup(
     name="python-bareos",
     version=get_version(),
@@ -60,11 +73,11 @@ setup(
     # What does your project relate to?
     keywords="bareos",
     description="Client library and tools for Bareos console access.",
-    long_description=open("README.rst").read(),
+    long_description=get_long_description(),
     long_description_content_type="text/x-rst",
     # RHEL7: python-3.6
     python_requires=">=3.6",
-    extras_require={"TLS-PSK": ["sslpsk"], "configfile": ["configargparse"]},
+    extras_require={"configfile": ["configargparse"]},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: GNU Affero General Public License v3",
