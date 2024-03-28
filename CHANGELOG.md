@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - stored: fix authentication race condition / deadlock [PR #1742]
 
+### Changed
+- systemtests: backport `wait for jobs to terminate` function [PR #1747]
+
 ## [21.1.9] - 2024-02-28
 
 ### Changed
@@ -729,4 +732,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1702]: https://github.com/bareos/bareos/pull/1702
 [PR #1705]: https://github.com/bareos/bareos/pull/1705
 [PR #1742]: https://github.com/bareos/bareos/pull/1742
+[PR #1747]: https://github.com/bareos/bareos/pull/1747
 [unreleased]: https://github.com/bareos/bareos/tree/master
