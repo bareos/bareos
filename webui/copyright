@@ -13,7 +13,7 @@ Comment: BAREOS is a fork of the Bacula source code.
 
 Files:
     webui/*
-Copyright: 2013-2023, Bareos GmbH & Co. KG
+Copyright: 2013-2024, Bareos GmbH & Co. KG
 License: AGPL-3.0-only
 
 Files:
@@ -144,12 +144,6 @@ Copyright: 2018, ApexCharts
 License: MIT-0
 
 Files:
-    webui/vendor/*
-    webui/vendor/Bareos/*
-Copyright: 2013-2023, Bareos GmbH & Co. KG
-License: AGPL-3.0-only
-
-Files:
     webui/vendor/composer/*
 Copyright: Nils Adermann, Jordi Boggiano
 License: MIT-0
@@ -166,131 +160,6 @@ Copyright: 2013-2016, container-interop
 License: MIT-0
 
 Files:
-    webui/vendor/zendframework/zend-cache/*
-Copyright: 2005-2016, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-config/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-console/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-escaper/*
-Copyright: 2005-2019, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-eventmanager/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-filter/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-form/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-http/*
+    webui/vendor/zendframework/*
 Copyright: 2005-2018, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-hydrator/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-i18n/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-inputfilter/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-json/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-loader/*
-Copyright: 2005-2019, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-log/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-math/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-modulemanager/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-mvc/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-navigation/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-serializer/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-servicemanager/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-session/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-stdlib/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-uri/*
-Copyright: 2005-2018, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-validator/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-version/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
-License: BSD-3-Clause
-
-Files:
-    webui/vendor/zendframework/zend-view/*
-Copyright: 2005-2015, Zend Technologies USA, Inc.
 License: BSD-3-Clause

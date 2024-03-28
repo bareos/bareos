@@ -13,14 +13,14 @@ Comment: BAREOS is a fork of the Bacula source code.
 
 
 Files: *
-Copyright: 2012-2023 Bareos GmbH & Co. KG
+Copyright: 2012-2024 Bareos GmbH & Co. KG
 License: AGPL-3.0-only
 
 
 Files: core/* docs/manuals/source/*
 Copyright: 2000-2012 Free Software Foundation Europe e.V.
-           2011-2012 Planets Communications B.V.
-           2013-2023 Bareos GmbH & Co. KG
+           2010-2017 Planets Communications B.V.
+           2013-2024 Bareos GmbH & Co. KG
 License: Bareos
     This is basically AGPL-3.0 with Bacula and other exceptions.
     This section is the reformated version of
@@ -1289,11 +1289,11 @@ License: permissive
 
 
 Files: core/src/lmdb/*
-Copyright: 2011-2014 Howard Chu, Symas Corp.
+Copyright: 2011-2016 Howard Chu, Symas Corp.
 License: OpenLDAP
 
 
-Files: core/src/ndmp/md5.h src/ndmp/md5c.c
+Files: core/src/ndmp/md5.h core/src/ndmp/md5c.c
 Copyright:  1991,1992, RSA Data Security, Inc.
 License: permissive
     Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
@@ -1385,8 +1385,8 @@ Files: core/src/win32/compat/include/sys/mtio.h
 Copyright: 1996, 1997 Free Software Foundation, Inc.
 License: LGPL-2.1+
 
-Files: core/src/win32/compat/glob.c core/src/win32/compat/include/glob.h
-Copyright (C) 2012 MinGW.org project
+Files: core/src/win32/compat/glob.cc core/src/win32/compat/include/glob.h
+Copyright (C) 2011-2013 MinGW.org project
 License: permissive
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1407,9 +1407,8 @@ License: permissive
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER
  * DEALINGS IN THE SOFTWARE.
 
-Files: core/src/win32/plugins/filed/mssqlvdi-fd.c
+Files: core/src/win32/plugins/filed/mssqlvdi-fd.cc
 Copyright:  2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
-            2013-2013 Bareos GmbH & Co. KG
 License: AGPL-3.0-only
 
 Files: core/src/stored/crc32/crc32.cc core/src/stored/crc32/crc32.h
@@ -1484,6 +1483,158 @@ License:  BSD-3-clause
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+Files:
+    webui/*
+Copyright: 2013-2024, Bareos GmbH & Co. KG
+License: AGPL-3.0-only
+
+Files:
+    webui/public/fonts/*
+    webui/public/css/Bootstrap-3.3.7/*
+    webui/public/css/boostrap.css
+    webui/public/css/boostrap.css.map
+    webui/public/css/boostrap.min.css
+    webui/public/css/boostrap.min.css.map
+    webui/public/css/boostrap-theme.css
+    webui/public/css/boostrap-theme.css.map
+    webui/public/css/boostrap-theme.min.css
+    webui/public/js/bootstrap.js
+    webui/public/js/bootstrap.min.js
+Copyright: 2011-2023, The Bootstrap Authors
+License: MIT-0
+
+Files:
+    webui/public/css/boostrap-datetimepicker.css
+    webui/public/css/boostrap-datetimepicker.min.css
+    webui/public/js/bootstrap-datetimepicker.min.js
+Copyright: 2015, Jonathan Peterson
+License: MIT-0
+
+Files:
+    webui/public/css/boostrap-select.css
+    webui/public/css/boostrap-select.css.map
+    webui/public/css/boostrap-select.min.css
+    webui/public/js/boostrap-select.js
+    webui/public/js/boostrap-select.js.map
+    webui/public/js/boostrap-select.min.js
+Copyright: 2013-2017, SnapAppointments, LLC
+License: MIT-0
+
+Files:
+    webui/public/css/bootstrap-slider.css
+    webui/public/css/bootstrap-slider.min.css
+    webui/public/js/bootstrap-slider.js
+    webui/public/js/bootstrap-slider.min.js
+Copyright: 2019, Kyle Kemp, Rohit Kalkur, and contributors
+License: MIT-0
+
+Files:
+    webui/public/css/bootstrap-table.css
+    webui/public/css/bootstrap-table.min.css
+    webui/public/js/bootstrap-table.js
+    webui/public/js/bootstrap-table.min.js
+    webui/public/js/bootstrap-table-cookie.js
+    webui/public/js/bootstrap-table-cookie.min.js
+    webui/public/js/bootstrap-table-locale.js
+    webui/public/js/bootstrap-table-locale.min.js
+    webui/public/css/bootstrap-table-filter-control.css
+    webui/public/cs/bootstrap-table-filter-control.min.css
+    webui/public/js/bootstrap-table-filter-control.js
+    webui/public/js/bootstrap-table-filter-control.min.js
+Copyright: 2012-2019, Zhixin Wen <wenzhixin2010@gmail.com>
+License: MIT-0
+
+Files:
+    webui/public/css/jstree.css public/css/jstree.min.css
+    webui/public/css/32px.png
+    webui/public/css/40px.png
+    webui/public/js/jstree.js
+    webui/public/js/jstree.min.js
+Copyright: 2014, Ivan Bozhanov
+License: MIT-0
+
+Files:
+    webui/public/js/jstree-grid.js
+Copyright: 2015, Avi Deitcher
+License: MIT-0
+
+Files:
+    webui/public/js/d3/*
+Copyright: 2010-2023 Mike Bostock
+License: ISC
+
+Files:
+    webui/public/js/jquery.js
+    webui/public/js/jquery.min.js
+    webui/public/js/jquery.min.map
+Copyright: OpenJS Foundation and other contributors
+License: MIT-0
+
+Files:
+    webui/public/js/jquery.cookie.js
+Copyright: 2013, Klaus Hartl
+License: MIT-0
+
+Files:
+    webui/public/js/jquery.jqplot.js
+    webui/public/js/jquery.jqplot.min.js
+Copyright: 2009-2016, Chris Leonello
+License: MIT-0
+
+Files:
+    webui/public/js/moment*
+Copyright: JS Foundation and other contributors
+License: MIT-0
+
+Files:
+    webui/public/js/excanvas.js
+    webui/public/js/excanvas.min.js
+Copyright: 2006, Google Inc.
+License: Apache-2.0
+
+Files:
+    webui/public/js/html5shiv.js
+Copyright: 2014, Alexander Farkas
+License: MIT-0
+
+Files:
+    webui/public/js/i_*
+    webui/public/js/partials/*
+Copyright: 2015, Tindo Ngoufo Arsel
+License: LGPL-2.1
+
+Files:
+    webui/public/js/respond.min.js
+Copyright: 2012, Scott Jehl, Paul Irish, Nicholas Zakas
+License: MIT-0
+
+Files:
+    webui/public/js/apexcharts.js
+    webui/public/js/apexcharts.min.js
+    webui/public/js/locales/*
+Copyright: 2018, ApexCharts
+License: MIT-0
+
+Files:
+    webui/vendor/composer/*
+Copyright: Nils Adermann, Jordi Boggiano
+License: MIT-0
+
+Files:
+    webui/vendor/container-interop/*
+Copyright: 2013, container-interop
+License: MIT-0
+
+Files:
+    webui/vendor/psr/*
+Copyright: 2013-2016, container-interop
+           2016, PHP Framework Interoperability Group
+License: MIT-0
+
+Files:
+    webui/vendor/zendframework/*
+Copyright: 2005-2018, Zend Technologies USA, Inc.
+License: BSD-3-Clause
 
 
 

@@ -37,11 +37,11 @@ License: permissive
 
 
 Files: core/src/lmdb/*
-Copyright: 2011-2014 Howard Chu, Symas Corp.
+Copyright: 2011-2016 Howard Chu, Symas Corp.
 License: OpenLDAP
 
 
-Files: core/src/ndmp/md5.h src/ndmp/md5c.c
+Files: core/src/ndmp/md5.h core/src/ndmp/md5c.c
 Copyright:  1991,1992, RSA Data Security, Inc.
 License: permissive
     Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
@@ -133,8 +133,8 @@ Files: core/src/win32/compat/include/sys/mtio.h
 Copyright: 1996, 1997 Free Software Foundation, Inc.
 License: LGPL-2.1+
 
-Files: core/src/win32/compat/glob.c core/src/win32/compat/include/glob.h
-Copyright (C) 2012 MinGW.org project
+Files: core/src/win32/compat/glob.cc core/src/win32/compat/include/glob.h
+Copyright (C) 2011-2013 MinGW.org project
 License: permissive
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -155,9 +155,8 @@ License: permissive
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER
  * DEALINGS IN THE SOFTWARE.
 
-Files: core/src/win32/plugins/filed/mssqlvdi-fd.c
+Files: core/src/win32/plugins/filed/mssqlvdi-fd.cc
 Copyright:  2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
-            2013-2013 Bareos GmbH & Co. KG
 License: AGPL-3.0-only
 
 Files: core/src/stored/crc32/crc32.cc core/src/stored/crc32/crc32.h
