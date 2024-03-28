@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -25,15 +25,9 @@
 # Bareos-fd-vmware is a python Bareos FD Plugin intended to backup and
 # restore VMware images and configuration
 
-import os.path
-
-from BareosFdWrapper import *  # noqa
-
-import bareosfd
-
-import BareosFdPluginBaseclass
 import json
 import os
+import io
 import time
 import tempfile
 import subprocess
@@ -43,7 +37,10 @@ import ssl
 import socket
 import hashlib
 import re
+import traceback
 from sys import version_info
+import urllib3.util
+import requests
 
 try:
     import configparser
@@ -62,6 +59,10 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+
+from BareosFdWrapper import *  # noqa
+import bareosfd
+import BareosFdPluginBaseclass
 
 # Job replace code as defined in src/include/baconfig.h like this:
 # #define REPLACE_ALWAYS   'a'
@@ -137,6 +138,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.vm_config_info_saved = False
         self.current_object_index = int(time.time())
         self.do_io_in_core = True
+        self.data_stream = None
 
     def parse_plugin_definition(self, plugindef):
         """
@@ -385,7 +387,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.options["vadp_dumper_query_allocated_blocks_chunk_size"]
             )
 
-        for options in self.options:
+        for option in self.options:
             bareosfd.DebugMessage(
                 100,
                 "Using Option %s=%s\n"
@@ -397,7 +399,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 # fetch the thumbprint and compare it with the passed thumbprint,
                 # warn if they don't match as VixDiskLib will return "unknown error"
                 # when running bareos-vadp-dumper
-                self.vadp.fetch_vcthumbprint()
+                if not self.vadp.fetch_vcthumbprint():
+                    return bareosfd.bRC_Error
                 if self.options["vcthumbprint"] != self.vadp.fetched_vcthumbprint:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
@@ -500,6 +503,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(100, "BareosFdPluginVMware:start_backup_file() called\n")
 
         if not self.vadp.files_to_backup:
+            if not self.vadp.disk_devices:
+                bareosfd.JobMessage(bareosfd.M_FATAL, "No disk devices found\n")
+                return bareosfd.bRC_Error
+
             self.vadp.disk_device_to_backup = self.vadp.disk_devices.pop(0)
             self.vadp.files_to_backup = []
 
@@ -552,6 +559,11 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 bytearray(self.vadp.changed_disk_areas_json, "utf-8"),
             )
 
+        elif self.vadp.file_to_backup.endswith(".nvram"):
+            savepkt.statp = bareosfd.StatPacket()
+            savepkt.fname = StringCodec.encode(self.vadp.file_to_backup)
+            savepkt.type = bareosfd.FT_REG
+
         else:
             # start bareos_vadp_dumper
             self.vadp.start_dumper("dump")
@@ -603,7 +615,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def create_file(self, restorepkt):
         """
-        For the time being, assumes that the virtual disk already
+        Assumes that the virtual disk already
         exists with the same name that has been backed up.
         This should work for restoring the same VM.
         For restoring to a new different VM, additional steps
@@ -613,6 +625,15 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100,
             "BareosFdPluginVMware:create_file() called with %s\n" % (restorepkt),
         )
+
+        if restorepkt.ofname.endswith(".nvram"):
+            bareosfd.DebugMessage(
+                100,
+                "BareosFdPluginVMware:create_file() restoring NVRAM file %s\n"
+                % (os.path.basename(restorepkt.ofname)),
+            )
+            restorepkt.create_status = bareosfd.CF_EXTRACT
+            return bareosfd.bRC_OK
 
         tmp_path = "/var/tmp/bareos-vmware-plugin"
         if restorepkt.where != "":
@@ -699,6 +720,71 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
         return bareosfd.bRC_Seen
 
+    def plugin_io_open_nvram(self, IOP):
+        """
+        Plugin IO funtion to open NVRAM file
+        """
+        # There is no real file to be opened here. For the backup case, the
+        # NVRAM file content has already been downloaded from the datastore
+        # at this stage and its content is stored in the variable
+        # self.vadp.vm_nvram_content.
+        # For restore, the data will first be stored in the same variable,
+        # then it must be uploaded to the datastore.
+        bareosfd.DebugMessage(
+            100,
+            (
+                "BareosFdPluginVMware:plugin_io_open_nvram() called with function %s"
+                " IOP.count=%s, self.FNAME is set to %s\n"
+            )
+            % (IOP.func, IOP.count, self.FNAME),
+        )
+
+        if IOP.flags & (os.O_CREAT | os.O_WRONLY):
+            bareosfd.DebugMessage(
+                100,
+                "BareosFdPluginVMware:plugin_io_open_nvram(): Restoring %s\n"
+                % (self.FNAME),
+            )
+            self.data_stream = io.BytesIO()
+        else:
+            bareosfd.DebugMessage(
+                100,
+                "BareosFdPluginVMware:plugin_io_open_nvram(): Backing up %s\n"
+                % (self.FNAME),
+            )
+            self.data_stream = io.BytesIO(self.vadp.vm_nvram_content)
+
+        IOP.status = bareosfd.iostat_do_in_plugin
+        return bareosfd.bRC_OK
+
+    def plugin_io_close_nvram(self, IOP):
+        """
+        Plugin IO funtion to close NVRAM file
+        """
+        bareosfd.DebugMessage(
+            100,
+            ("plugin_io[IO_CLOSE]: was called for %s, jobtype %s\n")
+            % (self.FNAME, self.jobType),
+        )
+
+        if self.jobType == "R":
+            self.vadp.vm_nvram_content = self.data_stream.getvalue()
+            if self.vadp.restore_vm_created:
+                self.vadp.put_vm_nvram()
+
+        bareosfd.DebugMessage(
+            100,
+            ("plugin_io[IO_CLOSE]: size of %s is %s, sha1sum: %s\n")
+            % (
+                os.path.basename(self.FNAME),
+                len(self.vadp.vm_nvram_content),
+                hashlib.sha1(self.vadp.vm_nvram_content).hexdigest(),
+            ),
+        )
+        self.data_stream = None
+
+        return bareosfd.bRC_OK
+
     def plugin_io(self, IOP):
         bareosfd.DebugMessage(
             200,
@@ -716,14 +802,19 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             bareosfd.DebugMessage(
                 100, "self.FNAME was set to %s from IOP.fname\n" % (self.FNAME)
             )
+
+            if self.FNAME.endswith(".nvram"):
+                return self.plugin_io_open_nvram(IOP)
+
             try:
                 if IOP.flags & (os.O_CREAT | os.O_WRONLY):
+                    # this is a restore
+
                     bareosfd.DebugMessage(
                         100,
                         "Open file %s for writing with %s\n" % (self.FNAME, IOP),
                     )
 
-                    # this is a restore
                     # create_file() should have started
                     # bareos_vadp_dumper, check:
                     # if self.vadp.dumper_process:
@@ -798,6 +889,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_OK
 
         elif IOP.func == bareosfd.IO_CLOSE:
+            if self.FNAME.endswith(".nvram"):
+                return self.plugin_io_close_nvram(IOP)
+
             if self.jobType == "B":
                 # Backup Job
                 bareosfd.DebugMessage(
@@ -859,12 +953,42 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         elif IOP.func == bareosfd.IO_READ:
             IOP.buf = bytearray(IOP.count)
-            IOP.status = self.vadp.dumper_process.stdout.readinto(IOP.buf)
+            if self.data_stream:
+                # backup nvram file
+                bareosfd.DebugMessage(
+                    100,
+                    "plugin_io[IO_READ]: backup nvram: %s IOP.count=%s\n"
+                    % (os.path.basename(self.FNAME), IOP.count),
+                )
+                IOP.status = self.data_stream.readinto(IOP.buf)
+                bareosfd.DebugMessage(
+                    100,
+                    "plugin_io[IO_READ]: backup nvram: IOP.status=%s IOP.io_errno=%s\n"
+                    % (IOP.status, IOP.io_errno),
+                )
+            else:
+                IOP.status = self.vadp.dumper_process.stdout.readinto(IOP.buf)
             IOP.io_errno = 0
 
             return bareosfd.bRC_OK
 
         elif IOP.func == bareosfd.IO_WRITE:
+            if self.data_stream:
+                # restore nvram file
+                bareosfd.DebugMessage(
+                    100,
+                    "plugin_io[IO_WRITE]: restore nvram: %s\n"
+                    % (os.path.basename(self.FNAME)),
+                )
+                IOP.status = self.data_stream.write(IOP.buf)
+                bareosfd.DebugMessage(
+                    100,
+                    "plugin_io[IO_WRITE]: restore nvram: IOP.status=%s IOP.io_errno=%s\n"
+                    % (IOP.status, IOP.io_errno),
+                )
+                IOP.io_errno = 0
+                return bareosfd.bRC_OK
+
             try:
                 self.vadp.dumper_process.stdin.write(IOP.buf)
                 IOP.status = IOP.count
@@ -1024,9 +1148,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.vadp.restore_objects_by_diskpath[ro_filename].append(
             {"json": ROP.object, "data": ro_data}
         )
-        self.vadp.restore_objects_by_objectname[
-            ROP.object_name
-        ] = self.vadp.restore_objects_by_diskpath[ro_filename][-1]
+        self.vadp.restore_objects_by_objectname[ROP.object_name] = (
+            self.vadp.restore_objects_by_diskpath[ro_filename][-1]
+        )
         return bareosfd.bRC_OK
 
     def create_restoreobject_savepacket(self, savepkt, virtual_filename, object_data):
@@ -1101,8 +1225,7 @@ class BareosVADPWrapper(object):
         self.dc = None
         self.vmfs_vm_path_changed = False
         self.vmfs_vm_path = None
-        self.datastore_rex = re.compile(r"\[(.+?)\]")
-        self.datastore_vm_path_rex = re.compile(r"\[(.+?)\] (.+)\/")
+        self.datastore_vm_file_rex = re.compile(r"\[(.+?)\] (.+)")
         self.slashes_rex = re.compile(r"\/+")
         self.poweron_timeout = 15
         self.restore_disk_paths_map = OrderedDict()
@@ -1115,6 +1238,9 @@ class BareosVADPWrapper(object):
         self.dumper_multithreading = True
         self.dumper_sectors_per_call = 16384
         self.dumper_query_allocated_blocks_chunk_size = 1024
+        self.vm_nvram_path = None
+        self.vm_nvram_content = None
+        self.restore_vm_created = False
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1148,15 +1274,9 @@ class BareosVADPWrapper(object):
             ):
                 retry_no_ssl = True
             else:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Cannot connect to host %s with user %s and password, reason: %s\n"
-                    % (
-                        self.options["vcserver"],
-                        self.options["vcuser"],
-                        ioerror.strerror,
-                    ),
-                )
+                self._handle_connect_vmware_excpetion(ioerror)
+        except Exception as e:
+            self._handle_connect_vmware_exception(e)
 
         if retry_no_ssl:
             try:
@@ -1168,16 +1288,8 @@ class BareosVADPWrapper(object):
                     disableSslCertValidation=True,
                 )
 
-            except IOError as ioerror:
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Cannot connect to host %s with user %s and password, reason: %s\n"
-                    % (
-                        self.options["vcserver"],
-                        self.options["vcuser"],
-                        ioerror.strerror,
-                    ),
-                )
+            except Exception as e:
+                self._handle_connect_vmware_exception(e)
 
         if not self.si:
             return False
@@ -1186,11 +1298,36 @@ class BareosVADPWrapper(object):
 
         bareosfd.DebugMessage(
             100,
-            ("Successfully connected to VSphere API on host %s with" " user %s\n")
+            ("Successfully connected to VSphere API on host %s with user %s\n")
             % (self.options["vcserver"], self.options["vcuser"]),
         )
 
         return True
+
+    def _handle_connect_vmware_exception(self, caught_exception):
+        """
+        Handle exception from connect_vmware
+        """
+        bareosfd.DebugMessage(
+            100,
+            "Exception %s caught in connect_vmware() for host %s with user %s: %s\n"
+            % (
+                type(caught_exception),
+                self.options["vcserver"],
+                self.options["vcuser"],
+                str(caught_exception),
+            ),
+        )
+
+        bareosfd.JobMessage(
+            bareosfd.M_FATAL,
+            "Cannot connect to host %s with user %s and password, reason: %s\n"
+            % (
+                self.options["vcserver"],
+                self.options["vcuser"],
+                str(caught_exception),
+            ),
+        )
 
     def cleanup(self):
         Disconnect(self.si)
@@ -1351,6 +1488,11 @@ class BareosVADPWrapper(object):
                 % (StringCodec.encode(self.vm.name)),
             )
             return bareosfd.bRC_Error
+
+        if self.get_vm_nvram():
+            self.files_to_backup.append(
+                "%s/%s" % (self.backup_path, os.path.basename(self.vm_nvram_path))
+            )
 
         return bareosfd.bRC_OK
 
@@ -1718,7 +1860,6 @@ class BareosVADPWrapper(object):
         create_vm_task = None
         cluster_path = None
         datastore_name = None
-        vm_created = False
 
         config_info = json.loads(self.restore_vm_config_json)
 
@@ -1780,7 +1921,7 @@ class BareosVADPWrapper(object):
         ):
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "Option restore_restore_pool requires option restore_cluster!\n",
+                "Option restore_resourcepool requires option restore_cluster!\n",
             )
             return False
 
@@ -1820,9 +1961,8 @@ class BareosVADPWrapper(object):
                 )
                 return False
 
-        if not self.options.get("restore_cluster") and not self.options.get(
-            "restore_esxhost"
-        ):
+        elif not self.options.get("restore_cluster"):
+            # neither restore_esxhost nor restore_cluster were passed, so we must
             # use saved esx host name from restore object
             if not self.restore_vm_metadata:
                 self.restore_vm_metadata = json.loads(self.restore_vm_metadata_json)
@@ -1843,6 +1983,22 @@ class BareosVADPWrapper(object):
 
         target_folder = self.find_or_create_vm_folder(self.options["folder"])
 
+        # check if target host has target datastore
+        if destination_host:
+            target_datastore_name = datastore_name
+            if target_datastore_name is None:
+                # if no restore_datastore was passed, use datastore from backup
+                target_datastore_name = transformer.orig_vm_datastore_name
+            if target_datastore_name not in [
+                ds.name for ds in destination_host.datastore
+            ]:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Datastore %s is not available on ESX host %s!\n"
+                    % (target_datastore_name, destination_host.name),
+                )
+                return False
+
         bareosfd.JobMessage(
             bareosfd.M_INFO,
             "Creating VM %s in folder %s (%s)\n"
@@ -1854,7 +2010,7 @@ class BareosVADPWrapper(object):
         )
 
         vm_create_try_count = 0
-        while not vm_created:
+        while not self.restore_vm_created:
             vm_create_try_count += 1
             if vm_create_try_count > 5:
                 bareosfd.JobMessage(
@@ -1870,10 +2026,12 @@ class BareosVADPWrapper(object):
             try:
                 bareosfd.DebugMessage(
                     100,
-                    "Creating VM: %s in VMFS path %s\n"
+                    "Creating VM: %s in VMFS path %s, resource_pool: %s, destination_host: %s\n"
                     % (
                         StringCodec.encode(self.options["vmname"]),
                         config.files.vmPathName,
+                        resource_pool,
+                        destination_host,
                     ),
                 )
                 create_vm_task = target_folder.CreateVm(
@@ -1884,7 +2042,7 @@ class BareosVADPWrapper(object):
                     100,
                     "VM created: %s\n" % (StringCodec.encode(self.options["vmname"])),
                 )
-                vm_created = True
+                self.restore_vm_created = True
 
             except vim.fault.DuplicateName:
                 # VM with same name exists in target folder
@@ -1945,6 +2103,19 @@ class BareosVADPWrapper(object):
                 dev_spec.connectable.startConnected = False
                 dev_spec.backing = vim.vm.device.VirtualCdrom.RemoteAtapiBackingInfo()
                 dev_spec.backing.useAutoDetect = False
+
+            except vim.fault.CannotCreateFile as exc_cannot_create_file:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Error creating VM, name %s, vim.fault.CannotCreateFile exception, "
+                    "please check if datastore is available on target. "
+                    "API returned this error message: %s\n"
+                    % (
+                        StringCodec.encode(self.options["vmname"]),
+                        StringCodec.encode(str(exc_cannot_create_file)),
+                    ),
+                )
+                return False
 
             except Exception as ex:
                 bareosfd.JobMessage(
@@ -2273,6 +2444,13 @@ class BareosVADPWrapper(object):
                     str(transform_exception),
                 ),
             )
+            bareosfd.DebugMessage(
+                100,
+                "check_vmconfig_backup(): Unexpected VM Metadata transform exception %s(%s)\n"
+                % (str(transform_exception), type(transform_exception)),
+            )
+            for traceback_line in traceback.format_exception(transform_exception):
+                bareosfd.DebugMessage(100, traceback_line)
             return False
 
         return True
@@ -2783,7 +2961,7 @@ class BareosVADPWrapper(object):
             wrappedSocket.connect((self.options["vcserver"], 443))
         except Exception as e:
             bareosfd.JobMessage(
-                bareosfd.M_WARNING,
+                bareosfd.M_FATAL,
                 "Could not retrieve SSL Cert from %s: %s\n"
                 % (self.options["vcserver"], str(e)),
             )
@@ -3002,6 +3180,252 @@ class BareosVADPWrapper(object):
         adapt_config_task = self.vm.ReconfigVM_Task(config_spec)
         pyVim.task.WaitForTask(adapt_config_task)
 
+    def get_vm_nvram(self):
+        """
+        Get VM NVRAM
+
+        Retrieve the VMs NVRAM file.
+        The content of the name property normally is
+        "[<DatastoreName>] <VmName>/<VmName>.nvram"
+        for example
+        "[esxi2-ds1] deb12test2/deb12test2.nvram"
+
+        Note: A VM that has never been switched on has no nvram file
+        """
+        found_nvram_file_names = [
+            layout_file.name
+            for layout_file in self.vm.layoutEx.file
+            if layout_file.type == "nvram"
+        ]
+        if found_nvram_file_names:
+            self.vm_nvram_path = found_nvram_file_names[0]
+        if not self.vm_nvram_path:
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                "Error getting NVRAM path for VM: %s\n" % self.vm.name,
+            )
+            return False
+
+        # needed to retrieve NVRAM file content:
+        # - datastore name
+        # - datacenter name -> self.dc.name
+        # - nvram file path
+        # - service instance object -> self.si
+
+        ds_vm_file_match = self.datastore_vm_file_rex.match(self.vm_nvram_path)
+        if not ds_vm_file_match:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Error getting datastore name from nvram file path: %s\n"
+                % self.vm_nvram_path,
+            )
+            return False
+
+        vm_nvram_datastore_name = ds_vm_file_match.group(1)
+        vm_nvram_file_path = ds_vm_file_match.group(2)
+        self.vm_nvram_content = self.retrieve_file_content_from_datastore(
+            vm_nvram_datastore_name, vm_nvram_file_path
+        )
+        if not self.vm_nvram_content:
+            bareosfd.DebugMessage(
+                100,
+                "get_vm_nvram(): Error getting nvrame file %s\n" % (self.vm_nvram_path),
+            )
+            return False
+
+        bareosfd.DebugMessage(
+            100,
+            "get_vm_nvram(): Successfully got %s, size: %s, type: %s\n"
+            % (
+                self.vm_nvram_path,
+                len(self.vm_nvram_content),
+                type(self.vm_nvram_content),
+            ),
+        )
+        return True
+
+    def put_vm_nvram(self):
+        """
+        Put VM NVRAM
+
+        Upload the VMs NVRAM file.
+        The content of the name property normally is
+        "[<DatastoreName>] <VmName>/<VmName>.nvram"
+        for example
+        "[esxi2-ds1] deb12test2/deb12test2.nvram"
+        As this will probably be different on restore in most cases, the most
+        simple option is to use vm.config.files.vmPathName and replace .vmx
+        by .nvram
+        """
+        restore_vm_nvram_path = (
+            os.path.splitext(self.vm.config.files.vmPathName)[0] + ".nvram"
+        )
+        bareosfd.DebugMessage(
+            100,
+            "put_vm_nvram():  %s\n" % (restore_vm_nvram_path),
+        )
+        ds_vm_file_match = self.datastore_vm_file_rex.match(restore_vm_nvram_path)
+        if not ds_vm_file_match:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Error getting datastore name from nvram file path: %s\n"
+                % restore_vm_nvram_path,
+            )
+            return False
+
+        vm_nvram_datastore_name = ds_vm_file_match.group(1)
+        vm_nvram_file_path = ds_vm_file_match.group(2)
+        if self.upload_file_content_to_datastore(
+            vm_nvram_datastore_name, vm_nvram_file_path, self.vm_nvram_content
+        ):
+            bareosfd.DebugMessage(
+                100,
+                "put_vm_nvram(): successfully restored NVRAM to %s, size: %s\n"
+                % (restore_vm_nvram_path, len(self.vm_nvram_content)),
+            )
+            return True
+        return False
+
+    def retrieve_file_content_from_datastore(self, datastore_name, file_path):
+        """
+        Retrieve file content from datastore
+
+        Note: This will only work for small files, main purpose here is the NVRAM file.
+        """
+        verify_cert = True
+        if self.options.get("verifyssl") != "yes":
+            verify_cert = False
+        cookie = self._get_cookie_from_si()
+        request_params = {}
+        request_params["dsName"] = datastore_name
+        request_params["dcPath"] = self.dc.name
+        file_url = "https://%s:443/folder/%s" % (self.options["vcserver"], file_path)
+        request_headers = {"Content-Type": "application/octet-stream"}
+
+        file_content = None
+        with requests.Session() as s:
+            # retries will be done if either server is unreachable,
+            # or if the response succeeded but status is in status_forcelist,
+            # see https://httpstat.us/ for list of status codes
+            retries = urllib3.util.Retry(
+                total=3,
+                backoff_factor=0.1,
+                status_forcelist=[429, 500, 502, 503, 504],
+                allowed_methods={"GET"},
+            )
+            s.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+            try:
+                response = s.get(
+                    file_url,
+                    params=request_params,
+                    headers=request_headers,
+                    cookies=cookie,
+                    verify=verify_cert,
+                    timeout=5,
+                )
+                response.raise_for_status()
+            except Exception as exc:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Unexpected Error retrieving NVRAM file: %s\n" % str(exc),
+                )
+                return False
+
+            file_content = response.content
+
+        return file_content
+
+    def upload_file_content_to_datastore(self, datastore_name, file_path, file_content):
+        """
+        Upload file content to datastore
+
+        Note: This will only work for small files, main purpose here is the NVRAM file.
+        """
+        verify_cert = True
+        if self.options.get("verifyssl") != "yes":
+            verify_cert = False
+        cookie = self._get_cookie_from_si()
+        request_params = {}
+        request_params["dsName"] = datastore_name
+        request_params["dcPath"] = self.dc.name
+        file_url = "https://%s:443/folder/%s" % (self.options["vcserver"], file_path)
+        request_headers = {"Content-Type": "application/octet-stream"}
+
+        # Check if file_content is type bytes or bytearray and length > 0,
+        # the data parameter to put would even accept None which would create an
+        # empty file remote.
+        if not (isinstance(file_content, bytes) or isinstance(file_content, bytearray)):
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Error saving NVRAM, type of file_content must be bytes or bytearray but is %s\n"
+                % type(file_content),
+            )
+            return False
+
+        if len(file_content) == 0:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Error saving NVRAM, size of file_content must be > 0\n",
+            )
+            return False
+
+        with requests.Session() as s:
+            # retries will be done if either server is unreachable,
+            # or if the response succeeded but status is in status_forcelist,
+            # see https://httpstat.us/ for list of status codes
+            retries = urllib3.util.Retry(
+                total=3,
+                backoff_factor=0.1,
+                status_forcelist=[429, 500, 502, 503, 504],
+                allowed_methods={"PUT"},
+            )
+            s.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+            try:
+                response = s.put(
+                    file_url,
+                    params=request_params,
+                    data=file_content,
+                    headers=request_headers,
+                    cookies=cookie,
+                    verify=verify_cert,
+                    timeout=5,
+                )
+                response.raise_for_status()
+            except Exception as exc:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Unexpected Error uploading NVRAM file: %s\n" % str(exc),
+                )
+                return False
+
+            bareosfd.DebugMessage(
+                100,
+                "upload_file_content_to_datastore(): uploaded NVRAM to %s, size: %s, status: %s\n"
+                % (
+                    file_url,
+                    len(file_content),
+                    response.status_code,
+                ),
+            )
+
+        return True
+
+    def _get_cookie_from_si(self):
+        """
+        Get the client cookie from service instance
+        """
+        client_cookie = self.si._stub.cookie
+        cookie_name = client_cookie.split("=", 1)[0]
+        cookie_value = client_cookie.split("=", 1)[1].split(";", 1)[0]
+        cookie_path = (
+            client_cookie.split("=", 1)[1].split(";", 1)[1].split(";", 1)[0].lstrip()
+        )
+        cookie_text = " " + cookie_value + "; $" + cookie_path
+        cookie = dict()
+        cookie[cookie_name] = cookie_text
+
+        return cookie
+
     # helper functions ############
 
     def mkdir(self, directory_name):
@@ -3169,15 +3593,13 @@ class BareosVmConfigInfoToSpec(object):
         return list(datastore_names)
 
     def _extract_datastore_name(self, backing_path):
-        backing_ds_match = self.vadp.datastore_rex.match(backing_path)
+        backing_ds_match = self.datastore_rex.match(backing_path)
         if backing_ds_match:
             return backing_ds_match.group(1)
-        else:
-            raise RuntimeError(
-                "Error getting datastore name from backing path %s" % (backing_path)
-            )
 
-        return None
+        raise RuntimeError(
+            "Error getting datastore name from backing path %s" % (backing_path)
+        )
 
     def _get_vm_datastore_name(self):
         return self._extract_datastore_name(self.config_info["files"]["vmPathName"])
@@ -3366,7 +3788,6 @@ class BareosVmConfigInfoToSpec(object):
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
                 )
-                return None
 
             if add_device:
                 device_spec.device = add_device
@@ -3392,7 +3813,6 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Error: Unknown SCSI controller type %s" % (device["_vimtype"])
             )
-            return None
 
         add_device.key = device["key"] * -1
         add_device.busNumber = device["busNumber"]
@@ -3412,7 +3832,6 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Error: Unknown controller type %s" % (device["_vimtype"])
             )
-            return None
 
         add_device.key = device["key"] * -1
         add_device.busNumber = device["busNumber"]
@@ -3438,7 +3857,6 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Error: Unknown USB controller type %s" % (device["_vimtype"])
             )
-            return None
 
         add_device.key = device["key"] * -1
         add_device.autoConnectDevices = device["autoConnectDevices"]
@@ -3490,7 +3908,6 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Error: Unknown CDROM backing type %s" % (device["backing"]["_vimtype"])
             )
-            return None
 
         add_device.connectable = self._transform_connectable(device)
         self._transform_controllerkey_and_unitnumber(add_device, device)
@@ -3518,7 +3935,6 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Unknown Backing for Floppy: %s" % (device["backing"]["_vimtype"])
             )
-            return None
 
         add_device.connectable = self._transform_connectable(device)
         self._transform_controllerkey_and_unitnumber(add_device, device)
@@ -3569,7 +3985,6 @@ class BareosVmConfigInfoToSpec(object):
                 "Unknown Backing for VirtualPCIPassthrough: %s"
                 % (device["backing"]["_vimtype"])
             )
-            return None
 
         if device["connectable"]:
             add_device.connectable = self._transform_connectable(device)
@@ -3593,7 +4008,6 @@ class BareosVmConfigInfoToSpec(object):
                 "Unknown Backing for VirtualEnsoniq1371: %s"
                 % (device["backing"]["_vimtype"])
             )
-            return None
 
         if device["connectable"]:
             add_device.connectable = self._transform_connectable(device)
@@ -3603,6 +4017,7 @@ class BareosVmConfigInfoToSpec(object):
         return add_device
 
     def _transform_virtual_disk(self, device):
+        target_datastore_name = None
         add_device = vim.vm.device.VirtualDisk()
         add_device.key = device["key"] * -1
         if (
@@ -3627,20 +4042,61 @@ class BareosVmConfigInfoToSpec(object):
             )
 
             # When datastore is not changed, restore disk path will be the same as backed up disk
-            self.vadp.restore_disk_paths_map[
+            self.vadp.restore_disk_paths_map[orig_disk_backing_path] = (
                 orig_disk_backing_path
-            ] = orig_disk_backing_path
+            )
 
-            if (
-                self.target_datastore_name
-                and orig_disk_backing_datastore_name == self.orig_vm_datastore_name
-            ):
-                # replace datastore name in backing fileName
-                device["backing"]["fileName"] = self.datastore_rex.sub(
-                    "[" + self.target_datastore_name + "]",
-                    orig_disk_backing_path,
-                    count=1,
+            # Note: self.target_datastore_name will only be present if explicitly specified on
+            # restore using plugin option restore_datastore
+
+            # if a new VM name was passed, the VMFS path must be adapted to avoid an unnecessarily
+            # first step failing task trying to create an existing disk. However, this is still
+            # not easily avoidable when restoring to different folder but same VM name.
+            if orig_disk_backing_datastore_name == self.orig_vm_datastore_name:
+                if self.target_datastore_name:
+                    target_datastore_name = self.target_datastore_name
+                elif (
+                    self.new_target_vm_name
+                    and self.config_info["name"] != self.new_target_vm_name
+                ):
+                    target_datastore_name = orig_disk_backing_datastore_name
+
+            if target_datastore_name:
+                bareosfd.DebugMessage(
+                    100,
+                    "_transform_virtual_disk(): new_vm_name: %s, config_info vm name: %s\n"
+                    % (self.new_target_vm_name, self.config_info["name"]),
                 )
+
+                if (
+                    self.new_target_vm_name
+                    and self.config_info["name"] != self.new_target_vm_name
+                ):
+                    # replace both datastore name and VMFS directory in backing fileName,
+                    # for example this will transform
+                    #  [esxi2-ds1] deb12test2/deb12test2.vmdk
+                    # into
+                    #  [esxi2-ds1] deb12test2-rest/deb12test2-rest.vmdk
+                    # or
+                    #  [esxi2-ds1] deb12test2/deb12test2_1.vmdk
+                    # into
+                    #  [esxi2-ds1] deb12test2-rest/deb12test2-rest_1.vmdk
+                    # and also adapt the datastore name if it changed.
+                    new_disk_filename = os.path.basename(
+                        orig_disk_backing_path
+                    ).replace(self.config_info["name"], self.new_target_vm_name)
+                    device["backing"]["fileName"] = "[%s] %s/%s" % (
+                        target_datastore_name,
+                        self.new_target_vm_name,
+                        new_disk_filename,
+                    )
+                else:
+                    # replace datastore name in backing fileName
+                    device["backing"]["fileName"] = self.datastore_rex.sub(
+                        "[" + target_datastore_name + "]",
+                        orig_disk_backing_path,
+                        count=1,
+                    )
                 self.vadp.restore_disk_paths_map[orig_disk_backing_path] = device[
                     "backing"
                 ]["fileName"]
@@ -3664,7 +4120,7 @@ class BareosVmConfigInfoToSpec(object):
             # add_device.backing.uuid = device["backing"]["uuid"]
             add_device.backing.writeThrough = device["backing"]["writeThrough"]
             bareosfd.DebugMessage(
-                200,
+                100,
                 "_transform_virtual_disk(): backing.fileName: %s\n"
                 % (add_device.backing.fileName),
             )
@@ -3672,7 +4128,6 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Unknown Backing for disk: %s" % (device["backing"]["_vimtype"])
             )
-            return None
 
         add_device.storageIOAllocation = vim.StorageResourceManager.IOAllocationInfo()
         add_device.storageIOAllocation.shares = vim.SharesInfo()
@@ -3712,7 +4167,6 @@ class BareosVmConfigInfoToSpec(object):
             add_device = vim.vm.device.VirtualVmxnet3Vrdma()
         else:
             raise RuntimeError("Unknown ethernet card type: %s" % (device["_vimtype"]))
-            return None
 
         if (
             device["backing"]["_vimtype"]
@@ -3758,7 +4212,6 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Unknown ethernet backing type: %s" % (device["backing"]["_vimtype"])
             )
-            return None
 
         add_device.key = device["key"] * -1
         add_device.connectable = self._transform_connectable(device)
@@ -3830,6 +4283,23 @@ class BareosVmConfigInfoToSpec(object):
                 self.new_target_vm_name,
                 self.new_target_vm_name,
             )
+            # The values of the following properties could have pointed to different
+            # datastores and/or directories, but that's very uncommon. It's
+            # definitely better to set the directory names to the new VM name,
+            # so that all files related to the VM will be in the same directory.
+            for property_name in [
+                "ftMetadataDirectory",
+                "logDirectory",
+                "snapshotDirectory",
+                "suspendDirectory",
+            ]:
+                if self.config_info["files"][property_name] is not None:
+                    setattr(
+                        files,
+                        property_name,
+                        "[%s] %s/"
+                        % (self.new_vm_datastore_name, self.new_target_vm_name),
+                    )
 
         return files
 
@@ -3887,7 +4357,7 @@ class BareosVmConfigInfoToSpec(object):
             raise RuntimeError(
                 "Invalid latency sensitivity: custom (deprecated since 5.5)"
             )
-            return None
+
         latency_sensitivity.level = latency_sensitivity_config["level"]
 
         return latency_sensitivity
@@ -4087,8 +4557,6 @@ class BareosVmConfigInfoToSpec(object):
             add_device.controllerKey = device["controllerKey"] * -1
         add_device.unitNumber = device["unitNumber"]
 
-        return
-
     def _transform_property(
         self,
         property_name=None,
@@ -4102,7 +4570,6 @@ class BareosVmConfigInfoToSpec(object):
                     "Missing property %s in %s, pyVmomi %s or greater required"
                     % (property_name, source_data["_vimtype"], minimum_pyvmomi_version)
                 )
-                return None
 
             setattr(target_object, property_name, source_data[property_name])
 
