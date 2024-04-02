@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -260,7 +260,12 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
     def getDescription(self, data):
         description = ""
         if data.get("description"):
-            description = self.indent(data.get("description"), 3)
+            # Some descriptions contains text surrounded by '*'.
+            # This regex puts backticks around these texts.
+            description_rst = re.sub(
+                "(\*.*?\*)", ":strong:`\\1`", data.get("description")
+            )
+            description = self.indent(description_rst, 3)
         return description
 
     def getConvertedResourceDirectives(self, daemon, resourcename):
