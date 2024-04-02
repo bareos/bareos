@@ -2,7 +2,7 @@
 blank_issues_enabled: true
 contact_links:
   - name: Discuss a feature
-    url: 'https://github.com/bareos/bareos-testing/discussions/new?category=feature'
+    url: 'https://github.com/bareos/bareos/discussions/new?category=feature'
     about: |
       Start a discussion about a new feature Bareos should have
   - name: Ask a Question
