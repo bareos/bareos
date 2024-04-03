@@ -77,10 +77,6 @@
 #  define GWL_USERDATA GWLP_USERDATA
 #endif
 
-#ifndef INT64
-#  define INT64 long long int
-#endif
-
 void sleep(int);
 
 typedef UINT32 key_t;

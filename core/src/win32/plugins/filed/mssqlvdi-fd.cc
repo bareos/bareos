@@ -42,7 +42,7 @@
 #include <initguid.h>
 #include <adoid.h>
 #include <adoint.h>
-
+#include <stdexcept>
 
 namespace filedaemon {
 
