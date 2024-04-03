@@ -188,10 +188,18 @@ sslpsk
 The extra module `sslpsk` (see https://github.com/drbild/sslpsk)
 extends the core module `ssl` by TLS-PSK.
 
-At the time of writing, the lasted version installable via pip is 1.0.0 (https://pypi.org/project/sslpsk/), which is not working with Python >= 3.
+At the time of writing, the lasted version installable via pip is 1.0.0 (https://pypi.org/project/sslpsk/),
+which is not working with Python >= 3.
 
-If `python-bareos` should use TLS-PSK with Python >= 3,
-the latest version must by installed manually:
+For using `python-bareos` with TLS-PSK with
+Python >= 3 and Python <= 3.9
+the latest version must by installed manually.
+At the time of writing, even the latest version
+(https://github.com/drbild/sslpsk/commit/d88123a75786953f82f5e25d6c43d9d9259acb62)
+does not support Python >= 3.10.
+However, Python >= 3.13 has direct support for TLS-PSK in the core `ssl` module.
+
+Installing the `sslpsk` module manually:
 
 .. code:: shell
 
