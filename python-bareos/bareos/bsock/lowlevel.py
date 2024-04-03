@@ -54,12 +54,17 @@ import bareos.exceptions
 # If it is also not available, we continue anyway,
 # but don't use TLS-PSK.
 if not getattr(ssl, "HAS_PSK", False):
+
+    def format_warning_short(message, category, filename, lineno, line=""):
+        return f"{category.__name__}: {message}\n"
+
+    warnings.formatwarning = format_warning_short
     try:
         import sslpsk
     except ImportError:
         warnings.warn(
             "Connection encryption via TLS-PSK is not available "
-            "(TLS-PSK is not available in the ssl module and the extra module sslpsk is not installed)."
+            "(not available in 'ssl' and extra module 'sslpsk' is not installed)."
         )
 
 
