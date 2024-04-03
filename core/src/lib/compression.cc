@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -309,6 +309,42 @@ class lzo_compressor {
 };
 #endif
 
+struct compressors {
+#ifdef HAVE_LIBZ
+  std::unique_ptr<gzip_compressor> gzip{nullptr};
+#endif
+#ifdef HAVE_LZO
+  std::unique_ptr<lzo_compressor> lzo{nullptr};
+#endif
+  std::unique_ptr<z4_compressor> lz_fast{nullptr};
+  std::unique_ptr<z4_compressor> lz_default{nullptr};
+  std::unique_ptr<z4_compressor> lz_best{nullptr};
+};
+
+template <typename T> struct tls_manager {
+  pthread_key_t key;
+
+  tls_manager()
+  {
+    pthread_key_create(
+        &key, +[](void* arg) {
+          /* destructor is only called if arg != NULL */
+          auto* val = reinterpret_cast<T*>(arg);
+          delete val;
+        });
+  }
+  ~tls_manager() { pthread_key_delete(key); }
+  T* thread_local_value()
+  {
+    auto* local = reinterpret_cast<T*>(pthread_getspecific(key));
+    if (!local) {
+      local = new T{};
+      ASSERT(pthread_setspecific(key, local) == 0);
+    }
+    return local;
+  }
+};
+
 result<std::size_t> ThreadlocalCompress(uint32_t algo,
                                         uint32_t level,
                                         char const* input,
@@ -316,31 +352,43 @@ result<std::size_t> ThreadlocalCompress(uint32_t algo,
                                         char* output,
                                         std::size_t capacity)
 {
+  /* NOTE: this is done because thread_local is broken on the crosscompiler.
+   * it may free the underlying thread local storage before destroying the
+   * objects therein. */
+  static tls_manager<compressors> manager;
+
+  auto* comps = manager.thread_local_value();
   switch (algo) {
 #ifdef HAVE_LIBZ
     case COMPRESS_GZIP: {
-      thread_local gzip_compressor comp{};
-      comp.set_level(level);
-      return comp.compress(input, size, output, capacity);
+      if (!comps->gzip) comps->gzip.reset(new gzip_compressor);
+      comps->gzip->set_level(level);
+      return comps->gzip->compress(input, size, output, capacity);
     } break;
 #endif
 #ifdef HAVE_LZO
     case COMPRESS_LZO1X: {
-      thread_local lzo_compressor comp{};
-      return comp.compress(input, size, output, capacity);
+      if (!comps->lzo) comps->lzo.reset(new lzo_compressor);
+      return comps->lzo->compress(input, size, output, capacity);
     } break;
 #endif
     case COMPRESS_FZFZ: {
-      thread_local z4_compressor comp(Z_BEST_SPEED, COMPRESSOR_FASTLZ);
-      return comp.compress(input, size, output, capacity);
+      if (!comps->lz_fast)
+        comps->lz_fast.reset(
+            new z4_compressor{Z_BEST_SPEED, COMPRESSOR_FASTLZ});
+      return comps->lz_fast->compress(input, size, output, capacity);
     }
     case COMPRESS_FZ4L: {
-      thread_local z4_compressor comp(Z_BEST_SPEED, COMPRESSOR_LZ4);
-      return comp.compress(input, size, output, capacity);
+      if (!comps->lz_default)
+        comps->lz_default.reset(
+            new z4_compressor{Z_BEST_SPEED, COMPRESSOR_LZ4});
+      return comps->lz_default->compress(input, size, output, capacity);
     }
     case COMPRESS_FZ4H: {
-      thread_local z4_compressor comp(Z_BEST_COMPRESSION, COMPRESSOR_LZ4);
-      return comp.compress(input, size, output, capacity);
+      if (!comps->lz_best)
+        comps->lz_best.reset(
+            new z4_compressor{Z_BEST_COMPRESSION, COMPRESSOR_LZ4});
+      return comps->lz_best->compress(input, size, output, capacity);
     } break;
   }
 
