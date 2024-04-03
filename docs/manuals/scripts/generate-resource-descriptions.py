@@ -258,15 +258,14 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
         return default
 
     def getDescription(self, data):
-        description = ""
-        if data.get("description"):
-            # Some descriptions contains text surrounded by '*'.
-            # This regex puts backticks around these texts.
-            description_rst = re.sub(
-                "(\*.*?\*)", ":strong:`\\1`", data.get("description")
-            )
-            description = self.indent(description_rst, 3)
-        return description
+        description = data.get("description", "")
+        # Raise exception, when descriptions look like RST formatting.
+        if re.search(r"\*\*|`", description) is not None:
+            raise RuntimeError(f"Description is not plain text: '{description}'")
+        # Some descriptions contains text surrounded by '*'.
+        # This regex puts backticks around these texts.
+        description_rst = re.sub(r"(\*.*?\*)", r":strong:`\1`", description)
+        return self.indent(description_rst, 3)
 
     def getConvertedResourceDirectives(self, daemon, resourcename):
         logger = logging.getLogger()
