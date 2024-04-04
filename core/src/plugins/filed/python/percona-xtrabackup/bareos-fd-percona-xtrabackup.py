@@ -439,7 +439,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                             M_ERROR,
                             "Dump / restore command not finished properly\n",
                         )
-                        bRC_Error
+                        return bRC_Error
                     return bRC_OK
                 else:
                     DebugMessage(
