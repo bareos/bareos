@@ -1,7 +1,5 @@
 ### Thank you for contributing to the Bareos Project!
 
-**Backport of PR #0000 to bareos-2x** (remove this line if this is no backport; for backport use cherry-pick -x)
-
 #### Please check
 
 - [ ] Short description and the purpose of this PR is present _above this paragraph_
@@ -23,7 +21,6 @@ Make sure you check/merge the PR using `devtools/pr-tool` to have some simple au
 - [ ] Is the PR title usable as CHANGELOG entry?
 - [ ] Purpose of the PR is understood
 - [ ] Commit descriptions are understandable and well formatted
-- [ ] Check backport line
 - [ ] Required backport PRs have been created
 
 ##### Source code quality
