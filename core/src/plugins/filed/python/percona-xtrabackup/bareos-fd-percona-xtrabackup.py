@@ -587,7 +587,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                     os.kill(self.stream.pid, signal.SIGTERM)
                     sent_sigterm = True
                     # Wait timeout after sending TERM to the process
-                    timeout = 30
+                    timeout = 10
                     start_time = int(time.time())
                     continue
                 else:
