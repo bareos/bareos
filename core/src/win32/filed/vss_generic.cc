@@ -85,7 +85,7 @@ class IXMLDOMDocument;
 #  include "Win2003/vswriter.h"
 #  include "Win2003/vsbackup.h"
 
-#  define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
+#  define VSS_ERROR_OBJECT_ALREADY_EXISTS ((HRESULT) 0x8004230D)
 
 #  include "vss.h"
 
@@ -307,7 +307,7 @@ static inline bool HandleVolumeMountPoint(
                                                snapshoted_volumes);
       Dmsg1(200, "%s added to snapshotset \n", pvol.c_str());
       snapshot_success = true;
-    } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
+    } else if (hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
       Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol.c_str());
     } else {
       Dmsg3(
@@ -866,7 +866,7 @@ bool VSSClientGeneric::CreateSnapshots(const std::vector<std::wstring>& volumes,
 
   // startSnapshotSet
   hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
-  while ((unsigned)hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
+  while (hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
     Bmicrosleep(5, 0);
     Jmsg(jcr_, M_INFO, 0, "VSS_E_SNAPSHOT_SET_IN_PROGRESS, retrying ...\n");
     hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
