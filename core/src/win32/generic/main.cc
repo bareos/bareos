@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,9 @@
 #include "who.h"
 #include <signal.h>
 #include <pthread.h>
+#include <psapi.h>
+#include <dbghelp.h>
+#include "fill_proc_address.h"
 
 #undef _WIN32_IE
 #ifdef MINGW64
@@ -69,6 +72,304 @@ static pthread_t main_tid;
 const char usage[] = APP_NAME
     "[/debug] [/service] [/run] [/kill] [/install] [/remove] [/help]\n";
 
+using namespace std;
+
+// #pragma comment(lib,"Dbghelp.lib")
+
+#include <sstream>
+
+class DbgHelp {
+ public:
+  DbgHelp()
+  {
+    library_handle = LoadLibraryA("DBGHELP.DLL");
+    if (library_handle) {
+#define SETUP_FUNCTION(Name) \
+  BareosFillProcAddress(Name##Ptr, library_handle, #Name)
+      SETUP_FUNCTION(SymInitialize);
+      SETUP_FUNCTION(SymGetModuleBase);
+      SETUP_FUNCTION(SymFunctionTableAccess64);
+      SETUP_FUNCTION(StackWalk64);
+      SETUP_FUNCTION(SymFromAddr);
+      SETUP_FUNCTION(SymGetLineFromAddr64);
+      SETUP_FUNCTION(SymCleanup);
+      SETUP_FUNCTION(SymSetOptions);
+      SETUP_FUNCTION(ImageNtHeader);
+#undef SETUP_FUNCTION
+
+      if (SymInitializePtr && SymGetModuleBasePtr && SymFunctionTableAccess64Ptr
+          && StackWalk64Ptr && SymFromAddrPtr && SymGetLineFromAddr64Ptr
+          && SymCleanupPtr && SymSetOptionsPtr && ImageNtHeaderPtr) {
+        SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+        initialised = SymInitialize(::GetCurrentProcess(), NULL, TRUE);
+      }
+    }
+  }
+
+  ~DbgHelp()
+  {
+    if (initialised) { SymCleanup(::GetCurrentProcess()); }
+    if (library_handle) { FreeLibrary(library_handle); }
+  }
+
+  operator bool() const { return initialised; }
+
+  BOOL StackWalk64(DWORD MachineType,
+                   HANDLE hProcess,
+                   HANDLE hThread,
+                   LPSTACKFRAME64 StackFrame,
+                   PVOID ContextRecord)
+  {
+    std::unique_lock l{mut};
+    return StackWalk64Ptr(MachineType, hProcess, hThread, StackFrame,
+                          ContextRecord, NULL, SymFunctionTableAccess64Ptr,
+                          SymGetModuleBasePtr, NULL);
+  }
+
+  BOOL SymFromAddr(HANDLE hProcess,
+                   DWORD64 Address,
+                   PDWORD64 Displacement,
+                   PSYMBOL_INFO Symbol)
+  {
+    std::unique_lock l{mut};
+    return SymFromAddrPtr(hProcess, Address, Displacement, Symbol);
+  }
+
+  BOOL SymGetLineFromAddr64(HANDLE hProcess,
+                            DWORD64 qwAddr,
+                            PDWORD pdwDisplacement,
+                            PIMAGEHLP_LINE64 Line64)
+  {
+    std::unique_lock l{mut};
+    return SymGetLineFromAddr64Ptr(hProcess, qwAddr, pdwDisplacement, Line64);
+  }
+
+  PIMAGE_NT_HEADERS ImageNtHeader(PVOID Base)
+  {
+    std::unique_lock l{mut};
+    return ImageNtHeaderPtr(Base);
+  }
+
+ private:
+  DWORD SymSetOptions(DWORD Options)
+  {
+    std::unique_lock l{mut};
+    return SymSetOptionsPtr(Options);
+  }
+
+  BOOL SymInitialize(HANDLE hProcess, PCSTR UserSearchPath, BOOL fInvadeProcess)
+  {
+    std::unique_lock l{mut};
+    return SymInitializePtr(hProcess, UserSearchPath, fInvadeProcess);
+  }
+
+  BOOL SymCleanup(HANDLE hProcess)
+  {
+    std::unique_lock l{mut};
+    return SymCleanupPtr(hProcess);
+  }
+
+  using t_SymInitialize = decltype(&::SymInitialize);
+  using t_SymGetModuleBase = decltype(&::SymGetModuleBase);
+  using t_SymFunctionTableAccess64 = decltype(&::SymFunctionTableAccess64);
+  using t_StackWalk64 = decltype(&::StackWalk64);
+  using t_SymFromAddr = decltype(&::SymFromAddr);
+  using t_SymGetLineFromAddr64 = decltype(&::SymGetLineFromAddr64);
+  using t_SymCleanup = decltype(&::SymCleanup);
+  using t_SymSetOptions = decltype(&::SymSetOptions);
+  using t_ImageNtHeader = decltype(&::ImageNtHeader);
+
+  HMODULE library_handle{nullptr};
+  t_SymInitialize SymInitializePtr{nullptr};
+  t_SymGetModuleBase SymGetModuleBasePtr{nullptr};
+  t_SymFunctionTableAccess64 SymFunctionTableAccess64Ptr{nullptr};
+  t_StackWalk64 StackWalk64Ptr{nullptr};
+  t_SymFromAddr SymFromAddrPtr{nullptr};
+  t_SymGetLineFromAddr64 SymGetLineFromAddr64Ptr{nullptr};
+  t_SymCleanup SymCleanupPtr{nullptr};
+  t_SymSetOptions SymSetOptionsPtr{nullptr};
+  t_ImageNtHeader ImageNtHeaderPtr{nullptr};
+  bool initialised{false};
+  std::mutex mut{};
+};
+
+DbgHelp dbg;
+
+void backtrace(std::stringstream& bt, CONTEXT* ctx)
+{
+  constexpr size_t max_function_name_length = 256;
+
+  BOOL result;
+  HANDLE process;
+  HANDLE thread;
+  HMODULE hModule;
+
+  STACKFRAME64 stack;
+  ULONG frame;
+  DWORD64 displacement;
+
+  DWORD disp;
+
+  char buffer[offsetof(SYMBOL_INFO, Name[MAX_SYM_NAME])] alignas(SYMBOL_INFO);
+  char module[max_function_name_length];
+  PSYMBOL_INFO pSymbol = (PSYMBOL_INFO)buffer;
+
+  // On x64, StackWalk64 modifies the context record, that could
+  // cause crashes, so we create a copy to prevent it
+  CONTEXT ctxCopy;
+  memcpy(&ctxCopy, ctx, sizeof(CONTEXT));
+
+  memset(&stack, 0, sizeof(STACKFRAME64));
+
+  process = GetCurrentProcess();
+  thread = GetCurrentThread();
+  displacement = 0;
+  DWORD image;
+#if defined(_M_AMD64) || defined(_M_X64)
+  image = IMAGE_FILE_MACHINE_AMD64;
+  stack.AddrPC.Offset = ctxCopy.Rip;
+  stack.AddrPC.Mode = AddrModeFlat;
+  stack.AddrStack.Offset = ctxCopy.Rsp;
+  stack.AddrStack.Mode = AddrModeFlat;
+  stack.AddrFrame.Offset = ctxCopy.Rbp;
+  stack.AddrFrame.Mode = AddrModeFlat;
+#elif defined(_M_IX86)
+  image = IMAGE_FILE_MACHINE_I386;
+  frame.AddrPC.Offset = ctxCopy.Eip;
+  frame.AddrPC.Mode = AddrModeFlat;
+  frame.AddrFrame.Offset = ctxCopy.Ebp;
+  frame.AddrFrame.Mode = AddrModeFlat;
+  frame.AddrStack.Offset = ctxCopy.Esp;
+  frame.AddrStack.Mode = AddrModeFlat;
+#elif defined(_M_IA64)
+  image = IMAGE_FILE_MACHINE_IA64;
+  frame.AddrPC.Offset = ctxCopy.StIIP;
+  frame.AddrPC.Mode = AddrModeFlat;
+  frame.AddrFrame.Offset = ctxCopy.IntSp;
+  frame.AddrFrame.Mode = AddrModeFlat;
+  frame.AddrBStore.Offset = ctxCopy.RsBSP;
+  frame.AddrBStore.Mode = AddrModeFlat;
+  frame.AddrStack.Offset = ctxCopy.IntSp;
+  frame.AddrStack.Mode = AddrModeFlat;
+#else
+#  error "This platform is not supported."
+#endif
+
+  for (frame = 0;; frame++) {
+    // get next call from stack
+    result = dbg.StackWalk64(image, process, thread, &stack, &ctxCopy);
+
+    if (!result) break;
+
+    // get symbol name for address
+    pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+    pSymbol->MaxNameLen = MAX_SYM_NAME;
+    dbg.SymFromAddr(process, (ULONG64)stack.AddrPC.Offset, &displacement,
+                    pSymbol);
+
+    IMAGEHLP_LINE64 line{};
+    line.SizeOfStruct = sizeof(line);
+
+    bt << "\tat " << pSymbol->Name;
+    if (dbg.SymGetLineFromAddr64(process, stack.AddrPC.Offset, &disp, &line)) {
+      bt << " in " << line.FileName << "@L" << std::dec << line.LineNumber;
+    } else {
+      // failed to get line
+      hModule = NULL;
+      lstrcpyA(module, "");
+      GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+                            | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                        (LPCTSTR)(stack.AddrPC.Offset), &hModule);
+
+
+      // at least print module name
+      if (hModule != NULL) {
+        GetModuleFileNameA(hModule, module, sizeof(module));
+        bt << " in " << module;
+
+        LPVOID text_section = nullptr;
+        if (IMAGE_NT_HEADERS* nt = dbg.ImageNtHeader(hModule)) {
+          IMAGE_SECTION_HEADER* current_section
+              = reinterpret_cast<IMAGE_SECTION_HEADER*>(nt + 1);
+          const char* base = reinterpret_cast<const char*>(hModule);
+
+          for (int scn = 0; scn < nt->FileHeader.NumberOfSections; ++scn) {
+            if (memcmp(".text", current_section->Name, sizeof(".text")) == 0) {
+              text_section = (LPVOID)(base + current_section->VirtualAddress);
+            }
+            // char name[sizeof(current_section->Name) + 1] = {};
+            // memcpy(name, current_section->Name,
+            // sizeof(current_section->Name)); s << "(name=" << name << ",
+            // start=" << (void*) (base + current_section->VirtualAddress)
+            //   << ", size=" << current_section->Misc.VirtualSize << ")\n";
+            // printf("  Section %3d: %p...%p %-10.8s (%lu bytes)\n",
+            //        scn,
+            //        base + current_section->VirtualAddress,
+            //        base + current_section->VirtualAddress +
+            //        current_section->Misc.VirtualSize - 1,
+            //        current_section->Name,
+            //        current_section->Misc.VirtualSize);
+            current_section++;
+          }
+        }
+
+        bt << "@0x" << std::hex
+           << ((long long int)pSymbol->Address - (long long int)text_section
+               + (long long int)displacement);
+      } else {
+        bt << "at " << pSymbol->Name << " in <unknown>";
+      }
+    }
+    bt << " (addr=0x" << std::hex << pSymbol->Address << ", disp=0x" << std::hex
+       << displacement << ")";
+  }
+}
+
+extern const char* progname;
+
+LONG WINAPI
+BareosBacktracingExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo)
+{
+  auto header
+      = (std::stringstream{} << "Fatal: Unhandled exception 0x" << std::hex
+                             << pExceptionInfo->ExceptionRecord->ExceptionCode)
+            .str();
+
+  std::stringstream btss;
+  if (dbg) {
+    backtrace(btss, pExceptionInfo->ContextRecord);
+  } else {
+    btss << "Could not load dbghelp.dll";
+  }
+
+  HANDLE eventhandler = RegisterEventSourceA(NULL, progname ?: "Bareos");
+  if (eventhandler) {
+    std::string bt = btss.str();
+    std::string count = std::to_string(bt.size());
+    if (bt.size() > 31'000) {
+      bt.resize(31'000);
+      bt += "...";
+    }
+    std::array strings = {
+        header.c_str(),
+        bt.c_str(),
+        count.c_str(),
+    };
+
+    DWORD category = 0;
+    DWORD eventid = 0;
+    ReportEventA(eventhandler, EVENTLOG_ERROR_TYPE, category, eventid, NULL,
+                 strings.size(), 0, strings.data(), NULL);
+    DeregisterEventSource(eventhandler);
+  } else {
+    exit(2);
+  }
+  LogErrorMsg(header.c_str());
+  exit(1);
+
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+
 /*
  *
  * Main Windows entry point.
@@ -91,6 +392,8 @@ int WINAPI WinMain(HINSTANCE Instance,
   /* Save the application instance and main thread id */
   appInstance = Instance;
   mainthreadId = GetCurrentThreadId();
+
+  SetUnhandledExceptionFilter(BareosBacktracingExceptionHandler);
 
   if (GetVersionEx(&osversioninfo)
       && osversioninfo.dwPlatformId == VER_PLATFORM_WIN32_NT) {
@@ -203,7 +506,7 @@ int WINAPI WinMain(HINSTANCE Instance,
       return 0;
     }
 
-    MessageBox(NULL, cmdLine, T_("Bad Command Line Option"), MB_OK);
+    MessageBox(NULL, cmdLine, _("Bad Command Line Option"), MB_OK);
 
     /* Show the usage dialog */
     MessageBox(NULL, usage, APP_DESC, MB_OK | MB_ICONINFORMATION);
@@ -323,6 +626,18 @@ int BareosAppMain()
 
   WSACleanup();
   _exit(0);
+}
+
+
+void PauseMsg(const char* file, const char* func, int line, const char* msg)
+{
+  char buf[1000];
+  if (msg) {
+    Bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
+  } else {
+    Bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
+  }
+  MessageBox(NULL, buf, "Pause", MB_OK);
 }
 
 typedef void(WINAPI* PGNSI)(LPSYSTEM_INFO);

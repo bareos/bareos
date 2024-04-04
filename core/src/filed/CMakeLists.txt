@@ -87,6 +87,8 @@ if(HAVE_WIN32)
     list(APPEND FD_COMPILE_DEFINITIONS -DHAVE_VSS64)
   endif()
 
+  target_link_options(bareos-fd PRIVATE "-Wl,--export-all-symbols")
+
   target_compile_definitions(fd_objects PRIVATE ${FD_COMPILE_DEFINITIONS})
   target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
 endif()
