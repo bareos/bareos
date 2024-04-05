@@ -298,7 +298,11 @@ static Bpipe* open_mail_pipe(JobControlRecord* jcr,
     cmd = edit_job_codes(jcr, cmd, d->mail_cmd_.c_str(), d->where_.c_str(),
                          message_job_code_callback);
   } else {
+#ifdef HAVE_WIN32
+    return nullptr;
+#else
     Mmsg(cmd, "/usr/lib/sendmail -F BAREOS %s", d->where_.c_str());
+#endif
   }
 
   if ((bpipe = OpenBpipe(cmd, 120, "rw"))) {
