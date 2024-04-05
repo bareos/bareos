@@ -84,8 +84,11 @@ class DbgHelp {
   {
     library_handle = LoadLibraryA("DBGHELP.DLL");
     if (library_handle) {
-#define SETUP_FUNCTION(Name) \
-  BareosFillProcAddress(Name##Ptr, library_handle, #Name)
+      bool ok = true;
+#define SETUP_FUNCTION(Name)                                                  \
+  do {                                                                        \
+    if (!BareosFillProcAddress(Name##Ptr, library_handle, #Name)) ok = false; \
+  } while (0)
       SETUP_FUNCTION(SymInitialize);
       SETUP_FUNCTION(SymGetModuleBase);
       SETUP_FUNCTION(SymFunctionTableAccess64);
@@ -95,11 +98,10 @@ class DbgHelp {
       SETUP_FUNCTION(SymCleanup);
       SETUP_FUNCTION(SymSetOptions);
       SETUP_FUNCTION(ImageNtHeader);
+      SETUP_FUNCTION(EnumerateLoadedModules64);
 #undef SETUP_FUNCTION
 
-      if (SymInitializePtr && SymGetModuleBasePtr && SymFunctionTableAccess64Ptr
-          && StackWalk64Ptr && SymFromAddrPtr && SymGetLineFromAddr64Ptr
-          && SymCleanupPtr && SymSetOptionsPtr && ImageNtHeaderPtr) {
+      if (ok) {
         SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
         initialised = SymInitialize(::GetCurrentProcess(), NULL, TRUE);
       }
@@ -144,6 +146,14 @@ class DbgHelp {
     return SymGetLineFromAddr64Ptr(hProcess, qwAddr, pdwDisplacement, Line64);
   }
 
+  BOOL EnumerateLoadedModules64(HANDLE hProcess,
+                                PENUMLOADED_MODULES_CALLBACK64 cb,
+                                PVOID UserContext)
+  {
+    // std::unique_lock l{mut};
+    return EnumerateLoadedModules64Ptr(hProcess, cb, UserContext);
+  }
+
   PIMAGE_NT_HEADERS ImageNtHeader(PVOID Base)
   {
     std::unique_lock l{mut};
@@ -178,6 +188,7 @@ class DbgHelp {
   using t_SymCleanup = decltype(&::SymCleanup);
   using t_SymSetOptions = decltype(&::SymSetOptions);
   using t_ImageNtHeader = decltype(&::ImageNtHeader);
+  using t_EnumerateLoadedModules64 = decltype(&::EnumerateLoadedModules64);
 
   HMODULE library_handle{nullptr};
   t_SymInitialize SymInitializePtr{nullptr};
@@ -189,7 +200,12 @@ class DbgHelp {
   t_SymCleanup SymCleanupPtr{nullptr};
   t_SymSetOptions SymSetOptionsPtr{nullptr};
   t_ImageNtHeader ImageNtHeaderPtr{nullptr};
+  t_EnumerateLoadedModules64 EnumerateLoadedModules64Ptr{nullptr};
   bool initialised{false};
+  /* All DbgHelp functions are single threaded. Therefore, calls from more than
+   * one thread to this function will likely result in unexpected behavior or
+   * memory corruption. To avoid this, you must synchronize all concurrent
+   * calls. */
   std::mutex mut{};
 };
 
@@ -264,6 +280,12 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
     // get symbol name for address
     pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
     pSymbol->MaxNameLen = MAX_SYM_NAME;
+
+
+    // symbol->addr address of the symbol, displacement is the offset from
+    // the PC to that address.
+    // i.e. symbol->addr is the start of the function and
+    // displacement is the offset of the pc into that function
     dbg.SymFromAddr(process, (ULONG64)stack.AddrPC.Offset, &displacement,
                     pSymbol);
 
@@ -297,18 +319,6 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
             if (memcmp(".text", current_section->Name, sizeof(".text")) == 0) {
               text_section = (LPVOID)(base + current_section->VirtualAddress);
             }
-            // char name[sizeof(current_section->Name) + 1] = {};
-            // memcpy(name, current_section->Name,
-            // sizeof(current_section->Name)); s << "(name=" << name << ",
-            // start=" << (void*) (base + current_section->VirtualAddress)
-            //   << ", size=" << current_section->Misc.VirtualSize << ")\n";
-            // printf("  Section %3d: %p...%p %-10.8s (%lu bytes)\n",
-            //        scn,
-            //        base + current_section->VirtualAddress,
-            //        base + current_section->VirtualAddress +
-            //        current_section->Misc.VirtualSize - 1,
-            //        current_section->Name,
-            //        current_section->Misc.VirtualSize);
             current_section++;
           }
         }
@@ -321,50 +331,122 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
       }
     }
     bt << " (addr=0x" << std::hex << pSymbol->Address << ", disp=0x" << std::hex
-       << displacement << ")";
+       << displacement << ")\r\n";
   }
+}
+
+void GatherModuleInfo(std::stringstream& info)
+{
+  auto callback = +[](PCSTR ModuleName, DWORD64 ModuleBase, ULONG ModuleSize,
+                      PVOID UserContext) -> int {
+    (void)ModuleSize;
+
+    auto& info = *reinterpret_cast<std::stringstream*>(UserContext);
+
+    HANDLE hModule = (HANDLE)ModuleBase;
+
+    info << "\"" << ModuleName << "\" {\r\n";
+    if (IMAGE_NT_HEADERS* nt = dbg.ImageNtHeader(hModule)) {
+      IMAGE_SECTION_HEADER* current_section
+          = reinterpret_cast<IMAGE_SECTION_HEADER*>(nt + 1);
+      const char* base = reinterpret_cast<const char*>(hModule);
+
+      for (int scn = 0; scn < nt->FileHeader.NumberOfSections; ++scn) {
+        char name[sizeof(current_section->Name) + 1] = {};
+        memcpy(name, current_section->Name, sizeof(current_section->Name));
+        info << "\t{name=\"" << name << "\", start=0x"
+             << (void*)(base + current_section->VirtualAddress) << ", size=0x"
+             << std::hex << current_section->Misc.VirtualSize << "},\n";
+        current_section++;
+      }
+    }
+    info << "}\r\n";
+    return TRUE;
+  };
+
+  dbg.EnumerateLoadedModules64(::GetCurrentProcess(), callback,
+                               static_cast<PVOID>(&info));
 }
 
 extern const char* progname;
 
+static BOOL WriteString(HANDLE file, std::string_view str)
+{
+  DWORD written = 0;
+  while (written != str.size()) {
+    DWORD written_now = 0;
+    if (!WriteFile(file, str.data() + written, str.size() - written,
+                   &written_now, NULL)) {
+      return FALSE;
+    }
+
+    written += written_now;
+  }
+  return TRUE;
+}
+
 LONG WINAPI
 BareosBacktracingExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo)
 {
-  auto header
-      = (std::stringstream{} << "Fatal: Unhandled exception 0x" << std::hex
-                             << pExceptionInfo->ExceptionRecord->ExceptionCode)
-            .str();
+  auto header = (std::stringstream{}
+                 << "Fatal: Unhandled exception 0x" << std::hex
+                 << pExceptionInfo->ExceptionRecord->ExceptionCode << "\r\n")
+                    .str();
 
-  std::stringstream btss;
+  bool write_success = true;
+  char tmpfile[MAX_PATH];
   if (dbg) {
+    std::stringstream btss;
+    btss << "Backtrace:\r\n\r\n";
     backtrace(btss, pExceptionInfo->ContextRecord);
+    btss << "\r\n";
+
+    std::stringstream moduleinfo;
+    moduleinfo << "Loaded Modules:\r\n\r\n";
+    GatherModuleInfo(moduleinfo);
+    moduleinfo << "\r\n";
+
+    char tmppath[MAX_PATH];
+    HANDLE tmphandle = INVALID_HANDLE_VALUE;
+    if (GetTempPathA(MAX_PATH, tmppath) > 0
+        && GetTempFileNameA(tmppath, "bareos", 0, tmpfile) > 0
+        && (tmphandle = CreateFileA(tmpfile, GENERIC_WRITE, 0, NULL,
+                                    CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
+               != INVALID_HANDLE_VALUE) {
+      if (write_success) { write_success = WriteString(tmphandle, header); }
+      if (write_success) { write_success = WriteString(tmphandle, btss.str()); }
+      if (write_success) {
+        write_success = WriteString(tmphandle, moduleinfo.str());
+      }
+
+      CloseHandle(tmphandle);
+    }
   } else {
-    btss << "Could not load dbghelp.dll";
+    write_success = false;
   }
 
   HANDLE eventhandler = RegisterEventSourceA(NULL, progname ?: "Bareos");
   if (eventhandler) {
-    std::string bt = btss.str();
-    std::string count = std::to_string(bt.size());
-    if (bt.size() > 31'000) {
-      bt.resize(31'000);
-      bt += "...";
+    std::string location{};
+    if (!dbg) {
+      location = "Could not load dbghelp.dll.";
+    } else if (!write_success) {
+      location = "Could not write backtrace.";
+    } else {
+      location = "Backtrace written to: ";
+      location += tmpfile;
     }
     std::array strings = {
         header.c_str(),
-        bt.c_str(),
-        count.c_str(),
+        location.c_str(),
     };
 
-    DWORD category = 0;
-    DWORD eventid = 0;
-    ReportEventA(eventhandler, EVENTLOG_ERROR_TYPE, category, eventid, NULL,
-                 strings.size(), 0, strings.data(), NULL);
+    ReportEventA(eventhandler, EVENTLOG_ERROR_TYPE, 0, 0, NULL, strings.size(),
+                 0, strings.data(), NULL);
     DeregisterEventSource(eventhandler);
   } else {
     exit(2);
   }
-  LogErrorMsg(header.c_str());
   exit(1);
 
   return EXCEPTION_CONTINUE_SEARCH;
