@@ -43,6 +43,7 @@
 #include <pthread.h>
 #include <psapi.h>
 #include <dbghelp.h>
+#include <sstream>
 #include "fill_proc_address.h"
 
 #undef _WIN32_IE
@@ -74,9 +75,7 @@ const char usage[] = APP_NAME
 
 using namespace std;
 
-// #pragma comment(lib,"Dbghelp.lib")
-
-#include <sstream>
+#if __x86_64__
 
 class DbgHelp {
  public:
@@ -85,10 +84,11 @@ class DbgHelp {
     library_handle = LoadLibraryA("DBGHELP.DLL");
     if (library_handle) {
       bool ok = true;
-#define SETUP_FUNCTION(Name)                                                  \
-  do {                                                                        \
-    if (!BareosFillProcAddress(Name##Ptr, library_handle, #Name)) ok = false; \
-  } while (0)
+#  define SETUP_FUNCTION(Name)                                      \
+    do {                                                            \
+      if (!BareosFillProcAddress(Name##Ptr, library_handle, #Name)) \
+        ok = false;                                                 \
+    } while (0)
       SETUP_FUNCTION(SymInitialize);
       SETUP_FUNCTION(SymGetModuleBase);
       SETUP_FUNCTION(SymFunctionTableAccess64);
@@ -99,7 +99,7 @@ class DbgHelp {
       SETUP_FUNCTION(SymSetOptions);
       SETUP_FUNCTION(ImageNtHeader);
       SETUP_FUNCTION(EnumerateLoadedModules64);
-#undef SETUP_FUNCTION
+#  undef SETUP_FUNCTION
 
       if (ok) {
         SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
@@ -206,7 +206,7 @@ class DbgHelp {
    * one thread to this function will likely result in unexpected behavior or
    * memory corruption. To avoid this, you must synchronize all concurrent
    * calls. */
-  std::mutex mut{};
+  std::recursive_mutex mut{};
 };
 
 DbgHelp dbg;
@@ -241,7 +241,7 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
   thread = GetCurrentThread();
   displacement = 0;
   DWORD image;
-#if defined(_M_AMD64) || defined(_M_X64)
+#  if defined(_M_AMD64) || defined(_M_X64)
   image = IMAGE_FILE_MACHINE_AMD64;
   stack.AddrPC.Offset = ctxCopy.Rip;
   stack.AddrPC.Mode = AddrModeFlat;
@@ -249,7 +249,7 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
   stack.AddrStack.Mode = AddrModeFlat;
   stack.AddrFrame.Offset = ctxCopy.Rbp;
   stack.AddrFrame.Mode = AddrModeFlat;
-#elif defined(_M_IX86)
+#  elif defined(_M_IX86)
   image = IMAGE_FILE_MACHINE_I386;
   frame.AddrPC.Offset = ctxCopy.Eip;
   frame.AddrPC.Mode = AddrModeFlat;
@@ -257,7 +257,7 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
   frame.AddrFrame.Mode = AddrModeFlat;
   frame.AddrStack.Offset = ctxCopy.Esp;
   frame.AddrStack.Mode = AddrModeFlat;
-#elif defined(_M_IA64)
+#  elif defined(_M_IA64)
   image = IMAGE_FILE_MACHINE_IA64;
   frame.AddrPC.Offset = ctxCopy.StIIP;
   frame.AddrPC.Mode = AddrModeFlat;
@@ -267,9 +267,9 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
   frame.AddrBStore.Mode = AddrModeFlat;
   frame.AddrStack.Offset = ctxCopy.IntSp;
   frame.AddrStack.Mode = AddrModeFlat;
-#else
-#  error "This platform is not supported."
-#endif
+#  else
+#    error "This platform is not supported."
+#  endif
 
   for (frame = 0;; frame++) {
     // get next call from stack
@@ -452,6 +452,8 @@ BareosBacktracingExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo)
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
+#endif
+
 /*
  *
  * Main Windows entry point.
@@ -475,7 +477,9 @@ int WINAPI WinMain(HINSTANCE Instance,
   appInstance = Instance;
   mainthreadId = GetCurrentThreadId();
 
+#if __x86_64__
   SetUnhandledExceptionFilter(BareosBacktracingExceptionHandler);
+#endif
 
   if (GetVersionEx(&osversioninfo)
       && osversioninfo.dwPlatformId == VER_PLATFORM_WIN32_NT) {
