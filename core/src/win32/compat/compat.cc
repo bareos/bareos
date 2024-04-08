@@ -449,7 +449,7 @@ static void RemoveTrailingSlashes(std::wstring& str, bool always = false)
   }
 }
 
-static std::wstring AsFullPath(std::wstring_view p)
+static std::wstring NormalizePath(std::wstring_view p)
 {
   DWORD required = GetFullPathNameW(p.data(), 0, NULL, NULL);
   if (required == 0) {
@@ -477,6 +477,153 @@ static std::wstring AsFullPath(std::wstring_view p)
   return literal;
 }
 
+struct Encoder {
+  /* we use this construct because designated initializers are not
+   * available in c++ */
+  char table[256] = {};
+
+  Encoder()
+  {
+    table['!'] = '0';
+    table['<'] = '1';
+    table['>'] = '2';
+    table[':'] = '3';
+    table['"'] = '4';
+    table['|'] = '5';
+    table['?'] = '6';
+    table['*'] = '7';
+    table[' '] = '8';
+    table['.'] = '9';
+  }
+};
+
+static Encoder enc;
+
+static std::wstring Encode(std::wstring_view p)
+{
+  std::wstring str;
+
+  /* if we want to handle the illegal characters \x01-\x1F, we can do so
+   * in a similar way; just translate it like so:
+   *    # <-> #00
+   * \xXY <-> #XY
+   * or even better:
+   *    # <-> #0
+   * \x0Y <-> #('A' + Y)
+   * \x1Y <-> #('a' + Y)
+   */
+
+  bool inside_root = p.size() >= 2 && p[1] == ':';
+  for (wchar_t c : p) {
+    switch (c) {
+      case '.':
+        [[fallthrough]];
+      case '!':
+        [[fallthrough]];
+      case '<':
+        [[fallthrough]];
+      case '>':
+        [[fallthrough]];
+      case ':':
+        [[fallthrough]];
+      case '"':
+        [[fallthrough]];
+      case '|':
+        [[fallthrough]];
+      case '?':
+        [[fallthrough]];
+      case '*':
+        [[fallthrough]];
+      case ' ': {
+        // escape special characters, but not at the root of the path
+        if (inside_root) {
+          str += c;
+        } else {
+          str += '!';
+          str += enc.table[c];
+        }
+      } break;
+      case '/':
+        [[fallthrough]];
+      case '\\': {
+        inside_root = false;
+        str += c;
+      } break;
+      default: {
+        str += c;
+      }
+    }
+  }
+
+  return str;
+}
+
+static std::wstring Decode(std::wstring_view p)
+{
+  static constexpr char translation_table[] = {
+      '!', '<', '>', ':', '"', '|', '?', '*', ' ', '.',
+  };
+
+  std::wstring str;
+
+  for (auto iter = p.begin(); iter != p.end(); ++iter) {
+    switch (*iter) {
+      case '!': {
+        ++iter;
+        if (iter == p.end()) {
+          str += '!';
+          continue;
+        }
+
+        char c = *iter;
+        if ('0' <= c && c <= '9') {
+          str += translation_table[c - '0'];
+          continue;
+        }
+
+        str += '!';
+        str += *iter;
+      } break;
+
+      default: {
+        str += *iter;
+      } break;
+    }
+  }
+  return str;
+}
+
+static std::wstring AsFullPath(std::wstring_view p)
+{
+  /* this function basically does what GetFullPathName() would do
+   * except that it also handles invalid paths.
+   * The following characters are not allowed:
+   * <, >, :, ", /, \\, |, ?, *, \0--\31, (' ' and . at end of dir)
+   * We want to handle
+   * <,>,:,",|,?,*, (<SPC> and . at end of dir)
+   * Idea: Instead of normalizing p, we instead do
+   * encode -> normalize -> decode
+   * where encoding/decoding is replacing these nine chars with !<num>,
+   * where 1 <= num <= 9.  Obviously we also need to "escape" ! -- in this case
+   * with !0.  This gives us the following translation:
+   * !     <-> !0
+   * <     <-> !1
+   * >     <-> !2
+   * :     <-> !3
+   * "     <-> !4
+   * |     <-> !5
+   * ?     <-> !6
+   * *     <-> !7
+   * <SPC> <-> !8
+   * .     <-> !9 */
+
+  std::wstring encoded = Encode(p);
+  std::wstring normalized = NormalizePath(encoded);
+  std::wstring decoded = Decode(normalized);
+
+  return decoded;
+}
+
 /**
  * Replace all forward slashes by backwards slashes.
  * Also replaces all consecutive slashes by a single one unless they are
@@ -491,7 +638,6 @@ std::wstring ReplaceSlashes(std::wstring_view path)
   std::size_t head = std::min(path.find_first_not_of(path_separators), end);
 
   std::wstring result(head, L'\\');
-
 
   for (;;) {
     std::size_t copy_until
@@ -537,6 +683,7 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   }
 
   bool is_root = path.size() == 1 && IsPathSeparator(path[0]);
+
   std::wstring converted = AsFullPath(path);
   // for legacy reasons we do not want to have a trailing slash if
   // we were only given the "root" path, i.e. a path containing only a single
