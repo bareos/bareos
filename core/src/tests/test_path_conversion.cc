@@ -176,6 +176,7 @@ const std::vector<std::string_view> paths{
     "\\\\?\\literal_path"sv,
     "\\\\?\\literal_path\\.\\..\\\test"sv,
     long_file_name,
+
 };
 
 std::string OldU2U(const char* name)
@@ -238,6 +239,47 @@ TEST_P(Regression, wchar_long_path)
   std::wstring new_str = make_win32_path_UTF8_2_wchar(path);
   std::wstring old_str = OldU2W(path.data());
   EXPECT_EQ(new_str, old_str);
+}
+
+auto invalid_paths = {
+    "C:/dir./",        "C:/dir</",        "C:/dir>/",
+    "C:/dir*/",        "C:/dir?/",        "C:/dir /",
+
+    "C:/dir./rest/",   "C:/dir</rest/",   "C:/dir>/rest/",
+    "C:/dir*/rest/",   "C:/dir?/rest/",   "C:/dir /rest/",
+
+    "C:/./dir./rest/", "C:/./dir</rest/", "C:/./dir>/rest/",
+    "C:/./dir*/rest/", "C:/./dir?/rest/", "C:/./dir /rest/",
+
+    "C:/file.",        "C:/file<",        "C:/file>",
+    "C:/file*",        "C:/file?",        "C:/file ",
+
+    "C:/./file.",      "C:/./file<",      "C:/./file>",
+    "C:/./file*",      "C:/./file?",      "C:/./file ",
+};
+
+TEST_P(Regression, utf8_invalid_paths)
+{
+  using namespace std::literals;
+
+  for (auto path : invalid_paths) {
+    PoolMem converted;
+    unix_name_to_win32(converted.addr(), path);
+    std::string new_str{converted.c_str()};
+    std::string old_str = OldU2U(path);
+    EXPECT_EQ(new_str, old_str) << "During Conversion of " << path << ".";
+  }
+}
+
+TEST_P(Regression, wchar_invalid_paths)
+{
+  using namespace std::literals;
+
+  for (auto path : invalid_paths) {
+    std::wstring new_str = make_win32_path_UTF8_2_wchar(path);
+    std::wstring old_str = OldU2W(path);
+    EXPECT_EQ(new_str, old_str) << "During Conversion of " << path << ".";
+  }
 }
 
 INSTANTIATE_TEST_CASE_P(
