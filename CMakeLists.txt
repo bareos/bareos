@@ -93,6 +93,8 @@ if(BUILD_UNIVERSAL_CLIENT)
 endif()
 
 option(ENABLE_WEBUI "Build with WEBUI" ON)
+option(docs-only "Build only the documentation" OFF)
+option(docs-build-json "Update the configuration schema JSON files" OFF)
 
 if(docs-build-json)
   # check for wrong combinations of build flags
