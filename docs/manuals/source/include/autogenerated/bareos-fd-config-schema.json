@@ -101,18 +101,18 @@
           "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
-          "datatype": "DIRECTORY",
+          "datatype": "STRING",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"
+          "description": "Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command. Leftmost element has the highest priority."
         },
         "TlsCipherSuites": {
-          "datatype": "DIRECTORY",
+          "datatype": "STRING",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
+          "description": "Colon separated list of valid TLSv1.3 Ciphers; see \"openssl ciphers -s -tls1_3\" command. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
         },
         "TlsDhFile": {
           "datatype": "DIRECTORY",
@@ -391,18 +391,18 @@
           "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
-          "datatype": "DIRECTORY",
+          "datatype": "STRING",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"
+          "description": "Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command. Leftmost element has the highest priority."
         },
         "TlsCipherSuites": {
-          "datatype": "DIRECTORY",
+          "datatype": "STRING",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
+          "description": "Colon separated list of valid TLSv1.3 Ciphers; see \"openssl ciphers -s -tls1_3\" command. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
         },
         "TlsDhFile": {
           "datatype": "DIRECTORY",
@@ -681,18 +681,18 @@
           "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
-          "datatype": "DIRECTORY",
+          "datatype": "STRING",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"
+          "description": "Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command. Leftmost element has the highest priority."
         },
         "TlsCipherSuites": {
-          "datatype": "DIRECTORY",
+          "datatype": "STRING",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
+          "description": "Colon separated list of valid TLSv1.3 Ciphers; see \"openssl ciphers -s -tls1_3\" command. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
         },
         "TlsDhFile": {
           "datatype": "DIRECTORY",
