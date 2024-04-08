@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - increase warning level on C/C++ compiler [PR #1689]
 - VMware Plugin: Backup and Restore NVRAM [PR #1727]
 - doc: add backtick around *.?* description  [PR #1752]
+- PR template: remove backport hints [PR #1762]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -133,4 +134,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1745]: https://github.com/bareos/bareos/pull/1745
 [PR #1746]: https://github.com/bareos/bareos/pull/1746
 [PR #1752]: https://github.com/bareos/bareos/pull/1752
+[PR #1762]: https://github.com/bareos/bareos/pull/1762
 [unreleased]: https://github.com/bareos/bareos/tree/master
