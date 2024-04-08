@@ -27,7 +27,7 @@ if ([ -z "${ID}" ] || [ "${ID}" != "debian" ] && [ "${ID}" != "ubuntu" ]);then
  exit 77;
 fi
 
-PGVER=$(psql -V | awk '{gsub(".[0-9]$","",$3);print $3}')
+PGVER=$(psql -V | awk '{gsub(".[0-9]{1,}$","",$3);print $3}')
 if [ ${PGVER} -lt 10 ]; then
 # skip test
  echo "${TestName} test skipped: not compatible with PG <= 10"
