@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Backup and Restore NVRAM [PR #1727]
 - doc: add backtick around *.?* description  [PR #1752]
 - PR template: remove backport hints [PR #1762]
+- python-bareos: use TLS-PSK from core ssl module (available since Python >= 3.13) [PR #1756]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -134,5 +135,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1745]: https://github.com/bareos/bareos/pull/1745
 [PR #1746]: https://github.com/bareos/bareos/pull/1746
 [PR #1752]: https://github.com/bareos/bareos/pull/1752
+[PR #1756]: https://github.com/bareos/bareos/pull/1756
 [PR #1762]: https://github.com/bareos/bareos/pull/1762
 [unreleased]: https://github.com/bareos/bareos/tree/master
