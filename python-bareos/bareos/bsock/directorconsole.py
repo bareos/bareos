@@ -68,7 +68,7 @@ class DirectorConsole(LowLevel):
         group.add_argument(
             "--name",
             default="*UserAgent*",
-            help='use this to access a specific Bareos director named console. Otherwise it connects to the default console ("*UserAgent*").',
+            help='use this to access a specific Bareos director named console. Otherwise it connects to the default console ("%(default)s").',
             dest="BAREOS_name",
         )
 
@@ -83,7 +83,7 @@ class DirectorConsole(LowLevel):
         group.add_argument(
             "--port",
             default=9101,
-            help="Bareos Director network port.",
+            help="Bareos Director network port. Default: %(default)s.",
             dest="BAREOS_port",
         )
 
@@ -91,7 +91,7 @@ class DirectorConsole(LowLevel):
         group.add_argument(
             "--address",
             default="localhost",
-            help="Bareos Director network address.",
+            help="Bareos Director network address. Default: %(default)s.",
             dest="BAREOS_address",
         )
 
@@ -104,9 +104,11 @@ class DirectorConsole(LowLevel):
 
         group.add_argument(
             "--protocolversion",
-            default=ProtocolVersions.last,
             type=int,
-            help="Specify the Bareos console protocol version. Default: %(default)s (current).",
+            choices=set(protocolversion.value for protocolversion in ProtocolVersions)
+            | set([0]),
+            default=ProtocolVersions.last.value,
+            help="Specify the Bareos console protocol version (0: auto-detect, %(default)s: latest). Default: %(default)s.",
             dest="BAREOS_protocolversion",
         )
 
@@ -124,7 +126,7 @@ class DirectorConsole(LowLevel):
 
         group.add_argument(
             "--tls-psk-require",
-            help="Allow only encrypted connections. Default: False.",
+            help="Allow only encrypted connections. Default: %(default)s.",
             action="store_true",
             dest="BAREOS_tls_psk_require",
         )
@@ -192,7 +194,7 @@ class DirectorConsole(LowLevel):
         if tls_version is not None:
             self.tls_version = tls_version
         self.identity_prefix = "R_CONSOLE"
-        if protocolversion is not None:
+        if protocolversion is not None and protocolversion > 0:
             self.requested_protocol_version = int(protocolversion)
             self.protocol_messages.set_version(self.requested_protocol_version)
         self.connect(

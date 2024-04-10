@@ -46,17 +46,26 @@ from bareos.util.bareosbase64 import BareosBase64
 from bareos.util.password import Password
 import bareos.exceptions
 
-# Try to load the sslpsk module,
-# with implement TLS-PSK (Transport Layer Security - Pre-Shared-Key)
-# on top of the ssl module.
-# If it is not available, we continue anyway,
+# The ssl module support TLS-PSK (Transport Layer Security - Pre-Shared-Key)
+# since Python >= 3.13.
+# For some older Python versions, the TLS-PSK functionality
+# can be added by the sslpsk module,
+# with implement TLS-PSK on top of the ssl module.
+# If it is also not available, we continue anyway,
 # but don't use TLS-PSK.
-try:
-    import sslpsk
-except ImportError:
-    warnings.warn(
-        "Connection encryption via TLS-PSK is not available, as the module sslpsk is not installed."
-    )
+if not getattr(ssl, "HAS_PSK", False):
+
+    def format_warning_short(message, category, filename, lineno, line=""):
+        return f"{category.__name__}: {message}\n"
+
+    warnings.formatwarning = format_warning_short
+    try:
+        import sslpsk
+    except ImportError:
+        warnings.warn(
+            "Connection encryption via TLS-PSK is not available "
+            "(not available in 'ssl' and extra module 'sslpsk' is not installed)."
+        )
 
 
 class LowLevel(object):
@@ -182,7 +191,7 @@ class LowLevel(object):
         if self.tls_psk_require:
             if not self.is_tls_psk_available():
                 raise bareos.exceptions.ConnectionError(
-                    "TLS-PSK is required, but sslpsk module not loaded/available."
+                    "TLS-PSK is required, but not available."
                 )
             if not self.tls_psk_enable:
                 raise bareos.exceptions.ConnectionError(
@@ -267,23 +276,32 @@ class LowLevel(object):
         else:
             raise bareos.exceptions.ConnectionError("No password provided.")
         self.logger.debug("identity = {0}, password = {1}".format(identity, password))
-        try:
-            self.socket = sslpsk.wrap_socket(
-                client_socket,
-                ssl_version=self.tls_version,
-                ciphers="ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH",
-                psk=(password, identity),
-                server_side=False,
-            )
-        except ssl.SSLError as e:
-            # raise ConnectionError(
-            #     "failed to connect to host {0}, port {1}: {2}".format(self.address, self.port, str(e)))
-            # Using a general raise keep more information about the type of error.
-            raise
+        ciphers = "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"
+
+        if getattr(ssl, "HAS_PSK", False):
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            context.check_hostname = False
+            context.set_ciphers(ciphers)
+            context.set_psk_client_callback(lambda hint: (identity, password))
+            self.socket = context.wrap_socket(client_socket, server_side=False)
+        else:
+            try:
+                self.socket = sslpsk.wrap_socket(
+                    client_socket,
+                    ssl_version=self.tls_version,
+                    ciphers=ciphers,
+                    psk=(password, identity),
+                    server_side=False,
+                )
+            except ssl.SSLError as e:
+                # raise ConnectionError(
+                #     "failed to connect to host {0}, port {1}: {2}".format(self.address, self.port, str(e)))
+                # Using a general raise to keep more information about the type of error.
+                raise
         return True
 
     def get_tls_psk_identity(self):
-        """Bareos TLS-PSK excepts the identiy is a specific format."""
+        """Bareos TLS-PSK excepts the identity is a specific format."""
         name = str(self.name)
         if isinstance(self.name, bytes):
             name = self.name.decode("utf-8")
@@ -294,8 +312,8 @@ class LowLevel(object):
 
     @staticmethod
     def is_tls_psk_available():
-        """Checks if we have all required modules for TLS-PSK."""
-        return "sslpsk" in sys.modules
+        """Checks if TLS-PSK is available."""
+        return getattr(ssl, "HAS_PSK", False) or ("sslpsk" in sys.modules)
 
     def get_protocol_version(self):
         """Get the Bareos Console protocol version that is used.

@@ -24,6 +24,8 @@ Uses configargparse, if available,
 otherwise, falls back to argparse.
 """
 
+from pprint import pformat
+
 HAVE_CONFIG_ARG_PARSE_MODULE = False
 try:
     import configargparse as argparse
@@ -42,3 +44,9 @@ class ArgumentParser(argparse.ArgumentParser):
             self.add_argument(
                 "-c", "--config", is_config_file=True, help="Config file path."
             )
+
+    def format_values(self):
+        try:
+            return super().format_values()
+        except AttributeError:
+            return pformat(vars(self.parse_args()))
