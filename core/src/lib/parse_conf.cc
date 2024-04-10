@@ -68,12 +68,6 @@
 #include "lib/berrno.h"
 #include "lib/util.h"
 
-#if defined(HAVE_WIN32)
-#  include "shlobj.h"
-#else
-#  define MAX_PATH 1024
-#endif
-
 bool PrintMessage(void*, const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -353,29 +347,41 @@ ResourceItem* ConfigurationParser::GetResourceItem(
   return result;
 }
 
+#if defined(HAVE_WIN32)
+struct default_config_dir {
+  std::string path{DEFAULT_CONFIGDIR};
+
+  default_config_dir()
+  {
+    if (dyn::SHGetKnownFolderPath) {
+      PWSTR known_path{nullptr};
+      HRESULT hr = dyn::SHGetKnownFolderPath(FOLDERID_ProgramData, 0, nullptr,
+                                             &known_path);
+
+      if (SUCCEEDED(hr)) {
+        PoolMem utf8;
+        if (int len = wchar_2_UTF8(utf8.addr(), known_path); len > 0) {
+          if (utf8.c_str()[len - 1] == 0) {
+            // do not copy zero terminator
+            len -= 1;
+          }
+          path.assign(utf8.c_str(), len);
+          path += "\\Bareos";
+        }
+      }
+
+      CoTaskMemFree(known_path);
+    }
+  }
+};
+#endif
+
 const char* ConfigurationParser::GetDefaultConfigDir()
 {
 #if defined(HAVE_WIN32)
-  HRESULT hr;
-  static char szConfigDir[MAX_PATH + 1] = {0};
+  static default_config_dir def{};
 
-  if (!p_SHGetFolderPath) {
-    bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
-    return szConfigDir;
-  }
-
-  if (szConfigDir[0] == '\0') {
-    hr = p_SHGetFolderPath(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0,
-                           szConfigDir);
-
-    if (SUCCEEDED(hr)) {
-      bstrncat(szConfigDir, "\\Bareos", sizeof(szConfigDir));
-    } else {
-      bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
-    }
-  }
-
-  return szConfigDir;
+  return def.path.c_str();
 #else
   return CONFDIR;
 #endif
