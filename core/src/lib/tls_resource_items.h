@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,16 +38,16 @@
   { "EnableKtls", CFG_TYPE_BOOL, ITEM(res, enable_ktls_), 0, CFG_ITEM_DEFAULT, "false", \
      NULL, "If set to \"yes\", Bareos will allow the SSL implementation to use " \
      "Kernel TLS. " }, \
-  { "TlsCipherList", CFG_TYPE_STDSTRDIR, ITEM(res, cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
-     NULL, "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"}, \
-  { "TlsCipherSuites", CFG_TYPE_STDSTRDIR, ITEM(res, ciphersuites_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
-     NULL, "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`." \
+  { "TlsCipherList", CFG_TYPE_STDSTR, ITEM(res, cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
+     NULL, "Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command." \
+     " Leftmost element has the highest priority."}, \
+  { "TlsCipherSuites", CFG_TYPE_STDSTR, ITEM(res, ciphersuites_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
+     NULL, "Colon separated list of valid TLSv1.3 Ciphers; see \"openssl ciphers -s -tls1_3\" command." \
     " Leftmost element has the highest priority." \
-    " Currently only SHA256 ciphers are supported."},						\
+    " Currently only SHA256 ciphers are supported."}, \
   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res, tls_cert_.dhfile_), 0, 0, NULL, \
      NULL, "Path to PEM encoded Diffie-Hellman parameter file. " \
-     "If this directive is specified, DH key exchange will be used for " \
-     "the ephemeral keying, " \
+     "If this directive is specified, DH key exchange will be used for the ephemeral keying, " \
      "allowing for forward secrecy of communications." }, \
   { "TlsProtocol", CFG_TYPE_STDSTR, ITEM(res, protocol_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
      "20.0.0-", "OpenSSL Configuration: Protocol"}
@@ -71,7 +71,6 @@
      "specified \"TLS Certificate\"."}, \
   { "TlsAllowedCn", CFG_TYPE_STR_VECTOR, ITEM(res, tls_cert_.allowed_certificate_common_names_), 0, 0, NULL, \
      NULL, "\"Common Name\"s (CNs) of the allowed peer certificates." }
-
 
 /* clang-format on */
 #endif  // BAREOS_LIB_TLS_RESOURCE_ITEMS_H_
