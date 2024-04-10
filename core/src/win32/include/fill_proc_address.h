@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,10 +38,7 @@
 template <typename T>
 T BareosFillProcAddress(T& func_ptr, HMODULE hModule, LPCSTR lpProcName)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-function-type"
   func_ptr = reinterpret_cast<T>(GetProcAddress(hModule, lpProcName));
-#pragma GCC diagnostic pop
   return func_ptr;
 }
 
