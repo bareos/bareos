@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Bugfix: Clean up error handling in LDAP plugin, fix dependencies [PR #1720]
 - VMware Plugin: Backup and Restore NVRAM [PR #1733]
 - doc: add backtick around *.?* description  [PR #1757]
+- python-bareos: use TLS-PSK from core ssl module (available since Python >= 3.13) [PR #1764]
 
 ### Documentation
 - docs: fix Pool explanation for migration jobs [PR #1735]
@@ -444,4 +445,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1748]: https://github.com/bareos/bareos/pull/1748
 [PR #1749]: https://github.com/bareos/bareos/pull/1749
 [PR #1757]: https://github.com/bareos/bareos/pull/1757
+[PR #1764]: https://github.com/bareos/bareos/pull/1764
 [unreleased]: https://github.com/bareos/bareos/tree/master
