@@ -469,7 +469,7 @@ class pathid_cache;
 #define QUERY_HTABLE_PAGES 128
 
 // Current database version number schema = 2000 + 10 * Major + Minor
-#define BDB_VERSION 2230
+#define BDB_VERSION 2240
 
 typedef char** SQL_ROW;
 
