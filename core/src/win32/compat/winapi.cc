@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "fill_proc_address.h"
+#include "winapi.h"
 
 #define SET_API_POINTER_EX(name, symbol) \
   BareosFillProcAddress(p_##name, hLib, #symbol)
@@ -221,4 +222,24 @@ void InitWinAPIWrapper()
     hLib = LoadLibraryA("SHFOLDER.DLL");
     if (hLib) { SET_API_POINTER_EX(SHGetFolderPath, SHGetFolderPathA); }
   }
+
+  dyn::LoadDynamicFunctions();
 }
+
+namespace dyn {
+dynamic_function::dynamic_function(function_registry& registry, const char* lib)
+{
+  registry[lib].emplace_back(this);
+}
+
+void LoadDynamicFunctions()
+{
+  for (auto& [lib, funs] : dynamic_functions) {
+    auto library = LoadLibraryA(lib.c_str());
+
+    if (!library) continue;
+
+    for (auto* f : funs) { f->load(library); }
+  }
+}
+};  // namespace dyn
