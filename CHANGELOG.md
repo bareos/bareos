@@ -20,6 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: fix authentication race condition / deadlock [PR #1737]
 - stored: fix not counting files correctly in mac jobs when autoxflate is enabled [PR #1748]
 - cats: fixes BigSqlQuery header fetching [PR #1749]
+- Fix warning about missing delcandidates table in director [PR #1743]
 
 ## [23.0.2] - 2024-02-28
 
@@ -441,6 +442,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1733]: https://github.com/bareos/bareos/pull/1733
 [PR #1735]: https://github.com/bareos/bareos/pull/1735
 [PR #1737]: https://github.com/bareos/bareos/pull/1737
+[PR #1743]: https://github.com/bareos/bareos/pull/1743
 [PR #1748]: https://github.com/bareos/bareos/pull/1748
 [PR #1749]: https://github.com/bareos/bareos/pull/1749
 [PR #1757]: https://github.com/bareos/bareos/pull/1757
