@@ -104,8 +104,6 @@ t_GetCurrentDirectoryW p_GetCurrentDirectoryW = NULL;
 t_GetVolumePathNameW p_GetVolumePathNameW = NULL;
 t_GetVolumeNameForVolumeMountPointW p_GetVolumeNameForVolumeMountPointW = NULL;
 
-t_SHGetFolderPath p_SHGetFolderPath = NULL;
-
 t_CreateProcessA p_CreateProcessA = NULL;
 t_CreateProcessW p_CreateProcessW = NULL;
 
@@ -212,15 +210,6 @@ void InitWinAPIWrapper()
       SET_API_POINTER(WriteEncryptedFileRaw);
       SET_API_POINTER(CloseEncryptedFileRaw);
     }
-  }
-
-  hLib = LoadLibraryA("SHELL32.DLL");
-  if (hLib) {
-    SET_API_POINTER_EX(SHGetFolderPath, SHGetFolderPathA);
-  } else {
-    // If SHELL32 isn't found try SHFOLDER for older systems
-    hLib = LoadLibraryA("SHFOLDER.DLL");
-    if (hLib) { SET_API_POINTER_EX(SHGetFolderPath, SHGetFolderPathA); }
   }
 
   dyn::LoadDynamicFunctions();
