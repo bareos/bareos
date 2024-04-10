@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@ import time
 import tempfile
 import shutil
 import json
+import signal
 
 
 @BareosPlugin
@@ -48,6 +49,11 @@ class BareosFdPercona(BareosFdPluginBaseclass):
     def __init__(self, plugindef):
         # BareosFdPluginBaseclass.__init__(self, plugindef)
         super(BareosFdPercona, self).__init__(plugindef)
+        self.events = []
+        self.events.append(bEventStartBackupJob)
+        self.events.append(bEventStartRestoreJob)
+        self.events.append(bEventEndRestoreJob)
+        RegisterEvents(self.events)
         # we first create and backup the stream and after that
         # the lsn file as restore-object
         self.files_to_backup = ["lsnfile", "stream"]
@@ -394,27 +400,55 @@ class BareosFdPercona(BareosFdPluginBaseclass):
             return bRC_OK
 
         elif IOP.func == IO_CLOSE:
-            DebugMessage(100, "plugin_io called with IO_CLOSE\n")
-            self.subprocess_returnCode = self.stream.poll()
-            if self.subprocess_returnCode is None:
-                # Subprocess is open, we wait until it finishes and get results
-                try:
-                    self.stream.communicate()
-                    self.subprocess_returnCode = self.stream.poll()
-                except:
-                    JobMessage(
-                        M_ERROR,
-                        "Dump / restore command not finished properly\n",
-                    )
-                    bRC_Error
-                return bRC_OK
-            else:
+            DebugMessage(100, "plugin_io: called with IO_CLOSE\n")
+
+            if self.jobType == "B":
                 DebugMessage(
                     100,
-                    "Subprocess has terminated with returncode: %d\n"
-                    % self.subprocess_returnCode,
+                    "plugin_io: calling end_dumper() to wait for PID %s to terminate\n"
+                    % (self.stream.pid),
                 )
-                return bRC_OK
+                bareos_xtrabackup_dumper_returncode = self.end_dumper()
+                if bareos_xtrabackup_dumper_returncode != 0:
+                    JobMessage(
+                        M_FATAL,
+                        (
+                            "plugin_io[IO_CLOSE]: bareos_xtrabackup_dumper returncode:"
+                            " %s\n"
+                        )
+                        % (bareos_xtrabackup_dumper_returncode),
+                    )
+
+                    # Cleanup tmpdir
+                    shutil.rmtree(self.tempdir)
+                    self.subprocess_returnCode = bareos_xtrabackup_dumper_returncode
+
+                    return bRC_Error
+                else:
+                    self.subprocess_returnCode = bareos_xtrabackup_dumper_returncode
+
+            elif self.jobType == "R":
+                self.subprocess_returnCode = self.stream.poll()
+                if self.subprocess_returnCode is None:
+                    # Subprocess is open, we wait until it finishes and get results
+                    try:
+                        self.stream.communicate()
+                        self.subprocess_returnCode = self.stream.poll()
+                    except:
+                        JobMessage(
+                            M_ERROR,
+                            "Dump / restore command not finished properly\n",
+                        )
+                        return bRC_Error
+                    return bRC_OK
+                else:
+                    DebugMessage(
+                        100,
+                        "Subprocess has terminated with returncode: %d\n"
+                        % self.subprocess_returnCode,
+                    )
+
+            return bRC_OK
 
         elif IOP.func == IO_SEEK:
             return bRC_OK
@@ -425,6 +459,12 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 "plugin_io called with unsupported IOP:" + str(IOP.func) + "\n",
             )
             return bRC_OK
+
+    def handle_plugin_event(self, event):
+        if event in self.events:
+            self.jobType = chr(bareosfd.GetValue(bareosfd.bVarType))
+            DebugMessage(100, "jobType: %s\n" % (self.jobType))
+        return bRC_OK
 
     def end_backup_file(self):
         """
@@ -487,7 +527,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 % self.stream.returncode,
             )
             if returnCode != 0:
-                msg = ["Restore command returned non-zero value: %d" % return_code]
+                msg = ["Restore command returned non-zero value: %d" % returnCode]
                 if self.log:
                     msg += ['log file: "%s"' % self.log]
                 JobMessage(M_ERROR, ", ".join(msg) + "\n")
@@ -521,6 +561,59 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 % (self.max_to_lsn, ROP.jobid),
             )
         return bRC_OK
+
+    def end_dumper(self):
+        """
+        Wait for bareos_xtrabackup_dumper to terminate
+        """
+        bareos_xtrabackup_dumper_returncode = None
+        # Wait timeout before sending TERM to the process
+        timeout = 30
+        start_time = int(time.time())
+        sent_sigterm = False
+        while self.stream.poll() is None:
+            if int(time.time()) - start_time > timeout:
+                DebugMessage(
+                    100,
+                    "Timeout wait for bareos_xtrabackup_dumper PID %s to terminate\n"
+                    % (self.stream.pid),
+                )
+                if not sent_sigterm:
+                    DebugMessage(
+                        100,
+                        "sending SIGTERM to bareos_xtrabackup_dumper PID %s\n"
+                        % (self.stream.pid),
+                    )
+                    os.kill(self.stream.pid, signal.SIGTERM)
+                    sent_sigterm = True
+                    # Wait timeout after sending TERM to the process
+                    timeout = 10
+                    start_time = int(time.time())
+                    continue
+                else:
+                    DebugMessage(
+                        100,
+                        "Giving up to wait for bareos_xtrabackup_dumper PID %s to terminate\n"
+                        % (self.stream.pid),
+                    )
+                    # Set return code to 9 because we've tried to terminate subprocess earlier
+                    self.stream.returncode = 9
+                    break
+            DebugMessage(
+                100,
+                "Waiting for bareos_xtrabackup_dumper PID %s to terminate\n"
+                % (self.stream.pid),
+            )
+            time.sleep(1)
+
+        bareos_xtrabackup_dumper_returncode = self.stream.returncode
+        DebugMessage(
+            100,
+            "end_dumper() bareos_xtrabackup_dumper returncode: %s\n"
+            % (bareos_xtrabackup_dumper_returncode),
+        )
+
+        return bareos_xtrabackup_dumper_returncode
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4

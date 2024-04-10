@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - doc: add backtick around *.?* description  [PR #1752]
 - PR template: remove backport hints [PR #1762]
 - python-bareos: use TLS-PSK from core ssl module (available since Python >= 3.13) [PR #1756]
+- [percona-xtrabackup] prevent High memory usage for no reason (IO_CLOSE) [PR #1724]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -129,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1718]: https://github.com/bareos/bareos/pull/1718
 [PR #1719]: https://github.com/bareos/bareos/pull/1719
 [PR #1721]: https://github.com/bareos/bareos/pull/1721
+[PR #1724]: https://github.com/bareos/bareos/pull/1724
 [PR #1727]: https://github.com/bareos/bareos/pull/1727
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
