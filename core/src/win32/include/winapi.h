@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,9 @@
  */
 #  include <windef.h>
 #  include <string>
+#  include <unordered_map>
+#  include <vector>
+#  include <shlobj.h>
 
 #  ifndef POOLMEM
 typedef char POOLMEM;
@@ -276,6 +279,48 @@ extern t_SHGetFolderPath p_SHGetFolderPath;
 typedef INT(WSAAPI* t_InetPton)(INT Family,
                                 PCTSTR pszAddrString,
                                 PVOID pAddrBuf);
+
+namespace dyn {
+class dynamic_function;
+using function_registry
+    = std::unordered_map<std::string, std::vector<dynamic_function*>>;
+class dynamic_function {
+ protected:
+  dynamic_function(function_registry& reg, const char* lib);
+  virtual ~dynamic_function() {}
+
+ public:
+  virtual bool load(HMODULE lib) = 0;
+};
+
+inline function_registry dynamic_functions{};
+
+#  define DEFINE_DYN_FUNC(Lib, Name)                                     \
+    inline struct dyn##Name : dynamic_function {                         \
+      static constexpr const char* name = #Name;                         \
+      using type = decltype(::Name);                                     \
+      type* ptr{nullptr};                                                \
+      dyn##Name(function_registry& reg) : dynamic_function(reg, Lib) {}  \
+      template <typename... Args> auto operator()(Args... args)          \
+      {                                                                  \
+        return ptr(std::forward<Args>(args)...);                         \
+      }                                                                  \
+      operator bool() const { return (ptr != nullptr); }                 \
+      bool load(HMODULE lib) override                                    \
+      {                                                                  \
+        ptr = reinterpret_cast<type*>((void*)GetProcAddress(lib, name)); \
+        return (ptr != nullptr);                                         \
+      }                                                                  \
+    } Name(dynamic_functions);
+
+DEFINE_DYN_FUNC("KERNEL32.DLL", FindFirstFileW);
+DEFINE_DYN_FUNC("KERNEL32.DLL", FindFirstFileA);
+DEFINE_DYN_FUNC("SHELL32.DLL", SHGetKnownFolderPath);
+
+void LoadDynamicFunctions();
+
+#  undef DEFINE_DYNAMIC_FUNC
+};  // namespace dyn
 
 #endif
 #endif  // BAREOS_WIN32_INCLUDE_WINAPI_H_
