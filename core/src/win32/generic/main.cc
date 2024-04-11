@@ -335,7 +335,7 @@ void backtrace(std::stringstream& bt, CONTEXT* ctx)
   }
 }
 
-void GatherModuleInfo(std::stringstream& info)
+void GatherModuleInfo(std::stringstream& infostream)
 {
   auto callback = +[](PCSTR ModuleName, DWORD64 ModuleBase, ULONG ModuleSize,
                       PVOID UserContext) -> int {
@@ -365,7 +365,7 @@ void GatherModuleInfo(std::stringstream& info)
   };
 
   dbg.EnumerateLoadedModules64(::GetCurrentProcess(), callback,
-                               static_cast<PVOID>(&info));
+                               static_cast<PVOID>(&infostream));
 }
 
 extern const char* progname;
@@ -592,7 +592,7 @@ int WINAPI WinMain(HINSTANCE Instance,
       return 0;
     }
 
-    MessageBox(NULL, cmdLine, _("Bad Command Line Option"), MB_OK);
+    MessageBox(NULL, cmdLine, T_("Bad Command Line Option"), MB_OK);
 
     /* Show the usage dialog */
     MessageBox(NULL, usage, APP_DESC, MB_OK | MB_ICONINFORMATION);
