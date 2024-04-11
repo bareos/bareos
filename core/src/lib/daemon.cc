@@ -44,7 +44,10 @@
 #if defined(HAVE_WIN32)
 
 const char* progname = nullptr;
-void daemon_start(const char* my_name, int, std::string) { progname = my_name; }
+void daemon_start(const char* daemonname, int, std::string)
+{
+  progname = daemonname;
+}
 
 #else  // !HAVE_WIN32
 
