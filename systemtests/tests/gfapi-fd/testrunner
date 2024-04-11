@@ -54,7 +54,7 @@ BackupDirectory="${tmp}/data"
 [ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
 "${SUDO}" mount -t glusterfs ${gfapi_fd_host}:/testvol "${tmp}/data"
 
-"${SUDO}" rm -Rvf "${tmp}/data/*"
+"${SUDO}" rm -Rvf "${tmp}/data"/*
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
