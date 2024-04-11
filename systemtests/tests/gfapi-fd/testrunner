@@ -52,9 +52,9 @@ BackupDirectory="${tmp}/data"
 
 
 [ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
-"${SUDO}" mount -t glusterfs ${gfapi_fd_host}:/testvol "${tmp}/data"
+"${SUDO}" mount -t glusterfs "${gfapi_fd_host}:/${gfapi_fd_testvolume}" "${tmp}/data"
 
-"${SUDO}" rm -Rvf "${tmp}/data/*"
+"${SUDO}" rm -Rvf "${tmp}/data"/*
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
@@ -69,7 +69,7 @@ cat <<END_OF_DATA_BACKUP >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=100 storage=File
+setdebug level=150 storage=File client
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
