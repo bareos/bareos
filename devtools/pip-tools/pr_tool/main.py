@@ -183,8 +183,11 @@ class CommitAnalyzer:
     def _check_headline(cls, text):
         issues = []
         # we encourage to use no more than 50 chars, but still accept up to 60
-        if len(text) > 60:
-            issues.append("headline too long")
+        max_headline_length = 60
+        if len(text) > max_headline_length:
+            issues.append(
+                "headline too long ({} > {})".format(len(text), max_headline_length)
+            )
         res = cls.headline_pattern.match(text)
         if res:
             issues.append("headline starts with '{}'".format(res.group(0)))
@@ -198,8 +201,9 @@ class CommitAnalyzer:
                 "signed-off-by:"
             ):
                 continue
-            if len(line) > 72:
-                return ["body contains line longer 72 chars"]
+            max_line_length = 72
+            if len(line) > max_line_length:
+                return ["body contains line longer {} chars".format(max_line_length)]
         return []
 
     def _record_issues(self, commit, headline, issues):
