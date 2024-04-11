@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,8 @@ struct ResourceItem {
    * start_version: directive has been introduced in this version
    * end_version:   directive is deprecated since this version */
   const char* versions;
-  /* description of the directive, used for the documentation.
+  /* short description of the directive, in plain text,
+   * used for the documentation.
    * Full sentence.
    * Every new directive should have a description. */
   const char* description;
