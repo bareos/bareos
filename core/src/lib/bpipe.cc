@@ -56,7 +56,7 @@ static void BuildArgcArgv(char* cmd, int* bargc, char* bargv[], int max_arg);
  * a bi-directional pipe so that the user can read from and
  * write to the program.
  */
-Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
+Bpipe* OpenBpipe(const char* prog, int wait, const char* mode, bool dup_stderr)
 {
   char* bargv[MAX_ARGV];
   int bargc, i;
