@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - doc: add backtick around *.?* description  [PR #1757]
 - python-bareos: use TLS-PSK from core ssl module (available since Python >= 3.13) [PR #1764]
 - docs: improve handling of ResourceItem descriptions [PR #1766]
+- stored: fix some sd error messages; add additional check during restore; split up always-incremental-consolidate test [PR #1769]
 
 ### Documentation
 - docs: fix Pool explanation for migration jobs [PR #1735]
@@ -450,4 +451,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1757]: https://github.com/bareos/bareos/pull/1757
 [PR #1764]: https://github.com/bareos/bareos/pull/1764
 [PR #1766]: https://github.com/bareos/bareos/pull/1766
+[PR #1769]: https://github.com/bareos/bareos/pull/1769
 [unreleased]: https://github.com/bareos/bareos/tree/master
