@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: improve handling of ResourceItem descriptions [PR #1761]
 - pr-tool: give hint about commit headline length limits [PR #1763]
 - stored: fix some sd error messages; add additional check during restore; split up always-incremental-consolidate test [PR #1722]
+- Generate LICENSE.txt from LICENSE.template [PR #1753]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -141,6 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1745]: https://github.com/bareos/bareos/pull/1745
 [PR #1746]: https://github.com/bareos/bareos/pull/1746
 [PR #1752]: https://github.com/bareos/bareos/pull/1752
+[PR #1753]: https://github.com/bareos/bareos/pull/1753
 [PR #1756]: https://github.com/bareos/bareos/pull/1756
 [PR #1761]: https://github.com/bareos/bareos/pull/1761
 [PR #1762]: https://github.com/bareos/bareos/pull/1762
