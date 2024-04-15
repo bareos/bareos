@@ -27,7 +27,7 @@
 #ifndef BAREOS_LIB_BPIPE_H_
 #define BAREOS_LIB_BPIPE_H_
 
-struct btimer_t;
+#include "btimers.h"
 
 class Bpipe {
  public:
@@ -39,7 +39,7 @@ class Bpipe {
   FILE* wfd;
 };
 
-Bpipe* OpenBpipe(char* prog,
+Bpipe* OpenBpipe(const char* prog,
                  int wait,
                  const char* mode,
                  bool dup_stderr = true);
