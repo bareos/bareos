@@ -204,6 +204,16 @@ void ChunkedDevice::StopThreads()
   }
 }
 
+auto ChunkedDevice::getInflightLease(chunk_io_request* request)
+    -> std::optional<InflightLease>
+{
+  try {
+    return InflightLease(this, request);
+  } catch (InflightChunkException&) {
+    return std::nullopt;
+  }
+}
+
 // Set the inflight flag for a chunk.
 bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
 {
