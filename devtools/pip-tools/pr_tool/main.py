@@ -23,7 +23,7 @@ import logging
 import re
 
 from argparse import ArgumentParser, Namespace, ArgumentTypeError
-from os import environ, chdir
+from os import environ, chdir, path
 from pprint import pprint
 from sys import stdout, stderr
 from time import sleep
@@ -38,6 +38,7 @@ from changelog_utils import (
     update_links,
     guess_section,
 )
+from license_utils import generate_license_file
 
 from check_sources.main import main_program as check_sources
 from . import backport
@@ -348,6 +349,29 @@ def get_plain_label_list(label_list):
     return [x["name"].lower() for x in label_list]
 
 
+def get_git_file_modified(repo, path):
+    for item in repo.index.diff(None):
+        if path == item.b_path:
+            return True
+    return False
+
+
+def update_license_file(repo):
+    license_filename = "LICENSE.txt"
+    license_file_path = f"{repo.working_tree_dir}/{license_filename}"
+    license_template = "LICENSE.template"
+    license_template_path = f"{repo.working_tree_dir}/{license_template}"
+    if not path.isfile(license_template_path):
+        print(f"skipped, template file '{license_template}' not found.")
+        return None
+    generate_license_file(license_template_path, license_file_path)
+    if get_git_file_modified(repo, license_filename):
+        print(f"Updating {license_filename}")
+        repo.git.commit("-m", f"Update {license_filename}", license_file_path)
+        return True
+    return None
+
+
 def get_changelog_section(pr):
     labels = get_plain_label_list(pr["labels"])
     if "documentation" in labels:
@@ -411,6 +435,7 @@ def parse_cmdline_args():
         help="ignore (required) github status checks",
     )
     changelog_parser = subparsers.add_parser("add-changelog")
+    license_parser = subparsers.add_parser("update-license")
     merge_parser = subparsers.add_parser("merge")
     merge_parser.add_argument(
         "--skip-merge",
@@ -509,12 +534,18 @@ def merge_pr(
 
     original_commit = repo.head.commit
     try:
+        git_modified = False
+        if update_license_file(repo):
+            git_modified = True
         if check_changelog_entry(repo, pr):
             print("Keeping existing changelog entry.")
         else:
             print("Adding changelog entry")
             if not add_changelog_entry(repo, pr):
                 raise Exception("Adding changelog failed")
+            git_modified = True
+
+        if git_modified:
             repo.git.push()
 
         if check_merge_is_possible(repo, pr):
@@ -542,6 +573,7 @@ def merge_pr(
                 repo.git.rebase("--abort")
                 raise e
 
+            update_license_file(repo)
             print("Adding changelog entry again")
             if not add_changelog_entry(repo, pr):
                 raise Exception("Adding changelog failed")
@@ -743,6 +775,11 @@ def main():
             ret = False
 
         handle_ret(ret)
+    elif args.subcommand == "update-license":
+        if update_license_file(repo) in [None, True]:
+            exit(0)
+        else:
+            exit(1)
     elif args.subcommand == "add-changelog":
         if check_changelog_entry(repo, pr_data):
             print("Already have Changelog for this PR")
