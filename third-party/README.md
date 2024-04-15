@@ -8,7 +8,8 @@ Each Library will be put into its own subdirectory with `git subtree` and will h
 
 A typical git subtree command would look like this : `git subtree add --prefix destination/path https://www.yourgithost.com/your/repo yourbranch(usuallymaster) --squash`
 
-Make sure the library license is covert by `core/LICENSE`. At best, the library is also licensed as AGPL-3. If it is not already covered, a section needs to be added for it in `core/LICENSE` and `debian/copyright.footer`. Also execute `cd debian; make copyright` to update `debian/copyright`.
+Make sure the library license is covert by `LICENSE.txt`. At best, the library is also licensed as AGPL-3. If it is not already covered, a section needs to be added for it in `LICENSE.template`.
+Also execute `devtools/update-license-file.sh` to update `LICENSE.txt`, and commit new version.
 
 ### What to add?
 

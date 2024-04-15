@@ -1340,7 +1340,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/%{name}
-%doc core/AGPL-3.0.txt core/LICENSE core/README.* debian/copyright
+%license AGPL-3.0.txt LICENSE.txt  
+%doc core/README.*
 #TODO: cmake does not create build directory
 #doc build/
 
