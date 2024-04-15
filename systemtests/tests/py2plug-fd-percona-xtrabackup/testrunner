@@ -30,6 +30,7 @@ JobName=backup-bareos-fd
 XTRABACKUP="${XTRABACKUP_BINARY} --defaults-file=mysqldefaults"
 
 shutdown_mysql_server(){
+[ -f "mysql/mysqld.pid" ] && kill "$(cat mysql/mysqld.pid)" || :
 [ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
 }
 
