@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [percona-xtrabackup] prevent High memory usage for no reason (IO_CLOSE) [PR #1724]
 - docs: improve handling of ResourceItem descriptions [PR #1761]
 - pr-tool: give hint about commit headline length limits [PR #1763]
+- stored: fix some sd error messages; add additional check during restore; split up always-incremental-consolidate test [PR #1722]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -132,6 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1718]: https://github.com/bareos/bareos/pull/1718
 [PR #1719]: https://github.com/bareos/bareos/pull/1719
 [PR #1721]: https://github.com/bareos/bareos/pull/1721
+[PR #1722]: https://github.com/bareos/bareos/pull/1722
 [PR #1724]: https://github.com/bareos/bareos/pull/1724
 [PR #1727]: https://github.com/bareos/bareos/pull/1727
 [PR #1728]: https://github.com/bareos/bareos/pull/1728

@@ -122,6 +122,7 @@ fi
 export PYTHONPATH=@pythonpath@
 
 gfapi_fd_host=@gfapi_fd_host@
+gfapi_fd_testvolume=@gfapi_fd_testvolume@
 
 dbHost="@dbHost@"
 test_db_port=@test_db_port@

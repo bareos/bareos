@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -514,6 +514,8 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
       Dmsg0(200, "VOL_NO_MEDIA or default.\n");
       /* Send error message */
       if (!dev->poll) {
+        Jmsg(jcr, M_WARNING, 0, "Could not check volume label: ERR=%s\n",
+             jcr->errmsg);
       } else {
         Dmsg1(200, "Msg suppressed by poll: %s\n", jcr->errmsg);
       }
