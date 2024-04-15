@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include "stored/dev.h"
 #include "ordered_cbuf.h"
+#include <optional>
 
 template <typename T> class alist;
 
@@ -103,8 +104,43 @@ struct chunk_descriptor {
   bool opened;        /* An open call was done */
 };
 
+class InflightChunkException : public std::exception {};
 
 class ChunkedDevice : public Device {
+  class InflightLease {
+    ChunkedDevice* m_device;
+    chunk_io_request* m_request;
+
+   public:
+    InflightLease(ChunkedDevice* t_device, chunk_io_request* t_request)
+        : m_device(t_device), m_request(t_request)
+    {
+      if (!m_device->SetInflightChunk(m_request)) {
+        throw InflightChunkException();
+      }
+    }
+    ~InflightLease()
+    {
+      if (m_device && m_request) { m_device->ClearInflightChunk(m_request); }
+    }
+
+    InflightLease(const InflightLease&) = delete;
+    InflightLease& operator=(const InflightLease&) = delete;
+
+    InflightLease(InflightLease&& other) noexcept
+        : m_device(other.m_device), m_request(other.m_request)
+    {
+      other.m_device = nullptr;
+      other.m_request = nullptr;
+    };
+    InflightLease& operator=(InflightLease&& other) noexcept
+    {
+      std::swap(m_device, other.m_device);
+      std::swap(m_request, other.m_request);
+      return *this;
+    };
+  };
+
  private:
   // Private Members
   bool io_threads_started_{};
@@ -137,6 +173,7 @@ class ChunkedDevice : public Device {
   bool use_mmap_{};
 
   // Protected Methods
+  std::optional<InflightLease> getInflightLease(chunk_io_request* request);
   bool SetInflightChunk(chunk_io_request* request);
   void ClearInflightChunk(chunk_io_request* request);
   bool IsInflightChunk(chunk_io_request* request);
