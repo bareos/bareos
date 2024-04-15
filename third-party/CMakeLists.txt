@@ -40,3 +40,6 @@ if(USE_SYSTEM_XXHASH)
 else()
   include(./xxHash.cmake)
 endif()
+
+include(CPM)
+CPMFindPackage(NAME GSL GITHUB_REPOSITORY "microsoft/GSL" GIT_TAG "v4.0.0" VERSION "4.0.0")
