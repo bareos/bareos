@@ -85,7 +85,7 @@ class IXMLDOMDocument;
 #  include "Win2003/vswriter.h"
 #  include "Win2003/vsbackup.h"
 
-#  define VSS_ERROR_OBJECT_ALREADY_EXISTS ((HRESULT) 0x8004230D)
+#  define VSS_ERROR_OBJECT_ALREADY_EXISTS ((HRESULT)0x8004230D)
 
 #  include "vss.h"
 
