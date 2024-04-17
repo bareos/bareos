@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -79,14 +79,19 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
   item->payload.chksum[chksum_length] = '\0';
 
   item->payload.delta_seq = delta_seq;
-  item->payload.filenr = filenr_++;
-  file_list_->insert(item->fname, item);
-
-  if (chksum) {
-    Dmsg4(debuglevel, "add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n", fname,
-          lstat, delta_seq, chksum);
+  item->payload.filenr = filenr_;
+  if (file_list_->insert(item->fname, item)) {
+    if (chksum) {
+      Dmsg4(debuglevel,
+            "[file_nr = %lld] add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n",
+            item->payload.filenr, fname, lstat, delta_seq, chksum);
+    } else {
+      Dmsg2(debuglevel, "[file_nr = %lld] add fname=<%s> lstat=%s\n",
+            item->payload.filenr, fname, lstat);
+    }
+    filenr_ += 1;
   } else {
-    Dmsg2(debuglevel, "add fname=<%s> lstat=%s\n", fname, lstat);
+    Dmsg1(debuglevel, "fname=<%s> is already registered.\n", fname);
   }
 
   return retval;
