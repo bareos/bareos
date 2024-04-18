@@ -1,0 +1,4 @@
+@bindir@/bareos-triggerjob.py
+@bindir@/bsmc
+@confdir@/bsmc.conf
+@scriptdir@/reschedule_job_as_full.sh

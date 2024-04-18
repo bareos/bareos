@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2023 Bareos GmbH & Co KG
+#               2013-2024 Bareos GmbH & Co KG
 #
 
 Name:       bareos
@@ -1340,7 +1340,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/%{name}
-%license AGPL-3.0.txt LICENSE.txt  
+%license AGPL-3.0.txt LICENSE.txt
 %doc core/README.*
 #TODO: cmake does not create build directory
 #doc build/
@@ -1494,6 +1494,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_bindir}/bareos-triggerjob.py
 %{_bindir}/bsmc
 %attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bsmc.conf
+%{script_dir}/reschedule_job_as_full.sh
 
 
 %files       contrib-filedaemon-python-plugins
