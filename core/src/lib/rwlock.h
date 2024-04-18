@@ -72,5 +72,6 @@ extern int RwlReadunlock(brwlock_t* rwl);
 extern int RwlWritelock(brwlock_t* rwl);
 extern int RwlWritetrylock(brwlock_t* rwl);
 extern int RwlWriteunlock(brwlock_t* rwl);
+void RwlAssertWriterIsMe(brwlock_t* rwl);
 
 #endif  // BAREOS_LIB_RWLOCK_H_
