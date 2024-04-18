@@ -994,6 +994,12 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                        AttributesDbRecord* ar)
       = 0;
+
+ protected:
+  void AssertOwnership()
+  {
+    if (!is_private_) { RwlAssertWriterIsMe(&lock_); }
+  }
 };
 
 BareosDb* db_init_database(JobControlRecord* jcr,
