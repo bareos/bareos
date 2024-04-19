@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,10 +75,6 @@
 
 #ifdef _WIN64
 #  define GWL_USERDATA GWLP_USERDATA
-#endif
-
-#ifndef INT64
-#  define INT64 long long int
 #endif
 
 void sleep(int);
@@ -179,11 +175,11 @@ struct stat {
 #define S_IRUSR S_IREAD
 #define S_IWUSR S_IWRITE
 #define S_IXUSR S_IEXEC
-#define S_ISREG(x) (((x)&S_IFMT) == S_IFREG)
-#define S_ISLNK(x) (((x)&S_IFMT) == S_IFLNK)
-#define S_ISDIR(x) (((x)&S_IFMT) == S_IFDIR)
+#define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
+#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
+#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
 #define S_ISCHR(x) 0
-#define S_ISBLK(x) (((x)&S_IFMT) == S_IFBLK)
+#define S_ISBLK(x) (((x) & S_IFMT) == S_IFBLK)
 #define S_ISFIFO(x) 0
 
 #define S_IRGRP 000040
