@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - dbcheck: fix dbcheck crash if password is not set in catalog resource [PR #1731]
 - stored: fix some sd error messages; add additional check during restore; split up always-incremental-consolidate test [PR #1770]
+- Allow cross-building for Windows on newer compiler [PR #1777]
 
 ### Fixed
 - stored: fix authentication race condition / deadlock [PR #1736]
@@ -665,4 +666,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1736]: https://github.com/bareos/bareos/pull/1736
 [PR #1750]: https://github.com/bareos/bareos/pull/1750
 [PR #1770]: https://github.com/bareos/bareos/pull/1770
+[PR #1777]: https://github.com/bareos/bareos/pull/1777
 [unreleased]: https://github.com/bareos/bareos/tree/master
