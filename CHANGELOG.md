@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - systemtests: backport `wait for jobs to terminate` function [PR #1747]
 - stored: fix some sd error messages; add additional check during restore; split up always-incremental-consolidate test [PR #1771]
+- Allow cross-building for Windows on newer compiler [PR #1778]
 
 ## [21.1.9] - 2024-02-28
 
@@ -737,4 +738,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1747]: https://github.com/bareos/bareos/pull/1747
 [PR #1751]: https://github.com/bareos/bareos/pull/1751
 [PR #1771]: https://github.com/bareos/bareos/pull/1771
+[PR #1778]: https://github.com/bareos/bareos/pull/1778
 [unreleased]: https://github.com/bareos/bareos/tree/master
