@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,7 +102,7 @@ class IXMLDOMDocument;
 #    include "Win2003/vsbackup.h"
 #  endif
 
-#  define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
+#  define VSS_ERROR_OBJECT_ALREADY_EXISTS ((HRESULT)0x8004230D)
 
 #  include "vss.h"
 
@@ -304,10 +304,8 @@ static inline wstring GetUniqueVolumeNameForPath(wstring path)
     return L"";
   }
 
-  /*
-   * Get the volume name alias (might be different from the unique volume name
-   * in rare cases).
-   */
+  /* Get the volume name alias (might be different from the unique volume name
+   * in rare cases). */
   if (!p_GetVolumeNameForVolumeMountPointW
       || !p_GetVolumeNameForVolumeMountPointW(volumeRootPath, volumeName,
                                               MAX_PATH)) {
@@ -370,7 +368,7 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
     pVssClient->AddVolumeMountPointSnapshots(pVssObj, (wchar_t*)vol);
     Dmsg1(200, "%s added to snapshotset \n", pvol);
     retval = true;
-  } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
+  } else if (hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
     Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol);
   } else {
     Dmsg3(200,
@@ -532,13 +530,11 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
       return false;
     }
 
-    /*
-     * 2. SetBackupState
+    /* 2. SetBackupState
      *
      * Generate a bEventVssSetBackupState event and if none of the plugins
      * give back a bRC_Skip it means this will not be performed by any plugin
-     * and we should do the generic handling ourself in the core.
-     */
+     * and we should do the generic handling ourself in the core. */
     if (GeneratePluginEvent(jcr_, bEventVssSetBackupState) != bRC_Skip) {
       VSS_BACKUP_TYPE backup_type;
 
@@ -611,12 +607,10 @@ bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
   int timeout = 600; /* 10 minutes.... */
   int queryErrors = 0;
 
-  /*
-   * Wait until the async operation finishes
+  /* Wait until the async operation finishes
    * unfortunately we can't use a timeout here yet.
    * the interface would allow it on W2k3,
-   * but it is not implemented yet....
-   */
+   * but it is not implemented yet.... */
   do {
     if (hrReturned != S_OK) { Sleep(1000); }
     hrReturned = S_OK;
@@ -646,11 +640,9 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
   szDrive[1] = ':';
   szDrive[2] = 0;
 
-  /*
-   * szDriveLetters contains all drive letters in uppercase
+  /* szDriveLetters contains all drive letters in uppercase
    * If a drive can not being added, it's converted to lowercase in
-   * szDriveLetters
-   */
+   * szDriveLetters */
   for (size_t i = 0; i < strlen(szDriveLetters); i++) {
     szDrive[0] = szDriveLetters[i];
     volume = GetUniqueVolumeNameForPath(szDrive);
@@ -745,8 +737,7 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
   CComPtr<IVssAsync> pAsync2;
   HRESULT hr;
 
-  /*
-   * See
+  /* See
    * http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx.
    */
   if (!pVssObject_ || bBackupIsInitialized_) {
@@ -762,7 +753,7 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
 
   // startSnapshotSet
   hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
-  while ((unsigned)hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
+  while (hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
     Bmicrosleep(5, 0);
     Jmsg(jcr_, M_INFO, 0, "VSS_E_SNAPSHOT_SET_IN_PROGRESS, retrying ...\n");
     hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
@@ -865,11 +856,9 @@ bool VSSClientGeneric::CloseBackup()
     metadata_ = NULL;
   }
 
-  /*
-   * FIXME?: The docs
+  /* FIXME?: The docs
    * http://msdn.microsoft.com/en-us/library/aa384582%28v=VS.85%29.aspx say this
-   * isn't required...
-   */
+   * isn't required... */
   if (uidCurrentSnapshotSet_ != GUID_NULL) {
     VSS_ID idNonDeletedSnapshotID = GUID_NULL;
     LONG lSnapshots;
@@ -975,8 +964,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 // Check the status for all selected writers
 bool VSSClientGeneric::CheckWriterStatus()
 {
-  /*
-   * See
+  /* See
    * http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx
    */
   IVssBackupComponents* pVssObj = (IVssBackupComponents*)pVssObject_;
