@@ -209,6 +209,7 @@ class Device {
 
  public:
   Device() = default;
+  virtual bool setup() { return true; }; // optional device-specific setup
   virtual ~Device();
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
