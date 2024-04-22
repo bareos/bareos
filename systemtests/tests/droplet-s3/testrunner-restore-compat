@@ -36,11 +36,12 @@ JobName=backup-s3-fd
 
 start_test
 
-cat <<END_OF_DATA >$tmp/bconcmds
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $tmp/restore-compat.log
 wait
+setdebug storage=AlternateStorage trace=1 level=200
 .sql query="update Media set MediaType='AlternateStorage'"
 restore client=bareos-fd fileset=SelfTest storage=AlternateStorage where=$tmp/bareos-restores select all done
 yes
