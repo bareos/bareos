@@ -90,7 +90,7 @@ static ResourceItem cli_items[] = {
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL},
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_client, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client, plugin_names), 0, 0, NULL, NULL, NULL},
-  {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client, scripts_directory), 0, 0, NULL, NULL, NULL},
+  {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client, scripts_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_SCRIPTDIR, NULL, NULL},
   {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "1000", NULL, NULL},
   {"MaximumWorkersPerJob", CFG_TYPE_PINT32, ITEM(res_client, MaxWorkersPerJob), 0, CFG_ITEM_DEFAULT, "2", "23.0.0-",
    "The maximum number of worker threads that bareos will use during backup."},

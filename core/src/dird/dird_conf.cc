@@ -130,7 +130,7 @@ static ResourceItem dir_items[] = {
      "14.2.0-", "Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'." },
   { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), 0, 0, NULL,
       "14.2.0-", "List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded." },
-  { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_dir, scripts_directory), 0, 0, NULL, NULL, "This directive is currently unused." },
+  { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_dir, scripts_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_SCRIPTDIR, NULL, NULL },
   { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
   { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
