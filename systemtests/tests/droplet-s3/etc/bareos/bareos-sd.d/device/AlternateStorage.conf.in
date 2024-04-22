@@ -3,8 +3,8 @@ Device {
   Media Type = AlternateStorage
   Archive Device = S3 Object Storage
   # Bucket needs to be host-indivdidual
-  Device Options = "profile=@confdir@/bareos-sd.d/device/droplet/droplet.profile,bucket=backup,iothreads=2"
-  Device Type = droplet
+  Device Options = "iothreads=2"
+  Device Type = dplcompat
   LabelMedia = yes                    # lets Bareos label unlabeled media
   Random Access = yes
   AutomaticMount = yes                # when device opened, read it
