@@ -710,6 +710,7 @@ endif()
 
 set(PATH_BAREOS_BACKENDDIR \"${backenddir}\")
 set(PATH_BAREOS_WORKINGDIR \"${workingdir}\")
+set(PATH_BAREOS_SCRIPTDIR \"${scriptdir}\")
 
 if(HAVE_WIN32)
   install(DIRECTORY DESTINATION var/log)
