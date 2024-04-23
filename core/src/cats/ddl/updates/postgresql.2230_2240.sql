@@ -2,6 +2,8 @@
 -- start transaction
 begin;
 
+drop index if exists file_jobid_idx;
+
 -- subscription status part
 DROP VIEW IF EXISTS backup_unit_overview;
 DROP VIEW IF EXISTS latest_full_size_categorized;
