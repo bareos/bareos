@@ -802,7 +802,7 @@ bool DeviceControlRecord::WriteBlockToDev()
     dcr->WroteVol = true;
     if (!dcr->DirCreateJobmediaRecord(true)) {
       Jmsg(dcr->jcr, M_ERROR, 0,
-           "Was not able to create dummy job media record.\n");
+           "Was not able to create null job media record.\n");
     }
     dcr->VolFirstIndex = block->FirstIndex;
     uint64_t addr = dev->file_addr;
