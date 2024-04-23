@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -121,12 +121,8 @@ struct DeviceRecord {
   char state_bits[REC_STATE_BYTES]{}; /**< State bits */
   rec_state state{st_none};           /**< State of WriteRecordToBlock */
   BootStrapRecord* bsr{nullptr};      /**< Pointer to bsr that matched */
-  POOLMEM* data{nullptr}; /**< Record data. This MUST be a memory pool item */
-  int32_t match_stat{0};  /**< BootStrapRecord match status */
-  uint32_t last_VolSessionId{0}; /**< Used in sequencing FI for Vbackup */
-  uint32_t last_VolSessionTime{0};
-  int32_t last_FileIndex{0};
-  int32_t last_Stream{0};  /**< Used in SD-SD replication */
+  POOLMEM* data{nullptr};  /**< Record data. This MUST be a memory pool item */
+  int32_t match_stat{0};   /**< BootStrapRecord match status */
   bool own_mempool{false}; /**< Do we own the POOLMEM pointed to in data ? */
 };
 
@@ -150,17 +146,13 @@ struct DeviceRecord {
  * ser_volume_label() and UnserVolumeLabel() and is slightly different.
  */
 struct Volume_Label {
-  /*
-   * The first items in this structure are saved
+  /* The first items in this structure are saved
    * in the Device buffer, but are not actually written
-   * to the tape.
-   */
+   * to the tape. */
   int32_t LabelType{};  /**< This is written in header only */
   uint32_t LabelSize{}; /**< length of serialized label */
-  /*
-   * The items below this line are stored on
-   * the tape
-   */
+  /* The items below this line are stored on
+   * the tape */
   char Id[32]{}; /**< Bareos Immortal ... */
 
   uint32_t VerNum{}; /**< Label version number */
