@@ -730,6 +730,11 @@ def main():
                 return 1
         return 2
 
+    if args.subcommand == "update-license":
+        if update_license_file(repo) not in [None, True]:
+            return 1
+        return 0
+
     pr_data = get_current_pr_data()
     pr_data["_repo"] = repo
     pr_data["_base_branch"] = "{}/{}".format(git_remote, pr_data["baseRefName"])
@@ -775,11 +780,6 @@ def main():
             ret = False
 
         handle_ret(ret)
-    elif args.subcommand == "update-license":
-        if update_license_file(repo) in [None, True]:
-            exit(0)
-        else:
-            exit(1)
     elif args.subcommand == "add-changelog":
         if check_changelog_entry(repo, pr_data):
             print("Already have Changelog for this PR")
