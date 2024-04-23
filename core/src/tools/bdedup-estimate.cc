@@ -92,11 +92,21 @@ std::unordered_set<dedup_unit> dedup_units;
 bool verbose_status{false};
 bool enable_decompression{false};
 
+void OutputBlockSize(std::size_t blocksize)
+{
+  std::cout << "Using block size " << SizeAsSiPrefixFormat(blocksize) << "\n";
+}
+
 void OutputStatus()
 {
   char before[edit::min_buffer_size];
   char after[edit::min_buffer_size];
   char delta[edit::min_buffer_size];
+
+  char multiplier[100];
+
+  snprintf(multiplier, sizeof(multiplier), "%.2lf",
+           (double)total_size / (double)real_size);
 
   std::cout << "Records consumed: " << num_records << "\n  Total record size: "
             << edit_uint64_with_suffix(total_size, before) << "B"
@@ -104,6 +114,7 @@ void OutputStatus()
             << edit_uint64_with_suffix(real_size, after) << "B"
             << "\n  Possible reduction: "
             << edit_uint64_with_suffix(total_size - real_size, delta) << "B"
+            << "\n  Dedup factor: " << multiplier << "x"
             << "\n";
 }
 
@@ -297,6 +308,7 @@ int main(int argc, const char* argv[])
     }
   }
 
+  OutputBlockSize(block_size);
   read_records(volumes);
 
   OutputStatus();
