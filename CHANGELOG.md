@@ -81,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix warning about missing delcandidates table in director [PR #1721]
 - stored: fix not counting files correctly in mac jobs when autoxflate is enabled [PR #1745]
 - cats: fixes BigSqlQuery header fetching [PR #1746]
+- Fix issue #1780 libpng icc profil [PR #1788]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -149,4 +150,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1762]: https://github.com/bareos/bareos/pull/1762
 [PR #1763]: https://github.com/bareos/bareos/pull/1763
 [PR #1772]: https://github.com/bareos/bareos/pull/1772
+[PR #1788]: https://github.com/bareos/bareos/pull/1788
 [unreleased]: https://github.com/bareos/bareos/tree/master
