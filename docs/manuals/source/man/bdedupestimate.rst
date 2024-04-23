@@ -9,8 +9,8 @@ Synopsis
 Description
 -----------
 
-:program:`bdedupestimate` reads the given volumes with the specifiec device and
-estimates how much data could be deduplicated on a deduplicating filesystem that
+:program:`bdedupestimate` reads the given volumes with the specified device and
+estimates how much data could be deduplicated on a filesystem that
 deduplicates blocks of the given blocksize.
 
 This program works on the records themselves and does not try to reconstruct the
