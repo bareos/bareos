@@ -1,5 +1,6 @@
 #include "crud_storage.h"
 #include "fmt/format.h"
+#include "lib/berrno.h"
 #include "lib/bpipe.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
@@ -25,7 +26,13 @@ class BPipeHandle {
   int close()
   {
     ASSERT(bpipe);
-    int ret = CloseBpipe(bpipe);
+    int ret = CloseBpipe(bpipe) &~b_errno_exit;
+
+    if(ret & b_errno_signal) {
+      ret &= ~b_errno_signal;
+      ret *= -1;
+    }
+
     bpipe = nullptr;
     return ret;
   }
@@ -55,7 +62,20 @@ bool CrudStorage::set_program(const std::string& program)
 bool CrudStorage::test_connection()
 {
   Dmsg0(200, "test_connection called\n");
-  return true;
+  std::string cmdline = fmt::format("'{}' testconnection", m_program);
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  { // TODO: this should probably go into BPipeHandle
+    auto rfh = bph.getReadFd();
+    std::vector<char> output{};
+    while (!feof(rfh)) {
+      size_t offset = output.size();
+      output.resize(offset + 1024);
+      (void)!fread(output.data() + offset, 1, 1024, rfh);
+    }
+  }
+  auto ret = bph.close();
+  Dmsg1(200, "testconnection returned %d\n", ret);
+  return ret == 0;
 }
 
 auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
