@@ -557,6 +557,16 @@ run_bcopy()
    fi
 }
 
+run_bdedupestimate()
+{
+   print_debug "bestimating with ${BAREOS_BDEDUPESTIMATE_BINARY}"
+   if test "$debug" -eq 1 ; then
+      "${BAREOS_BDEDUPESTIMATE_BINARY}" -c "${conf}" -d 500 "$@" </dev/null | tee "${tmp}/bdedupestimate.out"
+   else
+      "${BAREOS_BDEDUPESTIMATE_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bdedupestimate.out"
+   fi
+}
+
 generate_testdata()
 {
    print_debug "creating test data with ${BAREOS_GENTESTDATA_BINARY}"
