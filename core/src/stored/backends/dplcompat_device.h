@@ -34,6 +34,7 @@ class DropletCompatibleDevice : public ChunkedDevice {
   /* maximun number of chunks in a volume (0000 to 9999) */
   static constexpr int max_chunks_ = 10000;
   CrudStorage m_storage;
+  bool m_setup_succeeded{false};
 
   // Interface from ChunkedDevice
   bool CheckRemoteConnection() override;
@@ -44,6 +45,7 @@ class DropletCompatibleDevice : public ChunkedDevice {
 
  public:
   // Interface from Device
+  bool setup() override;
   SeekMode GetSeekMode() const override { return SeekMode::BYTES; }
   bool CanReadConcurrently() const override { return true; }
   int d_close(int fd) override;
