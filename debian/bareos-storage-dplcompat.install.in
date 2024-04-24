@@ -1,0 +1,2 @@
+@backenddir@/libbareossd-dplcompat.so*
+@scriptdir@/s3cmd-wrapper.sh
