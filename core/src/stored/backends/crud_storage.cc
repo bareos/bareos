@@ -1,6 +1,9 @@
 #include "crud_storage.h"
 #include "fmt/format.h"
 #include "lib/bpipe.h"
+#include "stored/stored_conf.h"
+#include "stored/stored_globals.h"
+#include <sys/stat.h>
 
 namespace {
 class BPipeHandle {
@@ -28,10 +31,26 @@ class BPipeHandle {
   }
 };
 
-const std::string prog_name{
-    "/home/arogge/workspace/bareos/core/scripts/s3cmd-wrapper.sh"};
-
 }  // namespace
+
+bool CrudStorage::set_program(const std::string& program)
+{
+  if (program[0] != '/') {
+    m_program
+        = fmt::format("{}/{}", storagedaemon::me->scripts_directory, program);
+  } else {
+    m_program = program;
+  }
+
+  struct stat buffer;
+  if (::stat(m_program.c_str(), &buffer) == -1) {
+    Dmsg0(100, "program path '%s' does not exist.\n", m_program.c_str());
+    return false;
+  }
+
+  Dmsg0(200, "using program path '%s'\n", m_program.c_str());
+  return true;
+}
 
 bool CrudStorage::test_connection()
 {
@@ -44,25 +63,25 @@ auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
 {
   Dmsg1(200, "stat %s called\n", obj_name.data());
   std::string cmdline
-      = fmt::format("'{}' stat '{}' '{}'", prog_name, obj_name, obj_part);
+      = fmt::format("'{}' stat '{}' '{}'", m_program, obj_name, obj_part);
   auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
   auto rfh = bph.getReadFd();
   Stat stat;
   if (int n = fscanf(rfh, "%zu\n", &stat.size); n != 1) {
-    Dmsg1(200, "fscanf() returned %u\n", n);
+    Dmsg1(200, "fscanf() returned %d\n", n);
     return std::nullopt;
   }
   if (auto ret = bph.close(); ret != 0) {
-    Dmsg1(200, "stat returned %u\n", ret);
+    Dmsg1(200, "stat returned %d\n", ret);
     return std::nullopt;
   }
   Dmsg1(200, "stat returns %zu\n", stat.size);
   return stat;
 }
 
-auto CrudStorage::list(std::string_view obj_spec) -> std::map<std::string, Stat>
+auto CrudStorage::list(std::string_view obj_name) -> std::map<std::string, Stat>
 {
-  Dmsg1(200, "list %s called\n", obj_spec.data());
+  Dmsg1(200, "list %s called\n", obj_name.data());
   // get list of volume files
   return {};
 }
@@ -83,12 +102,12 @@ std::optional<gsl::span<char>> CrudStorage::download(std::string_view obj_name,
   Dmsg1(200, "download %s/%s called\n", obj_name.data(), obj_part.data());
   // download data from somewhere
   std::string cmdline
-      = fmt::format("'{}' download '{}' '{}'", prog_name, obj_name, obj_part);
+      = fmt::format("'{}' download '{}' '{}'", m_program, obj_name, obj_part);
 
   auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
   auto rfh = bph.getReadFd();
   size_t total_read{0};
-  constexpr size_t max_read_size{256*1024};
+  constexpr size_t max_read_size{256 * 1024};
   do {
     const size_t read_size
         = std::min(buffer.size_bytes() - total_read, max_read_size);
@@ -107,13 +126,13 @@ std::optional<gsl::span<char>> CrudStorage::download(std::string_view obj_name,
       }
     }
   } while (total_read < buffer.size_bytes());
-  if(fgetc(rfh) != EOF) {
-     Dmsg1(200, "extra data after desired end\n");
-     return std::nullopt;
+  if (fgetc(rfh) != EOF) {
+    Dmsg1(200, "extra data after desired end\n");
+    return std::nullopt;
   }
   if (bph.close() != 0) {
-     Dmsg1(200, "script exited non-zero\n");
-     return std::nullopt;
+    Dmsg1(200, "script exited non-zero\n");
+    return std::nullopt;
   }
   Dmsg1(200, "read %zu bytes\n", total_read);
   return buffer;

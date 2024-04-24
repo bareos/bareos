@@ -7,8 +7,10 @@ class CrudStorage {
   struct Stat {
     size_t size{0};
   };
+  std::string m_program{"/bin/false"};
 
  public:
+  bool set_program(const std::string& program);
   bool test_connection();
   std::optional<Stat> stat(std::string_view obj_name,
                            std::string_view obj_part);

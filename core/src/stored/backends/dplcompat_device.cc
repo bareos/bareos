@@ -31,6 +31,9 @@
 #include <optional>
 #include <fmt/format.h>
 #include <gsl/gsl>
+#include "util.h"
+
+namespace utl = backends::util;
 
 namespace {
 std::string get_chunk_name(storagedaemon::chunk_io_request* request)
@@ -45,13 +48,149 @@ bool is_chunk_name(const std::string& name)
   }
   return true;
 }
+
+static const utl::options option_defaults{
+    {"chunksize", "10485760"},  // 10 MB
+    {"iothreads", "0"},
+    {"ioslots", "10"},
+    {"retries", "0"},
+    //{"mmap", "0"},
+};
+
+namespace detail {
+class class_with_a_really_long_name_that_you_should_not_use {};
+}  // namespace detail
+
+template <class T> struct dependent_false : std::false_type {};
+
+template <>
+struct dependent_false<
+    detail::class_with_a_really_long_name_that_you_should_not_use>
+    : std::true_type {};
+
+class OptionConsumer {
+ private:
+  utl::options& options;
+  POOLMEM*& errmsg;
+
+  template <typename T> void convert_value(T&, const std::string&)
+  {
+    static_assert(dependent_false<T>::value,
+                  "missing specialization for this type");
+  }
+
+ public:
+  OptionConsumer(utl::options& t_options, POOLMEM*& t_errmsg)
+      : options(t_options), errmsg(t_errmsg)
+  {
+  }
+
+  template <typename T> bool convert(const std::string& key, T& target)
+  {
+    auto node_handle = options.extract(key);
+    if (node_handle.empty()) {
+      Mmsg0(errmsg, "no value provided for option '%s'\n", key.c_str());
+      return false;
+    }
+    auto value = node_handle.mapped();
+
+    try {
+      convert_value(target, value);
+    } catch (std::invalid_argument& e) {
+      Mmsg0(errmsg, "invalid argument '%s' for option '%s': %s\n",
+            value.c_str(), key.c_str(), e.what());
+      return false;
+    } catch (std::out_of_range& e) {
+      Mmsg0(errmsg, "value '%s' for option '%s' is out of range: %s\n",
+            value.c_str(), key.c_str(), e.what());
+      return false;
+    } catch (gsl::narrowing_error& e) {
+      Mmsg0(errmsg, "value '%s' for option '%s' would be truncated: %s\n",
+            value.c_str(), key.c_str(), e.what());
+      return false;
+    }
+    return true;
+  }
+};
+
+template <>
+void OptionConsumer::convert_value<>(unsigned long& to, const std::string& from)
+{
+  to = std::stoul(from);
+}
+
+template <>
+void OptionConsumer::convert_value<>(uint8_t& to, const std::string& from)
+{
+  to = gsl::narrow<uint8_t>(std::stoul(from));
+}
+
+template <>
+void OptionConsumer::convert_value<>(std::string& to, const std::string& from)
+{
+  to = from;
+}
+
+
 }  // namespace
 
 namespace storagedaemon {
 
+bool DropletCompatibleDevice::setup()
+{
+  if(m_setup_succeeded) { return true; }
+  auto res = utl::parse_options(dev_options);
+  if (std::holds_alternative<utl::error>(res)) {
+    Mmsg0(errmsg, "device option error: %s\n",
+          std::get<utl::error>(res).c_str());
+    Emsg0(M_FATAL, 0, errmsg);
+    return false;
+  }
+  auto options = std::get<utl::options>(res);
+
+  // apply default values
+  options.merge(utl::options(option_defaults));
+
+  Dmsg0(200, "dev_options: %s\n", dev_options);
+  for (const auto& [key, value] : options) {
+    Dmsg0(200, "'%s' = '%s'\n", key.c_str(), value.c_str());
+  }
+
+  OptionConsumer oc{options, errmsg};
+  std::string program;
+  if (!oc.convert("iothreads", io_threads_) || !oc.convert("ioslots", io_slots_)
+      || !oc.convert("retries", retries_)
+      || !oc.convert("chunksize", chunk_size_)
+      || !oc.convert("program", program)) {
+    Emsg0(M_FATAL, 0, errmsg);
+    return false;
+  }
+  if (program.empty()) {
+    Mmsg0(errmsg, "option 'program' is required");
+    Emsg0(M_FATAL, 0, errmsg);
+    return false;
+  }
+  if (!m_storage.set_program(program)) {
+    Mmsg0(errmsg,
+          "program '%s' is not usable, provide the absolute path or make sure "
+          "it is in your Scripts Directory.\n",
+          program.c_str());
+    Emsg0(M_FATAL, 0, errmsg);
+    return false;
+  }
+
+  /* TODO: check for non-consumed options
+  if(!options.empty()) {
+
+  }
+  */
+  return m_setup_succeeded = true;
+}
+
 bool DropletCompatibleDevice::CheckRemoteConnection()
 {
-  return m_storage.test_connection();
+  Dmsg0(200, "CheckRemoteConnection called\n");
+  return setup() && m_storage.test_connection();
 }
 
 bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
@@ -98,7 +237,8 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
   if (!obj_stat) {
-    Mmsg1(errmsg, T_("Failed to open %s/%s doesn't exist\n"), obj_name.c_str(), obj_chunk.c_str());
+    Mmsg1(errmsg, T_("Failed to open %s/%s doesn't exist\n"), obj_name.c_str(),
+          obj_chunk.c_str());
     Dmsg1(100, "%s", errmsg);
     dev_errno = EIO;
     return false;
@@ -112,15 +252,13 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
     return false;
   }
 
-  // get remote object
-  // char* buffer = static_cast<char*>(malloc(obj_stat->size));
-
-  if (auto obj_data = m_storage.download(obj_name, obj_chunk, {request->buffer, obj_stat->size})) {
+  if (auto obj_data = m_storage.download(obj_name, obj_chunk,
+                                         {request->buffer, obj_stat->size})) {
     *request->rbuflen = obj_data->size_bytes();
-    //request->buffer = obj_data->data();
     return true;
   } else {
-    Mmsg1(errmsg, T_("Failed to read %s/%s\n"), obj_name.c_str(), obj_chunk.c_str());
+    Mmsg1(errmsg, T_("Failed to read %s/%s\n"), obj_name.c_str(),
+          obj_chunk.c_str());
     Dmsg1(100, "%s", errmsg);
     dev_errno = EIO;
     return false;
@@ -158,6 +296,10 @@ bool DropletCompatibleDevice::d_flush(DeviceControlRecord*)
 
 int DropletCompatibleDevice::d_open(const char* pathname, int flags, int mode)
 {
+  if(!setup()) {
+    dev_errno = EIO;
+    Emsg0(M_FATAL, 0, errmsg);
+  }
   return SetupChunk(pathname, flags, mode);
 }
 
