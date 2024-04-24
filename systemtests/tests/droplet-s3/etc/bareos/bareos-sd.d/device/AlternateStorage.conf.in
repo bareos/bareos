@@ -3,7 +3,7 @@ Device {
   Media Type = AlternateStorage
   Archive Device = S3 Object Storage
   # Bucket needs to be host-indivdidual
-  Device Options = "iothreads=2,program=s3cmd-wrapper.sh"
+  Device Options = "iothreads=2,program=@tmp@/s3cmd-wrapper.sh"
   Device Type = dplcompat
   LabelMedia = yes                    # lets Bareos label unlabeled media
   Random Access = yes
