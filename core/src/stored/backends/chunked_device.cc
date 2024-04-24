@@ -1091,6 +1091,7 @@ bool ChunkedDevice::is_written()
 // Busy waits until write buffer is empty.
 bool ChunkedDevice::WaitUntilChunksWritten()
 {
+  if (!current_chunk_) { return true; }
   if (current_chunk_->need_flushing) {
     if (!FlushChunk(false /* release */, false /* move_to_next_chunk */)) {
       dev_errno = EIO;
