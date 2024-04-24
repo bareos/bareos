@@ -138,13 +138,16 @@ Bpipe* OpenBpipe(const char* prog, int wait, const char* mode, bool dup_stderr)
 
       execvp(bargv[0], bargv); /* call the program */
 
+      // execvp will only return on error
+      perror("Program execution failed");
+
       // Convert errno into an exit code for later analysis
       for (i = 0; i < num_execvp_errors; i++) {
         if (execvp_errors[i] == errno) {
-          exit(200 + i); /* exit code => errno */
+          std::quick_exit(200 + i); /* exit code => errno */
         }
       }
-      exit(255); /* unknown errno */
+      std::quick_exit(255); /* unknown errno */
 
     default: /* parent */
       break;
