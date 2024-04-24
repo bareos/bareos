@@ -98,6 +98,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     fstype
     bregex
     testfind
+    gentestdata
 )
 
 if(TARGET bareos_vadp_dumper)

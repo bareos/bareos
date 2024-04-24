@@ -557,6 +557,14 @@ run_bcopy()
    fi
 }
 
+generate_testdata()
+{
+   print_debug "creating test data with ${BAREOS_GENTESTDATA_BINARY}"
+   file="$1"
+   shift;
+   ${BAREOS_GENTESTDATA_BINARY} "$@" > "$file"
+}
+
 kill_process() {
   if [ "$1" -gt 0 ] && kill -0 "$1" 2>/dev/null; then
     kill -TERM "$1"
