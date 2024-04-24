@@ -51,7 +51,7 @@ endif()
 add_sd_backend(bareossd-dplcompat)
 target_sources(
   bareossd-dplcompat PRIVATE dplcompat_device.cc ordered_cbuf.cc
-                           chunked_device.cc crud_storage.cc
+                           chunked_device.cc crud_storage.cc util.cc
 )
 target_link_libraries(bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt-header-only)
 
