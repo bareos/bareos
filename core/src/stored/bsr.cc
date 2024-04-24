@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -438,17 +438,18 @@ static int MatchAll(BootStrapRecord* bsr,
   }
 
   /* NOTE!! This test MUST come after sesstime and sessid tests */
-  if (!MatchFindex(bsr, bsr->FileIndex, rec, 1)) {
-    if (bsr->FileIndex) {
+  if (bsr->FileIndex) {
+    if (!MatchFindex(bsr, bsr->FileIndex, rec, 1)) {
       Dmsg3(dbglevel, "Fail on findex=%d. bsr=%d,%d\n", rec->FileIndex,
             bsr->FileIndex->findex, bsr->FileIndex->findex2);
+      goto no_match;
     } else {
-      Dmsg0(dbglevel, "No bsr->FileIndex!\n");
+      Dmsg3(dbglevel, "match on findex=%d. bsr=%d,%d\n", rec->FileIndex,
+            bsr->FileIndex->findex, bsr->FileIndex->findex2);
     }
-    goto no_match;
+  } else {
+    Dmsg0(dbglevel, "No bsr->FileIndex!\n");
   }
-  Dmsg3(dbglevel, "match on findex=%d. bsr=%d,%d\n", rec->FileIndex,
-        bsr->FileIndex->findex, bsr->FileIndex->findex2);
 
   if (!MatchFileregex(bsr, rec, jcr)) {
     Dmsg1(dbglevel, "Fail on fileregex='%s'\n", bsr->fileregex);
