@@ -43,7 +43,7 @@ elif [ $# -gt 3 ]; then
 fi
 
 case "$1" in
-  testconn)
+  testconnection)
     s3cmd info "${s3cmd_baseurl}"
     ;;
   list)
