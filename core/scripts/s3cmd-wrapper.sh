@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+
+s3cmd_common_args=(--no-progress)
+
+# you can use a custom configuration file like this:
+#s3cmd_common_args=(--no-progress --config /etc/bareos/s3cfg)
+
+
+
 if ! s3cmd_prog="$(command -v s3cmd)"; then
   echo "Cannot find s3cmd command" >&2
   exit 1
@@ -8,7 +16,6 @@ fi
 
 s3cmd_baseurl=s3://backup
 
-s3cmd_common_args=(--no-progress --config /home/arogge/workspace/bareos/build/systemtests/tests/droplet-s3/etc/s3cfg)
 
 s3cmd() {
   "$s3cmd_prog" "${s3cmd_common_args[@]}" "$@"
@@ -48,7 +55,7 @@ case "$1" in
     s3cmd del "$part_url"
     ;;
   *)
-    s3cmd "$@"
+    exit 2
     ;;
 esac
 
