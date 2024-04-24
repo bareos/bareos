@@ -200,30 +200,27 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
 
   const std::string obj_name = request->volname;
   const std::string obj_chunk = get_chunk_name(request);
-  auto retries = 3;
-  do {
-    Dmsg1(100, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
+  Dmsg1(100, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
 
-    /* Check on the remote backing store if the chunk already exists.
-     * We only upload this chunk if it is bigger then the chunk that exists
-     * on the remote backing store. When using io-threads it could happen
-     * that there are multiple flush requests for the same chunk when a
-     * chunk is reused in a next backup job. We only want the chunk with
-     * the biggest amount of valid data to persist as we only append to
-     * chunks. */
-    auto obj_stat = m_storage.stat(obj_name, obj_chunk);
+  /* Check on the remote backing store if the chunk already exists.
+   * We only upload this chunk if it is bigger then the chunk that exists
+   * on the remote backing store. When using io-threads it could happen
+   * that there are multiple flush requests for the same chunk when a
+   * chunk is reused in a next backup job. We only want the chunk with
+   * the biggest amount of valid data to persist as we only append to
+   * chunks. */
+  auto obj_stat = m_storage.stat(obj_name, obj_chunk);
 
-    if (obj_stat && obj_stat->size > request->wbuflen) {
-      Dmsg1(100,
-            "Not uploading chunk %s with size %d, as chunk with size %d is "
-            "already present\n",
-            obj_name.c_str(), obj_stat->size, request->wbuflen);
-      return true;
-    }
-    // FIXME more error handling here!
-    auto obj_data = gsl::span{request->buffer, request->wbuflen};
-    if (m_storage.upload(obj_name, obj_chunk, obj_data)) { return true; }
-  } while (retries-- > 0);
+  if (obj_stat && obj_stat->size > request->wbuflen) {
+    Dmsg1(100,
+          "Not uploading chunk %s with size %d, as chunk with size %d is "
+          "already present\n",
+          obj_name.c_str(), obj_stat->size, request->wbuflen);
+    return true;
+  }
+  // FIXME more error handling here!
+  auto obj_data = gsl::span{request->buffer, request->wbuflen};
+  if (m_storage.upload(obj_name, obj_chunk, obj_data)) { return true; }
   return false;
 }
 
