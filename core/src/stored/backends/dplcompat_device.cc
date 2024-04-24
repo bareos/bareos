@@ -138,7 +138,7 @@ namespace storagedaemon {
 
 bool DropletCompatibleDevice::setup()
 {
-  if(m_setup_succeeded) { return true; }
+  if (m_setup_succeeded) { return true; }
   auto res = utl::parse_options(dev_options);
   if (std::holds_alternative<utl::error>(res)) {
     Mmsg0(errmsg, "device option error: %s\n",
@@ -195,12 +195,16 @@ bool DropletCompatibleDevice::CheckRemoteConnection()
 
 bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
 {
-  auto inflight_lease = getInflightLease(request);
-  if (!inflight_lease) { return false; }
-
   const std::string obj_name = request->volname;
   const std::string obj_chunk = get_chunk_name(request);
   Dmsg1(100, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
+
+  auto inflight_lease = getInflightLease(request);
+  if (!inflight_lease) { 
+    Dmsg0(100, "Could not acquire inflight lease for %s %s\n", obj_name.c_str(), obj_chunk.c_str());
+    return false;
+  }
+
 
   /* Check on the remote backing store if the chunk already exists.
    * We only upload this chunk if it is bigger then the chunk that exists
@@ -220,6 +224,7 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   }
   // FIXME more error handling here!
   auto obj_data = gsl::span{request->buffer, request->wbuflen};
+  Dmsg1(5, "Uploading %zu bytes of data\n", request->wbuflen);
   if (m_storage.upload(obj_name, obj_chunk, obj_data)) { return true; }
   return false;
 }
@@ -293,7 +298,7 @@ bool DropletCompatibleDevice::d_flush(DeviceControlRecord*)
 
 int DropletCompatibleDevice::d_open(const char* pathname, int flags, int mode)
 {
-  if(!setup()) {
+  if (!setup()) {
     dev_errno = EIO;
     Emsg0(M_FATAL, 0, errmsg);
   }
