@@ -34,7 +34,7 @@ s3cmd() {
 }
 
 if [ $# -eq 2 ]; then
-  volume_url="${s3cmd_baseurl}/$2"
+  volume_url="${s3cmd_baseurl}/$2/"
 elif [ $# -eq 3 ]; then
   part_url="${s3cmd_baseurl}/$2/$3"
 elif [ $# -gt 3 ]; then
