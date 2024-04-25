@@ -1,7 +1,11 @@
--- update db schema from 2210 to 2230
+-- update db schema from 2230 to 2240
 -- start transaction
 begin;
 
+-- drop old index file_jobid_idx if still present.
+-- replaced by file_jpfid_idx in 2014
+-- PostgreSQL is able to use first column of partial index.
+-- We can drop it as we only have PG backend.
 drop index if exists file_jobid_idx;
 
 -- subscription status part
