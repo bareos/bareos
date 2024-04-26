@@ -52,7 +52,6 @@ BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord* jcr,
   db_ro_txn_ = NULL;
   db_rw_txn_ = NULL;
   db_dbi_ = 0;
-  max_capacity_ = number_of_files;
 }
 
 bool BareosAccurateFilelistLmdb::init()
@@ -69,7 +68,7 @@ bool BareosAccurateFilelistLmdb::init()
       return false;
     }
 
-    if ((max_capacity_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
+    if ((initial_capacity_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
       size_t pagesize;
 
 #  ifdef HAVE_GETPAGESIZE
@@ -78,7 +77,7 @@ bool BareosAccurateFilelistLmdb::init()
       pagesize = B_PAGE_SIZE;
 #  endif
 
-      mapsize = (((max_capacity_ * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1)
+      mapsize = (((initial_capacity_ * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1)
                 * pagesize;
     }
     result = mdb_env_set_mapsize(env, mapsize);
@@ -141,9 +140,8 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
                                          int chksulength_,
                                          int32_t delta_seq)
 {
-  if (seen_bitmap_.size() >= max_capacity_) {
-    Jmsg(jcr_, M_FATAL, 0,
-         "Director send too many accurate files to filedaemon.\n");
+  if (seen_bitmap_.size() >= initial_capacity_) {
+    excess_files_ += 1;
     return false;
   }
 
@@ -249,6 +247,14 @@ bool BareosAccurateFilelistLmdb::EndLoad()
             mdb_strerror(result));
       return false;
     }
+  }
+
+  if (excess_files_ > 0) {
+    Jmsg2(jcr_, M_FATAL, 0,
+          T_("The director send too many files. %llu were sent but only %llu "
+             "were anticipated. The lmdb backend requested an abort.\n"),
+          seen_bitmap_.size() + excess_files_, initial_capacity_);
+    return false;
   }
 
   return true;

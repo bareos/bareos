@@ -63,10 +63,11 @@ class BareosAccurateFilelist {
  protected:
   std::vector<bool> seen_bitmap_;
   JobControlRecord* jcr_ = nullptr;
+  std::size_t initial_capacity_;
 
  public:
   BareosAccurateFilelist(JobControlRecord* jcr, std::size_t initial_capacity)
-      : jcr_{jcr}
+      : jcr_{jcr}, initial_capacity_{initial_capacity}
   {
     seen_bitmap_.reserve(initial_capacity);
   }
@@ -131,6 +132,7 @@ class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
 
  protected:
   FileList* file_list_;
+  std::size_t duplicate_files_{0};
   void destroy();
 
  public:
@@ -172,7 +174,7 @@ class BareosAccurateFilelistLmdb : public BareosAccurateFilelist {
   MDB_dbi db_dbi_;
   MDB_txn* db_rw_txn_;
   MDB_txn* db_ro_txn_;
-  uint32_t max_capacity_;
+  uint32_t excess_files_{0};
 
   void destroy();
 
