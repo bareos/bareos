@@ -19,4 +19,5 @@ rcvar=bareosfd_enable
 command="@sbindir@/bareos-fd"
 
 load_rc_config $name
+: ${bareosfd_enable:=no}
 run_rc_command "$1"
