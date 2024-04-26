@@ -18,6 +18,7 @@
 #   02110-1301, USA.
 
 message("Adding systemtests from ${CMAKE_CURRENT_SOURCE_DIR}")
+add_subdirectory(accurate-stresstest)
 add_subdirectory(acl)
 add_subdirectory(always-incremental-consolidate)
 add_subdirectory(autochanger)

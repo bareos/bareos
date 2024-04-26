@@ -1,0 +1,133 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Check whether the file daemon correctly double checks
+# the number of files transfered during accurate
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/backup-jobid.out
+.api 2
+run job=$JobName level=Full yes
+.api 1
+@$out $log_home/create-full.out
+wait
+status director
+status client
+status storage=File
+messages
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+# check that accurate is enabled
+expect_grep "Accurate:[[:space:]]*yes" \
+	    "$log_home/create-full.out" \
+	    "Accurate was not enabled."
+
+# check that more than 0 files are in backup
+expect_not_grep "SD Files Written:[[:space:]]*0" \
+	    "$log_home/create-full.out" \
+	    "No files were backed up"
+
+# check that backup was success
+expect_grep "Backup OK" \
+	    "$log_home/create-full.out" \
+	    "Backup was not created correctly."
+
+jobid=$(cat "$log_home/backup-jobid.out" | grep "jobid" | tail -n1 | cut -d':' -f2 | cut -d'"' -f2)
+
+# make the director miscount the number of files
+# we need to take into account that we do a
+# select distinct on (name, pathid) before sending
+# the data to the fd.  As such we need to
+# delete the unique pathname idx and then
+# create duplicate path entries, which then allows us to send
+# duplicate file entries to the fd
+run_query "DROP INDEX path_name_idx"
+run_query "INSERT INTO Path (path) SELECT path from Path"
+run_query "WITH old_to_new AS (SELECT MIN(pathid) as old, MAX(pathid) as new, path FROM Path GROUP BY (path))
+INSERT INTO File (FileIndex, JobId, PathId, DeltaSeq, MarkId, Fhinfo, Fhnode, Lstat, Md5, Name)
+SELECT FileIndex, JobId, new as PathId, DeltaSeq, MarkId, Fhinfo, Fhnode, Lstat, Md5, Name FROM File, old_to_new
+WHERE jobid=${jobid} and PathId = old"
+
+# now create an incremetal job with accurate information
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $log_home/create-incremental.out
+setdebug level=100 trace=1 client
+run job=$JobName level=Incremental yes
+wait
+messages
+status director
+status client
+status storage=File
+END_OF_DATA
+run_bconsole
+
+# check that job is incremental
+expect_grep "Backup Level:[[:space:]]*Incremental" \
+	    "$log_home/create-incremental.out" \
+	    "Accurate was not enabled."
+
+# check that accurate is enabled
+expect_grep "Accurate:[[:space:]]*yes" \
+	    "$log_home/create-incremental.out" \
+	    "Accurate was not enabled."
+
+# check that we used the htable backend
+expect_grep "accurate_htable.cc" \
+	    "$log_home/create-incremental.out" \
+	    "Wrong backend chosen."
+
+# check that duplicates were found
+expect_grep "duplicate files were sent by the director" \
+	    "$log_home/create-incremental.out" \
+	    "Warning was not send out."
+
+# check that backup was success
+expect_grep "Backup OK -- with warnings" \
+	    "$log_home/create-incremental.out" \
+	    "Backup was not created correctly."
+
+end_test
