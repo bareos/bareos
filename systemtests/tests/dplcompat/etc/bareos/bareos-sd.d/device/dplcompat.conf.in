@@ -1,0 +1,14 @@
+Device {
+  Name = dplcompat
+  Media Type = dplcompat
+  Archive Device = S3 Object Storage
+  Device Options = "iothreads=2,program=@confdir@/localfile-wrapper.sh"
+  Device Type = dplcompat
+  LabelMedia = yes
+  Random Access = yes
+  AutomaticMount = yes
+  RemovableMedia = no
+  AlwaysOpen = no
+  Maximum File Size = 20000000
+  Maximum Concurrent Jobs = 1
+}
