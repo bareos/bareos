@@ -42,19 +42,17 @@ static int debuglevel = 100;
 #  define AVG_NR_BYTES_PER_ENTRY 256
 #  define B_PAGE_SIZE 4096
 
-BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord*,
+BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord* jcr,
                                                        uint32_t number_of_files)
+    : BareosAccurateFilelist(jcr, number_of_files)
 {
-  filenr_ = 0;
   pay_load_ = GetPoolMemory(PM_MESSAGE);
   lmdb_name_ = GetPoolMemory(PM_FNAME);
-  seen_bitmap_ = (char*)malloc(NbytesForBits(number_of_previous_files_));
-  ClearAllBits(number_of_previous_files_, seen_bitmap_);
   db_env_ = NULL;
   db_ro_txn_ = NULL;
   db_rw_txn_ = NULL;
   db_dbi_ = 0;
-  number_of_previous_files_ = number_of_files;
+  max_capacity_ = number_of_files;
 }
 
 bool BareosAccurateFilelistLmdb::init()
@@ -71,7 +69,7 @@ bool BareosAccurateFilelistLmdb::init()
       return false;
     }
 
-    if ((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
+    if ((max_capacity_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
       size_t pagesize;
 
 #  ifdef HAVE_GETPAGESIZE
@@ -80,10 +78,8 @@ bool BareosAccurateFilelistLmdb::init()
       pagesize = B_PAGE_SIZE;
 #  endif
 
-      mapsize
-          = (((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) / pagesize)
-             + 1)
-            * pagesize;
+      mapsize = (((max_capacity_ * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1)
+                * pagesize;
     }
     result = mdb_env_set_mapsize(env, mapsize);
     if (result) {
@@ -145,28 +141,10 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
                                          int chksulength_,
                                          int32_t delta_seq)
 {
-  if (filenr_ >= number_of_previous_files_) {
-    Jmsg(jcr_, M_ERROR, 0,
+  if (seen_bitmap_.size() >= max_capacity_) {
+    Jmsg(jcr_, M_FATAL, 0,
          "Director send too many accurate files to filedaemon.\n");
-
-    if (number_of_previous_files_ * 2 < number_of_previous_files_) {
-      Jmsg(jcr_, M_FATAL, 0, "Could not enlarge buffer size (wraparound).\n");
-      return false;
-    }
-
-    auto ptr
-        = realloc(seen_bitmap_, NbytesForBits(number_of_previous_files_ * 2));
-
-    if (!ptr) {
-      Jmsg(jcr_, M_FATAL, 0, "Could not enlarge buffer size.\n");
-      return false;
-    }
-
-    Dmsg2(400, "Enlarged seen_bitmap_ %" PRIu32 " -> %" PRIu32 "\n",
-          number_of_previous_files_, number_of_previous_files_ * 2);
-    number_of_previous_files_ *= 2;
-    seen_bitmap_ = static_cast<char*>(ptr);
-    ASSERT(filenr_ < number_of_previous_files_);
+    return false;
   }
 
   accurate_payload* payload;
@@ -194,7 +172,7 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
   payload->chksum[chksulength_] = '\0';
 
   payload->delta_seq = delta_seq;
-  payload->filenr = filenr_++;
+  payload->filenr = seen_bitmap_.size();
 
   key.mv_data = fname;
   key.mv_size = strlen(fname) + 1;
@@ -236,6 +214,8 @@ retry:
             mdb_strerror(result));
       break;
   }
+
+  if (retval) { seen_bitmap_.push_back(false); }
 
   return retval;
 }
@@ -437,7 +417,7 @@ bool BareosAccurateFilelistLmdb::SendBaseFileList()
   if (result == 0) {
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
       payload = (accurate_payload*)data.mv_data;
-      if (BitIsSet(payload->filenr, seen_bitmap_)) {
+      if (seen_bitmap_.at(payload->filenr)) {
         Dmsg1(debuglevel, "base file fname=%s\n", key.mv_data);
         DecodeStat(payload->lstat, &ff_pkt->statp, sizeof(struct stat),
                    &LinkFIc); /* decode catalog stat */
@@ -499,7 +479,7 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
       payload = (accurate_payload*)data.mv_data;
 
-      if (BitIsSet(payload->filenr, seen_bitmap_)
+      if (seen_bitmap_.at(payload->filenr)
           || PluginCheckFile(jcr_, (char*)key.mv_data)) {
         continue;
       }
@@ -580,13 +560,6 @@ void BareosAccurateFilelistLmdb::destroy()
     FreePoolMemory(lmdb_name_);
     lmdb_name_ = NULL;
   }
-
-  if (seen_bitmap_) {
-    free(seen_bitmap_);
-    seen_bitmap_ = NULL;
-  }
-
-  filenr_ = 0;
 }
 #endif /* HAVE_LMDB */
 } /* namespace filedaemon */

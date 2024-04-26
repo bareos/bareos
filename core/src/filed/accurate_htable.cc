@@ -40,14 +40,9 @@ static int debuglevel = 100;
 BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(
     JobControlRecord* jcr,
     uint32_t number_of_files)
+    : BareosAccurateFilelist(jcr, number_of_files)
 {
-  jcr_ = jcr;
-  filenr_ = 0;
-  number_of_previous_files_ = number_of_files;
-
-  file_list_ = new FileList(number_of_previous_files_);
-  seen_bitmap_ = (char*)malloc(NbytesForBits(number_of_previous_files_));
-  ClearAllBits(number_of_previous_files_, seen_bitmap_);
+  file_list_ = new FileList(number_of_files);
 }
 
 bool BareosAccurateFilelistHtable::AddFile(char* fname,
@@ -58,30 +53,6 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
                                            int chksum_length,
                                            int32_t delta_seq)
 {
-  if (filenr_ >= number_of_previous_files_) {
-    Jmsg(jcr_, M_ERROR, 0,
-         "Director send too many accurate files to filedaemon.\n");
-
-    if (number_of_previous_files_ * 2 < number_of_previous_files_) {
-      Jmsg(jcr_, M_FATAL, 0, "Could not enlarge buffer size (wraparound).\n");
-      return false;
-    }
-
-    auto ptr
-        = realloc(seen_bitmap_, NbytesForBits(number_of_previous_files_ * 2));
-
-    if (!ptr) {
-      Jmsg(jcr_, M_FATAL, 0, "Could not enlarge buffer size.\n");
-      return false;
-    }
-
-    Dmsg2(400, "Enlarged seen_bitmap_ %" PRIu32 " -> %" PRIu32 "\n",
-          number_of_previous_files_, number_of_previous_files_ * 2);
-    number_of_previous_files_ *= 2;
-    seen_bitmap_ = static_cast<char*>(ptr);
-    ASSERT(filenr_ < number_of_previous_files_);
-  }
-
   CurFile* item;
   int total_length;
   bool retval = true;
@@ -103,7 +74,7 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
   item->payload.chksum[chksum_length] = '\0';
 
   item->payload.delta_seq = delta_seq;
-  item->payload.filenr = filenr_;
+  item->payload.filenr = seen_bitmap_.size();
   if (file_list_->insert(item->fname, item)) {
     if (chksum) {
       Dmsg4(debuglevel,
@@ -113,7 +84,7 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
       Dmsg2(debuglevel, "[file_nr = %lld] add fname=<%s> lstat=%s\n",
             item->payload.filenr, fname, lstat);
     }
-    filenr_ += 1;
+    seen_bitmap_.push_back(false);
   } else {
     Dmsg1(debuglevel, "fname=<%s> is already registered.\n", fname);
   }
@@ -156,7 +127,7 @@ bool BareosAccurateFilelistHtable::SendBaseFileList()
   ff_pkt->type = FT_BASE;
 
   foreach_htable (elt, file_list_) {
-    if (BitIsSet(elt->payload.filenr, seen_bitmap_)) {
+    if (seen_bitmap_.at(elt->payload.filenr)) {
       Dmsg1(debuglevel, "base file fname=%s\n", elt->fname);
       DecodeStat(elt->payload.lstat, &statp, sizeof(statp),
                  &LinkFIc); /* decode catalog stat */
@@ -184,7 +155,7 @@ bool BareosAccurateFilelistHtable::SendDeletedList()
   ff_pkt->type = FT_DELETED;
 
   foreach_htable (elt, file_list_) {
-    if (BitIsSet(elt->payload.filenr, seen_bitmap_)
+    if (seen_bitmap_.at(elt->payload.filenr)
         || PluginCheckFile(jcr_, elt->fname)) {
       continue;
     }
@@ -205,13 +176,6 @@ void BareosAccurateFilelistHtable::destroy()
 {
   delete file_list_;
   file_list_ = nullptr;
-
-  if (seen_bitmap_) {
-    free(seen_bitmap_);
-    seen_bitmap_ = NULL;
-  }
-
-  filenr_ = 0;
 }
 
 } /* namespace filedaemon */
