@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Added
+- Add FreeBSD 13.3 and 14.0 [PR #1779]
+
 ### Changed
 - filed: skip stripped top level directories [PR #1726]
 - Require python3 explicit [PR #1729]
@@ -454,4 +457,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1766]: https://github.com/bareos/bareos/pull/1766
 [PR #1769]: https://github.com/bareos/bareos/pull/1769
 [PR #1776]: https://github.com/bareos/bareos/pull/1776
+[PR #1779]: https://github.com/bareos/bareos/pull/1779
 [unreleased]: https://github.com/bareos/bareos/tree/master
