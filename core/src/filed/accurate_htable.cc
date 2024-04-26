@@ -86,6 +86,7 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
     }
     seen_bitmap_.push_back(false);
   } else {
+    duplicate_files_ += 1;
     Dmsg1(debuglevel, "fname=<%s> is already registered.\n", fname);
   }
 
@@ -94,6 +95,21 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
 
 bool BareosAccurateFilelistHtable::EndLoad()
 {
+  if (duplicate_files_ > 0) {
+    Jmsg1(jcr_, M_ERROR, 0,
+          T_("%llu duplicate files were sent by the director and removed. This "
+             "may indicate problems with the database.\n"),
+          duplicate_files_);
+  }
+  // seen_bitmap_.size() is the number of files sent by the director
+  // without duplicates
+  if (seen_bitmap_.size() > initial_capacity_) {
+    Jmsg1(
+        jcr_, M_ERROR, 0,
+        T_("The director send too many files. %llu were sent but only %llu "
+           "were anticipated. The accurate job may be in a corrupted state.\n"),
+        seen_bitmap_.size(), initial_capacity_);
+  }
   // Nothing to do.
   return true;
 }
