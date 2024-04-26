@@ -20,4 +20,5 @@ extra_commands=reload
 command="@sbindir@/bareos-dir"
 
 load_rc_config $name
+: ${bareosdir_enable:=no}
 run_rc_command "$1"
