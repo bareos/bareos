@@ -58,6 +58,30 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
                                            int chksum_length,
                                            int32_t delta_seq)
 {
+  if (filenr_ >= number_of_previous_files_) {
+    Jmsg(jcr_, M_ERROR, 0,
+         "Director send too many accurate files to filedaemon.\n");
+
+    if (number_of_previous_files_ * 2 < number_of_previous_files_) {
+      Jmsg(jcr_, M_FATAL, 0, "Could not enlarge buffer size (wraparound).\n");
+      return false;
+    }
+
+    auto ptr
+        = realloc(seen_bitmap_, NbytesForBits(number_of_previous_files_ * 2));
+
+    if (!ptr) {
+      Jmsg(jcr_, M_FATAL, 0, "Could not enlarge buffer size.\n");
+      return false;
+    }
+
+    Dmsg2(400, "Enlarged seen_bitmap_ %" PRIu32 " -> %" PRIu32 "\n",
+          number_of_previous_files_, number_of_previous_files_ * 2);
+    number_of_previous_files_ *= 2;
+    seen_bitmap_ = static_cast<char*>(ptr);
+    ASSERT(filenr_ < number_of_previous_files_);
+  }
+
   CurFile* item;
   int total_length;
   bool retval = true;
