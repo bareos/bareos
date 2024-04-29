@@ -1521,9 +1521,11 @@ class BareosVADPWrapper(object):
                 bareosfd.JobMessage(bareosfd.M_FATAL, StringCodec.encode(error_message))
                 return bareosfd.bRC_Error
         else:
-            if not self.get_vm_details_dc_folder_vmname(
+            vm_found = self.get_vm_details_dc_folder_vmname(
                 vm_not_found_error_level=bareosfd.M_INFO
-            ):
+            )
+
+            if not vm_found:
                 debug_message = (
                     "No VM with Folder/Name %s/%s found in DC %s, recreating it now\n"
                     % (
@@ -1575,7 +1577,8 @@ class BareosVADPWrapper(object):
             return bareosfd.bRC_Error
 
         # make sure backed up disks match VM disks
-        if not self.check_vm_disks_match():
+        # if recreate as a new vm, we can scip backed up disks
+        if not self.check_vm_disks_match(vm_found):
             return bareosfd.bRC_Error
 
         return bareosfd.bRC_OK
@@ -2345,9 +2348,10 @@ class BareosVADPWrapper(object):
         self.cbt2json()
         return True
 
-    def check_vm_disks_match(self):
+    def check_vm_disks_match(self, vm_found):
         """
-        Check if the backed up disks match selected VM disks
+        Check if the backed up disks match selected VM disks.
+        If recreate as a new VM, we can skip it.
         """
         backed_up_disks = set()
 
@@ -2380,7 +2384,12 @@ class BareosVADPWrapper(object):
                 "check_vm_disks_match(): OK, VM disks match backed up disks\n",
             )
             return True
-
+        if not vm_found:
+            bareosfd.DebugMessage(
+                100,
+                "check_vm_disks_match(): OK, VM disks not matching backed up disks, but will be skip because VM recreated as a new VM\n",
+            )
+            return True
         bareosfd.JobMessage(
             bareosfd.M_WARNING,
             "VM Disks: %s\n" % (StringCodec.encode(", ".join(vm_disks))),
