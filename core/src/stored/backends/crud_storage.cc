@@ -2,17 +2,22 @@
 #include "fmt/format.h"
 #include "lib/berrno.h"
 #include "lib/bpipe.h"
+#include "lib/bstringlist.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
 #include <sys/stat.h>
+#include <cctype>
 
 namespace {
 class BPipeHandle {
   Bpipe* bpipe;
 
  public:
-  BPipeHandle(const char* prog, int wait, const char* mode)
-      : bpipe(OpenBpipe(prog, wait, mode))
+  BPipeHandle(const char* prog,
+              int wait,
+              const char* mode,
+              const std::unordered_map<std::string, std::string>& env_vars = {})
+      : bpipe(OpenBpipe(prog, wait, mode, true, env_vars))
   {
     if (!bpipe) { throw std::system_error(ENOENT, std::generic_category()); }
   }
@@ -29,12 +34,15 @@ class BPipeHandle {
     char iobuf[1024];
     while (!feof(bpipe->rfd)) {
       size_t rsize = fread(iobuf, 1, 1024, bpipe->rfd);
-      if (rsize > 0 && !ferror(bpipe->rfd)) { output += std::string(iobuf, rsize); }
+      if (rsize > 0 && !ferror(bpipe->rfd)) {
+        output += std::string(iobuf, rsize);
+      }
     }
     return output;
   }
   bool timed_out() { return bpipe->timer_id && bpipe->timer_id->killed; }
-  void close_write() {
+  void close_write()
+  {
     ASSERT(bpipe);
     CloseWpipe(bpipe);
   }
@@ -52,6 +60,15 @@ class BPipeHandle {
     return ret;
   }
 };
+
+bool is_valid_env_name(const std::string& name)
+{
+  // according to IEEE Std 1003.1-2017 names should be
+  // non-empty, alphanumeric and not starting with a digit.
+  return !name.empty() && !std::isdigit(name[0])
+         && std::all_of(name.cbegin(), name.cend(),
+                        [](char c) { return std::isalnum(c) || c == '_'; });
+}
 
 }  // namespace
 
@@ -71,6 +88,38 @@ bool CrudStorage::set_program(const std::string& program)
   }
 
   Dmsg0(200, "using program path '%s'\n", m_program.c_str());
+
+
+  return true;
+}
+
+BStringList CrudStorage::get_supported_options()
+{
+  Dmsg0(200, "options called\n");
+  std::string cmdline = fmt::format("'{}' options", m_program);
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  auto output = bph.getOutput();
+  auto ret = bph.close();
+  Dmsg1(200,
+        "options returned %d\n"
+        "== Output ==\n"
+        "%s"
+        "============\n",
+        ret, output.c_str());
+  if (ret != 0) {
+    return {};
+  }
+  BStringList options{output, '\n'};
+  if (!options.empty() && options.back().empty()) { options.pop_back(); }
+  return options;
+}
+
+bool CrudStorage::set_option(const std::string& name, const std::string& value)
+{
+  if (!is_valid_env_name(name)) { return false; }
+  Dmsg0(200, "program environment variable '%s' set to '%s'\n", name.c_str(),
+        value.c_str());
+  m_env_vars[name] = value;
   return true;
 }
 
@@ -78,7 +127,7 @@ bool CrudStorage::test_connection()
 {
   Dmsg0(200, "test_connection called\n");
   std::string cmdline = fmt::format("'{}' testconnection", m_program);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
   auto output = bph.getOutput();
   auto ret = bph.close();
   Dmsg1(200,
@@ -96,7 +145,7 @@ auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
   Dmsg1(200, "stat %s called\n", obj_name.data());
   std::string cmdline
       = fmt::format("'{}' stat '{}' '{}'", m_program, obj_name, obj_part);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
   Stat stat;
   if (int n = fscanf(rfh, "%zu\n", &stat.size); n != 1) {
@@ -117,7 +166,7 @@ auto CrudStorage::list(std::string_view obj_name) -> std::map<std::string, Stat>
   // wrong on the way or if the list is simply empty.
   Dmsg1(5, "list %s called\n", obj_name.data());
   std::string cmdline = fmt::format("'{}' list '{}'", m_program, obj_name);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
 
   std::map<std::string, Stat> result;
@@ -151,7 +200,7 @@ bool CrudStorage::upload(std::string_view obj_name,
   std::string cmdline
       = fmt::format("'{}' upload '{}' '{}'", m_program, obj_name, obj_part);
 
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "rw")};
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "rw", m_env_vars)};
   auto wfh = bph.getWriteFd();
 
   constexpr size_t max_write_size{256 * 1024};
@@ -186,7 +235,7 @@ std::optional<gsl::span<char>> CrudStorage::download(std::string_view obj_name,
   std::string cmdline
       = fmt::format("'{}' download '{}' '{}'", m_program, obj_name, obj_part);
 
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
   size_t total_read{0};
   constexpr size_t max_read_size{256 * 1024};
@@ -223,8 +272,9 @@ std::optional<gsl::span<char>> CrudStorage::download(std::string_view obj_name,
 bool CrudStorage::remove(std::string_view obj_name, std::string_view obj_part)
 {
   Dmsg1(5, "remove %s/%s called\n", obj_name.data(), obj_part.data());
-  std::string cmdline = fmt::format("'{}' remove '{}' '{}'", m_program, obj_name, obj_part);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  std::string cmdline
+      = fmt::format("'{}' remove '{}' '{}'", m_program, obj_name, obj_part);
+  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
   auto output = bph.getOutput();
   auto ret = bph.close();
 
