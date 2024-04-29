@@ -196,64 +196,67 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  if (db_port_) {
-    Bsnprintf(buf, sizeof(buf), "%d", db_port_);
-    port = buf;
-  } else {
-    port = NULL;
+  {
+    DbLocker _{this};
+
+    if (db_port_) {
+      Bsnprintf(buf, sizeof(buf), "%d", db_port_);
+      port = buf;
+    } else {
+      port = NULL;
+    }
+
+    // If connection fails, try at 5 sec intervals for 30 seconds.
+    for (int retry = 0; retry < 6; retry++) {
+      db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
+                                port,          /* default port */
+                                NULL,          /* pg options */
+                                NULL,          /* tty, ignored */
+                                db_name_,      /* database name */
+                                db_user_,      /* login name */
+                                db_password_); /* password */
+
+      // If no connect, try once more in case it is a timing problem
+      if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
+
+      // free memory if not successful
+      PQfinish(db_handle_);
+      db_handle_ = nullptr;
+
+      Bmicrosleep(5, 0);
+    }
+
+    Dmsg0(50, "pg_real_connect %s\n",
+          PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
+    Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
+          (db_password_ == NULL) ? "(NULL)" : db_password_);
+
+    if (PQstatus(db_handle_) != CONNECTION_OK) {
+      Mmsg2(errmsg,
+            T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
+               "Possible causes: SQL server not running; password incorrect; "
+               "max_connections exceeded.\n(%s)\n"),
+            db_name_, db_user_, PQerrorMessage(db_handle_));
+      goto bail_out;
+    }
+
+    connected_ = true;
+    if (!CheckTablesVersion(jcr)) { goto bail_out; }
+
+    SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
+    SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
+    SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
+
+    /* Tell PostgreSQL we are using standard conforming strings
+     * and avoid warnings such as:
+     *  WARNING:  nonstandard use of \\ in a string literal */
+    SqlQueryWithoutHandler("SET standard_conforming_strings=on");
+
+    // Check that encoding is SQL_ASCII
+    CheckDatabaseEncoding(jcr);
+
+    retval = true;
   }
-
-  // If connection fails, try at 5 sec intervals for 30 seconds.
-  for (int retry = 0; retry < 6; retry++) {
-    db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
-                              port,          /* default port */
-                              NULL,          /* pg options */
-                              NULL,          /* tty, ignored */
-                              db_name_,      /* database name */
-                              db_user_,      /* login name */
-                              db_password_); /* password */
-
-    // If no connect, try once more in case it is a timing problem
-    if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
-
-    // free memory if not successful
-    PQfinish(db_handle_);
-    db_handle_ = nullptr;
-
-    Bmicrosleep(5, 0);
-  }
-
-  Dmsg0(50, "pg_real_connect %s\n",
-        PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
-  Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
-        (db_password_ == NULL) ? "(NULL)" : db_password_);
-
-  if (PQstatus(db_handle_) != CONNECTION_OK) {
-    Mmsg2(errmsg,
-          T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-             "Possible causes: SQL server not running; password incorrect; "
-             "max_connections exceeded.\n(%s)\n"),
-          db_name_, db_user_, PQerrorMessage(db_handle_));
-    goto bail_out;
-  }
-
-  connected_ = true;
-  if (!CheckTablesVersion(jcr)) { goto bail_out; }
-
-  SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
-  SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
-  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
-
-  /* Tell PostgreSQL we are using standard conforming strings
-   * and avoid warnings such as:
-   *  WARNING:  nonstandard use of \\ in a string literal */
-  SqlQueryWithoutHandler("SET standard_conforming_strings=on");
-
-  // Check that encoding is SQL_ASCII
-  CheckDatabaseEncoding(jcr);
-
-  retval = true;
-
 bail_out:
   unlock_mutex(mutex);
   return retval;
@@ -334,6 +337,10 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
   }
 
   if (esc_obj) {
+    /* from the PQescapeByteaConn documentation:
+     * [..] This result string length includes the terminating zero byte of the
+     * result. [...] A terminating zero byte is also added. [...]
+     * So this is unnecessary: */
     esc_obj = CheckPoolMemorySize(esc_obj, new_len + 1);
     if (esc_obj) {
       memcpy(esc_obj, obj, new_len);
@@ -458,7 +465,6 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 {
   SQL_ROW row;
   bool retval = false;
-  bool in_transaction = transaction_;
 
   Dmsg1(500, "BigSqlQuery starts with '%s'\n", query);
 
@@ -473,6 +479,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 
   DbLocker _{this};
 
+  bool in_transaction = transaction_;
   if (!in_transaction) { /* CURSOR needs transaction */
     SqlQueryWithoutHandler("BEGIN");
   }
