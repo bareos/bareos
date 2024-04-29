@@ -484,7 +484,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
     SqlQueryWithoutHandler("BEGIN");
   }
 
-  Mmsg(buf_, "DECLARE _bac_cursor CURSOR FOR %s", query);
+  Mmsg(buf_, "DECLARE _bar_cursor CURSOR FOR %s", query);
 
   if (!SqlQueryWithoutHandler(buf_)) {
     Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), buf_, sql_strerror());
@@ -493,7 +493,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
   }
 
   do {
-    if (!SqlQueryWithoutHandler("FETCH 100 FROM _bac_cursor")) {
+    if (!SqlQueryWithoutHandler("FETCH 100 FROM _bar_cursor")) {
       goto bail_out;
     }
     while ((row = SqlFetchRow()) != NULL) {
@@ -505,7 +505,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 
   } while (num_rows_ > 0);
 
-  SqlQueryWithoutHandler("CLOSE _bac_cursor");
+  SqlQueryWithoutHandler("CLOSE _bar_cursor");
 
   Dmsg0(500, "BigSqlQuery finished\n");
   SqlFreeResult();
