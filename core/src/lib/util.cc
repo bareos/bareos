@@ -28,6 +28,7 @@
 #include <openssl/md5.h>
 
 #include "include/bareos.h"
+#include "lib/util.h"
 #include "include/jcr.h"
 #include "lib/edit.h"
 #include "lib/ascii_control_characters.h"
@@ -1022,4 +1023,47 @@ void to_lower(std::string& s)
 {
   std::transform(s.begin(), s.end(), s.begin(),
                  [](unsigned char c) { return std::tolower(c); });
+}
+
+void timer::reset_and_start()
+{
+  start = std::chrono::steady_clock::now();
+  end.reset();
+}
+
+void timer::stop()
+{
+  ASSERT(!end);
+  end = std::chrono::steady_clock::now();
+}
+
+const char* timer::format_human_readable()
+{
+  using namespace std::chrono;
+
+  auto dur = end.value_or(steady_clock::now()) - start;
+
+  auto h = duration_cast<hours>(dur);
+  dur -= h;
+  auto m = duration_cast<minutes>(dur);
+  dur -= m;
+  auto s = duration_cast<seconds>(dur);
+
+  for (;;) {
+    auto ssize = std::snprintf(formatted.data(), formatted.size(),
+                               "%02llu:%02llu:%02llu",
+                               static_cast<long long unsigned>(h.count()),
+                               static_cast<long long unsigned>(m.count()),
+                               static_cast<long long unsigned>(s.count()));
+
+    if (ssize < 0) { return "<format error>"; }
+
+    auto size = static_cast<std::size_t>(ssize);
+
+    if (size < formatted.size()) { break; }
+
+    formatted.resize(size + 1);
+  }
+
+  return formatted.c_str();
 }
