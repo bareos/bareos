@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -227,6 +227,7 @@ std::pair<std::string, int> ParseHostAndPort(std::string val)
   std::string mailhost{host_and_port[0]};
   return std::make_pair(mailhost, mailport);
 }
+
 
 /*********************************************************************
  *
@@ -557,8 +558,14 @@ lookup_host:
   //  Send message header
   fprintf(sfp, "From: %s\r\n", from_addr.c_str());
   Dmsg1(10, "From: %s\r\n", from_addr.c_str());
+  // Subject has to be encoded if utf-8 see
+  // https://datatracker.ietf.org/doc/html/rfc2047
   if (!subject.empty()) {
-    fprintf(sfp, "Subject: %s\r\n", subject.c_str());
+    // rtrim subject
+    auto last_nonspace = subject.find_last_not_of(" \t\n\r\f\v") + 1;
+    int last_nonspace_int
+        = last_nonspace == subject.npos ? subject.size() : last_nonspace;
+    fprintf(sfp, "Subject: %.*s\r\n", last_nonspace_int, subject.c_str());
     Dmsg1(10, "Subject: %s\r\n", subject.c_str());
   }
   if (!reply_addr.empty()) {
@@ -580,10 +587,21 @@ lookup_host:
     Dmsg1(10, "Cc: %s\r\n", cc_addr.c_str());
   }
 
+  fprintf(sfp, "MIME-Version: 1.0\r\n");
+  Dmsg0(10, "MIME-Version: 1.0\r\n");
+
+  std::string charset = "us-ascii";
+  std::string encoding = "7bit";
+
   if (content_utf8) {
-    fprintf(sfp, "Content-Type: text/plain; charset=UTF-8\r\n");
-    Dmsg0(10, "Content-Type: text/plain; charset=UTF-8\r\n");
+    charset = "utf-8";
+    encoding = "8bit";
   }
+  fprintf(sfp, "Content-Type: text/plain; charset=%s\r\n", charset.c_str());
+  Dmsg0(10, "Content-Type: text/plain; charset=%s\r\n", charset.c_str());
+
+  fprintf(sfp, "Content-Transfer-Encoding: %s\r\n", encoding.c_str());
+  Dmsg0(10, "Content-Transfer-Encoding: %s\r\n", encoding.c_str());
 
   GetDateString(buf, sizeof(buf));
   fprintf(sfp, "Date: %s\r\n", buf);
