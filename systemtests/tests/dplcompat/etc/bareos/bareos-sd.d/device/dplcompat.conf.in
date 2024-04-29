@@ -2,7 +2,9 @@ Device {
   Name = dplcompat
   Media Type = dplcompat
   Archive Device = S3 Object Storage
-  Device Options = "iothreads=2,program=@confdir@/localfile-wrapper.sh"
+  Device Options = "iothreads=2"
+                   ",program=@confdir@/localfile-wrapper.sh"
+                   ",storage_path=@archivedir@"
   Device Type = dplcompat
   LabelMedia = yes
   Random Access = yes
