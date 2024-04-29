@@ -34,19 +34,6 @@ JobName=backup-s3-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-export S3CFG
-awk -f - "${CMAKE_SOURCE_DIR}/core/scripts/s3cmd-wrapper.sh" \
->"$tmp/s3cmd-wrapper.sh" \
-<<-'_EOT_'
-  {
-    print }
-  /^s3cmd_common_args=/ {
-    print "# the next line was injected by testrunner"
-    printf("s3cmd_common_args+=(--config \"%s\")\n\n", ENVIRON["S3CFG"])
-  }
-_EOT_
-chmod +x "$tmp/s3cmd-wrapper.sh"
-
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
