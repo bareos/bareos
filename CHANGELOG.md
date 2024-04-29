@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: fix some sd error messages; add additional check during restore; split up always-incremental-consolidate test [PR #1722]
 - Generate LICENSE.txt from LICENSE.template [PR #1753]
 - Allow cross-building for Windows on newer compiler [PR #1772]
+- cats: fix subscription view missing mariabackup plugin [PR #1767]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -151,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1762]: https://github.com/bareos/bareos/pull/1762
 [PR #1763]: https://github.com/bareos/bareos/pull/1763
 [PR #1765]: https://github.com/bareos/bareos/pull/1765
+[PR #1767]: https://github.com/bareos/bareos/pull/1767
 [PR #1772]: https://github.com/bareos/bareos/pull/1772
 [PR #1788]: https://github.com/bareos/bareos/pull/1788
 [unreleased]: https://github.com/bareos/bareos/tree/master
