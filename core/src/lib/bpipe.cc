@@ -56,7 +56,7 @@ static void BuildArgcArgv(char* cmd, int* bargc, char* bargv[], int max_arg);
  * a bi-directional pipe so that the user can read from and
  * write to the program.
  */
-Bpipe* OpenBpipe(const char* prog, int wait, const char* mode, bool dup_stderr)
+Bpipe* OpenBpipe(const char* prog, int wait, const char* mode, bool dup_stderr, const std::unordered_map<std::string, std::string>& env_vars)
 {
   char* bargv[MAX_ARGV];
   int bargc, i;
@@ -135,6 +135,15 @@ Bpipe* OpenBpipe(const char* prog, int wait, const char* mode, bool dup_stderr)
         close(i);
       }
 #  endif
+
+      // merge environment variables into our environment
+      for(auto& [var_name, var_value]: env_vars) {
+        if(var_value.empty()) {
+          unsetenv(var_name.c_str());
+        } else {
+          setenv(var_name.c_str(), var_value.c_str(), 1);
+        }
+      }
 
       execvp(bargv[0], bargv); /* call the program */
 
