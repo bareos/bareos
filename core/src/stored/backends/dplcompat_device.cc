@@ -29,6 +29,7 @@
 
 #include <string>
 #include <optional>
+#include <unordered_map>
 #include <fmt/format.h>
 #include <gsl/gsl>
 #include "util.h"
@@ -83,6 +84,13 @@ class OptionConsumer {
   OptionConsumer(utl::options& t_options, POOLMEM*& t_errmsg)
       : options(t_options), errmsg(t_errmsg)
   {
+  }
+
+  std::optional<std::string> fetch_value(const std::string& key)
+  {
+    auto node_handle = options.extract(key);
+    if (node_handle.empty()) { return std::nullopt; }
+    return node_handle.mapped();
   }
 
   template <typename T> bool convert(const std::string& key, T& target)
@@ -170,6 +178,7 @@ bool DropletCompatibleDevice::setup()
     Emsg0(M_FATAL, 0, errmsg);
     return false;
   }
+
   if (!m_storage.set_program(program)) {
     Mmsg0(errmsg,
           "program '%s' is not usable, provide the absolute path or make sure "
@@ -179,11 +188,30 @@ bool DropletCompatibleDevice::setup()
     return false;
   }
 
-  /* TODO: check for non-consumed options
-  if(!options.empty()) {
-
+  auto supported_options = m_storage.get_supported_options();
+  for (const auto& option_name : supported_options) {
+    if (auto value = oc.fetch_value(option_name)) {
+      if (!m_storage.set_option(option_name, *value)) {
+        Mmsg0(errmsg, "error setting option '%s' to '%s'\n",
+              option_name.c_str(), value->c_str());
+        Emsg0(M_FATAL, 0, errmsg);
+        return false;
+      }
+    }
   }
-  */
+
+  // OptionConsumer should have consumed all options at this point
+  if (!options.empty()) {
+    std::vector<std::string> option_names;
+    for ( const auto& [name, value]: options) {
+      option_names.push_back(name);
+    }
+    auto excess_options = fmt::format("{}", fmt::join(option_names, ", "));
+    Mmsg0(errmsg, "unknown options encountered: %s\n", excess_options.c_str());
+    Emsg0(M_FATAL, 0, errmsg);
+    return false;
+  }
+
   return m_setup_succeeded = true;
 }
 
@@ -200,8 +228,9 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   Dmsg1(100, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
 
   auto inflight_lease = getInflightLease(request);
-  if (!inflight_lease) { 
-    Dmsg0(100, "Could not acquire inflight lease for %s %s\n", obj_name.c_str(), obj_chunk.c_str());
+  if (!inflight_lease) {
+    Dmsg0(100, "Could not acquire inflight lease for %s %s\n", obj_name.c_str(),
+          obj_chunk.c_str());
     return false;
   }
 
