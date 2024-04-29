@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -203,6 +203,7 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   const char* digest;
   char ed1[50], ed2[50], ed3[50];
 
+  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
   pgsql_copy_escape(esc_name, fname, fnl);
 

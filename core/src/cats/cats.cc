@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -180,6 +180,7 @@ void BareosDb::EscapeString(JobControlRecord*,
  */
 char* BareosDb::EscapeObject(JobControlRecord*, char* old, int len)
 {
+  AssertOwnership();
   const int MaxLength = Base64LengthUnpadded(len) + 1;
   esc_obj = CheckPoolMemorySize(esc_obj, MaxLength + 1);
   const int length = BinToBase64(esc_obj, MaxLength, old, len, true);

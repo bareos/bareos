@@ -416,6 +416,7 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
  */
 void BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
 {
+  AssertOwnership();
   char ed1[50], ed2[50];
   char esc[MAX_ESCAPE_NAME_LENGTH];
   if (mr->InChanger != 0 && mr->Slot != 0 && mr->StorageId != 0) {
