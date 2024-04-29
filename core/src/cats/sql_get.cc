@@ -103,6 +103,7 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
   char ed1[50], ed2[50], ed3[50];
   int num_rows;
 
+  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * fnl + 2);
   EscapeString(jcr, esc_name, fname, fnl);
 
@@ -176,6 +177,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
   DBId_t PathId = 0;
   int num_rows;
 
+  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * pnl + 2);
   EscapeString(jcr, esc_name, path, pnl);
 
@@ -223,6 +225,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
 
 int BareosDb::GetPathRecord(JobControlRecord* jcr, const char* new_path)
 {
+  AssertOwnership();
   PmStrcpy(path, new_path);
   pnl = strlen(path);
   return GetPathRecord(jcr);
@@ -892,6 +895,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE);
 
+  AssertOwnership();
+
   Mmsg(cmd,
        "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ",
        mr->Recycle, mr->Enabled);
@@ -1264,6 +1269,8 @@ bool BareosDb::GetUsedBaseJobids(JobControlRecord*,
 db_list_ctx BareosDb::FilterZeroFileJobs(db_list_ctx& jobids)
 {
   if (jobids.empty()) { return {}; }
+
+  AssertOwnership();
 
   std::string query{"SELECT JobId FROM Job WHERE JobFiles = 0 AND JobId IN ("};
   query += jobids.Join(",") + ") ORDER BY JobId";

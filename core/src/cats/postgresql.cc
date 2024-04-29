@@ -329,6 +329,8 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
     return nullptr;
   }
 
+  AssertOwnership();
+
   if (esc_obj) {
     esc_obj = CheckPoolMemorySize(esc_obj, new_len + 1);
     if (esc_obj) {
@@ -557,6 +559,7 @@ bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query, int)
   bool retry = true;
   bool retval = false;
 
+  AssertOwnership();
   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
   // We are starting a new query. reset everything.
@@ -666,6 +669,7 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
   int j;
   SQL_ROW row = NULL; /* by default, return NULL */
 
+  AssertOwnership();
   Dmsg0(500, "SqlFetchRow start\n");
 
   if (num_fields_ == 0) { /* No field, no row */
@@ -709,23 +713,27 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
 
 const char* BareosDbPostgresql::sql_strerror(void)
 {
+  AssertOwnership();
   return PQerrorMessage(db_handle_);
 }
 
 void BareosDbPostgresql::SqlDataSeek(int row)
 {
+  AssertOwnership();
   // Set the row number to be returned on the next call to sql_fetch_row
   row_number_ = row;
 }
 
 int BareosDbPostgresql::SqlAffectedRows(void)
 {
+  AssertOwnership();
   return (unsigned)str_to_int32(PQcmdTuples(result_));
 }
 
 uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
                                                     const char* table_name)
 {
+  AssertOwnership();
   int i;
   uint64_t id = 0;
   char sequence[NAMEDATALEN - 1];
@@ -800,6 +808,7 @@ bail_out:
 
 void BareosDbPostgresql::SqlUpdateField(int i)
 {
+  AssertOwnership();
   Dmsg1(500, "filling field %d\n", i);
   fields_[i].name = PQfname(result_, i);
   fields_[i].type = PQftype(result_, i);
@@ -828,6 +837,7 @@ void BareosDbPostgresql::SqlUpdateField(int i)
 
 SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
 {
+  AssertOwnership();
   Dmsg0(500, "SqlFetchField starts\n");
 
   if (field_number_ >= num_fields_) {
