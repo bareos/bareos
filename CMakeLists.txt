@@ -122,6 +122,24 @@ include(BareosGetDistInfo)
 include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
 include(ForceOption)
+
+# TODO: move this into cmake/CpmPackages.cmake
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+include(CPM)
+CPMAddPackage(
+  NAME GSL
+  VERSION "4.0.0"
+  GITHUB_REPOSITORY "microsoft/GSL"
+  EXCLUDE_FROM_ALL
+)
+CPMAddPackage(
+  NAME tl-expected
+  VERSION "1.1.0"
+  GITHUB_REPOSITORY "TartanLlama/expected"
+  EXCLUDE_FROM_ALL
+  OPTIONS "EXPECTED_BUILD_PACKAGE OFF" "EXPECTED_BUILD_TESTS OFF"
+)
+
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"

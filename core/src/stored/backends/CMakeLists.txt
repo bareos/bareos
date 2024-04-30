@@ -55,6 +55,7 @@ target_sources(
 )
 target_link_libraries(
   bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt-header-only
+                             tl::expected
 )
 
 add_sd_backend(bareossd-file)
