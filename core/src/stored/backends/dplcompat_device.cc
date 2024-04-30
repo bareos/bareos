@@ -58,87 +58,67 @@ static const utl::options option_defaults{
     //{"mmap", "0"},
 };
 
-namespace detail {
-class class_with_a_really_long_name_that_you_should_not_use {};
-}  // namespace detail
+// delete this, so only specializations will be considered
+template <typename T> void convert_value(T&, const std::string&) = delete;
 
-template <class T> struct dependent_false : std::false_type {};
-
-template <>
-struct dependent_false<
-    detail::class_with_a_really_long_name_that_you_should_not_use>
-    : std::true_type {};
-
-class OptionConsumer {
- private:
-  utl::options& options;
-  POOLMEM*& errmsg;
-
-  template <typename T> void convert_value(T&, const std::string&)
-  {
-    static_assert(dependent_false<T>::value,
-                  "missing specialization for this type");
-  }
-
- public:
-  OptionConsumer(utl::options& t_options, POOLMEM*& t_errmsg)
-      : options(t_options), errmsg(t_errmsg)
-  {
-  }
-
-  std::optional<std::string> fetch_value(const std::string& key)
-  {
-    auto node_handle = options.extract(key);
-    if (node_handle.empty()) { return std::nullopt; }
-    return node_handle.mapped();
-  }
-
-  template <typename T> bool convert(const std::string& key, T& target)
-  {
-    auto node_handle = options.extract(key);
-    if (node_handle.empty()) {
-      Mmsg0(errmsg, "no value provided for option '%s'\n", key.c_str());
-      return false;
-    }
-    auto value = node_handle.mapped();
-
-    try {
-      convert_value(target, value);
-    } catch (std::invalid_argument& e) {
-      Mmsg0(errmsg, "invalid argument '%s' for option '%s': %s\n",
-            value.c_str(), key.c_str(), e.what());
-      return false;
-    } catch (std::out_of_range& e) {
-      Mmsg0(errmsg, "value '%s' for option '%s' is out of range: %s\n",
-            value.c_str(), key.c_str(), e.what());
-      return false;
-    } catch (gsl::narrowing_error& e) {
-      Mmsg0(errmsg, "value '%s' for option '%s' would be truncated: %s\n",
-            value.c_str(), key.c_str(), e.what());
-      return false;
-    }
-    return true;
-  }
-};
-
-template <>
-void OptionConsumer::convert_value<>(unsigned long& to, const std::string& from)
+template <> void convert_value<>(unsigned long& to, const std::string& from)
 {
   to = std::stoul(from);
 }
 
-template <>
-void OptionConsumer::convert_value<>(uint8_t& to, const std::string& from)
+template <> void convert_value<>(uint8_t& to, const std::string& from)
 {
   to = gsl::narrow<uint8_t>(std::stoul(from));
 }
 
-template <>
-void OptionConsumer::convert_value<>(std::string& to, const std::string& from)
+template <> void convert_value<>(std::string& to, const std::string& from)
 {
   to = from;
 }
 
+template <typename T>
+tl::expected<utl::options*, std::string> convert(utl::options* options,
+                                                 const std::string& key,
+                                                 T& target)
+{
+  auto node_handle = options->extract(key);
+  if (node_handle.empty()) {
+    return tl::unexpected(
+        fmt::format("no value provided for option '{}'\n", key));
+  }
+  auto value = node_handle.mapped();
+
+  try {
+    convert_value(target, value);
+  } catch (std::invalid_argument& e) {
+    return tl::unexpected(fmt::format(
+        "invalid argument '{}' for option '{}': {}\n", value, key, e.what()));
+  } catch (std::out_of_range& e) {
+    return tl::unexpected(
+        fmt::format("value '{}' for option '{}' is out of range: {}\n", value,
+                    key, e.what()));
+  } catch (gsl::narrowing_error& e) {
+    return tl::unexpected(
+        fmt::format("value '{}' for option '{}' would be truncated: {}\n",
+                    value, key, e.what()));
+  }
+  return options;
+}
+
+std::optional<std::string> fetch_value(utl::options& options,
+                                       const std::string& key)
+{
+  auto node_handle = options.extract(key);
+  if (node_handle.empty()) { return std::nullopt; }
+  return node_handle.mapped();
+}
+
+template <typename T> auto get_converter(const std::string& key, T& target)
+{
+  return [&key, &target](utl::options* options) {
+    return convert(options, key, target);
+  };
+}
 
 }  // namespace
 
@@ -147,12 +127,21 @@ namespace storagedaemon {
 bool DropletCompatibleDevice::setup()
 {
   if (m_setup_succeeded) { return true; }
-  auto res = utl::parse_options(dev_options);
-  if (std::holds_alternative<utl::error>(res)) {
-    Mmsg0(errmsg, "device option error: %s\n",
-          std::get<utl::error>(res).c_str());
+  if (auto result = setup_impl()) {
+    return m_setup_succeeded = true;
+  } else {
+    PmStrcpy(errmsg, result.error().c_str());
     Emsg0(M_FATAL, 0, errmsg);
     return false;
+  }
+}
+
+tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
+{
+  auto res = utl::parse_options(dev_options);
+  if (std::holds_alternative<utl::error>(res)) {
+    return tl::unexpected(
+        fmt::format("device option error: {}\n", std::get<utl::error>(res)));
   }
   auto options = std::get<utl::options>(res);
 
@@ -164,55 +153,42 @@ bool DropletCompatibleDevice::setup()
     Dmsg0(200, "'%s' = '%s'\n", key.c_str(), value.c_str());
   }
 
-  OptionConsumer oc{options, errmsg};
   std::string program;
-  if (!oc.convert("iothreads", io_threads_) || !oc.convert("ioslots", io_slots_)
-      || !oc.convert("retries", retries_)
-      || !oc.convert("chunksize", chunk_size_)
-      || !oc.convert("program", program)) {
-    Emsg0(M_FATAL, 0, errmsg);
-    return false;
-  }
-  if (program.empty()) {
-    Mmsg0(errmsg, "option 'program' is required");
-    Emsg0(M_FATAL, 0, errmsg);
-    return false;
+
+  if (auto conversion_result
+      = tl::expected<utl::options*, std::string>{&options}
+            .and_then(get_converter("iothreads", io_threads_))
+            .and_then(get_converter("ioslots", io_slots_))
+            .and_then(get_converter("retries", retries_))
+            .and_then(get_converter("chunksize", chunk_size_))
+            .and_then(get_converter("program", program));
+      !conversion_result) {
+    return tl::unexpected(conversion_result.error());
   }
 
-  if (!m_storage.set_program(program)) {
-    Mmsg0(errmsg,
-          "program '%s' is not usable, provide the absolute path or make sure "
-          "it is in your Scripts Directory.\n",
-          program.c_str());
-    Emsg0(M_FATAL, 0, errmsg);
-    return false;
+  if (program.empty()) {
+    return tl::unexpected("option 'program' is required\n");
   }
+
+  if (auto result = m_storage.set_program(program); !result) { return result; }
 
   auto supported_options = m_storage.get_supported_options();
   for (const auto& option_name : supported_options) {
-    if (auto value = oc.fetch_value(option_name)) {
-      if (!m_storage.set_option(option_name, *value)) {
-        Mmsg0(errmsg, "error setting option '%s' to '%s'\n",
-              option_name.c_str(), value->c_str());
-        Emsg0(M_FATAL, 0, errmsg);
-        return false;
-      }
+    if (auto value = fetch_value(options, option_name);
+        !m_storage.set_option(option_name, *value)) {
+      return tl::unexpected(fmt::format("error setting option '{}' to '{}'\n",
+                                        option_name, *value));
     }
   }
 
   // OptionConsumer should have consumed all options at this point
   if (!options.empty()) {
     std::vector<std::string> option_names;
-    for ( const auto& [name, value]: options) {
-      option_names.push_back(name);
-    }
-    auto excess_options = fmt::format("{}", fmt::join(option_names, ", "));
-    Mmsg0(errmsg, "unknown options encountered: %s\n", excess_options.c_str());
-    Emsg0(M_FATAL, 0, errmsg);
-    return false;
+    for (const auto& [name, value] : options) { option_names.push_back(name); }
+    return tl::unexpected(fmt::format("unknown options encountered: {}",
+                                      fmt::join(option_names, ", ")));
   }
-
-  return m_setup_succeeded = true;
+  return {};
 }
 
 bool DropletCompatibleDevice::CheckRemoteConnection()

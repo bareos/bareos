@@ -72,7 +72,7 @@ bool is_valid_env_name(const std::string& name)
 
 }  // namespace
 
-bool CrudStorage::set_program(const std::string& program)
+tl::expected<void, std::string> CrudStorage::set_program(const std::string& program)
 {
   if (program[0] != '/') {
     m_program
@@ -84,13 +84,11 @@ bool CrudStorage::set_program(const std::string& program)
   struct stat buffer;
   if (::stat(m_program.c_str(), &buffer) == -1) {
     Dmsg0(100, "program path '%s' does not exist.\n", m_program.c_str());
-    return false;
+    return tl::unexpected(fmt::format("program path {} does not exist.\n", m_program));
   }
 
   Dmsg0(200, "using program path '%s'\n", m_program.c_str());
-
-
-  return true;
+  return {};
 }
 
 BStringList CrudStorage::get_supported_options()

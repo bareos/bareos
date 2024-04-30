@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <gsl/span>
 #include "lib/bstringlist.h"
+#include "tl/expected.hpp"
 
 class CrudStorage {
   struct Stat {
@@ -13,7 +14,7 @@ class CrudStorage {
   std::unordered_map<std::string, std::string> m_env_vars{};
 
  public:
-  bool set_program(const std::string& program);
+  tl::expected<void, std::string> set_program(const std::string& program);
   BStringList get_supported_options();
   bool set_option(const std::string& name, const std::string& value);
   bool test_connection();
