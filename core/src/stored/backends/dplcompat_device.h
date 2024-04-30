@@ -26,6 +26,7 @@
 #include <gsl/span>
 #include <map>
 #include "crud_storage.h"
+#include <tl/expected.hpp>
 
 namespace storagedaemon {
 
@@ -35,6 +36,7 @@ class DropletCompatibleDevice : public ChunkedDevice {
   static constexpr int max_chunks_ = 10000;
   CrudStorage m_storage;
   bool m_setup_succeeded{false};
+  tl::expected<void, std::string> setup_impl();
 
   // Interface from ChunkedDevice
   bool CheckRemoteConnection() override;
