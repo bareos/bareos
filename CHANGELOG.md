@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generate LICENSE.txt from LICENSE.template [PR #1753]
 - Allow cross-building for Windows on newer compiler [PR #1772]
 - cats: fix subscription view missing mariabackup plugin [PR #1767]
+- contrib: add reschedule_job_as_full.sh [PR #1786]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -154,5 +155,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1765]: https://github.com/bareos/bareos/pull/1765
 [PR #1767]: https://github.com/bareos/bareos/pull/1767
 [PR #1772]: https://github.com/bareos/bareos/pull/1772
+[PR #1786]: https://github.com/bareos/bareos/pull/1786
 [PR #1788]: https://github.com/bareos/bareos/pull/1788
 [unreleased]: https://github.com/bareos/bareos/tree/master
