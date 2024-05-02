@@ -54,6 +54,7 @@ case "$1" in
   list)
     run_s3cmd ls "${volume_url}" \
     | while read -r date time size url; do
+      [[ "${size}" !=  +([0-9]) ]] && continue
       echo "${url:${#volume_url}}" "$size"
     done
     ;;
