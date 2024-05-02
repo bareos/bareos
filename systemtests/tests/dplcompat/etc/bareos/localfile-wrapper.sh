@@ -11,7 +11,7 @@ _EOT_
     [ -d "$storage_path" ]
     ;;
   list)
-    for f in "$storage_path"/*.*; do
+    for f in "$storage_path/$2".*; do
       base="$(basename "$f")"
       printf "%s %d\n" "${base##*.}" "$(stat "--format=%s" "$f")"
     done
