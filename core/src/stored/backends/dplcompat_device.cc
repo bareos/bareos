@@ -148,9 +148,9 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   // apply default values
   options.merge(utl::options(option_defaults));
 
-  Dmsg0(200, "dev_options: %s\n", dev_options);
+  Dmsg0(dlvl, "dev_options: %s\n", dev_options);
   for (const auto& [key, value] : options) {
-    Dmsg0(200, "'%s' = '%s'\n", key.c_str(), value.c_str());
+    Dmsg0(dlvl, "'%s' = '%s'\n", key.c_str(), value.c_str());
   }
 
   std::string program;
@@ -167,25 +167,29 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   }
 
   if (program.empty()) {
-    return tl::unexpected("option 'program' is required\n");
+    return tl::unexpected("Option 'program' is required\n");
   }
 
   if (auto result = m_storage.set_program(program); !result) { return result; }
 
-  auto supported_options = m_storage.get_supported_options();
-  for (const auto& option_name : supported_options) {
-    if (auto value = fetch_value(options, option_name);
-        !m_storage.set_option(option_name, *value)) {
-      return tl::unexpected(fmt::format("error setting option '{}' to '{}'\n",
-                                        option_name, *value));
+  if (auto supported_options = m_storage.get_supported_options()) {
+    for (const auto& option_name : *supported_options) {
+      if (auto value = fetch_value(options, option_name);
+          value && !m_storage.set_option(option_name, *value)) {
+        return tl::unexpected(fmt::format("Error setting option '{}' to '{}'\n",
+                                          option_name, *value));
+      }
     }
+  } else {
+    return tl::unexpected(fmt::format("Cannot get supported options.\nCause: {}\n",
+                                      supported_options.error()));
   }
 
   // OptionConsumer should have consumed all options at this point
   if (!options.empty()) {
     std::vector<std::string> option_names;
     for (const auto& [name, value] : options) { option_names.push_back(name); }
-    return tl::unexpected(fmt::format("unknown options encountered: {}",
+    return tl::unexpected(fmt::format("Unknown options encountered: {}\n",
                                       fmt::join(option_names, ", ")));
   }
   return {};
@@ -193,7 +197,7 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
 
 bool DropletCompatibleDevice::CheckRemoteConnection()
 {
-  Dmsg0(200, "CheckRemoteConnection called\n");
+  Dmsg0(dlvl, "CheckRemoteConnection called\n");
   return setup() && m_storage.test_connection();
 }
 
@@ -201,12 +205,12 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
 {
   const std::string obj_name = request->volname;
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(100, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
+  Dmsg1(dlvl, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
 
   auto inflight_lease = getInflightLease(request);
   if (!inflight_lease) {
-    Dmsg0(100, "Could not acquire inflight lease for %s %s\n", obj_name.c_str(),
-          obj_chunk.c_str());
+    Dmsg0(dlvl, "Could not acquire inflight lease for %s %s\n",
+          obj_name.c_str(), obj_chunk.c_str());
     return false;
   }
 
@@ -227,11 +231,16 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
           obj_name.c_str(), obj_stat->size, request->wbuflen);
     return true;
   }
-  // FIXME more error handling here!
+
   auto obj_data = gsl::span{request->buffer, request->wbuflen};
-  Dmsg1(5, "Uploading %zu bytes of data\n", request->wbuflen);
-  if (m_storage.upload(obj_name, obj_chunk, obj_data)) { return true; }
-  return false;
+  Dmsg1(dlvl, "Uploading %zu bytes of data\n", request->wbuflen);
+  if (auto result = m_storage.upload(obj_name, obj_chunk, obj_data)) {
+    return true;
+  } else {
+    PmStrcpy(errmsg, result.error().c_str());
+    dev_errno = EIO;
+    return false;
+  }
 }
 
 // Internal method for reading a chunk from the remote backing store.
@@ -239,14 +248,13 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   const std::string obj_name = request->volname;
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(100, "Reading chunk %s\n", obj_name.c_str());
+  Dmsg1(dlvl, "Reading chunk %s\n", obj_name.c_str());
 
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
   if (!obj_stat) {
-    Mmsg1(errmsg, T_("Failed to open %s/%s doesn't exist\n"), obj_name.c_str(),
-          obj_chunk.c_str());
-    Dmsg1(100, "%s", errmsg);
+    PmStrcpy(errmsg, obj_stat.error().c_str());
+    Dmsg1(dlvl, "%s", errmsg);
     dev_errno = EIO;
     return false;
   } else if (obj_stat->size > request->wbuflen) {
@@ -254,7 +262,7 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
           T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
              "bytes\n"),
           obj_name.c_str(), obj_stat->size, request->wbuflen);
-    Dmsg1(100, "%s", errmsg);
+    Dmsg1(dlvl, "%s", errmsg);
     dev_errno = EINVAL;
     return false;
   }
@@ -264,9 +272,8 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
     *request->rbuflen = obj_data->size_bytes();
     return true;
   } else {
-    Mmsg1(errmsg, T_("Failed to read %s/%s\n"), obj_name.c_str(),
-          obj_chunk.c_str());
-    Dmsg1(100, "%s", errmsg);
+    PmStrcpy(errmsg, obj_data.error().c_str());
+    Dmsg1(dlvl, "%s", errmsg);
     dev_errno = EIO;
     return false;
   }
@@ -276,9 +283,18 @@ bool DropletCompatibleDevice::TruncateRemoteVolume(DeviceControlRecord*)
 {
   const char* vol_name = getVolCatName();
   const auto list = m_storage.list(vol_name);
-  for (const auto& [chunk_name, stat] : list) {
+  if (!list) {
+    PmStrcpy(errmsg, list.error().c_str());
+    dev_errno = EIO;
+    return false;
+  }
+  for (const auto& [chunk_name, stat] : *list) {
     if (is_chunk_name(chunk_name)) {
-      if (!m_storage.remove(vol_name, chunk_name)) { return false; }
+      if (auto res = m_storage.remove(vol_name, chunk_name); !res) {
+        PmStrcpy(errmsg, list.error().c_str());
+        dev_errno = EIO;
+        return false;
+      }
     }
   }
   return true;
@@ -287,9 +303,14 @@ bool DropletCompatibleDevice::TruncateRemoteVolume(DeviceControlRecord*)
 ssize_t DropletCompatibleDevice::RemoteVolumeSize()
 {
   const auto list = m_storage.list(getVolCatName());
-  if (list.empty()) { return -1; }
+  if (!list) {
+    PmStrcpy(errmsg, list.error().c_str());
+    dev_errno = EIO;
+    return false;
+  }
+  if (list->empty()) { return -1; }
   ssize_t total_size{0};
-  for (const auto& [name, stat] : list) {
+  for (const auto& [name, stat] : *list) {
     if (is_chunk_name(name)) { total_size += stat.size; }
   }
   return total_size;
