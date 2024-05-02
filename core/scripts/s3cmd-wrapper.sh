@@ -21,7 +21,7 @@
 set -Eeuo pipefail
 
 if [ "$1" = options ]; then
-  printf "%s\n" bucket s3cfg s3cmd_prog base_url
+  printf "%s\n" bucket s3cfg s3cmd_prog base_url storage_class
   exit 0
 fi
 
@@ -30,8 +30,10 @@ fi
 : "${s3cmd_prog:=$(command -v s3cmd)}"
 : "${bucket:=backup}"
 : "${base_url:=s3://${bucket}}"
+: "${storage_class:=}"
 
 s3cmd_common_args=(--no-progress)
+s3cmd_put_args=()
 
 if [ -n "${s3cfg:+x}" ]; then
   if [ ! -r "${s3cfg}" ]; then
@@ -48,6 +50,10 @@ if [ -z "${s3cmd_prog:+x}" ]; then
 elif [ ! -x "${s3cmd_prog}" ]; then
   echo "Cannot execute '${s3cmd_prog}'" >&2
   exit 1
+fi
+
+if [ -n "${storage_class}" ]; then
+  s3cmd_put_args+=("--storage-class=${storage_class}")
 fi
 
 run_s3cmd() {
@@ -83,7 +89,7 @@ case "$1" in
       | (read -r date time size url; echo "$size")
     ;;
   upload)
-    exec_s3cmd put - "$part_url"
+    exec_s3cmd "${s3cmd_put_args[@]}" put - "$part_url"
     ;;
   download)
     exec_s3cmd get "$part_url" -
