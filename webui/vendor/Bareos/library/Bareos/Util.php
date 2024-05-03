@@ -36,6 +36,7 @@ class Util
     {
         foreach ($bareos_supported_versions as $version_info) {
             if (version_compare($version, $version_info["version"], ">=")) {
+                $version_info["requested_version"] = $version;
                 return $version_info;
             }
         }

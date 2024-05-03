@@ -117,9 +117,8 @@ class AuthController extends AbstractActionController
         $session->offsetSet('authenticated', true);
         $session->offsetSet('locale', $locale);
         $session->offsetSet('idletime', time());
-        $session->offsetSet('product-updates', $bareos_updates);
-        $session->offsetSet('product-updates-status', false);
-        $session->offsetSet('dird-update-available', false);
+        $session->offsetSet('product-updates', null);
+        $session->offsetSet('dird-update-info', null);
         $session->offsetSet('dt_lengthmenu', $configuration['configuration']['tables']['pagination_values']);
         $session->offsetSet('dt_pagelength', $configuration['configuration']['tables']['pagination_default_value']);
         $session->offsetSet('dt_statesave', ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false');
@@ -137,9 +136,9 @@ class AuthController extends AbstractActionController
             $bareos_updates != "false" &&
             !preg_match('/"statusText":"timeout"/', $bareos_updates)
         ) {
-            $session->offsetSet('product-updates-status', true);
             $this->updates = json_decode($bareos_updates, true);
-            $session->offsetSet('dird-update-available', $this->getUpdateStatusDIRD());
+            $session->offsetSet('product-updates', $this->updates);
+            $session->offsetSet('dird-update-info', $this->getUpdateInfoDIRD());
         }
 
         $apicheck = $this->checkAPIStatusDIRD();
@@ -285,38 +284,27 @@ class AuthController extends AbstractActionController
         return $commands;
     }
 
+
     /**
-     * DIRD update check
+     * get update info for Bareos Director.
      *
-     * @return mixed (false: uptodate, string: update message)
+     * @return mixed (false or array)
      */
-    private function getUpdateStatusDIRD()
+    private function getUpdateInfoDIRD()
     {
         $dird_version = null;
-        $dird_dist = null;
 
         try {
-            $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
-            if (array_key_exists('version', $dird_version)) {
-                $dird_vers = $dird_version['version'];
+            $dird_version_array = $this->getDirectorModel()->getDirectorVersion($this->bsock);
+            if (array_key_exists('version', $dird_version_array)) {
+                $dird_version = $dird_version_array['version'];
             }
         } catch (Exception $e) {
             echo $e->getMessage();
         }
 
-        if (isset($dird_vers)) {
-            # $_SESSION['bareos']['product-updates'] is
-            # a sorted list of Bareos release versions.
-            #$bareos_supported_versions = json_decode($_SESSION['bareos']['product-updates'], true);
-            $bareos_supported_versions = $this->updates;
-            \Bareos\Util::log("dird_version: " . $dird_vers);
-            $version_info = \Bareos\Util::getNearestVersionInfo($bareos_supported_versions, $dird_vers);
-            if ($version_info) {
-                \Bareos\Util::log("version_info: " . var_export($version_info, true));
-                if ($version_info['status'] != "uptodate") {
-                    return "Bareos Director (" . $dird_vers . "): " . $version_info['package_update_info'];
-                }
-            }
+        if (isset($dird_version)) {
+            return \Bareos\Util::getNearestVersionInfo($this->updates, $dird_version);
         }
 
         return false;

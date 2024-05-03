@@ -62,7 +62,7 @@ class ClientController extends AbstractRestfulController
             } else {
                 # $_SESSION['bareos']['product-updates'] is
                 # a sorted list of Bareos release versions.
-                $bareos_supported_versions = json_decode($_SESSION['bareos']['product-updates'], true);
+                $bareos_supported_versions = $_SESSION['bareos']['product-updates'];
 
                 $clients = $this->getClientModel()->getClients($this->bsock);
                 $dot_clients = $this->getClientModel()->getDotClients($this->bsock);
