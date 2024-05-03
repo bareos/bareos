@@ -30,19 +30,16 @@ use Zend\View\Helper\AbstractHelper;
 
 class UpdateAlert extends AbstractHelper
 {
-    protected $value;
-    protected $result;
-
-    public function __invoke($product_updates_status = null, $dird_update_message = null)
+    public function __invoke($version_info = null)
     {
-        if ($product_updates_status === false) {
-            $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="https://download.bareos.com/" target="_blank" title="Update information could not be retrieved"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
-            return $this->result;
-        }
+        $result = null;
 
-        if ($dird_update_message) {
-            $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="https://download.bareos.com/" target="_blank" title="' . $dird_update_message . '"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
-            return $this->result;
+        if (!$version_info) {
+            $result = '<a data-toggle="tooltip" data-placement="bottom" href="https://download.bareos.com/" target="_blank" title="Update information could not be retrieved"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
+        } elseif ($version_info['status'] != "uptodate") {
+            $message = "Bareos Director (" . $version_info["requested_version"] . "): " . $version_info['package_update_info'];
+            $result = '<a data-toggle="tooltip" data-placement="bottom" href="https://download.bareos.com/" target="_blank" title="' . $message . '"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
         }
+        return $result;
     }
 }
