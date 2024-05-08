@@ -3,20 +3,21 @@
 Links
 =====
 
-bugs.bareos.org
----------------
+Github
+------
 
-If you want to reference an issue that is tracked on https://bugs.bareos.org/, the following formatting should be used:
+Issue
+~~~~~
 
-.. literalinclude:: /DocumentationStyleGuide/example/mantis-issue.rst.inc
+Refer to a Github Issue by:
+
+.. literalinclude:: /DocumentationStyleGuide/example/github-issue.rst.inc
    :language: none
 
 This will be displayed as:
 
-.. include:: /DocumentationStyleGuide/example/mantis-issue.rst.inc
+.. include:: /DocumentationStyleGuide/example/github-issue.rst.inc
 
-Github
-------
 
 Pull request
 ~~~~~~~~~~~~
