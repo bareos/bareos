@@ -42,20 +42,19 @@ Please make sure to use the Bareos `Automatic Sourcecode Formatting`_.
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
 Also, include the Bareos copyright notice that can be found in every source file.
 
-Bug Database
-------------
+Issue Database
+--------------
 
-We have a bug database which is at https://bugs.bareos.org/.
+We use `github issues`_ as the Bareos issue tracker.
+Before 2024 we've used https://bugs.bareos.org/\ ,
+which is now in read-only mode.
 
-The first thing is if you want to take over a bug, rather than just make
-a note, you should assign the bug to yourself. This helps other
-developers know that you are the principal person to deal with the bug.
-You can do so by going into the bug and clicking on the **Update Issue**
-button. Then you simply go to the **Assigned To** box and select your
-name from the drop down box. To actually update it you must click on the
-**Update Information** button a bit further down on the screen, but if
-you have other things to do such as add a Note, you might wait before
-clicking on the **Update Information** button.
+All new bugs are now collected using the `github issues`_ component.
+If you want to take over an issue,
+rather than just make a comment,
+you should assign the issue to yourself.
+This helps other developers know that you are the principal person to deal with the bug.
+You can do so by going into the issue and use ``assign yourself`` in ``Assignees`` section.
 
 Generally, we set the **Status** field to either acknowledged,
 confirmed, or feedback when we first start working on the bug. Feedback

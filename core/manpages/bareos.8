@@ -48,16 +48,14 @@ providing the file attributes and data when requested by the
 Director.  The File services are also responsible for the file
 system dependent part of restoring the file attributes and data
 during a recovery operation.
-This program runs as a daemon on the machine to be backed up, and
-in some of the documentation, the File daemon is referred to as
-the Client (for example in Bareos's configuration file).
+This program runs as a daemon on the machine to be backed up.
 
 .LP
 Bareos Storage services consist of the software programs that
 perform the storage and recovery of the file attributes and data
 to the physical backup media or volumes.  In other words, the
 Storage daemon is responsible for reading and writing your tapes
-(or other storage media, e.g.  files).
+(or other storage media, e.g. files).
 The Storage services runs as a daemon on the machine that
 has the backup device.
 
@@ -66,16 +64,15 @@ Catalog services are comprised of the software programs
 responsible for maintaining the file indexes and volume databases
 for all files backed up.  The Catalog services permit the System
 Administrator or user to quickly locate and restore any desired
-file.  The Catalog services sets Bareos apart from simple backup
+file. The Catalog services sets Bareos apart from simple backup
 programs like tar and bru, because the catalog maintains a record
 of all Volumes used, all Jobs run, and all Files saved,
-permitting efficient restoration and Volume management.  Bareos
-supports only PostgreSQL.
+permitting efficient restoration and Volume management. Bareos
+utilize PostgreSQL as catalog backend.
 
 .SH CONFIGURATION
-Each daemon has its own configuration file which must be
-tailored for each particular installation.  Please see the HTML/PDF
-documentation for the details.
+Each daemon has its own configuration which must be
+tailored for each particular installation.
 
 .SH SEE ALSO
 <https://www.bareos.org>
@@ -83,7 +80,7 @@ documentation for the details.
 <https://docs.bareos.org>
 
 .SH BUGS
-See <https://bugs.bareos.org>
+See <https://github.com/bareos/bareos/issues/>
 
 .SH AUTHOR
 Kern Sibbald
@@ -94,4 +91,4 @@ file in the main Bareos source directory.
 
 .SH COPYRIGHT
 Bareos is distributed under a modified AGPL version 3.0, as described in the
-file LICENSE included with the source distribution.
+file LICENSE.txt included with the source distribution.
