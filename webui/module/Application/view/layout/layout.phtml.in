@@ -92,7 +92,7 @@ include 'version.php';
                <a href="#"><?php echo 'Version: ' . $bareos_full_version; ?></a>
             </li>
             <li class="dropdown">
-               <?php echo $this->UpdateAlert($_SESSION['bareos']['product-updates-status'],$_SESSION['bareos']['dird-update-available']); ?>
+               <?php echo $this->UpdateAlert($_SESSION['bareos']['product-updates-status'], $_SESSION['bareos']['dird-update-available']); ?>
             </li>
             <li class="dropdown">
                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
