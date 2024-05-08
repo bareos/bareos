@@ -1851,14 +1851,13 @@ Function getDatabaseParametersLeave
   ReadINIStr  $DbPassword             "$PLUGINSDIR\databasedialog.ini" "Field 6" "state"
   ReadINIStr  $DbName                 "$PLUGINSDIR\databasedialog.ini" "Field 7" "state"
   ReadINIStr  $DbPort                 "$PLUGINSDIR\databasedialog.ini" "Field 8" "state"
-dbcheckend:
 
-   StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
+  StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not installing director
 
-   ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
-     !insertmacro CheckDbAdminConnection
-     MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
-   ${EndIF}
+  ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
+    !insertmacro CheckDbAdminConnection
+    MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
+  ${EndIF}
 SkipDbCheck:
 
 FunctionEnd
