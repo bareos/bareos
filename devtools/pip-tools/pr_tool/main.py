@@ -44,6 +44,9 @@ from check_sources.main import main_program as check_sources
 from . import backport
 from .github import Gh
 
+LICENSE_FILENAME = "LICENSE.txt"
+LICENSE_TEMPLATE = "devtools/template/LICENSE.txt"
+
 
 def positive_int(val):
     intval = int(val)
@@ -174,11 +177,15 @@ class CommitAnalyzer:
         issues.extend(self._check_headline(headline))
         issues.extend(self._check_body("\n".join(messageBody)))
 
+        if LICENSE_FILENAME in commit.stats.files:
+            issues.append(
+                f"don't modify '{LICENSE_FILENAME}'. Make changes to '{LICENSE_FILENAME}' instead"
+            )
+
         if len(issues) > 0:
             self._record_issues(commit, headline, issues)
             return False
-        else:
-            return True
+        return True
 
     @classmethod
     def _check_headline(cls, text):
@@ -357,17 +364,15 @@ def get_git_file_modified(repo, path):
 
 
 def update_license_file(repo):
-    license_filename = "LICENSE.txt"
-    license_file_path = f"{repo.working_tree_dir}/{license_filename}"
-    license_template = "LICENSE.template"
-    license_template_path = f"{repo.working_tree_dir}/{license_template}"
+    license_file_path = f"{repo.working_tree_dir}/{LICENSE_FILENAME}"
+    license_template_path = f"{repo.working_tree_dir}/{LICENSE_TEMPLATE}"
     if not path.isfile(license_template_path):
-        print(f"skipped, template file '{license_template}' not found.")
+        print(f"skipped, template file '{LICENSE_TEMPLATE}' not found.")
         return None
     generate_license_file(license_template_path, license_file_path)
-    if get_git_file_modified(repo, license_filename):
-        print(f"Updating {license_filename}")
-        repo.git.commit("-m", f"Update {license_filename}", license_file_path)
+    if get_git_file_modified(repo, LICENSE_FILENAME):
+        print(f"Updating {LICENSE_FILENAME}")
+        repo.git.commit("-m", f"Update {LICENSE_FILENAME}", LICENSE_FILENAME)
         return True
     return None
 

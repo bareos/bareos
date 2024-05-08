@@ -37,7 +37,7 @@ def parse_cmdline_args():
     parser.add_argument(
         "--template",
         "-t",
-        default="LICENSE.template",
+        default="devtools/template/LICENSE.txt",
         help="License file template. Default: %(default)s",
     )
     parser.add_argument(
@@ -75,12 +75,12 @@ def get_translations(template_filename):
     replaces the variables
     and returns the resulting text.
     """
-    base_dir = dirname(template_filename)
+    base_dir = dirname(template_filename) + "/../../"
     translations = {
         "year": date.today().year,
     }
     translations['include("core/LICENSE")'] = get_include_file_content(
-        f"{base_dir}/core/LICENSE"
+        f"{base_dir}core/LICENSE"
     )
     return translations
 
