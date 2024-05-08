@@ -1511,15 +1511,19 @@ done:
   File "/oname=$PLUGINSDIR\libintl-8.dll" "libintl-8.dll"
   File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "libwinpthread-1.dll"
 
-  # one of the two files  have to be available depending onwhat openssl Version we sue
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1.dll" "libcrypto-1_1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1-x64.dll" "libcrypto-1_1-x64.dll"
-  # Either one of this two files will be available depending on 32/64 bits.
-  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
+  # Either one of these files will be available depending on 32/64 bits.
+!if ${BIT_WIDTH} == '64'
+    File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "libcrypto-3-x64.dll"
+    File "/oname=$PLUGINSDIR\libssl-3-x64.dll" "libssl-3-x64.dll"
+    File "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
+!else if ${BIT_WIDTH} == '32'
+    File "/oname=$PLUGINSDIR\libcrypto-3.dll" "libcrypto-3.dll"
+    File "/oname=$PLUGINSDIR\libssl-3.dll" "libssl-3.dll"
+    File "/oname=$PLUGINSDIR\libgcc_s_dw2-1.dll" "libgcc_s_dw2-1.dll"
+!else
+    !error "BIT_WIDTH neither 32 nor 64!"
+!endif
 
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1.dll" "libssl-1_1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1-x64.dll" "libssl-1_1-x64.dll"
 
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
