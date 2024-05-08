@@ -62,6 +62,8 @@ Current limitations amongst others are:
 
    When a disk of a VM was removed and then added again on the same datastore with the same name, or when a CBT reset happened, then the plugin will detect this and request the full level CBT information, and all allocated blocks of that disk will be backed up in an incremental or differential job as if it were a full level job. The restore of such a job will work, but it will take longer than necessary. The backup will terminate with a warning and a recommendation to run a full level job to optimize restore time.
 
+   Since :sinceVersion:`23.0.3: VMware Plugin` the plugin option **fallback_to_full_cbt=no** (see below) can be used to disable this and terminate the job with failure instead. This can be useful if it is desired to run a new full level job anyway.
+
 Requirements
 ^^^^^^^^^^^^
 
@@ -70,6 +72,15 @@ As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which 
 Since Bareos :sinceVersion:`22.0.0: VMware Plugin: VDDK 8.0.0` the plugin is using the Virtual Disk Development Kit (VDDK) 8.0.0, as of the VDDK 8.0 release notes, it should be compatible with vSphere 8 and the next major release (except new features) and backward compatible with vSphere 6.7 and 7, see VDDK release notes at https://developer.vmware.com/web/sdk/8.0/vddk for details.
 
 This plugin requires the pyVmomi module version 7.0.2 or greater. Since Bareos :sinceVersion:`21.0.0: VMware Plugin: pyVmomi` the package **bareos-vmware-plugin** no longer includes a dependency on a pyVmomi package, because some Linux distributions don't provide current versions. Consequently, pyVmomi must be either installed by using :command:`pip install pyvmomi` or by manually installing a distribution provided pyVmomi package.
+
+Since :sinceVersion:`23.0.3: VMware Plugin` the plugin requires the modules
+**requests** and **urllib3** for backup and restore of the NVRAM.
+There is no dependency in the package. In most Linux distributions,
+the packages providing these modules can be used. The minimum version of
+**requests** must be 2.20.0 and **urllib3** must be at least 1.24.1.
+On RHEL 7 or CentOS 7, the package
+https://forensics.cert.org/centos/cert/7/x86_64/python36-requests-2.27.1-1.el7.noarch.rpm
+can be used to fulfill this requirement.
 
 Installation
 ^^^^^^^^^^^^
@@ -294,6 +305,21 @@ And the config file as follows:
    Do not use quotes in the above config file, it is processed by the Python ConfigParser module and the quotes would not be stripped from the string.
 
 Since :sinceVersion:`20: VMware Plugin: quiesce` To allow backing up VMs which do not support quiesced snapshots, it is now possible to use the plugin option **quiesce**. By default quiescing when not explicitly using this option, quiescing is enabled to create backups that are as consistent as possible. When setting **quiesce=no** it is more likely to backup an inconsistent state. In this case, the backup job log will contain an appropriate warning and the the job termination will be **Backup OK -- with warnings**.
+
+Quiescing on Windows VMs also triggers VSS snapshot when VMware Tools are
+installed.
+If that fails for example on MS SQL Server, it can help to disable VSS
+application quiescing using the VMware Tools configuration by adding
+this to the VMware Tools config:
+
+.. code-block:: bareosconfig
+
+   [vmbackup]
+   vss.disableAppQuiescing = true
+
+For details see https://kb.vmware.com/s/article/2146204
+
+For consistent backups of MS SQL server, please use the Bareos **MSSQL Plugin**.
 
 Backup
 ^^^^^^
