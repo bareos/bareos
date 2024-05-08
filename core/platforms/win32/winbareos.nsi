@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2021 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2024 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -873,6 +873,7 @@ SectionIn 1 2 3
   File "libglib-2.0-0.dll"
   File "libintl-8.dll"
   File "libharfbuzz-0.dll"
+  File "libpcre2-8-0.dll"
   File "libpcre2-16-0.dll"
 
   SetOutPath "$INSTDIR\platforms"
@@ -2063,6 +2064,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libglib-2.0-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
   Delete "$INSTDIR\libharfbuzz-0.dll"
+  Delete "$INSTDIR\libpcre2-8-0.dll"
   Delete "$INSTDIR\libpcre2-16-0.dll"
   Delete "$INSTDIR\iconv.dll"
   Delete "$INSTDIR\libxml2-2.dll"
