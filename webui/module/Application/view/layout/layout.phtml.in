@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -108,8 +108,8 @@ include 'version.php';
                </a>
                <ul class="dropdown-menu" role="menu">
                   <li><a href="https://docs.bareos.org" target="_blank"><?php echo $this->translate("Documentation"); ?></a></li>
-                  <li><a href="https://www.bareos.com/community/#mailinglists" target="_blank"><?php echo $this->translate("Mailinglists"); ?></a></li>
-                  <li><a href="https://bugs.bareos.org/" target="_blank"><?php echo $this->translate("Bugtracker"); ?></a></li>
+                  <li><a href="https://www.bareos.com/community/join-in/#mailinglists" target="_blank"><?php echo $this->translate("Mailinglists"); ?></a></li>
+                  <li><a href="https://github.com/bareos/bareos/issues/" target="_blank"><?php echo $this->translate("Issue Tracker"); ?></a></li>
                   <li><a href="https://www.bareos.com/support/" target="_blank"><?php echo $this->translate("Support"); ?></a></li>
                   <li><a href="<?php echo $this->url('director', array('action' => 'subscription')); ?>"><?php echo $this->translate("Subscription"); ?></a></li>
                   <li role="separator" class="divider"></li>
