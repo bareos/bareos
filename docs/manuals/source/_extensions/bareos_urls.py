@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,8 @@ class BareosUrls(object):
         self.download_url = os.environ.get(
             "DOWNLOADSERVER_URL", "https://download.bareos.org/current/"
         )
+        if not self.download_url.endswith("/"):
+            self.download_url += "/"
 
     def get_download_bareos_org_url(self, tail=""):
         return self.download_url + tail
