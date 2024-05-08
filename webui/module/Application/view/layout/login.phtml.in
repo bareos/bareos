@@ -75,7 +75,7 @@ echo $this->doctype();
       <br />
       <p>
          <a href="@BareosComSubscriptionLink@" title="@BareosComSubscriptionLink@" target="_blank">@BareosGetOfficialBinariesAndSupportOnBareosComLoginPage@</a><br/>
-         Version <?php echo $bareos_full_version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />
+         Version <?php echo $bareos_full_version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="https://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />
          GNU Affero General Public License Version 3
       </p>
    </div>

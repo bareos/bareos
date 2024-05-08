@@ -108,8 +108,8 @@ include 'version.php';
                </a>
                <ul class="dropdown-menu" role="menu">
                   <li><a href="https://docs.bareos.org" target="_blank"><?php echo $this->translate("Documentation"); ?></a></li>
-                  <li><a href="https://www.bareos.com/community/#mailinglists" target="_blank"><?php echo $this->translate("Mailinglists"); ?></a></li>
-                  <li><a href="https://bugs.bareos.org/" target="_blank"><?php echo $this->translate("Bugtracker"); ?></a></li>
+                  <li><a href="https://www.bareos.com/community/join-in/#mailinglists" target="_blank"><?php echo $this->translate("Mailinglists"); ?></a></li>
+                  <li><a href="https://github.com/bareos/bareos/issues/" target="_blank"><?php echo $this->translate("Issue Tracker"); ?></a></li>
                   <li><a href="https://www.bareos.com/support/" target="_blank"><?php echo $this->translate("Support"); ?></a></li>
                   <li><a href="<?php echo $this->url('director', array('action' => 'subscription')); ?>"><?php echo $this->translate("Subscription"); ?></a></li>
                   <li role="separator" class="divider"></li>
