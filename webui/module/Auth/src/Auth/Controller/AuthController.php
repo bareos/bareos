@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -139,7 +139,7 @@ class AuthController extends AbstractActionController
         ) {
             $session->offsetSet('product-updates-status', true);
             $this->updates = json_decode($bareos_updates, true);
-            $session->offsetSet('dird-update-available', $this->checkUpdateStatusDIRD());
+            $session->offsetSet('dird-update-available', $this->getUpdateStatusDIRD());
         }
 
         $apicheck = $this->checkAPIStatusDIRD();
@@ -288,9 +288,9 @@ class AuthController extends AbstractActionController
     /**
      * DIRD update check
      *
-     * @return boolean
+     * @return mixed (false: uptodate, string: update message)
      */
-    private function checkUpdateStatusDIRD()
+    private function getUpdateStatusDIRD()
     {
         $dird_version = null;
         $dird_dist = null;
@@ -304,43 +304,17 @@ class AuthController extends AbstractActionController
             echo $e->getMessage();
         }
 
-        if (array_key_exists('obsdistribution', $dird_version)) {
-            $dird_dist = $dird_version['obsdistribution'];
-        }
-
-        if (!array_key_exists('obsarch', $dird_version)) {
-            $dird_arch = null;
-        }
-
-        if ($dird_dist !== null) {
-            if (preg_match("/ubuntu/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-                $dird_arch = "amd64";
-            } elseif (preg_match("/debian/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-                $dird_arch = "amd64";
-            } elseif (preg_match("/univention/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-                $dird_arch = "amd64";
-            } elseif (preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win32") {
-                $dird_arch = "32";
-            } elseif (preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win64") {
-                $dird_arch = "64";
-            } else {
-                $dird_arch = $dird_version['obsarch'];
-            }
-
-            if (isset($dird_arch) && isset($dird_vers)) {
-                if (
-                    array_key_exists('product', $this->updates) &&
-                    array_key_exists($dird_dist, $this->updates['product']['bareos-director']['distribution']) &&
-                    array_key_exists($dird_arch, $this->updates['product']['bareos-director']['distribution'][$dird_dist])
-                ) {
-                    foreach ($this->updates['product']['bareos-director']['distribution'][$dird_dist][$dird_arch] as $key => $value) {
-                        if (version_compare($dird_vers, $key, '>=')) {
-                            return false;
-                        }
-                        if (version_compare($dird_vers, $key, '<')) {
-                            return true;
-                        }
-                    }
+        if (isset($dird_vers)) {
+            # $_SESSION['bareos']['product-updates'] is
+            # a sorted list of Bareos release versions.
+            #$bareos_supported_versions = json_decode($_SESSION['bareos']['product-updates'], true);
+            $bareos_supported_versions = $this->updates;
+            \Bareos\Util::log("dird_version: " . $dird_vers);
+            $version_info = \Bareos\Util::getNearestVersionInfo($bareos_supported_versions, $dird_vers);
+            if ($version_info) {
+                \Bareos\Util::log("version_info: " . var_export($version_info, true));
+                if ($version_info['status'] != "uptodate") {
+                    return "Bareos Director (" . $dird_vers . "): " . $version_info['package_update_info'];
                 }
             }
         }
