@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# 1. Set up backup job such that if it's doing a VF/consolidation it sleeps for up to 60s
+# 2. Run 3 AI backups for consolidation
+# 3. Start consolidation (-> will sleep for 60s)
+# 4. Start incremental job
+# 5. Wait for incremental job to finish
+# 6. Cancel consolidation
+# 7. Test succeeds if incremental job terminated successfully, i.e., not canceled as duplicate
+#
+# Same for copy/migration jobs which are also configured to sleep for 60s.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+last_job_id=$(last_jobid_or_zero)
+
+full_id=$(( last_job_id + 1 ))
+incremental_1_id=$(( last_job_id + 2 ))
+incremental_2_id=$(( last_job_id + 3 ))
+incremental_3_id=$(( last_job_id + 4 ))
+
+# Create some incremental backups
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/full.out
+label volume=TestVolume001 storage=File pool=Full
+run job=ai-backup-bareos-fd level=Full yes
+wait jobid=${full_id}
+list joblog jobid=${full_id}
+@$out $tmp/inc1.out
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-1'"
+run job=ai-backup-bareos-fd level=Incremental yes
+wait jobid=${incremental_1_id}
+list joblog jobid=${incremental_1_id}
+@$out $tmp/inc2.out
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-2'"
+run job=ai-backup-bareos-fd level=Incremental yes
+wait jobid=${incremental_2_id}
+list joblog jobid=${incremental_2_id}
+@$out $tmp/inc3.out
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-3'"
+run job=ai-backup-bareos-fd level=Incremental yes
+wait jobid=${incremental_3_id}
+list joblog jobid=${incremental_3_id}
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Backup OK" \
+            "$tmp"/full.out \
+            "full job did not terminate successfully"
+expect_grep "Backup OK" \
+            "$tmp"/inc1.out \
+            "first incremental job did not terminate successfully"
+expect_grep "Backup OK" \
+            "$tmp"/inc2.out \
+            "second incremental job did not terminate successfully"
+expect_grep "Backup OK" \
+            "$tmp"/inc3.out \
+            "third incremental job did not terminate successfully"
+
+end_test
