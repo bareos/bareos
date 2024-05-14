@@ -6,19 +6,19 @@
 
 - True open source software; no open-core or other restrictions; License AGPLv3
 - network based
-- backends include Ceph, Gluster, S3
+- multiple backends
 - multiple clients and storages possible; Active / passive clients possible
-- Backup Clients ('Bareos-FD') available on Linux, Windows, MacOS, Solaris, HP-UX, AIX, BSD
-- Python plugin interface
+- Backup Clients ('Bareos-FD') available on Linux, FreeBSD, Windows, macOS and others
+- Python plugin interface, used by the VMWare Plugin and others
 - SAN-Backups using NDMP (with DAR/DDAR); NDMP tape support
 - Always Incremental Backup scheme
-- VMWare Plugin
 - Encryption
 - Scriptable CLI
 - web based graphical interface (webui)
 - Role-based ACL support for commands and objects
 
-The source code of Bareos is available on https://github.com/bareos/ under the AGPL v3 license. Additionally Bareos offers binary package repositories for the major Linux distributions as well as for MacOS and Windows.
+The source code of Bareos is available on https://github.com/bareos/ under the AGPL v3 license.
+Additionally Bareos offers binary package repositories for the major Linux distributions, FreeBSD, Windows and macOS.
 
 
 ### Documentation
@@ -30,22 +30,21 @@ The source code of Bareos is available on https://github.com/bareos/ under the A
 If you want to contribute something to this repo please read our contribution
 policy at
 
-  * https://www.bareos.org/en/howto-contribute.html
+  * https://www.bareos.org/community/
 
 ### Security policy
+
 If you want to report a security-related problem, please take a look at our [security policy](https://github.com/bareos/bareos/security/policy).
 
-### Mailing lists
-
-The Bareos project offers two mailing lists: bareos-users and bareos-devel.
+### Mailing list
 
  * https://groups.google.com/forum/#!forum/bareos-users
- * https://groups.google.com/forum/#!forum/bareos-devel
 
-### Bugtracker
+### Issue tracker
 
-  * [https://bugs.bareos.org](https://bugs.bareos.org)
+  * [https://github.com/bareos/bareos/issues](https://github.com/bareos/bareos/issues)
 
 ### Packages
 
-  * [http://download.bareos.org](http://download.bareos.org)
+  * [https://download.bareos.org](https://download.bareos.org)
+  * [https://download.bareos.com](https://download.bareos.com) (Subscription customers)

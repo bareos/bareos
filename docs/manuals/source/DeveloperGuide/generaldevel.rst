@@ -41,15 +41,18 @@ Please make sure to use the Bareos `Automatic Sourcecode Formatting`_.
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
 Also, include the Bareos copyright notice that can be found in every source file.
 
-Bug Database
-------------
+Issue Database
+--------------
 
-We had an historical bug database located at https://bugs.bareos.org/\ , which is now
-in read-only mode.
-All new bug are now collected using the `github issues`_ component
-The first thing is if you want to take over a bug, rather than just make
-a comment, you should assign the bug to yourself. This helps other
-developers know that you are the principal person to deal with the bug.
+We use `github issues`_ as the Bareos issue tracker.
+Before 2024 we've used https://bugs.bareos.org/\ ,
+which is now in read-only mode.
+
+All new bugs are now collected using the `github issues`_ component.
+If you want to take over an issue,
+rather than just make a comment,
+you should assign the issue to yourself.
+This helps other developers know that you are the principal person to deal with the bug.
 You can do so by going into the issue and use ``assign yourself`` in ``Assignees`` section.
 
 Working with labels
