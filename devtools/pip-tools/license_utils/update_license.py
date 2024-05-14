@@ -27,9 +27,14 @@ https://www.debian.org/doc/packaging-manuals/copyright-format/
 
 from argparse import ArgumentParser
 from datetime import date
-from os.path import dirname, curdir
+import os
 import re
 import sys
+
+from git import Repo
+
+LICENSE_FILENAME = "LICENSE.txt"
+LICENSE_TEMPLATE = "devtools/template/LICENSE.txt"
 
 
 def parse_cmdline_args():
@@ -37,7 +42,7 @@ def parse_cmdline_args():
     parser.add_argument(
         "--template",
         "-t",
-        default="devtools/template/LICENSE.txt",
+        default=LICENSE_TEMPLATE,
         help="License file template. Default: %(default)s",
     )
     parser.add_argument(
@@ -75,12 +80,12 @@ def get_translations(template_filename):
     replaces the variables
     and returns the resulting text.
     """
-    base_dir = dirname(template_filename) + "/../../"
+    base_dir = Repo(template_filename, search_parent_directories=True).working_dir
     translations = {
         "year": date.today().year,
     }
     translations['include("core/LICENSE")'] = get_include_file_content(
-        f"{base_dir}core/LICENSE"
+        os.path.join(base_dir, "core/LICENSE")
     )
     return translations
 
@@ -101,12 +106,12 @@ def main():
     if "/" in args.template:
         template_filename = args.template
     else:
-        template_filename = f"{curdir}/{args.template}"
+        template_filename = f"{os.path.curdir}/{args.template}"
 
     if args.out == "-" or "/" in args.out:
         target_filename = args.out
     else:
-        target_filename = f"{curdir}/{args.out}"
+        target_filename = f"{os.path.curdir}/{args.out}"
 
     try:
         generate_license_file(template_filename, target_filename)

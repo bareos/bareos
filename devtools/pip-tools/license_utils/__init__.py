@@ -21,4 +21,4 @@
 license util module.
 """
 
-from .update_license import generate_license_file
+from .update_license import LICENSE_FILENAME, LICENSE_TEMPLATE, generate_license_file

@@ -38,14 +38,11 @@ from changelog_utils import (
     update_links,
     guess_section,
 )
-from license_utils import generate_license_file
+from license_utils import LICENSE_FILENAME, LICENSE_TEMPLATE, generate_license_file
 
 from check_sources.main import main_program as check_sources
 from . import backport
 from .github import Gh
-
-LICENSE_FILENAME = "LICENSE.txt"
-LICENSE_TEMPLATE = "devtools/template/LICENSE.txt"
 
 
 def positive_int(val):
@@ -364,6 +361,7 @@ def get_git_file_modified(repo, path):
 
 
 def update_license_file(repo):
+    """Update license file from template."""
     license_file_path = f"{repo.working_tree_dir}/{LICENSE_FILENAME}"
     license_template_path = f"{repo.working_tree_dir}/{LICENSE_TEMPLATE}"
     if not path.isfile(license_template_path):
