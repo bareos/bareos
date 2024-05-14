@@ -1,7 +1,7 @@
 .. _section-UseMailxAsBsmtpReplacement:
 
-Use heimdal-mailx as :command:`bsmtp` replacement
--------------------------------------------------
+Use Heirloom mailx as :command:`bsmtp` replacement
+--------------------------------------------------
 
 .. index::
    single: howto; bsmtp replacement; mailx
@@ -17,13 +17,13 @@ This section will show you how to configure Bareos to use the command heimdal :c
 
 .. warning::
 
-   :command:`mailx` never return an error code even if the mail is not delivered!
+   :command:`mailx` never returns an error code even if the mail is not delivered!
 
-   Compared to :command:`bsmtp` usage with pipe mode in `WriteBootStrap`: ::strong::`the job will
+   Compared to :command:`bsmtp` usage with pipe mode in `WriteBootStrap`: :strong:`the job will
    then never fail!`
 
    You may be warned in job log when you use ``RunScript``, but ``WriteBootStrap`` will silently
-   failed.
+   fail.
 
 
 .. note::
@@ -34,7 +34,7 @@ This section will show you how to configure Bareos to use the command heimdal :c
 Prepare configuration for mailx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As :command:`mailx` by default read its default configuration from file :command:`~/.mailrc`,
+As :command:`mailx` by default reads its default configuration from file :command:`~/.mailrc`,
 we will create this :command:`.mailrc` file in the :config:option:`dir/director/WorkingDirectory`.
 You have to set the mode to :command:`0600` and set the owner to userid :strong:`bareos`.
 
@@ -57,11 +57,11 @@ You have to set the mode to :command:`0600` and set the owner to userid :strong:
    root@host:~# chown bareos:bareos /var/lib/bareos/.mailrc
    root@host:~# chmod 0600 /var/lib/bareos/.mailrc
 
-   .. note::
+.. note::
 
    To test this configuration as user :strong:`bareos` see example below.
 
-   .. code-block:: shell-session
+.. code-block:: shell-session
    :caption: Run :command:`mailx` command as bareos user
 
    # Start the shell as bareos user
@@ -74,14 +74,14 @@ You have to set the mode to :command:`0600` and set the owner to userid :strong:
    "
 
 
-This file allow to use sensitive data without leaking them on command line, but you can also set
+This file allows to use sensitive data without leaking them on command line, but you can also set
 most options on the command line or in Bareos configuration.
 
 
 .. note::
 
    Please check the fine manual of :command:`mailx` to learn more about the parameters that may
-   have an interest in your infrastructure.
+   be relevant in your infrastructure.
 
 
 We need now to replace :command:`bsmtp` by :command:`mailx` in different configuration files:
@@ -153,7 +153,7 @@ in your configuration like in the default :command:`BackupCatalog` you can setup
 Detecting errors
 ~~~~~~~~~~~~~~~~
 
-There is several ways to check if errors occurred during mail transport with :command:`mailx`.
+There are several ways to check if errors occurred during mail transport with :command:`mailx`.
 
 dead.letter presence
 ^^^^^^^^^^^^^^^^^^^^
@@ -185,7 +185,7 @@ When using :command:`mailx` with ``RunScript`` you may see errors like the follo
 :command:`mailx` error with systemd bareos-dir unit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-With :command:`systemd` managed hosts, the |dir| service will log error that happen.
+On :command:`systemd` managed hosts, the |dir| service will log errors that occur.
 
 .. code-block:: none
    :caption: example journalctl output of bareos-dir unit
