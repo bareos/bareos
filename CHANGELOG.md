@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: improve handling of ResourceItem descriptions [PR #1766]
 - stored: fix some sd error messages; add additional check during restore; split up always-incremental-consolidate test [PR #1769]
 - Allow cross-building for Windows on newer compiler [PR #1776]
+- replace https://bugs.bareos.org by  https://github.com/bareos/bareos/issues/ [PR #1813]
 
 ### Documentation
 - docs: fix Pool explanation for migration jobs [PR #1735]
@@ -460,4 +461,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1776]: https://github.com/bareos/bareos/pull/1776
 [PR #1779]: https://github.com/bareos/bareos/pull/1779
 [PR #1806]: https://github.com/bareos/bareos/pull/1806
+[PR #1813]: https://github.com/bareos/bareos/pull/1813
 [unreleased]: https://github.com/bareos/bareos/tree/master

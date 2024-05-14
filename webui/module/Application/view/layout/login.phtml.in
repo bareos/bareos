@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -75,7 +75,7 @@ echo $this->doctype();
       <br />
       <p>
          <a href="@BareosComSubscriptionLink@" title="@BareosComSubscriptionLink@" target="_blank">@BareosGetOfficialBinariesAndSupportOnBareosComLoginPage@</a><br/>
-         Version <?php echo $bareos_full_version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />
+         Version <?php echo $bareos_full_version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="https://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />
          GNU Affero General Public License Version 3
       </p>
    </div>
