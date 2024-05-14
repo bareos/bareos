@@ -30,6 +30,8 @@ add_custom_target(
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
 
+set(FETCHCONTENT_FULLY_DISCONNECTED CACHE STRING "OFF" FORCE)
+mark_as_advanced(FETCHCONTENT_FULLY_DISCONNECTED)
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
