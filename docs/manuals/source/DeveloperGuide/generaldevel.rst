@@ -83,6 +83,7 @@ The same applies to a support request (we answer only bugs), you might give the 
 
 .. _bareos-users:       https://groups.google.com/forum/#!forum/bareos-users
 .. _commercial support: https://www.bareos.com/product/support/
+.. _github issues:      https://github.com/bareos/bareos/issues/
 
 Reporting security issues
 ~~~~~~~~~~~~~~~~~~~~~~~~~
