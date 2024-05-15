@@ -86,7 +86,7 @@ mysql_server_start()
         [ $((tries-=1)) -eq 0 ] && {
             echo "Could not start MySQL server"
             cat mysql/mysql.log
-            shutdown_mysql_server
+            mysql_cleanup
             exit 1
         }
         printf "."
