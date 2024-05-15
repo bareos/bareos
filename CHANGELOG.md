@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: fix subscription view missing mariabackup plugin [PR #1767]
 - contrib: add reschedule_job_as_full.sh [PR #1786]
 - replace https://bugs.bareos.org by  https://github.com/bareos/bareos/issues/ [PR #1808]
+- tools: remove perl in mtx changer [PR #1740]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -146,6 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1727]: https://github.com/bareos/bareos/pull/1727
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
+[PR #1740]: https://github.com/bareos/bareos/pull/1740
 [PR #1745]: https://github.com/bareos/bareos/pull/1745
 [PR #1746]: https://github.com/bareos/bareos/pull/1746
 [PR #1752]: https://github.com/bareos/bareos/pull/1752
