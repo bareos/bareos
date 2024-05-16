@@ -1,0 +1,6 @@
+#!/bin/bash
+set -u
+set -e
+
+cat $MTX_MOCK_FILE
+exit $MTX_RETURNCODE
