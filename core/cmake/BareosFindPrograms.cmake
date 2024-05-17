@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,12 +24,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(AWK ${GAWK})
 endif()
 
+# ps is required for systemtests
 find_program(PIDOF pidof)
-if(NOT PIDOF)
-  set(PIDOF "")
-endif()
 
-find_program(PS ps)
+find_program(PS ps REQUIRED)
 if(PS)
   set(PSCMD ${PS})
   if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
