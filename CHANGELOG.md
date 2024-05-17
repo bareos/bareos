@@ -89,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: fix not counting files correctly in mac jobs when autoxflate is enabled [PR #1745]
 - cats: fixes BigSqlQuery header fetching [PR #1746]
 - Fix issue #1780 libpng icc profil [PR #1788]
+- Fix missing DLL in windows packaging [PR #1807]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -164,5 +165,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1788]: https://github.com/bareos/bareos/pull/1788
 [PR #1795]: https://github.com/bareos/bareos/pull/1795
 [PR #1805]: https://github.com/bareos/bareos/pull/1805
+[PR #1807]: https://github.com/bareos/bareos/pull/1807
 [PR #1808]: https://github.com/bareos/bareos/pull/1808
 [unreleased]: https://github.com/bareos/bareos/tree/master
