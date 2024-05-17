@@ -113,8 +113,11 @@ static ResourceItem cli_items[] = {
   {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_client, allowed_script_dirs), 0, 0, NULL, NULL, NULL},
   {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_client, allowed_job_cmds), 0, 0, NULL, NULL, NULL},
   {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_client, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
-  {"AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client, lmdb_threshold), 0, 0, NULL, NULL, NULL},
+  {"AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, always_use_lmdb), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "false", NULL,
+   "Ensure that bareos always chooses the lmdb backend for accurate information regardless of the file list size.  Use LmdbThreshold = 0 instead."
+  },
+  {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client, lmdb_threshold), 0, 0, NULL, NULL,
+   "File count threshold after which bareos will use the lmdb backend to store accurate information."},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL},
