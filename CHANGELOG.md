@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - contrib: add reschedule_job_as_full.sh [PR #1786]
 - replace https://bugs.bareos.org by  https://github.com/bareos/bareos/issues/ [PR #1808]
 - tools: remove perl in mtx changer [PR #1740]
+- bsmtp: add fixes to be more rfc compliant [PR #1795]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -161,6 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1772]: https://github.com/bareos/bareos/pull/1772
 [PR #1786]: https://github.com/bareos/bareos/pull/1786
 [PR #1788]: https://github.com/bareos/bareos/pull/1788
+[PR #1795]: https://github.com/bareos/bareos/pull/1795
 [PR #1805]: https://github.com/bareos/bareos/pull/1805
 [PR #1808]: https://github.com/bareos/bareos/pull/1808
 [unreleased]: https://github.com/bareos/bareos/tree/master
