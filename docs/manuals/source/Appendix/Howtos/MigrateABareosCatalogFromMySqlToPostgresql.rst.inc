@@ -167,7 +167,7 @@ to copy.
 .. note::
 
    In the example above the table *webacula_where_acl* was skipped, because it
-   does not exist in the target database scheme. This is the desired behaviour.
+   does not exist in the target database scheme. This is the desired behavior.
 
 
 Complete the migration process
