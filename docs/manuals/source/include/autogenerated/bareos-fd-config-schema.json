@@ -241,7 +241,9 @@
           "datatype": "PINT32",
           "code": 0,
           "default_value": "2",
-          "equals": true
+          "equals": true,
+          "versions": "23.0.0-",
+          "description": "The maximum number of worker threads that bareos will use during backup."
         },
         "Messages": {
           "datatype": "RES",
@@ -534,7 +536,9 @@
           "datatype": "PINT32",
           "code": 0,
           "default_value": "2",
-          "equals": true
+          "equals": true,
+          "versions": "23.0.0-",
+          "description": "The maximum number of worker threads that bareos will use during backup."
         },
         "Messages": {
           "datatype": "RES",
