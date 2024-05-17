@@ -245,6 +245,7 @@ static bool SetupDCR(JobControlRecord* jcr,
                      uint32_t& blocknum)
 {
   if (!jcr->sd_impl->dcr) {
+    jcr->sendJobStatus(JS_WaitSD);
     if (TryReserveAfterUse(jcr, true)) {
       Jmsg(jcr, M_INFO, 0, T_("Using Device %s to write.\n"),
            jcr->sd_impl->dcr->dev->print_name());
