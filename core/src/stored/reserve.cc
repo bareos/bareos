@@ -1099,7 +1099,6 @@ static void QueueReserveMessage(JobControlRecord* jcr)
   std::unique_lock l(jcr->mutex_guard());
 
   auto& msgs = jcr->sd_impl->reserve_msgs;
-  if (!msgs.size()) { return; }
   for (auto& msg : msgs) {
     // Comparison based on 4 digit message number
     if (bstrncmp(msg.c_str(), jcr->errmsg, 4)) { return; }
