@@ -67,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - replace https://bugs.bareos.org by  https://github.com/bareos/bareos/issues/ [PR #1808]
 - tools: remove perl in mtx changer [PR #1740]
 - bsmtp: add fixes to be more rfc compliant [PR #1795]
+- pr-tool: update LICENSE.txt [PR #1773]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -161,6 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1765]: https://github.com/bareos/bareos/pull/1765
 [PR #1767]: https://github.com/bareos/bareos/pull/1767
 [PR #1772]: https://github.com/bareos/bareos/pull/1772
+[PR #1773]: https://github.com/bareos/bareos/pull/1773
 [PR #1786]: https://github.com/bareos/bareos/pull/1786
 [PR #1788]: https://github.com/bareos/bareos/pull/1788
 [PR #1795]: https://github.com/bareos/bareos/pull/1795
