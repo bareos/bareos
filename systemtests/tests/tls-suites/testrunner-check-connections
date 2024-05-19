@@ -37,6 +37,9 @@ export TestName
 #shellcheck source=functions
 . functions
 
+# check if at least one check is ok
+no_test_was_ok=true
+
 function check_tls()
 {
   output=$(echo "exit" | sbin/bconsole-tls-suites -c etc/bareos/"$1")
@@ -67,7 +70,9 @@ function test_con()
         exit 2
     fi
 
+    no_test_was_ok=false
     echo "$1: ok"
+
   fi
 }
 
@@ -79,5 +84,11 @@ test_con TLS_CHACHA20_POLY1305_SHA256
 test_con TLS_AES_128_GCM_SHA256
 test_con TLS_AES_128_CCM_8_SHA256
 test_con TLS_AES_128_CCM_SHA256
+
+# make sure at least one check was successful
+if [ "$no_test_was_ok" = "true" ]; then
+  echo "all cipher checks failed!"
+  exit 4
+fi
 
 end_test
