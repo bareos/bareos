@@ -49,21 +49,26 @@ function check_tls()
 
 function test_con()
 {
-	response=$(check_tls bconsole-"$1".conf)
-	cipher=$(echo "$response" | cut -d' ' -f1)
-	tls=$(echo "$response" | cut -d' ' -f2 | tr -d '\r')
+  if ! openssl ciphers | grep -q "$1"; then
+    echo "$1: ***NOT IN 'openssl ciphers' skipping***"
 
-	if ! [ "$tls" = "TLSv1.3" ]; then
-	    echo "expected 'TLSv1.3' got '$tls'"
-	    exit 1
-	fi
+  else
+    response=$(check_tls bconsole-"$1".conf)
+    cipher=$(echo "$response" | cut -d' ' -f1)
+    tls=$(echo "$response" | cut -d' ' -f2 | tr -d '\r')
 
-	if ! [ "$cipher" = "$1" ]; then
-	    echo "expected '$1' got '$cipher'"
-	    exit 2
-	fi
+    if ! [ "$tls" = "TLSv1.3" ]; then
+        echo "expected 'TLSv1.3' got '$tls'"
+        exit 1
+    fi
 
-	echo "$1: ok"
+    if ! [ "$cipher" = "$1" ]; then
+        echo "expected '$1' got '$cipher'"
+        exit 2
+    fi
+
+    echo "$1: ok"
+  fi
 }
 
 start_test
