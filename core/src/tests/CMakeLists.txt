@@ -518,4 +518,10 @@ if(NOT HAVE_WIN32)
   bareos_add_test(fvec LINK_LIBRARIES GTest::gtest_main)
 endif()
 
+bareos_add_test(
+  backend_parse
+  LINK_LIBRARIES bareos GTest::gtest_main
+  ADDITIONAL_SOURCES "../stored/backends/util.cc"
+)
+
 include(DebugEdit)
