@@ -1,0 +1,30 @@
+Job {
+  Name = "ai-backup-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "SelfTest"
+  Accurate = yes
+  AlwaysIncremental = yes
+  AlwaysIncrementalJobRetention = 1 seconds
+  AlwaysIncrementalKeepNumber = 1
+  AlwaysIncrementalMaxFullAge = 1 seconds
+  Priority = 10
+  Spool Data = no
+  Allow Duplicate Jobs = no
+  Cancel Lower Level Duplicates = yes
+  Cancel Queued Duplicates = no
+  Cancel Running Duplicates = no
+  # Sleep up to 60s if this is a VF/consolidate job
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+}
