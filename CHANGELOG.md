@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - stored: fix authentication race condition / deadlock [PR #1742]
 - cats: fixes BigSqlQuery header fetching [PR #1751]
+- Fix missing DLL in windows packaging [PR #1819]
 
 ### Changed
 - systemtests: backport `wait for jobs to terminate` function [PR #1747]
@@ -739,4 +740,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1751]: https://github.com/bareos/bareos/pull/1751
 [PR #1771]: https://github.com/bareos/bareos/pull/1771
 [PR #1778]: https://github.com/bareos/bareos/pull/1778
+[PR #1819]: https://github.com/bareos/bareos/pull/1819
 [unreleased]: https://github.com/bareos/bareos/tree/master
