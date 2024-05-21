@@ -1,8 +1,8 @@
 OS:
   Sanitize:
-    "F39":
+    "F40":
       TYPE: scripted
-      IMAGE: fedora39
+      IMAGE: fedora40
       BUILD_SCRIPT: bareos/devtools/build-and-test-with-sanitize.sh
       FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
       ARCH:
