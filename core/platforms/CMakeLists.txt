@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,12 +34,11 @@ if(NOT HAVE_WIN32)
     message(STATUS "BAREOS_PLATFORM: " ${BAREOS_PLATFORM})
   elseif(${BAREOS_PLATFORM} STREQUAL archlinux)
     message(STATUS "BAREOS_PLATFORM: " ${BAREOS_PLATFORM})
+  elseif(${systemd})
+    add_subdirectory(systemd)
   else()
     add_subdirectory(${BAREOS_PLATFORM})
   endif()
 
-  if(${systemd})
-    add_subdirectory(systemd)
-  endif()
 
 endif()
