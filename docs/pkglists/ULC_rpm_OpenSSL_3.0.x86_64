@@ -1,0 +1,4 @@
+debug/x86_64/bareos-debugsource
+debug/x86_64/bareos-universal-client-debuginfo
+src/bareos
+x86_64/bareos-universal-client
