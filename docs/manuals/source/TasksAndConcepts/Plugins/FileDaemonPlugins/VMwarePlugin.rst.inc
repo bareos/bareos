@@ -693,6 +693,22 @@ vadp_dumper_query_allocated_blocks_chunk_size (optional)
    any performance impact. However, with more data it might have an impact on
    the backup performance.
 
+fallback_to_full_cbt (optional)
+   In some situations requesting the CBT information for an incremental backup
+   can fail, for example when the CBT information had to be reset. In that
+   case, by default the plugin will fall back to request full level CBT
+   information, which leads to a successful incremental backup job, but it
+   will have the size of a full level backup job. As a consequence, restore
+   time would increase, so a warning will be emitted in the job log, recommending
+   a new full level backup.
+   By setting ``fallback_to_full_cbt=no``, the job will not request full level
+   CBT and terminate immediately with failure instead. This can be used if it
+   is desired to run a subsequent new full level backup. Note that this does not
+   happen automatically, a new full level job must be run manually afterwards,
+   but this can be automated by using a post backup script, for details see
+   https://github.com/bareos/bareos/tree/master/contrib/misc/reschedule_job_as_full
+
+   Since :sinceVersion:`23.0.3: VMware Plugin`
 
 uuid (deprecated)
    The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless. When using uuid, restoring is only possible to the same still existing VM. It is recommended to change the configuration, as the uuid option will be dropped in the next version.
