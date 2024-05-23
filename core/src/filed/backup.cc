@@ -1697,6 +1697,8 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
       // Note we send one extra byte so Dir can store zero after object
       sd->message_length += comp_len + 1;
+      // initalize the extra byte
+      sd->msg[sd->message_length - 1] = '\0';
       status = sd->send();
       if (ff_pkt->object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
       break;
