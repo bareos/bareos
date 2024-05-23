@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,8 +28,11 @@ int main(int argc, char** argv)
 {
   CLI::App app{"Generate a stream of pseudo-random testdata"};
 
+  constexpr bool k_is_1000 = false;
   long bytes{1024};
-  app.add_option("-s,--size", bytes, "Number of bytes to create");
+  app.add_option("-s,--size", bytes, "Number of bytes to create")
+      ->transform(CLI::AsSizeValue{k_is_1000})
+      ->check(CLI::PositiveNumber);
 
   CLI11_PARSE(app, argc, argv);
 

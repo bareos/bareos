@@ -79,7 +79,7 @@ class JobConsistencyChecker {
 
   bool operator()(int num_fields, char** row)
   {
-    assert(num_fields == 5);
+    ASSERT(num_fields == 5);
     JobList.push_back(row[col_JobId]);
     if (row[col_PurgedFiles][0] != '0') {
       JobsWithPurgedFiles.push_back(row[col_JobId]);

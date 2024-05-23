@@ -520,7 +520,7 @@ static void WaitForCanceledStorageDaemonTermination(
     JobControlRecord* jcr,
     std::unique_lock<std::mutex> l)
 {
-  /* we exect jcr to be locked by l */
+  /* we expect jcr to be locked by l */
 
   /* Give SD 30 seconds to clean up after cancel */
   auto timeout = std::chrono::system_clock::now() + std::chrono::seconds(30);

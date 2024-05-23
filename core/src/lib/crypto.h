@@ -29,6 +29,7 @@
 #define BAREOS_LIB_CRYPTO_H_
 
 #include <optional>
+#include <cstdint>
 #include <string>
 
 template <typename T> class alist;
