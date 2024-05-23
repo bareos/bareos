@@ -8,9 +8,16 @@ OS:
       ARCH:
         - x86_64
   ULC_rpm:
+    "OpenSSL_1.1":
+      TYPE: scripted
+      IMAGE: "rhel8"
+      BUILD_SCRIPT: CD/rpm/build-ulc.sh
+      FINISH_SCRIPT: CD/rpm/finish-ulc.sh
+      ARCH:
+        - x86_64
     "OpenSSL_3.0":
       TYPE: scripted
-      IMAGE: "fedora40"
+      IMAGE: "rhel9"
       BUILD_SCRIPT: CD/rpm/build-ulc.sh
       FINISH_SCRIPT: CD/rpm/finish-ulc.sh
       ARCH:
