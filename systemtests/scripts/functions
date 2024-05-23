@@ -558,7 +558,7 @@ run_headless_dbcheck()
 {
    print_debug "checking with ${BAREOS_DBCHECK_BINARY}"
    if test "$debug" -eq 1 ; then
-      "${BAREOS_DBCHECK_BINARY}" "${working_dir}" "${db_name}" "${db_user}" "${db_password}" --verbose -d 500 "$@" | tee "${tmp}/dbcheck.out"
+      "${BAREOS_DBCHECK_BINARY}" "${working_dir}" "${db_name}" "${db_user}" "${db_password}" --verbose -b -d 500 "$@" | tee "${tmp}/dbcheck.out"
    else
       "${BAREOS_DBCHECK_BINARY}" "${working_dir}" "${db_name}" "${db_user}" "${db_password}" -b "$@" >"${tmp}/dbcheck.out" 2>&1
    fi
