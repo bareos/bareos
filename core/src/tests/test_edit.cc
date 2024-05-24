@@ -63,6 +63,13 @@ TEST(edit, convert_number_to_siunits)
 TEST(edit, convert_siunits_to_numbers)
 {
   {
+    const char* str = "";
+    uint64_t retvalue = 0;
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, 0);
+  }
+
+  {
     const char* str = "1";
     uint64_t retvalue = 0;
     ASSERT_TRUE(size_to_uint64(str, &retvalue));
@@ -174,5 +181,29 @@ TEST(edit, convert_siunits_to_numbers)
     uint64_t retvalue = 0;
     ASSERT_TRUE(size_to_uint64(str, &retvalue));
     ASSERT_EQ(retvalue, exi + pebi + tebi + gibi + mebi + kibi + 1);
+  }
+}
+
+TEST(edit, check_bad_parse)
+{
+  {
+    const char* str = "ei";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
+  {
+    const char* str = "-";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
+  {
+    const char* str = "+";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
+  {
+    const char* str = "M";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
   }
 }
