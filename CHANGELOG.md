@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bsmtp: add fixes to be more rfc compliant [PR #1795]
 - pr-tool: update LICENSE.txt [PR #1773]
 - tools: add dedup estimation tool `bdedupestimate` [PR #1654]
+- Build ULC and EL_9 for aarch64 [PR #1821]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -171,4 +172,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1805]: https://github.com/bareos/bareos/pull/1805
 [PR #1807]: https://github.com/bareos/bareos/pull/1807
 [PR #1808]: https://github.com/bareos/bareos/pull/1808
+[PR #1821]: https://github.com/bareos/bareos/pull/1821
 [unreleased]: https://github.com/bareos/bareos/tree/master
