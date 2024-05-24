@@ -7,7 +7,6 @@ OS:
       FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
       ARCH:
         - x86_64
-        - aarch64
   ULC_rpm:
     "OpenSSL_1.1":
       TYPE: scripted
@@ -24,6 +23,7 @@ OS:
       FINISH_SCRIPT: CD/rpm/finish-ulc.sh
       ARCH:
         - x86_64
+        - aarch64
   ULC_deb:
     "OpenSSL_1.1":
       TYPE: scripted
