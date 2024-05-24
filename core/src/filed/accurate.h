@@ -174,7 +174,8 @@ class BareosAccurateFilelistLmdb : public BareosAccurateFilelist {
   MDB_dbi db_dbi_;
   MDB_txn* db_rw_txn_;
   MDB_txn* db_ro_txn_;
-  uint32_t excess_files_{0};
+  std::size_t excess_files_{0};
+  std::size_t duplicate_files_{0};
 
   void destroy();
 
