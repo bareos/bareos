@@ -207,6 +207,11 @@ retry:
               mdb_strerror(result));
       }
       break;
+    case MDB_KEYEXIST: {
+      duplicate_files_ += 1;
+      Dmsg1(debuglevel, "fname=<%s> is already registered.\n", fname);
+      return false;
+    } break;
     default:
       Jmsg1(jcr_, M_FATAL, 0, T_("Unable insert new data: %s\n"),
             mdb_strerror(result));
@@ -255,6 +260,13 @@ bool BareosAccurateFilelistLmdb::EndLoad()
              "were anticipated. The lmdb backend requested an abort.\n"),
           seen_bitmap_.size() + excess_files_, initial_capacity_);
     return false;
+  }
+
+  if (duplicate_files_ > 0) {
+    Jmsg1(jcr_, M_ERROR, 0,
+          T_("%llu duplicate files were sent by the director and removed. This "
+             "may indicate problems with the database.\n"),
+          duplicate_files_);
   }
 
   return true;
