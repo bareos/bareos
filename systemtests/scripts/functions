@@ -550,7 +550,7 @@ run_bscan_db()
 run_query()
 {
     # hope that no pw is set
-    print_debug "run query $*"
+    echo "run query $*"
     PGOPTIONS="--client-min-messages=warning" psql -d "${db_name}" -q -c "$@"
 }
 
@@ -563,7 +563,6 @@ run_headless_dbcheck()
       "${BAREOS_DBCHECK_BINARY}" "${working_dir}" "${db_name}" "${db_user}" "${db_password}" -b "$@" >"${tmp}/dbcheck.out" 2>&1
    fi
 }
-
 
 run_bcopy()
 {
