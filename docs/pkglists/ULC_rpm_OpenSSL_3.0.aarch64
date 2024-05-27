@@ -1,4 +1,4 @@
-debug/arm64/bareos-debugsource
-debug/arm64/bareos-universal-client-debuginfo
+debug/aarch64/bareos-debugsource
+debug/aarch64/bareos-universal-client-debuginfo
 src/bareos
-arm64/bareos-universal-client
+aarch64/bareos-universal-client
