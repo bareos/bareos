@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2023 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2024 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -871,6 +871,7 @@ SectionIn 1 2 3
   File "libglib-2.0-0.dll"
   File "libintl-8.dll"
   File "libharfbuzz-0.dll"
+  File "libpcre2-8-0.dll"
   File "libpcre2-16-0.dll"
 
   SetOutPath "$INSTDIR\platforms"
@@ -1496,15 +1497,19 @@ done:
   File "/oname=$PLUGINSDIR\libintl-8.dll" "libintl-8.dll"
   File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "libwinpthread-1.dll"
 
-  # one of the two files  have to be available depending onwhat openssl Version we sue
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1.dll" "libcrypto-1_1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1-x64.dll" "libcrypto-1_1-x64.dll"
-  # Either one of this two files will be available depending on 32/64 bits.
-  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
+  # Either one of these files will be available depending on 32/64 bits.
+!if ${BIT_WIDTH} == '64'
+    File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "libcrypto-3-x64.dll"
+    File "/oname=$PLUGINSDIR\libssl-3-x64.dll" "libssl-3-x64.dll"
+    File "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
+!else if ${BIT_WIDTH} == '32'
+    File "/oname=$PLUGINSDIR\libcrypto-3.dll" "libcrypto-3.dll"
+    File "/oname=$PLUGINSDIR\libssl-3.dll" "libssl-3.dll"
+    File "/oname=$PLUGINSDIR\libgcc_s_dw2-1.dll" "libgcc_s_dw2-1.dll"
+!else
+    !error "BIT_WIDTH neither 32 nor 64!"
+!endif
 
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1.dll" "libssl-1_1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1-x64.dll" "libssl-1_1-x64.dll"
 
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
@@ -1846,14 +1851,13 @@ Function getDatabaseParametersLeave
   ReadINIStr  $DbPassword             "$PLUGINSDIR\databasedialog.ini" "Field 6" "state"
   ReadINIStr  $DbName                 "$PLUGINSDIR\databasedialog.ini" "Field 7" "state"
   ReadINIStr  $DbPort                 "$PLUGINSDIR\databasedialog.ini" "Field 8" "state"
-dbcheckend:
 
-   StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
+  StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not installing director
 
-   ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
-     !insertmacro CheckDbAdminConnection
-     MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
-   ${EndIF}
+  ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
+    !insertmacro CheckDbAdminConnection
+    MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
+  ${EndIF}
 SkipDbCheck:
 
 FunctionEnd
@@ -2046,6 +2050,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libglib-2.0-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
   Delete "$INSTDIR\libharfbuzz-0.dll"
+  Delete "$INSTDIR\libpcre2-8-0.dll"
   Delete "$INSTDIR\libpcre2-16-0.dll"
   Delete "$INSTDIR\iconv.dll"
   Delete "$INSTDIR\libxml2-2.dll"
