@@ -133,8 +133,7 @@ class AuthController extends AbstractActionController
         }
 
         if (
-            $bareos_updates != "false" &&
-            !preg_match('/"statusText":"timeout"/', $bareos_updates)
+            $bareos_updates != "false"
         ) {
             $this->updates = json_decode($bareos_updates, true);
             $session->offsetSet('product-updates', $this->updates);
