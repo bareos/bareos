@@ -31,6 +31,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: fix not counting files correctly in mac jobs when autoxflate is enabled [PR #1748]
 - cats: fixes BigSqlQuery header fetching [PR #1749]
 - Fix warning about missing delcandidates table in director [PR #1743]
+- Fix missing DLL in windows packaging [PR #1817]
 
 ## [23.0.2] - 2024-02-28
 
@@ -464,4 +465,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1806]: https://github.com/bareos/bareos/pull/1806
 [PR #1813]: https://github.com/bareos/bareos/pull/1813
 [PR #1816]: https://github.com/bareos/bareos/pull/1816
+[PR #1817]: https://github.com/bareos/bareos/pull/1817
 [unreleased]: https://github.com/bareos/bareos/tree/master
