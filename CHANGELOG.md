@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - replace https://bugs.bareos.org by  https://github.com/bareos/bareos/issues/ [PR #1813]
 - tools: remove perl in mtx changer [PR #1816]
 - Build ULC and EL_9 for aarch64 [PR #1827]
+- webui: fix and improve update check [PR #1833]
 
 ### Documentation
 - docs: fix Pool explanation for migration jobs [PR #1735]
@@ -470,4 +471,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1817]: https://github.com/bareos/bareos/pull/1817
 [PR #1827]: https://github.com/bareos/bareos/pull/1827
 [PR #1831]: https://github.com/bareos/bareos/pull/1831
+[PR #1833]: https://github.com/bareos/bareos/pull/1833
 [unreleased]: https://github.com/bareos/bareos/tree/master

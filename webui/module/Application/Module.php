@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,10 +41,9 @@ class Module
         $this->initSession($e);
 
         $translator = $e->getApplication()->getServiceManager()->get('MVCTranslator');
-        $translator->setLocale((isset($_SESSION['bareos']['locale']) ? $_SESSION['bareos']['locale'] : 'en_EN'))->setFallbackLocale('en_EN');
+        $translator->setLocale($_SESSION['bareos']['locale'] ?? 'en_EN')->setFallbackLocale('en_EN');
 
         $viewModel = $e->getApplication()->getMVCEvent()->getViewModel();
-        $viewModel->dirdUpdate = $_SESSION['bareos']['dird-update-available'];
     }
 
     public function getConfig()

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -196,7 +196,7 @@ get latest versions information via ajax call
 
 function getVersions() {
 
-   var update_url = window.location.protocol + "//download.bareos.com/release-info/bareos-version-info.js?callback=jsonCallback";
+   var update_url = window.location.protocol + "//download.bareos.com/release-info/bareos-version-info.js";
 
    var v = $.ajax({
       method: "GET",
@@ -211,22 +211,17 @@ function getVersions() {
       success: function(result) {
          return result;
       },
-      complete: function(result) {
-         return result;
-      }
    });
 
    return v;
 }
 
+
 $(window).on('load', function() {
-
-   var versions = getVersions();
-
-   $.when(versions).always(function(v) {
-      document.getElementById("bareos_updates").value = JSON.stringify(v);
-   });
-
+   $.when(getVersions())
+      .done(function(v) {
+         document.getElementById("bareos_updates").value = JSON.stringify(v);
+      });
 });
 
 </script>

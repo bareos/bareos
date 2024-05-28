@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -117,9 +117,8 @@ class AuthController extends AbstractActionController
         $session->offsetSet('authenticated', true);
         $session->offsetSet('locale', $locale);
         $session->offsetSet('idletime', time());
-        $session->offsetSet('product-updates', $bareos_updates);
-        $session->offsetSet('product-updates-status', false);
-        $session->offsetSet('dird-update-available', false);
+        $session->offsetSet('product-updates', null);
+        $session->offsetSet('dird-update-info', null);
         $session->offsetSet('dt_lengthmenu', $configuration['configuration']['tables']['pagination_values']);
         $session->offsetSet('dt_pagelength', $configuration['configuration']['tables']['pagination_default_value']);
         $session->offsetSet('dt_statesave', ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false');
@@ -134,12 +133,11 @@ class AuthController extends AbstractActionController
         }
 
         if (
-            $bareos_updates != "false" &&
-            !preg_match('/"statusText":"timeout"/', $bareos_updates)
+            $bareos_updates != "false"
         ) {
-            $session->offsetSet('product-updates-status', true);
             $this->updates = json_decode($bareos_updates, true);
-            $session->offsetSet('dird-update-available', $this->checkUpdateStatusDIRD());
+            $session->offsetSet('product-updates', $this->updates);
+            $session->offsetSet('dird-update-info', $this->getUpdateInfoDIRD());
         }
 
         $apicheck = $this->checkAPIStatusDIRD();
@@ -285,64 +283,27 @@ class AuthController extends AbstractActionController
         return $commands;
     }
 
+
     /**
-     * DIRD update check
+     * get update info for Bareos Director.
      *
-     * @return boolean
+     * @return mixed (false or array)
      */
-    private function checkUpdateStatusDIRD()
+    private function getUpdateInfoDIRD()
     {
         $dird_version = null;
-        $dird_dist = null;
 
         try {
-            $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
-            if (array_key_exists('version', $dird_version)) {
-                $dird_vers = $dird_version['version'];
+            $dird_version_array = $this->getDirectorModel()->getDirectorVersion($this->bsock);
+            if (array_key_exists('version', $dird_version_array)) {
+                $dird_version = $dird_version_array['version'];
             }
         } catch (Exception $e) {
             echo $e->getMessage();
         }
 
-        if (array_key_exists('obsdistribution', $dird_version)) {
-            $dird_dist = $dird_version['obsdistribution'];
-        }
-
-        if (!array_key_exists('obsarch', $dird_version)) {
-            $dird_arch = null;
-        }
-
-        if ($dird_dist !== null) {
-            if (preg_match("/ubuntu/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-                $dird_arch = "amd64";
-            } elseif (preg_match("/debian/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-                $dird_arch = "amd64";
-            } elseif (preg_match("/univention/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-                $dird_arch = "amd64";
-            } elseif (preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win32") {
-                $dird_arch = "32";
-            } elseif (preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win64") {
-                $dird_arch = "64";
-            } else {
-                $dird_arch = $dird_version['obsarch'];
-            }
-
-            if (isset($dird_arch) && isset($dird_vers)) {
-                if (
-                    array_key_exists('product', $this->updates) &&
-                    array_key_exists($dird_dist, $this->updates['product']['bareos-director']['distribution']) &&
-                    array_key_exists($dird_arch, $this->updates['product']['bareos-director']['distribution'][$dird_dist])
-                ) {
-                    foreach ($this->updates['product']['bareos-director']['distribution'][$dird_dist][$dird_arch] as $key => $value) {
-                        if (version_compare($dird_vers, $key, '>=')) {
-                            return false;
-                        }
-                        if (version_compare($dird_vers, $key, '<')) {
-                            return true;
-                        }
-                    }
-                }
-            }
+        if (isset($dird_version)) {
+            return \Bareos\Util::getNearestVersionInfo($this->updates, $dird_version);
         }
 
         return false;
