@@ -123,6 +123,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "vadp_dumper_multithreading",
             "vadp_dumper_sectors_per_call",
             "vadp_dumper_query_allocated_blocks_chunk_size",
+            "fallback_to_full_cbt",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -386,6 +387,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.vadp.dumper_query_allocated_blocks_chunk_size = int(
                 self.options["vadp_dumper_query_allocated_blocks_chunk_size"]
             )
+
+        if self.options.get("fallback_to_full_cbt") == "no":
+            self.vadp.fallback_to_full_cbt = False
 
         for option in self.options:
             bareosfd.DebugMessage(
@@ -1241,6 +1245,7 @@ class BareosVADPWrapper(object):
         self.vm_nvram_path = None
         self.vm_nvram_content = None
         self.restore_vm_created = False
+        self.fallback_to_full_cbt = True
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1274,7 +1279,7 @@ class BareosVADPWrapper(object):
             ):
                 retry_no_ssl = True
             else:
-                self._handle_connect_vmware_excpetion(ioerror)
+                self._handle_connect_vmware_exception(ioerror)
         except Exception as e:
             self._handle_connect_vmware_exception(e)
 
@@ -2329,6 +2334,15 @@ class BareosVADPWrapper(object):
                     fault.message for fault in error.faultMessage
                 ]:
                     bareosfd.JobMessage(bareosfd.M_ERROR, cbt_error_message + "\n")
+
+                if not self.fallback_to_full_cbt:
+                    bareosfd.JobMessage(
+                        bareosfd.M_FATAL,
+                        "As fallback to full CBT was disabled, "
+                        "a new full level backup of this job is required.\n",
+                    )
+                    return False
+
                 bareosfd.JobMessage(bareosfd.M_WARNING, "Falling back to full CBT\n")
                 self.changed_disk_areas = self.vm.QueryChangedDiskAreas(
                     snapshot=self.create_snap_result,
@@ -2950,7 +2964,7 @@ class BareosVADPWrapper(object):
 
         success = True
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
+        sock.settimeout(5)
         wrappedSocket = ssl.wrap_socket(sock)
         bareosfd.DebugMessage(
             100,
@@ -3304,15 +3318,7 @@ class BareosVADPWrapper(object):
 
         file_content = None
         with requests.Session() as s:
-            # retries will be done if either server is unreachable,
-            # or if the response succeeded but status is in status_forcelist,
-            # see https://httpstat.us/ for list of status codes
-            retries = urllib3.util.Retry(
-                total=3,
-                backoff_factor=0.1,
-                status_forcelist=[429, 500, 502, 503, 504],
-                allowed_methods={"GET"},
-            )
+            retries = self._setup_retries(methods={"GET"})
             s.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
             try:
                 response = s.get(
@@ -3373,12 +3379,7 @@ class BareosVADPWrapper(object):
             # retries will be done if either server is unreachable,
             # or if the response succeeded but status is in status_forcelist,
             # see https://httpstat.us/ for list of status codes
-            retries = urllib3.util.Retry(
-                total=3,
-                backoff_factor=0.1,
-                status_forcelist=[429, 500, 502, 503, 504],
-                allowed_methods={"PUT"},
-            )
+            retries = self._setup_retries(methods={"PUT"})
             s.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
             try:
                 response = s.put(
@@ -3425,6 +3426,33 @@ class BareosVADPWrapper(object):
         cookie[cookie_name] = cookie_text
 
         return cookie
+
+    def _setup_retries(self, methods=None):
+        """
+        Setup retries using for urllib3.util.Retry detecting version difference.
+        In urllib3 version 1.26.x the parameter method_whitelist was renamed
+        to allowed_methods.
+        """
+        # retries will be done if either server is unreachable,
+        # or if the response succeeded but status is in status_forcelist,
+        # see https://httpstat.us/ for list of status codes
+        retries = None
+        if hasattr(urllib3.util.Retry, "DEFAULT_ALLOWED_METHODS"):
+            retries = urllib3.util.Retry(
+                total=3,
+                backoff_factor=0.5,
+                status_forcelist=[429, 500, 502, 503, 504],
+                allowed_methods=methods,
+            )
+        else:
+            retries = urllib3.util.Retry(
+                total=3,
+                backoff_factor=0.5,
+                status_forcelist=[429, 500, 502, 503, 504],
+                method_whitelist=methods,
+            )
+
+        return retries
 
     # helper functions ############
 
