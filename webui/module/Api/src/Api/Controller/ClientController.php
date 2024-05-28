@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,16 +35,6 @@ class ClientController extends AbstractRestfulController
     protected $clientModel = null;
     protected $result = null;
 
-    private function getNearestVersionInfo($bareos_supported_versions, $client_version)
-    {
-        foreach ($bareos_supported_versions as $version_info) {
-            if (version_compare($client_version, $version_info["version"], ">=")) {
-                return $version_info;
-            }
-        }
-        return null;
-    }
-
     public function getList()
     {
         $this->RequestURIPlugin()->setRequestURI();
@@ -72,7 +62,7 @@ class ClientController extends AbstractRestfulController
             } else {
                 # $_SESSION['bareos']['product-updates'] is
                 # a sorted list of Bareos release versions.
-                $bareos_supported_versions = json_decode($_SESSION['bareos']['product-updates'], true);
+                $bareos_supported_versions = $_SESSION['bareos']['product-updates'];
 
                 $clients = $this->getClientModel()->getClients($this->bsock);
                 $dot_clients = $this->getClientModel()->getDotClients($this->bsock);
@@ -91,7 +81,7 @@ class ClientController extends AbstractRestfulController
                     $this->result[$i]['version'] = $v[0];
                     $this->result[$i]['version_tooltip'] = "";
                     $this->result[$i]['version_status'] = "unknown";
-                    $version_info = $this->getNearestVersionInfo($bareos_supported_versions, $this->result[$i]['version']);
+                    $version_info = \Bareos\Util::getNearestVersionInfo($bareos_supported_versions, $this->result[$i]['version']);
                     if ($version_info) {
                         $this->result[$i]['version_tooltip'] = $version_info['package_update_info'];
                         $this->result[$i]['version_status'] = $version_info['status'];
