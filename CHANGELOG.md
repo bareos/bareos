@@ -21,6 +21,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Allow cross-building for Windows on newer compiler [PR #1776]
 - replace https://bugs.bareos.org by  https://github.com/bareos/bareos/issues/ [PR #1813]
 - tools: remove perl in mtx changer [PR #1816]
+- Build ULC and EL_9 for aarch64 [PR #1827]
 
 ### Documentation
 - docs: fix Pool explanation for migration jobs [PR #1735]
@@ -466,4 +467,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1813]: https://github.com/bareos/bareos/pull/1813
 [PR #1816]: https://github.com/bareos/bareos/pull/1816
 [PR #1817]: https://github.com/bareos/bareos/pull/1817
+[PR #1827]: https://github.com/bareos/bareos/pull/1827
 [unreleased]: https://github.com/bareos/bareos/tree/master
