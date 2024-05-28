@@ -80,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: fix Pool explanation for migration jobs [PR #1728]
 - github: introduce template for issues [PR #1716]
 - docs: improve pluginAPI docs [PR #1805]
+- Fix mistake in VolumeManagement.rst [PR #1829]
 
 ### Fixed
 - dird: fix `purge oldest volume` [PR #1628]
@@ -173,4 +174,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1807]: https://github.com/bareos/bareos/pull/1807
 [PR #1808]: https://github.com/bareos/bareos/pull/1808
 [PR #1821]: https://github.com/bareos/bareos/pull/1821
+[PR #1829]: https://github.com/bareos/bareos/pull/1829
 [unreleased]: https://github.com/bareos/bareos/tree/master
