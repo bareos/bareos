@@ -93,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: fixes BigSqlQuery header fetching [PR #1746]
 - Fix issue #1780 libpng icc profil [PR #1788]
 - Fix missing DLL in windows packaging [PR #1807]
+- VMware Plugin: Adapt to older urllib3 versions [PR #1810]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -172,5 +173,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1805]: https://github.com/bareos/bareos/pull/1805
 [PR #1807]: https://github.com/bareos/bareos/pull/1807
 [PR #1808]: https://github.com/bareos/bareos/pull/1808
+[PR #1810]: https://github.com/bareos/bareos/pull/1810
 [PR #1821]: https://github.com/bareos/bareos/pull/1821
 [unreleased]: https://github.com/bareos/bareos/tree/master
