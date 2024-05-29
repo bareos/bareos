@@ -25,6 +25,7 @@
 #define BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_
 
 #include "cats/cats.h"
+#include "lib/mem_pool.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/job_trigger.h"
 
@@ -135,7 +136,7 @@ struct DirectorJcrImpl {
     JobId_t MigrateJobId;               /**< Migration JobId specified by UA */
     JobId_t VerifyJobId;                /**< Verify JobId specified by UA */
   };
-  POOLMEM* fname{};                     /**< Name to put into catalog */
+  PoolMem fname{PM_FNAME};              /**< Name to put into catalog */
   POOLMEM* client_uname{};              /**< Client uname */
   POOLMEM* FDSecureEraseCmd{};          /**< Report: Secure Erase Command  */
   POOLMEM* SDSecureEraseCmd{};          /**< Report: Secure Erase Command  */

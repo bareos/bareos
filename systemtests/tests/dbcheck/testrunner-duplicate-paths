@@ -1,0 +1,58 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Create duplicate path entries and remove them.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+# recreate the database, so we can start with a clean one
+"${rscripts}"/setup
+
+start_test
+
+# we need to get rid of the uniqueness constraint first or we will not be able
+# to add duplicate paths
+# the easiest way to do this is to drop the index entirely
+run_query "DROP INDEX path_name_idx"
+run_query "INSERT INTO Path (path) VALUES ('x'), ('y'), ('x')"
+run_query "SELECT * FROM Path" > "${tmp}/select_before.out"
+
+run_headless_dbcheck --fix
+
+run_query "SELECT * FROM Path" > "${tmp}/select_after.out"
+run_query "WITH counted (path, count) AS (SELECT path, COUNT(*) FROM Path GROUP BY path) SELECT count FROM counted WHERE count > 1" > "${tmp}/after.out"
+
+
+expect_grep "(0 rows)" "${tmp}/after.out" "Not all duplicates were removed."
+
+end_test
