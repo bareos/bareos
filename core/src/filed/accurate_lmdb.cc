@@ -23,6 +23,7 @@
 // This file contains the LMDB abstraction of the accurate payload storage.
 
 #include <unistd.h>
+#include <cstring>
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/streams.h"
@@ -473,7 +474,6 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
   MDB_cursor* cursor;
   MDB_val key, data;
   bool retval = false;
-  accurate_payload* payload;
   int stream = STREAM_UNIX_ATTRIBUTES;
 
   if (!jcr_->accurate) { return true; }
@@ -495,15 +495,19 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
   result = mdb_cursor_open(db_ro_txn_, db_dbi_, &cursor);
   if (result == 0) {
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
-      payload = (accurate_payload*)data.mv_data;
+      // lmdb does not guarantee any alignment, so we are not allowed to just
+      // access the data.  We need to "copy" it first.  The compiler should be
+      // able to optimize this away and use unaligned loads instead.
+      accurate_payload payload;
+      std::memcpy(&payload, data.mv_data, sizeof(payload));
 
-      if (seen_bitmap_.at(payload->filenr)
+      if (seen_bitmap_.at(payload.filenr)
           || PluginCheckFile(jcr_, (char*)key.mv_data)) {
         continue;
       }
 
       Dmsg1(debuglevel, "deleted fname=%s\n", key.mv_data);
-      DecodeStat(payload->lstat, &statp, sizeof(struct stat),
+      DecodeStat(payload.lstat, &statp, sizeof(struct stat),
                  &LinkFIc); /* decode catalog stat */
       ff_pkt->fname = (char*)key.mv_data;
       ff_pkt->statp.st_mtime = statp.st_mtime;
