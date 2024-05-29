@@ -93,7 +93,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 wait
 messages
 @$out $restore_log
-restore jobid=${slowjobid} where=$restore_directory all done yes
+restore jobid=${slowjobid} bootstrap=${tmp}/bootstrap-${daemon} where=$restore_directory all done yes
 wait
 messages
 quit
