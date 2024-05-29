@@ -598,6 +598,8 @@ void DoRestore(JobControlRecord* jcr)
         }
 
         if (status == CF_CORE) {
+          Jmsg(jcr, M_INFO, 0, "Create File (%lu): %s\n", jcr->JobFiles,
+               attr->ofname);
           status = CreateFile(jcr, attr, &rctx.bfd, jcr->fd_impl->replace);
         }
 

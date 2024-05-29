@@ -29,6 +29,7 @@ READ_CTX* new_read_context(void);
 void FreeReadContext(READ_CTX* rctx);
 void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx);
 bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
+                             READ_CTX* ctx,
                              Session_Label* sessrec,
                              bool RecordCb(DeviceControlRecord* dcr,
                                            DeviceRecord* rec,
