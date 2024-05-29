@@ -551,6 +551,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   int num_rows;
 
   errmsg[0] = 0;
+  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * pnl + 2);
   EscapeString(jcr, esc_name, path, pnl);
 
@@ -778,6 +779,8 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     return true;
   }
 
+  DbLocker _{jcr->db_batch};
+
   Dmsg1(50, "db_create_file_record changes=%u\n", changes);
 
   jcr->setJobStatus(JS_AttrInserting);
@@ -851,6 +854,7 @@ bail_out:
 bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
                                                AttributesDbRecord* ar)
 {
+  DbLocker _{this};
   ASSERT(ar->FileType != FT_BASE);
 
   Dmsg1(dbglevel, "Fname=%s\n", ar->fname);
@@ -862,6 +866,7 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
 
   if (!jcr->batch_started) {
     if (!OpenBatchConnection(jcr)) { return false; /* error already printed */ }
+    DbLocker batch_lock{jcr->db_batch};
     if (!jcr->db_batch->SqlBatchStartFileTable(jcr)) {
       Mmsg1(errmsg, "Can't start batch mode: ERR=%s",
             jcr->db_batch->strerror());
@@ -871,6 +876,8 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
     jcr->batch_started = true;
   }
 
+  // this lock should probably also be around the other things...
+  DbLocker batch_lock{jcr->db_batch};
   jcr->db_batch->SplitPathAndFile(jcr, ar->fname);
 
   return jcr->db_batch->SqlBatchInsertFileTable(jcr, ar);
@@ -923,6 +930,7 @@ bool BareosDb::CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   ASSERT(ar->JobId);
   ASSERT(ar->PathId);
 
+  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * fnl + 2);
   EscapeString(jcr, esc_name, fname, fnl);
 
