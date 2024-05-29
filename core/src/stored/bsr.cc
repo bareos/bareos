@@ -741,11 +741,16 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
     }
   } else {
     /* This is the old way -- deprecated */
-    for (p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
-      n = strchr(p, '|'); /* volume name separator */
-      if (n) { *n++ = 0; /* Terminate name */ }
+    for (const char* p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
+      const char* n = strchr(p, '|'); /* volume name separator */
       vol = new_restore_volume();
-      bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
+      if (n) {
+        bstrncpy(vol->VolumeName, p,
+                 MIN((size_t)(n - p), sizeof(vol->VolumeName)));
+        n += 1;
+      } else {
+        bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
+      }
       bstrncpy(vol->MediaType, jcr->sd_impl->dcr->media_type,
                sizeof(vol->MediaType));
       if (AddRestoreVolume(jcr, vol)) {
