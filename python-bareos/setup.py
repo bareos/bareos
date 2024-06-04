@@ -55,7 +55,9 @@ def get_long_description():
         bsock_content = bsock_file.read().strip()
     # bsock_description = re.sub(r'.*"""(.*?)""".*', r'\1', bsock_content, flags=re.DOTALL)
     bsock_description = re.sub(
-        r'.*(\.\. note::.*?)""".*', r"\n\n\1", bsock_content, flags=re.DOTALL
+        ":py:class:",
+        "",
+        re.sub(r'.*(\.\. note::.*?)""".*', r"\n\n\1", bsock_content, flags=re.DOTALL),
     )
     return description + bsock_description
 
