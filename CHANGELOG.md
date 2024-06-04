@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [21.1.10] - 2024-06-04
 
 ### Fixed
 - stored: fix authentication race condition / deadlock [PR #1742]
@@ -470,6 +470,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [21.1.7]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.7
 [21.1.8]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.8
 [21.1.9]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.9
+[21.1.10]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.10
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -741,4 +742,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1771]: https://github.com/bareos/bareos/pull/1771
 [PR #1778]: https://github.com/bareos/bareos/pull/1778
 [PR #1819]: https://github.com/bareos/bareos/pull/1819
-[unreleased]: https://github.com/bareos/bareos/tree/master
