@@ -98,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix missing DLL in windows packaging [PR #1807]
 - VMware Plugin: Adapt to older urllib3 versions [PR #1810]
 - fix various memory leaks [PR #1723]
+- fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1725]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -156,6 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1722]: https://github.com/bareos/bareos/pull/1722
 [PR #1723]: https://github.com/bareos/bareos/pull/1723
 [PR #1724]: https://github.com/bareos/bareos/pull/1724
+[PR #1725]: https://github.com/bareos/bareos/pull/1725
 [PR #1727]: https://github.com/bareos/bareos/pull/1727
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
