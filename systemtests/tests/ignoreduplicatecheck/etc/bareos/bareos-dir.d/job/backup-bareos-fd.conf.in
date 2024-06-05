@@ -15,16 +15,17 @@ Job {
   Cancel Queued Duplicates = no
   Cancel Running Duplicates = no
   # Sleep up to 60s if this is a VF/consolidate job
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
-  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && sleep 5 || exit 0'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 1\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 2\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 3\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 4\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 5\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 6\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 7\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 8\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 9\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 10\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 11\") || echo \"Did not sleep\"'"
+  Run Before Job = "sh -c 'test \"%l\" = \"Virtual Full\" && (sleep 5; echo \"Did sleep 12\") || echo \"Did not sleep\"'"
+
 }

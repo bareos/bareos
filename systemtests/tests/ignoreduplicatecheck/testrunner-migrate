@@ -27,7 +27,7 @@ wait jobid=${migrate_admin_id}
 @sleep 5
 messages
 @$out $tmp/migrate_worker_before_status.out
-llist jobid=${migrate_worked_id}
+llist jobid=${migrated_job_id}
 @$out $tmp/migrate.out
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-5'"
 run job=ai-backup-bareos-fd level=Incremental yes

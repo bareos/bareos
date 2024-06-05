@@ -52,6 +52,8 @@ list joblog jobid=${incremental_2_id}
 run job=ai-backup-bareos-fd level=Incremental yes
 wait jobid=${incremental_3_id}
 list joblog jobid=${incremental_3_id}
+@$out $tmp/backup-messages
+messages
 END_OF_DATA
 
 run_bconsole
