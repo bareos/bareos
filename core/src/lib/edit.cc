@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,8 @@
 #include "include/bareos.h"
 #include "lib/edit.h"
 #include <math.h>
+#include <cstdlib>
+#include <algorithm>
 
 // We assume ASCII input and don't worry about overflow
 uint64_t str_to_uint64(const char* str)
@@ -191,57 +193,110 @@ char* edit_int64_with_commas(int64_t val, char* buf)
  * Given a string "str", separate the numeric part into str, and the modifier
  * into mod.
  */
-static bool GetModifier(char* str,
-                        char* num,
-                        int num_len,
-                        char* mod,
-                        int mod_len)
+struct modifier_parse_result {
+  double number;
+  std::string_view modifier;
+  const char* rest;
+};
+
+static std::string_view TrimLeft(std::string_view input)
 {
-  int i, len, num_begin, num_end, mod_begin, mod_end;
-
-  StripTrailingJunk(str);
-  len = strlen(str);
-
-  for (i = 0; i < len; i++) {
-    if (!B_ISSPACE(str[i])) { break; }
+  while (input.size() > 0 && B_ISSPACE(input.front())) {
+    input.remove_prefix(1);
   }
-  num_begin = i;
+  return input;
+}
 
-  // Walk through integer part
-  for (; i < len; i++) {
-    if (!B_ISDIGIT(str[i]) && str[i] != '.') { break; }
-  }
-
-  num_end = i;
-  if (num_len > (num_end - num_begin + 1)) {
-    num_len = num_end - num_begin + 1;
-  }
-  if (num_len == 0) { return false; }
-
-  // Eat any spaces in front of modifier
-  for (; i < len; i++) {
-    if (!B_ISSPACE(str[i])) { break; }
+static std::optional<modifier_parse_result> GetModifier(const char* input)
+{
+  Dmsg2(900, "parsing \"%s\"\n", input);
+  char* num_end;
+  errno = 0;
+  // strtod takes care of leading space
+  auto number = strtod(input, &num_end);
+  if (number == 0 && errno != 0) {
+    Dmsg0(900, "parse error: \"%s\" ERR=%s\n", input, strerror(errno));
+    return std::nullopt;
   }
 
-  mod_begin = i;
-  for (; i < len; i++) {
-    if (!B_ISALPHA(str[i])) { break; }
+  if (num_end == input) {
+    // we do not accept empty inputs (but strtod does!)
+    Dmsg0(900, "parse error: \"%s\" ERR=no number\n", input);
+    return std::nullopt;
   }
 
-  mod_end = i;
-  if (mod_len > (mod_end - mod_begin + 1)) {
-    mod_len = mod_end - mod_begin + 1;
+  std::string_view rest{num_end};
+
+  auto trimmed = TrimLeft(rest);
+
+  auto mod_end = std::find_if(trimmed.begin(), trimmed.end(), [](auto c) {
+    return B_ISDIGIT(c) || B_ISSPACE(c);
+  });
+  auto mod = trimmed.substr(0, mod_end - trimmed.begin());
+
+  const char* rest_input = mod.end();
+
+  Dmsg2(900, "num=%lf mod=\"%.*s\" rest=\"%s\"\n", number, (int)mod.size(),
+        mod.data(), rest_input);
+  // empty mod is ok, so no need to check!
+  return modifier_parse_result{number, mod, rest_input};
+}
+
+// mults needs to be at least as big as mods; mods needs to be NULL terminated.
+// returns the number as well as the rest of the string that was not parsed.
+static std::pair<std::uint64_t, const char*> parse_number_with_mod(
+    const char* str,
+    const char* const mods[],
+    const double mults[])
+{
+  std::uint64_t total = 0;
+
+  while (*str) {
+    double number;
+    std::string_view modifier;
+    const char* rest;
+    if (auto res = GetModifier(str); !res) {
+      return {total, str};
+    } else {
+      number = res->number;
+      modifier = res->modifier;
+      rest = res->rest;
+    }
+
+    if (modifier.size() == 0) {
+      total += static_cast<std::uint64_t>(number);
+    } else {
+      bool found = false;
+      for (int i = 0; mods[i]; ++i) {
+        if (bstrncasecmp(modifier.data(), mods[i], modifier.size())) {
+          // without the static_cast, this will first cast total to double,
+          // then add the doubles, and then finally cast back to uint64,
+          // which we do not want!  doubles lose precision to quickly:
+          // 1 exabyte + 1 == 1 exabyte for doubles
+          total += static_cast<std::uint64_t>(number * mults[i]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        Dmsg1(900, "Unknown modifier: \"%.*s\"\n", modifier.size(),
+              modifier.data());
+        return {total, str};
+      }
+    }
+
+    str = rest;
   }
 
-  Dmsg5(900, "str=%s: num_beg=%d num_end=%d mod_beg=%d mod_end=%d\n", str,
-        num_begin, num_end, mod_begin, mod_end);
-  bstrncpy(num, &str[num_begin], num_len);
-  bstrncpy(mod, &str[mod_begin], mod_len);
+  return {total, str};
+}
 
-  if (!Is_a_number(num)) { return false; }
-
-  bstrncpy(str, &str[mod_end], len);
-  Dmsg2(900, "num=%s mod=%s\n", num, mod);
+// returns wether the string only contains junk characters
+static bool IsJunk(const char* str)
+{
+  for (auto* head = str; *head; ++head) {
+    if (!b_isjunkchar(*head)) { return false; }
+  }
 
   return true;
 }
@@ -251,55 +306,31 @@ static bool GetModifier(char* str,
  * Returns false: if error
  *         true:  if OK, and value stored in value
  */
-bool DurationToUtime(char* str, utime_t* value)
+bool DurationToUtime(const char* str, utime_t* value)
 {
-  int i, mod_len;
-  double val, total = 0.0;
-  char mod_str[20];
-  char num_str[50];
   // The "n" = mins and months appears before minutes so that m maps to months.
   static const char* mod[]
       = {"n",    "seconds", "months",   "minutes", "mins",     "hours",
          "days", "weeks",   "quarters", "years",   (char*)NULL};
-  static const int32_t mult[] = {60,
-                                 1,
-                                 60 * 60 * 24 * 30,
-                                 60,
-                                 60,
-                                 3600,
-                                 3600 * 24,
-                                 3600 * 24 * 7,
-                                 3600 * 24 * 91,
-                                 3600 * 24 * 365,
-                                 0};
+  static const double mult[] = {60,
+                                1,
+                                60 * 60 * 24 * 30,
+                                60,
+                                60,
+                                3600,
+                                3600 * 24,
+                                3600 * 24 * 7,
+                                3600 * 24 * 91,
+                                3600 * 24 * 365,
+                                0};
 
-  while (*str) {
-    if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
-      return false;
-    }
-
-    // Now find the multiplier corresponding to the modifier
-    mod_len = strlen(mod_str);
-    if (mod_len == 0) {
-      i = 1; /* Default to seconds */
-    } else {
-      for (i = 0; mod[i]; i++) {
-        if (bstrncasecmp(mod_str, mod[i], mod_len)) { break; }
-      }
-      if (mod[i] == NULL) { return false; }
-    }
-
-    Dmsg2(900, "str=%s: mult=%d\n", num_str, mult[i]);
-    errno = 0;
-    val = strtod(num_str, NULL);
-
-    if (errno != 0 || val < 0) { return false; }
-
-    total += val * mult[i];
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult);
+      IsJunk(rest)) {
+    *value = static_cast<utime_t>(total);
+    return true;
+  } else {
+    return false;
   }
-  *value = (utime_t)total;
-
-  return true;
 }
 
 // Edit a utime "duration" into ASCII
@@ -349,13 +380,11 @@ char* edit_pthread(pthread_t val, char* buf, int buf_len)
   return buf;
 }
 
-static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
+static bool strunit_to_uint64(const char* str,
+                              uint64_t* value,
+                              const char** mod)
 {
-  int i, mod_len;
-  double val;
-  char mod_str[20];
-  char num_str[50];
-  static const uint64_t mult[] = {
+  static const double mult[] = {
       1,     // Byte
       1024,  // KiB Kibibyte
       1000,  // kB Kilobyte
@@ -378,29 +407,13 @@ static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
 
   };
 
-  if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
-    return 0;
-  }
-
-  // Now find the multiplier corresponding to the modifier
-  mod_len = strlen(mod_str);
-  if (mod_len == 0) {
-    i = 0; /* Default with no modifier = 1 */
+  if (auto [total, rest] = parse_number_with_mod(str, mod, mult);
+      IsJunk(rest)) {
+    *value = total;
+    return true;
   } else {
-    for (i = 0; mod[i]; i++) {
-      if (bstrncasecmp(mod_str, mod[i], mod_len)) { break; }
-    }
-    if (mod[i] == NULL) { return false; }
+    return false;
   }
-
-  Dmsg2(900, "str=%s: mult=%d\n", str, mult[i]);
-  errno = 0;
-  val = strtod(num_str, NULL);
-
-  if (errno != 0 || val < 0) { return false; }
-  *value = (utime_t)(val * mult[i]);
-
-  return true;
 }
 
 // convert uint64 number to size string
@@ -442,7 +455,7 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
  * Returns false: if error
  *         true:  if OK, and value stored in value
  */
-bool size_to_uint64(char* str, uint64_t* value)
+bool size_to_uint64(const char* str, uint64_t* value)
 {
   // not used
   // clang-format off
@@ -470,7 +483,7 @@ bool size_to_uint64(char* str, uint64_t* value)
  * Returns false: if error
  *         true:  if OK, and value stored in value
  */
-bool speed_to_uint64(char* str, uint64_t* value)
+bool speed_to_uint64(const char* str, uint64_t* value)
 {
   // not used
   static const char* mod[] = {"*", "k/s", "kb/s", "m/s", "mb/s", NULL};

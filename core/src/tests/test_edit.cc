@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,23 +28,34 @@
 
 #include "lib/edit.h"
 
+constexpr std::uint64_t kibi = 1024;
+constexpr std::uint64_t mebi = 1024 * kibi;
+constexpr std::uint64_t gibi = 1024 * mebi;
+constexpr std::uint64_t tebi = 1024 * gibi;
+constexpr std::uint64_t pebi = 1024 * tebi;
+constexpr std::uint64_t exi = 1024 * pebi;
+
+constexpr std::uint64_t kilo = 1000;
+constexpr std::uint64_t mega = 1000 * kilo;
+constexpr std::uint64_t giga = 1000 * mega;
+constexpr std::uint64_t tera = 1000 * giga;
+constexpr std::uint64_t peta = 1000 * tera;
+constexpr std::uint64_t exa = 1000 * peta;
+
 TEST(edit, convert_number_to_siunits)
 {
   ASSERT_STREQ(SizeAsSiPrefixFormat(0).c_str(), "0");
   ASSERT_STREQ(SizeAsSiPrefixFormat(1).c_str(), "1");
   ASSERT_STREQ(SizeAsSiPrefixFormat(123).c_str(), "123");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(1024).c_str(), "1 k");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(2050).c_str(), "2 k 2");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(1048576).c_str(), "1 m");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(1073741824).c_str(), "1 g");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(1099511627776).c_str(), "1 t");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(1125899906842624).c_str(), "1 p");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(1152921504606846976).c_str(), "1 e");
-
+  ASSERT_STREQ(SizeAsSiPrefixFormat(kibi).c_str(), "1 k");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(2 * kibi + 2).c_str(), "2 k 2");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(mebi).c_str(), "1 m");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(gibi).c_str(), "1 g");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(tebi).c_str(), "1 t");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(pebi).c_str(), "1 p");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(exi).c_str(), "1 e");
   ASSERT_STREQ(
-      SizeAsSiPrefixFormat(1152921504606846976 + 1125899906842624
-                           + 1099511627776 + 1073741824 + 1048576 + 1024 + 1)
-          .c_str(),
+      SizeAsSiPrefixFormat(exi + pebi + tebi + gibi + mebi + kibi + 1).c_str(),
       "1 e 1 p 1 t 1 g 1 m 1 k 1");
 }
 
@@ -52,113 +63,147 @@ TEST(edit, convert_number_to_siunits)
 TEST(edit, convert_siunits_to_numbers)
 {
   {
-    char str[] = "1 k";
+    const char* str = "";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1024);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, 0);
+  }
+
+  {
+    const char* str = "1";
+    uint64_t retvalue = 0;
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, 1);
+  }
+
+  {
+    const char* str = "1 k";
+    uint64_t retvalue = 0;
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, kibi);
   }
 
 
   // kilobyte
   {
-    char str[] = "1 kb";
+    const char* str = "1 kb";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1000);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, kilo);
   }
   {
-    char str[] = "1 KB";
+    const char* str = "1 KB";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1000);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, kilo);
   }
 
   // mebibyte
   {
-    char str[] = "1 m";
+    const char* str = "1 m";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1024 * 1024);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, mebi);
   }
 
   // megabyte
   {
-    char str[] = "1 mb";
+    const char* str = "1 mb";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1000 * 1000);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, mega);
   }
 
 
   // gibibyte
   {
-    char str[] = "1 g";
+    const char* str = "1 g";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1024 * 1024 * 1024);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, gibi);
   }
   // gigabyte
   {
-    char str[] = "1 gb";
+    const char* str = "1 gb";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1000 * 1000 * 1000);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, giga);
   }
 
 
   // tebibyte
   {
-    char str[] = "1 t";
+    const char* str = "1 t";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1099511627776);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, tebi);
   }
   // terabyte
   {
-    char str[] = "1 tb";
+    const char* str = "1 tb";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1'000'000'000'000);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, tera);
   }
 
   // pebibyte
   {
-    char str[] = "1 p";
+    const char* str = "1 p";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1'125'899'906'842'624);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, pebi);
   }
   // petabyte
   {
-    char str[] = "1 pb";
+    const char* str = "1 pb";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1'000'000'000'000'000);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, peta);
   }
 
   // exbibyte
   {
-    char str[] = "1 e";
+    const char* str = "1 e";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1'152'921'504'606'846'976);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, exi);
   }
   // exabyte
   {
-    char str[] = "1 eb";
+    const char* str = "1 eb";
     uint64_t retvalue = 0;
-    size_to_uint64(str, &retvalue);
-    ASSERT_EQ(retvalue, 1'000'000'000'000'000'000);
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, exa);
   }
-  // size_to_uint64 only checks for first modifier so the following does not
-  // work
-  /*
-    {
-      char str[] = "1 e 1 p 1 t 1 g 1 m 1 k 1";
-      uint64_t retvalue = 0;
-      size_to_uint64(str, &retvalue);
-      ASSERT_EQ(retvalue, 1152921504606846976 + 1125899906842624 + 1099511627776
-    + 1073741824 + 1048576 + 1024 + 1);
-    }
-  */
+  // combined specification
+  {
+    const char* str = "1 e 1 p 1 t 1 g 1 m 1 k 1";
+    uint64_t retvalue = 0;
+    ASSERT_TRUE(size_to_uint64(str, &retvalue));
+    ASSERT_EQ(retvalue, exi + pebi + tebi + gibi + mebi + kibi + 1);
+  }
+}
+
+TEST(edit, check_bad_parse)
+{
+  {
+    const char* str = "ei";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
+  {
+    const char* str = "-";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
+  {
+    const char* str = "+";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
+  {
+    const char* str = "M";
+    uint64_t retvalue = 0;
+    ASSERT_FALSE(size_to_uint64(str, &retvalue));
+  }
 }
