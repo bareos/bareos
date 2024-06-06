@@ -58,6 +58,6 @@ if __name__ == "__main__":
         sys.exit(1)
     logger.debug("authentication successful")
     if args.command:
-        print(bsock.call(args.command))
+        print(bsock.call(args.command).decode("utf-8"))
     else:
         bsock.interactive()
