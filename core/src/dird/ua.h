@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,7 @@ class BareosDb;
 class guid_list;
 class OutputFormatter;
 typedef struct s_tree_root TREE_ROOT;
-typedef struct s_tree_node TREE_NODE;
+struct tree_node;
 
 namespace directordaemon {
 
@@ -165,8 +165,8 @@ class UaContext {
 // Context for InsertTreeHandler()
 struct TreeContext {
   TREE_ROOT* root = nullptr;       /**< Root */
-  TREE_NODE* node = nullptr;       /**< Current node */
-  TREE_NODE* avail_node = nullptr; /**< Unused node last insert */
+  tree_node* node = nullptr;       /**< Current node */
+  tree_node* avail_node = nullptr; /**< Unused node last insert */
   int cnt = 0;                     /**< Count for user feedback */
   bool all = false;                /**< If set mark all as default */
   UaContext* ua = nullptr;
