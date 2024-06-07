@@ -157,7 +157,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
 {
   int len;
   int cnt = 0;
-  TREE_NODE *node, *parent;
+  tree_node *node, *parent;
   PoolMem restore_pathname, tmp;
 
   node = FirstTreeNode(jcr->dir_impl->restore_tree_root);

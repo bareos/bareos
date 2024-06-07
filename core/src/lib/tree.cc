@@ -35,10 +35,10 @@
 #define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE) /* approx 10MB */
 
 /* Forward referenced subroutines */
-static TREE_NODE* search_and_insert_tree_node(char* fname,
-                                              int type,
+static tree_node* search_and_insert_tree_node(char* fname,
+                                              tree_node_type type,
                                               TREE_ROOT* root,
-                                              TREE_NODE* parent);
+                                              tree_node* parent);
 template <typename T> static T* tree_alloc(TREE_ROOT* root, int size);
 
 // NOTE !!!!! we turn off Debug messages for performance reasons.
@@ -84,24 +84,24 @@ TREE_ROOT* new_tree(int count)
   root = new (root) TREE_ROOT();
 
   // Assume filename + node  = 40 characters average length
-  size = count * (BALIGN(sizeof(TREE_NODE)) + 40);
+  size = count * (BALIGN(sizeof(tree_node)) + 40);
   if (count > 1000000 || size > (MAX_BUF_SIZE / 2)) { size = MAX_BUF_SIZE; }
   Dmsg2(400, "count=%d size=%d\n", count, size);
   MallocBuf(root, size);
   root->cached_path_len = -1;
   root->cached_path = GetPoolMemory(PM_FNAME);
-  root->type = TN_ROOT;
+  root->type = tree_node_type::Root;
   root->fname = "";
   return root;
 }
 
 // Create a new tree node.
-static TREE_NODE* new_tree_node(TREE_ROOT* root)
+static tree_node* new_tree_node(TREE_ROOT* root)
 {
-  TREE_NODE* node;
-  int size = sizeof(TREE_NODE);
-  node = tree_alloc<TREE_NODE>(root, size);
-  node = new (node) TREE_NODE();
+  tree_node* node;
+  int size = sizeof(tree_node);
+  node = tree_alloc<tree_node>(root, size);
+  node = new (node) tree_node();
   node->delta_seq = -1;
   return node;
 }
@@ -109,14 +109,14 @@ static TREE_NODE* new_tree_node(TREE_ROOT* root)
 // This routine can be called to release the previously allocated tree node.
 static void FreeTreeNode(TREE_ROOT* root)
 {
-  int asize = BALIGN(sizeof(TREE_NODE));
+  int asize = BALIGN(sizeof(tree_node));
   root->mem->rem += asize;
   root->mem->mem = (char*)root->mem->mem - asize;
 }
 
-void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node)
+void TreeRemoveNode(TREE_ROOT* root, tree_node* node)
 {
-  int asize = BALIGN(sizeof(TREE_NODE));
+  int asize = BALIGN(sizeof(tree_node));
   node->parent->child.remove(node);
   if (((char*)root->mem->mem - asize) == (char*)node) {
     FreeTreeNode(root);
@@ -171,7 +171,7 @@ void FreeTree(TREE_ROOT* root)
 
 // Add Delta part for this node
 void TreeAddDeltaPart(TREE_ROOT* root,
-                      TREE_NODE* node,
+                      tree_node* node,
                       JobId_t JobId,
                       int32_t FileIndex)
 {
@@ -188,15 +188,15 @@ void TreeAddDeltaPart(TREE_ROOT* root,
  * Insert a node in the tree. This is the main subroutine called when building a
  * tree.
  */
-TREE_NODE* insert_tree_node(char* path,
+tree_node* insert_tree_node(char* path,
                             char* fname,
-                            int,
+                            tree_node_type type,
                             TREE_ROOT* root,
-                            TREE_NODE* parent)
+                            tree_node* parent)
 {
   char *p, *q;
   int path_len = strlen(path);
-  TREE_NODE* node;
+  tree_node* node;
 
   Dmsg1(100, "insert_tree_node: %s\n", path);
 
@@ -244,7 +244,7 @@ TREE_NODE* insert_tree_node(char* path,
     Dmsg1(100, "No / found: %s\n", path);
   }
 
-  node = search_and_insert_tree_node(fname, 0, root, parent);
+  node = search_and_insert_tree_node(fname, type, root, parent);
 
   if (q) {    /* if trailing slash on entry */
     *q = '/'; /*  restore it */
@@ -258,11 +258,11 @@ TREE_NODE* insert_tree_node(char* path,
 }
 
 // Ensure that all appropriate nodes for a full path exist in the tree.
-TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
+tree_node* make_tree_path(char* path, TREE_ROOT* root)
 {
-  TREE_NODE *parent, *node;
+  tree_node *parent, *node;
   char *fname, *p;
-  int type = TN_NEWDIR;
+  auto type = tree_node_type::NewDir;
 
   Dmsg1(100, "make_tree_path: %s\n", path);
 
@@ -281,7 +281,7 @@ TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
   } else {
     fname = path;
     parent = root;
-    type = TN_DIR_NLS;
+    type = tree_node_type::DirWin;
   }
 
   node = search_and_insert_tree_node(fname, type, root, parent);
@@ -291,8 +291,8 @@ TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
 
 static int NodeCompare(void* item1, void* item2)
 {
-  TREE_NODE* tn1 = (TREE_NODE*)item1;
-  TREE_NODE* tn2 = (TREE_NODE*)item2;
+  tree_node* tn1 = (tree_node*)item1;
+  tree_node* tn2 = (tree_node*)item2;
 
   if (tn1->fname[0] > tn2->fname[0]) {
     return 1;
@@ -312,16 +312,16 @@ static const char* copy_string(std::string_view str, TREE_ROOT* root)
 }
 
 // See if the fname already exists. If not insert a new node for it.
-static TREE_NODE* search_and_insert_tree_node(char* fname,
-                                              int type,
+static tree_node* search_and_insert_tree_node(char* fname,
+                                              tree_node_type type,
                                               TREE_ROOT* root,
-                                              TREE_NODE* parent)
+                                              tree_node* parent)
 {
-  TREE_NODE *node, *found_node;
+  tree_node *node, *found_node;
 
   node = new_tree_node(root);
   node->fname = fname;
-  found_node = (TREE_NODE*)parent->child.insert(node, NodeCompare);
+  found_node = (tree_node*)parent->child.insert(node, NodeCompare);
   if (found_node != node) { /* already in list */
     FreeTreeNode(root);     /* free node allocated above */
     found_node->inserted = false;
@@ -346,7 +346,7 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
   return node;
 }
 
-static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
+static void TreeGetpathItem(tree_node* node, POOLMEM*& path)
 {
   if (!node) { return; }
 
@@ -355,7 +355,8 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
   /* Fixup for Win32. If we have a Win32 directory and
    * there is only a / in the buffer, remove it since
    * win32 names don't generally start with / */
-  if (node->type == TN_DIR_NLS && IsPathSeparator(path[0]) && path[1] == '\0') {
+  if (node->type == tree_node_type::DirWin && IsPathSeparator(path[0])
+      && path[1] == '\0') {
     PmStrcpy(path, "");
   }
   PmStrcat(path, node->fname);
@@ -363,13 +364,14 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
   /* Add a slash for all directories unless we are at the root,
    * also add a slash to a soft linked file if it has children
    * i.e. it is linked to a directory. */
-  if ((node->type != TN_FILE && !(IsPathSeparator(path[0]) && path[1] == '\0'))
+  if ((node->type != tree_node_type::File
+       && !(IsPathSeparator(path[0]) && path[1] == '\0'))
       || (node->soft_link && TreeNodeHasChild(node))) {
     PmStrcat(path, "/");
   }
 }
 
-POOLMEM* tree_getpath(TREE_NODE* node)
+POOLMEM* tree_getpath(tree_node* node)
 {
   POOLMEM* path;
 
@@ -386,14 +388,14 @@ POOLMEM* tree_getpath(TREE_NODE* node)
 }
 
 // Change to specified directory
-TREE_NODE* tree_cwd(char* path, TREE_ROOT* root, TREE_NODE* node)
+tree_node* tree_cwd(char* path, TREE_ROOT* root, tree_node* node)
 {
   if (path[0] == '.' && path[1] == '\0') { return node; }
 
   // Handle relative path
   if (path[0] == '.' && path[1] == '.'
       && (IsPathSeparator(path[2]) || path[2] == '\0')) {
-    TREE_NODE* parent = node->parent ? node->parent : node;
+    tree_node* parent = node->parent ? node->parent : node;
     if (path[2] == 0) {
       return parent;
     } else {
@@ -412,11 +414,11 @@ TREE_NODE* tree_cwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 }
 
 // Do a relative cwd -- i.e. relative to current node rather than root node
-TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
+tree_node* tree_relcwd(char* path, TREE_ROOT* root, tree_node* node)
 {
   char* p;
   int len;
-  TREE_NODE* cd;
+  tree_node* cd;
   char save_char;
   int match;
 
@@ -447,7 +449,9 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
     if (match) { break; }
   }
 
-  if (!cd || (cd->type == TN_FILE && !TreeNodeHasChild(cd))) { return NULL; }
+  if (!cd || (cd->type == tree_node_type::File && !TreeNodeHasChild(cd))) {
+    return NULL;
+  }
 
   if (!p) {
     Dmsg0(100, "tree_relcwd: no more to lookup. found.\n");
