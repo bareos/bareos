@@ -301,12 +301,7 @@ int InsertTreeHandler(void* ctx, int, char** row)
     node->soft_link = S_ISLNK(statp.st_mode) != 0;
     node->delta_seq = delta_seq;
 
-    if (tree->all) {
-      node->extract = true; /* extract all by default */
-      if (type == tree_node_type::Dir || type == tree_node_type::DirWin) {
-        node->extract_dir = true; /* if dir, extract it */
-      }
-    }
+    if (tree->all) { node->extract = true; /* extract by default */ }
 
     // Insert file having hardlinks into hardlink hashtable.
     if (statp.st_nlink > 1 && type != tree_node_type::Dir
@@ -364,11 +359,6 @@ static int SetExtract(UaContext* ua,
   }
 
   node->extract = extract;
-  if (node->type == tree_node_type::Dir
-      || node->type == tree_node_type::DirWin) {
-    node->extract_dir = extract; /* set/clear dir too */
-  }
-
 
   // For a non-file (i.e. directory), we see all the children
   if (node->type != tree_node_type::File
@@ -399,13 +389,17 @@ static int SetExtract(UaContext* ua,
   if (extract) {
     while (node->parent) {
       node = node->parent;
-      if (node->extract || node->extract_dir) {
-        break;
-      }  // everything above is already extracted
-      node->extract_dir = true;
-      if (node->type != tree_node_type::NewDir
-          && node->type != tree_node_type::Root) {
-        count += 1;
+      node->extract_descendend = true;
+    }
+  } else {
+    while (node->parent) {
+      node = node->parent;
+      node->extract_descendend = false;
+      tree_node* child;
+      foreach_child (child, node) {
+        if (child->extract || child->extract_descendend) {
+          node->extract_descendend = true;
+        }
       }
     }
   }
@@ -626,7 +620,7 @@ static int Markdircmd(UaContext* ua, TreeContext* tree)
       if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
         if (node->type == tree_node_type::Dir
             || node->type == tree_node_type::DirWin) {
-          node->extract_dir = true;
+          node->extract = true;
           count++;
         }
       }
@@ -653,7 +647,7 @@ static int countcmd(UaContext* ua, TreeContext* tree)
   for (node = FirstTreeNode(tree->root); node; node = NextTreeNode(node)) {
     if (node->type != tree_node_type::NewDir) {
       total++;
-      if (node->extract || node->extract_dir) { num_extract++; }
+      if (node->extract) { num_extract++; }
     }
   }
   ua->SendMsg(T_("%s total files/dirs. %s marked to be restored.\n"),
@@ -680,7 +674,7 @@ static int findcmd(UaContext* ua, TreeContext* tree)
         cwd = tree_getpath(node);
         if (node->extract) {
           tag = "*";
-        } else if (node->extract_dir) {
+        } else if (node->extract_descendend) {
           tag = "+";
         } else {
           tag = "";
@@ -742,7 +736,7 @@ static int lscmd(UaContext* ua, TreeContext* tree)
       const char* tag;
       if (node->extract) {
         tag = "*";
-      } else if (node->extract_dir) {
+      } else if (node->extract_descendend) {
         tag = "+";
       } else {
         tag = "";
@@ -761,7 +755,7 @@ static int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
   if (!TreeNodeHasChild(tree->node)) { return 1; }
   foreach_child (node, tree->node) {
     if ((ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0)
-        && (node->extract || node->extract_dir)) {
+        && (node->extract)) {
       ua->SendMsg("%s%s\n", node->fname, TreeNodeHasChild(node) ? "/" : "");
     }
   }
@@ -788,11 +782,11 @@ static void rlsmark(UaContext* ua, tree_node* tnode, int level)
 
   foreach_child (node, tnode) {
     if ((ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0)
-        && (node->extract || node->extract_dir)) {
+        && (node->extract || node->extract_descendend)) {
       const char* tag;
       if (node->extract) {
         tag = "*";
-      } else if (node->extract_dir) {
+      } else if (node->extract_descendend) {
         tag = "+";
       } else {
         tag = "";
@@ -877,7 +871,7 @@ static int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
     if (ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0) {
       if (node->extract) {
         tag = "*";
-      } else if (node->extract_dir) {
+      } else if (node->extract_descendend) {
         tag = "+";
       } else {
         tag = " ";
@@ -966,7 +960,7 @@ static int Estimatecmd(UaContext* ua, TreeContext* tree)
         }
 
         FreePoolMemory(cwd);
-      } else if (node->extract || node->extract_dir) {
+      } else if (node->extract || node->extract_descendend) {
         // Directory, count only
         num_extract++;
       }
@@ -1158,7 +1152,7 @@ static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
       if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
         if (node->type == tree_node_type::Dir
             || node->type == tree_node_type::DirWin) {
-          node->extract_dir = false;
+          node->extract = false;
           count++;
         }
       }
