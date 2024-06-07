@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -171,6 +171,7 @@ void TreeAddDeltaPart(TREE_ROOT* root,
                       int32_t FileIndex);
 void FreeTree(TREE_ROOT* root);
 POOLMEM* tree_getpath(TREE_NODE* node);
+bool tree_getpathsegment(POOLMEM*& buffer, TREE_NODE* from, TREE_NODE* until);
 void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node);
 
 /**
