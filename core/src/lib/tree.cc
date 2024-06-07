@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -361,6 +361,28 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
       || (node->soft_link && TreeNodeHasChild(node))) {
     PmStrcat(path, "/");
   }
+}
+
+bool tree_getpathsegment(POOLMEM*& buffer, TREE_NODE* from, TREE_NODE* until)
+{
+  if (!until) { return false; }
+
+  if (from == until) {
+    if (from->type == TN_FILE) { return false; }
+
+    PmStrcpy(buffer, ".");
+
+    return true;
+  }
+
+  if (until->parent == nullptr) { return false; }
+
+  if (!tree_getpathsegment(buffer, from, until->parent)) { return false; }
+
+  PmStrcat(buffer, "/");
+  PmStrcat(buffer, until->fname);
+
+  return true;
 }
 
 POOLMEM* tree_getpath(TREE_NODE* node)

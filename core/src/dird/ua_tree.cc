@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -370,14 +370,6 @@ static int SetExtract(UaContext* ua,
     // Recursive set children within directory
     foreach_child (n, node) { count += SetExtract(ua, n, tree, extract); }
 
-    // Walk up tree marking any unextracted parent to be extracted.
-    if (extract) {
-      while (node->parent && !node->parent->extract_dir) {
-        node = node->parent;
-        node->extract_dir = true;
-        if (node->type != TN_NEWDIR && node->type != TN_ROOT) { count += 1; }
-      }
-    }
   } else {
     if (extract && node->hard_link) {
       // Every hardlink is in hashtable, and it points to linked file.
@@ -388,11 +380,20 @@ static int SetExtract(UaContext* ua,
       HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
       if (entry && entry->node) {
         n = entry->node;
-        // if this is our first time marking it, then add to the count
-        if (!n->extract) { count += 1; }
-        n->extract = true;
-        n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
+        SetExtract(ua, n, tree, extract);
+        // // if this is our first time marking it, then add to the count
+        // if (!n->extract) { count += 1; }
+        // n->extract = true;
+        // n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
       }
+    }
+  }
+  // Walk up tree marking any unextracted parent to be extracted.
+  if (extract) {
+    while (node->parent && !node->parent->extract_dir) {
+      node = node->parent;
+      node->extract_dir = true;
+      if (node->type != TN_NEWDIR && node->type != TN_ROOT) { count += 1; }
     }
   }
 
@@ -409,41 +410,109 @@ static void StripTrailingSlash(char* arg)
   }
 }
 
+static std::vector<std::string> split_path(std::string_view v)
+{
+  std::vector<std::string> parts;
+
+
+  for (;;) {
+    auto pos = v.find_first_of('/');
+
+    if (pos == v.npos) {
+      parts.emplace_back(v);
+      break;
+    }
+
+    parts.emplace_back(v.substr(0, pos));
+
+    if (pos == v.size()) { break; }
+
+    v = v.substr(pos + 1);
+  }
+
+  return parts;
+}
+
 static int MarkElements(UaContext* ua, TreeContext* tree)
 {
   int count = 0;
 
   for (int i = 1; i < ua->argc; i++) {
     StripTrailingSlash(ua->argk[i]);
+    std::vector parts = split_path(ua->argk[i]);
 
+    if (parts.size() == 0) { continue; }
+
+    struct stack_elem {
+      TREE_NODE* node;
+      std::size_t part_index;  // index into parts vector
+    };
+
+    std::vector<stack_elem> stack;
+
+    stack.push_back({tree->node, 0});
+
+
+    while (!stack.empty()) {
+      auto current = stack.back();
+      stack.pop_back();
+      auto& part = parts[current.part_index];
+      auto* node = current.node;
+      if (fnmatch(part.c_str(), node->fname, 0) == 0) {
+        if (current.part_index + 1 == parts.size()) {
+          // if this is the last part, then we mark every found node
+          count += SetExtract(ua, node, tree, true);
+        } else if (node->type != TN_FILE) {
+          // otherwise we check every child with the next part
+          TREE_NODE* child;
+
+          if (part == "**") {
+            // ** matches any number of path parts, so we cannot just
+            //    skip this
+            foreach_child (child, node) {
+              stack.push_back({child, current.part_index});
+            }
+          }
+
+          foreach_child (child, node) {
+            stack.push_back({child, current.part_index + 1});
+          }
+        }
+      } else if (node->type == TN_ROOT) {
+        TREE_NODE* child;
+
+        foreach_child (child, node) {
+          stack.push_back({child, current.part_index});
+        }
+      }
+    }
+#if 0
     // See if this is a complex path.
     if (strchr(ua->argk[i], '/')) {
+
+
       int pnl, fnl;
-      POOLMEM* given_file_pattern = GetPoolMemory(PM_FNAME);
-      POOLMEM* given_path_pattern = GetPoolMemory(PM_FNAME);
+      PoolMem given_file_pattern(PM_FNAME);
+      PoolMem given_path_pattern(PM_FNAME);
 
       // Split the argument into a path pattern and file pattern.
-      SplitPathAndFilename(ua->argk[i], given_path_pattern, &pnl,
-                           given_file_pattern, &fnl);
+      SplitPathAndFilename(ua->argk[i], given_path_pattern.addr(), &pnl,
+                           given_file_pattern.addr(), &fnl);
 
-      if (!tree_cwd(given_path_pattern, tree->root, tree->node)) {
-        ua->WarningMsg(T_("Invalid path %s given.\n"), given_path_pattern);
-        FreePoolMemory(given_file_pattern);
-        FreePoolMemory(given_path_pattern);
+      if (!tree_cwd(given_path_pattern.c_str(), tree->root, tree->node)) {
+        ua->WarningMsg(T_("Invalid path %s given.\n"),
+                       given_path_pattern.c_str());
         continue;
       }
 
-      std::string fullpath_pattern{};
-      if (ua->argk[i][0] != '/') {
-        POOLMEM* path = tree_getpath(tree->node);
-        fullpath_pattern.append(path);
-        FreePoolMemory(path);
-      }
+      // std::string fullpath_pattern{};
+      // if (ua->argk[i][0] != '/') {
+      //   POOLMEM* path = tree_getpath(tree->node);
+      //   fullpath_pattern.append(path);
+      //   FreePoolMemory(path);
+      // }
 
-      fullpath_pattern.append(given_path_pattern);
-
-      POOLMEM* node_filename = GetPoolMemory(PM_FNAME);
-      POOLMEM* node_path = GetPoolMemory(PM_FNAME);
+      // fullpath_pattern.append(given_path_pattern);
 
       TREE_NODE* node{nullptr};
       {
@@ -456,22 +525,38 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
         FreePoolMemory(path);
       }
 
-      for (; node; node = NextTreeNode(node)) {
-        POOLMEM* path = tree_getpath(node);
-        SplitPathAndFilename(path, node_path, &pnl, node_filename, &fnl);
-        FreePoolMemory(path);
+      PoolMem temp;
 
-        if (fnmatch(fullpath_pattern.c_str(), node_path, 0) == 0) {
-          if (fnmatch(given_file_pattern, node->fname, 0) == 0) {
+      auto len = given_path_pattern.strlen();
+      char* pp = given_path_pattern.c_str();
+      if (pp[len - 1] == '/') {
+        // getpathsegment does not include a trailing slash
+        pp[len-1] = '\0';
+      }
+      for (; node; node = NextTreeNode(node)) {
+
+        if (!tree_getpathsegment(temp.addr(), tree->node, node->parent)) {
+          continue;
+        }
+
+        // temp is now always a relative path, more often than not starting with
+        // ./
+        // We should probably actually do our own delimited matching
+        // so we can do this properly. But for now this workaround should be
+        // enough
+
+        const char* fname = temp.c_str();
+        if (temp.strlen() > 2) {
+          fname += 2;
+        }
+
+
+        if (fnmatch(given_path_pattern.c_str(), fname, 0) == 0) {
+          if (fnmatch(given_file_pattern.c_str(), node->fname, 0) == 0) {
             count += SetExtract(ua, node, tree, true);
           }
         }
       }
-
-      FreePoolMemory(given_file_pattern);
-      FreePoolMemory(given_path_pattern);
-      FreePoolMemory(node_filename);
-      FreePoolMemory(node_path);
     } else {
       // Only a pattern without a / so do things relative to CWD.
       TREE_NODE* node;
@@ -481,6 +566,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
         }
       }
     }
+#endif
   }
   return count;
 }
