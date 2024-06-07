@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -358,10 +358,6 @@ if(NOT client-only)
     test_config_parser_dir
     LINK_LIBRARIES dird_objects bareos bareosfind testing_common bareossql
                    GTest::gtest_main
-  )
-  set_tests_properties(
-    gtest:ConfigParser_Dir.bareos_configparser_tests
-    PROPERTIES LABELS broken_with_enabled_sanitzers
   )
   bareos_add_test(
     test_crc32

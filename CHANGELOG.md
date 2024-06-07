@@ -40,6 +40,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix warning about missing delcandidates table in director [PR #1743]
 - Fix missing DLL in windows packaging [PR #1817]
 - VMware Plugin: Adapt to older urllib3 versions [PR #1831]
+- fix various memory leaks [PR #1828]
 
 ## [23.0.2] - 2024-02-28
 
@@ -476,6 +477,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1816]: https://github.com/bareos/bareos/pull/1816
 [PR #1817]: https://github.com/bareos/bareos/pull/1817
 [PR #1827]: https://github.com/bareos/bareos/pull/1827
+[PR #1828]: https://github.com/bareos/bareos/pull/1828
 [PR #1831]: https://github.com/bareos/bareos/pull/1831
 [PR #1833]: https://github.com/bareos/bareos/pull/1833
 [PR #1834]: https://github.com/bareos/bareos/pull/1834

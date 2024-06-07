@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -105,6 +105,15 @@ int MakeIdList(BareosDb* db, const char* query, ID_LIST* id_list)
   return 1;
 }
 
+void FreeIdList(s_id_ctx* id_list)
+{
+  id_list->num_ids = 0;
+  id_list->num_del = 0;
+  id_list->tot_ids = 0;
+  free(id_list->Id);
+  id_list->Id = nullptr;
+}
+
 // Called here with each name to be added to the list
 int NameListHandler(void* ctx, int, char** row)
 {
@@ -153,6 +162,7 @@ void FreeNameList(NameList* name_list)
   name_list->num_ids = 0;
   name_list->max_ids = 0;
   free(name_list->name);
+  name_list->name = nullptr;
 }
 
 std::vector<int> get_deletable_storageids(
@@ -222,7 +232,10 @@ std::vector<int> get_deletable_storageids(
       storage_ids_to_delete.push_back(
           orphaned_storage_ids_list.Id[orphaned_storage_id]);
     }
+    FreeNameList(&device_names);
+    FreeNameList(&volume_names);
   }
+  FreeIdList(&orphaned_storage_ids_list);
   return storage_ids_to_delete;
 }
 

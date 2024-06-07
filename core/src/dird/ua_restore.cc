@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1396,6 +1396,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
   // Select Client from the Catalog
   if (!GetClientDbr(ua, &cr)) { goto bail_out; }
+  if (rx->ClientName) { free(rx->ClientName); }
   rx->ClientName = strdup(cr.Name);
 
   // Get FileSet
