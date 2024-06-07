@@ -142,7 +142,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   user->signal(BNET_START_RTREE);
 
   // Enter interactive command handler allowing selection of individual files.
-  tree->node = (TREE_NODE*)tree->root;
+  tree->node = tree->root;
   cwd = tree_getpath(tree->node);
   if (cwd) {
     ua->SendMsg(T_("cwd is: %s\n"), cwd);

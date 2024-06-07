@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -79,7 +79,7 @@ class Globbing : public testing::Test {
   void SetUp() override
   {
     tree.root = new_tree(1);
-    tree.node = (TREE_NODE*)tree.root;
+    tree.node = tree.root;
     me = new DirectorResource;
     ua = new_ua_context(&jcr);
   }
