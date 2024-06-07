@@ -358,12 +358,13 @@ static int SetExtract(UaContext* ua,
   TREE_NODE* n;
   int count = 0;
 
+  if (node->extract != extract && node->type != TN_NEWDIR) { count++; }
+
   node->extract = extract;
   if (node->type == TN_DIR || node->type == TN_DIR_NLS) {
     node->extract_dir = extract; /* set/clear dir too */
   }
 
-  if (node->type != TN_NEWDIR) { count++; }
 
   // For a non-file (i.e. directory), we see all the children
   if (node->type != TN_FILE || (node->soft_link && TreeNodeHasChild(node))) {
@@ -386,8 +387,11 @@ static int SetExtract(UaContext* ua,
   }
   // Walk up tree marking any unextracted parent to be extracted.
   if (extract) {
-    while (node->parent && !node->parent->extract_dir) {
+    while (node->parent) {
       node = node->parent;
+      if (node->extract || node->extract_dir) {
+        break;
+      }  // everything above is already extracted
       node->extract_dir = true;
       if (node->type != TN_NEWDIR && node->type != TN_ROOT) { count += 1; }
     }
