@@ -240,7 +240,7 @@ TREE_NODE* insert_tree_node(char* path,
     }
   } else {
     fname = path;
-    if (!parent) { parent = (TREE_NODE*)root; }
+    if (!parent) { parent = root; }
     Dmsg1(100, "No / found: %s\n", path);
   }
 
@@ -268,7 +268,7 @@ TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
 
   if (*path == 0) {
     Dmsg0(100, "make_tree_path: parent=*root*\n");
-    return (TREE_NODE*)root;
+    return root;
   }
 
   // Get last dir component of path
@@ -280,7 +280,7 @@ TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
     *p = '/'; /* restore full name */
   } else {
     fname = path;
-    parent = (TREE_NODE*)root;
+    parent = root;
     type = TN_DIR_NLS;
   }
 
@@ -303,6 +303,14 @@ static int NodeCompare(void* item1, void* item2)
   return strcmp(tn1->fname, tn2->fname);
 }
 
+static const char* copy_string(std::string_view str, TREE_ROOT* root)
+{
+  char* buf = tree_alloc<char>(root, str.size() + 1);
+  memcpy(buf, str.data(), str.size());
+  buf[str.size()] = '\0';
+  return buf;
+}
+
 // See if the fname already exists. If not insert a new node for it.
 static TREE_NODE* search_and_insert_tree_node(char* fname,
                                               int type,
@@ -321,9 +329,7 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
   }
 
   // It was not found, but is now inserted
-  node->fname_len = strlen(fname);
-  node->fname = tree_alloc<char>(root, node->fname_len + 1);
-  strcpy(node->fname, fname);
+  node->fname = copy_string(fname, root);
   node->parent = parent;
   node->type = type;
 
@@ -419,7 +425,7 @@ TREE_NODE* tree_cwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 
   if (IsPathSeparator(path[0])) {
     Dmsg0(100, "Doing absolute lookup.\n");
-    return tree_relcwd(path + 1, root, (TREE_NODE*)root);
+    return tree_relcwd(path + 1, root, root);
   }
 
   Dmsg0(100, "Doing relative lookup.\n");
