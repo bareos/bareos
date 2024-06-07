@@ -273,7 +273,7 @@ The |dir| configuration is as follows:
      Address = bareos-sd.example.com
      Password = local_storage_password
      Device = RecycleDir2
-     Media Type = File1
+     Media Type = File2
    }
 
    Catalog {
