@@ -436,7 +436,7 @@ static std::vector<std::string> split_path(std::string_view v)
   return parts;
 }
 
-static int MarkElements(UaContext* ua, TreeContext* tree)
+static int MarkElements(UaContext* ua, TreeContext* tree, bool extract = true)
 {
   int count = 0;
 
@@ -464,7 +464,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
       if (fnmatch(part.c_str(), node->fname, 0) == 0) {
         if (current.part_index + 1 == parts.size()) {
           // if this is the last part, then we mark every found node
-          count += SetExtract(ua, node, tree, true);
+          count += SetExtract(ua, node, tree, extract);
         } else if (node->type != tree_node_type::File) {
           // otherwise we check every child with the next part
           tree_node* child;
@@ -972,81 +972,23 @@ static int DotPwdcmd(UaContext* ua, TreeContext* tree)
 
 static int Unmarkcmd(UaContext* ua, TreeContext* tree)
 {
-  POOLMEM* cwd;
-  tree_node* node;
-  int count = 0;
-  bool restore_cwd = false;
-
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
     ua->SendMsg(T_("No files unmarked.\n"));
     return 1;
   }
 
-  // Save the current CWD.
-  cwd = tree_getpath(tree->node);
+  char ec1[50];
 
-  for (int i = 1; i < ua->argc; i++) {
-    StripTrailingSlash(ua->argk[i]);
-
-    // See if this is a full path.
-    if (strchr(ua->argk[i], '/')) {
-      int pnl, fnl;
-      POOLMEM* file = GetPoolMemory(PM_FNAME);
-      POOLMEM* path = GetPoolMemory(PM_FNAME);
-
-      // Split the argument into a path and file part.
-      SplitPathAndFilename(ua->argk[i], path, &pnl, file, &fnl);
-
-      // First change the CWD to the correct PATH.
-      node = tree_cwd(path, tree->root, tree->node);
-      if (!node) {
-        ua->WarningMsg(T_("Invalid path %s given.\n"), path);
-        FreePoolMemory(file);
-        FreePoolMemory(path);
-        continue;
-      }
-      tree->node = node;
-      restore_cwd = true;
-
-      foreach_child (node, tree->node) {
-        if (fnmatch(file, node->fname, 0) == 0) {
-          count += SetExtract(ua, node, tree, false);
-        }
-      }
-
-      FreePoolMemory(file);
-      FreePoolMemory(path);
-    } else {
-      // Only a pattern without a / so do things relative to CWD.
-      foreach_child (node, tree->node) {
-        if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
-          count += SetExtract(ua, node, tree, false);
-        }
-      }
-    }
-  }
+  int count = MarkElements(ua, tree, false);
 
   if (count == 0) {
     ua->SendMsg(T_("No files unmarked.\n"));
   } else if (count == 1) {
     ua->SendMsg(T_("1 file unmarked.\n"));
   } else {
-    char ed1[50];
     ua->SendMsg(T_("%s files unmarked.\n"),
-                edit_uint64_with_commas(count, ed1));
+                edit_uint64_with_commas(count, ec1));
   }
-
-  // Restore the CWD when we changed it.
-  if (restore_cwd && cwd) {
-    node = tree_cwd(cwd, tree->root, tree->node);
-    if (!node) {
-      ua->WarningMsg(T_("Invalid path %s given.\n"), cwd);
-    } else {
-      tree->node = node;
-    }
-  }
-
-  if (cwd) { FreePoolMemory(cwd); }
 
   return 1;
 }
