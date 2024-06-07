@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Documentation
+- Fix mistake in VolumeManagement.rst [PR #1834]
+
 ## [23.0.3] - 2024-06-04
 
 ### Added
@@ -475,4 +478,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1827]: https://github.com/bareos/bareos/pull/1827
 [PR #1831]: https://github.com/bareos/bareos/pull/1831
 [PR #1833]: https://github.com/bareos/bareos/pull/1833
+[PR #1834]: https://github.com/bareos/bareos/pull/1834
 [unreleased]: https://github.com/bareos/bareos/tree/master
