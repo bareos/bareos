@@ -74,7 +74,6 @@ struct tree_node {
   tree_node()
       : type{tree_node_type::Root}
       , extract{false}
-      , extract_dir{false}
       , hard_link{false}
       , soft_link{false}
       , inserted{false}
@@ -90,12 +89,13 @@ struct tree_node {
   uint32_t JobId{};    /* JobId */
   int32_t delta_seq{}; /* current delta sequence */
   tree_node_type type;
-  unsigned int extract : 1;     /* extract item */
-  unsigned int extract_dir : 1; /* extract dir entry only */
-  unsigned int hard_link : 1;   /* set if have hard link */
-  unsigned int soft_link : 1;   /* set if is soft link */
-  unsigned int inserted : 1;    /* set when node newly inserted */
-  unsigned int loaded : 1;      /* set when the dir is in the tree */
+  unsigned int extract : 1; /* extract item */
+  unsigned int
+      extract_descendend : 1; /* something to extract lives in this subtree */
+  unsigned int hard_link : 1; /* set if have hard link */
+  unsigned int soft_link : 1; /* set if is soft link */
+  unsigned int inserted : 1;  /* set when node newly inserted */
+  unsigned int loaded : 1;    /* set when the dir is in the tree */
   tree_node* parent{};
   tree_node* next{};               /* next hash of FileIndex */
   struct delta_list* delta_list{}; /* delta parts for this node */
