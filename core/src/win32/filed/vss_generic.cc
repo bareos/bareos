@@ -82,8 +82,8 @@ class IXMLDOMDocument;
 
 #  define VSSClientGeneric VSSClientVista
 #  include "bareos_vss.h"
-#  include "vswriter.h"
-#  include "vsbackup.h"
+#  include <vswriter.h>
+#  include <vsbackup.h>
 
 
 using namespace filedaemon;
