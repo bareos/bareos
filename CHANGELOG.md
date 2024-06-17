@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- python-bareos: add missing `dirname` variable [PR #1849]
+
 ## [21.1.10] - 2024-06-04
 
 ### Fixed
@@ -744,4 +747,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1771]: https://github.com/bareos/bareos/pull/1771
 [PR #1778]: https://github.com/bareos/bareos/pull/1778
 [PR #1819]: https://github.com/bareos/bareos/pull/1819
+[PR #1849]: https://github.com/bareos/bareos/pull/1849
 [unreleased]: https://github.com/bareos/bareos/tree/master
