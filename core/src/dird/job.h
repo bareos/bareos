@@ -58,6 +58,7 @@ void DirdFreeJcrPointers(JobControlRecord* jcr);
 void CancelStorageDaemonJob(JobControlRecord* jcr);
 bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd);
 void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig);
+void SdMsgThreadSendSignal_Locked(JobControlRecord* jcr, int sig);
 void InitJobServer(int max_workers);
 void TermJobServer();
 

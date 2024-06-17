@@ -642,14 +642,19 @@ static void* job_thread(void* arg)
   return NULL;
 }
 
-void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig)
+void SdMsgThreadSendSignal_Locked(JobControlRecord* jcr, int sig)
 {
-  std::unique_lock l(jcr->mutex_guard());
   if (!jcr->dir_impl->sd_msg_thread_done && jcr->dir_impl->SD_msg_chan_started
       && !pthread_equal(jcr->dir_impl->SD_msg_chan, pthread_self())) {
     Dmsg1(800, "Send kill to SD msg chan jid=%d\n", jcr->JobId);
     pthread_kill(jcr->dir_impl->SD_msg_chan, sig);
   }
+}
+
+void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig)
+{
+  std::unique_lock l(jcr->mutex_guard());
+  SdMsgThreadSendSignal_Locked(jcr, sig);
 }
 
 /**

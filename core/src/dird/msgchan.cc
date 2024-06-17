@@ -529,7 +529,7 @@ static void WaitForCanceledStorageDaemonTermination(
     if (jcr->dir_impl->SD_msg_chan_started) {
       jcr->store_bsock->SetTimedOut();
       jcr->store_bsock->SetTerminated();
-      SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
+      SdMsgThreadSendSignal_Locked(jcr, TIMEOUT_SIGNAL);
     }
 
     if (jcr->dir_impl->term_wait.wait_until(l, timeout)
