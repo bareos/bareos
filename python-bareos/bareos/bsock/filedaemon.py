@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -100,6 +100,7 @@ class FileDaemon(LowLevel):
         self,
         address="localhost",
         port=9102,
+        dirname=None,
         name=None,
         password=None,
         tls_psk_enable=True,
@@ -136,20 +137,20 @@ class FileDaemon(LowLevel):
             self.tls_version = tls_version
         # Well, we are not really a Director,
         # but using the interface provided for Directors.
-        self.identity_prefix = u"R_DIRECTOR"
+        self.identity_prefix = "R_DIRECTOR"
         self.connect(address, port, dirname, ConnectionType.FILEDAEMON, name, password)
         self._init_connection()
 
     def _finalize_authentication(self):
         code, text = self.receive_and_evaluate_response_message()
 
-        self.logger.debug(u"code: {0}".format(code))
+        self.logger.debug("code: {0}".format(code))
 
         #
         # Test if authentication has been accepted.
         #
         if code == ProtocolMessageIds.FdOk:
-            self.logger.info(u"Authentication: {0}".format(text))
+            self.logger.info("Authentication: {0}".format(text))
             self.auth_credentials_valid = True
         else:
             raise bareos.exceptions.AuthenticationError(
