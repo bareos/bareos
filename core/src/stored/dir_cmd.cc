@@ -865,7 +865,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
       // Find resource, and make sure we were able to open it
       if (bstrcmp(devname.c_str(), changer->resource_name_)) {
         // Try each device in this AutoChanger
-        foreach_alist (device_resource, changer->device_resources) {
+        for (auto* device_resource : *changer->device_resources) {
           Dmsg1(100, "Try changer device %s\n",
                 device_resource->resource_name_);
           if (!device_resource->dev) {

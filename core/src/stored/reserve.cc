@@ -427,10 +427,10 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
       if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) { continue; }
 
       Dmsg1(debuglevel, "vol=%s OK for this job\n", vol->vol_name);
-      foreach_alist (store, dirstore) {
+      for (auto* store : *dirstore) {
         int status;
         rctx.store = store;
-        foreach_alist (device_name, store->device) {
+        for (auto* device_name : *store->device) {
           // Found a device, try to use it
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
@@ -490,9 +490,9 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
    *
    * For each storage device that the user specified, we
    * search and see if there is a resource for that device. */
-  foreach_alist (store, dirstore) {
+  for (auto* store : *dirstore) {
     rctx.store = store;
-    foreach_alist (device_name, store->device) {
+    for (auto* device_name : *store->device) {
       int status;
       rctx.device_name = device_name;
       status = SearchResForDevice(rctx);
@@ -532,7 +532,7 @@ int SearchResForDevice(ReserveContext& rctx)
     // Find resource, and make sure we were able to open it
     if (bstrcmp(rctx.device_name, changer->resource_name_)) {
       // Try each device_resource in this AutoChanger
-      foreach_alist (device_resource, changer->device_resources) {
+      for (auto* device_resource : *changer->device_resources) {
         Dmsg1(debuglevel, "Try changer device %s\n",
               device_resource->resource_name_);
         if (!device_resource->autoselect) {

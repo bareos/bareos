@@ -174,7 +174,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   }
 
   // Iterate through the trusted signers
-  foreach_alist (keypair, jcr->fd_impl->crypto.pki_signers) {
+  for (auto* keypair : *jcr->fd_impl->crypto.pki_signers) {
     err = CryptoSignGetDigest(sig, jcr->fd_impl->crypto.pki_keypair, algorithm,
                               &digest);
     switch (err) {

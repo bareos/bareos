@@ -799,7 +799,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         } else {
           p->device_resources = res_changer->device_resources;
 
-          foreach_alist (q, p->device_resources) { q->changer_res = p; }
+          for (auto* q : *p->device_resources) { q->changer_res = p; }
 
           int errstat;
           if ((errstat = RwlInit(&p->changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {

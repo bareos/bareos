@@ -202,7 +202,7 @@ bool UaContext::AclAccessOk(int acl,
   /* If we didn't find a matching ACL try to use the profiles this console is
    * connected to. */
   if (!retval && user_acl->profiles && user_acl->profiles->size()) {
-    foreach_alist (profile, user_acl->profiles) {
+    for (auto* profile : *user_acl->profiles) {
       retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);
 
       // If we found a match break the loop.
@@ -237,7 +237,7 @@ bool UaContext::AclNoRestrictions(int acl)
     }
   }
 
-  foreach_alist (profile, user_acl->profiles) {
+  for (auto* profile : *user_acl->profiles) {
     if (profile) {
       if (profile->ACL_lists[acl]) {
         for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {

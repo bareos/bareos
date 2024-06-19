@@ -179,7 +179,7 @@ void ChunkedDevice::StopThreads()
 
   // Wait for all threads to exit.
   if (thread_ids_) {
-    foreach_alist (handle, thread_ids_) {
+    for (auto* handle : *thread_ids_) {
       switch (handle->type) {
         case WAIT_CANCEL_THREAD:
           Dmsg1(100, "Canceling thread with threadid=%s\n",
