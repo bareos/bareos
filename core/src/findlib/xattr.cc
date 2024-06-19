@@ -143,6 +143,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
  */
 void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
 {
+  if (!xattr_value_list) { return; }
   // Walk the list of xattrs and free allocated memory on traversing.
   for (auto* current_xattr : *xattr_value_list) {
     // See if we can shortcut.
@@ -1519,8 +1520,7 @@ static inline xattr_link_cache_entry_t* find_xattr_link_cache_entry(
     XattrData* xattr_data,
     ino_t inum)
 {
-  xattr_link_cache_entry_t* ptr;
-
+  if (xattr_data->u.build->link_cache) { return nullptr; }
   for (auto* ptr : *xattr_data->u.build->link_cache) {
     if (ptr && ptr->inum == inum) { return ptr; }
   }
@@ -1547,10 +1547,9 @@ static inline void add_xattr_link_cache_entry(XattrData* xattr_data,
 
 static inline void DropXattrLinkCache(XattrData* xattr_data)
 {
-  xattr_link_cache_entry_t* ptr;
-
   /* Walk the list of xattr link cache entries and free allocated memory on
    * traversing. */
+  if (xattr_data) { return; }
   for (auto* ptr : *xattr_data->u.build->link_cache) {
     free(ptr->target);
     free(ptr);

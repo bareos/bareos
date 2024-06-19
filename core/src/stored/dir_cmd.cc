@@ -865,37 +865,40 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
       // Find resource, and make sure we were able to open it
       if (bstrcmp(devname.c_str(), changer->resource_name_)) {
         // Try each device in this AutoChanger
-        for (auto* device_resource : *changer->device_resources) {
-          Dmsg1(100, "Try changer device %s\n",
-                device_resource->resource_name_);
-          if (!device_resource->dev) {
-            device_resource->dev = FactoryCreateDevice(jcr, device_resource);
-          }
-          if (!device_resource->dev) {
-            Dmsg1(100, "Device %s could not be opened. Skipped\n",
-                  devname.c_str());
-            Jmsg(jcr, M_WARNING, 0,
-                 T_("\n"
-                    "     Device \"%s\" in changer \"%s\" requested by DIR "
-                    "could not be opened or does not exist.\n"),
-                 device_resource->resource_name_, devname.c_str());
-            continue;
-          }
-          if ((drive == kInvalidDriveNumber && device_resource->dev->autoselect)
-              || drive == device_resource->dev->drive) {
-            Dmsg1(20, "Found changer device %s\n",
+        if (changer->device_resources) {
+          for (auto* device_resource : *changer->device_resources) {
+            Dmsg1(100, "Try changer device %s\n",
                   device_resource->resource_name_);
-            target_device = device_resource;
-            break;
-          }
-          Dmsg3(100, "Device %s drive wrong: want=%hd got=%hd skipping\n",
-                devname.c_str(), drive, device_resource->dev->drive);
+            if (!device_resource->dev) {
+              device_resource->dev = FactoryCreateDevice(jcr, device_resource);
+            }
+            if (!device_resource->dev) {
+              Dmsg1(100, "Device %s could not be opened. Skipped\n",
+                    devname.c_str());
+              Jmsg(jcr, M_WARNING, 0,
+                   T_("\n"
+                      "     Device \"%s\" in changer \"%s\" requested by DIR "
+                      "could not be opened or does not exist.\n"),
+                   device_resource->resource_name_, devname.c_str());
+              continue;
+            }
+            if ((drive == kInvalidDriveNumber
+                 && device_resource->dev->autoselect)
+                || drive == device_resource->dev->drive) {
+              Dmsg1(20, "Found changer device %s\n",
+                    device_resource->resource_name_);
+              target_device = device_resource;
+              break;
+            }
+            Dmsg3(100, "Device %s drive wrong: want=%hd got=%hd skipping\n",
+                  devname.c_str(), drive, device_resource->dev->drive);
 
-          if (changer->device_resources->current()
-              == changer->device_resources->size()) {
-            Jmsg(jcr, M_ERROR, 0,
-                 T_("Drive number \"%d\" for device \"%s\" not found.\n"),
-                 drive, devname.c_str());
+            if (changer->device_resources->current()
+                == changer->device_resources->size()) {
+              Jmsg(jcr, M_ERROR, 0,
+                   T_("Drive number \"%d\" for device \"%s\" not found.\n"),
+                   drive, devname.c_str());
+            }
           }
         }
         break; /* we found it but could not open a device */

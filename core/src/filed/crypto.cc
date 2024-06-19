@@ -174,80 +174,83 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   }
 
   // Iterate through the trusted signers
-  for (auto* keypair : *jcr->fd_impl->crypto.pki_signers) {
-    err = CryptoSignGetDigest(sig, jcr->fd_impl->crypto.pki_keypair, algorithm,
-                              &digest);
-    switch (err) {
-      case CRYPTO_ERROR_NONE:
-        Dmsg0(50, "== Got digest\n");
-        /* We computed jcr->fd_impl_->crypto.digest using signing_algorithm
-         * while writing the file. If it is not the same as the algorithm used
-         * for this file, punt by releasing the computed algorithm and computing
-         * by re-reading the file. */
-        if (algorithm != signing_algorithm) {
+  if (jcr->fd_impl->crypto.pki_signers) {
+    for (auto* keypair : *jcr->fd_impl->crypto.pki_signers) {
+      err = CryptoSignGetDigest(sig, jcr->fd_impl->crypto.pki_keypair,
+                                algorithm, &digest);
+      switch (err) {
+        case CRYPTO_ERROR_NONE:
+          Dmsg0(50, "== Got digest\n");
+          /* We computed jcr->fd_impl_->crypto.digest using signing_algorithm
+           * while writing the file. If it is not the same as the algorithm used
+           * for this file, punt by releasing the computed algorithm and
+           * computing by re-reading the file. */
+          if (algorithm != signing_algorithm) {
+            if (jcr->fd_impl->crypto.digest) {
+              CryptoDigestFree(jcr->fd_impl->crypto.digest);
+              jcr->fd_impl->crypto.digest = NULL;
+            }
+          }
           if (jcr->fd_impl->crypto.digest) {
-            CryptoDigestFree(jcr->fd_impl->crypto.digest);
+            // Use digest computed while writing the file to verify the
+            // signature
+            if ((err
+                 = CryptoSignVerify(sig, keypair, jcr->fd_impl->crypto.digest))
+                != CRYPTO_ERROR_NONE) {
+              Dmsg1(50, "Bad signature on %s\n", jcr->fd_impl->last_fname);
+              Jmsg2(jcr, M_ERROR, 0,
+                    T_("Signature validation failed for file %s: ERR=%s\n"),
+                    jcr->fd_impl->last_fname, crypto_strerror(err));
+              goto bail_out;
+            }
+          } else {
+            /* Signature found, digest allocated.  Old method,
+             * re-read the file and compute the digest */
+            jcr->fd_impl->crypto.digest = digest;
+
+            /* Checksum the entire file
+             * Make sure we don't modify JobBytes by saving and restoring it */
+            saved_bytes = jcr->JobBytes;
+            if (FindOneFile(jcr, jcr->fd_impl->ff, DoFileDigest,
+                            jcr->fd_impl->last_fname, (dev_t)-1, 1)
+                != 0) {
+              Jmsg(jcr, M_ERROR, 0, T_("Digest one file failed for file: %s\n"),
+                   jcr->fd_impl->last_fname);
+              jcr->JobBytes = saved_bytes;
+              goto bail_out;
+            }
+            jcr->JobBytes = saved_bytes;
+
+            // Verify the signature
+            if ((err = CryptoSignVerify(sig, keypair, digest))
+                != CRYPTO_ERROR_NONE) {
+              Dmsg1(50, "Bad signature on %s\n", jcr->fd_impl->last_fname);
+              Jmsg2(jcr, M_ERROR, 0,
+                    T_("Signature validation failed for file %s: ERR=%s\n"),
+                    jcr->fd_impl->last_fname, crypto_strerror(err));
+              goto bail_out;
+            }
             jcr->fd_impl->crypto.digest = NULL;
           }
-        }
-        if (jcr->fd_impl->crypto.digest) {
-          // Use digest computed while writing the file to verify the signature
-          if ((err
-               = CryptoSignVerify(sig, keypair, jcr->fd_impl->crypto.digest))
-              != CRYPTO_ERROR_NONE) {
-            Dmsg1(50, "Bad signature on %s\n", jcr->fd_impl->last_fname);
-            Jmsg2(jcr, M_ERROR, 0,
-                  T_("Signature validation failed for file %s: ERR=%s\n"),
-                  jcr->fd_impl->last_fname, crypto_strerror(err));
-            goto bail_out;
-          }
-        } else {
-          /* Signature found, digest allocated.  Old method,
-           * re-read the file and compute the digest */
-          jcr->fd_impl->crypto.digest = digest;
 
-          /* Checksum the entire file
-           * Make sure we don't modify JobBytes by saving and restoring it */
-          saved_bytes = jcr->JobBytes;
-          if (FindOneFile(jcr, jcr->fd_impl->ff, DoFileDigest,
-                          jcr->fd_impl->last_fname, (dev_t)-1, 1)
-              != 0) {
-            Jmsg(jcr, M_ERROR, 0, T_("Digest one file failed for file: %s\n"),
-                 jcr->fd_impl->last_fname);
-            jcr->JobBytes = saved_bytes;
-            goto bail_out;
-          }
-          jcr->JobBytes = saved_bytes;
-
-          // Verify the signature
-          if ((err = CryptoSignVerify(sig, keypair, digest))
-              != CRYPTO_ERROR_NONE) {
-            Dmsg1(50, "Bad signature on %s\n", jcr->fd_impl->last_fname);
-            Jmsg2(jcr, M_ERROR, 0,
-                  T_("Signature validation failed for file %s: ERR=%s\n"),
-                  jcr->fd_impl->last_fname, crypto_strerror(err));
-            goto bail_out;
-          }
-          jcr->fd_impl->crypto.digest = NULL;
-        }
-
-        // Valid signature
-        Dmsg1(50, "Signature good on %s\n", jcr->fd_impl->last_fname);
-        CryptoDigestFree(digest);
-        return true;
-
-      case CRYPTO_ERROR_NOSIGNER:
-        // Signature not found, try again
-        if (digest) {
+          // Valid signature
+          Dmsg1(50, "Signature good on %s\n", jcr->fd_impl->last_fname);
           CryptoDigestFree(digest);
-          digest = NULL;
-        }
-        continue;
-      default:
-        // Something strange happened (that shouldn't happen!)...
-        Qmsg2(jcr, M_ERROR, 0, T_("Signature validation failed for %s: %s\n"),
-              jcr->fd_impl->last_fname, crypto_strerror(err));
-        goto bail_out;
+          return true;
+
+        case CRYPTO_ERROR_NOSIGNER:
+          // Signature not found, try again
+          if (digest) {
+            CryptoDigestFree(digest);
+            digest = NULL;
+          }
+          continue;
+        default:
+          // Something strange happened (that shouldn't happen!)...
+          Qmsg2(jcr, M_ERROR, 0, T_("Signature validation failed for %s: %s\n"),
+                jcr->fd_impl->last_fname, crypto_strerror(err));
+          goto bail_out;
+      }
     }
   }
 

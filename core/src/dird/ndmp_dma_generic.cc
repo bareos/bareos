@@ -145,7 +145,8 @@ bool NdmpValidateStorage(JobControlRecord* jcr)
     for (auto* store : *jcr->dir_impl->res.write_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
-  } else {
+
+  } else if (jcr->dir_impl->res.read_storage_list) {
     for (auto* store : *jcr->dir_impl->res.read_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
