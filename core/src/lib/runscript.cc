@@ -104,11 +104,6 @@ int RunScripts(JobControlRecord* jcr,
                const char* label,
                alist<const char*>* allowed_script_dirs)
 {
-  std::vector<std::string> names;
-
-  for (auto* script : *runscripts) { names.push_back(script->command); }
-
-
   bool runit;
   int when;
 
@@ -123,7 +118,7 @@ int RunScripts(JobControlRecord* jcr,
     when = SCRIPT_After;
   }
 
-  if (runscripts == NULL) {
+  if (!runscripts) {
     Dmsg0(100, "runscript: WARNING RUNSCRIPTS list is NULL\n");
     return 0;
   }
@@ -287,7 +282,9 @@ void FreeRunscripts(alist<RunScript*>* runscripts)
 {
   Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
-  for (auto* r : *runscripts) { FreeRunscript(r); }
+  if (runscripts) {
+    for (auto* r : *runscripts) { FreeRunscript(r); }
+  }
 }
 
 void RunScript::Debug() const
