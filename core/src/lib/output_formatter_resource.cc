@@ -208,7 +208,7 @@ void OutputFormatterResource::KeyMultipleStringsInOneLine(
 
   send_->ArrayStart(key, GetKeyFormatString(as_comment).c_str());
   if (list != NULL) {
-    foreach_alist (item, list) {
+    for (auto* item : *list) {
       send_->ArrayItem(GetValue(item), format.c_str());
       if (cnt == 0) { format.insert(0, ", "); }
       cnt++;
@@ -267,7 +267,7 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     }
   } else {
     send_->ArrayStart(key);
-    foreach_alist (item, list) {
+    for (auto* item : *list) {
       KeyMultipleStringsOnePerLineAddItem(key, GetValue(item), as_comment,
                                           quoted_strings, escape_strings);
     }

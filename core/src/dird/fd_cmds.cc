@@ -811,7 +811,7 @@ static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 
   if (RunScripts->empty()) { return false; }
 
-  foreach_alist (cmd, RunScripts) {
+  for (auto* cmd : *RunScripts) {
     if (!cmd->IsLocal()) { retval = true; }
   }
 
@@ -838,7 +838,7 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
 
   msg = GetPoolMemory(PM_FNAME);
   ehost = GetPoolMemory(PM_FNAME);
-  foreach_alist (cmd, jcr->dir_impl->res.job->RunScripts) {
+  for (auto* cmd : *jcr->dir_impl->res.job->RunScripts) {
     if (!cmd->target.empty()) {
       ehost = edit_job_codes(jcr, ehost, cmd->target.c_str(), "");
       Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target.c_str(), ehost);
@@ -956,9 +956,7 @@ static int RestoreObjectHandler(void* ctx, int, char** row)
 bool SendPluginOptions(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
-  int i;
   PoolMem cur_plugin_options(PM_MESSAGE);
-  const char* plugin_options;
   POOLMEM* msg;
 
   if (jcr->dir_impl->plugin_options) {
@@ -977,8 +975,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
   if (jcr->dir_impl->res.job && jcr->dir_impl->res.job->FdPluginOptions
       && jcr->dir_impl->res.job->FdPluginOptions->size()) {
     Dmsg2(200, "dird: sendpluginoptions found FdPluginOptions in res.job\n");
-    foreach_alist_index (i, plugin_options,
-                         jcr->dir_impl->res.job->FdPluginOptions) {
+    for (auto* plugin_options : jcr->dir_impl->res.job->FdPluginOptions) {
       PmStrcpy(cur_plugin_options, plugin_options);
       BashSpaces(cur_plugin_options.c_str());
 

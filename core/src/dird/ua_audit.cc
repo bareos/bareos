@@ -38,7 +38,7 @@ bool UaContext::AuditEventWanted(bool audit_event_enabled)
   if (!me->audit_events) { return audit_event_enabled; }
 
   if (audit_event_enabled) {
-    foreach_alist (event, me->audit_events) {
+    for (auto* event : *me->audit_events) {
       if (Bstrcasecmp(event, argk[0])) { return true; }
     }
   }

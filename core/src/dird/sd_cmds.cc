@@ -717,7 +717,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
     PoolMem devicenames;
 
     // Build a list of devicenames that belong to this storage defintion.
-    foreach_alist (device_resource, store->device) {
+    for (auto* device_resource : *store->device) {
       if (cnt == 0) {
         PmStrcpy(devicenames, device_resource->resource_name_);
       } else {

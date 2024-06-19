@@ -382,7 +382,7 @@ static bool CheckResources()
 
       /* If additional signing public keys have been specified, load them up */
       if (me->pki_signing_key_files) {
-        foreach_alist (filepath, me->pki_signing_key_files) {
+        for (auto* filepath : me->pki_signing_key_files) {
           X509_KEYPAIR* keypair;
 
           keypair = crypto_keypair_new();
@@ -427,7 +427,7 @@ static bool CheckResources()
 
       /* If additional keys have been specified, load them up */
       if (me->pki_master_key_files) {
-        foreach_alist (filepath, me->pki_master_key_files) {
+        for (auto* filepath : me->pki_master_key_files) {
           X509_KEYPAIR* keypair;
 
           keypair = crypto_keypair_new();
