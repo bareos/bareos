@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -861,33 +861,35 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        drive_number_t drive,
                                        BlockSizeBoundaries* blocksizes)
 {
-  DeviceResource* device_resource = nullptr;
   AutochangerResource* changer;
-  bool found = false;
   DeviceControlRecord* dcr = NULL;
-
+  DeviceResource* target_device = nullptr;
   UnbashSpaces(devname);
-  foreach_res (device_resource, R_DEVICE) {
-    // Find resource, and make sure we were able to open it
-    if (bstrcmp(device_resource->resource_name_, devname.c_str())) {
-      if (!device_resource->dev) {
-        device_resource->dev = FactoryCreateDevice(jcr, device_resource);
+
+  {
+    DeviceResource* device_resource;
+    foreach_res (device_resource, R_DEVICE) {
+      // Find resource, and make sure we were able to open it
+      if (bstrcmp(device_resource->resource_name_, devname.c_str())) {
+        if (!device_resource->dev) {
+          device_resource->dev = FactoryCreateDevice(jcr, device_resource);
+        }
+        if (!device_resource->dev) {
+          Jmsg(jcr, M_WARNING, 0,
+               _("\n"
+                 "     Device \"%s\" requested by DIR could not be opened or "
+                 "does not exist.\n"),
+               devname.c_str());
+          continue;
+        }
+        Dmsg1(20, "Found device %s\n", device_resource->resource_name_);
+        target_device = device_resource;
+        break;
       }
-      if (!device_resource->dev) {
-        Jmsg(jcr, M_WARNING, 0,
-             _("\n"
-               "     Device \"%s\" requested by DIR could not be opened or "
-               "does not exist.\n"),
-             devname.c_str());
-        continue;
-      }
-      Dmsg1(20, "Found device %s\n", device_resource->resource_name_);
-      found = true;
-      break;
     }
   }
 
-  if (!found) {
+  if (!target_device) {
     foreach_res (changer, R_AUTOCHANGER) {
       // Find resource, and make sure we were able to open it
       if (bstrcmp(devname.c_str(), changer->resource_name_)) {
@@ -912,7 +914,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
               || drive == device_resource->dev->drive) {
             Dmsg1(20, "Found changer device %s\n",
                   device_resource->resource_name_);
-            found = true;
+            target_device = device_resource;
             break;
           }
           Dmsg3(100, "Device %s drive wrong: want=%hd got=%hd skipping\n",
@@ -930,13 +932,14 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
     }
   }
 
-  if (found) {
-    Dmsg1(100, "Found device %s\n", device_resource->resource_name_);
+  if (target_device) {
+    Dmsg1(100, "Found device %s\n", target_device->resource_name_);
     dcr = new StorageDaemonDeviceControlRecord;
-    SetupNewDcrDevice(jcr, dcr, device_resource->dev, blocksizes);
+    SetupNewDcrDevice(jcr, dcr, target_device->dev, blocksizes);
     dcr->SetWillWrite();
-    dcr->device_resource = device_resource;
+    dcr->device_resource = target_device;
   }
+
   return dcr;
 }
 

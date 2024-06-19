@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -139,7 +139,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
       std::string name_to_compare(name ? name : "???");
       if (name_of_device == name_to_compare) { ++count_str_ok; }
     } /* if (device->multiplied_device_resource) */
-  }   /* while GetNextRes */
+  } /* while GetNextRes */
   return count_str_ok;
 }
 
@@ -202,7 +202,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
       std::string name_to_compare(name ? name : "???");
       if (name_of_device == name_to_compare) { ++count_str_ok; }
     } /* if (device_resource->multiplied_device_resource) */
-  }   /* while GetNextRes */
+  } /* while GetNextRes */
   return count_str_ok;
 }
 
@@ -286,7 +286,6 @@ static uint32_t CheckSomeDevicesInAutochanger(ConfigurationParser& my_config)
       std::string autochanger_name_test(
           "virtual-multiplied-device-autochanger");
       if (autochanger_name == autochanger_name_test) {
-        DeviceResource* d = nullptr;
         foreach_alist (d, autochanger->device_resources) {
           std::string device_name(d->resource_name_);
           if (names.find(device_name) != names.end()) { ++count_str_ok; }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -807,7 +807,6 @@ bool SendExcludeList(JobControlRecord*) { return true; }
 // This checks to see if there are any non local runscripts for this job.
 static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 {
-  RunScript* cmd = nullptr;
   bool retval = false;
 
   if (RunScripts->empty()) { return false; }
@@ -828,7 +827,6 @@ static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 int SendRunscriptsCommands(JobControlRecord* jcr)
 {
   int result;
-  RunScript* cmd = nullptr;
   POOLMEM *msg, *ehost;
   BareosSocket* fd = jcr->file_bsock;
   bool has_before_jobs = false;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -331,15 +331,12 @@ void BnetThreadServerTcp(
     fd_set sockset;
     FD_ZERO(&sockset);
 
-    s_sockfd* fd_ptr = nullptr;
     foreach_alist (fd_ptr, sockfds) {
       FD_SET((unsigned)fd_ptr->fd, &sockset);
       maxfd = std::max(fd_ptr->fd, maxfd);
     }
 
-    struct timeval timeout {
-      .tv_sec = 1, .tv_usec = 0
-    };
+    struct timeval timeout{.tv_sec = 1, .tv_usec = 0};
 
     errno = 0;
     int status = select(maxfd + 1, &sockset, NULL, NULL, &timeout);

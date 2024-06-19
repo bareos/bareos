@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -253,8 +253,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void)
 {
-  backend_shared_library_t* backend_shared_library = nullptr;
-
   if (loaded_backends) {
     foreach_alist (backend_shared_library, loaded_backends) {
       backend_shared_library->flush_backend();

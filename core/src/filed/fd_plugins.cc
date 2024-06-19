@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -345,7 +345,6 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   int len = 0;
   bool call_if_canceled = false;
   restore_object_pkt* rop;
-  PluginContext* ctx = nullptr;
   alist<PluginContext*>* plugin_ctx_list;
   bRC rc = bRC_OK;
 
@@ -416,6 +415,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    *
    * See if we need to trigger the loaded plugins in reverse order. */
   if (reverse) {
+    PluginContext* ctx;
     int i{};
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
       if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
@@ -430,6 +430,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       }
     }
   } else {
+    PluginContext* ctx;
     int i{};
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
@@ -457,7 +458,6 @@ bail_out:
 // Check if file was seen for accurate
 bool PluginCheckFile(JobControlRecord* jcr, char* fname)
 {
-  PluginContext* ctx = nullptr;
   alist<PluginContext*>* plugin_ctx_list;
   int retval = bRC_OK;
 
@@ -565,7 +565,6 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   bRC retval = bRC_Core;
   bEvent event;
   bEventType eventType;
-  PluginContext* ctx = nullptr;
   alist<PluginContext*>* plugin_ctx_list;
 
   cmd = ff_pkt->plugin;
@@ -646,7 +645,6 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   bRC retval;
   char* cmd;
   bEvent event;
-  PluginContext* ctx = nullptr;
   bEventType eventType;
   PoolMem fname(PM_FNAME);
   PoolMem link(PM_FNAME);
@@ -868,7 +866,6 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   bEventType eventType;
   PoolMem fname(PM_FNAME);
   PoolMem link(PM_FNAME);
-  PluginContext* ctx = nullptr;
   alist<PluginContext*>* plugin_ctx_list;
   Attributes attr;
 
@@ -1051,7 +1048,6 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   char* p = name;
   bool start;
   bool retval = true;
-  PluginContext* ctx = nullptr;
   alist<PluginContext*>* plugin_ctx_list;
 
   Dmsg1(debuglevel, "Read plugin stream string=%s\n", name);
@@ -1518,8 +1514,6 @@ BxattrExitCode PluginParseXattrStreams(
 #if defined(HAVE_XATTR)
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
   if (PlugFunc(plugin)->setXattr != NULL) {
-    xattr_t* current_xattr = nullptr;
-
     xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
     if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
@@ -1734,8 +1728,6 @@ void NewPlugins(JobControlRecord* jcr)
 // Free the plugin instances for this Job
 void FreePlugins(JobControlRecord* jcr)
 {
-  PluginContext* ctx = nullptr;
-
   if (!fd_plugin_list || !jcr->plugin_ctx_list) { return; }
 
   Dmsg2(debuglevel, "Free instance fd-plugin_ctx_list=%p JobId=%d\n",
@@ -2135,7 +2127,6 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  PluginContext* nctx;
   FiledPluginContext* bctx;
   bRC retval = bRC_Error;
 
