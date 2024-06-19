@@ -528,7 +528,8 @@ int SearchResForDevice(JobControlRecord* jcr, ReserveContext& rctx)
     // Find resource, and make sure we were able to open it
     if (bstrcmp(rctx.device_name, changer->resource_name_)) {
       // Try each device_resource in this AutoChanger
-      foreach_alist (device_resource, changer->device_resources) {
+      for (auto* device_resource : *changer->device_resources) {
+        rctx.device_resource = device_resource;
         Dmsg1(debuglevel, "Try changer device %s\n",
               device_resource->resource_name_);
         if (!device_resource->autoselect) {

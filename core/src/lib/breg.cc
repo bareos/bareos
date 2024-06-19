@@ -67,7 +67,7 @@ void FreeBregexps(alist<BareosRegex*>* bregexps)
 {
   Dmsg0(500, "bregexp: freeing all BareosRegex object\n");
 
-  foreach_alist (elt, bregexps) { FreeBregexp(elt); }
+  for (auto* elt : *bregexps) { FreeBregexp(elt); }
 }
 
 /* Apply all regexps to fname
@@ -79,7 +79,7 @@ bool ApplyBregexps(const char* fname,
   bool ok = false;
 
   char* ret = (char*)fname;
-  foreach_alist (elt, bregexps) {
+  for (auto* elt : *bregexps) {
     ret = elt->replace(ret);
     ok = ok || elt->success;
   }
