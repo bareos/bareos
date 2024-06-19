@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -269,8 +269,6 @@ int main(int argc, char* argv[])
 // Cleanup of delayed restore stack with streams for later processing.
 static inline void DropDelayedDataStreams()
 {
-  DelayedDataStream* dds = nullptr;
-
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
   foreach_alist (dds, delayed_streams) { free(dds->content); }
@@ -307,8 +305,6 @@ static inline void PushDelayedDataStream(int stream,
  */
 static inline void PopDelayedDataStreams()
 {
-  DelayedDataStream* dds = nullptr;
-
   // See if there is anything todo.
   if (!delayed_streams || delayed_streams->empty()) { return; }
 

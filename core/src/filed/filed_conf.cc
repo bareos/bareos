@@ -383,13 +383,11 @@ static void FreeResource(BareosResource* res, int type)
       if (p->pki_keypair) { CryptoKeypairFree(p->pki_keypair); }
       if (p->pki_signing_key_files) { delete p->pki_signing_key_files; }
       if (p->pki_signers) {
-        X509_KEYPAIR* keypair = nullptr;
         foreach_alist (keypair, p->pki_signers) { CryptoKeypairFree(keypair); }
         delete p->pki_signers;
       }
       if (p->pki_master_key_files) { delete p->pki_master_key_files; }
       if (p->pki_recipients) {
-        X509_KEYPAIR* keypair = nullptr;
         foreach_alist (keypair, p->pki_recipients) {
           CryptoKeypairFree(keypair);
         }

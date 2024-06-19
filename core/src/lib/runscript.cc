@@ -62,7 +62,6 @@ static bool ScriptDirAllowed(JobControlRecord*,
                              RunScript* script,
                              alist<const char*>* allowed_script_dirs)
 {
-  const char* allowed_script_dir = nullptr;
   bool allowed = false;
   PoolMem script_dir(PM_FNAME);
 
@@ -105,7 +104,11 @@ int RunScripts(JobControlRecord* jcr,
                const char* label,
                alist<const char*>* allowed_script_dirs)
 {
-  RunScript* script = nullptr;
+  std::vector<std::string> names;
+
+  foreach_alist (script, runscripts) { names.push_back(script->command); }
+
+
   bool runit;
   int when;
 
@@ -284,7 +287,6 @@ void FreeRunscripts(alist<RunScript*>* runscripts)
 {
   Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
-  RunScript* r = nullptr;
   foreach_alist (r, runscripts) { FreeRunscript(r); }
 }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1491,25 +1491,14 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
 static inline bool InsertSelectedJobid(alist<JobId_t*>* selected_jobids,
                                        JobId_t JobId)
 {
-  bool found;
-  JobId_t* selected_jobid = nullptr;
-
-  found = false;
-  foreach_alist (selected_jobid, selected_jobids) {
-    if (*selected_jobid == JobId) {
-      found = true;
-      break;
-    }
+  foreach_alist (jobid, selected_jobids) {
+    if (*jobid == JobId) { return false; }
   }
 
-  if (!found) {
-    selected_jobid = (JobId_t*)malloc(sizeof(JobId_t));
-    *selected_jobid = JobId;
-    selected_jobids->append(selected_jobid);
-    return true;
-  }
-
-  return false;
+  auto* selected_jobid = (JobId_t*)malloc(sizeof(JobId_t));
+  *selected_jobid = JobId;
+  selected_jobids->append(selected_jobid);
+  return true;
 }
 
 /**

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,10 +86,8 @@ void OutputFormatterResource::ResourceStart(const char* resource_type_groupname,
                                             bool as_comment)
 {
   const bool case_sensitive_name = true;
-  /*
-   * Use resource_type_groupname as structure key (JSON),
-   * but use resource_type_name when writing config resources.
-   */
+  /* Use resource_type_groupname as structure key (JSON),
+   * but use resource_type_name when writing config resources. */
   std::string format = std::string(resource_type_name) + std::string(" {\n");
   send_->ObjectStart(resource_type_groupname,
                      GetKeyFormatString(as_comment, format).c_str());
@@ -205,7 +203,6 @@ void OutputFormatterResource::KeyMultipleStringsInOneLine(
 {
   // Each member of the list is comma-separated
   int cnt = 0;
-  const char* item = nullptr;
   std::string format = "%s";
   if (quoted_strings) { format = "\"%s\""; }
 
@@ -261,7 +258,6 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     bool escape_strings)
 {
   // One line for each member of the list
-  const char* item = nullptr;
 
   if ((list == NULL) or (list->empty())) {
     if (as_comment) {

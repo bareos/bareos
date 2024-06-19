@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,6 @@ namespace filedaemon {
 static bool InitPublicPrivateKeys(const std::string& configfile)
 {
   bool OK = true;
-  const char* filepath = nullptr;
   /* Load our keypair */
   me->pki_keypair = crypto_keypair_new();
   if (!me->pki_keypair) {

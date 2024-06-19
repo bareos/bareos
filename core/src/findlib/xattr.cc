@@ -143,8 +143,6 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
  */
 void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
 {
-  xattr_t* current_xattr = nullptr;
-
   // Walk the list of xattrs and free allocated memory on traversing.
   foreach_alist (current_xattr, xattr_value_list) {
     // See if we can shortcut.
@@ -178,7 +176,6 @@ uint32_t SerializeXattrStream(JobControlRecord*,
                               uint32_t expected_serialize_len,
                               alist<xattr_t*>* xattr_value_list)
 {
-  xattr_t* current_xattr = nullptr;
   ser_declare;
 
   /* Make sure the serialized stream fits in the poolmem buffer.
@@ -919,7 +916,6 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
                                                   char* content,
                                                   uint32_t content_length)
 {
-  xattr_t* current_xattr = nullptr;
   alist<xattr_t*>* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
