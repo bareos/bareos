@@ -29,7 +29,6 @@ namespace filedaemon {
 static bool InitPublicPrivateKeys(const std::string& configfile)
 {
   bool OK = true;
-  const char* filepath = nullptr;
   /* Load our keypair */
   me->pki_keypair = crypto_keypair_new();
   if (!me->pki_keypair) {

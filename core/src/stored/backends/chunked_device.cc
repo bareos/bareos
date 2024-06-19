@@ -172,7 +172,6 @@ bool ChunkedDevice::StartIoThreads()
 void ChunkedDevice::StopThreads()
 {
   char ed1[50];
-  thread_handle* handle = nullptr;
 
   /* Tell all IO threads that we flush the circular buffer.
    * As such they will get a NULL chunk_io_request back and exit. */

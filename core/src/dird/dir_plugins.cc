@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -389,7 +389,6 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
   int i, j, len;
   Plugin* plugin;
-  PluginContext* ctx = nullptr;
   uint32_t instance;
   bDirEvent event;
   bDirEventType eventType;
@@ -446,27 +445,29 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
       /* See if this plugin options are for an already instantiated plugin
        * instance. */
       if (jcr->plugin_ctx_list) {
+        PluginContext* found_ctx = nullptr;
         foreach_alist (ctx, jcr->plugin_ctx_list) {
           if (ctx->instance == instance && ctx->plugin->file_len == len
               && bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
+            found_ctx = ctx;
             break;
           }
         }
 
         // Found a context in the previous loop ?
-        if (!ctx) {
+        if (!found_ctx) {
           foreach_alist_index (j, plugin, dird_plugin_list) {
             if (plugin->file_len == len
                 && bstrncasecmp(plugin->file, plugin_name, len)) {
-              ctx = instantiate_plugin(jcr, plugin, instance);
+              found_ctx = instantiate_plugin(jcr, plugin, instance);
               break;
             }
           }
         }
 
-        if (ctx) {
-          trigger_plugin_event(eventType, &event, ctx, (void*)plugin_options,
-                               NULL, NULL);
+        if (found_ctx) {
+          trigger_plugin_event(eventType, &event, found_ctx,
+                               (void*)plugin_options, NULL, NULL);
         }
       }
     }
@@ -500,8 +501,6 @@ void NewPlugins(JobControlRecord* jcr)
 // Free the plugin instances for this Job
 void FreePlugins(JobControlRecord* jcr)
 {
-  PluginContext* ctx = nullptr;
-
   if (!dird_plugin_list || !jcr->plugin_ctx_list) { return; }
 
   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
@@ -778,7 +777,6 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  PluginContext* nctx;
   b_plugin_ctx* bctx;
   bRC retval = bRC_Error;
 
