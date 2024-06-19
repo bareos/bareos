@@ -157,11 +157,13 @@ bool ReserveReadDevice(JobControlRecord* jcr,
                        pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
       Dmsg1(100, "read_storage >stored: %s", sd_socket->msg);
       /* Loop over alternative storage Devices until one is OK */
-      for (auto* dev : *storage->device) {
-        PmStrcpy(device_name, dev->resource_name_);
-        BashSpaces(device_name);
-        sd_socket->fsend(use_device, device_name.c_str());
-        Dmsg1(100, ">stored: %s", sd_socket->msg);
+      if (storage->device) {
+        for (auto* dev : *storage->device) {
+          PmStrcpy(device_name, dev->resource_name_);
+          BashSpaces(device_name);
+          sd_socket->fsend(use_device, device_name.c_str());
+          Dmsg1(100, ">stored: %s", sd_socket->msg);
+        }
       }
       sd_socket->signal(BNET_EOD);  // end of Device
     }
@@ -232,11 +234,13 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
 
       Dmsg1(100, "write_storage >stored: %s", jcr->store_bsock->msg);
       // Loop over alternative storage Devices until one is OK
-      for (auto* dev : *storage->device) {
-        PmStrcpy(device_name, dev->resource_name_);
-        BashSpaces(device_name);
-        jcr->store_bsock->fsend(use_device, device_name.c_str());
-        Dmsg1(100, ">stored: %s", jcr->store_bsock->msg);
+      if (storage->device) {
+        for (auto* dev : *storage->device) {
+          PmStrcpy(device_name, dev->resource_name_);
+          BashSpaces(device_name);
+          jcr->store_bsock->fsend(use_device, device_name.c_str());
+          Dmsg1(100, ">stored: %s", jcr->store_bsock->msg);
+        }
       }
       jcr->store_bsock->signal(BNET_EOD);  // end of Devices
     }
