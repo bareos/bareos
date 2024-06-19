@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -140,8 +140,6 @@ static inline bool NdmpValidateStorage(JobControlRecord* jcr,
 
 bool NdmpValidateStorage(JobControlRecord* jcr)
 {
-  StorageResource* store = nullptr;
-
   if (jcr->dir_impl->res.write_storage_list) {
     foreach_alist (store, jcr->dir_impl->res.write_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
@@ -282,15 +280,13 @@ int NativeToNdmpLoglevel(int NdmpLoglevel, int debuglevel, NIS* nis)
 
   nis->LogLevel = NdmpLoglevel;
 
-  /*
-   * NDMP loglevels run from 0 - 9 so we take a look at the
+  /* NDMP loglevels run from 0 - 9 so we take a look at the
    * current debug level and divide it by 100 to get a proper
    * value. If the debuglevel is below the wanted initial level
    * we set the loglevel to the wanted initial level. As the
    * debug logging takes care of logging messages that are
    * unwanted we can set the loglevel higher and still don't
-   * get debug messages.
-   */
+   * get debug messages. */
   level = debuglevel / 100;
   if (level < nis->LogLevel) { level = nis->LogLevel; }
 
@@ -311,10 +307,8 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
   job->operation = operation;
   job->bu_type = jcr->dir_impl->backup_format;
 
-  /*
-   * For NDMP the backupformat is a prerequite abort the backup job when
-   * it is not supplied in the config definition.
-   */
+  /* For NDMP the backupformat is a prerequite abort the backup job when
+   * it is not supplied in the config definition. */
   if (!job->bu_type) {
     Jmsg(jcr, M_FATAL, 0, _("No backup type specified in NDMP job\n"));
     goto bail_out;
@@ -424,18 +418,14 @@ bool NdmpBuildClientAndStorageJob(JobControlRecord* jcr,
                                   int operation,
                                   struct ndm_job_param* job)
 {
-  /*
-   * setup storage job
-   * i.e. setup tape_agent and robot_agent
-   */
+  /* setup storage job
+   * i.e. setup tape_agent and robot_agent */
   if (!NdmpBuildStorageJob(jcr, store, init_tape, init_robot, operation, job)) {
     goto bail_out;
   }
 
-  /*
-   * now configure client job
-   * i.e. setup data_agent
-   */
+  /* now configure client job
+   * i.e. setup data_agent */
   if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                               client->AuthType, client->address, client->FDport,
                               client->username, client->password_.value)) {
@@ -464,16 +454,13 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
-  /*
-   * If the log level of this message is under our logging treshold we
-   * log it as part of the Job.
-   */
+  /* If the log level of this message is under our logging treshold we
+   * log it as part of the Job. */
   if (level <= (int)nis->LogLevel) {
     if (nis->jcr) {
       // Look at the tag field to see what is logged.
       if (bstrncmp(tag + 1, "LM", 2)) {
-        /*
-         * *LM* messages. E.g. log message NDMP protocol msgs.
+        /* *LM* messages. E.g. log message NDMP protocol msgs.
          * First character of the tag is the agent sending the
          * message e.g. 'D' == Data Agent
          *              'T' == Tape Agent
@@ -485,8 +472,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
          * 'd' - debug message
          * 'e' - error message
          * 'w' - warning message
-         * '?' - unknown message level
-         */
+         * '?' - unknown message level */
         switch (*(tag + 3)) {
           case 'n':
             Jmsg(nis->jcr, M_INFO, 0, "%s\n", msg);
@@ -509,11 +495,9 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
     }
   }
 
-  /*
-   * Print any debug message we convert the NDMP level back to an internal
+  /* Print any debug message we convert the NDMP level back to an internal
    * level and let the normal debug logging handle if it needs to be printed
-   * or not.
-   */
+   * or not. */
   internal_level = level * 100;
   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, level, msg);
 }

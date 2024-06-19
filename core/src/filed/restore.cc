@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -174,8 +174,6 @@ static inline bool RestoreFinderinfo(JobControlRecord*, POOLMEM*, int32_t)
 // Cleanup of delayed restore stack with streams for later processing.
 static inline void DropDelayedDataStreams(r_ctx& rctx, bool reuse)
 {
-  DelayedDataStream* dds = nullptr;
-
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return; }
 
   foreach_alist (dds, rctx.delayed_streams) { free(dds->content); }
@@ -295,8 +293,6 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
  */
 static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
 {
-  DelayedDataStream* dds = nullptr;
-
   // See if there is anything todo.
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return true; }
 
@@ -1006,7 +1002,7 @@ void DoRestore(JobControlRecord* jcr)
         Dmsg2(0, "Unknown stream=%d data=%s\n", rctx.stream, sd->msg);
         break;
     } /* end switch(stream) */
-  }   /* end while get_msg() */
+  } /* end while get_msg() */
 
   /* If output file is still open, it was the last one in the
    * archive since we just hit an end of file, so close the file. */

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1011,7 +1011,6 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
                                    alist<X509_KEYPAIR*>* pubkeys)
 {
   CRYPTO_SESSION* cs;
-  X509_KEYPAIR* keypair = nullptr;
   const EVP_CIPHER* ec;
   unsigned char* iv;
   int iv_len;
@@ -1245,7 +1244,6 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
                                    CRYPTO_SESSION** session)
 {
   CRYPTO_SESSION* cs;
-  X509_KEYPAIR* keypair = nullptr;
   STACK_OF(RecipientInfo) * recipients;
   crypto_error_t retval = CRYPTO_ERROR_NONE;
 #    if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)

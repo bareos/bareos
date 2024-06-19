@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1726,7 +1726,6 @@ void CreateClones(JobControlRecord* jcr)
   Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->dir_impl->cloned,
         jcr->dir_impl->res.job->run_cmds);
   if (!jcr->dir_impl->cloned && jcr->dir_impl->res.job->run_cmds) {
-    const char* runcmd = nullptr;
     JobId_t jobid;
     JobResource* job = jcr->dir_impl->res.job;
     POOLMEM* cmd = GetPoolMemory(PM_FNAME);

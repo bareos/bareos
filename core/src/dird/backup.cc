@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,8 +130,6 @@ char* StorageAddressToContact(StorageResource* read_storage,
 
 static inline bool ValidateStorage(JobControlRecord* jcr)
 {
-  StorageResource* store = nullptr;
-
   foreach_alist (store, jcr->dir_impl->res.write_storage_list) {
     switch (store->Protocol) {
       case APT_NATIVE:
@@ -177,7 +175,6 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
 static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 {
   JobDbRecord jr;
-  JobResource* job = nullptr;
   JobId_t id;
 
   if (!jcr->dir_impl->res.job->base) {
