@@ -580,6 +580,8 @@ static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 {
   bool retval = false;
 
+  if (!RunScripts) { return false; }
+
   if (RunScripts->empty()) { return false; }
 
   for (auto* cmd : *RunScripts) {

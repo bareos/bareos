@@ -71,6 +71,8 @@ void TestForeachAlist(alist<const char*>* list)
 
   // test all available foreach loops
 
+  ASSERT_TRUE(list);
+
   for (auto* str : *list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(str, buf);
@@ -114,8 +116,8 @@ void test_alist_dynamic()
   // NULL->size() will segfault
   // EXPECT_EQ(list->size(), 0);
 
-  // does foreach work for NULL?
-  TestForeachAlist(list);
+  // does foreach work for NULL? -> not anymore (macro has been removed)
+  // TestForeachAlist(list);
 
   // create empty list, which is prepared for a number of entires
   list = new alist<const char*>(10);

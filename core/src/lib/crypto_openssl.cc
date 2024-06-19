@@ -1153,58 +1153,61 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
 
   /* Create RecipientInfo structures for supplied
    * public keys. */
-  for (auto* keypair : *pubkeys) {
-    RecipientInfo* ri;
-    unsigned char* ekey;
-    int ekey_len;
+  if (pubkeys) {
+    for (auto* keypair : *pubkeys) {
+      RecipientInfo* ri;
+      unsigned char* ekey;
+      int ekey_len;
 
-    ri = RecipientInfo_new();
-    if (!ri) {
-      /* Allocation failed in OpenSSL */
-      CryptoSessionFree(cs);
-      return NULL;
-    }
+      ri = RecipientInfo_new();
+      if (!ri) {
+        /* Allocation failed in OpenSSL */
+        CryptoSessionFree(cs);
+        return NULL;
+      }
 
-    /* Set the ASN.1 structure version number */
-    ASN1_INTEGER_set(ri->version, BAREOS_ASN1_VERSION);
+      /* Set the ASN.1 structure version number */
+      ASN1_INTEGER_set(ri->version, BAREOS_ASN1_VERSION);
 
-    /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier */
-    M_ASN1_OCTET_STRING_free(ri->subjectKeyIdentifier);
-    ri->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
+      /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier
+       */
+      M_ASN1_OCTET_STRING_free(ri->subjectKeyIdentifier);
+      ri->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
 
-    /* Set our key encryption algorithm. We currently require RSA */
-    assert(keypair->pubkey
-           && EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
-    ri->keyEncryptionAlgorithm = OBJ_nid2obj(NID_rsaEncryption);
+      /* Set our key encryption algorithm. We currently require RSA */
+      assert(keypair->pubkey
+             && EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
+      ri->keyEncryptionAlgorithm = OBJ_nid2obj(NID_rsaEncryption);
 
-    /* Encrypt the session key */
-    ekey = (unsigned char*)malloc(EVP_PKEY_size(keypair->pubkey));
+      /* Encrypt the session key */
+      ekey = (unsigned char*)malloc(EVP_PKEY_size(keypair->pubkey));
 
-    ALLOW_DEPRECATED(
-        if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key,
-                                         cs->session_key_len, keypair->pubkey))
-            <= 0) {
-          /* OpenSSL failure */
-          RecipientInfo_free(ri);
-          CryptoSessionFree(cs);
-          free(ekey);
-          return NULL;
-        })
+      ALLOW_DEPRECATED(
+          if ((ekey_len = EVP_PKEY_encrypt(
+                   ekey, cs->session_key, cs->session_key_len, keypair->pubkey))
+              <= 0) {
+            /* OpenSSL failure */
+            RecipientInfo_free(ri);
+            CryptoSessionFree(cs);
+            free(ekey);
+            return NULL;
+          })
 
-    /* Store it in our ASN.1 structure */
-    if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
-      /* Allocation failed in OpenSSL */
-      RecipientInfo_free(ri);
-      CryptoSessionFree(cs);
+      /* Store it in our ASN.1 structure */
+      if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
+        /* Allocation failed in OpenSSL */
+        RecipientInfo_free(ri);
+        CryptoSessionFree(cs);
+        free(ekey);
+        return NULL;
+      }
+
+      /* Free the encrypted key buffer */
       free(ekey);
-      return NULL;
+
+      /* Push the new RecipientInfo structure onto the stack */
+      sk_RecipientInfo_push(cs->cryptoData->recipientInfo, ri);
     }
-
-    /* Free the encrypted key buffer */
-    free(ekey);
-
-    /* Push the new RecipientInfo structure onto the stack */
-    sk_RecipientInfo_push(cs->cryptoData->recipientInfo, ri);
   }
 
   return cs;
@@ -1275,49 +1278,53 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
 
   /* Find a matching RecipientInfo structure for a supplied
    * public key */
-  for (auto* keypair : *keypairs) {
-    RecipientInfo* ri;
-    int i;
+  if (keypairs) {
+    for (auto* keypair : *keypairs) {
+      RecipientInfo* ri;
+      int i;
 
-    /* Private key available? */
-    if (keypair->privkey == NULL) { continue; }
+      /* Private key available? */
+      if (keypair->privkey == NULL) { continue; }
 
-    for (i = 0; i < sk_RecipientInfo_num(recipients); i++) {
-      ri = sk_RecipientInfo_value(recipients, i);
+      for (i = 0; i < sk_RecipientInfo_num(recipients); i++) {
+        ri = sk_RecipientInfo_value(recipients, i);
 
-      /* Match against the subjectKeyIdentifier */
-      if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier)
-          == 0) {
-        /* Match found, extract symmetric encryption session data */
+        /* Match against the subjectKeyIdentifier */
+        if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier)
+            == 0) {
+          /* Match found, extract symmetric encryption session data */
 
-        /* RSA is required. */
-        assert(EVP_PKEY_type(EVP_PKEY_id(keypair->privkey)) == EVP_PKEY_RSA);
+          /* RSA is required. */
+          assert(EVP_PKEY_type(EVP_PKEY_id(keypair->privkey)) == EVP_PKEY_RSA);
 
-        /* If we recieve a RecipientInfo structure that does not use
-         * RSA, return an error */
-        if (OBJ_obj2nid(ri->keyEncryptionAlgorithm) != NID_rsaEncryption) {
-          retval = CRYPTO_ERROR_INVALID_CRYPTO;
-          goto err;
+          /* If we recieve a RecipientInfo structure that does not use
+           * RSA, return an error */
+          if (OBJ_obj2nid(ri->keyEncryptionAlgorithm) != NID_rsaEncryption) {
+            retval = CRYPTO_ERROR_INVALID_CRYPTO;
+            goto err;
+          }
+
+          /* Decrypt the session key */
+          /* Allocate sufficient space for the largest possible decrypted data
+           */
+          cs->session_key
+              = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
+          ALLOW_DEPRECATED(
+              cs->session_key_len = EVP_PKEY_decrypt(
+                  cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
+                  M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);)
+          if (cs->session_key_len <= 0) {
+            OpensslPostErrors(M_ERROR,
+                              T_("Failure decrypting the session key"));
+            retval = CRYPTO_ERROR_DECRYPTION;
+            goto err;
+          }
+
+          /* Session key successfully extracted, return the CRYPTO_SESSION
+           * structure */
+          *session = cs;
+          return CRYPTO_ERROR_NONE;
         }
-
-        /* Decrypt the session key */
-        /* Allocate sufficient space for the largest possible decrypted data */
-        cs->session_key
-            = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
-        ALLOW_DEPRECATED(
-            cs->session_key_len = EVP_PKEY_decrypt(
-                cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
-                M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);)
-        if (cs->session_key_len <= 0) {
-          OpensslPostErrors(M_ERROR, T_("Failure decrypting the session key"));
-          retval = CRYPTO_ERROR_DECRYPTION;
-          goto err;
-        }
-
-        /* Session key successfully extracted, return the CRYPTO_SESSION
-         * structure */
-        *session = cs;
-        return CRYPTO_ERROR_NONE;
       }
     }
   }

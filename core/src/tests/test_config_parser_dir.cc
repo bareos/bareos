@@ -237,6 +237,7 @@ void test_config_directive_type(
 
 void test_CFG_TYPE_AUDIT(DirectorResource* res)
 {
+  ASSERT_TRUE(res->audit_events);
   for (auto* val : *res->audit_events) { printf("AuditEvents = %s\n", val); }
   EXPECT_EQ(res->audit_events->size(), 8);
 }
@@ -249,6 +250,7 @@ TEST_F(ConfigParser_Dir, CFG_TYPE_AUDIT)
 
 void test_CFG_TYPE_PLUGIN_NAMES(DirectorResource* res)
 {
+  ASSERT_TRUE(res->plugin_names);
   for (auto* val : *res->plugin_names) { printf("PluginNames = %s\n", val); }
   EXPECT_EQ(res->plugin_names->size(), 16);
 }
@@ -328,6 +330,7 @@ void test_CFG_TYPE_FNAME(DirectorResource*)
 
   alist<const char*>* files
       = std::addressof(fileset1->include_items.at(0)->name_list);
+  ASSERT_TRUE(files);
   for (auto* val : *files) { printf("Files = %s\n", val); }
 }
 
