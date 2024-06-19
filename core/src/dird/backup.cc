@@ -132,7 +132,7 @@ char* StorageAddressToContact(StorageResource* read_storage,
 
 static inline bool ValidateStorage(JobControlRecord* jcr)
 {
-  foreach_alist (store, jcr->dir_impl->res.write_storage_list) {
+  for (auto* store : *jcr->dir_impl->res.write_storage_list) {
     switch (store->Protocol) {
       case APT_NATIVE:
         continue;
@@ -186,7 +186,7 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 
   jr.StartTime = jcr->dir_impl->jr.StartTime;
 
-  foreach_alist (job, jcr->dir_impl->res.job->base) {
+  for (auto* job : *jcr->dir_impl->res.job->base) {
     bstrncpy(jr.Name, job->resource_name_, sizeof(jr.Name));
     jcr->db->GetBaseJobid(jcr, &jr, &id);
 

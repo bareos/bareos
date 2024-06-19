@@ -264,7 +264,7 @@ static bool ValidateCommand(JobControlRecord* jcr,
   // If there is no explicit list of allowed cmds allow all cmds.
   if (!allowed_job_cmds) { return true; }
 
-  foreach_alist (allowed_job_cmd, allowed_job_cmds) {
+  for (auto* allowed_job_cmd : *allowed_job_cmds) {
     if (Bstrcasecmp(cmd, allowed_job_cmd)) {
       allowed = true;
       break;

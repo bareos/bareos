@@ -56,7 +56,7 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
   alist<DeviceResource*>* original_alist = device_resources;
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
-  foreach_alist (device_resource, original_alist) {
+  for (auto* device_resource : *original_alist) {
     if (device_resource->multiplied_device_resource) {
       if (device_resource->multiplied_device_resource == device_resource) {
         DeviceResource* d = new DeviceResource(*device_resource);
@@ -71,7 +71,7 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
   device_resources = temp_alist;
   BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
   device_resources = original_alist;
-  foreach_alist (device_resource, temp_alist) { delete device_resource; }
+  for (auto* device_resource : *temp_alist) { delete device_resource; }
   delete temp_alist;
   return true;
 }

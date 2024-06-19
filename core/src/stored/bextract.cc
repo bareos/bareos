@@ -271,7 +271,7 @@ static inline void DropDelayedDataStreams()
 {
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
-  foreach_alist (dds, delayed_streams) { free(dds->content); }
+  for (auto* dds : *delayed_streams) { free(dds->content); }
 
   delayed_streams->destroy();
 }
@@ -317,7 +317,7 @@ static inline void PopDelayedDataStreams()
    * processing for the following type of streams:
    * - *_ACL_*
    * - *_XATTR_* */
-  foreach_alist (dds, delayed_streams) {
+  for (auto* dds : *delayed_streams) {
     switch (dds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:

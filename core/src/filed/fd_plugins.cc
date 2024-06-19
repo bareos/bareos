@@ -394,7 +394,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       call_if_canceled = true; /* plugin *must* see this call */
       break;
     case bEventStartRestoreJob:
-      foreach_alist (ctx, plugin_ctx_list) {
+      for (auto* ctx : *plugin_ctx_list) {
         ((FiledPluginContext*)ctx->core_private_context)->restoreFileStarted
             = false;
         ((FiledPluginContext*)ctx->core_private_context)->createFileCalled
@@ -476,7 +476,7 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
         jcr->JobId);
 
   // Pass event to every plugin
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto* ctx : *plugin_ctx_list) {
     if (IsPluginDisabled(ctx)) { continue; }
 
     jcr->plugin_ctx = ctx;
@@ -607,7 +607,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
 
   // Note, we stop the loop on the first plugin that matches the name
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto* ctx : *plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
@@ -683,7 +683,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
 
   // Note, we stop the loop on the first plugin that matches the name
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto* ctx : *plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
@@ -920,7 +920,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
 
   // Note, we stop the loop on the first plugin that matches the name
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto* ctx : *plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
@@ -1132,7 +1132,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
 
   // Search for correct plugin as specified on the command
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto* ctx : *plugin_ctx_list) {
     bEvent event;
     bEventType eventType;
     FiledPluginContext* b_ctx;
@@ -1562,7 +1562,7 @@ BxattrExitCode PluginParseXattrStreams(
     xattr_pkt xp;
     xp.fname = xattr_data->last_fname;
 
-    foreach_alist (current_xattr, xattr_value_list) {
+    for (auto* current_xattr : *xattr_value_list) {
       xp.name = current_xattr->name;
       xp.name_length = current_xattr->name_length;
       xp.value = current_xattr->value;
@@ -1769,7 +1769,7 @@ void FreePlugins(JobControlRecord* jcr)
 
   Dmsg2(debuglevel, "Free instance fd-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
-  foreach_alist (ctx, jcr->plugin_ctx_list) {
+  for (auto* ctx : *jcr->plugin_ctx_list) {
     // Free the plugin instance
     PlugFunc(ctx->plugin)->freePlugin(ctx);
     delete static_cast<FiledPluginContext*>(ctx->core_private_context);
@@ -2177,7 +2177,7 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
   cnt = 0;
   foreach_jcr (njcr) {
     if (jcr->plugin_ctx_list) {
-      foreach_alist (nctx, jcr->plugin_ctx_list) {
+      for (auto* nctx : *jcr->plugin_ctx_list) {
         if (nctx->plugin == bctx->plugin) { cnt++; }
       }
     }
