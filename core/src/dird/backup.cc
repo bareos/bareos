@@ -132,8 +132,6 @@ char* StorageAddressToContact(StorageResource* read_storage,
 
 static inline bool ValidateStorage(JobControlRecord* jcr)
 {
-  StorageResource* store = nullptr;
-
   foreach_alist (store, jcr->dir_impl->res.write_storage_list) {
     switch (store->Protocol) {
       case APT_NATIVE:
@@ -180,7 +178,6 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
 static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 {
   JobDbRecord jr;
-  JobResource* job = nullptr;
   JobId_t id;
 
   if (!jcr->dir_impl->res.job->base) {

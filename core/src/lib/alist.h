@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,8 +35,7 @@
  * Loop var through each member of list using an increasing index.
  * Loop var through each member of list using an decreasing index.
  */
-#define foreach_alist(var, list) \
-  for ((var) = list ? (list)->first() : 0; (var); (var) = (list)->next())
+#define foreach_alist(var, list) for (auto var : *list)
 
 #define foreach_alist_null(var, list) \
   for ((var) = list ? (list)->first() : nullptr; (var); (var) = (list)->next())
@@ -66,6 +65,54 @@ enum
 
 template <typename T> class alist {
  public:
+  template <typename Mem> struct enumerated_span {
+    size_t count;
+    Mem* items;
+
+    struct iter {
+      size_t current;
+      Mem* ptr;
+
+      iter(size_t start, Mem* base) : current{start}, ptr{base} {}
+
+      std::pair<size_t, Mem*> operator*() { return {current, ptr}; }
+
+      iter& operator++()
+      {
+        current += 1;
+        ptr += 1;
+        return *this;
+      }
+
+      friend bool operator!=(const iter& l, const iter& r)
+      {
+        return l.current != r.current || l.ptr != r.ptr;
+      }
+    };
+
+    iter begin() { return iter{0, items}; }
+
+    iter end() { return iter{count, items + count}; }
+  };
+
+  T* begin() { return &items[0]; }
+
+  T* end() { return &items[num_items]; }
+
+  const T* begin() const { return &items[0]; }
+
+  const T* end() const { return &items[num_items]; }
+
+  enumerated_span<T> enumerate()
+  {
+    return enumerated_span<T>{num_items, items};
+  }
+
+  enumerated_span<const T> enumerate() const
+  {
+    return enumerated_span<const T>{num_items, items};
+  }
+
   // Ueb disable non pointer initialization
   alist(int num = 1, bool own = true) { init(num, own); }
   ~alist() { destroy(); }

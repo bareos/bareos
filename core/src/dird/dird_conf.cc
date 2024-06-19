@@ -1064,7 +1064,6 @@ static void PropagateResource(ResourceItem* items,
           break;
         }
         case CFG_TYPE_ALIST_STR: {
-          const char* str = nullptr;
           alist<const char*>*orig_list, **new_list;
 
           // Handle alist strings
@@ -1086,7 +1085,6 @@ static void PropagateResource(ResourceItem* items,
           break;
         }
         case CFG_TYPE_ALIST_RES: {
-          BareosResource* res = nullptr;
           alist<BareosResource*>*orig_list, **new_list;
 
           // Handle alist resources
@@ -1108,7 +1106,6 @@ static void PropagateResource(ResourceItem* items,
           break;
         }
         case CFG_TYPE_ACL: {
-          const char* str = nullptr;
           alist<const char*>*orig_list, **new_list;
 
           // Handle ACL lists.
@@ -1303,7 +1300,6 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
 
   send.ArrayStart(item.name, inherited, "");
 
-  RunScript* runscript = nullptr;
   foreach_alist (runscript, list) {
     std::string esc = EscapeString(runscript->command.c_str());
 
@@ -2412,7 +2408,6 @@ bool PropagateJobdefs(int res_type, JobResource* res)
         res->RunScripts = new alist<RunScript*>(10, not_owned_by_alist);
       }
 
-      RunScript* rs = nullptr;
       foreach_alist (rs, jobdefs->RunScripts) {
         RunScript* r = DuplicateRunscript(rs);
         r->from_jobdef = true;

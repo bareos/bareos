@@ -119,7 +119,6 @@ static inline std::optional<bool> FindInAclList(alist<const char*>* list,
   if (!list || list->empty()) { return std::nullopt; }
 
   // Search list for item
-  const char* list_value = nullptr;
   foreach_alist (list_value, list) {
     // See if this is a deny acl.
     if (*list_value == '!') {
@@ -198,7 +197,6 @@ bail_out:
 bool UaContext::AclNoRestrictions(int acl)
 {
   const char* list_value;
-  ProfileResource* profile = nullptr;
 
   // If no console resource => default console and all is permitted
   if (!user_acl) { return true; }

@@ -799,7 +799,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         } else {
           p->device_resources = res_changer->device_resources;
 
-          DeviceResource* q = nullptr;
           foreach_alist (q, p->device_resources) { q->changer_res = p; }
 
           int errstat;

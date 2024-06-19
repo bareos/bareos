@@ -119,7 +119,6 @@ bool ReserveReadDevice(JobControlRecord* jcr,
                        alist<StorageResource*>* read_storage)
 {
   BareosSocket* sd_socket = jcr->store_bsock;
-  StorageResource* storage = nullptr;
   PoolMem device_name;
   std::string StoreName{};
   std::string pool_name{};
@@ -157,7 +156,6 @@ bool ReserveReadDevice(JobControlRecord* jcr,
       sd_socket->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
                        pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
       Dmsg1(100, "read_storage >stored: %s", sd_socket->msg);
-      DeviceResource* dev = nullptr;
       /* Loop over alternative storage Devices until one is OK */
       foreach_alist (dev, storage->device) {
         PmStrcpy(device_name, dev->resource_name_);
@@ -223,7 +221,6 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
     pool_name = jcr->dir_impl->res.pool->resource_name_;
     BashSpaces(pool_type);
     BashSpaces(pool_name);
-    StorageResource* storage = nullptr;
     foreach_alist (storage, write_storage) {
       StoreName = storage->resource_name_;
       BashSpaces(StoreName);
@@ -234,7 +231,6 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
                               pool_type.c_str(), 1, copy, stripe);
 
       Dmsg1(100, "write_storage >stored: %s", jcr->store_bsock->msg);
-      DeviceResource* dev = nullptr;
       // Loop over alternative storage Devices until one is OK
       foreach_alist (dev, storage->device) {
         PmStrcpy(device_name, dev->resource_name_);

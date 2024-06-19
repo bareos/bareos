@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,6 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
   alist<DeviceResource*>* original_alist = device_resources;
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
-  DeviceResource* device_resource = nullptr;
   foreach_alist (device_resource, original_alist) {
     if (device_resource->multiplied_device_resource) {
       if (device_resource->multiplied_device_resource == device_resource) {
@@ -72,9 +71,7 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
   device_resources = temp_alist;
   BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
   device_resources = original_alist;
-  foreach_alist (device_resource, temp_alist) {
-    delete device_resource;
-  }
+  foreach_alist (device_resource, temp_alist) { delete device_resource; }
   delete temp_alist;
   return true;
 }
