@@ -184,7 +184,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
   // See if the backend is already loaded.
   if (loaded_backends) {
-    foreach_alist (backend_shared_library, loaded_backends) {
+    for (auto* backend_shared_library : loaded_backends) {
       if (backend_shared_library->interface_type_id
           == backend_interface_mapping->interface_type_id) {
         return backend_shared_library->backend_instantiate(
@@ -254,7 +254,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 void DbFlushBackends(void)
 {
   if (loaded_backends) {
-    foreach_alist (backend_shared_library, loaded_backends) {
+    for (auto* backend_shared_library : loaded_backends) {
       backend_shared_library->flush_backend();
 
       dlclose(backend_shared_library->handle);

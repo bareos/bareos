@@ -71,7 +71,7 @@ void TestForeachAlist(alist<const char*>* list)
 
   // test all available foreach loops
 
-  foreach_alist (str, list) {
+  for (auto* str : *list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(str, buf);
     i++;
