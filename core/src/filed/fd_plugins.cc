@@ -394,11 +394,13 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       call_if_canceled = true; /* plugin *must* see this call */
       break;
     case bEventStartRestoreJob:
-      for (auto* ctx : *plugin_ctx_list) {
-        ((FiledPluginContext*)ctx->core_private_context)->restoreFileStarted
-            = false;
-        ((FiledPluginContext*)ctx->core_private_context)->createFileCalled
-            = false;
+      if (plugin_ctx_list) {
+        for (auto* ctx : *plugin_ctx_list) {
+          ((FiledPluginContext*)ctx->core_private_context)->restoreFileStarted
+              = false;
+          ((FiledPluginContext*)ctx->core_private_context)->createFileCalled
+              = false;
+        }
       }
       break;
     case bEventEndRestoreJob:

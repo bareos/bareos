@@ -132,17 +132,19 @@ char* StorageAddressToContact(StorageResource* read_storage,
 
 static inline bool ValidateStorage(JobControlRecord* jcr)
 {
-  for (auto* store : *jcr->dir_impl->res.write_storage_list) {
-    switch (store->Protocol) {
-      case APT_NATIVE:
-        continue;
-      default:
-        Jmsg(
-            jcr, M_FATAL, 0,
-            T_("Storage %s has illegal backup protocol %s for Native backup\n"),
-            store->resource_name_,
-            AuthenticationProtocolTypeToString(store->Protocol));
-        return false;
+  if (jcr->dir_impl->res.write_storage_list) {
+    for (auto* store : *jcr->dir_impl->res.write_storage_list) {
+      switch (store->Protocol) {
+        case APT_NATIVE:
+          continue;
+        default:
+          Jmsg(jcr, M_FATAL, 0,
+               T_("Storage %s has illegal backup protocol %s for Native "
+                  "backup\n"),
+               store->resource_name_,
+               AuthenticationProtocolTypeToString(store->Protocol));
+          return false;
+      }
     }
   }
 
