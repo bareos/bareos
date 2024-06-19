@@ -716,15 +716,17 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
     int cnt = 0;
     PoolMem devicenames;
 
-    // Build a list of devicenames that belong to this storage defintion.
-    for (auto* device_resource : *store->device) {
-      if (cnt == 0) {
-        PmStrcpy(devicenames, device_resource->resource_name_);
-      } else {
-        PmStrcat(devicenames, ",");
-        PmStrcat(devicenames, device_resource->resource_name_);
+    if (store->device) {
+      // Build a list of devicenames that belong to this storage defintion.
+      for (auto* device_resource : *store->device) {
+        if (cnt == 0) {
+          PmStrcpy(devicenames, device_resource->resource_name_);
+        } else {
+          PmStrcat(devicenames, ",");
+          PmStrcat(devicenames, device_resource->resource_name_);
+        }
+        cnt++;
       }
-      cnt++;
     }
 
     BashSpaces(devicenames);

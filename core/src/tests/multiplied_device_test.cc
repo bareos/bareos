@@ -281,7 +281,7 @@ static uint32_t CheckSomeDevicesInAutochanger(ConfigurationParser& my_config)
 
   while ((p = my_config.GetNextRes(R_AUTOCHANGER, p))) {
     AutochangerResource* autochanger = dynamic_cast<AutochangerResource*>(p);
-    if (autochanger) {
+    if (autochanger && autochanger->device_resources) {
       std::string autochanger_name(autochanger->resource_name_);
       std::string autochanger_name_test(
           "virtual-multiplied-device-autochanger");
