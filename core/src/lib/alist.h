@@ -56,6 +56,7 @@ enum
  *               array of pointers to inserted items
  */
 
+
 template <typename T> class alist {
  public:
   template <typename Mem> struct enumerated_span {

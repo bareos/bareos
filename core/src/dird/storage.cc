@@ -237,12 +237,15 @@ void SetPairedStorage(JobControlRecord* jcr)
             = jcr->dir_impl->res.write_storage_list;
         jcr->dir_impl->res.write_storage_list
             = new alist<StorageResource*>(10, not_owned_by_alist);
-        for (auto* store : *jcr->dir_impl->res.paired_read_write_storage_list) {
-          if (store->paired_storage) {
-            Dmsg1(100, "write_storage_list=%s\n",
-                  store->paired_storage->resource_name_);
-            jcr->dir_impl->res.write_storage_list->append(
-                store->paired_storage);
+        if (jcr->dir_impl->res.paired_read_write_storage_list) {
+          for (auto* store :
+               *jcr->dir_impl->res.paired_read_write_storage_list) {
+            if (store->paired_storage) {
+              Dmsg1(100, "write_storage_list=%s\n",
+                    store->paired_storage->resource_name_);
+              jcr->dir_impl->res.write_storage_list->append(
+                  store->paired_storage);
+            }
           }
         }
 
@@ -309,11 +312,15 @@ void SetPairedStorage(JobControlRecord* jcr)
             = jcr->dir_impl->res.read_storage_list;
         jcr->dir_impl->res.read_storage_list
             = new alist<StorageResource*>(10, not_owned_by_alist);
-        for (auto* store : *jcr->dir_impl->res.paired_read_write_storage_list) {
-          if (store->paired_storage) {
-            Dmsg1(100, "read_storage_list=%s\n",
-                  store->paired_storage->resource_name_);
-            jcr->dir_impl->res.read_storage_list->append(store->paired_storage);
+        if (jcr->dir_impl->res.paired_read_write_storage_list) {
+          for (auto* store :
+               *jcr->dir_impl->res.paired_read_write_storage_list) {
+            if (store->paired_storage) {
+              Dmsg1(100, "read_storage_list=%s\n",
+                    store->paired_storage->resource_name_);
+              jcr->dir_impl->res.read_storage_list->append(
+                  store->paired_storage);
+            }
           }
         }
 
