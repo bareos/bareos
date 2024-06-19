@@ -280,7 +280,6 @@ static uint32_t CheckSomeDevicesInAutochanger(ConfigurationParser& config)
       std::string autochanger_name_test(
           "virtual-multiplied-device-autochanger");
       if (autochanger_name == autochanger_name_test) {
-        DeviceResource* d = nullptr;
         foreach_alist (d, autochanger->device_resources) {
           std::string device_name(d->resource_name_);
           if (names.find(device_name) != names.end()) { ++count_str_ok; }

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,8 +38,6 @@ bool UaContext::AuditEventWanted(bool audit_event_enabled)
   if (!me->audit_events) { return audit_event_enabled; }
 
   if (audit_event_enabled) {
-    const char* event = nullptr;
-
     foreach_alist (event, me->audit_events) {
       if (Bstrcasecmp(event, argk[0])) { return true; }
     }

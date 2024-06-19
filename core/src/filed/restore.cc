@@ -182,8 +182,6 @@ static inline bool RestoreFinderinfo(JobControlRecord*, POOLMEM*, int32_t)
 // Cleanup of delayed restore stack with streams for later processing.
 static inline void DropDelayedDataStreams(r_ctx& rctx, bool reuse)
 {
-  DelayedDataStream* dds = nullptr;
-
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return; }
 
   foreach_alist (dds, rctx.delayed_streams) { free(dds->content); }
@@ -303,8 +301,6 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
  */
 static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
 {
-  DelayedDataStream* dds = nullptr;
-
   // See if there is anything todo.
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return true; }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -99,7 +99,6 @@ void CopyRstorage(JobControlRecord* jcr,
                   const char* where)
 {
   if (storage) {
-    StorageResource* store = nullptr;
     if (jcr->dir_impl->res.read_storage_list) {
       delete jcr->dir_impl->res.read_storage_list;
     }
@@ -125,8 +124,6 @@ void CopyRstorage(JobControlRecord* jcr,
  */
 void SetRstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
 {
-  StorageResource* storage = nullptr;
-
   if (!store->store) { return; }
   if (jcr->dir_impl->res.read_storage_list) { FreeRstorage(jcr); }
   if (!jcr->dir_impl->res.read_storage_list) {
@@ -160,7 +157,6 @@ void CopyWstorage(JobControlRecord* jcr,
                   const char* where)
 {
   if (storage) {
-    StorageResource* st = nullptr;
     if (jcr->dir_impl->res.write_storage_list) {
       delete jcr->dir_impl->res.write_storage_list;
     }
@@ -190,8 +186,6 @@ void CopyWstorage(JobControlRecord* jcr,
  */
 void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
 {
-  StorageResource* storage = nullptr;
-
   if (!store->store) { return; }
   if (jcr->dir_impl->res.write_storage_list) { FreeWstorage(jcr); }
   if (!jcr->dir_impl->res.write_storage_list) {
@@ -231,8 +225,6 @@ void FreeWstorage(JobControlRecord* jcr)
  */
 void SetPairedStorage(JobControlRecord* jcr)
 {
-  StorageResource *store = nullptr, *paired_read_write_storage = nullptr;
-
   switch (jcr->getJobType()) {
     case JT_BACKUP:
       // For a backup we look at the write storage.
@@ -259,7 +251,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * paired storage entry. We save the actual storage entry in
          * paired_read_write_storage which is for restore in the
          * FreePairedStorage() function. */
-        store = jcr->dir_impl->res.write_storage;
+        auto* store = jcr->dir_impl->res.write_storage;
         if (store->paired_storage) {
           jcr->dir_impl->res.write_storage = store->paired_storage;
           jcr->dir_impl->res.paired_read_write_storage = store;
@@ -279,7 +271,8 @@ void SetPairedStorage(JobControlRecord* jcr)
             = new alist<StorageResource*>(10, not_owned_by_alist);
         foreach_alist (paired_read_write_storage,
                        jcr->dir_impl->res.read_storage_list) {
-          store = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
+          auto* store
+              = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
           while (store) {
             if (store->paired_storage == paired_read_write_storage) { break; }
 
@@ -330,7 +323,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * paired storage entry. We save the actual storage entry in
          * paired_read_write_storage which is for restore in the
          * FreePairedStorage() function. */
-        store = jcr->dir_impl->res.read_storage;
+        auto* store = jcr->dir_impl->res.read_storage;
         if (store->paired_storage) {
           jcr->dir_impl->res.read_storage = store->paired_storage;
           jcr->dir_impl->res.paired_read_write_storage = store;
@@ -408,8 +401,6 @@ void FreePairedStorage(JobControlRecord* jcr)
 // Check if every possible storage has paired storage associated.
 bool HasPairedStorage(JobControlRecord* jcr)
 {
-  StorageResource* store = nullptr;
-
   switch (jcr->getJobType()) {
     case JT_BACKUP:
       // For a backup we look at the write storage.

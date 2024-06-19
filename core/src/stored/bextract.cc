@@ -269,8 +269,6 @@ int main(int argc, char* argv[])
 // Cleanup of delayed restore stack with streams for later processing.
 static inline void DropDelayedDataStreams()
 {
-  DelayedDataStream* dds = nullptr;
-
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
   foreach_alist (dds, delayed_streams) { free(dds->content); }
@@ -307,8 +305,6 @@ static inline void PushDelayedDataStream(int stream,
  */
 static inline void PopDelayedDataStreams()
 {
-  DelayedDataStream* dds = nullptr;
-
   // See if there is anything todo.
   if (!delayed_streams || delayed_streams->empty()) { return; }
 

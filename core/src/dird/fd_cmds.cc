@@ -578,7 +578,6 @@ bool SendIncludeExcludeLists(JobControlRecord* jcr)
 // This checks to see if there are any non local runscripts for this job.
 static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 {
-  RunScript* cmd = nullptr;
   bool retval = false;
 
   if (RunScripts->empty()) { return false; }
@@ -599,7 +598,6 @@ static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 int SendRunscriptsCommands(JobControlRecord* jcr)
 {
   int result;
-  RunScript* cmd = nullptr;
   POOLMEM *msg, *ehost;
   BareosSocket* fd = jcr->file_bsock;
   bool has_before_jobs = false;
