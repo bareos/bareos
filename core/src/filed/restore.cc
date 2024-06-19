@@ -184,7 +184,7 @@ static inline void DropDelayedDataStreams(r_ctx& rctx, bool reuse)
 {
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return; }
 
-  foreach_alist (dds, rctx.delayed_streams) { free(dds->content); }
+  for (auto* dds : *rctx.delayed_streams) { free(dds->content); }
 
   rctx.delayed_streams->destroy();
   if (reuse) { rctx.delayed_streams->init(10, owned_by_alist); }
@@ -313,7 +313,7 @@ static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
    * processing for the following type of streams:
    * - *_ACL_*
    * - *_XATTR_* */
-  foreach_alist (dds, rctx.delayed_streams) {
+  for (auto* dds : *rctx.delayed_streams) {
     switch (dds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:

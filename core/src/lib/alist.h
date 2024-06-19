@@ -27,19 +27,13 @@
 #define BAREOS_LIB_ALIST_H_
 
 
-/* There is a lot of extra casting here to work around the fact
- * that some compilers (Sun and Visual C++) do not accept
- * (void *) as an lvalue on the left side of an equal.
- *
- * Loop var through each member of list
- * Loop var through each member of list using an increasing index.
- * Loop var through each member of list using an decreasing index.
- */
-#define foreach_alist(var, list) for (auto var : *list)
+/* Loop var through each member of list using an increasing index.
+ * Loop var through each member of list using an decreasing index. */
 
-#define foreach_alist_null(var, list) \
-  for ((var) = list ? (list)->first() : nullptr; (var); (var) = (list)->next())
 
+/* These should also get removed.  Currently there are some situations where
+ * items are removed from the list during traversal (see UnloadPlugin).
+ * Since this is thread safe it can stay for now. */
 #define foreach_alist_index(inx, var, list) \
   for ((inx) = 0; (list != nullptr) ? ((var) = (list)->get((inx))) : 0; (inx)++)
 
@@ -50,7 +44,6 @@
 
 #include <string>
 #include <list>
-
 
 // Second arg of init
 enum

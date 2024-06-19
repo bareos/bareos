@@ -446,7 +446,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
        * instance. */
       if (jcr->plugin_ctx_list) {
         PluginContext* found_ctx = nullptr;
-        foreach_alist (ctx, jcr->plugin_ctx_list) {
+        for (auto* ctx : *jcr->plugin_ctx_list) {
           if (ctx->instance == instance && ctx->plugin->file_len == len
               && bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
             found_ctx = ctx;
@@ -505,7 +505,7 @@ void FreePlugins(JobControlRecord* jcr)
 
   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
-  foreach_alist (ctx, jcr->plugin_ctx_list) {
+  for (auto* ctx : *jcr->plugin_ctx_list) {
     // Free the plugin instance
     DirplugFunc(ctx->plugin)->freePlugin(ctx);
     free(ctx->core_private_context); /* Free BAREOS private context */
@@ -787,7 +787,7 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
   cnt = 0;
   foreach_jcr (njcr) {
     if (jcr->plugin_ctx_list) {
-      foreach_alist (nctx, jcr->plugin_ctx_list) {
+      for (auto* nctx : *jcr->plugin_ctx_list) {
         if (nctx->plugin == bctx->plugin) { cnt++; }
       }
     }

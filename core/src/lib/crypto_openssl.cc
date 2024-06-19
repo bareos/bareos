@@ -1154,7 +1154,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
 
   /* Create RecipientInfo structures for supplied
    * public keys. */
-  foreach_alist (keypair, pubkeys) {
+  for (auto* keypair : *pubkeys) {
     RecipientInfo* ri;
     unsigned char* ekey;
     int ekey_len;
@@ -1277,7 +1277,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
 
   /* Find a matching RecipientInfo structure for a supplied
    * public key */
-  foreach_alist (keypair, keypairs) {
+  for (auto* keypair : *keypairs) {
     RecipientInfo* ri;
     int i;
 

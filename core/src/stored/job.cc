@@ -440,7 +440,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
   if (jcr->sd_impl->plugin_options) { delete jcr->sd_impl->plugin_options; }
 
   if (jcr->sd_impl->read_store) {
-    foreach_alist (store, jcr->sd_impl->read_store) {
+    for (auto* store : *jcr->sd_impl->read_store) {
       delete store->device;
       delete store;
     }
@@ -449,7 +449,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
   }
 
   if (jcr->sd_impl->write_store) {
-    foreach_alist (store, jcr->sd_impl->write_store) {
+    for (auto* store : *jcr->sd_impl->write_store) {
       delete store->device;
       delete store;
     }

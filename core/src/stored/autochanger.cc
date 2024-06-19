@@ -66,7 +66,7 @@ bool InitAutochangers()
   // Ensure that the media_type for each device is the same
   foreach_res (changer, R_AUTOCHANGER) {
     logical_drive_number = 0;
-    foreach_alist (device_resource, changer->device_resources) {
+    for (auto* device_resource : *changer->device_resources) {
       /* If the device does not have a changer name or changer command
        * defined, used the one from the Autochanger resource */
       if (!device_resource->changer_name && changer->changer_name) {
@@ -510,7 +510,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   /* We look for the slot number corresponding to the tape
    * we want in other drives, and if possible, unload it. */
   Dmsg0(100, "Wiffle through devices looking for slot\n");
-  foreach_alist (device_resource, changer->device_resources) {
+  for (auto* device_resource : *changer->device_resources) {
     dev = device_resource->dev;
     if (!dev) { continue; }
     dev_save = dcr->dev;
