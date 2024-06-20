@@ -11,6 +11,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - python-bareos: fix description [PR #1841]
 
+### Fixed
+- fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
+
 ## [23.0.3] - 2024-06-04
 
 ### Added
@@ -485,4 +488,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1833]: https://github.com/bareos/bareos/pull/1833
 [PR #1834]: https://github.com/bareos/bareos/pull/1834
 [PR #1841]: https://github.com/bareos/bareos/pull/1841
+[PR #1842]: https://github.com/bareos/bareos/pull/1842
 [unreleased]: https://github.com/bareos/bareos/tree/master

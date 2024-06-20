@@ -294,15 +294,18 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * the previous_jr record. We will set our times to the
    * values from that job so that anything changed after that
    * time will be picked up on the next backup. */
-  jcr->dir_impl->previous_jr = JobDbRecord{};
-  jcr->dir_impl->previous_jr.JobId = str_to_int64(jobid_list.back().c_str());
-  Dmsg1(10, "Previous JobId=%s\n", jobid_list.back().c_str());
+  {
+    JobDbRecord jr{};
+    jr.JobId = str_to_int64(jobid_list.back().c_str());
+    Dmsg1(10, "Previous JobId=%s\n", jobid_list.back().c_str());
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
-    Jmsg(jcr, M_FATAL, 0,
-         T_("Error getting Job record for previous Job: ERR=%s\n"),
-         jcr->db->strerror());
-    return false;
+    if (!jcr->db->GetJobRecord(jcr, &jr)) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Error getting Job record for previous Job: ERR=%s\n"),
+           jcr->db->strerror());
+      return false;
+    }
+    jcr->dir_impl->previous_jr.emplace(std::move(jr));
   }
 
   if (!CreateBootstrapFile(*jcr, jobids)) {
@@ -424,15 +427,17 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
 
   UpdateJobEnd(jcr, TermCode);
 
-  // Update final items to set them to the previous job's values
-  Mmsg(query,
-       "UPDATE Job SET StartTime='%s',EndTime='%s',"
-       "JobTDate=%s WHERE JobId=%s",
-       jcr->dir_impl->previous_jr.cStartTime,
-       jcr->dir_impl->previous_jr.cEndTime,
-       edit_uint64(jcr->dir_impl->previous_jr.JobTDate, ec1),
-       edit_uint64(jcr->JobId, ec2));
-  jcr->db->SqlQuery(query.c_str());
+  if (jcr->dir_impl->previous_jr) {
+    // Update final items to set them to the previous job's values
+    Mmsg(query,
+         "UPDATE Job SET StartTime='%s',EndTime='%s',"
+         "JobTDate=%s WHERE JobId=%s",
+         jcr->dir_impl->previous_jr->cStartTime,
+         jcr->dir_impl->previous_jr->cEndTime,
+         edit_uint64(jcr->dir_impl->previous_jr->JobTDate, ec1),
+         edit_uint64(jcr->JobId, ec2));
+    jcr->db->SqlQuery(query.c_str());
+  }
 
   // Get the fully updated job record
   if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {

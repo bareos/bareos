@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,8 @@
 #define BAREOS_DIRD_JOB_H_
 
 class JobControlRecord;
+
+#include "cats/cats.h"
 
 namespace directordaemon {
 
@@ -50,7 +52,7 @@ void UpdateJobEnd(JobControlRecord* jcr, int TermCode);
 bool SetupJob(JobControlRecord* jcr, bool suppress_output = false);
 void ExecuteJob(JobControlRecord* jcr);
 void CreateClones(JobControlRecord* jcr);
-int CreateRestoreBootstrapFile(JobControlRecord* jcr);
+int CreateRestoreBootstrapFile(JobControlRecord* jcr, const JobDbRecord& jobid);
 void DirdFreeJcr(JobControlRecord* jcr);
 void DirdFreeJcrPointers(JobControlRecord* jcr);
 void CancelStorageDaemonJob(JobControlRecord* jcr);

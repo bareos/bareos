@@ -115,14 +115,12 @@ bool DoVerify(JobControlRecord* jcr)
   BareosSocket* sd = NULL;
   int status;
   char ed1[100];
-  JobDbRecord jr;
+  JobDbRecord prev_jr{};
+  JobDbRecord jr{};
   JobId_t verify_jobid = 0;
   const char* Name;
 
   FreeWstorage(jcr); /* we don't write */
-
-  new (&jcr->dir_impl->previous_jr)
-      JobDbRecord();  // placement new instead of memset
 
   /* Find JobId of last job that ran. Note, we do this when
    *   the job actually starts running, not at schedule time,
@@ -173,22 +171,22 @@ bool DoVerify(JobControlRecord* jcr)
 
       /* Now get the job record for the previous backup that interests
        *   us. We use the verify_jobid that we found above. */
-      jcr->dir_impl->previous_jr.JobId = verify_jobid;
-      if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
+      prev_jr.JobId = verify_jobid;
+      if (!jcr->db->GetJobRecord(jcr, &prev_jr)) {
         Jmsg(jcr, M_FATAL, 0,
              T_("Could not get job record for previous Job. ERR=%s\n"),
              jcr->db->strerror());
         return false;
       }
-      if (!(jcr->dir_impl->previous_jr.JobStatus == JS_Terminated
-            || jcr->dir_impl->previous_jr.JobStatus == JS_Warnings)) {
+      if (!(prev_jr.JobStatus == JS_Terminated
+            || prev_jr.JobStatus == JS_Warnings)) {
         Jmsg(jcr, M_FATAL, 0,
              T_("Last Job %d did not Terminate normally. JobStatus=%c\n"),
-             verify_jobid, jcr->dir_impl->previous_jr.JobStatus);
+             verify_jobid, prev_jr.JobStatus);
         return false;
       }
       Jmsg(jcr, M_INFO, 0, T_("Verifying against JobId=%d Job=%s\n"),
-           jcr->dir_impl->previous_jr.JobId, jcr->dir_impl->previous_jr.Job);
+           prev_jr.JobId, prev_jr.Job);
   }
 
   /* If we are verifying a Volume, we need the Storage
@@ -200,7 +198,7 @@ bool DoVerify(JobControlRecord* jcr)
       /* Note: negative status is an error, zero status, means
        *  no files were backed up, so skip calling SD and
        *  client. */
-      status = CreateRestoreBootstrapFile(jcr);
+      status = CreateRestoreBootstrapFile(jcr, prev_jr);
       if (status < 0) { /* error */
         return false;
       } else if (status == 0) {            /* No files, nothing to do */
@@ -217,8 +215,7 @@ bool DoVerify(JobControlRecord* jcr)
       break;
   }
 
-  Dmsg2(100, "ClientId=%u JobLevel=%c\n", jcr->dir_impl->previous_jr.ClientId,
-        JobLevel);
+  Dmsg2(100, "ClientId=%u JobLevel=%c\n", prev_jr.ClientId, JobLevel);
 
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
@@ -384,12 +381,12 @@ bool DoVerify(JobControlRecord* jcr)
       jcr->dir_impl->sd_msg_thread_done
           = true; /* no SD msg thread, so it is done */
       jcr->dir_impl->SDJobStatus = JS_Terminated;
-      GetAttributesAndCompareToCatalog(jcr, jcr->dir_impl->previous_jr.JobId);
+      GetAttributesAndCompareToCatalog(jcr, &prev_jr);
       break;
     case L_VERIFY_VOLUME_TO_CATALOG:
       // Verify Volume to catalog entries
       Dmsg0(10, "Verify level=volume\n");
-      GetAttributesAndCompareToCatalog(jcr, jcr->dir_impl->previous_jr.JobId);
+      GetAttributesAndCompareToCatalog(jcr, &prev_jr);
       break;
     case L_VERIFY_DISK_TO_CATALOG:
       // Verify Disk attributes to catalog
@@ -397,7 +394,7 @@ bool DoVerify(JobControlRecord* jcr)
       jcr->dir_impl->sd_msg_thread_done
           = true; /* no SD msg thread, so it is done */
       jcr->dir_impl->SDJobStatus = JS_Terminated;
-      GetAttributesAndCompareToCatalog(jcr, jcr->dir_impl->previous_jr.JobId);
+      GetAttributesAndCompareToCatalog(jcr, &prev_jr);
       break;
     case L_VERIFY_INIT:
       // Build catalog
@@ -495,6 +492,9 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
   std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
   std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
 
+  auto prev_id
+      = jcr->dir_impl->previous_jr ? jcr->dir_impl->previous_jr->JobId : 0;
+
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
       Jmsg(jcr, msg_type, 0,
@@ -522,8 +522,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
            jcr->dir_impl->res.fileset->resource_name_,
            JobLevelToString(JobLevel),
-           jcr->dir_impl->res.client->resource_name_,
-           jcr->dir_impl->previous_jr.JobId, Name, sdt, edt,
+           jcr->dir_impl->res.client->resource_name_, prev_id, Name, sdt, edt,
            edit_uint64_with_commas(jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
            fd_term_msg.c_str(), sd_term_msg.c_str(),
@@ -554,8 +553,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
            jcr->dir_impl->res.fileset->resource_name_,
            JobLevelToString(JobLevel),
-           jcr->dir_impl->res.client->resource_name_,
-           jcr->dir_impl->previous_jr.JobId, Name, sdt, edt,
+           jcr->dir_impl->res.client->resource_name_, prev_id, Name, sdt, edt,
            edit_uint64_with_commas(jcr->JobFiles, ec1), jcr->JobErrors,
            fd_term_msg.c_str(), kBareosVersionStrings.JoblogMessage,
            JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
@@ -566,7 +564,8 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
 }
 
 // This routine is called only during a Verify
-void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
+void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
+                                      JobDbRecord* prev_jr)
 {
   BareosSocket* fd;
   int n, len;
@@ -579,7 +578,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
   int32_t file_index = 0;
 
   fd = jcr->file_bsock;
-  fdbr.JobId = JobId;
+  fdbr.JobId = prev_jr->JobId;
   jcr->dir_impl->FileIndex = 0;
 
   Dmsg0(20, "dir: waiting to receive file attributes\n");
@@ -632,7 +631,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         jcr->JobFiles++;
         jcr->dir_impl->FileIndex
             = file_index; /* remember attribute file_index */
-        jcr->dir_impl->previous_jr.FileIndex = file_index;
+        prev_jr->FileIndex = file_index;
         DecodeStat(attr, &statf, sizeof(statf),
                    &LinkFIf); /* decode file stat packet */
         do_Digest = CRYPTO_DIGEST_NONE;
@@ -647,8 +646,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         // Find equivalent record in the database
         fdbr.FileId = 0;
         if (!jcr->db->GetFileAttributesRecord(jcr, jcr->dir_impl->fname.c_str(),
-                                              &jcr->dir_impl->previous_jr,
-                                              &fdbr)) {
+                                              prev_jr, &fdbr)) {
           Jmsg(jcr, M_INFO, 0, T_("New file: %s\n"),
                jcr->dir_impl->fname.c_str());
           Dmsg1(020, T_("File not in catalog: %s\n"),
@@ -823,7 +821,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
        "SELECT Path.Path,File.Name FROM File,Path "
        "WHERE File.JobId=%d AND File.FileIndex > 0 "
        "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
-       JobId, jcr->JobId);
+       prev_jr->JobId, jcr->JobId);
   /* MissingHandler is called for each file found */
   jcr->db->SqlQuery(buf.c_str(), MissingHandler, (void*)jcr);
   if (jcr->dir_impl->fn_printed) {

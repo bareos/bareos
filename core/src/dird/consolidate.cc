@@ -221,18 +221,18 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         std::string oldestjobid = jobids_ctx.front();
 
         // Get db record of oldest jobid and check its age
-        jcr->dir_impl->previous_jr = JobDbRecord{};
-        jcr->dir_impl->previous_jr.JobId = std::stoul(oldestjobid);
+        auto prev_jr = JobDbRecord{};
+        prev_jr.JobId = std::stoul(oldestjobid);
         Dmsg1(10, "Previous JobId=%s\n", oldestjobid.c_str());
 
-        if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
+        if (!jcr->db->GetJobRecord(jcr, &prev_jr)) {
           Jmsg(jcr, M_FATAL, 0,
                T_("Error getting Job record for first Job: ERR=%s\n"),
                jcr->db->strerror());
           return true;
         }
 
-        starttime = jcr->dir_impl->previous_jr.JobTDate;
+        starttime = prev_jr.JobTDate;
         oldest_allowed_starttime = now - job->AlwaysIncrementalMaxFullAge;
         bstrftimes(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
         bstrftimes(sdt_starttime, sizeof(sdt_starttime), starttime);
@@ -266,6 +266,8 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         }
         Jmsg(jcr, M_INFO, 0, T_("after ConsolidateFull: jobids: %s\n"),
              jobids_ctx.GetAsString().c_str());
+
+        jcr->dir_impl->previous_jr.emplace(std::move(prev_jr));
       }
 
       // Set the virtualfull jobids to be consolidated
