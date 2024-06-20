@@ -1317,7 +1317,6 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
                                               char* content,
                                               uint32_t content_length)
 {
-  xattr_t* current_xattr = nullptr;
   alist<xattr_t*>* xattr_value_list;
   int current_attrnamespace, cnt;
   char *attrnamespace, *attrname;
