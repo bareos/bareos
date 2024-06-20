@@ -321,6 +321,9 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
     }
 
     int ssl_error = SSL_get_error(openssl_, nwritten);
+    if (ssl_error != SSL_ERROR_NONE) {
+      Dmsg1(50, "SSL_get_error() returned error value %d\n", ssl_error);
+    }
     switch (ssl_error) {
       case SSL_ERROR_NONE:
         nleft -= nwritten;
@@ -395,6 +398,9 @@ bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
     }
 
     int ssl_error = SSL_get_error(openssl_, err_accept);
+    if (ssl_error != SSL_ERROR_NONE) {
+      Dmsg1(50, "SSL_get_error() returned error value %d\n", ssl_error);
+    }
     switch (ssl_error) {
       case SSL_ERROR_NONE:
         bsock->SetTlsEstablished();

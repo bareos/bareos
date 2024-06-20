@@ -241,7 +241,9 @@
           "datatype": "PINT32",
           "code": 0,
           "default_value": "2",
-          "equals": true
+          "equals": true,
+          "versions": "23.0.0-",
+          "description": "The maximum number of worker threads that bareos will use during backup."
         },
         "Messages": {
           "datatype": "RES",
@@ -341,12 +343,15 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "description": "Ensure that bareos always chooses the lmdb backend for accurate information regardless of the file list size.  Use LmdbThreshold = 0 instead."
         },
         "LmdbThreshold": {
           "datatype": "PINT32",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "description": "File count threshold after which bareos will use the lmdb backend to store accurate information."
         },
         "SecureEraseCommand": {
           "datatype": "STRING",
@@ -531,7 +536,9 @@
           "datatype": "PINT32",
           "code": 0,
           "default_value": "2",
-          "equals": true
+          "equals": true,
+          "versions": "23.0.0-",
+          "description": "The maximum number of worker threads that bareos will use during backup."
         },
         "Messages": {
           "datatype": "RES",
@@ -631,12 +638,15 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "description": "Ensure that bareos always chooses the lmdb backend for accurate information regardless of the file list size.  Use LmdbThreshold = 0 instead."
         },
         "LmdbThreshold": {
           "datatype": "PINT32",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "description": "File count threshold after which bareos will use the lmdb backend to store accurate information."
         },
         "SecureEraseCommand": {
           "datatype": "STRING",
