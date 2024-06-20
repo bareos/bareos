@@ -892,13 +892,11 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
             }
             Dmsg3(100, "Device %s drive wrong: want=%hd got=%hd skipping\n",
                   devname.c_str(), drive, device_resource->dev->drive);
-
-            if (changer->device_resources->current()
-                == changer->device_resources->size()) {
-              Jmsg(jcr, M_ERROR, 0,
-                   T_("Drive number \"%d\" for device \"%s\" not found.\n"),
-                   drive, devname.c_str());
-            }
+          }
+          if (!target_device) {
+            Jmsg(jcr, M_ERROR, 0,
+                 T_("Drive number \"%d\" for device \"%s\" not found.\n"),
+                 drive, devname.c_str());
           }
         }
         break; /* we found it but could not open a device */
