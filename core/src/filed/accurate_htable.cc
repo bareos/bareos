@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,14 +40,9 @@ static int debuglevel = 100;
 BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(
     JobControlRecord* jcr,
     uint32_t number_of_files)
+    : BareosAccurateFilelist(jcr, number_of_files)
 {
-  jcr_ = jcr;
-  filenr_ = 0;
-  number_of_previous_files_ = number_of_files;
-
-  file_list_ = new FileList(number_of_previous_files_);
-  seen_bitmap_ = (char*)malloc(NbytesForBits(number_of_previous_files_));
-  ClearAllBits(number_of_previous_files_, seen_bitmap_);
+  file_list_ = new FileList(number_of_files);
 }
 
 bool BareosAccurateFilelistHtable::AddFile(char* fname,
@@ -79,14 +74,20 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
   item->payload.chksum[chksum_length] = '\0';
 
   item->payload.delta_seq = delta_seq;
-  item->payload.filenr = filenr_++;
-  file_list_->insert(item->fname, item);
-
-  if (chksum) {
-    Dmsg4(debuglevel, "add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n", fname,
-          lstat, delta_seq, chksum);
+  item->payload.filenr = seen_bitmap_.size();
+  if (file_list_->insert(item->fname, item)) {
+    if (chksum) {
+      Dmsg4(debuglevel,
+            "[file_nr = %lld] add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n",
+            item->payload.filenr, fname, lstat, delta_seq, chksum);
+    } else {
+      Dmsg2(debuglevel, "[file_nr = %lld] add fname=<%s> lstat=%s\n",
+            item->payload.filenr, fname, lstat);
+    }
+    seen_bitmap_.push_back(false);
   } else {
-    Dmsg2(debuglevel, "add fname=<%s> lstat=%s\n", fname, lstat);
+    duplicate_files_ += 1;
+    Dmsg1(debuglevel, "fname=<%s> is already registered.\n", fname);
   }
 
   return retval;
@@ -94,6 +95,21 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
 
 bool BareosAccurateFilelistHtable::EndLoad()
 {
+  if (duplicate_files_ > 0) {
+    Jmsg1(jcr_, M_ERROR, 0,
+          T_("%llu duplicate files were sent by the director and removed. This "
+             "may indicate problems with the database.\n"),
+          duplicate_files_);
+  }
+  // seen_bitmap_.size() is the number of files sent by the director
+  // without duplicates
+  if (seen_bitmap_.size() > initial_capacity_) {
+    Jmsg1(
+        jcr_, M_ERROR, 0,
+        T_("The director send too many files. %llu were sent but only %llu "
+           "were anticipated. The accurate job may be in a corrupted state.\n"),
+        seen_bitmap_.size(), initial_capacity_);
+  }
   // Nothing to do.
   return true;
 }
@@ -127,7 +143,7 @@ bool BareosAccurateFilelistHtable::SendBaseFileList()
   ff_pkt->type = FT_BASE;
 
   foreach_htable (elt, file_list_) {
-    if (BitIsSet(elt->payload.filenr, seen_bitmap_)) {
+    if (seen_bitmap_.at(elt->payload.filenr)) {
       Dmsg1(debuglevel, "base file fname=%s\n", elt->fname);
       DecodeStat(elt->payload.lstat, &statp, sizeof(statp),
                  &LinkFIc); /* decode catalog stat */
@@ -155,7 +171,7 @@ bool BareosAccurateFilelistHtable::SendDeletedList()
   ff_pkt->type = FT_DELETED;
 
   foreach_htable (elt, file_list_) {
-    if (BitIsSet(elt->payload.filenr, seen_bitmap_)
+    if (seen_bitmap_.at(elt->payload.filenr)
         || PluginCheckFile(jcr_, elt->fname)) {
       continue;
     }
@@ -176,13 +192,6 @@ void BareosAccurateFilelistHtable::destroy()
 {
   delete file_list_;
   file_list_ = nullptr;
-
-  if (seen_bitmap_) {
-    free(seen_bitmap_);
-    seen_bitmap_ = NULL;
-  }
-
-  filenr_ = 0;
 }
 
 } /* namespace filedaemon */

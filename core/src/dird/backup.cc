@@ -199,6 +199,12 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
   return (!jobids->empty());
 }
 
+struct accurate_list_handler_args {
+  JobControlRecord* jcr{nullptr};
+  std::size_t sent{0};
+  std::size_t discarded{0};
+};
+
 /*
  * Foreach files in currrent list, send "/path/fname\0LStat\0MD5\0Delta" to FD
  *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
@@ -206,11 +212,13 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
  */
 static int AccurateListHandler(void* ctx, int num_fields, char** row)
 {
-  JobControlRecord* jcr = (JobControlRecord*)ctx;
+  auto* args = reinterpret_cast<accurate_list_handler_args*>(ctx);
+  auto* jcr = args->jcr;
 
   if (jcr->IsJobCanceled()) { return 1; }
 
   if (row[2][0] == '0') { /* discard when file_index == 0 */
+    args->discarded += 1;
     return 0;
   }
 
@@ -224,6 +232,7 @@ static int AccurateListHandler(void* ctx, int num_fields, char** row)
     jcr->file_bsock->fsend("%s%s%c%s%c%c%s", row[0], row[1], 0, row[4], 0, 0,
                            row[5]);
   }
+  args->sent += 1;
   return 0;
 }
 
@@ -326,17 +335,25 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 
   // Don't send and store the checksum if fileset doesn't require it
   jcr->dir_impl->use_accurate_chksum = IsChecksumNeededByFileset(jcr);
-  if (jcr->JobId) { /* display the message only for real jobs */
-    Jmsg(jcr, M_INFO, 0, T_("Sending Accurate information.\n"));
-  }
+
+  timer accurate_timer;
 
   // To be able to allocate the right size for htable
   Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)",
        jobids.GetAsString().c_str());
   jcr->db->SqlQuery(buf.c_str(), DbListHandler, &nb);
+  auto count_as_str = nb.GetAsString();
   Dmsg2(200, "jobids=%s nb=%s\n", jobids.GetAsString().c_str(),
-        nb.GetAsString().c_str());
-  jcr->file_bsock->fsend("accurate files=%s\n", nb.GetAsString().c_str());
+        count_as_str.c_str());
+  if (jcr->JobId) { /* display the message only for real jobs */
+    Jmsg(jcr, M_INFO, 0, "Sending Accurate information (estimated %s files).\n",
+         count_as_str.c_str());
+  }
+  jcr->file_bsock->fsend("accurate files=%s\n", count_as_str.c_str());
+
+
+  accurate_list_handler_args args;
+  args.jcr = jcr;
 
   if (jcr->HasBase) {
     jcr->nb_base_files = nb.GetFrontAsInteger();
@@ -346,7 +363,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return false;
     }
     if (!jcr->db->GetBaseFileList(jcr, jcr->dir_impl->use_accurate_chksum,
-                                  AccurateListHandler, (void*)jcr)) {
+                                  AccurateListHandler, (void*)&args)) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db->GetBaseFileList:%s\n",
            jcr->db->strerror());
       return false;
@@ -360,11 +377,19 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
     if (!jcr->db_batch->GetFileList(jcr, jobids.GetAsString().c_str(),
                                     jcr->dir_impl->use_accurate_chksum,
                                     false /* no delta */, AccurateListHandler,
-                                    (void*)jcr)) {
+                                    (void*)&args)) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
            jcr->db_batch->strerror());
       return false;
     }
+  }
+  accurate_timer.stop();
+
+  if (jcr->JobId) { /* display the message only for real jobs */
+    Jmsg(jcr, M_INFO, 0,
+         "Sent Accurate information for %llu files (skipping %llu deleted "
+         "files) in %s.\n",
+         args.sent, args.discarded, accurate_timer.format_human_readable());
   }
 
   jcr->file_bsock->signal(BNET_EOD);

@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 
 message("Adding systemtests from ${CMAKE_CURRENT_SOURCE_DIR}")
+add_subdirectory(accurate-lmdb-stresstest)
+add_subdirectory(accurate-stresstest)
 add_subdirectory(acl)
 add_subdirectory(always-incremental-consolidate)
 add_subdirectory(autochanger)
@@ -57,6 +59,7 @@ add_subdirectory(multiple-clients)
 add_subdirectory(ndmp)
 add_subdirectory(notls)
 add_subdirectory(parallel-jobs)
+add_subdirectory(parser)
 add_subdirectory(passive)
 add_subdirectory(pruning)
 add_subdirectory(py3plug-dir)

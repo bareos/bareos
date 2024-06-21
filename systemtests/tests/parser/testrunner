@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+"${rscripts}"/cleanup
+
+start_test
+
+${BAREOS_STORAGEDAEMON_BINARY} -t -c "bad.conf" > "${tmp}/out.txt" || :
+
+expect_grep "CONFIG ERROR" \
+            "${tmp}/out.txt" \
+            "Config error not found"
+
+expect_grep "get_char: called after EOF." \
+            "${tmp}/out.txt" \
+            "Wrong error caught"
+
+end_test

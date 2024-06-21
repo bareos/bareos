@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -302,6 +302,9 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
   }
 
   int ssl_error = SSL_get_error(d_->openssl_, err_shutdown);
+  if (ssl_error != SSL_ERROR_NONE) {
+    Dmsg1(50, "SSL_get_error() returned error value %d\n", ssl_error);
+  }
 
   /* There may be more errors on the thread-local error-queue.
    * As we just shutdown our context and looked at the errors that we were

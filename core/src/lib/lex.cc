@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -335,7 +335,7 @@ LEX* lex_open_file(LEX* lf,
 int LexGetChar(LEX* lf)
 {
   if (lf->ch == L_EOF) {
-    Emsg0(M_ABORT, 0,
+    Emsg0(M_CONFIG_ERROR, 0,
           T_("get_char: called after EOF."
              " You may have a open double quote without the closing double "
              "quote.\n"));
@@ -726,7 +726,7 @@ int LexGetToken(LEX* lf, int expect)
         }
         if (ch == '\n' || ch == L_EOL || ch == '=' || ch == '}' || ch == '{'
             || ch == '\r' || ch == ';' || ch == ',' || ch == '#'
-            || (B_ISSPACE(ch))) {
+            || (B_ISSPACE(ch)) || ch == '"') {
           LexUngetChar(lf);
           token = BCT_UNQUOTED_STRING;
           lf->state = lex_none;

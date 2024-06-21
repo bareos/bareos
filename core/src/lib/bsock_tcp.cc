@@ -410,14 +410,16 @@ bool BareosSocketTCP::SendPacket(int32_t* hdr, int32_t pktsiz)
     }
     if (rc < 0) {
       if (!suppress_error_msgs_) {
-        Qmsg5(jcr_, M_ERROR, 0,
-              T_("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
-              message_length, who_, host_, port_, this->bstrerror());
+        Qmsg5(
+            jcr_, M_ERROR, 0,
+            T_("Write error sending %d (mlen: %d) bytes to %s:%s:%d: ERR=%s\n"),
+            pktsiz, message_length, who_, host_, port_, this->bstrerror());
       }
     } else {
-      Qmsg5(jcr_, M_ERROR, 0,
-            T_("Wrote %d bytes to %s:%s:%d, but only %d accepted.\n"),
-            message_length, who_, host_, port_, rc);
+      Qmsg5(
+          jcr_, M_ERROR, 0,
+          T_("Wrote %d (mlen: %d) bytes to %s:%s:%d, but only %d accepted.\n"),
+          pktsiz, message_length, who_, host_, port_, rc);
     }
     ok = false;
   }

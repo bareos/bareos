@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,7 @@
 // This file contains the LMDB abstraction of the accurate payload storage.
 
 #include <unistd.h>
+#include <cstring>
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/streams.h"
@@ -42,19 +43,16 @@ static int debuglevel = 100;
 #  define AVG_NR_BYTES_PER_ENTRY 256
 #  define B_PAGE_SIZE 4096
 
-BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord*,
+BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord* jcr,
                                                        uint32_t number_of_files)
+    : BareosAccurateFilelist(jcr, number_of_files)
 {
-  filenr_ = 0;
   pay_load_ = GetPoolMemory(PM_MESSAGE);
   lmdb_name_ = GetPoolMemory(PM_FNAME);
-  seen_bitmap_ = (char*)malloc(NbytesForBits(number_of_previous_files_));
-  ClearAllBits(number_of_previous_files_, seen_bitmap_);
   db_env_ = NULL;
   db_ro_txn_ = NULL;
   db_rw_txn_ = NULL;
   db_dbi_ = 0;
-  number_of_previous_files_ = number_of_files;
 }
 
 bool BareosAccurateFilelistLmdb::init()
@@ -71,7 +69,7 @@ bool BareosAccurateFilelistLmdb::init()
       return false;
     }
 
-    if ((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
+    if ((initial_capacity_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
       size_t pagesize;
 
 #  ifdef HAVE_GETPAGESIZE
@@ -80,10 +78,8 @@ bool BareosAccurateFilelistLmdb::init()
       pagesize = B_PAGE_SIZE;
 #  endif
 
-      mapsize
-          = (((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) / pagesize)
-             + 1)
-            * pagesize;
+      mapsize = (((initial_capacity_ * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1)
+                * pagesize;
     }
     result = mdb_env_set_mapsize(env, mapsize);
     if (result) {
@@ -145,6 +141,11 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
                                          int chksulength_,
                                          int32_t delta_seq)
 {
+  if (seen_bitmap_.size() >= initial_capacity_) {
+    excess_files_ += 1;
+    return false;
+  }
+
   accurate_payload* payload;
   int result;
   int total_length;
@@ -170,7 +171,7 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
   payload->chksum[chksulength_] = '\0';
 
   payload->delta_seq = delta_seq;
-  payload->filenr = filenr_++;
+  payload->filenr = seen_bitmap_.size();
 
   key.mv_data = fname;
   key.mv_size = strlen(fname) + 1;
@@ -207,11 +208,18 @@ retry:
               mdb_strerror(result));
       }
       break;
+    case MDB_KEYEXIST: {
+      duplicate_files_ += 1;
+      Dmsg1(debuglevel, "fname=<%s> is already registered.\n", fname);
+      return false;
+    } break;
     default:
       Jmsg1(jcr_, M_FATAL, 0, T_("Unable insert new data: %s\n"),
             mdb_strerror(result));
       break;
   }
+
+  if (retval) { seen_bitmap_.push_back(false); }
 
   return retval;
 }
@@ -245,6 +253,21 @@ bool BareosAccurateFilelistLmdb::EndLoad()
             mdb_strerror(result));
       return false;
     }
+  }
+
+  if (excess_files_ > 0) {
+    Jmsg2(jcr_, M_FATAL, 0,
+          T_("The director send too many files. %llu were sent but only %llu "
+             "were anticipated. The lmdb backend requested an abort.\n"),
+          seen_bitmap_.size() + excess_files_, initial_capacity_);
+    return false;
+  }
+
+  if (duplicate_files_ > 0) {
+    Jmsg1(jcr_, M_ERROR, 0,
+          T_("%llu duplicate files were sent by the director and removed. This "
+             "may indicate problems with the database.\n"),
+          duplicate_files_);
   }
 
   return true;
@@ -413,7 +436,7 @@ bool BareosAccurateFilelistLmdb::SendBaseFileList()
   if (result == 0) {
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
       payload = (accurate_payload*)data.mv_data;
-      if (BitIsSet(payload->filenr, seen_bitmap_)) {
+      if (seen_bitmap_.at(payload->filenr)) {
         Dmsg1(debuglevel, "base file fname=%s\n", key.mv_data);
         DecodeStat(payload->lstat, &ff_pkt->statp, sizeof(struct stat),
                    &LinkFIc); /* decode catalog stat */
@@ -451,7 +474,6 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
   MDB_cursor* cursor;
   MDB_val key, data;
   bool retval = false;
-  accurate_payload* payload;
   int stream = STREAM_UNIX_ATTRIBUTES;
 
   if (!jcr_->accurate) { return true; }
@@ -473,15 +495,19 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
   result = mdb_cursor_open(db_ro_txn_, db_dbi_, &cursor);
   if (result == 0) {
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
-      payload = (accurate_payload*)data.mv_data;
+      // lmdb does not guarantee any alignment, so we are not allowed to just
+      // access the data.  We need to "copy" it first.  The compiler should be
+      // able to optimize this away and use unaligned loads instead.
+      accurate_payload payload;
+      std::memcpy(&payload, data.mv_data, sizeof(payload));
 
-      if (BitIsSet(payload->filenr, seen_bitmap_)
+      if (seen_bitmap_.at(payload.filenr)
           || PluginCheckFile(jcr_, (char*)key.mv_data)) {
         continue;
       }
 
       Dmsg1(debuglevel, "deleted fname=%s\n", key.mv_data);
-      DecodeStat(payload->lstat, &statp, sizeof(struct stat),
+      DecodeStat(payload.lstat, &statp, sizeof(struct stat),
                  &LinkFIc); /* decode catalog stat */
       ff_pkt->fname = (char*)key.mv_data;
       ff_pkt->statp.st_mtime = statp.st_mtime;
@@ -556,13 +582,6 @@ void BareosAccurateFilelistLmdb::destroy()
     FreePoolMemory(lmdb_name_);
     lmdb_name_ = NULL;
   }
-
-  if (seen_bitmap_) {
-    free(seen_bitmap_);
-    seen_bitmap_ = NULL;
-  }
-
-  filenr_ = 0;
 }
 #endif /* HAVE_LMDB */
 } /* namespace filedaemon */

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,12 +41,17 @@
  * also cost some bytes.
  */
 
+#include <vector>
+#include <algorithm>
 #include "include/config.h"
+#include "include/baconfig.h"
+#include "lib/jcr.h"
+#include "lib/htable.h"
 
 namespace filedaemon {
 
 struct accurate_payload {
-  int64_t filenr;
+  std::size_t filenr;
   int32_t delta_seq;
   char* lstat;
   char* chksum;
@@ -56,13 +61,17 @@ struct accurate_payload {
 // Accurate payload storage abstraction classes.
 class BareosAccurateFilelist {
  protected:
-  int64_t filenr_ = 0;
-  char* seen_bitmap_ = nullptr;
+  std::vector<bool> seen_bitmap_;
   JobControlRecord* jcr_ = nullptr;
-  uint32_t number_of_previous_files_ = 0;
+  std::size_t initial_capacity_;
 
  public:
-  BareosAccurateFilelist() = default;
+  BareosAccurateFilelist(JobControlRecord* jcr, std::size_t initial_capacity)
+      : jcr_{jcr}, initial_capacity_{initial_capacity}
+  {
+    seen_bitmap_.reserve(initial_capacity);
+  }
+
   virtual ~BareosAccurateFilelist() {}
 
   virtual bool init() = 0;
@@ -81,17 +90,31 @@ class BareosAccurateFilelist {
   virtual bool SendDeletedList() = 0;
   void MarkFileAsSeen(accurate_payload* payload)
   {
-    SetBit(payload->filenr, seen_bitmap_);
+    /* Something went really wrong if we are supposed to mark a file as seen
+     * that we have not even registered.  The best course of action is to
+     * crash in that situation. */
+    ASSERT(seen_bitmap_.size() > payload->filenr);
+    seen_bitmap_[payload->filenr] = true;
   }
 
   void UnmarkFileAsSeen(accurate_payload* payload)
   {
-    ClearBit(payload->filenr, seen_bitmap_);
+    /* Something went really wrong if we are supposed to mark a file as seen
+     * that we have not even registered.  The best course of action is to
+     * crash in that situation. */
+    ASSERT(seen_bitmap_.size() > payload->filenr);
+    seen_bitmap_[payload->filenr] = false;
   }
 
-  void MarkAllFilesAsSeen() { SetBitRange(0, filenr_ - 1, seen_bitmap_); }
+  void MarkAllFilesAsSeen()
+  {
+    std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 1);
+  }
 
-  void UnmarkAllFilesAsSeen() { ClearBitRange(0, filenr_ - 1, seen_bitmap_); }
+  void UnmarkAllFilesAsSeen()
+  {
+    std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 0);
+  }
 };
 
 /*
@@ -109,6 +132,7 @@ class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
 
  protected:
   FileList* file_list_;
+  std::size_t duplicate_files_{0};
   void destroy();
 
  public:
@@ -150,6 +174,8 @@ class BareosAccurateFilelistLmdb : public BareosAccurateFilelist {
   MDB_dbi db_dbi_;
   MDB_txn* db_rw_txn_;
   MDB_txn* db_ro_txn_;
+  std::size_t excess_files_{0};
+  std::size_t duplicate_files_{0};
 
   void destroy();
 

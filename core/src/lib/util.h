@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <chrono>
 #include <variant>
+#include <chrono>
+#include <optional>
 
 #if defined(HAVE_WIN32)
 #  include "bregex.h"
@@ -138,6 +140,21 @@ template <typename T> class result {
   // Once we have access to std::format everywhere, this should change
   // to std::string.
   std::variant<T, PoolMem> data;
+};
+
+class timer {
+ public:
+  timer() { reset_and_start(); }
+  void reset_and_start();
+  void stop();
+
+  const char* format_human_readable();
+
+ private:
+  using time_point = std::chrono::steady_clock::time_point;
+  time_point start{};
+  std::optional<time_point> end{};
+  std::string formatted{};
 };
 
 #endif  // BAREOS_LIB_UTIL_H_

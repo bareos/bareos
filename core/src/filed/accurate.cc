@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -325,7 +325,7 @@ bail_out:
 
 bool AccurateCmd(JobControlRecord* jcr)
 {
-  uint32_t number_of_previous_files;
+  uint32_t accurate_max_file_count;
   int fname_length, lstat_length, chksum_length;
   char *fname, *lstat, *chksum;
   uint16_t delta_seq;
@@ -333,25 +333,24 @@ bool AccurateCmd(JobControlRecord* jcr)
 
   if (jcr->IsJobCanceled()) { return true; }
 
-  if (sscanf(dir->msg, "accurate files=%u", &number_of_previous_files) != 1) {
+  if (sscanf(dir->msg, "accurate files=%u", &accurate_max_file_count) != 1) {
     dir->fsend(T_("2991 Bad accurate command\n"));
     return false;
   }
 
+  jcr->fd_impl->file_list = nullptr;
 #ifdef HAVE_LMDB
   if (me->always_use_lmdb
-      || (me->lmdb_threshold > 0
-          && number_of_previous_files >= me->lmdb_threshold)) {
+      || (me->IsMemberPresent("LmdbThreshold")
+          && accurate_max_file_count >= me->lmdb_threshold)) {
     jcr->fd_impl->file_list
-        = new BareosAccurateFilelistLmdb(jcr, number_of_previous_files);
-  } else {
-    jcr->fd_impl->file_list
-        = new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
+        = new BareosAccurateFilelistLmdb(jcr, accurate_max_file_count);
   }
-#else
-  jcr->fd_impl->file_list
-      = new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
 #endif
+  if (!jcr->fd_impl->file_list) {
+    jcr->fd_impl->file_list
+        = new BareosAccurateFilelistHtable(jcr, accurate_max_file_count);
+  }
 
   if (!jcr->fd_impl->file_list->init()) { return false; }
 
