@@ -166,7 +166,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
   for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
        devinfo != store->runtime_storage_status->ndmp_deviceinfo.end();
        devinfo++) {
-    Jmsg(jcr, M_INFO, 0, " %s\n", devinfo->device.c_str(),
+    Jmsg(jcr, M_INFO, 0, " %s:(%s)\n", devinfo->device.c_str(),
          devinfo->model.c_str());
   }
   return true;
@@ -1035,7 +1035,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   }
 
   tapedevice = reserve_ndmp_tapedevice_for_job(store, jcr);
-  ndmp_job.tape_device = (char*)tapedevice.c_str();
+  ndmp_job.tape_device = strdup(tapedevice.c_str());
 
   int driveindex = lookup_ndmp_driveindex_by_name(store, ndmp_job.tape_device);
 
