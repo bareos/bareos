@@ -143,7 +143,6 @@ static inline bool fill_restore_environment_ndmp_native(
                                      destination_path.c_str(), ndmp_filesystem)
              == 0) {
     Jmsg(jcr, M_INFO, 0, T_("No files selected for restore\n"));
-    return false;
   }
   return true;
 }
