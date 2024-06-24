@@ -24,6 +24,7 @@ project(bareos-systemtests)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(BareosSystemtestFunctions)
 
+# ps is required for systemtests
 find_program(PS ps REQUIRED)
 
 set(USER $ENV{USER})
