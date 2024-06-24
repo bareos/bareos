@@ -29,23 +29,16 @@ add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
-
-if(FETCHCONTENT_FULLY_DISCONNECTED)
-  message(WARNING "Detected FETCHCONTENT_FULLY_DISCONNECTED.")
-  message(WARNING "As this will break fetching, only local packages will be considered!")
-  set(CPM_LOCAL_PACKAGES_ONLY ON)
-endif()
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
 find_package(Git)
+include(BareosCPM)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(RemoveNDebugFlag)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-include(CPM)
-set(CPM_USE_LOCAL_PACKAGES ON)
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
