@@ -162,23 +162,16 @@ Bareos source code has been released under the AGPL version 3 license.
 Summary:    Bareos File daemon (backup and restore client)
 Group:      Productivity/Archiving/Backup
 Provides:   %{name}-fd
-%if 0%{?suse_version}
-Requires(pre): shadow
-%else
-Requires(pre): shadow-utils
-%endif
+Requires(pre): /usr/sbin/useradd
+Requires(pre): /usr/sbin/groupadd
 Requires(pre): coreutils
 Requires(pre): findutils
 Requires(pre): gawk
 Requires(pre): grep
 Requires(pre): openssl
 Requires(pre): sed
-%if 0%{?suse_version}
-Requires(pre): shadow
-%else
-Requires(pre): glibc-common
-Requires(pre): shadow-utils
-%endif
+Requires(pre): /usr/sbin/useradd
+Requires(pre): /usr/sbin/groupadd
 Provides:   %{name}-libs
 
 %description universal-client
