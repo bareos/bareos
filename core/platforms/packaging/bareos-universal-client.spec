@@ -1,12 +1,12 @@
 #
-# spec file for package bareos
+# spec file for bareos univeral client
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
 #               2013-2024 Bareos GmbH & Co KG
 #
 
 Name:       bareos
-Version:    24.0.0~pre570.86f820e14
-Release:    21%{?dist}
+Version:    0.0.0
+Release:    0
 Group:      Productivity/Archiving/Backup
 License:    AGPL-3.0
 BuildRoot:  %{_tmppath}/%{name}-root
@@ -162,23 +162,16 @@ Bareos source code has been released under the AGPL version 3 license.
 Summary:    Bareos File daemon (backup and restore client)
 Group:      Productivity/Archiving/Backup
 Provides:   %{name}-fd
-%if 0%{?suse_version}
-Requires(pre): shadow
-%else
-Requires(pre): shadow-utils
-%endif
+Requires(pre): /usr/sbin/useradd
+Requires(pre): /usr/sbin/groupadd
 Requires(pre): coreutils
 Requires(pre): findutils
 Requires(pre): gawk
 Requires(pre): grep
 Requires(pre): openssl
 Requires(pre): sed
-%if 0%{?suse_version}
-Requires(pre): shadow
-%else
-Requires(pre): glibc-common
-Requires(pre): shadow-utils
-%endif
+Requires(pre): /usr/sbin/useradd
+Requires(pre): /usr/sbin/groupadd
 Provides:   %{name}-libs
 
 %description universal-client
@@ -190,7 +183,7 @@ This package contains the File Daemon
 %prep
 # this is a hack so we always build in "bareos" and not in "bareos-version"
 %setup -c -n bareos
-[ -d bareos-* ] && mv bareos-*/* .
+[ -d bareos-* ] && mv bareos-*/* . || :
 
 
 %build
@@ -588,6 +581,3 @@ exit 0
 /sbin/ldconfig
 
 %changelog
-* Tue May 21 2024 Bareos Jenkins <noreply@bareos.com> - 24.0.0~pre570.86f820e14-21
-- See https://docs.bareos.org/release-notes/
-
