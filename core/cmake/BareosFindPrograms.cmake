@@ -27,7 +27,7 @@ endif()
 # ps is required for systemtests
 find_program(PIDOF pidof)
 
-find_program(PS ps REQUIRED)
+find_program(PS ps)
 set(PSCMD ${PS})
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(PSCMD "${PS} -e")

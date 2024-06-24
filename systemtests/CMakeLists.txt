@@ -24,6 +24,8 @@ project(bareos-systemtests)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(BareosSystemtestFunctions)
 
+find_program(PS ps REQUIRED)
+
 set(USER $ENV{USER})
 
 # set the data encryption and signature keys
