@@ -47,8 +47,8 @@ info "Creating database '${db_name}'"
 retval=0
 psql -f - -d template1 << END-OF-DATA || retval=$?
 \set ON_ERROR_STOP on
-CREATE DATABASE ${db_name} ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;
-ALTER DATABASE ${db_name} SET datestyle TO 'ISO, YMD';
+CREATE DATABASE "${db_name}" ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;
+ALTER DATABASE "${db_name}" SET datestyle TO 'ISO, YMD';
 END-OF-DATA
 
 QUERY="SELECT pg_catalog.pg_encoding_to_char(d.encoding) as encoding \
