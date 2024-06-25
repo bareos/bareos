@@ -14,6 +14,8 @@ myname=$(basename "$0")
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+expected_files=3
+
 start_test
 
 find "${tmp}/data/" -type f -delete
@@ -31,7 +33,7 @@ END_OF_DATA
 
 run_bconsole
 
-if ! grep -q 'FD Files Written:.*3' "$tmp/$myname.log"; then
+if ! grep -q "FD Files Written:.*${expected_files}" "$tmp/$myname.log"; then
   echo "Number of files mismatch!"
   exit 2
 fi
