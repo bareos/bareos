@@ -29,7 +29,9 @@
  */
 
 
-#include <unistd.h>
+#if !defined(_MSC_VER)
+#  include <unistd.h>
+#endif
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/berrno.h"
@@ -137,7 +139,11 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
     Dmsg0(100, "wpipe_command OK\n");
     retval = 0;
   } else {
+#ifdef _MSC_VER
+    retval = _unlink(pathname);
+#else
     retval = unlink(pathname);
+#endif
   }
 
   return retval;

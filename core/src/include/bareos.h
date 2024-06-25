@@ -92,6 +92,7 @@
 #  include <io.h>
 #  include <direct.h>
 #  include <process.h>
+#  define NOMINMAX
 #endif
 
 #if defined(_MSC_VER)

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1024,7 +1024,14 @@ void OutputFormatter::JsonFinalizeResult(bool result)
       Dmsg0(100, ErrorMsg.c_str());
       JsonSendErrorMessage(ErrorMsg.c_str());
     }
+#  if JANSSON_VERSION_HEX >= 0x020800
+    json_malloc_t my_alloc;
+    json_free_t my_free;
+    json_get_alloc_funcs(&my_alloc, &my_free);
+    my_free(string);
+#  else
     free(string);
+#  endif
   }
 
   /* cleanup and reinitialize */

@@ -153,8 +153,9 @@ target_compile_definitions(
 
 target_link_libraries(
   bareos
-  PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES}
-          ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash
+  PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${LZO2_LIBRARIES}
+          ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash
+  PUBLIC ${THREADS_THREADS}
 )
 
 if(XXHASH_ENABLE_DISPATCH)

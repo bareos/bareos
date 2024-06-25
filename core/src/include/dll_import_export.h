@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,41 +18,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
+
+#ifndef BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
+#define BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
+
+#if defined(_MSVC_LANG)
+#  define BAREOS_EXPORT __declspec(dllexport) extern
+#  define BAREOS_IMPORT __declspec(dllimport) extern
 #else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
+#  define BAREOS_EXPORT extern
+#  define BAREOS_IMPORT extern
 #endif
 
-#include "lib/parse_conf.h"
-#include "filed/filed_globals.h"
-#include "filed/filed_conf.h"
-
-#ifdef _MSC_VER
-#  define PATH_MAX MAX_PATH
-#endif
-
-namespace filedaemon {
-
-TEST(ConfigParser, test_filed_config)
-{
-  OSDependentInit();
-
-#if HAVE_WIN32
-  WSA_Init();
-#endif
-
-  std::string path_to_config_file
-      = std::string("configs/bareos-configparser-tests");
-  my_config = InitFdConfig(path_to_config_file.c_str(), M_ERROR_TERM);
-
-  ASSERT_TRUE(my_config->ParseConfig());
-
-  my_config->DumpResources(PrintMessage, NULL);
-
-  delete my_config;
-}
-
-}  // namespace filedaemon
+#endif  // BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_

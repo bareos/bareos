@@ -38,9 +38,12 @@ include(BareosHelper)
 
 # switch on CXX 17 Support
 #
-set(CMAKE_CXX_STANDARD 17)
+if(NOT MSVC)
+  set(CMAKE_CXX_STANDARD 17)
+else()
+  set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # enable PIC/PIE by default
 include(CheckPIESupported)
 check_pie_supported()
@@ -166,45 +169,51 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(Intl_ROOT_DIR ${HOMEBREW_PREFIX}/opt/gettext)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX})
-  set(MINGW_BINDIR "${MINGW_PREFIX}/bin")
-  if(${WINDOWS_BITS} MATCHES "32")
-    set(CMAKE_CROSSCOMPILING_EMULATOR wine)
-    set(SITE
-        "${CMAKE_SYSTEM}-32"
-        CACHE STRING "build name variable for CDash"
-    )
-  else()
-    set(CMAKE_CROSSCOMPILING_EMULATOR wine64)
-    set(SITE
-        "${CMAKE_SYSTEM}-64"
-        CACHE STRING "build name variable for CDash"
-    )
+if(NOT MSVC)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX})
+    set(MINGW_BINDIR "${MINGW_PREFIX}/bin")
+    if(${WINDOWS_BITS} MATCHES "32")
+      set(CMAKE_CROSSCOMPILING_EMULATOR wine)
+      set(SITE
+          "${CMAKE_SYSTEM}-32"
+          CACHE STRING "build name variable for CDash"
+      )
+    else()
+      set(CMAKE_CROSSCOMPILING_EMULATOR wine64)
+      set(SITE
+          "${CMAKE_SYSTEM}-64"
+          CACHE STRING "build name variable for CDash"
+      )
+    endif()
+
+    # search for dll.a files before .dll
+    set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
+    set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
+
+    # set WINEPATH so that cross-compiled .exe tests find their dlls
+    set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/stored\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats\\\\;")
+
+    message(${WINEPATH})
+    # replace slash with backslash everywhere MESSAGE(FATAL_ERROR ${WINEPATH})
+
+    set(ENV{WINEPATH} ${WINEPATH})
   endif()
-
-  # search for dll.a files before .dll
-  set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
-  set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
-
-  # set WINEPATH so that cross-compiled .exe tests find their dlls
-  set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/stored\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats\\\\;")
-
-  message(${WINEPATH})
-  # replace slash with backslash everywhere
-  string(REPLACE "/" "\\" WINEPATH ${WINEPATH})
-  # MESSAGE(FATAL_ERROR ${WINEPATH})
-
-  set(ENV{WINEPATH} ${WINEPATH})
-
 endif()
 
 include(BareosFindAllLibraries)
+
+if(MSVC)
+  set(THREADS_THREADS "PThreads4W::PThreads4W_CXXEXC")
+else()
+  set(THREADS_THREADS "Threads::Threads")
+endif()
+
 include(BareosFindPrograms)
 
 if(NOT ${OPENSSL_FOUND})
@@ -317,23 +326,29 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     SYSTEM ${PROJECT_SOURCE_DIR}/src/win32/include
     ${PROJECT_SOURCE_DIR}/src/win32/compat/include
   )
+  if(MSVC)
+    link_libraries(Intl::Intl)
+    include_directories(SYSTEM C:/src/vdi/include SYSTEM C:/src/vss/include)
+  endif()
 
   set(HAVE_WIN32 1)
 
-  set(Python3_LIBRARIES python38.dll)
-
+  if(NOT MSVC)
+    set(Python3_LIBRARIES python38.dll)
+  endif()
   if(${WINDOWS_BITS} MATCHES "32")
     set(cross-prefix i686-w64-mingw32)
   else()
     set(cross-prefix x86_64-w64-mingw32)
   endif()
 
-  set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
-
-  set(PostgreSQL_LIBRARY libpq.dll)
-  set(PostgreSQL_INCLUDE_DIR "")
-  set(PostgreSQL_TYPE_INCLUDE_DIR "")
-
+  if(NOT MSVC)
+    set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
+  endif()
+  if(MSVC)
+    set(PostgreSQL_INCLUDE_DIR "")
+    set(PostgreSQL_TYPE_INCLUDE_DIR "")
+  endif()
   set(dynamic-storage-backends OFF)
   set(HAVE_DYNAMIC_SD_BACKENDS 0)
 
@@ -343,11 +358,10 @@ endif()
 
 include(FindIntl)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wshadow")
-set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wshadow -Wnon-virtual-dtor"
-)
-
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
+endif()
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 
@@ -368,11 +382,23 @@ endif()
 
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  add_definitions(
-    -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW
-    -D_WIN32_WINNT=${WINDOWS_VERSION}
-  )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
+  if(MSVC)
+    add_definitions(
+      -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -D_WIN32_WINNT=${WINDOWS_VERSION}
+    )
+    # add parallel builds (-MP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")
+    # export all symbols of dlls trick in cmake
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  else()
+    add_definitions(
+      -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW
+      -D_WIN32_WINNT=${WINDOWS_VERSION}
+    )
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads"
+    )
+  endif()
 
   set(Python3_SITEARCH ${plugindir})
 endif()
@@ -532,11 +558,6 @@ message(STATUS "BORLAND: " ${BORLAND})
 # Microsoft compiler
 message(STATUS "MSVC: " ${MSVC})
 message(STATUS "MSVC_IDE: " ${MSVC_IDE})
-message(STATUS "MSVC60: " ${MSVC60})
-message(STATUS "MSVC70: " ${MSVC70})
-message(STATUS "MSVC71: " ${MSVC71})
-message(STATUS "MSVC80: " ${MSVC80})
-message(STATUS "CMAKE_COMPILER_2005: " ${CMAKE_COMPILER_2005})
 
 # set this to true if you don't want to rebuild the object files if the rules
 # have changed, but not the actual source files or headers (e.g. if you changed
@@ -564,7 +585,7 @@ message(STATUS "CMAKE_SUPPRESS_REGENERATION: " ${CMAKE_SUPPRESS_REGENERATION})
 # A simple way to get switches to the compiler is to use ADD_DEFINITIONS(). But
 # there are also two variables exactly for this purpose:
 
-# wheter or not
+# whether or not
 message(STATUS "CCACHE: " ${CCACHE_PROGRAM})
 
 # Choose the type of build.  Example: SET(CMAKE_BUILD_TYPE Debug)
@@ -861,7 +882,9 @@ message(
 )
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
-message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
+message(
+  "   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ${PostgreSQL_LIBRARY}"
+)
 message("   GTest enabled:                ${GTest_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"
@@ -916,3 +939,5 @@ endif()
 configure_file(
   "CTestScript.cmake.in" "${CMAKE_BINARY_DIR}/CTestScript.cmake" @ONLY
 )
+
+bareoscopydllstobindir()

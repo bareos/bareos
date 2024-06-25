@@ -144,7 +144,7 @@ if(${HAVE_DYNAMIC_SD_BACKENDS})
     list(APPEND BACKEND_OBJECTS libbareossd-chunked)
   endif()
 
-  set(LIBBAREOSSD_LIBRARIES bareos Threads::Threads ${BACKEND_OBJECTS})
+  set(LIBBAREOSSD_LIBRARIES bareos ${THREADS_THREADS} ${BACKEND_OBJECTS})
   message(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 else()
   if(TARGET droplet)
@@ -159,7 +159,7 @@ endif()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 target_link_libraries(
-  bareossd PRIVATE bareos Threads::Threads fmt::fmt-header-only
+  bareossd PRIVATE bareos ${THREADS_THREADS} fmt::fmt-header-only
 )
 set_target_properties(
   bareossd PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
@@ -173,9 +173,9 @@ else()
 endif()
 
 add_library(stored_objects STATIC ${SDSRCS})
-add_executable(bareos-sd stored.cc)
+add_executable(bareos-sd WIN32 stored.cc)
 
-target_link_libraries(stored_objects PRIVATE Threads::Threads)
+target_link_libraries(stored_objects PRIVATE ${THREADS_THREADS})
 target_link_libraries(
   bareos-sd PRIVATE stored_objects bareos bareossd bareosfind CLI11::CLI11
 )
@@ -226,4 +226,5 @@ if(TARGET droplet)
   target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
 endif()
 
+bareoscopydllstobindir()
 include(DebugEdit)

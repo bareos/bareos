@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,25 +17,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
-project(bareosfastlz LANGUAGES C)
 
-add_library(
-  bareosfastlz SHARED src/fastlzlib.c src/fastlz.c src/lz4.c src/lz4hc.c
+install(FILES winbareos-native.nsi DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES bareos.ico bareos-config-deploy.bat fillup.sed clientdialog.ini
+              databasedialog.ini directordialog.ini storagedialog.ini
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/win32"
 )
-target_include_directories(
-  bareosfastlz
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:include>
-if (MSVC)
-  ${ZLIB_INCLUDE_DIR}
-endif()
-  PRIVATE src
-)
-target_compile_definitions(bareosfastlz PRIVATE "-DDLL_EXPORT")
-install(TARGETS bareosfastlz DESTINATION ${libdir})
-set_target_properties(
-  bareosfastlz PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                          SOVERSION "${BAREOS_VERSION_MAJOR}"
-)
-
-include(DebugEdit)

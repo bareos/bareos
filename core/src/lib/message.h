@@ -5,20 +5,20 @@
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
-   This program is Free Software; you can redistribute it and/or
-   modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation and included
-   in the file LICENSE.
+ This program is Free Software; you can redistribute it and/or
+ modify it under the terms of version three of the GNU Affero General Public
+ License as published by the Free Software Foundation and included
+ in the file LICENSE.
 
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   Affero General Public License for more details.
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ Affero General Public License for more details.
 
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+ You should have received a copy of the GNU Affero General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ 02110-1301, USA.
 */
 // Kern Sibbald, 2000
 /**
@@ -34,6 +34,7 @@
 #include "lib/dlink.h"
 #include "lib/rwlock.h"
 #include "lib/message_destination_info.h"
+#include "include/dll_import_export.h"
 
 #include <functional>
 #include <string>
@@ -57,17 +58,17 @@ void SetDbLogInsertCallback(DbLogInsertCallback f);
 
 class MessagesResource;
 
-extern int debug_level;
-extern bool dbg_timestamp; /* print timestamp in debug output */
-extern bool prt_kaboom;    /* Print kaboom output */
-extern int g_verbose;
-extern char my_name[];
-extern const char* working_directory;
-extern utime_t daemon_start_time;
+BAREOS_IMPORT int debug_level;
+BAREOS_IMPORT bool dbg_timestamp; /* print timestamp in debug output */
+BAREOS_IMPORT bool prt_kaboom;    /* Print kaboom output */
+BAREOS_IMPORT int g_verbose;
+BAREOS_IMPORT char my_name[];
+BAREOS_IMPORT const char* working_directory;
+BAREOS_IMPORT utime_t daemon_start_time;
 
-extern bool console_msg_pending;
-extern FILE* con_fd;       /* Console file descriptor */
-extern brwlock_t con_lock; /* Console lock structure */
+BAREOS_IMPORT bool console_msg_pending;
+BAREOS_IMPORT FILE* con_fd;       /* Console file descriptor */
+BAREOS_IMPORT brwlock_t con_lock; /* Console lock structure */
 
 void MyNameIs(int argc, const char* const argv[], const char* name);
 void InitMsg(JobControlRecord* jcr,

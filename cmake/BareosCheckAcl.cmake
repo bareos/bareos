@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -17,18 +17,22 @@
 
 # Extract version information and commit timestamp if run in a git checkout
 
-find_program(SETFACL_PROG setfacl)
-find_program(GETFACL_PROG getfacl)
-
 set(SETFACL_WORKS NO)
-if(SETFACL_PROG AND GETFACL_PROG)
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/acl-test-file.txt" "Just a testfile")
-  execute_process(
-    COMMAND ${SETFACL_PROG} -m user:0:rw- acl-test-file.txt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    RESULT_VARIABLE SETFACL_RETURN
-  )
-  if(SETFACL_RETURN EQUAL 0)
-    set(SETFACL_WORKS YES)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  find_program(SETFACL_PROG setfacl)
+  find_program(GETFACL_PROG getfacl)
+
+  if(SETFACL_PROG AND GETFACL_PROG)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/acl-test-file.txt"
+         "Just a testfile"
+    )
+    execute_process(
+      COMMAND ${SETFACL_PROG} -m user:0:rw- acl-test-file.txt
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      RESULT_VARIABLE SETFACL_RETURN
+    )
+    if(SETFACL_RETURN EQUAL 0)
+      set(SETFACL_WORKS YES)
+    endif()
   endif()
 endif()

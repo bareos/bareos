@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,14 @@
 #endif
 
 #if !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
-#  include <utime.h>
+#  ifndef _MSC_VER
+#    include <utime.h>
+#  endif
+#endif
+#ifdef _MSVC_VER
+extern "C" {
+#  include <sys/utime.h>
+}
 #endif
 
 #define MODE_RALL (S_IRUSR | S_IRGRP | S_IROTH)

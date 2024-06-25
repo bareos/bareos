@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,7 @@ typedef struct s_rwlock_tag {
     mutex = PTHREAD_MUTEX_INITIALIZER;
     read = PTHREAD_COND_INITIALIZER;
     write = PTHREAD_COND_INITIALIZER;
-    writer_id = 0;
+    writer_id = pthread_t();
     priority = 0;
     valid = 0;
     r_active = 0;

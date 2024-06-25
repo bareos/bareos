@@ -26,7 +26,9 @@
  * Dumb program to extract files from a Bareos backup.
  */
 
-#include <unistd.h>
+#if !defined(_MSC_VER)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "include/filetypes.h"
@@ -60,6 +62,11 @@
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
 }
+
+#ifdef _MSC_VER
+char* optarg{};
+#endif
+
 
 using namespace storagedaemon;
 
@@ -105,6 +112,8 @@ int main(int argc, char* argv[])
   InitMsg(nullptr, nullptr); /* setup message handler */
 
   OSDependentInit();
+
+  (void)WSA_Init(); /* Initialize Windows sockets */
 
   ff = init_find_files();
   binit(&g_bfd);
