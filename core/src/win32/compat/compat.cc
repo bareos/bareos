@@ -29,7 +29,7 @@
  */
 /**
  * @file
- * compatibilty layer to make bareos-fd run natively under windows
+ * compatibility layer to make bareos-fd run natively under windows
  */
 #include "include/bareos.h"
 #include "include/jcr.h"
@@ -252,8 +252,10 @@ const char* errorString(void);
 // To allow the usage of the original version in this file here
 #undef fputs
 
-extern DWORD g_platform_id;
-extern DWORD g_MinorVersion;
+#define USE_WIN32_32KPATHCONVERSION 1
+
+BAREOS_IMPORT DWORD g_platform_id;
+BAREOS_IMPORT DWORD g_MinorVersion;
 
 // From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
 // see
@@ -1936,6 +1938,21 @@ int link(const char*, const char*)
   errno = ENOSYS;
   return -1;
 }
+
+#if defined(_MSVC_LANG)
+#  include <chrono>
+
+static int mingw_gettimeofday(struct timeval* tp, struct timezone* tzp)
+{
+  namespace sc = std::chrono;
+  sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+  sc::seconds s = sc::duration_cast<sc::seconds>(d);
+  tp->tv_sec = s.count();
+  tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+
+  return 0;
+}
+#endif  //_MSVC_LANG
 
 int gettimeofday(struct timeval* tv, struct timezone* tz)
 {

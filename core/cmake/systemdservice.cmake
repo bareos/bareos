@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,20 +23,20 @@
 # Find systemd service dir
 
 include(FindPkgConfig)
-
-pkg_check_modules(SYSTEMD "systemd")
-if(SYSTEMD_FOUND AND "${SYSTEMD_UNITDIR}" STREQUAL "")
-  execute_process(
-    COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=systemdsystemunitdir systemd
-    OUTPUT_VARIABLE SYSTEMD_UNITDIR
-  )
-  string(REGEX REPLACE "[ \t\n]+" "" SYSTEMD_UNITDIR "${SYSTEMD_UNITDIR}")
-elseif(NOT SYSTEMD_FOUND AND SYSTEMD_UNITDIR)
-  message(FATAL_ERROR "Variable SYSTEMD_UNITDIR is\
-		defined, but we can't find systemd using pkg-config"
-  )
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  pkg_check_modules(SYSTEMD "systemd")
+  if(SYSTEMD_FOUND AND "${SYSTEMD_UNITDIR}" STREQUAL "")
+    execute_process(
+      COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=systemdsystemunitdir systemd
+      OUTPUT_VARIABLE SYSTEMD_UNITDIR
+    )
+    string(REGEX REPLACE "[ \t\n]+" "" SYSTEMD_UNITDIR "${SYSTEMD_UNITDIR}")
+  elseif(NOT SYSTEMD_FOUND AND SYSTEMD_UNITDIR)
+    message(FATAL_ERROR "Variable SYSTEMD_UNITDIR is\
+      defined, but we can't find systemd using pkg-config"
+    )
+  endif()
 endif()
-
 if(SYSTEMD_FOUND)
   set(WITH_SYSTEMD "ON")
   message(STATUS "systemd services install dir: ${SYSTEMD_UNITDIR}")

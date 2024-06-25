@@ -60,6 +60,12 @@
 #include <array>
 #include <vector>
 
+#ifdef HAVE_WIN32
+#  define socketClose(fd) ::closesocket(fd)
+#else
+#  define socketClose(fd) ::close(fd)
+#endif
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static std::atomic<bool> quit{false};
 
@@ -192,7 +198,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
 
   do {
     ++tries;
-    if (bind(fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0) {
+    if (bind(fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) != 0) {
       BErrNo be;
       char tmp[1024];
 #ifdef HAVE_WIN32

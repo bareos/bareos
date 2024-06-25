@@ -74,9 +74,9 @@ if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)
 endif()
 
-add_executable(bareos-fd filed.cc)
+add_executable(bareos-fd WIN32 filed.cc)
 
-set(BAREOS_FD_LIBRARIES bareosfind bareos Threads::Threads)
+set(BAREOS_FD_LIBRARIES bareosfind bareos ${THREADS_THREADS})
 if(HAVE_WIN32)
   target_sources(bareos-fd PRIVATE ../win32/generic/main.cc)
   list(APPEND BAREOS_FD_LIBRARIES comctl32)
@@ -117,4 +117,5 @@ install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake
         COMPONENT filedaemon
 )
 
+bareoscopydllstobindir()
 include(DebugEdit)

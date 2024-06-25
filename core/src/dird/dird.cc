@@ -78,7 +78,7 @@ static void CleanUpOldFiles();
 static bool InitSighandlerSighup();
 
 /* Exported subroutines */
-extern bool ParseDirConfig(const char* configfile, int exit_code);
+BAREOS_IMPORT bool ParseDirConfig(const char* configfile, int exit_code);
 extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 /* Imported subroutines */
@@ -405,6 +405,7 @@ static
   }
   Scheduler::GetMainScheduler().Terminate();
   TermJobServer();
+  TermMsg(); /* Terminate message handler */
 
   if (configfile != nullptr) { free(configfile); }
   if (my_config) {
@@ -412,7 +413,6 @@ static
     my_config = nullptr;
   }
 
-  TermMsg(); /* Terminate message handler */
   CleanupCrypto();
 
   exit(sig);

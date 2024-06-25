@@ -171,10 +171,11 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
-               CoreFunctions* lbareos_core_functions,
-               PluginInformation** plugin_information,
-               PluginFunctions** plugin_functions)
+BAREOS_EXPORT bRC
+loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+           CoreFunctions* lbareos_core_functions,
+           PluginInformation** plugin_information,
+           PluginFunctions** plugin_functions)
 {
   if (Py_IsInitialized()) { return bRC_Error; }
 
@@ -217,7 +218,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 }
 
 // External entry point to unload the plugin
-bRC unloadPlugin()
+BAREOS_EXPORT bRC unloadPlugin()
 {
   /* Terminate Python if it was initialized correctly */
   if (mainThreadState) {

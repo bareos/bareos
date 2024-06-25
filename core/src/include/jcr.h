@@ -256,24 +256,30 @@ class JobControlRecord {
 /* clang-format on */
 
 // The following routines are found in lib/jcr.c
-int GetNextJobidFromList(const char** p, uint32_t* JobId);
-bool InitJcrSubsystem(int timeout);
-JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
-void register_jcr(JobControlRecord* jcr);
-JobControlRecord* get_jcr_by_id(uint32_t JobId);
-JobControlRecord* get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
-JobControlRecord* get_jcr_by_partial_name(char* Job);
-JobControlRecord* get_jcr_by_full_name(char* Job);
-const char* JcrGetAuthenticateKey(const char* unified_job_name);
+BAREOS_IMPORT int GetNextJobidFromList(const char** p, uint32_t* JobId);
+BAREOS_IMPORT bool InitJcrSubsystem(int timeout);
+BAREOS_IMPORT JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
+BAREOS_IMPORT void register_jcr(JobControlRecord* jcr);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_id(uint32_t JobId);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_session(uint32_t SessionId,
+                                                   uint32_t SessionTime);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_partial_name(char* Job);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(char* Job);
+BAREOS_IMPORT const char* JcrGetAuthenticateKey(const char* unified_job_name);
 TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
-std::size_t NumJobsRun();
+BAREOS_IMPORT std::size_t NumJobsRun();
 
-void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
+BAREOS_IMPORT void b_free_jcr(const char* file,
+                              int line,
+                              JobControlRecord* jcr);
+BAREOS_IMPORT void b_free_jcr(const char* file,
+                              int line,
+                              JobControlRecord* jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 
 // Used to display specific job information after a fatal signal
 typedef void(dbg_jcr_hook_t)(JobControlRecord* jcr, FILE* fp);
-void DbgJcrAddHook(dbg_jcr_hook_t* fct);
+BAREOS_IMPORT void DbgJcrAddHook(dbg_jcr_hook_t* fct);
 
 /* new-2019 interface */
 void InitJcr(std::shared_ptr<JobControlRecord> jcr,

@@ -230,5 +230,8 @@ void LoadDynamicFunctions()
 
     for (auto* f : funs) { f->load(library); }
   }
+
+  SetTrace(0);
+  (void)WSA_Init(); /* Initialize Windows sockets */
 }
 };  // namespace dyn

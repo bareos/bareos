@@ -166,6 +166,8 @@ int main(int argc, char* argv[])
 
   OSDependentInit();
 
+  (void)WSA_Init(); /* Initialize Windows sockets */
+
   working_directory = work_dir.c_str();
 
   my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);

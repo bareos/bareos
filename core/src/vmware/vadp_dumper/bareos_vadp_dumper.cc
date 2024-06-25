@@ -28,7 +28,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#include <unistd.h>
+#if !defined(_MSC_VER)
+#  include <unistd.h>
+#endif
 #include <signal.h>
 #include <vector>
 #include <cerrno>

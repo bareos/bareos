@@ -25,7 +25,18 @@
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 
+
+#ifdef _MSC_VER
+#  define NOMINMAX
+// not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in
+// mingw
+#  define strncasecmp _strnicmp
+#  define strcasecmp _stricmp
+#endif
+
+#include <winsock2.h>
 #include <windows.h>
+#include <ws2tcpip.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -69,8 +80,6 @@
 #  define _declspec __declspec
 #endif
 
-#include <ntdef.h>
-
 #include <winioctl.h>
 
 #ifdef _WIN64
@@ -91,9 +100,44 @@ typedef UINT32 uid_t;
 typedef UINT32 gid_t;
 typedef UINT32 mode_t;
 typedef INT32 ssize_t;
-typedef UINT32 size_t;
 #  define HAVE_SSIZE_T 1
 #endif /* HAVE_MINGW */
+
+#define utime _utime
+#define utimbuf _utimbuf
+
+#define NO_OLDNAMES
+// #if defined(_MSC_VER)
+typedef struct _REPARSE_DATA_BUFFER {
+  ULONG ReparseTag;
+  USHORT ReparseDataLength;
+  USHORT Reserved;
+  union {
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      ULONG Flags;
+      WCHAR PathBuffer[1];
+    } SymbolicLinkReparseBuffer;
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      WCHAR PathBuffer[1];
+    } MountPointReparseBuffer;
+    struct {
+      UCHAR DataBuffer[1];
+    } GenericReparseBuffer;
+  } DUMMYUNIONNAME;
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+// #endif
+
+#define ftello _ftelli64
+#define fseeko _fseeki64
+
 
 struct dirent {
   uint64_t d_ino;
@@ -103,7 +147,12 @@ struct dirent {
 };
 typedef void DIR;
 
-
+#ifdef _MSC_VER
+struct _utimbuf {
+  time_t actime;   // access time
+  time_t modtime;  // modification time
+};
+#endif
 #if !defined(__cplusplus)
 #  if !defined(true)
 #    define true 1
@@ -175,11 +224,11 @@ struct stat {
 #define S_IRUSR S_IREAD
 #define S_IWUSR S_IWRITE
 #define S_IXUSR S_IEXEC
-#define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
-#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
-#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
+#define S_ISREG(x) (((x)&S_IFMT) == S_IFREG)
+#define S_ISLNK(x) (((x)&S_IFMT) == S_IFLNK)
+#define S_ISDIR(x) (((x)&S_IFMT) == S_IFDIR)
 #define S_ISCHR(x) 0
-#define S_ISBLK(x) (((x) & S_IFMT) == S_IFBLK)
+#define S_ISBLK(x) (((x)&S_IFMT) == S_IFBLK)
 #define S_ISFIFO(x) 0
 
 #define S_IRGRP 000040
@@ -248,7 +297,10 @@ int waitpid(int, int*, int);
 #if !defined(HAVE_MINGW)
 #  define strncasecmp strnicmp
 // int strncasecmp(const char*, const char *, int);
-int utime(const char* filename, struct utimbuf* buf);
+extern "C" {
+__declspec(dllimport) int utime(const char* filename,
+                                struct utimbuf* const buf);
+}
 #  define vsnprintf _vsnprintf
 #  define snprintf _snprintf
 #endif  // HAVE_MINGW
@@ -301,7 +353,6 @@ struct sigaction {
 #define sigaction(a, b, c)
 
 #define mkdir(p, m) win32_mkdir(p)
-#define unlink win32_unlink
 #define chdir win32_chdir
 extern "C" void syslog(int type, const char* fmt, ...);
 #if !defined(LOG_DAEMON)
@@ -314,11 +365,10 @@ extern "C" void syslog(int type, const char* fmt, ...);
 int stat(const char*, struct stat*);
 #  if defined(__cplusplus)
 #    define access _access
-extern "C" _CRTIMP int __cdecl _access(const char*, int);
 int execvp(const char*, char*[]);
 extern "C" void* __cdecl _alloca(size_t);
 #  endif
-#endif  // HAVE_MINGW
+#endif  // !HAVE_MINGW
 
 #define getpid _getpid
 
@@ -334,7 +384,10 @@ char* win32_getcwd(char* buf, int maxlen);
 int win32_chdir(const char* buf);
 int win32_mkdir(const char* buf);
 int win32_fputs(const char* string, FILE* stream);
-int win32_unlink(const char* filename);
+#if defined(HAVE_MINGW)
+#  define unlink win32_unlink
+int win32_unlink(char const* filename);
+#endif
 int win32_chmod(const char*, mode_t, _dev_t);
 
 char* win32_cgets(char* buffer, int len);
@@ -363,9 +416,6 @@ typedef DWORD EXECUTION_STATE;
 #ifndef ES_USER_PRESENT
 #  define ES_USER_PRESENT 0x00000004
 #endif
-
-WINBASEAPI EXECUTION_STATE WINAPI
-SetThreadExecutionState(EXECUTION_STATE esFlags);
 
 extern void LogErrorMsg(const char* message);
 

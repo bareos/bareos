@@ -234,7 +234,7 @@ static std::optional<modifier_parse_result> GetModifier(const char* input)
   });
   auto mod = trimmed.substr(0, mod_end - trimmed.begin());
 
-  const char* rest_input = mod.end();
+  const char* rest_input = mod.data() + (mod.end() - mod.begin());
 
   Dmsg2(900, "num=%lf mod=\"%.*s\" rest=\"%s\"\n", number, (int)mod.size(),
         mod.data(), rest_input);

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,8 +53,8 @@ struct s_watchdog_t {
 typedef struct s_watchdog_t watchdog_t;
 
 /* Exported globals */
-extern utime_t watchdog_time;       /* this has granularity of SLEEP_TIME */
-extern utime_t watchdog_sleep_time; /* examine things every 60 seconds */
+BAREOS_IMPORT utime_t watchdog_time; /* this has granularity of SLEEP_TIME */
+BAREOS_IMPORT utime_t watchdog_sleep_time; /* examine things every 60 seconds */
 int StartWatchdog(void);
 int StopWatchdog(void);
 watchdog_t* new_watchdog(void);

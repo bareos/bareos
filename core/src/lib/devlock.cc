@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,7 +48,7 @@ DevLock* DevLock::new_devlock()
   lock->mutex = PTHREAD_MUTEX_INITIALIZER;
   lock->read = PTHREAD_COND_INITIALIZER;
   lock->write = PTHREAD_COND_INITIALIZER;
-  lock->writer_id = 0;
+  lock->writer_id = pthread_t();
   lock->priority = 0;
   lock->valid = 0;
   lock->r_active = 0;

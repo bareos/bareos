@@ -18,10 +18,83 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-cmake_minimum_required(VERSION 3.17)
-cmake_policy(VERSION 3.17...3.19)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  cmake_minimum_required(VERSION 3.25)
+  cmake_policy(SET CMP0141 NEW) # allow to disable /Zi from cmake debug switches
+                                # on MSVC
+else()
+  cmake_minimum_required(VERSION 3.17)
+  cmake_policy(VERSION 3.17...3.19)
+endif()
 
 project(bareos NONE)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
+  string(REPLACE "Program Files (x86)" "Program Files" CMAKE_INSTALL_PREFIX
+                 "${CMAKE_INSTALL_PREFIX}"
+  )
+  # these tests do not work on windows
+  set(TESTS_TO_SKIP
+      system:always-incremental-consolidate:04-virtualfull
+      system:autoxflate:setup
+      system:autoxflate:copy-to-local
+      system:autoxflate:copy-to-offsite
+      system:autoxflate:create-backup
+      system:autoxflate:replication-local
+      system:autoxflate:replication-offsite
+      system:autoxflate:cleanup
+      system:bareos-basic:hardlinks
+      system:bareos-basic:test-make-catalog-backup
+      system:catalog
+      system:checkpoints:checkpoints-on-kill
+      system:checkpoints:checkpoints-on-stop
+      system:commandline-options
+      system:dedupestimate:do-estimation
+      system:fileset-multiple-blocks:include-blocks
+      system:fileset-multiple-blocks:options-blocks
+      system:heartbeat-interval:check
+      system:messages
+      system:parser
+      system:py3plug-dir
+      system:py3plug-fd-local-fileset-restoreobject
+      system:py3plug-sd
+      system:py3plug-fd-local-fileset-basic:basic
+      system:py3plug-fd-local-fileset-basic:io_in_core
+      system:py3plug-fd-basic:cancel-check
+      system:py3plug-fd-basic:cancel-check-no-wait
+      system:py3plug-fd-basic:config
+      system:py3plug-fd-basic:forcebackup
+      system:py3plug-fd-basic:jobmsg
+      system:python-bareos:acl
+      system:python-bareos:bvfs
+      system:python-bareos:delete
+      system:python-bareos:filedaemon
+      system:python-bareos:json
+      system:python-bareos:json_config
+      system:python-bareos:list_command
+      system:python-bareos:plaintext
+      system:python-bareos:protocol_124
+      system:python-bareos:python_bareos_module
+      system:python-bareos:python_fd_plugins
+      system:python-bareos:runscript
+      system:python-bareos:show
+      system:python-bareos:tlspsk
+      system:python-bareos:update_all_volumes_all_pools
+      system:restore:archive-restore-file
+      system:restore:full-restore
+      system:restore:restore-file
+      system:restore:restore-fileregex
+      system:restore:multi
+      system:scheduler:scheduler-backup
+      system:sparse-file
+      system:strippath:02-restore
+      system:strippath:03-verify
+  )
+else()
+  set(TESTS_TO_SKIP)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
@@ -37,6 +110,7 @@ find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
+include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
 
 set(BUILDNAME
@@ -137,10 +211,12 @@ if(BUILD_BAREOS_BINARIES)
   if(ENABLE_WEBUI)
     add_subdirectory(webui)
   endif()
-  if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  if(NOT client-only)
     add_subdirectory(systemtests)
   endif()
-  add_subdirectory(contrib)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    add_subdirectory(contrib)
+  endif()
 endif()
 
 if(docs
