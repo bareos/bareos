@@ -26,8 +26,8 @@ if [ $ret -ne 0 ]; then
   exit $ret
 fi
 
-if ! grep -q "bcopy: stored/bcopy.cc:.* . Jobs copied. .*records copied." "$tmp/bcopy.out"; then
-  echo 'Expected string \"weird-files/dangling-link\" not found in bcopy output'
+if ! grep -q "bcopy: stored.bcopy.cc:.* . Jobs copied. .*records copied." "$tmp/bcopy.out"; then
+  echo 'Expected string bcopy: stored.bcopy.cc:.* . Jobs copied. .*records copied" not found in bcopy output'
   stop_bareos
   exit 1
 fi

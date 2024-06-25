@@ -29,12 +29,13 @@ JobName=ai-backup-bareos-fd
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/extra.out
 messages
-@$out $tmp/full+incr:start.out
+@$out $tmp/full+incr_start.out
 .api 2
 run job=$JobName level=Full yes
 wait
@@ -50,7 +51,7 @@ wait
 run job=Consolidate yes
 .api 1
 wait
-@$out $tmp/full+incr:messages.out
+@$out $tmp/full+incr_messages.out
 messages
 status director
 status client
@@ -59,16 +60,16 @@ list jobs
 END_OF_DATA
 run_bconsole
 
-jobids=$(grep "jobid" "$tmp/full+incr:start.out" | sed 's/["jobid:]//g' | tail -n5)
+jobids=$(grep "jobid" "$tmp/full+incr_start.out" | sed 's/["jobid:]//g' | tail -n5)
 fincrs=$(head -n3 <<< "$jobids" | xargs | tr ' ' ',')
 cons=$(tail -n1 <<< "$jobids" | xargs)
 
 expect_not_grep "^  Termination: *Backup Canceled" \
-		"${tmp}/full+incr:messages.out" \
+		"${tmp}/full+incr_messages.out" \
 		"Some job was canceled"
 
 expect_grep "purged JobIds ${fincrs} as they were consolidated into Job $((cons+1))" \
-            "$tmp/full+incr:messages.out" \
+            "$tmp/full+incr_messages.out" \
             "consolidation of expected jobs did not happen."
 
 end_test

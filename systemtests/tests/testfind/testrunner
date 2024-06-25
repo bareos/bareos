@@ -15,9 +15,12 @@ zstat=0
 #shellcheck source=../environment.in
 . ./environment
 
+
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
 "${rscripts}"/cleanup
+
 
 setup_data
 
@@ -25,18 +28,26 @@ selftest_log="$tmp"/selftest_log.out
 wildcard_log="$tmp"/wildcard_log.out
 error_log="$logdir"/bareos.log
 
-./sbin/testfind-testfind -c etc/bareos -f SelfTest > "$selftest_log"
+if [[ "$(uname -s)" =~ _NT ]]; then
+  expected_files_1=38
+  expected_files_2=19
+else
+  expected_files_1=68
+  expected_files_2=22
+fi
 
-expect_grep "Number of files examined: 68" \
+sbin/${CMAKE_CONFIG_TYPE}/testfind-testfind -c etc/bareos -f SelfTest > "$selftest_log"
+
+expect_grep "Number of files examined: $expected_files_1" \
             "$selftest_log" \
             "Number of files is incorrect."
 
 unopenable_dir=${tmp}/data/unopenable_dir
 mkdir -m 000 "$unopenable_dir"
 
-./sbin/testfind-testfind -c etc/bareos -f Wildtest > "$wildcard_log"
+sbin/${CMAKE_CONFIG_TYPE}/testfind-testfind -c etc/bareos -f Wildtest > "$wildcard_log"
 
-expect_grep "Number of files examined: 22" \
+expect_grep "Number of files examined: $expected_files_2" \
             "$wildcard_log" \
             "Number of files is incorrect."
 

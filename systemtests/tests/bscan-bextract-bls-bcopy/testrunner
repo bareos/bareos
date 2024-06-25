@@ -55,8 +55,8 @@ if [ $ret -ne 0 ]; then
   exit $ret
 fi
 
-if ! grep -q "weird-files/dangling-link" "$tmp/bls.out"; then
-  echo 'Expected string \"weird-files/dangling-link\" not found in  bls output'
+if ! grep -q "tests.bregtest.c" "$tmp/bls.out"; then
+  echo 'Expected string \"tests.bregtest.c\" not found in  bls output'
   stop_bareos
   exit 1
 fi
@@ -97,13 +97,13 @@ if ! grep -q "Created new JobId=${new_job_id} record for original JobId=${origin
   exit 1
 fi
 
-num_sos=$(grep -c '^Begin Job Session Record:$' "$tmp/bscan.out")
+num_sos=$(grep -c '^Begin Job Session Record:' "$tmp/bscan.out")
 if [ "$num_sos" -ne 1 ]; then
   echo "Found $num_sos start of session records instead of 1"
   stop_bareos
   exit 1
 fi
-num_eos=$(grep -c '^End Job Session Record:$' "$tmp/bscan.out")
+num_eos=$(grep -c '^End Job Session Record:' "$tmp/bscan.out")
 if [ "$num_eos" -ne 1 ]; then
   echo "Found $num_eos end of session records instead of 1"
   stop_bareos
