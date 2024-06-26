@@ -146,10 +146,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         get_version_command.extend(
             ["--batch", "--skip-column-names", "--execute", "select version();"]
         )
-        DebugMessage(
-            100,
-            f"mariadb version check: \"{get_version_command}\"\n"
-            )
+        DebugMessage(100, f'mariadb version check: "{get_version_command}"\n')
         try:
             ret = check_output(get_version_command).decode().split(".")[0]
             mariadb_major_version = int(ret)
@@ -182,12 +179,14 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
     def get_lsn_by_command(self):
         get_lsn_cmd = self.mysqlcmd.split()
         get_lsn_cmd.extend(
-            ["--batch", "--skip-column-names", "--execute", "SHOW ENGINE INNODB STATUS;"]
+            [
+                "--batch",
+                "--skip-column-names",
+                "--execute",
+                "SHOW ENGINE INNODB STATUS;",
+            ]
         )
-        DebugMessage(
-            100,
-            f"get_lsn_by_command: \"{get_lsn_cmd}\"\n"
-            )
+        DebugMessage(100, f'get_lsn_by_command: "{get_lsn_cmd}"\n')
         try:
             ret = check_output(get_lsn_cmd).decode()
             return ret
@@ -501,8 +500,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             else:
                 DebugMessage(
                     100,
-                    "end_backup_file() Returncode: %d\n"
-                    % self.stream.returncode,
+                    "end_backup_file() Returncode: %d\n" % self.stream.returncode,
                 )
                 if returnCode != 0:
                     msg = [

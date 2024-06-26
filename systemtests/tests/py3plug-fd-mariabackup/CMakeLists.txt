@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +19,7 @@
 
 # This test requires the following variables to be set:
 #
-# -D MARIABACKUP_BINARY=/usr/bin/mariadb-backup \ -D
+# -D MARIADB_BACKUP_BINARY=/usr/bin/mariadb-backup \ -D
 # MARIADB_DAEMON_BINARY=/usr/bin/mariadbd \ -D
 # MARIADB_CLIENT_BINARY=/usr/bin/mariadb \ -D
 # MARIADB_MYSQL_INSTALL_DB_SCRIPT=/usr/bin/mysql_install_db
