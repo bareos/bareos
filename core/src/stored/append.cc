@@ -387,7 +387,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   ProcessedFile file_currently_processed;
 
-  MessageHandler handler(std::exchange(bs, nullptr));
+  // we need to clone here as we need to send heartbeats in case of
+  // just in time reservation.  Keep in mind that from this point forward
+  // trying to read from the filedaemon socked is still forbidden.  Only
+  // writing is ok!
+  MessageHandler handler(bs->clone());
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /* Read Stream header from the daemon.
@@ -498,9 +502,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       n = content.size;
 
       if (!jcr->sd_impl->dcr) {
-        Jmsg(jcr, M_INFO, 0, T_("JustInTime Reservation: Finding drive to reserve.\n")) if (
-            !SetupDCR(jcr, current_volumeid, current_block_number))
-        {
+        Jmsg(jcr, M_INFO, 0,
+             T_("JustInTime Reservation: Finding drive to reserve.\n"));
+        if (!SetupDCR(jcr, current_volumeid, current_block_number)) {
           ok = false;
           break;
         }
@@ -582,7 +586,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     }
   }
 
-  bs = handler.close_and_get_sock();
+  {
+    // delete the copy
+    auto* copy = handler.close_and_get_sock();
+    copy->close();
+    delete copy;
+  }
+
   // Create Job status for end of session label
   jcr->setJobStatusWithPriorityCheck(ok ? JS_Terminated : JS_ErrorTerminated);
 
