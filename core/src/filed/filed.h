@@ -32,7 +32,7 @@
 #define FILE_DAEMON 1
 #include "filed_conf.h"
 #ifdef HAVE_WIN32
-#  include "bareos_vss.h"
+#  include "vss_client.h"
 #endif
 #include "include/jcr.h"
 #include "lib/breg.h"

@@ -94,6 +94,7 @@ class IXMLDOMDocument;
 #  define VSS_ERROR_OBJECT_ALREADY_EXISTS ((HRESULT)0x8004230D)
 #  include "vss.h"
 #  include "bareos_vss.h"
+#  include "vss_client.h"
 #  include <vswriter.h>
 #  include <vsbackup.h>
 
