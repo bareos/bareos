@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,8 +20,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_WIN32_INCLUDE_VSS_H_
-#define BAREOS_WIN32_INCLUDE_VSS_H_
+#ifndef BAREOS_WIN32_INCLUDE_VSS_CLIENT_H_
+#define BAREOS_WIN32_INCLUDE_VSS_CLIENT_H_
 
 /*                               -*- Mode: C -*-
  * vss.h --
@@ -173,4 +173,4 @@ class VSSClientVista : public VSSClient {
 
 #endif /* WIN32_VSS */
 
-#endif  // BAREOS_WIN32_INCLUDE_VSS_H_
+#endif  // BAREOS_WIN32_INCLUDE_VSS_CLIENT_H_
