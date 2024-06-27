@@ -81,7 +81,7 @@ class IXMLDOMDocument;
 #  endif
 
 #  define VSSClientGeneric VSSClientVista
-#  include "bareos_vss.h"
+#  include "vss_client.h"
 #  include <vswriter.h>
 #  include <vsbackup.h>
 
