@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: fix and improve update check [PR #1809]
 - python-bareos: fix description [PR #1840]
 - contrib: fix reschedule_job_as_full.sh [PR #1853]
+- pull-request-template: add milestone check to reviewers list [PR #1868]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -189,4 +190,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1829]: https://github.com/bareos/bareos/pull/1829
 [PR #1840]: https://github.com/bareos/bareos/pull/1840
 [PR #1853]: https://github.com/bareos/bareos/pull/1853
+[PR #1868]: https://github.com/bareos/bareos/pull/1868
 [unreleased]: https://github.com/bareos/bareos/tree/master
