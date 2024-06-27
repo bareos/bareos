@@ -499,10 +499,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       auto content2 = std::get<message_type>(std::move(msg2).value());
       n = content2.size;
 
-      if (!jcr->sd_impl->dcr
-          && !SetupDCR(jcr, current_volumeid, current_block_number)) {
-        ok = false;
-        break;
+      if (!jcr->sd_impl->dcr) {
+        Jmsg(jcr, M_INFO, 0, T_("JustInTime Reservation: Finding drive to reserve.\n")) if (
+            !SetupDCR(jcr, current_volumeid, current_block_number))
+        {
+          ok = false;
+          break;
+        }
       }
 
       if (rec_data == nullptr) { rec_data = jcr->sd_impl->dcr->rec->data; }
