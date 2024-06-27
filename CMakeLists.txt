@@ -106,13 +106,11 @@ set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
 find_package(Git)
-include(BareosCPM)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -198,6 +196,8 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  include(BareosCPM)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS
