@@ -67,6 +67,9 @@
 #include "lib/version.h"
 
 #include <cassert>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace directordaemon {
 
@@ -913,6 +916,22 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   return true;
 }
+
+namespace {
+template <typename T>
+std::shared_ptr<T> GetRuntimeStatus(const std::string& name)
+{
+  static std::unordered_map<std::string, std::weak_ptr<T>> map{};
+
+  std::shared_ptr<T> sptr = map[name].lock();
+  if (!sptr) {
+    sptr = std::make_shared<T>();
+    map[name] = sptr;
+  }
+  Dmsg0(50, "Returning RuntimeStatus with use_count=%ld\n", sptr.use_count());
+  return sptr;
+}
+}  // namespace
 
 static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
 {
@@ -2245,7 +2264,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_store->tls_cert_.allowed_certificate_common_names_);
         p->device = res_store->device;
-        p->runtime_storage_status = std::make_shared<RuntimeStorageStatus>();
+        p->runtime_storage_status
+            = GetRuntimeStatus<RuntimeStorageStatus>(p->resource_name_);
       }
       break;
     }
@@ -2311,7 +2331,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
           p->RestoreWhere = NULL;
         }
 
-        p->rjs = std::make_shared<RuntimeJobStatus>();
+        p->rjs = GetRuntimeStatus<RuntimeJobStatus>(p->resource_name_);
       }
       break;
     }
@@ -2345,7 +2365,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         p->tls_cert_.allowed_certificate_common_names_ = std::move(
             res_client->tls_cert_.allowed_certificate_common_names_);
 
-        p->rcs = std::make_shared<RuntimeClientStatus>();
+        p->rcs = GetRuntimeStatus<RuntimeClientStatus>(p->resource_name_);
       }
       break;
     }
