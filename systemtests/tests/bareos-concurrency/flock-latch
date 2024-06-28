@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+. environment
+
+# wait for an exclusive lock on the lock file
+flock "${tmp}/flock-latch.lck" true
