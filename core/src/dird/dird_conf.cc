@@ -2249,7 +2249,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
 
         p->device = res_store->device;
 
-        p->runtime_storage_status = new RuntimeStorageStatus;
+        p->runtime_storage_status = std::make_shared<RuntimeStorageStatus>();
 
         if ((status = pthread_mutex_init(
                  &p->runtime_storage_status->changer_lock, NULL))
@@ -2332,11 +2332,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
           p->RestoreWhere = NULL;
         }
 
-        if (type == R_JOB) {
-          p->rjs = (RuntimeJobStatus*)malloc(sizeof(RuntimeJobStatus));
-          RuntimeJobStatus empty_rjs;
-          *p->rjs = empty_rjs;
-        }
+        p->rjs = std::make_shared<RuntimeJobStatus>();
       }
       break;
     }
@@ -2370,9 +2366,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         p->tls_cert_.allowed_certificate_common_names_ = std::move(
             res_client->tls_cert_.allowed_certificate_common_names_);
 
-        p->rcs = (RuntimeClientStatus*)malloc(sizeof(RuntimeClientStatus));
-        RuntimeClientStatus empty_rcs;
-        *p->rcs = empty_rcs;
+        p->rcs = std::make_shared<RuntimeClientStatus>();
       }
       break;
     }
@@ -3866,7 +3860,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->lanaddress) { free(p->lanaddress); }
       if (p->username) { free(p->username); }
       if (p->password_.value) { free(p->password_.value); }
-      if (p->rcs) { free(p->rcs); }
       delete p;
       break;
     }
@@ -3895,7 +3888,7 @@ static void FreeResource(BareosResource* res, int type)
         }
         pthread_mutex_destroy(&p->runtime_storage_status->changer_lock);
         pthread_mutex_destroy(&p->runtime_storage_status->ndmp_deviceinfo_lock);
-        delete p->runtime_storage_status;
+        p->runtime_storage_status.reset();
       }
       delete p;
       break;
@@ -3970,7 +3963,6 @@ static void FreeResource(BareosResource* res, int type)
         FreeRunscripts(p->RunScripts);
         delete p->RunScripts;
       }
-      if (p->rjs) { free(p->rjs); }
       delete p;
       break;
     }

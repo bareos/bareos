@@ -84,7 +84,7 @@ struct Resources {
   directordaemon::PoolResource* next_pool{};    /**< Next Pool used for migration/copy and virtual backup */
   directordaemon::FilesetResource* fileset{};   /**< FileSet resource */
   directordaemon::CatalogResource* catalog{};   /**< Catalog resource */
-  directordaemon::RuntimeJobStatus* rjs{};  /**< Runtime Job Status. May point to the rjs of another resource (e.g. for consolidation vf jobs this points to the rjs of the parent consolidation job's resource) */
+  std::shared_ptr<directordaemon::RuntimeJobStatus> rjs{};  /**< Runtime Job Status. May point to the rjs of another resource (e.g. for consolidation vf jobs this points to the rjs of the parent consolidation job's resource) */
   MessagesResource* messages{};   /**< Default message handler */
   POOLMEM* pool_source{};         /**< Where pool came from */
   POOLMEM* npool_source{};        /**< Where next pool came from */

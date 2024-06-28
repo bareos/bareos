@@ -29,6 +29,7 @@
 #define BAREOS_DIRD_DIRD_CONF_H_
 
 #include <openssl/md5.h>
+#include <memory>
 
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/date_time_bitfield.h"
@@ -322,8 +323,8 @@ class ClientResource
       = false; /* Ignore failed jobs when calculating quota */
   bool ndmp_use_lmdb
       = false; /* NDMP Protocol specific use LMDB for the FHDB or not */
-  int64_t max_bandwidth = 0;          /* Limit speed on this client */
-  RuntimeClientStatus* rcs = nullptr; /* Runtime Client Status */
+  int64_t max_bandwidth = 0;                  /* Limit speed on this client */
+  std::shared_ptr<RuntimeClientStatus> rcs{}; /* Runtime Client Status */
   ClientConnectionHandshakeMode connection_successful_handshake_
       = ClientConnectionHandshakeMode::kUndefined;
 };
@@ -363,7 +364,7 @@ class StorageResource
   utime_t heartbeat_interval = {0}; /**< Interval to send heartbeats */
   utime_t cache_status_interval = {
       0}; /**< Interval to cache the vol_list in the runtime_storage_status */
-  RuntimeStorageStatus* runtime_storage_status = nullptr;
+  std::shared_ptr<RuntimeStorageStatus> runtime_storage_status{};
   StorageResource* paired_storage = nullptr; /**< Paired storage configuration
                                       item for protocols like NDMP */
 
@@ -500,7 +501,7 @@ class JobResource : public BareosResource {
   bool SaveFileHist = false; /**< Ability to disable File history saving for certain protocols */
   bool AlwaysIncremental = false; /**< Always incremental with regular consolidation */
 
-  RuntimeJobStatus* rjs = nullptr; /**< Runtime Job Status */
+  std::shared_ptr<RuntimeJobStatus> rjs; /**< Runtime Job Status */
 
   /* Methods */
   virtual bool Validate() override;
