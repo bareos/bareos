@@ -2241,32 +2241,11 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
               res_dir->resource_name_);
         return false;
       } else {
-        int status;
-
         p->paired_storage = res_store->paired_storage;
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_store->tls_cert_.allowed_certificate_common_names_);
-
         p->device = res_store->device;
-
         p->runtime_storage_status = std::make_shared<RuntimeStorageStatus>();
-
-        if ((status = pthread_mutex_init(
-                 &p->runtime_storage_status->changer_lock, NULL))
-            != 0) {
-          BErrNo be;
-
-          Emsg1(M_ERROR_TERM, 0, T_("pthread_mutex_init: ERR=%s\n"),
-                be.bstrerror(status));
-        }
-        if ((status = pthread_mutex_init(
-                 &p->runtime_storage_status->ndmp_deviceinfo_lock, NULL))
-            != 0) {
-          BErrNo be;
-
-          Emsg1(M_ERROR_TERM, 0, T_("pthread_mutex_init: ERR=%s\n"),
-                be.bstrerror(status));
-        }
       }
       break;
     }
@@ -3873,23 +3852,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->media_type) { free(p->media_type); }
       if (p->ndmp_changer_device) { free(p->ndmp_changer_device); }
       if (p->device) { delete p->device; }
-      if (p->runtime_storage_status) {
-        if (p->runtime_storage_status->vol_list) {
-          if (p->runtime_storage_status->vol_list->contents) {
-            vol_list_t* vl;
-
-            foreach_dlist (vl, p->runtime_storage_status->vol_list->contents) {
-              if (vl->VolName) { free(vl->VolName); }
-            }
-            p->runtime_storage_status->vol_list->contents->destroy();
-            delete p->runtime_storage_status->vol_list->contents;
-          }
-          free(p->runtime_storage_status->vol_list);
-        }
-        pthread_mutex_destroy(&p->runtime_storage_status->changer_lock);
-        pthread_mutex_destroy(&p->runtime_storage_status->ndmp_deviceinfo_lock);
-        p->runtime_storage_status.reset();
-      }
       delete p;
       break;
     }

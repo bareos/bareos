@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -727,7 +727,8 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
 {
   JobId_t jobid = jcr->JobId;
   std::string returnvalue;
-  lock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
+  const std::lock_guard lock(
+      store->runtime_storage_status->ndmp_deviceinfo_lock);
 
   if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
@@ -747,7 +748,6 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
       }
     }
   }
-  unlock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
   return returnvalue;
 }
 
@@ -757,7 +757,8 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
 {
   JobId_t jobid = jcr->JobId;
   bool retval = false;
-  lock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
+  const std::lock_guard lock(
+      store->runtime_storage_status->ndmp_deviceinfo_lock);
 
   if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
@@ -773,7 +774,6 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
       }
     }
   }
-  unlock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
   return retval;
 }
 
@@ -997,19 +997,17 @@ bool NdmpSendLabelRequest(UaContext* ua,
 static bool ndmp_native_update_runtime_storage_status(JobControlRecord* jcr,
                                                       StorageResource* store)
 {
-  bool retval = true;
-
-  lock_mutex(store->runtime_storage_status->changer_lock);
-  if (!do_ndmp_native_query_tape_and_robot_agents(jcr, store)) {
-    retval = false;
+  {
+    const std::lock_guard lock_(store->runtime_storage_status->changer_lock);
+    if (!do_ndmp_native_query_tape_and_robot_agents(jcr, store)) {
+      return false;
+    }
   }
-  unlock_mutex(store->runtime_storage_status->changer_lock);
 
-  lock_mutex(store->runtime_storage_status->changer_lock);
-  if (!NdmpUpdateStorageMappings(jcr, store)) { retval = false; }
-  unlock_mutex(store->runtime_storage_status->changer_lock);
+  const std::lock_guard lock_(store->runtime_storage_status->changer_lock);
+  if (!NdmpUpdateStorageMappings(jcr, store)) { return false; }
 
-  return retval;
+  return true;
 }
 
 bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
