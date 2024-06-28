@@ -124,6 +124,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "vadp_dumper_sectors_per_call",
             "vadp_dumper_query_allocated_blocks_chunk_size",
             "fallback_to_full_cbt",
+            "restore_ignore_disks_mismatch",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -391,6 +392,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if self.options.get("fallback_to_full_cbt") == "no":
             self.vadp.fallback_to_full_cbt = False
+
+        if self.options.get("restore_ignore_disks_mismatch") == "yes":
+            self.vadp.restore_ignore_disks_mismatch = True
 
         for option in self.options:
             bareosfd.DebugMessage(
@@ -1247,6 +1251,7 @@ class BareosVADPWrapper(object):
         self.vm_nvram_content = None
         self.restore_vm_created = False
         self.fallback_to_full_cbt = True
+        self.restore_ignore_disks_mismatch = False
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -2404,6 +2409,15 @@ class BareosVADPWrapper(object):
             bareosfd.M_WARNING,
             "Backed up Disks: %s\n" % (StringCodec.encode(", ".join(backed_up_disks))),
         )
+
+        # currently ignoring disks mismatch is only allowed for recreated VMs
+        if self.restore_ignore_disks_mismatch and self.restore_vm_created:
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                "Ignoring disks mismatch as restore_ignore_disks_mismatch=yes was given\n",
+            )
+            return True
+
         bareosfd.JobMessage(
             bareosfd.M_FATAL,
             "ERROR: VM disks not matching backed up disks\n",
@@ -3166,10 +3180,21 @@ class BareosVADPWrapper(object):
             backing_path_changed = False
             while not device_created:
                 reconfig_task = self.vm.ReconfigVM_Task(spec=config_spec)
+                bareosfd.DebugMessage(
+                    100,
+                    "add_disk_devices_to_vm(): Trying to add disk %s\n"
+                    % (device_spec.device.backing.fileName),
+                )
                 try:
                     pyVim.task.WaitForTask(reconfig_task)
                     device_created = True
                 except vim.fault.FileAlreadyExists:
+                    bareosfd.DebugMessage(
+                        100,
+                        "add_disk_devices_to_vm(): Disk %s already exists, retrying with datastore name only\n"
+                        % (device_spec.device.backing.fileName),
+                    )
+
                     device_spec.device.backing.fileName = (
                         "[%s] " % device_spec.device.backing.datastore.name
                     )
@@ -3179,16 +3204,23 @@ class BareosVADPWrapper(object):
             # and the backing path to the disk will be created by the API, then mapping in self.restore_disk_paths_map
             # must be corrected. This is only possible by walking the VMs devices and detect the added disks path,
             # because the task result does not contain it.
+            created_disk_backing_filename = [
+                device.backing.fileName
+                for device in self.vm.config.hardware.device
+                if type(device) == vim.vm.device.VirtualDisk
+            ][disk_index]
+
+            bareosfd.DebugMessage(
+                100,
+                "add_disk_devices_to_vm(): Disk was recreated as %s\n"
+                % (created_disk_backing_filename),
+            )
+
             if backing_path_changed:
                 self.restore_disk_paths_map[
                     list(self.restore_disk_paths_map)[disk_index]
-                ] = [
-                    device.backing.fileName
-                    for device in self.vm.config.hardware.device
-                    if type(device) == vim.vm.device.VirtualDisk
-                ][
-                    disk_index
-                ]
+                ] = created_disk_backing_filename
+
             disk_index += 1
 
     def adapt_vm_config(self, config_spec):
