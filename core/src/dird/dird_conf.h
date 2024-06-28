@@ -279,9 +279,9 @@ class CatalogResource : public BareosResource {
 };
 
 // Forward referenced structures
-struct runtime_client_status_t;
+struct RuntimeClientStatus;
 struct RuntimeStorageStatus;
-struct runtime_job_status_t;
+struct RuntimeJobStatus;
 
 // Client Resource
 class ClientResource
@@ -322,8 +322,8 @@ class ClientResource
       = false; /* Ignore failed jobs when calculating quota */
   bool ndmp_use_lmdb
       = false; /* NDMP Protocol specific use LMDB for the FHDB or not */
-  int64_t max_bandwidth = 0;              /* Limit speed on this client */
-  runtime_client_status_t* rcs = nullptr; /* Runtime Client Status */
+  int64_t max_bandwidth = 0;          /* Limit speed on this client */
+  RuntimeClientStatus* rcs = nullptr; /* Runtime Client Status */
   ClientConnectionHandshakeMode connection_successful_handshake_
       = ClientConnectionHandshakeMode::kUndefined;
 };
@@ -500,7 +500,7 @@ class JobResource : public BareosResource {
   bool SaveFileHist = false; /**< Ability to disable File history saving for certain protocols */
   bool AlwaysIncremental = false; /**< Always incremental with regular consolidation */
 
-  runtime_job_status_t* rjs = nullptr; /**< Runtime Job Status */
+  RuntimeJobStatus* rjs = nullptr; /**< Runtime Job Status */
 
   /* Methods */
   virtual bool Validate() override;

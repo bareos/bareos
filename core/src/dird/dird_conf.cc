@@ -2333,8 +2333,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         }
 
         if (type == R_JOB) {
-          p->rjs = (runtime_job_status_t*)malloc(sizeof(runtime_job_status_t));
-          runtime_job_status_t empty_rjs;
+          p->rjs = (RuntimeJobStatus*)malloc(sizeof(RuntimeJobStatus));
+          RuntimeJobStatus empty_rjs;
           *p->rjs = empty_rjs;
         }
       }
@@ -2370,9 +2370,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         p->tls_cert_.allowed_certificate_common_names_ = std::move(
             res_client->tls_cert_.allowed_certificate_common_names_);
 
-        p->rcs
-            = (runtime_client_status_t*)malloc(sizeof(runtime_client_status_t));
-        runtime_client_status_t empty_rcs;
+        p->rcs = (RuntimeClientStatus*)malloc(sizeof(RuntimeClientStatus));
+        RuntimeClientStatus empty_rcs;
         *p->rcs = empty_rcs;
       }
       break;
