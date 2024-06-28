@@ -572,7 +572,7 @@ it thinks that |ktls| is enabled or not.
    :caption: connecting a console with |ktls| enabled
    :emphasize-lines: 18,19
 
-   bin/bconsole -d150                     
+   host:~$ bconsole -d150
    [...]
    bconsole (100): lib/tls_openssl_private.cc:58-0 Construct TlsOpenSslPrivate
    bconsole (100): lib/tls_openssl_private.cc:614-0 Set tcp filedescriptor: <3>
