@@ -102,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix various memory leaks [PR #1723]
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1725]
 - windows: fix some crashes, change handling of invalid paths; lex: add better error detection; accurate: fix out of bounds writes [PR #1793]
+- create_bareos_database: fix `db_name` not being double quoted [PR #1865]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -190,5 +191,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1829]: https://github.com/bareos/bareos/pull/1829
 [PR #1840]: https://github.com/bareos/bareos/pull/1840
 [PR #1853]: https://github.com/bareos/bareos/pull/1853
+[PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
 [unreleased]: https://github.com/bareos/bareos/tree/master
