@@ -3033,13 +3033,12 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool)
   }
 
   // Spawn program with redirected handles as appropriate
-  bpipe->worker_pid
-      = (pid_t)CreateChildProcess(prog,            /* Commandline */
-                                  hChildStdinRd,   /* stdin HANDLE */
-                                  hChildStdoutWr,  /* stdout HANDLE */
-                                  hChildStdoutWr); /* stderr HANDLE */
+  bpipe->worker_pid = CreateChildProcess(prog,            /* Commandline */
+                                         hChildStdinRd,   /* stdin HANDLE */
+                                         hChildStdoutWr,  /* stdout HANDLE */
+                                         hChildStdoutWr); /* stderr HANDLE */
 
-  if ((HANDLE)bpipe->worker_pid == INVALID_HANDLE_VALUE) goto cleanup;
+  if (bpipe->worker_pid == INVALID_HANDLE_VALUE) goto cleanup;
 
   bpipe->wait = wait;
   bpipe->worker_stime = time(NULL);
@@ -3063,7 +3062,8 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool)
   }
 
   if (wait > 0) {
-    bpipe->timer_id = start_child_timer(NULL, bpipe->worker_pid, wait);
+    // the cast here is ok as the child timer only uses the pid for printing
+    bpipe->timer_id = start_child_timer(NULL, (pid_t)bpipe->worker_pid, wait);
   }
 
   return bpipe;
