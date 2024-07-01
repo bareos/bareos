@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,9 +29,15 @@
 
 struct btimer_t;
 
+#ifdef HAVE_WIN32
+using ProcessId = HANDLE;
+#else
+using ProcessId = pid_t;
+#endif
+
 class Bpipe {
  public:
-  pid_t worker_pid;
+  ProcessId worker_pid;
   time_t worker_stime;
   int wait;
   btimer_t* timer_id;
