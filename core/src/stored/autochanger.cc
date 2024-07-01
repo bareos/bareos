@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,36 +65,36 @@ bool InitAutochangers()
 
   // Ensure that the media_type for each device is the same
   foreach_res (changer, R_AUTOCHANGER) {
-    DeviceResource* device_resource = nullptr;
-
     logical_drive_number = 0;
-    foreach_alist (device_resource, changer->device_resources) {
-      /* If the device does not have a changer name or changer command
-       * defined, used the one from the Autochanger resource */
-      if (!device_resource->changer_name && changer->changer_name) {
-        device_resource->changer_name = strdup(changer->changer_name);
-      }
+    if (changer->device_resources) {
+      for (auto* device_resource : *changer->device_resources) {
+        /* If the device does not have a changer name or changer command
+         * defined, used the one from the Autochanger resource */
+        if (!device_resource->changer_name && changer->changer_name) {
+          device_resource->changer_name = strdup(changer->changer_name);
+        }
 
-      if (!device_resource->changer_command && changer->changer_command) {
-        device_resource->changer_command = strdup(changer->changer_command);
-      }
+        if (!device_resource->changer_command && changer->changer_command) {
+          device_resource->changer_command = strdup(changer->changer_command);
+        }
 
-      if (!device_resource->changer_name) {
-        Jmsg(NULL, M_ERROR, 0,
-             T_("No Changer Name given for device %s. Cannot continue.\n"),
-             device_resource->resource_name_);
-        OK = false;
-      }
+        if (!device_resource->changer_name) {
+          Jmsg(NULL, M_ERROR, 0,
+               T_("No Changer Name given for device %s. Cannot continue.\n"),
+               device_resource->resource_name_);
+          OK = false;
+        }
 
-      if (!device_resource->changer_command) {
-        Jmsg(NULL, M_ERROR, 0,
-             T_("No Changer Command given for device %s. Cannot continue.\n"),
-             device_resource->resource_name_);
-        OK = false;
-      }
+        if (!device_resource->changer_command) {
+          Jmsg(NULL, M_ERROR, 0,
+               T_("No Changer Command given for device %s. Cannot continue.\n"),
+               device_resource->resource_name_);
+          OK = false;
+        }
 
-      // Give the drive in the autochanger a logical drive number.
-      device_resource->drive = logical_drive_number++;
+        // Give the drive in the autochanger a logical drive number.
+        device_resource->drive = logical_drive_number++;
+      }
     }
   }
 
@@ -504,7 +504,6 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   Device* dev_save;
   bool found = false;
   AutochangerResource* changer = dcr->dev->device_resource->changer_res;
-  DeviceResource* device_resource = nullptr;
   int retries = 0; /* wait for device retries */
 
   if (!changer) { return false; }
@@ -513,7 +512,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   /* We look for the slot number corresponding to the tape
    * we want in other drives, and if possible, unload it. */
   Dmsg0(100, "Wiffle through devices looking for slot\n");
-  foreach_alist (device_resource, changer->device_resources) {
+  for (auto* device_resource : *changer->device_resources) {
     dev = device_resource->dev;
     if (!dev) { continue; }
     dev_save = dcr->dev;

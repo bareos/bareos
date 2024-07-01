@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -782,10 +782,8 @@ char* lookup_ndmp_drive(StorageResource* store, drive_number_t drivenumber)
 {
   int cnt = 0;
   char* tapedevice;
-  BareosResource* tapedeviceres = nullptr;
-
   if (store->device) {
-    foreach_alist (tapedeviceres, store->device) {
+    for (auto* tapedeviceres : *store->device) {
       if (cnt == drivenumber) {
         tapedevice = tapedeviceres->resource_name_;
         return tapedevice;
