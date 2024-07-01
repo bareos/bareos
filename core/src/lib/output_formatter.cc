@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -661,10 +661,8 @@ void OutputFormatter::ClearFilters()
 
 bool OutputFormatter::has_acl_filters()
 {
-  of_filter_tuple* tuple = nullptr;
-
   if (filters) {
-    foreach_alist (tuple, filters) {
+    for (of_filter_tuple* tuple : *filters) {
       if (tuple->type == OF_FILTER_ACL) { return true; }
     }
   }
@@ -675,13 +673,12 @@ bool OutputFormatter::has_acl_filters()
 bool OutputFormatter::FilterData(void* data)
 {
   of_filter_state state;
-  of_filter_tuple* tuple = nullptr;
   int acl_filter_show = 0, acl_filter_unknown = 0;
 
   /* See if a filtering function is registered.
    * See if there are any filters. */
   if (filter_func && filters && !filters->empty()) {
-    foreach_alist (tuple, filters) {
+    for (of_filter_tuple* tuple : *filters) {
       state = filter_func(filter_ctx, data, tuple);
 
       Dmsg1(800, "filter_state %d\n", state);
@@ -980,8 +977,7 @@ void OutputFormatter::JsonFinalizeResult(bool result)
 
       range_obj = json_object();
 
-      of_filter_tuple* tuple = nullptr;
-      foreach_alist (tuple, filters) {
+      for (of_filter_tuple* tuple : *filters) {
         if (tuple->type == OF_FILTER_LIMIT) {
           json_object_set_new(range_obj, "limit",
                               json_integer(tuple->u.limit_filter.limit));

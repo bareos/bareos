@@ -1,0 +1,66 @@
+#!/bin/bash
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+last_job_id=$(last_jobid_or_zero)
+
+consolidate_admin_id=$(( last_job_id + 1 ))
+consolidate_work_id=$(( last_job_id + 2 ))
+new_backup_id=$(( last_job_id + 3 ))
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/consolidate.out
+run job=Consolidate yes
+wait jobid=${consolidate_admin_id}
+@sleep 5
+messages
+@$out $tmp/consolidate_worker_before_status.out
+llist jobid=${consolidate_work_id}
+@$out $tmp/consolidate.out
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-6'"
+run job=ai-backup-bareos-fd level=Incremental yes
+wait jobid=${new_backup_id}
+@$out $tmp/consolidate_worker_before_status.out
+llist jobid=${consolidate_work_id}
+@$out $tmp/consolidate.out
+cancel jobid=${consolidate_work_id}
+wait
+messages
+@$out $tmp/consolidate_worker_status.out
+llist jobid=${consolidate_work_id}
+@$out $tmp/consolidate_incremental_status.out
+llist jobid=${new_backup_id}
+@$out /dev/null
+quit
+END_OF_DATA
+run_bconsole
+
+
+expect_grep "jobstatus: R" \
+            "$tmp"/consolidate_worker_before_status.out \
+            "consolidate job was stopped prematurely"
+
+expect_grep "jobstatus: A" \
+            "$tmp"/consolidate_worker_status.out \
+            "consolidate job was not canceled after incremental"
+
+expect_not_grep "jobstatus: A" \
+            "$tmp"/consolidate_incremental_status.out \
+            "incremental job was canceled during consolidation"
+
+expect_grep "jobstatus: T" \
+            "$tmp"/consolidate_incremental_status.out \
+            "incremental job did not terminate successfully during consolidation"
+
+end_test

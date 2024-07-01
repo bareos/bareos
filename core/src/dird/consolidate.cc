@@ -69,7 +69,7 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
   ua->batch = true;
   Mmsg(ua->cmd,
        "run job=\"%s\" jobid=%s level=VirtualFull priority=%d accurate=%s "
-       "spooldata=%s consolidatejob=%s",
+       "spooldata=%s ignoreduplicatecheck=yes consolidatejob=%s",
        jobname, jcr->dir_impl->vf_jobids, jcr->JobPriority,
        jcr->accurate ? "yes" : "no", jcr->dir_impl->spool_data ? "yes" : "no",
        consolidate_job->resource_name_);

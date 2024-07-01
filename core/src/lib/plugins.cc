@@ -214,10 +214,9 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
   /* See if we are loading certain plugins only or all plugins of a certain
    * type. */
   if (plugin_names && plugin_names->size()) {
-    const char* name = nullptr;
     PoolMem plugin_name(PM_FNAME);
 
-    foreach_alist (name, plugin_names) {
+    for (const char* name : *plugin_names) {
       // Generate the plugin name e.g. <name>-<daemon>.so
       Mmsg(plugin_name, "%s%s", name, type);
 
@@ -412,12 +411,11 @@ void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct)
 
 void DumpPlugins(alist<Plugin*>* plugin_list, FILE* fp)
 {
-  Plugin* plugin{};
   fprintf(fp, "Attempt to dump plugins. Hook count=%d\n",
           dbg_plugin_hook_count);
 
   if (!plugin_list) { return; }
-  foreach_alist (plugin, plugin_list) {
+  for (auto* plugin : *plugin_list) {
     for (int i = 0; i < dbg_plugin_hook_count; i++) {
       fprintf(fp, "Plugin %p name=\"%s\"\n", plugin, plugin->file);
     }

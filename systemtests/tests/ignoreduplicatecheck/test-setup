@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#
+# We want to check that Copy/Migrate/Consolidate jobs do not stop backup jobs
+# from running. The basic structure for these tests is the following:
+#      1) Setup environment for a particular job type (Copy/Migrate/Consolidate)
+#      2) Run a job of that type
+#      3) Run a normal backup job
+#      4) Check that the normal job was not canceled
+#      5) Cancel the other job
+#      6) Check that the job was not aborted prematurely
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+bin/bareos start
+bin/bareos status
+
+# make sure, director is up and running.
+print_debug "$(bin/bconsole <<< "status dir")"

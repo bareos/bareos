@@ -881,9 +881,16 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
   bool cancel_dup = false;
   bool cancel_me = false;
 
+  bool is_consolidation
+      = jcr->getJobLevel() == L_VIRTUAL_FULL && job->AlwaysIncremental;
+
   /* See if AllowDuplicateJobs is set or
-   * if duplicate checking is disabled for this job. */
-  if (job->AllowDuplicateJobs || jcr->dir_impl->IgnoreDuplicateJobChecking) {
+   * if duplicate checking is disabled for this job.
+   * If the new jcr is a consolidation job then we check
+   * for duplicates anyways. */
+  if (!is_consolidation
+      && (job->AllowDuplicateJobs
+          || jcr->dir_impl->IgnoreDuplicateJobChecking)) {
     return true;
   }
 
@@ -895,6 +902,25 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
   foreach_jcr (djcr) {
     if (jcr == djcr || djcr->JobId == 0) {
       continue; /* do not cancel this job or consoles */
+    }
+
+    /* Check if the new jcr is a duplicate always-incremental
+     * virtual full job (= consolidation job) and if so cancel
+     * it. We don't want any duplicate consolidation virtual
+     * full jobs in any case. */
+    if (is_consolidation && djcr->getJobLevel() == L_VIRTUAL_FULL
+        && djcr->dir_impl->res.job->AlwaysIncremental
+        && bstrcmp(jcr->dir_impl->res.client->resource_name_,
+                   djcr->dir_impl->res.client->resource_name_)
+        && bstrcmp(jcr->dir_impl->res.fileset->resource_name_,
+                   djcr->dir_impl->res.fileset->resource_name_)) {
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
+      Jmsg(jcr, M_FATAL, 0,
+           T_("JobId %d already running. Duplicate consolidation job of Client "
+              "\"%s\" and FileSet \"%s\" not allowed.\n"),
+           djcr->JobId, jcr->dir_impl->res.client->resource_name_,
+           jcr->dir_impl->res.fileset->resource_name_);
+      break; /* get out of foreach_jcr */
     }
 
     /* See if this Job has the IgnoreDuplicateJobChecking flag set, ignore it
@@ -1736,14 +1762,13 @@ void CreateClones(JobControlRecord* jcr)
   Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->dir_impl->cloned,
         jcr->dir_impl->res.job->run_cmds);
   if (!jcr->dir_impl->cloned && jcr->dir_impl->res.job->run_cmds) {
-    const char* runcmd = nullptr;
     JobId_t jobid;
     JobResource* job = jcr->dir_impl->res.job;
     POOLMEM* cmd = GetPoolMemory(PM_FNAME);
 
     UaContext* ua = new_ua_context(jcr);
     ua->batch = true;
-    foreach_alist (runcmd, job->run_cmds) {
+    for (auto* runcmd : *job->run_cmds) {
       cmd = edit_job_codes(jcr, cmd, runcmd, "", job_code_callback_director);
       Mmsg(ua->cmd, "run %s cloned=yes", cmd);
       Dmsg1(900, "=============== Clone cmd=%s\n", ua->cmd);

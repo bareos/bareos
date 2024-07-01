@@ -52,3 +52,9 @@ set_tests_properties(
     FIXTURES_REQUIRED
     "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
 )
+set_tests_properties(
+  system:always-incremental-consolidate:06-consolidate-duplicates
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+)

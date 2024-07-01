@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1297,9 +1297,6 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
     // Storage defaults
     storage = ua->GetStoreResWithName(ua->argv[pos]);
     if (storage) {
-      DeviceResource* device_resource;
-      PoolMem devices;
-
       ua->send->ObjectKeyValue("storage", "%s=", storage->resource_name_,
                                "%s\n");
       ua->send->ObjectKeyValue("address", "%s=", storage->address, "%s\n");
@@ -1308,17 +1305,16 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
       ua->send->ObjectKeyValue("media_type", "%s=", storage->media_type,
                                "%s\n");
 
-      device_resource = (DeviceResource*)storage->device->first();
-      if (device_resource) {
-        devices.strcpy(device_resource->resource_name_);
-        if (storage->device->size() > 1) {
-          while ((device_resource = (DeviceResource*)storage->device->next())) {
-            devices.strcat(",");
-            devices.strcat(device_resource->resource_name_);
-          }
+      std::string devices;
+      for (auto* device_resource : *storage->device) {
+        if (device_resource) {
+          // if the string is nonempty, then there are already devices in the
+          // "list", so seperate the new entry with a comma.
+          if (!devices.empty()) { devices += ","; }
+          devices += device_resource->resource_name_;
         }
-        ua->send->ObjectKeyValue("device", "%s=", devices.c_str(), "%s\n");
       }
+      ua->send->ObjectKeyValue("device", "%s=", devices.c_str(), "%s\n");
     }
   } else if ((pos = FindArgWithValue(ua, "pool")) >= 0) {
     PoolResource* pool;

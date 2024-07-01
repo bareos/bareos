@@ -622,6 +622,7 @@ static
       }
       FreeJcr(jcr);
     }
+    endeach_jcr(jcr);
     Bmicrosleep(0, 500000); /* give them 1/2 sec to clean up */
   }
 

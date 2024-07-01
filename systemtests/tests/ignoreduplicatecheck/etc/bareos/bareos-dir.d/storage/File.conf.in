@@ -1,0 +1,30 @@
+Storage {
+  Name = File
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  SD Port = @sd_port@
+  Maximum Concurrent Jobs = 10
+}
+
+Storage {
+  Name = File2
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage2
+  Device = FileStorage4
+  Media Type = File
+  SD Port = @sd_port@
+  Maximum Concurrent Jobs = 10
+}
+
+Storage {
+  Name = File3
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage3
+  Media Type = File
+  SD Port = @sd_port@
+  Maximum Concurrent Jobs = 10
+}

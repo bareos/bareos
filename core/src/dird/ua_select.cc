@@ -1507,25 +1507,16 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
 static inline bool InsertSelectedJobid(alist<JobId_t*>* selected_jobids,
                                        JobId_t JobId)
 {
-  bool found;
-  JobId_t* selected_jobid = nullptr;
+  if (!selected_jobids) { return false; }
 
-  found = false;
-  foreach_alist (selected_jobid, selected_jobids) {
-    if (*selected_jobid == JobId) {
-      found = true;
-      break;
-    }
+  for (auto* jobid : *selected_jobids) {
+    if (*jobid == JobId) { return false; }
   }
 
-  if (!found) {
-    selected_jobid = (JobId_t*)malloc(sizeof(JobId_t));
-    *selected_jobid = JobId;
-    selected_jobids->append(selected_jobid);
-    return true;
-  }
-
-  return false;
+  auto* selected_jobid = (JobId_t*)malloc(sizeof(JobId_t));
+  *selected_jobid = JobId;
+  selected_jobids->append(selected_jobid);
+  return true;
 }
 
 /**
@@ -1709,6 +1700,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         InsertSelectedJobid(selected_jobids, jcr->JobId);
         ua->SendMsg(T_("Selected Job %d for cancelling\n"), jcr->JobId);
       }
+      endeach_jcr(jcr);
 
       if (selected_jobids->empty()) {
         ua->SendMsg(T_("No Jobs selected.\n"));
