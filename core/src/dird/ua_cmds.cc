@@ -177,8 +177,8 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".api"), DotApiCmd, T_("Switch between different api modes"),
      NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false},
     {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
-     NT_("job=<job-name> | client=<client-name> | storage=<storage-name | \n"
-         "schedule=<schedule-name> | pool=<pool-name> | cmd=<command> | \n"
+     NT_("job=<job-name> | client=<client-name> | storage=<storage-name> |\n"
+         "schedule=<schedule-name> | pool=<pool-name> | cmd=<command> |\n"
          "fileset=<fileset-name> | catalog=<catalog>"),
      false, false},
     {NT_(".catalogs"), DotCatalogsCmd, T_("List all catalog resources"), NULL,
@@ -587,16 +587,16 @@ bool Do_a_command(UaContext* ua)
   len = strlen(ua->argk[0]);
   for (i = 0; i < comsize; i++) { /* search for command */
     if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
+      const char* command = commands[i].key;
       // Check if command permitted, but "quit" and "whoami" is always OK
-      if (!bstrcmp(ua->argk[0], NT_("quit"))
-          && !bstrcmp(ua->argk[0], NT_("whoami"))
-          && !ua->AclAccessOk(Command_ACL, ua->argk[0], true)) {
+      if (!bstrcmp(command, NT_("quit")) && !bstrcmp(command, NT_("whoami"))
+          && !ua->AclAccessOk(Command_ACL, command, true)) {
         break;
       }
 
       // Check if this command is authorized in RunScript
       if (ua->runscript && !commands[i].allowed_in_runscript) {
-        ua->ErrorMsg(T_("Can't use %s command in a runscript"), ua->argk[0]);
+        ua->ErrorMsg(T_("Can't use %s command in a runscript"), command);
         break;
       }
 
