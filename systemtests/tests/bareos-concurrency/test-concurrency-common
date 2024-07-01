@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+exec 4<>"$tmp/flock-latch.lck"
+if ! flock -n 4; then
+  echo 'Cannot set up flock-latch. Skipping test!' >&2
+  exit 77
+fi
+
+touch "$tmp/file-list"
+: >"$tmp/$JobName.out"
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/$JobName.out
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+reload
+run job=$JobName yes
+@sleep 5
+status director
+END_OF_DATA
+
+run_bconsole
+
+# release the flock-latch
+flock -u 4
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+wait
+quit
+END_OF_DATA
+
+run_bconsole
+
+: "${want_w_client:=0}"
+: "${want_w_storage:=0}"
+: "${want_w_job:=0}"
+export want_w_client want_w_storage want_w_job
+
+echo "The following jobs are currently in run queue:"
+awk -f - "$tmp/$JobName.out" <<'EOT'
+BEGIN {
+  running=0
+  waiting=0
+}
+$2 == "Full" && $3 ~ /^test-.*-concurrency/ {
+  if ($0 ~ /is running/) { running++ }
+  if ($0 ~ /is waiting on max Client jobs/) { w_client++ }
+  if ($0 ~ /is waiting on max Storage jobs/) { w_storage++ }
+  if ($0 ~ /is waiting on max Job jobs/) { w_job++ }
+  print
+}
+END {
+  ret=0
+  if (running != 2) {
+    print "There should be exactly 2 running jobs, found " running
+    ret=1
+  }
+  if (w_client != ENVIRON["want_w_client"]) {
+    print "There should be exactly " ENVIRON["want_w_client"] " jobs waiting on client, found " w_client
+    ret=1
+  }
+  if (w_storage != ENVIRON["want_w_storage"]) {
+    print "There should be exactly " ENVIRON["want_w_storage"] " jobs waiting on storage, found " w_storage
+    ret=1
+  }
+  if (w_job != ENVIRON["want_w_job"]) {
+    print "There should be exactly " ENVIRON["want_w_job"] " jobs waiting on job, found " w_job
+    ret=1
+  }
+  exit ret
+}
+EOT
+
+end_test
