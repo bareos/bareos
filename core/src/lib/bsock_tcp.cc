@@ -61,6 +61,27 @@ BareosSocketTCP::BareosSocketTCP() : BareosSocket() {}
 
 BareosSocketTCP::~BareosSocketTCP() { destroy(); }
 
+#ifdef HAVE_WIN32
+
+int DuplicateSocket(int fd, PoolMem*& error)
+{
+  WSAPROTOCOL_INFO info;
+  int r = WSADuplicateSocket(fd, GetCurrentProcessId(), &info);
+
+  if (r != 0) {
+    Mmsg(error, "could not duplicate socket: %d", WSAGetLastError());
+    return -1;
+  }
+  SOCKET s = WSASocket(info.iAddressFamily, info.iSocketType, info.iProtocol,
+                       &info, 0, 0);
+
+  static_assert(sizeof(s) == sizeof(int));
+
+  return s;
+}
+
+#endif
+
 BareosSocket* BareosSocketTCP::clone()
 {
   BareosSocketTCP* clone = new BareosSocketTCP(*this);
@@ -74,7 +95,11 @@ BareosSocket* BareosSocketTCP::clone()
   if (host_) { host_ = strdup(host_); }
 
   /* duplicate file descriptors */
+#ifdef HAVE_WIN32
+  if (fd_ >= 0) { clone->fd_ = DuplicateSocket(fd_, clone->errmsg); }
+#else
   if (fd_ >= 0) { clone->fd_ = dup(fd_); }
+#endif
   if (spool_fd_ >= 0) { clone->spool_fd_ = dup(spool_fd_); }
 
   clone->cloned_ = true;
