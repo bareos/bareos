@@ -35,7 +35,7 @@
 #include <openssl/rand.h>
 #include <openssl/aes.h>
 #include "lib/crypto_wrap.h"
-#include "include/allow_deprecated.h"
+#include "include/compiler_macro.h"
 
 /*
  * @kek: key encryption key (KEK)
@@ -59,7 +59,8 @@ void OldAesWrap(const uint8_t* kek,
   memset(a, 0xa6, 8);
   memcpy(r, plain, 8 * n);
 
-  ALLOW_DEPRECATED(AES_set_encrypt_key(kek, 128, &key));
+  IGNORE_DEPRECATED_ON;
+  AES_set_encrypt_key(kek, 128, &key);
 
   /* 2) Calculate intermediate values.
    * For j = 0 to 5
@@ -72,13 +73,14 @@ void OldAesWrap(const uint8_t* kek,
     for (i = 1; i <= n; i++) {
       memcpy(b, a, 8);
       memcpy(b + 8, r, 8);
-      ALLOW_DEPRECATED(AES_encrypt(b, b, &key));
+      AES_encrypt(b, b, &key);
       memcpy(a, b, 8);
       a[7] ^= n * j + i;
       memcpy(r, b + 8, 8);
       r += 8;
     }
   }
+  IGNORE_DEPRECATED_OFF;
 
   /* 3) Output the results.
    *
@@ -107,7 +109,8 @@ int OldAesUnwrap(const uint8_t* kek,
   r = plain;
   memcpy(r, cipher + 8, 8 * n);
 
-  ALLOW_DEPRECATED(AES_set_decrypt_key(kek, 128, &key));
+  IGNORE_DEPRECATED_ON;
+  AES_set_decrypt_key(kek, 128, &key);
 
   /* 2) Compute intermediate values.
    * For j = 5 to 0
@@ -122,12 +125,13 @@ int OldAesUnwrap(const uint8_t* kek,
       b[7] ^= n * j + i;
 
       memcpy(b + 8, r, 8);
-      ALLOW_DEPRECATED(AES_decrypt(b, b, &key));
+      AES_decrypt(b, b, &key);
       memcpy(a, b, 8);
       memcpy(r, b + 8, 8);
       r -= 8;
     }
   }
+  IGNORE_DEPRECATED_OFF;
 
   /* 3) Output results.
    *

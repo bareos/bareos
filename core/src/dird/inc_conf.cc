@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,7 @@
 #include "dird/director_jcr_impl.h"
 #include "findlib/match.h"
 #include "lib/parse_conf.h"
-#include "include/allow_deprecated.h"
+#include "include/compiler_macro.h"
 
 #ifndef HAVE_REGEX_H
 #  include "lib/bregex.h"
@@ -831,8 +831,9 @@ static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
       case BCT_QUOTED_STRING: {
         FilesetResource* res_fs = GetStaticFilesetResource();
         if (res_fs->have_MD5) {
-          ALLOW_DEPRECATED(
-              MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len));
+          IGNORE_DEPRECATED_ON;
+          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          IGNORE_DEPRECATED_OFF;
         }
 
         if (res_incexe->name_list.size() == 0) {
@@ -881,8 +882,9 @@ static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
         FilesetResource* res_fs = GetStaticFilesetResource();
 
         if (res_fs->have_MD5) {
-          ALLOW_DEPRECATED(
-              MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len));
+          IGNORE_DEPRECATED_ON;
+          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          IGNORE_DEPRECATED_OFF;
         }
         if (res_incexe->plugin_list.size() == 0) {
           res_incexe->plugin_list.init(10, true);
@@ -934,7 +936,9 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   if (pass == 1) { res_incexe = new IncludeExcludeItem; }
 
   if (!res_fs->have_MD5) {
-    ALLOW_DEPRECATED(MD5_Init(&res_fs->md5c));
+    IGNORE_DEPRECATED_ON;
+    MD5_Init(&res_fs->md5c);
+    IGNORE_DEPRECATED_OFF;
     res_fs->have_MD5 = true;
   }
   res_fs->new_include = true;

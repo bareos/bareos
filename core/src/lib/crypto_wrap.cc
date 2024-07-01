@@ -22,7 +22,6 @@
 
 #include "include/bareos.h"
 #include "lib/crypto_wrap.h"
-#include "include/allow_deprecated.h"
 
 #include <openssl/evp.h>
 #include <openssl/err.h>
