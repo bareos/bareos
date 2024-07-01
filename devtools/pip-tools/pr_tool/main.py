@@ -379,7 +379,7 @@ def get_changelog_section(pr):
     labels = get_plain_label_list(pr["labels"])
     if "documentation" in labels:
         return "Documentation"
-    if "bugfix" in labels:
+    if "bugfix" in labels or "bug" in labels:
         return "Fixed"
     if "removal" in labels:
         return "Removed"
