@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,7 +61,7 @@ struct hlink {
 
 class htableImpl {
   hlink** table = nullptr;      /* Hash table */
-  int loffset = 0;              /* Link offset in item */
+  size_t loffset = 0;           /* Link offset in item */
   hlink* walkptr = nullptr;     /* Table walk pointer */
   uint64_t hash = 0;            /* Temp storage */
   uint32_t walk_index = 0;      /* Table walk index */
