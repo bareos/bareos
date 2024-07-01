@@ -123,10 +123,6 @@ if(HAVE_WIN32)
 endif()
 
 set(BSCANSRCS bscan.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/bscanres.rc.in)
-  list(APPEND BSCANSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bscanres.rc)
-endif()
 
 set(BCOPYSRCS bcopy.cc)
 
@@ -173,7 +169,16 @@ else()
 endif()
 
 add_library(stored_objects STATIC ${SDSRCS})
-add_executable(bareos-sd WIN32 stored.cc)
+
+if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/stored/bscanres.rc.in)
+  add_executable(
+    bareos-sd WIN32 stored.cc
+                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bscanres.rc
+  )
+else()
+  add_executable(bareos-sd WIN32 stored.cc)
+endif()
 
 target_link_libraries(stored_objects PRIVATE ${THREADS_THREADS})
 target_link_libraries(

@@ -60,11 +60,6 @@ if(HAVE_WIN32)
   )
 endif()
 
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/filed/filedres.rc.in)
-  list(APPEND FDSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc)
-endif()
-
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(fd_objects STATIC ${FDSRCS})
@@ -74,7 +69,15 @@ if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)
 endif()
 
-add_executable(bareos-fd WIN32 filed.cc)
+if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/filed/filedres.rc.in)
+  add_executable(
+    bareos-fd WIN32 filed.cc
+                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc
+  )
+else()
+  add_executable(bareos-fd filed.cc)
+endif()
 
 set(BAREOS_FD_LIBRARIES bareosfind bareos ${THREADS_THREADS})
 if(HAVE_WIN32)

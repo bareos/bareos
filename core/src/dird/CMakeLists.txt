@@ -135,11 +135,6 @@ set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
               ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc
 )
 
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/dird/dbcheckres.rc.in)
-  list(APPEND DBCHKSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dbcheckres.rc)
-endif()
-
 set(DIRD_RESTYPES
     catalog
     client
@@ -162,7 +157,15 @@ target_link_libraries(
   dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} ${THREADS_THREADS}
 )
 
-add_executable(bareos-dir WIN32)
+if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/dird/dbcheckres.rc.in)
+  add_executable(
+    bareos-dir WIN32 ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dbcheckres.rc
+  )
+else()
+  add_executable(bareos-dir)
+endif()
+
 target_sources(bareos-dir PRIVATE dird.cc)
 
 target_link_libraries(
