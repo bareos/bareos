@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=test-client-concurrency
+want_w_client=2
+
+. test-concurrency-common
