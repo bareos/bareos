@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -136,7 +136,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         logger.debug(str(result))
         # TODO: This is a bug.
         #       ACL checking does not work here,
-        #       because this jobid should be accessable in this console.
+        #       because this jobid should be accessible in this console.
         # self.assertIn(b'No Job found for JobId', result)
         result = console_bareos_fd.call("find *")
         logger.debug(str(result))
@@ -160,7 +160,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         # 5: Select the most recent backup for a client
         #
-        # Only the bareos-fd client should be accessable
+        # Only the bareos-fd client should be accessible
         # and is therefore autoselected.
         #
         result = console_bareos_fd.call("5")
@@ -300,12 +300,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
             ),
         )
 
-        # TODO:
-        # IMHO this is a bug.
         # This console should not see volumes in the Full pool.
-        # It needs to be fixed in the server side code.
-        with self.assertRaises(AssertionError):
-            self._test_no_volume_in_pool(console_overwrite, console_password, "Full")
+        self._test_no_volume_in_pool(console_overwrite, console_password, "Full")
 
     def test_json_list_jobid_with_job_acl(self):
         """
@@ -402,3 +398,30 @@ class PythonBareosAclTest(bareos_unittest.Json):
     def test_status_subscription_user_fails(self):
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
             self._test_status_subscription("client-bareos-fd", "secret")
+
+    def test_limited_command_acl(self):
+        """
+        The console "limited-operator" uses the profile "operator",
+        but disallows the command ".consoles".
+        """
+        logger = logging.getLogger()
+
+        username = "limited-operator"
+        password = "secret"
+
+        console = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = console.call(".consoles")
+            # logger.debug(result)
+            # consoles = [item["name"] for item in result["consoles"]]
+            # self.assertIn(username, consoles)
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = console.call(".consol")
