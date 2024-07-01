@@ -30,6 +30,8 @@
 #define PYTHON_MODULE_NAME bareosfd
 #define PYTHON_MODULE_NAME_QUOTED "bareosfd"
 
+#include "include/compiler_macro.h"
+
 /* common code for all python plugins */
 #include "plugins/include/python_plugins_common.h"
 #include "plugins/include/common.h"
@@ -102,8 +104,7 @@ static PyMemberDef PyRestoreObject_members[]
         (char*)"Jobid"},
        {} /* Sentinel */};
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
 static PyTypeObject PyRestoreObjectType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
@@ -118,7 +119,7 @@ static PyTypeObject PyRestoreObjectType = {
     .tp_init      = (initproc)PyRestoreObject_init,
 };
 /* clang-format on */
-#  pragma GCC diagnostic pop
+IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyStatPacket type
 typedef struct {
@@ -174,8 +175,7 @@ static PyMemberDef PyStatPacket_members[] = {
      (char*)"Blocks"},
     {} /* Sentinel */};
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
 static PyTypeObject PyStatPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
@@ -190,7 +190,7 @@ static PyTypeObject PyStatPacketType = {
     .tp_init      = (initproc)PyStatPacket_init,
 };
 /* clang-format on */
-#  pragma GCC diagnostic pop
+IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PySavePacket type
 typedef struct {
@@ -253,8 +253,7 @@ static PyMemberDef PySavePacket_members[] = {
      (char*)"Restore ObjectIndex"},
     {} /* Sentinel */};
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
 static PyTypeObject PySavePacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
@@ -269,7 +268,7 @@ static PyTypeObject PySavePacketType = {
     .tp_init      = (initproc)PySavePacket_init,
 };
 /* clang-format on */
-#  pragma GCC diagnostic pop
+IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyRestorePacket type
 typedef struct {
@@ -333,8 +332,7 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"file descriptor of current file"},
     {NULL, 0, 0, 0, NULL}};
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
 static PyTypeObject PyRestorePacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
@@ -349,7 +347,7 @@ static PyTypeObject PyRestorePacketType = {
     .tp_init      = (initproc)PyRestorePacket_init,
 };
 /* clang-format on */
-#  pragma GCC diagnostic pop
+IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyIOPacket type
 typedef struct {
@@ -406,8 +404,7 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"file descriptor of current file"},
        {NULL, 0, 0, 0, NULL}};
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
 static PyTypeObject PyIoPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
@@ -422,7 +419,7 @@ static PyTypeObject PyIoPacketType = {
     .tp_init      = (initproc)PyIoPacket_init,
 };
 /* clang-format on */
-#  pragma GCC diagnostic pop
+IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyAclPacket type
 typedef struct {
@@ -446,8 +443,7 @@ static PyMemberDef PyAclPacket_members[]
         (char*)"ACL content buffer"},
        {} /* Sentinel */};
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
 static PyTypeObject PyAclPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
@@ -462,7 +458,7 @@ static PyTypeObject PyAclPacketType = {
     .tp_init      = (initproc)PyAclPacket_init,
 };
 /* clang-format on */
-#  pragma GCC diagnostic pop
+IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyXattrPacket type
 typedef struct {
@@ -491,8 +487,7 @@ static PyMemberDef PyXattrPacket_members[]
         (char*)"XATTR value buffer"},
        {} /* Sentinel */};
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
 static PyTypeObject PyXattrPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
@@ -507,7 +502,7 @@ static PyTypeObject PyXattrPacketType = {
     .tp_init      = (initproc)PyXattrPacket_init,
 };
 /* clang-format off */
-#  pragma GCC diagnostic pop
+  IGNORE_MISSING_INITIALIZERS_OFF
 
 // Callback methods from Python.
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args);
