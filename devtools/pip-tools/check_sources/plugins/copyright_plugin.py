@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -74,7 +74,7 @@ def set_copyright_year(
     else:
         commit = file_history.get_latest_commit(file_path, ignore=blame_ignore_revs)
         if commit:
-            change_year = datetime.utcfromtimestamp(commit.authored_date).year
+            change_year = datetime.utcfromtimestamp(commit.committed_date).year
             logger.debug(
                 "Latest commit for {} is {} from {}".format(
                     file_path, commit.hexsha, change_year

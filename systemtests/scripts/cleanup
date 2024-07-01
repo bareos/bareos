@@ -16,6 +16,7 @@ rm -rf "${working:?}"/*.conmsg
 rm -rf "${working:?}"/*.pid
 rm -rf "${working:?}"/.accurate_lmdb*
 rm -rf "${working:?}"/*.mail
+rm -rf "${working:?}"/*.cryptoc
 rm -rf "${working:?}"/CLEANUPMARKER
 rm -rf "${working:?}"/plugins/*
 rm -rf "${archivedir:?}"/*
