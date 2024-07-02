@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,9 +18,17 @@
 #   02110-1301, USA.
 
 import unittest
-import bareosfd
 import time
 import types
+import os
+
+# for key, value in os.environ.items():
+#    print(f'{key}: {value}')
+
+print("PATH", os.environ["PATH"])
+print("PYTHONPATH", os.environ["PYTHONPATH"])
+
+import bareosfd
 
 # print(dir(bareosfd))
 print("bareosfd.iostat_error: ", bareosfd.iostat_error)

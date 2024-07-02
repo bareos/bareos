@@ -1,7 +1,7 @@
 /*
 
    Copyright (C) 2007-2012 Kern Sibbald
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    You may freely use this code to create your own plugin provided
    it is to write a plugin for Bareos licensed under AGPLv3
@@ -75,10 +75,11 @@ extern "C" {
 #endif
 
 // Plugin called here when it is first loaded
-bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
-               CoreFunctions* lbareos_core_functions,
-               PluginInformation** plugin_information,
-               PluginFunctions** plugin_functions)
+BAREOS_EXPORT bRC
+loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+           CoreFunctions* lbareos_core_functions,
+           PluginInformation** plugin_information,
+           PluginFunctions** plugin_functions)
 {
   bareos_core_functions
       = lbareos_core_functions; /* set Bareos funct pointers */
@@ -96,7 +97,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
  * Plugin called here when it is unloaded, normally when
  *  Bareos is going to exit.
  */
-bRC unloadPlugin()
+BAREOS_EXPORT bRC unloadPlugin()
 {
   printf("plugin: Unloaded\n");
   return bRC_OK;

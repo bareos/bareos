@@ -118,10 +118,10 @@ PluginFunctions pluginFuncs = {sizeof(pluginFuncs),
 extern "C" {
 
 // Plugin called here when it is first loaded
-bRC loadPlugin(PluginApiDefinition*,
-               CoreFunctions* bareos_core_functions,
-               PluginInformation** plugin_information,
-               PluginFunctions** plugin_functions)
+BAREOS_EXPORT bRC loadPlugin(PluginApiDefinition*,
+                             CoreFunctions* bareos_core_functions,
+                             PluginInformation** plugin_information,
+                             PluginFunctions** plugin_functions)
 {
   bareos = bareos_core_functions;
   *plugin_information = &pluginInfo;
@@ -134,7 +134,7 @@ bRC loadPlugin(PluginApiDefinition*,
  * Plugin called here when it is unloaded, normally when
  *  Bareos is going to exit.
  */
-bRC unloadPlugin() { return bRC_OK; }
+BAREOS_EXPORT bRC unloadPlugin() { return bRC_OK; }
 }
 
 } /* namespace filedaemon */

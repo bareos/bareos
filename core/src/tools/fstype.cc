@@ -25,12 +25,18 @@
  * Program for determining file system type
  */
 
-#include <unistd.h>
+#if !defined(_MSC_VER)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
 #include "findlib/fstype.h"
+
+#if _MSC_VER
+char* optarg{};
+#endif
 
 static void usage(int exit_status)
 {

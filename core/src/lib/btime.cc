@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,11 @@
 void Blocaltime(const time_t* time, struct tm* tm)
 {
   /* ***FIXME**** localtime_r() should be user configurable */
+#ifdef _MSC_VER
+  localtime_s(tm, time);
+#else
   (void)localtime_r(time, tm);
+#endif
 }
 
 // Formatted time for user display: dd-Mon-yyyy hh:mm

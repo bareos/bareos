@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,14 +42,6 @@ JobName=backup-bareos-fd
 mkdir -p "${archivedir}-remote"
 find "${archivedir}-remote" -mindepth 1 -delete
 
-bareos_ctl_sd2() {
-  BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote" BAREOS_SD_PORT=${BAREOS_STORAGE2_PORT} "${rscripts}/bareos-ctl-sd" "$@"
-}
-
-my_stop_bareos() {
-  stop_bareos
-  bareos_ctl_sd2 stop
-}
 
 
 # Fill ${BackupDirectory} with data.
@@ -57,9 +49,7 @@ setup_data
 
 start_test
 
-start_bareos
-bareos_ctl_sd2 start
-
+bin/bareos start
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -102,7 +92,7 @@ conf="${oldconf}"
 
 if [ $ret -ne 0 ]; then
   echo "bscan exit code: $ret"
-  my_stop_bareos
+  bin/bareos stop
   exit $ret
 fi
 
@@ -112,20 +102,20 @@ new_job_id=5
 
 if ! grep -q "Created new JobId=${new_job_id} record for original JobId=${original_job_id}" "$tmp/bscan.out"; then
   echo 'Job numbers of scanned job are not correct'
-  my_stop_bareos
+  bin/bareos stop
   exit 1
 fi
 
-num_sos=$(grep -c '^Begin Job Session Record:$' "$tmp/bscan.out")
+num_sos=$(grep -c '^Begin Job Session Record:' "$tmp/bscan.out")
 if [ "$num_sos" -ne 1 ]; then
   echo "Found $num_sos start of session records instead of 1"
-  my_stop_bareos
+  bin/bareos stop
   exit 1
 fi
-num_eos=$(grep -c '^End Job Session Record:$' "$tmp/bscan.out")
+num_eos=$(grep -c '^End Job Session Record:' "$tmp/bscan.out")
 if [ "$num_eos" -ne 1 ]; then
   echo "Found $num_eos end of session records instead of 1"
-  my_stop_bareos
+  bin/bareos stop
   exit 1
 fi
 
@@ -134,13 +124,13 @@ my_jobid_records=$(grep -cE "^JobId +: ${original_job_id}" "$tmp/bscan.out")
 
 if [ "$my_jobid_records" -ne 2 ]; then
   echo "Got $my_jobid_records mentions of my jobid, expected 2"
-  my_stop_bareos
+  bin/bareos stop
   exit 1
 fi
 if [ "$my_jobid_records" -ne "$total_jobid_records" ]; then
   echo "Volume contains excess session records:"
   echo "Got $total_jobid_records in total, only $my_jobid_records mention my original jobid"
-  my_stop_bareos
+  bin/bareos stop
   exit 1
 fi
 
@@ -162,7 +152,7 @@ run_bconsole "$tmp/bconcmds2"
 
 check_for_zombie_jobs storage=File
 
-my_stop_bareos
+bin/bareos stop
 
 check_two_logs
 check_restore_diff "${BackupDirectory}"

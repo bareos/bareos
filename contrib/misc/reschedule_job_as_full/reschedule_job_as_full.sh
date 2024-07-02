@@ -46,7 +46,7 @@ debug_log_file=${6:-/dev/null}
 } >> "${debug_log_file}"
 
 if [ "${JobExitStatus}" == "Fatal Error" ] && [ "${JobLevel}" == "Incremental" ] && [ "${JobType}" == "Backup" ]; then
-  if (bconsole <<< "list joblog jobid=${JobId}" | tee -a "${debug_log_file}" | grep -q -F "new full level backup of this job is required"); then
+  if (bconsole <<< "list joblog jobid=${JobId}" | tee -a "${debug_log_file}" | grep -q -F "A new full level backup of this job is required."); then
     echo "Required new full level run will be started in 1 minute."
     if ! bconsole <<< "run job=${JobName} level=Full when=\"$(date -d "now 1min" +"%Y-%m-%d %H:%M:%S")\" yes"; then
       echo "Error while rescheduling ${JobName}"

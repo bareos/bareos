@@ -31,7 +31,7 @@ pidofproc() {
    fi
 
    # Finally try to extract it from ps
-   pid=`${PSCMD} | grep -m 1 $base | ${AWK} '{ print $1 }' | tr '\n' ' '`
+   pid=$(ps | grep ${base} | awk '{print $1}' | head -n1)
    echo $pid
    return 0
 }

@@ -37,7 +37,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 wait
 .api 2
-@$out $tmp/virtualfull:jobs.out
+@$out $tmp/virtualfull_jobs.out
 run job=VirtualLongtermFull yes
 wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-13'"
@@ -49,16 +49,16 @@ wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-15'"
 run job=$JobName level=Incremental yes
 wait
-@$out $tmp/virtualfull:messages.out
+@$out $tmp/virtualfull_messages.out
 .api 1
 messages
 END_OF_DATA
 run_bconsole
 
-jobid=$(grep "jobid" "$tmp/virtualfull:jobs.out" | tail -n 4 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+jobid=$(grep "jobid" "$tmp/virtualfull_jobs.out" | tail -n 4 | head -n 1 | sed 's/["jobid:]//g' | xargs)
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out $tmp/virtualfull:bvfs.out
+@$out $tmp/virtualfull_bvfs.out
 .bvfs_lsdirs jobid=${jobid} path=
 .bvfs_update
 .bvfs_lsdirs jobid=${jobid} path=
@@ -67,12 +67,12 @@ messages
 END_OF_DATA
 run_bconsole
 
-expect_grep "0	0	A A A A A A A A A A A A A A	/" \
-            "$tmp/virtualfull:bvfs.out" \
+expect_grep "0	0	A A A A A A A A A A A A A A	.*/" \
+            "$tmp/virtualfull_bvfs.out" \
             "bvfs_update did not take into consideration VirtualFull Archive."
 
 expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
-            "$tmp/virtualfull:bvfs.out" \
+            "$tmp/virtualfull_bvfs.out" \
             ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
 
 end_test

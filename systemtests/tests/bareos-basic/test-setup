@@ -38,10 +38,10 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
     generate_testdata "${BackupDirectory}/testfile$i.bin" --size=1M
 done
 
-mkdir "$tmp/data/hardlinks"
-mkdir "$tmp/data/hardlinks/file"
+rm -f "$tmp/data/hardlinks" || :
+mkdir -p "$tmp/data/hardlinks/file"
 touch "$tmp/data/hardlinks/file/file"
-ln "$tmp/data/hardlinks/file/file" "$tmp/data/hardlinks/link"
+ln -f "$tmp/data/hardlinks/file/file" "$tmp/data/hardlinks/link"
 
 bin/bareos start
 bin/bareos status

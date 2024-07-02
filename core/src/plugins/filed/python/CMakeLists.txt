@@ -55,7 +55,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     TEST bareosfd-python3-module-tester
     PROPERTY
       ENVIRONMENT
-      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
+      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules/${CMAKE_CONFIG_TYPE}:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
       "LSAN_OPTIONS=fast_unwind_on_malloc=0 suppressions=${CMAKE_CURRENT_SOURCE_DIR}/test/lsan-suppressions.txt"
   )
 endif()
@@ -77,7 +77,7 @@ if(Python3_FOUND)
                LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
                LINKER_LANGUAGE CXX
                INCLUDE_DIRECTORIES "${pymod3_include_dirs}"
-               CXX_STANDARD 17
+               CXX_STANDARD 20
   )
   target_compile_options(bareosfd-python3-module PUBLIC -fno-strict-aliasing)
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
@@ -91,29 +91,31 @@ if(Python3_FOUND)
   )
   target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
 
-  add_test(NAME bareosfd-python3-module
-           COMMAND ${Python3_EXECUTABLE}
-                   ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
-  )
+  if(NOT MSVC) # TODO: fix on MSVC
+    add_test(NAME bareosfd-python3-module
+             COMMAND ${Python3_EXECUTABLE}
+                     ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
+    )
 
-  set_property(
-    TEST bareosfd-python3-module
-    PROPERTY
-      ENVIRONMENT
-      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
-      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
-      "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
-  )
-  add_test(
-    NAME python-simple-test-example
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test/simple-test-example.py
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test
-  )
-  set_property(
-    # add current directory for documentation only
-    TEST python-simple-test-example PROPERTY ENVIRONMENT PYTHONPATH=./
-  )
-  set_property(TEST python-simple-test-example PROPERTY DISABLED true)
+    set_property(
+      TEST bareosfd-python3-module
+      PROPERTY
+        ENVIRONMENT
+        "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
+        LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
+        "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
+    )
+    add_test(
+      NAME python-simple-test-example
+      COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test/simple-test-example.py
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test
+    )
+    set_property(
+      # add current directory for documentation only
+      TEST python-simple-test-example PROPERTY ENVIRONMENT PYTHONPATH=./
+    )
+    set_property(TEST python-simple-test-example PROPERTY DISABLED true)
+  endif()
 endif()
 
 bareos_configure_file(GLOB_RECURSE "ldap/python-ldap-conf.d/*" COPY)

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2010-2017 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include "include/dll_import_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +48,7 @@ struct BareosVersionStrings {
   void (*PrintCopyright)(FILE* fh, int StartYear);
   const char* (*GetOsInfo)(void);
 };
-
-extern const struct BareosVersionStrings kBareosVersionStrings;
+BAREOS_IMPORT const struct BareosVersionStrings kBareosVersionStrings;
 
 #ifdef __cplusplus
 };

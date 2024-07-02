@@ -3,4 +3,50 @@
 
 #shellcheck source=../environment.in
 . ./environment
-"${rscripts}"/bareos "$@"
+
+if [[ "$(uname -s)" =~ _NT ]]; then
+  # echo "Appending CMAKE_CONFIG_TYPE ${CMAKE_CONFIG_TYPE} to Plugin Directory in config files"
+  sed -i.sed_bak "s:stored.*:stored/${CMAKE_CONFIG_TYPE}\":g" etc/*/*/*/*sd.conf
+  sed -i.sed_bak "s:filed.*:filed/${CMAKE_CONFIG_TYPE}\":g" etc/*/*/*/myself.conf
+  sed -i.sed_bak "s:dird.*:dird/${CMAKE_CONFIG_TYPE}\":g" etc/*/*/*/*dir.conf
+
+  chmod 644 etc/*/*/*/*sd.conf
+  chmod 644 etc/*/*/*/*fd.conf
+  chmod 644 etc/*/*/*/*dir.conf
+fi
+
+
+
+for confdir in etc/bareos*; do
+    BAREOS_STORAGEDAEMON_BINARY_TO_USE=""
+    BAREOS_FILEDAEMON_BINARY_TO_USE=""
+    BAREOS_DIRECTOR_BINARY_TO_USE=""
+    daemonsuffix="$(sed 's#etc/bareos##g'<<< $confdir)"
+    if [ -d "$confdir/bareos-sd.d" ]; then
+      # create binary with correct name
+      if [ -n "$daemonsuffix" ]; then
+        cp -af "${BAREOS_STORAGEDAEMON_BINARY}" "${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}"
+      fi
+      BAREOS_STORAGEDAEMON_BINARY_TO_USE="${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}"
+    fi
+
+    if [ -d "$confdir/bareos-fd.d" ]; then
+      # create binary with correct name
+      if [ -n "$daemonsuffix" ]; then
+        cp -af "${BAREOS_FILEDAEMON_BINARY}" "${BAREOS_FILEDAEMON_BINARY}${daemonsuffix}"
+      fi
+      BAREOS_FILEDAEMON_BINARY_TO_USE="${BAREOS_FILEDAEMON_BINARY}${daemonsuffix}"
+    fi
+
+    if [ -d "$confdir/bareos-dir.d" ]; then
+      # create binary with correct name
+      if [ -n "$daemonsuffix" ]; then
+        cp -af "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_BINARY}${daemonsuffix}"
+      fi
+      BAREOS_DIRECTOR_BINARY_TO_USE="${BAREOS_DIRECTOR_BINARY}${daemonsuffix}"
+    fi
+  BAREOS_STORAGEDAEMON_BINARY="$BAREOS_STORAGEDAEMON_BINARY_TO_USE" \
+  BAREOS_FILEDAEMON_BINARY="$BAREOS_FILEDAEMON_BINARY_TO_USE" \
+  BAREOS_DIRECTOR_BINARY="$BAREOS_DIRECTOR_BINARY_TO_USE" \
+  BAREOS_CONFIG_DIR=$(pwd)/"$confdir" "${rscripts}"/bareos "$@"
+done

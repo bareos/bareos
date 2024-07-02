@@ -25,11 +25,17 @@
  * Program for determining drive type
  */
 
-#include <unistd.h>
+#if !defined(_MSC_VER)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "findlib/find.h"
 #include "findlib/drivetype.h"
+
+#if _MSC_VER
+char* optarg{};
+#endif
 
 static void usage(int exit_code)
 {

@@ -944,10 +944,11 @@ PluginFunctions pluginFuncs
 extern "C" {
 
 // Plugin called here when it is first loaded
-bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
-               CoreFunctions* lbareos_core_functions,
-               PluginInformation** plugin_information,
-               PluginFunctions** plugin_functions)
+BAREOS_EXPORT bRC
+loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+           CoreFunctions* lbareos_core_functions,
+           PluginInformation** plugin_information,
+           PluginFunctions** plugin_functions)
 {
   if (Py_IsInitialized()) { return bRC_Error; }
 
@@ -993,6 +994,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
  * Plugin called here when it is unloaded, normally when Bareos is going to
  * exit.
  */
+BAREOS_EXPORT
 bRC unloadPlugin()
 {
   /* Terminate Python if it was initialized correctly */
