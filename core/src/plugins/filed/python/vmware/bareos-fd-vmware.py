@@ -177,7 +177,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.config = configparser.ConfigParser()
 
         try:
-            self.config.read_file(open(self.options["config_file"]))
+            with open(self.options["config_file"]) as fp:
+                self.config.read_file(fp)
         except IOError as err:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
@@ -2962,8 +2963,6 @@ class BareosVADPWrapper(object):
         if self.fetched_vcthumbprint:
             return True
 
-        success = False
-        error_message = ""
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
@@ -2975,30 +2974,23 @@ class BareosVADPWrapper(object):
         )
 
         try:
-            sock = socket.create_connection((self.options["vcserver"], 443), timeout=5)
-        except Exception as e:
-            error_message = str(e)
-        else:
-            try:
-                wrappedSocket = ssl_context.wrap_socket(
+            with socket.create_connection(
+                (self.options["vcserver"], 443), timeout=5
+            ) as sock:
+                with ssl_context.wrap_socket(
                     sock, server_hostname=self.options["vcserver"]
-                )
-            except Exception as e:
-                error_message = str(e)
-            else:
-                der_cert_bin = wrappedSocket.getpeercert(True)
-                thumb_sha1 = hashlib.sha1(der_cert_bin).hexdigest()
-                self.fetched_vcthumbprint = thumb_sha1.upper()
-                wrappedSocket.close()
-                success = True
-
-        if not success:
+                ) as wrappedSocket:
+                    der_cert_bin = wrappedSocket.getpeercert(True)
+                    thumb_sha1 = hashlib.sha1(der_cert_bin).hexdigest()
+                    self.fetched_vcthumbprint = thumb_sha1.upper()
+            return True
+        except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
                 "Could not fetch SSL Cert from %s: %s\n"
-                % (self.options["vcserver"], error_message),
+                % (self.options["vcserver"], str(e)),
             )
-        return success
+            return False
 
     def retrieve_vcthumbprint(self):
         """
