@@ -3,15 +3,11 @@
 Data Encryption
 ===============
 
-:index:`\ <single: Data Encryption>`\  :index:`\ <single: Encryption; Data>`\
+.. index::
+   single: Data Encryption
+   single: Encryption; Data
 
 Bareos permits file data encryption and signing within the File Daemon (or Client) prior to sending data to the Storage Daemon. Upon restoration, file signatures are validated and any mismatches are reported. At no time does the Director or the Storage Daemon have access to unencrypted file contents.
-
-
-
-.. warning::
-
-   These feature is only available, if Bareos is build against OpenSSL.
 
 It is very important to specify what this implementation does NOT do:
 

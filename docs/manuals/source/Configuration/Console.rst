@@ -93,6 +93,8 @@ With this configuration, the console program (e.g. :command:`bconsole`) will try
 
 .. _section-ConsoleAccessExample:
 
+.. _section-named-console:
+
 Using Named Consoles
 ~~~~~~~~~~~~~~~~~~~~
 
