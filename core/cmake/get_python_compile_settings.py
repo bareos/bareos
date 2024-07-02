@@ -34,7 +34,7 @@ except:
 for var in ("CC", "BLDSHARED"):
     value = sysconfig.get_config_var(var)
     print(
-        'message(STATUS "Python{0}_{1}\ is\  {2}")'.format(
+        'message(STATUS "Python{0}_{1} is  {2}")'.format(
             sys.version_info[0], var, value
         )
     )
@@ -47,7 +47,7 @@ for var in ("CC", "BLDSHARED"):
         value = ""
     # as these vars contain the compiler itself, we remove the first word and return it as _FLAGS
     print(
-        'message(STATUS "Python{0}_{1}_FLAGS\ is\  {2}")'.format(
+        'message(STATUS "Python{0}_{1}_FLAGS is  {2}")'.format(
             sys.version_info[0], var, value
         )
     )
@@ -56,7 +56,7 @@ for var in ("CC", "BLDSHARED"):
 for var in ("CFLAGS", "CCSHARED", "INCLUDEPY", "LDFLAGS"):
     value = sysconfig.get_config_var(var)
     print(
-        'message(STATUS "Python{0}_{1}\ is\  {2}")'.format(
+        'message(STATUS "Python{0}_{1} is  {2}")'.format(
             sys.version_info[0], var, value
         )
     )
@@ -67,7 +67,7 @@ for var in ("EXT_SUFFIX",):
     if value is None:
         value = ""
     print(
-        'message(STATUS "Python{0}_{1}\ is\  {2}")'.format(
+        'message(STATUS "Python{0}_{1} is  {2}")'.format(
             sys.version_info[0], var, value
         )
     )
