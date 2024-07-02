@@ -264,7 +264,7 @@ void TerminateFiled(int sig)
   StopWatchdog();
 
   StopConnectToDirectorThreads(true);
-  StopSocketServer(true);
+  StopSocketServer();
 
   UnloadFdPlugins();
   FlushMntentCache();
