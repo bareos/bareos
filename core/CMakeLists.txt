@@ -511,44 +511,6 @@ message(STATUS "CMAKE_SYSTEM_VERSION: " ${CMAKE_SYSTEM_VERSION})
 # the processor name (e.g. "Intel(R) Pentium(R) M processor 2.00GHz")
 message(STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
 
-# is TRUE on all UNIX-like OS's, including Apple OS X and CygWin
-message(STATUS "UNIX: " ${UNIX})
-
-# is TRUE on Windows, including CygWin
-message(STATUS "WIN32: " ${WIN32})
-
-# is TRUE on Apple OS X
-message(STATUS "APPLE: " ${APPLE})
-
-# is TRUE when using the MinGW compiler in Windows
-message(STATUS "MINGW: " ${MINGW})
-
-# is TRUE on Windows when using the CygWin version of cmake
-message(STATUS "CYGWIN: " ${CYGWIN})
-
-# is TRUE on Windows when using a Borland compiler
-message(STATUS "BORLAND: " ${BORLAND})
-
-# Microsoft compiler
-message(STATUS "MSVC: " ${MSVC})
-message(STATUS "MSVC_IDE: " ${MSVC_IDE})
-message(STATUS "MSVC60: " ${MSVC60})
-message(STATUS "MSVC70: " ${MSVC70})
-message(STATUS "MSVC71: " ${MSVC71})
-message(STATUS "MSVC80: " ${MSVC80})
-message(STATUS "CMAKE_COMPILER_2005: " ${CMAKE_COMPILER_2005})
-
-# set this to true if you don't want to rebuild the object files if the rules
-# have changed, but not the actual source files or headers (e.g. if you changed
-# the some compiler switches)
-message(STATUS "CMAKE_SKIP_RULE_DEPENDENCY: " ${CMAKE_SKIP_RULE_DEPENDENCY})
-
-# since CMake 2.1 the install rule depends on all, i.e. everything will be built
-# before installing. If you don't like this, set this one to true.
-message(STATUS "CMAKE_SKIP_INSTALL_ALL_DEPENDENCY: "
-               ${CMAKE_SKIP_INSTALL_ALL_DEPENDENCY}
-)
-
 # If set, runtime paths are not added when using shared libraries. Default it is
 # set to OFF
 message(STATUS "CMAKE_SKIP_RPATH: " ${CMAKE_SKIP_RPATH})

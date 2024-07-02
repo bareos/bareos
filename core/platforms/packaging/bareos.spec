@@ -61,6 +61,10 @@ BuildRequires: rpcgen
 BuildRequires: libtirpc-devel
 %endif
 
+%if 0%{?fedora} >= 40
+BuildRequires: fmt-devel
+%endif
+
 #
 # SUSE (openSUSE, SLES) specific settings
 #

@@ -131,17 +131,12 @@ void StartSocketServer(dlist<IPADDR>* addrs)
   }
 }
 
-void StopSocketServer(bool wait)
+void StopSocketServer()
 {
   Dmsg0(100, "StopSocketServer\n");
   if (server_running) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    /* before thread_servers terminates,
-     * it calls cleanup_bnet_thread_server_tcp */
-    if (wait) {
-      pthread_join(tcp_server_tid, NULL);
-      server_running = false;
-    }
+    server_running = false;
   }
 }
 } /* namespace filedaemon */

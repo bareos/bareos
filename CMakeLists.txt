@@ -29,7 +29,6 @@ add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
-
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
@@ -38,7 +37,6 @@ include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(RemoveNDebugFlag)
-
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -124,6 +122,8 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  include(BareosCPM)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS
