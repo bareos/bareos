@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,132 +47,101 @@ bool UaContext::AclAccessOk(int acl, const char* item, bool audit_event)
  * A regexp uses the following chars:
  * ., (, ), [, ], |, ^, $, +, ?, *
  */
-static bool is_regex(std::string string_to_check)
+static inline bool is_regex(std::string string_to_check)
 {
   return std::string::npos != string_to_check.find_first_of(".()[]|^$+?*");
+}
+
+/**
+ * acl_list_value: value of the ACL definition.
+ * acl_list_compare_value: value ot compare against. This is identical to
+ * acl_list_value or a modified acl_list_value to compare against.
+ */
+static inline bool CompareAclListValueWithItem(
+    int acl,
+    const char* acl_list_value,
+    const char* acl_list_compare_value,
+    const char* item)
+{
+  // gives full access
+  if (Bstrcasecmp("*all*", acl_list_compare_value)) {
+    Dmsg2(1400, "Global ACL found in %d %s\n", acl, acl_list_value);
+    return true;
+  }
+
+  if (Bstrcasecmp(item, acl_list_compare_value)) {
+    // Explicit match.
+    Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, acl_list_value);
+    return true;
+  }
+
+  /* If we didn't get an exact match see if we can use the pattern as a
+   * regex. */
+  if (is_regex(acl_list_compare_value)) {
+    regex_t preg{};
+    int match_length = strlen(item);
+    int rc = regcomp(&preg, acl_list_compare_value, REG_EXTENDED | REG_ICASE);
+    if (rc != 0) {
+      // Not a valid regular expression so skip it.
+      Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n",
+            acl_list_value);
+      return false;
+    }
+
+    int nmatch = 1;
+    regmatch_t pmatch[1]{};
+    if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
+      // Make sure its not a partial match but a full match.
+      Dmsg2(1400, "Found match start offset %d end offset %d\n",
+            pmatch[0].rm_so, pmatch[0].rm_eo);
+      if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
+        Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl,
+              acl_list_value);
+        regfree(&preg);
+        return true;
+      }
+    }
+    regfree(&preg);
+  }
+  return false;
 }
 
 /**
  * Loop over the items in the alist and verify if they match the given item
  * that access was requested for.
  */
-static inline bool FindInAclList(alist<const char*>* list,
-                                 int acl,
-                                 const char* item,
-                                 int len)
+static inline std::optional<bool> FindInAclList(alist<const char*>* list,
+                                                int acl,
+                                                const char* item,
+                                                int len)
 {
-  int rc;
-  regex_t preg{};
-  int nmatch = 1;
-  bool retval = false;
-  regmatch_t pmatch[1]{};
-  const char* list_value;
-
   // See if we have an empty list.
   if (!list) {
-    /*
-     * Empty list for Where => empty where accept anything.
-     * For any other list, reject everything.
-     */
+    /* Empty list for Where => empty where accept anything.
+     * For any other list, reject everything. */
     if (len == 0 && acl == Where_ACL) {
       Dmsg0(1400, "Empty Where_ACL allowing restore anywhere\n");
-      retval = true;
+      return true;
     }
-    goto bail_out;
+    return std::nullopt;
   }
 
   // Search list for item
-  for (int i = 0; i < list->size(); i++) {
-    list_value = (char*)list->get(i);
-
+  const char* list_value = nullptr;
+  foreach_alist (list_value, list) {
     // See if this is a deny acl.
     if (*list_value == '!') {
-      if (Bstrcasecmp(item, list_value + 1)) {
-        // Explicit deny.
-        Dmsg3(1400, "Deny ACL found %s in %d %s\n", item, acl, list_value);
-        goto bail_out;
-      }
-
-      /*
-       * If we didn't get an exact match see if we can use the pattern as a
-       * regex.
-       */
-      if (is_regex(list_value + 1)) {
-        int match_length;
-
-        match_length = strlen(item);
-        rc = regcomp(&preg, list_value + 1, REG_EXTENDED | REG_ICASE);
-        if (rc != 0) {
-          // Not a valid regular expression so skip it.
-          Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n",
-                list_value);
-          continue;
-        }
-
-        if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
-          // Make sure its not a partial match but a full match.
-          Dmsg2(1400, "Found match start offset %d end offset %d\n",
-                pmatch[0].rm_so, pmatch[0].rm_eo);
-          if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
-            Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl,
-                  list_value);
-            regfree(&preg);
-            goto bail_out;
-          }
-        }
-
-        regfree(&preg);
+      if (CompareAclListValueWithItem(acl, list_value, list_value + 1, item)) {
+        return false;
       }
     } else {
-      // gives full access
-      if (Bstrcasecmp("*all*", list_value)) {
-        Dmsg2(1400, "Global ACL found in %d %s\n", acl, list_value);
-        retval = true;
-        goto bail_out;
-      }
-
-      if (Bstrcasecmp(item, list_value)) {
-        Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, list_value);
-        retval = true;
-        goto bail_out;
-      }
-
-      /*
-       * If we didn't get an exact match see if we can use the pattern as a
-       * regex.
-       */
-      if (is_regex(list_value)) {
-        int match_length;
-
-        match_length = strlen(item);
-        rc = regcomp(&preg, list_value, REG_EXTENDED | REG_ICASE);
-        if (rc != 0) {
-          // Not a valid regular expression so skip it.
-          Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n",
-                list_value);
-          continue;
-        }
-
-        if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
-          // Make sure its not a partial match but a full match.
-          Dmsg2(1400, "Found match start offset %d end offset %d\n",
-                pmatch[0].rm_so, pmatch[0].rm_eo);
-          if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
-            Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl,
-                  list_value);
-            retval = true;
-            regfree(&preg);
-            goto bail_out;
-          }
-        }
-
-        regfree(&preg);
+      if (CompareAclListValueWithItem(acl, list_value, list_value, item)) {
+        return true;
       }
     }
   }
 
-bail_out:
-  return retval;
+  return std::nullopt;
 }
 
 // This version expects the length of the item which we must check.
@@ -181,7 +150,7 @@ bool UaContext::AclAccessOk(int acl,
                             int len,
                             bool audit_event)
 {
-  bool retval = false;
+  std::optional<bool> retval;
 
   // The resource name contains nasty characters
   switch (acl) {
@@ -205,25 +174,27 @@ bool UaContext::AclAccessOk(int acl,
 
   retval = FindInAclList(user_acl->ACL_lists[acl], acl, item, len);
 
-  /*
-   * If we didn't find a matching ACL try to use the profiles this console is
-   * connected to.
-   */
-  if (!retval && user_acl->profiles && user_acl->profiles->size()) {
-    ProfileResource* profile = nullptr;
+  /* If we didn't find a matching ACL try to use the profiles this console is
+   * connected to. */
+  if (!retval.has_value()) {
+    if (user_acl->profiles && user_acl->profiles->size()) {
+      ProfileResource* profile = nullptr;
 
-    foreach_alist (profile, user_acl->profiles) {
-      retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);
+      foreach_alist (profile, user_acl->profiles) {
+        retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);
 
-      // If we found a match break the loop.
-      if (retval) { break; }
+        // If we found a match break the loop.
+        if (retval.has_value()) { break; }
+      }
     }
   }
 
 bail_out:
-  if (audit_event && !retval) { LogAuditEventAclFailure(acl, item); }
+  if (audit_event && !retval.value_or(false)) {
+    LogAuditEventAclFailure(acl, item);
+  }
 
-  return retval;
+  return retval.value_or(false);
 }
 
 /**
@@ -306,11 +277,9 @@ bool UaContext::IsResAllowed(BareosResource* res)
 
   acl = RcodeToAcltype(res->rcode_);
   if (acl == -1) {
-    /*
-     * For all resources for which we don't know an explicit mapping
+    /* For all resources for which we don't know an explicit mapping
      * to the right ACL we check if the Command ACL has access to the
-     * configure command just as we do for suppressing sensitive data.
-     */
+     * configure command just as we do for suppressing sensitive data. */
     return AclAccessOk(Command_ACL, "configure", false);
   }
 
@@ -330,11 +299,9 @@ BareosResource* UaContext::GetResWithName(int rcode,
 
   acl = RcodeToAcltype(rcode);
   if (acl == -1) {
-    /*
-     * For all resources for which we don't know an explicit mapping
+    /* For all resources for which we don't know an explicit mapping
      * to the right ACL we check if the Command ACL has access to the
-     * configure command just as we do for suppressing sensitive data.
-     */
+     * configure command just as we do for suppressing sensitive data. */
     if (!AclAccessOk(Command_ACL, "configure", false)) { goto bail_out; }
   } else {
     if (!AclAccessOk(acl, name, audit_event)) { goto bail_out; }
