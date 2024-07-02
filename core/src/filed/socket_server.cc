@@ -127,18 +127,11 @@ void StartSocketServer(dlist<IPADDR>* addrs)
                       my_config, nullptr, UserAgentShutdownCallback);
 }
 
-void StopSocketServer(bool wait)
+void StopSocketServer()
 {
   Dmsg0(100, "StopSocketServer\n");
   if (sock_fds) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    /* before thread_servers terminates,
-     * it calls cleanup_bnet_thread_server_tcp */
-    if (wait) {
-      pthread_join(tcp_server_tid, NULL);
-      delete (sock_fds);
-      sock_fds = NULL;
-    }
   }
 }
 } /* namespace filedaemon */
