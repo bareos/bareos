@@ -167,7 +167,9 @@ Consider the following steps:
 
 -  If you have a valid saved Bootstrap file as created for your damaged machine with WriteBootstrap, use it to restore the files to the damaged machine, where you have loaded a static Bareos File daemon using the Rescue disk). This is done by using the restore command and at the yes/mod/no prompt, selecting mod then specifying the path to the bootstrap file.
 
--  If you have the Bootstrap file, you should now be back up and running, if you do not have a Bootstrap file, continue with the suggestions below.
+-  After the Catalog is restored, it should be located in (:file:`./var/lib/bareos/bareos.sql`) relative to the restore location. After stopping the bareos-dir service, this file then needs to be loaded into the PostgreSQL database. (For example by running ``sudo -u bareos psql bareos bareos -f ./var/lib/bareos/bareos.sql`` or ```su postgres -c "psql bareos -f ./var/lib/bareos/bareos.sql``)
+
+-  If you have successfully used a Bootstrap file, you should now be back up and running, if you do not have a Bootstrap file, continue with the suggestions below.
 
 -  Using bscan scan the last set of backup tapes into your catalog database.
 
