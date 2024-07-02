@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -630,7 +630,7 @@ bool BareosSocket::FormatAndSendResponseMessage(
   m += list_of_arguments.Join(AsciiControlCharacters::RecordSeparator());
 
   StartTimer(30);  // 30 seconds
-  if (send(m.c_str(), m.size()) <= 0) {
+  if (!send(m.c_str(), m.size())) {
     Dmsg1(100, "Could not send response message: %s\n", m.c_str());
     StopTimer();
     return false;
