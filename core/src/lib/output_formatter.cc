@@ -1025,9 +1025,8 @@ void OutputFormatter::JsonFinalizeResult(bool result)
       JsonSendErrorMessage(ErrorMsg.c_str());
     }
 #  if JANSSON_VERSION_HEX >= 0x020800
-    json_malloc_t my_alloc;
     json_free_t my_free;
-    json_get_alloc_funcs(&my_alloc, &my_free);
+    json_get_alloc_funcs(nullptr, &my_free);
     my_free(string);
 #  else
     free(string);
