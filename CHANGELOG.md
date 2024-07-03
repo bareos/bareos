@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - pull-request-template: add milestone check to reviewers list [PR #1868]
 - contrib: add pure python statefile parser [PR #1789]
 - Use only MinGW VSS [PR #1847]
+- VMware Plugin: Adapt to Python 3.12 [PR #1850]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -195,6 +196,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1829]: https://github.com/bareos/bareos/pull/1829
 [PR #1840]: https://github.com/bareos/bareos/pull/1840
 [PR #1847]: https://github.com/bareos/bareos/pull/1847
+[PR #1850]: https://github.com/bareos/bareos/pull/1850
 [PR #1853]: https://github.com/bareos/bareos/pull/1853
 [PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
