@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - python-bareos: fix description [PR #1841]
+- VMware Plugin: Adapt to Python 3.12 [PR #1879]
 
 ### Fixed
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
@@ -491,4 +492,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1841]: https://github.com/bareos/bareos/pull/1841
 [PR #1842]: https://github.com/bareos/bareos/pull/1842
 [PR #1860]: https://github.com/bareos/bareos/pull/1860
+[PR #1879]: https://github.com/bareos/bareos/pull/1879
 [unreleased]: https://github.com/bareos/bareos/tree/master
