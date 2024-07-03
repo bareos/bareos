@@ -333,7 +333,9 @@ static const char* gethost_strerror()
   return msg;
 }
 
-static const char* resolv_host(int family, const char* host, dlist* addr_list)
+static const char* resolv_host(int family,
+                               const char* host,
+                               dlist<IPADDR>* addr_list)
 {
   struct hostent* hp;
   const char* errmsg;
