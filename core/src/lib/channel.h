@@ -138,8 +138,8 @@ template <typename T> class queue {
   result_type input_lock()
   {
     auto locked = shared.lock();
-    locked.wait(out_update, [max_size = max_size](const auto& t_queue) {
-      return t_queue.data.size() < max_size || t_queue.out_dead;
+    locked.wait(out_update, [msz = max_size](const auto& t_queue) {
+      return t_queue.data.size() < msz || t_queue.out_dead;
     });
     ASSERT(!locked->in_dead);
 
