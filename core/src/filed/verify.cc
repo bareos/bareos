@@ -44,6 +44,8 @@ namespace filedaemon {
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
+#else
+const bool have_darwin_os = false;
 #endif
 
 static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool);
@@ -311,8 +313,7 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
   ReadDigest(&bfd, digest, jcr);
   bclose(&bfd);
 
-#if HAVE_DARWIN_OS
-  if (have_darwin_os) {
+  if constexpr (have_darwin_os) {
     // Open resource fork if necessary
     if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->hfsinfo.rsrclength > 0) {
       if (BopenRsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
@@ -332,7 +333,6 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
       CryptoDigestUpdate(digest, (uint8_t*)ff_pkt->hfsinfo.fndrinfo, 32);
     }
   }
-#endif
   return 0;
 }
 
