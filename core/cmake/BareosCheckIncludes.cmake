@@ -81,4 +81,17 @@ if(NOT MSVC)
   check_include_files(dev/scsipi/scsipi_all.h HAVE_DEV_SCSIPI_SCSIPI_ALL_H)
 
   check_include_files(scsi/uscsi_all.h HAVE_USCSI_ALL_H)
+else()
+  block()
+  include(CheckIncludeFileCXX)
+  set(CMAKE_REQUIRED_INCLUDES
+      "${PROJECT_SOURCE_DIR}/src/win32/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include"
+  )
+  set(CMAKE_REQUIRED_DEFINITIONS "-DHAVE_MSVC=1")
+  check_include_file_cxx(sys/mtio.h HAVE_SYS_MTIO_H)
+  check_include_file_cxx(sys/time.h HAVE_SYS_TIME_H)
+  # TODO: figure out why this returns false even though it works during build
+  # ...
+  check_include_file_cxx(zlib.h HAVE_ZLIB_H)
+  endblock()
 endif()
