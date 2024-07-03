@@ -44,19 +44,19 @@
 #include "lib/btime.h"
 #include <math.h>
 
-#ifndef HAVE_LOCALTIME_R
-#  ifdef HAVE_MSVC
-struct tm* localtime_r(const time_t* timep, struct tm* tm)
+#if defined(HAVE_LOCALTIME_R)
+void Blocaltime(const time_t* time, struct tm* tm)
+{
+  (void)localtime_r(time, tm);
+}
+#elif defined(HAVE_MSVC)
+void Blocaltime(const time_t* timep, struct tm* tm)
 {
   auto error = localtime_s(tm, timep);
-  if (error) {
-    errno = error;
-    return nullptr;
-  }
-  return tm;
+  if (error) { errno = error; }
 }
-#  else
-struct tm* localtime_r(const time_t* timep, struct tm* tm)
+#else
+void Blocaltime(const time_t* timep, struct tm* tm)
 {
   static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -64,17 +64,8 @@ struct tm* localtime_r(const time_t* timep, struct tm* tm)
   struct tm* ltm = localtime(timep);
   if (ltm) { memcpy(tm, ltm, sizeof(struct tm)); }
   unlock_mutex(mutex);
-
-  return ltm ? tm : NULL;
 }
-#  endif /* HAVE_MSVC */
-#endif   /* HAVE_LOCALTIME_R */
-
-
-void Blocaltime(const time_t* time, struct tm* tm)
-{
-  (void)localtime_r(time, tm);
-}
+#endif /* HAVE_MSVC */
 
 // Formatted time for user display: dd-Mon-yyyy hh:mm
 char* bstrftime(char* dt, int maxlen, utime_t utime, const char* fmt)
