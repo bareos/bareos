@@ -365,20 +365,6 @@ int cstrlen(const char* str)
   return len;
 }
 
-#ifndef HAVE_LOCALTIME_R
-struct tm* localtime_r(const time_t* timep, struct tm* tm)
-{
-  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-  struct tm *ltm,
-
-      lock_mutex(mutex);
-  ltm = localtime(timep);
-  if (ltm) { memcpy(tm, ltm, sizeof(struct tm)); }
-  unlock_mutex(mutex);
-  return ltm ? tm : NULL;
-}
-#endif /* HAVE_LOCALTIME_R */
-
 #ifndef HAVE_READDIR_R
 #  ifndef HAVE_WIN32
 #    include <dirent.h>

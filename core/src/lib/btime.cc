@@ -44,14 +44,36 @@
 #include "lib/btime.h"
 #include <math.h>
 
+#ifndef HAVE_LOCALTIME_R
+#  ifdef HAVE_MSVC
+struct tm* localtime_r(const time_t* timep, struct tm* tm)
+{
+  auto error = localtime_s(tm, timep);
+  if (error) {
+    errno = error;
+    return nullptr;
+  }
+  return tm;
+}
+#  else
+struct tm* localtime_r(const time_t* timep, struct tm* tm)
+{
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+  lock_mutex(mutex);
+  struct tm* ltm = localtime(timep);
+  if (ltm) { memcpy(tm, ltm, sizeof(struct tm)); }
+  unlock_mutex(mutex);
+
+  return ltm ? tm : NULL;
+}
+#  endif /* HAVE_MSVC */
+#endif   /* HAVE_LOCALTIME_R */
+
+
 void Blocaltime(const time_t* time, struct tm* tm)
 {
-  /* ***FIXME**** localtime_r() should be user configurable */
-#ifdef _MSC_VER
-  localtime_s(tm, time);
-#else
   (void)localtime_r(time, tm);
-#endif
 }
 
 // Formatted time for user display: dd-Mon-yyyy hh:mm
