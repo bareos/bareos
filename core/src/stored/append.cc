@@ -87,7 +87,7 @@ ProcessedFile::ProcessedFile(int32_t fileindex) : fileindex_(fileindex) {}
 void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
 {
   std::for_each(attributes_.begin(), attributes_.end(),
-                [&jcr](ProcessedFileData& attribute) {
+                [jcr](ProcessedFileData& attribute) {
                   DeviceRecord devicerecord = attribute.GetData();
                   SendAttrsToDir(jcr, &devicerecord);
                 });
@@ -113,7 +113,7 @@ static bool SaveFullyProcessedFilesAttributes(
   if (!processed_files.empty()) {
     std::for_each(
         processed_files.begin(), processed_files.end(),
-        [&jcr](ProcessedFile& file) { file.SendAttributesToDirector(jcr); });
+        [jcr](ProcessedFile& file) { file.SendAttributesToDirector(jcr); });
     jcr->JobFiles = processed_files.back().GetFileIndex();
     processed_files.clear();
     return true;
