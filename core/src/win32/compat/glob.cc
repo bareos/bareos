@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#ifndef _MSC_VER
+#ifndef HAVE_MSVC
 #  include <filesystem>
 #  include <libgen.h>
 #endif
@@ -85,7 +85,7 @@ static int glob_escape_char = '\\';
 #  define glob_strdup strdup
 #endif
 
-#ifdef _MSC_VER
+#ifdef HAVE_MSVC
 char* LastSlash(char* str, std::size_t n)
 {
   while (n--) {

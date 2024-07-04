@@ -45,7 +45,7 @@
 #endif
 
 #if !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
-#  ifndef _MSC_VER
+#  ifndef HAVE_MSVC
 #    include <utime.h>
 #  endif
 #endif

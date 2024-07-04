@@ -46,7 +46,7 @@
 // Use inlined functions for supported systems.
 #if defined(__GNUC__) || defined(__DMC__) || defined(__POCC__) || defined(__WATCOMC__) || defined(__SUNPRO_C)
 #define FASTLZ_INLINE inline
-#elif defined(__BORLANDC__) || defined(_MSC_VER) || defined(__LCC__)
+#elif defined(__BORLANDC__) || defined(HAVE_MSVC) || defined(__LCC__)
 #define FASTLZ_INLINE __inline
 #else 
 #define FASTLZ_INLINE

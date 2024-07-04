@@ -36,7 +36,7 @@
 #include "lib/mntent_cache.h"
 #include "findlib/fstype.h"
 
-#if _MSC_VER
+#if HAVE_MSVC
 char* optarg{};
 #endif
 

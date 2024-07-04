@@ -32,7 +32,7 @@
  */
 
 #include <vector>
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include <syslog.h>

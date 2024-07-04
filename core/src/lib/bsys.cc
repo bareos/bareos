@@ -29,7 +29,7 @@
  */
 
 
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include "include/fcntl_def.h"
@@ -139,7 +139,7 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
     Dmsg0(100, "wpipe_command OK\n");
     retval = 0;
   } else {
-#ifdef _MSC_VER
+#ifdef HAVE_MSVC
     retval = _unlink(pathname);
 #else
     retval = unlink(pathname);

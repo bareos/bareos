@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,7 @@
 #ifdef HAVE_WIN32
 typedef int __daddr_t;
 
-#  if !defined(_MSC_VER) || (_MSC_VER < 1400)  // VC8+
+#  if !defined(HAVE_MSVC) || (_MSC_VER < 1400)  // VC8+
 #    ifndef _TIME_T_DEFINED
 #      define _TIME_T_DEFINED
 typedef long time_t;

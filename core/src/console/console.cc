@@ -55,7 +55,7 @@
 #define clrbrk()
 #define usrbrk() 0
 
-#if defined(HAVE_WIN32) && !defined(_MSC_VER)
+#if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
 // windows has its own isatty implemented, so
 // if we are compiling with msvc we can just that
 #  define isatty(fd) ((fd) == 0)

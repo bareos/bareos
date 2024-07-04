@@ -50,7 +50,7 @@
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
 
-#ifdef _MSC_VER
+#ifdef HAVE_MSVC
 #  define PATH_MAX MAX_PATH
 #endif
 

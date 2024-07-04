@@ -24,7 +24,7 @@
  *
  * Kern Sibbald, MM
  */
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include <openssl/md5.h>

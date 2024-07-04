@@ -26,7 +26,7 @@
  * Create a file, and reset the modes
  */
 
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include "include/fcntl_def.h"

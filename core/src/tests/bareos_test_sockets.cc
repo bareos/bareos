@@ -206,7 +206,7 @@ BareosSocket* create_new_bareos_socket(int fd)
 
 
 #include <sys/types.h>
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 

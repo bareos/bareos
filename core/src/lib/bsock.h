@@ -37,7 +37,7 @@
 #define BAREOS_LIB_BSOCK_H_
 
 
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 

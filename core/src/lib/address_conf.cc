@@ -26,7 +26,7 @@
  * Configuration file parser for IP-Addresse ipv4 and ipv6
  */
 #include <netdb.h>
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 
@@ -38,7 +38,7 @@
 #include "lib/output_formatter_resource.h"
 #include "lib/berrno.h"
 
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  define socketClose(...) close(__VA_ARGS__)
 #else
 #  define socketClose(...) closesocket(__VA_ARGS__)

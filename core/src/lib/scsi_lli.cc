@@ -25,7 +25,7 @@
  *
  * Marco van Wieringen, March 2012
  */
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include "include/fcntl_def.h"
@@ -167,7 +167,7 @@ bool CheckScsiAtEod(int fd)
 #    include <sys/scsi/impl/uscsi.h>
 
 #    ifndef LOBYTE
-#      define LOBYTE(_w) ((_w)&0xff)
+#      define LOBYTE(_w) ((_w) & 0xff)
 #    endif
 
 // Core interface function to lowlevel SCSI interface.

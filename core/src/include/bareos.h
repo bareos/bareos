@@ -88,7 +88,7 @@
 #if HAVE_ALLOCA_H
 #  include <alloca.h>
 #endif
-#if defined(_MSC_VER)
+#if defined(HAVE_MSVC)
 #  include <io.h>
 #  include <direct.h>
 #  include <process.h>

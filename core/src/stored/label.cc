@@ -25,7 +25,7 @@
  * @file
  * Bareos routines to handle labels
  */
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include "include/bareos.h" /* pull in global headers */

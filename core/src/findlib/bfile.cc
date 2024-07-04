@@ -28,7 +28,7 @@
  * I.e. on Windows, we use Windows APIs.
  */
 
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include <netinet/in.h>

@@ -34,7 +34,7 @@
  */
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
-#ifndef _MSC_VER
+#ifndef HAVE_MSVC
 #  include <_mingw.h>
 #endif
 #ifndef RC_INVOKED

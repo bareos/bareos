@@ -26,7 +26,7 @@
 #define BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 
 
-#ifdef _MSC_VER
+#ifdef HAVE_MSVC
 #  define NOMINMAX
 // not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in
 // mingw
@@ -147,7 +147,7 @@ struct dirent {
 };
 typedef void DIR;
 
-#ifdef _MSC_VER
+#ifdef HAVE_MSVC
 struct _utimbuf {
   time_t actime;   // access time
   time_t modtime;  // modification time
@@ -224,11 +224,11 @@ struct stat {
 #define S_IRUSR S_IREAD
 #define S_IWUSR S_IWRITE
 #define S_IXUSR S_IEXEC
-#define S_ISREG(x) (((x)&S_IFMT) == S_IFREG)
-#define S_ISLNK(x) (((x)&S_IFMT) == S_IFLNK)
-#define S_ISDIR(x) (((x)&S_IFMT) == S_IFDIR)
+#define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
+#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
+#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
 #define S_ISCHR(x) 0
-#define S_ISBLK(x) (((x)&S_IFMT) == S_IFBLK)
+#define S_ISBLK(x) (((x) & S_IFMT) == S_IFBLK)
 #define S_ISFIFO(x) 0
 
 #define S_IRGRP 000040
@@ -423,7 +423,7 @@ extern void LogErrorMsg(const char* message);
 #  define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #endif
 
-#if defined(_MSC_VER)
+#if defined(HAVE_MSVC)
 inline unsigned long ffs(unsigned long word)
 {
   unsigned long index;

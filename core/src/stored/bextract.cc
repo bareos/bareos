@@ -26,7 +26,7 @@
  * Dumb program to extract files from a Bareos backup.
  */
 
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 #include "include/bareos.h"

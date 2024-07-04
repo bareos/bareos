@@ -25,7 +25,7 @@
  * A simple pipe plugin for the Bareos File Daemon
  */
 
-#if !defined(_MSC_VER)
+#if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
 

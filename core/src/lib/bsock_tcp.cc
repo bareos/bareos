@@ -39,7 +39,7 @@
 #include "lib/bsock_tcp.h"
 #include "lib/berrno.h"
 
-#ifdef _MSC_VER
+#ifdef HAVE_MSVC
 #  include "mstcpip.h"
 #endif
 
@@ -78,7 +78,7 @@ BareosSocket* BareosSocketTCP::clone()
   if (host_) { host_ = strdup(host_); }
 
   /* duplicate file descriptors */
-#if defined(_MSC_VER)
+#if defined(HAVE_MSVC)
   if (fd_ >= 0) {
     WSAPROTOCOL_INFOW protocol_info;
     WSADuplicateSocketW(fd_, GetCurrentProcessId(), &protocol_info);

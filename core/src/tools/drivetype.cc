@@ -35,7 +35,7 @@
 #include "findlib/find.h"
 #include "findlib/drivetype.h"
 
-#if _MSC_VER
+#if HAVE_MSVC
 char* optarg{};
 #endif
 
