@@ -19,7 +19,7 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-if(MSVC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(DISABLED_TESTS
       system:always-incremental-consolidate:02-empty-incrementals
       system:always-incremental-consolidate:03-zero-file
@@ -73,9 +73,7 @@ endif()
 project(bareos-systemtests)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  if(MSVC)
-    find_program(BASH_EXE bash.exe REQUIRED)
-  endif()
+  find_program(BASH_EXE bash.exe REQUIRED)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -260,7 +258,7 @@ if(MINIO)
   endif()
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" AND MSVC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   configure_file(
     "CTestCustom-win.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
     NEWLINE_STYLE UNIX
