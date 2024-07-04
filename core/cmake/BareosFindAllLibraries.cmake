@@ -177,6 +177,8 @@ endif()
 find_package(ZLIB)
 if(${ZLIB_FOUND})
   set(HAVE_LIBZ 1)
+  # yes its actually libz vs zlib ...
+  set(HAVE_ZLIB_H 1)
 endif()
 
 find_package(Readline)
