@@ -462,12 +462,10 @@ bareos_add_test(test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
 
-if(NOT MSVC)
-  bareos_add_test(
-    test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
-                                         GTest::gtest_main
-  )
-endif()
+bareos_add_test(
+  test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
+                                       GTest::gtest_main
+)
 bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
 
 if(NOT MSVC)

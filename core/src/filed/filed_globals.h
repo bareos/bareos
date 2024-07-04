@@ -24,11 +24,13 @@
 #ifndef BAREOS_FILED_FILED_GLOBALS_H_
 #define BAREOS_FILED_FILED_GLOBALS_H_
 
+#include "include/dll_import_export.h"
+
 class ConfigurationParser;
 
 namespace filedaemon {
 
-BAREOS_IMPORT ConfigurationParser* my_config;
+BAREOS_EXPORT ConfigurationParser* my_config;
 
 BAREOS_IMPORT bool no_signals;
 BAREOS_IMPORT bool backup_only_mode;
