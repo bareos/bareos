@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,9 +36,6 @@
 
 /* Define if you have lzo lib */
 #define HAVE_LZO 1
-
-/* File daemon specif libraries */
-#define FDLIBS 1
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #ifndef HAVE_MINGW
@@ -128,9 +125,6 @@
 
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
-
-/* Define to 1 if you have the `__builtin_va_copy' function. */
-#define HAVE___BUILTIN_VA_COPY 1
 
 /* Directory for daemon files */
 #define PATH_BAREOS_WORKINGDIR "%TEMP%"
