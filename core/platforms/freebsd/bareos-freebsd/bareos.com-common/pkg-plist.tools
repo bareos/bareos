@@ -8,9 +8,9 @@ sbin/bls
 sbin/bregex
 sbin/bwild
 sbin/bpluginfo
-man/man1/bwild.1.gz
-man/man1/bregex.1.gz
-man/man8/bcopy.8.gz
-man/man8/bextract.8.gz
-man/man8/bls.8.gz
-man/man8/bpluginfo.8.gz
+share/man/man1/bwild.1.gz
+share/man/man1/bregex.1.gz
+share/man/man8/bcopy.8.gz
+share/man/man8/bextract.8.gz
+share/man/man8/bls.8.gz
+share/man/man8/bpluginfo.8.gz
