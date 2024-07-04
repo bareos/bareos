@@ -444,6 +444,7 @@ message(STATUS "PROJECT_SOURCE_DIR:         " ${PROJECT_SOURCE_DIR})
 
 # needed for check_include
 set(CMAKE_REQUIRED_DEFINITIONS "-D_FILE_OFFSET_BITS=64")
+
 include(BareosCheckIncludes)
 
 include(BareosCheckFunctions)
@@ -729,8 +730,13 @@ else()
   endif()
 endif()
 
-set(PATH_BAREOS_BACKENDDIR \"${backenddir}\")
-set(PATH_BAREOS_WORKINGDIR \"${workingdir}\")
+if(HAVE_MSVC)
+  set(PATH_BAREOS_WORKINGDIR \"%TEMP%\")
+  set(PATH_BAREOS_BACKENDDIR \".\")
+else()
+  set(PATH_BAREOS_BACKENDDIR \"${backenddir}\")
+  set(PATH_BAREOS_WORKINGDIR \"${workingdir}\")
+endif()
 
 if(HAVE_WIN32)
   install(DIRECTORY DESTINATION var/log)
