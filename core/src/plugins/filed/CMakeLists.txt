@@ -27,7 +27,6 @@ if(HAVE_WIN32)
     ${PROJECT_SOURCE_DIR}/src/win32/filed
     ${PROJECT_SOURCE_DIR}/src/win32/plugins/filed
     ${PROJECT_SOURCE_DIR}/src/win32/compat/include
-    ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
     ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
     ${PROJECT_SOURCE_DIR}/src/include
     ${PROJECT_SOURCE_DIR}/src
@@ -62,6 +61,9 @@ endif()
 if(HAVE_WIN32)
   add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
   target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
+  target_include_directories(
+    mssqlvdi-fd PRIVATE ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
+  )
   if(MSVC)
     target_link_libraries(
       mssqlvdi-fd PRIVATE ${THREADS_THREADS} bareos comsupp.lib

@@ -328,7 +328,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   if(MSVC)
     link_libraries(Intl::Intl)
-    include_directories(SYSTEM C:/src/vdi/include SYSTEM C:/src/vss/include)
   endif()
 
   set(HAVE_WIN32 1)
