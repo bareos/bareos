@@ -13,7 +13,7 @@ OS:
       IMAGE: "rhel8"
       BUILD_SCRIPT: CD/rpm/build-ulc.sh
       FINISH_SCRIPT: CD/rpm/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ Rocky-8, Fedora-37, SLE-15_sp6 ]
+      CUSTOM_TEST_IMAGES: [ Rocky-8, Rocky-9, Fedora-37, SLE-15_sp6 ]
       ARCH:
         - x86_64
         - aarch64
@@ -22,7 +22,7 @@ OS:
       IMAGE: "rhel9"
       BUILD_SCRIPT: CD/rpm/build-ulc.sh
       FINISH_SCRIPT: CD/rpm/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ Rocky-9 ]
+      CUSTOM_TEST_IMAGES: [ Rocky-9, Fedora-40, SLE-15_sp6, Mageia-9 ]
       ARCH:
         - x86_64
         - aarch64
