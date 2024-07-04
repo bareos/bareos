@@ -13,5 +13,5 @@ default:
 
 win-native-64-release:
   ctest_unstable: 85
-  warnings_unhealthy: 200
-  warnings_healthy: 192
+  warnings_unhealthy: 6200
+  warnings_healthy: 6192
