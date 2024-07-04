@@ -19,10 +19,10 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
-#define BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
+#ifndef BAREOS_INCLUDE_DLL_IMPORT_EXPORT_H_
+#define BAREOS_INCLUDE_DLL_IMPORT_EXPORT_H_
 
-#if defined(_MSVC_LANG)
+#if defined(HAVE_MSVC)
 #  define BAREOS_EXPORT __declspec(dllexport) extern
 #  define BAREOS_IMPORT __declspec(dllimport) extern
 #else
@@ -30,4 +30,4 @@
 #  define BAREOS_IMPORT extern
 #endif
 
-#endif  // BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
+#endif  // BAREOS_INCLUDE_DLL_IMPORT_EXPORT_H_
