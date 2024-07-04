@@ -92,7 +92,7 @@
 #  include <io.h>
 #  include <direct.h>
 #  include <process.h>
-#  define NOMINMAX
+#  define NOMINMAX  // suppress definition of min() and max() macros on windows
 #endif
 
 #include <sys/socket.h>
