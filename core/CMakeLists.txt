@@ -432,7 +432,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # manual definitions
 set(BAREOS "Bareos")
-set(LOCALEDIR \"${CMAKE_INSTALL_LOCALEDIR}\")
+if(MSVC)
+  set(LOCALEDIR \".\")
+else()
+  set(LOCALEDIR \"${CMAKE_INSTALL_LOCALEDIR}\")
+endif()
 
 set(HAVE_CRYPTO 1)
 
