@@ -783,7 +783,6 @@ static int glob_match(const char* pattern,
   else
     /* ...otherwise, we simply note that there was no prefix.
      */
-    // dir = NULL;
 
     /* We now have a globbed list of prefix directories, returned from
      * recursive processing, in local_gl_buf.gl_pathv, and we also have
