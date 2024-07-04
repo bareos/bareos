@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -97,7 +97,7 @@ void htableImpl::HashIndex(uint8_t* key, uint32_t keylen)
 }
 
 // tsize is the estimated number of entries in the hash table
-htableImpl::htableImpl(int t_loffset, int tsize)
+htableImpl::htableImpl(size_t t_loffset, int tsize)
 {
   init(tsize);
   loffset = t_loffset;
@@ -184,13 +184,11 @@ void htableImpl::grow_table()
   // Insert all the items in the new hash table
   Dmsg1(100, "Before copy num_items=%d\n", num_items);
 
-  /*
-   * We walk through the old smaller tree getting items,
+  /* We walk through the old smaller tree getting items,
    * but since we are overwriting the colision links, we must
    * explicitly save the item->next pointer and walk each
    * colision chain ourselves. We do use next() for getting
-   * to the next bucket.
-   */
+   * to the next bucket. */
   for (void* item = first(); item;) {
     cur = (hlink*)((char*)item + loffset);
     next_item = cur->next; /* Save link overwritten by insert */

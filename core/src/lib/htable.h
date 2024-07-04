@@ -79,7 +79,7 @@ class htableImpl {
 
  public:
   htableImpl() = default;
-  htableImpl(int t_loffset, int tsize = 31);
+  htableImpl(size_t t_loffset, int tsize = 31);
   ~htableImpl() { destroy(); }
   void init(int tsize = 31);
   bool insert(char* key, void* item);

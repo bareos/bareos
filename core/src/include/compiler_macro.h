@@ -92,4 +92,14 @@
 #  define IGNORE_UNREFERENCED_FUNCTION_OFF
 #endif
 
+#ifdef HAVE_MSVC
+#  define IGNORE_INT_PTR_CAST_ON \
+    _Pragma("warning( push )");  \
+    _Pragma("warning( disable : 4312 )")
+#  define IGNORE_INT_PTR_CAST_OFF _Pragma("warning( pop )")
+#else
+#  define IGNORE_INT_PTR_CAST_ON
+#  define IGNORE_INT_PTR_CAST_OFF
+#endif
+
 #endif  // BAREOS_INCLUDE_COMPILER_MACRO_H_

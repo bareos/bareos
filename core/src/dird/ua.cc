@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -125,5 +125,8 @@ char RestoreContext::FilterIdentifier(RestoreContext::JobTypeFilter filter)
       ASSERT(!"Invalid job type filter.");
     }
   }
+
+  // this should not be reachable
+  return '\0';
 }
 } /* namespace directordaemon */

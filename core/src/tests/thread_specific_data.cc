@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -72,11 +72,11 @@ TEST(thread_specific_data, setup_and_readout_data_multiple_threads)
   std::vector<std::thread> threads;
 
   for (std::size_t i = 0; i < thread_jobids.size(); i++) {
-    threads.emplace_back(test_thread, i);
+    threads.emplace_back(test_thread, static_cast<uint32_t>(i));
   }
 
   for (std::size_t i = 0; i < thread_jobids.size(); i++) {
     threads[i].join();
-    EXPECT_EQ(thread_jobids[i], 123 + i);
+    EXPECT_EQ(thread_jobids[i], static_cast<uint32_t>(123 + i));
   }
 }
