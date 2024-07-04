@@ -6,7 +6,7 @@ This is the "home" of external libraries that are used in Bareos
 
 Each Library will be put into its own subdirectory with `git subtree` and will have its own CMake include-file (if it is not already made available by the provider of the library), that is then loaded in CMakeLists.txt
 
-A typical git subtree command would look like this : `git subtree add --prefix destination/path https://www.yourgithost.com/your/repo yourbranch(usuallymaster) --squash`
+A typical git subtree command would look like this : `git subtree add --prefix destination/path https://www.yourgithost.com/your/repo yourbranch (usually master) --squash`
 
 Make sure the library license is covert by `core/LICENSE`. At best, the library is also licensed as AGPL-3. If it is not already covered, a section needs to be added for it in `core/LICENSE` and `debian/copyright.footer`. Also execute `cd debian; make copyright` to update `debian/copyright`.
 
