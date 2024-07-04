@@ -44,7 +44,7 @@ const char* bind_error_message = "Invalid argument";
 const char* open_error_message = "No such file or directory";
 const char* socket_error_message = "Invalid argument";
 const char* bind_error_message = "Bad file number";
-#elif defined _MSVC_LANG
+#elif defined HAVE_MSVC
 const char* open_error_message
     = "No such file or directory (errno=2 | win_error=0x00000002)";
 const char* win_open_error_message

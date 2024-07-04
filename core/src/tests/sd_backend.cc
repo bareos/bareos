@@ -73,7 +73,7 @@ TEST_F(sd, backend_load_unload)
    * because otherwise OpenDevice()/open()
    * would also try IOCTLs on the tape device,
    * which will fail on our dummy device. */
-#if defined _MSVC_LANG
+#if defined HAVE_MSVC
   dev->fd = dev->d_open("NUL", 0, 0640);
 #else
   dev->fd = dev->d_open("/dev/null", 0, 0640);

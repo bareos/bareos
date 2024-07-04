@@ -1939,7 +1939,7 @@ int link(const char*, const char*)
   return -1;
 }
 
-#if defined(_MSVC_LANG)
+#if defined(HAVE_MSVC)
 #  include <chrono>
 
 static int mingw_gettimeofday(struct timeval* tp, struct timezone* tzp)
@@ -1952,7 +1952,7 @@ static int mingw_gettimeofday(struct timeval* tp, struct timezone* tzp)
 
   return 0;
 }
-#endif  //_MSVC_LANG
+#endif  // HAVE_MSVC
 
 int gettimeofday(struct timeval* tv, struct timezone* tz)
 {
