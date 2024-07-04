@@ -22,11 +22,6 @@
 #include "testing_dir_common.h"
 #include "dird/stats.h"
 
-#ifdef _MSC_VER
-char* optarg{};
-#endif
-
-
 class DirStatisticsThread : public ::testing::Test {
   void SetUp() override { InitDirGlobals(); }
 };

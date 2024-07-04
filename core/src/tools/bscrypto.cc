@@ -27,7 +27,9 @@
  * using a lowlevel SCSI interface.
  */
 
-#if !defined(_MSC_VER)
+#if defined(HAVE_MSVC)
+#  include "getopt.h"
+#else
 #  include <unistd.h>
 #endif
 #include "include/fcntl_def.h"

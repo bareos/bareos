@@ -95,12 +95,6 @@
 #  define NOMINMAX
 #endif
 
-#if defined(_MSC_VER)
-extern "C" {
-#  include "getopt.h"
-}
-#endif
-
 #include <sys/socket.h>
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #  include <winsock2.h>

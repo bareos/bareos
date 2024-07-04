@@ -28,7 +28,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#if !defined(_MSC_VER)
+#if defined(HAVE_MSVC)
+#  include "getopt.h"
+#else
 #  include <unistd.h>
 #endif
 #include <signal.h>
