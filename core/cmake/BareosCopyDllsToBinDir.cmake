@@ -19,6 +19,12 @@
 
 # Windows: copy over all dlls our binaries depend on into the binary dir Also
 # create a file containing all dlls required
+
+# Add a job pool where only a single job can run at the same time for copying.
+# This prevents the error where two targets try to copy the same file to the
+# same directory at the same time, causing one to fail
+set_property(GLOBAL PROPERTY JOB_POOLS copy=1)
+
 macro(BareosCopyDllsToBinDir)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows" AND MSVC)
     set(FNAME "${CMAKE_BINARY_DIR}/required_dlls")
@@ -38,7 +44,7 @@ macro(BareosCopyDllsToBinDir)
       )
         add_custom_command(
           TARGET ${TGT}
-          POST_BUILD
+          POST_BUILD JOB_POOL copy
           COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TGT}>
                   $<TARGET_RUNTIME_DLLS:${TGT}>;${DLLS_TO_COPY_MANUALLY}
           COMMAND_EXPAND_LISTS
