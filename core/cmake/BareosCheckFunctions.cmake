@@ -91,6 +91,12 @@ else()
   block()
   include(CheckSymbolExists)
   set(CMAKE_REQUIRED_LIBRARIES "ws2_32")
+  set(CMAKE_REQUIRED_INCLUDES
+      "${PROJECT_SOURCE_DIR}/src/win32/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include"
+  )
+  set(CMAKE_REQUIRED_DEFINITIONS "-DHAVE_MSVC=1")
   check_symbol_exists(getaddrinfo "ws2tcpip.h" HAVE_GETADDRINFO)
   endblock()
+  # the following are implemented in our compat layer
+  set(HAVE_GLOB 1)
 endif()
