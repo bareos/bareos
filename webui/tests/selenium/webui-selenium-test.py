@@ -238,13 +238,12 @@ class SeleniumTest(unittest.TestCase):
                 self.chromedriverpath = self.getChromedriverpath()
                 # chrome webdriver option: disable experimental feature
                 opt = webdriver.ChromeOptions()
-                opt.add_experimental_option("w3c", False)
                 # chrome webdriver option: specify user data directory
                 opt.add_argument(
                     "--user-data-dir=/tmp/chrome-user-data-"
-                    + SeleniumTest.profile
+                    + getattr(self, 'profile', "none")
                     + "-"
-                    + SeleniumTest.testname
+                    + getattr(self, 'testname', "none")
                 )
                 # Set some options to improve reliability
                 # https://stackoverflow.com/a/55307841/11755457
@@ -501,11 +500,11 @@ class SeleniumTest(unittest.TestCase):
         driver = self.driver
         self.select_navbar_element("job")
         self.wait_and_click(By.LINK_TEXT, "Run")
-        Select(driver.find_element_by_id("job")).select_by_visible_text(
+        Select(driver.find_element(By.ID, "job")).select_by_visible_text(
             "backup-bareos-fd"
         )
-        Select(driver.find_element_by_id("client")).select_by_visible_text(self.client)
-        Select(driver.find_element_by_id("level")).select_by_visible_text("Incremental")
+        Select(driver.find_element(By.ID, "client")).select_by_visible_text(self.client)
+        Select(driver.find_element(By.ID, "level")).select_by_visible_text("Incremental")
         # Clears the priority field and enters 5.
         self.enter_input("priority", "5")
         # Open the calendar
@@ -531,11 +530,11 @@ class SeleniumTest(unittest.TestCase):
         # )
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
-        driver.find_element_by_xpath('(//button[@type="button"])[1]').click()
-        driver.find_element_by_link_text("English").click()
-        driver.find_element_by_xpath('//input[@id="submit"]').click()
+        driver.find_element(By.XPATH,'(//button[@type="button"])[1]').click()
+        driver.find_element(By.LINK_TEXT, "English").click()
+        driver.find_element(By.XPATH, '//input[@id="submit"]').click()
         try:
-            driver.find_element_by_xpath('//div[@role="alert"]')
+            driver.find_element(By.XPATH, '//div[@role="alert"]')
         except:
             self.wait_for_spinner_absence()
         else:
@@ -567,7 +566,7 @@ class SeleniumTest(unittest.TestCase):
         """
         logger = logging.getLogger()
         logger.info("Entering %r into the input-field %r.", inputvalue, inputname)
-        elem = self.driver.find_element_by_name(inputname)
+        elem = self.driver.find_element(By.NAME, inputname)
         elem.clear()
         elem.send_keys(inputvalue)
 
