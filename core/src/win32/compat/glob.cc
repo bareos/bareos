@@ -831,7 +831,7 @@ static int glob_match(const char* pattern,
             char* found;
             size_t prefix;
             size_t matchlen = D_NAMLEN(entry);
-            char matchpath[MAX_PATH];
+            auto* matchpath = static_cast<char*>(alloca(2 + dirlen + matchlen));
             if ((prefix = dirlen) > 0) {
               /* ...first copying the prefix, if any,
                * followed by a directory name separator...
