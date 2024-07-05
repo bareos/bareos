@@ -220,15 +220,13 @@ static void ListDevices(JobControlRecord* jcr,
                changer->resource_name_);
     sp->send(msg, len);
 
-    if (changer->device_resources) {
-      for (auto* device_resource : *changer->device_resources) {
-        if (device_resource->dev) {
-          len = Mmsg(msg, "   %s\n", device_resource->dev->print_name());
-          sp->send(msg, len);
-        } else {
-          len = Mmsg(msg, "   %s\n", device_resource->resource_name_);
-          sp->send(msg, len);
-        }
+    for (auto* device_resource : changer->device_resources) {
+      if (device_resource->dev) {
+        len = Mmsg(msg, "   %s\n", device_resource->dev->print_name());
+        sp->send(msg, len);
+      } else {
+        len = Mmsg(msg, "   %s\n", device_resource->resource_name_);
+        sp->send(msg, len);
       }
     }
   }

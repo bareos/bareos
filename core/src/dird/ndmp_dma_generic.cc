@@ -142,12 +142,12 @@ static inline bool NdmpValidateStorage(JobControlRecord* jcr,
 bool NdmpValidateStorage(JobControlRecord* jcr)
 {
   if (jcr->dir_impl->res.write_storage_list) {
-    for (auto* store : *jcr->dir_impl->res.write_storage_list) {
+    for (auto* store : jcr->dir_impl->res.write_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
 
   } else if (jcr->dir_impl->res.read_storage_list) {
-    for (auto* store : *jcr->dir_impl->res.read_storage_list) {
+    for (auto* store : jcr->dir_impl->res.read_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
   }
