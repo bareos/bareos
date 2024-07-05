@@ -55,7 +55,6 @@ enum
  *               array of pointers to inserted items
  */
 
-
 template <typename T> class alist {
  public:
   T* begin() { return &items[0]; }
@@ -175,5 +174,29 @@ template <typename T> class alist {
   int num_grow = 0;
   bool own_items = false;
 };
+
+template <typename T> const T* begin(const alist<T>* alist)
+{
+  if (!alist) { return nullptr; }
+  return alist->begin();
+}
+
+template <typename T> const T* end(const alist<T>* alist)
+{
+  if (!alist) { return nullptr; }
+  return alist->end();
+}
+
+template <typename T> T* begin(alist<T>* alist)
+{
+  if (!alist) { return nullptr; }
+  return alist->begin();
+}
+
+template <typename T> T* end(alist<T>* alist)
+{
+  if (!alist) { return nullptr; }
+  return alist->end();
+}
 
 #endif  // BAREOS_LIB_ALIST_H_
