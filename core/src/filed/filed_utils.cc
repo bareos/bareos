@@ -60,36 +60,34 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
   }
 
   /* If additional signing public keys have been specified, load them up */
-  if (me->pki_signing_key_files) {
-    for (auto* filepath : *me->pki_signing_key_files) {
-      X509_KEYPAIR* keypair;
+  for (auto* filepath : me->pki_signing_key_files) {
+    X509_KEYPAIR* keypair;
 
-      keypair = crypto_keypair_new();
-      if (!keypair) {
-        Emsg0(M_FATAL, 0, T_("Failed to allocate a new keypair object.\n"));
-        OK = false;
-      } else {
-        if (CryptoKeypairLoadCert(keypair, filepath)) {
-          me->pki_signers->append(keypair);
+    keypair = crypto_keypair_new();
+    if (!keypair) {
+      Emsg0(M_FATAL, 0, T_("Failed to allocate a new keypair object.\n"));
+      OK = false;
+    } else {
+      if (CryptoKeypairLoadCert(keypair, filepath)) {
+        me->pki_signers->append(keypair);
 
-          /* Attempt to load a private key, if available */
-          if (CryptoKeypairHasKey(filepath)) {
-            if (!CryptoKeypairLoadKey(keypair, filepath, nullptr, nullptr)) {
-              Emsg3(M_FATAL, 0,
-                    T_("Failed to load private key from file %s for File"
-                       " daemon \"%s\" in %s.\n"),
-                    filepath, me->resource_name_, configfile.c_str());
-              OK = false;
-            }
+        /* Attempt to load a private key, if available */
+        if (CryptoKeypairHasKey(filepath)) {
+          if (!CryptoKeypairLoadKey(keypair, filepath, nullptr, nullptr)) {
+            Emsg3(M_FATAL, 0,
+                  T_("Failed to load private key from file %s for File"
+                     " daemon \"%s\" in %s.\n"),
+                  filepath, me->resource_name_, configfile.c_str());
+            OK = false;
           }
-
-        } else {
-          Emsg3(M_FATAL, 0,
-                T_("Failed to load trusted signer certificate"
-                   " from file %s for File daemon \"%s\" in %s.\n"),
-                filepath, me->resource_name_, configfile.c_str());
-          OK = false;
         }
+
+      } else {
+        Emsg3(M_FATAL, 0,
+              T_("Failed to load trusted signer certificate"
+                 " from file %s for File daemon \"%s\" in %s.\n"),
+              filepath, me->resource_name_, configfile.c_str());
+        OK = false;
       }
     }
   }
@@ -103,24 +101,22 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
 
 
   /* If additional keys have been specified, load them up */
-  if (me->pki_master_key_files) {
-    for (auto* filepath : *me->pki_master_key_files) {
-      X509_KEYPAIR* keypair;
+  for (auto* filepath : me->pki_master_key_files) {
+    X509_KEYPAIR* keypair;
 
-      keypair = crypto_keypair_new();
-      if (!keypair) {
-        Emsg0(M_FATAL, 0, T_("Failed to allocate a new keypair object.\n"));
-        OK = false;
+    keypair = crypto_keypair_new();
+    if (!keypair) {
+      Emsg0(M_FATAL, 0, T_("Failed to allocate a new keypair object.\n"));
+      OK = false;
+    } else {
+      if (CryptoKeypairLoadCert(keypair, filepath)) {
+        me->pki_recipients->append(keypair);
       } else {
-        if (CryptoKeypairLoadCert(keypair, filepath)) {
-          me->pki_recipients->append(keypair);
-        } else {
-          Emsg3(M_FATAL, 0,
-                T_("Failed to load master key certificate"
-                   " from file %s for File daemon \"%s\" in %s.\n"),
-                filepath, me->resource_name_, configfile.c_str());
-          OK = false;
-        }
+        Emsg3(M_FATAL, 0,
+              T_("Failed to load master key certificate"
+                 " from file %s for File daemon \"%s\" in %s.\n"),
+              filepath, me->resource_name_, configfile.c_str());
+        OK = false;
       }
     }
   }

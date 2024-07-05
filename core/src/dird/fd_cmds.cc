@@ -584,7 +584,7 @@ static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 
   if (RunScripts->empty()) { return false; }
 
-  for (auto* cmd : *RunScripts) {
+  for (auto* cmd : RunScripts) {
     if (!cmd->IsLocal()) { retval = true; }
   }
 
@@ -611,7 +611,7 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
 
   msg = GetPoolMemory(PM_FNAME);
   ehost = GetPoolMemory(PM_FNAME);
-  for (auto* cmd : *jcr->dir_impl->res.job->RunScripts) {
+  for (auto* cmd : jcr->dir_impl->res.job->RunScripts) {
     if (!cmd->target.empty()) {
       ehost = edit_job_codes(jcr, ehost, cmd->target.c_str(), "");
       Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target.c_str(), ehost);

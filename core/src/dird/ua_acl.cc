@@ -167,13 +167,11 @@ bool UaContext::AclAccessOk(int acl,
   /* If we didn't find a matching ACL try to use the profiles this console is
    * connected to. */
   if (!retval.has_value()) {
-    if (user_acl->profiles && user_acl->profiles->size()) {
-      for (auto* profile : *user_acl->profiles) {
-        retval = FindInAclList(profile->ACL_lists[acl], acl, item, item_length);
+    for (auto* profile : user_acl->profiles) {
+      retval = FindInAclList(profile->ACL_lists[acl], acl, item, item_length);
 
-        // If we found a match break the loop.
-        if (retval.has_value()) { break; }
-      }
+      // If we found a match break the loop.
+      if (retval.has_value()) { break; }
     }
   }
 
@@ -206,20 +204,18 @@ bool UaContext::AclNoRestrictions(int acl)
     }
   }
 
-  if (user_acl->profiles) {
-    for (auto* profile : *user_acl->profiles) {
-      if (profile) {
-        if (profile->ACL_lists[acl]) {
-          for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
-            list_value = (char*)profile->ACL_lists[acl]->get(i);
+  for (auto* profile : user_acl->profiles) {
+    if (profile) {
+      if (profile->ACL_lists[acl]) {
+        for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
+          list_value = (char*)profile->ACL_lists[acl]->get(i);
 
-            if (*list_value == '!') { return false; }
+          if (*list_value == '!') { return false; }
 
-            if (Bstrcasecmp("*all*", list_value)) { return true; }
-          } /* for (int i = 0; */
-        }   /* if (profile->ACL_lists[acl]) */
-      }     /* if (profile) */
-    }
+          if (Bstrcasecmp("*all*", list_value)) { return true; }
+        } /* for (int i = 0; */
+      }   /* if (profile->ACL_lists[acl]) */
+    }     /* if (profile) */
   }
 
   return false;

@@ -207,12 +207,10 @@ void OutputFormatterResource::KeyMultipleStringsInOneLine(
   if (quoted_strings) { format = "\"%s\""; }
 
   send_->ArrayStart(key, GetKeyFormatString(as_comment).c_str());
-  if (list != NULL) {
-    for (auto* item : *list) {
-      send_->ArrayItem(GetValue(item), format.c_str());
-      if (cnt == 0) { format.insert(0, ", "); }
-      cnt++;
-    }
+  for (auto* item : list) {
+    send_->ArrayItem(GetValue(item), format.c_str());
+    if (cnt == 0) { format.insert(0, ", "); }
+    cnt++;
   }
   send_->ArrayEnd(key, "\n");
 }
@@ -267,7 +265,7 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     }
   } else {
     send_->ArrayStart(key);
-    for (auto* item : *list) {
+    for (auto* item : list) {
       KeyMultipleStringsOnePerLineAddItem(key, GetValue(item), as_comment,
                                           quoted_strings, escape_strings);
     }
