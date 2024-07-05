@@ -34,7 +34,6 @@ set -u
 # Fill ${BackupDirectory} with data.
 setup_data
 
-
 bin/bareos start
 
 bin/bareos status
