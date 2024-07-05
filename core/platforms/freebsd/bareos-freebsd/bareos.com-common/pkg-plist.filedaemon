@@ -9,5 +9,5 @@
 @sample(bareos,root,0640) %%ETCDIR%%/bareos-fd.d/messages/Standard.conf.sample
 sbin/bareos-fd
 lib/bareos/plugins/bpipe-fd.so
-man/man8/bareos-fd.8.gz
+share/man/man8/bareos-fd.8.gz
 etc/rc.d/bareos-fd

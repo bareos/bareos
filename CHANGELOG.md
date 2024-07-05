@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - contrib: add pure python statefile parser [PR #1789]
 - Use only MinGW VSS [PR #1847]
 - VMware Plugin: Adapt to Python 3.12 [PR #1850]
+- freebsd: fix build issues with ports tree 2024Q3 [PR #1883]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -201,4 +202,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
 [PR #1881]: https://github.com/bareos/bareos/pull/1881
+[PR #1883]: https://github.com/bareos/bareos/pull/1883
 [unreleased]: https://github.com/bareos/bareos/tree/master
