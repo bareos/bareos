@@ -119,7 +119,9 @@ setup_data()
    fi
   done
 
-# TODO: make this also work on windows
+ # The following files in the "weird files" tar cause problems on windows, so
+ # for now they are removed before the tests start.
+ # TODO: Make these files also work on windows.
  if [[ "$(uname -s)" =~ _NT ]]; then
    pushd "$data_dir" || echo "pushd failed"
    for f in 'weird-files/a-file-with-spaces-at-the-end    ' \
