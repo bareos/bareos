@@ -125,6 +125,9 @@ export PHP_EXECUTABLE="@PHP@"
 export PYTHON_EXECUTABLE="@PYTHON_EXECUTABLE@"
 
 
+# On Windows native builds which allow multiple configurations(Debug/Release),
+# the binaries are created in a subdirectory named after the configuration type
+# below the corresponding CMAKE_BINARY_DIR
 PATH=\
 ../../../core/src/console/${CMAKE_CONFIG_TYPE}:\
 ../../../core/src/dird/${CMAKE_CONFIG_TYPE}:\
