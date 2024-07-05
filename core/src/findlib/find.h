@@ -49,7 +49,8 @@
 #    include <utime.h>
 #  endif
 #endif
-#ifdef _MSVC_VER
+
+#if defined(HAVE_MSVC)
 extern "C" {
 #  include <sys/utime.h>
 }

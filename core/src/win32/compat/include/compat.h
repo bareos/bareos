@@ -103,11 +103,7 @@ typedef INT32 ssize_t;
 #  define HAVE_SSIZE_T 1
 #endif /* HAVE_MINGW */
 
-#define utime _utime
-#define utimbuf _utimbuf
-
 #define NO_OLDNAMES
-// #if defined(_MSC_VER)
 typedef struct _REPARSE_DATA_BUFFER {
   ULONG ReparseTag;
   USHORT ReparseDataLength;
@@ -133,11 +129,9 @@ typedef struct _REPARSE_DATA_BUFFER {
     } GenericReparseBuffer;
   } DUMMYUNIONNAME;
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
-// #endif
 
 #define ftello _ftelli64
 #define fseeko _fseeki64
-
 
 struct dirent {
   uint64_t d_ino;
@@ -147,12 +141,6 @@ struct dirent {
 };
 typedef void DIR;
 
-#ifdef HAVE_MSVC
-struct _utimbuf {
-  time_t actime;   // access time
-  time_t modtime;  // modification time
-};
-#endif
 #if !defined(__cplusplus)
 #  if !defined(true)
 #    define true 1
@@ -294,16 +282,11 @@ int pipe(int[]);
 int fork();
 int waitpid(int, int*, int);
 
-#if !defined(HAVE_MINGW)
+#if defined(HAVE_MSVC)
 #  define strncasecmp strnicmp
-// int strncasecmp(const char*, const char *, int);
-extern "C" {
-__declspec(dllimport) int utime(const char* filename,
-                                struct utimbuf* const buf);
-}
 #  define vsnprintf _vsnprintf
 #  define snprintf _snprintf
-#endif  // HAVE_MINGW
+#endif  // HAVE_MSVC
 
 #define WNOHANG 0
 #define WIFEXITED(x) 0
