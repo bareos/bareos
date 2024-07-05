@@ -1,8 +1,6 @@
 Messages {
   Name = Daemon
   Description = "Message delivery for daemon messages (no job)."
-  mailcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
-  mail = @job_email@ = all, !skipped, !audit # (#02)
   console = all, !skipped, !saved, !audit
   append = "@logdir@/bareos.log" = all, !skipped, !audit
   append = "@logdir@/bareos-audit.log" = audit
