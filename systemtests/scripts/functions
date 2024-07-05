@@ -123,7 +123,7 @@ setup_data()
  # for now they are removed before the tests start.
  # TODO: Make these files also work on windows.
  if [[ "$(uname -s)" =~ _NT ]]; then
-   pushd "$data_dir" || echo "pushd failed"
+   pushd "$data_dir" || exit 1
    for f in 'weird-files/a-file-with-spaces-at-the-end    ' \
     weird-files/'  ' \
     weird-files/' ' \
@@ -152,7 +152,7 @@ setup_data()
 
   do rm -Rvf "$f" || echo "failed to remove \"$f\""
   done
-   popd || echo "popd failed"
+   popd || exit 1
  fi
 
   return 0
