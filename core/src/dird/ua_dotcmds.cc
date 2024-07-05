@@ -1306,7 +1306,7 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
                                "%s\n");
 
       std::string devices;
-      for (auto* device_resource : *storage->device) {
+      for (auto* device_resource : storage->device) {
         if (device_resource) {
           // if the string is nonempty, then there are already devices in the
           // "list", so seperate the new entry with a comma.

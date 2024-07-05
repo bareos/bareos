@@ -427,51 +427,47 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
       if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) { continue; }
 
       Dmsg1(debuglevel, "vol=%s OK for this job\n", vol->vol_name);
-      if (dirstore) {
-        for (auto* store : *dirstore) {
-          int status;
-          rctx.store = store;
-          if (store->device) {
-            for (auto* device_name : *store->device) {
-              // Found a device, try to use it
-              rctx.device_name = device_name;
-              rctx.device_resource = vol->dev->device_resource;
+      for (auto* store : dirstore) {
+        int status;
+        rctx.store = store;
+        for (auto* device_name : store->device) {
+          // Found a device, try to use it
+          rctx.device_name = device_name;
+          rctx.device_resource = vol->dev->device_resource;
 
-              if (vol->dev->AttachedToAutochanger()) {
-                Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
-                if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
-                  continue;
-                }
-              } else if (!bstrcmp(device_name,
-                                  vol->dev->device_resource->resource_name_)) {
-                Dmsg2(debuglevel, "device=%s not suitable want %s\n",
-                      vol->dev->device_resource->resource_name_, device_name);
-                continue;
-              }
-
-              bstrncpy(rctx.VolumeName, vol->vol_name, sizeof(rctx.VolumeName));
-              rctx.have_volume = true;
-
-              // Try reserving this device and volume
-              Dmsg2(debuglevel, "try vol=%s on device=%s\n", rctx.VolumeName,
-                    device_name);
-              status = ReserveDevice(rctx);
-              if (status == 1) { /* found available device */
-                Dmsg1(debuglevel, "Suitable device found=%s\n", device_name);
-                ok = true;
-                break;
-              } else if (status == 0) { /* device busy */
-                Dmsg1(debuglevel, "Suitable device=%s, busy: not use\n",
-                      device_name);
-              } else {
-                Dmsg0(debuglevel, "No suitable device found.\n");
-              }
-              rctx.have_volume = false;
-              rctx.VolumeName[0] = 0;
+          if (vol->dev->AttachedToAutochanger()) {
+            Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
+            if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
+              continue;
             }
+          } else if (!bstrcmp(device_name,
+                              vol->dev->device_resource->resource_name_)) {
+            Dmsg2(debuglevel, "device=%s not suitable want %s\n",
+                  vol->dev->device_resource->resource_name_, device_name);
+            continue;
           }
-          if (ok) { break; }
+
+          bstrncpy(rctx.VolumeName, vol->vol_name, sizeof(rctx.VolumeName));
+          rctx.have_volume = true;
+
+          // Try reserving this device and volume
+          Dmsg2(debuglevel, "try vol=%s on device=%s\n", rctx.VolumeName,
+                device_name);
+          status = ReserveDevice(rctx);
+          if (status == 1) { /* found available device */
+            Dmsg1(debuglevel, "Suitable device found=%s\n", device_name);
+            ok = true;
+            break;
+          } else if (status == 0) { /* device busy */
+            Dmsg1(debuglevel, "Suitable device=%s, busy: not use\n",
+                  device_name);
+          } else {
+            Dmsg0(debuglevel, "No suitable device found.\n");
+          }
+          rctx.have_volume = false;
+          rctx.VolumeName[0] = 0;
         }
+        if (ok) { break; }
       }
       if (ok) { break; }
     } /* end for loop over reserved volumes */
@@ -494,28 +490,23 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
    *
    * For each storage device that the user specified, we
    * search and see if there is a resource for that device. */
-  if (dirstore) {
-    for (auto* store : *dirstore) {
-      rctx.store = store;
-      if (store->device) {
-        for (auto* device_name : *store->device) {
-          int status;
-          rctx.device_name = device_name;
-          status = SearchResForDevice(rctx);
-          if (status == 1) { /* found available device */
-            Dmsg1(debuglevel, "available device found=%s\n", device_name);
-            ok = true;
-            break;
-          } else if (status == 0) { /* device busy */
-            Dmsg1(debuglevel, "No usable device=%s, busy: not use\n",
-                  device_name);
-          } else {
-            Dmsg0(debuglevel, "No usable device found.\n");
-          }
-        }
+  for (auto* store : dirstore) {
+    rctx.store = store;
+    for (auto* device_name : store->device) {
+      int status;
+      rctx.device_name = device_name;
+      status = SearchResForDevice(rctx);
+      if (status == 1) { /* found available device */
+        Dmsg1(debuglevel, "available device found=%s\n", device_name);
+        ok = true;
+        break;
+      } else if (status == 0) { /* device busy */
+        Dmsg1(debuglevel, "No usable device=%s, busy: not use\n", device_name);
+      } else {
+        Dmsg0(debuglevel, "No usable device found.\n");
       }
-      if (ok) { break; }
     }
+    if (ok) { break; }
   }
   if (ok) {
     Dmsg1(debuglevel, "OK dev found. Vol=%s\n", rctx.VolumeName);
@@ -541,34 +532,32 @@ int SearchResForDevice(ReserveContext& rctx)
     // Find resource, and make sure we were able to open it
     if (bstrcmp(rctx.device_name, changer->resource_name_)) {
       // Try each device_resource in this AutoChanger
-      if (changer->device_resources) {
-        for (auto* device_resource : *changer->device_resources) {
-          rctx.device_resource = device_resource;
-          Dmsg1(debuglevel, "Try changer device %s\n",
+      for (auto* device_resource : changer->device_resources) {
+        rctx.device_resource = device_resource;
+        Dmsg1(debuglevel, "Try changer device %s\n",
+              device_resource->resource_name_);
+        if (!device_resource->autoselect) {
+          Dmsg1(100, "Device %s not autoselect skipped.\n",
                 device_resource->resource_name_);
-          if (!device_resource->autoselect) {
-            Dmsg1(100, "Device %s not autoselect skipped.\n",
-                  device_resource->resource_name_);
-            continue; /* Device is not available */
-          }
-          status = ReserveDevice(rctx);
-          if (status != 1) { /* Try another device */
-            continue;
-          }
-
-          // Debug code
-          if (rctx.store->append == SD_APPEND) {
-            Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
-                  device_resource->resource_name_,
-                  rctx.jcr->sd_impl->dcr->dev->NumReserved());
-          } else {
-            Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                  device_resource->resource_name_,
-                  rctx.jcr->sd_impl->read_dcr->dev->NumReserved());
-          }
-
-          return status;
+          continue; /* Device is not available */
         }
+        status = ReserveDevice(rctx);
+        if (status != 1) { /* Try another device */
+          continue;
+        }
+
+        // Debug code
+        if (rctx.store->append == SD_APPEND) {
+          Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
+                device_resource->resource_name_,
+                rctx.jcr->sd_impl->dcr->dev->NumReserved());
+        } else {
+          Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
+                device_resource->resource_name_,
+                rctx.jcr->sd_impl->read_dcr->dev->NumReserved());
+        }
+
+        return status;
       }
     }
   }

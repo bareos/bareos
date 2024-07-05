@@ -809,7 +809,7 @@ static inline bool CancelJobs(UaContext* ua, const char*)
   if (!selection) { return true; }
 
   // Loop over the different JobIds selected.
-  for (auto* JobId : *selection) {
+  for (auto* JobId : selection) {
     if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
 
     CancelJob(ua, jcr);
@@ -976,7 +976,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
     if (!selection) { return true; }
 
     // Loop over the different JobIds selected.
-    for (auto* JobId : *selection) {
+    for (auto* JobId : selection) {
       if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
 
       jcr->max_bandwidth = limit;

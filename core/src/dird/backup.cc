@@ -132,19 +132,17 @@ char* StorageAddressToContact(StorageResource* read_storage,
 
 static inline bool ValidateStorage(JobControlRecord* jcr)
 {
-  if (jcr->dir_impl->res.write_storage_list) {
-    for (auto* store : *jcr->dir_impl->res.write_storage_list) {
-      switch (store->Protocol) {
-        case APT_NATIVE:
-          continue;
-        default:
-          Jmsg(jcr, M_FATAL, 0,
-               T_("Storage %s has illegal backup protocol %s for Native "
-                  "backup\n"),
-               store->resource_name_,
-               AuthenticationProtocolTypeToString(store->Protocol));
-          return false;
-      }
+  for (auto* store : jcr->dir_impl->res.write_storage_list) {
+    switch (store->Protocol) {
+      case APT_NATIVE:
+        continue;
+      default:
+        Jmsg(jcr, M_FATAL, 0,
+             T_("Storage %s has illegal backup protocol %s for Native "
+                "backup\n"),
+             store->resource_name_,
+             AuthenticationProtocolTypeToString(store->Protocol));
+        return false;
     }
   }
 
@@ -188,7 +186,7 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 
   jr.StartTime = jcr->dir_impl->jr.StartTime;
 
-  for (auto* job : *jcr->dir_impl->res.job->base) {
+  for (auto* job : jcr->dir_impl->res.job->base) {
     bstrncpy(jr.Name, job->resource_name_, sizeof(jr.Name));
     jcr->db->GetBaseJobid(jcr, &jr, &id);
 

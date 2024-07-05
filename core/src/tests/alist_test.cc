@@ -73,7 +73,7 @@ void TestForeachAlist(alist<const char*>* list)
 
   ASSERT_TRUE(list);
 
-  for (auto* str : *list) {
+  for (auto* str : list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(str, buf);
     i++;

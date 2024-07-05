@@ -661,10 +661,8 @@ void OutputFormatter::ClearFilters()
 
 bool OutputFormatter::has_acl_filters()
 {
-  if (filters) {
-    for (of_filter_tuple* tuple : *filters) {
-      if (tuple->type == OF_FILTER_ACL) { return true; }
-    }
+  for (of_filter_tuple* tuple : filters) {
+    if (tuple->type == OF_FILTER_ACL) { return true; }
   }
 
   return false;
@@ -677,8 +675,8 @@ bool OutputFormatter::FilterData(void* data)
 
   /* See if a filtering function is registered.
    * See if there are any filters. */
-  if (filter_func && filters && !filters->empty()) {
-    for (of_filter_tuple* tuple : *filters) {
+  if (filter_func) {
+    for (of_filter_tuple* tuple : filters) {
       state = filter_func(filter_ctx, data, tuple);
 
       Dmsg1(800, "filter_state %d\n", state);
@@ -977,7 +975,7 @@ void OutputFormatter::JsonFinalizeResult(bool result)
 
       range_obj = json_object();
 
-      for (of_filter_tuple* tuple : *filters) {
+      for (of_filter_tuple* tuple : filters) {
         if (tuple->type == OF_FILTER_LIMIT) {
           json_object_set_new(range_obj, "limit",
                               json_integer(tuple->u.limit_filter.limit));

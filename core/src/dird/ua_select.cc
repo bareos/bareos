@@ -1509,7 +1509,7 @@ static inline bool InsertSelectedJobid(alist<JobId_t*>* selected_jobids,
 {
   if (!selected_jobids) { return false; }
 
-  for (auto* jobid : *selected_jobids) {
+  for (auto* jobid : selected_jobids) {
     if (*jobid == JobId) { return false; }
   }
 

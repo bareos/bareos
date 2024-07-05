@@ -782,14 +782,12 @@ char* lookup_ndmp_drive(StorageResource* store, drive_number_t drivenumber)
 {
   int cnt = 0;
   char* tapedevice;
-  if (store->device) {
-    for (auto* tapedeviceres : *store->device) {
-      if (cnt == drivenumber) {
-        tapedevice = tapedeviceres->resource_name_;
-        return tapedevice;
-      }
-      cnt++;
+  for (auto* tapedeviceres : store->device) {
+    if (cnt == drivenumber) {
+      tapedevice = tapedeviceres->resource_name_;
+      return tapedevice;
     }
+    cnt++;
   }
 
   return NULL;
