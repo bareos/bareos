@@ -66,8 +66,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:virtualfull-basic
       system:virtualfull-bscan
   )
+  set(COMMENT_POD_USAGE_IN_DIFF_PL "#")
+  # "Pod:Usage" is not available on windows, so we comment it out in diff.pl
 else()
   set(DISABLED_TESTS)
+  set(COMMENT_POD_USAGE_IN_DIFF_PL "")
 endif()
 
 project(bareos-systemtests)
