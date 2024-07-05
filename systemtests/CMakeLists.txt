@@ -326,19 +326,18 @@ set(WEBUI_TESTS_BROKEN
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
-find_program(PYTHON NAMES python python3 python2)
+find_program(PYTHON NAMES python python3)
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
-message("   PHP:                    " ${PHP})
-message("   PYTHON_EXECUTABLE:      " ${PYTHON_EXECUTABLE})
-message("   PYMODULE_2_SELENIUM_FOUND:" ${PYMODULE_2_SELENIUM_FOUND})
-message("   PYMODULE_3_SELENIUM_FOUND:" ${PYMODULE_3_SELENIUM_FOUND})
-message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
+message("   PHP:                       " ${PHP})
+message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
+message("   PYMODULE_3_SELENIUM_FOUND: " ${PYMODULE_3_SELENIUM_FOUND})
+message("   CHROMEDRIVER:              " ${CHROMEDRIVER})
 
 if(PHP
    AND PYTHON_EXECUTABLE
-   AND (PYMODULE_2_SELENIUM_FOUND OR PYMODULE_3_SELENIUM_FOUND)
+   AND PYMODULE_3_SELENIUM_FOUND
    AND CHROMEDRIVER
 )
   set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
@@ -351,9 +350,7 @@ else()
 endif()
 
 set(WEBUI_TEST_PREFIX "webui:")
-if(ENABLE_WEBUI_SELENIUM_TEST)
-  set(WEBUI_SELENIUM_TESTS ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-else()
+if(NOT ENABLE_WEBUI_SELENIUM_TEST)
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
     add_test(NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED} COMMAND false)
@@ -362,10 +359,9 @@ else()
     )
     message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}")
   endforeach()
-endif()
-
-# webui specific settings
-if(ENABLE_WEBUI_SELENIUM_TEST)
+else()
+  # webui specific settings
+  set(WEBUI_SELENIUM_TESTS ${AVAILABLE_WEBUI_SELENIUM_TESTS})
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
     message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
 
@@ -420,6 +416,9 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
     )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
+  # unset variables, so that they are not set in other environments.
+  set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_TESTNAME "")
 endif()
 
 #
