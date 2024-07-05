@@ -1244,10 +1244,6 @@ fi
 # Save current directory
 cwd="$(pwd)"
 
-# Source the configuration variables
-# shellcheck source=../environment.in
-#. "${cwd}/environment"
-
 db_name="${db_name:-"regress"}"
 db_user="${db_user:-"regress"}"
 db_password="${db_password:-""}"
