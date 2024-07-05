@@ -45,7 +45,7 @@ case "$1" in
           nssm set $srv_name AppNoConsole 1
           nssm set $srv_name DisplayName $srv_name
           nssm set $srv_name ObjectName LocalSystem
-          nssm set $srv_name Start SERVICE_AUTO_START
+          nssm set $srv_name Start SERVICE_DEMAND_START
           nssm set $srv_name Type SERVICE_WIN32_OWN_PROCESS
           nssm set $srv_name AppEnvironmentExtra PATH="${CMAKE_BINARY_DIR}/core/src/filed/${CMAKE_CONFIG_TYPE};%PATH%"
           exec 1>&3 2>&4
