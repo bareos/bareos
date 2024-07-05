@@ -37,6 +37,8 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.chrome.service import Service as ChromeService
+
 
 class BadJobException(Exception):
     """Raise when a started job doesn't result in ID"""
@@ -184,7 +186,8 @@ class SeleniumTest(unittest.TestCase):
                 opt.add_argument("--headless")
                 opt.add_argument("--no-sandbox")
 
-            self.driver = webdriver.Chrome(self.chromedriverpath, options=opt)
+            self.driver = webdriver.Chrome(service=ChromeService(self.chromedriverpath), options=opt)
+
         elif self.browser == "firefox":
             d = DesiredCapabilities.FIREFOX
             d["loggingPrefs"] = {"browser": "ALL"}
