@@ -50,12 +50,6 @@ for f in "$file1" "$file2" "$file3" ; do
     fi;
 done
 
-if [[ "$(uname -s)" =~ _NT ]]; then
-  filename1="$(cygpath -w -m $file1)"
-  filename2="$(cygpath -w -m $file2)"
-  filename3="$(cygpath -w -m $file3)"
-fi
-
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 setdebug level=100 storage=File
