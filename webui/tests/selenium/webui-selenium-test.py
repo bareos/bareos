@@ -171,9 +171,9 @@ class SeleniumTest(unittest.TestCase):
             # chrome webdriver option: specify user data directory
             opt.add_argument(
                 "--user-data-dir=/tmp/chrome-user-data-"
-                + getattr(self, 'profile', "none")
+                + getattr(self, "profile", "none")
                 + "-"
-                + getattr(self, 'testname', "none")
+                + getattr(self, "testname", "none")
             )
             # Set some options to improve reliability
             # https://stackoverflow.com/a/55307841/11755457
@@ -186,7 +186,9 @@ class SeleniumTest(unittest.TestCase):
                 opt.add_argument("--headless")
                 opt.add_argument("--no-sandbox")
 
-            self.driver = webdriver.Chrome(service=ChromeService(self.chromedriverpath), options=opt)
+            self.driver = webdriver.Chrome(
+                service=ChromeService(self.chromedriverpath), options=opt
+            )
 
         elif self.browser == "firefox":
             d = DesiredCapabilities.FIREFOX
@@ -435,7 +437,9 @@ class SeleniumTest(unittest.TestCase):
             "backup-bareos-fd"
         )
         Select(driver.find_element(By.ID, "client")).select_by_visible_text(self.client)
-        Select(driver.find_element(By.ID, "level")).select_by_visible_text("Incremental")
+        Select(driver.find_element(By.ID, "level")).select_by_visible_text(
+            "Incremental"
+        )
         # Clears the priority field and enters 5.
         self.enter_input("priority", "5")
         # Open the calendar
@@ -461,7 +465,7 @@ class SeleniumTest(unittest.TestCase):
         # )
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
-        driver.find_element(By.XPATH,'(//button[@type="button"])[1]').click()
+        driver.find_element(By.XPATH, '(//button[@type="button"])[1]').click()
         driver.find_element(By.LINK_TEXT, "English").click()
         driver.find_element(By.XPATH, '//input[@id="submit"]').click()
         try:
