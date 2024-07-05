@@ -104,7 +104,7 @@ void CopyRstorage(JobControlRecord* jcr,
     }
     jcr->dir_impl->res.read_storage_list
         = new alist<StorageResource*>(10, not_owned_by_alist);
-    for (auto* store : *storage) {
+    for (auto* store : storage) {
       jcr->dir_impl->res.read_storage_list->append(store);
     }
     if (!jcr->dir_impl->res.rstore_source) {
@@ -135,7 +135,7 @@ void SetRstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
     jcr->dir_impl->res.rstore_source = GetPoolMemory(PM_MESSAGE);
   }
   PmStrcpy(jcr->dir_impl->res.rstore_source, store->store_source);
-  for (auto* storage : *jcr->dir_impl->res.read_storage_list) {
+  for (auto* storage : jcr->dir_impl->res.read_storage_list) {
     if (store->store == storage) { return; }
   }
   /* Store not in list, so add it */
@@ -162,7 +162,7 @@ void CopyWstorage(JobControlRecord* jcr,
     }
     jcr->dir_impl->res.write_storage_list
         = new alist<StorageResource*>(10, not_owned_by_alist);
-    for (auto* st : *storage) {
+    for (auto* st : storage) {
       Dmsg1(100, "write_storage_list=%s\n", st->resource_name_);
       jcr->dir_impl->res.write_storage_list->append(st);
     }
@@ -200,7 +200,7 @@ void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
   Dmsg2(50, "write_storage=%s where=%s\n",
         jcr->dir_impl->res.write_storage->resource_name_,
         jcr->dir_impl->res.wstore_source);
-  for (auto* storage : *jcr->dir_impl->res.write_storage_list) {
+  for (auto* storage : jcr->dir_impl->res.write_storage_list) {
     if (store->store == storage) { return; }
   }
 
@@ -239,7 +239,7 @@ void SetPairedStorage(JobControlRecord* jcr)
             = new alist<StorageResource*>(10, not_owned_by_alist);
         if (jcr->dir_impl->res.paired_read_write_storage_list) {
           for (auto* store :
-               *jcr->dir_impl->res.paired_read_write_storage_list) {
+               jcr->dir_impl->res.paired_read_write_storage_list) {
             if (store->paired_storage) {
               Dmsg1(100, "write_storage_list=%s\n",
                     store->paired_storage->resource_name_);
@@ -272,7 +272,7 @@ void SetPairedStorage(JobControlRecord* jcr)
         jcr->dir_impl->res.paired_read_write_storage_list
             = new alist<StorageResource*>(10, not_owned_by_alist);
         for (auto* paired_read_write_storage :
-             *jcr->dir_impl->res.read_storage_list) {
+             jcr->dir_impl->res.read_storage_list) {
           auto* store
               = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
           while (store) {
@@ -314,7 +314,7 @@ void SetPairedStorage(JobControlRecord* jcr)
             = new alist<StorageResource*>(10, not_owned_by_alist);
         if (jcr->dir_impl->res.paired_read_write_storage_list) {
           for (auto* store :
-               *jcr->dir_impl->res.paired_read_write_storage_list) {
+               jcr->dir_impl->res.paired_read_write_storage_list) {
             if (store->paired_storage) {
               Dmsg1(100, "read_storage_list=%s\n",
                     store->paired_storage->resource_name_);
@@ -410,7 +410,7 @@ bool HasPairedStorage(JobControlRecord* jcr)
     case JT_BACKUP:
       // For a backup we look at the write storage.
       if (jcr->dir_impl->res.write_storage_list) {
-        for (auto* store : *jcr->dir_impl->res.write_storage_list) {
+        for (auto* store : jcr->dir_impl->res.write_storage_list) {
           if (!store->paired_storage) { return false; }
         }
       } else {
@@ -424,7 +424,7 @@ bool HasPairedStorage(JobControlRecord* jcr)
     case JT_MIGRATE:
     case JT_COPY:
       if (jcr->dir_impl->res.read_storage_list) {
-        for (auto* store : *jcr->dir_impl->res.read_storage_list) {
+        for (auto* store : jcr->dir_impl->res.read_storage_list) {
           if (!store->paired_storage) { return false; }
         }
       } else {

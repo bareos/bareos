@@ -216,7 +216,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
   if (plugin_names && plugin_names->size()) {
     PoolMem plugin_name(PM_FNAME);
 
-    for (const char* name : *plugin_names) {
+    for (const char* name : plugin_names) {
       // Generate the plugin name e.g. <name>-<daemon>.so
       Mmsg(plugin_name, "%s%s", name, type);
 
@@ -414,8 +414,7 @@ void DumpPlugins(alist<Plugin*>* plugin_list, FILE* fp)
   fprintf(fp, "Attempt to dump plugins. Hook count=%d\n",
           dbg_plugin_hook_count);
 
-  if (!plugin_list) { return; }
-  for (auto* plugin : *plugin_list) {
+  for (auto* plugin : plugin_list) {
     for (int i = 0; i < dbg_plugin_hook_count; i++) {
       //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
       fprintf(fp, "Plugin %p name=\"%s\"\n", plugin, plugin->file);
