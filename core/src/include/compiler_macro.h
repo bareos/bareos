@@ -32,16 +32,16 @@
 #ifndef BAREOS_INCLUDE_COMPILER_MACRO_H_
 #define BAREOS_INCLUDE_COMPILER_MACRO_H_
 
-#ifdef HAVE_GCC
+#if defined(HAVE_GCC)
 #  define IGNORE_MISSING_INITIALIZERS_ON \
     _Pragma("GCC diagnostic push");      \
     _Pragma("GCC diagnostic ignored \"-Wmissing-field-initializers\"");
 #  define IGNORE_MISSING_INITIALIZERS_OFF _Pragma("GCC diagnostic pop");
-#elif HAVE_MSVC
+#elif defined(HAVE_MSVC)
 // msvc does not warn for this it seems.
 #  define IGNORE_MISSING_INITIALIZERS_ON
 #  define IGNORE_MISSING_INITIALIZERS_OFF
-#elif HAVE_CLANG
+#elif defined(HAVE_CLANG)
 #  define IGNORE_MISSING_INITIALIZERS_ON \
     _Pragma("clang diagnostic push");    \
     _Pragma("clang diagnostic ignored \"-Wmissing-field-initializers\"");
@@ -52,17 +52,17 @@
 #endif
 
 
-#ifdef HAVE_GCC
+#if defined(HAVE_GCC)
 #  define IGNORE_DEPRECATED_ON      \
     _Pragma("GCC diagnostic push"); \
     _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"");
 #  define IGNORE_DEPRECATED_OFF _Pragma("GCC diagnostic pop")
-#elif HAVE_CLANG
+#elif defined(HAVE_CLANG)
 #  define IGNORE_DEPRECATED_ON        \
     _Pragma("clang diagnostic push"); \
     _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"");
 #  define IGNORE_DEPRECATED_OFF _Pragma("clang diagnostic pop")
-#elif HAVE_MSVC
+#elif defined(HAVE_MSVC)
 #  define IGNORE_DEPRECATED_ON  \
     _Pragma("warning( push )"); \
     _Pragma("warning( disable : 4996 )")
@@ -72,17 +72,17 @@
 #  define IGNORE_DEPRECATED_OFF
 #endif
 
-#ifdef HAVE_GCC
+#if defined(HAVE_GCC)
 #  define IGNORE_UNREFERENCED_FUNCTION_ON \
     _Pragma("GCC diagnostic push");       \
     _Pragma("GCC diagnostic ignored \"-Wunused-function\"");
 #  define IGNORE_UNREFERENCED_FUNCTION_OFF _Pragma("GCC diagnostic pop")
-#elif HAVE_CLANG
+#elif defined(HAVE_CLANG)
 #  define IGNORE_UNREFERENCED_FUNCTION_ON \
     _Pragma("clang diagnostic push");     \
     _Pragma("clang diagnostic ignored \"-Wunused-function\"");
 #  define IGNORE_UNREFERENCED_FUNCTION_OFF _Pragma("clang diagnostic pop")
-#elif HAVE_MSVC
+#elif defined(HAVE_MSVC)
 #  define IGNORE_UNREFERENCED_FUNCTION_ON \
     _Pragma("warning( push )");           \
     _Pragma("warning( disable : 4505 )")
@@ -92,7 +92,7 @@
 #  define IGNORE_UNREFERENCED_FUNCTION_OFF
 #endif
 
-#ifdef HAVE_MSVC
+#if defined(HAVE_MSVC)
 #  define IGNORE_INT_PTR_CAST_ON \
     _Pragma("warning( push )");  \
     _Pragma("warning( disable : 4312 )")
