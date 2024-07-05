@@ -3,6 +3,14 @@
 # A set of useful functions to be sourced in each test
 #
 
+# remove the colon from a windows path
+# required to determine the restore path as the colon is omitted if restored to
+# a subdirectory C:/test will result in C:/bareos-restores/C/test
+remove_colon_from_windows_path()
+{
+   sed 's#/\(.\):#/\1#g'<<< "$1"
+}
+
 generate_test_data(){
   subdir=$1
   mkdir -p "$tmp/$subdir"
@@ -489,7 +497,6 @@ start_sd() {
  ${rscripts}/bareos-ctl-sd start
 }
 
-
 start_bareos()
 {
    debug_wait
@@ -878,7 +885,7 @@ check_restore_diff()
    result=0
 
    restorepath="$restoredirectory/${dest}"
-   restorepath=$(sed 's#/\(.\):#/\1#g'<<< $restorepath)
+   restorepath=$(remove_colon_from_windows_path "$restorepath")
    if ! perl "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
        dstat=1
    fi

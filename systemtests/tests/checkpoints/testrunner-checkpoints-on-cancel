@@ -106,7 +106,8 @@ expect_grep "Files Restored:         ${NumberOfBackedUpFiles}" \
             "Restore of canceled job did not go well!"
 
 restorepath="$restore_directory/$tmp/bigdata"
-restorepath=$(sed 's#/\(.\):#/\1#g' <<< $restorepath)
+restorepath=$(remove_colon_from_windows_path "$restorepath")
+
 # Certain systems do not support multiple types for find (-type f,l)
 NumberOfFilesRestored=$(find "$restorepath" -type f | wc -l)
 NumberOfLinksRestored=$(find "$restorepath" -type l | wc -l)

@@ -14,7 +14,7 @@ TestName=02-restore
 start_test
 
 restorepath="$tmp/bareos-restores/${BackupDirectory}"
-restorepath=$(sed 's#/\(.\):#/\1#g'<<< $restorepath) # remove ':' from windows path
+restorepath=$(remove_colon_from_windows_path "$restorepath")
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
