@@ -89,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - github: introduce template for issues [PR #1716]
 - docs: improve pluginAPI docs [PR #1805]
 - Fix mistake in VolumeManagement.rst [PR #1829]
+- docs: improve Restoring a Bareos Server section [PR #1878]
 
 ### Fixed
 - dird: fix `purge oldest volume` [PR #1628]
@@ -201,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1853]: https://github.com/bareos/bareos/pull/1853
 [PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
+[PR #1878]: https://github.com/bareos/bareos/pull/1878
 [PR #1881]: https://github.com/bareos/bareos/pull/1881
 [PR #1883]: https://github.com/bareos/bareos/pull/1883
 [unreleased]: https://github.com/bareos/bareos/tree/master
