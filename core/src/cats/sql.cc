@@ -115,19 +115,20 @@ int DbIdListHandler(void* ctx, int num_fields, char** row)
  * DbMaxConnectionsHandler.
  */
 struct max_connections_context {
-  BareosDb* db;
   uint32_t nr_connections;
 };
 
-static inline int DbMaxConnectionsHandler(void* ctx, int, char** row)
+static inline int DbMaxConnectionsHandler(void* ctx, int count, char** row)
 {
-  struct max_connections_context* context;
+  auto* context = static_cast<struct max_connections_context*>(ctx);
 
-  context = (struct max_connections_context*)ctx;
-  uint32_t index = 0;
+  if (count != 1) {
+    Dmsg0(50, "Expected exactly one field, got %d\n", count);
+    return -1;
+  }
 
-  if (row[index]) {
-    context->nr_connections = str_to_int64(row[index]);
+  if (row[0]) {
+    context->nr_connections = str_to_int64(row[0]);
   } else {
     Dmsg0(800, "int_handler finds zero\n");
     context->nr_connections = 0;
@@ -138,14 +139,12 @@ static inline int DbMaxConnectionsHandler(void* ctx, int, char** row)
 bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
                                    uint32_t max_concurrent_jobs)
 {
-  PoolMem query(PM_MESSAGE);
-  struct max_connections_context context;
-
-  // Without Batch insert, no need to verify max_connections
+  // Without Batch insert, no need to verify max_connections, as all
+  // jobs share a connection otherwise
   if (!BatchInsertAvailable()) return true;
 
-  context.db = this;
-  context.nr_connections = 0;
+  struct max_connections_context context {};
+  PoolMem query(PM_MESSAGE);
 
   // Check max_connections setting
   FillQuery(query, SQL_QUERY::sql_get_max_connections);
