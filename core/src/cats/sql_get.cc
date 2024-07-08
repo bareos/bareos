@@ -103,7 +103,6 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
   char ed1[50], ed2[50], ed3[50];
   int num_rows;
 
-  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * fnl + 2);
   EscapeString(jcr, esc_name, fname, fnl);
 
@@ -177,7 +176,6 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
   DBId_t PathId = 0;
   int num_rows;
 
-  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * pnl + 2);
   EscapeString(jcr, esc_name, path, pnl);
 
@@ -1040,6 +1038,8 @@ bool BareosDb::GetAllVolumeNames(db_list_ctx* volumenames)
   Mmsg(query,
        "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName");
 
+  DbLocker _{this};
+
   if (!SqlQueryWithHandler(query.c_str(), DbListHandler, volumenames)) {
     Emsg1(M_ERROR, 0, "Could not retrieve volume names: ERR=%s\n",
           sql_strerror());
@@ -1270,13 +1270,12 @@ db_list_ctx BareosDb::FilterZeroFileJobs(db_list_ctx& jobids)
 {
   if (jobids.empty()) { return {}; }
 
-  AssertOwnership();
-
   std::string query{"SELECT JobId FROM Job WHERE JobFiles = 0 AND JobId IN ("};
   query += jobids.Join(",") + ") ORDER BY JobId";
 
   db_list_ctx zero_file_jobs;
-  if (!SqlQueryWithHandler(query.c_str(), DbListHandler, &zero_file_jobs)) {
+  if (DbLocker _{this};
+      !SqlQueryWithHandler(query.c_str(), DbListHandler, &zero_file_jobs)) {
     throw new BareosSqlError(sql_strerror());
   }
   for (auto& remove_jobid : zero_file_jobs) {
@@ -1309,6 +1308,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   char clientid[50], jobid[50], filesetid[50];
   char date[MAX_TIME_LENGTH];
   PoolMem query(PM_MESSAGE);
+
+  DbLocker _{this};
 
   /* Take the current time as upper limit if nothing else specified */
   utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
@@ -1870,6 +1871,7 @@ bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
   for (int i = 0; i < mediaIds.size(); i++) {
     mr.MediaId = mediaIds.get(i);
     if (!GetMediaRecord(jcr, &mr)) {
+      DbLocker _{this};
       Mmsg1(errmsg, T_("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       return false;

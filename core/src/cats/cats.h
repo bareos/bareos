@@ -529,9 +529,6 @@ class BareosDb : public BareosDbQueryEnum {
 
  private:
   int GetFilenameRecord(JobControlRecord* jcr);
-  bool GetFileRecord(JobControlRecord* jcr,
-                     JobDbRecord* jr,
-                     FileDbRecord* fdbr);
   bool CreateBatchFileAttributesRecord(JobControlRecord* jcr,
                                        AttributesDbRecord* ar);
   bool CreateFilenameRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
@@ -655,13 +652,13 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateTapealertStatistics(JobControlRecord* jcr,
                                  TapealertStatsDbRecord* tsr);
 
-  /* sql_delete.c */
+  /* sql_delete.cc */
   bool DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pool_dbr);
   bool DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
   void PurgeFiles(const char* jobids);
   void PurgeJobs(const char* jobids);
 
-  /* sql_find.c */
+  /* sql_find.cc */
 
   enum class SqlFindResult
   {
@@ -697,14 +694,20 @@ class BareosDb : public BareosDbQueryEnum {
                           POOLMEM* stime,
                           int& JobLevel);
 
-  /* sql_get.c */
+  /* sql_get.cc */
+ private:
+  int GetPathRecord(JobControlRecord* jcr);
+  bool GetFileRecord(JobControlRecord* jcr,
+                     JobDbRecord* jr,
+                     FileDbRecord* fdbr);
+
+ public:
   bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);
   bool GetMediaIdsInPool(PoolDbRecord* pool_record, std::vector<DBId_t>* lst);
   bool GetBaseFileList(JobControlRecord* jcr,
                        bool use_md5,
                        DB_RESULT_HANDLER* ResultHandler,
                        void* ctx);
-  int GetPathRecord(JobControlRecord* jcr);
   int GetPathRecord(JobControlRecord* jcr, const char* new_path);
   bool GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr);
   bool GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr);
