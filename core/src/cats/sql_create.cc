@@ -551,7 +551,6 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   int num_rows;
 
   errmsg[0] = 0;
-  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * pnl + 2);
   EscapeString(jcr, esc_name, path, pnl);
 
