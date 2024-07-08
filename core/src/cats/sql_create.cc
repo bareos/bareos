@@ -929,7 +929,6 @@ bool BareosDb::CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   ASSERT(ar->JobId);
   ASSERT(ar->PathId);
 
-  AssertOwnership();
   esc_name = CheckPoolMemorySize(esc_name, 2 * fnl + 2);
   EscapeString(jcr, esc_name, fname, fnl);
 
@@ -968,6 +967,8 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
                                       AttributesDbRecord* ar)
 {
   bool retval;
+
+  DbLocker _{this};
 
   errmsg[0] = 0;
   // Make sure we have an acceptable attributes record.
@@ -1082,14 +1083,14 @@ bool BareosDb::CommitBaseFileAttributesRecord(JobControlRecord* jcr)
  */
 bool BareosDb::CreateBaseFileList(JobControlRecord* jcr, const char* jobids)
 {
-  PoolMem buf(PM_MESSAGE);
-
   DbLocker _{this};
 
   if (!*jobids) {
     Mmsg(errmsg, T_("ERR=JobIds are empty\n"));
     return false;
   }
+
+  PoolMem buf(PM_MESSAGE);
 
   FillQuery(SQL_QUERY::create_temp_basefile, (uint64_t)jcr->JobId);
   if (!SqlQuery(cmd)) { return false; }

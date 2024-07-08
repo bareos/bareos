@@ -535,8 +535,6 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateBatchFileAttributesRecord(JobControlRecord* jcr,
                                        AttributesDbRecord* ar);
   bool CreateFilenameRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
-  bool CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
-  void CleanupBaseFile(JobControlRecord* jcr);
   void BuildPathHierarchy(JobControlRecord* jcr,
                           pathid_cache& ppathid_cache,
                           char* org_pathid,
@@ -615,9 +613,11 @@ class BareosDb : public BareosDbQueryEnum {
   bool OpenBatchConnection(JobControlRecord* jcr);
   void DbDebugPrint(FILE* fp);
 
-  /* sql_create.c */
+  /* sql_create.cc */
  private:
+  bool CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
+  void CleanupBaseFile(JobControlRecord* jcr);
 
  public:
   bool CreateFileAttributesRecord(JobControlRecord* jcr,
