@@ -27,6 +27,7 @@
 
 #if defined(HAVE_MSVC)
 #  include "getopt.h"
+char* optarg{};
 #else
 #  include <unistd.h>
 #endif
@@ -35,10 +36,6 @@
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
 #include "findlib/fstype.h"
-
-#if HAVE_MSVC
-char* optarg{};
-#endif
 
 static void usage(int exit_status)
 {

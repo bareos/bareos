@@ -27,6 +27,7 @@
 
 #if defined(HAVE_MSVC)
 #  include "getopt.h"
+char* optarg{};
 #else
 #  include <unistd.h>
 #endif
@@ -34,10 +35,6 @@
 #include "include/exit_codes.h"
 #include "findlib/find.h"
 #include "findlib/drivetype.h"
-
-#if HAVE_MSVC
-char* optarg{};
-#endif
 
 static void usage(int exit_code)
 {
