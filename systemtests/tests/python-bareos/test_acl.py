@@ -20,7 +20,6 @@
 
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
 import json
 import logging
 import os
@@ -417,11 +416,32 @@ class PythonBareosAclTest(bareos_unittest.Json):
             **self.director_extra_options
         )
 
+        # verify that the command ".consoles" is not allowed.
+        # We expect that the Bareos Director will return something like:
+        # {
+        #   "jsonrpc": "2.0",
+        #   "id": null,
+        #   "error": {
+        #     "code": 1,
+        #     "message": "failed",
+        #     "data": {
+        #       "result": {},
+        #       "messages": {
+        #         "error": [
+        #           ".consoles: is an invalid command.\n"
+        #         ]
+        #       }
+        #     }
+        #   }
+        # }
+        # DirectorConsoleJson will raise an exception, if the result contains the "error" key.
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
             result = console.call(".consoles")
-            # logger.debug(result)
-            # consoles = [item["name"] for item in result["consoles"]]
-            # self.assertIn(username, consoles)
 
+        # verify that substings of the ".consoles" command are not allowed.
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
             result = console.call(".consol")
+
+        # verify that other commands are allowed.
+        result = console.call(".jobs")
+        self.assertGreaterEqual(len(result["jobs"]), 1)
