@@ -814,33 +814,37 @@ bail_out:
   return id;
 }
 
-void BareosDbPostgresql::SqlUpdateField(int i)
+static void ComputeFields(int num_fields,
+                          int num_rows,
+                          SQL_FIELD fields[/* num_fields */],
+                          PGresult* result)
 {
-  AssertOwnership();
-  Dmsg1(500, "filling field %d\n", i);
-  fields_[i].name = PQfname(result_, i);
-  fields_[i].type = PQftype(result_, i);
-  fields_[i].flags = 0;
-
   // For a given column, find the max length.
-  int max_length = 0;
-  int this_length = 0;
-  for (int j = 0; j < num_rows_; j++) {
-    if (PQgetisnull(result_, j, i)) {
-      this_length = 4; /* "NULL" */
-    } else {
-      this_length = cstrlen(PQgetvalue(result_, j, i));
+  for (int fidx = 0; fidx < num_fields; ++fidx) { fields[fidx].max_length = 0; }
+
+  for (int ridx = 0; ridx < num_rows; ++ridx) {
+    for (int fidx = 0; fidx < num_fields; ++fidx) {
+      int length = PQgetisnull(result, ridx, fidx)
+                       ? 4 /* "NULL" */
+                       : cstrlen(PQgetvalue(result, ridx, fidx));
+
+      if (fields[fidx].max_length < length) {
+        fields[fidx].max_length = length;
+      }
     }
-
-    if (max_length < this_length) { max_length = this_length; }
   }
-  fields_[i].max_length = max_length;
 
-  Dmsg4(500,
-        "SqlUpdateField finds field '%s' has length='%d' type='%d' and "
-        "IsNull=%d\n",
-        fields_[i].name, fields_[i].max_length, fields_[i].type,
-        fields_[i].flags);
+  for (int fidx = 0; fidx < num_fields; ++fidx) {
+    Dmsg1(500, "filling field %d\n", fidx);
+    fields[fidx].name = PQfname(result, fidx);
+    fields[fidx].type = PQftype(result, fidx);
+    fields[fidx].flags = 0;
+    Dmsg4(500,
+          "ComputeFields finds field '%s' has length='%d' type='%d' and "
+          "IsNull=%d\n",
+          fields[fidx].name, fields[fidx].max_length, fields[fidx].type,
+          fields[fidx].flags);
+  }
 }
 
 SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
@@ -853,19 +857,20 @@ SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
     return nullptr;
   }
 
-  if (!fields_ || fields_size_ < num_fields_) {
-    fields_fetched_ = false;
-    if (fields_) {
-      free(fields_);
-      fields_ = NULL;
-    }
-    Dmsg1(500, "allocating space for %d fields\n", num_fields_);
-    fields_ = (SQL_FIELD*)malloc(sizeof(SQL_FIELD) * num_fields_);
-    fields_size_ = num_fields_;
-  }
-
   if (!fields_fetched_) {
-    for (int i = 0; i < num_fields_; i++) { SqlUpdateField(i); }
+    if (!fields_ || fields_size_ < num_fields_) {
+      fields_fetched_ = false;
+      if (fields_) {
+        free(fields_);
+        fields_ = NULL;
+      }
+      Dmsg1(500, "allocating space for %d fields\n", num_fields_);
+      fields_ = (SQL_FIELD*)malloc(sizeof(SQL_FIELD) * num_fields_);
+      fields_size_ = num_fields_;
+    }
+
+    ComputeFields(num_fields_, num_rows_, fields_, result_);
+
     fields_fetched_ = true;
   }
 

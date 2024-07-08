@@ -92,7 +92,6 @@ class BareosDbPostgresql : public BareosDb {
   int SqlAffectedRows(void) override;
   uint64_t SqlInsertAutokeyRecord(const char* query,
                                   const char* table_name) override;
-  void SqlUpdateField(int column);
   SQL_FIELD* SqlFetchField(void) override;
   bool SqlFieldIsNotNull(int field_type) override;
   bool SqlFieldIsNumeric(int field_type) override;
