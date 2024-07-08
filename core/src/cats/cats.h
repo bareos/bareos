@@ -557,6 +557,13 @@ class BareosDb : public BareosDbQueryEnum {
     return num_rows_;
   }
 
+  /* each public function should either
+   * 1. Lock the db itself, or
+   * 2. assert that it currently holds the lock,
+   * if it modifies the database state in anyway.
+   * A function should never lock the db itself, if it returns some internal
+   * db state, i.e. error messages, SqlResults, etc. */
+
  public:
   BareosDb() {}
   virtual ~BareosDb() {}
@@ -576,6 +583,10 @@ class BareosDb : public BareosDbQueryEnum {
                            void* ctx);
 
   /* sql.c */
+ private:
+  void ListDashes(OutputFormatter* send);
+
+ public:
   char* strerror();
   bool CheckMaxConnections(JobControlRecord* jcr, uint32_t max_concurrent_jobs);
   bool CheckTablesVersion(JobControlRecord* jcr);
@@ -597,7 +608,6 @@ class BareosDb : public BareosDbQueryEnum {
                const char* UpdateCmd);
   int GetSqlRecordMax(JobControlRecord* jcr);
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
-  void ListDashes(OutputFormatter* send);
   int ListResult(void* vctx, int nb_col, char** row);
   int ListResult(JobControlRecord* jcr,
                  OutputFormatter* send,
@@ -606,7 +616,10 @@ class BareosDb : public BareosDbQueryEnum {
   void DbDebugPrint(FILE* fp);
 
   /* sql_create.c */
+ private:
   bool CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
+
+ public:
   bool CreateFileAttributesRecord(JobControlRecord* jcr,
                                   AttributesDbRecord* ar);
   bool CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr);
