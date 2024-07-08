@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1606,16 +1606,16 @@ static bool DisplayJobParameters(UaContext* ua,
       } else {
         if (ua->api) ua->signal(BNET_RUN_CMD);
         ua->SendMsg(T_("Run Restore job\n"
-                       "JobName:    %s\n"
-                       "Bootstrap:  %s\n"),
+                       "JobName:         %s\n"
+                       "Bootstrap:       %s\n"),
                     job->resource_name_, NPRT(jcr->RestoreBootstrap));
 
         /* RegexWhere is take before RestoreWhere */
         if (jcr->RegexWhere || (job->RegexWhere && !jcr->where)) {
-          ua->SendMsg(T_("RegexWhere: %s\n"),
+          ua->SendMsg(T_("RegexWhere:      %s\n"),
                       jcr->RegexWhere ? jcr->RegexWhere : job->RegexWhere);
         } else {
-          ua->SendMsg(T_("Where:      %s\n"),
+          ua->SendMsg(T_("Where:           %s\n"),
                       jcr->where ? jcr->where : NPRT(job->RestoreWhere));
         }
 
