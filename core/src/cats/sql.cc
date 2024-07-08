@@ -155,6 +155,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
 
   if (context.nr_connections && max_concurrent_jobs
       && max_concurrent_jobs > context.nr_connections) {
+    DbLocker _{this};
     Mmsg(errmsg,
          T_("Potential performance problem:\n"
             "max_connections=%d set for %s database \"%s\" should be larger "
@@ -168,10 +169,6 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   return true;
 }
 
-/* NOTE!!! The following routines expect that the
- *  calling subroutine sets and clears the mutex
- */
-
 bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
 {
   uint32_t bareos_db_version = 0;
@@ -183,6 +180,7 @@ bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
   }
 
   if (bareos_db_version != BDB_VERSION) {
+    DbLocker _{this};
     Mmsg(errmsg, "Version error for database \"%s\". Wanted %d, got %d\n",
          get_db_name(), BDB_VERSION, bareos_db_version);
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
@@ -191,6 +189,9 @@ bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
 
   return true;
 }
+
+/* NOTE!!! The following routines expect that the
+ *  calling subroutine sets and clears the mutex */
 
 /**
  * Utility routine for queries. The database MUST be locked before calling here.
@@ -202,6 +203,8 @@ bool BareosDb::QueryDB(const char* file,
                        JobControlRecord* jcr,
                        const char* select_cmd)
 {
+  AssertOwnership();
+
   SqlFreeResult();
   Dmsg1(1000, "query: %s\n", select_cmd);
   if (!SqlQuery(select_cmd, QF_STORE_RESULT)) {
@@ -225,6 +228,7 @@ int BareosDb::InsertDB(const char* file,
                        JobControlRecord* jcr,
                        const char* select_cmd)
 {
+  AssertOwnership();
   int num_rows;
 
   if (!SqlQuery(select_cmd)) {
@@ -256,6 +260,7 @@ int BareosDb::UpdateDB(const char* file,
                        JobControlRecord* jcr,
                        const char* UpdateCmd)
 {
+  AssertOwnership();
   if (!SqlQuery(UpdateCmd)) {
     msg_(file, line, errmsg, T_("update %s failed:\n%s\n"), UpdateCmd,
          sql_strerror());
@@ -279,6 +284,7 @@ int BareosDb::DeleteDB(const char* file,
                        JobControlRecord* jcr,
                        const char* DeleteCmd)
 {
+  AssertOwnership();
   if (!SqlQuery(DeleteCmd)) {
     msg_(file, line, errmsg, T_("delete %s failed:\n%s\n"), DeleteCmd,
          sql_strerror());
@@ -299,6 +305,8 @@ int BareosDb::DeleteDB(const char* file,
  */
 int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
 {
+  AssertOwnership();
+
   SQL_ROW row;
   int retval = 0;
 
@@ -317,7 +325,13 @@ int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
   return retval;
 }
 
-char* BareosDb::strerror() { return errmsg; }
+char* BareosDb::strerror()
+{
+  // it does not make sense to call this function without holding the lock,
+  // as it may not be the real error anymore.
+  AssertOwnership();
+  return errmsg;
+}
 
 /**
  * Given a full filename, split it into its path
@@ -326,6 +340,7 @@ char* BareosDb::strerror() { return errmsg; }
  */
 void BareosDb::SplitPathAndFile(JobControlRecord* jcr, const char* filename)
 {
+  AssertOwnership();
   const char *p, *f;
 
   /* Find path without the filename.
@@ -408,6 +423,8 @@ void BareosDb::ListDashes(OutputFormatter* send)
 // List result handler used by queries done with db_big_sql_query()
 int BareosDb::ListResult(void* vctx, int, char** row)
 {
+  AssertOwnership();
+
   JobControlRecord* jcr;
   char ewc[30];
   PoolMem key;
@@ -618,6 +635,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
                          OutputFormatter* send,
                          e_list_type type)
 {
+  AssertOwnership();
+
   SQL_ROW row;
   char ewc[30];
   PoolMem key;
@@ -845,11 +864,13 @@ int ListResult(JobControlRecord* jcr,
 }
 
 /**
- * Open a new connexion to mdb catalog. This function is used by batch and
+ * Open a new connection to mdb catalog. This function is used by batch and
  * accurate mode.
  */
 bool BareosDb::OpenBatchConnection(JobControlRecord* jcr)
 {
+  AssertOwnership();
+
   bool multi_db;
 
   multi_db = BatchInsertAvailable();
@@ -866,6 +887,8 @@ bool BareosDb::OpenBatchConnection(JobControlRecord* jcr)
 
 void BareosDb::DbDebugPrint(FILE* fp)
 {
+  AssertOwnership();
+
   fprintf(fp, "BareosDb=%p db_name=%s db_user=%s connected=%s\n", this,
           NPRTB(get_db_name()), NPRTB(get_db_user()),
           IsConnected() ? "true" : "false");
