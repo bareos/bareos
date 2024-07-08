@@ -474,10 +474,10 @@ class pathid_cache;
 typedef char** SQL_ROW;
 
 typedef struct sql_field {
-  char* name = nullptr; /* name of column */
-  int max_length = 0;   /* max length */
-  uint32_t type = 0;    /* type */
-  uint32_t flags = 0;   /* flags */
+  const char* name = nullptr; /* name of column */
+  int max_length = 0;         /* max length */
+  uint32_t type = 0;          /* type */
+  uint32_t flags = 0;         /* flags */
 } SQL_FIELD;
 
 class BareosSqlError : public std::runtime_error {
