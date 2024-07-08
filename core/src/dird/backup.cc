@@ -354,6 +354,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 
   if (jcr->HasBase) {
     jcr->nb_base_files = nb.GetFrontAsInteger();
+    DbLocker _{jcr->db};
     if (!jcr->db->CreateBaseFileList(jcr, jobids.GetAsString().c_str())) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db->CreateBaseFileList:%s\n",
            jcr->db->strerror());
