@@ -47,9 +47,9 @@ bool UaContext::AclAccessOk(int acl, const char* item, bool audit_event)
  * A regexp uses the following chars:
  * ., (, ), [, ], |, ^, $, +, ?, *
  */
-static inline bool is_regex(std::string string_to_check)
+constexpr bool is_regex(std::string_view string_to_check)
 {
-  return std::string::npos != string_to_check.find_first_of(".()[]|^$+?*");
+  return string_to_check.npos != string_to_check.find_first_of(".()[]|^$+?*");
 }
 
 /**
