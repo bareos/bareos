@@ -551,6 +551,12 @@ class BareosDb : public BareosDbQueryEnum {
                        BareosDb::SQL_QUERY predefined_query,
                        va_list arg_ptr);
 
+  int SqlNumRows(void)
+  {
+    // only valid for queries without handler
+    return num_rows_;
+  }
+
  public:
   BareosDb() {}
   virtual ~BareosDb() {}
@@ -560,12 +566,6 @@ class BareosDb : public BareosDbQueryEnum {
   bool BatchInsertAvailable(void) { return have_batch_insert_; }
   bool IsPrivate(void) { return is_private_; }
   void IncrementRefcount(void) { ref_count_++; }
-
-  int SqlNumRows(void)
-  {
-    // only valid for queries without handler
-    return num_rows_;
-  }
 
   /* bvfs.c */
   bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, const char* jobids);
