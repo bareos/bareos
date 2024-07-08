@@ -351,6 +351,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
           jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex,
           jm.LastIndex);
+    DbLocker _{jcr->db};
     if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
       Jmsg(jcr, M_FATAL, 0, T_("Catalog error creating JobMedia record. %s\n"),
            jcr->db->strerror());

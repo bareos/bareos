@@ -366,7 +366,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return false;
     }
   } else {
-    if (!jcr->db->OpenBatchConnection(jcr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->OpenBatchConnection(jcr)) {
       Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
       return false; /* Fail */
     }
