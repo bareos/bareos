@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -98,11 +98,7 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 #  define MAX_DEL_LIST_LEN 1000000
 
 struct s_del_ctx {
-  JobId_t* JobId;
-  int num_ids; /* ids stored */
-  int max_ids; /* size of array */
-  int num_del; /* number deleted */
-  int tot_ids; /* total to process */
+  std::vector<JobId_t> ids;
 };
 
 /**
@@ -114,14 +110,12 @@ struct s_del_ctx {
  */
 static int DeleteHandler(void* ctx, int, char** row)
 {
-  struct s_del_ctx* del = (struct s_del_ctx*)ctx;
+  auto* del = static_cast<s_del_ctx*>(ctx);
 
-  if (del->num_ids == MAX_DEL_LIST_LEN) { return 1; }
-  if (del->num_ids == del->max_ids) {
-    del->max_ids = (del->max_ids * 3) / 2;
-    del->JobId = (JobId_t*)realloc(del->JobId, sizeof(JobId_t) * del->max_ids);
-  }
-  del->JobId[del->num_ids++] = (JobId_t)str_to_int64(row[0]);
+  if (del->ids.size() == MAX_DEL_LIST_LEN) { return 1; }
+
+  del->ids.push_back(str_to_int64(row[0]));
+
   return 0;
 }
 
@@ -157,44 +151,33 @@ int BareosDb::DeleteNullJobmediaRecords(JobControlRecord* jcr,
  */
 static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
 {
-  int i;
   char ed1[50];
-  struct s_del_ctx del;
+  struct s_del_ctx del {};
   PoolMem query(PM_MESSAGE);
-
-  del.num_ids = 0;
-  del.tot_ids = 0;
-  del.num_del = 0;
-  del.max_ids = 0;
 
   Mmsg(query, "SELECT JobId from JobMedia WHERE MediaId=%d", mr->MediaId);
 
-  del.max_ids = mr->VolJobs;
-  if (del.max_ids < 100) {
-    del.max_ids = 100;
-  } else if (del.max_ids > MAX_DEL_LIST_LEN) {
-    del.max_ids = MAX_DEL_LIST_LEN;
+  if (mr->VolJobs) {
+    del.ids.reserve(100);
+  } else if (mr->VolJobs > MAX_DEL_LIST_LEN) {
+    del.ids.reserve(MAX_DEL_LIST_LEN);
+  } else {
+    del.ids.reserve(mr->VolJobs);
   }
-  del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 
   mdb->SqlQuery(query.c_str(), DeleteHandler, (void*)&del);
 
-  for (i = 0; i < del.num_ids; i++) {
-    Dmsg1(400, "Delete JobId=%d\n", del.JobId[i]);
-    Mmsg(query, "DELETE FROM Job WHERE JobId=%s",
-         edit_int64(del.JobId[i], ed1));
+  for (auto jobid : del.ids) {
+    Dmsg1(400, "Delete JobId=%d\n", jobid);
+    Mmsg(query, "DELETE FROM Job WHERE JobId=%s", edit_int64(jobid, ed1));
     mdb->SqlQuery(query.c_str());
 
-    Mmsg(query, "DELETE FROM File WHERE JobId=%s",
-         edit_int64(del.JobId[i], ed1));
+    Mmsg(query, "DELETE FROM File WHERE JobId=%s", edit_int64(jobid, ed1));
     mdb->SqlQuery(query.c_str());
 
-    Mmsg(query, "DELETE FROM JobMedia WHERE JobId=%s",
-         edit_int64(del.JobId[i], ed1));
+    Mmsg(query, "DELETE FROM JobMedia WHERE JobId=%s", edit_int64(jobid, ed1));
     mdb->SqlQuery(query.c_str());
   }
-
-  free(del.JobId);
 
   return 1;
 }
