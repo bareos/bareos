@@ -116,15 +116,7 @@ static inline std::optional<bool> FindInAclList(alist<const char*>* list,
                                                 int item_length)
 {
   // See if we have an empty list.
-  if (!list || list->empty()) {
-    /* Empty list for Where => empty where accept anything.
-     * For any other list, reject everything. */
-    if (acl == Where_ACL) {
-      Dmsg0(1400, "Empty Where_ACL allowing restore anywhere\n");
-      return true;
-    }
-    return std::nullopt;
-  }
+  if (!list || list->empty()) { return std::nullopt; }
 
   // Search list for item
   const char* list_value = nullptr;
