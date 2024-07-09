@@ -445,3 +445,52 @@ class PythonBareosAclTest(bareos_unittest.Json):
         # verify that other commands are allowed.
         result = console.call(".jobs")
         self.assertGreaterEqual(len(result["jobs"]), 1)
+
+    def test_limiting_where_acl(self):
+        """
+        Try different where options on restore.
+        """
+        logger = logging.getLogger()
+
+        username = "limited-operator"
+        password = "secret"
+
+        jobname = "backup-bareos-fd"
+        client = "bareos-fd"
+        # console WhereACL is expected to be:
+        # WhereAcl = <allowed_restore_path>, "!*all*"
+        allowed_restore_path = "{}/tmp/bareos-restores-{}".format(os.getcwd(), username)
+
+        console = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # retrieve or create a jobid of a valid backup job
+        backup_jobid = self.get_backup_jobid(console, jobname)
+
+        # restore with default where path
+        restore_jobid = self.run_restore(console, client=client, jobid=backup_jobid)
+
+        # restore with allowed where path
+        restore_jobid = self.run_restore(
+            console,
+            client=client,
+            jobid=backup_jobid,
+            extra="where={}".format(allowed_restore_path),
+        )
+
+        # try to restore with non-allowed where path
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            restore_jobid = self.run_restore(
+                console, client=client, jobid=backup_jobid, extra="where=/tmp/INVALID"
+            )
+
+        # try to restore with non-allowed empty where path
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            restore_jobid = self.run_restore(
+                console, client=client, jobid=backup_jobid, extra="where="
+            )
