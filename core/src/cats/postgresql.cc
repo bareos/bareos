@@ -879,11 +879,12 @@ bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
 {
   // TEMP: the following is taken from select OID, typname from pg_type;
   switch (field_type) {
-    case 20:
-    case 21:
-    case 23:
-    case 700:
-    case 701:
+    case 20:   /* int8 (8-byte) */
+    case 21:   /* int2 (2-byte) */
+    case 23:   /* int4 (4-byte) */
+    case 700:  /* float4 (single precision) */
+    case 701:  /* float8 (double precision) */
+    case 1700: /* numeric + decimal */
       return true;
     default:
       return false;
