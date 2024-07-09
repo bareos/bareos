@@ -853,7 +853,6 @@ bail_out:
 bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
                                                AttributesDbRecord* ar)
 {
-  DbLocker _{this};
   ASSERT(ar->FileType != FT_BASE);
 
   Dmsg1(dbglevel, "Fname=%s\n", ar->fname);
@@ -875,7 +874,6 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
     jcr->batch_started = true;
   }
 
-  // this lock should probably also be around the other things...
   DbLocker batch_lock{jcr->db_batch};
   jcr->db_batch->SplitPathAndFile(jcr, ar->fname);
 
