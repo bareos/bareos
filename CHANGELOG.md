@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - python-bareos: add missing `dirname` variable [PR #1848]
 
+### Fixed
+- create_bareos_database: fix `db_name` not being double quoted [PR #1870]
+
 ## [22.1.5] - 2024-06-04
 
 ### Changed
@@ -680,4 +683,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1814]: https://github.com/bareos/bareos/pull/1814
 [PR #1818]: https://github.com/bareos/bareos/pull/1818
 [PR #1848]: https://github.com/bareos/bareos/pull/1848
+[PR #1870]: https://github.com/bareos/bareos/pull/1870
 [unreleased]: https://github.com/bareos/bareos/tree/master
