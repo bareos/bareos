@@ -61,7 +61,8 @@ static inline bool CompareAclListValueWithItem(
     int acl,
     const char* acl_list_value,
     const char* acl_list_compare_value,
-    const char* item)
+    const char* item,
+    int item_length)
 {
   // gives full access
   if (Bstrcasecmp("*all*", acl_list_compare_value)) {
@@ -79,7 +80,6 @@ static inline bool CompareAclListValueWithItem(
    * regex. */
   if (is_regex(acl_list_compare_value)) {
     regex_t preg{};
-    int match_length = strlen(item);
     int rc = regcomp(&preg, acl_list_compare_value, REG_EXTENDED | REG_ICASE);
     if (rc != 0) {
       // Not a valid regular expression so skip it.
@@ -94,7 +94,7 @@ static inline bool CompareAclListValueWithItem(
       // Make sure its not a partial match but a full match.
       Dmsg2(1400, "Found match start offset %d end offset %d\n",
             pmatch[0].rm_so, pmatch[0].rm_eo);
-      if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
+      if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= item_length) {
         Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl,
               acl_list_value);
         regfree(&preg);
@@ -131,11 +131,13 @@ static inline std::optional<bool> FindInAclList(alist<const char*>* list,
   foreach_alist (list_value, list) {
     // See if this is a deny acl.
     if (*list_value == '!') {
-      if (CompareAclListValueWithItem(acl, list_value, list_value + 1, item)) {
+      if (CompareAclListValueWithItem(acl, list_value, list_value + 1, item,
+                                      item_length)) {
         return false;
       }
     } else {
-      if (CompareAclListValueWithItem(acl, list_value, list_value, item)) {
+      if (CompareAclListValueWithItem(acl, list_value, list_value, item,
+                                      item_length)) {
         return true;
       }
     }
@@ -147,7 +149,7 @@ static inline std::optional<bool> FindInAclList(alist<const char*>* list,
 // This version expects the length of the item which we must check.
 bool UaContext::AclAccessOk(int acl,
                             const char* item,
-                            int len,
+                            int item_length,
                             bool audit_event)
 {
   std::optional<bool> retval;
@@ -172,7 +174,7 @@ bool UaContext::AclAccessOk(int acl,
     goto bail_out;
   }
 
-  retval = FindInAclList(user_acl->ACL_lists[acl], acl, item, len);
+  retval = FindInAclList(user_acl->ACL_lists[acl], acl, item, item_length);
 
   /* If we didn't find a matching ACL try to use the profiles this console is
    * connected to. */
@@ -181,7 +183,7 @@ bool UaContext::AclAccessOk(int acl,
       ProfileResource* profile = nullptr;
 
       foreach_alist (profile, user_acl->profiles) {
-        retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);
+        retval = FindInAclList(profile->ACL_lists[acl], acl, item, item_length);
 
         // If we found a match break the loop.
         if (retval.has_value()) { break; }
