@@ -950,15 +950,6 @@ class BareosDb : public BareosDbQueryEnum {
                             char* snew,
                             const char* old,
                             int len);
-  virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
-  virtual unsigned char* EscapeObject(const unsigned char*,
-                                      std::size_t,
-                                      std::size_t&)
-  {
-    return nullptr;
-  }
-  virtual void FreeEscapedObjectMemory(unsigned char*) {}
-
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,
                               int32_t expected_len,
@@ -979,13 +970,8 @@ class BareosDb : public BareosDbQueryEnum {
     return SqlQuery(query, ResultHandler, ctx);
   }
 
-  virtual bool SqlCopyStart(const std::string& table_name,
-                            const std::vector<std::string>& field_names)
-      = 0;
-  virtual bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) = 0;
-  virtual bool SqlCopyEnd() = 0;
-
  private:
+  virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
   virtual void SqlFieldSeek(int field) = 0;
   virtual int SqlNumFields(void) = 0;
   virtual void SqlFreeResult(void) = 0;
