@@ -110,19 +110,9 @@ BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
 
-%if 0%{?sle_version} == 150400
-BuildRequires: gcc11
-BuildRequires: gcc11-c++
-%else
-  %if 0%{?sle_version} == 150300 || 0%{?suse_version} > 1500
-BuildRequires: gcc10
-BuildRequires: gcc10-c++
-  %else
-    %if 0%{?suse_version}
-BuildRequires: gcc9
-BuildRequires: gcc9-c++
-    %endif
-  %endif
+%if 0%{?suse_version}
+BuildRequires: gcc13
+BuildRequires: gcc13-c++
 %endif
 
 %if 0%{?systemd_support}
@@ -263,7 +253,7 @@ Bareos source code has been released under the AGPL version 3 license.
 %{dscr}
 
 
-%if 0%{?opensuse_version} || 0%{?sle_version}
+%if 0%{?suse_version}
 %debug_package
 %endif
 
@@ -661,7 +651,7 @@ Requires: httpd
 %define www_daemon_group apache
 %endif
 
-%if 0%{?suse_version} || 0%{?sle_version}
+%if 0%{?suse_version}
 Conflicts: mod_php_any
 %define _apache_conf_dir /etc/apache2/conf.d/
 %define www_daemon_user wwwrun
@@ -841,22 +831,10 @@ source /opt/rh/devtoolset-8/enable
 %endif
 
 # use modern compiler on suse
-%if 0%{?sle_version} == 150400
-CC=gcc-11  ; export CC
-CXX=g++-11 ; export CXX
-%else
-  %if 0%{?sle_version} == 150300 || 0%{?suse_version} > 1500
-CC=gcc-10  ; export CC
-CXX=g++-10 ; export CXX
-  %else
-    %if 0%{?suse_version}
-CC=gcc-9  ; export CC
-CXX=g++-9 ; export CXX
-    %endif
-  %endif
+%if 0%{?suse_version}
+CC=gcc-13  ; export CC
+CXX=g++-13 ; export CXX
 %endif
-
-
 
 CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
 CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
