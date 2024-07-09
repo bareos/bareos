@@ -786,7 +786,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
                                        dbid_list& mediaIds);
 
-  /* sql_list.c */
+  /* sql_list.cc */
   void ListPoolRecords(JobControlRecord* jcr,
                        PoolDbRecord* pr,
                        OutputFormatter* sendit,
@@ -891,7 +891,7 @@ class BareosDb : public BareosDbQueryEnum {
                            JobId_t jobid,
                            OutputFormatter* sendit);
 
-  /* SqlQuery.c */
+  /* sql_query.cc */
   const char* get_predefined_query_name(SQL_QUERY query);
   const char* get_predefined_query(SQL_QUERY query);
 
@@ -903,7 +903,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool SqlQuery(const char* query, int flags = 0);
   bool SqlQuery(const char* query, DB_RESULT_HANDLER* ResultHandler, void* ctx);
 
-  /* sql_update.c */
+  /* sql_update.cc */
   bool UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr);
   bool UpdateRunningJobRecord(JobControlRecord* jcr);
   bool UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr);
