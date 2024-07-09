@@ -177,9 +177,9 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".api"), DotApiCmd, T_("Switch between different api modes"),
      NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false},
     {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
-     NT_("job=<job-name> | client=<client-name> | storage=<storage-name> |\n"
-         "schedule=<schedule-name> | pool=<pool-name> | cmd=<command> |\n"
-         "fileset=<fileset-name> | catalog=<catalog>"),
+     NT_("job=<job-name> | client=<client-name> | storage=<storage-name> "
+         "| schedule=<schedule-name> | pool=<pool-name> | cmd=<command> "
+         "| fileset=<fileset-name> | catalog=<catalog>"),
      false, false},
     {NT_(".catalogs"), DotCatalogsCmd, T_("List all catalog resources"), NULL,
      false, false},
@@ -224,9 +224,9 @@ static struct ua_cmdstruct commands[] = {
      NT_("[enabled | disabled]"), false, false},
     {NT_(".status"), DotStatusCmd, T_("Report status"),
      NT_("dir ( current | last | header | scheduled | running | terminated ) "
-         "|\n"
+         "| "
          "storage=<storage> [ header | waitreservation | devices | volumes | "
-         "spooling | running | terminated ] |\n"
+         "spooling | running | terminated ] | "
          "client=<client> [ header | terminated | running ]"),
      false, true},
     {NT_(".storages"), DotStorageCmd, T_("List all storage resources"),
@@ -303,13 +303,12 @@ static struct ua_cmdstruct commands[] = {
         "mode"),
      NT_("on | off"), false, false},
     {NT_("help"), help_cmd, T_("Print help on specific command"),
-     NT_("add autodisplay automount cancel configure create delete disable\n"
-         "\tenable estimate exit gui label list llist\n"
-         "\tmessages memory mount prune purge quit query\n"
-         "\trestore relabel release reload run status\n"
-         "\tsetbandwidth setdebug setip show sqlquery time trace truncate "
-         "unmount\n"
-         "\tumount update use var version wait"),
+     NT_("add autodisplay automount cancel configure create delete disable "
+         "enable estimate exit gui label list llist "
+         "messages memory mount prune purge quit query "
+         "restore relabel release reload run status "
+         "setbandwidth setdebug setip show sqlquery time trace truncate "
+         "unmount umount update use var version wait"),
      false, false},
     {NT_("import"), ImportCmd,
      T_("Import volumes from import/export slots to normal slots"),
@@ -321,77 +320,76 @@ static struct ua_cmdstruct commands[] = {
          "slot=<slot> [ drive = <drivenum>] [ barcodes ] [ encrypt ] [ yes ]"),
      false, true},
     {NT_("list"), list_cmd, T_("List objects from catalog"),
-     NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
+     NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> | "
          "backups client=<client-name> [fileset=<fileset-name>] "
          "[jobstatus=<status>] [level=<level>] [order=<asc|desc>] "
-         "[limit=<number>] |\n"
-         "clients | copies jobid=<jobid> |\n"
-         "files jobid=<jobid> | files ujobid=<complete_name> |\n"
-         "filesets |\n"
-         "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] |\n"
-         "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
+         "[limit=<number>] | "
+         "clients | copies jobid=<jobid> | "
+         "files jobid=<jobid> | files ujobid=<complete_name> | "
+         "filesets | "
+         "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | "
+         "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] | "
          "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
          "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
          "[pool=<pool>] "
-         "[days=<number>] [hours=<number>] [last] [count] |\n"
+         "[days=<number>] [hours=<number>] [last] [count] | "
          "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
          "[jobtype=<jobtype>] [volume=<volumename>] [days=<number>] "
-         "[hours=<number>] |\n"
-         "jobid=<jobid> | ujobid=<complete_name> |\n"
-         "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
-         "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
-         "jobtotals |\n"
-         "jobstatistics jobid=<jobid> |\n"
-         "log [ limit=<number> [ offset=<number> ] ] [reverse]|\n"
+         "[hours=<number>] | "
+         "jobid=<jobid> | ujobid=<complete_name> | "
+         "joblog jobid=<jobid> | joblog ujobid=<complete_name> | "
+         "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> | "
+         "jobtotals | "
+         "jobstatistics jobid=<jobid> | "
+         "log [ limit=<number> [ offset=<number> ] ] [reverse]| "
          "media [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | "
-         "all ] |\n"
-         "media=<media-name> |\n"
-         "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
-         "pools |\n"
-         "pool=<pool-name> |\n"
-         "poolid=<poolid> |\n"
-         "storages |\n"
+         "all ] | "
+         "media=<media-name> | "
+         "nextvol job=<job-name> | nextvolume ujobid=<complete_name> | "
+         "pools | "
+         "pool=<pool-name> | "
+         "poolid=<poolid> | "
+         "storages | "
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> "
-         "| all ] [count] |\n"
-         "volume=<volume-name> |\n"
-         "volumeid=<volumeid> | mediaid=<volumeid> |\n"
-         "[current] | [enabled | disabled] |\n"
+         "| all ] [count] | "
+         "volume=<volume-name> | "
+         "volumeid=<volumeid> | mediaid=<volumeid> | "
+         "[current] | [enabled | disabled] | "
          "[limit=<number> [offset=<number>]]"),
      true, true},
     {NT_("llist"), LlistCmd, T_("Full or long list like list command"),
-     NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
+     NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> | "
          "backups client=<client-name> [fileset=<fileset-name>] "
          "[jobstatus=<status>] [level=<level>] [order=<asc|desc>] "
-         "[limit=<number>] [days=<number>] [hours=<number>]|\n"
-         "clients | copies jobid=<jobid> |\n"
-         "files jobid=<jobid> | files ujobid=<complete_name> |\n"
-         "filesets |\n"
-         "fileset jobid=<jobid> | fileset ujobid=<complete_name> |\n"
-         "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
+         "[limit=<number>] [days=<number>] [hours=<number>] | "
+         "clients | copies jobid=<jobid> | "
+         "files jobid=<jobid> | files ujobid=<complete_name> | "
+         "filesets | "
+         "fileset jobid=<jobid> | fileset ujobid=<complete_name> | "
+         "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] | "
          "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
          "[jobtype=<jobtype>] [volume=<volumename>] [pool=<pool>] "
          "[days=<number>] "
-         "[hours=<number>] [last] [count] |\n"
+         "[hours=<number>] [last] [count] | "
          "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
          "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
-         "[days=<number>] [hours=<number>] |\n"
-         "jobid=<jobid> | ujobid=<complete_name> |\n"
+         "[days=<number>] [hours=<number>] | "
+         "jobid=<jobid> | ujobid=<complete_name> | "
          "joblog jobid=<jobid> [count] | joblog ujobid=<complete_name> [count] "
-         "|\n"
-         "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
-         "jobtotals |\n"
-         "media [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | "
-         "all ] |\n"
-         "media=<media-name> |\n"
-         "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
-         "pools |\n"
-         "pool=<pool-name> |\n"
-         "poolid=<poolid> |\n"
+         "| jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> "
+         "| jobtotals "
+         "| media [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> "
+         "| all ] "
+         "| media=<media-name> | "
+         "nextvol job=<job-name> | nextvolume ujobid=<complete_name> | "
+         "pools | "
+         "pool=<pool-name> | "
+         "poolid=<poolid> | "
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> "
-         "| all ] [count] |\n"
-         "volume=<volume-name> |\n"
-         "volumeid=<volumeid> | mediaid=<volumeid> |\n"
-         "[current] | [enabled | disabled] |\n"
+         "| all ] [count] | "
+         "volume=<volume-name> | "
+         "volumeid=<volumeid> | mediaid=<volumeid> | "
+         "[current] | [enabled | disabled] | "
          "[limit=<num> [offset=<number>]]"),
      true, true},
     {NT_("messages"), MessagesCmd, T_("Display pending messages"), NT_(""),
@@ -399,27 +397,27 @@ static struct ua_cmdstruct commands[] = {
     {NT_("memory"), MemoryCmd, T_("Print current memory usage"), NT_(""), true,
      false},
     {NT_("mount"), MountCmd, T_("Mount storage"),
-     NT_("storage=<storage-name> slot=<num> drive=<drivenum>\n"
-         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
+     NT_("storage=<storage-name> slot=<num> drive=<drivenum> "
+         "jobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
      false, true},
     {NT_("move"), move_cmd, T_("Move slots in an autochanger"),
      NT_("storage=<storage-name> srcslots=<slot-selection> "
          "dstslots=<slot-selection>"),
      true, true},
     {NT_("prune"), PruneCmd, T_("Prune records from catalog"),
-     NT_("files [client=<client>] [pool=<pool>] [yes] |\n"
-         "jobs [client=<client>] [pool=<pool>] [yes] |\n"
-         "volume [all] [=volume] [pool=<pool>] [yes] |\n"
-         "stats [yes] |\n"
-         "directory [=directory] [client=<client>] [recursive] [yes] |\n"),
+     NT_("files [client=<client>] [pool=<pool>] [yes] | "
+         "jobs [client=<client>] [pool=<pool>] [yes] | "
+         "volume [all] [=volume] [pool=<pool>] [yes] | "
+         "stats [yes] | "
+         "directory [=directory] [client=<client>] [recursive] [yes]"),
      true, true},
     {NT_("purge"), PurgeCmd, T_("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | "
-         "volume=<volume>]] |\n"
+         "volume=<volume>]] | "
          "[jobs [client=<client> | volume=<volume>] | pool=<pool>] "
-         "[jobstatus=<status>]] |\n"
+         "[jobstatus=<status>]] | "
          "[volume[=<volume>] [storage=<storage>] [pool=<pool> | allpools] "
-         "[devicetype=<type>] [drive=<drivenum>] [action=<action>]] |\n"
+         "[devicetype=<type>] [drive=<drivenum>] [action=<action>]] | "
          "[quota [client=<client>]]"),
      true, true},
     {NT_("quit"), quit_cmd, T_("Terminate Bconsole session"), NT_(""), false,
@@ -427,21 +425,21 @@ static struct ua_cmdstruct commands[] = {
     {NT_("query"), QueryCmd, T_("Query catalog"), NT_(""), false, true},
     {NT_("restore"), RestoreCmd, T_("Restore files"),
      NT_("where=</path> client=<client-name> storage=<storage-name> "
-         "bootstrap=<file>\n"
-         "\trestorejob=<job-name> comment=<text> jobid=<jobid> "
-         "fileset=<fileset-name>\n"
-         "\treplace=<always|never|ifolder|ifnewer> "
-         "pluginoptions=<plugin-options-string>\n"
-         "\tregexwhere=<regex> fileregex=<regex> "
-         "restoreclient=<client-name> backupformat=<format>\n"
-         "\tpool=<pool-name> file=<filename> directory=<directory> "
-         "before=<date>\n"
-         "\tstrip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix>\n"
-         "\tselect=<date> select before current copies done all"),
+         "bootstrap=<file> "
+         "restorejob=<job-name> comment=<text> jobid=<jobid> "
+         "fileset=<fileset-name> "
+         "replace=<always|never|ifolder|ifnewer> "
+         "pluginoptions=<plugin-options-string> "
+         "regexwhere=<regex> fileregex=<regex> "
+         "restoreclient=<client-name> backupformat=<format> "
+         "pool=<pool-name> file=<filename> directory=<directory> "
+         "before=<date> "
+         "strip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix> "
+         "select=<date> select before current copies done all"),
      false, true},
     {NT_("relabel"), RelabelCmd, T_("Relabel a tape"),
-     NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
-         "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"),
+     NT_("storage=<storage-name> oldvolume=<old-volume-name> "
+         " volume=<new-volume-name> pool=<pool-name> [ encrypt ]"),
      false, true},
     {NT_("release"), ReleaseCmd, T_("Release storage"),
      NT_("storage=<storage-name> [ drive=<drivenum> ] [ alldrives ]"), true,
@@ -456,29 +454,29 @@ static struct ua_cmdstruct commands[] = {
      true},
     {NT_("run"), RunCmd, T_("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> "
-         "level=<level>\n"
-         "\tstorage=<storage-name> where=<directory-prefix> "
-         "when=<universal-time-specification>\n"
-         "\tpool=<pool-name> pluginoptions=<plugin-options-string> "
-         "accurate=<yes|no> comment=<text>\n"
-         "\tspooldata=<yes|no> priority=<number> jobid=<jobid> "
-         "catalog=<catalog> migrationjob=<job-name>\n"
-         "\tbackupclient=<client-name> backupformat=<format> "
-         "nextpool=<pool-name>\n"
-         "\tsince=<universal-time-specification> verifyjob=<job-name> "
-         "verifylist=<verify-list>\n"
-         "\tmigrationjob=<complete_name> yes"),
+         "level=<level> "
+         "storage=<storage-name> where=<directory-prefix> "
+         "when=<universal-time-specification> "
+         "pool=<pool-name> pluginoptions=<plugin-options-string> "
+         "accurate=<yes|no> comment=<text> "
+         "spooldata=<yes|no> priority=<number> jobid=<jobid> "
+         "catalog=<catalog> migrationjob=<job-name> "
+         "backupclient=<client-name> backupformat=<format> "
+         "nextpool=<pool-name> "
+         "since=<universal-time-specification> verifyjob=<job-name> "
+         "verifylist=<verify-list> "
+         "migrationjob=<complete_name> [ yes ]"),
      false, true},
     {NT_("status"), StatusCmd, T_("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | "
-         "schedule=<schedule-name> | client=<client-name> |\n"
-         "storage=<storage-name> slots | days=<nr_days> | job=<job-name> |\n"
+         "schedule=<schedule-name> | client=<client-name> | "
+         "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
          "subscriptions [detail] [unknown] [all] | configuration"),
      true, true},
     {NT_("setbandwidth"), SetbwlimitCmd, T_("Sets bandwidth"),
-     NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
-         "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
-         "\tlimit=<nn-kbs> [ yes ]"),
+     NT_("[ client=<client-name> | storage=<storage-name> | jobid=<jobid> "
+         "| job=<job-name> | ujobid=<unique-jobid> state=<job_state> | all ] "
+         "limit=<nn-kbs> [ yes ]"),
      true, true},
     {NT_("setdebug"), SetdebugCmd, T_("Sets debug level"),
      NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | "
@@ -497,14 +495,11 @@ static struct ua_cmdstruct commands[] = {
          "message=<message-resource-name> | "
          "pool=<pool-name> | profile=<profile-name> | "
          "schedule=<schedule-name> | storage=<storage-name> "
-         "|\n"
-         "catalog | clients | consoles | directors | filesets | jobdefs | jobs "
-         "| "
-         "messages | pools | profiles | schedules | storages "
-         "|\n"
-         "disabled [ clients | jobs | schedules ] "
-         "|\n"
-         "all [verbose]"),
+         "| catalog | clients | consoles | directors | filesets "
+         "| jobdefs | jobs "
+         "| messages | pools | profiles | schedules | storages "
+         "| disabled [ clients | jobs | schedules ] "
+         "| all [verbose]"),
      true, true},
     {NT_("sqlquery"), SqlqueryCmd, T_("Use SQL to query catalog"), NT_(""),
      false, true},
@@ -517,13 +512,13 @@ static struct ua_cmdstruct commands[] = {
          "[yes]"),
      true, true},
     {NT_("unmount"), UnmountCmd, T_("Unmount storage"),
-     NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
-         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
+     NT_("storage=<storage-name> [ drive=<drivenum> ] "
+         "jobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
      false, true},
     {NT_("umount"), UnmountCmd,
      T_("Umount - for old-time Unix guys, see unmount"),
-     NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
-         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
+     NT_("storage=<storage-name> [ drive=<drivenum> ] "
+         "jobid=<jobid> | job=<job-name> | ujobid=<complete_name>"),
      false, true},
     {NT_("update"), UpdateCmd,
      T_("Update volume, pool, slots, job or statistics"),
@@ -532,19 +527,15 @@ static struct ua_cmdstruct commands[] = {
          "actiononpurge=<action>] "
          "[pool=<pool-name>] [recycle=<yes/no>] [slot=<number>] "
          "[inchanger=<yes/no>]] "
-         "|\n"
-         "[pool=<pool-name> "
+         "| [pool=<pool-name> "
          "[maxvolbytes=<size>] [maxvolfiles=<nb>] [maxvoljobs=<nb>]"
          "[enabled=<yes/no>] [recyclepool=<pool-name>] "
-         "[actiononpurge=<action>] |\n"
+         "[actiononpurge=<action>] | "
          "slots [storage=<storage-name>] [scan]] "
-         "|\n"
-         "[jobid=<jobid> [jobname=<name>] [starttime=<time-def>] "
-         "[client=<client-name>]\n"
+         "| [jobid=<jobid> [jobname=<name>] [starttime=<time-def>] "
+         "[client=<client-name>] "
          "[filesetid=<fileset-id>] [jobtype=<job-type>]] "
-         "|\n"
-         "[stats "
-         "[days=<number>]]"),
+         "| [stats [days=<number>]]"),
      true, true},
     {NT_("use"), use_cmd, T_("Use specific catalog"), NT_("catalog=<catalog>"),
      false, true},
