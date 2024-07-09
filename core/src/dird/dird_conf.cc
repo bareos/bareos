@@ -174,7 +174,7 @@ static ResourceItem dir_items[] = {
   { "CatalogAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Catalog_ACL, 0, NULL, NULL,\
      "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },\
   { "WhereAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Where_ACL, 0, NULL, NULL,\
-     "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },\
+     "Specifies the base directories, where files could be restored." },\
   { "PluginOptionsAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), PluginOptions_ACL, 0, NULL, NULL,\
      "Specifies the allowed plugin options. An empty strings allows all Plugin Options." }
 
