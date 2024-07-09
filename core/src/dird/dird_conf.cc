@@ -2790,7 +2790,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
-        Emsg1(M_ERROR, 0, T_("Cannot store Acl: %s\n"), msg.data());
+        scan_err1(lc, T_("Cannot store Acl: %s"), msg.data());
         return;
       }
       list->append(strdup(lc->str));
