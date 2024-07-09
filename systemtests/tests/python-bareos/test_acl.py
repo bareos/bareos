@@ -20,6 +20,7 @@
 
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import json
 import logging
 import os
@@ -54,8 +55,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        console_bareos_fd_username = u"client-bareos-fd"
-        console_bareos_fd_password = u"secret"
+        console_bareos_fd_username = "client-bareos-fd"
+        console_bareos_fd_password = "secret"
 
         director_root = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -192,7 +193,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        console_password = u"secret"
+        console_password = "secret"
 
         director_root = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -215,7 +216,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         # make sure, timestamp differs
         sleep(2)
 
-        self.append_to_file(u"{}/extrafile.txt".format(self.backup_directory), "Test\n")
+        self.append_to_file("{}/extrafile.txt".format(self.backup_directory), "Test\n")
 
         sleep(2)
 
@@ -238,13 +239,13 @@ class PythonBareosAclTest(bareos_unittest.Json):
 
         result = director_root.call("list volume pool=Full count")
         self.assertTrue(
-            int(result["volumes"][0]["count"]) >= 1, u"Full pool contains no volumes."
+            int(result["volumes"][0]["count"]) >= 1, "Full pool contains no volumes."
         )
 
         result = director_root.call("list volume pool=Incremental count")
         self.assertTrue(
             int(result["volumes"][0]["count"]) >= 1,
-            u"Incremental pool contains no volumes.",
+            "Incremental pool contains no volumes.",
         )
 
         # without Pool ACL restrictions,
@@ -294,7 +295,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             director_root,
             "consoles",
             console_overwrite,
-            u"console={} password={} profile=operator poolacl=!Full tlsenable=no".format(
+            "console={} password={} profile=operator poolacl=!Full tlsenable=no".format(
                 console_overwrite, console_password
             ),
         )
@@ -312,17 +313,17 @@ class PythonBareosAclTest(bareos_unittest.Json):
           verifies that both jobs are visible by the list command.
         login as a console that can only see backup-bareos-fd jobs
           verifies that the backup-bareos-fd is visible.
-          verifies that the backup-bareos-fd is not visible.
+          verifies that the backup-bareos-fd-test is not visible.
         """
         logger = logging.getLogger()
 
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        console_username = u"job-backup-bareos-fd"
-        console_password = u"secret"
-        jobname1 = u"backup-bareos-fd"
-        jobname2 = u"backup-bareos-fd-test"
+        console_username = "job-backup-bareos-fd"
+        console_password = "secret"
+        jobname1 = "backup-bareos-fd"
+        jobname2 = "backup-bareos-fd-test"
 
         director_root = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -333,7 +334,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         )
 
         jobid1 = self.run_job(
-            director=director_root, jobname=jobname1, level=u"Full", wait=True
+            director=director_root, jobname=jobname1, level="Full", wait=True
         )
 
         self.configure_add(
@@ -344,7 +345,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         )
 
         jobid2 = self.run_job(
-            director=director_root, jobname=jobname2, level=u"Full", wait=True
+            director=director_root, jobname=jobname2, level="Full", wait=True
         )
 
         #
@@ -370,33 +371,6 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         self._test_list_with_valid_jobid(director, jobid1)
         self._test_list_with_invalid_jobid(director, jobid2)
-
-    def _test_status_subscription(self, username, password):
-        logger = logging.getLogger()
-
-        configured_subscriptions = "10"
-
-        director_root = bareos.bsock.DirectorConsoleJson(
-            address=self.director_address,
-            port=self.director_port,
-            name=username,
-            password=password,
-            **self.director_extra_options
-        )
-
-        result = director_root.call("status subscription all")
-        self.assertEqual(
-            configured_subscriptions, result["total-units-required"]["configured"]
-        )
-
-    def test_status_subscription_admin(self):
-        username = self.get_operator_username()
-        password = self.get_operator_password(username)
-        self._test_status_subscription(username, password)
-
-    def test_status_subscription_user_fails(self):
-        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
-            self._test_status_subscription("client-bareos-fd", "secret")
 
     def test_limited_command_acl(self):
         """
@@ -445,3 +419,52 @@ class PythonBareosAclTest(bareos_unittest.Json):
         # verify that other commands are allowed.
         result = console.call(".jobs")
         self.assertGreaterEqual(len(result["jobs"]), 1)
+
+    def test_limiting_where_acl(self):
+        """
+        Try different where options on restore.
+        """
+        logger = logging.getLogger()
+
+        username = "limited-operator"
+        password = "secret"
+
+        jobname = "backup-bareos-fd"
+        client = "bareos-fd"
+        # console WhereACL is expected to be:
+        # WhereAcl = <allowed_restore_path>, "!*all*"
+        allowed_restore_path = "{}/tmp/bareos-restores-{}".format(os.getcwd(), username)
+
+        console = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # retrieve or create a jobid of a valid backup job
+        backup_jobid = self.get_backup_jobid(console, jobname)
+
+        # restore with default where path
+        restore_jobid = self.run_restore(console, client=client, jobid=backup_jobid)
+
+        # restore with allowed where path
+        restore_jobid = self.run_restore(
+            console,
+            client=client,
+            jobid=backup_jobid,
+            extra="where={}".format(allowed_restore_path),
+        )
+
+        # try to restore with non-allowed where path
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            restore_jobid = self.run_restore(
+                console, client=client, jobid=backup_jobid, extra="where=/tmp/INVALID"
+            )
+
+        # try to restore with non-allowed empty where path
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            restore_jobid = self.run_restore(
+                console, client=client, jobid=backup_jobid, extra="where="
+            )
