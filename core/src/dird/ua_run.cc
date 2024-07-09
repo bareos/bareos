@@ -723,18 +723,24 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         } else if (jcr->is_JobType(JT_RESTORE)) { /* Where */
           if (GetCmd(ua, T_("Please enter the full path prefix for restore (/ "
                             "for none): "))) {
-            if (jcr->RegexWhere) { /* cannot use regexwhere and where */
-              free(jcr->RegexWhere);
-              jcr->RegexWhere = NULL;
+            if (!ua->AclAccessOk(Where_ACL, ua->cmd, true)) {
+              ua->SendMsg(
+                  T_("No authorization for \"where\" specification.\n"));
+            } else {
+              if (jcr->RegexWhere) { /* cannot use regexwhere and where */
+                free(jcr->RegexWhere);
+                jcr->RegexWhere = NULL;
+              }
+              if (jcr->where) {
+                free(jcr->where);
+                jcr->where = NULL;
+              }
+              // "/" is treated as no prefix.
+              if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
+                ua->cmd[0] = 0;
+              }
+              jcr->where = strdup(ua->cmd);
             }
-            if (jcr->where) {
-              free(jcr->where);
-              jcr->where = NULL;
-            }
-            if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
-              ua->cmd[0] = 0;
-            }
-            jcr->where = strdup(ua->cmd);
             goto try_again;
           }
         } else { /* Plugin Options */
@@ -1880,7 +1886,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             }
             rc.where = ua->argv[i];
             if (!ua->AclAccessOk(Where_ACL, rc.where, true)) {
-              ua->SendMsg(T_("No authoriztion for \"where\" specification.\n"));
+              ua->SendMsg(
+                  T_("No authorization for \"where\" specification.\n"));
               return false;
             }
             kw_ok = true;
