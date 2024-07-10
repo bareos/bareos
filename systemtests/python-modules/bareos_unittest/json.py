@@ -51,12 +51,20 @@ class Json(PythonBareosBase):
         logger = logging.getLogger()
         rc = False
         try:
+            # .<resourcesname> only returns one result key,
+            # but that can differ slightly from the called command,
+            # e.g. ".console" returns
+            # "result": { "consoles": [ ... ] }
+            # Therefore we check "all" keys of result
+            # and do a substring match.
             result = director.call(".{}".format(resourcesname))
-            for i in result[resourcesname]:
-                if i["name"] == name:
-                    rc = True
+            for resourcetype in result.keys():
+                if resourcetype.startswith(resourcesname):
+                    for i in result[resourcetype]:
+                        if i["name"] == name:
+                            rc = True
         except Exception as e:
-            logger.warn(str(e))
+            logger.warning(str(e))
         return rc
 
     @staticmethod
