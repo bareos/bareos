@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -301,14 +301,12 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
   ua->db->SqlQuery(select_jobs_from_pool.c_str(), JobDeleteHandler,
                    &delete_list);
 
-  ClientResource* client = ua->jcr->dir_impl->res.client;
   if (delete_list.empty()) {
-    ua->WarningMsg(T_("No Jobs found for pool %s to purge from %s catalog.\n"),
-                   pool_record->Name, client->catalog->resource_name_);
+    ua->WarningMsg(T_("No Jobs found for pool %s to purge from catalog.\n"),
+                   pool_record->Name);
   } else {
-    ua->InfoMsg(T_("Found %d Jobs for pool \"%s\" in catalog \"%s\".\n"),
-                delete_list.size(), pool_record->Name,
-                client->catalog->resource_name_);
+    ua->InfoMsg(T_("Found %d Jobs for pool \"%s\" in catalog.\n"),
+                delete_list.size(), pool_record->Name);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(T_("Purge canceled.\n"));
     } else {
@@ -321,8 +319,7 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
 
   std::vector<DBId_t> media_ids_in_pool;
   if (ua->db->GetMediaIdsInPool(pool_record, &media_ids_in_pool)) {
-    ua->WarningMsg(T_("No Medias found for pool %s.\n"), pool_record->Name,
-                   client->catalog->resource_name_);
+    ua->WarningMsg(T_("No Media found for pool %s.\n"), pool_record->Name);
   }
   for (auto mediaid : media_ids_in_pool) {
     MediaDbRecord mr;
@@ -531,13 +528,12 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
     jobids = lst.GetAsString();
   }
 
-  ClientResource* client = ua->jcr->dir_impl->res.client;
   if (lst.empty()) {
-    ua->WarningMsg(T_("No Jobs found for media %s to purge from %s catalog.\n"),
-                   mr->VolumeName, client->catalog->resource_name_);
+    ua->WarningMsg(T_("No Jobs found for media %s to purge from catalog.\n"),
+                   mr->VolumeName);
   } else {
-    ua->InfoMsg(T_("Found %d Jobs for media \"%s\" in catalog \"%s\".\n"),
-                lst.size(), mr->VolumeName, client->catalog->resource_name_);
+    ua->InfoMsg(T_("Found %d Jobs for media \"%s\" in catalog.\n"), lst.size(),
+                mr->VolumeName);
     if (!GetConfirmation(ua, "Purge (yes/no)? ", true)) {
       ua->InfoMsg(T_("Purge canceled.\n"));
     } else {
