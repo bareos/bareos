@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use only MinGW VSS [PR #1847]
 - VMware Plugin: Adapt to Python 3.12 [PR #1850]
 - freebsd: fix build issues with ports tree 2024Q3 [PR #1883]
+- Improve PythonFdWrapper class [PR #1846]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -198,6 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1821]: https://github.com/bareos/bareos/pull/1821
 [PR #1829]: https://github.com/bareos/bareos/pull/1829
 [PR #1840]: https://github.com/bareos/bareos/pull/1840
+[PR #1846]: https://github.com/bareos/bareos/pull/1846
 [PR #1847]: https://github.com/bareos/bareos/pull/1847
 [PR #1850]: https://github.com/bareos/bareos/pull/1850
 [PR #1853]: https://github.com/bareos/bareos/pull/1853
