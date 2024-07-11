@@ -76,7 +76,10 @@ endif()
 project(bareos-systemtests)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  find_program(BASH_EXE bash.exe REQUIRED)
+  find_program(BASH_EXE bash.exe)
+  if(NOT BASH_EXE)
+    message("bash not found.  running systemtests will not be possible")
+  endif()
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -125,8 +128,7 @@ endif()
 find_program(
   PG_CTL
   NAMES pg_ctl pg_ctl.exe
-  PATHS /usr/lib/postgresql/*/bin /usr/bin /bin
-  REQUIRED
+  PATHS /usr/lib/postgresql/*/bin /usr/bin /bin REQUIRED
 )
 
 get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
