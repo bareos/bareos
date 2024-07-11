@@ -579,8 +579,9 @@ bool Do_a_command(UaContext* ua)
   for (i = 0; i < comsize; i++) { /* search for command */
     if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
       const char* command = commands[i].key;
-      // Check if command permitted, but "quit" and "whoami" is always OK
-      if (!bstrcmp(command, NT_("quit")) && !bstrcmp(command, NT_("whoami"))
+      // Check if command permitted, but "exit/quit" and "whoami" is always OK
+      if (!bstrcmp(command, NT_("exit")) && !bstrcmp(command, NT_("quit"))
+          && !bstrcmp(command, NT_("whoami"))
           && !ua->AclAccessOk(Command_ACL, command, true)) {
         break;
       }
