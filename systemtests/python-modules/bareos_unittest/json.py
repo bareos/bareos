@@ -149,7 +149,7 @@ class Json(PythonBareosBase):
             jobid = result["jobs"][0]["jobid"]
             return jobid
         except IndexError:
-            # there is no valid backup for these parameter.
+            # there is no valid backup for these parameters.
             # run a backup job.
             return self.run_job(director, jobname, level, extra, wait=True)
 
