@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -273,14 +273,18 @@ static bRC freePlugin(PluginContext* plugin_ctx)
   // Stop any sub interpreter started per plugin instance.
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
-
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
   Py_EndInterpreter(plugin_priv_ctx->interpreter);
-#if PY_VERSION_HEX < VERSION_HEX(3, 2, 0)
-  PyEval_ReleaseLock();
-#else
+  // endinterpreter releases the gil for us since 3.12
+#if PY_VERSION_HEX < VERSION_HEX(3, 12, 0)
+  // release gil a different way
   PyThreadState_Swap(mainThreadState);
+  // while we still have the gil, we need to make sure we clear the type cache
+  // so that it does not contain outdated references
+#  if PY_VERSION_HEX < VERSION_HEX(3, 10, 0)
+  PyType_ClearCache();
+#  endif
   PyEval_ReleaseThread(mainThreadState);
 #endif
 
