@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -579,8 +579,9 @@ bool Do_a_command(UaContext* ua)
   for (i = 0; i < comsize; i++) { /* search for command */
     if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
       const char* command = commands[i].key;
-      // Check if command permitted, but "quit" and "whoami" is always OK
-      if (!bstrcmp(command, NT_("quit")) && !bstrcmp(command, NT_("whoami"))
+      // Check if command permitted, but "exit/quit" and "whoami" is always OK
+      if (!bstrcmp(command, NT_("exit")) && !bstrcmp(command, NT_("quit"))
+          && !bstrcmp(command, NT_("whoami"))
           && !ua->AclAccessOk(Command_ACL, command, true)) {
         break;
       }
