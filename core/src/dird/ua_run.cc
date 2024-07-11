@@ -49,6 +49,7 @@ static bool DisplayJobParameters(UaContext* ua,
                                  JobControlRecord* jcr,
                                  RunContext& rc);
 static void SelectWhereRegexp(UaContext* ua, JobControlRecord* jcr);
+static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr);
 static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc);
 static bool ResetRestoreContext(UaContext* ua,
                                 JobControlRecord* jcr,
@@ -383,10 +384,8 @@ int DoRunCmd(UaContext* ua, const char*)
     ua->quit = true;
   }
 
-  /*
-   * Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
-   * before returning.
-   */
+  /* Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
+   * before returning. */
   if (!jcr) {
     jcr = NewDirectorJcr(DirdFreeJcr);
     SetJcrDefaults(jcr, rc.job);
@@ -413,15 +412,13 @@ try_again:
   // Run without prompting?
   if (ua->batch || FindArg(ua, NT_("yes")) > 0) { goto start_job; }
 
-  /*
-   * When doing interactive runs perform the pool level overrides
+  /* When doing interactive runs perform the pool level overrides
    * early this way the user doesn't get nasty surprisses when
    * a level override changes the pool the data will be saved to
    * later. We only want to do these overrides once so we use
    * a tracking boolean do_pool_overrides to see if we still
    * need to do this (e.g. we pass by here multiple times when
-   * the user interactivly changes options.
-   */
+   * the user interactivly changes options. */
   if (do_pool_overrides) {
     switch (jcr->getJobType()) {
       case JT_BACKUP:
@@ -433,23 +430,19 @@ try_again:
     do_pool_overrides = false;
   }
 
-  /*
-   * Prompt User to see if all run job parameters are correct, and
-   * allow him to modify them.
-   */
+  /* Prompt User to see if all run job parameters are correct, and
+   * allow him to modify them. */
   if (!DisplayJobParameters(ua, jcr, rc)) { goto bail_out; }
 
   // Prompt User until we have a valid response.
   do {
     if (!GetCmd(ua, _("OK to run? (yes/mod/no): "))) { goto bail_out; }
 
-    /*
-     * Empty line equals yes, anything other we compare
+    /* Empty line equals yes, anything other we compare
      * the cmdline for the length of the given input unless
      * its mod or .mod where we compare only the keyword
      * and a space as it can be followed by a full cmdline
-     * with new cmdline arguments that need to be parsed.
-     */
+     * with new cmdline arguments that need to be parsed. */
     valid_response = false;
     length = strlen(ua->cmd);
     if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, ".mod ", MIN(length, 5))
@@ -486,10 +479,8 @@ try_again:
       goto bail_out;
   }
 
-  /*
-   * For interactive runs we set IgnoreLevelPoolOverrides as we already
-   * performed the actual overrrides.
-   */
+  /* For interactive runs we set IgnoreLevelPoolOverrides as we already
+   * performed the actual overrrides. */
   jcr->dir_impl->IgnoreLevelPoolOverrides = true;
 
   if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd))
@@ -732,10 +723,9 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
           goto try_again;
         } else if (jcr->is_JobType(JT_RESTORE)) { /* Where */
           if (GetCmd(ua, _("Please enter the full path prefix for restore (/ "
-                            "for none): "))) {
+                           "for none): "))) {
             if (!ua->AclAccessOk(Where_ACL, ua->cmd, true)) {
-              ua->SendMsg(
-                  _("No authorization for \"where\" specification.\n"));
+              ua->SendMsg(_("No authorization for \"where\" specification.\n"));
             } else {
               if (jcr->RegexWhere) { /* cannot use regexwhere and where */
                 free(jcr->RegexWhere);
@@ -754,14 +744,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
             goto try_again;
           }
         } else { /* Plugin Options */
-          if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
-            if (jcr->dir_impl->plugin_options) {
-              free(jcr->dir_impl->plugin_options);
-              jcr->dir_impl->plugin_options = NULL;
-            }
-            jcr->dir_impl->plugin_options = strdup(ua->cmd);
-            goto try_again;
-          }
+          GetPluginOptions(ua, jcr);
+          goto try_again;
         }
         break;
       case 10:
@@ -770,14 +754,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
           SelectWhereRegexp(ua, jcr);
           goto try_again;
         } else if (jcr->is_JobType(JT_BACKUP)) {
-          if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
-            if (jcr->dir_impl->plugin_options) {
-              free(jcr->dir_impl->plugin_options);
-              jcr->dir_impl->plugin_options = NULL;
-            }
-            jcr->dir_impl->plugin_options = strdup(ua->cmd);
-            goto try_again;
-          }
+          GetPluginOptions(ua, jcr);
+          goto try_again;
         }
         break;
       case 11:
@@ -804,15 +782,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         goto try_again;
       case 13:
         /* Plugin Options */
-        if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
-          if (jcr->dir_impl->plugin_options) {
-            free(jcr->dir_impl->plugin_options);
-            jcr->dir_impl->plugin_options = NULL;
-          }
-          jcr->dir_impl->plugin_options = strdup(ua->cmd);
-          goto try_again;
-        }
-        break;
+        GetPluginOptions(ua, jcr);
+        goto try_again;
       case -1: /* error or cancel */
         return -1;
       default:
@@ -842,12 +813,10 @@ static bool ResetRestoreContext(UaContext* ua,
   jcr->dir_impl->res.pool = rc.pool;
   jcr->dir_impl->res.next_pool = rc.next_pool;
 
-  /*
-   * See if an explicit pool override was performed.
+  /* See if an explicit pool override was performed.
    * If so set the pool_source to command line and
    * set the IgnoreLevelPoolOverrides so any level Pool
-   * overrides are ignored.
-   */
+   * overrides are ignored. */
   if (rc.pool_name) {
     PmStrcpy(jcr->dir_impl->res.pool_source, _("command line"));
     jcr->dir_impl->IgnoreLevelPoolOverrides = true;
@@ -998,18 +967,14 @@ static bool ResetRestoreContext(UaContext* ua,
     rc.backup_format = NULL;
   }
 
-  /*
-   * Some options are not available through the menu
-   * TODO: Add an advanced menu?
-   */
+  /* Some options are not available through the menu
+   * TODO: Add an advanced menu? */
   if (rc.spool_data_set) { jcr->dir_impl->spool_data = rc.spool_data; }
 
   if (rc.accurate_set) { jcr->accurate = rc.accurate; }
 
-  /*
-   * Used by migration jobs that can have the same name,
-   * but can run at the same time
-   */
+  /* Used by migration jobs that can have the same name,
+   * but can run at the same time */
   if (rc.ignoreduplicatecheck_set) {
     jcr->dir_impl->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
   }
@@ -1064,6 +1029,10 @@ try_again_reg:
     case 3:
       /* Add rwhere */
       if (GetCmd(ua, _("Please enter a valid regexp (!from!to!): "))) {
+        if (!ua->AclAccessOk(Where_ACL, ua->cmd, true)) {
+          ua->SendMsg(_("Denied by \"WhereACL\" configuration.\n"));
+          goto try_again_reg;
+        }
         if (rwhere) free(rwhere);
         rwhere = strdup(ua->cmd);
       }
@@ -1130,6 +1099,13 @@ try_again_reg:
     jcr->RegexWhere = (char*)malloc(len * sizeof(char));
     bregexp_build_where(jcr->RegexWhere, len, strip_prefix, add_prefix,
                         add_suffix);
+    if (!ua->AclAccessOk(Where_ACL, jcr->RegexWhere, true)) {
+      ua->SendMsg(_("Regex (%s) denied by \"WhereACL\" configuration.\n"),
+                  jcr->RegexWhere);
+      free(jcr->RegexWhere);
+      jcr->RegexWhere = NULL;
+      goto try_again_reg;
+    }
   }
 
   regs = get_bregexps(jcr->RegexWhere);
@@ -1149,6 +1125,23 @@ bail_out_reg:
   if (add_prefix) { free(add_prefix); }
   if (add_suffix) { free(add_suffix); }
   if (rwhere) { free(rwhere); }
+}
+
+static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr)
+{
+  if (GetCmd(ua, _("Please enter Plugin Options string: "))) {
+    if (!ua->AclAccessOk(PluginOptions_ACL, ua->cmd, true)) {
+      ua->SendMsg(_("No authorization for \"PluginOptions\" specification.\n"));
+      return false;
+    }
+    if (jcr->dir_impl->plugin_options) {
+      free(jcr->dir_impl->plugin_options);
+      jcr->dir_impl->plugin_options = NULL;
+    }
+    jcr->dir_impl->plugin_options = strdup(ua->cmd);
+    return true;
+  }
+  return false;
 }
 
 static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr)
@@ -1615,8 +1608,8 @@ static bool DisplayJobParameters(UaContext* ua,
       } else {
         if (ua->api) ua->signal(BNET_RUN_CMD);
         ua->SendMsg(_("Run Restore job\n"
-                       "JobName:         %s\n"
-                       "Bootstrap:       %s\n"),
+                      "JobName:         %s\n"
+                      "Bootstrap:       %s\n"),
                     job->resource_name_, NPRT(jcr->RestoreBootstrap));
 
         /* RegexWhere is take before RestoreWhere */
@@ -1886,8 +1879,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             }
             rc.where = ua->argv[i];
             if (!ua->AclAccessOk(Where_ACL, rc.where, true)) {
-              ua->SendMsg(
-                  _("No authorization for \"where\" specification.\n"));
+              ua->SendMsg(_("No authorization for \"where\" specification.\n"));
               return false;
             }
             kw_ok = true;
@@ -2070,10 +2062,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     // End of keyword for loop -- if not found, we got a bogus keyword
     if (!kw_ok) {
       Dmsg1(800, "%s not found\n", ua->argk[i]);
-      /*
-       * Special case for Job Name, it can be the first
-       * keyword that has no value.
-       */
+      /* Special case for Job Name, it can be the first
+       * keyword that has no value. */
       if (!rc.job_name && !ua->argv[i]) {
         rc.job_name = ua->argk[i]; /* use keyword as job name */
         Dmsg1(800, "Set jobname=%s\n", rc.job_name);
@@ -2157,10 +2147,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     GetJobStorage(rc.store, rc.job, NULL); /* use default */
   }
 
-  /*
-   * For certain Jobs an explicit setting of the read storage is not
-   * required as its determined when the Job is executed automatically.
-   */
+  /* For certain Jobs an explicit setting of the read storage is not
+   * required as its determined when the Job is executed automatically. */
   switch (rc.job->JobType) {
     case JT_COPY:
     case JT_MIGRATE:
