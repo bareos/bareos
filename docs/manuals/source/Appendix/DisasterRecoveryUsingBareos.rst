@@ -92,7 +92,7 @@ For ReaR to work with Bareos, the following packages must be installed:
 * **bareos-fd**
 * **bareos-bconsole**
 
-Make sure you have a working |fd| configuration on the system and already did a backup of all disks you want to restore.
+Make sure you have a working |fd| configuration on the system and already did a backup of all disks you want to restore (the fileset have to include all data required to fully restore the system. A good starting point is :config:option:`dir/fileset = LinuxAll`).
 You also need the |bconsole| installed and configured,
 so that it can connect to the |dir|.
 Ideally the |bconsole| is configured in a way that it can only access this client,
@@ -148,7 +148,7 @@ If you have installed and configured ReaR on your system, type
 
    root@host:~# rear -v mkrescue
 
-to create the rescue image. If you used the configuration example above, you will get a bootable ISO image file.
+to create the rescue image. If you used the configuration example above, you will get a bootable ISO image file, containing all the relevant programs and tools to do a Bareos restore over the network.
 
 .. warning::
 
@@ -161,7 +161,9 @@ to create the rescue image. If you used the configuration example above, you wil
 .. note::
 
    The rescue image is created from the running system.
-   It contains the relevant configuration,
+   It contains the required programs
+   (including :command:`bareos-fd` and :command:`bconsole`),
+   the relevant configuration,
    information about attached storage devices
    and also the kernel of the running system.
    You should therefore regularly update your rescue images,
@@ -210,7 +212,7 @@ This will restore the most recent Bareos backup
 (from this client with the given fileset)
 to your system.
 
-The **manual restore mode** just starts the :command:`bconsole`program
+The **manual restore mode** just starts the :command:`bconsole` program
 and let you choose the restore command.
 For comfort, the :command:`bconsole` command line history
 is already filled with some useful commands,
@@ -383,6 +385,9 @@ The corresponding :file:`/etc/bareos/bconsole.conf` on the ReaR client will look
 
 For more detail, refer to :ref:`section-named-console`.
 
+Make sure (via filesystem permissions) that the file is only readable for required users.
+By default that is the user **root** and the members of the group **bareos**.
+Access to the rescue image should also be limited to the relevant persons.
 
 .. _section-rear-retrieve-rescue-image:
 
@@ -491,6 +496,10 @@ like implemented in the following script with the corresponding :config:option:`
          Command = "/usr/local/sbin/update-rear-rescue.sh %l"
       }
    }
+
+Copy the script to :file:`/usr/local/sbin/update-rear-rescue.sh` on the |dir|,
+make it executable
+and add the Run Script definition to the job intended to backup the data for a ReaR restore.
 
 
 
