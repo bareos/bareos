@@ -224,12 +224,12 @@ bRC newPlugin(PluginContext* plugin_ctx)
   plugin_ctx->plugin_private_context
       = (void*)plugin_priv_ctx; /* set our context pointer */
 
+  /* For each plugin instance we instantiate a new Python interpreter. */
+  PyEval_AcquireThread(mainThreadState);
 
   /* set bareos_plugin_context inside of bareosfd module */
   Bareosfd_set_plugin_context(plugin_ctx);
 
-  /* For each plugin instance we instantiate a new Python interpreter. */
-  PyEval_AcquireThread(mainThreadState);
   auto* ts = Py_NewInterpreter();
   plugin_priv_ctx->interp = ts->interp;
   // register ts
@@ -759,9 +759,7 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
   plugin_private_context* plugin_priv_ctx
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
-  if (!plugin_priv_ctx) { goto bail_out; }
-
-  Bareosfd_set_plugin_context(plugin_ctx);
+  if (!plugin_priv_ctx) { return bRC_Error; }
 
   /* First handle some events internally before calling python if it
    * want to do some special handling on the event triggered. */
@@ -821,6 +819,7 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
    * processing was successful (e.g. retval == bRC_OK). */
   if (!event_dispatched || retval == bRC_OK) {
     auto l = AcquireLock(plugin_priv_ctx->interp);
+    Bareosfd_set_plugin_context(plugin_ctx);
 
     /* Now dispatch the event to Python.
      * First the calls that need special handling. */
@@ -888,7 +887,6 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
     }
   }
 
-bail_out:
   return retval;
 }
 
