@@ -613,7 +613,7 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char*)
     return false;
   }
 
-  if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+  if (DbLocker _{ua->db}; !ua->db->GetJobRecord(ua->jcr, &jr)) {
     ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
                  ua->argv[pos], ua->db->strerror());
     return false;
@@ -1088,7 +1088,7 @@ bool DotMediatypesCmd(UaContext* ua, const char*)
   if (!OpenClientDb(ua)) { return true; }
 
   ua->send->ArrayStart("mediatypes");
-  if (!ua->db->SqlQuery(
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(
           "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
           OneHandler, (void*)ua)) {
     ua->ErrorMsg(T_("List MediaType failed: ERR=%s\n"), ua->db->strerror());

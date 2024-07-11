@@ -372,10 +372,10 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return false; /* Fail */
     }
 
-    if (!jcr->db_batch->GetFileList(jcr, jobids.GetAsString().c_str(),
-                                    jcr->dir_impl->use_accurate_chksum,
-                                    false /* no delta */, AccurateListHandler,
-                                    (void*)&args)) {
+    if (DbLocker _{jcr->db_batch}; !jcr->db_batch->GetFileList(
+            jcr, jobids.GetAsString().c_str(),
+            jcr->dir_impl->use_accurate_chksum, false /* no delta */,
+            AccurateListHandler, (void*)&args)) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
            jcr->db_batch->strerror());
       return false;
@@ -504,7 +504,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
         jcr->dir_impl->jr.JobLevel);
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -605,7 +606,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
    * is after the start of this run. */
   jcr->start_time = time(nullptr);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
@@ -634,8 +636,10 @@ bool DoNativeBackup(JobControlRecord* jcr)
     jcr->db_batch->WriteBatchFileRecords(
         jcr);  // used by bulk batch file insert
   }
-  if (jcr->HasBase && !jcr->db->CommitBaseFileAttributesRecord(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+  if (jcr->HasBase) {
+    if (DbLocker _{jcr->db}; !jcr->db->CommitBaseFileAttributesRecord(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+    }
   }
 
   /* Check softquotas after job did run.
@@ -767,7 +771,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
@@ -775,7 +779,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
   }
 
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
-  if (!jcr->db->GetClientRecord(jcr, &cr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());
@@ -849,6 +853,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
       fd = fopen(fname, jcr->is_JobLevel(L_FULL) ? "w+b" : "a+b");
     }
     if (fd) {
+      DbLocker _{jcr->db};
       VolCount = jcr->db->GetJobVolumeParameters(jcr, jcr->JobId, &VolParams);
       if (VolCount == 0) {
         Jmsg(jcr, M_ERROR, 0,
@@ -943,7 +948,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       kbps = ((double)jcr->dir_impl->jr.JobBytes) / (1000.0 * (double)RunTime);
    }
 
-   if (!jcr->db->GetJobVolumeNames(jcr, jcr->dir_impl->jr.JobId, jcr->VolumeName)) {
+   if (DbLocker _{jcr->db}; !jcr->db->GetJobVolumeNames(jcr, jcr->dir_impl->jr.JobId, jcr->VolumeName)) {
       /* Note, if the job has erred, most likely it did not write any
        * tape, so suppress this "error" message since in that case
        * it is normal.  Or look at it the other way, only for a
@@ -963,7 +968,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
          p = jcr->VolumeName;     /* no |, take full name */
       }
       bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
-      if (!jcr->db->GetMediaRecord(jcr, &mr)) {
+      if (DbLocker _{jcr->db}; !jcr->db->GetMediaRecord(jcr, &mr)) {
          Jmsg(jcr, M_WARNING, 0, T_("Error getting Media record for Volume \"%s\": ERR=%s\n"),
               mr.VolumeName, jcr->db->strerror());
       }

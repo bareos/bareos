@@ -1347,6 +1347,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
   }
   PoolDbRecord pr;
   bstrncpy(pr.Name, jcr->dir_impl->res.pool->resource_name_, sizeof(pr.Name));
+  DbLocker _{jcr->db};
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
     if (CreatePool(jcr, jcr->db, jcr->dir_impl->res.pool, POOL_OP_CREATE) < 0) {

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -123,7 +123,7 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
 
   // get media record by name
   bstrncpy(mr.VolumeName, media->label, NDMMEDIA_LABEL_MAX);
-  if (!jcr->db->GetMediaRecord(jcr, &mr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetMediaRecord(jcr, &mr)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Catalog error getting Media record for Medium %s: %s"),
          mr.VolumeName, jcr->db->strerror());
@@ -137,13 +137,13 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
   // store db records
   jm.MediaId = mr.MediaId;
   jm.JobId = jcr->JobId;
-  if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
+  if (DbLocker _{jcr->db}; !jcr->db->CreateJobmediaRecord(jcr, &jm)) {
     Jmsg(jcr, M_FATAL, 0, T_("Catalog error creating JobMedia record. %s"),
          jcr->db->strerror());
     return false;
   }
 
-  if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->UpdateMediaRecord(jcr, &mr)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Catalog error updating Media record for Medium %s: %s"),
          mr.VolumeName, jcr->db->strerror());
@@ -173,6 +173,9 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
   if (restoreJobId == 0) {
     Jmsg(jcr, M_FATAL, 0, T_("RestoreJobId is zero, cannot go on\n"));
   }
+
+  DbLocker _{jcr->db};
+
   // Get Media for certain job
   VolCount = jcr->db->GetJobVolumeParameters(jcr, restoreJobId, &VolParams);
 

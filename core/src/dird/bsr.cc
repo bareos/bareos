@@ -237,9 +237,9 @@ bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
       bsr->VolCount = 0;    /*   there are no volumes */
       continue;
     }
-    if ((bsr->VolCount
-         = ua->db->GetJobVolumeParameters(ua->jcr, bsr->JobId, &bsr->VolParams))
-        == 0) {
+    if (DbLocker _{ua->db}; (bsr->VolCount = ua->db->GetJobVolumeParameters(
+                                 ua->jcr, bsr->JobId, &bsr->VolParams))
+                            == 0) {
       ua->ErrorMsg(T_("Unable to get Job Volume Parameters. ERR=%s\n"),
                    ua->db->strerror());
       if (bsr->VolParams) {

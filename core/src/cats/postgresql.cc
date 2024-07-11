@@ -423,6 +423,8 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
 
 void BareosDbPostgresql::EndTransaction(JobControlRecord* jcr)
 {
+  DbLocker _{this};
+
   if (jcr && jcr->cached_attribute) {
     Dmsg0(400, "Flush last cached attribute.\n");
     if (!CreateAttributesRecord(jcr, jcr->ar)) {
@@ -433,7 +435,7 @@ void BareosDbPostgresql::EndTransaction(JobControlRecord* jcr)
 
   if (!allow_transactions_) { return; }
 
-  DbLocker _{this};
+
   if (transaction_) {
     SqlQueryWithoutHandler("COMMIT"); /* end transaction */
     transaction_ = false;

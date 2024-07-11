@@ -98,7 +98,7 @@ int MakeIdList(BareosDb* db, const char* query, ID_LIST* id_list)
   id_list->num_del = 0;
   id_list->tot_ids = 0;
 
-  if (!db->SqlQuery(query, IdListHandler, (void*)id_list)) {
+  if (DbLocker _{db}; !db->SqlQuery(query, IdListHandler, (void*)id_list)) {
     printf("%s", db->strerror());
     return 0;
   }
@@ -140,7 +140,7 @@ int MakeNameList(BareosDb* db, const char* query, NameList* name_list)
   name_list->num_del = 0;
   name_list->tot_ids = 0;
 
-  if (!db->SqlQuery(query, NameListHandler, (void*)name_list)) {
+  if (DbLocker _{db}; !db->SqlQuery(query, NameListHandler, (void*)name_list)) {
     printf("%s", db->strerror());
     return 0;
   }

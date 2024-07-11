@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2016 Planets Communications B.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -72,7 +72,7 @@ void NdmpStoreAttributeRecord(JobControlRecord* jcr,
   ar = jcr->ar;
   if (jcr->cached_attribute) {
     Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
-    if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
+    if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, ar)) {
       Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
             jcr->db->strerror());
       return;
@@ -104,7 +104,7 @@ void NdmpStoreAttributeRecord(JobControlRecord* jcr,
     jcr->ar->DeltaSeq = 0;
   }
 
-  if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
+  if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, ar)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
           jcr->db->strerror());
     return;
