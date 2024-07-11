@@ -274,6 +274,7 @@ bRC freePlugin(PluginContext* plugin_ctx)
 
   // Stop any sub interpreter started per plugin instance.
   auto* ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
+  ASSERT(ts);
   PyEval_AcquireThread(ts);
 
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
@@ -282,6 +283,9 @@ bRC freePlugin(PluginContext* plugin_ctx)
   if (PyVersion() < VERSION_HEX(3, 12, 0)) {
     // release gil a different way
     PyThreadState_Swap(mainThreadState);
+    // while we still have the gil, we need to make sure we clear the type cache
+    // so that it does not contain outdated references
+    if (PyVersion() < VERSION_HEX(3, 10, 0)) { PyType_ClearCache(); }
     PyEval_ReleaseThread(mainThreadState);
   } else {
     // endinterpreter releases the gil for us since 3.12
