@@ -141,8 +141,9 @@ class locked_threadstate {
  private:
   locked_threadstate(PyThreadState* t_ts, bool t_owns) : ts{t_ts}, owns{t_owns}
   {
-    // lock the gil and make ts active
-    PyEval_RestoreThread(t_ts);
+    // make the given thread state active
+    // we assume that we are currently holding the gil
+    (void)PyThreadState_Swap(t_ts);
   }
 
  public:
@@ -195,6 +196,8 @@ class locked_threadstate {
  * is destroyed by locked_threadstates destructor. */
 locked_threadstate AcquireLock(PyInterpreterState* interp)
 {
+  // we lock the gil here to synchronize potential calls to PyThreadState_New().
+  PyEval_RestoreThread(mainThreadState);
   auto* ts = GetThreadStateForInterp(interp);
   if (!ts) {
     // create a new thread state
