@@ -49,6 +49,7 @@ static bool DisplayJobParameters(UaContext* ua,
                                  JobControlRecord* jcr,
                                  RunContext& rc);
 static void SelectWhereRegexp(UaContext* ua, JobControlRecord* jcr);
+static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr);
 static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc);
 static bool ResetRestoreContext(UaContext* ua,
                                 JobControlRecord* jcr,
@@ -744,14 +745,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
             goto try_again;
           }
         } else { /* Plugin Options */
-          if (GetCmd(ua, T_("Please enter Plugin Options string: "))) {
-            if (jcr->dir_impl->plugin_options) {
-              free(jcr->dir_impl->plugin_options);
-              jcr->dir_impl->plugin_options = NULL;
-            }
-            jcr->dir_impl->plugin_options = strdup(ua->cmd);
-            goto try_again;
-          }
+          GetPluginOptions(ua, jcr);
+          goto try_again;
         }
         break;
       case 10:
@@ -760,14 +755,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
           SelectWhereRegexp(ua, jcr);
           goto try_again;
         } else if (jcr->is_JobType(JT_BACKUP)) {
-          if (GetCmd(ua, T_("Please enter Plugin Options string: "))) {
-            if (jcr->dir_impl->plugin_options) {
-              free(jcr->dir_impl->plugin_options);
-              jcr->dir_impl->plugin_options = NULL;
-            }
-            jcr->dir_impl->plugin_options = strdup(ua->cmd);
-            goto try_again;
-          }
+          GetPluginOptions(ua, jcr);
+          goto try_again;
         }
         break;
       case 11:
@@ -794,14 +783,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         goto try_again;
       case 13:
         /* Plugin Options */
-        if (GetCmd(ua, T_("Please enter Plugin Options string: "))) {
-          if (jcr->dir_impl->plugin_options) {
-            free(jcr->dir_impl->plugin_options);
-            jcr->dir_impl->plugin_options = NULL;
-          }
-          jcr->dir_impl->plugin_options = strdup(ua->cmd);
-          goto try_again;
-        }
+        GetPluginOptions(ua, jcr);
+        goto try_again;
         break;
       case -1: /* error or cancel */
         return -1;
@@ -1065,6 +1048,10 @@ try_again_reg:
     case 3:
       /* Add rwhere */
       if (GetCmd(ua, T_("Please enter a valid regexp (!from!to!): "))) {
+        if (!ua->AclAccessOk(Where_ACL, ua->cmd, true)) {
+          ua->SendMsg(T_("Denied by \"WhereACL\" configuration.\n"));
+          goto try_again_reg;
+        }
         if (rwhere) free(rwhere);
         rwhere = strdup(ua->cmd);
       }
@@ -1131,6 +1118,13 @@ try_again_reg:
     jcr->RegexWhere = (char*)malloc(len * sizeof(char));
     bregexp_build_where(jcr->RegexWhere, len, strip_prefix, add_prefix,
                         add_suffix);
+    if (!ua->AclAccessOk(Where_ACL, jcr->RegexWhere, true)) {
+      ua->SendMsg(T_("Regex (%s) denied by \"WhereACL\" configuration.\n"),
+                  jcr->RegexWhere);
+      free(jcr->RegexWhere);
+      jcr->RegexWhere = NULL;
+      goto try_again_reg;
+    }
   }
 
   regs = get_bregexps(jcr->RegexWhere);
@@ -1150,6 +1144,24 @@ bail_out_reg:
   if (add_prefix) { free(add_prefix); }
   if (add_suffix) { free(add_suffix); }
   if (rwhere) { free(rwhere); }
+}
+
+static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr)
+{
+  if (GetCmd(ua, T_("Please enter Plugin Options string: "))) {
+    if (!ua->AclAccessOk(PluginOptions_ACL, ua->cmd, true)) {
+      ua->SendMsg(
+          T_("No authorization for \"PluginOptions\" specification.\n"));
+      return false;
+    }
+    if (jcr->dir_impl->plugin_options) {
+      free(jcr->dir_impl->plugin_options);
+      jcr->dir_impl->plugin_options = NULL;
+    }
+    jcr->dir_impl->plugin_options = strdup(ua->cmd);
+    return true;
+  }
+  return false;
 }
 
 static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr)
