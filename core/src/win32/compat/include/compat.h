@@ -103,7 +103,10 @@ typedef INT32 ssize_t;
 #  define HAVE_SSIZE_T 1
 #endif /* HAVE_MINGW */
 
-#define NO_OLDNAMES
+#if defined(HAVE_MSVC)
+#  define NO_OLDNAMES
+#endif
+
 typedef struct _REPARSE_DATA_BUFFER {
   ULONG ReparseTag;
   USHORT ReparseDataLength;

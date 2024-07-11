@@ -44,17 +44,15 @@
 #  include <sys/param.h>
 #endif
 
-#if !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
-#  ifndef HAVE_MSVC
-#    include <utime.h>
-#  endif
-#endif
-
 #if defined(HAVE_MSVC)
 extern "C" {
 #  include <sys/utime.h>
 }
+#elif !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
+#  include <utime.h>
+#else
 #endif
+
 
 #define MODE_RALL (S_IRUSR | S_IRGRP | S_IROTH)
 
