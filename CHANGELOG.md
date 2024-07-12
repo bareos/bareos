@@ -112,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix warnings on FreeBSD 13.3 compiler [PR #1881]
 - dir: fix crash on purge with job without client [PR #1857]
 - fix runtime status [PR #1872]
+- Fix multiple ACL handling bugs [PR #1875]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -208,6 +209,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
 [PR #1872]: https://github.com/bareos/bareos/pull/1872
+[PR #1875]: https://github.com/bareos/bareos/pull/1875
 [PR #1878]: https://github.com/bareos/bareos/pull/1878
 [PR #1881]: https://github.com/bareos/bareos/pull/1881
 [PR #1883]: https://github.com/bareos/bareos/pull/1883
