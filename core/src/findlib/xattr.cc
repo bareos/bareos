@@ -74,7 +74,7 @@ static std::string error_message_disabling_xattributes{
  * platform.
  */
 BxattrExitCode BuildXattrStreams(JobControlRecord*,
-                                 XattrData*,
+                                 XattrBuildData*,
                                  FindFilesPacket*)
 {
   return BxattrExitCode::kErrorFatal;
@@ -88,10 +88,17 @@ BxattrExitCode ParseXattrStreams(JobControlRecord*,
 {
   return BxattrExitCode::kErrorFatal;
 }
+
+BxattrExitCode SendXattrStream(JobControlRecord*,
+                               XattrBuildData*,
+                               int)
+{
+  return BattrBxattrExitCode::kErrorFatal;
+}
 #else
 // Send a XATTR stream to the SD.
 BxattrExitCode SendXattrStream(JobControlRecord* jcr,
-                               XattrData* xattr_data,
+                               XattrBuildData* xattr_data,
                                int stream)
 {
   BareosSocket* sd = jcr->store_bsock;
@@ -101,7 +108,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
 #  endif
 
   // Sanity check
-  if (xattr_data->u.build->content_length <= 0) {
+  if (xattr_data->content_length <= 0) {
     return BxattrExitCode::kSuccess;
   }
 
@@ -113,10 +120,10 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   }
 
   // Send the buffer to the storage deamon
-  Dmsg1(400, "Backing up XATTR <%s>\n", xattr_data->u.build->content);
+  Dmsg1(400, "Backing up XATTR <%s>\n", xattr_data->content);
   msgsave = sd->msg;
-  sd->msg = xattr_data->u.build->content;
-  sd->message_length = xattr_data->u.build->content_length;
+  sd->msg = xattr_data->content;
+  sd->message_length = xattr_data->content_length;
   if (!sd->send()) {
     sd->msg = msgsave;
     sd->message_length = 0;
@@ -174,7 +181,7 @@ void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
  *
  */
 uint32_t SerializeXattrStream(JobControlRecord*,
-                              XattrData* xattr_data,
+                              XattrBuildData* xattr_data,
                               uint32_t expected_serialize_len,
                               alist<xattr_t*>* xattr_value_list)
 {
@@ -183,9 +190,9 @@ uint32_t SerializeXattrStream(JobControlRecord*,
 
   /* Make sure the serialized stream fits in the poolmem buffer.
    * We allocate some more to be sure the stream is gonna fit. */
-  xattr_data->u.build->content = CheckPoolMemorySize(
-      xattr_data->u.build->content, expected_serialize_len + 10);
-  SerBegin(xattr_data->u.build->content, expected_serialize_len + 10);
+  xattr_data->content = CheckPoolMemorySize(
+      xattr_data->content, expected_serialize_len + 10);
+  SerBegin(xattr_data->content, expected_serialize_len + 10);
 
   // Walk the list of xattrs and Serialize the data.
   foreach_alist (current_xattr, xattr_value_list) {
@@ -209,10 +216,10 @@ uint32_t SerializeXattrStream(JobControlRecord*,
     }
   }
 
-  SerEnd(xattr_data->u.build->content, expected_serialize_len + 10);
-  xattr_data->u.build->content_length = SerLength(xattr_data->u.build->content);
+  SerEnd(xattr_data->content, expected_serialize_len + 10);
+  xattr_data->content_length = SerLength(xattr_data->content);
 
-  return xattr_data->u.build->content_length;
+  return xattr_data->content_length;
 }
 
 BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
@@ -671,7 +678,7 @@ static const char* xattr_skiplist[]
 #    endif
 
 static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
-                                                  XattrData* xattr_data,
+                                                  XattrBuildData* xattr_data,
                                                   FindFilesPacket* ff_pkt)
 {
   char* bp;
@@ -973,7 +980,7 @@ bail_out:
 
 // Function pointers to the build and parse function to use for these xattrs.
 static BxattrExitCode (*os_build_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
+                                                XattrBuildData* xattr_data,
                                                 FindFilesPacket* ff_pkt)
     = generic_build_xattr_streams;
 static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
@@ -2739,7 +2746,7 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
 
 // Entry points when compiled with support for XATTRs on a supported platform.
 BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
-                                 XattrData* xattr_data,
+                                 XattrBuildData* xattr_data,
                                  FindFilesPacket* ff_pkt)
 {
   /* See if we are changing from one device to another.
