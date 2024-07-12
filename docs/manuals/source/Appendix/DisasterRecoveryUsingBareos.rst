@@ -92,7 +92,7 @@ For ReaR to work with Bareos, the following packages must be installed:
 * **bareos-fd**
 * **bareos-bconsole**
 
-Make sure you have a working |fd| configuration on the system and already did a backup of all disks you want to restore (the fileset have to include all data required to fully restore the system. A good starting point is :config:option:`dir/fileset = LinuxAll`).
+Make sure you have a working |fd| configuration on the system and already did a backup of all disks you want to restore (the fileset has to include all data required to fully restore the system. A good starting point is :config:option:`dir/fileset = LinuxAll`).
 You also need the |bconsole| installed and configured,
 so that it can connect to the |dir|.
 Ideally the |bconsole| is configured in a way that it can only access this client,
@@ -120,7 +120,7 @@ your ReaR configuration will look like this:
    BAREOS_RESTORE_JOB=RestoreFiles
 
 
-If you want to create an ISO image and store it to an NFS server with the IP Address 192.168.10.1, you can use the following configuration:
+If you want to create an ISO image and store it on an NFS server with the IP address 192.168.10.1, you can use the following configuration:
 
 .. code-block:: cfg
    :caption: :file:`/etc/rear/local.conf` (with OUTPUT_URL)
@@ -213,7 +213,7 @@ This will restore the most recent Bareos backup
 to your system.
 
 The **manual restore mode** just starts the :command:`bconsole` program
-and let you choose the restore command.
+and lets you choose the restore command.
 For comfort, the :command:`bconsole` command line history
 is already filled with some useful commands,
 especially with the :bcommand:`restore` command
@@ -281,7 +281,7 @@ and finally:
    RESCUE bareosclient:~ # 
 
 The restored system can be found under the :file:`/mnt/local` directory.
-After restoring the files, ReaR restored the bootloader.
+After restoring the files, ReaR restores the bootloader.
 The recovery is now completed and the system can be rebooted.
 
 The ReaR Bareos backend also works in ReaRs **Automatic Recover** mode,
@@ -316,7 +316,7 @@ Configure a Named Console for ReaR
 The default :command:`bconsole` configuration on the |dir| offers full access to the |dir|.
 This is normally not wanted from a client systems.
 
-Instead you configure a :config:option:`dir/console` for every Bareos client using ReaR,
+Instead it is recommended to configure a :config:option:`dir/console` for every Bareos client using ReaR,
 limiting the access to only one system and the required console commands:
 
 .. code-block:: bareosconfig
@@ -360,7 +360,7 @@ limiting the access to only one system and the required console commands:
    }
 
 Create the file on the |dir| and :bcommand:`reload` the configuration.
-Of course a individual password should be used.
+Of course an individual password should be used.
 
 The corresponding :file:`/etc/bareos/bconsole.conf` on the ReaR client will look like this.
 
@@ -383,7 +383,7 @@ The corresponding :file:`/etc/bareos/bconsole.conf` on the ReaR client will look
 * :config:option:`console/console/Name`: must correspond to :config:option:`dir/console/Name`.
 * :config:option:`console/console/Password`: must correspond to :config:option:`dir/console/Password`.
 
-For more detail, refer to :ref:`section-named-console`.
+For more details, see :ref:`section-named-console`.
 
 Make sure (via filesystem permissions) that the file is only readable for required users.
 By default that is the user **root** and the members of the group **bareos**.
@@ -439,7 +439,7 @@ it works best if it matches the current configuration of your system.
 Any configuration change (hardware, software or environment/network)
 can require an updated rescue image.
 
-This can be automatic using different methods, besides others:
+This can be automated using various methods, among others:
 
 * periodically (cron)
 * on system restart (as a configuration change, like a new kernel version, often requires a reboot)
@@ -453,7 +453,7 @@ Doing this via Bareos backup job has two advantages:
 However, the size of a rescue image is around 200 MB.
 Adding this to a daily incremental backup is often unnecessary.
 
-So wrapping the creation of a new rescue image by a script to limit the number of times it get regenerated often makes sense.
+So it often makes sense to wrap the creation of a new rescue image by a script to limit the number of times it gets regenerated.
 Limitations could be made based on the backup level or the age of the existing rescue image,
 like implemented in the following script with the corresponding :config:option:`dir/job` configuration:
 
