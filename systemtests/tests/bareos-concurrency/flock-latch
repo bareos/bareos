@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# when using this script as a pre-script in a job and exclusively
+# locking ${tmp}/flock-latch.lck in the testrunnner, the jobs
+# will stall until testrunner releases its lock.
+set -euo pipefail
+
+. environment
+
+# wait for an exclusive lock on the lock file
+flock "${tmp}/flock-latch.lck" true

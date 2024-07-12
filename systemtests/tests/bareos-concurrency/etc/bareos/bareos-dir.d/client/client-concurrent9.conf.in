@@ -1,0 +1,8 @@
+Client {
+  Name = client-concurrent9
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  FD PORT = @fd_port@
+  Maximum Concurrent Jobs = 9
+}
