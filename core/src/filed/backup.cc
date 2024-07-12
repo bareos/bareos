@@ -181,10 +181,10 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
          T_("Encountered %ld acl errors while doing backup\n"),
          jcr->fd_impl->acl_data->u.build->nr_errors);
   }
-  if (have_xattr && jcr->fd_impl->xattr_data->u.build->nr_errors > 0) {
+  if (have_xattr && jcr->fd_impl->xattr_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Encountered %ld xattr errors while doing backup\n"),
-         jcr->fd_impl->xattr_data->u.build->nr_errors);
+         jcr->fd_impl->xattr_data->nr_errors);
   }
 
 #if defined(WIN32_VSS)
@@ -495,7 +495,7 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
       break;
     case BxattrExitCode::kError:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->fd_impl->xattr_data->u.build->nr_errors++;
+      jcr->fd_impl->xattr_data->nr_errors++;
       break;
     case BxattrExitCode::kSuccess:
       break;

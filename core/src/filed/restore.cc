@@ -283,7 +283,7 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
       break;
     case BxattrExitCode::kError:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->fd_impl->xattr_data->u.parse->nr_errors++;
+      jcr->fd_impl->xattr_data->nr_errors++;
       break;
     case BxattrExitCode::kSuccess:
       break;
@@ -479,12 +479,7 @@ void DoRestore(JobControlRecord* jcr)
         = (acl_parse_data_t*)malloc(sizeof(acl_parse_data_t));
     memset(jcr->fd_impl->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
   }
-  if (have_xattr) {
-    jcr->fd_impl->xattr_data = std::make_unique<XattrData>();
-    jcr->fd_impl->xattr_data->u.parse
-        = (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
-    memset(jcr->fd_impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
-  }
+  if (have_xattr) { jcr->fd_impl->xattr_data = std::make_unique<XattrData>(); }
 
   while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // Remember previous stream type
@@ -1033,7 +1028,7 @@ void DoRestore(JobControlRecord* jcr)
         Dmsg2(0, "Unknown stream=%d data=%s\n", rctx.stream, sd->msg);
         break;
     } /* end switch(stream) */
-  }   /* end while get_msg() */
+  } /* end while get_msg() */
 
   /* If output file is still open, it was the last one in the
    * archive since we just hit an end of file, so close the file. */
@@ -1062,10 +1057,10 @@ ok_out:
          T_("Encountered %ld acl errors while doing restore\n"),
          jcr->fd_impl->acl_data->u.parse->nr_errors);
   }
-  if (have_xattr && jcr->fd_impl->xattr_data->u.parse->nr_errors > 0) {
+  if (have_xattr && jcr->fd_impl->xattr_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Encountered %ld xattr errors while doing restore\n"),
-         jcr->fd_impl->xattr_data->u.parse->nr_errors);
+         jcr->fd_impl->xattr_data->nr_errors);
   }
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
@@ -1126,10 +1121,6 @@ ok_out:
 
   if (have_acl && jcr->fd_impl->acl_data) {
     free(jcr->fd_impl->acl_data->u.parse);
-  }
-
-  if (have_xattr && jcr->fd_impl->xattr_data) {
-    free(jcr->fd_impl->xattr_data->u.parse);
   }
 
   // Free the delayed stream stack list.
