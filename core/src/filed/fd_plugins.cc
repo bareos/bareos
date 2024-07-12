@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1425,7 +1425,7 @@ bacl_exit_code plugin_parse_acl_streams(
 // Plugin specific callback for getting XATTR information.
 BxattrExitCode PluginBuildXattrStreams(
     JobControlRecord* jcr,
-    [[maybe_unused]] struct XattrData* xattr_data,
+    [[maybe_unused]] XattrBuildData* xattr_data,
     FindFilesPacket*)
 {
   Plugin* plugin;
@@ -1535,12 +1535,11 @@ bail_out:
 }
 
 // Plugin specific callback for setting XATTR information.
-BxattrExitCode PluginParseXattrStreams(
-    JobControlRecord* jcr,
-    [[maybe_unused]] struct XattrData* xattr_data,
-    int,
-    [[maybe_unused]] char* content,
-    [[maybe_unused]] uint32_t content_length)
+BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
+                                       [[maybe_unused]] XattrData* xattr_data,
+                                       int,
+                                       [[maybe_unused]] char* content,
+                                       [[maybe_unused]] uint32_t content_length)
 {
 #if defined(HAVE_XATTR)
   Plugin* plugin;
