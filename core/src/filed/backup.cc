@@ -162,11 +162,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   }
 
   if (have_xattr) {
-    jcr->fd_impl->xattr_data = std::make_unique<XattrData>();
-    jcr->fd_impl->xattr_data->u.build
-        = (xattr_build_data_t*)malloc(sizeof(xattr_build_data_t));
-    memset(jcr->fd_impl->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
-    jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
+    jcr->fd_impl->xattr_data = std::make_unique<XattrBuildData>();
   }
 
   // Subroutine SaveFile() is called for each file
@@ -200,11 +196,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   if (have_acl && jcr->fd_impl->acl_data) {
     FreePoolMemory(jcr->fd_impl->acl_data->u.build->content);
     free(jcr->fd_impl->acl_data->u.build);
-  }
-
-  if (have_xattr && jcr->fd_impl->xattr_data) {
-    FreePoolMemory(jcr->fd_impl->xattr_data->u.build->content);
-    free(jcr->fd_impl->xattr_data->u.build);
   }
 
   if (jcr->fd_impl->big_buf) {
@@ -481,10 +472,13 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->fd_impl->xattr_data->last_fname = jcr->fd_impl->last_fname;
 
   if (jcr->IsPlugin()) {
-    retval
-        = PluginBuildXattrStreams(jcr, jcr->fd_impl->xattr_data.get(), ff_pkt);
+    retval = PluginBuildXattrStreams(
+        jcr, static_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        ff_pkt);
   } else {
-    retval = BuildXattrStreams(jcr, jcr->fd_impl->xattr_data.get(), ff_pkt);
+    retval = BuildXattrStreams(
+        jcr, static_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        ff_pkt);
   }
 
   switch (retval) {
