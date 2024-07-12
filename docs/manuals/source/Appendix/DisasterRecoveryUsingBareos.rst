@@ -317,46 +317,34 @@ The default :command:`bconsole` configuration on the |dir| offers full access to
 This is normally not wanted from a client systems.
 
 Instead it is recommended to configure a :config:option:`dir/console` for every Bareos client using ReaR,
-limiting the access to only one system and the required console commands:
+limiting the access to only one system and the required console commands.
+
+As all these consoles share much of their configuration,
+best start with a common :config:option:`dir/profile` for them.
+:config:option:`dir/profile = rear-client-profile`
+is a good starting point for such a profile:
+
+.. literalinclude:: /include/config/rear-client-profile.conf
+   :language: bareosconfig
+   :caption: :file:`bareos-dir.d/profile/rear-client-profile.conf`
+
+
+This :config:option:`dir/profile`
+limits the access to the required commands.
+Access to all clients is denied.
+This permission must be given individually in the consoles.
+
+Next, create a :config:option:`dir/console`
+for every Bareos client using ReaR:
 
 .. code-block:: bareosconfig
    :caption: :file:`bareos-dir.d/console/bareosclient-console.conf`
 
    Console {
-      # individual per client
-      Name = "bareosclient-console"
-      Password = "secret"
-      Client ACL = "bareosclient-fd"
-
-      # identical for all clients
-      Description = "Restricted console used by ReaR"
-      Command ACL = "."
-      Command ACL = ".api"
-      Command ACL = ".client"
-      Command ACL = ".clients"
-      Command ACL = ".fileset"
-      Command ACL = ".filesets"
-      Command ACL = ".help"
-      Command ACL = ".jobs"
-      Command ACL = ".jobstatus"
-      Command ACL = ".status"
-      Command ACL = "exit"
-      Command ACL = "help"
-      Command ACL = "list"
-      Command ACL = "llist"
-      Command ACL = "restore"
-      Command ACL = "show"
-      Command ACL = "status"
-      Command ACL = "version"
-      Command ACL = "wait"
-      Catalog ACL = *all*
-      FileSet ACL = *all*
-      Job ACL = *all*
-      Plugin Options ACL = *all*
-      Pool ACL = *all*
-      Schedule ACL = *all*
-      Storage ACL = *all*
-      Where ACL = *all*
+      Name               = "bareosclient-console"
+      Password           = "secret"
+      Client ACL         = "bareosclient-fd"
+      Profile            = "rear-client-profile"
    }
 
 Create the file on the |dir| and :bcommand:`reload` the configuration.
