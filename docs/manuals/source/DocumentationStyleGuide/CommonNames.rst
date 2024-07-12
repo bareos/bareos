@@ -88,9 +88,12 @@ Products
 .. csv-table:: Product Names
    :header: "Text to be Displayed", "Text Formatting"
 
+   |ktls|,       ``|ktls|``
    |mysql|,      ``|mysql|``
    open-source,  open-source
+   OpenSSL,      OpenSSL
    |postgresql|, ``|postgresql|``
+   ReaR,         ReaR
    reST,         reST
    TLS-PSK,      TLS-PSK
    |vmware|,     ``|vmware|``
