@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,6 @@
 
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
 import json
 import logging
 import os
@@ -136,7 +135,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         logger.debug(str(result))
         # TODO: This is a bug.
         #       ACL checking does not work here,
-        #       because this jobid should be accessable in this console.
+        #       because this jobid should be accessible in this console.
         # self.assertIn(b'No Job found for JobId', result)
         result = console_bareos_fd.call("find *")
         logger.debug(str(result))
@@ -160,7 +159,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         # 5: Select the most recent backup for a client
         #
-        # Only the bareos-fd client should be accessable
+        # Only the bareos-fd client should be accessible
         # and is therefore autoselected.
         #
         result = console_bareos_fd.call("5")
@@ -300,12 +299,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
             ),
         )
 
-        # TODO:
-        # IMHO this is a bug.
         # This console should not see volumes in the Full pool.
-        # It needs to be fixed in the server side code.
-        with self.assertRaises(AssertionError):
-            self._test_no_volume_in_pool(console_overwrite, console_password, "Full")
+        self._test_no_volume_in_pool(console_overwrite, console_password, "Full")
 
     def test_json_list_jobid_with_job_acl(self):
         """
@@ -402,3 +397,100 @@ class PythonBareosAclTest(bareos_unittest.Json):
     def test_status_subscription_user_fails(self):
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
             self._test_status_subscription("client-bareos-fd", "secret")
+
+    def test_limited_command_acl(self):
+        """
+        The console "limited-operator" uses the profile "operator",
+        but disallows the command ".consoles".
+        """
+        logger = logging.getLogger()
+
+        username = "limited-operator"
+        password = "secret"
+
+        console = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # verify that the command ".consoles" is not allowed.
+        # We expect that the Bareos Director will return something like:
+        # {
+        #   "jsonrpc": "2.0",
+        #   "id": null,
+        #   "error": {
+        #     "code": 1,
+        #     "message": "failed",
+        #     "data": {
+        #       "result": {},
+        #       "messages": {
+        #         "error": [
+        #           ".consoles: is an invalid command.\n"
+        #         ]
+        #       }
+        #     }
+        #   }
+        # }
+        # DirectorConsoleJson will raise an exception, if the result contains the "error" key.
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = console.call(".consoles")
+
+        # verify that substings of the ".consoles" command are not allowed.
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = console.call(".consol")
+
+        # verify that other commands are allowed.
+        result = console.call(".jobs")
+        self.assertGreaterEqual(len(result["jobs"]), 1)
+
+    def test_limiting_where_acl(self):
+        """
+        Try different where options on restore.
+        """
+        logger = logging.getLogger()
+
+        username = "limited-operator"
+        password = "secret"
+
+        jobname = "backup-bareos-fd"
+        client = "bareos-fd"
+        # console WhereACL is expected to be:
+        # WhereAcl = <allowed_restore_path>, "!*all*"
+        allowed_restore_path = "{}/tmp/bareos-restores-{}".format(os.getcwd(), username)
+
+        console = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # retrieve or create a jobid of a valid backup job
+        backup_jobid = self.get_backup_jobid(console, jobname)
+
+        # restore with default where path
+        restore_jobid = self.run_restore(console, client=client, jobid=backup_jobid)
+
+        # restore with allowed where path
+        restore_jobid = self.run_restore(
+            console,
+            client=client,
+            jobid=backup_jobid,
+            extra="where={}".format(allowed_restore_path),
+        )
+
+        # try to restore with non-allowed where path
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            restore_jobid = self.run_restore(
+                console, client=client, jobid=backup_jobid, extra="where=/tmp/INVALID"
+            )
+
+        # try to restore with non-allowed empty where path
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            restore_jobid = self.run_restore(
+                console, client=client, jobid=backup_jobid, extra="where="
+            )

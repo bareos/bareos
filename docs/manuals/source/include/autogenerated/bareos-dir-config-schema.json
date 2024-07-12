@@ -2384,7 +2384,7 @@
           "datatype": "ACL",
           "code": 8,
           "equals": true,
-          "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
+          "description": "Specifies the base directories, where files could be restored."
         },
         "PluginOptionsAcl": {
           "datatype": "ACL",
@@ -2463,7 +2463,7 @@
           "datatype": "ACL",
           "code": 8,
           "equals": true,
-          "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
+          "description": "Specifies the base directories, where files could be restored."
         },
         "PluginOptionsAcl": {
           "datatype": "ACL",
@@ -2651,7 +2651,7 @@
           "datatype": "ACL",
           "code": 8,
           "equals": true,
-          "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
+          "description": "Specifies the base directories, where files could be restored."
         },
         "PluginOptionsAcl": {
           "datatype": "ACL",
