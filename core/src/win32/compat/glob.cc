@@ -99,8 +99,7 @@ static char* dirname(char* path)
   static const char dot[] = ".";
   char* last_slash;
   /* Find last '/'.  */
-  std::size_t len = strlen(path);
-  last_slash = path != NULL ? LastSlash(path, len) : NULL;
+  last_slash = path != NULL ? LastSlash(path, strlen(path)) : NULL;
   if (last_slash != NULL && last_slash != path && last_slash[1] == '\0') {
     /* Determine whether all remaining characters are slashes.  */
     char* runp;
