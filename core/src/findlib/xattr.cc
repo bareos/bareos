@@ -326,7 +326,7 @@ static int os_default_xattr_streams[1] = {STREAM_XATTR_AIX};
 #    endif
 
 static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
-                                              XattrData* xattr_data,
+                                              XattrBuildData* xattr_data,
                                               FindFilesPacket* ff_pkt)
 {
   char* bp;
@@ -611,7 +611,7 @@ bail_out:
 
 // Function pointers to the build and parse function to use for these xattrs.
 static BxattrExitCode (*os_build_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
+                                                XattrBuildData* xattr_data,
                                                 FindFilesPacket* ff_pkt)
     = aix_build_xattr_streams;
 static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
@@ -1033,7 +1033,7 @@ static const char* xattr_skiplist[1] = {NULL};
 #    endif
 
 static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
-                                              XattrData* xattr_data,
+                                              XattrBuildData* xattr_data,
                                               FindFilesPacket* ff_pkt)
 {
   bool skip_xattr;
@@ -1401,7 +1401,7 @@ bail_out:
 
 // Function pointers to the build and parse function to use for these xattrs.
 static BxattrExitCode (*os_build_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
+                                                XattrBuildData* xattr_data,
                                                 FindFilesPacket* ff_pkt)
     = bsd_build_xattr_streams;
 static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
@@ -1527,18 +1527,18 @@ static int os_default_xattr_streams[1] = {STREAM_XATTR_SOLARIS};
  * counterpart(s))
  */
 static inline xattr_link_cache_entry_t* find_xattr_link_cache_entry(
-    XattrData* xattr_data,
+    XattrBXattrBuildData* xattr_data,
     ino_t inum)
 {
   xattr_link_cache_entry_t* ptr;
 
-  foreach_alist (ptr, xattr_data->u.build->link_cache) {
+  foreach_alist (ptr, xattr_data->link_cache) {
     if (ptr && ptr->inum == inum) { return ptr; }
   }
   return NULL;
 }
 
-static inline void add_xattr_link_cache_entry(XattrData* xattr_data,
+static inline void add_xattr_link_cache_entry(XattrBuildData* xattr_data,
                                               ino_t inum,
                                               char* target)
 {
@@ -1549,26 +1549,26 @@ static inline void add_xattr_link_cache_entry(XattrData* xattr_data,
   ptr->inum = inum;
   ptr->target = strdup(target);
 
-  if (!xattr_data->u.build->link_cache) {
-    xattr_data->u.build->link_cache
+  if (!xattr_data->link_cache) {
+    xattr_data->link_cache
         = new alist<xattr_t*>(10, not_owned_by_alist);
   }
-  xattr_data->u.build->link_cache->append(ptr);
+  xattr_data->link_cache->append(ptr);
 }
 
-static inline void DropXattrLinkCache(XattrData* xattr_data)
+static inline void DropXattrLinkCache(XattrBuildData* xattr_data)
 {
   xattr_link_cache_entry_t* ptr;
 
   /* Walk the list of xattr link cache entries and free allocated memory on
    * traversing. */
-  foreach_alist (ptr, xattr_data->u.build->link_cache) {
+  foreach_alist (ptr, xattr_data->link_cache) {
     free(ptr->target);
     free(ptr);
   }
 
-  delete xattr_data->u.build->link_cache;
-  xattr_data->u.build->link_cache = NULL;
+  delete xattr_data->link_cache;
+  xattr_data->link_cache = NULL;
 }
 
 #    if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
@@ -1795,7 +1795,7 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
  * actual_xattr_data is the content of the xattr file.
  */
 static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
-                                         XattrData* xattr_data,
+                                         XattrBuildData* xattr_data,
                                          int fd,
                                          const char* xattr_namespace,
                                          const char* attrname,
@@ -1862,15 +1862,15 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
       // See if this is the toplevel_hidden_dir being saved.
       if (toplevel_hidden_dir) {
         /* Save the data for later storage when we encounter a real xattr.
-         * We store the data in the xattr_data->u.build->content buffer
+         * We store the data in the xattr_data->content buffer
          * and flush that just before sending out the first real xattr.
          * Encode the stat struct into an ASCII representation and jump
          * out of the function. */
         EncodeStat(attribs, &st, sizeof(st), 0, stream);
         cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c", target_attrname,
                         0, attribs, 0, (acl_text) ? acl_text : "", 0);
-        PmMemcpy(xattr_data->u.build->content, buffer, cnt);
-        xattr_data->u.build->content_length = cnt;
+        PmMemcpy(xattr_data->content, buffer, cnt);
+        xattr_data->content_length = cnt;
         goto bail_out;
       } else {
         /* The current implementation of xattr on Solaris doesn't support this,
@@ -1892,8 +1892,8 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
           EncodeStat(attribs, &st, sizeof(st), st.st_ino, stream);
           cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c",
                           target_attrname, 0, attribs, 0, xlce->target, 0);
-          PmMemcpy(xattr_data->u.build->content, buffer, cnt);
-          xattr_data->u.build->content_length = cnt;
+          PmMemcpy(xattr_data->content, buffer, cnt);
+          xattr_data->content_length = cnt;
           retval = SendXattrStream(jcr, xattr_data, stream);
 
           /* For a hard linked file we are ready now, no need to recursively
@@ -1960,12 +1960,12 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
       EncodeStat(attribs, &st, sizeof(st), st.st_ino, stream);
       cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c", target_attrname,
                       0, attribs, 0, link_source, 0);
-      PmMemcpy(xattr_data->u.build->content, buffer, cnt);
-      xattr_data->u.build->content_length = cnt;
+      PmMemcpy(xattr_data->content, buffer, cnt);
+      xattr_data->content_length = cnt;
       retval = SendXattrStream(jcr, xattr_data, stream);
 
       if (retval == BxattrExitCode::kSuccess) {
-        xattr_data->u.build->nr_saved++;
+        xattr_data->nr_saved++;
       }
 
       /* For a soft linked file we are ready now, no need to recursively save
@@ -1978,15 +1978,15 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
   /* See if this is the first real xattr being saved.
    * If it is save the toplevel_hidden_dir attributes first.
    * This is easy as its stored already in the
-   * xattr_data->u.build->content buffer. */
-  if (xattr_data->u.build->nr_saved == 0) {
+   * xattr_data->content buffer. */
+  if (xattr_data->nr_saved == 0) {
     retval = SendXattrStream(jcr, xattr_data, STREAM_XATTR_SOLARIS);
     if (retval != BxattrExitCode::kSuccess) { goto bail_out; }
-    xattr_data->u.build->nr_saved++;
+    xattr_data->nr_saved++;
   }
 
-  PmMemcpy(xattr_data->u.build->content, buffer, cnt);
-  xattr_data->u.build->content_length = cnt;
+  PmMemcpy(xattr_data->content, buffer, cnt);
+  xattr_data->content_length = cnt;
 
   // Only dump the content of regular files.
   switch (st.st_mode & S_IFMT) {
@@ -2002,13 +2002,13 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         }
 
         while ((cnt = read(attrfd, buffer, sizeof(buffer))) > 0) {
-          xattr_data->u.build->content
-              = CheckPoolMemorySize(xattr_data->u.build->content,
-                                    xattr_data->u.build->content_length + cnt);
-          memcpy(xattr_data->u.build->content
-                     + xattr_data->u.build->content_length,
+          xattr_data->content
+              = CheckPoolMemorySize(xattr_data->content,
+                                    xattr_data->content_length + cnt);
+          memcpy(xattr_data->content
+                     + xattr_data->content_length,
                  buffer, cnt);
-          xattr_data->u.build->content_length += cnt;
+          xattr_data->content_length += cnt;
         }
 
         if (cnt < 0) {
@@ -2029,7 +2029,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
   // We build a new xattr stream send it to the SD.
   retval = SendXattrStream(jcr, xattr_data, stream);
   if (retval != BxattrExitCode::kSuccess) { goto bail_out; }
-  xattr_data->u.build->nr_saved++;
+  xattr_data->nr_saved++;
 
   /* Recursivly call solaris_save_extended_attributes for archiving the
    * attributes available on this extended attribute. */
@@ -2063,7 +2063,7 @@ bail_out:
 }
 
 static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
-                                          XattrData* xattr_data,
+                                          XattrBuildData* xattr_data,
                                           const char* xattr_namespace,
                                           const char* attr_parent)
 {
@@ -2653,7 +2653,7 @@ bail_out:
 }
 
 static BxattrExitCode solaris_build_xattr_streams(JobControlRecord* jcr,
-                                                  XattrData* xattr_data,
+                                                  XattrBuildData* xattr_data,
                                                   FindFilesPacket* ff_pkt)
 {
   char cwd[PATH_MAX];
@@ -2662,14 +2662,14 @@ static BxattrExitCode solaris_build_xattr_streams(JobControlRecord* jcr,
   /* First see if extended attributes or extensible attributes are present.
    * If not just pretend things went ok. */
   if (pathconf(xattr_data->last_fname, _PC_XATTR_EXISTS) > 0) {
-    xattr_data->u.build->nr_saved = 0;
+    xattr_data->nr_saved = 0;
 
     /* As we change the cwd in the save function save the current cwd
      * for restore after return from the solaris_save_xattrs function. */
     getcwd(cwd, sizeof(cwd));
     retval = solaris_save_xattrs(jcr, xattr_data, NULL, NULL);
     chdir(cwd);
-    if (xattr_data->u.build->link_cache) { DropXattrLinkCache(xattr_data); }
+    if (xattr_data->link_cache) { DropXattrLinkCache(xattr_data); }
   }
   return retval;
 }
@@ -2732,7 +2732,7 @@ bail_out:
 
 // Function pointers to the build and parse function to use for these xattrs.
 static BxattrExitCode (*os_build_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
+                                                XattrBuildData* xattr_data,
                                                 FindFilesPacket* ff_pkt)
     = solaris_build_xattr_streams;
 static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
