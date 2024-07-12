@@ -50,7 +50,7 @@ add_executable(gentestdata)
 target_sources(gentestdata PRIVATE gentestdata.cc)
 target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
 
-if(NOT HAVE_WIN32)
+if(NOT HAVE_MSVC)
   add_executable(drivetype drivetype.cc)
   target_link_libraries(drivetype bareos bareosfind)
 
@@ -59,6 +59,9 @@ if(NOT HAVE_WIN32)
 
   add_executable(bscrypto bscrypto.cc)
   target_link_libraries(bscrypto bareos)
+endif()
+
+if(NOT HAVE_WIN32)
 
   add_executable(btestls btestls.cc)
   target_link_libraries(btestls bareosfind bareos)
