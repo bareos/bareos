@@ -205,6 +205,10 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
 {
   const std::string obj_name = request->volname;
   const std::string obj_chunk = get_chunk_name(request);
+  if(request->wbuflen == 0) {
+    Dmsg1(dlvl, "Not flushing empty chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
+    return true;
+  }
   Dmsg1(dlvl, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
 
   auto inflight_lease = getInflightLease(request);

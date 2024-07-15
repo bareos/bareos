@@ -159,7 +159,7 @@ auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
   Stat stat;
   if (int n = fscanf(rfh, "%zu\n", &stat.size); n != 1) {
     return tl::unexpected(
-        fmt::format("could not parse data returned by {}", cmdline));
+        fmt::format("could not parse data returned by {}\n", cmdline));
   }
   if (auto ret = bph.close(); ret != 0) {
     Dmsg1(dlvl, "stat returned %d\n", ret);
