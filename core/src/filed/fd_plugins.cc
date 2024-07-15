@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1506,20 +1506,9 @@ BxattrExitCode PluginBuildXattrStreams(
 
     // If we found any xattr send them to the SD.
     if (xattr_count > 0) {
-      // Serialize the datastream.
-      if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                               xattr_value_list)
-          < expected_serialize_len) {
-        Mmsg1(jcr->errmsg,
-              T_("Failed to Serialize extended attributes on file \"%s\"\n"),
-              xattr_data->last_fname);
-        Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-              xattr_data->last_fname);
-        goto bail_out;
-      }
-
-      // Send the datastream to the SD.
-      retval = SendXattrStream(jcr, xattr_data, STREAM_XATTR_PLUGIN);
+      retval
+          = SerializeAndSendXattrStream(jcr, xattr_data, expected_serialize_len,
+                                        xattr_value_list, STREAM_XATTR_PLUGIN);
     } else {
       retval = BxattrExitCode::kSuccess;
     }
@@ -1535,12 +1524,11 @@ bail_out:
 }
 
 // Plugin specific callback for setting XATTR information.
-BxattrExitCode PluginParseXattrStreams(
-    JobControlRecord* jcr,
-    [[maybe_unused]] XattrData* xattr_data,
-    int,
-    [[maybe_unused]] char* content,
-    [[maybe_unused]] uint32_t content_length)
+BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
+                                       [[maybe_unused]] XattrData* xattr_data,
+                                       int,
+                                       [[maybe_unused]] char* content,
+                                       [[maybe_unused]] uint32_t content_length)
 {
 #if defined(HAVE_XATTR)
   Plugin* plugin;

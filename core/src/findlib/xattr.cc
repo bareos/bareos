@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -89,9 +89,7 @@ BxattrExitCode ParseXattrStreams(JobControlRecord*,
   return BxattrExitCode::kErrorFatal;
 }
 
-BxattrExitCode SendXattrStream(JobControlRecord*,
-                               XattrBuildData*,
-                               int)
+BxattrExitCode SendXattrStream(JobControlRecord*, XattrBuildData*, int)
 {
   return BattrBxattrExitCode::kErrorFatal;
 }
@@ -108,9 +106,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
 #  endif
 
   // Sanity check
-  if (xattr_data->content_length <= 0) {
-    return BxattrExitCode::kSuccess;
-  }
+  if (xattr_data->content_length <= 0) { return BxattrExitCode::kSuccess; }
 
   // Send header
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
@@ -120,9 +116,9 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   }
 
   // Send the buffer to the storage deamon
-  Dmsg1(400, "Backing up XATTR <%s>\n", xattr_data->content);
+  Dmsg1(400, "Backing up XATTR <%s>\n", xattr_data->content.c_str());
   msgsave = sd->msg;
-  sd->msg = xattr_data->content;
+  sd->msg = xattr_data->content.c_str();
   sd->message_length = xattr_data->content_length;
   if (!sd->send()) {
     sd->msg = msgsave;
@@ -190,9 +186,8 @@ uint32_t SerializeXattrStream(JobControlRecord*,
 
   /* Make sure the serialized stream fits in the poolmem buffer.
    * We allocate some more to be sure the stream is gonna fit. */
-  xattr_data->content = CheckPoolMemorySize(
-      xattr_data->content, expected_serialize_len + 10);
-  SerBegin(xattr_data->content, expected_serialize_len + 10);
+  xattr_data->content.check_size(expected_serialize_len + 10);
+  SerBegin(xattr_data->content.c_str(), expected_serialize_len + 10);
 
   // Walk the list of xattrs and Serialize the data.
   foreach_alist (current_xattr, xattr_value_list) {
@@ -216,8 +211,8 @@ uint32_t SerializeXattrStream(JobControlRecord*,
     }
   }
 
-  SerEnd(xattr_data->content, expected_serialize_len + 10);
-  xattr_data->content_length = SerLength(xattr_data->content);
+  SerEnd(xattr_data->content.c_str(), expected_serialize_len + 10);
+  xattr_data->content_length = SerLength(xattr_data->content.c_str());
 
   return xattr_data->content_length;
 }
@@ -296,6 +291,25 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
   return BxattrExitCode::kSuccess;
 }
 
+BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
+                                           XattrBuildData* xattr_data,
+                                           uint32_t expected_serialize_len,
+                                           alist<xattr_t*>* xattr_value_list,
+                                           int stream_type)
+{
+  // Serialize the datastream.
+  const uint32_t serialize_len = SerializeXattrStream(
+      jcr, xattr_data, expected_serialize_len, xattr_value_list);
+  if (serialize_len < expected_serialize_len) {
+    Mmsg1(jcr->errmsg,
+          T_("Failed to Serialize extended attributes on file \"%s\"\n"),
+          xattr_data->last_fname);
+    Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
+          xattr_data->last_fname);
+    return BxattrExitCode::kError;
+  }
+  return SendXattrStream(jcr, xattr_data, stream_type);
+}
 // This is a supported OS, See what kind of interface we should use.
 #  if defined(HAVE_AIX_OS)
 
@@ -525,20 +539,9 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
 
   // If we found any xattr send them to the SD.
   if (xattr_count > 0) {
-    // Serialize the datastream.
-    if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                             xattr_value_list)
-        < expected_serialize_len) {
-      Mmsg1(jcr->errmsg,
-            T_("Failed to Serialize extended attributes on file \"%s\"\n"),
-            xattr_data->last_fname);
-      Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-            xattr_data->last_fname);
-      goto bail_out;
-    }
-
-    // Send the datastream to the SD.
-    retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
+    retval = SerializeAndSendXattrStream(
+        jcr, xattr_data, expected_serialize_len, xattr_value_list,
+        os_default_xattr_streams[0]);
   } else {
     retval = BxattrExitCode::kSuccess;
   }
@@ -895,20 +898,9 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
 
   // If we found any xattr send them to the SD.
   if (xattr_count > 0) {
-    // Serialize the datastream.
-    if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                             xattr_value_list)
-        < expected_serialize_len) {
-      Mmsg1(jcr->errmsg,
-            T_("Failed to Serialize extended attributes on file \"%s\"\n"),
-            xattr_data->last_fname);
-      Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-            xattr_data->last_fname);
-      goto bail_out;
-    }
-
-    // Send the datastream to the SD.
-    retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
+    retval = SerializeAndSendXattrStream(
+        jcr, xattr_data, expected_serialize_len, xattr_value_list,
+        os_default_xattr_streams[0]);
   } else {
     retval = BxattrExitCode::kSuccess;
   }
@@ -1295,20 +1287,9 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
 
   // If we found any xattr send them to the SD.
   if (xattr_count > 0) {
-    // Serialize the datastream.
-    if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                             xattr_value_list)
-        < expected_serialize_len) {
-      Mmsg1(jcr->errmsg,
-            T_("Failed to Serialize extended attributes on file \"%s\"\n"),
-            xattr_data->last_fname);
-      Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-            xattr_data->last_fname);
-      goto bail_out;
-    }
-
-    // Send the datastream to the SD.
-    retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
+    retval = SerializeAndSendXattrStream(
+        jcr, xattr_data, expected_serialize_len, xattr_value_list,
+        os_default_xattr_streams[0]);
   } else {
     retval = BxattrExitCode::kSuccess;
   }
@@ -1550,8 +1531,7 @@ static inline void add_xattr_link_cache_entry(XattrBuildData* xattr_data,
   ptr->target = strdup(target);
 
   if (!xattr_data->link_cache) {
-    xattr_data->link_cache
-        = new alist<xattr_t*>(10, not_owned_by_alist);
+    xattr_data->link_cache = new alist<xattr_t*>(10, not_owned_by_alist);
   }
   xattr_data->link_cache->append(ptr);
 }
@@ -1964,9 +1944,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
       xattr_data->content_length = cnt;
       retval = SendXattrStream(jcr, xattr_data, stream);
 
-      if (retval == BxattrExitCode::kSuccess) {
-        xattr_data->nr_saved++;
-      }
+      if (retval == BxattrExitCode::kSuccess) { xattr_data->nr_saved++; }
 
       /* For a soft linked file we are ready now, no need to recursively save
        * the attributes. */
@@ -2002,11 +1980,8 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         }
 
         while ((cnt = read(attrfd, buffer, sizeof(buffer))) > 0) {
-          xattr_data->content
-              = CheckPoolMemorySize(xattr_data->content,
-                                    xattr_data->content_length + cnt);
-          memcpy(xattr_data->content
-                     + xattr_data->content_length,
+          xattr_data->content.check_size(xattr_data->content_length + cnt);
+          memcpy(xattr_data->content.c_str() + xattr_data->content_length,
                  buffer, cnt);
           xattr_data->content_length += cnt;
         }
