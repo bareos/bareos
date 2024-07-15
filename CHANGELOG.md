@@ -20,6 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - create_bareos_database: fix `db_name` not being double quoted [PR #1869]
 - dir: fix crash on purge with job without client [PR #1861]
 - fix runtime status [PR #1874]
+- Fix multiple ACL handling bugs [PR #1890]
 
 ## [23.0.3] - 2024-06-04
 
@@ -503,4 +504,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1879]: https://github.com/bareos/bareos/pull/1879
 [PR #1884]: https://github.com/bareos/bareos/pull/1884
 [PR #1886]: https://github.com/bareos/bareos/pull/1886
+[PR #1890]: https://github.com/bareos/bareos/pull/1890
 [unreleased]: https://github.com/bareos/bareos/tree/master
