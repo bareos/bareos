@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - Fix mistake in VolumeManagement.rst [PR #1834]
 - docs: improve Restoring a Bareos Server section [PR #1886]
+- Update ReaR documentation [PR #1894]
 
 ### Changed
 - python-bareos: fix description [PR #1841]
@@ -505,4 +506,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1884]: https://github.com/bareos/bareos/pull/1884
 [PR #1886]: https://github.com/bareos/bareos/pull/1886
 [PR #1890]: https://github.com/bareos/bareos/pull/1890
+[PR #1894]: https://github.com/bareos/bareos/pull/1894
 [unreleased]: https://github.com/bareos/bareos/tree/master
