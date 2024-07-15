@@ -337,8 +337,8 @@ bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
 {
   chunk_io_request *new_request, *enqueued_request;
 
-  Dmsg2(100, "Enqueueing chunk %d of volume %s\n", request->chunk,
-        request->volname);
+  Dmsg2(100, "Enqueueing chunk %d of volume %s (%d bytes)\n", request->chunk,
+        request->volname, request->wbuflen);
 
   if (!io_threads_started_) {
     if (!StartIoThreads()) { return false; }
@@ -1165,6 +1165,8 @@ bool ChunkedDevice::LoadChunk()
            * latest data anyway. */
           if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest)
               == &request) {
+            current_chunk_->end_offset
+                = start_offset + (current_chunk_->chunk_size - 1);
             goto bail_out;
           }
         }
