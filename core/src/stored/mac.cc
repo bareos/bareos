@@ -446,6 +446,7 @@ bool DoMacRun(JobControlRecord* jcr)
   bool ok = true;
   bool acquire_fail = false;
   BareosSocket* dir = jcr->dir_bsock;
+  if (!jcr->sd_impl->dcr) { TryReserveAfterUse(jcr, true); }
   Device* dev = jcr->sd_impl->dcr->dev;
 
   switch (jcr->getJobType()) {

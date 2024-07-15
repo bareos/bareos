@@ -36,6 +36,7 @@ void sd::SetUp()
 {
   using namespace storagedaemon;
   OSDependentInit();
+  InitReservationsLock();
 
   debug_level = 900;
 
