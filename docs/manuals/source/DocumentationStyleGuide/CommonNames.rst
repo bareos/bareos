@@ -90,7 +90,9 @@ Products
 
    |mysql|,      ``|mysql|``
    open-source,  open-source
+   OpenSSL,      OpenSSL
    |postgresql|, ``|postgresql|``
+   ReaR,         ReaR
    reST,         reST
    |sqlite|,     ``|sqlite|``
    TLS-PSK,      TLS-PSK
