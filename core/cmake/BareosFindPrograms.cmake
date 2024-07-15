@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -117,26 +117,26 @@ message(STATUS "XTRABACKUP_BINARY: ${XTRABACKUP_BINARY}")
 message(STATUS "MYSQL_DAEMON_BINARY:${MYSQL_DAEMON_BINARY}")
 message(STATUS "MYSQL_CLIENT_BINARY:${MYSQL_CLIENT_BINARY}")
 
-# For mariadb: MARIABACKUP_BINARY MARIADB_DAEMON_BINARY MARIADB_CLIENT_BINARY
+# For mariadb: MARIADB_BACKUP_BINARY MARIADB_DAEMON_BINARY MARIADB_CLIENT_BINARY
 # MARIADB_MYSQL_INSTALL_DB_SCRIPT
 
-if(NOT DEFINED MARIABACKUP_BINARY)
-  find_program(MARIABACKUP_BINARY mariabackup)
+if(NOT DEFINED MARIADB_BACKUP_BINARY)
+  find_program(MARIADB_BACKUP_BINARY mariadb-backup)
 endif()
 
 find_program_and_verify_version_string(
-  MARIADB_DAEMON_BINARY mysqld MariaDB "/usr/libexec" ""
+  MARIADB_DAEMON_BINARY mariadbd MariaDB "/usr/libexec" ""
 )
 find_program_and_verify_version_string(
-  MARIADB_CLIENT_BINARY mysql MariaDB "" ""
+  MARIADB_CLIENT_BINARY mariadb MariaDB "" ""
 )
 
 if(NOT DEFINED MARIADB_MYSQL_INSTALL_DB_SCRIPT)
   find_program(MARIADB_MYSQL_INSTALL_DB_SCRIPT mysql_install_db)
 endif()
 
-message(STATUS "MARIABACKUP_BINARY: ${MARIABACKUP_BINARY}")
-message(STATUS "MARIADB_DAEMON_BINARY:${MARIADB_DAEMON_BINARY}")
+message(STATUS "MARIADB_BACKUP_BINARY: ${MARIADB_BACKUP_BINARY}")
+message(STATUS "MARIADB_DAEMON_BINARY: ${MARIADB_DAEMON_BINARY}")
 message(STATUS "MARIADB_CLIENT_BINARY: ${MARIADB_CLIENT_BINARY}")
 message(
   STATUS "MARIADB_MYSQL_INSTALL_DB_SCRIPT: ${MARIADB_MYSQL_INSTALL_DB_SCRIPT}"
