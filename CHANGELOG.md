@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Adapt to Python 3.12 [PR #1850]
 - freebsd: fix build issues with ports tree 2024Q3 [PR #1883]
 - Improve PythonFdWrapper class [PR #1846]
+- windows: build natively with msvc compiler [PR #1744]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -177,6 +178,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
 [PR #1740]: https://github.com/bareos/bareos/pull/1740
+[PR #1744]: https://github.com/bareos/bareos/pull/1744
 [PR #1745]: https://github.com/bareos/bareos/pull/1745
 [PR #1746]: https://github.com/bareos/bareos/pull/1746
 [PR #1752]: https://github.com/bareos/bareos/pull/1752
