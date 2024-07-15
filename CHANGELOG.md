@@ -12,6 +12,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - create_bareos_database: fix `db_name` not being double quoted [PR #1870]
 - Fix multiple ACL handling bugs [PR #1891]
 
+### Documentation
+- Update ReaR documentation [PR #1895]
+
 ## [22.1.5] - 2024-06-04
 
 ### Changed
@@ -686,4 +689,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1848]: https://github.com/bareos/bareos/pull/1848
 [PR #1870]: https://github.com/bareos/bareos/pull/1870
 [PR #1891]: https://github.com/bareos/bareos/pull/1891
+[PR #1895]: https://github.com/bareos/bareos/pull/1895
 [unreleased]: https://github.com/bareos/bareos/tree/master
