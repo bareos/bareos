@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - python-bareos: add missing `dirname` variable [PR #1849]
 
+### Fixed
+- Fix multiple ACL handling bugs [PR #1892]
+
 ## [21.1.10] - 2024-06-04
 
 ### Fixed
@@ -748,4 +751,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1778]: https://github.com/bareos/bareos/pull/1778
 [PR #1819]: https://github.com/bareos/bareos/pull/1819
 [PR #1849]: https://github.com/bareos/bareos/pull/1849
+[PR #1892]: https://github.com/bareos/bareos/pull/1892
 [unreleased]: https://github.com/bareos/bareos/tree/master
