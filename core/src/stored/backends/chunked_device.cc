@@ -311,10 +311,10 @@ static int CompareChunkIoRequest(ocbuf_item* ocbuf1, ocbuf_item* ocbuf2)
 }
 
 // Call back function for updating two chunk_io_requests.
-static void UpdateChunkIoRequest(void* item1, void* item2)
+static void UpdateChunkIoRequest(void* old_item, void* new_item)
 {
-  chunk_io_request* chunk1 = (chunk_io_request*)item1;
-  chunk_io_request* chunk2 = (chunk_io_request*)item2;
+  chunk_io_request* old_req = (chunk_io_request*)old_item;
+  chunk_io_request* new_req = (chunk_io_request*)new_item;
 
   /* See if the new chunk_io_request has more bytes then
    * the chunk_io_request currently on the ordered circular
@@ -325,11 +325,17 @@ static void UpdateChunkIoRequest(void* item1, void* item2)
    * means all pointers are the same only the wbuflen and the
    * release flag of the chunk_io_request differ. So we only
    * copy those two fields and not the others. */
-  if (chunk2->buffer == chunk1->buffer && chunk2->wbuflen > chunk1->wbuflen) {
-    chunk1->wbuflen = chunk2->wbuflen;
-    chunk1->release = chunk2->release;
+  Dmsg0(200, "Updating chunk request at %p from new request at %p\n", old_req, new_req);
+  ASSERT(new_req->wbuflen >= old_req->wbuflen);
+  if (new_req->buffer == old_req->buffer) {
+    old_req->wbuflen = new_req->wbuflen;
+    old_req->release = new_req->release;
+    new_req->release = false;
+  } else {
+    new_req->release = false; // we must keep the new buffer
+    old_req->release = false; // but should discard the old one
+    std::swap(*old_req, *new_req);
   }
-  chunk2->release = false;
 }
 
 // Enqueue a chunk flush request onto the ordered circular buffer.
