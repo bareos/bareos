@@ -114,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dir: fix crash on purge with job without client [PR #1857]
 - fix runtime status [PR #1872]
 - Fix multiple ACL handling bugs [PR #1875]
+- fix #1775 plugin: fd mariabackup add support mariadb 11+ [PR #1835]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -201,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1810]: https://github.com/bareos/bareos/pull/1810
 [PR #1821]: https://github.com/bareos/bareos/pull/1821
 [PR #1829]: https://github.com/bareos/bareos/pull/1829
+[PR #1835]: https://github.com/bareos/bareos/pull/1835
 [PR #1840]: https://github.com/bareos/bareos/pull/1840
 [PR #1846]: https://github.com/bareos/bareos/pull/1846
 [PR #1847]: https://github.com/bareos/bareos/pull/1847
