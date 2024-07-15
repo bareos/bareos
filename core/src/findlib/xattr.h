@@ -78,18 +78,15 @@ class XattrData {
   uint32_t current_dev{0};
   bool first_dev{true};
   uint32_t nr_errors{0};
-  virtual ~XattrData() noexcept {}
+  virtual ~XattrData() noexcept = default;
 };
 
 class XattrBuildData : public XattrData {
  public:
   uint32_t nr_saved{0};
-  POOLMEM* content{nullptr};
+  PoolMem content{PM_MESSAGE};
   uint32_t content_length{0};
   alist<xattr_link_cache_entry_t*>* link_cache{nullptr};
-
-  XattrBuildData() noexcept : content(GetPoolMemory(PM_MESSAGE)) {}
-  ~XattrBuildData() noexcept override { FreePoolMemory(content); }
 };
 
 // Maximum size of the XATTR stream this prevents us from blowing up the filed.
@@ -98,6 +95,11 @@ class XattrBuildData : public XattrData {
 // Upperlimit on a xattr internal buffer
 #define XATTR_BUFSIZ 1024
 
+BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
+                                           XattrBuildData* xattr_data,
+                                           uint32_t expected_serialize_len,
+                                           alist<xattr_t*>* xattr_value_list,
+                                           int stream_type);
 BxattrExitCode SendXattrStream(JobControlRecord* jcr,
                                XattrBuildData* xattr_data,
                                int stream);

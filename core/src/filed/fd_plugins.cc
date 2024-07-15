@@ -1506,20 +1506,9 @@ BxattrExitCode PluginBuildXattrStreams(
 
     // If we found any xattr send them to the SD.
     if (xattr_count > 0) {
-      // Serialize the datastream.
-      if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                               xattr_value_list)
-          < expected_serialize_len) {
-        Mmsg1(jcr->errmsg,
-              T_("Failed to Serialize extended attributes on file \"%s\"\n"),
-              xattr_data->last_fname);
-        Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-              xattr_data->last_fname);
-        goto bail_out;
-      }
-
-      // Send the datastream to the SD.
-      retval = SendXattrStream(jcr, xattr_data, STREAM_XATTR_PLUGIN);
+      retval
+          = SerializeAndSendXattrStream(jcr, xattr_data, expected_serialize_len,
+                                        xattr_value_list, STREAM_XATTR_PLUGIN);
     } else {
       retval = BxattrExitCode::kSuccess;
     }
