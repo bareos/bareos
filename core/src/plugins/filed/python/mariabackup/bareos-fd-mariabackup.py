@@ -195,8 +195,8 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             ret = check_output(get_lsn_cmd).decode()
             return ret
         except CalledProcessError as run_err:
-            DebugMessage(
-                100,
+            JobMessage(
+                M_FATAL,
                 f"Error while looking for LSN: {run_err}\n",
             )
             return bRC_Error
@@ -208,9 +208,15 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                 if line.startswith("Log sequence number"):
                     last_lsn = int(line.split(" ")[-1])
         except ValueError as val_err:
-            DebugMessage(
-                100,
+            JobMessage(
+                M_FATAL,
                 f"Returned LSN seems wrong: {val_err}\n",
+            )
+            return bRC_Error
+        if last_lsn is None:
+            JobMessage(
+                M_FATAL,
+                f"Could not get LSN from {res}\n",
             )
             return bRC_Error
         return last_lsn
@@ -325,6 +331,8 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                 innodb_status = self.get_lsn_by_command()
 
             last_lsn = self.parse_innodb_status(innodb_status)
+            if last_lsn == bRC_Error:
+                return bRC_Error
             JobMessage(M_INFO, "Backup until LSN: %d\n" % last_lsn)
             if (
                 self.max_to_lsn > 0
