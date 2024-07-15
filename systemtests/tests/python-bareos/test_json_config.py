@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -73,7 +73,7 @@ class PythonBareosJsonConfigTest(bareos_unittest.Json):
 
         self.assertFalse(
             self.check_resource(director, resourcesname, newclient),
-            u"Resource {} in {} already exists.".format(newclient, resourcesname),
+            "Resource {} in {} already exists.".format(newclient, resourcesname),
         )
 
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
@@ -83,7 +83,7 @@ class PythonBareosJsonConfigTest(bareos_unittest.Json):
             director,
             resourcesname,
             newclient,
-            u"client={} password={} address=127.0.0.1".format(newclient, newpassword),
+            "client={} password={} address=127.0.0.1".format(newclient, newpassword),
         )
 
         director.call("show all")
@@ -122,14 +122,14 @@ class PythonBareosJsonConfigTest(bareos_unittest.Json):
 
         self.assertFalse(
             self.check_resource(director, resourcesname, testname),
-            u"Resource {} in {} already exists.".format(testname, resourcesname),
+            "Resource {} in {} already exists.".format(testname, resourcesname),
         )
 
         self.configure_add(
             director,
             resourcesname,
             testname,
-            u'job jobdefs=DefaultJob name={} description="{}" runafterjob="{}" priority={}'.format(
+            'job jobdefs=DefaultJob name={} description="{}" runafterjob="{}" priority={}'.format(
                 testname, stringwithwhitespace, testscript, priority
             ),
         )
@@ -150,3 +150,48 @@ class PythonBareosJsonConfigTest(bareos_unittest.Json):
             result["jobs"][testname]["priority"],
             priority,
         )
+
+    def _test_configure_add_conole_with_where_acl(self, name, where_acl):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        resourcetype = "console"
+
+        try:
+            os.remove("etc/bareos/bareos-dir.d/{}/{}.conf".format(resourcetype, name))
+            director.call("reload")
+        except OSError:
+            pass
+
+        self.assertFalse(
+            self.check_resource(director, resourcetype, name),
+            "Resource {} in {} already exists.".format(name, resourcetype),
+        )
+
+        self.configure_add(
+            director,
+            resourcetype,
+            name,
+            '{} name={} password=secret profile=operator WhereACL="{}"'.format(
+                resourcetype, name, where_acl
+            ),
+        )
+
+        self.assertTrue(self.check_resource(director, resourcetype, name))
+
+    def test_configure_add_valid_where_acl(self):
+        self._test_configure_add_conole_with_where_acl(
+            "valid-WhereAcl", "/tmp/validpath"
+        )
+
+    def test_configure_add_invalid_where_acl(self):
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            self._test_configure_add_conole_with_where_acl("invalid-WhereAcl", "|!(){}")

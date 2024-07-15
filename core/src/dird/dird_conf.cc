@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,7 +177,7 @@ static ResourceItem dir_items[] = {
   { "CatalogAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Catalog_ACL, 0, NULL, NULL,\
      "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },\
   { "WhereAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Where_ACL, 0, NULL, NULL,\
-     "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },\
+     "Specifies the base directories, where files could be restored." },\
   { "PluginOptionsAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), PluginOptions_ACL, 0, NULL, NULL,\
      "Specifies the allowed plugin options. An empty strings allows all Plugin Options." }
 
@@ -2796,7 +2796,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
-        Emsg1(M_ERROR, 0, _("Cannot store Acl: %s\n"), msg.data());
+        scan_err1(lc, _("Cannot store Acl: %s"), msg.data());
         return;
       }
       list->append(strdup(lc->str));
