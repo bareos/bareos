@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# check that "maximum concurrent jobs" on the Client resource works correctly.
+# for details, see test-concurrency-common
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=test-client-concurrency
+want_w_client=2
+
+. test-concurrency-common

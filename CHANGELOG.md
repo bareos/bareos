@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - windows: fix some crashes, change handling of invalid paths; lex: add better error detection; accurate: fix out of bounds writes [PR #1860]
 - create_bareos_database: fix `db_name` not being double quoted [PR #1869]
 - dir: fix crash on purge with job without client [PR #1861]
+- fix runtime status [PR #1874]
 
 ## [23.0.3] - 2024-06-04
 
@@ -498,6 +499,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1860]: https://github.com/bareos/bareos/pull/1860
 [PR #1861]: https://github.com/bareos/bareos/pull/1861
 [PR #1869]: https://github.com/bareos/bareos/pull/1869
+[PR #1874]: https://github.com/bareos/bareos/pull/1874
 [PR #1879]: https://github.com/bareos/bareos/pull/1879
 [PR #1884]: https://github.com/bareos/bareos/pull/1884
 [PR #1886]: https://github.com/bareos/bareos/pull/1886
