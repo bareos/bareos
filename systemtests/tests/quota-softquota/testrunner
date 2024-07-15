@@ -42,7 +42,6 @@ dd if=/dev/zero of=${BackupDirectory}/testdata bs=$MEGABYTE count=10 >/dev/null
 
 echo ${BackupDirectory}/testdata >${tmp}/file-list
 
-
 start_test
 
 #
@@ -51,13 +50,13 @@ start_test
 # verify logs by:
 # grep -E -i '(quota|grace)' tmp/log*.out
 
-cat >${cwd}/tmp/bconcmds <<END_OF_DATA
+cat >tmp/bconcmds <<END_OF_DATA
 messages
 label storage=File1 pool=Full volume=TestVolume001
 
 
 
-@$out ${cwd}/tmp/log1.out
+@$out tmp/log1.out
 @# 1: backup data less than the Soft Quota => ok - 10MB
 
 run job=$JobName Level=Full yes
@@ -66,7 +65,7 @@ messages
 
 
 
-@$out ${cwd}/tmp/log2.out
+@$out tmp/log2.out
 @# 2: backup data less than the Soft Quota => ok - 20MB
 
 run job=$JobName Level=Full yes
@@ -75,7 +74,7 @@ messages
 
 
 
-@$out ${cwd}/tmp/log3.out
+@$out tmp/log3.out
 @# 3: backup data. "Quota Used" > "Soft Quota" => ok - 30MB ("Soft Quota exceeded, Grace Period starts now.")
 
 run job=$JobName Level=Full yes
@@ -84,7 +83,7 @@ messages
 
 
 
-@$out ${cwd}/tmp/log4.out
+@$out tmp/log4.out
 @# 4: backup data. job notices that quota is exceeded but continues => ok - 40MB ("Soft Quota exceeded, will be enforced after Grace Period expires.")
 
 run job=$JobName Level=Full yes
@@ -93,7 +92,7 @@ messages
 
 
 
-@$out ${cwd}/tmp/log5.out
+@$out tmp/log5.out
 @# 5: wait till the grace time is over.
 @#    backup data outside the grace time => fail - 40MB
 
@@ -105,7 +104,7 @@ messages
 
 
 
-@$out ${cwd}/tmp/log6.out
+@$out tmp/log6.out
 @# 6: delete jobs, so that "Quota Used" < "Soft Quota",
 @#    backup data => ok - 20MB
 

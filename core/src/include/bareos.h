@@ -73,7 +73,7 @@
 
 #include "include/config.h"
 
-#if HAVE_AIX_OS
+#if defined(HAVE_AIX_OS)
 #  define _LINUX_SOURCE_COMPAT 1
 #endif
 
@@ -82,22 +82,17 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#if HAVE_UMEM_H
+#if defined(HAVE_UMEM_H)
 #  include <umem.h>
 #endif
-#if HAVE_ALLOCA_H
+#if defined(HAVE_ALLOCA_H)
 #  include <alloca.h>
 #endif
-#if defined(_MSC_VER)
+#if defined(HAVE_MSVC)
 #  include <io.h>
 #  include <direct.h>
 #  include <process.h>
-#endif
-
-#if defined(_MSC_VER)
-extern "C" {
-#  include "getopt.h"
-}
+#  define NOMINMAX  // suppress definition of min() and max() macros on windows
 #endif
 
 #include <sys/socket.h>

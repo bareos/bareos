@@ -25,7 +25,12 @@
  * Program for determining drive type
  */
 
-#include <unistd.h>
+#if defined(HAVE_MSVC)
+#  include "getopt.h"
+char* optarg{};
+#else
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "findlib/find.h"

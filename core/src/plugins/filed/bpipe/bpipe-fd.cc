@@ -25,7 +25,9 @@
  * A simple pipe plugin for the Bareos File Daemon
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
@@ -138,10 +140,11 @@ extern "C" {
  *  they are common to all Bareos plugins.
  */
 // External entry point called by Bareos to "load" the plugin
-bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
-               CoreFunctions* lbareos_core_functions,
-               PluginInformation** plugin_information,
-               PluginFunctions** plugin_functions)
+BAREOS_EXPORT bRC
+loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+           CoreFunctions* lbareos_core_functions,
+           PluginInformation** plugin_information,
+           PluginFunctions** plugin_functions)
 {
   bareos_core_functions
       = lbareos_core_functions; /* set Bareos funct pointers */
@@ -153,7 +156,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 }
 
 // External entry point to unload the plugin
-bRC unloadPlugin() { return bRC_OK; }
+BAREOS_EXPORT bRC unloadPlugin() { return bRC_OK; }
 
 #ifdef __cplusplus
 }

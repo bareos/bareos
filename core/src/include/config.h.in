@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,16 @@
 #define DIR_DEFAULT_PORT "@dir_port@"
 #define NDMP_DEFAULT_PORT "10000"
 
-#if defined(HAVE_WIN32)
+// Define to 1 if you use gcc
+#cmakedefine HAVE_GCC @HAVE_GCC@
+
+// Define to 1 if you use clang
+#cmakedefine HAVE_CLANG @HAVE_CLANG@
+
+// Define to 1 if you use msvc
+#cmakedefine HAVE_MSVC @HAVE_MSVC@
+
+#if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
 #  include "mingwconfig.h"
 #define _POSIX_C_SOURCE 1
 extern char win_os[];
@@ -198,9 +207,6 @@ extern char win_os[];
 
 // Define to 1 if you have the `futimesat' function
 #cmakedefine HAVE_FUTIMESAT @HAVE_FUTIMESAT@
-
-// Define to 1 if you use gcc
-#cmakedefine HAVE_GCC @HAVE_GCC@
 
 // Define to 1 if you have the `getaddrinfo' function
 #cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@

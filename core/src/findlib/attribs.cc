@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,9 @@
  * other non-Unix systems, or Unix systems with ACLs, ...
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 
 #include "include/bareos.h"
 #include "include/filetypes.h"
@@ -310,7 +312,6 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
 
   restore_times.actime = attr->statp.st_atime;
   restore_times.modtime = attr->statp.st_mtime;
-
   if (utime(attr->ofname, &restore_times) < 0 && !suppress_errors) {
     BErrNo be;
 

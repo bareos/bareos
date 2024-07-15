@@ -59,7 +59,9 @@
  */
 #include <netdb.h>
 #include <pwd.h>
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "include/jcr.h"
@@ -404,6 +406,11 @@ int main(int argc, char* argv[])
   }
   Dmsg1(20, "From addr=%s\n", from_addr.c_str());
 
+#if defined(HAVE_WIN32)
+  SOCKET s;
+#else
+  int s{}, r{};
+#endif
   //  Connect to smtp daemon on mailhost.
 lookup_host:
 #ifdef HAVE_GETADDRINFO
@@ -437,12 +444,6 @@ lookup_host:
     }
     exit(BEXIT_FAILURE);
   }
-
-#  if defined(HAVE_WIN32)
-  SOCKET s;
-#  else
-  int s{}, r{};
-#  endif
   for (rp = ai; rp != NULL; rp = rp->ai_next) {
 #  if defined(HAVE_WIN32)
     s = WSASocket(rp->ai_family, rp->ai_socktype, rp->ai_protocol, NULL, 0, 0);

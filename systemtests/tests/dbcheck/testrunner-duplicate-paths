@@ -40,6 +40,9 @@ export TestName
 
 start_test
 
+# set language to english
+export LC_MESSAGES=C
+
 # we need to get rid of the uniqueness constraint first or we will not be able
 # to add duplicate paths
 # the easiest way to do this is to drop the index entirely

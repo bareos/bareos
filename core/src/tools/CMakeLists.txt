@@ -28,12 +28,6 @@ endif()
 add_executable(bsmtp ${BSMTPSRCS})
 target_link_libraries(bsmtp bareos CLI11::CLI11)
 
-add_executable(drivetype drivetype.cc)
-target_link_libraries(drivetype bareos bareosfind)
-
-add_executable(fstype fstype.cc)
-target_link_libraries(fstype bareos bareosfind)
-
 set(BREGEXSRCS bregex.cc)
 if(HAVE_WIN32)
   bareos_configure_file(FILES ../win32/tools/bregexres.rc.in)
@@ -52,24 +46,34 @@ endif()
 add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos CLI11::CLI11)
 
-add_executable(bscrypto bscrypto.cc)
-target_link_libraries(bscrypto bareos)
+add_executable(gentestdata)
+target_sources(gentestdata PRIVATE gentestdata.cc)
+target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
+
+if(NOT HAVE_MSVC)
+  add_executable(drivetype drivetype.cc)
+  target_link_libraries(drivetype bareos bareosfind)
+
+  add_executable(fstype fstype.cc)
+  target_link_libraries(fstype bareos bareosfind)
+
+  add_executable(bscrypto bscrypto.cc)
+  target_link_libraries(bscrypto bareos)
+endif()
 
 if(NOT HAVE_WIN32)
+
   add_executable(btestls btestls.cc)
   target_link_libraries(btestls bareosfind bareos)
 
   add_executable(bpluginfo bpluginfo.cc)
   target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} CLI11::CLI11)
+
+  set(TOOLS_SBIN bscrypto bwild bregex)
+else()
+  set(TOOLS_SBIN bwild bregex)
 endif()
-
-add_executable(gentestdata)
-target_sources(gentestdata PRIVATE gentestdata.cc)
-target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
-
 set(TOOLS_BIN bsmtp bwild bregex)
-
-set(TOOLS_SBIN bscrypto bwild bregex)
 
 if(NOT HAVE_WIN32)
   list(APPEND TOOLS_SBIN bpluginfo btestls)
@@ -83,11 +87,10 @@ if(NOT client-only)
   )
   list(APPEND TOOLS_SBIN testfind)
 
-  if(NOT HAVE_WIN32)
-    add_executable(bdedupestimate bdedup-estimate.cc)
-    target_link_libraries(bdedupestimate bareos bareossd CLI11::CLI11)
-    list(APPEND TOOLS_SBIN bdedupestimate)
-  endif()
+  add_executable(bdedupestimate bdedup-estimate.cc)
+  target_link_libraries(bdedupestimate bareos bareossd CLI11::CLI11)
+  list(APPEND TOOLS_SBIN bdedupestimate)
+
 endif()
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")

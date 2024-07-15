@@ -191,6 +191,11 @@ Files: core/src/stored/crc32/crc32.cc core/src/stored/crc32/crc32.h
 Copyright:  2011-2019 Stephan Brumme
 License: Zlib
 
+Files:
+    core/src/win32/vdi/*
+Copyright: Microsoft Corporation
+License: MIT-0
+
 Files: core/src/droplet/*
 Copyright:  2010 SCALITY SA
 License: BSD-2-clause

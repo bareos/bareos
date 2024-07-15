@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,19 +69,19 @@ TEST_F(sd, backend_load_unload)
   ASSERT_TRUE(dev);
 
   Dmsg0(100, "open\n");
-  /*
-   * Open device. Calling d_open directly,
+  /* Open device. Calling d_open directly,
    * because otherwise OpenDevice()/open()
    * would also try IOCTLs on the tape device,
-   * which will fail on our dummy device.
-   */
+   * which will fail on our dummy device. */
+#if defined HAVE_MSVC
+  dev->fd = dev->d_open("NUL", 0, 0640);
+#else
   dev->fd = dev->d_open("/dev/null", 0, 0640);
+#endif
   ASSERT_TRUE(dev->fd > 0);
 
-  /*
-   * always true on generic (disk) device.
-   * On /dev/null used as tape it will fail.
-   */
+  /* always true on generic (disk) device.
+   * On /dev/null used as tape it will fail. */
   ASSERT_FALSE(dev->offline());
 
   Dmsg0(100, "cleanup dev \n");

@@ -26,7 +26,9 @@
  * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "include/streams.h"
@@ -95,6 +97,8 @@ int main(int argc, char* argv[])
   InitMsg(nullptr, nullptr); /* initialize message handler */
 
   OSDependentInit();
+
+  (void)WSA_Init(); /* Initialize Windows sockets */
 
   ff = init_find_files();
 

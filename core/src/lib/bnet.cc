@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -253,7 +253,6 @@ int BnetWaitDataIntr(BareosSocket* bsock, int sec)
 #  define NO_DATA 4 /* Valid name, no data record of requested type. */
 #endif
 
-#if HAVE_GETADDRINFO
 const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
 {
   int res;
@@ -302,77 +301,6 @@ const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
   freeaddrinfo(ai);
   return NULL;
 }
-#else
-// Get human readable error for gethostbyname()
-static const char* gethost_strerror()
-{
-  const char* msg;
-  BErrNo be;
-  switch (h_errno) {
-    case NETDB_INTERNAL:
-      msg = be.bstrerror();
-      break;
-    case NETDB_SUCCESS:
-      msg = T_("No problem.");
-      break;
-    case HOST_NOT_FOUND:
-      msg = T_("Authoritative answer for host not found.");
-      break;
-    case TRY_AGAIN:
-      msg = T_("Non-authoritative for host not found, or ServerFail.");
-      break;
-    case NO_RECOVERY:
-      msg = T_("Non-recoverable errors, FORMERR, REFUSED, or NOTIMP.");
-      break;
-    case NO_DATA:
-      msg = T_("Valid name, no data record of resquested type.");
-      break;
-    default:
-      msg = T_("Unknown error.");
-  }
-  return msg;
-}
-
-static const char* resolv_host(int family, const char* host, dlist* addr_list)
-{
-  struct hostent* hp;
-  const char* errmsg;
-  char** p;
-  IPADDR* addr;
-
-  lock_mutex(ip_mutex); /* gethostbyname() is not thread safe */
-#  ifdef HAVE_GETHOSTBYNAME2
-  if ((hp = gethostbyname2(host, family)) == NULL) {
-#  else
-  if ((hp = gethostbyname(host)) == NULL) {
-#  endif
-    /* may be the strerror give not the right result -:( */
-    errmsg = gethost_strerror();
-    unlock_mutex(ip_mutex);
-    return errmsg;
-  } else {
-    for (p = hp->h_addr_list; *p != 0; p++) {
-      switch (hp->h_addrtype) {
-        case AF_INET:
-          addr = new IPADDR(hp->h_addrtype);
-          addr->SetType(IPADDR::R_MULTIPLE);
-          addr->SetAddr4((struct in_addr*)*p);
-          break;
-        case AF_INET6:
-          addr = new IPADDR(hp->h_addrtype);
-          addr->SetType(IPADDR::R_MULTIPLE);
-          addr->SetAddr6((struct in6_addr*)*p);
-          break;
-        default:
-          continue;
-      }
-      addr_list->append(addr);
-    }
-    unlock_mutex(ip_mutex);
-  }
-  return NULL;
-}
-#endif
 
 static IPADDR* add_any(int family)
 {
@@ -630,7 +558,7 @@ bool BareosSocket::FormatAndSendResponseMessage(
   m += list_of_arguments.Join(AsciiControlCharacters::RecordSeparator());
 
   StartTimer(30);  // 30 seconds
-  if (send(m.c_str(), m.size()) <= 0) {
+  if (!send(m.c_str(), m.size())) {
     Dmsg1(100, "Could not send response message: %s\n", m.c_str());
     StopTimer();
     return false;

@@ -30,7 +30,9 @@
  * routines for the new syntax Options resource.
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"

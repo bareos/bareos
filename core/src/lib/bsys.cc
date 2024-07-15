@@ -29,7 +29,9 @@
  */
 
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/berrno.h"
@@ -137,7 +139,11 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
     Dmsg0(100, "wpipe_command OK\n");
     retval = 0;
   } else {
+#ifdef HAVE_MSVC
+    retval = _unlink(pathname);
+#else
     retval = unlink(pathname);
+#endif
   }
 
   return retval;
@@ -358,20 +364,6 @@ int cstrlen(const char* str)
   }
   return len;
 }
-
-#ifndef HAVE_LOCALTIME_R
-struct tm* localtime_r(const time_t* timep, struct tm* tm)
-{
-  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-  struct tm *ltm,
-
-      lock_mutex(mutex);
-  ltm = localtime(timep);
-  if (ltm) { memcpy(tm, ltm, sizeof(struct tm)); }
-  unlock_mutex(mutex);
-  return ltm ? tm : NULL;
-}
-#endif /* HAVE_LOCALTIME_R */
 
 #ifndef HAVE_READDIR_R
 #  ifndef HAVE_WIN32

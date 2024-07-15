@@ -48,7 +48,7 @@
 #include "win32_tape_device.h"
 
 #include "sys/mtio.h"
-#if defined(_MSC_VER)
+#if defined(HAVE_MSVC)
 #  include <winioctl.h>
 #else
 #  include <ntddstor.h>

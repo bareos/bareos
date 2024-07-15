@@ -1,7 +1,7 @@
 /**
  * @file glob.h
  * Copyright (C) 2012 MinGW.org project
- * Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+ * Copyright (C) 2016-2024 Bareos GmbH & Co. KG
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,8 +34,9 @@
  */
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
-#include <_mingw.h>
-
+#ifndef HAVE_MSVC
+#  include <_mingw.h>
+#endif
 #ifndef RC_INVOKED
 /* POSIX requires glob.h to define the size_t type; we need to
  * get this from GCC, just as sys/types.h does.
@@ -69,13 +70,11 @@ enum
   __GLOB_NOCHECK_OFFSET,
   __GLOB_NOESCAPE_OFFSET,
   __GLOB_NOSORT_OFFSET,
-  /*
-   * GNU's implementation of glob() supports a supplementary set of
+  /* GNU's implementation of glob() supports a supplementary set of
    * options, none of which are required by POSIX.  We include these
    * for reference, and to reserve the flag identities for a possible
    * future implementation; the current MinGW implementation does not
-   * support them.
-   */
+   * support them. */
   __GLOB_TILDE_OFFSET,
   __GLOB_TILDE_CHECK_OFFSET,
   __GLOB_PERIOD_OFFSET,
@@ -83,8 +82,7 @@ enum
   __GLOB_ONLYDIR_OFFSET,
   __GLOB_ALTDIRFUNC_OFFSET,
   __GLOB_NOMAGIC_OFFSET,
-  /*
-   * This MinGW implementation DOES add support for the following
+  /* This MinGW implementation DOES add support for the following
    * custom options, which offer improved handling of MS-Windows
    * specific peculiarities:--
    *
@@ -97,14 +95,11 @@ enum
    *            character match by default, (except
    *            when matching within character group
    *            patterns, which are ALWAYS assumed to
-   *            require CASE SENSITIVE matching).
-   */
+   *            require CASE SENSITIVE matching). */
   __GLOB_CASEMATCH_OFFSET,
-  /*
-   * The following is a convenience, to mark the end of the enumeration;
+  /* The following is a convenience, to mark the end of the enumeration;
    * it is NEVER used to locate any user visible __GLOB_FLAG__, but it
-   * MUST remain as the final entry in the enumerated list.
-   */
+   * MUST remain as the final entry in the enumerated list. */
   __GLOB_FLAG_OFFSET_HIGH_WATER_MARK
 };
 
@@ -138,7 +133,8 @@ void __mingw_globfree(glob_t*);
 /* ...to which the standard names are then mapped as aliases,
  * via inline function expansion.
  */
-#  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
+// #  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
+#  define GLOB_INLINE static inline
 
 GLOB_INLINE int glob(const char* __pattern,
                      int __flags,

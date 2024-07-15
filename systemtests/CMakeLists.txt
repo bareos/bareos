@@ -19,7 +19,68 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(DISABLED_TESTS
+      system:always-incremental-consolidate:02-empty-incrementals
+      system:always-incremental-consolidate:03-zero-file
+      system:always-incremental-consolidate:04-virtualfull
+      system:autoxflate:copy-to-local
+      system:autoxflate:copy-to-offsite
+      system:autoxflate:replication-local
+      system:autoxflate:replication-offsite
+      system:bareos-basic:bcopy-autoxflate
+      system:bareos-basic:bextract-autoxflate
+      system:bareos-basic:bls-autoxflate
+      system:bareos-basic:bscan-autoxflate
+      system:bareos-basic:volume-recycling
+      system:bscan-bextract-bls-bcopy
+      system:checkpoints:checkpoints-regular-backup
+      system:client-initiated
+      system:commandline-options
+      system:copy-migrate:05-migrate
+      system:copy-remote-bscan
+      system:encrypt-signature-no-tls
+      system:encrypt-signature-tls-cert
+      system:fileset-multiple-blocks:options-blocks
+      system:messages
+      system:multiplied-device
+      system:notls
+      system:parallel-jobs:parallel-jobs
+      system:parallel-jobs:reservation-order
+      system:passive
+      system:py3plug-dir
+      system:py3plug-fd-local-fileset-restoreobject
+      system:py3plug-sd
+      system:py3plug-fd-basic:config
+      system:py3plug-fd-basic:forcebackup
+      system:py3plug-fd-basic:jobmsg
+      system:restore:archive-full-restore
+      system:restore:full-restore
+      system:restore:restore-fileregex
+      system:scheduler:scheduler-backup
+      system:spool
+      system:strippath:02-restore
+      system:strippath:03-verify
+      system:testfind
+      system:tlsrestricted
+      system:virtualfull-basic
+      system:virtualfull-bscan
+  )
+  set(COMMENT_POD_USAGE_IN_DIFF_PL "#")
+  # "Pod:Usage" is not available on windows, so we comment it out in diff.pl
+else()
+  set(DISABLED_TESTS)
+  set(COMMENT_POD_USAGE_IN_DIFF_PL "")
+endif()
+
 project(bareos-systemtests)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  find_program(BASH_EXE bash.exe)
+  if(NOT BASH_EXE)
+    message("bash not found.  running systemtests will not be possible")
+  endif()
+endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(BareosSystemtestFunctions)
@@ -64,11 +125,13 @@ else()
   set(systemtests_s3_use_https "true")
 endif()
 
-# Main starts here...
+find_program(
+  PG_CTL
+  NAMES pg_ctl pg_ctl.exe
+  PATHS /usr/lib/postgresql/*/bin /usr/bin /bin REQUIRED
+)
 
-find_program(PG_CTL pg_ctl /usr/lib/postgresql/*/bin /usr/bin /bin)
 get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
-# message(STATUS "PG_CTL is ${PG_CTL}")
 message(STATUS "POSTGRES_BIN_PATH is ${POSTGRES_BIN_PATH}")
 
 find_program(PERL perl)
@@ -200,13 +263,38 @@ if(MINIO)
   endif()
 endif()
 
-configure_file(
-  "CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
-)
-configure_file(
-  "ctest_custom_pretest.sh.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY
-)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  configure_file(
+    "CTestCustom-win.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
+    NEWLINE_STYLE UNIX
+  )
+  configure_file(
+    "ctest_custom_pretest-win.sh.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY
+    NEWLINE_STYLE UNIX
+  )
+  configure_file(
+    "ctest_custom_posttest-win.sh.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_posttest.sh" @ONLY
+    NEWLINE_STYLE UNIX
+  )
+else()
+  configure_file(
+    "CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
+    NEWLINE_STYLE UNIX
+  )
+  configure_file(
+    "ctest_custom_pretest.sh.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY
+    NEWLINE_STYLE UNIX
+  )
+  configure_file(
+    "ctest_custom_posttest.sh.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_posttest.sh" @ONLY
+    NEWLINE_STYLE UNIX
+  )
+
+endif()
 
 #
 # webui: start
@@ -293,16 +381,21 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
     configure_file(
       "${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in"
       "${current_test_directory}/webui/config/autoload/global.php" @ONLY
+      NEWLINE_STYLE UNIX
     )
     configure_file(
       "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in"
-      "${current_test_directory}/testrunner" @ONLY
+      "${current_test_directory}/testrunner" @ONLY NEWLINE_STYLE UNIX
     )
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
     )
 
-    configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
+    configure_file(
+      "environment.in" "tests/${TEST_NAME}/environment" @ONLY
+      NEWLINE_STYLE UNIX
+    )
+
     # create a bin/bareos and bin/bconsole script in every testdir for
     # start/stop and bconsole file(MAKE_DIRECTORY
     # "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")

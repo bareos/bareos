@@ -37,28 +37,28 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/extra.out
 messages
 .api 2
-@$out $tmp/consolidate-empty-incrementals:incr.out
+@$out $tmp/consolidate-empty-incrementals_incr.out
 run job=$JobName level=Incremental yes
 wait
 run job=$JobName level=Incremental yes
 wait
 run job=$JobName level=Incremental yes
 wait
-@$out $tmp/consolidate-empty-incrementals:consolidate.out
+@$out $tmp/consolidate-empty-incrementals_consolidate.out
 run job=Consolidate yes
 wait
 .api 1
-@$out $tmp/consolidate-empty-incrementals:messages.out
+@$out $tmp/consolidate-empty-incrementals_messages.out
 messages
 END_OF_DATA
 run_bconsole
 
 # take the last 3 jobs (needed in case of test restart)
 
-jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals:incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
+jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
 
 expect_grep "purging empty jobids ${jobids}" \
-            "$tmp/consolidate-empty-incrementals:messages.out" \
+            "$tmp/consolidate-empty-incrementals_messages.out" \
             "Removal of expected empty jobs was not successful."
 
 end_test

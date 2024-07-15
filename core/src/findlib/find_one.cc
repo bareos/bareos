@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,9 @@
  * Thanks to the TAR programmers.
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include <assert.h>
 #include "include/bareos.h"
 #include "include/filetypes.h"
@@ -41,7 +43,6 @@
 #include "findlib/fstype.h"
 #include "findlib/drivetype.h"
 #include "lib/berrno.h"
-
 #ifdef HAVE_DARWIN_OS
 #  include <sys/param.h>
 #  include <sys/mount.h>
@@ -385,7 +386,6 @@ static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
 
   restore_times.actime = ff_pkt->statp.st_atime;
   restore_times.modtime = ff_pkt->statp.st_mtime;
-
   utime(fname, &restore_times);
 #endif
 }

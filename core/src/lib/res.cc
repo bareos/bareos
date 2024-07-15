@@ -40,7 +40,7 @@
 #include "lib/util.h"
 #include "lib/address_conf.h"
 #include "lib/output_formatter.h"
-#include "include/allow_deprecated.h"
+#include "include/compiler_macro.h"
 #include "lib/crypto.h"
 
 // Set default indention e.g. 2 spaces.
@@ -553,9 +553,11 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
         }
       }
 
-      ALLOW_DEPRECATED(MD5_Init(&md5c); MD5_Update(
-                           &md5c, (unsigned char*)(lc->str), lc->str_len);
-                       MD5_Final(digest, &md5c);)
+      IGNORE_DEPRECATED_ON;
+      MD5_Init(&md5c);
+      MD5_Update(&md5c, (unsigned char*)(lc->str), lc->str_len);
+      MD5_Final(digest, &md5c);
+      IGNORE_DEPRECATED_OFF;
       for (i = j = 0; i < sizeof(digest); i++) {
         snprintf(&sig[j], 3, "%02x", digest[i]);
         j += 2;

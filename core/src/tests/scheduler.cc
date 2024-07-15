@@ -157,7 +157,7 @@ void SimulatedTimeSource::ExecuteJob(JobControlRecord* jcr)
   // std::cout << put_time(&tm, "%d-%m-%Y %H:%M:%S") << std::endl;
 }
 
-static int CalculateAverage()
+static auto CalculateAverage()
 {
   std::adjacent_difference(
       list_of_job_execution_time_stamps.begin(),
@@ -167,8 +167,8 @@ static int CalculateAverage()
   list_of_time_gaps_between_adjacent_jobs.erase(
       list_of_time_gaps_between_adjacent_jobs.begin());
 
-  int sum{std::accumulate(list_of_time_gaps_between_adjacent_jobs.begin(),
-                          list_of_time_gaps_between_adjacent_jobs.end(), 0)};
+  auto sum = std::accumulate(list_of_time_gaps_between_adjacent_jobs.begin(),
+                             list_of_time_gaps_between_adjacent_jobs.end(), 0);
 
   return sum / list_of_time_gaps_between_adjacent_jobs.size();
 }
@@ -199,7 +199,7 @@ TEST_F(SchedulerTest, hourly)
   if (debug) { std::cout << "End" << std::endl; }
   delete my_config;
 
-  int average{CalculateAverage()};
+  auto average = CalculateAverage();
 
   bool average_time_between_adjacent_jobs_is_too_low = average < 3600 - 36;
   bool average_time_between_adjacent_jobs_is_too_high = average > 3600 + 36;

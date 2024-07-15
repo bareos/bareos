@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,7 @@ expect_grep "Restore OK" \
 	    "$tmp/restore-O1C1.out" \
 	    "Restore from O1C1 did not succeed."
 
-conf="${BAREOS_CONFIG_DIR}"/../sd-1
+conf="$(dirname ${BAREOS_CONFIG_DIR})/bareos-sd1"
 
 if ! is_file_compressed "1D2" "O1C1" "${File}"; then
     echo "O1D2 is not compressed"

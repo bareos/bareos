@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,12 @@
 #include "lib/bsock_tcp.h"
 
 #include <thread>
+
+#ifdef HAVE_WIN32
+#  define socketClose(fd) ::closesocket(fd)
+#else
+#  define socketClose(fd) ::close(fd)
+#endif
 
 #if HAVE_WIN32
 #  include <cstdlib>
@@ -147,7 +153,7 @@ static int accept_server_socket(int listen_file_descriptor)
     return -1;
   }
 
-  close(listen_file_descriptor);
+  socketClose(listen_file_descriptor);
 
   return new_socket;
 }
@@ -200,7 +206,9 @@ BareosSocket* create_new_bareos_socket(int fd)
 
 
 #include <sys/types.h>
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 
 static uint16_t listening_server_port_number = 0;
 

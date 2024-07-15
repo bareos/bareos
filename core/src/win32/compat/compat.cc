@@ -29,7 +29,7 @@
  */
 /**
  * @file
- * compatibilty layer to make bareos-fd run natively under windows
+ * compatibility layer to make bareos-fd run natively under windows
  */
 #include "include/bareos.h"
 #include "include/jcr.h"
@@ -252,8 +252,10 @@ const char* errorString(void);
 // To allow the usage of the original version in this file here
 #undef fputs
 
-extern DWORD g_platform_id;
-extern DWORD g_MinorVersion;
+#define USE_WIN32_32KPATHCONVERSION 1
+
+BAREOS_IMPORT DWORD g_platform_id;
+BAREOS_IMPORT DWORD g_MinorVersion;
 
 // From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
 // see
@@ -1937,6 +1939,21 @@ int link(const char*, const char*)
   return -1;
 }
 
+#if defined(HAVE_MSVC)
+#  include <chrono>
+
+static int mingw_gettimeofday(struct timeval* tp, struct timezone* tzp)
+{
+  namespace sc = std::chrono;
+  sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+  sc::seconds s = sc::duration_cast<sc::seconds>(d);
+  tp->tv_sec = s.count();
+  tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+
+  return 0;
+}
+#endif  // HAVE_MSVC
+
 int gettimeofday(struct timeval* tv, struct timezone* tz)
 {
   return mingw_gettimeofday(tv, tz);
@@ -3016,13 +3033,12 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool)
   }
 
   // Spawn program with redirected handles as appropriate
-  bpipe->worker_pid
-      = (pid_t)CreateChildProcess(prog,            /* Commandline */
-                                  hChildStdinRd,   /* stdin HANDLE */
-                                  hChildStdoutWr,  /* stdout HANDLE */
-                                  hChildStdoutWr); /* stderr HANDLE */
+  bpipe->worker_pid = CreateChildProcess(prog,            /* Commandline */
+                                         hChildStdinRd,   /* stdin HANDLE */
+                                         hChildStdoutWr,  /* stdout HANDLE */
+                                         hChildStdoutWr); /* stderr HANDLE */
 
-  if ((HANDLE)bpipe->worker_pid == INVALID_HANDLE_VALUE) goto cleanup;
+  if (bpipe->worker_pid == INVALID_HANDLE_VALUE) goto cleanup;
 
   bpipe->wait = wait;
   bpipe->worker_stime = time(NULL);
@@ -3046,7 +3062,8 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool)
   }
 
   if (wait > 0) {
-    bpipe->timer_id = start_child_timer(NULL, bpipe->worker_pid, wait);
+    // the cast here is ok as the child timer only uses the pid for printing
+    bpipe->timer_id = start_child_timer(NULL, (pid_t)bpipe->worker_pid, wait);
   }
 
   return bpipe;

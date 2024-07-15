@@ -48,13 +48,10 @@
 
 #include "fastlz/fastlzlib.h"
 
-#ifdef HAVE_LIBZ
-
-#  ifndef HAVE_COMPRESS_BOUND
-#    define compressBound(sourceLen)                                         \
-      (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) \
-       + 13)
-#  endif
+#ifndef HAVE_COMPRESS_BOUND
+#  define compressBound(sourceLen) \
+    (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
+#endif
 
 const char* cmprs_algo_to_text(uint32_t compression_algorithm)
 {
@@ -75,6 +72,8 @@ const char* cmprs_algo_to_text(uint32_t compression_algorithm)
 }
 
 // Convert ZLIB error code into an ASCII message
+// These are also used by fastlzlib, so this always needs to be
+// available
 static const char* zlib_strerror(int stat)
 {
   if (stat >= 0) { return T_("None"); }
@@ -95,7 +94,6 @@ static const char* zlib_strerror(int stat)
       return T_("*None*");
   }
 }
-#endif
 
 static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
                                                uint32_t compression_algorithm)

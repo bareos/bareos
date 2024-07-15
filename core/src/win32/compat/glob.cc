@@ -37,7 +37,105 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <libgen.h>
+#ifndef HAVE_MSVC
+#  include <filesystem>
+#  include <libgen.h>
+#endif
+
+// #define GLOB_HARD_ESC __CRT_GLOB_ESCAPE_CHAR__
+#define GLOB_HARD_ESC (char)(127)
+
+#if defined _WIN32 || defined __MS_DOS__
+/*
+ * For the Microsoft platforms, we treat '\' and '/' interchangeably
+ * as directory separator characters...
+ */
+#  define GLOB_DIRSEP ('\\')
+#  define glob_is_dirsep(c) (((c) == ('/')) || ((c) == GLOB_DIRSEP))
+// ...and we use the ASCII ESC code as our escape character.
+static int glob_escape_char = GLOB_HARD_ESC;
+
+GLOB_INLINE char* glob_strdup(const char* pattern)
+{
+  /* An inline wrapper around the standard strdup() function;
+   * this strips instances of the GLOB_HARD_ESC character, which
+   * have not themselves been escaped, from the strdup()ed copy.
+   */
+  char buf[MAX_PATH];
+  char* copy = buf;
+  const char* origin = pattern;
+  do {
+    if (*origin == GLOB_HARD_ESC) ++origin;
+    *copy++ = *origin;
+  } while (*origin++);
+  return strdup(buf);
+}
+
+#else
+/* Otherwise, we assume only the POSIX standard '/'...
+ */
+#  define GLOB_DIRSEP ('/')
+#  define glob_is_dirsep(c) ((c) == GLOB_DIRSEP)
+/*
+ * ...and we interpret '\', as specified by POSIX, as
+ * the escape character.
+ */
+static int glob_escape_char = '\\';
+
+#  define glob_strdup strdup
+#endif
+
+#ifdef HAVE_MSVC
+char* LastSlash(char* str, std::size_t n)
+{
+  while (n--) {
+    if (glob_is_dirsep(str[n])) { return &str[n]; }
+  }
+  return nullptr;
+}
+
+static char* dirname(char* path)
+{
+  static const char dot[] = ".";
+  char* last_slash;
+  /* Find last '/'.  */
+  last_slash = path != NULL ? LastSlash(path, strlen(path)) : NULL;
+  if (last_slash != NULL && last_slash != path && last_slash[1] == '\0') {
+    /* Determine whether all remaining characters are slashes.  */
+    char* runp;
+    for (runp = last_slash; runp != path; --runp)
+      if (!glob_is_dirsep(runp[-1])) break;
+    /* The '/' is the last character, we have to look further.  */
+    if (runp != path) last_slash = LastSlash(path, runp - path);
+  }
+  if (last_slash != NULL) {
+    /* Determine whether all remaining characters are slashes.  */
+    char* runp;
+    for (runp = last_slash; runp != path; --runp)
+      if (!glob_is_dirsep(runp[-1])) break;
+    /* Terminate the path.  */
+    if (runp == path) {
+      /* The last slash is the first character in the string.  We have to
+         return "/".  As a special case we have to return "//" if there
+         are exactly two slashes at the beginning of the string.  See
+         XBD 4.10 Path Name Resolution for more information.  */
+      if (last_slash == path + 1)
+        ++last_slash;
+      else
+        last_slash = path + 1;
+    } else
+      last_slash = runp;
+    last_slash[0] = '\0';
+  } else
+    /* This assignment is ill-designed but the XPG specs require to
+       return a string containing "." in any case no directory part is
+       found and so a static and constant string is required.  */
+    path = (char*)dot;
+  return path;
+}
+
+
+#endif
 #include <dirent.h>
 #include <errno.h>
 
@@ -71,48 +169,6 @@ enum
 
 #ifndef GLOB_INLINE
 #  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
-#endif
-
-#define GLOB_HARD_ESC (char)(127)
-
-#if defined _WIN32 || defined __MS_DOS__
-/*
- * For the Microsoft platforms, we treat '\' and '/' interchangeably
- * as directory separator characters...
- */
-#  define GLOB_DIRSEP ('\\')
-#  define glob_is_dirsep(c) (((c) == ('/')) || ((c) == GLOB_DIRSEP))
-// ...and we use the ASCII ESC code as our escape character.
-static int glob_escape_char = GLOB_HARD_ESC;
-
-GLOB_INLINE char* glob_strdup(const char* pattern)
-{
-  /* An inline wrapper around the standard strdup() function;
-   * this strips instances of the GLOB_HARD_ESC character, which
-   * have not themselves been escaped, from the strdup()ed copy.
-   */
-  char buf[1 + strlen(pattern)];
-  char* copy = buf;
-  const char* origin = pattern;
-  do {
-    if (*origin == GLOB_HARD_ESC) ++origin;
-    *copy++ = *origin;
-  } while (*origin++);
-  return strdup(buf);
-}
-
-#else
-/* Otherwise, we assume only the POSIX standard '/'...
- */
-#  define GLOB_DIRSEP ('/')
-#  define glob_is_dirsep(c) ((c) == GLOB_DIRSEP)
-/*
- * ...and we interpret '\', as specified by POSIX, as
- * the escape character.
- */
-static int glob_escape_char = '\\';
-
-#  define glob_strdup strdup
 #endif
 
 static int IsGlobPattern(const char* pattern, int flags)
@@ -674,8 +730,8 @@ static int glob_match(const char* pattern,
 
   /* Begin by separating out any path prefix from the glob pattern.
    */
-  std::string dirbuf(pattern);
-  const char* dir = dirname(dirbuf.data());
+  char dirbuf[MAX_PATH];
+  const char* dir = dirname((char*)memcpy(dirbuf, pattern, sizeof(dirbuf)));
   char **dirp, preferred_dirsep = GLOB_DIRSEP;
 
   /* Initialise a temporary local glob_t structure, to capture the
@@ -726,14 +782,13 @@ static int glob_match(const char* pattern,
   else
     /* ...otherwise, we simply note that there was no prefix.
      */
-    dir = NULL;
 
-  /* We now have a globbed list of prefix directories, returned from
-   * recursive processing, in local_gl_buf.gl_pathv, and we also have
-   * a separate pattern which we may attempt to match in each of them;
-   * at the outset, we have yet to match this pattern to anything.
-   */
-  status = GLOB_NOMATCH;
+    /* We now have a globbed list of prefix directories, returned from
+     * recursive processing, in local_gl_buf.gl_pathv, and we also have
+     * a separate pattern which we may attempt to match in each of them;
+     * at the outset, we have yet to match this pattern to anything.
+     */
+    status = GLOB_NOMATCH;
   for (dirp = local_gl_buf.gl_pathv; *dirp != NULL; free(*dirp++)) {
     /* Provided an earlier cycle hasn't scheduled an abort...
      */
@@ -775,7 +830,7 @@ static int glob_match(const char* pattern,
             char* found;
             size_t prefix;
             size_t matchlen = D_NAMLEN(entry);
-            char matchpath[2 + dirlen + matchlen];
+            auto* matchpath = static_cast<char*>(alloca(2 + dirlen + matchlen));
             if ((prefix = dirlen) > 0) {
               /* ...first copying the prefix, if any,
                * followed by a directory name separator...

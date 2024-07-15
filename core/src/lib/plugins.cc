@@ -26,7 +26,9 @@
  * Kern Sibbald, October 2007
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "lib/alist.h"
 #include "lib/berrno.h"

@@ -37,7 +37,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/extra.log
 messages
 .api 2
-@$out $tmp/zero-file:start.out
+@$out $tmp/zero-file_start.out
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-4'"
 run job=$JobName level=Incremental yes
 wait
@@ -46,10 +46,10 @@ wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-5'"
 run job=$JobName level=Incremental yes
 wait
-@$out $tmp/zero-file:consolidate.out
+@$out $tmp/zero-file_consolidate.out
 run job=Consolidate yes
 wait
-@$out $tmp/zero-file:messages.out
+@$out $tmp/zero-file_messages.out
 .api 1
 status director
 status client
@@ -60,23 +60,23 @@ END_OF_DATA
 run_bconsole
 
 # get the second to last jobid (taking into account test restarts)
-first_job=$(grep "jobid" "$tmp/zero-file:start.out" | tail -n 3 | head -n 1 | sed 's/["jobid:]//g' | xargs)
-empty_job=$(grep "jobid" "$tmp/zero-file:start.out" | tail -n 2 | head -n 1 | sed 's/["jobid:]//g' | xargs)
-second_job=$(grep "jobid" "$tmp/zero-file:start.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
-cons_job=$(grep "jobid" "$tmp/zero-file:consolidate.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
+first_job=$(grep "jobid" "$tmp/zero-file_start.out" | tail -n 3 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+empty_job=$(grep "jobid" "$tmp/zero-file_start.out" | tail -n 2 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+second_job=$(grep "jobid" "$tmp/zero-file_start.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
+cons_job=$(grep "jobid" "$tmp/zero-file_consolidate.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
 
 expect_grep "purging empty jobids ${empty_job}" \
-            "$tmp/zero-file:messages.out" \
+            "$tmp/zero-file_messages.out" \
             "Removal of expected empty jobs was not successful"
 
 expect_grep "purged JobIds .*${first_job} as they were consolidated into Job $((cons_job + 1))" \
-            "$tmp/zero-file:messages.out" \
+            "$tmp/zero-file_messages.out" \
             "consolidation of expected jobs did not happen."
 expect_not_grep "purged JobIds .*${empty_job}.* as they were consolidated into Job $((cons_job + 1))" \
-		"$tmp/zero-file:messages.out" \
+		"$tmp/zero-file_messages.out" \
 		"consolidation of empty happened."
 expect_not_grep "purged JobIds .*${second_job}.* as they were consolidated into Job $((cons_job + 1))" \
-		"$tmp/zero-file:messages.out" \
+		"$tmp/zero-file_messages.out" \
 		"consolidation of last incremental happened."
 
 end_test

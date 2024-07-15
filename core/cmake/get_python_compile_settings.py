@@ -24,7 +24,7 @@
 #  The output is consumed by cmake where appropriate variables are set.
 #  This is required to build python modules without setuptools.
 
-import sys
+import sys, os
 
 try:
     import sysconfig
@@ -55,20 +55,20 @@ for var in ("CC", "BLDSHARED"):
 
 for var in ("CFLAGS", "CCSHARED", "INCLUDEPY", "LDFLAGS"):
     value = sysconfig.get_config_var(var)
-    print(
-        'message(STATUS "Python{0}_{1} is  {2}")'.format(
-            sys.version_info[0], var, value
+    if value:
+        value = value.replace(os.sep, "/")
+        print(
+            'message(STATUS "Python{0}_{1} is {2}")'.format(
+                sys.version_info[0], var, value
+            )
         )
-    )
-    print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))
+        print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))
 
 for var in ("EXT_SUFFIX",):
     value = sysconfig.get_config_var(var)
     if value is None:
         value = ""
     print(
-        'message(STATUS "Python{0}_{1} is  {2}")'.format(
-            sys.version_info[0], var, value
-        )
+        'message(STATUS "Python{0}_{1} is {2}")'.format(sys.version_info[0], var, value)
     )
     print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))

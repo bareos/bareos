@@ -32,7 +32,9 @@
  * talk to devices that are configured.
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
@@ -235,6 +237,8 @@ int main(int margc, char* margv[])
   InitMsg(nullptr, nullptr);
 
   OSDependentInit();
+
+  (void)WSA_Init(); /* Initialize Windows sockets */
 
   CLI::App btape_app;
   InitCLIApp(btape_app, "The Bareos Tape Manipulation tool.", 2000);

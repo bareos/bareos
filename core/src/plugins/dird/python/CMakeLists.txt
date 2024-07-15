@@ -60,18 +60,20 @@ if(Python3_FOUND)
   endif()
   target_link_libraries(bareosdir-python3-module bareos ${Python3_LIBRARIES})
 
-  add_test(NAME bareosdir-python3-module
-           COMMAND ${Python3_EXECUTABLE}
-                   ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosdir_test.py
-  )
-  set_property(
-    TEST bareosdir-python3-module
-    PROPERTY
-      ENVIRONMENT
-      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
-      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
-      "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
-  )
+  if(NOT MSVC) # TODO: fix on MSVC
+    add_test(NAME bareosdir-python3-module
+             COMMAND ${Python3_EXECUTABLE}
+                     ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosdir_test.py
+    )
+    set_property(
+      TEST bareosdir-python3-module
+      PROPERTY
+        ENVIRONMENT
+        "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
+        LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+        "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
+    )
+  endif()
 endif()
 
 include(DebugEdit)

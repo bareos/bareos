@@ -13,13 +13,16 @@ TestName=02-restore
 
 start_test
 
+restorepath="$tmp/bareos-restores/${BackupDirectory}"
+restorepath=$(remove_colon_from_windows_path "$restorepath")
+
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $tmp/file-list.out
 list files jobid=1
 @$out $tmp/restore.out
-restore client=bareos-fd fileset=SelfTestStripPath where=$tmp/bareos-restores/${BackupDirectory} select all done yes
+restore client=bareos-fd fileset=SelfTestStripPath where=${restorepath} select all done yes
 wait
 messages
 quit

@@ -27,7 +27,11 @@
  * using a lowlevel SCSI interface.
  */
 
-#include <unistd.h>
+#if defined(HAVE_MSVC)
+#  include "getopt.h"
+#else
+#  include <unistd.h>
+#endif
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/crypto_cache.h"

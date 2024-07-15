@@ -26,7 +26,9 @@
  * Bareos File Daemon
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "filed/dir_cmd.h"

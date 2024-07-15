@@ -29,7 +29,9 @@
  * @file
  * Generic Tape API device abstraction.
  */
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 
 #include "include/fcntl_def.h"
 #include "include/bareos.h"

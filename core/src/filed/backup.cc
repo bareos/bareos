@@ -228,17 +228,22 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
   bool retval = false;
 
   if (bsctx.ff_pkt->hfsinfo.rsrclength > 0) {
-    if (BopenRsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY,
-                  0)
-        < 0) {
-      bsctx.ff_pkt->ff_errno = errno;
-      BErrNo be;
-      Jmsg(bsctx.jcr, M_NOTSAVED, -1,
-           T_("     Cannot open resource fork for \"%s\": ERR=%s.\n"),
-           bsctx.ff_pkt->fname, be.bstrerror());
-      bsctx.jcr->JobErrors++;
-      if (IsBopen(&bsctx.ff_pkt->bfd)) { bclose(&bsctx.ff_pkt->bfd); }
-    } else {
+    bool done = false;
+    if constexpr (have_darwin_os) {
+      if (BopenRsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname,
+                    O_RDONLY | O_BINARY, 0)
+          < 0) {
+        done = true;
+        bsctx.ff_pkt->ff_errno = errno;
+        BErrNo be;
+        Jmsg(bsctx.jcr, M_NOTSAVED, -1,
+             T_("     Cannot open resource fork for \"%s\": ERR=%s.\n"),
+             bsctx.ff_pkt->fname, be.bstrerror());
+        bsctx.jcr->JobErrors++;
+        if (IsBopen(&bsctx.ff_pkt->bfd)) { bclose(&bsctx.ff_pkt->bfd); }
+      }
+    }
+    if (!done) {
       int status;
 
       memcpy(flags, bsctx.ff_pkt->flags, sizeof(flags));

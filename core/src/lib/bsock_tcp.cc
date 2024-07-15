@@ -39,6 +39,10 @@
 #include "lib/bsock_tcp.h"
 #include "lib/berrno.h"
 
+#ifdef HAVE_MSVC
+#  include "mstcpip.h"
+#endif
+
 #ifndef ENODATA /* not defined on BSD systems */
 #  define ENODATA EPIPE
 #endif
@@ -74,7 +78,18 @@ BareosSocket* BareosSocketTCP::clone()
   if (host_) { host_ = strdup(host_); }
 
   /* duplicate file descriptors */
+#if defined(HAVE_MSVC)
+  if (fd_ >= 0) {
+    WSAPROTOCOL_INFOW protocol_info;
+    WSADuplicateSocketW(fd_, GetCurrentProcessId(), &protocol_info);
+    clone->fd_ = WSASocketW(protocol_info.iAddressFamily,
+                            protocol_info.iSocketType, protocol_info.iProtocol,
+                            &protocol_info, 0, WSA_FLAG_OVERLAPPED);
+  }
+#else
   if (fd_ >= 0) { clone->fd_ = dup(fd_); }
+#endif
+  // if this is a socket we need to do the same thing here!
   if (spool_fd_ >= 0) { clone->spool_fd_ = dup(spool_fd_); }
 
   clone->cloned_ = true;

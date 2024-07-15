@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 set -u
+
 #
 # Run one time the BackupCatalog default configuration job.
 # Restore the dump, drop all tables, then restore them.
@@ -108,6 +109,8 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${tmp}/testout2.txt
 list filesets
 END_OF_DATA
+
+start_bareos
 
 run_bconsole
 check_for_zombie_jobs storage=File

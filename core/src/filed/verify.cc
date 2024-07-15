@@ -313,7 +313,7 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
   ReadDigest(&bfd, digest, jcr);
   bclose(&bfd);
 
-  if (have_darwin_os) {
+  if constexpr (have_darwin_os) {
     // Open resource fork if necessary
     if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->hfsinfo.rsrclength > 0) {
       if (BopenRsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {

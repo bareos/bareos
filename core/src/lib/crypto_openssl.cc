@@ -32,7 +32,7 @@
 
 #if defined(HAVE_OPENSSL)
 
-#  include "include/allow_deprecated.h"
+#  include "include/compiler_macro.h"
 #  include <openssl/err.h>
 #  include <openssl/rand.h>
 
@@ -223,11 +223,10 @@ IMPLEMENT_STACK_OF(RecipientInfo)
 /* Openssl Version >= 1.1 */
 
 /* ignore the suggest-override warnings caused by following DEFINE_STACK_OF() */
-#      pragma GCC diagnostic push
-#      pragma GCC diagnostic ignored "-Wunused-function"
+IGNORE_UNREFERENCED_FUNCTION_ON
 DEFINE_STACK_OF(SignerInfo)
 DEFINE_STACK_OF(RecipientInfo)
-#      pragma GCC diagnostic pop
+IGNORE_UNREFERENCED_FUNCTION_OFF
 
 
 #      define M_ASN1_OCTET_STRING_free(a) ASN1_STRING_free((ASN1_STRING*)a)
@@ -645,7 +644,9 @@ DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type)
     switch (type) {
       case CRYPTO_DIGEST_MD5:
         // Solaris deprecates use of md5 in OpenSSL
-        ALLOW_DEPRECATED(return new EvpDigest(jcr, type, EVP_md5());)
+        IGNORE_DEPRECATED_ON;
+        return new EvpDigest(jcr, type, EVP_md5());
+        IGNORE_DEPRECATED_OFF;
         break;
       case CRYPTO_DIGEST_SHA1:
         return new EvpDigest(jcr, type, EVP_sha1());
@@ -1181,16 +1182,17 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
     /* Encrypt the session key */
     ekey = (unsigned char*)malloc(EVP_PKEY_size(keypair->pubkey));
 
-    ALLOW_DEPRECATED(
-        if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key,
-                                         cs->session_key_len, keypair->pubkey))
-            <= 0) {
-          /* OpenSSL failure */
-          RecipientInfo_free(ri);
-          CryptoSessionFree(cs);
-          free(ekey);
-          return NULL;
-        })
+    IGNORE_DEPRECATED_ON;
+    if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key, cs->session_key_len,
+                                     keypair->pubkey))
+        <= 0) {
+      /* OpenSSL failure */
+      RecipientInfo_free(ri);
+      CryptoSessionFree(cs);
+      free(ekey);
+      return NULL;
+    }
+    IGNORE_DEPRECATED_OFF;
 
     /* Store it in our ASN.1 structure */
     if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
@@ -1306,10 +1308,11 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
         /* Allocate sufficient space for the largest possible decrypted data */
         cs->session_key
             = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
-        ALLOW_DEPRECATED(
-            cs->session_key_len = EVP_PKEY_decrypt(
-                cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
-                M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);)
+        IGNORE_DEPRECATED_ON;
+        cs->session_key_len = EVP_PKEY_decrypt(
+            cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
+            M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
+        IGNORE_DEPRECATED_OFF;
         if (cs->session_key_len <= 0) {
           OpensslPostErrors(M_ERROR, T_("Failure decrypting the session key"));
           retval = CRYPTO_ERROR_DECRYPTION;
@@ -1518,8 +1521,10 @@ int InitCrypto(void)
   ENGINE_load_pk11();
 #  else
   // Load all the builtin engines.
-  ALLOW_DEPRECATED(ENGINE_load_builtin_engines();
-                   ENGINE_register_all_complete();)
+  IGNORE_DEPRECATED_ON;
+  ENGINE_load_builtin_engines();
+  ENGINE_register_all_complete();
+  IGNORE_DEPRECATED_OFF;
 #  endif
 
   crypto_initialized = true;

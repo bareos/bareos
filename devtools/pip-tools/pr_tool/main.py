@@ -176,7 +176,7 @@ class CommitAnalyzer:
 
         if LICENSE_FILENAME in commit.stats.files:
             issues.append(
-                f"don't modify '{LICENSE_FILENAME}'. Make changes to '{LICENSE_FILENAME}' instead"
+                f"don't modify '{LICENSE_FILENAME}'. Make changes to '{LICENSE_TEMPLATE}' instead"
             )
 
         if len(issues) > 0:

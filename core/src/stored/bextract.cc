@@ -26,7 +26,9 @@
  * Dumb program to extract files from a Bareos backup.
  */
 
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "include/filetypes.h"
@@ -105,6 +107,8 @@ int main(int argc, char* argv[])
   InitMsg(nullptr, nullptr); /* setup message handler */
 
   OSDependentInit();
+
+  (void)WSA_Init(); /* Initialize Windows sockets */
 
   ff = init_find_files();
   binit(&g_bfd);

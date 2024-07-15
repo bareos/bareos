@@ -99,6 +99,14 @@ OS:
       ARCH:
         - x64
   win:
+    native:
+      TYPE: win-native
+      STAGES:
+        - win-native-64-release
+      ARCH:
+       - x86_64
+      WINVERSIONS:
+         - windows-11-64
     cross:
       TYPE: win
       STAGES:

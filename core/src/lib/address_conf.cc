@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,9 @@
  * Configuration file parser for IP-Addresse ipv4 and ipv6
  */
 #include <netdb.h>
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 
 #include "include/bareos.h"
 #include "lib/address_conf.h"
@@ -35,6 +37,12 @@
 #include "lib/edit.h"
 #include "lib/output_formatter_resource.h"
 #include "lib/berrno.h"
+
+#if !defined(HAVE_MSVC)
+#  define socketClose(...) close(__VA_ARGS__)
+#else
+#  define socketClose(...) closesocket(__VA_ARGS__)
+#endif
 
 
 #ifdef HAVE_ARPA_NAMESER_H
@@ -375,7 +383,6 @@ bool CheckIfFamilyEnabled(IpFamily family)
           FamilyName(family), be.bstrerror());
     return false;
   }
-
 #ifdef HAVE_WIN32
   ::closesocket(fd);
 #else

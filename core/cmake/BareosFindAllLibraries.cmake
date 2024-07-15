@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@ option(ENABLE_PYTHON "Enable Python support" ON)
 if(NOT ENABLE_PYTHON)
   set(HAVE_PYTHON 0)
   set(Python3_FOUND 0)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows" AND NOT MSVC)
   set(HAVE_PYTHON 1)
   set(Python3_FOUND 1)
   set(Python3_EXT_SUFFIX ".pyd")
@@ -72,9 +72,7 @@ else()
   endif()
 endif()
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  include(FindPostgreSQL)
-endif()
+include(FindPostgreSQL)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(OPENSSL_USE_STATIC_LIBS 1)
@@ -143,8 +141,9 @@ elseif(
       "vmware options were set but VMware Vix Disklib was not found. Cannot run vmware tests."
   )
 endif()
-
-bareosfindlibraryandheaders("pthread" "pthread.h" "")
+if(NOT MSVC)
+  bareosfindlibraryandheaders("pthread" "pthread.h" "")
+endif()
 bareosfindlibraryandheaders("cap" "sys/capability.h" "")
 bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
 
@@ -178,6 +177,8 @@ endif()
 find_package(ZLIB)
 if(${ZLIB_FOUND})
   set(HAVE_LIBZ 1)
+  # yes its actually libz vs zlib ...
+  set(HAVE_ZLIB_H 1)
 endif()
 
 find_package(Readline)
@@ -187,4 +188,11 @@ if(ENABLE_JANSSON)
   find_package(Jansson)
 endif()
 
-include(thread)
+if(NOT MSVC)
+  include(thread)
+else()
+  find_package(pthread)
+endif()
+if(MSVC)
+  find_package(Intl)
+endif()

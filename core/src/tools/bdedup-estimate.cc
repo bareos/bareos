@@ -21,6 +21,7 @@
 
 #define STORAGE_DAEMON
 
+#include "include/bareos.h"
 #include "lib/crypto.h"
 #include "stored/butil.h"
 #include "stored/device_control_record.h"

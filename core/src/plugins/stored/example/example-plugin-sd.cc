@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -70,10 +70,10 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
-               bsdFuncs* lbareos_core_functions,
-               PluginInformation** plugin_information,
-               PluginFunctions** plugin_functions)
+BAREOS_EXPORT bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
+                             bsdFuncs* lbareos_core_functions,
+                             PluginInformation** plugin_information,
+                             PluginFunctions** plugin_functions)
 {
   bareos_core_functions
       = lbareos_core_functions; /* set Bareos funct pointers */
@@ -87,7 +87,7 @@ bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
 }
 
 // External entry point to unload the plugin
-bRC unloadPlugin()
+BAREOS_EXPORT bRC unloadPlugin()
 {
   printf("example-plugin-sd: Unloaded\n");
   return bRC_OK;

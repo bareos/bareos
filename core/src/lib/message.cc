@@ -32,7 +32,9 @@
  */
 
 #include <vector>
-#include <unistd.h>
+#if !defined(HAVE_MSVC)
+#  include <unistd.h>
+#endif
 #include <syslog.h>
 
 #include "include/fcntl_def.h"

@@ -28,7 +28,11 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#include <unistd.h>
+#if defined(HAVE_MSVC)
+#  include "getopt.h"
+#else
+#  include <unistd.h>
+#endif
 #include <signal.h>
 #include <vector>
 #include <cerrno>

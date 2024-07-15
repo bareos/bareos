@@ -34,7 +34,7 @@
 #include "lib/bstringlist.h"
 #include "lib/bsock.h"
 #include "lib/watchdog.h"
-#include "include/allow_deprecated.h"
+#include "include/compiler_macro.h"
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -222,7 +222,9 @@ bool TlsOpenSslPrivate::init()
       OpensslPostErrors(M_FATAL, T_("Unable to open DH parameters file"));
       return false;
     }
-    ALLOW_DEPRECATED(DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL));
+    IGNORE_DEPRECATED_ON;
+    DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+    IGNORE_DEPRECATED_OFF;
     BIO_free(bio);
     if (!dh) {
       OpensslPostErrors(M_FATAL,
@@ -232,7 +234,9 @@ bool TlsOpenSslPrivate::init()
     if (!SSL_CTX_set_tmp_dh(openssl_ctx_, dh)) {
       OpensslPostErrors(M_FATAL,
                         T_("Failed to set TLS Diffie-Hellman parameters"));
-      ALLOW_DEPRECATED(DH_free(dh));
+      IGNORE_DEPRECATED_ON;
+      DH_free(dh);
+      IGNORE_DEPRECATED_OFF;
       return false;
     }
     SSL_CTX_set_options(openssl_ctx_, SSL_OP_SINGLE_DH_USE);

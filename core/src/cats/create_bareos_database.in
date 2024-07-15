@@ -34,7 +34,7 @@ cd /
 . "@scriptdir@"/bareos-config-lib.sh
 
 db_name="${db_name:-$(get_database_name @db_name@)}"
-export PGOPTIONS='--client-min-messages=warning' 
+export PGOPTIONS='--client-min-messages=warning'
 
 if [ $# -gt 0 ]; then
   handle_database_scripts_command_line_parameter $*
@@ -54,7 +54,7 @@ END-OF-DATA
 QUERY="SELECT pg_catalog.pg_encoding_to_char(d.encoding) as encoding \
  FROM pg_catalog.pg_database d WHERE d.datname='${db_name}';"
 
-if [ "$(psql --tuples-only --no-align --command="${QUERY}")" = "SQL_ASCII" ]
+if [ "$(psql --tuples-only --no-align --command="${QUERY}" | tr -d '\r')" = "SQL_ASCII" ]
 then
     info "Database encoding OK"
 else
