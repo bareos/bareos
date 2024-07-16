@@ -176,26 +176,6 @@ struct DatatypeName {
   const char* description;
 };
 
-PRINTF_LIKE(2, 3)
-static inline bool dummy_sendit(void* user, const char* fmt, ...)
-{
-  (void)user;
-  (void)fmt;
-  return true;
-}
-
-typedef void(INIT_RES_HANDLER)(const ResourceItem* item, int pass);
-typedef void(STORE_RES_HANDLER)(LEX* lc,
-                                const ResourceItem* item,
-                                int index,
-                                int pass,
-                                BareosResource** configuration_resources);
-typedef void(PRINT_RES_HANDLER)(const ResourceItem& item,
-                                OutputFormatterResource& send,
-                                bool hide_sensitive_data,
-                                bool inherited,
-                                bool verbose);
-
 class QualifiedResourceNameTypeConverter;
 
 class ConfigurationParser {
@@ -203,16 +183,27 @@ class ConfigurationParser {
   friend class ConfigParserStateMachine;
 
  public:
-  using sender = decltype(dummy_sendit);
+  using sender = PRINTF_LIKE(2, 3) bool(void* user, const char* fmt, ...);
+  using resource_initer = void(const ResourceItem* item, int pass);
+  using resource_storer = void(LEX* lc,
+                               const ResourceItem* item,
+                               int index,
+                               int pass,
+                               BareosResource** configuration_resources);
+  using resource_printer = void(const ResourceItem& item,
+                                OutputFormatterResource& send,
+                                bool hide_sensitive_data,
+                                bool inherited,
+                                bool verbose);
 
   std::string cf_;                             /* Config file parameter */
   LEX_ERROR_HANDLER* scan_error_{nullptr};     /* Error handler if non-null */
   LEX_WARNING_HANDLER* scan_warning_{nullptr}; /* Warning handler if non-null */
-  INIT_RES_HANDLER* init_res_{
+  resource_initer* init_res_{
       nullptr}; /* Init resource handler for non default types if non-null */
-  STORE_RES_HANDLER* store_res_{
+  resource_storer* store_res_{
       nullptr}; /* Store resource handler for non default types if non-null */
-  PRINT_RES_HANDLER* print_res_{
+  resource_printer* print_res_{
       nullptr}; /* Print resource handler for non default types if non-null */
 
   int32_t err_type_{0};       /* The way to Terminate on failure */
@@ -235,9 +226,9 @@ class ConfigurationParser {
   ConfigurationParser(const char* cf,
                       LEX_ERROR_HANDLER* ScanError,
                       LEX_WARNING_HANDLER* scan_warning,
-                      INIT_RES_HANDLER* init_res,
-                      STORE_RES_HANDLER* StoreRes,
-                      PRINT_RES_HANDLER* print_res,
+                      resource_initer* init_res,
+                      resource_storer* store_res,
+                      resource_printer* print_res,
                       int32_t err_type,
                       int32_t r_num,
                       const ResourceTable* resources,
