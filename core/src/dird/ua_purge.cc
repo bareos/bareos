@@ -634,8 +634,9 @@ static void do_truncate_on_purge(UaContext* ua,
 
   // Do it by relabeling the Volume, which truncates it
   sd->fsend(
-      "relabel %s OldName=%s NewName=%s PoolName=%s "
-      "MediaType=%s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d\n",
+      "relabel %s OldName=%s NewName=%s PoolName=%s MediaType=%s"
+      " Slot=%" PRIi32 " drive=%" PRIi16 " MinBlocksize=%" PRIu32
+      " MaxBlocksize=%" PRIu32 "\n",
       storage, mr->VolumeName, mr->VolumeName, pool, mr->MediaType, mr->Slot,
       drive,
       // If relabeling, keep blocksize settings
