@@ -42,7 +42,7 @@ fi
 info "Dropping of ${db_name} database"
 
 retval=0
-dropdb "${db_name}" || retval=$?
+dropdb --if-exists "${db_name}" || retval=$?
 if [ ${retval} -eq 0 ]; then
    info "Drop of ${db_name} database succeeded."
 else
