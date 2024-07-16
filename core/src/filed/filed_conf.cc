@@ -177,7 +177,7 @@ static struct s_kw CryptoCiphers[]
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
        {NULL, 0}};
 
-static void StoreCipher(LEX* lc, ResourceItem* item, int index, int)
+static void StoreCipher(lexer* lc, ResourceItem* item, int index, int)
 {
   int i;
   LexGetToken(lc, BCT_NAME);
@@ -227,7 +227,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(LEX* lc,
+static void ParseConfigCb(lexer* lc,
                           ResourceItem* item,
                           int index,
                           int pass,

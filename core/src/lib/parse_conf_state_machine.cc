@@ -30,8 +30,8 @@
 ConfigParserStateMachine::ConfigParserStateMachine(
     const char* config_file_name,
     void* caller_ctx,
-    LEX_ERROR_HANDLER* scan_error,
-    LEX_WARNING_HANDLER* scan_warning,
+    lexer::error_handler* scan_error,
+    lexer::warning_handler* scan_warning,
     ConfigurationParser& my_config)
     : config_file_name_(config_file_name)
     , caller_ctx_(caller_ctx)
