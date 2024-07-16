@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@
 
 namespace directordaemon {
 
-static void ConfigureLexErrorHandler(const char*, int, LEX* lc, PoolMem& msg)
+static void ConfigureLexErrorHandler(const char*, int, lexer* lc, PoolMem& msg)
 {
   UaContext* ua;
 
@@ -49,7 +49,7 @@ static void ConfigureLexErrorHandler(const char*, int, LEX* lc, PoolMem& msg)
 
 static void ConfigureLexErrorHandler(const char* file,
                                      int line,
-                                     LEX* lc,
+                                     lexer* lc,
                                      const char* msg,
                                      ...)
 {

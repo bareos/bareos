@@ -199,7 +199,7 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
  * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
  * destination (MAIL, FILE, OPERATOR, ...)
  */
-void ConfigurationParser::ScanTypes(LEX* lc,
+void ConfigurationParser::ScanTypes(lexer* lc,
                                     MessagesResource* msg,
                                     MessageDestinationCode dest_code,
                                     const std::string& where,
@@ -251,7 +251,7 @@ void ConfigurationParser::ScanTypes(LEX* lc,
 }
 
 // Store Messages Destination information
-void ConfigurationParser::StoreMsgs(LEX* lc,
+void ConfigurationParser::StoreMsgs(lexer* lc,
                                     ResourceItem* item,
                                     int index,
                                     int pass)
@@ -404,7 +404,10 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
  * This routine is ONLY for resource names
  * Store a name at specified address.
  */
-void ConfigurationParser::StoreName(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreName(lexer* lc,
+                                    ResourceItem* item,
+                                    int index,
+                                    int)
 {
   std::string msg{};
 
@@ -431,7 +434,7 @@ void ConfigurationParser::StoreName(LEX* lc, ResourceItem* item, int index, int)
  * Store a name string at specified address
  * A name string is limited to MAX_RES_NAME_LENGTH
  */
-void ConfigurationParser::StoreStrname(LEX* lc,
+void ConfigurationParser::StoreStrname(lexer* lc,
                                        ResourceItem* item,
                                        int index,
                                        int pass)
@@ -448,7 +451,7 @@ void ConfigurationParser::StoreStrname(LEX* lc,
 }
 
 // Store a string at specified address
-void ConfigurationParser::StoreStr(LEX* lc,
+void ConfigurationParser::StoreStr(lexer* lc,
                                    ResourceItem* item,
                                    int index,
                                    int pass)
@@ -461,7 +464,7 @@ void ConfigurationParser::StoreStr(LEX* lc,
 }
 
 // Store a string at specified address
-void ConfigurationParser::StoreStdstr(LEX* lc,
+void ConfigurationParser::StoreStdstr(lexer* lc,
                                       ResourceItem* item,
                                       int index,
                                       int pass)
@@ -478,7 +481,7 @@ void ConfigurationParser::StoreStdstr(LEX* lc,
  * shell expansion except if the string begins with a vertical
  * bar (i.e. it will likely be passed to the shell later).
  */
-void ConfigurationParser::StoreDir(LEX* lc,
+void ConfigurationParser::StoreDir(lexer* lc,
                                    ResourceItem* item,
                                    int index,
                                    int pass)
@@ -497,7 +500,7 @@ void ConfigurationParser::StoreDir(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-void ConfigurationParser::StoreStdstrdir(LEX* lc,
+void ConfigurationParser::StoreStdstrdir(lexer* lc,
                                          ResourceItem* item,
                                          int index,
                                          int pass)
@@ -515,7 +518,7 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
 }
 
 // Store a password at specified address in MD5 coding
-void ConfigurationParser::StoreMd5Password(LEX* lc,
+void ConfigurationParser::StoreMd5Password(lexer* lc,
                                            ResourceItem* item,
                                            int index,
                                            int pass)
@@ -598,7 +601,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 }
 
 // Store a password at specified address in MD5 coding
-void ConfigurationParser::StoreClearpassword(LEX* lc,
+void ConfigurationParser::StoreClearpassword(lexer* lc,
                                              ResourceItem* item,
                                              int index,
                                              int pass)
@@ -632,7 +635,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
  * If we are in pass 2, do a lookup of the
  * resource.
  */
-void ConfigurationParser::StoreRes(LEX* lc,
+void ConfigurationParser::StoreRes(lexer* lc,
                                    ResourceItem* item,
                                    int index,
                                    int pass)
@@ -668,7 +671,7 @@ void ConfigurationParser::StoreRes(LEX* lc,
  *
  * If we are in pass 2, do a lookup of the resource.
  */
-void ConfigurationParser::StoreAlistRes(LEX* lc,
+void ConfigurationParser::StoreAlistRes(lexer* lc,
                                         ResourceItem* item,
                                         int index,
                                         int pass)
@@ -705,7 +708,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
 }
 
 // Store a std::string in an std::vector<std::string>.
-void ConfigurationParser::StoreStdVectorStr(LEX* lc,
+void ConfigurationParser::StoreStdVectorStr(lexer* lc,
                                             ResourceItem* item,
                                             int index,
                                             int pass)
@@ -739,7 +742,7 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
 }
 
 // Store a string in an alist.
-void ConfigurationParser::StoreAlistStr(LEX* lc,
+void ConfigurationParser::StoreAlistStr(lexer* lc,
                                         ResourceItem* item,
                                         int index,
                                         int pass)
@@ -788,7 +791,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
  * with a vertical bar (i.e. it will likely be passed to the
  * shell later).
  */
-void ConfigurationParser::StoreAlistDir(LEX* lc,
+void ConfigurationParser::StoreAlistDir(lexer* lc,
                                         ResourceItem* item,
                                         int index,
                                         int pass)
@@ -831,7 +834,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
 }
 
 // Store a list of plugin names to load by the daemon on startup.
-void ConfigurationParser::StorePluginNames(LEX* lc,
+void ConfigurationParser::StorePluginNames(lexer* lc,
                                            ResourceItem* item,
                                            int index,
                                            int pass)
@@ -887,7 +890,10 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
  * Note, here item points to the main resource (e.g. Job, not
  *  the jobdefs, which we look up).
  */
-void ConfigurationParser::StoreDefs(LEX* lc, ResourceItem* item, int, int pass)
+void ConfigurationParser::StoreDefs(lexer* lc,
+                                    ResourceItem* item,
+                                    int,
+                                    int pass)
 {
   BareosResource* res;
 
@@ -906,7 +912,7 @@ void ConfigurationParser::StoreDefs(LEX* lc, ResourceItem* item, int, int pass)
 }
 
 // Store an integer at specified address
-void ConfigurationParser::store_int16(LEX* lc,
+void ConfigurationParser::store_int16(lexer* lc,
                                       ResourceItem* item,
                                       int index,
                                       int)
@@ -918,7 +924,7 @@ void ConfigurationParser::store_int16(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-void ConfigurationParser::store_int32(LEX* lc,
+void ConfigurationParser::store_int32(lexer* lc,
                                       ResourceItem* item,
                                       int index,
                                       int)
@@ -931,7 +937,7 @@ void ConfigurationParser::store_int32(LEX* lc,
 }
 
 // Store a positive integer at specified address
-void ConfigurationParser::store_pint16(LEX* lc,
+void ConfigurationParser::store_pint16(lexer* lc,
                                        ResourceItem* item,
                                        int index,
                                        int)
@@ -943,7 +949,7 @@ void ConfigurationParser::store_pint16(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-void ConfigurationParser::store_pint32(LEX* lc,
+void ConfigurationParser::store_pint32(lexer* lc,
                                        ResourceItem* item,
                                        int index,
                                        int)
@@ -956,7 +962,7 @@ void ConfigurationParser::store_pint32(LEX* lc,
 }
 
 // Store an 64 bit integer at specified address
-void ConfigurationParser::store_int64(LEX* lc,
+void ConfigurationParser::store_int64(lexer* lc,
                                       ResourceItem* item,
                                       int index,
                                       int)
@@ -969,7 +975,7 @@ void ConfigurationParser::store_int64(LEX* lc,
 }
 
 // Store a size in bytes
-void ConfigurationParser::store_int_unit(LEX* lc,
+void ConfigurationParser::store_int_unit(lexer* lc,
                                          ResourceItem* item,
                                          int index,
                                          int,
@@ -1042,7 +1048,7 @@ void ConfigurationParser::store_int_unit(LEX* lc,
 }
 
 // Store a size in bytes
-void ConfigurationParser::store_size32(LEX* lc,
+void ConfigurationParser::store_size32(lexer* lc,
                                        ResourceItem* item,
                                        int index,
                                        int pass)
@@ -1051,7 +1057,7 @@ void ConfigurationParser::store_size32(LEX* lc,
 }
 
 // Store a size in bytes
-void ConfigurationParser::store_size64(LEX* lc,
+void ConfigurationParser::store_size64(lexer* lc,
                                        ResourceItem* item,
                                        int index,
                                        int pass)
@@ -1060,7 +1066,7 @@ void ConfigurationParser::store_size64(LEX* lc,
 }
 
 // Store a speed in bytes/s
-void ConfigurationParser::StoreSpeed(LEX* lc,
+void ConfigurationParser::StoreSpeed(lexer* lc,
                                      ResourceItem* item,
                                      int index,
                                      int pass)
@@ -1069,7 +1075,10 @@ void ConfigurationParser::StoreSpeed(LEX* lc,
 }
 
 // Store a time period in seconds
-void ConfigurationParser::StoreTime(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreTime(lexer* lc,
+                                    ResourceItem* item,
+                                    int index,
+                                    int)
 {
   utime_t utime;
   char period[500];
@@ -1108,7 +1117,10 @@ void ConfigurationParser::StoreTime(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store a yes/no in a bit field
-void ConfigurationParser::StoreBit(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreBit(lexer* lc,
+                                   ResourceItem* item,
+                                   int index,
+                                   int)
 {
   LexGetToken(lc, BCT_NAME);
   char* bitvalue = GetItemVariablePointer<char*>(*item);
@@ -1127,7 +1139,10 @@ void ConfigurationParser::StoreBit(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store a bool in a bit field
-void ConfigurationParser::StoreBool(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreBool(lexer* lc,
+                                    ResourceItem* item,
+                                    int index,
+                                    int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
@@ -1145,7 +1160,7 @@ void ConfigurationParser::StoreBool(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store Tape Label Type (BAREOS, ANSI, IBM)
-void ConfigurationParser::StoreLabel(LEX* lc,
+void ConfigurationParser::StoreLabel(lexer* lc,
                                      ResourceItem* item,
                                      int index,
                                      int)
@@ -1197,7 +1212,7 @@ void ConfigurationParser::StoreLabel(LEX* lc,
  *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
  *   = { ipv4 { port = 4711 } }
  */
-void ConfigurationParser::StoreAddresses(LEX* lc,
+void ConfigurationParser::StoreAddresses(lexer* lc,
                                          ResourceItem* item,
                                          int index,
                                          int pass)
@@ -1314,7 +1329,7 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-void ConfigurationParser::StoreAddressesAddress(LEX* lc,
+void ConfigurationParser::StoreAddressesAddress(lexer* lc,
                                                 ResourceItem* item,
                                                 int,
                                                 int pass)
@@ -1338,7 +1353,7 @@ void ConfigurationParser::StoreAddressesAddress(LEX* lc,
   }
 }
 
-void ConfigurationParser::StoreAddressesPort(LEX* lc,
+void ConfigurationParser::StoreAddressesPort(lexer* lc,
                                              ResourceItem* item,
                                              int,
                                              int pass)
@@ -1380,7 +1395,7 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
 
 // Generic store resource dispatcher.
 bool ConfigurationParser::StoreResource(int type,
-                                        LEX* lc,
+                                        lexer* lc,
                                         ResourceItem* item,
                                         int index,
                                         int pass)
