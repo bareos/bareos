@@ -84,8 +84,8 @@ extern struct s_kw RunFields[];
  */
 static PoolMem* configure_usage_string = NULL;
 
-extern void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass);
-extern void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass);
+extern void StoreInc(lexer* lc, const ResourceItem* item, int index, int pass);
+extern void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass);
 
 static void CreateAndAddUserAgentConsoleResource(
     ConfigurationParser& my_config);
@@ -2406,7 +2406,7 @@ static bool PopulateJobdefaults()
 
 bool PopulateDefs() { return PopulateJobdefaults(); }
 
-static void StorePooltype(LEX* lc,
+static void StorePooltype(lexer* lc,
                           const ResourceItem* item,
                           int index,
                           int pass)
@@ -2432,7 +2432,7 @@ static void StorePooltype(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreActiononpurge(LEX* lc,
+static void StoreActiononpurge(lexer* lc,
                                const ResourceItem* item,
                                int index,
                                int)
@@ -2465,7 +2465,7 @@ static void StoreActiononpurge(LEX* lc,
  * first reference. The details of the resource are obtained
  * later from the SD.
  */
-static void StoreDevice(LEX* lc,
+static void StoreDevice(lexer* lc,
                         const ResourceItem* item,
                         int index,
                         int pass,
@@ -2513,7 +2513,7 @@ static void StoreDevice(LEX* lc,
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(LEX* lc, const ResourceItem* item, int index)
+static void StoreMigtype(lexer* lc, const ResourceItem* item, int index)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2537,7 +2537,7 @@ static void StoreMigtype(LEX* lc, const ResourceItem* item, int index)
 }
 
 // Store JobType (backup, verify, restore)
-static void StoreJobtype(LEX* lc, const ResourceItem* item, int index, int)
+static void StoreJobtype(lexer* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2560,7 +2560,7 @@ static void StoreJobtype(LEX* lc, const ResourceItem* item, int index, int)
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
-static void StoreProtocoltype(LEX* lc, const ResourceItem* item, int index, int)
+static void StoreProtocoltype(lexer* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2582,7 +2582,7 @@ static void StoreProtocoltype(LEX* lc, const ResourceItem* item, int index, int)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreReplace(LEX* lc, const ResourceItem* item, int index, int)
+static void StoreReplace(lexer* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Scan Replacement options
@@ -2606,7 +2606,7 @@ static void StoreReplace(LEX* lc, const ResourceItem* item, int index, int)
 }
 
 // Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
-static void StoreAuthprotocoltype(LEX* lc,
+static void StoreAuthprotocoltype(lexer* lc,
                                   const ResourceItem* item,
                                   int index,
                                   int)
@@ -2633,7 +2633,7 @@ static void StoreAuthprotocoltype(LEX* lc,
 }
 
 // Store authentication type (Mostly for NDMP like clear or MD5).
-static void StoreAuthtype(LEX* lc, const ResourceItem* item, int index, int)
+static void StoreAuthtype(lexer* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2657,7 +2657,7 @@ static void StoreAuthtype(LEX* lc, const ResourceItem* item, int index, int)
 }
 
 // Store Job Level (Full, Incremental, ...)
-static void StoreLevel(LEX* lc, const ResourceItem* item, int index, int)
+static void StoreLevel(lexer* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2684,7 +2684,7 @@ static void StoreLevel(LEX* lc, const ResourceItem* item, int index, int)
  * Store password either clear if for NDMP and catalog or MD5 hashed for
  * native.
  */
-static void StoreAutopassword(LEX* lc,
+static void StoreAutopassword(lexer* lc,
                               const ResourceItem* item,
                               int index,
                               int pass)
@@ -2763,7 +2763,7 @@ static void StoreAutopassword(LEX* lc,
   }
 }
 
-static void StoreAcl(LEX* lc, const ResourceItem* item, int index, int pass)
+static void StoreAcl(lexer* lc, const ResourceItem* item, int index, int pass)
 {
   alist<const char*>** alistvalue
       = GetItemVariablePointer<alist<const char*>**>(*item);
@@ -2792,7 +2792,7 @@ static void StoreAcl(LEX* lc, const ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreAudit(LEX* lc, const ResourceItem* item, int index, int pass)
+static void StoreAudit(lexer* lc, const ResourceItem* item, int index, int pass)
 {
   int token;
   alist<const char*>* list;
@@ -2818,7 +2818,7 @@ static void StoreAudit(LEX* lc, const ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreRunscriptWhen(LEX* lc, const ResourceItem* item, int, int)
+static void StoreRunscriptWhen(lexer* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2839,7 +2839,7 @@ static void StoreRunscriptWhen(LEX* lc, const ResourceItem* item, int, int)
   ScanToEol(lc);
 }
 
-static void StoreRunscriptTarget(LEX* lc,
+static void StoreRunscriptTarget(lexer* lc,
                                  const ResourceItem* item,
                                  int,
                                  int pass)
@@ -2870,7 +2870,7 @@ static void StoreRunscriptTarget(LEX* lc,
   ScanToEol(lc);
 }
 
-static void StoreRunscriptCmd(LEX* lc, const ResourceItem* item, int, int pass)
+static void StoreRunscriptCmd(lexer* lc, const ResourceItem* item, int, int pass)
 {
   LexGetToken(lc, BCT_STRING);
 
@@ -2882,7 +2882,7 @@ static void StoreRunscriptCmd(LEX* lc, const ResourceItem* item, int, int pass)
   ScanToEol(lc);
 }
 
-static void StoreShortRunscript(LEX* lc,
+static void StoreShortRunscript(lexer* lc,
                                 const ResourceItem* item,
                                 int,
                                 int pass)
@@ -2942,7 +2942,7 @@ static void StoreShortRunscript(LEX* lc,
  * Store a bool in a bit field without modifing hdr
  * We can also add an option to StoreBool to skip hdr
  */
-static void StoreRunscriptBool(LEX* lc, const ResourceItem* item, int, int)
+static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
@@ -2963,7 +2963,7 @@ static void StoreRunscriptBool(LEX* lc, const ResourceItem* item, int, int)
  * resource.  We treat the RunScript like a sort of
  * mini-resource within the Job resource.
  */
-static void StoreRunscript(LEX* lc,
+static void StoreRunscript(lexer* lc,
                            const ResourceItem* item,
                            int index,
                            int pass)
@@ -3198,7 +3198,7 @@ static void InitResourceCb(const ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(LEX* lc,
+static void ParseConfigCb(lexer* lc,
                           const ResourceItem* item,
                           int index,
                           int pass,
