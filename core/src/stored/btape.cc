@@ -227,7 +227,7 @@ int main(int margc, char* margv[])
   Bsnprintf(buf2, sizeof(buf2), "%" PRIu64, x64);
 
   uint64_t y64;
-  i = bsscanf(buf2, "%" PRIu64, &y64);
+  i = bsscanf(buf2, "%llu", &y64);
   if (i != 1 || x64 != y64) {
     Pmsg3(-1,
           T_("64 bit printf/scanf problem. i=%d x64=%" PRIu64 " y64=%" PRIu64
