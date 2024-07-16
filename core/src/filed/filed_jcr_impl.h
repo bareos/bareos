@@ -31,7 +31,7 @@
 #include <atomic>
 
 struct AclData;
-struct XattrData;
+class XattrData;
 
 namespace filedaemon {
 class BareosAccurateFilelist;

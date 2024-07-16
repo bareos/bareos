@@ -35,7 +35,6 @@
  * from winbase.h on Win32. We didn't inlcude cStreamName
  * as we don't use it and don't need it for a correct struct size.
  */
-
 #define WIN32_BACKUP_DATA 1
 
 typedef struct _BWIN32_STREAM_ID {
