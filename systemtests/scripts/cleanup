@@ -24,6 +24,7 @@ function deletefiles(){
   rm -rf /tmp/chrome-user-data-*
 }
 
+deletefiles
 
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
 
