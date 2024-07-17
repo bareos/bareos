@@ -375,23 +375,14 @@ const char* BnetStrerror(BareosSocket* bsock) { return bsock->bstrerror(); }
 bool BnetFsend(BareosSocket* bs, const char* fmt, ...)
 {
   va_list arg_ptr;
-  int maxlen;
 
   if (bs->errors || bs->IsTerminated()) { return false; }
-  /* This probably won't work, but we vsnprintf, then if we
-   * get a negative length or a length greater than our buffer
-   * (depending on which library is used), the printf was truncated, so
-   * get a bigger buffer and try again.
-   */
-  for (;;) {
-    maxlen = SizeofPoolMemory(bs->msg) - 1;
-    va_start(arg_ptr, fmt);
-    bs->message_length = Bvsnprintf(bs->msg, maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (bs->message_length > 0 && bs->message_length < (maxlen - 5)) { break; }
-    bs->msg = ReallocPoolMemory(bs->msg, maxlen + maxlen / 2);
-  }
-  return bs->send();
+
+  va_start(arg_ptr, fmt);
+  auto res = bs->vfsend(fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  return res;
 }
 
 int BnetGetPeer(BareosSocket* bs, char* buf, socklen_t buflen)

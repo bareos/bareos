@@ -126,22 +126,13 @@ PRINTF_LIKE(2, 3)
 static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
 {
   va_list arg_ptr;
-  int len, maxlen;
   PoolMem item(PM_MESSAGE);
 
-  while (1) {
-    maxlen = item.MaxSize() - 1;
-    va_start(arg_ptr, fmt);
-    len = Bvsnprintf(item.c_str(), maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (len < 0 || len >= (maxlen - 5)) {
-      item.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-    break;
-  }
+  va_start(arg_ptr, fmt);
+  auto res = item.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
 
-  buffer += item.c_str();
+  if (res >= 0) buffer += item.c_str();
 }
 
 /**

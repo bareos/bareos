@@ -1967,24 +1967,11 @@ int gettimeofday(struct timeval* tv, struct timezone* tz)
 extern "C" void syslog(int, const char* fmt, ...)
 {
   va_list arg_ptr;
-  int len, maxlen;
-  POOLMEM* msg;
-
-  msg = GetPoolMemory(PM_EMSG);
-
-  for (;;) {
-    maxlen = SizeofPoolMemory(msg) - 1;
-    va_start(arg_ptr, fmt);
-    len = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (len < 0 || len >= (maxlen - 5)) {
-      msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-      continue;
-    }
-    break;
-  }
-  LogErrorMsg((const char*)msg);
-  FreeMemory(msg);
+  PoolMem msg(PM_EMSG);
+  va_start(arg_ptr, fmt);
+  msg.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
+  LogErrorMsg(msg.c_str());
 }
 
 extern "C" void closelog() {}
