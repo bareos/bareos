@@ -145,23 +145,12 @@ PRINTF_LIKE(4, 5)
 static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME);
   JobControlRecord* jcr = (JobControlRecord*)(lc->caller_ctx);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (jcr) {
     Jmsg(jcr, M_FATAL, 0,
@@ -181,23 +170,12 @@ PRINTF_LIKE(4, 5)
 static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME);
   JobControlRecord* jcr = (JobControlRecord*)(lc->caller_ctx);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (jcr) {
     Jmsg(jcr, M_WARNING, 0,
