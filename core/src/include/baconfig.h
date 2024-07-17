@@ -565,8 +565,8 @@ inline const char* first_path_separator(const char* path)
 #  define Leave(lvl)
 #endif
 
-#ifdef HAVE_WIN32
-// mingw/windows does not understand "%zu" by default
+#if defined(HAVE_WIN32)
+// mingw/windows does not understand "%zu/%zi" by default
 #  define PRIuz PRIu64
 #  define PRIiz PRIi64
 #  define PRItime "lld"
