@@ -137,4 +137,7 @@ int PmMemcpy(POOLMEM*& dest_pm, PoolMem& data, int32_t n);
 int PmMemcpy(PoolMem& dest_pm, const char* data, int32_t n);
 int PmMemcpy(PoolMem*& dest_pm, const char* data, int32_t n);
 
+int PmFormat(POOLMEM*& dest_pm, const char* fmt, ...);
+int PmVFormat(POOLMEM*& dest_pm, const char* fmt, va_list args);
+
 #endif  // BAREOS_LIB_MEM_POOL_H_
