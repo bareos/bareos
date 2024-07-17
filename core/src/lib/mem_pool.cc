@@ -279,17 +279,32 @@ int PoolMem::bsprintf(const char* fmt, ...)
 
 int PoolMem::Bvsprintf(const char* fmt, va_list arg_ptr)
 {
+  return PmVFormat(mem, fmt, arg_ptr);
+}
+
+int PmFormat(POOLMEM*& dest_pm, const char* fmt, ...)
+{
+  va_list arg_ptr;
+  va_start(arg_ptr, fmt);
+  int len = PmVFormat(dest_pm, fmt, arg_ptr);
+  va_end(arg_ptr);
+  return len;
+}
+
+int PmVFormat(POOLMEM*& dest_pm, const char* fmt, va_list arg_ptr)
+{
   int maxlen, len;
   va_list ap;
 
-again:
-  maxlen = MaxSize() - 1;
-  va_copy(ap, arg_ptr);
-  len = ::Bvsnprintf(mem, maxlen, fmt, ap);
-  va_end(ap);
-  if (len >= maxlen) {
-    ReallocPm(maxlen + maxlen / 2);
-    goto again;
+  for (;;) {
+    maxlen = SizeofPoolMemory(dest_pm) - 1;
+    va_copy(ap, arg_ptr);
+    len = Bvsnprintf(dest_pm, maxlen, fmt, ap);
+    va_end(ap);
+    if (len < maxlen) { break; }
+    auto* mem = ReallocPoolMemory(dest_pm, maxlen + maxlen / 2);
+    if (!mem) { return -1; }
+    dest_pm = mem;
   }
   return len;
 }
