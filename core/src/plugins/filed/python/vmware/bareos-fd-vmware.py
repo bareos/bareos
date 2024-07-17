@@ -124,7 +124,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "vadp_dumper_sectors_per_call",
             "vadp_dumper_query_allocated_blocks_chunk_size",
             "fallback_to_full_cbt",
-            "restore_ignore_disks_mismatch",
+            "restore_allow_disks_mismatch",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -393,8 +393,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if self.options.get("fallback_to_full_cbt") == "no":
             self.vadp.fallback_to_full_cbt = False
 
-        if self.options.get("restore_ignore_disks_mismatch") == "yes":
-            self.vadp.restore_ignore_disks_mismatch = True
+        if self.options.get("restore_allow_disks_mismatch") == "yes":
+            self.vadp.restore_allow_disks_mismatch = True
 
         for option in self.options:
             bareosfd.DebugMessage(
@@ -1251,7 +1251,7 @@ class BareosVADPWrapper(object):
         self.vm_nvram_content = None
         self.restore_vm_created = False
         self.fallback_to_full_cbt = True
-        self.restore_ignore_disks_mismatch = False
+        self.restore_allow_disks_mismatch = False
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -2411,10 +2411,10 @@ class BareosVADPWrapper(object):
         )
 
         # currently ignoring disks mismatch is only allowed for recreated VMs
-        if self.restore_ignore_disks_mismatch and self.restore_vm_created:
+        if self.restore_allow_disks_mismatch and self.restore_vm_created:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                "Ignoring disks mismatch as restore_ignore_disks_mismatch=yes was given\n",
+                "Ignoring disks mismatch as restore_allow_disks_mismatch=yes was given\n",
             )
             return True
 
@@ -3171,14 +3171,23 @@ class BareosVADPWrapper(object):
         """
         Add devices to VM
         """
+        retry_limit = 3
         disk_index = 0
         for device_spec in device_changes:
             config_spec = vim.vm.ConfigSpec()
             device_spec.device.controllerKey = abs(device_spec.device.controllerKey)
             config_spec.deviceChange = [device_spec]
             device_created = False
-            backing_path_changed = False
-            while not device_created:
+
+            # 2024-07-17 sduehr: Always create disk with datastore only in
+            # the backing file name.
+            expected_disk_backing_filename = device_spec.device.backing.fileName
+            device_spec.device.backing.fileName = (
+                "[%s] " % device_spec.device.backing.datastore.name
+            )
+            retry_count = 1
+
+            while not device_created and retry_count <= retry_limit:
                 reconfig_task = self.vm.ReconfigVM_Task(spec=config_spec)
                 bareosfd.DebugMessage(
                     100,
@@ -3188,40 +3197,60 @@ class BareosVADPWrapper(object):
                 try:
                     pyVim.task.WaitForTask(reconfig_task)
                     device_created = True
-                except vim.fault.FileAlreadyExists:
-                    bareosfd.DebugMessage(
-                        100,
-                        "add_disk_devices_to_vm(): Disk %s already exists, retrying with datastore name only\n"
-                        % (device_spec.device.backing.fileName),
+                except Exception as create_disk_exc:
+                    bareosfd.JobMessage(
+                        bareosfd.M_INFO,
+                        "add_disk_devices_to_vm(): Failed to create disk %s: %s, retrying\n"
+                        % (device_spec.device.backing.fileName, str(create_disk_exc)),
                     )
+                    retry_count += 1
 
-                    device_spec.device.backing.fileName = (
-                        "[%s] " % device_spec.device.backing.datastore.name
-                    )
-                    backing_path_changed = True
+            if not device_created:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "add_disk_devices_to_vm(): Failed to create disk %s: giving up.\n"
+                    % (device_spec.device.backing.fileName),
+                )
+                return False
 
-            # When handling the FileAlreadyExists exception, we only pass the datastore name
-            # and the backing path to the disk will be created by the API, then mapping in self.restore_disk_paths_map
-            # must be corrected. This is only possible by walking the VMs devices and detect the added disks path,
-            # because the task result does not contain it.
+            # When only passing the datastore name in device.backing.fileName when creating a disk,
+            # the complete backing path to the disk will be created by the API, and the new backing
+            # path could differ from the old one so that mapping in self.restore_disk_paths_map
+            # must be corrected. This is only possible by walking the VMs devices and detect the
+            # added disks path, because the task result does not contain it.
             created_disk_backing_filename = [
                 device.backing.fileName
                 for device in self.vm.config.hardware.device
                 if type(device) == vim.vm.device.VirtualDisk
             ][disk_index]
 
+            if expected_disk_backing_filename != created_disk_backing_filename:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "Disk %s was recreated as %s\n"
+                    % (expected_disk_backing_filename, created_disk_backing_filename),
+                )
+
             bareosfd.DebugMessage(
                 100,
-                "add_disk_devices_to_vm(): Disk was recreated as %s\n"
-                % (created_disk_backing_filename),
+                "add_disk_devices_to_vm(): Adapting restore_disk_paths_maps"
+                "[%s] from %s to %s\n"
+                % (
+                    list(self.restore_disk_paths_map)[disk_index],
+                    self.restore_disk_paths_map[
+                        list(self.restore_disk_paths_map)[disk_index]
+                    ],
+                    created_disk_backing_filename,
+                ),
             )
 
-            if backing_path_changed:
-                self.restore_disk_paths_map[
-                    list(self.restore_disk_paths_map)[disk_index]
-                ] = created_disk_backing_filename
+            self.restore_disk_paths_map[
+                list(self.restore_disk_paths_map)[disk_index]
+            ] = created_disk_backing_filename
 
             disk_index += 1
+
+        return True
 
     def adapt_vm_config(self, config_spec):
         """

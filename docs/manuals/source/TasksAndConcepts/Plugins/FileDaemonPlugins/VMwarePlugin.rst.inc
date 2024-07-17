@@ -710,11 +710,12 @@ fallback_to_full_cbt (optional)
 
    Since :sinceVersion:`23.0.3: VMware Plugin`
 
-restore_ignore_disks_mismatch (optional)
+restore_allow_disks_mismatch (optional)
    When using VSAN, restoring with recreating the VM can fail because the plugin
    detects a disk mismatch, as when using VSAN obviously recreated disks get a
    generated backing disk path. When passing the plugin option
-   ``restore_ignore_disks_mismatch=yes``, this disk match check will be skipped.
+   ``restore_allow_disks_mismatch=yes``, this disk match check will allow a
+   mismatch and continue the restore.
    This option will only be used when recreating the VM to be restored.
 
    Since :sinceVersion:`23.0.4: VMware Plugin`
