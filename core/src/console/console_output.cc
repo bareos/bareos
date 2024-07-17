@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,13 +30,14 @@ static bool teeout_enabled_ = false;
 
 void ConsoleOutputFormat(const char* fmt, ...)
 {
-  std::vector<char> buf(3000);
+  PoolMem buf;
   va_list arg_ptr;
 
   va_start(arg_ptr, fmt);
-  Bvsnprintf(buf.data(), 3000 - 1, (char*)fmt, arg_ptr);
+  auto res = buf.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
-  ConsoleOutput(buf.data());
+  ASSERT(res >= 0);
+  ConsoleOutput(buf.c_str());
 }
 
 void ConsoleOutput(const char* buf)

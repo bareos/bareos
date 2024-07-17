@@ -2061,22 +2061,10 @@ static void LogEvent(DWORD event_type, const char* message)
 extern "C" void syslog(int severity, const char* fmt, ...)
 {
   va_list arg_ptr;
-  int len, maxlen;
-  POOLMEM* msg;
-
-  msg = GetPoolMemory(PM_EMSG);
-
-  for (;;) {
-    maxlen = SizeofPoolMemory(msg) - 1;
-    va_start(arg_ptr, fmt);
-    len = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (len < 0 || len >= (maxlen - 5)) {
-      msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-      continue;
-    }
-    break;
-  }
+  PoolMem msg;
+  va_start(arg_ptr, fmt);
+  msg.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
 
   auto prio = syslog_event_priority(severity & LOG_PRIMASK);
 
@@ -2088,23 +2076,22 @@ extern "C" void syslog(int severity, const char* fmt, ...)
     case LOG_CRIT:
       [[fallthrough]];
     case LOG_ERR: {
-      LogEvent(EVENTLOG_ERROR_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_ERROR_TYPE, msg.c_str());
     } break;
     case LOG_WARNING: {
-      LogEvent(EVENTLOG_WARNING_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_WARNING_TYPE, msg.c_str());
     } break;
     case LOG_NOTICE:
       [[fallthrough]];
     case LOG_INFO:
       [[fallthrough]];
     case LOG_DEBUG: {
-      LogEvent(EVENTLOG_INFORMATION_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_INFORMATION_TYPE, msg.c_str());
     } break;
     default: {
-      LogEvent(EVENTLOG_ERROR_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_ERROR_TYPE, msg.c_str());
     } break;
   }
-  FreeMemory(msg);
 }
 
 struct passwd* getpwuid(uid_t) { return NULL; }

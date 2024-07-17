@@ -74,22 +74,11 @@ PRINTF_LIKE(4, 5)
 static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME), more(PM_NAME);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (lc->err_type == 0) { /* M_ERROR_TERM by default */
     lc->err_type = M_ERROR_TERM;
@@ -119,22 +108,11 @@ PRINTF_LIKE(4, 5)
 static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME), more(PM_NAME);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (lc->line_no > lc->begin_line_no) {
     Mmsg(more, T_("Problem probably begins at line %d.\n"), lc->begin_line_no);
