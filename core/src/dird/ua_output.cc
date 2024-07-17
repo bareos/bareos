@@ -1536,22 +1536,12 @@ bool sprintit(void* ctx, const char* fmt, ...)
 void bmsg(UaContext* ua, const char* fmt, va_list arg_ptr)
 {
   BareosSocket* bs = ua->UA_sock;
-  int maxlen, len;
   POOLMEM* msg = NULL;
-  va_list ap;
 
   if (bs) { msg = bs->msg; }
   if (!msg) { msg = GetPoolMemory(PM_EMSG); }
 
-again:
-  maxlen = SizeofPoolMemory(msg) - 1;
-  va_copy(ap, arg_ptr);
-  len = Bvsnprintf(msg, maxlen, fmt, ap);
-  va_end(ap);
-  if (len < 0 || len >= maxlen) {
-    msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-    goto again;
-  }
+  int len = PmVFormat(msg, fmt, arg_ptr);
 
   if (bs) {
     bs->msg = msg;

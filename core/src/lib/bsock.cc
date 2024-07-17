@@ -290,23 +290,17 @@ bool BareosSocket::fsend(const char* fmt, ...)
 
 bool BareosSocket::vfsend(const char* fmt, va_list ap)
 {
-  va_list arg_ptr;
-  int maxlen;
-
   if (errors || IsTerminated()) { return false; }
   /* This probably won't work, but we vsnprintf, then if we
    * get a negative length or a length greater than our buffer
    * (depending on which library is used), the printf was truncated, so
    * get a bigger buffer and try again.
    */
-  for (;;) {
-    maxlen = SizeofPoolMemory(msg) - 1;
-    va_copy(arg_ptr, ap);
-    message_length = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (message_length >= 0 && message_length < (maxlen - 5)) { break; }
-    msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-  }
+
+  message_length = PmVFormat(msg, fmt, ap);
+
+  if (message_length < 0) { return false; }
+
   return send();
 }
 
