@@ -419,7 +419,6 @@ class PoolMem;
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
 int Mmsg(POOLMEM*& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
 int Mmsg(PoolMem& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
-int Mmsg(PoolMem*& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
 int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
 
 class JobControlRecord;
