@@ -765,7 +765,7 @@ class BareosDb : public BareosDbQueryEnum {
                                 void* ctx);
   bool PrepareMediaSqlQuery(JobControlRecord* jcr,
                             MediaDbRecord* mr,
-                            PoolMem* querystring,
+                            PoolMem& querystring,
                             PoolMem& volumes);
   bool VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
                                        dbid_list& mediaIds);

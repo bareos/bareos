@@ -2094,7 +2094,7 @@ static bool TruncateCmd(UaContext* ua, const char*)
   }
 
   /* create sql query string (in ua->db->cmd) */
-  if (!ua->db->PrepareMediaSqlQuery(ua->jcr, &mr, &tmp, volumes)) {
+  if (!ua->db->PrepareMediaSqlQuery(ua->jcr, &mr, tmp, volumes)) {
     ua->ErrorMsg(T_("Invalid parameter (failed to create sql query).\n"));
     goto bail_out;
   }

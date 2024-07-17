@@ -1774,7 +1774,7 @@ bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
  */
 bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
                                     MediaDbRecord* mr,
-                                    PoolMem* querystring,
+                                    PoolMem& querystring,
                                     PoolMem& volumes)
 {
   bool ok = true;
@@ -1849,7 +1849,7 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
     PmStrcat(querystring, buf.c_str());
   }
 
-  Dmsg1(100, "query=%s\n", querystring->c_str());
+  Dmsg1(100, "query=%s\n", querystring.c_str());
 
   return ok;
 }

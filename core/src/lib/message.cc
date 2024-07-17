@@ -1455,28 +1455,6 @@ int Mmsg(PoolMem& pool_buf, const char* fmt, ...)
   return len;
 }
 
-int Mmsg(PoolMem*& pool_buf, const char* fmt, ...)
-{
-  int len, maxlen;
-  va_list ap;
-
-  while (1) {
-    maxlen = pool_buf->MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(pool_buf->c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      pool_buf->ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
-
-  return len;
-}
-
 int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...)
 {
   va_list ap;
