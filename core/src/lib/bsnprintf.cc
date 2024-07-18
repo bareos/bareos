@@ -19,10 +19,6 @@
    02110-1301, USA.
 */
 
-#if defined(HAVE_MSVC)
-#  define NO_OLDNAMES
-#endif
-
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
@@ -42,5 +38,6 @@ int Bsnprintf(char* str, int32_t size, const char* format, ...)
 
 int Bvsnprintf(char* str, int32_t size, const char* format, va_list args)
 {
+  if (size < 0) { return -1; }
   return std::min(size, vsnprintf(str, size, format, args));
 }
