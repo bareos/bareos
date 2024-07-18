@@ -303,7 +303,7 @@ int CreateFile(JobControlRecord* jcr,
             // Timeout open() in 60 seconds
             if (attr->type == FT_FIFO) {
               Dmsg0(400, "Set FIFO timer\n");
-              tid = start_thread_timer(jcr, pthread_self(), 60);
+              tid = StartThreadTimer(jcr, pthread_self(), 60);
             } else {
               tid = NULL;
             }
