@@ -56,7 +56,7 @@ TEST(watchdog, legacy_thread_timer)
 
   signal_handler_called = false;
 
-  start_thread_timer(nullptr, pthread_self(), 1);
+  StartThreadTimer(nullptr, pthread_self(), 1);
   int timeout = 0;
   while (!signal_handler_called && ++timeout < 20) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

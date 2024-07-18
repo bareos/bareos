@@ -49,7 +49,7 @@ static void CallbackThreadTimer(watchdog_t* self);
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t* start_child_timer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
+btimer_t* StartChildTimer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
 {
   btimer_t* wid;
 
@@ -117,7 +117,7 @@ static void CallbackChildTimer(watchdog_t* self)
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t* start_thread_timer(JobControlRecord* jcr,
+btimer_t* StartThreadTimer(JobControlRecord* jcr,
                              pthread_t tid,
                              uint32_t wait)
 {
@@ -126,7 +126,7 @@ btimer_t* start_thread_timer(JobControlRecord* jcr,
 
   wid = btimer_start_common();
   if (wid == NULL) {
-    Dmsg1(debuglevel, "start_thread_timer return NULL from common. wait=%d.\n",
+    Dmsg1(debuglevel, "StartThreadTimer return NULL from common. wait=%d.\n",
           wait);
     return NULL;
   }

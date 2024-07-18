@@ -178,7 +178,7 @@ Bpipe* OpenBpipe(const char* prog, int wait, const char* mode, bool dup_stderr, 
   bpipe->wait = wait;
 
   if (wait > 0) {
-    bpipe->timer_id = start_child_timer(NULL, bpipe->worker_pid, wait);
+    bpipe->timer_id = StartChildTimer(NULL, bpipe->worker_pid, wait);
   }
 
   return bpipe;
