@@ -109,33 +109,25 @@ static const char* bstrrpath(const char* start, const char* end)
 
 PRINTF_LIKE(1, 2) static void DeliveryError(const char* fmt, ...)
 {
-  va_list ap;
-  int i, len, maxlen;
-  POOLMEM* pool_buf;
+  POOLMEM* pool_buf = GetPoolMemory(PM_EMSG);
   char dt[MAX_TIME_LENGTH];
-
-  pool_buf = GetPoolMemory(PM_EMSG);
-
   bstrftime(dt, sizeof(dt), time(NULL), log_timestamp_format);
   bstrncat(dt, " ", sizeof(dt));
+  Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
 
-  i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
+  POOLMEM* formated = GetPoolMemory(PM_EMSG);
 
-  /* PMARKER */
+  va_list ap;
+  va_start(ap, fmt);
+  int len = PmVFormat(formated, fmt, ap);
+  va_end(ap);
 
-  while (1) {
-    maxlen = SizeofPoolMemory(pool_buf) - i - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(pool_buf + i, maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      pool_buf = ReallocPoolMemory(pool_buf, maxlen + i + maxlen / 2);
-      continue;
-    }
-
-    break;
+  if (len >= 0) {
+    PmStrcat(pool_buf, formated);
+  } else {
+    PmStrcat(pool_buf, "<formatting error>");
   }
+  FreeMemory(formated);
 
   fputs(pool_buf, stdout); /* print this here to INSURE that it is printed */
   fflush(stdout);
