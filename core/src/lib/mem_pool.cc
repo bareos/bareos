@@ -125,6 +125,8 @@ int32_t SizeofPoolMemory(POOLMEM* obuf) noexcept
 
 POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size) noexcept
 {
+  if (size < 0) { return obuf; }
+
   struct abufhead* old_abuf_ptr = GetPmHeader(obuf);
   char* buf = static_cast<char*>(realloc(old_abuf_ptr, size + HEAD_SIZE));
   if (buf == NULL) {
@@ -295,13 +297,21 @@ int PmVFormat(POOLMEM*& dest_pm, const char* fmt, va_list arg_ptr)
 {
   va_list ap;
 
+  ASSERT(SizeofPoolMemory(dest_pm) >= 0);
+
   for (;;) {
-    int maxlen = SizeofPoolMemory(dest_pm) - 1;
+    int maxlen = SizeofPoolMemory(dest_pm);
+
     va_copy(ap, arg_ptr);
     int len = Bvsnprintf(dest_pm, maxlen, fmt, ap);
     va_end(ap);
+
+    // if len == maxlen, then we might have been truncated, so we need to
+    // try again
     if (len < maxlen) { return len; }
-    auto* mem = ReallocPoolMemory(dest_pm, maxlen + maxlen / 2);
+
+    // add 1 to make sure we always grow (think of maxlen = 0, 1)
+    auto* mem = ReallocPoolMemory(dest_pm, maxlen + 1 + maxlen / 2);
     if (!mem) { return -1; }
     dest_pm = mem;
   }
