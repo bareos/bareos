@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,6 +58,7 @@ btimer_t* StartChildTimer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
   wid->type = TYPE_CHILD;
   wid->pid = pid;
   wid->killed = false;
+  wid->cop = false;
   wid->jcr = jcr;
 
   wid->wd->callback = CallbackChildTimer;
@@ -81,11 +82,22 @@ void StopChildTimer(btimer_t* wid)
   StopBtimer(wid);
 }
 
+/* Set the child operates properly flag on the timer.
+ *
+ * this signals the timeout callback to skip the kill once.
+ * When repeatedly calling this, the child will not run
+ * into a timeout.
+ */
+void TimerChildOperatesProperly(btimer_t& t) { t.cop = true; }
+
 static void CallbackChildTimer(watchdog_t* self)
 {
   btimer_t* wid = (btimer_t*)self->data;
-
-  if (!wid->killed) {
+  if (wid->cop) {
+    /* the child is known to operate properly
+     * so don't kill it, but reset the flag */
+    wid->cop = false;
+  } else if (!wid->killed) {
     /* First kill attempt; try killing it softly (kill -SONG) first */
     wid->killed = true;
 
@@ -117,9 +129,7 @@ static void CallbackChildTimer(watchdog_t* self)
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t* StartThreadTimer(JobControlRecord* jcr,
-                             pthread_t tid,
-                             uint32_t wait)
+btimer_t* StartThreadTimer(JobControlRecord* jcr, pthread_t tid, uint32_t wait)
 {
   char ed1[50];
   btimer_t* wid;

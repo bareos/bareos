@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #ifndef BAREOS_LIB_BTIMERS_H_
 #define BAREOS_LIB_BTIMERS_H_
 
+#include <atomic>
 #include "lib/timer_thread.h"
 #include "lib/watchdog.h"
 
@@ -40,6 +41,7 @@ struct btimer_t {
   watchdog_t* wd; /**< Parent watchdog */
   int type;
   bool killed;
+  std::atomic<bool> cop; /**< child operates properly flag */
   pid_t pid;             /**< process id if TYPE_CHILD */
   pthread_t tid;         /**< thread id if TYPE_PTHREAD */
   BareosSocket* bsock;   /**< Pointer to BareosSocket */
@@ -47,6 +49,7 @@ struct btimer_t {
 };
 
 btimer_t* StartChildTimer(JobControlRecord* jcr, pid_t pid, uint32_t wait);
+void TimerChildOperatesProperly(btimer_t& t);
 void StopChildTimer(btimer_t* wid);
 btimer_t* StartThreadTimer(JobControlRecord* jcr, pthread_t tid, uint32_t wait);
 void StopThreadTimer(btimer_t* wid);
