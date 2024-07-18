@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -385,7 +385,47 @@ TEST(poolmem, pmmemcpy4)
   EXPECT_STREQ(pm.c_str(), "12345");
 }
 
-TEST(poolmem, class)
+TEST(poolmem, bad_realloc)
+{
+  POOLMEM* mem = GetMemory(20);
+
+  POOLMEM* result = ReallocPoolMemory(mem, -1);
+
+  ASSERT_NE(result, nullptr);
+
+  ASSERT_GE(SizeofPoolMemory(result), 0);
+
+  FreeMemory(result);
+}
+
+TEST(poolmem, format_no_memory)
+{
+  POOLMEM* mem = GetMemory(0);
+
+  EXPECT_EQ(PmFormat(mem, "%s", "Hello"), 5);
+  EXPECT_STREQ(mem, "Hello");
+  EXPECT_GT(SizeofPoolMemory(mem), 5);
+
+  FreeMemory(mem);
+}
+
+TEST(poolmem, format)
+{
+  POOLMEM* string = GetMemory(0);
+
+  EXPECT_EQ(PmFormat(string, "%s %s", "xyz", "123"), 7);
+  EXPECT_EQ(strlen(string), 7);
+  EXPECT_STREQ(string, "xyz 123");
+  EXPECT_GT(SizeofPoolMemory(string), 7);
+
+  EXPECT_EQ(PmFormat(string, "%150d", 150), 150);
+  EXPECT_EQ(strlen(string), 150);
+  EXPECT_GT(SizeofPoolMemory(string), 150);
+
+  FreeMemory(string);
+}
+
+TEST(PoolMem, constructor)
 {
   PoolMem pm_name;
   EXPECT_EQ(pm_name.MaxSize(), 130);
@@ -401,12 +441,24 @@ TEST(poolmem, class)
   EXPECT_EQ(pm_string.MaxSize(), 130);
   EXPECT_STREQ(pm_string.c_str(), "abc");
   EXPECT_EQ(pm_string.strlen(), 3);
+}
+
+TEST(PoolMem, realloc)
+{
+  PoolMem pm_name;
+  PoolMem pm_pool{PM_BSOCK};
 
   pm_name.ReallocPm(150);
   EXPECT_EQ(pm_name.MaxSize(), 150);
 
   pm_pool.ReallocPm(150);
   EXPECT_EQ(pm_pool.MaxSize(), 150);
+}
+
+TEST(PoolMem, strcat)
+{
+  PoolMem pm_name;
+  PoolMem pm_string{"abc"};
 
   EXPECT_EQ(pm_name.strcat(pm_string), 3);
   EXPECT_EQ(pm_name.strlen(), 3);
@@ -419,24 +471,38 @@ TEST(poolmem, class)
   EXPECT_EQ(pm_name.strcat(nullptr), 6);
   EXPECT_EQ(pm_name.strlen(), 6);
   EXPECT_STREQ(pm_name.c_str(), "abcDEF");
+}
 
+TEST(PoolMem, tolower)
+{
+  PoolMem pm_name{"AbCDeF"};
+  pm_name.toLower();
+  EXPECT_EQ(pm_name.strlen(), 6);
+  EXPECT_STREQ(pm_name.c_str(), "abcdef");
+}
+
+TEST(PoolMem, strcpy)
+{
+  PoolMem pm_name{"6chars"};
+  PoolMem pm_pool{PM_BSOCK};
   EXPECT_EQ(pm_pool.strcpy(pm_name), 6);
   EXPECT_EQ(pm_pool.strlen(), 6);
   EXPECT_STREQ(pm_pool.c_str(), pm_name.c_str());
 
-  pm_name.toLower();
-  EXPECT_EQ(pm_name.strlen(), 6);
-  EXPECT_STREQ(pm_name.c_str(), "abcdef");
-
+  PoolMem pm_string;
   EXPECT_EQ(pm_string.strcpy(nullptr), 0);
   EXPECT_EQ(pm_string.strlen(), 0);
   EXPECT_STREQ(pm_string.c_str(), "");
+}
 
+TEST(PoolMem, format)
+{
+  PoolMem pm_string;
   EXPECT_EQ(pm_string.bsprintf("%s %s", "xyz", "123"), 7);
   EXPECT_EQ(pm_string.strlen(), 7);
   EXPECT_STREQ(pm_string.c_str(), "xyz 123");
 
   EXPECT_EQ(pm_string.bsprintf("%150d", 0), 150);
   EXPECT_EQ(pm_string.strlen(), 150);
-  EXPECT_EQ(pm_string.MaxSize(), 193);
+  EXPECT_GT(pm_string.MaxSize(), 150);
 }

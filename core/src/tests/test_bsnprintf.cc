@@ -171,3 +171,113 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%X", 255), 2);
   EXPECT_STREQ(dest, "FF");
 }
+
+template <typename T> struct specifier;
+
+template <typename T> constexpr auto specifier_v = specifier<T>::value;
+
+template <> struct specifier<std::uint64_t> {
+  static constexpr const char* value = "%" PRIu64;
+};
+template <> struct specifier<std::int64_t> {
+  static constexpr const char* value = "%" PRIi64;
+};
+template <> struct specifier<std::uint32_t> {
+  static constexpr const char* value = "%" PRIu32;
+};
+template <> struct specifier<std::int32_t> {
+  static constexpr const char* value = "%" PRIi32;
+};
+template <> struct specifier<std::uint16_t> {
+  static constexpr const char* value = "%" PRIu16;
+};
+template <> struct specifier<std::int16_t> {
+  static constexpr const char* value = "%" PRIi16;
+};
+template <> struct specifier<std::uint8_t> {
+  static constexpr const char* value = "%" PRIu8;
+};
+template <> struct specifier<std::int8_t> {
+  static constexpr const char* value = "%" PRIi8;
+};
+
+template <typename T> auto test_format(T value, std::string_view expected)
+{
+  PoolMem buf;
+  ASSERT_EQ(buf.bsprintf(specifier_v<T>, value), expected.size());
+  EXPECT_EQ(std::string_view{buf.c_str()}, expected);
+}
+
+template <typename T>
+auto test_limits(std::string_view min, std::string_view max)
+{
+  test_format(std::numeric_limits<T>::min(), min);
+  test_format(std::numeric_limits<T>::max(), max);
+}
+
+TEST(bsnprintf, integer_limits)
+{
+  test_limits<std::uint64_t>("0", "18446744073709551615");
+  test_limits<std::int64_t>("-9223372036854775808", "9223372036854775807");
+  test_limits<std::uint32_t>("0", "4294967295");
+  test_limits<std::int32_t>("-2147483648", "2147483647");
+  test_limits<std::uint16_t>("0", "65535");
+  test_limits<std::int16_t>("-32768", "32767");
+  test_limits<std::uint8_t>("0", "255");
+  test_limits<std::int8_t>("-128", "127");
+}
+
+static std::string repeat(char c, std::size_t count)
+{
+  std::string s;
+
+  s.resize(count);
+  for (char& current : s) { current = c; }
+
+  return s;
+}
+
+
+static void test_buffer(char* buffer, size_t size, const std::string& s)
+{
+  size_t expected_result = std::min(size, s.size());
+
+  EXPECT_EQ(Bsnprintf(buffer, size, "%s", s.c_str()), expected_result);
+
+  size_t expected_size = std::min(size - 1, s.size());
+
+  EXPECT_EQ(std::string_view(buffer, expected_size),
+            std::string_view(s.c_str(), expected_size));
+
+  EXPECT_EQ(buffer[expected_size], '\0');
+}
+
+TEST(bsnprintf, memory_limits)
+{
+  EXPECT_EQ(Bsnprintf(nullptr, -1, "%s", "Hello, World!"), -1);
+  EXPECT_EQ(Bsnprintf(nullptr, 0, "%s", "Hello, World!"), 0);
+
+
+  char buffer[100];
+
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 1, repeat('b', 9).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 10, repeat('b', 9).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 10, repeat('b', 10).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 100, repeat('b', 10).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 100, repeat('b', 100).c_str());
+  }
+}
