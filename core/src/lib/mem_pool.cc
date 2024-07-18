@@ -293,18 +293,16 @@ int PmFormat(POOLMEM*& dest_pm, const char* fmt, ...)
 
 int PmVFormat(POOLMEM*& dest_pm, const char* fmt, va_list arg_ptr)
 {
-  int maxlen, len;
   va_list ap;
 
   for (;;) {
-    maxlen = SizeofPoolMemory(dest_pm) - 1;
+    int maxlen = SizeofPoolMemory(dest_pm) - 1;
     va_copy(ap, arg_ptr);
-    len = Bvsnprintf(dest_pm, maxlen, fmt, ap);
+    int len = Bvsnprintf(dest_pm, maxlen, fmt, ap);
     va_end(ap);
-    if (len < maxlen) { break; }
+    if (len < maxlen) { return len; }
     auto* mem = ReallocPoolMemory(dest_pm, maxlen + maxlen / 2);
     if (!mem) { return -1; }
     dest_pm = mem;
   }
-  return len;
 }
