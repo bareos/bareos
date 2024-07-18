@@ -551,10 +551,9 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
       if (candidate.size() != md5len) {
         scan_err2(lc,
-                  "md5 password does not have the right size; expected: %llu"
-                  ", got: %llu\n",
-                  static_cast<long long unsigned>(md5len),
-                  static_cast<long long unsigned>(candidate.size()));
+                  "md5 password does not have the right size; expected: %" PRIuz
+                  ", got: %" PRIuz "\n",
+                  md5len, candidate.size());
         *pwd = {};
         return;
       }
