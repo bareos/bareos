@@ -171,12 +171,7 @@ int main(int argc, char* argv[])
              "but program was not started with required root privileges.\n"));
   }
 
-  if (!no_signals) {
-    InitSignals(TerminateFiled);
-  } else {
-    // This reduces the number of signals facilitating debugging
-    watchdog_sleep_time = 120; /* long timeout for debugging */
-  }
+  if (!no_signals) { InitSignals(TerminateFiled); }
 
   if (export_config_schema) {
     PoolMem buffer;
