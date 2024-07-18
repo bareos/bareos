@@ -173,9 +173,6 @@ int main(int argc, char* argv[])
 
   if (!no_signals) {
     InitSignals(TerminateFiled);
-  } else {
-    // This reduces the number of signals facilitating debugging
-    watchdog_sleep_time = 120; /* long timeout for debugging */
   }
 
   if (export_config_schema) {

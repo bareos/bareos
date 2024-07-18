@@ -224,14 +224,14 @@ static void CallbackThreadTimer(watchdog_t* self)
   }
 
   if (wid->type == TYPE_BSOCK && wid->bsock) { wid->bsock->SetTimedOut(); }
-  pthread_kill(wid->tid, TIMEOUT_SIGNAL);
+  pthread_kill(wid->tid, kTimeoutSignal);
 }
 
 static btimer_t* btimer_start_common()
 {
   btimer_t* wid = (btimer_t*)malloc(sizeof(btimer_t));
 
-  wid->wd = new_watchdog();
+  wid->wd = NewWatchdog();
   if (wid->wd == NULL) {
     free(wid);
     return NULL;
