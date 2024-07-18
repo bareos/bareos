@@ -399,7 +399,7 @@ void SetTimeoutHandler()
   sigtimer.sa_flags = 0;
   sigtimer.sa_handler = TimeoutHandler;
   sigfillset(&sigtimer.sa_mask);
-  sigaction(TIMEOUT_SIGNAL, &sigtimer, nullptr);
+  sigaction(kTimeoutSignal, &sigtimer, nullptr);
 }
 #else   // HAVE_WIN32
 void SetTimeoutHandler() {}

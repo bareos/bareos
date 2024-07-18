@@ -47,7 +47,7 @@ static void InstallSignalHandler()
   action.sa_flags = SA_SIGINFO;
   action.sa_sigaction = SignalHandler;
 
-  EXPECT_EQ(sigaction(TIMEOUT_SIGNAL, &action, NULL), 0);
+  EXPECT_EQ(sigaction(kTimeoutSignal, &action, NULL), 0);
 }
 
 TEST(watchdog, legacy_thread_timer)
