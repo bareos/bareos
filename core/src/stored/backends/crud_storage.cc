@@ -40,6 +40,7 @@ class BPipeHandle {
     }
     return output;
   }
+  void reset_timeout() { TimerChildOperatesProperly(*bpipe->timer_id); }
   bool timed_out() { return bpipe->timer_id && bpipe->timer_id->killed; }
   void close_write()
   {
@@ -226,6 +227,7 @@ tl::expected<void, std::string> CrudStorage::upload(std::string_view obj_name,
           "Broken pipe after writing {} of {} bytes at offset {} into {}/{}\n",
           has_written, write_size, offset, obj_name, obj_part));
     }
+    bph.reset_timeout();
     remaining_bytes -= write_size;
   }
   auto output = bph.getOutput();
@@ -262,6 +264,7 @@ tl::expected<gsl::span<char>, std::string> CrudStorage::download(
         = std::min(buffer.size_bytes() - total_read, max_read_size);
     const size_t bytes_read
         = fread(buffer.data() + total_read, 1, read_size, rfh);
+    bph.reset_timeout();
     total_read += bytes_read;
     if (bytes_read < read_size) {
       if (feof(rfh)) {
