@@ -541,6 +541,29 @@ void ConfigurationParser::StoreMd5Password(lexer* lc,
                     (*item->allocated_resource)->resource_name_);
         }
       }
+
+      std::string_view candidate{lc->str + 5};
+
+      constexpr size_t md5len = 32;
+
+      if (candidate.size() != md5len) {
+        scan_err2(lc,
+                  "md5 password does not have the right size; expected: %" PRIuz
+                  ", got: %" PRIuz "\n",
+                  md5len, candidate.size());
+        *pwd = {};
+        return;
+      }
+
+      if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
+          bad != candidate.npos) {
+        scan_err1(
+            lc, "md5 password contains non hexadecimal characters, e.g. '%c'\n",
+            candidate[bad]);
+        *pwd = {};
+        return;
+      }
+
       pwd->encoding = p_encoding_md5;
       pwd->value = strdup(lc->str + 5);
     } else {
