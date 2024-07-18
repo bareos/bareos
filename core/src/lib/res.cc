@@ -528,7 +528,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
     // See if we are parsing an MD5 encoded password already.
     if (bstrncmp(lc->str, "[md5]", 5)) {
-      if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
         static const char* empty_password_md5_hash
             = "d41d8cd98f00b204e9800998ecf8427e";
         if (strncmp(lc->str + 5, empty_password_md5_hash,
@@ -546,7 +546,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
       unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
       char sig[100];
 
-      if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
         if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
           scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
                     (*item->allocated_resource)->resource_name_);
@@ -585,7 +585,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 
     if (pwd->value) { free(pwd->value); }
 
-    if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+    if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
       if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
         scan_err1(
             lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
