@@ -534,8 +534,8 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
         if (strncmp(lc->str + 5, empty_password_md5_hash,
                     strlen(empty_password_md5_hash))
             == 0) {
-          Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
-                (*item->allocated_resource)->resource_name_);
+          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                    (*item->allocated_resource)->resource_name_);
         }
       }
       pwd->encoding = p_encoding_md5;
@@ -548,8 +548,8 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
       if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
         if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-          Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
-                (*item->allocated_resource)->resource_name_);
+          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                    (*item->allocated_resource)->resource_name_);
         }
       }
 
@@ -587,8 +587,9 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 
     if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
       if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-        Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
-              (*item->allocated_resource)->resource_name_);
+        scan_err1(
+            lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
+            (*item->allocated_resource)->resource_name_);
       }
     }
 
