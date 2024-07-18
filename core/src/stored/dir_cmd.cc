@@ -534,7 +534,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
   }
 
   pthread_cond_signal(&jcr->sd_impl->job_end_wait); /* wake waiting job */
-  jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+  jcr->MyThreadSendSignal(kTimeoutSignal);
 
   dir->fsend(T_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId,
              jcr->Job, reason);

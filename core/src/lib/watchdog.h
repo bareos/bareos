@@ -28,8 +28,9 @@
 #define BAREOS_LIB_WATCHDOG_H_
 
 #include <signal.h>
-
-#include "lib/dlist.h"
+#include "lib/dlink.h"
+#include "include/bc_types.h"
+#include "include/dll_import_export.h"
 
 enum
 {
@@ -38,7 +39,7 @@ enum
   TYPE_BSOCK
 };
 
-#define TIMEOUT_SIGNAL SIGUSR2
+static inline constexpr int kTimeoutSignal = SIGUSR2;
 
 struct s_watchdog_t {
   bool one_shot;
@@ -54,10 +55,9 @@ typedef struct s_watchdog_t watchdog_t;
 
 /* Exported globals */
 BAREOS_IMPORT utime_t watchdog_time; /* this has granularity of SLEEP_TIME */
-BAREOS_IMPORT utime_t watchdog_sleep_time; /* examine things every 60 seconds */
 int StartWatchdog(void);
 int StopWatchdog(void);
-watchdog_t* new_watchdog(void);
+watchdog_t* NewWatchdog(void);
 bool RegisterWatchdog(watchdog_t* wd);
 bool UnregisterWatchdog(watchdog_t* wd);
 bool IsWatchdog();
