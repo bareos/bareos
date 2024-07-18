@@ -39,5 +39,13 @@ int Bsnprintf(char* str, int32_t size, const char* format, ...)
 int Bvsnprintf(char* str, int32_t size, const char* format, va_list args)
 {
   if (size < 0) { return -1; }
-  return std::min(size, vsnprintf(str, size, format, args));
+
+  auto ret = vsnprintf(str, size, format, args);
+
+  /* we differ from the real vsnprintf in that we return exactly how many
+   * bytes we _did_ write.  This only includes the NUL terminator if the buffer
+   * was too small (i.e. ret >= size) otherwise it is excluded.  As such it is
+   * sufficient to just return min(size, ret) */
+
+  return std::min(ret, size);
 }
