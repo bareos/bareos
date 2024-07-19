@@ -58,7 +58,7 @@ btimer_t* StartChildTimer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
   wid->type = TYPE_CHILD;
   wid->pid = pid;
   wid->killed = false;
-  wid->cop = false;
+  wid->keepalive = false;
   wid->jcr = jcr;
 
   wid->wd->callback = CallbackChildTimer;
@@ -88,15 +88,14 @@ void StopChildTimer(btimer_t* wid)
  * When repeatedly calling this, the child will not run
  * into a timeout.
  */
-void TimerChildOperatesProperly(btimer_t& t) { t.cop = true; }
+void TimerKeepalive(btimer_t& t) { t.keepalive = true; }
 
 static void CallbackChildTimer(watchdog_t* self)
 {
   btimer_t* wid = (btimer_t*)self->data;
-  if (wid->cop) {
-    /* the child is known to operate properly
-     * so don't kill it, but reset the flag */
-    wid->cop = false;
+  if (wid->keepalive) {
+    // we got a keepalive for the child, so we don't kill it this time
+    wid->keepalive = false;
   } else if (!wid->killed) {
     /* First kill attempt; try killing it softly (kill -SONG) first */
     wid->killed = true;
