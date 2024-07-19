@@ -94,11 +94,15 @@ tl::expected<void, std::string> CrudStorage::set_program(
   return {};
 }
 
+void CrudStorage::set_program_timeout(uint32_t timeout) {
+  m_program_timeout = timeout;
+}
+
 tl::expected<BStringList, std::string> CrudStorage::get_supported_options()
 {
   Dmsg0(dlvl, "options called\n");
   std::string cmdline = fmt::format("'{}' options", m_program);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r")};
+  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r")};
   auto output = bph.getOutput();
   auto ret = bph.close();
   Dmsg1(dlvl,
@@ -133,7 +137,7 @@ tl::expected<void, std::string> CrudStorage::test_connection()
 {
   Dmsg0(dlvl, "test_connection called\n");
   std::string cmdline = fmt::format("'{}' testconnection", m_program);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
+  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto output = bph.getOutput();
   auto ret = bph.close();
   Dmsg1(dlvl,
@@ -155,7 +159,7 @@ auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
   Dmsg1(dlvl, "stat %s called\n", obj_name.data());
   std::string cmdline
       = fmt::format("'{}' stat '{}' '{}'", m_program, obj_name, obj_part);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
+  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
   Stat stat;
   if (int n = fscanf(rfh, "%zu\n", &stat.size); n != 1) {
@@ -176,7 +180,7 @@ auto CrudStorage::list(std::string_view obj_name)
 {
   Dmsg1(dlvl, "list %s called\n", obj_name.data());
   std::string cmdline = fmt::format("'{}' list '{}'", m_program, obj_name);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
+  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
 
   std::map<std::string, Stat> result;
@@ -212,7 +216,7 @@ tl::expected<void, std::string> CrudStorage::upload(std::string_view obj_name,
   std::string cmdline
       = fmt::format("'{}' upload '{}' '{}'", m_program, obj_name, obj_part);
 
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "rw", m_env_vars)};
+  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "rw", m_env_vars)};
   auto wfh = bph.getWriteFd();
 
   constexpr size_t max_write_size{256 * 1024};
@@ -255,7 +259,7 @@ tl::expected<gsl::span<char>, std::string> CrudStorage::download(
   std::string cmdline
       = fmt::format("'{}' download '{}' '{}'", m_program, obj_name, obj_part);
 
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
+  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
   size_t total_read{0};
   constexpr size_t max_read_size{256 * 1024};
@@ -294,7 +298,7 @@ tl::expected<void, std::string> CrudStorage::remove(std::string_view obj_name, s
   Dmsg1(dlvl, "remove %s/%s called\n", obj_name.data(), obj_part.data());
   std::string cmdline
       = fmt::format("'{}' remove '{}' '{}'", m_program, obj_name, obj_part);
-  auto bph{BPipeHandle(cmdline.c_str(), 30, "r", m_env_vars)};
+  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto output = bph.getOutput();
   auto ret = bph.close();
 

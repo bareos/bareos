@@ -55,7 +55,7 @@ static const utl::options option_defaults{
     {"iothreads", "0"},
     {"ioslots", "10"},
     {"retries", "0"},
-    //{"mmap", "0"},
+    {"program_timeout", "0"}, // use default in crud_storage
 };
 
 // delete this, so only specializations will be considered
@@ -70,6 +70,12 @@ template <> void convert_value<>(uint8_t& to, const std::string& from)
 {
   to = gsl::narrow<uint8_t>(std::stoul(from));
 }
+
+template <> void convert_value<>(uint32_t& to, const std::string& from)
+{
+  to = gsl::narrow<uint32_t>(std::stoul(from));
+}
+
 
 template <> void convert_value<>(std::string& to, const std::string& from)
 {
@@ -154,6 +160,7 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   }
 
   std::string program;
+  uint32_t program_timeout{0};
 
   if (auto conversion_result
       = tl::expected<utl::options*, std::string>{&options}
@@ -161,7 +168,8 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
             .and_then(get_converter("ioslots", io_slots_))
             .and_then(get_converter("retries", retries_))
             .and_then(get_converter("chunksize", chunk_size_))
-            .and_then(get_converter("program", program));
+            .and_then(get_converter("program", program))
+            .and_then(get_converter("program_timeout", program_timeout));
       !conversion_result) {
     return tl::unexpected(conversion_result.error());
   }
@@ -171,6 +179,10 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   }
 
   if (auto result = m_storage.set_program(program); !result) { return result; }
+
+  if(program_timeout > 0) {
+    m_storage.set_program_timeout(program_timeout);
+  }
 
   if (auto supported_options = m_storage.get_supported_options()) {
     for (const auto& option_name : *supported_options) {
