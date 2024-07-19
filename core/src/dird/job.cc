@@ -1738,14 +1738,13 @@ void CreateClones(JobControlRecord* jcr)
   Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->dir_impl->cloned,
         jcr->dir_impl->res.job->run_cmds);
   if (!jcr->dir_impl->cloned && jcr->dir_impl->res.job->run_cmds) {
-    const char* runcmd = nullptr;
     JobId_t jobid;
     JobResource* job = jcr->dir_impl->res.job;
     POOLMEM* cmd = GetPoolMemory(PM_FNAME);
 
     UaContext* ua = new_ua_context(jcr);
     ua->batch = true;
-    foreach_alist (runcmd, job->run_cmds) {
+    for (auto* runcmd : job->run_cmds) {
       cmd = edit_job_codes(jcr, cmd, runcmd, "", job_code_callback_director);
       Mmsg(ua->cmd, "run %s cloned=yes", cmd);
       Dmsg1(900, "=============== Clone cmd=%s\n", ua->cmd);

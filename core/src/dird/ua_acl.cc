@@ -115,12 +115,8 @@ static inline std::optional<bool> FindInAclList(alist<const char*>* list,
                                                 const char* item,
                                                 int item_length)
 {
-  // See if we have an empty list.
-  if (!list || list->empty()) { return std::nullopt; }
-
   // Search list for item
-  const char* list_value = nullptr;
-  foreach_alist (list_value, list) {
+  for (auto* list_value : list) {
     // See if this is a deny acl.
     if (*list_value == '!') {
       if (CompareAclListValueWithItem(acl, list_value, list_value + 1, item,
@@ -171,15 +167,11 @@ bool UaContext::AclAccessOk(int acl,
   /* If we didn't find a matching ACL try to use the profiles this console is
    * connected to. */
   if (!retval.has_value()) {
-    if (user_acl->profiles && user_acl->profiles->size()) {
-      ProfileResource* profile = nullptr;
+    for (auto* profile : user_acl->profiles) {
+      retval = FindInAclList(profile->ACL_lists[acl], acl, item, item_length);
 
-      foreach_alist (profile, user_acl->profiles) {
-        retval = FindInAclList(profile->ACL_lists[acl], acl, item, item_length);
-
-        // If we found a match break the loop.
-        if (retval.has_value()) { break; }
-      }
+      // If we found a match break the loop.
+      if (retval.has_value()) { break; }
     }
   }
 
@@ -198,7 +190,6 @@ bail_out:
 bool UaContext::AclNoRestrictions(int acl)
 {
   const char* list_value;
-  ProfileResource* profile = nullptr;
 
   // If no console resource => default console and all is permitted
   if (!user_acl) { return true; }
@@ -213,7 +204,7 @@ bool UaContext::AclNoRestrictions(int acl)
     }
   }
 
-  foreach_alist (profile, user_acl->profiles) {
+  for (auto* profile : user_acl->profiles) {
     if (profile) {
       if (profile->ACL_lists[acl]) {
         for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {

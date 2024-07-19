@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,18 +66,18 @@ void AlistFill(alist<const char*>* list, int max)
 // we expect, that the list is filled with strings of numbers from 0 to n.
 void TestForeachAlist(alist<const char*>* list)
 {
-  const char* str = NULL;
   char buf[30];
   int i = 0;
 
   // test all available foreach loops
 
-  foreach_alist (str, list) {
+  for (auto* str : list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(str, buf);
     i++;
   }
 
+  const char* str;
   foreach_alist_index (i, str, list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(str, buf);
@@ -111,10 +111,7 @@ void test_alist_dynamic()
   alist<const char*>* list = nullptr;
   char* buf;
 
-  // NULL->size() will segfault
-  // EXPECT_EQ(list->size(), 0);
-
-  // does foreach work for NULL?
+  // does foreach work for empty lists?
   TestForeachAlist(list);
 
   // create empty list, which is prepared for a number of entires

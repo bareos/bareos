@@ -174,7 +174,6 @@ bool ChunkedDevice::StartIoThreads()
 void ChunkedDevice::StopThreads()
 {
   char ed1[50];
-  thread_handle* handle = nullptr;
 
   /* Tell all IO threads that we flush the circular buffer.
    * As such they will get a NULL chunk_io_request back and exit. */
@@ -182,7 +181,7 @@ void ChunkedDevice::StopThreads()
 
   // Wait for all threads to exit.
   if (thread_ids_) {
-    foreach_alist (handle, thread_ids_) {
+    for (auto* handle : thread_ids_) {
       switch (handle->type) {
         case WAIT_CANCEL_THREAD:
           Dmsg1(100, "Canceling thread with threadid=%s\n",

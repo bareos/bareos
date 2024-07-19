@@ -1013,7 +1013,6 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
                                    alist<X509_KEYPAIR*>* pubkeys)
 {
   CRYPTO_SESSION* cs;
-  X509_KEYPAIR* keypair = nullptr;
   const EVP_CIPHER* ec;
   unsigned char* iv;
   int iv_len;
@@ -1155,7 +1154,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
 
   /* Create RecipientInfo structures for supplied
    * public keys. */
-  foreach_alist (keypair, pubkeys) {
+  for (auto* keypair : pubkeys) {
     RecipientInfo* ri;
     unsigned char* ekey;
     int ekey_len;
@@ -1170,7 +1169,8 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
     /* Set the ASN.1 structure version number */
     ASN1_INTEGER_set(ri->version, BAREOS_ASN1_VERSION);
 
-    /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier */
+    /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier
+     */
     M_ASN1_OCTET_STRING_free(ri->subjectKeyIdentifier);
     ri->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
 
@@ -1193,7 +1193,6 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
       return NULL;
     }
     IGNORE_DEPRECATED_OFF;
-
     /* Store it in our ASN.1 structure */
     if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
       /* Allocation failed in OpenSSL */
@@ -1248,7 +1247,6 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
                                    CRYPTO_SESSION** session)
 {
   CRYPTO_SESSION* cs;
-  X509_KEYPAIR* keypair = nullptr;
   STACK_OF(RecipientInfo) * recipients;
   crypto_error_t retval = CRYPTO_ERROR_NONE;
 #    if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
@@ -1279,7 +1277,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
 
   /* Find a matching RecipientInfo structure for a supplied
    * public key */
-  foreach_alist (keypair, keypairs) {
+  for (auto* keypair : keypairs) {
     RecipientInfo* ri;
     int i;
 
@@ -1305,7 +1303,8 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
         }
 
         /* Decrypt the session key */
-        /* Allocate sufficient space for the largest possible decrypted data */
+        /* Allocate sufficient space for the largest possible decrypted data
+         */
         cs->session_key
             = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
         IGNORE_DEPRECATED_ON;

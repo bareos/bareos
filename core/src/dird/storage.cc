@@ -99,13 +99,12 @@ void CopyRstorage(JobControlRecord* jcr,
                   const char* where)
 {
   if (storage) {
-    StorageResource* store = nullptr;
     if (jcr->dir_impl->res.read_storage_list) {
       delete jcr->dir_impl->res.read_storage_list;
     }
     jcr->dir_impl->res.read_storage_list
         = new alist<StorageResource*>(10, not_owned_by_alist);
-    foreach_alist (store, storage) {
+    for (auto* store : storage) {
       jcr->dir_impl->res.read_storage_list->append(store);
     }
     if (!jcr->dir_impl->res.rstore_source) {
@@ -125,8 +124,6 @@ void CopyRstorage(JobControlRecord* jcr,
  */
 void SetRstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
 {
-  StorageResource* storage = nullptr;
-
   if (!store->store) { return; }
   if (jcr->dir_impl->res.read_storage_list) { FreeRstorage(jcr); }
   if (!jcr->dir_impl->res.read_storage_list) {
@@ -138,7 +135,7 @@ void SetRstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
     jcr->dir_impl->res.rstore_source = GetPoolMemory(PM_MESSAGE);
   }
   PmStrcpy(jcr->dir_impl->res.rstore_source, store->store_source);
-  foreach_alist (storage, jcr->dir_impl->res.read_storage_list) {
+  for (auto* storage : jcr->dir_impl->res.read_storage_list) {
     if (store->store == storage) { return; }
   }
   /* Store not in list, so add it */
@@ -160,13 +157,12 @@ void CopyWstorage(JobControlRecord* jcr,
                   const char* where)
 {
   if (storage) {
-    StorageResource* st = nullptr;
     if (jcr->dir_impl->res.write_storage_list) {
       delete jcr->dir_impl->res.write_storage_list;
     }
     jcr->dir_impl->res.write_storage_list
         = new alist<StorageResource*>(10, not_owned_by_alist);
-    foreach_alist (st, storage) {
+    for (auto* st : storage) {
       Dmsg1(100, "write_storage_list=%s\n", st->resource_name_);
       jcr->dir_impl->res.write_storage_list->append(st);
     }
@@ -190,8 +186,6 @@ void CopyWstorage(JobControlRecord* jcr,
  */
 void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
 {
-  StorageResource* storage = nullptr;
-
   if (!store->store) { return; }
   if (jcr->dir_impl->res.write_storage_list) { FreeWstorage(jcr); }
   if (!jcr->dir_impl->res.write_storage_list) {
@@ -206,7 +200,7 @@ void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
   Dmsg2(50, "write_storage=%s where=%s\n",
         jcr->dir_impl->res.write_storage->resource_name_,
         jcr->dir_impl->res.wstore_source);
-  foreach_alist (storage, jcr->dir_impl->res.write_storage_list) {
+  for (auto* storage : jcr->dir_impl->res.write_storage_list) {
     if (store->store == storage) { return; }
   }
 
@@ -231,8 +225,6 @@ void FreeWstorage(JobControlRecord* jcr)
  */
 void SetPairedStorage(JobControlRecord* jcr)
 {
-  StorageResource *store = nullptr, *paired_read_write_storage = nullptr;
-
   switch (jcr->getJobType()) {
     case JT_BACKUP:
       // For a backup we look at the write storage.
@@ -245,13 +237,15 @@ void SetPairedStorage(JobControlRecord* jcr)
             = jcr->dir_impl->res.write_storage_list;
         jcr->dir_impl->res.write_storage_list
             = new alist<StorageResource*>(10, not_owned_by_alist);
-        foreach_alist (store,
-                       jcr->dir_impl->res.paired_read_write_storage_list) {
-          if (store->paired_storage) {
-            Dmsg1(100, "write_storage_list=%s\n",
-                  store->paired_storage->resource_name_);
-            jcr->dir_impl->res.write_storage_list->append(
-                store->paired_storage);
+        if (jcr->dir_impl->res.paired_read_write_storage_list) {
+          for (auto* store :
+               jcr->dir_impl->res.paired_read_write_storage_list) {
+            if (store->paired_storage) {
+              Dmsg1(100, "write_storage_list=%s\n",
+                    store->paired_storage->resource_name_);
+              jcr->dir_impl->res.write_storage_list->append(
+                  store->paired_storage);
+            }
           }
         }
 
@@ -259,7 +253,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * paired storage entry. We save the actual storage entry in
          * paired_read_write_storage which is for restore in the
          * FreePairedStorage() function. */
-        store = jcr->dir_impl->res.write_storage;
+        auto* store = jcr->dir_impl->res.write_storage;
         if (store->paired_storage) {
           jcr->dir_impl->res.write_storage = store->paired_storage;
           jcr->dir_impl->res.paired_read_write_storage = store;
@@ -277,9 +271,10 @@ void SetPairedStorage(JobControlRecord* jcr)
          * jcr->dir_impl_->res.read_storage_list. */
         jcr->dir_impl->res.paired_read_write_storage_list
             = new alist<StorageResource*>(10, not_owned_by_alist);
-        foreach_alist (paired_read_write_storage,
-                       jcr->dir_impl->res.read_storage_list) {
-          store = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
+        for (auto* paired_read_write_storage :
+             jcr->dir_impl->res.read_storage_list) {
+          auto* store
+              = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
           while (store) {
             if (store->paired_storage == paired_read_write_storage) { break; }
 
@@ -317,12 +312,15 @@ void SetPairedStorage(JobControlRecord* jcr)
             = jcr->dir_impl->res.read_storage_list;
         jcr->dir_impl->res.read_storage_list
             = new alist<StorageResource*>(10, not_owned_by_alist);
-        foreach_alist (store,
-                       jcr->dir_impl->res.paired_read_write_storage_list) {
-          if (store->paired_storage) {
-            Dmsg1(100, "read_storage_list=%s\n",
-                  store->paired_storage->resource_name_);
-            jcr->dir_impl->res.read_storage_list->append(store->paired_storage);
+        if (jcr->dir_impl->res.paired_read_write_storage_list) {
+          for (auto* store :
+               jcr->dir_impl->res.paired_read_write_storage_list) {
+            if (store->paired_storage) {
+              Dmsg1(100, "read_storage_list=%s\n",
+                    store->paired_storage->resource_name_);
+              jcr->dir_impl->res.read_storage_list->append(
+                  store->paired_storage);
+            }
           }
         }
 
@@ -330,7 +328,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * paired storage entry. We save the actual storage entry in
          * paired_read_write_storage which is for restore in the
          * FreePairedStorage() function. */
-        store = jcr->dir_impl->res.read_storage;
+        auto* store = jcr->dir_impl->res.read_storage;
         if (store->paired_storage) {
           jcr->dir_impl->res.read_storage = store->paired_storage;
           jcr->dir_impl->res.paired_read_write_storage = store;
@@ -408,13 +406,11 @@ void FreePairedStorage(JobControlRecord* jcr)
 // Check if every possible storage has paired storage associated.
 bool HasPairedStorage(JobControlRecord* jcr)
 {
-  StorageResource* store = nullptr;
-
   switch (jcr->getJobType()) {
     case JT_BACKUP:
       // For a backup we look at the write storage.
       if (jcr->dir_impl->res.write_storage_list) {
-        foreach_alist (store, jcr->dir_impl->res.write_storage_list) {
+        for (auto* store : jcr->dir_impl->res.write_storage_list) {
           if (!store->paired_storage) { return false; }
         }
       } else {
@@ -428,7 +424,7 @@ bool HasPairedStorage(JobControlRecord* jcr)
     case JT_MIGRATE:
     case JT_COPY:
       if (jcr->dir_impl->res.read_storage_list) {
-        foreach_alist (store, jcr->dir_impl->res.read_storage_list) {
+        for (auto* store : jcr->dir_impl->res.read_storage_list) {
           if (!store->paired_storage) { return false; }
         }
       } else {

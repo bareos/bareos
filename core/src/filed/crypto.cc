@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -152,7 +152,6 @@ bool CryptoSessionSend(JobControlRecord* jcr, BareosSocket* sd)
  */
 bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
 {
-  X509_KEYPAIR* keypair = nullptr;
   DIGEST* digest = NULL;
   crypto_error_t err;
   uint64_t saved_bytes;
@@ -175,7 +174,7 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   }
 
   // Iterate through the trusted signers
-  foreach_alist (keypair, jcr->fd_impl->crypto.pki_signers) {
+  for (auto* keypair : jcr->fd_impl->crypto.pki_signers) {
     err = CryptoSignGetDigest(sig, jcr->fd_impl->crypto.pki_keypair, algorithm,
                               &digest);
     switch (err) {
@@ -183,8 +182,8 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
         Dmsg0(50, "== Got digest\n");
         /* We computed jcr->fd_impl_->crypto.digest using signing_algorithm
          * while writing the file. If it is not the same as the algorithm used
-         * for this file, punt by releasing the computed algorithm and computing
-         * by re-reading the file. */
+         * for this file, punt by releasing the computed algorithm and
+         * computing by re-reading the file. */
         if (algorithm != signing_algorithm) {
           if (jcr->fd_impl->crypto.digest) {
             CryptoDigestFree(jcr->fd_impl->crypto.digest);
@@ -192,7 +191,8 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
           }
         }
         if (jcr->fd_impl->crypto.digest) {
-          // Use digest computed while writing the file to verify the signature
+          // Use digest computed while writing the file to verify the
+          // signature
           if ((err
                = CryptoSignVerify(sig, keypair, jcr->fd_impl->crypto.digest))
               != CRYPTO_ERROR_NONE) {

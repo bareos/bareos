@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -143,10 +143,9 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
  */
 void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
 {
-  xattr_t* current_xattr = nullptr;
-
+  if (!xattr_value_list) { return; }
   // Walk the list of xattrs and free allocated memory on traversing.
-  foreach_alist (current_xattr, xattr_value_list) {
+  for (auto* current_xattr : xattr_value_list) {
     // See if we can shortcut.
     if (current_xattr == NULL || current_xattr->magic != XATTR_MAGIC) break;
 
@@ -178,7 +177,6 @@ uint32_t SerializeXattrStream(JobControlRecord*,
                               uint32_t expected_serialize_len,
                               alist<xattr_t*>* xattr_value_list)
 {
-  xattr_t* current_xattr = nullptr;
   ser_declare;
 
   /* Make sure the serialized stream fits in the poolmem buffer.
@@ -188,7 +186,7 @@ uint32_t SerializeXattrStream(JobControlRecord*,
   SerBegin(xattr_data->u.build->content, expected_serialize_len + 10);
 
   // Walk the list of xattrs and Serialize the data.
-  foreach_alist (current_xattr, xattr_value_list) {
+  for (auto* current_xattr : xattr_value_list) {
     // See if we can shortcut.
     if (current_xattr == NULL || current_xattr->magic != XATTR_MAGIC) break;
 
@@ -561,7 +559,7 @@ static BxattrExitCode aix_parse_xattr_streams(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  foreach_alist (current_xattr, xattr_value_list) {
+  for (auto* current_xattr : xattr_value_list) {
     if (lsetea(xattr_data->last_fname, current_xattr->name,
                current_xattr->value, current_xattr->value_length, 0)
         != 0) {
@@ -919,7 +917,6 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
                                                   char* content,
                                                   uint32_t content_length)
 {
-  xattr_t* current_xattr = nullptr;
   alist<xattr_t*>* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
@@ -931,7 +928,7 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  foreach_alist (current_xattr, xattr_value_list) {
+  for (auto* current_xattr : xattr_value_list) {
     if (lsetxattr(xattr_data->last_fname, current_xattr->name,
                   current_xattr->value, current_xattr->value_length, 0)
         != 0) {
@@ -1320,7 +1317,6 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
                                               char* content,
                                               uint32_t content_length)
 {
-  xattr_t* current_xattr = nullptr;
   alist<xattr_t*>* xattr_value_list;
   int current_attrnamespace, cnt;
   char *attrnamespace, *attrname;
@@ -1334,7 +1330,7 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  foreach_alist (current_xattr, xattr_value_list) {
+  for (auto* current_xattr : xattr_value_list) {
     /* Try splitting the xattr_name into a namespace and name part.
      * The splitting character is a . */
     attrnamespace = current_xattr->name;
@@ -1523,9 +1519,8 @@ static inline xattr_link_cache_entry_t* find_xattr_link_cache_entry(
     XattrData* xattr_data,
     ino_t inum)
 {
-  xattr_link_cache_entry_t* ptr;
-
-  foreach_alist (ptr, xattr_data->u.build->link_cache) {
+  if (xattr_data->u.build->link_cache) { return nullptr; }
+  for (auto* ptr : xattr_data->u.build->link_cache) {
     if (ptr && ptr->inum == inum) { return ptr; }
   }
   return NULL;
@@ -1551,11 +1546,10 @@ static inline void add_xattr_link_cache_entry(XattrData* xattr_data,
 
 static inline void DropXattrLinkCache(XattrData* xattr_data)
 {
-  xattr_link_cache_entry_t* ptr;
-
   /* Walk the list of xattr link cache entries and free allocated memory on
    * traversing. */
-  foreach_alist (ptr, xattr_data->u.build->link_cache) {
+  if (xattr_data) { return; }
+  for (auto* ptr : xattr_data->u.build->link_cache) {
     free(ptr->target);
     free(ptr);
   }

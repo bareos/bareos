@@ -391,8 +391,6 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
   bool ok = false;
-  DirectorStorage* store = nullptr;
-  const char* device_name = nullptr;
   alist<DirectorStorage*>* dirstore;
   DeviceControlRecord* dcr = jcr->sd_impl->dcr;
 
@@ -429,10 +427,10 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
       if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) { continue; }
 
       Dmsg1(debuglevel, "vol=%s OK for this job\n", vol->vol_name);
-      foreach_alist (store, dirstore) {
+      for (auto* store : dirstore) {
         int status;
         rctx.store = store;
-        foreach_alist (device_name, store->device) {
+        for (auto* device_name : store->device) {
           // Found a device, try to use it
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
@@ -492,9 +490,9 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
    *
    * For each storage device that the user specified, we
    * search and see if there is a resource for that device. */
-  foreach_alist (store, dirstore) {
+  for (auto* store : dirstore) {
     rctx.store = store;
-    foreach_alist (device_name, store->device) {
+    for (auto* device_name : store->device) {
       int status;
       rctx.device_name = device_name;
       status = SearchResForDevice(rctx);
@@ -534,12 +532,13 @@ int SearchResForDevice(ReserveContext& rctx)
     // Find resource, and make sure we were able to open it
     if (bstrcmp(rctx.device_name, changer->resource_name_)) {
       // Try each device_resource in this AutoChanger
-      foreach_alist (rctx.device_resource, changer->device_resources) {
+      for (auto* device_resource : changer->device_resources) {
+        rctx.device_resource = device_resource;
         Dmsg1(debuglevel, "Try changer device %s\n",
-              rctx.device_resource->resource_name_);
-        if (!rctx.device_resource->autoselect) {
+              device_resource->resource_name_);
+        if (!device_resource->autoselect) {
           Dmsg1(100, "Device %s not autoselect skipped.\n",
-                rctx.device_resource->resource_name_);
+                device_resource->resource_name_);
           continue; /* Device is not available */
         }
         status = ReserveDevice(rctx);
@@ -550,13 +549,14 @@ int SearchResForDevice(ReserveContext& rctx)
         // Debug code
         if (rctx.store->append == SD_APPEND) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
-                rctx.device_resource->resource_name_,
+                device_resource->resource_name_,
                 rctx.jcr->sd_impl->dcr->dev->NumReserved());
         } else {
           Dmsg2(debuglevel, "Device %s reserved=%d for read.\n",
-                rctx.device_resource->resource_name_,
+                device_resource->resource_name_,
                 rctx.jcr->sd_impl->read_dcr->dev->NumReserved());
         }
+
         return status;
       }
     }

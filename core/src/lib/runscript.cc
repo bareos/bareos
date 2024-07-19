@@ -62,7 +62,6 @@ static bool ScriptDirAllowed(JobControlRecord*,
                              RunScript* script,
                              alist<const char*>* allowed_script_dirs)
 {
-  const char* allowed_script_dir = nullptr;
   bool allowed = false;
   PoolMem script_dir(PM_FNAME);
 
@@ -86,7 +85,7 @@ static bool ScriptDirAllowed(JobControlRecord*,
 
   /* Match the path the script is in against the list of allowed script
    * directories. */
-  foreach_alist (allowed_script_dir, allowed_script_dirs) {
+  for (auto* allowed_script_dir : allowed_script_dirs) {
     if (Bstrcasecmp(script_dir.c_str(), allowed_script_dir)) {
       allowed = true;
       break;
@@ -105,7 +104,6 @@ int RunScripts(JobControlRecord* jcr,
                const char* label,
                alist<const char*>* allowed_script_dirs)
 {
-  RunScript* script = nullptr;
   bool runit;
   int when;
 
@@ -120,12 +118,12 @@ int RunScripts(JobControlRecord* jcr,
     when = SCRIPT_After;
   }
 
-  if (runscripts == NULL) {
+  if (!runscripts) {
     Dmsg0(100, "runscript: WARNING RUNSCRIPTS list is NULL\n");
     return 0;
   }
 
-  foreach_alist (script, runscripts) {
+  for (auto* script : runscripts) {
     Dmsg5(200,
           "runscript: try to run (Target=%s, OnSuccess=%i, OnFailure=%i, "
           "CurrentJobStatus=%c, command=%s)\n",
@@ -284,8 +282,7 @@ void FreeRunscripts(alist<RunScript*>* runscripts)
 {
   Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
-  RunScript* r = nullptr;
-  foreach_alist (r, runscripts) { FreeRunscript(r); }
+  for (auto* r : runscripts) { FreeRunscript(r); }
 }
 
 void RunScript::Debug() const
