@@ -201,30 +201,42 @@ template <> struct specifier<std::int8_t> {
   static constexpr const char* value = "%" PRIi8;
 };
 
-template <typename T> auto test_format(T value, std::string_view expected)
+#include <charconv>
+
+template <typename T> void test_format(T value)
 {
-  PoolMem buf;
-  ASSERT_EQ(buf.bsprintf(specifier_v<T>, value), expected.size());
-  EXPECT_EQ(std::string_view{buf.c_str()}, expected);
+  char buffer[100];
+
+  auto res = std::to_chars(std::begin(buffer), std::end(buffer), value);
+
+  ASSERT_EQ(res.ec, std::errc());
+  ASSERT_NE(res.ptr, std::end(buffer));
+  *res.ptr = '\0';
+
+  PoolMem formatted;
+  auto size = formatted.bsprintf(specifier_v<T>, value);
+  ASSERT_GE(size, 0);
+  ASSERT_LT(size, sizeof(buffer));
+
+  EXPECT_STREQ(buffer, formatted.c_str());
 }
 
-template <typename T>
-auto test_limits(std::string_view min, std::string_view max)
+template <typename T> void test_limits()
 {
-  test_format(std::numeric_limits<T>::min(), min);
-  test_format(std::numeric_limits<T>::max(), max);
+  test_format(std::numeric_limits<T>::min());
+  test_format(std::numeric_limits<T>::max());
 }
 
 TEST(bsnprintf, integer_limits)
 {
-  test_limits<std::uint64_t>("0", "18446744073709551615");
-  test_limits<std::int64_t>("-9223372036854775808", "9223372036854775807");
-  test_limits<std::uint32_t>("0", "4294967295");
-  test_limits<std::int32_t>("-2147483648", "2147483647");
-  test_limits<std::uint16_t>("0", "65535");
-  test_limits<std::int16_t>("-32768", "32767");
-  test_limits<std::uint8_t>("0", "255");
-  test_limits<std::int8_t>("-128", "127");
+  test_limits<std::uint64_t>();
+  test_limits<std::int64_t>();
+  test_limits<std::uint32_t>();
+  test_limits<std::int32_t>();
+  test_limits<std::uint16_t>();
+  test_limits<std::int16_t>();
+  test_limits<std::uint8_t>();
+  test_limits<std::int8_t>();
 }
 
 static std::string repeat(char c, std::size_t count)
