@@ -22,6 +22,8 @@ cmake_minimum_required(VERSION 3.17)
 cmake_policy(VERSION 3.17...3.19)
 
 project(bareos NONE)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
@@ -122,7 +124,6 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
   include(BareosCpmPackages)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
