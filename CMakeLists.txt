@@ -197,7 +197,7 @@ endif()
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-  include(BareosCPM)
+  include(BareosCpmPackages)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS
