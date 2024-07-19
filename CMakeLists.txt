@@ -28,6 +28,7 @@ else()
 endif()
 
 project(bareos NONE)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
@@ -196,7 +197,6 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
   include(BareosCpmPackages)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
