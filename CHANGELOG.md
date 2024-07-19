@@ -80,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - freebsd: fix build issues with ports tree 2024Q3 [PR #1883]
 - Improve PythonFdWrapper class [PR #1846]
 - windows: build natively with msvc compiler [PR #1744]
+- alist: fix race condition while iterating [PR #1859]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -211,6 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1850]: https://github.com/bareos/bareos/pull/1850
 [PR #1853]: https://github.com/bareos/bareos/pull/1853
 [PR #1857]: https://github.com/bareos/bareos/pull/1857
+[PR #1859]: https://github.com/bareos/bareos/pull/1859
 [PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
 [PR #1871]: https://github.com/bareos/bareos/pull/1871
