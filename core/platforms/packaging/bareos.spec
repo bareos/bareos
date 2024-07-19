@@ -89,7 +89,7 @@ BuildRequires: fmt-devel
 # RedHat (CentOS, Fedora, RHEL) specific settings
 #
 
-%if 0%{?fedora_version} >= 20
+%if 0%{?fedora} >= 20
 %define glusterfs 1
 %define systemd_support 1
 %endif
