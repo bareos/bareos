@@ -40,7 +40,7 @@ class BPipeHandle {
     }
     return output;
   }
-  void reset_timeout() { TimerChildOperatesProperly(*bpipe->timer_id); }
+  void reset_timeout() { TimerKeepalive(*bpipe->timer_id); }
   bool timed_out() { return bpipe->timer_id && bpipe->timer_id->killed; }
   void close_write()
   {
