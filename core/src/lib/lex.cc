@@ -765,6 +765,10 @@ int LexGetToken(LEX* lf, int expect)
           break;
         }
         if (ch == L_EOL) {
+#if HAVE_WIN32
+          add_str(lf, '\r');
+#endif
+          add_str(lf, '\n');
           esc_next = false;
           break;
         }
