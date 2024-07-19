@@ -765,6 +765,7 @@ int LexGetToken(LEX* lf, int expect)
           break;
         }
         if (ch == L_EOL) {
+          add_str(lf, '\n');
           esc_next = false;
           break;
         }
