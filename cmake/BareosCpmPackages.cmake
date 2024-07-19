@@ -17,13 +17,20 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include(CPM)
-set(CPM_USE_LOCAL_PACKAGES ON)
-if(FETCHCONTENT_FULLY_DISCONNECTED)
-  message(WARNING "Detected FETCHCONTENT_FULLY_DISCONNECTED.")
-  message(WARNING "As this will break fetching, only local packages will be considered!")
+if(NOT DEFINED CPM_USE_LOCAL_PACKAGES AND NOT DEFINED
+                                          ENV{CPM_USE_LOCAL_PACKAGES}
+)
+  set(CPM_USE_LOCAL_PACKAGES ON)
+endif()
+if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
+  message(
+    WARNING
+      " Detected FETCHCONTENT_FULLY_DISCONNECTED is set.\n"
+      " As this will break fetching, only local packages will be considered!"
+  )
   set(CPM_LOCAL_PACKAGES_ONLY ON)
 endif()
+include(CPM)
 
 CPMAddPackage(
   NAME fmt
