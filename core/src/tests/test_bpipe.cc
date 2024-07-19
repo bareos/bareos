@@ -120,15 +120,15 @@ TEST(bpipe, child_operates_properly)
   EXPECT_EQ(ferror(bp->wfd), 0);
   EXPECT_NE(fputs("First String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
-  TimerChildOperatesProperly(*bp->timer_id);
+  TimerKeepalive(*bp->timer_id);
   std::this_thread::sleep_for(1s);
   EXPECT_NE(fputs("Second String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
-  TimerChildOperatesProperly(*bp->timer_id);
+  TimerKeepalive(*bp->timer_id);
   std::this_thread::sleep_for(1s);
   EXPECT_NE(fputs("Third String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
-  TimerChildOperatesProperly(*bp->timer_id);
+  TimerKeepalive(*bp->timer_id);
   EXPECT_FALSE(bp->timer_id->killed);
   EXPECT_EQ(CloseWpipe(bp), 1);
   EXPECT_THAT(bp->wfd, IsNull());
@@ -147,11 +147,11 @@ TEST(bpipe, child_operates_flaky)
   EXPECT_EQ(ferror(bp->wfd), 0);
   EXPECT_NE(fputs("First String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
-  TimerChildOperatesProperly(*bp->timer_id);
+  TimerKeepalive(*bp->timer_id);
   std::this_thread::sleep_for(1s);
   EXPECT_NE(fputs("Second String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
-  TimerChildOperatesProperly(*bp->timer_id);
+  TimerKeepalive(*bp->timer_id);
   std::this_thread::sleep_for(5s);  // here we pretend to hang
   EXPECT_TRUE(bp->timer_id->killed);
   EXPECT_EQ(CloseBpipe(bp), b_errno_signal | 15);
