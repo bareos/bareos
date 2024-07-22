@@ -11,7 +11,7 @@ OS:
     "OpenSSL_1.1":
       TYPE: scripted
       IMAGE: "rhel8"
-      BUILD_SCRIPT: bareos/devtools/build-rpm.sh --ulc
+      BUILD_SCRIPT: CD/rpm/build-ulc.sh
       FINISH_SCRIPT: CD/rpm/finish-ulc.sh
       CUSTOM_TEST_IMAGES: [ Rocky-8, Rocky-9, Fedora-37, SLE-15_sp6 ]
       ARCH:
@@ -20,7 +20,7 @@ OS:
     "OpenSSL_3.0":
       TYPE: scripted
       IMAGE: "rhel9"
-      BUILD_SCRIPT: bareos/devtools/build-rpm.sh --ulc
+      BUILD_SCRIPT: CD/rpm/build-ulc.sh
       FINISH_SCRIPT: CD/rpm/finish-ulc.sh
       CUSTOM_TEST_IMAGES: [ Rocky-9, Fedora-40, SLE-15_sp6, Mageia-9 ]
       ARCH:
