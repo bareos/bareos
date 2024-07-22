@@ -23,6 +23,24 @@ set -e
 set -x
 shopt -s nullglob
 
+pkg=bareos
+while [ "${1:-}" ]; do
+  case "$1" in
+    --ulc)
+      pkg=bareos-universal-client
+      ;;
+    --)
+      shift
+      break # everything else will be passed to rpmbuild
+      ;;
+    *)
+      echo "Unknown option '$1', to pass options to rpmbuild, add '--' as a separator"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
 if [ -t ${BAREOS_VERSION:+x} ]; then
   BAREOS_VERSION="$(cmake -P get_version.cmake | sed -e 's,^-- ,,')"
 fi
@@ -40,7 +58,8 @@ export CCACHE_BASEDIR CCACHE_SLOPPINESS
 # Make sure we use the default generator
 unset CMAKE_GENERATOR
 
-spec="core/platforms/packaging/bareos.spec"
+
+: "${spec:=core/platforms/packaging/$pkg.spec}"
 
 rpmdev-bumpspec \
   --comment="- See https://docs.bareos.org/release-notes/" \
