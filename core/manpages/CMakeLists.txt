@@ -18,7 +18,6 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-
 set(MAN8 bareos-fd.8 btraceback.8)
 
 if(NOT client-only)

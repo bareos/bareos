@@ -29,7 +29,7 @@ message(STATUS "installing systemd files to  ${SYSTEMD_UNITDIR}")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-fd.service"
         DESTINATION ${SYSTEMD_UNITDIR}
 )
-if (NOT client-only)
+if(NOT client-only)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-sd.service"
           DESTINATION ${SYSTEMD_UNITDIR}
   )

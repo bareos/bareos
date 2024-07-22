@@ -33,6 +33,6 @@ if(HAVE_WIN32)
   endif()
 endif()
 
-if (ENABLE_PYTHON)
+if(ENABLE_PYTHON)
   add_subdirectory(python)
 endif()
