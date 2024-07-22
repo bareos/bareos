@@ -1,4 +1,3 @@
 debug/aarch64/bareos-debugsource
 debug/aarch64/bareos-universal-client-debuginfo
-src/bareos
 aarch64/bareos-universal-client
