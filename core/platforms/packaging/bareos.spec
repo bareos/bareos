@@ -61,7 +61,7 @@ BuildRequires: rpcgen
 BuildRequires: libtirpc-devel
 %endif
 
-%if 0%{?fedora} || 0%{?suse_version}
+%if 0%{?fedora} || 0%{?suse_version} >= 1500
 BuildRequires: fmt-devel
 %endif
 
