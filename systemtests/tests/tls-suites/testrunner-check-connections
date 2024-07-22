@@ -37,6 +37,9 @@ export TestName
 #shellcheck source=functions
 . functions
 
+# check if at least one check is ok
+no_test_was_ok=true
+
 function check_tls()
 {
   output=$(echo "exit" | sbin/${CMAKE_CONFIG_TYPE}/bconsole-tls-suites -c etc/bareos/"$1")
@@ -49,21 +52,28 @@ function check_tls()
 
 function test_con()
 {
-	response=$(check_tls bconsole-"$1".conf)
-	cipher=$(echo "$response" | cut -d' ' -f1)
-	tls=$(echo "$response" | cut -d' ' -f2 | tr -d '\r')
+  if ! openssl ciphers | grep -q "$1"; then
+    echo "$1: ***NOT IN 'openssl ciphers' skipping***"
 
-	if ! [ "$tls" = "TLSv1.3" ]; then
-	    echo "expected 'TLSv1.3' got '$tls'"
-	    exit 1
-	fi
+  else
+    response=$(check_tls bconsole-"$1".conf)
+    cipher=$(echo "$response" | cut -d' ' -f1)
+    tls=$(echo "$response" | cut -d' ' -f2 | tr -d '\r')
 
-	if ! [ "$cipher" = "$1" ]; then
-	    echo "expected '$1' got '$cipher'"
-	    exit 2
-	fi
+    if ! [ "$tls" = "TLSv1.3" ]; then
+        echo "expected 'TLSv1.3' got '$tls'"
+        exit 1
+    fi
 
-	echo "$1: ok"
+    if ! [ "$cipher" = "$1" ]; then
+        echo "expected '$1' got '$cipher'"
+        exit 2
+    fi
+
+    no_test_was_ok=false
+    echo "$1: ok"
+
+  fi
 }
 
 start_test
@@ -72,10 +82,13 @@ start_test
 #test_con TLS_AES_256_GCM_SHA384
 test_con TLS_CHACHA20_POLY1305_SHA256
 test_con TLS_AES_128_GCM_SHA256
+test_con TLS_AES_128_CCM_8_SHA256
 test_con TLS_AES_128_CCM_SHA256
 
-if (openssl ciphers | grep TLS_AES_128_CCM_8_SHA256); then
-  test_con TLS_AES_128_CCM_8_SHA256
+# make sure at least one check was successful
+if [ "$no_test_was_ok" = "true" ]; then
+  echo "all cipher checks failed!"
+  exit 4
 fi
 
 end_test

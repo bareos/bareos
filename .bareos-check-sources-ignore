@@ -1,4 +1,5 @@
 contrib
+cmake/CPM.cmake
 core/src/lmdb
 core/src/fastlz
 core/src/ndmp/*.c

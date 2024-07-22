@@ -28,6 +28,7 @@ else()
 endif()
 
 project(bareos NONE)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
@@ -102,7 +103,6 @@ add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
-
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
@@ -112,7 +112,6 @@ include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
-
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -198,6 +197,7 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
+  include(BareosCpmPackages)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS
