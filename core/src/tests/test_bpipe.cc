@@ -51,6 +51,14 @@ class SignalCatcher {
   int num_events() const { return events[sig_num]; }
 };
 
+/* wait up to timeout seconds for process to be killed */
+static void wait_kill(btimer_t* timer, std::chrono::milliseconds timeout) {
+  using namespace std::chrono_literals;
+  const auto end_time = std::chrono::steady_clock::now() + timeout;
+  while(!timer->killed && end_time > std::chrono::steady_clock::now()) {
+    std::this_thread::sleep_for(200ms);
+  }
+}
 
 /* Run a command with exit code == 0 */
 TEST(bpipe, success)
@@ -99,11 +107,14 @@ TEST(bpipe, simple_write)
 TEST(bpipe, timeout)
 {
   using namespace std::chrono_literals;
-  Bpipe* bp = OpenBpipe("cat", 1, "r");
+  // even though we don't intend to write, we have to attach a pipe to our
+  // childs stdin, otherwise it will inherit ours which might be closed and
+  // would make `cat` exit immediately.
+  Bpipe* bp = OpenBpipe("cat", 1, "rw");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->timer_id, NotNull());
   ASSERT_FALSE(bp->timer_id->killed);
-  std::this_thread::sleep_for(2s);
+  wait_kill(bp->timer_id, 30s);
   ASSERT_TRUE(bp->timer_id->killed);
   EXPECT_EQ(CloseBpipe(bp), b_errno_signal | 15);
 }
@@ -121,12 +132,20 @@ TEST(bpipe, child_operates_properly)
   EXPECT_NE(fputs("First String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(500ms);
   EXPECT_NE(fputs("Second String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(500ms);
   EXPECT_NE(fputs("Third String\n", bp->wfd), 0);
+  EXPECT_EQ(fflush(bp->wfd), 0);
+  TimerKeepalive(*bp->timer_id);
+  std::this_thread::sleep_for(500ms);
+  EXPECT_NE(fputs("Fourth String\n", bp->wfd), 0);
+  EXPECT_EQ(fflush(bp->wfd), 0);
+  TimerKeepalive(*bp->timer_id);
+  std::this_thread::sleep_for(500ms);
+  EXPECT_NE(fputs("Fifth String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
   EXPECT_FALSE(bp->timer_id->killed);
@@ -148,11 +167,15 @@ TEST(bpipe, child_operates_flaky)
   EXPECT_NE(fputs("First String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(500ms);
   EXPECT_NE(fputs("Second String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(5s);  // here we pretend to hang
+  std::this_thread::sleep_for(500ms);
+  EXPECT_NE(fputs("Third String\n", bp->wfd), 0);
+  EXPECT_EQ(fflush(bp->wfd), 0);
+  TimerKeepalive(*bp->timer_id);
+  wait_kill(bp->timer_id, 30s); // here we pretend to hang
   EXPECT_TRUE(bp->timer_id->killed);
   EXPECT_EQ(CloseBpipe(bp), b_errno_signal | 15);
 }
@@ -180,9 +203,12 @@ TEST(bpipe, stalled_read)
 {
   using namespace std::chrono_literals;
   char buffer[1024];
-  Bpipe* bp = OpenBpipe("cat", 1, "r");
+  // even though we don't intend to write, we have to attach a pipe to our
+  // childs stdin, otherwise it will inherit ours which might be closed and
+  // would make `cat` exit immediately.
+  Bpipe* bp = OpenBpipe("cat", 1, "rw");
   ASSERT_THAT(bp, NotNull());
-  ASSERT_THAT(bp->wfd, IsNull());
+  ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, NotNull());
   EXPECT_EQ(ferror(bp->rfd), 0);
   EXPECT_THAT(fgets(buffer, sizeof(buffer), bp->rfd), IsNull());
