@@ -53,6 +53,21 @@ CPMAddPackage(
 )
 
 CPMAddPackage(
+  NAME GSL
+  VERSION "4.0.0"
+  GITHUB_REPOSITORY "microsoft/GSL"
+  EXCLUDE_FROM_ALL
+)
+
+CPMAddPackage(
+  NAME tl-expected
+  VERSION "1.1.0"
+  GITHUB_REPOSITORY "TartanLlama/expected"
+  EXCLUDE_FROM_ALL
+  OPTIONS "EXPECTED_BUILD_PACKAGE OFF" "EXPECTED_BUILD_TESTS OFF"
+)
+
+CPMAddPackage(
   NAME utf8cpp
   VERSION 2.3.4
   GITHUB_REPOSITORY nemtrif/utfcpp
