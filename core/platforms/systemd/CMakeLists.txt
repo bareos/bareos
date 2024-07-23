@@ -26,12 +26,14 @@ bareos_configure_file(
 message(STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE})
 message(STATUS "installing systemd files to  ${SYSTEMD_UNITDIR}")
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-sd.service"
-        DESTINATION ${SYSTEMD_UNITDIR}
-)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-fd.service"
         DESTINATION ${SYSTEMD_UNITDIR}
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-dir.service"
-        DESTINATION ${SYSTEMD_UNITDIR}
-)
+if(NOT client-only)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-sd.service"
+          DESTINATION ${SYSTEMD_UNITDIR}
+  )
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-dir.service"
+          DESTINATION ${SYSTEMD_UNITDIR}
+  )
+endif()

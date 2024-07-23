@@ -23,15 +23,49 @@ set -e
 set -x
 shopt -s nullglob
 
+cleanup_paths=()
+at_exit() {
+  if [ "${#cleanup_paths[@]}" -gt 0 ]; then
+    rm -rf "${cleanup_paths[@]}"
+  fi
+}
+trap at_exit EXIT
+
+pkg=bareos
+use_tarball=0
+
+while [ "${1:-}" ]; do
+  case "$1" in
+    --ulc)
+      pkg=bareos-universal-client
+      ;;
+    --tarball)
+      use_tarball=1
+      tarball_opts=()
+      ;;
+    --fast-tarball)
+      use_tarball=1
+      tarball_opts=(--fast)
+      ;;
+    --)
+      shift
+      break # everything else will be passed to rpmbuild
+      ;;
+    *)
+      echo "Unknown option '$1', to pass options to rpmbuild, add '--' as a separator"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
 if [ -t ${BAREOS_VERSION:+x} ]; then
   BAREOS_VERSION="$(cmake -P get_version.cmake | sed -e 's,^-- ,,')"
 fi
 
 RPMDIR="$(rpm --eval "%{_rpmdir}")"
 BUILDDIR="$(rpm --eval "%{_builddir}")"
-for d in $RPMDIR $BUILDDIR ; do
-      [ ! -d "$d" ] && mkdir -p "$d"
-done
+mkdir -p "$RPMDIR" "$BUILDDIR"
 
 CCACHE_BASEDIR="$(pwd)"
 CCACHE_SLOPPINESS="file_macro"
@@ -40,7 +74,27 @@ export CCACHE_BASEDIR CCACHE_SLOPPINESS
 # Make sure we use the default generator
 unset CMAKE_GENERATOR
 
-spec="core/platforms/packaging/bareos.spec"
+
+: "${spec:=core/platforms/packaging/$pkg.spec}"
+spec="$(mktemp --suffix=.spec)"
+cleanup_paths+=("$spec")
+cat "core/platforms/packaging/$pkg.spec" >"$spec"
+
+rpmbuild_opts=()
+if [ $use_tarball -eq 1 ]; then
+  rpm_sourcedir="$(mktemp -d)"
+  cleanup_paths+=("$rpm_sourcedir")
+  devtools/dist-tarball.sh "${tarball_opts[@]}" "$rpm_sourcedir"
+  rpmbuild_opts+=("--define=_sourcedir $rpm_sourcedir")
+  sed -i -e '/Source0: %{name}-%{version}.tar.gz/s/gz$/xz/' "$spec"
+
+else
+  rpmbuild_opts+=(--build-in-place)
+fi
+
+if rpm -q bareos-vmware-vix-disklib-devel; then
+  rpmbuild_opts+=("--define=vmware 1")
+fi
 
 rpmdev-bumpspec \
   --comment="- See https://docs.bareos.org/release-notes/" \
@@ -48,8 +102,4 @@ rpmdev-bumpspec \
   --new="${BAREOS_VERSION}-${BUILD_ID:-1}%{?dist}" \
   "${spec}"
 
-opts=()
-if rpm -q bareos-vmware-vix-disklib-devel; then
-  opts+=("--define=vmware 1")
-fi
-rpmbuild -bb --build-in-place --noclean "${opts[@]}" "$@" "${spec}"
+rpmbuild -bb --noclean "${rpmbuild_opts[@]}" "$@" "${spec}"

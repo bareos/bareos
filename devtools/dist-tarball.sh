@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -80,6 +80,16 @@ if ! xz="$(command -v xz)"; then
   exit 2
 fi
 
+if [ "${1:-}" = "--fast" ]; then
+  xz_opts=(-0)
+  shift
+elif [ "${1:-}" = "--best" ]; then
+  xz_opts=(-9)
+  shift
+else
+  xz_opts=(-6)
+fi
+
 # The directory we're going to pack up
 topdir="$(dirname "$0")/.."
 
@@ -130,7 +140,7 @@ fi
 "$sort" -u -z | \
 add_prefix | \
 "$tar" "${args[@]}" -cf - --files-from - | \
-"$xz" --threads=0 -c -6 > "${archive_file}"
+"$xz" --threads=0 -c "${xz_opts[@]}" > "${archive_file}"
 
 echo -n "Wrote tarball: "
 "${list_file_cmd[@]}" "${archive_file}"

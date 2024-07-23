@@ -36,35 +36,51 @@ bareos_configure_file(
 )
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos
-        ${CMAKE_CURRENT_BINARY_DIR}/btraceback
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/btraceback
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
   DESTINATION "${sbindir}"
 )
+if(NOT client-only)
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+    DESTINATION "${sbindir}"
+  )
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-fd
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+    DESTINATION "${scriptdir}"
+    COMPONENT filedaemon
+  )
 
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+    DESTINATION "${scriptdir}"
+  )
+endif()
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-fd
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-              WORLD_READ WORLD_EXECUTE
-  DESTINATION "${scriptdir}"
-  COMPONENT filedaemon
-)
-
-install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos
-        ${CMAKE_CURRENT_BINARY_DIR}/bareos-config
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-              WORLD_READ WORLD_EXECUTE
-  DESTINATION "${scriptdir}"
-)
-
-install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-config-lib.sh bareos-ctl-funcs
-        btraceback.gdb btraceback.dbx btraceback.mdb
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-config-lib.sh btraceback.gdb
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION "${scriptdir}"
 )
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-config
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+  DESTINATION "${scriptdir}"
+)
+if(NOT client-only)
+  install(
+    FILES bareos-ctl-funcs btraceback.dbx btraceback.mdb
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+    DESTINATION "${scriptdir}"
+  )
+endif()
 if(TARGET python3-fd)
   install(
     FILES bareos_encode_string.py

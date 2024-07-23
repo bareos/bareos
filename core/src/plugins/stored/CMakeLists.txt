@@ -33,7 +33,9 @@ if(HAVE_WIN32)
   endif()
 endif()
 
-add_subdirectory(python)
+if(ENABLE_PYTHON)
+  add_subdirectory(python)
+endif()
 
 add_library(autoxflate-sd MODULE autoxflate/autoxflate-sd.cc)
 set_target_properties(autoxflate-sd PROPERTIES PREFIX "")

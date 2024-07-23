@@ -45,7 +45,9 @@ endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-add_subdirectory(python)
+if(ENABLE_PYTHON)
+  add_subdirectory(python)
+endif()
 
 add_library(bpipe-fd MODULE bpipe/bpipe-fd.cc)
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
