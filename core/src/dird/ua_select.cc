@@ -1700,6 +1700,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         InsertSelectedJobid(selected_jobids, jcr->JobId);
         ua->SendMsg(T_("Selected Job %d for cancelling\n"), jcr->JobId);
       }
+      endeach_jcr(jcr);
 
       if (selected_jobids->empty()) {
         ua->SendMsg(T_("No Jobs selected.\n"));
