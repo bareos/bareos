@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -49,7 +49,7 @@ info "Updating ${db_name} tables"
 
 while true
 do
-    DBVERSION=$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;")
+    DBVERSION=$(PGOPTIONS='--client-min-messages=warning' psql --no-psqlrc -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;" | tr -d '\r')
     if [ -z "${DBVERSION}" ]; then
         error "Unable to determine version of Bareos database"
         exit 1
@@ -106,7 +106,9 @@ do
 
    info "Upgrading database schema from version ${start_version} to ${end_version}"
    retval=0
-   PAGER="" PGOPTIONS="--client-min-messages=warning" psql -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
+   PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
+
+
    rm -f "${temp_sql_schema}"
 
    if [ ${retval} -ne 0 ]; then
@@ -117,7 +119,7 @@ do
    # return value of psql is does says OK when transaction was rolled back.
    # So we verify that the version was set to what we expect.
    #
-   DBVERSION_AFTER=$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;")
+   DBVERSION_AFTER=$(PGOPTIONS='--client-min-messages=warning' psql --no-psqlrc -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;" | tr -d '\r')
    if [ "${DBVERSION_AFTER}" -ne "${end_version}" ]; then
       error "Failed to upgrade database schema from version ${DBVERSION} to ${end_version}, is still on ${DBVERSION_AFTER}"
       exit 1
