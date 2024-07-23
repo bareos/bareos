@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - windows: build natively with msvc compiler [PR #1744]
 - alist: fix race condition while iterating [PR #1859]
 - build: enable building for Fedora40 and Ubuntu 24.04 [PR #1815]
+- ULC: build the universal linux client also for rpm based OS. [PR #1824]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -206,6 +207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1810]: https://github.com/bareos/bareos/pull/1810
 [PR #1815]: https://github.com/bareos/bareos/pull/1815
 [PR #1821]: https://github.com/bareos/bareos/pull/1821
+[PR #1824]: https://github.com/bareos/bareos/pull/1824
 [PR #1829]: https://github.com/bareos/bareos/pull/1829
 [PR #1835]: https://github.com/bareos/bareos/pull/1835
 [PR #1840]: https://github.com/bareos/bareos/pull/1840
