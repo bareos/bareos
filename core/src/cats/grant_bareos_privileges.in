@@ -53,9 +53,9 @@ fi
 
 retval=0
 if [[ "$(uname -s)" =~ _NT ]]; then
-  PGOPTIONS='--client-min-messages=warning' psql -f "$(cygpath -w ${temp_sql_grants})" -d "${db_name}" || retval=$?
+  PGOPTIONS='--client-min-messages=warning' psql --no-psqlrc -f "$(cygpath -w ${temp_sql_grants})" -d "${db_name}" || retval=$?
 else
-  PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_grants}" -d "${db_name}" || retval=$?
+  PGOPTIONS='--client-min-messages=warning' psql --no-psqlrc -f "${temp_sql_grants}" -d "${db_name}" || retval=$?
 fi
 if [ ${retval} -eq 0 ]; then
    info "Privileges for user ${db_user} granted ON database ${db_name}."
