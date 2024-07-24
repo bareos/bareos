@@ -84,6 +84,7 @@ class ordered_circbuf {
   int flush();
   bool full() { return size_ == (capacity_ - reserved_); }
   bool empty() { return size_ == 0; }
+  bool empty_with_no_reserve() { return size_ + reserved_ == 0; }
   bool IsFlushing() { return flush_; }
   int capacity() const { return capacity_; }
 };
