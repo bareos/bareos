@@ -689,7 +689,7 @@ bool StopConnectToDirectorThreads(bool wait)
     while (!client_initiated_connection_threads->empty()) {
       thread = (pthread_t*)client_initiated_connection_threads->remove(0);
       if (thread) {
-        pthread_kill(*thread, TIMEOUT_SIGNAL);
+        pthread_kill(*thread, kTimeoutSignal);
         if (wait) {
           if (pthread_join(*thread, nullptr) != 0) { result = false; }
         }
@@ -755,7 +755,7 @@ static bool CancelCmd(JobControlRecord* jcr)
           cjcr->store_bsock->SetTimedOut();
           cjcr->store_bsock->SetTerminated();
         }
-        cjcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+        cjcr->MyThreadSendSignal(kTimeoutSignal);
         cjcr->CancelFinished();
       }
       FreeJcr(cjcr);

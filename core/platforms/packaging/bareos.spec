@@ -322,6 +322,12 @@ Requires:   %{name}-common  = %{version}
 Requires:   %{name}-storage = %{version}
 %endif
 
+%package    storage-dplcompat
+Summary:    Object Storage support for the Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
+
 %if 0%{?glusterfs}
 %package    storage-glusterfs
 Summary:    GlusterFS support for the Bareos Storage daemon
@@ -755,6 +761,11 @@ This package contains the Storage Daemon tape support
 
 This package contains the Storage backend for Object Storage (through libdroplet).
 %endif
+
+%description storage-dplcompat
+%{dscr}
+
+This package contains the Storage backend for Object Storage (via scripts).
 
 %if 0%{?glusterfs}
 %description storage-glusterfs
@@ -1237,6 +1248,13 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/
 %attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/*.example
 %endif
+
+%files storage-dplcompat
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-dplcompat*.so
+%{script_dir}/s3cmd-wrapper.sh
+#%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example
+#%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/S3_ObjectStorage.conf.example
 
 %if 0%{?glusterfs}
 %files storage-glusterfs

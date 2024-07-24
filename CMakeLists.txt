@@ -112,6 +112,7 @@ include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
+
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"

@@ -33,7 +33,6 @@
 #include "lib/get_tls_psk_by_fqname_callback.h"
 #include "lib/bstringlist.h"
 #include "lib/bsock.h"
-#include "lib/watchdog.h"
 #include "include/compiler_macro.h"
 
 #include <openssl/err.h>

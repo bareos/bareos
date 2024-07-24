@@ -46,7 +46,6 @@
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
-#include "lib/watchdog.h"
 
 namespace directordaemon {
 
@@ -657,9 +656,9 @@ bool CancelStorageDaemonJob(UaContext* ua,
 
   if (!interactive) { jcr->dir_impl->sd_canceled = true; }
 
-  SdMsgThreadSendSignal(jcr, TIMEOUT_SIGNAL);
+  SdMsgThreadSendSignal(jcr, kTimeoutSignal);
 
-  if (interactive) { jcr->MyThreadSendSignal(TIMEOUT_SIGNAL); }
+  if (interactive) { jcr->MyThreadSendSignal(kTimeoutSignal); }
 
   return true;
 }
