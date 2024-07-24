@@ -214,6 +214,7 @@ void* ordered_circbuf::dequeue(bool reserve_slot,
   if (!item) { goto bail_out; }
 
   data_->remove(item);
+  if (reserve_slot) { reserved_++; }
   size_--;
 
   // Let all waiting producers know there is room.
@@ -222,9 +223,6 @@ void* ordered_circbuf::dequeue(bool reserve_slot,
   // Extract the payload and drop the placeholder.
   data = item->data;
   free(item);
-
-  // Increase the reserved slot count when we are asked to reserve the slot.
-  if (reserve_slot) { reserved_++; }
 
 bail_out:
   pthread_mutex_unlock(&lock_);
