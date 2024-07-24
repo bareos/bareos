@@ -21,6 +21,8 @@
 #ifndef BAREOS_STORED_ACQUIRE_H_
 #define BAREOS_STORED_ACQUIRE_H_
 
+class JobControlRecord;
+
 namespace storagedaemon {
 
 class Device;

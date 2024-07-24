@@ -1056,7 +1056,7 @@ bool ChunkedDevice::is_written()
   }
 
   if (io_threads_ > 0 && cb_) {
-    if (!cb_->empty()) {
+    if (!cb_->empty_with_no_reserve()) {
       chunk_io_request* request;
 
       /* Peek on the ordered circular queue if there are any pending IO-requests
