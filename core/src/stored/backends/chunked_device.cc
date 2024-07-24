@@ -1073,6 +1073,8 @@ bool ChunkedDevice::is_written()
               current_volname_);
         return false;
       }
+      Dmsg0(100, "storage is pending, as there are queued write requests for previous volumes.\n");
+      return false;
     }
   }
 
