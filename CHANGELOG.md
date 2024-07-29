@@ -85,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ULC: build the universal linux client also for rpm based OS. [PR #1824]
 - consolidate: disable vfull duplicate job check [PR #1739]
 - dird: disallow running always incremental virtual full jobs with empty jobid list [PR #1738]
+- msgchan: fix deadlock [PR #1858]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -220,6 +221,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1850]: https://github.com/bareos/bareos/pull/1850
 [PR #1853]: https://github.com/bareos/bareos/pull/1853
 [PR #1857]: https://github.com/bareos/bareos/pull/1857
+[PR #1858]: https://github.com/bareos/bareos/pull/1858
 [PR #1859]: https://github.com/bareos/bareos/pull/1859
 [PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
