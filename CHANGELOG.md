@@ -84,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - build: enable building for Fedora40 and Ubuntu 24.04 [PR #1815]
 - ULC: build the universal linux client also for rpm based OS. [PR #1824]
 - consolidate: disable vfull duplicate job check [PR #1739]
+- dird: disallow running always incremental virtual full jobs with empty jobid list [PR #1738]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -182,6 +183,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1727]: https://github.com/bareos/bareos/pull/1727
 [PR #1728]: https://github.com/bareos/bareos/pull/1728
 [PR #1732]: https://github.com/bareos/bareos/pull/1732
+[PR #1738]: https://github.com/bareos/bareos/pull/1738
 [PR #1739]: https://github.com/bareos/bareos/pull/1739
 [PR #1740]: https://github.com/bareos/bareos/pull/1740
 [PR #1744]: https://github.com/bareos/bareos/pull/1744
