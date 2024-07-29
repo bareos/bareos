@@ -379,11 +379,6 @@ int DoRunCmd(UaContext* ua, const char*)
 
   if (!ScanCommandLineArguments(ua, rc)) { return 0; }
 
-  if (FindArg(ua, NT_("fdcalled")) > 0) {
-    jcr->file_bsock = ua->UA_sock->clone();
-    ua->quit = true;
-  }
-
   /* Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
    * before returning. */
   if (!jcr) {

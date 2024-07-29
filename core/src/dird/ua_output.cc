@@ -346,60 +346,52 @@ bool list_cmd(UaContext* ua, const char* cmd)
 
 static int GetJobidFromCmdline(UaContext* ua)
 {
-  int jobid;
-  JobDbRecord jr;
-  ClientDbRecord cr;
+  JobDbRecord jr{};
 
-  if (const char* ujobid = GetArgValue(ua, NT_("ujobid"))) {
-    bstrncpy(jr.Job, ujobid, MAX_NAME_LENGTH);
-    jr.JobId = 0;
-    if (ua->db->GetJobRecord(ua->jcr, &jr)) {
-      jobid = jr.JobId;
-    } else {
-      return -1;
-    }
-  } else if (const char* jobid_str = GetArgValue(ua, NT_("jobid"))) {
-    jr.JobId = str_to_int64(jobid_str);
-  } else {
-    jobid = 0;
-    goto bail_out;
-  }
-
-  if (ua->db->GetJobRecord(ua->jcr, &jr)) {
-    jobid = jr.JobId;
-  } else {
-    Dmsg1(200, "GetJobidFromCmdline: Failed to get job record for JobId %d\n",
+  if (const char* jobname = GetArgValue(ua, NT_("ujobid"))) {
+    bstrncpy(jr.Job, jobname, MAX_NAME_LENGTH);
+    Dmsg1(200, "GetJobidFromCmdline: Selecting ujobid %s from cmdline.\n",
+          jr.Job);
+  } else if (const char* jobid = GetArgValue(ua, NT_("jobid"))) {
+    jr.JobId = str_to_int64(jobid);
+    Dmsg1(200, "GetJobidFromCmdline: Selecting jobid %d from cmdline.\n",
           jr.JobId);
-    jobid = -1;
-    goto bail_out;
+  } else {
+    Dmsg0(200, "GetJobidFromCmdline: No jobid specified on cmdline.\n");
+    return 0;
   }
+
+  if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+    Dmsg0(200, "GetJobidFromCmdline: Failed to get job record.\n");
+    return -1;
+  }
+
+  Dmsg1(200, "GetJobidFromCmdline: Found job record with jobid %d.\n",
+        jr.JobId);
 
   if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
     Dmsg1(200, "GetJobidFromCmdline: No access to Job %s\n", jr.Name);
-    jobid = -1;
-    goto bail_out;
+    return -1;
   }
 
   if (jr.ClientId) {
+    ClientDbRecord cr{};
     cr.ClientId = jr.ClientId;
-    if (ua->db->GetClientRecord(ua->jcr, &cr)) {
-      if (!ua->AclAccessOk(Client_ACL, cr.Name, true)) {
-        Dmsg1(200, "GetJobidFromCmdline: No access to Client %s\n", cr.Name);
-        jobid = -1;
-        goto bail_out;
-      }
-    } else {
+    if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
       Dmsg1(
           200,
           "GetJobidFromCmdline: Failed to get client record for ClientId %d\n",
           jr.ClientId);
-      jobid = -1;
-      goto bail_out;
+      return -1;
+    }
+
+    if (!ua->AclAccessOk(Client_ACL, cr.Name, true)) {
+      Dmsg1(200, "GetJobidFromCmdline: No access to Client %s\n", cr.Name);
+      return -1;
     }
   }
 
-bail_out:
-  return jobid;
+  return jr.JobId;
 }
 
 /**
@@ -665,8 +657,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
   ListCmdOptions optionslist(ua);
 
-  int jobid{0};
-
   // Select what to do based on the first argument.
   if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
       || ((Bstrcasecmp(ua->argk[1], NT_("job"))
@@ -728,7 +718,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     /* List JOBID=nn
      * List UJOBID=xxx */
     if (ua->argv[1]) {
-      jobid = GetJobidFromCmdline(ua);
+      int jobid = GetJobidFromCmdline(ua);
       if (jobid > 0) {
         jr.JobId = jobid;
 
@@ -771,8 +761,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
     // List BASEFILES
-    jobid = GetJobidFromCmdline(ua);
-    if (jobid > 0) {
+    if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
       ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send);
     } else {
       ua->ErrorMsg(
@@ -781,8 +770,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
     // List FILES
-    jobid = GetJobidFromCmdline(ua);
-    if (jobid > 0) {
+    if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
       ua->db->ListFilesForJob(ua->jcr, jobid, ua->send);
     } else {
       ua->ErrorMsg(
@@ -797,7 +785,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       filesetid = str_to_int64(value);
     }
 
-    jobid = GetJobidFromCmdline(ua);
+    int jobid = GetJobidFromCmdline(ua);
     if (jobid > 0 || filesetid > 0) {
       jr.JobId = jobid;
       jr.FileSetId = filesetid;
@@ -823,8 +811,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
     // List JOBMEDIA
-    jobid = GetJobidFromCmdline(ua);
-    if (jobid >= 0) {
+    if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send, llist);
     } else {
       ua->ErrorMsg(
@@ -833,8 +820,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
-    jobid = GetJobidFromCmdline(ua);
-    if (jobid >= 0) {
+    if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(),
                                 optionslist.count, ua->send, llist);
     } else {
@@ -988,8 +974,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobstatistics"))
              || Bstrcasecmp(ua->argk[1], NT_("jobstats"))) {
-    jobid = GetJobidFromCmdline(ua);
-    if (jobid > 0) {
+    if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
       ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
     } else {
       ua->ErrorMsg(T_("no jobid given\n"));
