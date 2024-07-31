@@ -267,7 +267,7 @@ bool TlsOpenSslPrivate::init()
     return false;
   }
 
-  ASSERT(tcp_file_descriptor_);
+  ASSERT(tcp_file_descriptor_ >= 0);  // 0 is a good (socket-)fd
   BIO_set_fd(bio, tcp_file_descriptor_, BIO_NOCLOSE);
 
   SSL_set_bio(openssl_, bio, bio);

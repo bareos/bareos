@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,7 +80,7 @@ class TlsOpenSslPrivate {
   std::string protocol_;
 
   /* cert attributes */
-  int tcp_file_descriptor_{};
+  int tcp_file_descriptor_{kInvalidFiledescriptor};
   std::string ca_certfile_;
   std::string ca_certdir_;
   std::string crlfile_;
