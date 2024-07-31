@@ -37,6 +37,7 @@
 #include "copy_thread.h"
 
 #include <jansson.h>
+#include <cassert>
 
 /*
  * json_array_foreach macro was added in jansson version 2.5
@@ -1327,7 +1328,11 @@ struct vec {
 
   size_t size() const { return count; }
 
-  reference operator[](size_t i) { return data[i]; }
+  reference operator[](size_t i)
+  {
+    assert(i < count);
+    return data[i];
+  }
 
   ~vec()
   {
@@ -1433,12 +1438,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
     changed_len += offset_length;
 
-    if (allocated.size() == current_block) {
-      // All further sectors are unallocated, so we can stop here.
-      break;
-    }
-
-    for (;;) {
+    while (current_block < allocated.size()) {
       auto& block = allocated[current_block];
 
       auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
@@ -1471,6 +1471,11 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
       }
 
       if (start_offset + offset_length <= boffset + blength) { break; }
+    }
+
+    if (allocated.size() == current_block) {
+      // All further sectors are unallocated, so we can stop here.
+      break;
     }
   }
 
