@@ -108,10 +108,10 @@ static void start_bareos_server(std::promise<bool>* promise,
                                 std::string console_name,
                                 std::string console_password,
                                 std::string,
-                                int server_port)
+                                const listening_socket& ls)
 
 {
-  int newsockfd = create_accepted_server_socket(server_port);
+  int newsockfd = accept_socket(ls);
 
   if (newsockfd < 0) { return; }
 
@@ -256,8 +256,6 @@ std::string server_cons_password;
 
 TEST(bsock, auth_works)
 {
-  uint16_t portnumber = create_unique_socket_number();
-
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -272,13 +270,16 @@ TEST(bsock, auth_works)
   cons_dir_config->tls_enable_ = false;
   dir_cons_config->tls_enable_ = false;
 
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST, portnumber);
+                            server_cons_password, HOST, std::ref(*ls));
 
   Dmsg0(10, "connecting to server\n");
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                portnumber));
+                                ls->port));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -287,8 +288,6 @@ TEST(bsock, auth_works)
 
 TEST(bsock, auth_works_with_different_names)
 {
-  uint16_t portnumber = create_unique_socket_number();
-
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -303,13 +302,16 @@ TEST(bsock, auth_works_with_different_names)
   cons_dir_config->tls_enable_ = false;
   dir_cons_config->tls_enable_ = false;
 
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST, portnumber);
+                            server_cons_password, HOST, std::ref(*ls));
 
   Dmsg0(10, "connecting to server\n");
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                portnumber));
+                                ls->port));
 
   server_thread.join();
   EXPECT_TRUE(future.get());
@@ -317,8 +319,6 @@ TEST(bsock, auth_works_with_different_names)
 
 TEST(bsock, auth_fails_with_different_passwords)
 {
-  uint16_t portnumber = create_unique_socket_number();
-
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -333,13 +333,17 @@ TEST(bsock, auth_fails_with_different_passwords)
   cons_dir_config->tls_enable_ = false;
   dir_cons_config->tls_enable_ = false;
 
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST, portnumber);
+                            server_cons_password, HOST, std::ref(*ls));
 
   Dmsg0(10, "connecting to server\n");
   EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                 portnumber));
+                                 ls->port));
+
 
   server_thread.join();
   EXPECT_FALSE(future.get());
@@ -347,8 +351,6 @@ TEST(bsock, auth_fails_with_different_passwords)
 
 TEST(bsock, auth_works_with_tls_cert)
 {
-  uint16_t portnumber = create_unique_socket_number();
-
   std::promise<bool> promise;
   std::future<bool> future = promise.get_future();
 
@@ -363,20 +365,23 @@ TEST(bsock, auth_works_with_tls_cert)
   cons_dir_config->tls_enable_ = true;
   dir_cons_config->tls_enable_ = true;
 
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
   Dmsg0(10, "starting listen thread...\n");
   std::thread server_thread(start_bareos_server, &promise, server_cons_name,
-                            server_cons_password, HOST, portnumber);
+                            server_cons_password, HOST, std::ref(*ls));
 
   Dmsg0(10, "connecting to server\n");
 
 #if CLIENT_AS_A_THREAD
   std::thread client_thread(connect_to_server, client_cons_name,
-                            client_cons_password, HOST, portnumber,
+                            client_cons_password, HOST, ls->port,
                             cons_dir_config.get());
   client_thread.join();
 #else
   EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
-                                portnumber));
+                                ls->port));
 #endif
 
   server_thread.join();
