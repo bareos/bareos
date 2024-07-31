@@ -98,7 +98,7 @@ fi
 
 cat <<END_OF_DATA4 >"$tmp/bconcmds"
 @$out ${tmp}/log4.out
-restore client=bareos-fd fileset=MariaBackupTest yes restorejob=RestoreFile select all done
+restore client=bareos-fd fileset=MariabackupTest yes restorejob=RestoreFile select all done
 wait
 status dir
 wait
