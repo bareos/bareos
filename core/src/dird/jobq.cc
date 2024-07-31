@@ -401,7 +401,8 @@ extern "C" void* jobq_server(void* arg)
       jq->running_jobs->append(je);
 
       // Attach jcr to this thread while we run the job
-      jcr->SetKillable(true);
+      jcr->AttachToThread();
+
       SetJcrInThreadSpecificData(jcr);
       Dmsg1(2300, "Took jobid=%d from ready and appended to run\n", jcr->JobId);
 
@@ -415,7 +416,7 @@ extern "C" void* jobq_server(void* arg)
 
       // Job finished detach from thread
       RemoveJcrFromThreadSpecificData(je->jcr);
-      je->jcr->SetKillable(false);
+      je->jcr->UnattachFromThread();
 
       Dmsg2(2300, "Back from user engine jobid=%d use=%d.\n", jcr->JobId,
             jcr->UseCount());

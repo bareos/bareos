@@ -41,6 +41,7 @@
 #include "include/job_types.h"
 #include "lib/message_queue_item.h"
 #include "lib/alist.h"
+#include "lib/thread_util.h"
 #include "lib/tls_conf.h"
 #include "lib/breg.h"
 #include "lib/dlink.h"
@@ -74,16 +75,37 @@ typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 
 #define endeach_jcr(jcr) JcrWalkEnd(jcr)
 
+struct origin_thread {
+  bool signalable{false};
+  std::optional<pthread_t> thread_id{};
+
+  origin_thread(pthread_t id) : thread_id{id} {}
+
+  origin_thread() = default;
+
+  bool can_signal() const { return signalable && thread_id; }
+  bool signal(int sig);
+  void reset()
+  {
+    signalable = false;
+    thread_id.reset();
+  }
+};
+
 /* clang-format off */
 class JobControlRecord {
+public:
+  synchronized<origin_thread> origin;
  private:
+
+
+
   std::mutex mutex_; /**< Jcr mutex */
   std::atomic<int32_t> use_count_{};                   /**< Use count */
   std::atomic<int32_t> JobStatus_{}; /**< ready, running, blocked, terminated */
   int32_t JobType_{};            /**< Backup, restore, verify ... */
   int32_t JobLevel_{};           /**< Job level */
   int32_t Protocol_{};           /**< Backup Protocol */
-  bool my_thread_killable_{};
   enum class cancel_status : int8_t {
     None,
     InProcess,
@@ -151,13 +173,25 @@ class JobControlRecord {
   bool sendJobStatus();                          /**< in lib/jcr.c */
   bool sendJobStatus(int newJobStatus);          /**< in lib/jcr.c */
   bool JobReads();                               /**< in lib/jcr.c */
+
+  void AttachToThread()
+  {
+    auto locked = origin.lock();
+    locked->signalable = true;
+    locked->thread_id = pthread_self();
+  }
+
+  void UnattachFromThread()
+  {
+    auto locked = origin.lock();
+    locked->reset();
+  }
+
   void MyThreadSendSignal(int sig);              /**< in lib/jcr.c */
-  void SetKillable(bool killable);               /**< in lib/jcr.c */
-  bool IsKillable() const { return my_thread_killable_; }
+
   void UpdateJobStats();
 
   dlink<JobControlRecord> link;                     /**< JobControlRecord chain link */
-  pthread_t my_thread_id{};       /**< Id of thread controlling jcr */
   BareosSocket* dir_bsock{};      /**< Director bsock or NULL if we are him */
   BareosSocket* store_bsock{};    /**< Storage connection socket */
   BareosSocket* file_bsock{};     /**< File daemon connection socket */

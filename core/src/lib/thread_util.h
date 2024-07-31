@@ -127,6 +127,9 @@ template <typename T, typename Mutex = std::mutex> class synchronized {
 
   [[nodiscard]] const_unique_locked lock() const { return {mut, &data}; }
 
+
+  [[nodiscard]] const T& unsafe_access_without_lock() const { return data; }
+
  private:
   mutable Mutex mut{};
   T data;

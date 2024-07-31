@@ -328,7 +328,7 @@ bool BareosSocket::send(const char* msg_in, uint32_t nbytes)
 
 void BareosSocket::SetKillable(bool killable)
 {
-  if (jcr_) { jcr_->SetKillable(killable); }
+  if (jcr_) { jcr_->origin.lock()->signalable = killable; }
 }
 
 bool BareosSocket::ConsoleAuthenticateWithDirector(

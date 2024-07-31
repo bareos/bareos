@@ -180,7 +180,7 @@ static void CallJobEndCallbacks(JobControlRecord* jcr)
   }
 }
 
-JobControlRecord::JobControlRecord()
+JobControlRecord::JobControlRecord() : origin{pthread_self()}
 {
   Dmsg0(100, "Construct JobControlRecord\n");
 
@@ -193,7 +193,6 @@ JobControlRecord::JobControlRecord()
          be.bstrerror(status));
   }
 
-  my_thread_id = pthread_self();
   job_end_callbacks.init(1, false);
   sched_time = time(nullptr);
   initial_sched_time = sched_time;
@@ -270,7 +269,8 @@ static void FreeCommonJcr(JobControlRecord* jcr)
   if (!jcr) { Dmsg0(100, "FreeCommonJcr: Invalid jcr\n"); }
 
   RemoveJcrFromThreadSpecificData(jcr);
-  jcr->SetKillable(false);
+
+  jcr->origin.lock()->reset();
 
   if (jcr->msg_queue) {
     delete jcr->msg_queue;
@@ -419,30 +419,28 @@ void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
   Dmsg0(debuglevel, "Exit FreeJcr\n");
 }
 
-void JobControlRecord::SetKillable(bool killable)
-{
-  std::unique_lock l(mutex_);
-
-  my_thread_killable_ = killable;
-  if (killable) {
-    my_thread_id = pthread_self();
-  } else {
-    memset(&my_thread_id, 0, sizeof(my_thread_id));
-  }
-}
-
 void JobControlRecord::MyThreadSendSignal(int sig)
 {
-  std::unique_lock l(mutex_);
+  auto locked = origin.lock();
 
-  if (IsKillable() && !pthread_equal(my_thread_id, pthread_self())) {
-    Dmsg1(800, "Send kill to jid=%d\n", JobId);
-    pthread_kill(my_thread_id, sig);
-  } else if (!IsKillable()) {
-    Dmsg1(10, "Warning, can't send kill to jid=%d\n", JobId);
+  if (!locked->can_signal()) {
+    Dmsg1(10, "jid=%d is not killable\n", JobId);
+  } else if (locked->signal(sig)) {
+    Dmsg1(800, "send kill to jid=%d\n", JobId);
+  } else {
+    Dmsg1(800, "could not send kill to jid=%d ERR=%s\n", JobId,
+          strerror(errno));
   }
 }
 
+bool origin_thread::signal(int sig)
+{
+  if (can_signal()) {
+    return pthread_kill(thread_id.value(), sig) == 0;
+  } else {
+    return false;
+  }
+}
 
 /*
  * Given a JobId, find the JobControlRecord
@@ -1031,10 +1029,16 @@ void DbgPrintJcr(FILE* fp)
   for (JobControlRecord* jcr
        = (JobControlRecord*)job_control_record_chain->first();
        jcr; jcr = (JobControlRecord*)job_control_record_chain->next(jcr)) {
-    fprintf(
-        fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
-        edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), jcr->IsKillable(),
-        (int)jcr->JobId, jcr->getJobStatus(), jcr, jcr->Job);
+    auto& job_thread = jcr->origin.unsafe_access_without_lock();
+
+    const char* thread_id = job_thread.thread_id ? edit_pthread(
+                                job_thread.thread_id.value(), ed1, sizeof(ed1))
+                                                 : "<NONE>";
+
+    fprintf(fp,
+            "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
+            thread_id, job_thread.signalable, (int)jcr->JobId,
+            jcr->getJobStatus(), jcr, jcr->Job);
     fprintf(fp, "\tUseCount=%i\n", jcr->UseCount());
     fprintf(fp, "\tJobType=%c JobLevel=%c\n", jcr->getJobType(),
             jcr->getJobLevel());
