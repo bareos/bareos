@@ -168,7 +168,8 @@ static auto CalculateAverage()
       list_of_time_gaps_between_adjacent_jobs.begin());
 
   auto sum = std::accumulate(list_of_time_gaps_between_adjacent_jobs.begin(),
-                             list_of_time_gaps_between_adjacent_jobs.end(), 0);
+                             list_of_time_gaps_between_adjacent_jobs.end(),
+                             std::size_t{0});
 
   return sum / list_of_time_gaps_between_adjacent_jobs.size();
 }
