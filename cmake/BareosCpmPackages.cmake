@@ -32,19 +32,24 @@ if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
 endif()
 include(CPM)
 
+option(USE_SYSTEM_CLI11 "Use the CLI11 lib of the operating system" OFF)
+if(USE_SYSTEM_CLI11)
+  find_package(CLI11 "2.2.0" CONFIG REQUIRED)
+  message(STATUS "Using system CLI11 ${CLI11_VERSION}")
+else()
+  CPMAddPackage(
+    NAME CLI11
+    VERSION 2.4.2
+    GITHUB_REPOSITORY CLIUtils/CLI11
+    EXCLUDE_FROM_ALL YES
+  )
+endif()
+
 CPMAddPackage(
   NAME fmt
   VERSION 6.2.1
   GITHUB_REPOSITORY fmtlib/fmt
   GIT_TAG 10.2.1
-  EXCLUDE_FROM_ALL YES
-)
-
-CPMAddPackage(
-  NAME CLI11
-  VERSION 2.4.2
-  GITHUB_REPOSITORY CLIUtils/CLI11
-  GIT_TAG 2.4.2
   EXCLUDE_FROM_ALL YES
 )
 

@@ -19,15 +19,6 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-option(USE_SYSTEM_CLI11 "Use the CLI11 lib of the operating system" OFF)
-if(USE_SYSTEM_CLI11)
-  find_package(CLI11 "2.2.0" CONFIG REQUIRED)
-  set_target_properties(CLI11::CLI11 PROPERTIES IMPORTED_GLOBAL TRUE)
-  message(STATUS "Using system CLI11 ${CLI11_VERSION}")
-else()
-  add_subdirectory(CLI11 EXCLUDE_FROM_ALL)
-endif()
-
 option(USE_SYSTEM_XXHASH "Use the xxHash lib of the operating system" OFF)
 if(USE_SYSTEM_XXHASH)
   find_package(xxHash REQUIRED)
