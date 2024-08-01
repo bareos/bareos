@@ -61,14 +61,17 @@ extern "C" {
 #define LOG_FACMASK 0x03f8 /* mask to extract facility part */
 
 //  Priorities (these are ordered)
-#define LOG_EMERG 0   /* system is unusable */
-#define LOG_ALERT 1   /* action must be taken immediately */
-#define LOG_CRIT 2    /* critical conditions */
-#define LOG_ERR 3     /* error conditions */
-#define LOG_WARNING 4 /* warning conditions */
-#define LOG_NOTICE 5  /* normal but signification condition */
-#define LOG_INFO 6    /* informational */
-#define LOG_DEBUG 7   /* debug-level messages */
+enum syslog_event_priority
+{
+  LOG_EMERG = 0,   /* system is unusable */
+  LOG_ALERT = 1,   /* action must be taken immediately */
+  LOG_CRIT = 2,    /* critical conditions */
+  LOG_ERR = 3,     /* error conditions */
+  LOG_WARNING = 4, /* warning conditions */
+  LOG_NOTICE = 5,  /* normal but signification condition */
+  LOG_INFO = 6,    /* informational */
+  LOG_DEBUG = 7,   /* debug-level messages */
+};
 
 #define LOG_PRIMASK 0x0007 /* mask to extract priority part (internal) */
 
@@ -91,8 +94,6 @@ extern "C" {
 #define LOG_NOWAIT 0x10 /* if forking to log on console, don't wait() */
 
 void syslog(int type, const char* fmt, ...);
-void openlog(const char* app, int, int);
-void closelog(void);
 
 #ifdef __cplusplus
 }
