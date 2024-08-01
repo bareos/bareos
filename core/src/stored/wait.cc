@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,6 @@ static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 int WaitForSysop(DeviceControlRecord* dcr)
 {
   struct timeval tv;
-  struct timezone tz;
   struct timespec timeout;
   time_t last_heartbeat = 0;
   time_t first_start = time(NULL);
@@ -97,7 +96,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
   while (!jcr->IsJobCanceled()) {
     time_t now, start, total_waited;
 
-    gettimeofday(&tv, &tz);
+    gettimeofday(&tv, NULL);
     timeout.tv_nsec = tv.tv_usec * 1000;
     timeout.tv_sec = tv.tv_sec + add_wait;
 
@@ -215,7 +214,6 @@ int WaitForSysop(DeviceControlRecord* dcr)
 bool WaitForDevice(JobControlRecord* jcr, int& retries)
 {
   struct timeval tv;
-  struct timezone tz;
   struct timespec timeout;
   int status = 0;
   bool ok = true;
@@ -231,7 +229,7 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
          edit_uint64(jcr->JobId, ed1), jcr->Job);
   }
 
-  gettimeofday(&tv, &tz);
+  gettimeofday(&tv, NULL);
   timeout.tv_nsec = tv.tv_usec * 1000;
   timeout.tv_sec = tv.tv_sec + max_wait_time;
 

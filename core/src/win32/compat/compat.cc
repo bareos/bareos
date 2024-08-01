@@ -1942,7 +1942,7 @@ int link(const char*, const char*)
 #if defined(HAVE_MSVC)
 #  include <chrono>
 
-static int mingw_gettimeofday(struct timeval* tp, struct timezone* tzp)
+static int mingw_gettimeofday(struct timeval* tp, struct timezone*)
 {
   namespace sc = std::chrono;
   sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();

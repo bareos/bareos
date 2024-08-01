@@ -356,9 +356,8 @@ char* encode_time(utime_t utime, char* buf)
 bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds)
 {
   struct timeval tv;
-  struct timezone tz;
 
-  gettimeofday(&tv, &tz);
+  gettimeofday(&tv, NULL);
   timeout.tv_nsec = tv.tv_usec * 1000;
   timeout.tv_sec = tv.tv_sec + timeout_in_seconds;
 
