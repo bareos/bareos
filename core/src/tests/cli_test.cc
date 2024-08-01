@@ -63,7 +63,7 @@ TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
       "        REQUIRED\n"
       "        Needs: -x\n"
       "        Excludes: -x\n"
-      "        "+random_option_text+" \n\n\n"};
+      "        "+random_option_text+" \n\n"};
   /* clang-format on */
 
   EXPECT_STREQ(app.get_description().c_str(), "test app");
