@@ -341,8 +341,7 @@ template <typename T> class output {
   void update_cache(with_lock lock)
   {
     if (cache_iter == cache.end()) {
-      using handle_t = typename queue<T>::handle;
-      std::optional<handle_t> handle;
+      std::optional<handle_type> handle;
       if (lock == with_lock::No) {
         if (auto result = shared->try_output_lock()) {
           do_update_cache(result.value());
