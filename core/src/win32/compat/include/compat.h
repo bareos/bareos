@@ -99,7 +99,7 @@ typedef UINT32 gid_t;
 typedef UINT32 uid_t;
 typedef UINT32 gid_t;
 typedef UINT32 mode_t;
-typedef INT32 ssize_t;
+typedef INT64 ssize_t;
 #  define HAVE_SSIZE_T 1
 #endif /* HAVE_MINGW */
 
@@ -287,8 +287,6 @@ int waitpid(int, int*, int);
 
 #if defined(HAVE_MSVC)
 #  define strncasecmp strnicmp
-#  define vsnprintf _vsnprintf
-#  define snprintf _snprintf
 #endif  // HAVE_MSVC
 
 #define WNOHANG 0
