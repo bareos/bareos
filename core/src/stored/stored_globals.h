@@ -37,7 +37,6 @@ BAREOS_IMPORT StorageResource* me;
 
 BAREOS_IMPORT char* configfile;
 
-BAREOS_IMPORT void* start_heap;
 BAREOS_IMPORT bool init_done;
 BAREOS_IMPORT uint32_t vol_session_time;
 BAREOS_IMPORT uint32_t NewVolSessionId();
