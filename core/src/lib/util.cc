@@ -260,7 +260,9 @@ bool GetNameAndResourceTypeAndVersionFromHello(
               bareos_version = static_cast<BareosVersionNumber>(v);
               ok = true;
             } catch (const std::exception& e) {
-              Dmsg0(100, "Could not read out any version from hello message\n");
+              Dmsg0(100,
+                    "Could not read out any version from hello message: %s\n",
+                    e.what());
             }
           }
         }
