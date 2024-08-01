@@ -370,7 +370,6 @@ bool ChunkedDevice::DequeueChunk()
 {
   char ed1[50];
   struct timeval tv;
-  struct timezone tz;
   struct timespec ts;
   bool requeued = false;
   chunk_io_request* new_request;
@@ -385,7 +384,7 @@ bool ChunkedDevice::DequeueChunk()
 
     /* Calculate the next absolute timeout if we find out there is no work to be
      * done. */
-    gettimeofday(&tv, &tz);
+    gettimeofday(&tv, NULL);
     ts.tv_nsec = tv.tv_usec * 1000;
     ts.tv_sec = tv.tv_sec + DEFAULT_RECHECK_INTERVAL;
 
