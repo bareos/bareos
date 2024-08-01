@@ -112,12 +112,8 @@ static void DumpResource(int type,
     recurse = false;
   }
 
-  switch (type) {
-    default:
-      res->PrintConfig(output_formatter_resource, *my_config,
-                       hide_sensitive_data, verbose);
-      break;
-  }
+  res->PrintConfig(output_formatter_resource, *my_config, hide_sensitive_data,
+                   verbose);
 
   if (recurse && res->next_) {
     DumpResource(type, res->next_, sendit, sock, hide_sensitive_data, verbose);
