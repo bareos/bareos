@@ -1962,7 +1962,7 @@ int gettimeofday(struct timeval* tv, struct timezone* tz)
 // Syslog function, added by Nicolas Boichat
 
 // Log an error message
-static void LogEvent(DWORD event_type const char* message)
+static void LogEvent(DWORD event_type, const char* message)
 {
   HANDLE eventHandler;
   const char* strings[2];
@@ -1973,13 +1973,13 @@ static void LogEvent(DWORD event_type const char* message)
 
   eventHandler = RegisterEventSource(NULL, "Bareos");
   if (eventHandler) {
-    ReportEvent(eventHandler, event_log_type, 0, /* Category */
-                0,                               /* ID */
-                NULL,                            /* SID */
-                2,                               /* Number of strings */
-                0,                               /* Raw data size */
-                (const char**)strings,           /* Error strings */
-                NULL);                           /* Raw data */
+    ReportEvent(eventHandler, event_type, 0, /* Category */
+                0,                           /* ID */
+                NULL,                        /* SID */
+                2,                           /* Number of strings */
+                0,                           /* Raw data size */
+                (const char**)strings,       /* Error strings */
+                NULL);                       /* Raw data */
     DeregisterEventSource(eventHandler);
   }
 }
@@ -2005,7 +2005,8 @@ extern "C" void syslog(int severity, const char* fmt, ...)
     }
     break;
   }
-  syslog_event_priority prio = severity & LOG_PRIMASK;
+
+  auto prio = syslog_event_priority(severity & LOG_PRIMASK);
 
   switch (prio) {
     case LOG_EMERG:
