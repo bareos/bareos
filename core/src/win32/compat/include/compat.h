@@ -378,11 +378,6 @@ char* win32_cgets(char* buffer, int len);
 
 int WSA_Init(void);
 
-#if defined(HAVE_MINGW)
-void closelog();
-void openlog(const char* ident, int option, int facility);
-#endif  // HAVE_MINGW
-
 /* Don't let OS go to sleep (usually a Laptop) while we are backing up */
 void PreventOsSuspensions();
 void AllowOsSuspensions();
@@ -400,8 +395,6 @@ typedef DWORD EXECUTION_STATE;
 #ifndef ES_USER_PRESENT
 #  define ES_USER_PRESENT 0x00000004
 #endif
-
-extern void LogErrorMsg(const char* message);
 
 #if !defined(INVALID_FILE_ATTRIBUTES)
 #  define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
