@@ -1226,8 +1226,8 @@ fi
 # Used by mysqltest
 skip_if_root()
 {
-USER=$(whoami)
-if [ "$USER" == "root"  ]; then
+USER="$(whoami)"
+if [ "${USER}" == "root"  ]; then
  echo "${TestName} test skipped: test cannot be run as user root."
  exit 77;
 fi

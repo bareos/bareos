@@ -158,23 +158,54 @@ static int accept_server_socket(int listen_file_descriptor)
   return new_socket;
 }
 
-int create_accepted_server_socket(int port)
+static std::optional<uint16_t> port_number_of(int sockfd)
 {
-  int sock_fd = create_listening_server_socket(port);
-  if (sock_fd > 0) { sock_fd = accept_server_socket(sock_fd); }
-  return sock_fd;
+  union {
+    struct sockaddr addr;
+    struct sockaddr_in addr4;
+    struct sockaddr_in6 addr6;
+  } buf = {};
+
+  // the port gets chosen during StartSocketServer, so we need to query
+  // the port number afterwards.
+  socklen_t len = sizeof(buf);
+  auto error = getsockname(sockfd, &buf.addr, &len);
+  EXPECT_EQ(error, 0);
+  if (error != 0) {
+    perror("sock name error");
+    return false;
+  }
+
+  if (buf.addr.sa_family != AF_INET && buf.addr.sa_family != AF_INET6) {
+    return std::nullopt;
+  }
+
+  auto nport = (buf.addr.sa_family == AF_INET) ? buf.addr4.sin_port
+                                               : buf.addr6.sin6_port;
+
+  auto port = ntohs(nport);
+
+  return port;
 }
 
 std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
 {
   std::unique_ptr<TestSockets> test_sockets(new TestSockets);
 
-  uint16_t portnumber = create_unique_socket_number();
+  int listen_fd = create_listening_server_socket(0);
 
-  int server_file_descriptor = create_listening_server_socket(portnumber);
+  EXPECT_GE(listen_fd, 0) << "Could not create listening socket";
+  if (listen_fd < 0) { return nullptr; }
 
-  EXPECT_GE(server_file_descriptor, 0) << "Could not create listening socket";
-  if (server_file_descriptor < 0) { return nullptr; }
+  auto portnumber_opt = port_number_of(listen_fd);
+
+  EXPECT_NE(portnumber_opt, std::nullopt) << "Could not find used port number";
+  if (!portnumber_opt) {
+    socketClose(listen_fd);
+    return nullptr;
+  }
+
+  auto portnumber = *portnumber_opt;
 
   test_sockets->client.reset(new BareosSocketTCP);
   test_sockets->client->sleep_time_after_authentication_error = 0;
@@ -182,13 +213,21 @@ std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
   bool ok = test_sockets->client->connect(NULL, 1, 1, 0, "Director daemon",
                                           HOST, NULL, portnumber, false);
   EXPECT_EQ(ok, true) << "Could not connect client socket with server socket.";
-  if (!ok) { return nullptr; }
+  if (!ok) {
+    socketClose(listen_fd);
+    return nullptr;
+  }
 
-  server_file_descriptor = accept_server_socket(server_file_descriptor);
-  EXPECT_GE(server_file_descriptor, 0) << "Could not accept server socket.";
-  if (server_file_descriptor <= 0) { return nullptr; }
+  auto server_fd = accept_server_socket(listen_fd);
+  EXPECT_GE(server_fd, 0) << "Could not accept server socket.";
+  if (server_fd <= 0) {
+    socketClose(listen_fd);
+    return nullptr;
+  }
 
-  test_sockets->server.reset(create_new_bareos_socket(server_file_descriptor));
+  socketClose(listen_fd);
+
+  test_sockets->server.reset(create_new_bareos_socket(server_fd));
 
   return test_sockets;
 }
@@ -204,23 +243,29 @@ BareosSocket* create_new_bareos_socket(int fd)
   return bs;
 }
 
-
-#include <sys/types.h>
-#if !defined(HAVE_MSVC)
-#  include <unistd.h>
-#endif
-
-static uint16_t listening_server_port_number = 0;
-
-uint16_t create_unique_socket_number()
+std::optional<listening_socket> create_listening_socket()
 {
-  if (listening_server_port_number == 0) {
-    pid_t pid = getpid();
-    uint16_t port_number = 5 * (static_cast<uint32_t>(pid) % 10000) + 10000;
-    listening_server_port_number = port_number;
-  } else {
-    ++listening_server_port_number;
+  int sock_fd = create_listening_server_socket(0);
+
+  if (sock_fd < 0) { return std::nullopt; }
+
+  auto port = port_number_of(sock_fd);
+
+  if (!port) {
+    socketClose(sock_fd);
+    return std::nullopt;
   }
 
-  return listening_server_port_number;
+  return listening_socket{*port, sock_fd};
+}
+
+int accept_socket(const listening_socket& ls)
+{
+  auto fd = accept_server_socket(ls.sockfd);
+  return fd;
+}
+
+listening_socket::~listening_socket()
+{
+  if (sockfd >= 0) { socketClose(sockfd); }
 }

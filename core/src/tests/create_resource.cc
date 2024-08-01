@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@ console::DirectorResource* CreateAndInitializeNewDirectorResource()
 {
   console::DirectorResource* dir = new (console::DirectorResource);
   dir->address = (char*)HOST;
-  dir->DIRport = htons(create_unique_socket_number());
+  dir->DIRport = 0;
   dir->tls_enable_ = false;
   dir->tls_require_ = false;
   dir->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";
@@ -93,7 +93,7 @@ directordaemon::StorageResource* CreateAndInitializeNewStorageResource()
   directordaemon::StorageResource* store
       = new (directordaemon::StorageResource);
   store->address = (char*)HOST;
-  store->SDport = htons(create_unique_socket_number());
+  store->SDport = 0;
   store->tls_enable_ = false;
   store->tls_require_ = false;
   store->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";

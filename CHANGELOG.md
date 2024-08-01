@@ -87,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: disallow running always incremental virtual full jobs with empty jobid list [PR #1738]
 - msgchan: fix deadlock [PR #1858]
 - VMware Plugin: Add option restore_allow_disks_mismatch [PR #1876]
+- matrix remove obsolete SUSE [PR #1888]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -233,4 +234,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1878]: https://github.com/bareos/bareos/pull/1878
 [PR #1881]: https://github.com/bareos/bareos/pull/1881
 [PR #1883]: https://github.com/bareos/bareos/pull/1883
+[PR #1888]: https://github.com/bareos/bareos/pull/1888
 [unreleased]: https://github.com/bareos/bareos/tree/master

@@ -270,7 +270,15 @@ _EOT_
     awk -F ":" -f - "${TMPFILE}" << '_EOT_'
     /^Data Transfer Element .*[0-9]:/ {
       gsub("Data Transfer Element ","",$1)
-      F=gensub(/Full \(Storage Element ([0-9]{1,}) Loaded\)/,":F:\\1",1,$2)
+      match($2,/Full \(Storage Element ([0-9]{1,}) Loaded\)/)
+      if (RSTART > 0 ) {
+        T=substr($2,RSTART,RLENGTH)
+        match(T,/[0-9]{1,}/)
+        F=":F:" substr(T,RSTART,RLENGTH)
+      }
+      else {
+        F=$2
+      }
       gsub("Empty",":E",F)
       gsub("VolumeTag = ",":",$3)
       print "D:" $1 F $3
