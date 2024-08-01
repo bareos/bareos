@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -112,7 +112,6 @@ POOLMEM* GetMemory(int32_t size) noexcept
   if (buf == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
                         T_("Out of memory requesting %d bytes\n"), size);
-    return NULL;
   }
   POOLMEM* pm_ptr = static_cast<POOLMEM*>(buf + HEAD_SIZE);
   GetPmHeader(pm_ptr)->ablen = size;
@@ -131,7 +130,6 @@ POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size) noexcept
   if (buf == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
                         T_("Out of memory requesting %d bytes\n"), size);
-    return NULL;
   }
   POOLMEM* new_pm_ptr = static_cast<POOLMEM*>(buf + HEAD_SIZE);
   GetPmHeader(new_pm_ptr)->ablen = size;
