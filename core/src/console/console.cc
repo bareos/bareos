@@ -48,13 +48,6 @@
 #include <fstream>
 #include <string>
 
-#define ConInit(x)
-#define ConTerm()
-#define ConSetZedKeys()
-#define trapctlc()
-#define clrbrk()
-#define usrbrk() 0
-
 #if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
 // windows has its own isatty implemented, so
 // if we are compiling with msvc we can just use that
@@ -117,12 +110,6 @@ extern "C" void GotSigcontinue(int) { stop = false; }
 extern "C" void GotSigtout(int) {}
 extern "C" void GotSigtin(int) {}
 
-static int ZedKeyscmd(FILE*, BareosSocket*)
-{
-  ConSetZedKeys();
-  return 1;
-}
-
 // These are the @commands that run only in bconsole
 struct cmdstruct {
   const char* key;
@@ -140,8 +127,6 @@ static struct cmdstruct commands[] = {
     {NT_("echo"), EchoCmd, T_("echo command string")},
     {NT_("exec"), ExecCmd, T_("execute an external command")},
     {NT_("exit"), QuitCmd, T_("exit = quit")},
-    {NT_("zed_keys"), ZedKeyscmd,
-     T_("zed_keys = use zed keys instead of bash keys")},
     {NT_("help"), HelpCmd, T_("help listing")},
     {NT_("separator"), EolCmd, T_("set command separator")},
 };
@@ -198,12 +183,9 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
     }
     if (tty_input) {
       status = GetCmd(input, prompt, UA_sock, 30);
-      if (usrbrk() == 1) { clrbrk(); }
-      if (usrbrk()) { break; }
     } else {
       // Reading input from a file
       int len = SizeofPoolMemory(UA_sock->msg) - 1;
-      if (usrbrk()) { break; }
       if (fgets(UA_sock->msg, len, input) == NULL) {
         status = -1;
       } else {
@@ -265,17 +247,12 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
 
       /* Suppress output if running
        * in background or user hit ctl-c */
-      if (!stop && !usrbrk()) {
+      if (!stop) {
         if (UA_sock->msg) { ConsoleOutput(UA_sock->msg); }
       }
     }
     StopBsockTimer(tid);
 
-    if (usrbrk() > 1) {
-      break;
-    } else {
-      clrbrk();
-    }
     if (!stop) { fflush(stdout); }
 
     if (IsBnetStop(UA_sock)) {
@@ -930,7 +907,6 @@ int main(int argc, char* argv[])
   signal(SIGCONT, GotSigcontinue);
   signal(SIGTTIN, GotSigtin);
   signal(SIGTTOU, GotSigtout);
-  trapctlc();
 #endif
 
   OSDependentInit();
@@ -961,8 +937,6 @@ int main(int argc, char* argv[])
     Emsg1(M_ERROR_TERM, 0, T_("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
   }
-
-  ConInit(stdin);
 
   if (list_directors) {
     foreach_res (director_resource, R_DIRECTOR) {
@@ -1119,7 +1093,6 @@ static void TerminateConsole(int sig)
   my_config = NULL;
   CleanupCrypto();
   FreePoolMemory(g_args);
-  ConTerm();
   WSACleanup(); /* Cleanup Windows sockets */
 
   if (sig != 0) { exit(BEXIT_FAILURE); }
