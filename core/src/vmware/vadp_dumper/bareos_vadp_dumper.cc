@@ -1461,7 +1461,10 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
       if (boffset < start_offset + offset_length
           && boffset + blength > start_offset) {
         uint64 offset = std::max(boffset, start_offset);
-        uint64 min_length = std::min(blength, offset_length);
+        uint64 bend = boffset + blength;
+        uint64 oend = start_offset + offset_length;
+
+        uint64 min_length = std::min(bend, oend);
 
         saved_len += min_length;
 
