@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
    Copyright (C) 2015-2015 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -1459,11 +1459,14 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
       if (boffset < start_offset + offset_length
           && boffset + blength > start_offset) {
         uint64 offset = std::max(boffset, start_offset);
-        uint64 length = std::min(blength, offset_length);
+        uint64 bend = boffset + blength;
+        uint64 oend = start_offset + offset_length;
 
-        saved_len += length;
+        uint64 min_length = std::min(bend, oend);
 
-        if (!process_single_cbt(buffer, offset, length)) { goto bail_out; }
+        saved_len += min_length;
+
+        if (!process_single_cbt(buffer, offset, min_length)) { goto bail_out; }
       }
 
       if (boffset + blength <= start_offset + offset_length) {
