@@ -79,7 +79,7 @@ jobs:
     - name: Build package
       run: |
         eval "$(brew shellenv)"
-        cmake -S . -B cmake-build -DCMAKE_INSTALL_PREFIX=/usr/local/bareos -DUSE_RELATIVE_PATHS=ON -Dconfigtemplatedir=lib/bareos/defaultconfigs -DENABLE_JANSSON=OFF -Dclient-only=yes
+        cmake -S . -B cmake-build -DCMAKE_INSTALL_PREFIX=/usr/local/bareos -DUSE_RELATIVE_PATHS=ON -Dconfigtemplatedir=lib/bareos/defaultconfigs -DENABLE_JANSSON=OFF -Dclient-only=yes -Dmon_fd_password="mon pw" -Ddir-password="dir pw"
         cmake --build cmake-build -- package
         ls -la cmake-build/*.pkg
         mkdir -p "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
@@ -102,6 +102,14 @@ jobs:
         set -x
         sudo installer -pkg artifacts/BUILD_RESULTS/MacOS/bareos-${{ inputs.version }}.pkg -target /
         cd /usr/local/bareos/
+        echo "-- etc --"
+        cat etc/bareos/bareos-fd.d/director/bareos-mon.conf
+        echo "-- /etc --"
+        cat /etc/bareos/bareos-fd.d/director/bareos-mon.conf
+        echo "-- /lib --"
+        cat /lib/bareos/defaultconfigs/bareos-fd.d/director/bareos-mon.conf
+        echo "-----"
+        ls /lib/bareos/defaultconfigs
         /usr/local/bareos/sbin/bareos-fd -d 100 --xc || /usr/local/bareos/sbin/bareos-fd -d 100 -xc
         cd
         sudo launchctl start com.bareos.bareos-fd
