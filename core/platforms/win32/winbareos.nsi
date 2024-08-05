@@ -76,8 +76,6 @@ SetCompressor /solid lzma
 Var LocalHostAddress
 Var HostName
 
-var SEC_DIR_POSTGRES_DESCRIPTION
-
 # Config Parameters Dialog
 
 # Needed for Configuring client config file
@@ -713,15 +711,6 @@ SectionIn 2 3
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
   File config\tray-monitor.d\director\Director-local.conf
 
-SectionEnd
-
-
-Section /o "Director PostgreSQL Backend Support " SEC_DIR_POSTGRES
-SectionIn 2 3
-  SetShellVarContext all
-
-  SetOutPath "$INSTDIR"
-
   # edit sql ddl files
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-grant.sql"'
 
@@ -805,9 +794,7 @@ IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check,
 
 StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not installing director
 
-${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
 !insertmacro CheckDbAdminConnection
-${EndIF}
 
 DataBaseCheckEnd:
 SectionEnd
@@ -1012,14 +999,6 @@ SectionEnd
   ; DIR
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR} "Installs the Bareos Director Daemon"
   !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_DIR} "Programs belonging to the Bareos Director"
-
-
-${If} $IsPostgresInstalled == yes
-  StrCpy $SEC_DIR_POSTGRES_DESCRIPTION "PostgreSQL Catalog Database Support - Needs PostgreSQL DB Server Installation which was found in $PostgresPath"
-${Else}
-  StrCpy $SEC_DIR_POSTGRES_DESCRIPTION "PostgreSQL Catalog Database Support - Needs PostgreSQL DB Server Installation which was NOT found"
-${EndIf}
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR_POSTGRES} "$SEC_DIR_POSTGRES_DESCRIPTION"
 
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIRPLUGINS} "Installs the Bareos Director Plugins"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_DIR} "Opens the needed ports for the Director Daemon in the windows firewall"
@@ -1551,20 +1530,10 @@ done:
     # also install bconsole if director is selected
     SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
 
-IfSilent 0 DbDriverCheckEnd
-  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
-DbDriverCheckEnd:
-
   IfSilent AutoSelecPostgresIfAvailableEnd
-  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
 AutoSelecPostgresIfAvailableEnd:
 
   dontInstDir:
-
-${If} $IsPostgresInstalled == no
-   SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
-   InstTypeSetText 2 "(!)Full PostgreSQL - All Daemons,  Director PostgreSQL Backend (needed local PostgreSQL Server missing (!)"
-${EndIf}
 
   StrCmp $InstallStorage "no" dontInstSD
     SectionSetFlags ${SEC_SD} ${SF_SELECTED} # storage daemon
@@ -1828,7 +1797,6 @@ Function getDatabaseParameters
   strcmp $Upgrading "yes" skip
   strcmp $InstallDirector "no" skip
 
-${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
   # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 3" "state" $DbAdminUser
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 4" "state" $DbAdminPassword
@@ -1837,7 +1805,6 @@ ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 7" "state" $DbName
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 8" "state" $DbPort
   InstallOptions::dialog $PLUGINSDIR\databasedialog.ini
-${EndIF}
 
 skip:
   Pop $R0
@@ -1854,7 +1821,7 @@ Function getDatabaseParametersLeave
 
   StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not installing director
 
-  ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
+  ${If} ${SectionIsSelected} ${SEC_DIR}
     !insertmacro CheckDbAdminConnection
     MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
   ${EndIF}
@@ -2155,12 +2122,6 @@ Function .onSelChange
   Push $R0
   Push $R1
 
-  # if Postgres was not detected always disable postgresql backend
-
-  ${If} $IsPostgresInstalled == no
-    SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
-  ${EndIf}
-
   # Check if WEBUI was just selected then select SEC_DIR
   SectionGetFlags ${SEC_WEBUI} $R0
   IntOp $R0 $R0 & ${SF_SELECTED}
@@ -2174,10 +2135,6 @@ Function .onSelChange
   StrCmp $R0 ${SF_SELECTED} 0 +3
   StrCpy $InstallDirector "yes"
   SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
-
-  SectionGetFlags ${SEC_DIR_POSTGRES} $R0
-  IntOp $R0 $R0 & ${SF_SELECTED}
-  StrCmp $R0 ${SF_SELECTED} 0 +2
 
   Pop $R1
   Pop $R0
