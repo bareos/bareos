@@ -41,6 +41,7 @@
 #include "copy_thread.h"
 
 #include <jansson.h>
+#include <cassert>
 
 /*
  * json_array_foreach macro was added in jansson version 2.5
@@ -1219,6 +1220,16 @@ static bool process_single_cbt(std::vector<uint8>& buffer,
     uint64 sectors_to_read
         = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
 
+    if (sectors_to_read == 0) {
+      fprintf(stderr,
+              "Internal logic error (length (%llu) is not divisible by sector "
+              "size (%llu))\n",
+              static_cast<long long unsigned>(offset_length),
+              static_cast<long long unsigned>(DEFAULT_SECTOR_SIZE));
+      retval = false;
+      break;
+    }
+
     if (multi_threaded) {
       if (!send_to_copy_thread(sector_offset,
                                sectors_to_read * DEFAULT_SECTOR_SIZE)) {
@@ -1226,6 +1237,17 @@ static bool process_single_cbt(std::vector<uint8>& buffer,
         break;
       }
     } else {
+      if (buffer.size() < sectors_to_read * DEFAULT_SECTOR_SIZE) {
+        fprintf(stderr,
+                "Internal logic error (buffer is too small.  Wanted %llu; have "
+                "%llu\n",
+                static_cast<long long unsigned>(sectors_to_read
+                                                * DEFAULT_SECTOR_SIZE),
+                static_cast<long long unsigned>(buffer.size()));
+        retval = false;
+        break;
+      }
+
       if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
                          buffer.data())
           != sectors_to_read * DEFAULT_SECTOR_SIZE) {
@@ -1308,7 +1330,11 @@ struct vec {
 
   size_t size() const { return count; }
 
-  reference operator[](size_t i) { return data[i]; }
+  reference operator[](size_t i)
+  {
+    assert(i < count);
+    return data[i];
+  }
 
   ~vec()
   {
@@ -1414,12 +1440,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
     changed_len += offset_length;
 
-    if (allocated.size() == current_block) {
-      // All further sectors are unallocated, so we can stop here.
-      break;
-    }
-
-    for (;;) {
+    while (current_block < allocated.size()) {
       auto& block = allocated[current_block];
 
       auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
@@ -1440,7 +1461,10 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
       if (boffset < start_offset + offset_length
           && boffset + blength > start_offset) {
         uint64 offset = std::max(boffset, start_offset);
-        uint64 min_length = std::min(blength, offset_length);
+        uint64 bend = boffset + blength;
+        uint64 oend = start_offset + offset_length;
+
+        uint64 min_length = std::min(bend, oend) - offset;
 
         saved_len += min_length;
 
@@ -1452,6 +1476,11 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
       }
 
       if (start_offset + offset_length <= boffset + blength) { break; }
+    }
+
+    if (allocated.size() == current_block) {
+      // All further sectors are unallocated, so we can stop here.
+      break;
     }
   }
 
@@ -1554,12 +1583,34 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
       sectors_to_read
           = MIN(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
 
+      if (sectors_to_read == 0) {
+        fprintf(
+            stderr,
+            "Internal logic error (length (%llu) is not divisible by sector "
+            "size (%llu))\n",
+            static_cast<long long unsigned>(rce.offset_length),
+            static_cast<long long unsigned>(DEFAULT_SECTOR_SIZE));
+        retval = false;
+        break;
+      }
+
       if (!validate_only && multi_threaded) {
         if (!send_to_copy_thread(sector_offset,
                                  sectors_to_read * DEFAULT_SECTOR_SIZE)) {
           goto bail_out;
         }
       } else {
+        if (buffer.size() < sectors_to_read * DEFAULT_SECTOR_SIZE) {
+          fprintf(stderr,
+                  "Internal logic error (buffer is too small.  Wanted %llu; "
+                  "have %llu\n",
+                  static_cast<long long unsigned>(sectors_to_read
+                                                  * DEFAULT_SECTOR_SIZE),
+                  static_cast<long long unsigned>(buffer.size()));
+          retval = false;
+          break;
+        }
+
         cnt = robust_reader(STDIN_FILENO, (char*)buffer.data(),
                             sectors_to_read * DEFAULT_SECTOR_SIZE);
         if (cnt != sectors_to_read * DEFAULT_SECTOR_SIZE) { goto bail_out; }
