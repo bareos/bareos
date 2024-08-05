@@ -45,13 +45,19 @@ else()
   )
 endif()
 
-CPMAddPackage(
-  NAME fmt
-  VERSION 6.2.1
-  GITHUB_REPOSITORY fmtlib/fmt
-  GIT_TAG 10.2.1
-  EXCLUDE_FROM_ALL YES
-)
+option(USE_SYSTEM_FMT "Use the FMT lib of the operating system" OFF)
+if(USE_SYSTEM_FMT)
+  find_package(FMT "6.2.1" CONFIG REQUIRED)
+  message(STATUS "Using system FMT ${FMT_VERSION}")
+else()
+  CPMAddPackage(
+    NAME fmt
+    VERSION 6.2.1
+    GITHUB_REPOSITORY fmtlib/fmt
+    GIT_TAG 10.2.1
+    EXCLUDE_FROM_ALL YES
+  )
+endif()
 
 option(USE_SYSTEM_XXHASH "Use the xxHash lib of the operating system" OFF)
 if(USE_SYSTEM_XXHASH)
