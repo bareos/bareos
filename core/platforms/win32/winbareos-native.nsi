@@ -707,7 +707,7 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
-  File config\tray-monitor.d\director\Director-local.conf
+  File ${CMAKE_BINARY_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf
 
   # edit sql ddl files
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-grant.sql"'
@@ -1747,7 +1747,6 @@ Function getDatabaseParameters
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 7" "state" $DbName
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 8" "state" $DbPort
   InstallOptions::dialog $PLUGINSDIR\databasedialog.ini
-${EndIF}
 
 skip:
   Pop $R0
