@@ -459,7 +459,7 @@ ShowInstDetails show
 ShowUnInstDetails show
 
 InstType "Standard - FileDaemon + Plugins, Traymonitor"
-InstType "Full PostgreSQL - All Daemons,  Director PostgreSQL Backend (needs local PostgreSQL Server)"
+InstType "Full - All Daemons, Director with PostgreSQL Catalog Database (needs local PostgreSQL Server)"
 InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
 
