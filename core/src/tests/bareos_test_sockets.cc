@@ -195,7 +195,7 @@ std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
 
   EXPECT_NE(portnumber_opt, std::nullopt) << "Could not find used port number";
   if (!portnumber_opt) {
-    socketClose(listen_fd);
+    close(listen_fd);
     return nullptr;
   }
 
@@ -208,18 +208,18 @@ std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket()
                                           HOST, NULL, portnumber, false);
   EXPECT_EQ(ok, true) << "Could not connect client socket with server socket.";
   if (!ok) {
-    socketClose(listen_fd);
+    close(listen_fd);
     return nullptr;
   }
 
   auto server_fd = accept_server_socket(listen_fd);
   EXPECT_GE(server_fd, 0) << "Could not accept server socket.";
   if (server_fd <= 0) {
-    socketClose(listen_fd);
+    close(listen_fd);
     return nullptr;
   }
 
-  socketClose(listen_fd);
+  close(listen_fd);
 
   test_sockets->server.reset(create_new_bareos_socket(server_fd));
 
@@ -246,7 +246,7 @@ std::optional<listening_socket> create_listening_socket()
   auto port = port_number_of(sock_fd);
 
   if (!port) {
-    socketClose(sock_fd);
+    close(sock_fd);
     return std::nullopt;
   }
 
@@ -261,5 +261,5 @@ int accept_socket(const listening_socket& ls)
 
 listening_socket::~listening_socket()
 {
-  if (sockfd >= 0) { socketClose(sockfd); }
+  if (sockfd >= 0) { close(sockfd); }
 }
