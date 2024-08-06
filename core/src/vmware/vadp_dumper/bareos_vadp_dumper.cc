@@ -1528,11 +1528,6 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
         break;
       }
     }
-
-    if (allocated.size() == allocated_index) {
-      // All further sectors are unallocated, so we can stop here.
-      break;
-    }
   }
 
   if (verbose) {
