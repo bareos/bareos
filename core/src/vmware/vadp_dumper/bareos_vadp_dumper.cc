@@ -1365,7 +1365,6 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
     fprintf(stderr, "\n\n");
   }
 
-  bool retval = false;
   size_t index;
   json_t *object, *array_element, *start, *length;
   uint64_t start_offset, offset_length;
@@ -1382,14 +1381,14 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
   if (!read_diskHandle) {
     fprintf(stderr,
             "Cannot process CBT data as no VixDiskLib disk handle opened\n");
-    goto bail_out;
+    return false;
   }
 
   object = json_object_get(cbt, CBT_CHANGEDAREA_KEY);
   if (!object) {
     fprintf(stderr, "Failed to find %s in JSON definition of object %s\n",
             CBT_CHANGEDAREA_KEY, key);
-    goto bail_out;
+    return false;
   }
 
   /* Iterate over each element of the JSON array and get the "start" and
@@ -1468,7 +1467,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
         saved_len += min_length;
 
-        if (!process_single_cbt(buffer, offset, min_length)) { goto bail_out; }
+        if (!process_single_cbt(buffer, offset, min_length)) { return false; }
       }
 
       if (boffset + blength <= start_offset + offset_length) {
@@ -1489,16 +1488,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
             saved_len);
   }
 
-
-  retval = true;
-
-bail_out:
-  if (read_diskHandle) {
-    VixDiskLib_Close(read_diskHandle);
-    read_diskHandle = NULL;
-  }
-
-  return retval;
+  return true;
 }
 
 /*
@@ -1678,6 +1668,7 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
 {
   json_t* value;
   uint64_t absolute_disk_length = 0;
+  bool retval = false;
 
   process_json_work_file(json_work_file);
 
@@ -1808,9 +1799,14 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
     blocks.push_back(VixDiskLibBlock{.offset = 0, .length = Capacity});
   }
 
-  return process_cbt(CBT_DISKCHANGEINFO_KEY, std::move(blocks), value);
+  retval = process_cbt(CBT_DISKCHANGEINFO_KEY, std::move(blocks), value);
+
 bail_out:
-  return false;
+  if (read_diskHandle) {
+    VixDiskLib_Close(read_diskHandle);
+    read_diskHandle = NULL;
+  }
+  return retval;
 }
 
 // Worker function that performs the restore operation of the program.
