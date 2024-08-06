@@ -1365,12 +1365,6 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
     fprintf(stderr, "\n\n");
   }
 
-  size_t index;
-  json_t *object, *array_element, *start, *length;
-  uint64_t start_offset, offset_length;
-  uint64 current_block = 0;
-  uint64 changed_len = 0, saved_len = 0;
-
   std::vector<uint8> buffer;
   if (!multi_threaded) {
     // we read at most sectors_per_call sectors at once
@@ -1384,8 +1378,8 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
     return false;
   }
 
-  object = json_object_get(cbt, CBT_CHANGEDAREA_KEY);
-  if (!object) {
+  json_t* changed_blocks = json_object_get(cbt, CBT_CHANGEDAREA_KEY);
+  if (!changed_blocks) {
     fprintf(stderr, "Failed to find %s in JSON definition of object %s\n",
             CBT_CHANGEDAREA_KEY, key);
     return false;
@@ -1426,66 +1420,127 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
    * iterate over them), whereas popping the allocated list happens byr
    * advancing the current_block index.
    */
-  json_array_foreach(object, index, array_element)
+
+  // this is the current index into the changed blocks "array"
+  size_t changed_index = 0;
+  // this is the current index into the allocated blocks array
+  uint64 allocated_index = 0;
+
+  // this is the amount of data that we were going to backup if it wasnt
+  // for the QueryAllocatedBlocks Api, i.e. the total amount of changed
+  // data
+  uint64 changed_count = 0;
+  // this is the amount of data that we actually backed up
+  uint64 saved_count = 0;
+
+  json_t* cbt_entry = nullptr;
+  json_array_foreach(changed_blocks, changed_index, cbt_entry)
   {
     // Get the two members we are interested in.
-    start = json_object_get(array_element, CBT_CHANGEDAREA_START_KEY);
-    length = json_object_get(array_element, CBT_CHANGEDAREA_LENGTH_KEY);
+    json_t* start_str = json_object_get(cbt_entry, CBT_CHANGEDAREA_START_KEY);
+    json_t* length_str = json_object_get(cbt_entry, CBT_CHANGEDAREA_LENGTH_KEY);
 
-    if (!start || !length) { continue; }
-
-    start_offset = json_integer_value(start);
-    offset_length = json_integer_value(length);
-
-    changed_len += offset_length;
-
-    while (current_block < allocated.size()) {
-      auto& block = allocated[current_block];
-
-      auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
-      auto blength = block.length * DEFAULT_SECTOR_SIZE;
-
-      if (start_offset + offset_length < boffset) {
-        // skip unallocated block
-        break;
+    if (!start_str || !length_str) {
+      if (start_str) {
+        // only length is missing
+        fprintf(stderr,
+                "Found a cbt entry without length info at index %llu. "
+                "Skipping...\n",
+                static_cast<long long unsigned>(changed_index));
+      } else if (length_str) {
+        // only start is missing
+        fprintf(stderr,
+                "Found a cbt entry without start info at index %llu. "
+                "Skipping...\n",
+                static_cast<long long unsigned>(changed_index));
+      } else {
+        // both are missing
+        fprintf(stderr,
+                "Found a cbt entry without start and length info at index "
+                "%llu. Skipping...\n",
+                static_cast<long long unsigned>(changed_index));
       }
-
-      // in a perfect world we would also save information about
-      // newly unallocated blocks as well.
-      // But since we cannot currently take advantage of that information
-      // -- we do restores first -> last instead of last -> first and we
-      //    do not do consolidations for plugins --
-      // we just ignore them.  If needed in the future, we can mark "empty"
-      // by e.g. changing the BAREOS_MAGIC to a different one.
-      if (boffset < start_offset + offset_length
-          && boffset + blength > start_offset) {
-        uint64 offset = std::max(boffset, start_offset);
-        uint64 bend = boffset + blength;
-        uint64 oend = start_offset + offset_length;
-
-        uint64 min_length = std::min(bend, oend);
-
-        saved_len += min_length;
-
-        if (!process_single_cbt(buffer, offset, min_length)) { return false; }
-      }
-
-      if (boffset + blength <= start_offset + offset_length) {
-        current_block += 1;
-      }
-
-      if (start_offset + offset_length <= boffset + blength) { break; }
+      continue;
     }
 
-    if (allocated.size() == current_block) {
+    // changed blocks are given us terms of bytes (from the python plugin)
+    uint64 changed_start = json_integer_value(start_str);
+    uint64 changed_length = json_integer_value(length_str);
+    uint64 changed_end = changed_start + changed_length;
+
+    if (changed_start == changed_end) {
+      fprintf(stderr,
+              "Found an empty changed block at index %llu. Skipping...\n",
+              static_cast<long long unsigned>(changed_index));
+      continue;
+    }
+
+    changed_count += changed_length;
+
+    while (allocated_index < allocated.size()) {
+      auto& block = allocated[allocated_index];
+
+      // allocated blocks are given us terms of sectors
+      auto allocated_start = block.offset * DEFAULT_SECTOR_SIZE;
+      auto allocated_length = block.length * DEFAULT_SECTOR_SIZE;
+      auto allocated_end = allocated_start + allocated_length;
+
+      if (allocated_start == allocated_end) {
+        fprintf(stderr,
+                "Found an empty allocated block at index %llu. Skipping...\n",
+                static_cast<long long unsigned>(allocated_index));
+        allocated_index += 1;
+        continue;
+      }
+
+      /* in a perfect world we would also save information about
+       * newly unallocated blocks as well.
+       * But since we cannot currently take advantage of that information
+       * -- we do restores first -> last instead of last -> first and we
+       *    do not do consolidations for plugins --
+       * we just ignore them.  If needed in the future, we can embed "empty"
+       * blocks into the output stream by e.g. using a different BAREOS_MAGIC
+       * value and only saving the block header. */
+      if ((allocated_start < changed_end) && (changed_start < allocated_end)) {
+        uint64 intersection_start = std::max(allocated_start, changed_start);
+
+        uint64 intersection_end = std::min(allocated_end, changed_end);
+
+        // the if condition implies that this always holds true
+        assert(intersection_start < intersection_end);
+
+        uint64 intersection_length = intersection_end - intersection_start;
+
+        saved_count += intersection_length;
+
+        if (!process_single_cbt(buffer, intersection_start,
+                                intersection_length)) {
+          return false;
+        }
+      }
+
+      if (allocated_end <= changed_end) {
+        // only advance the index if we are completely done with the allocated
+        // block, otherwise we might miss an intersection with the next
+        // changed block
+        allocated_index += 1;
+      } else {
+        // ... otherwise we are done with this changed block and we want
+        // to continue to the next one
+        break;
+      }
+    }
+
+    if (allocated.size() == allocated_index) {
       // All further sectors are unallocated, so we can stop here.
       break;
     }
   }
 
   if (verbose) {
-    fprintf(stderr, "Changed len: %lu, Saved len: %lu\n", changed_len,
-            saved_len);
+    fprintf(stderr, "Total Changed Data: %llu, Total Saved Data: %llu\n",
+            static_cast<long long unsigned>(changed_count),
+            static_cast<long long unsigned>(saved_count));
   }
 
   return true;
