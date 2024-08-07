@@ -32,48 +32,31 @@ if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
 endif()
 include(CPM)
 
-option(USE_SYSTEM_CLI11 "Use the CLI11 lib of the operating system" OFF)
-if(USE_SYSTEM_CLI11)
-  find_package(CLI11 "2.2.0" CONFIG REQUIRED)
-  message(STATUS "Using system CLI11 ${CLI11_VERSION}")
-else()
-  CPMAddPackage(
-    NAME CLI11
-    VERSION 2.4.2
-    GITHUB_REPOSITORY CLIUtils/CLI11
-    EXCLUDE_FROM_ALL YES
-  )
-endif()
+CPMFindPackage(
+  NAME CLI11
+  VERSION 2.4.2
+  GITHUB_REPOSITORY CLIUtils/CLI11
+  EXCLUDE_FROM_ALL YES
+)
 
-option(USE_SYSTEM_FMT "Use the FMT lib of the operating system" OFF)
-if(USE_SYSTEM_FMT)
-  find_package(FMT "6.2.1" CONFIG REQUIRED)
-  message(STATUS "Using system FMT ${FMT_VERSION}")
-else()
-  CPMAddPackage(
-    NAME fmt
-    VERSION 6.2.1
-    GITHUB_REPOSITORY fmtlib/fmt
-    GIT_TAG 10.2.1
-    EXCLUDE_FROM_ALL YES
-  )
-endif()
+CPMFindPackage(
+  NAME fmt
+  VERSION 6.2.1
+  GITHUB_REPOSITORY fmtlib/fmt
+  GIT_TAG 10.2.1
+  EXCLUDE_FROM_ALL YES
+)
 
-option(USE_SYSTEM_XXHASH "Use the xxHash lib of the operating system" OFF)
-if(USE_SYSTEM_XXHASH)
-  find_package(xxHash REQUIRED)
-  set(XXHASH_ENABLE_DISPATCH
-      OFF
-      CACHE INTERNAL ""
-  )
-  message(STATUS "Using system xxHash ${XXHASH_VERSION}")
-else()
-  CPMAddPackage(
-    NAME xxHash
-    VERSION 0.8.2
-    GITHUB_REPOSITORY Cyan4973/xxHash
-    EXCLUDE_FROM_ALL YES
-  )
-  add_library(xxHash::xxhash ALIAS xxhash)
-endif()
+CPMFindPackage(
+  NAME xxHash
+  VERSION 0.8.2
+  GITHUB_REPOSITORY Cyan4973/xxHash
+  EXCLUDE_FROM_ALL YES
+  SOURCE_SUBDIR cmake_unofficial
+)
+set(XXHASH_ENABLE_DISPATCH
+  OFF
+  CACHE INTERNAL ""
+)
+set(xxHash::xxhash ALIAS xxhash)
 
