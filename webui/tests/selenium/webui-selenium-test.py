@@ -186,9 +186,14 @@ class SeleniumTest(unittest.TestCase):
                 opt.add_argument("--headless")
                 opt.add_argument("--no-sandbox")
 
-            self.driver = webdriver.Chrome(
-                service=ChromeService(self.chromedriverpath), options=opt
-            )
+            try:
+                # selenium >= 4
+                self.driver = webdriver.Chrome(
+                    service=ChromeService(self.chromedriverpath), options=opt
+                )
+            except TypeError:
+                # fallback to old selenium initialization.
+                self.driver = webdriver.Chrome(self.chromedriverpath, options=opt)
 
         elif self.browser == "firefox":
             d = DesiredCapabilities.FIREFOX
