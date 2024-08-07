@@ -88,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - msgchan: fix deadlock [PR #1858]
 - VMware Plugin: Add option restore_allow_disks_mismatch [PR #1876]
 - matrix remove obsolete SUSE [PR #1888]
+- cats: scripts add option --no-psqlrc to psql [PR #1900]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -235,4 +236,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1881]: https://github.com/bareos/bareos/pull/1881
 [PR #1883]: https://github.com/bareos/bareos/pull/1883
 [PR #1888]: https://github.com/bareos/bareos/pull/1888
+[PR #1900]: https://github.com/bareos/bareos/pull/1900
 [unreleased]: https://github.com/bareos/bareos/tree/master
