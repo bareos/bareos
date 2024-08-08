@@ -69,9 +69,9 @@ local_db_prepare_files() {
 local_db_start_server() {
   echo "start db server"
   if [ $UID -eq 0 ]; then
-    su postgres -c "${POSTGRES_BIN_PATH}/pg_ctl --timeout=10 --wait --pgdata=data --log=log/logfile start"
+    su postgres -c "${POSTGRES_BIN_PATH}/pg_ctl --timeout=15 --wait --pgdata=data --log=log/logfile start"
   else
-    ${POSTGRES_BIN_PATH}/pg_ctl --timeout=10 --wait --pgdata=data --log=log/logfile start
+    ${POSTGRES_BIN_PATH}/pg_ctl --timeout=15 --wait --pgdata=data --log=log/logfile start
   fi
 }
 

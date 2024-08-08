@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - python-bareos: fix description [PR #1841]
 - VMware Plugin: Adapt to Python 3.12 [PR #1879]
 - freebsd: fix build issues with ports tree 2024Q3 [PR #1884]
+- matrix remove obsolete SUSE [PR #1906]
 
 ### Fixed
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
@@ -507,4 +508,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1886]: https://github.com/bareos/bareos/pull/1886
 [PR #1890]: https://github.com/bareos/bareos/pull/1890
 [PR #1894]: https://github.com/bareos/bareos/pull/1894
+[PR #1906]: https://github.com/bareos/bareos/pull/1906
 [unreleased]: https://github.com/bareos/bareos/tree/master
