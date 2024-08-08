@@ -81,30 +81,21 @@ class IXMLDOMDocument;
 #  undef uuid
 #  define uuid(x)
 
-#  ifdef B_VSS_XP
+#  if defined(B_VSS_XP)
 #    define VSSClientGeneric VSSClientXP
-#    include "WinXP/vss.h"
-#    include "WinXP/vswriter.h"
-#    include "WinXP/vsbackup.h"
-#  endif
-
-#  ifdef B_VSS_W2K3
+#  elif defined(B_VSS_W2K3)
 #    define VSSClientGeneric VSSClient2003
-#    include "Win2003/vss.h"
-#    include "Win2003/vswriter.h"
-#    include "Win2003/vsbackup.h"
-#  endif
-
-#  ifdef B_VSS_VISTA
+#  elif defined(B_VSS_VISTA)
 #    define VSSClientGeneric VSSClientVista
-#    include "Win2003/vss.h"
-#    include "Win2003/vswriter.h"
-#    include "Win2003/vsbackup.h"
+#  else
+#    error "no suitable vss client found"
 #  endif
 
 #  define VSS_ERROR_OBJECT_ALREADY_EXISTS ((HRESULT)0x8004230D)
-
 #  include "vss.h"
+#  include "vss_client.h"
+#  include <vswriter.h>
+#  include <vsbackup.h>
 
 using namespace filedaemon;
 

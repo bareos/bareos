@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,6 @@ if(HAVE_WIN32)
     ${PROJECT_SOURCE_DIR}/src/win32/filed
     ${PROJECT_SOURCE_DIR}/src/win32/plugins/filed
     ${PROJECT_SOURCE_DIR}/src/win32/compat/include
-    ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
     ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
     ${PROJECT_SOURCE_DIR}/src/include
     ${PROJECT_SOURCE_DIR}/src
@@ -62,6 +61,9 @@ if(HAVE_WIN32)
   target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
   set_target_properties(
     mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
+  )
+  target_include_directories(
+    mssqlvdi-fd PRIVATE ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
   )
 
   install(
