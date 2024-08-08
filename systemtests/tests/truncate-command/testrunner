@@ -80,7 +80,7 @@ if [ ${VolumeSizeAfterTruncate} -gt ${MinVolumeSize} ]; then
     set_error "Volume size: ${VolumeSizeAfterTruncate} > ${MinVolumeSize}. Something went wrong with the truncate command."
 fi
 
-printf "Volume path:          %s\n" ${tmp}/${VolumeName}
+printf "Volume path:          %s\n" ${VolumePath}
 printf "Size before truncate: %d\n" ${VolumeSizeWithJob}
 printf "Size after truncate:  %d\n" ${VolumeSizeAfterTruncate}
 
