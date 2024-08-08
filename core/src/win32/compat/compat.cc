@@ -1942,7 +1942,7 @@ int link(const char*, const char*)
 #if defined(HAVE_MSVC)
 #  include <chrono>
 
-static int mingw_gettimeofday(struct timeval* tp, struct timezone* tzp)
+static int mingw_gettimeofday(struct timeval* tp, struct timezone*)
 {
   namespace sc = std::chrono;
   sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
@@ -1959,8 +1959,34 @@ int gettimeofday(struct timeval* tv, struct timezone* tz)
   return mingw_gettimeofday(tv, tz);
 }
 
+// Syslog function, added by Nicolas Boichat
+
+// Log an error message
+static void LogEvent(DWORD event_type, const char* message)
+{
+  HANDLE eventHandler;
+  const char* strings[2];
+
+  // Use the OS event logging to log the error
+  strings[0] = T_("\n\nBareos ERROR: ");
+  strings[1] = message;
+
+  eventHandler = RegisterEventSource(NULL, "Bareos");
+  if (eventHandler) {
+    ReportEvent(eventHandler, event_type, 0, /* Category */
+                0,                           /* ID */
+                NULL,                        /* SID */
+                2,                           /* Number of strings */
+                0,                           /* Raw data size */
+                (const char**)strings,       /* Error strings */
+                NULL);                       /* Raw data */
+    DeregisterEventSource(eventHandler);
+  }
+}
+
+
 // Write in Windows System log
-extern "C" void syslog(int, const char* fmt, ...)
+extern "C" void syslog(int severity, const char* fmt, ...)
 {
   va_list arg_ptr;
   int len, maxlen;
@@ -1979,11 +2005,35 @@ extern "C" void syslog(int, const char* fmt, ...)
     }
     break;
   }
-  LogErrorMsg((const char*)msg);
+
+  auto prio = syslog_event_priority(severity & LOG_PRIMASK);
+
+  switch (prio) {
+    case LOG_EMERG:
+      [[fallthrough]];
+    case LOG_ALERT:
+      [[fallthrough]];
+    case LOG_CRIT:
+      [[fallthrough]];
+    case LOG_ERR: {
+      LogEvent(EVENTLOG_ERROR_TYPE, (const char*)msg);
+    } break;
+    case LOG_WARNING: {
+      LogEvent(EVENTLOG_WARNING_TYPE, (const char*)msg);
+    } break;
+    case LOG_NOTICE:
+      [[fallthrough]];
+    case LOG_INFO:
+      [[fallthrough]];
+    case LOG_DEBUG: {
+      LogEvent(EVENTLOG_INFORMATION_TYPE, (const char*)msg);
+    } break;
+    default: {
+      LogEvent(EVENTLOG_ERROR_TYPE, (const char*)msg);
+    } break;
+  }
   FreeMemory(msg);
 }
-
-extern "C" void closelog() {}
 
 struct passwd* getpwuid(uid_t) { return NULL; }
 
@@ -3157,32 +3207,6 @@ int CloseWpipe(Bpipe* bpipe)
     bpipe->wfd = NULL;
   }
   return result;
-}
-
-// Syslog function, added by Nicolas Boichat
-extern "C" void openlog(const char*, int, int) {}
-
-// Log an error message
-void LogErrorMsg(const char* message)
-{
-  HANDLE eventHandler;
-  const char* strings[2];
-
-  // Use the OS event logging to log the error
-  strings[0] = T_("\n\nBareos ERROR: ");
-  strings[1] = message;
-
-  eventHandler = RegisterEventSource(NULL, "Bareos");
-  if (eventHandler) {
-    ReportEvent(eventHandler, EVENTLOG_ERROR_TYPE, 0, /* Category */
-                0,                                    /* ID */
-                NULL,                                 /* SID */
-                2,                                    /* Number of strings */
-                0,                                    /* Raw data size */
-                (const char**)strings,                /* Error strings */
-                NULL);                                /* Raw data */
-    DeregisterEventSource(eventHandler);
-  }
 }
 
 /**

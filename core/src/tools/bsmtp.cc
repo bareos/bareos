@@ -407,7 +407,7 @@ int main(int argc, char* argv[])
   Dmsg1(20, "From addr=%s\n", from_addr.c_str());
 
 #if defined(HAVE_WIN32)
-  SOCKET s;
+  SOCKET s = INVALID_SOCKET;
 #else
   int s{}, r{};
 #endif
@@ -447,6 +447,7 @@ lookup_host:
   for (rp = ai; rp != NULL; rp = rp->ai_next) {
 #  if defined(HAVE_WIN32)
     s = WSASocket(rp->ai_family, rp->ai_socktype, rp->ai_protocol, NULL, 0, 0);
+    if (s == INVALID_SOCKET) { continue; }
 #  else
     s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (s < 0) { continue; }

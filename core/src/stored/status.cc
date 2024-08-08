@@ -45,9 +45,6 @@
 
 namespace storagedaemon {
 
-/* Imported variables */
-extern void* start_heap;
-
 /* Static variables */
 static char statuscmd[] = "status %s\n";
 static char dotstatuscmd[] = ".status %127s\n";

@@ -360,7 +360,6 @@ extern "C" void* statistics_thread_runner(void*)
 {
   utime_t now;
   struct timeval tv;
-  struct timezone tz;
   struct timespec timeout;
   DeviceResource* device_resource = nullptr;
   JobControlRecord* jcr;
@@ -394,7 +393,7 @@ extern "C" void* statistics_thread_runner(void*)
     /* Wait for a next run. Normally this waits exactly
      * me->stats_collect_interval seconds. It can be interrupted when signaled
      * by the StopStatisticsThread() function. */
-    gettimeofday(&tv, &tz);
+    gettimeofday(&tv, NULL);
     timeout.tv_nsec = tv.tv_usec * 1000;
     timeout.tv_sec = tv.tv_sec + me->stats_collect_interval;
 

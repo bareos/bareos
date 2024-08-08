@@ -1,9 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,21 +19,24 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_DIRD_GLOBALS_H_
-#define BAREOS_DIRD_DIRD_GLOBALS_H_
+#include "testing_dir_common.h"
 
-#include "include/dll_import_export.h"
+#include "dird/ua.h"
+#include "include/jcr.h"
+#include "dird/ua_configure.cc"
 
-class ConfigurationParser;
+TEST(BadConfig, changing_pw_type)
+{
+  InitDirGlobals();
+  std::string path_to_config
+      = std::string("configs/bad_configs/changing_pw_type.conf");
 
-namespace directordaemon {
+  auto* parser = directordaemon::InitDirConfig(path_to_config.c_str(), M_INFO);
 
-class DirectorResource;
-BAREOS_EXPORT DirectorResource* me;
-BAREOS_IMPORT ConfigurationParser* my_config;
+  ASSERT_NE(parser, nullptr);
+  directordaemon::my_config = parser; /* set the director global variable */
 
-BAREOS_IMPORT char* configfile;
+  EXPECT_FALSE(parser->ParseConfig());
 
-} /* namespace directordaemon */
-
-#endif  // BAREOS_DIRD_DIRD_GLOBALS_H_
+  delete parser;
+}

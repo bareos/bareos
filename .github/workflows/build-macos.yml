@@ -79,7 +79,20 @@ jobs:
     - name: Build package
       run: |
         eval "$(brew shellenv)"
-        cmake -S . -B cmake-build -DCMAKE_INSTALL_PREFIX=/usr/local/bareos -DUSE_RELATIVE_PATHS=ON -Dconfigtemplatedir=lib/bareos/defaultconfigs -DENABLE_JANSSON=OFF -Dclient-only=yes
+        cmake -S . -B cmake-build \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/bareos \
+        -DUSE_RELATIVE_PATHS=ON \
+        -Dconfigtemplatedir=lib/bareos/defaultconfigs \
+        -DENABLE_JANSSON=OFF \
+        -Dclient-only=yes \
+        -Ddir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
+        -Dfd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
+        -Dsd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
+        -Dmon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
+        -Dmon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
+        -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
+        -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+        -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX"
         cmake --build cmake-build -- package
         ls -la cmake-build/*.pkg
         mkdir -p "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
@@ -101,6 +114,7 @@ jobs:
       run: |
         set -x
         sudo installer -pkg artifacts/BUILD_RESULTS/MacOS/bareos-${{ inputs.version }}.pkg -target /
+        cat /tmp/bareos-postinstall.log
         cd /usr/local/bareos/
         /usr/local/bareos/sbin/bareos-fd -d 100 --xc || /usr/local/bareos/sbin/bareos-fd -d 100 -xc
         cd

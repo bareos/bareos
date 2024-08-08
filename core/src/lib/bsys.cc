@@ -168,7 +168,6 @@ int Bmicrosleep(int32_t sec, int32_t usec)
 {
   struct timespec timeout;
   struct timeval tv;
-  struct timezone tz;
   int status;
 
   timeout.tv_sec = sec;
@@ -181,7 +180,7 @@ int Bmicrosleep(int32_t sec, int32_t usec)
 #endif
 
   // Do it the old way
-  gettimeofday(&tv, &tz);
+  gettimeofday(&tv, NULL);
   timeout.tv_nsec += static_cast<decltype(timeout.tv_nsec)>(tv.tv_usec) * 1000l;
   timeout.tv_sec += tv.tv_sec;
   while (timeout.tv_nsec >= 1000000000) {

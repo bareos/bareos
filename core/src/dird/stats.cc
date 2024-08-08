@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,10 +104,9 @@ bail_out:
 static inline void wait_for_next_run()
 {
   struct timeval tv;
-  struct timezone tz;
   struct timespec timeout;
 
-  gettimeofday(&tv, &tz);
+  gettimeofday(&tv, NULL);
   timeout.tv_nsec = tv.tv_usec * 1000;
   timeout.tv_sec = tv.tv_sec + me->stats_collect_interval;
 

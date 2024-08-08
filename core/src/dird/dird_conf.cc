@@ -2734,6 +2734,18 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
       }
       break;
     case R_CLIENT:
+      if (pass == 2) {
+        auto* res = dynamic_cast<ClientResource*>(my_config->GetResWithName(
+            R_CLIENT, (*item->allocated_resource)->resource_name_));
+        ASSERT(res);
+
+        if (res_client->Protocol != res->Protocol) {
+          scan_err1(lc,
+                    "Trying to store password to resource \"%s\", but protocol "
+                    "is not known.\n",
+                    (*item->allocated_resource)->resource_name_);
+        }
+      }
       switch (res_client->Protocol) {
         case APT_NDMPV2:
         case APT_NDMPV3:
@@ -2747,6 +2759,18 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
       }
       break;
     case R_STORAGE:
+      if (pass == 2) {
+        auto* res = dynamic_cast<StorageResource*>(my_config->GetResWithName(
+            R_STORAGE, (*item->allocated_resource)->resource_name_));
+        ASSERT(res);
+
+        if (res_store->Protocol != res->Protocol) {
+          scan_err1(lc,
+                    "Trying to store password to resource \"%s\", but protocol "
+                    "is not known.\n",
+                    (*item->allocated_resource)->resource_name_);
+        }
+      }
       switch (res_store->Protocol) {
         case APT_NDMPV2:
         case APT_NDMPV3:

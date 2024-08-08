@@ -38,7 +38,6 @@ BAREOS_IMPORT bool restore_only_mode;
 
 class ClientResource;
 BAREOS_IMPORT ClientResource* me;
-BAREOS_IMPORT void* start_heap;
 BAREOS_IMPORT char* g_filed_configfile;
 
 } /* namespace filedaemon */

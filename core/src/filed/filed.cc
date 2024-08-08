@@ -268,8 +268,10 @@ void TerminateFiled(int sig)
 
   UnloadFdPlugins();
   FlushMntentCache();
-  WriteStateFile(me->working_directory, "bareos-fd",
-                 GetFirstPortHostOrder(me->FDaddrs));
+  if (me) {
+    WriteStateFile(me->working_directory, "bareos-fd",
+                   GetFirstPortHostOrder(me->FDaddrs));
+  }
   DeletePidFile(pidfile_path);
 
   if (g_filed_configfile != nullptr) { free(g_filed_configfile); }

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -244,7 +244,6 @@ extern "C" void* watchdog_thread(void*)
 {
   struct timespec timeout;
   struct timeval tv;
-  struct timezone tz;
   utime_t next_time;
 
   SetJcrInThreadSpecificData(nullptr);
@@ -288,7 +287,7 @@ extern "C" void* watchdog_thread(void*)
     wd_unlock();
 
     // Wait sleep time or until someone wakes us
-    gettimeofday(&tv, &tz);
+    gettimeofday(&tv, NULL);
     timeout.tv_nsec = tv.tv_usec * 1000;
     timeout.tv_sec = tv.tv_sec + next_time - time(NULL);
     while (timeout.tv_nsec >= 1000000000) {

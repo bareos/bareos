@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -267,9 +267,8 @@ void CramMd5Handshake::InitRandom() const
 {
   struct timeval t1;
   struct timeval t2;
-  struct timezone tz;
 
-  gettimeofday(&t1, &tz);
-  for (int i = 0; i < 4; i++) { gettimeofday(&t2, &tz); }
+  gettimeofday(&t1, NULL);
+  for (int i = 0; i < 4; i++) { gettimeofday(&t2, NULL); }
   srandom((t1.tv_sec & 0xffff) * (t2.tv_usec & 0xff));
 }
