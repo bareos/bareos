@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -234,7 +234,6 @@ set(WEBUI_TESTS_BROKEN
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
-find_program(PYTHON NAMES python python3)
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
@@ -288,10 +287,6 @@ else()
     configure_file(
       "${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in"
       "${current_test_directory}/webui/config/autoload/global.php" @ONLY
-    )
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in"
-      "${current_test_directory}/testrunner" @ONLY
     )
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
