@@ -223,6 +223,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
 
 int BareosDb::GetPathRecord(JobControlRecord* jcr, const char* new_path)
 {
+  AssertOwnership();
   PmStrcpy(path, new_path);
   pnl = strlen(path);
   return GetPathRecord(jcr);
@@ -892,6 +893,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE);
 
+  AssertOwnership();
+
   Mmsg(cmd,
        "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ",
        mr->Recycle, mr->Enabled);
@@ -1034,6 +1037,8 @@ bool BareosDb::GetAllVolumeNames(db_list_ctx* volumenames)
   volumenames->clear();
   Mmsg(query,
        "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName");
+
+  DbLocker _{this};
 
   if (!SqlQueryWithHandler(query.c_str(), DbListHandler, volumenames)) {
     Emsg1(M_ERROR, 0, "Could not retrieve volume names: ERR=%s\n",
@@ -1269,7 +1274,8 @@ db_list_ctx BareosDb::FilterZeroFileJobs(db_list_ctx& jobids)
   query += jobids.Join(",") + ") ORDER BY JobId";
 
   db_list_ctx zero_file_jobs;
-  if (!SqlQueryWithHandler(query.c_str(), DbListHandler, &zero_file_jobs)) {
+  if (DbLocker _{this};
+      !SqlQueryWithHandler(query.c_str(), DbListHandler, &zero_file_jobs)) {
     throw new BareosSqlError(sql_strerror());
   }
   for (auto& remove_jobid : zero_file_jobs) {
@@ -1302,6 +1308,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   char clientid[50], jobid[50], filesetid[50];
   char date[MAX_TIME_LENGTH];
   PoolMem query(PM_MESSAGE);
+
+  DbLocker _{this};
 
   /* Take the current time as upper limit if nothing else specified */
   utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
@@ -1863,6 +1871,7 @@ bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
   for (int i = 0; i < mediaIds.size(); i++) {
     mr.MediaId = mediaIds.get(i);
     if (!GetMediaRecord(jcr, &mr)) {
+      DbLocker _{this};
       Mmsg1(errmsg, T_("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       return false;

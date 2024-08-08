@@ -354,6 +354,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 
   if (jcr->HasBase) {
     jcr->nb_base_files = nb.GetFrontAsInteger();
+    DbLocker _{jcr->db};
     if (!jcr->db->CreateBaseFileList(jcr, jobids.GetAsString().c_str())) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db->CreateBaseFileList:%s\n",
            jcr->db->strerror());
@@ -366,7 +367,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return false;
     }
   } else {
-    if (!jcr->db->OpenBatchConnection(jcr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->OpenBatchConnection(jcr)) {
       Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
       return false; /* Fail */
     }

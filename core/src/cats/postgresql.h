@@ -67,10 +67,6 @@ class BareosDbPostgresql : public BareosDb {
                     const char* old,
                     int len) override;
   char* EscapeObject(JobControlRecord* jcr, char* old, int len) override;
-  unsigned char* EscapeObject(const unsigned char* old,
-                              std::size_t old_len,
-                              std::size_t& new_len) override;
-  void FreeEscapedObjectMemory(unsigned char* obj) override;
   void UnescapeObject(JobControlRecord* jcr,
                       char* from,
                       int32_t expected_len,
@@ -92,7 +88,6 @@ class BareosDbPostgresql : public BareosDb {
   int SqlAffectedRows(void) override;
   uint64_t SqlInsertAutokeyRecord(const char* query,
                                   const char* table_name) override;
-  void SqlUpdateField(int column);
   SQL_FIELD* SqlFetchField(void) override;
   bool SqlFieldIsNotNull(int field_type) override;
   bool SqlFieldIsNumeric(int field_type) override;
@@ -100,10 +95,6 @@ class BareosDbPostgresql : public BareosDb {
   bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error) override;
   bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                AttributesDbRecord* ar) override;
-  bool SqlCopyStart(const std::string& table_name,
-                    const std::vector<std::string>& column_names) override;
-  bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) override;
-  bool SqlCopyEnd() override;
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 

@@ -34,43 +34,31 @@
 
 #include <pthread.h>
 
-typedef struct s_rwlock_tag {
-  pthread_mutex_t mutex;
-  pthread_cond_t read;  /* wait for read */
-  pthread_cond_t write; /* wait for write */
-  pthread_t writer_id;  /* writer's thread id */
-  int priority;         /* used in deadlock detection */
-  int valid;            /* set when valid */
-  int r_active;         /* readers active */
-  int w_active;         /* writers active */
-  int r_wait;           /* readers waiting */
-  int w_wait;           /* writers waiting */
-  s_rwlock_tag()
-  {
-    mutex = PTHREAD_MUTEX_INITIALIZER;
-    read = PTHREAD_COND_INITIALIZER;
-    write = PTHREAD_COND_INITIALIZER;
-    writer_id = pthread_t();
-    priority = 0;
-    valid = 0;
-    r_active = 0;
-    w_active = 0;
-    r_wait = 0;
-    w_wait = 0;
-  };
-} brwlock_t;
+struct brwlock_t {
+  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  pthread_cond_t read = PTHREAD_COND_INITIALIZER;  /* wait for read */
+  pthread_cond_t write = PTHREAD_COND_INITIALIZER; /* wait for write */
+  pthread_t writer_id{};                           /* writer's thread id */
+  int priority{}; /* used in deadlock detection */
+  int valid{};    /* set when valid */
+  int r_active{}; /* readers active */
+  int w_active{}; /* writers active */
+  int r_wait{};   /* readers waiting */
+  int w_wait{};   /* writers waiting */
+};
 
-#define RWLOCK_VALID 0xfacade
+static constexpr int RWLOCK_VALID{0xfacade};
 
 // read/write lock prototypes
-extern int RwlInit(brwlock_t* rwl, int priority = 0);
-extern int RwlDestroy(brwlock_t* rwl);
-extern bool RwlIsInit(brwlock_t* rwl);
-extern int RwlReadlock(brwlock_t* rwl);
-extern int RwlReadtrylock(brwlock_t* rwl);
-extern int RwlReadunlock(brwlock_t* rwl);
-extern int RwlWritelock(brwlock_t* rwl);
-extern int RwlWritetrylock(brwlock_t* rwl);
-extern int RwlWriteunlock(brwlock_t* rwl);
+int RwlInit(brwlock_t* rwl, int priority = 0);
+int RwlDestroy(brwlock_t* rwl);
+bool RwlIsInit(brwlock_t* rwl);
+int RwlReadlock(brwlock_t* rwl);
+int RwlReadtrylock(brwlock_t* rwl);
+int RwlReadunlock(brwlock_t* rwl);
+int RwlWritelock(brwlock_t* rwl);
+int RwlWritetrylock(brwlock_t* rwl);
+int RwlWriteunlock(brwlock_t* rwl);
+void RwlAssertWriterIsMe(brwlock_t* rwl);
 
 #endif  // BAREOS_LIB_RWLOCK_H_

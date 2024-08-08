@@ -1042,6 +1042,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
   jcr->dir_impl->since[0] = 0;
 
+  DbLocker _{jcr->db};
+
   // If since time was given on command line use it
   if (jcr->starttime_string && jcr->starttime_string[0]) {
     bstrncpy(jcr->dir_impl->since, T_(", since="),
@@ -1078,6 +1080,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       if (!jcr->db->FindJobStartTime(jcr, &jcr->dir_impl->jr,
                                      jcr->starttime_string,
                                      jcr->dir_impl->PrevJob)) {
+        Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         do_full = true;
       }
 
@@ -1129,7 +1132,6 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
       if (do_full) {
         // No recent Full job found, so upgrade this one to Full
-        Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              T_("No prior or suitable Full backup found in catalog. Doing FULL "
                 "backup.\n"));
@@ -1140,7 +1142,6 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       } else if (do_vfull) {
         /* No recent Full job found, and MaxVirtualFull is set so upgrade this
          * one to Virtual Full */
-        Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              T_("No prior or suitable Full backup found in catalog. Doing "
                 "Virtual FULL backup.\n"));

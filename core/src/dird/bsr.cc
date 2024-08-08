@@ -226,7 +226,7 @@ bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
   for (; bsr; bsr = bsr->next.get()) {
     JobDbRecord jr;
     jr.JobId = bsr->JobId;
-    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+    if (DbLocker _{ua->db}; !ua->db->GetJobRecord(ua->jcr, &jr)) {
       ua->ErrorMsg(T_("Unable to get Job record. ERR=%s\n"),
                    ua->db->strerror());
       return false;

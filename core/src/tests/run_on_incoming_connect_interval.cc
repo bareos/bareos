@@ -200,16 +200,6 @@ class MockDatabase : public BareosDb {
   void CloseDatabase(JobControlRecord* /*jcr*/) override {}
   void StartTransaction(JobControlRecord* /*jcr*/) override {}
   void EndTransaction(JobControlRecord* /*jcr*/) override {}
-  bool SqlCopyStart(const std::string&,
-                    const std::vector<std::string>&) override
-  {
-    return false;
-  }
-  bool SqlCopyInsert(const std::vector<DatabaseField>&) override
-  {
-    return false;
-  }
-  bool SqlCopyEnd() override { return false; }
 
  private:
   Mode mode_{};
