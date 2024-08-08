@@ -32,10 +32,45 @@ if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
 endif()
 include(CPM)
 
-CPMAddPackage(
+# Keep module alphabetically ordered
+
+CPMFindPackage(
+  NAME CLI11
+  VERSION 2.4.2
+  GITHUB_REPOSITORY CLIUtils/CLI11
+  EXCLUDE_FROM_ALL YES
+)
+
+CPMFindPackage(
+  NAME CPMLicenses.cmake 
+  GITHUB_REPOSITORY cpm-cmake/CPMLicenses.cmake
+  VERSION 0.0.5
+)
+
+CPMFindPackage(
   NAME fmt
   VERSION 6.2.1
   GITHUB_REPOSITORY fmtlib/fmt
   GIT_TAG 10.2.1
   EXCLUDE_FROM_ALL YES
 )
+
+CPMFindPackage(
+  NAME xxHash
+  VERSION 0.8.2
+  GITHUB_REPOSITORY Cyan4973/xxHash
+  EXCLUDE_FROM_ALL YES
+  SOURCE_SUBDIR cmake_unofficial
+)
+set(XXHASH_ENABLE_DISPATCH
+  OFF
+  CACHE INTERNAL ""
+)
+set(xxHash::xxhash ALIAS xxhash)
+
+
+# **IMPORTANT** keep this as last item!
+cpm_licenses_create_disclaimer_target(
+  write-licenses "${CMAKE_CURRENT_BINARY_DIR}/LICENSES_third_party.txt" "${CPM_PACKAGES}"
+)
+
