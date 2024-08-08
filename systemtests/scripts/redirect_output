@@ -1,0 +1,9 @@
+# source this file
+
+logfile="${logdir}/$(basename ${0}).log"
+echo "Writing log to ${logfile}"
+if [ "${verbose}" == "1" ]; then
+  exec &> >(tee "${logfile}")
+else
+  exec &> "${logfile}"
+fi
