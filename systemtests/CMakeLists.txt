@@ -326,7 +326,6 @@ set(WEBUI_TESTS_BROKEN
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
-find_program(PYTHON NAMES python python3)
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
@@ -381,10 +380,6 @@ else()
       "${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in"
       "${current_test_directory}/webui/config/autoload/global.php" @ONLY
       NEWLINE_STYLE UNIX
-    )
-    configure_file(
-      "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in"
-      "${current_test_directory}/testrunner" @ONLY NEWLINE_STYLE UNIX
     )
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
