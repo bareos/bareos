@@ -141,8 +141,9 @@ class locked_threadstate {
  private:
   locked_threadstate(PyThreadState* t_ts, bool t_owns) : ts{t_ts}, owns{t_owns}
   {
-    // lock the gil and make ts active
-    PyEval_RestoreThread(t_ts);
+    // make the given thread state active
+    // we assume that we are currently holding the gil
+    (void)PyThreadState_Swap(t_ts);
   }
 
  public:
@@ -195,6 +196,8 @@ class locked_threadstate {
  * is destroyed by locked_threadstates destructor. */
 locked_threadstate AcquireLock(PyInterpreterState* interp)
 {
+  // we lock the gil here to synchronize potential calls to PyThreadState_New().
+  PyEval_RestoreThread(mainThreadState);
   auto* ts = GetThreadStateForInterp(interp);
   if (!ts) {
     // create a new thread state
@@ -221,12 +224,12 @@ bRC newPlugin(PluginContext* plugin_ctx)
   plugin_ctx->plugin_private_context
       = (void*)plugin_priv_ctx; /* set our context pointer */
 
+  /* For each plugin instance we instantiate a new Python interpreter. */
+  PyEval_AcquireThread(mainThreadState);
 
   /* set bareos_plugin_context inside of bareosfd module */
   Bareosfd_set_plugin_context(plugin_ctx);
 
-  /* For each plugin instance we instantiate a new Python interpreter. */
-  PyEval_AcquireThread(mainThreadState);
   auto* ts = Py_NewInterpreter();
   plugin_priv_ctx->interp = ts->interp;
   // register ts
@@ -272,6 +275,7 @@ bRC freePlugin(PluginContext* plugin_ctx)
 
   // Stop any sub interpreter started per plugin instance.
   auto* ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
+  ASSERT(ts);
   PyEval_AcquireThread(ts);
 
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
@@ -280,6 +284,9 @@ bRC freePlugin(PluginContext* plugin_ctx)
   if (PyVersion() < VERSION_HEX(3, 12, 0)) {
     // release gil a different way
     PyThreadState_Swap(mainThreadState);
+    // while we still have the gil, we need to make sure we clear the type cache
+    // so that it does not contain outdated references
+    if (PyVersion() < VERSION_HEX(3, 10, 0)) { PyType_ClearCache(); }
     PyEval_ReleaseThread(mainThreadState);
   } else {
     // endinterpreter releases the gil for us since 3.12
@@ -756,9 +763,7 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
   plugin_private_context* plugin_priv_ctx
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
-  if (!plugin_priv_ctx) { goto bail_out; }
-
-  Bareosfd_set_plugin_context(plugin_ctx);
+  if (!plugin_priv_ctx) { return bRC_Error; }
 
   /* First handle some events internally before calling python if it
    * want to do some special handling on the event triggered. */
@@ -818,6 +823,7 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
    * processing was successful (e.g. retval == bRC_OK). */
   if (!event_dispatched || retval == bRC_OK) {
     auto l = AcquireLock(plugin_priv_ctx->interp);
+    Bareosfd_set_plugin_context(plugin_ctx);
 
     /* Now dispatch the event to Python.
      * First the calls that need special handling. */
@@ -885,7 +891,6 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
     }
   }
 
-bail_out:
   return retval;
 }
 
