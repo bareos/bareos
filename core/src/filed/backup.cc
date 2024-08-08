@@ -178,12 +178,12 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         T_("Encountered %ld acl errors while doing backup\n"),
+         T_("Encountered %" PRIu32 " acl errors while doing backup\n"),
          jcr->fd_impl->acl_data->u.build->nr_errors);
   }
   if (have_xattr && jcr->fd_impl->xattr_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
-         T_("Encountered %ld xattr errors while doing backup\n"),
+         T_("Encountered %" PRIu32 " xattr errors while doing backup\n"),
          jcr->fd_impl->xattr_data->u.build->nr_errors);
   }
 
@@ -264,7 +264,8 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
   }
 
   Dmsg1(300, "Saving Finder Info for \"%s\"\n", bsctx.ff_pkt->fname);
-  sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, STREAM_HFSPLUS_ATTRIBUTES);
+  sd->fsend("%" PRIu32 " %" PRId32 " 0", bsctx.jcr->JobFiles,
+            STREAM_HFSPLUS_ATTRIBUTES);
   Dmsg1(300, "filed>stored:header %s", sd->msg);
   PmMemcpy(sd->msg, bsctx.ff_pkt->hfsinfo.fndrinfo, 32);
   sd->message_length = 32;
@@ -390,7 +391,8 @@ static inline bool TerminateSigningDigest(b_save_ctx& bsctx)
   }
 
   // Send our header
-  sd->fsend("%ld %ld 0", bsctx.jcr->JobFiles, STREAM_SIGNED_DIGEST);
+  sd->fsend("%" PRIu32 " %" PRId32 " 0", bsctx.jcr->JobFiles,
+            STREAM_SIGNED_DIGEST);
   Dmsg1(300, "filed>stored:header %s", sd->msg);
 
   // Encode signature data
@@ -417,7 +419,8 @@ static inline bool TerminateDigest(b_save_ctx& bsctx)
   bool retval = false;
   BareosSocket* sd = bsctx.jcr->store_bsock;
 
-  sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, bsctx.digest_stream);
+  sd->fsend("%" PRIu32 " %" PRId32 " 0", bsctx.jcr->JobFiles,
+            bsctx.digest_stream);
   Dmsg1(300, "filed>stored:header %s", sd->msg);
 
   size = CRYPTO_DIGEST_MAX_SIZE;
@@ -823,7 +826,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   // Check if original file has a digest, and send it
   if (ff_pkt->type == FT_LNKSAVED && ff_pkt->digest) {
     Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
-    sd->fsend("%ld %d 0", jcr->JobFiles, ff_pkt->digest_stream);
+    sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles,
+              ff_pkt->digest_stream);
 
     sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
     memcpy(sd->msg, ff_pkt->digest, ff_pkt->digest_len);
@@ -1215,7 +1219,7 @@ static result<shared_message> DoCompressMessage(compression_context& compctx,
 
   if (csize > std::numeric_limits<std::uint32_t>::max()) {
     PoolMem error;
-    Mmsg(error, "Compressed size to big (%llu > %llu)", csize,
+    Mmsg(error, "Compressed size to big (%" PRIuz " > %" PRIu32 ")", csize,
          std::numeric_limits<std::uint32_t>::max());
     return error;
   }
@@ -1472,7 +1476,7 @@ static int send_data(JobControlRecord* jcr,
 
   /* Send Data header to Storage daemon
    *    <file-index> <stream> <info> */
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, stream)) {
     if (!jcr->IsJobCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
@@ -1619,7 +1623,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
   /* Send Attributes header to Storage daemon
    *    <file-index> <stream> <info> */
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, attr_stream)) {
     if (!jcr->IsJobCanceled() && !jcr->IsIncomplete()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
@@ -1660,14 +1664,14 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_LNKSAVED:
       Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname,
             ff_pkt->link);
-      status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", jcr->JobFiles,
+      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%s%c%s%c%u%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0,
                          ff_pkt->link, 0, attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
     case FT_DIREND:
     case FT_REPARSE:
       /* Here link is the canonical filename (i.e. with trailing slash) */
-      status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
+      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->link, 0, attribs.c_str(), 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
@@ -1708,12 +1712,12 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       if (ff_pkt->object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
       break;
     case FT_REG:
-      status = sd->fsend("%ld %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
+      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
     default:
-      status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
+      status = sd->fsend("%" PRIu32 " %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
@@ -1792,8 +1796,8 @@ void StripPath(FindFilesPacket* ff_pkt)
   PmStrcpy(ff_pkt->fname_save, ff_pkt->fname);
   if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
     PmStrcpy(ff_pkt->link_save, ff_pkt->link);
-    Dmsg2(500, "strcpy link_save=%d link=%d\n", strlen(ff_pkt->link_save),
-          strlen(ff_pkt->link));
+    Dmsg2(500, "strcpy link_save=%" PRIuz " link=%" PRIuz "\n",
+          strlen(ff_pkt->link_save), strlen(ff_pkt->link));
   }
 
   /* Strip path. If it doesn't succeed put it back. If it does, and there
@@ -1829,8 +1833,8 @@ void UnstripPath(FindFilesPacket* ff_pkt)
     Dmsg2(500, "strcpy link=%s link_save=%s\n", ff_pkt->link,
           ff_pkt->link_save);
     strcpy(ff_pkt->link, ff_pkt->link_save);
-    Dmsg2(500, "strcpy link=%d link_save=%d\n", strlen(ff_pkt->link),
-          strlen(ff_pkt->link_save));
+    Dmsg2(500, "strcpy link=%" PRIuz " link_save=%" PRIuz "\n",
+          strlen(ff_pkt->link), strlen(ff_pkt->link_save));
   }
 }
 

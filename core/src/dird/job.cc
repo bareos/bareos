@@ -783,8 +783,8 @@ static bool JobCheckMaxwaittime(JobControlRecord* jcr)
 
   if (jcr->wait_time) { current = watchdog_time - jcr->wait_time; }
 
-  Dmsg2(200, "check maxwaittime %u >= %u\n", current + jcr->wait_time_sum,
-        job->MaxWaitTime);
+  Dmsg2(200, "check maxwaittime %" PRIu64 " >= %" PRIu64 "\n",
+        current + jcr->wait_time_sum, job->MaxWaitTime);
   if (job->MaxWaitTime != 0
       && (current + jcr->wait_time_sum) >= job->MaxWaitTime) {
     cancel = true;
@@ -809,9 +809,12 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
     return false;
   }
   run_time = watchdog_time - jcr->start_time;
-  Dmsg7(200, "check_maxruntime %llu-%u=%llu >= %llu|%llu|%llu|%llu\n",
-        watchdog_time, jcr->start_time, run_time, job->MaxRunTime,
-        job->FullMaxRunTime, job->IncMaxRunTime, job->DiffMaxRunTime);
+  Dmsg7(200,
+        "check_maxruntime %" PRId64 "-%lld=%" PRId64 " >= %" PRId64 "|%" PRId64
+        "|%" PRId64 "|%" PRId64 "\n",
+        watchdog_time, static_cast<long long>(jcr->start_time), run_time,
+        job->MaxRunTime, job->FullMaxRunTime, job->IncMaxRunTime,
+        job->DiffMaxRunTime);
 
   if (jcr->getJobLevel() == L_FULL && job->FullMaxRunTime != 0
       && run_time >= job->FullMaxRunTime) {
@@ -844,8 +847,8 @@ static bool JobCheckMaxrunschedtime(JobControlRecord* jcr)
   }
   if ((watchdog_time - jcr->initial_sched_time)
       < jcr->dir_impl->MaxRunSchedTime) {
-    Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %d not expired\n", jcr,
-          jcr->Job, jcr->dir_impl->MaxRunSchedTime);
+    Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %" PRId64 " not expired\n",
+          jcr, jcr->Job, jcr->dir_impl->MaxRunSchedTime);
     return false;
   }
 
@@ -1089,8 +1092,9 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         do_full = true; /* No full, upgrade to one */
       }
 
-      Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full,
-            do_full, now, last_full_time);
+      Dmsg4(50,
+            "have_full=%d do_full=%d now=%" PRId64 " full_time=%" PRId64 "\n",
+            have_full, do_full, now, last_full_time);
 
       // Make sure the last diff is recent enough
       if (have_full && JobLevel == L_INCREMENTAL
@@ -1103,17 +1107,17 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
           if (last_diff_time < last_full_time) {
             last_diff_time = last_full_time;
           }
-          Dmsg2(50, "last_diff_time=%lld last_full_time=%lld\n", last_diff_time,
-                last_full_time);
+          Dmsg2(50, "last_diff_time=%" PRId64 " last_full_time=%" PRId64 "\n",
+                last_diff_time, last_full_time);
         } else {
           // No last differential, so use last full time
           last_diff_time = last_full_time;
-          Dmsg1(50, "No last_diff_time setting to full_time=%lld\n",
+          Dmsg1(50, "No last_diff_time setting to full_time=%" PRId64 "\n",
                 last_full_time);
         }
         do_diff = ((now - last_diff_time)
                    >= jcr->dir_impl->res.job->MaxDiffInterval);
-        Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff,
+        Dmsg2(50, "do_diff=%d diffInter=%" PRId64 "\n", do_diff,
               jcr->dir_impl->res.job->MaxDiffInterval);
       }
 

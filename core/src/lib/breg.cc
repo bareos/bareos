@@ -211,7 +211,8 @@ char* BareosRegex::replace(const char* fname)
     result = CheckPoolMemorySize(result, len);
     EditSubst(fname, regs);
     success = true;
-    Dmsg2(500, "bregexp: len = %i, result_len = %i\n", len, strlen(result));
+    Dmsg2(500, "bregexp: len = %i, result_len = %" PRIuz "\n", len,
+          strlen(result));
 
   } else { /* error in substitution */
     Dmsg0(100, "bregexp: error in substitution\n");
@@ -370,14 +371,14 @@ char* bregexp_build_where(char* dest,
   }
 
   if (add_suffix) {
-    if (len) dest[len++] = ',';
+    if (len > 0 && (len + 1) < str_size) dest[len++] = ',';
 
     len += Bsnprintf(dest + len, str_size - len, str_add_suffix,
                      bregexp_escape_string(str_tmp, add_suffix, regexp_sep));
   }
 
   if (add_prefix) {
-    if (len) dest[len++] = ',';
+    if (len > 0 && (len + 1) < str_size) dest[len++] = ',';
 
     len += Bsnprintf(dest + len, str_size - len, str_add_prefix,
                      bregexp_escape_string(str_tmp, add_prefix, regexp_sep));

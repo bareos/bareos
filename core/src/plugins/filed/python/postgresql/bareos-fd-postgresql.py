@@ -408,9 +408,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 if os.path.isfile(os.path.join(conf_d_dir, item)) and item.endswith(
                     ".conf"
                 ):
-                    self.cluster_configuration_parameters[
-                        os.path.splitext(item)[0]
-                    ] = os.path.join(conf_d_dir, item)
+                    self.cluster_configuration_parameters[os.path.splitext(item)[0]] = (
+                        os.path.join(conf_d_dir, item)
+                    )
             # and finally the subdir & dir
             self.cluster_configuration_parameters["conf_dir"] = os.path.join(
                 conf_dir, "conf.d"
@@ -1206,7 +1206,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             try:
                 self.__check_pg_major_version()
             except ValueError as val_error:
-                bareosfd.JobMessage(bareosfd.M_FATAL, val_error)
+                bareosfd.JobMessage(bareosfd.M_FATAL, f"error: {val_error}")
                 return bareosfd.bRC_Error
 
             start_dir = self.options["wal_archive_dir"]

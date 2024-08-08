@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1936,11 +1936,13 @@ static PyObject* PyStatPacket_repr(PyStatPacket* self)
   PoolMem buf(PM_MESSAGE);
 
   Mmsg(buf,
-       "StatPacket(dev=%ld, ino=%lld, mode=%04o, nlink=%d, "
-       "uid=%ld, gid=%ld, rdev=%ld, size=%lld, "
-       "atime=%ld, mtime=%ld, ctime=%ld, blksize=%ld, blocks=%lld)",
+       "StatPacket(dev=%" PRIu32 ", ino=%" PRIu64 ", mode=%04o, nlink=%" PRId16
+       ", uid=%" PRIu32 ", gid=%" PRIu32 ", rdev=%" PRIu32 ", size=%" PRIu64
+       ", atime=%lld, mtime=%lld, ctime=%lld, blksize=%" PRIu32
+       ", blocks=%" PRIu64 ")",
        self->dev, self->ino, (self->mode & ~S_IFMT), self->nlink, self->uid,
-       self->gid, self->rdev, self->size, self->atime, self->mtime, self->ctime,
+       self->gid, self->rdev, self->size, static_cast<long long>(self->atime),
+       static_cast<long long>(self->mtime), static_cast<long long>(self->ctime),
        self->blksize, self->blocks);
 
   s = PyUnicode_FromString(buf.c_str());
@@ -2025,10 +2027,12 @@ static PyObject* PySavePacket_repr(PySavePacket* self)
   PoolMem buf(PM_MESSAGE);
 
   Mmsg(buf,
-       "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%s, "
+       "SavePacket(fname=\"%s\", link=\"%s\", type=%" PRId32
+       ", flags=%s, "
        "no_read=%d, portable=%d, accurate_found=%d, "
-       "cmd=\"%s\", save_time=%ld, delta_seq=%ld, object_name=\"%s\", "
-       "object=\"%s\", object_len=%ld, object_index=%ld)",
+       "cmd=\"%s\", save_time=%" PRItime ", delta_seq=%" PRIu32
+       ", object_name=\"%s\", "
+       "object=\"%s\", object_len=%" PRId32 ", object_index=%" PRId32 ")",
        PyGetStringValue(self->fname), PyGetStringValue(self->link), self->type,
        print_flags_bitmap(self->flags), self->no_read, self->portable,
        self->accurate_found, self->cmd, self->save_time, self->delta_seq,
@@ -2097,10 +2101,11 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
 
   stat_repr = PyObject_Repr(self->statp);
   Mmsg(buf,
-       "RestorePacket(stream=%d, data_stream=%ld, type=%ld, file_index=%ld, "
-       "linkFI=%ld, uid=%ld, statp=\"%s\", attrEx=\"%s\", ofname=\"%s\", "
-       "olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d, "
-       "create_status=%d)",
+       "RestorePacket(stream=%d, data_stream=%" PRId32 ", type=%" PRId32
+       ", file_index=%" PRId32 ", linkFI=%" PRId32 ", uid=%" PRIu32
+       ", statp=\"%s\", attrEx=\"%s\", ofname=\"%s\""
+       ", olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d"
+       ", create_status=%d)",
        self->stream, self->data_stream, self->type, self->file_index,
        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx,
        self->ofname, self->olname, self->where, self->RegexWhere, self->replace,
@@ -2166,9 +2171,10 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
   PoolMem buf(PM_MESSAGE);
 
   Mmsg(buf,
-       "IoPacket(func=%d, count=%ld, flags=%ld, mode=%04o, "
-       "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
-       "whence=%ld, offset=%lld, win32=%d, filedes=%d)",
+       "IoPacket(func=%d, count=%" PRId32 ", flags=%" PRId32
+       ", mode=%04o, buf=\"%s\", fname=\"%s\", status=%" PRId32
+       ", io_errno=%" PRId32 ", lerror=%" PRId32 ", whence=%" PRId32
+       ", offset=%" PRId64 ", win32=%d, filedes=%d)",
        self->func, self->count, self->flags, (self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
        self->io_errno, self->lerror, self->whence, self->offset, self->win32,

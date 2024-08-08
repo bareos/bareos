@@ -1311,7 +1311,8 @@ RunResource* find_next_run(RunResource* run,
             runtm.tm_min = run->minute;
             runtm.tm_sec = 0;
             runtime = mktime(&runtm);
-            Dmsg2(200, "now=%d runtime=%lld\n", now, runtime);
+            Dmsg2(200, "now=%lld runtime=%lld\n", static_cast<long long>(now),
+                  static_cast<long long>(runtime));
             if ((runtime > now) && (runtime < endtime)) {
               Dmsg2(200, "Found it level=%d %c\n", run->level, run->level);
               return run; /* found it, return run resource */
@@ -1568,22 +1569,12 @@ bool sprintit(void* ctx, const char* fmt, ...)
 void bmsg(UaContext* ua, const char* fmt, va_list arg_ptr)
 {
   BareosSocket* bs = ua->UA_sock;
-  int maxlen, len;
   POOLMEM* msg = NULL;
-  va_list ap;
 
   if (bs) { msg = bs->msg; }
   if (!msg) { msg = GetPoolMemory(PM_EMSG); }
 
-again:
-  maxlen = SizeofPoolMemory(msg) - 1;
-  va_copy(ap, arg_ptr);
-  len = Bvsnprintf(msg, maxlen, fmt, ap);
-  va_end(ap);
-  if (len < 0 || len >= maxlen) {
-    msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-    goto again;
-  }
+  int len = PmVFormat(msg, fmt, arg_ptr);
 
   if (bs) {
     bs->msg = msg;
@@ -1641,7 +1632,7 @@ void UaContext::SendMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
+void UaContext::SendRawMsg(const char* msg) { SendMsg("%s", msg); }
 
 
 /**

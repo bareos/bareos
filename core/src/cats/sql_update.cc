@@ -100,8 +100,8 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   DbLocker _{this};
   Mmsg(cmd,
        "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
-       "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%lu,"
-       "VolSessionTime=%lu WHERE JobId=%s",
+       "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%" PRIu32
+       ", VolSessionTime=%" PRIu32 " WHERE JobId=%s",
        (char)(jcr->getJobStatus()), (char)(jr->JobLevel), dt,
        edit_int64(jr->ClientId, ed1), edit_uint64(JobTDate, ed2),
        edit_int64(jr->PoolId, ed3), edit_int64(jr->FileSetId, ed4),
@@ -114,7 +114,9 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
 bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr)
 {
   DbLocker _{this};
-  Mmsg(cmd, "UPDATE Job SET JobBytes=%llu,JobFiles=%lu WHERE JobId=%lu",
+  Mmsg(cmd,
+       "UPDATE Job SET JobBytes=%" PRIu64 ",JobFiles=%" PRIu32
+       " WHERE JobId=%" PRIu32,
        jcr->JobBytes, jcr->JobFiles, jcr->JobId);
 
   return UPDATE_DB(jcr, cmd) > 0;
@@ -293,7 +295,8 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   char esc_medianame[MAX_ESCAPE_NAME_LENGTH];
   char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
-  Dmsg1(100, "update_media: FirstWritten=%d\n", mr->FirstWritten);
+  Dmsg1(100, "update_media: FirstWritten=%lld\n",
+        static_cast<long long>(mr->FirstWritten));
   DbLocker _{this};
   EscapeString(jcr, esc_medianame, mr->VolumeName, strlen(mr->VolumeName));
   EscapeString(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
@@ -307,7 +310,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "WHERE VolumeName='%s'",
          dt, esc_medianame);
     UPDATE_DB(jcr, cmd);
-    Dmsg1(400, "Firstwritten=%d\n", mr->FirstWritten);
+    Dmsg1(400, "Firstwritten=%lld\n", static_cast<long long>(mr->FirstWritten));
   }
 
   /* Label just done? */
@@ -437,7 +440,7 @@ void BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
       Mmsg(cmd,
            "UPDATE Media SET InChanger=0, Slot=0 WHERE "
            "Slot=%d AND StorageId=%s",
-           mr->Slot, edit_int64(mr->StorageId, ed1), mr->VolumeName);
+           mr->Slot, edit_int64(mr->StorageId, ed1));
     }
     Dmsg1(100, "%s\n", cmd);
     UPDATE_DB(jcr, cmd);

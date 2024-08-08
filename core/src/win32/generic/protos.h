@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,6 @@ extern int BareosAppMain();
 extern void LogLastErrorMsg(const char* msg, const char* fname, int lineno);
 extern int BareosMain(int argc, char* argv[]);
 extern BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint);
-extern void d_msg(const char*, int, int, const char*, ...);
 
 /* service.cpp */
 bool postToBareos(UINT message, WPARAM wParam, LPARAM lParam);

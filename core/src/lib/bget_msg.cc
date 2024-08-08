@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,8 +31,8 @@
 #include "lib/bget_msg.h"
 #include "lib/bsock.h"
 
-static char OK_msg[] = "2000 OK\n";
-static char TERM_msg[] = "2999 Terminate\n";
+constexpr const char OK_msg[] = "2000 OK\n";
+constexpr const char TERM_msg[] = "2999 Terminate\n";
 
 #define messagelevel 500
 

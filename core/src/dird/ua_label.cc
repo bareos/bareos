@@ -285,7 +285,7 @@ static inline bool IsCleaningTape(UaContext* ua,
       = bstrncmp(mr->VolumeName, ua->jcr->dir_impl->res.pool->cleaning_prefix,
                  strlen(ua->jcr->dir_impl->res.pool->cleaning_prefix));
 
-  Dmsg4(100, "CLNprefix=%s: Vol=%s: len=%d bstrncmp=%s\n",
+  Dmsg4(100, "CLNprefix=%s: Vol=%s: len=%" PRIuz " bstrncmp=%s\n",
         ua->jcr->dir_impl->res.pool->cleaning_prefix, mr->VolumeName,
         strlen(ua->jcr->dir_impl->res.pool->cleaning_prefix),
         retval ? "true" : "false");

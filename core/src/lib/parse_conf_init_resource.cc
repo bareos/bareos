@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -202,6 +202,8 @@ void ConfigurationParser::SetAllResourceDefaultsIterateOverItems(
       SetBit(res_item_index,
              (*items[res_item_index].allocated_resource)->inherit_content_);
     }
+
+    (*items[res_item_index].allocated_resource)->rcode_ = rcode;
 
     res_item_index++;
 

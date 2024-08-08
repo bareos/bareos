@@ -84,47 +84,49 @@ extern void terminate_child();
 namespace storagedaemon {
 
 /* Commands received from director that need scanning */
-static char setbandwidth[] = "setbandwidth=%lld Job=%127s";
-static char setdebugv0cmd[] = "setdebug=%d trace=%d";
-static char setdebugv1cmd[] = "setdebug=%d trace=%d timestamp=%d";
-static char cancelcmd[] = "cancel Job=%127s";
-static char relabelcmd[]
+constexpr const char setbandwidth[] = "setbandwidth=%lld Job=%127s";
+constexpr const char setdebugv0cmd[] = "setdebug=%d trace=%d";
+constexpr const char setdebugv1cmd[] = "setdebug=%d trace=%d timestamp=%d";
+constexpr const char cancelcmd[] = "cancel Job=%127s";
+constexpr const char relabelcmd[]
     = "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
       "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
-static char labelcmd[]
+constexpr const char labelcmd[]
     = "label %127s VolumeName=%127s PoolName=%127s "
       "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
-static char mountslotcmd[] = "mount %127s drive=%hd slot=%hd";
-static char mountcmd[] = "mount %127s drive=%hd";
-static char unmountcmd[] = "unmount %127s drive=%hd";
-static char releasecmd[] = "release %127s drive=%hd";
-static char readlabelcmd[] = "readlabel %127s Slot=%hd drive=%hd";
-static char replicatecmd[]
+constexpr const char mountslotcmd[] = "mount %127s drive=%hd slot=%hd";
+constexpr const char mountcmd[] = "mount %127s drive=%hd";
+constexpr const char unmountcmd[] = "unmount %127s drive=%hd";
+constexpr const char releasecmd[] = "release %127s drive=%hd";
+constexpr const char readlabelcmd[] = "readlabel %127s Slot=%hd drive=%hd";
+constexpr const char replicatecmd[]
     = "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
       "Authorization=%100s";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d";
-static char resolvecmd[] = "resolve %s";
-static char pluginoptionscmd[] = "pluginoptions %s";
+constexpr const char passiveclientcmd[]
+    = "passive client address=%s port=%d ssl=%d";
+constexpr const char resolvecmd[] = "resolve %s";
+constexpr const char pluginoptionscmd[] = "pluginoptions %s";
 
 /* Responses sent to Director */
-static char derrmsg[] = "3900 Invalid command:";
-static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
-static char OKsetdebugv1[]
+constexpr const char derrmsg[] = "3900 Invalid command:";
+constexpr const char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
+constexpr const char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
-static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
-static char invalid_cmd[]
+constexpr const char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
+constexpr const char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
-static char OK_bootstrap[] = "3000 OK bootstrap\n";
-static char ERROR_bootstrap[] = "3904 Error bootstrap\n";
-static char OK_replicate[] = "3000 OK replicate\n";
-static char BADcmd[] = "3991 Bad %s command: %s\n";
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKpassive[] = "2000 OK passive client\n";
-static char OKpluginoptions[] = "2000 OK plugin options\n";
-static char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
+constexpr const char OK_bootstrap[] = "3000 OK bootstrap\n";
+constexpr const char ERROR_bootstrap[] = "3904 Error bootstrap\n";
+constexpr const char OK_replicate[] = "3000 OK replicate\n";
+constexpr const char BADcmd[] = "3991 Bad %s command: %s\n";
+constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+constexpr const char OKpassive[] = "2000 OK passive client\n";
+constexpr const char OKpluginoptions[] = "2000 OK plugin options\n";
+constexpr const char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
 
 #define MAX_SETDEVICE_NAME_LENGTH 128  // including the trailing zero
-static char setdevice_autoselect[] = "setdevice device=%127s autoselect=%d";
+constexpr const char setdevice_autoselect[]
+    = "setdevice device=%127s autoselect=%d";
 
 /* Forward referenced functions */
 // static bool ActionOnPurgeCmd(JobControlRecord *jcr);
@@ -306,7 +308,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
     if (!found) { /* command not found */
       PoolMem err_msg;
       Mmsg(err_msg, "%s %s\n", derrmsg, dir->msg);
-      dir->fsend(err_msg.c_str());
+      dir->fsend("%s", err_msg.c_str());
       break;
     }
   }
@@ -401,7 +403,8 @@ static bool SetdebugCmd(JobControlRecord* jcr)
     return dir->fsend(OKsetdebugv1, level, GetTrace(), GetTimestamp(),
                       tracefilename.c_str());
   } else {
-    Dmsg3(50, "level=%d trace=%d\n", level, GetTrace(), tracefilename.c_str());
+    Dmsg3(50, "level=%d trace=%d tracefilename=%s\n", level, GetTrace(),
+          tracefilename.c_str());
     return dir->fsend(OKsetdebugv0, level, tracefilename.c_str());
   }
 }
@@ -536,8 +539,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
   pthread_cond_signal(&jcr->sd_impl->job_end_wait); /* wake waiting job */
   jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
 
-  dir->fsend(T_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId,
-             jcr->Job, reason);
+  dir->fsend(T_("3000 JobId=%" PRIu32 " Job=\"%s\" marked to be %s.\n"),
+             jcr->JobId, jcr->Job, reason);
   FreeJcr(jcr);
 
 bail_out:

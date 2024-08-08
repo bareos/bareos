@@ -51,7 +51,6 @@ using namespace filedaemon;
 
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
-extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 
 static std::string pidfile_path{};
@@ -268,8 +267,10 @@ void TerminateFiled(int sig)
 
   UnloadFdPlugins();
   FlushMntentCache();
-  WriteStateFile(me->working_directory, "bareos-fd",
-                 GetFirstPortHostOrder(me->FDaddrs));
+  if (me) {
+    WriteStateFile(me->working_directory, "bareos-fd",
+                   GetFirstPortHostOrder(me->FDaddrs));
+  }
   DeletePidFile(pidfile_path);
 
   if (g_filed_configfile != nullptr) { free(g_filed_configfile); }

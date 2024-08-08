@@ -711,8 +711,8 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   source = BSTR_2_str(pSource);
   description = BSTR_2_str(pDescription);
   if (source && description) {
-    Jmsg(ctx, M_FATAL, "%s(x%X): %s\n", source, hrErr, description);
-    Dmsg(ctx, debuglevel, "%s(x%X): %s\n", source, hrErr, description);
+    Jmsg(ctx, M_FATAL, "%s(x%08lX): %s\n", source, hrErr, description);
+    Dmsg(ctx, debuglevel, "%s(x%08lX): %s\n", source, hrErr, description);
   }
 
   if (source) { free(source); }
@@ -1261,13 +1261,13 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     if (success) {
       snprintf(error_msg.data(), error_msg.size(), fmt, "successful",
                static_cast<unsigned int>(hr), err);
-      Jmsg(ctx, M_INFO, error_msg.data());
-      Dmsg(ctx, debuglevel, error_msg.data());
+      Jmsg(ctx, M_INFO, "%s", error_msg.data());
+      Dmsg(ctx, debuglevel, "%s", error_msg.data());
     } else {
       sprintf(error_msg.data(), fmt, "failed", static_cast<unsigned int>(hr),
               err);
-      Jmsg(ctx, M_FATAL, error_msg.data());
-      Dmsg(ctx, debuglevel, error_msg.data());
+      Jmsg(ctx, M_FATAL, "%s", error_msg.data());
+      Dmsg(ctx, debuglevel, "%s", error_msg.data());
       goto bail_out;
     }
   }  // GetConfiguration
@@ -1388,10 +1388,10 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   // See what command is available on the VDIDevice.
   hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
   if (!SUCCEEDED(hr)) {
-    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n",
-         hr);
+    Jmsg(ctx, M_ERROR,
+         "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%08lX\n", hr);
     Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
+         "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%08lX\n", hr);
     goto bail_out;
   }
 
@@ -1435,9 +1435,9 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
   if (!SUCCEEDED(hr)) {
     Jmsg(ctx, M_ERROR,
-         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%08lX\n", hr);
     Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%08lX\n", hr);
     goto bail_out;
   }
 
