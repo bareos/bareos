@@ -542,7 +542,7 @@ class LowLevel(object):
         msg = self.recv_submsg(length)
         return msg
 
-    def recv_msg(self, regex=b"^\d\d\d\d OK.*$"):
+    def recv_msg(self, regex=b"^\\d\\d\\d\\d OK.*$"):
         """Receive a full message.
 
         It retrieves messages (header + message text),
