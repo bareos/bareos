@@ -23,7 +23,6 @@
 
 # selenium.common.exceptions.ElementNotInteractableException: requires >= selenium-3.4.0
 
-from __future__ import print_function
 from datetime import datetime
 import logging
 import os
@@ -38,16 +37,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
-
-#
-# try to import the SauceClient,
-# required for builds inside https://travis-ci.org,
-# but not available on all platforms.
-#
-try:
-    from sauceclient import SauceClient
-except ImportError:
-    pass
+from selenium.webdriver.chrome.service import Service as ChromeService
 
 
 class BadJobException(Exception):
@@ -163,63 +153,6 @@ class SeleniumTest(unittest.TestCase):
     # time to wait before trying again
     # Value must be > 0.1.
     waittime = 0.2
-    # Travis SauceLab integration
-    travis = False
-    sauce_username = None
-    access_key = None
-
-    def __get_dict_from_env(self):
-        result = {}
-
-        for key in [
-            "TRAVIS_BRANCH",
-            "TRAVIS_BUILD_NUMBER",
-            "TRAVIS_BUILD_WEB_URL",
-            "TRAVIS_COMMIT",
-            "TRAVIS_COMMIT_MESSAGE",
-            "TRAVIS_JOB_NUMBER",
-            "TRAVIS_JOB_WEB_URL",
-            "TRAVIS_PULL_REQUEST",
-            "TRAVIS_PULL_REQUEST_BRANCH",
-            "TRAVIS_PULL_REQUEST_SHA",
-            "TRAVIS_PULL_REQUEST_SLUG",
-            "TRAVIS_REPO_SLUG",
-            "TRAVIS_TAG",
-        ]:
-            result[key] = os.environ.get(key)
-        result["GIT_BRANCH_URL"] = (
-            "https://github.com/bareos/bareos/tree/" + os.environ.get("TRAVIS_BRANCH")
-        )
-        result["GIT_COMMIT_URL"] = (
-            "https://github.com/bareos/bareos/tree/" + os.environ.get("TRAVIS_COMMIT")
-        )
-
-        return result
-
-    def __setUpTravis(self):
-        self.desired_capabilities = {}
-        buildnumber = os.environ["TRAVIS_BUILD_NUMBER"]
-        jobnumber = os.environ["TRAVIS_JOB_NUMBER"]
-        self.desired_capabilities["tunnel-identifier"] = jobnumber
-        self.desired_capabilities["build"] = "{} {}".format(
-            os.environ.get("TRAVIS_REPO_SLUG"), buildnumber
-        )
-        # self.desired_capabilities['name'] = "Travis Build Nr. {}: {}".format(buildnumber, self.__get_name_of_test())
-        self.desired_capabilities["name"] = "{}: {}".format(
-            os.environ.get("TRAVIS_BRANCH"), self.__get_name_of_test()
-        )
-        self.desired_capabilities["tags"] = [os.environ.get("TRAVIS_BRANCH")]
-        self.desired_capabilities["custom-data"] = self.__get_dict_from_env()
-        self.desired_capabilities["platform"] = "macOS 10.13"
-        self.desired_capabilities["browserName"] = "chrome"
-        self.desired_capabilities["version"] = "latest"
-        self.desired_capabilities["captureHtml"] = True
-        self.desired_capabilities["extendedDebugging"] = True
-        sauce_url = "http://%s:%s@localhost:4445/wd/hub"
-        self.driver = webdriver.Remote(
-            desired_capabilities=self.desired_capabilities,
-            command_executor=sauce_url % (self.sauce_username, self.access_key),
-        )
 
     def setUp(self):
         # Configure the logger, for information about the timings set it to INFO
@@ -231,49 +164,53 @@ class SeleniumTest(unittest.TestCase):
         )
         self.logger = logging.getLogger()
 
-        if self.travis:
-            self.__setUpTravis()
-        else:
-            if self.browser == "chrome":
-                self.chromedriverpath = self.getChromedriverpath()
-                # chrome webdriver option: disable experimental feature
-                opt = webdriver.ChromeOptions()
-                opt.add_experimental_option("w3c", False)
-                # chrome webdriver option: specify user data directory
-                opt.add_argument(
-                    "--user-data-dir=/tmp/chrome-user-data-"
-                    + SeleniumTest.profile
-                    + "-"
-                    + SeleniumTest.testname
+        if self.browser == "chrome":
+            self.chromedriverpath = self.getChromedriverpath()
+            # chrome webdriver option: disable experimental feature
+            opt = webdriver.ChromeOptions()
+            # chrome webdriver option: specify user data directory
+            opt.add_argument(
+                "--user-data-dir=/tmp/chrome-user-data-"
+                + getattr(self, "profile", "none")
+                + "-"
+                + getattr(self, "testname", "none")
+            )
+            # Set some options to improve reliability
+            # https://stackoverflow.com/a/55307841/11755457
+            opt.add_argument("--disable-extensions")
+            opt.add_argument("--dns-prefetch-disable")
+            opt.add_argument("--disable-gpu")
+
+            # test in headless mode?
+            if self.chromeheadless:
+                opt.add_argument("--headless")
+                opt.add_argument("--no-sandbox")
+
+            try:
+                # selenium >= 4
+                self.driver = webdriver.Chrome(
+                    service=ChromeService(self.chromedriverpath), options=opt
                 )
-                # Set some options to improve reliability
-                # https://stackoverflow.com/a/55307841/11755457
-                opt.add_argument("--disable-extensions")
-                opt.add_argument("--dns-prefetch-disable")
-                opt.add_argument("--disable-gpu")
-
-                # test in headless mode?
-                if self.chromeheadless:
-                    opt.add_argument("--headless")
-                    opt.add_argument("--no-sandbox")
-
+            except TypeError:
+                # fallback to old selenium initialization.
                 self.driver = webdriver.Chrome(self.chromedriverpath, options=opt)
-            elif self.browser == "firefox":
-                d = DesiredCapabilities.FIREFOX
-                d["loggingPrefs"] = {"browser": "ALL"}
-                fp = webdriver.FirefoxProfile()
-                fp.set_preference(
-                    "webdriver.log.file", self.logpath + "/firefox_console.log"
-                )
-                self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
-            else:
-                raise RuntimeError("Browser {} not found.".format(str(self.browser)))
-            #
-            # set explicit window size
-            #
-            self.driver.set_window_size(self.resolution_x, self.resolution_y)
-            # Large resolution to show website without hamburger menu.
-            # self.driver.set_window_size(1920, 1080)
+
+        elif self.browser == "firefox":
+            d = DesiredCapabilities.FIREFOX
+            d["loggingPrefs"] = {"browser": "ALL"}
+            fp = webdriver.FirefoxProfile()
+            fp.set_preference(
+                "webdriver.log.file", self.logpath + "/firefox_console.log"
+            )
+            self.driver = webdriver.Firefox(capabilities=d, firefox_profile=fp)
+        else:
+            raise RuntimeError("Browser {} not found.".format(str(self.browser)))
+        #
+        # set explicit window size
+        #
+        self.driver.set_window_size(self.resolution_x, self.resolution_y)
+        # Large resolution to show website without hamburger menu.
+        # self.driver.set_window_size(1920, 1080)
 
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
@@ -501,11 +438,13 @@ class SeleniumTest(unittest.TestCase):
         driver = self.driver
         self.select_navbar_element("job")
         self.wait_and_click(By.LINK_TEXT, "Run")
-        Select(driver.find_element_by_id("job")).select_by_visible_text(
+        Select(driver.find_element(By.ID, "job")).select_by_visible_text(
             "backup-bareos-fd"
         )
-        Select(driver.find_element_by_id("client")).select_by_visible_text(self.client)
-        Select(driver.find_element_by_id("level")).select_by_visible_text("Incremental")
+        Select(driver.find_element(By.ID, "client")).select_by_visible_text(self.client)
+        Select(driver.find_element(By.ID, "level")).select_by_visible_text(
+            "Incremental"
+        )
         # Clears the priority field and enters 5.
         self.enter_input("priority", "5")
         # Open the calendar
@@ -531,11 +470,11 @@ class SeleniumTest(unittest.TestCase):
         # )
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
-        driver.find_element_by_xpath('(//button[@type="button"])[1]').click()
-        driver.find_element_by_link_text("English").click()
-        driver.find_element_by_xpath('//input[@id="submit"]').click()
+        driver.find_element(By.XPATH, '(//button[@type="button"])[1]').click()
+        driver.find_element(By.LINK_TEXT, "English").click()
+        driver.find_element(By.XPATH, '//input[@id="submit"]').click()
         try:
-            driver.find_element_by_xpath('//div[@role="alert"]')
+            driver.find_element(By.XPATH, '//div[@role="alert"]')
         except:
             self.wait_for_spinner_absence()
         else:
@@ -567,7 +506,7 @@ class SeleniumTest(unittest.TestCase):
         """
         logger = logging.getLogger()
         logger.info("Entering %r into the input-field %r.", inputvalue, inputname)
-        elem = self.driver.find_element_by_name(inputname)
+        elem = self.driver.find_element(By.NAME, inputname)
         elem.clear()
         elem.send_keys(inputvalue)
 
@@ -732,17 +671,6 @@ class SeleniumTest(unittest.TestCase):
 
     def tearDown(self):
         logger = logging.getLogger()
-        if self.travis:
-            print(
-                "Link to test {}: https://app.saucelabs.com/jobs/{}".format(
-                    self.__get_name_of_test(), self.driver.session_id
-                )
-            )
-            sauce_client = SauceClient(self.sauce_username, self.access_key)
-            if sys.exc_info() == (None, None, None):
-                sauce_client.jobs.update_job(self.driver.session_id, passed=True)
-            else:
-                sauce_client.jobs.update_job(self.driver.session_id, passed=False)
         try:
             self.driver.quit()
         except WebDriverException as e:
@@ -826,10 +754,6 @@ def get_env():
     sleeptime = os.environ.get("BAREOS_WEBUI_DELAY")
     if sleeptime:
         SeleniumTest.sleeptime = float(sleeptime)
-    if os.environ.get("TRAVIS_COMMIT"):
-        SeleniumTest.travis = True
-        SeleniumTest.sauce_username = os.environ.get("SAUCE_USERNAME")
-        SeleniumTest.access_key = os.environ.get("SAUCE_ACCESS_KEY")
 
 
 if __name__ == "__main__":
