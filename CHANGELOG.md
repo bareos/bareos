@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - matrix remove obsolete SUSE [PR #1888]
 - cats: scripts add option --no-psqlrc to psql [PR #1900]
 - filed: fix python plugin crash on python <3.10 [PR #1889]
+- vadp-dumper: fix out of bounds read [PR #1908]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -239,4 +240,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1888]: https://github.com/bareos/bareos/pull/1888
 [PR #1889]: https://github.com/bareos/bareos/pull/1889
 [PR #1900]: https://github.com/bareos/bareos/pull/1900
+[PR #1908]: https://github.com/bareos/bareos/pull/1908
 [unreleased]: https://github.com/bareos/bareos/tree/master

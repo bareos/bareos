@@ -41,6 +41,7 @@
 #include "copy_thread.h"
 
 #include <jansson.h>
+#include <cassert>
 
 /*
  * json_array_foreach macro was added in jansson version 2.5
@@ -1219,6 +1220,16 @@ static bool process_single_cbt(std::vector<uint8>& buffer,
     uint64 sectors_to_read
         = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
 
+    if (sectors_to_read == 0) {
+      fprintf(stderr,
+              "Internal logic error (length (%llu) is not divisible by sector "
+              "size (%llu))\n",
+              static_cast<long long unsigned>(offset_length),
+              static_cast<long long unsigned>(DEFAULT_SECTOR_SIZE));
+      retval = false;
+      break;
+    }
+
     if (multi_threaded) {
       if (!send_to_copy_thread(sector_offset,
                                sectors_to_read * DEFAULT_SECTOR_SIZE)) {
@@ -1226,6 +1237,17 @@ static bool process_single_cbt(std::vector<uint8>& buffer,
         break;
       }
     } else {
+      if (buffer.size() < sectors_to_read * DEFAULT_SECTOR_SIZE) {
+        fprintf(stderr,
+                "Internal logic error (buffer is too small.  Wanted %llu; have "
+                "%llu\n",
+                static_cast<long long unsigned>(sectors_to_read
+                                                * DEFAULT_SECTOR_SIZE),
+                static_cast<long long unsigned>(buffer.size()));
+        retval = false;
+        break;
+      }
+
       if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
                          buffer.data())
           != sectors_to_read * DEFAULT_SECTOR_SIZE) {
@@ -1308,7 +1330,11 @@ struct vec {
 
   size_t size() const { return count; }
 
-  reference operator[](size_t i) { return data[i]; }
+  reference operator[](size_t i)
+  {
+    assert(i < count);
+    return data[i];
+  }
 
   ~vec()
   {
@@ -1339,13 +1365,6 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
     fprintf(stderr, "\n\n");
   }
 
-  bool retval = false;
-  size_t index;
-  json_t *object, *array_element, *start, *length;
-  uint64_t start_offset, offset_length;
-  uint64 current_block = 0;
-  uint64 changed_len = 0, saved_len = 0;
-
   std::vector<uint8> buffer;
   if (!multi_threaded) {
     // we read at most sectors_per_call sectors at once
@@ -1356,14 +1375,14 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
   if (!read_diskHandle) {
     fprintf(stderr,
             "Cannot process CBT data as no VixDiskLib disk handle opened\n");
-    goto bail_out;
+    return false;
   }
 
-  object = json_object_get(cbt, CBT_CHANGEDAREA_KEY);
-  if (!object) {
+  json_t* changed_blocks = json_object_get(cbt, CBT_CHANGEDAREA_KEY);
+  if (!changed_blocks) {
     fprintf(stderr, "Failed to find %s in JSON definition of object %s\n",
             CBT_CHANGEDAREA_KEY, key);
-    goto bail_out;
+    return false;
   }
 
   /* Iterate over each element of the JSON array and get the "start" and
@@ -1401,75 +1420,125 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
    * iterate over them), whereas popping the allocated list happens byr
    * advancing the current_block index.
    */
-  json_array_foreach(object, index, array_element)
+
+  // this is the current index into the changed blocks "array"
+  size_t changed_index = 0;
+  // this is the current index into the allocated blocks array
+  uint64 allocated_index = 0;
+
+  // this is the amount of data that we were going to backup if it wasnt
+  // for the QueryAllocatedBlocks Api, i.e. the total amount of changed
+  // data
+  uint64 changed_count = 0;
+  // this is the amount of data that we actually backed up
+  uint64 saved_count = 0;
+
+  json_t* cbt_entry = nullptr;
+  json_array_foreach(changed_blocks, changed_index, cbt_entry)
   {
     // Get the two members we are interested in.
-    start = json_object_get(array_element, CBT_CHANGEDAREA_START_KEY);
-    length = json_object_get(array_element, CBT_CHANGEDAREA_LENGTH_KEY);
+    json_t* start_str = json_object_get(cbt_entry, CBT_CHANGEDAREA_START_KEY);
+    json_t* length_str = json_object_get(cbt_entry, CBT_CHANGEDAREA_LENGTH_KEY);
 
-    if (!start || !length) { continue; }
-
-    start_offset = json_integer_value(start);
-    offset_length = json_integer_value(length);
-
-    changed_len += offset_length;
-
-    if (allocated.size() == current_block) {
-      // All further sectors are unallocated, so we can stop here.
-      break;
+    if (!start_str || !length_str) {
+      if (start_str) {
+        // only length is missing
+        fprintf(stderr,
+                "Found a cbt entry without length info at index %llu. "
+                "Skipping...\n",
+                static_cast<long long unsigned>(changed_index));
+      } else if (length_str) {
+        // only start is missing
+        fprintf(stderr,
+                "Found a cbt entry without start info at index %llu. "
+                "Skipping...\n",
+                static_cast<long long unsigned>(changed_index));
+      } else {
+        // both are missing
+        fprintf(stderr,
+                "Found a cbt entry without start and length info at index "
+                "%llu. Skipping...\n",
+                static_cast<long long unsigned>(changed_index));
+      }
+      continue;
     }
 
-    for (;;) {
-      auto& block = allocated[current_block];
+    // changed blocks are given us terms of bytes (from the python plugin)
+    uint64 changed_start = json_integer_value(start_str);
+    uint64 changed_length = json_integer_value(length_str);
+    uint64 changed_end = changed_start + changed_length;
 
-      auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
-      auto blength = block.length * DEFAULT_SECTOR_SIZE;
+    if (changed_start == changed_end) {
+      fprintf(stderr,
+              "Found an empty changed block at index %llu. Skipping...\n",
+              static_cast<long long unsigned>(changed_index));
+      continue;
+    }
 
-      if (start_offset + offset_length < boffset) {
-        // skip unallocated block
+    changed_count += changed_length;
+
+    while (allocated_index < allocated.size()) {
+      auto& block = allocated[allocated_index];
+
+      // allocated blocks are given us terms of sectors
+      auto allocated_start = block.offset * DEFAULT_SECTOR_SIZE;
+      auto allocated_length = block.length * DEFAULT_SECTOR_SIZE;
+      auto allocated_end = allocated_start + allocated_length;
+
+      if (allocated_start == allocated_end) {
+        fprintf(stderr,
+                "Found an empty allocated block at index %llu. Skipping...\n",
+                static_cast<long long unsigned>(allocated_index));
+        allocated_index += 1;
+        continue;
+      }
+
+      /* in a perfect world we would also save information about
+       * newly unallocated blocks as well.
+       * But since we cannot currently take advantage of that information
+       * -- we do restores first -> last instead of last -> first and we
+       *    do not do consolidations for plugins --
+       * we just ignore them.  If needed in the future, we can embed "empty"
+       * blocks into the output stream by e.g. using a different BAREOS_MAGIC
+       * value and only saving the block header. */
+      if ((allocated_start < changed_end) && (changed_start < allocated_end)) {
+        uint64 intersection_start = std::max(allocated_start, changed_start);
+
+        uint64 intersection_end = std::min(allocated_end, changed_end);
+
+        // the if condition implies that this always holds true
+        assert(intersection_start < intersection_end);
+
+        uint64 intersection_length = intersection_end - intersection_start;
+
+        saved_count += intersection_length;
+
+        if (!process_single_cbt(buffer, intersection_start,
+                                intersection_length)) {
+          return false;
+        }
+      }
+
+      if (allocated_end <= changed_end) {
+        // only advance the index if we are completely done with the allocated
+        // block, otherwise we might miss an intersection with the next
+        // changed block
+        allocated_index += 1;
+      } else {
+        // ... otherwise we are done with this changed block and we want
+        // to continue to the next one
         break;
       }
-
-      // in a perfect world we would also save information about
-      // newly unallocated blocks as well.
-      // But since we cannot currently take advantage of that information
-      // -- we do restores first -> last instead of last -> first and we
-      //    do not do consolidations for plugins --
-      // we just ignore them.  If needed in the future, we can mark "empty"
-      // by e.g. changing the BAREOS_MAGIC to a different one.
-      if (boffset < start_offset + offset_length
-          && boffset + blength > start_offset) {
-        uint64 offset = std::max(boffset, start_offset);
-        uint64 min_length = std::min(blength, offset_length);
-
-        saved_len += min_length;
-
-        if (!process_single_cbt(buffer, offset, min_length)) { goto bail_out; }
-      }
-
-      if (boffset + blength <= start_offset + offset_length) {
-        current_block += 1;
-      }
-
-      if (start_offset + offset_length <= boffset + blength) { break; }
     }
   }
 
   if (verbose) {
-    fprintf(stderr, "Changed len: %lu, Saved len: %lu\n", changed_len,
-            saved_len);
+    fprintf(stderr, "Total Changed Data: %llu, Total Saved Data: %llu\n",
+            static_cast<long long unsigned>(changed_count),
+            static_cast<long long unsigned>(saved_count));
   }
 
-
-  retval = true;
-
-bail_out:
-  if (read_diskHandle) {
-    VixDiskLib_Close(read_diskHandle);
-    read_diskHandle = NULL;
-  }
-
-  return retval;
+  return true;
 }
 
 /*
@@ -1554,12 +1623,34 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
       sectors_to_read
           = MIN(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
 
+      if (sectors_to_read == 0) {
+        fprintf(
+            stderr,
+            "Internal logic error (length (%llu) is not divisible by sector "
+            "size (%llu))\n",
+            static_cast<long long unsigned>(rce.offset_length),
+            static_cast<long long unsigned>(DEFAULT_SECTOR_SIZE));
+        retval = false;
+        break;
+      }
+
       if (!validate_only && multi_threaded) {
         if (!send_to_copy_thread(sector_offset,
                                  sectors_to_read * DEFAULT_SECTOR_SIZE)) {
           goto bail_out;
         }
       } else {
+        if (buffer.size() < sectors_to_read * DEFAULT_SECTOR_SIZE) {
+          fprintf(stderr,
+                  "Internal logic error (buffer is too small.  Wanted %llu; "
+                  "have %llu\n",
+                  static_cast<long long unsigned>(sectors_to_read
+                                                  * DEFAULT_SECTOR_SIZE),
+                  static_cast<long long unsigned>(buffer.size()));
+          retval = false;
+          break;
+        }
+
         cnt = robust_reader(STDIN_FILENO, (char*)buffer.data(),
                             sectors_to_read * DEFAULT_SECTOR_SIZE);
         if (cnt != sectors_to_read * DEFAULT_SECTOR_SIZE) { goto bail_out; }
@@ -1627,6 +1718,7 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
 {
   json_t* value;
   uint64_t absolute_disk_length = 0;
+  bool retval = false;
 
   process_json_work_file(json_work_file);
 
@@ -1757,9 +1849,14 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
     blocks.push_back(VixDiskLibBlock{.offset = 0, .length = Capacity});
   }
 
-  return process_cbt(CBT_DISKCHANGEINFO_KEY, std::move(blocks), value);
+  retval = process_cbt(CBT_DISKCHANGEINFO_KEY, std::move(blocks), value);
+
 bail_out:
-  return false;
+  if (read_diskHandle) {
+    VixDiskLib_Close(read_diskHandle);
+    read_diskHandle = NULL;
+  }
+  return retval;
 }
 
 // Worker function that performs the restore operation of the program.

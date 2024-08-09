@@ -51,8 +51,8 @@ static void* copy_thread(void* data)
 
     while (save_data) {
       auto total_length = save_data->data_len;
-      cnt = cp_thread->output_function(save_data->sector_offset,
-                                       save_data->data_len, save_data->data);
+      cnt = context->output_function(save_data->sector_offset,
+                                     save_data->data_len, save_data->data);
       // dequeue invalidates save_data!
       context->cb->dequeue();
       if (cnt < total_length) { return NULL; }
