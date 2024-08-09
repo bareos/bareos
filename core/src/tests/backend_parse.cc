@@ -147,12 +147,12 @@ TEST(parse_device_options, GoodComma)
   {
     auto parsed = butil::parse_options("blocksize=3\\,");
     auto* error = std::get_if<butil::error>(&parsed);
-    EXPECT_EQ(error ? error->c_str() : "", "");
+    EXPECT_STREQ(error ? error->c_str() : "", "");
   }
   {
     auto parsed = butil::parse_options("blocksize=3\\\\\\,");
     auto* error = std::get_if<butil::error>(&parsed);
-    EXPECT_EQ(error ? error->c_str() : "", "");
+    EXPECT_STREQ(error ? error->c_str() : "", "");
   }
 }
 
