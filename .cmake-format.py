@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -85,6 +85,32 @@ additional_commands = {
         "pargs": 0,
         "flags": ["", ""],
         "kwargs": {"BAREOS_DB_NAME": "*", "DEBIAN_DB_NAME": "*"},
+    },
+    "CPMAddPackage": {
+        "pargs": 0,
+        "flags": ["", ""],
+        "kwargs": {
+            "NAME": "1",
+            "FORCE": "1",
+            "VERSION": "1",
+            "GIT_TAG": "1",
+            "DOWNLOAD_ONLY": "1",
+            "GITHUB_REPOSITORY": "1",
+            "GITLAB_REPOSITORY": "1",
+            "BITBUCKET_REPOSITORY": "1",
+            "GIT_REPOSITORY": "1",
+            "SOURCE_DIR": "1",
+            "FIND_PACKAGE_ARGUMENTS": "1",
+            "NO_CACHE": "1",
+            "SYSTEM": "1",
+            "GIT_SHALLOW": "1",
+            "EXCLUDE_FROM_ALL": "1",
+            "SOURCE_SUBDIR": "1",
+            "CUSTOM_CACHE_KEY": "1",
+            "URL": "*",
+            "OPTIONS": "*",
+            "DOWNLOAD_COMMAND": "*",
+        },
     },
 }
 

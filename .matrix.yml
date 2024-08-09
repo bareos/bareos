@@ -1,8 +1,8 @@
 OS:
   Sanitize:
-    "F39":
+    "F40":
       TYPE: scripted
-      IMAGE: fedora39
+      IMAGE: fedora40
       BUILD_SCRIPT: bareos/devtools/build-and-test-with-sanitize.sh
       FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
       ARCH:
@@ -27,6 +27,11 @@ OS:
         - x86_64
         - aarch64
   xUbuntu:
+    "24.04":
+      TYPE: deb
+      IMAGE: "ubuntu24.04"
+      ARCH:
+        - x86_64
     "22.04":
       TYPE: deb
       IMAGE: "ubuntu22.04"
@@ -52,6 +57,11 @@ OS:
       ARCH:
       - x86_64
   Fedora:
+    "40":
+      TYPE: rpm
+      IMAGE: fedora40
+      ARCH:
+      - x86_64
     "39":
       TYPE: rpm
       IMAGE: fedora39
@@ -71,11 +81,6 @@ OS:
     "11":
       TYPE: deb
       IMAGE: "debian11"
-      ARCH:
-        - x86_64
-    "10":
-      TYPE: deb
-      IMAGE: "debian10"
       ARCH:
         - x86_64
   EL:
