@@ -105,6 +105,12 @@ std::string GetVfJobids(JobControlRecord& jcr)
   if (jcr.dir_impl->vf_jobids) {
     Dmsg1(10, "jobids=%s\n", jcr.dir_impl->vf_jobids);
     return jcr.dir_impl->vf_jobids;
+  } else if (jcr.dir_impl->res.job->AlwaysIncremental) {
+    // jcr.dir_impl->vf_jobids is NULL here
+    Jmsg(&jcr, M_ERROR, 0,
+         "Cannot run always incremental job at level VirtualFull with no jobid "
+         "list.\n");
+    return std::string{};
   } else {
     db_list_ctx jobids_ctx;
     jcr.db->AccurateGetJobids(&jcr, &jcr.dir_impl->jr, &jobids_ctx);

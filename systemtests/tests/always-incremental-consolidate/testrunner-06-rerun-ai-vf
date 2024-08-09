@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+# Check consolidate ai virtual full can't be rerun manually (without a jobid list).
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${tmp}/ai2backups.out
+messages
+label volume=TestVolume002 storage=File pool=Full
+run job=$JobName level=Full yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-19'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-20'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-21'"
+run job=$JobName level=Incremental yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${tmp}/consolidatevfs_canceled.out
+run job=Consolidate yes
+@sleep 2
+cancel all yes
+wait
+messages
+@$out ${tmp}/consolidatevfs_canceled_listjobs.out
+list jobs jobtype=B jobstatus=A,C
+quit
+END_OF_DATA
+run_bconsole
+
+last_jobid=$(awk '/^\| [ 0-9]/{a=$2}END{print a}' ${tmp}/consolidatevfs_canceled_listjobs.out)
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${tmp}/consolidatevfs_rerun_canceled.out
+rerun jobid=${last_jobid} yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+expect_grep "Cannot run always incremental job at level VirtualFull with no jobid" \
+            "${tmp}/consolidatevfs_rerun_canceled.out" \
+            "Aborting rerun without jobis not found"
+
+end_test
