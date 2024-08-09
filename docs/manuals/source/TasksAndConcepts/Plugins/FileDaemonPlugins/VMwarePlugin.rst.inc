@@ -710,5 +710,15 @@ fallback_to_full_cbt (optional)
 
    Since :sinceVersion:`23.0.3: VMware Plugin`
 
+restore_allow_disks_mismatch (optional)
+   When using VSAN, restoring with recreating the VM can fail because the plugin
+   detects a disk mismatch, as when using VSAN obviously recreated disks get a
+   generated backing disk path. When passing the plugin option
+   ``restore_allow_disks_mismatch=yes``, this disk match check will allow a
+   mismatch and continue the restore.
+   This option will only be used when recreating the VM to be restored.
+
+   Since :sinceVersion:`23.0.4: VMware Plugin`
+
 uuid (deprecated)
    The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless. When using uuid, restoring is only possible to the same still existing VM. It is recommended to change the configuration, as the uuid option will be dropped in the next version.
