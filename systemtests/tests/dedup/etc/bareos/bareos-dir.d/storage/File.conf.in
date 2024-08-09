@@ -1,0 +1,8 @@
+Storage {
+  Name = Dedup
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = DedupStorage
+  Media Type = Dedup
+  SD Port = @sd_port@
+}
