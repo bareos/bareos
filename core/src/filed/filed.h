@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@
 #define FILE_DAEMON 1
 #include "filed_conf.h"
 #ifdef HAVE_WIN32
-#  include "vss.h"
+#  include "vss_client.h"
 #endif
 #include "include/jcr.h"
 #include "lib/breg.h"
