@@ -29,7 +29,6 @@
  * Joerg Steffens, April 2015
  */
 
-
 #include "include/bareos.h"
 #define NEED_JANSSON_NAMESPACE
 #include "lib/output_formatter.h"
@@ -893,6 +892,72 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, uint64_t value)
   return true;
 }
 
+
+// bool make_utf8(const char* in, PoolMem& out)
+// {
+//   size_t inchars = ::strlen(in);
+//   char* inp = (char*)in;
+//   size_t outchars = inchars * 2;
+//   out.ReallocPm(outchars);
+//   char* outp = out.c_str();
+// 
+//   iconv_t conversiondescriptor = iconv_open("UTF-8//IGNORE", "UTF-8//IGNORE");
+//   // iconv_t conversiondescriptor = iconv_open("UTF-8//TRANSLIT", "UTF-8");
+//   if (conversiondescriptor == (iconv_t)-1) {
+//     // perror( "iconv_open conversiondescriptor" );
+//     Emsg0(M_ERROR, 0, "iconv_open: failed to setup conversion");
+//     return false;
+//   }
+//   size_t iconv_rc
+//       = iconv(conversiondescriptor, &inp, &inchars, &outp, &outchars);
+//   if (iconv_rc == (size_t)-1) {
+//     //      perror( "iconv" );
+//     Emsg5(M_ERROR, 0, "iconv: failed for %d, %s (%d), %s (%d)\n", iconv_rc, in,
+//           inchars, out.c_str(), outchars);
+// 
+//     //  UTF-8//IGNORE
+//     // bareos-dir (10): lib/output_formatter.cc:916-0 ERROR: iconv: failed for
+//     // -1, �� INVALID
+//     //  (0),
+//     // INVALID
+//     //  (13)
+// 
+//     //   UTF-8//TRANSLIT
+//     // bareos-dir (10): lib/output_formatter.cc:916-0 ERROR: iconv: failed for
+//     // -1, �� INVALID
+//     //  (11),  (22)
+// 
+//     iconv_close(conversiondescriptor);
+//     return false;
+//   }
+//   iconv_close(conversiondescriptor);
+//   return true;
+// }
+
+
+std::string make_utf8(const char* in)
+{
+  std::mbstate_t state = std::mbstate_t();  // initial state
+  const char* end = in + ::strlen(in);
+  const char replacemendchar = '?';
+  size_t len = 1;
+  std::string out{};
+  while ((in < end) && (len != 0)) {
+    len = std::mbrtowc(nullptr, in, end - in, &state);
+    if (len == static_cast<std::size_t>(-1)) {
+      out.append(1, replacemendchar);
+      in++;
+    } else if (len == static_cast<std::size_t>(-2)) {
+      out.append(end - in, replacemendchar);
+      in = end;
+    } else if (len > 0) {
+      out.append(in, len);
+      in += len;
+    }
+  }
+  return out;
+}
+
 bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
 {
   json_t* json_obj = NULL;
@@ -904,9 +969,17 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
     Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
     return false;
   }
-  json_object_set_new(json_obj, lkey.c_str(), json_string(value));
+  int rc = -1;
+  // PoolMem value_utf8(PM_MESSAGE);
+  std::string value_utf8 = make_utf8(value);
+  // if (make_utf8(value, value_utf8)) {
+  rc = json_object_set_new(json_obj, lkey.c_str(),
+                           json_string(value_utf8.c_str()));
+  
+  if (rc != 0) { Dmsg2(100, "invalid json: %s => %s\n", lkey.c_str(), value); }
+  //}
 
-  return true;
+  return (rc == 0);
 }
 
 void OutputFormatter::JsonAddMessage(const char* type, PoolMem& message)
