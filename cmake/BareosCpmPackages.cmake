@@ -52,6 +52,22 @@ CPMAddPackage(
 )
 
 CPMAddPackage(
+  NAME utf8cpp
+  VERSION 2.3.4
+  GITHUB_REPOSITORY nemtrif/utfcpp
+  GIT_TAG "v4.0.4"
+  EXCLUDE_FROM_ALL YES
+)
+
+# some version of utf8cpp come with cmake files that only define the target
+# utf8cpp.
+if(TARGET utf8cpp)
+  if(NOT TARGET utf8cpp::utf8cpp)
+    add_library(utf8cpp::utf8cpp ALIAS utf8cpp)
+  endif()
+endif()
+
+CPMAddPackage(
   NAME xxHash
   VERSION 0.8.0
   GITHUB_REPOSITORY Cyan4973/xxHash

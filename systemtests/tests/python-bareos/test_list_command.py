@@ -640,3 +640,64 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             filenames_plain,
             "JSON result is not identical to plain (api 0) result.",
         )
+
+    def verify_joblog(self, result):
+        self.assertIn("joblog", result)
+
+        for i in result["joblog"]:
+            self.assertIn("time", i)
+            self.assertIn("logtext", i)
+
+    def test_list_joblog(self):
+        """
+        verifying `list joblog` outputs correct data
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options,
+        )
+
+        jobid = self.get_backup_jobid(director=director, jobname="backup-bareos-fd")
+
+        result = director.call(f"list joblog jobid={jobid}")
+        self.verify_joblog(result)
+
+    def test_list_joblog_non_utf8(self):
+        """
+        verifying `list joblog` outputs correct data
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options,
+        )
+
+        jobid = self.get_backup_jobid(director=director, jobname="backup-bareos-fd")
+        logger.info(f"jobid={jobid}")
+        print(f"jobid={jobid}")
+
+        result = director.call(f"list joblog jobid={jobid}")
+        self.verify_joblog(result)
+
+        result = director.call(
+            f".sql query=\"insert into log (jobid, time, logtext) values ({jobid}, '2099-01-01 00:00:00', E'\\\\xAB\\\\xCD\\\\nINVALID\\\\n');\""
+        )
+        print(result)
+
+        result = director.call(f"list joblog jobid={jobid}")
+        self.verify_joblog(result)

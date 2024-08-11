@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -111,7 +111,7 @@ class PythonBareosJsonBackendTest(bareos_unittest.Json):
         # Used "show clients" earlier,
         # however, this now produces valid output.
         # Commands like 'status storage' (and 'status client') only produces empty output.
-        # The "messages" command shows plain outout in JSON mode,
+        # The "messages" command shows plain output in JSON mode,
         # but only if there are pending messages.
         bcmd = "show clients"
 

@@ -29,10 +29,12 @@
  * Joerg Steffens, April 2015
  */
 
-
 #include "include/bareos.h"
 #define NEED_JANSSON_NAMESPACE
 #include "lib/output_formatter.h"
+
+#include <cassert>
+#include <utf8.h>
 
 const char* json_error_message_template
     = "{ "
@@ -904,9 +906,19 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
     Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
     return false;
   }
-  json_object_set_new(json_obj, lkey.c_str(), json_string(value));
 
-  return true;
+  json_t* value_as_json_string = json_string(value);
+  if (value_as_json_string == nullptr) {
+    // value has not been a valid null terminated UTF-8 encoded Unicode string.
+    std::string value_as_utf8{};
+    utf8::replace_invalid(value, value + ::strlen(value),
+                          back_inserter(value_as_utf8));
+    value_as_json_string = json_string(value_as_utf8.c_str());
+  }
+  int rc = json_object_set_new(json_obj, lkey.c_str(), value_as_json_string);
+  assert(rc == 0);
+
+  return (rc == 0);
 }
 
 void OutputFormatter::JsonAddMessage(const char* type, PoolMem& message)
