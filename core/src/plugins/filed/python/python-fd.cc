@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -141,8 +141,9 @@ class locked_threadstate {
  private:
   locked_threadstate(PyThreadState* ts, bool owns) : ts{ts}, owns{owns}
   {
-    // lock the gil and make ts active
-    PyEval_RestoreThread(ts);
+    // make the given thread state active
+    // we assume that we are currently holding the gil
+    (void)PyThreadState_Swap(ts);
   }
 
  public:
@@ -194,6 +195,8 @@ class locked_threadstate {
  * is destroyed by locked_threadstates destructor. */
 locked_threadstate AcquireLock(PyInterpreterState* interp)
 {
+  // we lock the gil here to synchronize potential calls to PyThreadState_New().
+  PyEval_RestoreThread(mainThreadState);
   auto* ts = GetThreadStateForInterp(interp);
   if (!ts) {
     // create a new thread state
@@ -271,6 +274,7 @@ bRC freePlugin(PluginContext* plugin_ctx)
 
   // Stop any sub interpreter started per plugin instance.
   auto* ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
+  ASSERT(ts);
   PyEval_AcquireThread(ts);
 
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
@@ -279,6 +283,9 @@ bRC freePlugin(PluginContext* plugin_ctx)
   if (PyVersion() < VERSION_HEX(3, 12, 0)) {
     // release gil a different way
     PyThreadState_Swap(mainThreadState);
+    // while we still have the gil, we need to make sure we clear the type cache
+    // so that it does not contain outdated references
+    if (PyVersion() < VERSION_HEX(3, 10, 0)) { PyType_ClearCache(); }
     PyEval_ReleaseThread(mainThreadState);
   } else {
     // endinterpreter releases the gil for us since 3.12
