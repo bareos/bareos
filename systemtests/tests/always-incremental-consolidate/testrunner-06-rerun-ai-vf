@@ -54,9 +54,17 @@ END_OF_DATA
 run_bconsole
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out ${tmp}/consolidatevfs_canceled.out
+.api 2
+@$out ${tmp}/consolidatevfs_consolidate.out
 run job=Consolidate yes
-@sleep 2
+END_OF_DATA
+run_bconsole
+
+consolidate_jobid=$(grep "jobid" ${tmp}/consolidatevfs_consolidate.out | tail -n1 | sed 's/.*"jobid": "\(.*\)"/\1/')
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${tmp}/consolidatevfs_canceled.out
+wait jobid=${consolidate_jobid}
 cancel all yes
 wait
 messages
