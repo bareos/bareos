@@ -934,12 +934,11 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
   if (value_as_json_string == nullptr) {
     // value has not been a valid null terminated UTF-8 encoded Unicode string.
     // value_as_json_string = json_string(make_utf8(value).c_str());
-    // value_as_json_string =
-    // json_string(utf8::replace_invalid(std::string(value)).c_str());
-    std::vector<char> value_as_utf8{};
-    utf8::replace_invalid(value, value + ::strlen(value),
-                          back_inserter(value_as_utf8));
-    value_as_json_string = json_string(value_as_utf8.data());
+    value_as_json_string = json_string(utf8::replace_invalid(std::string_view(value)).c_str());
+    // std::vector<char> value_as_utf8{};
+    // utf8::replace_invalid(value, value + ::strlen(value),
+    //                       back_inserter(value_as_utf8));
+    // value_as_json_string = json_string(value_as_utf8.data());
   }
   int rc = json_object_set_new(json_obj, lkey.c_str(), value_as_json_string);
   if (rc != 0) { Dmsg2(100, "invalid json: %s => %s\n", lkey.c_str(), value); }
