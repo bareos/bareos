@@ -81,13 +81,9 @@ class IXMLDOMDocument;
 #  endif
 
 #  define VSSClientGeneric VSSClientVista
-#  include "Win2003/vss.h"
-#  include "Win2003/vswriter.h"
-#  include "Win2003/vsbackup.h"
-
-#  define VSS_ERROR_OBJECT_ALREADY_EXISTS ((HRESULT)0x8004230D)
-
-#  include "vss.h"
+#  include "vss_client.h"
+#  include <vswriter.h>
+#  include <vsbackup.h>
 
 
 using namespace filedaemon;
@@ -307,7 +303,7 @@ static inline bool HandleVolumeMountPoint(
                                                snapshoted_volumes);
       Dmsg1(200, "%s added to snapshotset \n", pvol.c_str());
       snapshot_success = true;
-    } else if (hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
+    } else if (hr == VSS_E_OBJECT_ALREADY_EXISTS) {
       Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol.c_str());
     } else {
       Dmsg3(
