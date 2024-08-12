@@ -39,3 +39,8 @@ CPMAddPackage(
   GIT_TAG 10.2.1
   EXCLUDE_FROM_ALL YES
 )
+
+cpmfindpackage(
+  NAME utf8cpp VERSION 4.0.4 GITHUB_REPOSITORY nemtrif/utfcpp EXCLUDE_FROM_ALL
+  YES
+)

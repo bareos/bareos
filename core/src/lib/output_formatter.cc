@@ -33,6 +33,8 @@
 #define NEED_JANSSON_NAMESPACE
 #include "lib/output_formatter.h"
 
+#include "utf8.h"
+
 const char* json_error_message_template
     = "{ "
       "\"jsonrpc\": \"2.0\", "
@@ -892,28 +894,29 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, uint64_t value)
   return true;
 }
 
-std::string make_utf8(const char* in)
-{
-  std::mbstate_t state = std::mbstate_t();  // initial state
-  const char* end = in + ::strlen(in);
-  const char replacemendchar = '?';
-  size_t len = 1;
-  std::string out{};
-  while ((in < end) && (len != 0)) {
-    len = std::mbrtowc(nullptr, in, end - in, &state);
-    if (len == static_cast<std::size_t>(-1)) {
-      out.append(1, replacemendchar);
-      in++;
-    } else if (len == static_cast<std::size_t>(-2)) {
-      out.append(end - in, replacemendchar);
-      in = end;
-    } else if (len > 0) {
-      out.append(in, len);
-      in += len;
-    }
-  }
-  return out;
-}
+// std::string make_utf8(const char* in)
+// {
+//   // fails on freebsd. setlocale missing?
+//   std::mbstate_t state = std::mbstate_t();  // initial state
+//   const char* end = in + ::strlen(in);
+//   const char replacemendchar = '?';
+//   size_t len = 1;
+//   std::string out{};
+//   while ((in < end) && (len != 0)) {
+//     len = std::mbrtowc(nullptr, in, end - in, &state);
+//     if (len == static_cast<std::size_t>(-1)) {
+//       out.append(1, replacemendchar);
+//       in++;
+//     } else if (len == static_cast<std::size_t>(-2)) {
+//       out.append(end - in, replacemendchar);
+//       in = end;
+//     } else if (len > 0) {
+//       out.append(in, len);
+//       in += len;
+//     }
+//   }
+//   return out;
+// }
 
 bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
 {
@@ -930,7 +933,13 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
   json_t* value_as_json_string = json_string(value);
   if (value_as_json_string == nullptr) {
     // value has not been a valid null terminated UTF-8 encoded Unicode string.
-    value_as_json_string = json_string(make_utf8(value).c_str());
+    // value_as_json_string = json_string(make_utf8(value).c_str());
+    // value_as_json_string =
+    // json_string(utf8::replace_invalid(std::string(value)).c_str());
+    std::vector<char> value_as_utf8{};
+    utf8::replace_invalid(value, value + ::strlen(value),
+                          back_inserter(value_as_utf8));
+    value_as_json_string = json_string(value_as_utf8.data());
   }
   int rc = json_object_set_new(json_obj, lkey.c_str(), value_as_json_string);
   if (rc != 0) { Dmsg2(100, "invalid json: %s => %s\n", lkey.c_str(), value); }
