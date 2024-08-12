@@ -363,9 +363,9 @@ int ListPlugins(alist<Plugin*>* plugin_list, PoolMem& msg)
 
         PmStrcat(msg, " Version    : ");
         PmStrcat(msg, NPRT(info->plugin_version));
-        PmStrcat(msg, ", Date: ");
+        PmStrcat(msg, " (");
         PmStrcat(msg, NPRT(info->plugin_date));
-        PmStrcat(msg, "\n");
+        PmStrcat(msg, ")\n");
 
         PmStrcat(msg, " Author     : ");
         PmStrcat(msg, NPRT(info->plugin_author));
