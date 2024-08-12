@@ -490,7 +490,7 @@ class SeleniumTest(unittest.TestCase):
         sleep(self.sleeptime)
 
     def select_navbar_element(self, tab, additional_modals=None):
-        tabid = u"menu-topnavbar-{}".format(tab)
+        tabid = "menu-topnavbar-{}".format(tab)
         # (By.CLASS_NAME, 'navbar-toggle')
         # is used, when top navbar is hidden,
         # because of low windows resolution.
@@ -652,7 +652,7 @@ class SeleniumTest(unittest.TestCase):
             )
         except TimeoutException:
             raise ElementTimeoutException("spinner")
-        logger.info(u"waited %ss", (self.get_duration(starttime)))
+        logger.info("waited %ss", (self.get_duration(starttime)))
         return element
 
     def close_alert_and_get_its_text(self, accept=True):
