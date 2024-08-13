@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - python-bareos: add missing `dirname` variable [PR #1848]
 - matrix remove obsolete SUSE [PR #1907]
 - filed: fix python plugin crash on python <3.10 [PR #1916]
+- Use only MinGW VSS [PR #1897]
 
 ### Fixed
 - create_bareos_database: fix `db_name` not being double quoted [PR #1870]
@@ -692,6 +693,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1870]: https://github.com/bareos/bareos/pull/1870
 [PR #1891]: https://github.com/bareos/bareos/pull/1891
 [PR #1895]: https://github.com/bareos/bareos/pull/1895
+[PR #1897]: https://github.com/bareos/bareos/pull/1897
 [PR #1907]: https://github.com/bareos/bareos/pull/1907
 [PR #1916]: https://github.com/bareos/bareos/pull/1916
 [unreleased]: https://github.com/bareos/bareos/tree/master
