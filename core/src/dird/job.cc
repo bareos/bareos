@@ -1703,6 +1703,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   jcr->dir_impl->res.full_pool = job->full_pool;
   jcr->dir_impl->res.inc_pool = job->inc_pool;
   jcr->dir_impl->res.diff_pool = job->diff_pool;
+  jcr->dir_impl->res.vfull_pool = job->vfull_pool;
 
   if (job->pool && job->pool->catalog) {
     jcr->dir_impl->res.catalog = job->pool->catalog;
