@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,7 @@
 #define BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_
 
 #include <memory>
+#include <optional>
 
 class BareosSocketTCP;
 class BareosSocket;
@@ -37,9 +38,30 @@ class TestSockets {
   TestSockets(const TestSockets&) = delete;
 };
 
-int create_accepted_server_socket(int port);
+struct listening_socket {
+  uint16_t port{};
+  int sockfd{};
+
+  listening_socket() = default;
+  listening_socket(uint16_t port_, int sockfd_) : port{port_}, sockfd{sockfd_}
+  {
+  }
+  listening_socket(const listening_socket&) = delete;
+  listening_socket& operator=(const listening_socket&) = delete;
+  listening_socket(listening_socket&& other) { *this = std::move(other); }
+  listening_socket& operator=(listening_socket&& other)
+  {
+    std::swap(port, other.port);
+    std::swap(sockfd, other.sockfd);
+    return *this;
+  }
+  ~listening_socket();
+};
+
+std::optional<listening_socket> create_listening_socket();
+int accept_socket(const listening_socket& ls);
+
 BareosSocket* create_new_bareos_socket(int fd);
 std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket();
-uint16_t create_unique_socket_number();
 
 #endif  // BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_

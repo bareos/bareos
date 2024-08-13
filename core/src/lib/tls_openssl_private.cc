@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -252,7 +252,7 @@ bool TlsOpenSslPrivate::init()
     return false;
   }
 
-  ASSERT(tcp_file_descriptor_);
+  ASSERT(tcp_file_descriptor_ >= 0);  // 0 is a good (socket-)fd
   BIO_set_fd(bio, tcp_file_descriptor_, BIO_NOCLOSE);
 
   SSL_set_bio(openssl_, bio, bio);
