@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -83,7 +83,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
     def prepare_bvfs_jobs(self, director, jobname, format_params):
         self.append_to_file(format_params["BackupFileExtra"], "Test Content: initial\n")
 
-        jobid1 = self.run_job(director, jobname, level="Full", wait=True)
+        jobid1 = self.get_backup_jobid(director, jobname, level="Full")
         files1 = director.call("list files jobid={}".format(jobid1))["filenames"]
 
         # modify file and rerun backup
@@ -101,7 +101,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
         self.assertGreaterEqual(
             len(backup_job_ids),
             2,
-            u"Expecting at least 2 jobs, got {}.".format(backup_job_ids),
+            "Expecting at least 2 jobs, got {}.".format(backup_job_ids),
         )
         format_params["BackupJobIds"] = ",".join(backup_job_ids)
 
@@ -191,7 +191,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        jobname = u"backup-bareos-fd-bpipe"
+        jobname = "backup-bareos-fd-bpipe"
 
         format_params = {
             "Client": self.client,
@@ -365,7 +365,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        jobname = u"backup-bareos-fd-bpipe"
+        jobname = "backup-bareos-fd-bpipe"
 
         format_params = {
             "Client": self.client,
