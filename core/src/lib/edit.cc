@@ -644,7 +644,7 @@ char* add_commas(char* val, char* buf)
  * check if acl entry is valid
  * valid acl entries contain only A-Z 0-9 and !*.:_-'/
  */
-bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
+bool IsAclEntryValid(const char* acl, PoolMem& msg)
 {
   int len;
   const char* p;
@@ -680,6 +680,6 @@ bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
 
 bool IsAclEntryValid(const char* acl)
 {
-  std::vector<char> msg;
+  PoolMem msg;
   return IsAclEntryValid(acl, msg);
 }
