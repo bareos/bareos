@@ -1342,37 +1342,6 @@ int Mmsg(PoolMem& pool_buf, const char* fmt, ...)
   return len;
 }
 
-/* PMARKER */
-int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...)
-{
-  va_list ap;
-
-  size_t maxlen = msgbuf.size();
-  size_t fmtlen = strlen(fmt);
-
-  /* resize msgbuf so at least fmt fits in there.
-   * this makes sure the rest of the code works with a zero-sized vector
-   */
-  if (maxlen < fmtlen) {
-    msgbuf.resize(fmtlen);
-    maxlen = fmtlen;
-  }
-
-  while (1) {
-    va_start(ap, fmt);
-    int len = Bvsnprintf(msgbuf.data(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len >= 0 && (size_t)len >= (maxlen - 5)) {
-      maxlen += maxlen / 2;
-      msgbuf.resize(maxlen);
-      continue;
-    }
-
-    return len;
-  }
-}
-
 // convert bareos message type to syslog log priority
 static int MessageTypeToLogPriority(int message_type)
 {

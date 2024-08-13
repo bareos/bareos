@@ -2774,13 +2774,13 @@ static void StoreAcl(lexer* lc, const ResourceItem* item, int index, int pass)
     }
   }
   alist<const char*>* list = alistvalue[item->code];
-  std::vector<char> msg(256);
+  PoolMem msg;
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
-        scan_err1(lc, T_("Cannot store Acl: %s"), msg.data());
+        scan_err1(lc, T_("Cannot store Acl: %s"), msg.c_str());
         return;
       }
       list->append(strdup(lc->str));

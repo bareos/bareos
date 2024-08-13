@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include "include/bc_types.h"
+#include "lib/mem_pool.h"
 
 namespace edit {
 /* The biggest 64 bit number -- 2^64-1 -- has 20 digits.
@@ -60,7 +61,7 @@ bool Is_a_number_list(const char* n);
 bool IsAnInteger(const char* n);
 bool IsNameValid(const char* name, std::string& msg);
 bool IsNameValid(const char* name);
-bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
+bool IsAclEntryValid(const char* acl, PoolMem& msg);
 bool IsAclEntryValid(const char* acl);
 std::string SizeAsSiPrefixFormat(uint64_t value_in);
 
