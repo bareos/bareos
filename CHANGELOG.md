@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - VMware Plugin: Add option restore_allow_disks_mismatch [PR #1905]
 - Use only MinGW VSS [PR #1896]
 - filed: fix python plugin crash on python <3.10 [PR #1913]
+- vadp-dumper: fix out of bounds read [PR #1918]
 
 ### Fixed
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
@@ -515,4 +516,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1905]: https://github.com/bareos/bareos/pull/1905
 [PR #1906]: https://github.com/bareos/bareos/pull/1906
 [PR #1913]: https://github.com/bareos/bareos/pull/1913
+[PR #1918]: https://github.com/bareos/bareos/pull/1918
 [unreleased]: https://github.com/bareos/bareos/tree/master
