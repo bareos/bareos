@@ -96,14 +96,20 @@ class Json(PythonBareosBase):
         # }
         self.assertEqual(result["job"]["jobstatuslong"], expected_status)
 
-    def run_job(self, director, jobname, level=None, extra=None, wait=False):
+    def run_job(
+        self, director, jobname, level=None, fileset=None, extra=None, wait=False
+    ):
         logger = logging.getLogger()
-        run_parameter = ["job={}".format(jobname), "yes"]
+        run_parameter = [f"job={jobname}"]
         if level:
-            run_parameter.append("level={}".format(level))
+            run_parameter.append(f"level={level}")
+        if fileset:
+            run_parameter.append(f"fileset={fileset}")
         if extra:
             run_parameter.append("{}".format(extra))
-        result = director.call("run {}".format(" ".join(run_parameter)))
+        run_parameter.append("yes")
+        run_cmd = "run {}".format(" ".join(run_parameter))
+        result = director.call(run_cmd)
         jobId = result["run"]["jobid"]
         if wait:
             self.wait_job(director, jobId)
@@ -127,31 +133,37 @@ class Json(PythonBareosBase):
             run_parameter.append("jobid={}".format(jobid))
         if fileset:
             run_parameter.append("fileset={}".format(fileset))
+            run_parameter.append("select")
         if extra:
             run_parameter.append("{}".format(extra))
-        run_parameter += ["select", "all", "done", "yes"]
-        result = director.call("restore {}".format(" ".join(run_parameter)))
+        run_parameter += ["all", "done", "yes"]
+        restore_cmd = "restore {}".format(" ".join(run_parameter))
+        result = director.call(restore_cmd)
         jobId = result["run"]["jobid"]
         if wait:
             self.wait_job(director, jobId)
         return jobId
 
-    def get_backup_jobid(self, director, jobname, level="F", extra=None):
+    def get_backup_jobid(self, director, jobname, level=None, fileset=None, extra=None):
         """
         Get a valid backup job jobid.
         If no such job exists,
         run such a job.
         """
+        list_level_parameter = ""
+        if level:
+            list_level_parameter = f"level={level}"
         result = director.call(
-            "list jobs job={} level={} jobstatus=T last".format(jobname, level)
+            f"list jobs job={jobname} {list_level_parameter} jobstatus=T last"
         )
-        try:
-            jobid = result["jobs"][0]["jobid"]
-            return jobid
-        except IndexError:
-            # there is no valid backup for these parameters.
-            # run a backup job.
-            return self.run_job(director, jobname, level, extra, wait=True)
+        if len(result["jobs"]) >= 1:
+            job = result["jobs"][0]
+            # TODO: it would be more efficient, if the list command could by by fileset.
+            if (fileset is None) or (job["fileset"] == fileset):
+                return job["jobid"]
+        # there is no valid backup for these parameters.
+        # run a backup job.
+        return self.run_job(director, jobname, level, fileset, extra, wait=True)
 
     def _test_job_result(self, jobs, jobid):
         logger = logging.getLogger()
@@ -173,7 +185,7 @@ class Json(PythonBareosBase):
             port=self.director_port,
             name=console,
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         result = console_poolbotfull.call("llist media all")

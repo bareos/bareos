@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,7 +42,7 @@ class BareosFdPythonPluginOptions(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        jobname = u"backup-bareos-fd-pluginoptions"
+        jobname = "backup-bareos-fd-pluginoptions"
 
         director = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -52,7 +52,7 @@ class BareosFdPythonPluginOptions(bareos_unittest.Json):
             **self.director_extra_options
         )
 
-        jobid = self.run_job(director, jobname, level="Full", wait=True)
+        jobid = self.get_backup_jobid(director, jobname, level="Full")
         jobid = self.run_restore(
             director,
             client=self.client,
@@ -68,7 +68,7 @@ class BareosFdPythonPluginOptions(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        jobname = u"backup-bareos-fd-pluginoptions"
+        jobname = "backup-bareos-fd-pluginoptions"
 
         backup_dumpfile = "tmp/backup-pluginoptions.json"
         restore_dumpfile = "tmp/restore-pluginoptions.json"
@@ -131,7 +131,7 @@ class BareosFdPythonPluginOptions(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        jobname = u"backup-bareos-fd-pluginoptions"
+        jobname = "backup-bareos-fd-pluginoptions"
 
         backup_dumpfile = "tmp/backup-overwrite-pluginoptions.json"
         restore_dumpfile = "tmp/restore-overwrite-pluginoptions.json"
