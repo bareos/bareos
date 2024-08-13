@@ -1988,6 +1988,12 @@ bool GetUserJobLevelSelection(UaContext* ua, std::vector<char>& joblevel_list)
     for (const auto& level : joblevelinput_list) {
       if (level.size() == 1 && level[0] >= 'A' && level[0] <= 'z') {
         joblevel_list.push_back(level[0]);
+      } else if (Bstrcasecmp(level.c_str(), "Full")) {
+        joblevel_list.push_back('F');
+      } else if (Bstrcasecmp(level.c_str(), "Differential")) {
+        joblevel_list.push_back('D');
+      } else if (Bstrcasecmp(level.c_str(), "Incremental")) {
+        joblevel_list.push_back('I');
       } else {
         /* invalid joblevel */
         return false;
