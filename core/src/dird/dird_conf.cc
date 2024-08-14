@@ -400,7 +400,7 @@ ResourceItem job_items[] = {
   { "SelectionType", CFG_TYPE_MIGTYPE, ITEM(res_job, selection_type), 0, 0, NULL, NULL, NULL },
   { "Accurate", CFG_TYPE_BOOL, ITEM(res_job, accurate), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "AllowDuplicateJobs", CFG_TYPE_BOOL, ITEM(res_job, AllowDuplicateJobs), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "true", NULL, NULL },
   { "CancelLowerLevelDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelLowerLevelDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "CancelQueuedDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },

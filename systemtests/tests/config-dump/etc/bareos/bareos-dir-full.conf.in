@@ -240,7 +240,6 @@ JobDefs {
   # SelectionPattern =
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -345,7 +344,6 @@ JobDefs {
   }
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -426,7 +424,6 @@ Job {
   # SelectionPattern =
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -507,7 +504,6 @@ Job {
   # SelectionPattern =
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -599,7 +595,6 @@ Job {
   }
   Accurate = Yes
   AllowDuplicateJobs = No
-  AllowHigherDuplicates = No
   CancelLowerLevelDuplicates = Yes
   CancelQueuedDuplicates = Yes
   CancelRunningDuplicates = Yes
@@ -684,7 +679,6 @@ Job {
   # SelectionPattern =
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -767,7 +761,6 @@ Job {
   RunAfterJob = "/usr/lib/bareos/scripts/delete_catalog_backup"
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -911,7 +904,6 @@ Job {
   }
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -1020,7 +1012,6 @@ Job {
   }
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -1125,7 +1116,6 @@ Job {
   # }
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
@@ -1246,7 +1236,6 @@ Job {
   # }
   # Accurate = No
   # AllowDuplicateJobs = Yes
-  # AllowHigherDuplicates = Yes
   # CancelLowerLevelDuplicates = No
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
