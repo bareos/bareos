@@ -47,20 +47,13 @@ CPMAddPackage(
   EXCLUDE_FROM_ALL YES
 )
 
-option(USE_SYSTEM_XXHASH "Use the xxHash lib of the operating system" OFF)
-if(USE_SYSTEM_XXHASH)
-  find_package(xxHash REQUIRED)
-  set(XXHASH_ENABLE_DISPATCH
-      OFF
-      CACHE INTERNAL ""
-  )
-  message(STATUS "Using system xxHash ${XXHASH_VERSION}")
-else()
-  CPMAddPackage(
-    NAME xxHash
-    VERSION 0.8.2
-    GITHUB_REPOSITORY Cyan4973/xxHash
-    EXCLUDE_FROM_ALL YES
-  )
-  add_library(xxHash::xxhash ALIAS xxhash)
+CPMAddPackage(
+  NAME xxHash
+  VERSION 0.8.2
+  GITHUB_REPOSITORY Cyan4973/xxHash
+  EXCLUDE_FROM_ALL YES
+  DOWNLOAD_ONLY True
+)
+if(xxHash_ADDED)
+  include("cmake/xxHash.cmake")
 endif()
