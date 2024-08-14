@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -92,6 +92,7 @@ class RestoreController extends AbstractActionController
         $this->setRestoreParams();
         $errors = null;
         $result = null;
+        $restore_jobid = null;
 
         if ($this->restore_params['client'] != null) {
             $this->handleJobId();
@@ -103,7 +104,8 @@ class RestoreController extends AbstractActionController
         }
 
         try {
-            $clients = $this->getClientModel()->getClients($this->bsock);
+            $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
+            $restore_target_clients = $this->getClientModel()->getClients($this->bsock);
             $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
             $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
@@ -122,11 +124,12 @@ class RestoreController extends AbstractActionController
         // Create the form
         $form = new RestoreForm(
             $this->restore_params,
-            $clients,
+            $restore_source_clients,
             $filesets,
             $restorejobresources,
             $this->restore_params['jobids'],
-            $backups
+            $backups,
+            $restore_target_clients
         );
 
         // Set the method attribute for the form
@@ -178,6 +181,15 @@ class RestoreController extends AbstractActionController
                             $replace,
                             $pluginoptions
                         );
+                        $matches = null;
+                        preg_match('/JobId=([0-9]*)/i', $result, $matches, PREG_UNMATCHED_AS_NULL);
+                        if(isset($matches[1])) {
+                            $restore_jobid = (int)$matches[1];
+                        }
+                        // if $restore_jobid is not set,
+                        // could not be started as expected.
+                        // We assume the Director message ($result)
+                        // contains information about this has happened.
                     }
                 } catch (Exception $e) {
                     echo $e->getMessage();
@@ -190,7 +202,8 @@ class RestoreController extends AbstractActionController
                     'form' => $form,
                     'result' => $result,
                     'errors' => $errors,
-                    'ndmp_advice_note' => $this->ndmp_advice_note
+                    'ndmp_advice_note' => $this->ndmp_advice_note,
+                    'restore_jobid' => $restore_jobid
                 ));
             } else {
                 $this->bsock->disconnect();
@@ -265,7 +278,8 @@ class RestoreController extends AbstractActionController
         }
 
         try {
-            $clients = $this->getClientModel()->getClients($this->bsock);
+            $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
+            $restore_target_clients = $this->getClientModel()->getClients($this->bsock);
             $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
             $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
@@ -284,11 +298,12 @@ class RestoreController extends AbstractActionController
         // Create the form
         $form = new RestoreForm(
             $this->restore_params,
-            $clients,
+            $restore_source_clients,
             $filesets,
             $restorejobresources,
             $this->restore_params['jobids'],
-            $backups
+            $backups,
+            $restore_target_clients
         );
 
         // Set the method attribute for the form

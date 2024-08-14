@@ -33,92 +33,93 @@ $this->headTitle($title);
    <li class="active"><a href="<?php echo $this->url('restore', array('action' => 'versions')); ?>"><?php echo $this->translate('Restore specific file version'); ?></a></li>
 </ul>
 
-<br/>
+<br />
 
-<?php if ($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif (!$this->acl_alert) : ?>
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands);
+else : ?>
 
 <!-- modal-001 start -->
 <div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel1">
-   <div class="modal-dialog modal-md">
-      <div class="modal-content">
-         <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
-         </div>
-         <div class="modal-body">
-            <p><?php echo $this->translate("Error message received:"); ?></p>
-            <p class="text-danger"><?php echo $this->errors; ?></p>
-         </div>
-         <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
-         </div>
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
       </div>
-   </div>
+      <div class="modal-body">
+         <p><?php echo $this->translate("Error message received:"); ?></p>
+         <p class="text-danger"><?php echo $this->errors; ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
 </div>
-
 <!-- modal-001 end -->
 
-<!-- modal-002 start -->
+<!-- modal-002 start (confirmation about started restore job) -->
 <div id="modal-002" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
-   <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-         <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
-         </div>
-         <div class="modal-body">
-            <pre><code>
-<?php echo $this->result; ?>
-            </code></pre>
-         </div>
-         <div class="modal-footer">
-            <?php $jobid = substr($this->result, stripos($this->result, 'JobId=') + 6 ); ?>
-            <a class="btn btn-primary" href="<?php echo $this->basePath() . '/job/details/' . $jobid; ?>"><?php echo $this->translate("Job report"); ?></a>
-            <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
-         </div>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
       </div>
-   </div>
+      <div class="modal-body">
+         <pre><code>
+<?php echo $this->result; ?>
+         </code></pre>
+      </div>
+      <div class="modal-footer">
+         <?php if (isset($this->restore_jobid)): ?>
+            <a class="btn btn-primary" href="<?php echo $this->basePath() . '/job/details/' . $this->restore_jobid; ?>"><?php echo $this->translate("Job report"); ?></a>.
+         <?php endif; ?>
+         <button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- modal-002 end -->
 
-<!-- modal-003 start -->
+<!-- modal-003 start (confirm to start restore job) -->
 <div id="modal-003" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
-   <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-         <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Confirm restore job submit"); ?></h4>
-         </div>
-         <div class="modal-body">
-            <p>A restore job with the parameters given below will be scheduled.</p>
-            <table id="restore-params-table" style="border-collapse: separate; border-spacing: 10px;">
-            </table>
-         </div>
-         <div class="modal-footer">
-            <button id="modal-003-btn-cancel" type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
-            <button id="modal-003-btn-ok" type="button" class="btn btn-primary"><?php echo $this->translate("OK"); ?></button>
-         </div>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Confirm restore job submit"); ?></h4>
       </div>
-   </div>
+      <div class="modal-body">
+         <p>A restore job with the parameters given below will be scheduled.</p>
+         <table id="restore-params-table" style="border-collapse: separate; border-spacing: 10px;">
+         </table>
+      </div>
+      <div class="modal-footer">
+         <button id="modal-003-btn-cancel" type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
+         <button id="modal-003-btn-ok" type="button" class="btn btn-primary"><?php echo $this->translate("OK"); ?></button>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- modal-003 end -->
 
 <!-- modal-004 start -->
 <div id="modal-004" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
-   <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-         <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="myModalLabel"></h4>
-         </div>
-         <div class="modal-body">
-            <p><?php echo $this->translate("No file selected to restore!"); ?></p>
-         </div>
-         <div class="modal-footer">
-            <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
-         </div>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel"></h4>
       </div>
-   </div>
+      <div class="modal-body">
+         <p><?php echo $this->translate("No file selected to restore!"); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- modal-004 end -->
 
@@ -142,68 +143,71 @@ $this->headTitle($title);
 <!-- modal-005 end -->
 
 <div class="panel panel-default">
-   <div class="panel-heading">
-      <h3 class="panel-title">Restore</h3>
-   </div>
-   <div class="panel-body">
-      <div class="container-fluid">
-         <?php
-            $form->prepare();
-            $form->setAttribute('class', 'form-horizontal');
-            echo $this->form()->openTag($form);
-         ?>
+  <div class="panel-heading">
+    <h3 class="panel-title">Restore</h3>
+  </div>
+  <div class="panel-body">
+    <div class="container-fluid">
+
+<?php
+$form->prepare();
+$form->setAttribute('class', 'form-horizontal');
+echo $this->form()->openTag($form);
+?>
       <div class="row">
+        <div class="col-md-3">
 
-         <div class="col-md-3">
-            <?php
-                  echo '<p>' . $this->formRow($form->get('client')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('backups')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('mergefilesets')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('mergejobs')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('restorejob')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('restoreclient')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('replace')) . '</p>';
-                  echo '<p>' . $this->formRow($form->get('where')) . '</p>';
+<?php
+echo '<p>'.$this->formRow($form->get('client')).'</p>';
+echo '<p>'.$this->formRow($form->get('backups')).'</p>';
+echo '<p>'.$this->formRow($form->get('mergefilesets')).'</p>';
+echo '<p>'.$this->formRow($form->get('mergejobs')).'</p>';
+echo '<p>'.$this->formRow($form->get('restorejob')).'</p>';
+echo '<p>'.$this->formRow($form->get('restoreclient')).'</p>';
+echo '<p>'.$this->formRow($form->get('replace')).'</p>';
+echo '<p>'.$this->formRow($form->get('where')).'</p>';
 
-                  if($restore_params['mergefilesets'] == 1) {
-                     foreach($form->backups as $backup) {
-                        if($backup['jobid'] === $this->restore_params['jobid'] && $backup['pluginjob']) {
-                           echo '<p>'.$this->formRow($form->get('pluginoptions')).'</p>';
-                        }
-                     }
-                  } else {
-                     $pluginjobs = false;
-                     foreach($form->backups as $backup) {
-                        if($backup['pluginjob']) {
-                           $pluginjobs = true;
-                        }
-                     }
-                     if($pluginjobs) {
-                        echo '<p>'.$this->formRow($form->get('pluginoptions')).'</p>';
-                     }
-                  }
+if($restore_params['mergefilesets'] == 1) {
+    foreach($form->backups as $backup) {
+        if($backup['jobid'] === $this->restore_params['jobid'] && $backup['pluginjob']) {
+            echo '<p>'.$this->formRow($form->get('pluginoptions')).'</p>';
+        }
+    }
+} else {
+    $pluginjobs = false;
+    foreach($form->backups as $backup) {
+        if($backup['pluginjob']) {
+            $pluginjobs = true;
+        }
+    }
+    if($pluginjobs) {
+        echo '<p>'.$this->formRow($form->get('pluginoptions')).'</p>';
+    }
+}
 
-                  echo '<p>'.$this->formRow($form->get('form-submit')).'</p>';
+echo '<p>'.$this->formRow($form->get('form-submit')).'</p>';
 
-                  // Hidden fields
-                  echo $this->formRow($form->get('checked_files'));
-                  echo $this->formRow($form->get('checked_directories'));
-                  echo $this->formRow($form->get('jobids_hidden'));
+// Hidden fields
+echo $this->formRow($form->get('checked_files'));
+echo $this->formRow($form->get('checked_directories'));
+echo $this->formRow($form->get('jobids_hidden'));
+?>
 
-            ?>
-         </div>
+        </div>
 
-         <div class="col-md-5">
-            <?php
-                  echo '<strong>';
-                  echo $this->translate("File selection");
-                  echo '</strong>';
-            ?>
-               <div class="panel panel-default">
-                <div id="filebrowser" style="width: 100%;">
-                  <div style="height: 60vH;"></div>
-                </div>
-               </div>
+	 <div class="col-md-5">
+
+<?php
+echo '<strong>';
+echo $this->translate("File selection");
+echo '</strong>';
+?>
+
+          <div class="panel panel-default">
+            <div id="filebrowser" style="width: 100%;">
+              <div style="height: 60vH;"></div>
+              </div>
+            </div>
          </div>
 
          <div class="col-md-4">
@@ -243,12 +247,12 @@ $this->headTitle($title);
 
       </div>
 
-      <?php
-         echo $this->form()->closeTag($form);
-      ?>
+<?php
+   echo $this->form()->closeTag($form);
+?>
 
-      </div>
-   </div>
+    </div>
+  </div>
 </div>
 
 <?php

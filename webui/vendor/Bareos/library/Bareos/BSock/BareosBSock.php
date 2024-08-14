@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2014-2023 Bareos GmbH & Co. KG
+ * @copyright Copyright (C) 2014-2024 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -239,7 +239,7 @@ class BareosBSock implements BareosBSockInterface
      *
      * @return string
      */
-    private function receive($len=0)
+    private function receive($len = 0)
     {
         $buffer = "";
         $msg_len = 0;
@@ -644,14 +644,14 @@ class BareosBSock implements BareosBSockInterface
         self::cram_md5_response($recv, $this->config['password']);
         $recv = self::receive();
 
-        if (strncasecmp($recv, self::DIR_AUTH_FAILED, strlen(self::DIR_AUTH_FAILED)) == 0) {
-            return false;
-        //throw new \Exception("Failed to authenticate with Director\n");
-        } elseif (strncasecmp($recv, self::DIR_OK_AUTH, strlen(self::DIR_OK_AUTH)) == 0) {
+        if (strncasecmp($recv, self::DIR_OK_AUTH, strlen(self::DIR_OK_AUTH)) == 0) {
             return self::cram_md5_challenge($this->config['password']);
-        } else {
+        } else if (strncasecmp($recv, self::DIR_AUTH_FAILED, strlen(self::DIR_AUTH_FAILED)) == 0) {
+            // Failed to authenticate with Director. Director returned: Authorization failed.
             return false;
-            //throw new \Exception("Unknown response to authentication by Director $recv\n");
+        } else {
+            // Failed to authenticate with Director. Unknown reason.
+            return false;
         }
     }
 
@@ -897,7 +897,7 @@ class BareosBSock implements BareosBSockInterface
      * @param $api
      * @return string
      */
-    public function send_command($cmd, $api=0)
+    public function send_command($cmd, $api = 0)
     {
         $result = "";
         $debug = "";
@@ -908,10 +908,6 @@ class BareosBSock implements BareosBSockInterface
                 self::send(".api 2 compact=yes");
                 try {
                     $debug = self::receive_message();
-                    if (!preg_match('/result/', $debug)) {
-                        throw new \Exception("Error: API 2 not available on director.
-                  Please upgrade to version 15.2.2 or greater and/or compile with jansson support.");
-                    }
                 } catch(\Exception $e) {
                     echo $e->getMessage();
                     exit;
@@ -941,6 +937,73 @@ class BareosBSock implements BareosBSockInterface
     }
 
     /**
+     * Calls a command on the Bareos Director and returns its result.
+     *
+     * @param $cmd
+     * @return array: Result received from the Bareos Director.
+     */
+    public function call_fullresult_json($cmd)
+    {
+        // should behave similar to
+        // https://github.com/bareos/bareos/blob/master/python-bareos/bareos/bsock/directorconsolejson.py
+        // def call_fullresult(self, command):
+        //     resultstring = super(DirectorConsoleJson, self).call(command)
+        //     data = None
+        //     if resultstring:
+        //         try:
+        //             data = json.loads(resultstring.decode("utf-8"))
+        //         except ValueError as e:
+        //             # in case result is not valid json,
+        //             # create a JSON-RPC wrapper
+        //             data = {"error": {"code": 2, "message": str(e), "data": resultstring}}
+        //             raise bareos.exceptions.JsonRpcInvalidJsonReceivedException(data)
+        //     return data
+        $resultstring = self::send_command($cmd, 2);
+        $data = \Zend\Json\Json::decode($resultstring, \Zend\Json\Json::TYPE_ARRAY);
+        return $data;
+    }
+
+    /**
+     * Calls a command on the Bareos Director and returns its result.
+     *
+     *  If the JSON-RPC result indicates an error
+     *  (contains the ``error`` element),
+     *  an exception will be raised.
+     *
+     * @param $cmd
+     * @return array: The "result" sub-map of the result received from the Bareos Director.
+     * @throw Exception: if JSON-RPC result contains "error" key.
+     * @throw Exception: if JSON-RPC did not contain "result" nor "error" key.
+     */
+    public function call_json($cmd)
+    {
+        // should behave similar to
+        // https://github.com/bareos/bareos/blob/master/python-bareos/bareos/bsock/directorconsolejson.py
+        // def call(self, command):
+        //     json = self.call_fullresult(command)
+        //     if json == None:
+        //         return
+        //     if "result" in json:
+        //         result = json["result"]
+        //     elif "error" in json:
+        //         raise bareos.exceptions.JsonRpcErrorReceivedException(json)
+        //     else:
+        //         raise bareos.exceptions.JsonRpcInvalidJsonReceivedException(json)
+        //     return result
+        $resultstring = self::send_command($cmd, 2);
+        $json = \Zend\Json\Json::decode($resultstring, \Zend\Json\Json::TYPE_ARRAY);
+        if (empty($json)) {
+            return null;
+        } elseif (array_key_exists("result", $json)) {
+            return $json["result"];
+        } elseif (array_key_exists("error", $json)) {
+            throw new \Exception("JsonRpcErrorReceived: " . $resultstring);
+        } else {
+            throw new \Exception("JsonRpcInvalidJsonReceived: " . $resultstring);
+        }
+    }
+
+    /**
      * Send restore command
      *
      * @param $jobid
@@ -956,7 +1019,7 @@ class BareosBSock implements BareosBSockInterface
      *
      * @return string
      */
-    public function restore($jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null, $pluginoptions=null)
+    public function restore($jobid = null, $client = null, $restoreclient = null, $restorejob = null, $where = null, $fileid = null, $dirid = null, $jobids = null, $replace = null, $pluginoptions = null)
     {
         $result = "";
         $debug = "";
