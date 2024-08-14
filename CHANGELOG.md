@@ -93,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - vadp-dumper: fix out of bounds read [PR #1908]
 - webui: fixing selenium tests [PR #1885]
 - plugins: adjust plugin info formatting [PR #1919]
+- python-bareos: fix backslash usage in regex [PR #1917]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -244,5 +245,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1889]: https://github.com/bareos/bareos/pull/1889
 [PR #1900]: https://github.com/bareos/bareos/pull/1900
 [PR #1908]: https://github.com/bareos/bareos/pull/1908
+[PR #1917]: https://github.com/bareos/bareos/pull/1917
 [PR #1919]: https://github.com/bareos/bareos/pull/1919
 [unreleased]: https://github.com/bareos/bareos/tree/master
