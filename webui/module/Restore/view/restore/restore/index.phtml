@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -501,26 +501,27 @@ $this->headTitle($title);
 
    $(document).ready(function(){
 
+      var show_file_tree = true;
+
       var errors = '<?php echo str_replace(array("\n","\r"), "", $this->errors); ?>';
-
-      if($('#client').val() !== "") {
-         showFileTree();
-      }
-
       if(errors.length > 0) {
          $("#modal-001").modal();
+         show_file_tree = false;
       }
 
       var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
-
       if(result.length > 0) {
          $("#modal-002").modal();
       }
 
       var ndmp_advice_note = '<?php echo $this->ndmp_advice_note; ?>';
-
       if(ndmp_advice_note) {
          $("#modal-005").modal();
+         show_file_tree = false;
+      }
+
+      if(show_file_tree && ($('#client').val() !== "")) {
+          showFileTree();
       }
 
    });
