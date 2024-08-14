@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Check that the NextPool option inside the pool resource
+#       is taken into consideration
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+. functions
+
+mkdir -p ${BackupDirectory}
+
+start_test
+
+cat <<EOF >${tmp}/bconcmds
+@$out ${log_home}/full.out
+@exec "touch ${BackupDirectory}/1.txt"
+run job=job-resources level=Full yes
+wait
+messages
+@$out ${log_home}/diff.out
+@exec "touch ${BackupDirectory}/2.txt"
+run job=job-resources level=Differential yes
+wait
+messages
+@$out ${log_home}/incr.out
+@exec "touch ${BackupDirectory}/3.txt"
+run job=job-resources level=Incremental yes
+wait
+messages
+@$out ${log_home}/copy.out
+run job=Copy-Job yes
+wait
+messages
+@$out ${log_home}/vfull.out
+@exec "touch ${BackupDirectory}/4.txt"
+run job=job-resources level=Incremental yes
+wait
+@exec "touch ${BackupDirectory}/5.txt"
+run job=job-resources level=Incremental yes
+wait
+run job=Consolidate yes
+wait
+messages
+EOF
+run_bconsole
+
+expect_grep "Pool:[[:space:]]*\"Full-Job\"" "${log_home}/full.out" "Full Backup chose wrong Pool"
+check_all_jobs "${log_home}/full.out" "Full Backup did not complete sucessfully"
+expect_grep "Pool:[[:space:]]*\"Differential-Job\"" "${log_home}/diff.out" "Differential Backup chose wrong Pool"
+check_all_jobs "${log_home}/diff.out" "Differential Backup did not complete sucessfully"
+expect_grep "Pool:[[:space:]]*\"Incremental-Job\"" "${log_home}/incr.out" "Incremental Backup chose wrong Pool"
+check_all_jobs "${log_home}/incr.out" "Incremental Backup did not complete sucessfully"
+expect_grep "Write Pool:[[:space:]]*\"Full-Copy\"" "${log_home}/copy.out" "Full backup was copied to the wrong pool"
+check_all_jobs "${log_home}/copy.out" "Copy job did not complete sucessfully"
+expect_grep "Pool:[[:space:]]*\"VirtualFull-Job\"" "${log_home}/vfull.out" "Consolidation wrote to the wrong pool"
+check_all_jobs "${log_home}/vfull.out" "Consolidate did not complete sucessfully"
+
+end_test

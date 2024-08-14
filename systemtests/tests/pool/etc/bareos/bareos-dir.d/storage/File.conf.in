@@ -1,0 +1,19 @@
+Storage {
+  Name = Normal
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  SD Port = @sd_port@
+  Maximum Concurrent Jobs = 10
+}
+
+Storage {
+  Name = Copy
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage2
+  Media Type = File
+  SD Port = @sd_port@
+  Maximum Concurrent Jobs = 10
+}

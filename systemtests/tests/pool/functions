@@ -1,0 +1,23 @@
+#!/bin/bash
+
+runner_name="$(basename "$0")"
+log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
+
+check_all_jobs()
+{
+    local usage="Usage: ${FUNCNAME[0]} <result_file> <errmsg>\n    Check that the termination status of all jobs in result_file contains 'OK'.\nThe error message is printed if a job without 'OK' is found."
+
+    if [ $# -lt 2 ] || [ $# -gt 2 ]; then
+        echo -e "${usage}"
+        exit 1
+    fi
+
+    local file="$1"
+    local errmsg="$2"
+
+    if grep -Hn "Termination:[[:space:]]*\(.*\)$" "${file}" | grep -v "OK"; then
+        echo "${errmsg}"
+        exit 1
+    fi
+}

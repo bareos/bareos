@@ -1,0 +1,22 @@
+# We use two different filesets here so that each job can have its own.
+# This prevents consolidation jobs from accidentally consolidating
+# jobs we did not want to consolidate just yet.
+
+
+FileSet {
+  Name = "SelfTest-Pool"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    File=@tmpdir@
+  }
+}
+
+FileSet {
+  Name = "SelfTest-Job"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    File=@tmpdir@
+  }
+}

@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Check that the NextPool option inside the pool resource
+#       is taken into consideration
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+. functions
+
+mkdir -p ${BackupDirectory}
+
+start_test
+
+cat <<EOF >${tmp}/bconcmds
+@$out ${log_home}/full.out
+@exec "touch ${BackupDirectory}/1.txt"
+run job=pool-resources level=Full yes
+wait
+messages
+@$out ${log_home}/copy.out
+run job=Copy-Pool yes
+wait
+messages
+EOF
+run_bconsole
+
+expect_grep "Pool:[[:space:]]*\"Full\"" "${log_home}/full.out" "Full Backup chose wrong Pool"
+check_all_jobs "${log_home}/full.out" "Full Backup did not complete sucessfully"
+expect_grep "Write Pool:[[:space:]]*\"Full-Next\"" "${log_home}/copy.out" "Full backup was copied to the wrong pool"
+check_all_jobs "${log_home}/copy.out" "Copy Job did not complete sucessfully"
+
+end_test
