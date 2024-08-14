@@ -55,25 +55,16 @@ CPMFindPackage(
   EXCLUDE_FROM_ALL YES
 )
 
-if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|amd64|AMD64)$")
-  set(XXHASH_ENABLE_DISPATCH ON
-      CACHE INTERNAL ""
-  )
-else()
-  set(XXHASH_ENABLE_DISPATCH OFF
-      CACHE INTERNAL ""
-  )
-endif()
 CPMFindPackage(
   NAME xxHash
   VERSION 0.8.2
   GITHUB_REPOSITORY Cyan4973/xxHash
   EXCLUDE_FROM_ALL YES
-  OPTIONS "XXHASH_BUILD_ENABLE_INLINE_API OFF" "XXHASH_BUILD_XXHSUM ON" "XXASH_ENABLE_DISPATCH ${XXHASH_ENABLE_DISPATCH}"
-  SOURCE_SUBDIR cmake_unofficial
+  DOWNLOAD_ONLY True
 )
-set(xxHash::xxhash ALIAS xxhash)
-target_link_libraries(xxhash PRIVATE xxHash::xxhash)
+if (xxHash_ADDED)
+  include("cmake/xxHash.cmake")
+endif()
 
 
 # **IMPORTANT** keep this as last item!
