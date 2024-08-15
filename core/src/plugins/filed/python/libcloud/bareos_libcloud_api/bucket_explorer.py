@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@ class TASK_TYPE(object):
     DOWNLOADED = 1
     TEMP_FILE = 2
     STREAM = 3
+    ACCURATE = 4
 
     def __setattr__(self, *_):
         raise Exception("class TASK_TYPE is read only")
@@ -139,6 +140,7 @@ class BucketExplorer(ProcessBase):
                 # again but remembered as "still here" (for accurate mode)
                 # If accurate mode is off, we can simply skip that object
                 if self.options["accurate"] is True:
+                    task["type"] = TASK_TYPE.ACCURATE
                     self.queue_try_put(self.discovered_objects_queue, task)
 
                 continue

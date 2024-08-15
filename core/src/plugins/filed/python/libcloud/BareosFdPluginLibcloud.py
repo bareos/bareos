@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -392,7 +392,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     )
                     self.current_backup_task["skip_file"] = True
                     return bRC_OK
-
+        elif self.current_backup_task["type"] == TASK_TYPE.ACCURATE:
+            self.FILE = None
         else:
             raise Exception(value='Wrong argument for current_backup_task["type"]')
 

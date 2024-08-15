@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -121,7 +121,9 @@ class Worker(ProcessBase):
 
         action = CONTINUE
 
-        if task["size"] < 1024 * 10:
+        if task["type"] == TASK_TYPE.ACCURATE:
+            action = self._put_accurate_object_into_queue(task, obj)
+        elif task["size"] < 1024 * 10:
             action = self._download_object_into_queue(task, obj)
         elif task["size"] < self.options["prefetch_size"]:
             action = self._download_object_into_tempfile(task, obj)
@@ -234,6 +236,32 @@ class Worker(ProcessBase):
         except Exception as e:
             self.error_message(
                 "Error preparing stream object, skipping: %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
+
+    def _put_accurate_object_into_queue(self, task, obj):
+        try:
+            self.debug_message(
+                110,
+                "Prepare object as accurate for download %s"
+                % (task_object_full_name(task)),
+            )
+            task["data"] = obj
+            task["type"] = TASK_TYPE.ACCURATE
+            self.queue_try_put(self.output_queue, task)
+            return CONTINUE
+        except LibcloudError as e:
+            self.error_message(
+                "Libcloud error preparing accurate object, skipping: %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
+        except Exception as e:
+            self.error_message(
+                "Error preparing accurate object, skipping: %s"
                 % (task_object_full_name(task)),
                 e,
             )
