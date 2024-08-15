@@ -478,20 +478,39 @@ struct ListCmdOptions {
   bool current;
   bool enabled;
   bool disabled;
+  // jobstatus=X,Y,Z....
+  std::vector<char> jobstatuslist;
+  // joblevel=X
+  std::vector<char> joblevel_list;
+  // jobtype=X
+  std::vector<char> jobtypes{};
 
-  ListCmdOptions(UaContext* ua)
+  bool parse(UaContext* ua)
   {
     current = FindArg(ua, NT_("current")) >= 0;
     enabled = FindArg(ua, NT_("enabled")) >= 0;
     disabled = FindArg(ua, NT_("disabled")) >= 0;
     count = FindArg(ua, NT_("count")) >= 0;
     last = FindArg(ua, NT_("last")) >= 0;
+    if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
+      ua->ErrorMsg(T_("invalid jobstatus parameter\n"));
+      return false;
+    }
+    if (!GetUserJobLevelSelection(ua, joblevel_list)) {
+      ua->ErrorMsg(T_("invalid joblevel parameter\n"));
+      return false;
+    }
+    if (!GetUserJobTypeListSelection(ua, jobtypes, false)) {
+      ua->ErrorMsg(T_("invalid jobtype parameter\n"));
+      return false;
+    }
+    return true;
   }
 };
 
 static bool ListMedia(UaContext* ua,
                       e_list_type llist,
-                      ListCmdOptions optionslist)
+                      ListCmdOptions& optionslist)
 {
   JobDbRecord jr;
   std::string query_range;
@@ -593,6 +612,90 @@ static bool ListMedia(UaContext* ua,
 }
 
 
+static bool DoListJobsCmd(UaContext* ua,
+                          e_list_type llist,
+                          ListCmdOptions& optionslist)
+{
+  // List jobs or List job=xxx
+
+  // days or hours given?
+  const int secs_in_day = 86400;
+  const int secs_in_hour = 3600;
+
+  JobDbRecord jr;
+
+  utime_t now = (utime_t)time(NULL);
+  time_t schedtime = 0;
+  if (const char* value = GetArgValue(ua, NT_("days"))) {
+    int days = str_to_int64(value);
+    schedtime = now - secs_in_day * days; /* Days in the past */
+  }
+  if (const char* value = GetArgValue(ua, NT_("hours"))) {
+    int hours = str_to_int64(value);
+    schedtime = now - secs_in_hour * hours; /* Hours in the past */
+  }
+
+  if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
+                         || (value = GetArgValue(ua, NT_("job")))) {
+    jr.JobId = 0;
+    bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
+  }
+
+  const char* clientname = nullptr;
+  if (const char* value = GetArgValue(ua, NT_("client"))) {
+    if (ua->GetClientResWithName(value)) {
+      clientname = value;
+    } else {
+      ua->ErrorMsg(T_("invalid client parameter\n"));
+      return false;
+    }
+  }
+
+  const char* volumename = GetArgValue(ua, NT_("volume"));
+  const char* poolname = GetArgValue(ua, NT_("pool"));
+
+  switch (llist) {
+    case VERT_LIST:
+      if (!optionslist.count) {  // count result is one column, no filtering
+        SetAclFilter(ua, 2, Job_ACL);
+        SetAclFilter(ua, 7, Client_ACL);
+        SetAclFilter(ua, 22, Pool_ACL);
+        SetAclFilter(ua, 25, FileSet_ACL);
+        if (optionslist.current) {
+          SetResFilter(ua, 2, R_JOB);
+          SetResFilter(ua, 7, R_CLIENT);
+          SetResFilter(ua, 22, R_POOL);
+          SetResFilter(ua, 25, R_FILESET);
+        }
+      }
+      if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
+      if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
+      break;
+    default:
+      if (!optionslist.count) {  // count result is one column, no filtering
+        SetAclFilter(ua, 1, Job_ACL);
+        SetAclFilter(ua, 2, Client_ACL);
+        if (optionslist.current) {
+          SetResFilter(ua, 1, R_JOB);
+          SetResFilter(ua, 2, R_CLIENT);
+        }
+      }
+      if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
+      if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
+      break;
+  }
+
+  std::string query_range;
+  SetQueryRange(query_range, ua, &jr);
+
+  ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
+                         optionslist.jobstatuslist, optionslist.joblevel_list,
+                         optionslist.jobtypes, volumename, poolname, schedtime,
+                         optionslist.last, optionslist.count, ua->send, llist);
+
+  return true;
+}
+
 static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 {
   const int secs_in_day = 86400;
@@ -619,8 +722,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     schedtime = now - secs_in_hour * hours; /* Hours in the past */
   }
 
-  std::string query_range;
   JobDbRecord jr;
+  std::string query_range;
   SetQueryRange(query_range, ua, &jr);
 
   const char* clientname = nullptr;
@@ -633,82 +736,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   }
 
-
-  // jobstatus=X,Y,Z....
-  std::vector<char> jobstatuslist;
-  if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
-    ua->ErrorMsg(T_("invalid jobstatus parameter\n"));
-    return false;
-  }
-
-  // joblevel=X
-  std::vector<char> joblevel_list;
-  if (!GetUserJobLevelSelection(ua, joblevel_list)) {
-    ua->ErrorMsg(T_("invalid joblevel parameter\n"));
-    return false;
-  }
-
-  // jobtype=X
-  std::vector<char> jobtypes{};
-  if (!GetUserJobTypeListSelection(ua, jobtypes, false)) {
-    ua->ErrorMsg(T_("invalid jobtype parameter\n"));
-    return false;
-  }
-
-  ListCmdOptions optionslist(ua);
+  ListCmdOptions optionslist{};
+  if (!optionslist.parse(ua)) { return false; }
 
   // Select what to do based on the first argument.
   if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
       || ((Bstrcasecmp(ua->argk[1], NT_("job"))
            || Bstrcasecmp(ua->argk[1], NT_("jobname")))
           && ua->argv[1])) {
-    // List jobs or List job=xxx
-    if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
-                           || (value = GetArgValue(ua, NT_("job")))) {
-      jr.JobId = 0;
-      bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
-    }
-
-    const char* volumename = GetArgValue(ua, NT_("volume"));
-    const char* poolname = GetArgValue(ua, NT_("pool"));
-
-    switch (llist) {
-      case VERT_LIST:
-        if (!optionslist.count) {  // count result is one column, no filtering
-          SetAclFilter(ua, 2, Job_ACL);
-          SetAclFilter(ua, 7, Client_ACL);
-          SetAclFilter(ua, 22, Pool_ACL);
-          SetAclFilter(ua, 25, FileSet_ACL);
-          if (optionslist.current) {
-            SetResFilter(ua, 2, R_JOB);
-            SetResFilter(ua, 7, R_CLIENT);
-            SetResFilter(ua, 22, R_POOL);
-            SetResFilter(ua, 25, R_FILESET);
-          }
-        }
-        if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
-        if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
-        break;
-      default:
-        if (!optionslist.count) {  // count result is one column, no filtering
-          SetAclFilter(ua, 1, Job_ACL);
-          SetAclFilter(ua, 2, Client_ACL);
-          if (optionslist.current) {
-            SetResFilter(ua, 1, R_JOB);
-            SetResFilter(ua, 2, R_CLIENT);
-          }
-        }
-        if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
-        if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
-        break;
-    }
-
-    SetQueryRange(query_range, ua, &jr);
-
-    ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                           jobstatuslist, joblevel_list, jobtypes, volumename,
-                           poolname, schedtime, optionslist.last,
-                           optionslist.count, ua->send, llist);
+    return DoListJobsCmd(ua, llist, optionslist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
     // List JOBTOTALS
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
@@ -754,8 +790,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
         SetQueryRange(query_range, ua, &jr);
 
         ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                               jobstatuslist, joblevel_list, jobtypes, nullptr,
-                               poolname, schedtime, optionslist.last,
+                               optionslist.jobstatuslist,
+                               optionslist.joblevel_list, optionslist.jobtypes,
+                               nullptr, poolname, schedtime, optionslist.last,
                                optionslist.count, ua->send, llist);
       }
     }
