@@ -344,6 +344,10 @@ bool list_cmd(UaContext* ua, const char* cmd)
   return DoListCmd(ua, cmd, HORZ_LIST);
 }
 
+// @return >0: jobid
+// @return 0: neither "jobid" nor "ujobid" parameter is provided.
+// @return -1: can't access jobid (because it doesn't exist or no permission to
+// access it).
 static int GetJobidFromCmdline(UaContext* ua)
 {
   JobDbRecord jr{};
@@ -621,29 +625,43 @@ static bool ListJobs(UaContext* ua,
   // list jobid=nnn [...]
   // list ujobid=xxx [...]
 
+  JobDbRecord jr;
+
+  if (Bstrcasecmp(ua->argk[1], NT_("jobs")) && ua->argv[1]) {
+    ua->ErrorMsg(T_("'list jobs' does not allow an jobs parameter\n"));
+    return false;
+  }
+
+  if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
+                         || (value = GetArgValue(ua, NT_("job")))) {
+    jr.JobId = 0;
+    bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
+  } else if (Bstrcasecmp(ua->argk[1], NT_("job"))
+             || Bstrcasecmp(ua->argk[1], NT_("jobname"))) {
+    ua->ErrorMsg(T_("Missing %s parameter\n"), NPRT(ua->argk[1]));
+    return false;
+  }
+
+  int jobid = GetJobidFromCmdline(ua);
+  if (jobid > 0) {
+    jr.JobId = jobid;
+  } else if (jobid < 0) {
+    // jobid < 0: jobid does not exist or no permission to access it.
+    // This is not treated as error (to keep behavior of prior versions).
+    ua->send->ObjectStart("jobs");
+    ua->send->ObjectEnd("jobs");
+    return true;
+  } else /* if (jobid == 0) */ {
+    if (Bstrcasecmp(ua->argk[1], NT_("jobid"))
+        || Bstrcasecmp(ua->argk[1], NT_("ujobid"))) {
+      ua->ErrorMsg(T_("Missing %s parameter\n"), NPRT(ua->argk[1]));
+      return false;
+    }
+  }
+
   // days or hours given?
   const int secs_in_day = 86400;
   const int secs_in_hour = 3600;
-
-  JobDbRecord jr;
-
-  // list jobid=nnn
-  // list ujobid=nnn
-  if ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
-       || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
-      && ua->argv[1]) {
-    int jobid = GetJobidFromCmdline(ua);
-    if (jobid > 0) {
-      jr.JobId = jobid;
-    } else {
-      ua->ErrorMsg(T_("invalid %s %s\n"), ua->argk[1], ua->argv[1]);
-      return false;
-    }
-  } else if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
-                                || (value = GetArgValue(ua, NT_("job")))) {
-    jr.JobId = 0;
-    bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
-  }
 
   utime_t now = (utime_t)time(NULL);
   time_t schedtime = 0;
@@ -722,9 +740,17 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     return false;
   }
 
-  JobDbRecord jr;
-  std::string query_range;
-  SetQueryRange(query_range, ua, &jr);
+  ListCmdOptions optionslist{};
+  if (!optionslist.parse(ua)) { return false; }
+
+  // Select what to do based on the first argument.
+  if (Bstrcasecmp(ua->argk[1], NT_("jobs"))
+      || Bstrcasecmp(ua->argk[1], NT_("job"))
+      || Bstrcasecmp(ua->argk[1], NT_("jobname"))
+      || Bstrcasecmp(ua->argk[1], NT_("jobid"))
+      || Bstrcasecmp(ua->argk[1], NT_("ujobid"))) {
+    return ListJobs(ua, llist, optionslist);
+  }
 
   const char* clientname = nullptr;
   if (const char* value = GetArgValue(ua, NT_("client"))) {
@@ -736,19 +762,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   }
 
-  ListCmdOptions optionslist{};
-  if (!optionslist.parse(ua)) { return false; }
+  JobDbRecord jr;
+  std::string query_range;
+  SetQueryRange(query_range, ua, &jr);
 
-  // Select what to do based on the first argument.
-  if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
-      || ((Bstrcasecmp(ua->argk[1], NT_("job"))
-           || Bstrcasecmp(ua->argk[1], NT_("jobname")))
-          && ua->argv[1])
-      || ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
-           || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
-          && ua->argv[1])) {
-    return ListJobs(ua, llist, optionslist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
+  if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
     // List JOBTOTALS
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
   } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
@@ -916,11 +934,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     ua->send->ObjectEnd("volume");
   } else if (Bstrcasecmp(ua->argk[1], NT_("nextvol"))
              || Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
-    int days;
-
     // List next volume
-    days = 1;
-
+    int days = 1;
     if (const char* value = GetArgValue(ua, NT_("days"))) {
       days = atoi(value);
       if ((days < 0) || (days > kDefaultNumberOfDays)) {
@@ -1244,10 +1259,8 @@ get_out:
   return true;
 }
 
-/**
- * For a given job, we examine all his run records
- *  to see if it is scheduled today or tomorrow.
- */
+/* For a given job, we examine all his run records
+ *  to see if it is scheduled today or tomorrow. */
 RunResource* find_next_run(RunResource* run,
                            JobResource* job,
                            utime_t& runtime,
@@ -1551,13 +1564,11 @@ bool sprintit(void* ctx, const char* fmt, ...)
 }
 
 
-/**
- * Format message and send to other end.
+/* Format message and send to other end.
 
  * If the UA_sock is NULL, it means that there is no user
  * agent, so we are being called from BAREOS core. In
- * that case direct the messages to the Job.
- */
+ * that case direct the messages to the Job. */
 void bmsg(UaContext* ua, const char* fmt, va_list arg_ptr)
 {
   BareosSocket* bs = ua->UA_sock;
@@ -1598,10 +1609,8 @@ bool bsendmsg(void* ctx, const char* fmt, ...)
   return true;
 }
 
-/*
- * The following UA methods are mainly intended for GUI
- * programs
- */
+/* The following UA methods are mainly intended for GUI
+ * programs */
 
 void UaContext::vSendMsg(int signal,
                          const char* messagetype,
@@ -1622,10 +1631,8 @@ void UaContext::vSendMsg(int signal,
   }
 }
 
-/**
- * This is a message that should be displayed on the user's
- *  console.
- */
+/* This is a message that should be displayed on the user's
+ *  console. */
 void UaContext::SendMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -1637,10 +1644,8 @@ void UaContext::SendMsg(const char* fmt, ...)
 void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
 
 
-/**
- * This is an error condition with a command. The gui should put
- *  up an error or critical dialog box.  The command is aborted.
- */
+/* This is an error condition with a command. The gui should put
+ *  up an error or critical dialog box.  The command is aborted. */
 void UaContext::ErrorMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -1649,11 +1654,9 @@ void UaContext::ErrorMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-/**
- * This is a warning message, that should bring up a warning
+/* This is a warning message, that should bring up a warning
  *  dialog box on the GUI. The command is not aborted, but something
- *  went wrong.
- */
+ *  went wrong. */
 void UaContext::WarningMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -1662,10 +1665,8 @@ void UaContext::WarningMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-/**
- * This is an information message that should probably be put
- *  into the status line of a GUI program.
- */
+/* This is an information message that should probably be put
+ *  into the status line of a GUI program. */
 void UaContext::InfoMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
