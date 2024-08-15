@@ -612,17 +612,38 @@ static bool ListMedia(UaContext* ua,
 }
 
 
-static bool DoListJobsCmd(UaContext* ua,
-                          e_list_type llist,
-                          ListCmdOptions& optionslist)
+static bool ListJobs(UaContext* ua,
+                     e_list_type llist,
+                     ListCmdOptions& optionslist)
 {
-  // List jobs or List job=xxx
+  // list jobs [...]
+  // list job=xxx [...]
+  // list jobid=nnn [...]
+  // list ujobid=xxx [...]
 
   // days or hours given?
   const int secs_in_day = 86400;
   const int secs_in_hour = 3600;
 
   JobDbRecord jr;
+
+  // list jobid=nnn
+  // list ujobid=nnn
+  if ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
+       || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
+      && ua->argv[1]) {
+    int jobid = GetJobidFromCmdline(ua);
+    if (jobid > 0) {
+      jr.JobId = jobid;
+    } else {
+      ua->ErrorMsg(T_("invalid %s %s\n"), ua->argk[1], ua->argv[1]);
+      return false;
+    }
+  } else if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
+                                || (value = GetArgValue(ua, NT_("job")))) {
+    jr.JobId = 0;
+    bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
+  }
 
   utime_t now = (utime_t)time(NULL);
   time_t schedtime = 0;
@@ -633,12 +654,6 @@ static bool DoListJobsCmd(UaContext* ua,
   if (const char* value = GetArgValue(ua, NT_("hours"))) {
     int hours = str_to_int64(value);
     schedtime = now - secs_in_hour * hours; /* Hours in the past */
-  }
-
-  if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
-                         || (value = GetArgValue(ua, NT_("job")))) {
-    jr.JobId = 0;
-    bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
   }
 
   const char* clientname = nullptr;
@@ -698,9 +713,6 @@ static bool DoListJobsCmd(UaContext* ua,
 
 static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 {
-  const int secs_in_day = 86400;
-  const int secs_in_hour = 3600;
-
   if (!OpenClientDb(ua, true)) { return true; }
 
   Dmsg1(20, "list: %s\n", cmd);
@@ -708,18 +720,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   if (ua->argc <= 1) {
     ua->ErrorMsg(T_("%s command requires a keyword\n"), NPRT(ua->argk[0]));
     return false;
-  }
-
-  // days or hours given?
-  utime_t now = (utime_t)time(NULL);
-  time_t schedtime = 0;
-  if (const char* value = GetArgValue(ua, NT_("days"))) {
-    int days = str_to_int64(value);
-    schedtime = now - secs_in_day * days; /* Days in the past */
-  }
-  if (const char* value = GetArgValue(ua, NT_("hours"))) {
-    int hours = str_to_int64(value);
-    schedtime = now - secs_in_hour * hours; /* Hours in the past */
   }
 
   JobDbRecord jr;
@@ -743,59 +743,14 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
       || ((Bstrcasecmp(ua->argk[1], NT_("job"))
            || Bstrcasecmp(ua->argk[1], NT_("jobname")))
+          && ua->argv[1])
+      || ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
+           || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
           && ua->argv[1])) {
-    return DoListJobsCmd(ua, llist, optionslist);
+    return ListJobs(ua, llist, optionslist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
     // List JOBTOTALS
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
-  } else if ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
-              || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
-             && ua->argv[1]) {
-    /* List JOBID=nn
-     * List UJOBID=xxx */
-    if (ua->argv[1]) {
-      int jobid = GetJobidFromCmdline(ua);
-      if (jobid > 0) {
-        jr.JobId = jobid;
-
-        const char* poolname = GetArgValue(ua, NT_("pool"));
-
-        switch (llist) {
-          case VERT_LIST:
-            SetAclFilter(ua, 2, Job_ACL);
-            SetAclFilter(ua, 7, Client_ACL);
-            SetAclFilter(ua, 22, Pool_ACL);
-            SetAclFilter(ua, 25, FileSet_ACL);
-            if (optionslist.current) {
-              SetResFilter(ua, 2, R_JOB);
-              SetResFilter(ua, 7, R_CLIENT);
-              SetResFilter(ua, 22, R_POOL);
-              SetResFilter(ua, 25, R_FILESET);
-            }
-            if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
-            if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
-            break;
-          default:
-            SetAclFilter(ua, 1, Job_ACL);
-            SetAclFilter(ua, 2, Client_ACL);
-            if (optionslist.current) {
-              SetResFilter(ua, 1, R_JOB);
-              SetResFilter(ua, 2, R_CLIENT);
-            }
-            if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
-            if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
-            break;
-        }
-
-        SetQueryRange(query_range, ua, &jr);
-
-        ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                               optionslist.jobstatuslist,
-                               optionslist.joblevel_list, optionslist.jobtypes,
-                               nullptr, poolname, schedtime, optionslist.last,
-                               optionslist.count, ua->send, llist);
-      }
-    }
   } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
     // List BASEFILES
     if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
