@@ -2193,10 +2193,25 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   if (rc.client_name) {
     rc.client = ua->GetClientResWithName(rc.client_name);
     if (!rc.client) {
-      if (*rc.client_name != 0) {
-        ua->WarningMsg(T_("Client \"%s\" not found.\n"), rc.client_name);
+      // Running backup jobs can only be performed on clients with a
+      // configuration resource. However, a restore job should also work from
+      // clients without configuration resource (client has been deleted from
+      // the configruation, but can still be found in the catalog database).
+      if (rc.job->JobType == JT_RESTORE) {
+        ClientDbRecord cr;
+        bstrncpy(cr.Name, rc.client_name, sizeof(cr.Name));
+        if ((!ua->db->GetClientRecord(ua->jcr, &cr))
+            || (!ua->AclAccessOk(Client_ACL, cr.Name, true))) {
+          ua->ErrorMsg(T_("Client \"%s\" not found.\n"), rc.client_name);
+          return false;
+        }
+      } else {
+        if (*rc.client_name != 0) {
+          ua->WarningMsg(T_("Client \"%s\" not found.\n"), rc.client_name);
+        }
+        rc.client = select_client_resource(ua);
+        if (!rc.client) { return false; }
       }
-      rc.client = select_client_resource(ua);
     }
   } else if (!rc.client) {
     rc.client = rc.job->client; /* use default */
@@ -2220,6 +2235,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
                        rc.restore_client_name);
       }
       rc.client = select_client_resource(ua);
+      if (!rc.client) { return false; }
     }
   } else if (!rc.client) {
     rc.client = rc.job->client; /* use default */
