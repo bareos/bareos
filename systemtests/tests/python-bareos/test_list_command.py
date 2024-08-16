@@ -58,10 +58,11 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             **self.director_extra_options,
         )
 
-        backup_jobid = self.get_backup_jobid(director, "backup-bareos-fd", level="Full")
+        backup_jobname = "backup-bareos-fd"
+        backup_jobid = self.get_backup_jobid(director, backup_jobname, level="Full")
         self.run_restore(director, client="bareos-fd", jobid=backup_jobid, wait=True)
         backup_jobid_incremental = self.get_backup_jobid(
-            director, "backup-bareos-fd", level="Incremental"
+            director, backup_jobname, level="Incremental"
         )
 
         # Regular list jobs
@@ -318,6 +319,53 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
 
         self.assertTrue(full_jobs >= 1)
         self.assertTrue(incremental_jobs >= 1)
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list jobs=x")
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list job")
+
+        result = director.call("list job=invalid_jobname")
+        self.assertEqual(len(result["jobs"]), 0)
+
+        result = director.call(f"list job={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        # this is not required to work.
+        result = director.call(f"list jobs job={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        result = director.call(f"list jobname={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        # this is not required to work.
+        result = director.call(f"list jobs jobname={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list jobid")
+
+        result = director.call(f"llist jobid={backup_jobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+        backup_job_ujobid = result["jobs"][0]["job"]
+
+        # this is not required to work.
+        result = director.call(f"llist jobs jobid={backup_jobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list ujobid")
+
+        result = director.call(f"llist ujobid={backup_job_ujobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+
+        # this is not required to work.
+        result = director.call(f"llist jobs ujobid={backup_job_ujobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+
+        result = director.call(f"llist ujobid=invalid_ujobid")
+        self.assertEqual(len(result["jobs"]), 0)
 
     def test_list_media(self):
         """

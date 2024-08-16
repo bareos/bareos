@@ -219,7 +219,7 @@ class Json(PythonBareosBase):
             listcmd = "{} jobid={}".format(cmd, jobid)
             result = director.call(listcmd)
             self.assertEqual(
-                len(result),
+                len(result["jobs"]),
                 0,
                 "Command {} should not return results. Current result: {} visible".format(
                     listcmd, str(result)
