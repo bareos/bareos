@@ -21,6 +21,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - vadp-dumper: fix out of bounds read [PR #1918]
 - dird: disallow running always incremental virtual full jobs with empty jobid list [PR #1901]
 - cats: scripts add option --no-psqlrc to psql [PR #1926]
+- python-bareos: fix backslash usage in regex [PR #1930]
 
 ### Fixed
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
@@ -521,4 +522,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1913]: https://github.com/bareos/bareos/pull/1913
 [PR #1918]: https://github.com/bareos/bareos/pull/1918
 [PR #1926]: https://github.com/bareos/bareos/pull/1926
+[PR #1930]: https://github.com/bareos/bareos/pull/1930
 [unreleased]: https://github.com/bareos/bareos/tree/master
