@@ -480,7 +480,7 @@ struct ListCmdOptions {
   bool count;
   bool last;
   bool current;
-  bool enabled;
+  bool enabled{};
   bool disabled;
   // jobstatus=X,Y,Z....
   std::vector<char> jobstatuslist;
@@ -514,7 +514,7 @@ struct ListCmdOptions {
 
 static bool ListMedia(UaContext* ua,
                       e_list_type llist,
-                      ListCmdOptions& optionslist)
+                      const ListCmdOptions& optionslist)
 {
   JobDbRecord jr;
   std::string query_range;
@@ -675,13 +675,11 @@ static bool ListJobs(UaContext* ua,
   }
 
   const char* clientname = nullptr;
-  if (const char* value = GetArgValue(ua, NT_("client"))) {
-    if (ua->GetClientResWithName(value)) {
-      clientname = value;
-    } else {
-      ua->ErrorMsg(T_("invalid client parameter\n"));
-      return false;
-    }
+  int client_arg = FindClientArgFromDatabase(ua);
+  if (client_arg < 0) {
+    return false;
+  } else if (client_arg > 0) {
+    clientname = ua->argv[client_arg];
   }
 
   const char* volumename = GetArgValue(ua, NT_("volume"));
@@ -750,16 +748,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       || Bstrcasecmp(ua->argk[1], NT_("jobid"))
       || Bstrcasecmp(ua->argk[1], NT_("ujobid"))) {
     return ListJobs(ua, llist, optionslist);
-  }
-
-  const char* clientname = nullptr;
-  if (const char* value = GetArgValue(ua, NT_("client"))) {
-    if (ua->GetClientResWithName(value)) {
-      clientname = value;
-    } else {
-      ua->ErrorMsg(T_("invalid client parameter\n"));
-      return false;
-    }
   }
 
   JobDbRecord jr;
@@ -839,11 +827,18 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
              "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("log"))) {
-    bool reverse;
-
     /* List last <limit> LOG entries
      * default is DEFAULT_LOG_LINES entries */
-    reverse = FindArg(ua, NT_("reverse")) >= 0;
+
+    const char* clientname = nullptr;
+    int client_arg = FindClientArgFromDatabase(ua);
+    if (client_arg < 0) {
+      return false;
+    } else if (client_arg > 0) {
+      clientname = ua->argv[client_arg];
+    }
+
+    bool reverse = FindArg(ua, NT_("reverse")) >= 0;
 
     if (query_range.empty()) {
       query_range = " LIMIT " + std::to_string(kDefaultLogLines);
@@ -1140,21 +1135,21 @@ static bool ParseListBackupsCmd(UaContext* ua,
 {
   PoolMem temp(PM_MESSAGE), selection(PM_MESSAGE), criteria(PM_MESSAGE);
 
-  const char* client = GetArgValue(ua, "client");
-  if (!client) {
+  const char* clientname = nullptr;
+  int client_arg = FindClientArgFromDatabase(ua);
+  if (client_arg < 0) {
+    return false;
+  } else if (client_arg == 0) {
     ua->ErrorMsg(T_("missing parameter: client\n"));
     return false;
-  }
-
-  if (!ua->AclAccessOk(Client_ACL, client, true)) {
-    ua->ErrorMsg(T_("Access to specified Client not allowed.\n"));
-    return false;
+  } else if (client_arg > 0) {
+    clientname = ua->argv[client_arg];
   }
 
   /* allow jobtypes 'B' for Backup and 'A' or 'a' for archive (update job
    * doesn't enforce a valid jobtype, so people have 'a' in their catalogs */
   selection.bsprintf("AND Job.Type IN('B', 'A', 'a') AND Client.Name='%s' ",
-                     client);
+                     clientname);
 
   // Build a selection pattern based on the jobstatus and level arguments.
   parse_jobstatus_selection_param(temp, ua, "AND JobStatus IN ('T','W') ");

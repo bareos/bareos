@@ -148,6 +148,38 @@ const char* GetArgValue(UaContext* ua, const char* keyword)
 }
 
 /**
+ * Tries to find client name, provided as command line argument in the Bareos
+ * catalog. This differs from ua->GetClientResWithName as it also gets clients
+ * no longer available in the configuration.
+ *
+ * @return -1: if invalid client parameter is given.
+ * @return  0: no client parameter given.
+ * @return >0: valid client parameter is given.
+ */
+int FindClientArgFromDatabase(UaContext* ua)
+{
+  ClientDbRecord cr;
+  int i = FindArgWithValue(ua, NT_("client"));
+  ASSERT(i != 0);
+  if (i >= 0) {
+    if (!IsNameValid(ua->argv[i], ua->errmsg)) {
+      ua->ErrorMsg("%s argument: %s", ua->argk[i], ua->errmsg.c_str());
+      return -1;
+    }
+    // this is checked by IsNameValid
+    ASSERT(strlen(ua->argv[i]) < sizeof(cr.Name));
+    bstrncpy(cr.Name, ua->argv[i], sizeof(cr.Name));
+    if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
+      ua->ErrorMsg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
+      return -1;
+    }
+    if (!ua->AclAccessOk(Client_ACL, cr.Name)) { return -1; }
+    return i;
+  }
+  return 0;
+}
+
+/**
  * Given a list of keywords, prompt the user to choose one.
  *
  * Returns: -1 on failure
