@@ -60,15 +60,16 @@
 namespace directordaemon {
 
 /* Commands sent to File daemon */
-static char backupcmd[] = "backup FileIndex=%ld\n";
-static char storaddrcmd[] = "storage address=%s port=%d ssl=%d\n";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
+constexpr const char backupcmd[] = "backup FileIndex=%" PRIu32 "\n";
+constexpr const char storaddrcmd[] = "storage address=%s port=%d ssl=%d\n";
+constexpr const char passiveclientcmd[]
+    = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-static char OKbackup[] = "2000 OK backup\n";
-static char OKstore[] = "2000 OK storage\n";
-static char OKpassiveclient[] = "2000 OK passive client\n";
-static char EndJob[]
+constexpr const char OKbackup[] = "2000 OK backup\n";
+constexpr const char OKstore[] = "2000 OK storage\n";
+constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
+constexpr const char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u "
       "ReadBytes=%llu JobBytes=%llu Errors=%u "
       "VSS=%d Encrypt=%d\n";
@@ -384,7 +385,8 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 
   if (jcr->JobId) { /* display the message only for real jobs */
     Jmsg(jcr, M_INFO, 0,
-         "Sent Accurate information for %llu files (skipping %llu deleted "
+         "Sent Accurate information for %" PRIuz " files (skipping %" PRIuz
+         " deleted "
          "files) in %s.\n",
          args.sent, args.discarded, accurate_timer.format_human_readable());
   }
@@ -1083,7 +1085,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
          if (jcr->HasBase) {
             Mmsg(client_options, T_(
                  "  Software Compression:   %s%s\n"
-                 "  Base files/Used files:  %lld/%lld (%.2f%%)\n"
+                 "  Base files/Used files:  %" PRIu64 "/%" PRIu64 "(%.2f%%)\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
                  "  Accurate:               %s\n"),

@@ -31,6 +31,7 @@
 #include "lib/output_formatter.h"
 #include "lib/output_formatter_resource.h"
 #include "lib/version.h"
+#include "include/compiler_macro.h"
 
 #include <cassert>
 
@@ -40,7 +41,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* reshdr,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
@@ -90,7 +91,7 @@ static ResourceTable resources[] = {
 
 static void DumpResource(int type,
                          BareosResource* res,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)
@@ -112,12 +113,8 @@ static void DumpResource(int type,
     recurse = false;
   }
 
-  switch (type) {
-    default:
-      res->PrintConfig(output_formatter_resource, *my_config,
-                       hide_sensitive_data, verbose);
-      break;
-  }
+  res->PrintConfig(output_formatter_resource, *my_config, hide_sensitive_data,
+                   verbose);
 
   if (recurse && res->next_) {
     DumpResource(type, res->next_, sendit, sock, hide_sensitive_data, verbose);

@@ -50,7 +50,7 @@
 namespace storagedaemon {
 
 /* Static variables */
-static char ferrmsg[] = "3900 Invalid command\n";
+constexpr const char ferrmsg[] = "3900 Invalid command\n";
 
 /* Imported functions */
 
@@ -79,19 +79,20 @@ static struct s_fd_cmds fd_cmds[] = {
 };
 
 /* Commands from the File daemon that require additional scanning */
-static char read_open[] = "read open session = %127s %ld %ld %ld %ld %ld %ld\n";
+constexpr const char read_open[]
+    = "read open session = %127s %ld %ld %ld %ld %ld %ld\n";
 
 /* Responses sent to the File daemon */
-static char NO_open[] = "3901 Error session already open\n";
-static char NOT_opened[] = "3902 Error session not opened\n";
-static char OK_end[] = "3000 OK end\n";
-static char OK_close[] = "3000 OK close Status = %d\n";
-static char OK_open[] = "3000 OK open ticket = %d\n";
-static char ERROR_append[] = "3903 Error append data\n";
+constexpr const char NO_open[] = "3901 Error session already open\n";
+constexpr const char NOT_opened[] = "3902 Error session not opened\n";
+constexpr const char OK_end[] = "3000 OK end\n";
+constexpr const char OK_close[] = "3000 OK close Status = %d\n";
+constexpr const char OK_open[] = "3000 OK open ticket = %d\n";
+constexpr const char ERROR_append[] = "3903 Error append data\n";
 
 /* Responses sent to the Director */
-static char Job_start[] = "3010 Job %s start\n";
-static char Job_end[]
+constexpr const char Job_start[] = "3010 Job %s start\n";
+constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**
@@ -381,11 +382,14 @@ static bool ReadOpenSession(JobControlRecord* jcr)
       return false;
     }
     Dmsg4(100,
-          "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
+          "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%" PRId32
+          " VolSessT=%" PRIu32 "\n",
           jcr->JobId, jcr->sd_impl->read_dcr->VolumeName,
           jcr->sd_impl->read_session.read_VolSessionId,
           jcr->sd_impl->read_session.read_VolSessionTime);
-    Dmsg4(100, "  StartF=%ld EndF=%ld StartB=%ld EndB=%ld\n",
+    Dmsg4(100,
+          "  StartF=%" PRIu32 " EndF=%" PRIu32 " StartB=%" PRIu32
+          " EndB=%" PRIu32 "\n",
           jcr->sd_impl->read_session.read_StartFile,
           jcr->sd_impl->read_session.read_EndFile,
           jcr->sd_impl->read_session.read_StartBlock,

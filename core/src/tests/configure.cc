@@ -40,7 +40,7 @@ TEST(ConfigureExport, ReturnsQuotedNameAndPassword)
   std::string expected_output{
       "Director {\n"
       "  Name = \"bareos director\"\n"
-      "  Password = \"[md5]9999\"\n"
+      "  Password = \"[md5]01234567890123456789012345678912\"\n"
       "}\n"};
 
   EXPECT_EQ(resource.c_str(), expected_output);

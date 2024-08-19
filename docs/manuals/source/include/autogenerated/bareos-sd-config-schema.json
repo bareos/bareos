@@ -241,7 +241,8 @@
         "MaximumConcurrentJobs": {
           "datatype": "PINT32",
           "code": 0,
-          "default_value": "20",
+          "default_value": "1000",
+          "deprecated": true,
           "equals": true
         },
         "Messages": {

@@ -1,3 +1,7 @@
+info shared
+info file
+info registers
+
 print my_name
 print exename
 print exepath

@@ -106,7 +106,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 {
   DbLocker _{this};
 
-  Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%lu", jm->JobId);
+  Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%" PRIu32, jm->JobId);
   int count = GetSqlRecordMax(jcr);
   if (count < 0) { count = 0; }
   count++;
@@ -115,7 +115,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
   Mmsg(cmd,
        "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
        "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
-       "VALUES (%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%llu)",
+       "VALUES (%" PRIu32 ",%" PRIdbid ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu64 ")",
        jm->JobId,
        jm->MediaId,
        jm->FirstIndex, jm->LastIndex,
@@ -125,13 +125,15 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
        jm->JobBytes);
   /* clang-format on */
 
-  Dmsg0(300, cmd);
+  Dmsg0(300, "%s", cmd);
   if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create JobMedia record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
   } else {
     // Worked, now update the Media record with the EndFile and EndBlock
-    Mmsg(cmd, "UPDATE Media SET EndFile=%lu, EndBlock=%lu WHERE MediaId=%lu",
+    Mmsg(cmd,
+         "UPDATE Media SET EndFile=%" PRIu32 ", EndBlock=%" PRIu32
+         " WHERE MediaId=%" PRIdbid,
          jm->EndFile, jm->EndBlock, jm->MediaId);
     if (UPDATE_DB(jcr, cmd) == -1) {
       Mmsg2(errmsg, T_("Update Media record %s failed: ERR=%s\n"), cmd,
@@ -706,10 +708,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
            "= ('%s','%s','%s','%s') WHERE FileSet='%s' AND MD5='%s' ",
            esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str(), esc_fs,
            esc_md5);
-      if (QUERY_DB(jcr, cmd)) {
-        SqlFreeResult();
-        return true;
-      } else {
+      if (!QUERY_DB(jcr, cmd)) {
         Mmsg1(errmsg, T_("error updating FileSet row: ERR=%s\n"),
               sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -717,8 +716,10 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
         return false;
       }
       SqlFreeResult();
+      return true;
+    } else {
+      SqlFreeResult();
     }
-    SqlFreeResult();
   }
 
   if (fsr->CreateTime == 0 && fsr->cCreateTime[0] == 0) {
@@ -935,7 +936,7 @@ bool BareosDb::CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   /* clang-format off */
   Mmsg(cmd,
        "INSERT INTO File (FileIndex,JobId,PathId,Name,"
-       "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%llu,%llu)",
+       "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%" PRIu64 ",%" PRIu64 ")",
        ar->FileIndex, ar->JobId, ar->PathId, esc_name,
        ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
   /* clang-format on */
@@ -1016,8 +1017,8 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
   esc_path = CheckPoolMemorySize(esc_path, pnl * 2 + 1);
   EscapeString(jcr, esc_path, path, pnl);
 
-  Mmsg(cmd, "INSERT INTO basefile%lld (Path, Name) VALUES ('%s','%s')",
-       (uint64_t)jcr->JobId, esc_path, esc_name);
+  Mmsg(cmd, "INSERT INTO basefile%" PRIu32 " (Path, Name) VALUES ('%s','%s')",
+       jcr->JobId, esc_path, esc_name);
 
   return INSERT_DB(jcr, cmd) == 1;
 }
@@ -1025,10 +1026,10 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
 void BareosDb::CleanupBaseFile(JobControlRecord* jcr)
 {
   PoolMem buf(PM_MESSAGE);
-  Mmsg(buf, "DROP TABLE IF EXISTS new_basefile%lld", (uint64_t)jcr->JobId);
+  Mmsg(buf, "DROP TABLE IF EXISTS new_basefile%" PRIu32, jcr->JobId);
   SqlQuery(buf.c_str());
 
-  Mmsg(buf, "DROP TABLE IF EXISTS basefile%lld", (uint64_t)jcr->JobId);
+  Mmsg(buf, "DROP TABLE IF EXISTS basefile%" PRIu32, jcr->JobId);
   SqlQuery(buf.c_str());
 }
 

@@ -617,7 +617,7 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
   char buf1[100], buf2[100];
 
   rec = new_record();
-  Dmsg1(130, "session_label record=%x\n", rec);
+  Dmsg1(130, "session_label record=%p\n", rec);
   if (label != SOS_LABEL && label != EOS_LABEL) {
     Jmsg1(jcr, M_ABORT, 0, T_("Bad Volume session label = %d\n"), label);
   }
@@ -1017,7 +1017,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     return false;
   }
 
-  Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n", dev->fd,
+  Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%p\n", dev->fd,
         dev);
 
   // Let any stored plugin know that we are (re)writing the label.

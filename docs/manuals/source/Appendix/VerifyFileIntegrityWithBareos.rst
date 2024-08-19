@@ -327,7 +327,7 @@ A Verify Configuration Example
      Name = MatouVerify
      Address = lmatou
      Catalog = Bareos
-     Password = ""
+     Password = "a very secure password"
      File Retention = 80d                # 80 days
      Job Retention = 1y                  # one year
      AutoPrune = yes                     # Prune expired Jobs/Files

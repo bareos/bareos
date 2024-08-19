@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,13 +40,11 @@
 
 namespace storagedaemon {
 
+inline constexpr const char OK_data[] = "3000 OK data\n";
+inline constexpr const char FD_error[] = "3000 error\n";
+
 /* Forward referenced subroutines */
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
-
-/* Responses sent to the File daemon */
-static char OK_data[] = "3000 OK data\n";
-static char FD_error[] = "3000 error\n";
-static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
 
 /**
  * Read Data and send to File Daemon
@@ -124,8 +122,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         stream_to_ascii(ec2, rec->Stream, rec->FileIndex), rec->data_len);
 
   // Send record header to File daemon
-  if (!fd->fsend(rec_header, rec->VolSessionId, rec->VolSessionTime,
-                 rec->FileIndex, rec->Stream, rec->data_len)) {
+  if (!fd->fsend("rechdr %" PRIu32 " %" PRIu32 " %" PRId32 " %" PRId32
+                 " %" PRIu32,
+                 rec->VolSessionId, rec->VolSessionTime, rec->FileIndex,
+                 rec->Stream, rec->data_len)) {
     Pmsg1(000, T_(">filed: Error Hdr=%s"), fd->msg);
     Jmsg1(jcr, M_FATAL, 0, T_("Error sending to File daemon. ERR=%s\n"),
           fd->bstrerror());

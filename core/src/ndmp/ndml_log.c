@@ -48,9 +48,9 @@ char* ndmlog_time_stamp(void)
   uint32_t elapsed;
   int ms, sec, min, hour;
 
-  if (!start_time.tv_sec) { gettimeofday(&start_time, (void*)0); }
+  if (!start_time.tv_sec) { gettimeofday(&start_time, NULL); }
 
-  gettimeofday(&now, (void*)0);
+  gettimeofday(&now, NULL);
 
   now.tv_sec -= start_time.tv_sec;
   now.tv_usec -= start_time.tv_usec;

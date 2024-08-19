@@ -444,7 +444,7 @@ static DWORD WINAPI receive_efs_data(PBYTE pbData,
 
   if (save_data) {
     if (save_data->data_len > *ulLength) {
-      Dmsg2(100, "Restore of data bigger then allowed EFS buffer %d vs %d\n",
+      Dmsg2(100, "Restore of data bigger then allowed EFS buffer %u vs %lu\n",
             save_data->data_len, *ulLength);
       *ulLength = 0;
     } else {

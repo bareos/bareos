@@ -352,14 +352,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(HAVE_DYNAMIC_SD_BACKENDS 0)
 
 else()
-  add_definitions("-D_FILE_OFFSET_BITS=64")
+  add_compile_definitions("_FILE_OFFSET_BITS=64")
 endif()
 
 include(FindIntl)
 
 if(NOT MSVC)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wshadow")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wshadow")
 else()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")

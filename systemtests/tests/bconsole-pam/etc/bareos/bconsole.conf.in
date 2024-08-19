@@ -6,7 +6,7 @@ Director {
   Name = @basename@-dir
   DIRport = @dir_port@
   Address = @hostname@
-  Password = ""
+  Password = "a very secure password"
 }
 
 Console {

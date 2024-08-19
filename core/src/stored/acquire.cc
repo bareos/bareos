@@ -61,14 +61,14 @@ DeviceControlRecord::DeviceControlRecord()
     BErrNo be;
 
     Mmsg(errmsg, T_("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-    Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
+    Jmsg0(NULL, M_ERROR_TERM, 0, "%s", errmsg.c_str());
   }
 
   if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
     BErrNo be;
 
     Mmsg(errmsg, T_("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
-    Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
+    Jmsg0(NULL, M_ERROR_TERM, 0, "%s", errmsg.c_str());
   }
 }
 
@@ -258,7 +258,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     if (jcr->IsJobCanceled()) {
       char ed1[50];
       Mmsg1(dev->errmsg, T_("Job %s canceled.\n"), edit_int64(jcr->JobId, ed1));
-      Jmsg(jcr, M_INFO, 0, dev->errmsg);
+      Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
       goto get_out; /* error return */
     }
 
@@ -747,13 +747,13 @@ static void AttachDcrToDev(DeviceControlRecord* dcr)
   lock_mutex(dcr->mutex_);
   dev = dcr->dev;
   jcr = dcr->jcr;
-  if (jcr) Dmsg1(500, "JobId=%u enter AttachDcrToDev\n", (uint32_t)jcr->JobId);
+  if (jcr) Dmsg1(500, "JobId=%" PRIu32 " enter AttachDcrToDev\n", jcr->JobId);
   /* ***FIXME*** return error if dev not initiated */
   if (!dcr->attached_to_dev && dev->initiated && jcr
       && jcr->getJobType() != JT_SYSTEM) {
     dev->Lock();
-    Dmsg4(200, "Attach Jid=%d dcr=%p size=%d dev=%s\n", (uint32_t)jcr->JobId,
-          dcr, dev->attached_dcrs.size(), dev->print_name());
+    Dmsg4(200, "Attach Jid=%" PRIu32 " dcr=%p size=%" PRIuz " dev=%s\n",
+          jcr->JobId, dcr, dev->attached_dcrs.size(), dev->print_name());
     dev->attached_dcrs.push_back(dcr); /* attach dcr to device */
     dev->Unlock();
     dcr->attached_to_dev = true;
@@ -771,9 +771,8 @@ static void LockedDetachDcrFromDev(DeviceControlRecord* dcr)
   if (dcr->attached_to_dev && dev) {
     dcr->UnreserveDevice();
     dev->Lock();
-    Dmsg4(200, "Detach Jid=%d dcr=%p size=%d to dev=%s\n",
-          (uint32_t)dcr->jcr->JobId, dcr, dev->attached_dcrs.size(),
-          dev->print_name());
+    Dmsg4(200, "Detach Jid=%" PRIu32 " dcr=%p size=%" PRIuz " to dev=%s\n",
+          dcr->jcr->JobId, dcr, dev->attached_dcrs.size(), dev->print_name());
     dcr->attached_to_dev = false;
     if (!dev->attached_dcrs.empty()) {
       // detach dcr from device

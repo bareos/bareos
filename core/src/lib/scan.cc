@@ -324,6 +324,7 @@ int bsscanf(const char* buf, const char* fmt, ...)
   int h = 0;
   int max_len = BIG;
   uint64_t value;
+  int64_t svalue;
   bool error = false;
   bool negative;
 
@@ -351,24 +352,24 @@ int bsscanf(const char* buf, const char* fmt, ...)
           l = 0;
           break;
         case 'd':
-          value = 0;
+          svalue = 0;
           if (*buf == '-') {
             negative = true;
             buf++;
           } else {
             negative = false;
           }
-          while (B_ISDIGIT(*buf)) { value = B_TIMES10(value) + *buf++ - '0'; }
-          if (negative) { value = -value; }
+          while (B_ISDIGIT(*buf)) { svalue = B_TIMES10(svalue) + *buf++ - '0'; }
+          if (negative) { svalue = -svalue; }
           vp = (void*)va_arg(ap, void*);
           if (h == 1) {
-            *((int16_t*)vp) = (int16_t)value;
+            *((int16_t*)vp) = (int16_t)svalue;
           } else if (l == 0) {
-            *((int*)vp) = (int)value;
+            *((int*)vp) = (int)svalue;
           } else if (l == 1) {
-            *((int32_t*)vp) = (int32_t)value;
+            *((int32_t*)vp) = (int32_t)svalue;
           } else {
-            *((int64_t*)vp) = (int64_t)value;
+            *((int64_t*)vp) = (int64_t)svalue;
           }
           count++;
           h = 0;

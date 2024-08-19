@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -297,7 +297,7 @@ OptionResult ConsoleAuthenticatorFrom_18_2::AuthenticatePamUser()
 
     if (!ua_->UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
                                                          message_arguments)) {
-      Dmsg2(100, "Could not evaluate response_id: %d - %d\n", response_id,
+      Dmsg2(100, "Could not evaluate response_id: %d - %s\n", response_id,
             message_arguments.JoinReadable().c_str());
       auth_success_ = false;
       return OptionResult::Completed;
@@ -409,14 +409,14 @@ bool AuthenticateConsole(UaContext* ua)
     if (num_leases > me->MaxConsoleConnections) {
       Emsg0(M_INFO, 0,
             T_("Number of console connections exceeded\n"
-               "Maximum: %u, Current: %zu\n"),
+               "Maximum: %u, Current: %" PRIuz "\n"),
             me->MaxConsoleConnections, num_leases);
     }
   } else {
     if (num_leases > me->MaxConsoleConnections) {
       Emsg0(M_ERROR, 0,
             T_("Number of console connections exceeded "
-               "Maximum :%u, Current: %zu\n"),
+               "Maximum :%u, Current: %" PRIuz "\n"),
             me->MaxConsoleConnections, num_leases);
       return false;
     }

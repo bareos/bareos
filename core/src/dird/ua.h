@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -146,15 +146,15 @@ class UaContext {
   // Audit event methods.
   bool AuditEventWanted(bool audit_event_enabled);
   void LogAuditEventCmdline();
-  void LogAuditEventInfoMsg(const char* fmt, ...);
+  void LogAuditEventInfoMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
 
   // The below are in ua_output.c
   void SendRawMsg(const char* msg);
-  void SendMsg(const char* fmt, ...);
-  void ErrorMsg(const char* fmt, ...);
-  void WarningMsg(const char* fmt, ...);
-  void InfoMsg(const char* fmt, ...);
-  void SendCmdUsage(const char* fmt, ...);
+  void SendMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
+  void ErrorMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
+  void WarningMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
+  void InfoMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
+  void SendCmdUsage(const char* fmt, ...) PRINTF_LIKE(2, 3);
 
   void vSendMsg(int signal,
                 const char* messagetype,

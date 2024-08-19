@@ -125,7 +125,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
                                          bool verbose);
 static bool response(JobControlRecord* jcr,
                      BareosSocket* sd,
-                     char* resp,
+                     const char* resp,
                      const char* cmd);
 static void FiledFreeJcr(JobControlRecord* jcr);
 static bool OpenSdReadSession(JobControlRecord* jcr);
@@ -176,83 +176,91 @@ static struct s_fd_dir_cmds cmds[] = {
 };
 
 // Commands send to director
-static char hello_client[] = "Hello Client %s FdProtocolVersion=%d calling\n";
+constexpr const char hello_client[]
+    = "Hello Client %s FdProtocolVersion=%d calling\n";
 
 // Responses received from the director
-static const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
+constexpr const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
 
 // Commands received from director that need scanning
-static char setauthorizationcmd[] = "setauthorization Authorization=%100s";
-static char setbandwidthcmd[] = "setbandwidth=%lld Job=%127s";
-static char setdebugv0cmd[] = "setdebug=%d trace=%d";
-static char setdebugv1cmd[] = "setdebug=%d trace=%d hangup=%d";
-static char setdebugv2cmd[] = "setdebug=%d trace=%d hangup=%d timestamp=%d";
-static char storaddrv0cmd[] = "storage address=%s port=%d ssl=%d";
-static char storaddrv1cmd[]
+constexpr const char setauthorizationcmd[]
+    = "setauthorization Authorization=%100s";
+constexpr const char setbandwidthcmd[] = "setbandwidth=%lld Job=%127s";
+constexpr const char setdebugv0cmd[] = "setdebug=%d trace=%d";
+constexpr const char setdebugv1cmd[] = "setdebug=%d trace=%d hangup=%d";
+constexpr const char setdebugv2cmd[]
+    = "setdebug=%d trace=%d hangup=%d timestamp=%d";
+constexpr const char storaddrv0cmd[] = "storage address=%s port=%d ssl=%d";
+constexpr const char storaddrv1cmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%100s";
-static char sessioncmd[] = "session %127s %ld %ld %ld %ld %ld %ld\n";
-static char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
-static char restorecmd1[] = "restore replace=%c prelinks=%d where=\n";
-static char restorecmdR[] = "restore replace=%c prelinks=%d regexwhere=%s\n";
-static char restoreobjcmd[] = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d,%s";
-static char restoreobjcmd1[] = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
-static char endrestoreobjectcmd[] = "restoreobject end\n";
-static char pluginoptionscmd[] = "pluginoptions %s";
-static char verifycmd[] = "verify level=%30s";
-static char Estimatecmd[] = "estimate listing=%d";
-static char runscriptcmd[]
+constexpr const char sessioncmd[] = "session %127s %ld %ld %ld %ld %ld %ld\n";
+constexpr const char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
+constexpr const char restorecmd1[] = "restore replace=%c prelinks=%d where=\n";
+constexpr const char restorecmdR[]
+    = "restore replace=%c prelinks=%d regexwhere=%s\n";
+constexpr const char restoreobjcmd[]
+    = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d,%s";
+constexpr const char restoreobjcmd1[]
+    = "restoreobject JobId=%u %d,%d,%d,%d,%d,%d\n";
+constexpr const char endrestoreobjectcmd[] = "restoreobject end\n";
+constexpr const char pluginoptionscmd[] = "pluginoptions %s";
+constexpr const char verifycmd[] = "verify level=%30s";
+constexpr const char Estimatecmd[] = "estimate listing=%d";
+constexpr const char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-static char resolvecmd[] = "resolve %s";
+constexpr const char resolvecmd[] = "resolve %s";
 
 // Responses sent to Director
-static char errmsg[] = "2999 Invalid command\n";
-static char invalid_cmd[]
+constexpr const char errmsg[] = "2999 Invalid command\n";
+constexpr const char invalid_cmd[]
     = "2997 Invalid command for a Director with Monitor directive enabled.\n";
-static char OkAuthorization[] = "2000 OK Authorization\n";
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKinc[] = "2000 OK include\n";
-static char OKest[] = "2000 OK estimate files=%s bytes=%s\n";
-static char OKlevel[] = "2000 OK level\n";
-static char OKbackup[] = "2000 OK backup\n";
-static char OKbootstrap[] = "2000 OK bootstrap\n";
-static char OKverify[] = "2000 OK verify\n";
-static char OKrestore[] = "2000 OK restore\n";
-static char OKsecureerase[] = "2000 OK FDSecureEraseCmd %s\n";
-static char OKsession[] = "2000 OK session\n";
-static char OKstore[] = "2000 OK storage\n";
-static char OKstoreend[] = "2000 OK storage end\n";
-static char OKjob[] = "2000 OK Job %s (%s) %s,%s";
-static char OKsetdebugv0[]
+constexpr const char OkAuthorization[] = "2000 OK Authorization\n";
+constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+constexpr const char OKinc[] = "2000 OK include\n";
+constexpr const char OKest[] = "2000 OK estimate files=%s bytes=%s\n";
+constexpr const char OKlevel[] = "2000 OK level\n";
+constexpr const char OKbackup[] = "2000 OK backup\n";
+constexpr const char OKbootstrap[] = "2000 OK bootstrap\n";
+constexpr const char OKverify[] = "2000 OK verify\n";
+constexpr const char OKrestore[] = "2000 OK restore\n";
+constexpr const char OKsecureerase[] = "2000 OK FDSecureEraseCmd %s\n";
+constexpr const char OKsession[] = "2000 OK session\n";
+constexpr const char OKstore[] = "2000 OK storage\n";
+constexpr const char OKstoreend[] = "2000 OK storage end\n";
+constexpr const char OKjob[] = "2000 OK Job %s (%s) %s,%s";
+constexpr const char OKsetdebugv0[]
     = "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
-static char OKsetdebugv1[]
+constexpr const char OKsetdebugv1[]
     = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
-static char BADjob[] = "2901 Bad Job\n";
-static char EndJob[]
+constexpr const char BADjob[] = "2901 Bad Job\n";
+constexpr const char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
       " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
-static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-static char OKRunScript[] = "2000 OK RunScript\n";
-static char FailedRunScript[] = "2905 Failed RunScript\n";
-static char BADcmd[] = "2902 Bad %s\n";
-static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
-static char OKPluginOptions[] = "2000 OK PluginOptions\n";
-static char BadPluginOptions[] = "2905 Bad PluginOptions command.\n";
+constexpr const char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
+constexpr const char OKRunScript[] = "2000 OK RunScript\n";
+constexpr const char FailedRunScript[] = "2905 Failed RunScript\n";
+constexpr const char BADcmd[] = "2902 Bad %s\n";
+constexpr const char OKRestoreObject[] = "2000 OK ObjectRestored\n";
+constexpr const char OKPluginOptions[] = "2000 OK PluginOptions\n";
+constexpr const char BadPluginOptions[] = "2905 Bad PluginOptions command.\n";
 
 // Responses received from Storage Daemon
-static char OK_end[] = "3000 OK end\n";
-static char OK_close[] = "3000 OK close Status = %d\n";
-static char OK_open[] = "3000 OK open ticket = %d\n";
-static char OK_data[] = "3000 OK data\n";
-static char OK_append[] = "3000 OK append data\n";
+constexpr const char OK_end[] = "3000 OK end\n";
+constexpr const char OK_close[] = "3000 OK close Status = %d\n";
+constexpr const char OK_open[] = "3000 OK open ticket = %d\n";
+constexpr const char OK_data[] = "3000 OK data\n";
+constexpr const char OK_append[] = "3000 OK append data\n";
 
 // Commands sent to Storage Daemon
-static char append_open[] = "append open session\n";
-static char append_data[] = "append data %d\n";
-static char append_end[] = "append end session %d\n";
-static char append_close[] = "append close session %d\n";
-static char read_open[] = "read open session = %s %ld %ld %ld %ld %ld %ld\n";
-static char read_data[] = "read data %d\n";
-static char read_close[] = "read close session %d\n";
+constexpr const char append_open[] = "append open session\n";
+constexpr const char append_data[] = "append data %d\n";
+constexpr const char append_end[] = "append end session %d\n";
+constexpr const char append_close[] = "append close session %d\n";
+constexpr const char read_open[]
+    = "read open session = %s %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32
+      " %" PRIu32 " %" PRIu32 "\n";
+constexpr const char read_data[] = "read data %d\n";
+constexpr const char read_close[] = "read close session %d\n";
 
 // See if we are allowed to execute the command issued.
 static bool ValidateCommand(JobControlRecord* jcr,
@@ -1311,7 +1319,7 @@ static bool LevelCmd(JobControlRecord* jcr)
     }
 
     since_time = str_to_uint64(buf); /* this is the since time */
-    Dmsg2(100, "since_time=%lld prev_job=%s\n", since_time,
+    Dmsg2(100, "since_time=%" PRId64 " prev_job=%s\n", since_time,
           jcr->fd_impl->PrevJob);
     /* Sync clocks by polling him for the time. We take 10 samples of his time
      * throwing out the first two. */
@@ -1349,13 +1357,13 @@ static bool LevelCmd(JobControlRecord* jcr)
         type = M_INFO;
       }
       Jmsg(jcr, type, 0,
-           T_("DIR and FD clocks differ by %lld seconds, FD automatically "
-              "compensating.\n"),
+           T_("DIR and FD clocks differ by %" PRId64
+              " seconds, FD automatically compensating.\n"),
            adj);
     }
     dir->signal(BNET_EOD);
 
-    Dmsg2(100, "adj=%lld since_time=%lld\n", adj, since_time);
+    Dmsg2(100, "adj=%" PRId64 " since_time=%" PRId64 "\n", adj, since_time);
     jcr->fd_impl->incremental
         = true; /* set incremental or decremental backup */
     jcr->fd_impl->since_time = since_time; /* set since time */
@@ -1552,7 +1560,7 @@ static void LogFlagStatus(JobControlRecord* jcr,
 
   std::string m = flag_text;
   m += found ? "is enabled\n" : "is disabled\n";
-  Jmsg(jcr, M_INFO, 0, m.c_str());
+  Jmsg(jcr, M_INFO, 0, "%s", m.c_str());
 }
 #endif
 
@@ -1586,7 +1594,7 @@ static inline void ClearFlagInFileset(JobControlRecord* jcr,
     }
   }
 
-  if (cleared_flag) { Jmsg(jcr, M_WARNING, 0, warning); }
+  if (cleared_flag) { Jmsg(jcr, M_WARNING, 0, "%s", warning); }
 }
 
 /**
@@ -1740,7 +1748,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
   if (sscanf(dir->msg, "backup FileIndex=%ld\n", &FileIndex) == 1) {
     jcr->JobFiles = FileIndex;
-    Dmsg1(100, "JobFiles=%ld\n", jcr->JobFiles);
+    Dmsg1(100, "JobFiles=%" PRIu32 "\n", jcr->JobFiles);
   }
 
   /* Validate some options given to the backup make sense for the compiled in
@@ -2317,8 +2325,11 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
     Jmsg(jcr, M_FATAL, 0, T_("Improper calling sequence.\n"));
     return false;
   }
-  Dmsg4(120, "VolSessId=%ld VolsessT=%ld SF=%ld EF=%ld\n", jcr->VolSessionId,
-        jcr->VolSessionTime, jcr->fd_impl->StartFile, jcr->fd_impl->EndFile);
+  Dmsg4(120,
+        "VolSessId=%" PRIu32 " VolsessT=%" PRIu32 " SF=%" PRIu32 " EF=%" PRIu32
+        "\n",
+        jcr->VolSessionId, jcr->VolSessionTime, jcr->fd_impl->StartFile,
+        jcr->fd_impl->EndFile);
   Dmsg2(120, "JobId=%d vol=%s\n", jcr->JobId, "DummyVolume");
   // Open Read Session with Storage daemon
   sd->fsend(read_open, "DummyVolume", jcr->VolSessionId, jcr->VolSessionTime,
@@ -2409,12 +2420,12 @@ static void FiledFreeJcr(JobControlRecord* jcr)
  */
 bool response(JobControlRecord* jcr,
               BareosSocket* sd,
-              char* resp,
+              const char* resp,
               const char* cmd)
 {
   if (sd->errors) { return false; }
   if (BgetMsg(sd) > 0) {
-    Dmsg0(110, sd->msg);
+    Dmsg0(110, "%s", sd->msg);
     if (bstrcmp(sd->msg, resp)) { return true; }
   }
   if (jcr->IsJobCanceled()) {

@@ -19,33 +19,24 @@
    02110-1301, USA.
 */
 
-#include <algorithm>
-#include <cstdarg>
-#include <cstdio>
+#include "testing_dir_common.h"
 
-#include "lib/bsnprintf.h"
+#include "dird/ua.h"
+#include "include/jcr.h"
+#include "dird/ua_configure.cc"
 
-int Bsnprintf(char* str, int32_t size, const char* format, ...)
+TEST(BadConfig, changing_pw_type)
 {
-  va_list arg_ptr;
-  int len;
+  InitDirGlobals();
+  std::string path_to_config
+      = std::string("configs/bad_configs/changing_pw_type.conf");
 
-  va_start(arg_ptr, format);
-  len = Bvsnprintf(str, size, format, arg_ptr);
-  va_end(arg_ptr);
-  return len;
-}
+  auto* parser = directordaemon::InitDirConfig(path_to_config.c_str(), M_INFO);
 
-int Bvsnprintf(char* str, int32_t size, const char* format, va_list args)
-{
-  if (size < 0) { return -1; }
+  ASSERT_NE(parser, nullptr);
+  directordaemon::my_config = parser; /* set the director global variable */
 
-  auto ret = vsnprintf(str, size, format, args);
+  EXPECT_FALSE(parser->ParseConfig());
 
-  /* we differ from the real vsnprintf in that we return exactly how many
-   * bytes we _did_ write.  This only includes the NUL terminator if the buffer
-   * was too small (i.e. ret >= size) otherwise it is excluded.  As such it is
-   * sufficient to just return min(size, ret) */
-
-  return std::min(ret, size);
+  delete parser;
 }

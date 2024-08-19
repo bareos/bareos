@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -308,7 +308,7 @@ bool BareosDbPostgresql::SqlCopyStart(
 
   std::size_t n = (int)PQnfields(result_);
   if (n != column_names.size()) {
-    Mmsg1(errmsg, T_("wrong number of rows: %d"), n);
+    Mmsg1(errmsg, T_("wrong number of rows: %" PRIuz), n);
     return false;
   }
 

@@ -439,7 +439,8 @@ int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results)
   }
 
   PmStrcpy(results, tmp);
-  Dmsg3(1900, "resadr=0x%x reslen=%d res=%s\n", results, strlen(results),
+
+  Dmsg3(1900, "resadr=%p reslen=%" PRIuz " res=%s\n", results, strlen(results),
         results);
   stat2 = CloseBpipe(bpipe);
   stat1 = stat2 != 0 ? stat2 : stat1;

@@ -35,7 +35,6 @@ BAREOS_EXPORT DirectorResource* me;
 BAREOS_IMPORT ConfigurationParser* my_config;
 
 BAREOS_IMPORT char* configfile;
-BAREOS_IMPORT void* start_heap;
 
 } /* namespace directordaemon */
 

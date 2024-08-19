@@ -358,7 +358,7 @@ The corresponding :file:`/etc/bareos/bconsole.conf` on the ReaR client will look
    Director {
       Name = "bareos-dir"
       Address = "bareos.example.com"
-      Password = ""
+      Password = "a very secure password"
    }
 
    Console {

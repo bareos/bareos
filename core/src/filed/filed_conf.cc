@@ -60,7 +60,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* reshdr,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
@@ -91,7 +91,7 @@ static ResourceItem cli_items[] = {
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_client, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client, scripts_directory), 0, 0, NULL, NULL, NULL},
-  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL},
+  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "1000", NULL, NULL},
   {"MaximumWorkersPerJob", CFG_TYPE_PINT32, ITEM(res_client, MaxWorkersPerJob), 0, CFG_ITEM_DEFAULT, "2", "23.0.0-",
    "The maximum number of worker threads that bareos will use during backup."},
   {"Messages", CFG_TYPE_RES, ITEM(res_client, messages), R_MSGS, 0, NULL, NULL, NULL},
@@ -177,7 +177,7 @@ static struct s_kw CryptoCiphers[]
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
        {NULL, 0}};
 
-static void StoreCipher(LEX* lc, ResourceItem* item, int index, int)
+static void StoreCipher(lexer* lc, ResourceItem* item, int index, int)
 {
   int i;
   LexGetToken(lc, BCT_NAME);
@@ -227,7 +227,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(LEX* lc,
+static void ParseConfigCb(lexer* lc,
                           ResourceItem* item,
                           int index,
                           int pass,
@@ -303,7 +303,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
 static void DumpResource(int type,
                          BareosResource* res,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)

@@ -38,16 +38,23 @@
 
 namespace storagedaemon {
 
-static char OKstats[] = "2000 OK statistics\n";
-static char DevStats[]
-    = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
-      "NumWaiting=%ld, NumWriters=%ld, "
-      "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
-      "VolFiles=%llu, "
-      "VolBlocks=%llu\n";
-static char TapeAlerts[] = "Tapealerts [%lld]: Device=%s TapeAlert=%llu\n";
-static char JobStats[]
-    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s\n";
+constexpr const char OKstats[] = "2000 OK statistics\n";
+constexpr const char DevStats[]
+    = "Devicestats [%" PRId64 "]: Device=%s Read=%" PRIu64 ", Write=%" PRIu64
+      ", SpoolSize=%" PRIu64
+      ", "
+      "NumWaiting=%d, NumWriters=%d, "
+      "ReadTime=%" PRId64 ", WriteTime=%" PRId64 ", MediaId=%" PRIdbid
+      ", VolBytes=%" PRIu64
+      ", "
+      "VolFiles=%" PRIu64
+      ", "
+      "VolBlocks=%" PRIu64 "\n";
+constexpr const char TapeAlerts[]
+    = "Tapealerts [%" PRId64 "]: Device=%s TapeAlert=%" PRIu64 "\n";
+constexpr const char JobStats[]
+    = "Jobstats [%" PRId64 "]: JobId=%" PRIu32 ", JobFiles=%" PRIu32
+      ", JobBytes=%" PRIu64 ", DevName=%s\n";
 
 /* Static globals */
 static bool quit = false;
@@ -169,7 +176,7 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   dev_stats->device_tapealerts->append(tape_alert);
   unlock_mutex(mutex);
 
-  Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
+  Dmsg3(200, "New stats [%" PRId64 "]: Device %s TapeAlert %" PRIu64 "\n",
         tape_alert->timestamp, dev_stats->DevName, tape_alert->flags);
 }
 
@@ -244,13 +251,18 @@ static inline void UpdateDeviceStatistics(const char* devname,
   unlock_mutex(mutex);
 
   Dmsg5(200,
-        "New stats [%lld]: Device %s Read %llu, Write %llu, Spoolsize %llu,\n",
+        "New stats [%" PRId64 "]: Device %s Read %" PRIu64 ", Write %" PRIu64
+        ", Spoolsize %" PRIu64 ",\n",
         dev_stat->timestamp, dev_stats->DevName, dev_stat->DevReadBytes,
         dev_stat->DevWriteBytes, dev_stat->spool_size);
-  Dmsg4(200, "NumWaiting %ld, NumWriters %ld, ReadTime=%lld, WriteTime=%lld,\n",
+  Dmsg4(200,
+        "NumWaiting %d, NumWriters %d, ReadTime=%" PRId64 ", WriteTime=%" PRId64
+        ",\n",
         dev_stat->num_waiting, dev_stat->num_writers, dev_stat->DevReadTime,
         dev_stat->DevWriteTime);
-  Dmsg4(200, "MediaId=%ld VolBytes=%llu, VolFiles=%llu, VolBlocks=%llu\n",
+  Dmsg4(200,
+        "MediaId=%" PRIdbid "VolBytes=%" PRIu64 ", VolFiles=%" PRIu64
+        ", VolBlocks=%" PRIu64 "\n",
         dev_stat->MediaId, dev_stat->VolCatBytes, dev_stat->VolCatFiles,
         dev_stat->VolCatBlocks);
 }
@@ -320,11 +332,11 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
   job_stats->job_statistics->append(job_stat);
   unlock_mutex(mutex);
 
-  Dmsg5(
-      200,
-      "New stats [%lld]: JobId %ld, JobFiles %lu, JobBytes %llu, DevName %s\n",
-      job_stat->timestamp, job_stats->JobId, job_stat->JobFiles,
-      job_stat->JobBytes, job_stat->DevName);
+  Dmsg5(200,
+        "New stats [%" PRId64 "]: JobId %" PRIu32 ", JobFiles %" PRIu32
+        ", JobBytes %" PRIu64 ", DevName %s\n",
+        job_stat->timestamp, job_stats->JobId, job_stat->JobFiles,
+        job_stat->JobBytes, job_stat->DevName);
 }
 
 static inline void cleanup_cached_statistics()
@@ -360,7 +372,6 @@ extern "C" void* statistics_thread_runner(void*)
 {
   utime_t now;
   struct timeval tv;
-  struct timezone tz;
   struct timespec timeout;
   DeviceResource* device_resource = nullptr;
   JobControlRecord* jcr;
@@ -394,7 +405,7 @@ extern "C" void* statistics_thread_runner(void*)
     /* Wait for a next run. Normally this waits exactly
      * me->stats_collect_interval seconds. It can be interrupted when signaled
      * by the StopStatisticsThread() function. */
-    gettimeofday(&tv, &tz);
+    gettimeofday(&tv, NULL);
     timeout.tv_nsec = tv.tv_usec * 1000;
     timeout.tv_sec = tv.tv_sec + me->stats_collect_interval;
 
@@ -460,7 +471,6 @@ void StopStatisticsThread()
 bool StatsCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  PoolMem msg(PM_MESSAGE);
   PoolMem dev_tmp(PM_MESSAGE);
 
   if (device_statistics) {
@@ -478,15 +488,14 @@ bool StatsCmd(JobControlRecord* jcr)
           if (!dev_stat->collected) {
             PmStrcpy(dev_tmp, dev_stats->DevName);
             BashSpaces(dev_tmp);
-            Mmsg(msg, DevStats, dev_stat->timestamp, dev_tmp.c_str(),
-                 dev_stat->DevReadBytes, dev_stat->DevWriteBytes,
-                 dev_stat->spool_size, dev_stat->num_waiting,
-                 dev_stat->num_writers, dev_stat->DevReadTime,
-                 dev_stat->DevWriteTime, dev_stat->MediaId,
-                 dev_stat->VolCatBytes, dev_stat->VolCatFiles,
-                 dev_stat->VolCatBlocks);
-            Dmsg1(100, ">dird: %s", msg.c_str());
-            dir->fsend(msg.c_str());
+            dir->fsend(DevStats, dev_stat->timestamp, dev_tmp.c_str(),
+                       dev_stat->DevReadBytes, dev_stat->DevWriteBytes,
+                       dev_stat->spool_size, dev_stat->num_waiting,
+                       dev_stat->num_writers, dev_stat->DevReadTime,
+                       dev_stat->DevWriteTime, dev_stat->MediaId,
+                       dev_stat->VolCatBytes, dev_stat->VolCatFiles,
+                       dev_stat->VolCatBlocks);
+            Dmsg1(100, ">dird: %s", dir->msg);
           }
 
           lock_mutex(mutex);
@@ -510,10 +519,9 @@ bool StatsCmd(JobControlRecord* jcr)
         while (tape_alert) {
           PmStrcpy(dev_tmp, dev_stats->DevName);
           BashSpaces(dev_tmp);
-          Mmsg(msg, TapeAlerts, tape_alert->timestamp, dev_tmp.c_str(),
-               tape_alert->flags);
-          Dmsg1(100, ">dird: %s", msg.c_str());
-          dir->fsend(msg.c_str());
+          dir->fsend(TapeAlerts, tape_alert->timestamp, dev_tmp.c_str(),
+                     tape_alert->flags);
+          Dmsg1(100, ">dird: %s", dir->msg);
 
           next_tape_alert = dev_stats->device_tapealerts->next(tape_alert);
           lock_mutex(mutex);
@@ -541,10 +549,9 @@ bool StatsCmd(JobControlRecord* jcr)
           if (!job_stat->collected) {
             PmStrcpy(dev_tmp, job_stat->DevName);
             BashSpaces(dev_tmp);
-            Mmsg(msg, JobStats, job_stat->timestamp, job_stats->JobId,
-                 job_stat->JobFiles, job_stat->JobBytes, dev_tmp.c_str());
-            Dmsg1(100, ">dird: %s", msg.c_str());
-            dir->fsend(msg.c_str());
+            dir->fsend(JobStats, job_stat->timestamp, job_stats->JobId,
+                       job_stat->JobFiles, job_stat->JobBytes, dev_tmp.c_str());
+            Dmsg1(100, ">dird: %s", dir->msg);
           }
 
           lock_mutex(mutex);

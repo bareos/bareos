@@ -238,7 +238,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
         ((StorageResource*)jcr->dir_impl->res.write_storage_list->first())
             ->resource_name_);
 
-  Jmsg(jcr, M_INFO, 0, T_("Start Virtual Backup JobId %lu, Job=%s\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Start Virtual Backup JobId %" PRIu32 ", Job=%s\n"),
        jcr->JobId, jcr->Job);
 
   if (!jcr->accurate) {
@@ -390,9 +390,10 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     UaContext* ua;
     ua = new_ua_context(jcr);
     PurgeJobsFromCatalog(ua, jobids.c_str());
-    Jmsg(jcr, M_INFO, 0,
-         T_("purged JobIds %s as they were consolidated into Job %lu\n"),
-         jobids.c_str(), jcr->JobId);
+    Jmsg(
+        jcr, M_INFO, 0,
+        T_("purged JobIds %s as they were consolidated into Job %" PRIu32 "\n"),
+        jobids.c_str(), jcr->JobId);
     FreeUaContext(ua);
   }
   return true;
