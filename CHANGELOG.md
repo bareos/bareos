@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - python-bareos: add missing `dirname` variable [PR #1849]
+- python-bareos: fix backslash usage in regex [PR #1932]
 
 ### Fixed
 - Fix multiple ACL handling bugs [PR #1892]
@@ -752,4 +753,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1819]: https://github.com/bareos/bareos/pull/1819
 [PR #1849]: https://github.com/bareos/bareos/pull/1849
 [PR #1892]: https://github.com/bareos/bareos/pull/1892
+[PR #1932]: https://github.com/bareos/bareos/pull/1932
 [unreleased]: https://github.com/bareos/bareos/tree/master
