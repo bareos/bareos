@@ -6,5 +6,10 @@ Director {
   Name = @basename@-dir
   DirPort = @dir_port@
   Address = @hostname@
-  Password = "@dir_password@"
+  Password = "INVALID"
+}
+
+Console {
+  name = "readonly"
+  password = "readonly"
 }

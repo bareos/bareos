@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: fix python plugin crash on python <3.10 [PR #1916]
 - Use only MinGW VSS [PR #1897]
 - python-bareos: fix backslash usage in regex [PR #1931]
+- webui: fixing selenium tests [PR #1925]
 
 ### Fixed
 - create_bareos_database: fix `db_name` not being double quoted [PR #1870]
@@ -697,5 +698,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1897]: https://github.com/bareos/bareos/pull/1897
 [PR #1907]: https://github.com/bareos/bareos/pull/1907
 [PR #1916]: https://github.com/bareos/bareos/pull/1916
+[PR #1925]: https://github.com/bareos/bareos/pull/1925
 [PR #1931]: https://github.com/bareos/bareos/pull/1931
 [unreleased]: https://github.com/bareos/bareos/tree/master
