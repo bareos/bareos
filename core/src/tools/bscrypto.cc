@@ -78,6 +78,65 @@ static void ReadKeyBits(const std::string& keyfile,
   Dmsg1(10, "Key data = %s\n", data);
 }
 
+static void wrap_key(const std::string& wrap_keyfile,
+                     const char* passphrase,
+                     char* keydata,
+                     size_t keydata_len)
+{
+  char wrapdata[64];
+  memset(wrapdata, 0, sizeof(wrapdata));
+  ReadKeyBits(wrap_keyfile, wrapdata, sizeof(wrapdata));
+
+  memset(keydata, 0, keydata_len);
+  if (auto error
+      = AesWrap((unsigned char*)wrapdata, DEFAULT_PASSPHRASE_LENGTH / 8,
+                (unsigned char*)passphrase, (unsigned char*)keydata)) {
+    fprintf(stderr, T_("Cannot wrap passphrase ERR=%s\n"), error->c_str());
+    TerminateBscrypto(1);
+  }
+}
+
+static void unwrap_key(char* keydata,
+                       const std::string& keyfile,
+                       const std::string& wrap_keyfile)
+{
+  char wrapdata[64];
+  memset(wrapdata, 0, sizeof(wrapdata));
+  ReadKeyBits(wrap_keyfile, wrapdata, sizeof(wrapdata));
+
+  /* A wrapped key is base64 encoded after it was wrapped so first
+   * convert it from base64 to bin. As we first go from base64 to bin
+   * and the Base64ToBin has a check if the decoded string will fit
+   * we need to alocate some more bytes for the decoded buffer to be
+   * sure it will fit. */
+  size_t length = DEFAULT_PASSPHRASE_LENGTH + 12;
+  char* wrapped_passphrase = (char*)malloc(length);
+  memset(wrapped_passphrase, 0, length);
+  if (Base64ToBin(wrapped_passphrase, length, keydata, strlen(keydata)) == 0) {
+    fprintf(stderr,
+            T_("Failed to base64 decode the keydata read from %s, "
+               "aborting...\n"),
+            keyfile.c_str());
+    free(wrapped_passphrase);
+    TerminateBscrypto(0);
+  }
+
+  length = DEFAULT_PASSPHRASE_LENGTH;
+
+  if (auto error = AesUnwrap((unsigned char*)wrapdata, length / 8,
+                             (unsigned char*)wrapped_passphrase,
+                             (unsigned char*)keydata)) {
+    fprintf(stderr,
+            T_("Failed to aes unwrap the keydata read from %s using the "
+               "wrap data from %s ERR=%s, aborting...\n"),
+            keyfile.c_str(), wrap_keyfile.c_str(), error->c_str());
+    free(wrapped_passphrase);
+    TerminateBscrypto(0);
+  }
+  keydata[DEFAULT_PASSPHRASE_LENGTH] = '\0';
+  free(wrapped_passphrase);
+}
+
 int main(int argc, char* const* argv)
 {
   setlocale(LC_ALL, "");
@@ -330,15 +389,10 @@ int main(int argc, char* const* argv)
 
 
   char keydata[64];
-  char wrapdata[64];
   memset(keydata, 0, sizeof(keydata));
-  memset(wrapdata, 0, sizeof(wrapdata));
-
-  if (wrapped_keys) { ReadKeyBits(wrap_keyfile, wrapdata, sizeof(wrapdata)); }
-
   /* Generate a new passphrase allow it to be wrapped using the given wrapkey
    * and base64 if specified or when wrapped. */
-  int length;
+  int length = DEFAULT_PASSPHRASE_LENGTH;
   if (generate_passphrase) {
     int cnt;
     char* passphrase;
@@ -351,21 +405,12 @@ int main(int argc, char* const* argv)
 
     // See if we need to wrap the passphrase.
     if (wrapped_keys) {
-      char* wrapped_passphrase;
-
+      wrap_key(wrap_keyfile, passphrase, keydata, sizeof(keydata));
+      ASSERT(strlen(keydata) <= sizeof(keydata));
       length = DEFAULT_PASSPHRASE_LENGTH + 8;
-      wrapped_passphrase = (char*)malloc(length);
-      memset(wrapped_passphrase, 0, length);
-      if (auto error = AesWrap(
-              (unsigned char*)wrapdata, DEFAULT_PASSPHRASE_LENGTH / 8,
-              (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase)) {
-        fprintf(stderr, T_("Cannot wrap passphrase ERR=%s\n"), error->c_str());
-        free(passphrase);
-        TerminateBscrypto(1);
-      }
-
       free(passphrase);
-      passphrase = wrapped_passphrase;
+      passphrase = (char*)malloc(length);
+      memcpy(passphrase, keydata, length);
     } else {
       length = DEFAULT_PASSPHRASE_LENGTH;
     }
@@ -418,41 +463,10 @@ int main(int argc, char* const* argv)
 
     // See if we need to unwrap the passphrase.
     if (wrapped_keys) {
-      char* wrapped_passphrase;
-      /* A wrapped key is base64 encoded after it was wrapped so first
-       * convert it from base64 to bin. As we first go from base64 to bin
-       * and the Base64ToBin has a check if the decoded string will fit
-       * we need to alocate some more bytes for the decoded buffer to be
-       * sure it will fit. */
-      length = DEFAULT_PASSPHRASE_LENGTH + 12;
-      wrapped_passphrase = (char*)malloc(length);
-      memset(wrapped_passphrase, 0, length);
-      if (Base64ToBin(wrapped_passphrase, length, keydata, strlen(keydata))
-          == 0) {
-        fprintf(stderr,
-                T_("Failed to base64 decode the keydata read from %s, "
-                   "aborting...\n"),
-                keyfile.c_str());
-        free(wrapped_passphrase);
-        TerminateBscrypto(0);
-      }
-
-      length = DEFAULT_PASSPHRASE_LENGTH;
-      passphrase = (char*)malloc(length);
-      memset(passphrase, 0, length);
-
-      if (auto error = AesUnwrap((unsigned char*)wrapdata, length / 8,
-                                 (unsigned char*)wrapped_passphrase,
-                                 (unsigned char*)passphrase)) {
-        fprintf(stderr,
-                T_("Failed to aes unwrap the keydata read from %s using the "
-                   "wrap data from %s ERR=%s, aborting...\n"),
-                keyfile.c_str(), wrap_keyfile.c_str(), error->c_str());
-        free(wrapped_passphrase);
-        TerminateBscrypto(0);
-      }
-
-      free(wrapped_passphrase);
+      unwrap_key(keydata, keyfile, wrap_keyfile);
+      length = strnlen(keydata, length);
+      passphrase = (char*)calloc(length, 1);
+      memcpy(passphrase, keydata, length);
     } else {
       if (base64_transform) {
         /* As we first go from base64 to bin and the Base64ToBin has a check
@@ -463,11 +477,11 @@ int main(int argc, char* const* argv)
         Base64ToBin(passphrase, length, keydata, strlen(keydata));
       } else {
         length = DEFAULT_PASSPHRASE_LENGTH;
-        passphrase = (char*)calloc(length, 1);
         // do not use bstrncpy here since it copies a 31 characters and appends
         // a terminating NUL whereas passphrase is not a cstring and consists
         // of 32 copied characters of keydata
         length = strnlen(keydata, length);
+        passphrase = (char*)calloc(length, 1);
         memcpy(passphrase, keydata, length);
       }
     }
@@ -507,6 +521,9 @@ int main(int argc, char* const* argv)
   if (set_encryption) {
     ReadKeyBits(keyfile, keydata, sizeof(keydata));
 
+    if (wrapped_keys) { unwrap_key(keydata, keyfile, wrap_keyfile); }
+
+    Dmsg1(10, "keydata: %s\n", keydata);
     if (SetScsiEncryptionKey(-1, device_name.c_str(), keydata)) {
       TerminateBscrypto(0);
     } else {
