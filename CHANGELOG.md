@@ -95,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: adjust plugin info formatting [PR #1919]
 - python-bareos: fix backslash usage in regex [PR #1917]
 - Libcloud Accurate File Backup [PR #1903]
+- cats: add missing database locks [PR #1787]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -210,6 +211,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1772]: https://github.com/bareos/bareos/pull/1772
 [PR #1773]: https://github.com/bareos/bareos/pull/1773
 [PR #1786]: https://github.com/bareos/bareos/pull/1786
+[PR #1787]: https://github.com/bareos/bareos/pull/1787
 [PR #1788]: https://github.com/bareos/bareos/pull/1788
 [PR #1789]: https://github.com/bareos/bareos/pull/1789
 [PR #1793]: https://github.com/bareos/bareos/pull/1793

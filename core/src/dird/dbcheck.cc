@@ -192,7 +192,7 @@ static bool DropTmpIdx(const char* idx_name, const char* table_name)
     fflush(stdout);
     Bsnprintf(buf, sizeof(buf), "DROP INDEX %s ON %s", idx_name, table_name);
     if (g_verbose) { printf("%s\n", buf); }
-    if (!db->SqlQuery(buf, nullptr, nullptr)) {
+    if (DbLocker _{db}; !db->SqlQuery(buf, nullptr, nullptr)) {
       printf("%s\n", db->strerror());
       return false;
     } else {
@@ -291,7 +291,7 @@ static void eliminate_orphaned_jobmedia_records()
             "JobMedia,Media "
             "WHERE JobMedia.JobMediaId=%s AND Media.MediaId=JobMedia.MediaId",
             edit_int64(id_list.Id[i], ed1));
-        if (!db->SqlQuery(buf, PrintJobmediaHandler, nullptr)) {
+        if (DbLocker _{db}; !db->SqlQuery(buf, PrintJobmediaHandler, nullptr)) {
           printf("%s\n", db->strerror());
         }
       }
@@ -330,7 +330,7 @@ static void eliminate_orphaned_file_records()
                   "SELECT File.FileId,File.JobId,File.Name FROM File "
                   "WHERE File.FileId=%s",
                   edit_int64(id_list.Id[i], ed1));
-        if (!db->SqlQuery(buf, PrintFileHandler, nullptr)) {
+        if (DbLocker _{db}; !db->SqlQuery(buf, PrintFileHandler, nullptr)) {
           printf("%s\n", db->strerror());
         }
       }
@@ -405,7 +405,7 @@ static void eliminate_orphaned_fileset_records()
                 "SELECT FileSetId,FileSet,MD5 FROM FileSet "
                 "WHERE FileSetId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintFilesetHandler, nullptr)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, PrintFilesetHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -444,7 +444,7 @@ static void eliminate_orphaned_client_records()
                 "SELECT ClientId,Name FROM Client "
                 "WHERE ClientId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintClientHandler, nullptr)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, PrintClientHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -484,7 +484,7 @@ static void eliminate_orphaned_job_records()
                 "SELECT JobId,Name,StartTime FROM Job "
                 "WHERE JobId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintJobHandler, nullptr)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, PrintJobHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -560,7 +560,7 @@ static void eliminate_admin_records()
                 "SELECT JobId,Name,StartTime FROM Job "
                 "WHERE JobId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintJobHandler, nullptr)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, PrintJobHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -592,7 +592,7 @@ static void eliminate_restore_records()
                 "SELECT JobId,Name,StartTime FROM Job "
                 "WHERE JobId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintJobHandler, nullptr)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, PrintJobHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -623,7 +623,7 @@ static void repair_bad_filenames()
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Name FROM File WHERE FileId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintNameHandler, nullptr)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, PrintNameHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -640,7 +640,7 @@ static void repair_bad_filenames()
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Name FROM File WHERE FileId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, GetNameHandler, name)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, GetNameHandler, name)) {
         printf("%s\n", db->strerror());
       }
       // Strip trailing slash(es)
@@ -679,7 +679,7 @@ static void repair_bad_paths()
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintNameHandler, nullptr)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, PrintNameHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -696,7 +696,7 @@ static void repair_bad_paths()
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, GetNameHandler, name)) {
+      if (DbLocker _{db}; !db->SqlQuery(buf, GetNameHandler, name)) {
         printf("%s\n", db->strerror());
       }
       // Strip trailing blanks

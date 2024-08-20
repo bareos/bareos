@@ -474,10 +474,10 @@ class pathid_cache;
 typedef char** SQL_ROW;
 
 typedef struct sql_field {
-  char* name = nullptr; /* name of column */
-  int max_length = 0;   /* max length */
-  uint32_t type = 0;    /* type */
-  uint32_t flags = 0;   /* flags */
+  const char* name = nullptr; /* name of column */
+  int max_length = 0;         /* max length */
+  uint32_t type = 0;          /* type */
+  uint32_t flags = 0;         /* flags */
 } SQL_FIELD;
 
 class BareosSqlError : public std::runtime_error {
@@ -529,14 +529,9 @@ class BareosDb : public BareosDbQueryEnum {
 
  private:
   int GetFilenameRecord(JobControlRecord* jcr);
-  bool GetFileRecord(JobControlRecord* jcr,
-                     JobDbRecord* jr,
-                     FileDbRecord* fdbr);
   bool CreateBatchFileAttributesRecord(JobControlRecord* jcr,
                                        AttributesDbRecord* ar);
   bool CreateFilenameRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
-  bool CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
-  void CleanupBaseFile(JobControlRecord* jcr);
   void BuildPathHierarchy(JobControlRecord* jcr,
                           pathid_cache& ppathid_cache,
                           char* org_pathid,
@@ -551,6 +546,19 @@ class BareosDb : public BareosDbQueryEnum {
                        BareosDb::SQL_QUERY predefined_query,
                        va_list arg_ptr);
 
+  int SqlNumRows(void)
+  {
+    // only valid for queries without handler
+    return num_rows_;
+  }
+
+  /* each public function should either
+   * 1. Lock the db itself, or
+   * 2. assert that it currently holds the lock,
+   * if it modifies the database state in anyway.
+   * A function should never lock the db itself, if it returns some internal
+   * db state, i.e. error messages, SqlResults, etc. */
+
  public:
   BareosDb() {}
   virtual ~BareosDb() {}
@@ -561,12 +569,6 @@ class BareosDb : public BareosDbQueryEnum {
   bool IsPrivate(void) { return is_private_; }
   void IncrementRefcount(void) { ref_count_++; }
 
-  int SqlNumRows(void)
-  {
-    // only valid for queries without handler
-    return num_rows_;
-  }
-
   /* bvfs.c */
   bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, const char* jobids);
   void BvfsUpdateCache(JobControlRecord* jcr);
@@ -576,6 +578,10 @@ class BareosDb : public BareosDbQueryEnum {
                            void* ctx);
 
   /* sql.c */
+ private:
+  void ListDashes(OutputFormatter* send);
+
+ public:
   char* strerror();
   bool CheckMaxConnections(JobControlRecord* jcr, uint32_t max_concurrent_jobs);
   bool CheckTablesVersion(JobControlRecord* jcr);
@@ -597,7 +603,6 @@ class BareosDb : public BareosDbQueryEnum {
                const char* UpdateCmd);
   int GetSqlRecordMax(JobControlRecord* jcr);
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
-  void ListDashes(OutputFormatter* send);
   int ListResult(void* vctx, int nb_col, char** row);
   int ListResult(JobControlRecord* jcr,
                  OutputFormatter* send,
@@ -605,8 +610,13 @@ class BareosDb : public BareosDbQueryEnum {
   bool OpenBatchConnection(JobControlRecord* jcr);
   void DbDebugPrint(FILE* fp);
 
-  /* sql_create.c */
+  /* sql_create.cc */
+ private:
+  bool CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
   bool CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar);
+  void CleanupBaseFile(JobControlRecord* jcr);
+
+ public:
   bool CreateFileAttributesRecord(JobControlRecord* jcr,
                                   AttributesDbRecord* ar);
   bool CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr);
@@ -642,13 +652,13 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateTapealertStatistics(JobControlRecord* jcr,
                                  TapealertStatsDbRecord* tsr);
 
-  /* sql_delete.c */
+  /* sql_delete.cc */
   bool DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pool_dbr);
   bool DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
   void PurgeFiles(const char* jobids);
   void PurgeJobs(const char* jobids);
 
-  /* sql_find.c */
+  /* sql_find.cc */
 
   enum class SqlFindResult
   {
@@ -684,14 +694,20 @@ class BareosDb : public BareosDbQueryEnum {
                           POOLMEM* stime,
                           int& JobLevel);
 
-  /* sql_get.c */
+  /* sql_get.cc */
+ private:
+  int GetPathRecord(JobControlRecord* jcr);
+  bool GetFileRecord(JobControlRecord* jcr,
+                     JobDbRecord* jr,
+                     FileDbRecord* fdbr);
+
+ public:
   bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);
   bool GetMediaIdsInPool(PoolDbRecord* pool_record, std::vector<DBId_t>* lst);
   bool GetBaseFileList(JobControlRecord* jcr,
                        bool use_md5,
                        DB_RESULT_HANDLER* ResultHandler,
                        void* ctx);
-  int GetPathRecord(JobControlRecord* jcr);
   int GetPathRecord(JobControlRecord* jcr, const char* new_path);
   bool GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr);
   bool GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr);
@@ -770,7 +786,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
                                        dbid_list& mediaIds);
 
-  /* sql_list.c */
+  /* sql_list.cc */
   void ListPoolRecords(JobControlRecord* jcr,
                        PoolDbRecord* pr,
                        OutputFormatter* sendit,
@@ -875,7 +891,7 @@ class BareosDb : public BareosDbQueryEnum {
                            JobId_t jobid,
                            OutputFormatter* sendit);
 
-  /* SqlQuery.c */
+  /* sql_query.cc */
   const char* get_predefined_query_name(SQL_QUERY query);
   const char* get_predefined_query(SQL_QUERY query);
 
@@ -887,7 +903,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool SqlQuery(const char* query, int flags = 0);
   bool SqlQuery(const char* query, DB_RESULT_HANDLER* ResultHandler, void* ctx);
 
-  /* sql_update.c */
+  /* sql_update.cc */
   bool UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr);
   bool UpdateRunningJobRecord(JobControlRecord* jcr);
   bool UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr);
@@ -934,15 +950,6 @@ class BareosDb : public BareosDbQueryEnum {
                             char* snew,
                             const char* old,
                             int len);
-  virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
-  virtual unsigned char* EscapeObject(const unsigned char*,
-                                      std::size_t,
-                                      std::size_t&)
-  {
-    return nullptr;
-  }
-  virtual void FreeEscapedObjectMemory(unsigned char*) {}
-
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,
                               int32_t expected_len,
@@ -963,13 +970,8 @@ class BareosDb : public BareosDbQueryEnum {
     return SqlQuery(query, ResultHandler, ctx);
   }
 
-  virtual bool SqlCopyStart(const std::string& table_name,
-                            const std::vector<std::string>& field_names)
-      = 0;
-  virtual bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) = 0;
-  virtual bool SqlCopyEnd() = 0;
-
  private:
+  virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
   virtual void SqlFieldSeek(int field) = 0;
   virtual int SqlNumFields(void) = 0;
   virtual void SqlFreeResult(void) = 0;
@@ -994,6 +996,12 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                        AttributesDbRecord* ar)
       = 0;
+
+ protected:
+  void AssertOwnership()
+  {
+    if (!is_private_) { RwlAssertWriterIsMe(&lock_); }
+  }
 };
 
 BareosDb* db_init_database(JobControlRecord* jcr,

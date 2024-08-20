@@ -262,7 +262,7 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
     Dmsg1(debuglevel, "Vol=%s has expired update media record\n",
           mr->VolumeName);
     SetStorageidInMr(NULL, mr);
-    if (!jcr->db->UpdateMediaRecord(jcr, mr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->UpdateMediaRecord(jcr, mr)) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Catalog error updating volume \"%s\". ERR=%s\n"), mr->VolumeName,
            jcr->db->strerror());
@@ -409,7 +409,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
       bstrncpy(pr.Name, jcr->dir_impl->res.pool->resource_name_,
                sizeof(pr.Name));
 
-      if (!jcr->db->GetPoolRecord(jcr, &pr)) {
+      if (DbLocker _{jcr->db}; !jcr->db->GetPoolRecord(jcr, &pr)) {
         Jmsg(jcr, M_WARNING, 0, T_("Unable to get Pool record: ERR=%s\n"),
              jcr->db->strerror());
         goto bail_out;
@@ -434,7 +434,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
       bstrncpy(mr->VolStatus, smr.VolStatus, sizeof(smr.VolStatus));
       mr->RecyclePoolId = smr.RecyclePoolId;
 
-      if (!jcr->db->UpdateMediaRecord(jcr, mr)) {
+      if (DbLocker _{jcr->db}; !jcr->db->UpdateMediaRecord(jcr, mr)) {
         Jmsg(jcr, M_WARNING, 0, T_("Failed to move Scratch Volume. ERR=%s\n"),
              jcr->db->strerror());
         goto bail_out;

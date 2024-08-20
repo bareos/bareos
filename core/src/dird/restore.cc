@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -375,7 +375,8 @@ bool DoNativeRestore(JobControlRecord* jcr)
   int status;
 
   jcr->dir_impl->jr.JobLevel = L_FULL; /* Full restore */
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
@@ -501,7 +502,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
 
   ClientDbRecord cr;
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
-  if (!jcr->db->GetClientRecord(jcr, &cr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());

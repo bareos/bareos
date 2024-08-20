@@ -721,7 +721,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             jr.VolSessionTime = mjcr2->VolSessionTime;
             jr.JobTDate = (utime_t)mjcr2->start_time;
             jr.ClientId = mjcr2->ClientId;
-            if (!db->UpdateJobEndRecord(my_bjcr, &jr)) {
+            if (DbLocker _{db}; !db->UpdateJobEndRecord(my_bjcr, &jr)) {
               Pmsg1(0, T_("Could not update job record. ERR=%s\n"),
                     db->strerror());
             }
@@ -1041,7 +1041,7 @@ static bool CreateFileAttributesRecord(BareosDb* t_db,
 
   if (!update_db) { return true; }
 
-  if (!t_db->CreateFileAttributesRecord(bjcr, &ar)) {
+  if (DbLocker _{t_db}; !t_db->CreateFileAttributesRecord(bjcr, &ar)) {
     Pmsg1(0, T_("Could not create File Attributes record. ERR=%s\n"),
           t_db->strerror());
     return false;
@@ -1075,6 +1075,7 @@ static bool CreateMediaRecord(BareosDb* t_db,
 
   if (!update_db) { return true; }
 
+  DbLocker _{t_db};
   if (!t_db->CreateMediaRecord(bjcr, t_mr)) {
     Pmsg1(000, T_("Could not create media record. ERR=%s\n"), t_db->strerror());
     return false;
@@ -1096,7 +1097,7 @@ static bool UpdateMediaRecord(BareosDb* t_db, MediaDbRecord* t_mr)
   if (!update_db && !update_vol_info) { return true; }
 
   t_mr->LastWritten = lasttime;
-  if (!t_db->UpdateMediaRecord(bjcr, t_mr)) {
+  if (DbLocker _{t_db}; !t_db->UpdateMediaRecord(bjcr, t_mr)) {
     Pmsg1(000, T_("Could not update media record. ERR=%s\n"), t_db->strerror());
     return false;
   }
@@ -1117,7 +1118,7 @@ static bool CreatePoolRecord(BareosDb* t_db, PoolDbRecord* t_pr)
 
   if (!update_db) { return true; }
 
-  if (!t_db->CreatePoolRecord(bjcr, t_pr)) {
+  if (DbLocker _{t_db}; !t_db->CreatePoolRecord(bjcr, t_pr)) {
     Pmsg1(000, T_("Could not create pool record. ERR=%s\n"), t_db->strerror());
     return false;
   }
@@ -1136,7 +1137,7 @@ static bool CreateClientRecord(BareosDb* t_db, ClientDbRecord* t_cr)
    * updating the database, so we must ensure that ClientId is non-zero. */
   if (!update_db) {
     t_cr->ClientId = 0;
-    if (!t_db->GetClientRecord(bjcr, t_cr)) {
+    if (DbLocker _{t_db}; !t_db->GetClientRecord(bjcr, t_cr)) {
       Pmsg1(0, T_("Could not get Client record. ERR=%s\n"), t_db->strerror());
       return false;
     }
@@ -1144,7 +1145,7 @@ static bool CreateClientRecord(BareosDb* t_db, ClientDbRecord* t_cr)
     return true;
   }
 
-  if (!t_db->CreateClientRecord(bjcr, t_cr)) {
+  if (DbLocker _{t_db}; !t_db->CreateClientRecord(bjcr, t_cr)) {
     Pmsg1(000, T_("Could not create Client record. ERR=%s\n"),
           t_db->strerror());
     return false;
@@ -1172,7 +1173,7 @@ static bool CreateFilesetRecord(BareosDb* t_db, FileSetDbRecord* t_fsr)
       Pmsg1(000, T_("Fileset \"%s\" already exists.\n"), t_fsr->FileSet);
     }
   } else {
-    if (!t_db->CreateFilesetRecord(bjcr, t_fsr)) {
+    if (DbLocker _{t_db}; !t_db->CreateFilesetRecord(bjcr, t_fsr)) {
       Pmsg2(000, T_("Could not create FileSet record \"%s\". ERR=%s\n"),
             t_fsr->FileSet, t_db->strerror());
       return false;
@@ -1216,6 +1217,7 @@ static JobControlRecord* CreateJobRecord(BareosDb* t_db,
 
   if (!update_db) { return mjcr; }
 
+  DbLocker _{t_db};
   // This creates the bare essentials
   if (!t_db->CreateJobRecord(bjcr, t_jr)) {
     Pmsg1(0, T_("Could not create JobId record. ERR=%s\n"), t_db->strerror());
@@ -1276,7 +1278,7 @@ static bool UpdateJobRecord(BareosDb* t_db,
     return true;
   }
 
-  if (!t_db->UpdateJobEndRecord(bjcr, t_jr)) {
+  if (DbLocker _{t_db}; !t_db->UpdateJobEndRecord(bjcr, t_jr)) {
     Pmsg2(0, T_("Could not update JobId=%u record. ERR=%s\n"), t_jr->JobId,
           t_db->strerror());
     FreeJcr(mjcr);
@@ -1366,7 +1368,7 @@ static bool CreateJobmediaRecord(BareosDb* t_db, JobControlRecord* mjcr)
 
   if (!update_db) { return true; }
 
-  if (!t_db->CreateJobmediaRecord(bjcr, &jmr)) {
+  if (DbLocker _{t_db}; !t_db->CreateJobmediaRecord(bjcr, &jmr)) {
     Pmsg1(0, T_("Could not create JobMedia record. ERR=%s\n"),
           t_db->strerror());
     return false;
@@ -1404,7 +1406,8 @@ static bool UpdateDigestRecord(BareosDb* t_db,
     return true;
   }
 
-  if (!t_db->AddDigestToFileRecord(bjcr, mjcr->FileId, digest, type)) {
+  if (DbLocker _{t_db};
+      !t_db->AddDigestToFileRecord(bjcr, mjcr->FileId, digest, type)) {
     Pmsg1(0, T_("Could not add MD5/SHA1 to File record. ERR=%s\n"),
           t_db->strerror());
     FreeJcr(mjcr);

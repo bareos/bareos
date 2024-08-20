@@ -172,7 +172,7 @@ bool DoVerify(JobControlRecord* jcr)
       /* Now get the job record for the previous backup that interests
        *   us. We use the verify_jobid that we found above. */
       prev_jr.JobId = verify_jobid;
-      if (!jcr->db->GetJobRecord(jcr, &prev_jr)) {
+      if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &prev_jr)) {
         Jmsg(jcr, M_FATAL, 0,
              T_("Could not get job record for previous Job. ERR=%s\n"),
              jcr->db->strerror());
@@ -217,7 +217,8 @@ bool DoVerify(JobControlRecord* jcr)
 
   Dmsg2(100, "ClientId=%u JobLevel=%c\n", prev_jr.ClientId, JobLevel);
 
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }

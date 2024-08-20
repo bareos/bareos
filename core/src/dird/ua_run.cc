@@ -75,7 +75,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
 
   jr.JobId = JobId;
   ua->SendMsg("rerunning jobid %d\n", jr.JobId);
-  if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+  if (DbLocker _{ua->db}; !ua->db->GetJobRecord(ua->jcr, &jr)) {
     Jmsg(ua->jcr, M_WARNING, 0,
          T_("Error getting Job record for Job rerun: ERR=%s\n"),
          ua->db->strerror());
@@ -104,7 +104,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     ClientDbRecord cr;
 
     cr.ClientId = jr.ClientId;
-    if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
+    if (DbLocker _{ua->db}; !ua->db->GetClientRecord(ua->jcr, &cr)) {
       Jmsg(ua->jcr, M_WARNING, 0,
            T_("Error getting Client record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
@@ -118,7 +118,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     PoolDbRecord pr;
 
     pr.PoolId = jr.PoolId;
-    if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+    if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &pr)) {
       Jmsg(ua->jcr, M_WARNING, 0,
            T_("Error getting Pool record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
@@ -182,7 +182,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     FileSetDbRecord fs;
 
     fs.FileSetId = jr.FileSetId;
-    if (!ua->db->GetFilesetRecord(ua->jcr, &fs)) {
+    if (DbLocker _{ua->db}; !ua->db->GetFilesetRecord(ua->jcr, &fs)) {
       Jmsg(ua->jcr, M_WARNING, 0,
            T_("Error getting FileSet record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
@@ -1425,7 +1425,7 @@ static bool DisplayJobParameters(UaContext* ua,
                                                    * requested
                                                    */
           jr.JobId = jcr->dir_impl->RestoreJobId;
-          if (!ua->db->GetJobRecord(jcr, &jr)) {
+          if (DbLocker _{ua->db}; !ua->db->GetJobRecord(jcr, &jr)) {
             ua->ErrorMsg(
                 T_("Could not get job record for selected JobId. ERR=%s"),
                 ua->db->strerror());

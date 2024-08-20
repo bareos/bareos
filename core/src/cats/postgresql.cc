@@ -196,64 +196,67 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  if (db_port_) {
-    Bsnprintf(buf, sizeof(buf), "%d", db_port_);
-    port = buf;
-  } else {
-    port = NULL;
+  {
+    DbLocker _{this};
+
+    if (db_port_) {
+      Bsnprintf(buf, sizeof(buf), "%d", db_port_);
+      port = buf;
+    } else {
+      port = NULL;
+    }
+
+    // If connection fails, try at 5 sec intervals for 30 seconds.
+    for (int retry = 0; retry < 6; retry++) {
+      db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
+                                port,          /* default port */
+                                NULL,          /* pg options */
+                                NULL,          /* tty, ignored */
+                                db_name_,      /* database name */
+                                db_user_,      /* login name */
+                                db_password_); /* password */
+
+      // If no connect, try once more in case it is a timing problem
+      if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
+
+      // free memory if not successful
+      PQfinish(db_handle_);
+      db_handle_ = nullptr;
+
+      Bmicrosleep(5, 0);
+    }
+
+    Dmsg0(50, "pg_real_connect %s\n",
+          PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
+    Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
+          (db_password_ == NULL) ? "(NULL)" : db_password_);
+
+    if (PQstatus(db_handle_) != CONNECTION_OK) {
+      Mmsg2(errmsg,
+            T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
+               "Possible causes: SQL server not running; password incorrect; "
+               "max_connections exceeded.\n(%s)\n"),
+            db_name_, db_user_, PQerrorMessage(db_handle_));
+      goto bail_out;
+    }
+
+    connected_ = true;
+    if (!CheckTablesVersion(jcr)) { goto bail_out; }
+
+    SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
+    SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
+    SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
+
+    /* Tell PostgreSQL we are using standard conforming strings
+     * and avoid warnings such as:
+     *  WARNING:  nonstandard use of \\ in a string literal */
+    SqlQueryWithoutHandler("SET standard_conforming_strings=on");
+
+    // Check that encoding is SQL_ASCII
+    CheckDatabaseEncoding(jcr);
+
+    retval = true;
   }
-
-  // If connection fails, try at 5 sec intervals for 30 seconds.
-  for (int retry = 0; retry < 6; retry++) {
-    db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
-                              port,          /* default port */
-                              NULL,          /* pg options */
-                              NULL,          /* tty, ignored */
-                              db_name_,      /* database name */
-                              db_user_,      /* login name */
-                              db_password_); /* password */
-
-    // If no connect, try once more in case it is a timing problem
-    if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
-
-    // free memory if not successful
-    PQfinish(db_handle_);
-    db_handle_ = nullptr;
-
-    Bmicrosleep(5, 0);
-  }
-
-  Dmsg0(50, "pg_real_connect %s\n",
-        PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
-  Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
-        (db_password_ == NULL) ? "(NULL)" : db_password_);
-
-  if (PQstatus(db_handle_) != CONNECTION_OK) {
-    Mmsg2(errmsg,
-          T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-             "Possible causes: SQL server not running; password incorrect; "
-             "max_connections exceeded.\n(%s)\n"),
-          db_name_, db_user_, PQerrorMessage(db_handle_));
-    goto bail_out;
-  }
-
-  connected_ = true;
-  if (!CheckTablesVersion(jcr)) { goto bail_out; }
-
-  SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
-  SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
-  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
-
-  /* Tell PostgreSQL we are using standard conforming strings
-   * and avoid warnings such as:
-   *  WARNING:  nonstandard use of \\ in a string literal */
-  SqlQueryWithoutHandler("SET standard_conforming_strings=on");
-
-  // Check that encoding is SQL_ASCII
-  CheckDatabaseEncoding(jcr);
-
-  retval = true;
-
 bail_out:
   unlock_mutex(mutex);
   return retval;
@@ -334,6 +337,10 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
   }
 
   if (esc_obj) {
+    /* from the PQescapeByteaConn documentation:
+     * [..] This result string length includes the terminating zero byte of the
+     * result. [...] A terminating zero byte is also added. [...]
+     * So this is unnecessary: */
     esc_obj = CheckPoolMemorySize(esc_obj, new_len + 1);
     if (esc_obj) {
       memcpy(esc_obj, obj, new_len);
@@ -347,19 +354,6 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
 
   return (char*)esc_obj;
 }
-
-unsigned char* BareosDbPostgresql::EscapeObject(const unsigned char* old,
-                                                std::size_t old_len,
-                                                std::size_t& new_len)
-{
-  return PQescapeByteaConn(db_handle_, old, old_len, std::addressof(new_len));
-}
-
-void BareosDbPostgresql::FreeEscapedObjectMemory(unsigned char* obj)
-{
-  PQfreemem(obj);
-}
-
 
 /**
  * Unescape binary object so that PostgreSQL is happy
@@ -429,6 +423,8 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
 
 void BareosDbPostgresql::EndTransaction(JobControlRecord* jcr)
 {
+  DbLocker _{this};
+
   if (jcr && jcr->cached_attribute) {
     Dmsg0(400, "Flush last cached attribute.\n");
     if (!CreateAttributesRecord(jcr, jcr->ar)) {
@@ -439,7 +435,7 @@ void BareosDbPostgresql::EndTransaction(JobControlRecord* jcr)
 
   if (!allow_transactions_) { return; }
 
-  DbLocker _{this};
+
   if (transaction_) {
     SqlQueryWithoutHandler("COMMIT"); /* end transaction */
     transaction_ = false;
@@ -458,7 +454,6 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 {
   SQL_ROW row;
   bool retval = false;
-  bool in_transaction = transaction_;
 
   Dmsg1(500, "BigSqlQuery starts with '%s'\n", query);
 
@@ -473,11 +468,12 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 
   DbLocker _{this};
 
+  bool in_transaction = transaction_;
   if (!in_transaction) { /* CURSOR needs transaction */
     SqlQueryWithoutHandler("BEGIN");
   }
 
-  Mmsg(buf_, "DECLARE _bac_cursor CURSOR FOR %s", query);
+  Mmsg(buf_, "DECLARE _bar_cursor CURSOR FOR %s", query);
 
   if (!SqlQueryWithoutHandler(buf_)) {
     Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), buf_, sql_strerror());
@@ -486,7 +482,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
   }
 
   do {
-    if (!SqlQueryWithoutHandler("FETCH 100 FROM _bac_cursor")) {
+    if (!SqlQueryWithoutHandler("FETCH 100 FROM _bar_cursor")) {
       goto bail_out;
     }
     while ((row = SqlFetchRow()) != NULL) {
@@ -498,7 +494,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 
   } while (num_rows_ > 0);
 
-  SqlQueryWithoutHandler("CLOSE _bac_cursor");
+  SqlQueryWithoutHandler("CLOSE _bar_cursor");
 
   Dmsg0(500, "BigSqlQuery finished\n");
   SqlFreeResult();
@@ -561,6 +557,7 @@ bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query, int)
   bool retry = true;
   bool retval = false;
 
+  AssertOwnership();
   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
   // We are starting a new query. reset everything.
@@ -716,6 +713,7 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
 
 const char* BareosDbPostgresql::sql_strerror(void)
 {
+  AssertOwnership();
   return PQerrorMessage(db_handle_);
 }
 
@@ -805,32 +803,37 @@ bail_out:
   return id;
 }
 
-void BareosDbPostgresql::SqlUpdateField(int i)
+static void ComputeFields(int num_fields,
+                          int num_rows,
+                          SQL_FIELD fields[/* num_fields */],
+                          PGresult* result)
 {
-  Dmsg1(500, "filling field %d\n", i);
-  fields_[i].name = PQfname(result_, i);
-  fields_[i].type = PQftype(result_, i);
-  fields_[i].flags = 0;
-
   // For a given column, find the max length.
-  int max_length = 0;
-  int this_length = 0;
-  for (int j = 0; j < num_rows_; j++) {
-    if (PQgetisnull(result_, j, i)) {
-      this_length = 4; /* "NULL" */
-    } else {
-      this_length = cstrlen(PQgetvalue(result_, j, i));
+  for (int fidx = 0; fidx < num_fields; ++fidx) { fields[fidx].max_length = 0; }
+
+  for (int ridx = 0; ridx < num_rows; ++ridx) {
+    for (int fidx = 0; fidx < num_fields; ++fidx) {
+      int length = PQgetisnull(result, ridx, fidx)
+                       ? 4 /* "NULL" */
+                       : cstrlen(PQgetvalue(result, ridx, fidx));
+
+      if (fields[fidx].max_length < length) {
+        fields[fidx].max_length = length;
+      }
     }
-
-    if (max_length < this_length) { max_length = this_length; }
   }
-  fields_[i].max_length = max_length;
 
-  Dmsg4(500,
-        "SqlUpdateField finds field '%s' has length='%d' type='%d' and "
-        "IsNull=%d\n",
-        fields_[i].name, fields_[i].max_length, fields_[i].type,
-        fields_[i].flags);
+  for (int fidx = 0; fidx < num_fields; ++fidx) {
+    Dmsg1(500, "filling field %d\n", fidx);
+    fields[fidx].name = PQfname(result, fidx);
+    fields[fidx].type = PQftype(result, fidx);
+    fields[fidx].flags = 0;
+    Dmsg4(500,
+          "ComputeFields finds field '%s' has length='%d' type='%d' and "
+          "IsNull=%d\n",
+          fields[fidx].name, fields[fidx].max_length, fields[fidx].type,
+          fields[fidx].flags);
+  }
 }
 
 SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
@@ -843,19 +846,20 @@ SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
     return nullptr;
   }
 
-  if (!fields_ || fields_size_ < num_fields_) {
-    fields_fetched_ = false;
-    if (fields_) {
-      free(fields_);
-      fields_ = NULL;
-    }
-    Dmsg1(500, "allocating space for %d fields\n", num_fields_);
-    fields_ = (SQL_FIELD*)malloc(sizeof(SQL_FIELD) * num_fields_);
-    fields_size_ = num_fields_;
-  }
-
   if (!fields_fetched_) {
-    for (int i = 0; i < num_fields_; i++) { SqlUpdateField(i); }
+    if (!fields_ || fields_size_ < num_fields_) {
+      fields_fetched_ = false;
+      if (fields_) {
+        free(fields_);
+        fields_ = NULL;
+      }
+      Dmsg1(500, "allocating space for %d fields\n", num_fields_);
+      fields_ = (SQL_FIELD*)malloc(sizeof(SQL_FIELD) * num_fields_);
+      fields_size_ = num_fields_;
+    }
+
+    ComputeFields(num_fields_, num_rows_, fields_, result_);
+
     fields_fetched_ = true;
   }
 
@@ -877,11 +881,12 @@ bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
 {
   // TEMP: the following is taken from select OID, typname from pg_type;
   switch (field_type) {
-    case 20:
-    case 21:
-    case 23:
-    case 700:
-    case 701:
+    case 20:   /* int8 (8-byte) */
+    case 21:   /* int2 (2-byte) */
+    case 23:   /* int4 (4-byte) */
+    case 700:  /* float4 (single precision) */
+    case 701:  /* float8 (double precision) */
+    case 1700: /* numeric + decimal */
       return true;
     default:
       return false;

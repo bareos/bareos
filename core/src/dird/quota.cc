@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
@@ -113,7 +113,7 @@ bool CheckHardquotas(JobControlRecord* jcr)
   Dmsg1(debuglevel, "Checking hard quotas for JobId %d\n", jcr->JobId);
   if (!jcr->dir_impl->HasQuota) {
     if (jcr->dir_impl->res.client->QuotaIncludeFailedJobs) {
-      if (!jcr->db->get_quota_jobbytes(
+      if (DbLocker _{jcr->db}; !jcr->db->get_quota_jobbytes(
               jcr, &jcr->dir_impl->jr,
               jcr->dir_impl->res.client->JobRetention)) {
         Jmsg(jcr, M_WARNING, 0, T_("Error getting Quota value: ERR=%s\n"),
@@ -121,7 +121,7 @@ bool CheckHardquotas(JobControlRecord* jcr)
         goto bail_out;
       }
     } else {
-      if (!jcr->db->get_quota_jobbytes_nofailed(
+      if (DbLocker _{jcr->db}; !jcr->db->get_quota_jobbytes_nofailed(
               jcr, &jcr->dir_impl->jr,
               jcr->dir_impl->res.client->JobRetention)) {
         Jmsg(jcr, M_WARNING, 0, T_("Error getting Quota value: ERR=%s\n"),
@@ -172,7 +172,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
   Dmsg1(debuglevel, "Checking soft quotas for JobId %d\n", jcr->JobId);
   if (!jcr->dir_impl->HasQuota) {
     if (jcr->dir_impl->res.client->QuotaIncludeFailedJobs) {
-      if (!jcr->db->get_quota_jobbytes(
+      if (DbLocker _{jcr->db}; !jcr->db->get_quota_jobbytes(
               jcr, &jcr->dir_impl->jr,
               jcr->dir_impl->res.client->JobRetention)) {
         Jmsg(jcr, M_WARNING, 0, T_("Error getting Quota value: ERR=%s\n"),
@@ -181,7 +181,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
       }
       Dmsg0(debuglevel, "Quota Includes Failed Jobs\n");
     } else {
-      if (!jcr->db->get_quota_jobbytes_nofailed(
+      if (DbLocker _{jcr->db}; !jcr->db->get_quota_jobbytes_nofailed(
               jcr, &jcr->dir_impl->jr,
               jcr->dir_impl->res.client->JobRetention)) {
         Jmsg(jcr, M_WARNING, 0, T_("Error getting Quota value: ERR=%s\n"),
@@ -214,7 +214,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
     if (jcr->dir_impl->res.client->GraceTime == 0
         && jcr->dir_impl->res.client->SoftQuotaGracePeriod) {
       Dmsg1(debuglevel, "UpdateQuotaGracetime: %d\n", now);
-      if (!jcr->db->UpdateQuotaGracetime(jcr, &jcr->dir_impl->jr)) {
+      if (DbLocker _{jcr->db};
+          !jcr->db->UpdateQuotaGracetime(jcr, &jcr->dir_impl->jr)) {
         Jmsg(jcr, M_WARNING, 0, T_("Error setting Quota gracetime: ERR=%s\n"),
              jcr->db->strerror());
       } else {
@@ -237,7 +238,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
       /* If gracetime has expired update else check more if not set softlimit
        * yet then set and bail out. */
       if (jcr->dir_impl->res.client->QuotaLimit < 1) {
-        if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->dir_impl->jr)) {
+        if (DbLocker _{jcr->db};
+            !jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->dir_impl->jr)) {
           Jmsg(jcr, M_WARNING, 0, T_("Error setting Quota Softlimit: ERR=%s\n"),
                jcr->db->strerror());
         }
@@ -253,7 +255,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
         /* If gracetime has expired update else check more if not set softlimit
          * yet then set and bail out. */
         if (jcr->dir_impl->res.client->QuotaLimit < 1) {
-          if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->dir_impl->jr)) {
+          if (DbLocker _{jcr->db};
+              !jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->dir_impl->jr)) {
             Jmsg(jcr, M_WARNING, 0,
                  T_("Error setting Quota Softlimit: ERR=%s\n"),
                  jcr->db->strerror());
@@ -293,7 +296,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
     // Reset softquota
     ClientDbRecord cr;
     cr.ClientId = jcr->dir_impl->jr.ClientId;
-    if (!jcr->db->ResetQuotaRecord(jcr, &cr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->ResetQuotaRecord(jcr, &cr)) {
       Jmsg(jcr, M_WARNING, 0, T_("Error setting Quota gracetime: ERR=%s\n"),
            jcr->db->strerror());
     } else {

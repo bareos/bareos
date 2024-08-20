@@ -250,7 +250,7 @@ static inline bool SetMigrationNextPool(JobControlRecord* jcr,
   /* Get the PoolId used with the original job. Then
    * find the pool name from the database record. */
   pr.PoolId = jcr->dir_impl->jr.PoolId;
-  if (!jcr->db->GetPoolRecord(jcr, &pr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetPoolRecord(jcr, &pr)) {
     Jmsg(jcr, M_FATAL, 0, T_("Pool for JobId %s not in database. ERR=%s\n"),
          edit_int64(pr.PoolId, ed1), jcr->db->strerror());
     return false;
@@ -511,7 +511,8 @@ static bool FindJobidsFromMediaidList(JobControlRecord* jcr,
 
   Mmsg(query, sql_jobids_from_mediaid, ids->list);
   ids->count = 0;
-  if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
     Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
     return false;
   }
@@ -534,7 +535,8 @@ static bool find_mediaid_then_jobids(JobControlRecord* jcr,
 
   // Basic query for MediaId
   Mmsg(query, query1, jcr->dir_impl->res.rpool->resource_name_);
-  if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
     Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
     return false;
   }
@@ -577,7 +579,8 @@ static inline bool FindJobidsOfPoolUncopiedJobs(JobControlRecord* jcr,
   Mmsg(query, sql_jobids_of_pool_uncopied_jobs,
        jcr->dir_impl->res.rpool->resource_name_);
   Dmsg1(dbglevel, "get uncopied jobs query=%s\n", query.c_str());
-  if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
     Jmsg(jcr, M_FATAL, 0, T_("SQL to get uncopied jobs failed. ERR=%s\n"),
          jcr->db->strerror());
     return false;
@@ -613,7 +616,8 @@ static bool regex_find_jobids(JobControlRecord* jcr,
   // Basic query for names
   Mmsg(query, query1, jcr->dir_impl->res.rpool->resource_name_);
   Dmsg1(dbglevel, "get name query1=%s\n", query.c_str());
-  if (!jcr->db->SqlQuery(query.c_str(), UniqueNameHandler, (void*)item_chain)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->SqlQuery(query.c_str(), UniqueNameHandler, (void*)item_chain)) {
     Jmsg(jcr, M_FATAL, 0, T_("SQL to get %s failed. ERR=%s\n"), type,
          jcr->db->strerror());
     goto bail_out;
@@ -676,7 +680,8 @@ static bool regex_find_jobids(JobControlRecord* jcr,
     Dmsg2(dbglevel, "Got %s: %s\n", type, item->item);
     Mmsg(query, query2, item->item, jcr->dir_impl->res.rpool->resource_name_);
     Dmsg1(dbglevel, "get id from name query2=%s\n", query.c_str());
-    if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
+    if (DbLocker _{jcr->db};
+        !jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
       Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
       goto bail_out;
     }
@@ -752,7 +757,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
         goto bail_out;
       }
       Dmsg1(dbglevel, "SQL=%s\n", jcr->dir_impl->res.job->selection_pattern);
-      if (!jcr->db->SqlQuery(jcr->dir_impl->res.job->selection_pattern,
+      if (DbLocker _{jcr->db};
+          !jcr->db->SqlQuery(jcr->dir_impl->res.job->selection_pattern,
                              UniqueDbidHandler, (void*)&ids)) {
         Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
         goto bail_out;
@@ -785,7 +791,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       // Find count of bytes in pool
       Mmsg(query, sql_pool_bytes, jcr->dir_impl->res.rpool->resource_name_);
 
-      if (!jcr->db->SqlQuery(query.c_str(), db_int64_handler, (void*)&ctx)) {
+      if (DbLocker _{jcr->db};
+          !jcr->db->SqlQuery(query.c_str(), db_int64_handler, (void*)&ctx)) {
         Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
         goto bail_out;
       }
@@ -815,7 +822,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       Mmsg(query, sql_mediaids, jcr->dir_impl->res.rpool->resource_name_);
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
-      if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)&ids)) {
+      if (DbLocker _{jcr->db};
+          !jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)&ids)) {
         Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
         goto bail_out;
       }
@@ -854,7 +862,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
         // Find count of bytes from Jobs
         Mmsg(query, sql_job_bytes, mid.list);
         Dmsg1(dbglevel, "Jobbytes query: %s\n", query.c_str());
-        if (!jcr->db->SqlQuery(query.c_str(), db_int64_handler, (void*)&ctx)) {
+        if (DbLocker _{jcr->db};
+            !jcr->db->SqlQuery(query.c_str(), db_int64_handler, (void*)&ctx)) {
           Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"),
                jcr->db->strerror());
           goto bail_out;
@@ -890,7 +899,8 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       Mmsg(query, sql_pool_time, jcr->dir_impl->res.rpool->resource_name_, dt);
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
-      if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)&ids)) {
+      if (DbLocker _{jcr->db};
+          !jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)&ids)) {
         Jmsg(jcr, M_FATAL, 0, T_("SQL failed. ERR=%s\n"), jcr->db->strerror());
         goto bail_out;
       }
@@ -1023,7 +1033,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
       jr.JobId = jcr->dir_impl->MigrateJobId;
       Dmsg1(dbglevel, "Previous jobid=%d\n", jr.JobId);
 
-      if (!jcr->db->GetJobRecord(jcr, &jr)) {
+      if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &jr)) {
         Jmsg(jcr, M_FATAL, 0,
              T_("Could not get job record for JobId %s to %s. ERR=%s\n"),
              edit_int64(jr.JobId, ed1), jcr->get_ActionName(),
@@ -1361,7 +1371,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record for this migration control job
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
@@ -1375,7 +1386,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   mig_jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record for the real migration backup job
-  if (!mig_jcr->db->UpdateJobStartRecord(mig_jcr, &mig_jcr->dir_impl->jr)) {
+  if (DbLocker _{mig_jcr->db};
+      !mig_jcr->db->UpdateJobStartRecord(mig_jcr, &mig_jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", mig_jcr->db->strerror());
     goto bail_out;
   }
@@ -1775,7 +1787,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
       }
     }
 
-    if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
       Jmsg(jcr, M_WARNING, 0,
            T_("Error getting Job record for Job report: ERR=%s\n"),
            jcr->db->strerror());
@@ -1784,8 +1796,8 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
 
     UpdateBootstrapFile(mig_jcr);
 
-    if (!mig_jcr->db->GetJobVolumeNames(mig_jcr, mig_jcr->dir_impl->jr.JobId,
-                                        mig_jcr->VolumeName)) {
+    if (DbLocker _{mig_jcr->db}; !mig_jcr->db->GetJobVolumeNames(
+            mig_jcr, mig_jcr->dir_impl->jr.JobId, mig_jcr->VolumeName)) {
       /* Note, if the job has failed, most likely it did not write any
        * tape, so suppress this "error" message since in that case
        * it is normal. Or look at it the other way, only for a
@@ -1805,7 +1817,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
         p = mig_jcr->VolumeName; /* no |, take full name */
       }
       bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
-      if (!jcr->db->GetMediaRecord(jcr, &mr)) {
+      if (DbLocker _{jcr->db}; !jcr->db->GetMediaRecord(jcr, &mr)) {
         Jmsg(jcr, M_WARNING, 0,
              T_("Error getting Media record for Volume \"%s\": ERR=%s\n"),
              mr.VolumeName, jcr->db->strerror());

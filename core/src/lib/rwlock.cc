@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -259,4 +259,11 @@ int RwlWriteunlock(brwlock_t* rwl)
   }
   status2 = pthread_mutex_unlock(&rwl->mutex);
   return (status == 0 ? status2 : status);
+}
+
+void RwlAssertWriterIsMe(brwlock_t* rwl)
+{
+  ASSERT(rwl->valid == RWLOCK_VALID);
+  ASSERT(rwl->w_active > 0);
+  ASSERT(pthread_equal(rwl->writer_id, pthread_self()));
 }

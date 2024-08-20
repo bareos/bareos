@@ -158,7 +158,10 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   jcr->start_time = time(NULL);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+
+
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
@@ -285,7 +288,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   tmp_jr.JobId = str_to_int64(jobid_list.front().c_str());
   Dmsg1(10, "Previous JobId=%s\n", jobid_list.front().c_str());
 
-  if (!jcr->db->GetJobRecord(jcr, &tmp_jr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &tmp_jr)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Error getting Job record for first Job: ERR=%s\n"),
          jcr->db->strerror());
@@ -305,7 +308,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     jr.JobId = str_to_int64(jobid_list.back().c_str());
     Dmsg1(10, "Previous JobId=%s\n", jobid_list.back().c_str());
 
-    if (!jcr->db->GetJobRecord(jcr, &jr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &jr)) {
       Jmsg(jcr, M_FATAL, 0,
            T_("Error getting Job record for previous Job: ERR=%s\n"),
            jcr->db->strerror());
@@ -354,7 +357,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -446,7 +450,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   }
 
   // Get the fully updated job record
-  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
@@ -469,14 +473,14 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
           + "SELECT FileIndex, "s + std::to_string(jcr->JobId) + " AS JobId, "s
           + "PathId, LStat, MD5, Name FROM ("s + inner_query.c_str() + ") T "s
           + "WHERE FileIndex = 0"s;
-    if (!jcr->db->SqlQuery(outer_query.c_str())) {
+    if (DbLocker _{jcr->db}; !jcr->db->SqlQuery(outer_query.c_str())) {
       Jmsg(jcr, M_WARNING, 0, "Error replicating deleted files: ERR=%s\n",
            jcr->db->strerror());
     }
   }
 
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
-  if (!jcr->db->GetClientRecord(jcr, &cr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());
@@ -549,7 +553,7 @@ static int InsertBootstrapHandler(void* ctx, int, char** row)
 static bool CreateBootstrapFile(JobControlRecord& jcr,
                                 const std::string& jobids)
 {
-  if (!jcr.db->OpenBatchConnection(&jcr)) {
+  if (DbLocker _{jcr.db}; !jcr.db->OpenBatchConnection(&jcr)) {
     Jmsg0(&jcr, M_FATAL, 0, "Can't get batch sql connexion");
     return false;
   }
@@ -559,9 +563,9 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = jobids_pm.addr();
 
-  if (!jcr.db_batch->GetFileList(&jcr, rx.JobIds, false /* don't use md5 */,
-                                 true /* use delta */, InsertBootstrapHandler,
-                                 (void*)rx.bsr.get())) {
+  if (DbLocker _{jcr.db_batch}; !jcr.db_batch->GetFileList(
+          &jcr, rx.JobIds, false /* don't use md5 */, true /* use delta */,
+          InsertBootstrapHandler, (void*)rx.bsr.get())) {
     Jmsg(&jcr, M_ERROR, 0, "%s", jcr.db_batch->strerror());
   }
 

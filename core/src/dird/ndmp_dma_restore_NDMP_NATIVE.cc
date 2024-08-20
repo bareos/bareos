@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -403,7 +403,8 @@ bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
   int status;
 
   jcr->dir_impl->jr.JobLevel = L_FULL; /* Full restore */
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }

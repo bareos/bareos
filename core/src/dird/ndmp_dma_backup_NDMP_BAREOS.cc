@@ -124,7 +124,8 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
 
   jcr->start_time = time(NULL);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -181,7 +182,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
         jcr->dir_impl->jr.JobLevel);
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }

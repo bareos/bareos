@@ -740,14 +740,14 @@ static bool add_cmd(UaContext* ua, const char*)
     mr.Enabled = VOL_ENABLED;
     SetStorageidInMr(store, &mr);
     Dmsg1(200, "Create Volume %s\n", mr.VolumeName);
-    if (!ua->db->CreateMediaRecord(ua->jcr, &mr)) {
+    if (DbLocker _{ua->db}; !ua->db->CreateMediaRecord(ua->jcr, &mr)) {
       ua->ErrorMsg("%s", ua->db->strerror());
       return true;
     }
   }
   pr.NumVols += num;
   Dmsg0(200, "Update pool record.\n");
-  if (ua->db->UpdatePoolRecord(ua->jcr, &pr) != 1) {
+  if (DbLocker _{ua->db}; ua->db->UpdatePoolRecord(ua->jcr, &pr) != 1) {
     ua->WarningMsg("%s", ua->db->strerror());
     return true;
   }
@@ -847,6 +847,8 @@ static bool CreateCmd(UaContext* ua, const char*)
 
   pool = get_pool_resource(ua);
   if (!pool) { return true; }
+
+  DbLocker _{ua->db};
 
   switch (CreatePool(ua->jcr, ua->db, pool, POOL_OP_CREATE)) {
     case 0:

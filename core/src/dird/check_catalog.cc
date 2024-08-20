@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,19 +55,26 @@ bool CheckCatalog(cat_op mode)
                           catalog->db_address, catalog->db_port,
                           catalog->db_socket, catalog->mult_db_connections,
                           catalog->disable_batch_insert, catalog->try_reconnect,
-                          catalog->exit_on_fatal);
+                          catalog->exit_on_fatal, true);
 
-    if (!db || !db->OpenDatabase(NULL)) {
+    if (!db) {
       Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\".\n"),
             catalog->resource_name_, catalog->db_name);
       Jmsg(NULL, M_FATAL, 0,
            T_("Could not open Catalog \"%s\", database \"%s\".\n"),
            catalog->resource_name_, catalog->db_name);
-      if (db) {
-        Jmsg(NULL, M_FATAL, 0, T_("%s"), db->strerror());
-        Pmsg1(000, "%s", db->strerror());
-        db->CloseDatabase(NULL);
-      }
+      OK = false;
+      goto bail_out;
+    }
+
+
+    if (!db->OpenDatabase(NULL)) {
+      Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+            catalog->resource_name_, catalog->db_name, db->strerror());
+      Jmsg(NULL, M_FATAL, 0,
+           T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
+           catalog->resource_name_, catalog->db_name, db->strerror());
+      db->CloseDatabase(NULL);
       OK = false;
       goto bail_out;
     }

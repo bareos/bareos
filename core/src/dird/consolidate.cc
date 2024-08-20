@@ -97,6 +97,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
   int32_t fullconsolidations_started = 0;
   JobResource* job;
   time_t now = time(NULL);
+  DbLocker _{jcr->db};
   foreach_res (job, R_JOB) {
     if (job->AlwaysIncremental) {
       Jmsg(jcr, M_INFO, 0, T_("Looking at always incremental job %s\n"),
@@ -325,7 +326,7 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());

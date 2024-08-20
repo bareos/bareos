@@ -199,7 +199,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     if (!GetOrCreateClientRecord(jcr)) { goto bail_out; }
   }
 
-  if (!jcr->db->CreateJobRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->CreateJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
@@ -460,7 +460,8 @@ static void* job_thread(void* arg)
         = new alist<RunScript*>(10, not_owned_by_alist);
   }
 
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
@@ -476,7 +477,8 @@ static void* job_thread(void* arg)
    * because in that case, their date is after the start of this run. */
   jcr->start_time = time(NULL);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
@@ -866,7 +868,8 @@ DBId_t GetOrCreatePoolRecord(JobControlRecord* jcr, char* pool_name)
 
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
-    if (CreatePool(jcr, jcr->db, jcr->dir_impl->res.pool, POOL_OP_CREATE) < 0) {
+    if (DbLocker _{jcr->db};
+        CreatePool(jcr, jcr->db, jcr->dir_impl->res.pool, POOL_OP_CREATE) < 0) {
       Jmsg(jcr, M_FATAL, 0, T_("Pool \"%s\" not in database. ERR=%s"), pr.Name,
            jcr->db->strerror());
       return 0;
@@ -1042,6 +1045,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
   jcr->dir_impl->since[0] = 0;
 
+  DbLocker _{jcr->db};
+
   // If since time was given on command line use it
   if (jcr->starttime_string && jcr->starttime_string[0]) {
     bstrncpy(jcr->dir_impl->since, T_(", since="),
@@ -1078,6 +1083,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       if (!jcr->db->FindJobStartTime(jcr, &jcr->dir_impl->jr,
                                      jcr->starttime_string,
                                      jcr->dir_impl->PrevJob)) {
+        Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         do_full = true;
       }
 
@@ -1129,7 +1135,6 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
       if (do_full) {
         // No recent Full job found, so upgrade this one to Full
-        Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              T_("No prior or suitable Full backup found in catalog. Doing FULL "
                 "backup.\n"));
@@ -1140,7 +1145,6 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       } else if (do_vfull) {
         /* No recent Full job found, and MaxVirtualFull is set so upgrade this
          * one to Virtual Full */
-        Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              T_("No prior or suitable Full backup found in catalog. Doing "
                 "Virtual FULL backup.\n"));
@@ -1330,7 +1334,7 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
   cr.JobRetention = jcr->dir_impl->res.client->JobRetention;
   if (!jcr->client_name) { jcr->client_name = GetPoolMemory(PM_NAME); }
   PmStrcpy(jcr->client_name, jcr->dir_impl->res.client->resource_name_);
-  if (!jcr->db->CreateClientRecord(jcr, &cr)) {
+  if (DbLocker _{jcr->db}; !jcr->db->CreateClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_FATAL, 0, T_("Could not create Client record. ERR=%s\n"),
          jcr->db->strerror());
     return false;
@@ -1339,7 +1343,7 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
   if (jcr->dir_impl->res.client->HardQuota != 0
       || jcr->dir_impl->res.client->SoftQuota != 0) {
     if (!jcr->db->GetQuotaRecord(jcr, &cr)) {
-      if (!jcr->db->CreateQuotaRecord(jcr, &cr)) {
+      if (DbLocker _{jcr->db}; !jcr->db->CreateQuotaRecord(jcr, &cr)) {
         Jmsg(jcr, M_FATAL, 0, T_("Could not create Quota record. ERR=%s\n"),
              jcr->db->strerror());
       }
@@ -1396,7 +1400,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
 
     fsr.FileSetText = FileSetText.c_str();
 
-    if (!jcr->db->CreateFilesetRecord(jcr, &fsr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->CreateFilesetRecord(jcr, &fsr)) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Could not create FileSet \"%s\" record. ERR=%s\n"), fsr.FileSet,
            jcr->db->strerror());
@@ -1444,7 +1448,8 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
   jcr->dir_impl->jr.JobErrors = jcr->JobErrors;
   jcr->dir_impl->jr.HasBase = jcr->HasBase;
-  if (!jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
+  if (DbLocker _{jcr->db};
+      !jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0, T_("Error updating job record. %s\n"),
          jcr->db->strerror());
   }

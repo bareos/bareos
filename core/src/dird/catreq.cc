@@ -351,6 +351,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
           jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex,
           jm.LastIndex);
+    DbLocker _{jcr->db};
     if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
       Jmsg(jcr, M_FATAL, 0, T_("Catalog error creating JobMedia record. %s\n"),
            jcr->db->strerror());
@@ -363,7 +364,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     Dmsg0(0, "Updating filelist\n");
 
     if (jcr->db_batch) {
-      if (!jcr->db_batch->WriteBatchFileRecords(jcr)) {
+      if (DbLocker _{jcr->db_batch};
+          !jcr->db_batch->WriteBatchFileRecords(jcr)) {
         Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating File table. %s\n"),
              jcr->db_batch->strerror());
         bs->fsend(T_("1992 Update File table error\n"));
@@ -381,7 +383,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     jcr->JobFiles = update_jobfiles;
     jcr->JobBytes = update_jobbytes;
 
-    if (!jcr->db->UpdateRunningJobRecord(jcr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->UpdateRunningJobRecord(jcr)) {
       Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating Job record. %s\n"),
            jcr->db->strerror());
       bs->fsend(T_("1992 Update job record error\n"));
@@ -488,7 +490,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
     case STREAM_UNIX_ATTRIBUTES_EX:
       if (jcr->cached_attribute) {
         Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
-        if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
+        if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, ar)) {
           Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
                 jcr->db->strerror());
         }
@@ -595,7 +597,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             ro.object_len, ro.object);
 
       // Store it.
-      if (!jcr->db->CreateRestoreObjectRecord(jcr, &ro)) {
+      if (DbLocker _{jcr->db}; !jcr->db->CreateRestoreObjectRecord(jcr, &ro)) {
         Jmsg1(jcr, M_FATAL, 0, T_("Restore object create error. %s"),
               jcr->db->strerror());
       }
@@ -654,14 +656,15 @@ static void UpdateAttribute(JobControlRecord* jcr,
                   ar->Stream, ar->fname);
 
             // Update BaseFile table
-            if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
+            if (DbLocker _{jcr->db};
+                !jcr->db->CreateAttributesRecord(jcr, ar)) {
               Jmsg1(jcr, M_FATAL, 0, T_("attribute create error. %s\n"),
                     jcr->db->strerror());
             }
             jcr->cached_attribute = false;
           } else {
-            if (!jcr->db->AddDigestToFileRecord(jcr, ar->FileId, digestbuf,
-                                                type)) {
+            if (DbLocker _{jcr->db}; !jcr->db->AddDigestToFileRecord(
+                    jcr, ar->FileId, digestbuf, type)) {
               Jmsg(jcr, M_ERROR, 0,
                    T_("Catalog error updating file digest. %s\n"),
                    jcr->db->strerror());
