@@ -1254,16 +1254,16 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
         break;
       case L_VIRTUAL_FULL:
         if (jcr->dir_impl->res.vfull_pool) {
-          jcr->dir_impl->res.pool = jcr->dir_impl->res.vfull_pool;
+          jcr->dir_impl->res.next_pool = jcr->dir_impl->res.vfull_pool;
           pool_override = true;
           if (jcr->dir_impl->res.run_vfull_pool_override) {
-            PmStrcpy(jcr->dir_impl->res.pool_source,
+            PmStrcpy(jcr->dir_impl->res.npool_source,
                      T_("Run VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
                   jcr->dir_impl->res.vfull_pool->resource_name_,
                   "Run VFullPool override\n");
           } else {
-            PmStrcpy(jcr->dir_impl->res.pool_source,
+            PmStrcpy(jcr->dir_impl->res.npool_source,
                      T_("Job VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
                   jcr->dir_impl->res.vfull_pool->resource_name_,

@@ -169,7 +169,12 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     storage_source = T_("Storage from Run NextPool override");
   } else {
     // See if there is a next pool override in the Job definition.
-    if (jcr->dir_impl->res.job->next_pool) {
+    if (jcr->dir_impl->res.job->vfull_pool) {
+      jcr->dir_impl->res.next_pool = jcr->dir_impl->res.job->vfull_pool;
+      PmStrcpy(jcr->dir_impl->res.npool_source, T_("Job's VFullPool resource"));
+      PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job's VFullPool resource"));
+      storage_source = T_("Storage from Job's VFullPool resource");
+    } else if (jcr->dir_impl->res.job->next_pool) {
       jcr->dir_impl->res.next_pool = jcr->dir_impl->res.job->next_pool;
       PmStrcpy(jcr->dir_impl->res.npool_source, T_("Job's NextPool resource"));
       PmStrcpy(jcr->dir_impl->res.pool_source, T_("Job's NextPool resource"));
