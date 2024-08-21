@@ -76,14 +76,14 @@ function send(cmd) {
       request.done(function(msg) {
          $("<div class='output'>"+msg.replace(/(?:\r\n|\r|\n)/g, '<br />')+"</div>").insertBefore(".prompt");
          $('.prompt').show();
+         
+         $('.bconsole').scrollTop($('.bconsole')[0].scrollHeight - $('.bconsole')[0].clientHeight);
+         document.getElementById('cli').focus();
       });
    }
 
-   $('.bconsole').scrollTop($('.bconsole')[0].scrollHeight - $('.bconsole')[0].clientHeight);
-
    document.getElementById('cli').value = "";
-   document.getElementById('cli').focus();
-
+   
 }
 
 var cli = document.getElementById("cli");
