@@ -608,6 +608,11 @@ FileSet Exclude-Resources very similar to Include-Resources, except that they on
 FileSet Options Resource
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. warning::
+
+   Defining Multiple options blocks will usually result in an unexpected
+   behaviour and are for this reason not supported.
+
 The Options resource is optional, but when specified, it will contain a list of keyword=value options to be applied to the file-list. See below for the definition of file-list. Multiple Options resources may be specified one after another. As the files are found in the specified directories, the Options will applied to the filenames to determine if and how the file should be backed up. The wildcard and regular expression pattern matching parts of the Options resources are checked in the order
 they are specified in the FileSet until the first one that matches. Once one matches, the compression and other flags within the Options specification will apply to the pattern matched.
 
