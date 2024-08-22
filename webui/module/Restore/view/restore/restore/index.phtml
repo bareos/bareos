@@ -352,7 +352,7 @@ echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.c
 
    function isRestoreFormReady()
    {
-      const required_ids = ["client", "jobid", "restorejob", "restoreclient", "where"];
+      const required_ids = ["client", "jobid", "restorejob", "restoreclient"];
 
       for (let i = 0; i < required_ids.length; i++) {
          let id = required_ids[i];

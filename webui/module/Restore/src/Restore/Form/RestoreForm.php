@@ -483,7 +483,7 @@ class RestoreForm extends Form
                     'size' => '30',
                     'placeholder' => _('e.g. / or /tmp/bareos-restores/'),
                     'required' => 'required',
-                    'disabled' => (!isset($where))
+                    'disabled' => (!isset($restore_params['client']))
                 )
             )
         );

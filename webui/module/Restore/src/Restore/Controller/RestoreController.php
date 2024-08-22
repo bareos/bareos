@@ -56,6 +56,16 @@ class RestoreController extends AbstractActionController
      */
     public function indexAction()
     {
+        return $this->commonRestoreAction();
+    }
+
+    public function versionsAction()
+    {
+        return $this->commonRestoreAction();
+    }
+
+    private function commonRestoreAction()
+    {
         $this->RequestURIPlugin()->setRequestURI();
 
         if (!$this->SessionTimeoutPlugin()->isValid()) {
@@ -204,172 +214,6 @@ class RestoreController extends AbstractActionController
                     'errors' => $errors,
                     'ndmp_advice_note' => $this->ndmp_advice_note,
                     'restore_jobid' => $restore_jobid
-                ));
-            } else {
-                $this->bsock->disconnect();
-
-                return new ViewModel(array(
-                    'restore_params' => $this->restore_params,
-                    'form' => $form,
-                    'result' => $result,
-                    'errors' => $errors,
-                    'ndmp_advice_note' => $this->ndmp_advice_note
-                ));
-            }
-        } else {
-            $this->bsock->disconnect();
-
-            return new ViewModel(array(
-                'restore_params' => $this->restore_params,
-                'form' => $form,
-                'result' => $result,
-                'errors' => $errors,
-                'ndmp_advice_note' => $this->ndmp_advice_note
-            ));
-        }
-    }
-
-    public function versionsAction()
-    {
-        $this->RequestURIPlugin()->setRequestURI();
-
-        if (!$this->SessionTimeoutPlugin()->isValid()) {
-            return $this->redirect()->toRoute(
-                'auth',
-                array(
-                    'action' => 'login'
-                ),
-                array(
-                    'query' => array(
-                        'req' => $this->RequestURIPlugin()->getRequestURI(),
-                        'dird' => $_SESSION['bareos']['director']
-                    )
-                )
-            );
-        }
-
-        $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-        $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
-            $module_config['console_commands']['Restore']['mandatory']
-        );
-        if (count($invalid_commands) > 0) {
-            $this->acl_alert = true;
-            return new ViewModel(
-                array(
-                    'acl_alert' => $this->acl_alert,
-                    'invalid_commands' => implode(",", $invalid_commands)
-                )
-            );
-        }
-
-        $this->bsock = $this->getServiceLocator()->get('director');
-
-        $this->setRestoreParams();
-        $errors = null;
-        $result = null;
-
-        if ($this->restore_params['client'] != null) {
-            $this->handleJobId();
-            $this->handleJobMerge();
-            $backups = $this->getClientBackups();
-            $this->updateBvfsCache();
-        } else {
-            $backups = null;
-        }
-
-        try {
-            $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
-            $restore_target_clients = $this->getClientModel()->getClients($this->bsock);
-            $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
-            $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
-            $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-
-        if (isset($this->restore_params['client']) && empty($backups)) {
-            $errors = 'No backups of client <strong>' . $this->restore_params['client'] . '</strong> found.';
-        }
-
-        if (isset($this->restore_params['client'])) {
-            $this->ndmp_advice_note = $this->isNDMPBackupClient($this->restore_params['client']);
-        }
-
-        // Create the form
-        $form = new RestoreForm(
-            $this->restore_params,
-            $restore_source_clients,
-            $filesets,
-            $restorejobresources,
-            $this->restore_params['jobids'],
-            $backups,
-            $restore_target_clients
-        );
-
-        // Set the method attribute for the form
-        $form->setAttribute('method', 'post');
-
-        $request = $this->getRequest();
-
-        if ($request->isPost()) {
-            $restore = new Restore();
-            $form->setInputFilter($restore->getInputFilter());
-            $form->setData($request->getPost());
-
-            if ($form->isValid()) {
-                $jobid = $form->getInputFilter()->getValue('jobid');
-                $client = $form->getInputFilter()->getValue('client');
-                $restoreclient = $form->getInputFilter()->getValue('restoreclient');
-                $restorejob = $form->getInputFilter()->getValue('restorejob');
-                $where = $form->getInputFilter()->getValue('where');
-                $fileid = $form->getInputFilter()->getValue('checked_files');
-                $dirid = $form->getInputFilter()->getValue('checked_directories');
-                $jobids = $form->getInputFilter()->getValue('jobids_hidden');
-                $replace = $form->getInputFilter()->getValue('replace');
-                $pluginoptions = $form->getInputFilter()->getValue('pluginoptions');
-
-                try {
-                    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-                    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
-                        $module_config['console_commands']['Restore']['optional']
-                    );
-                    if (count($invalid_commands) > 0 && in_array('restore', $invalid_commands)) {
-                        $this->acl_alert = true;
-                        return new ViewModel(
-                            array(
-                                'acl_alert' => $this->acl_alert,
-                                'invalid_commands' => 'restore'
-                            )
-                        );
-                    } else {
-                        $result = $this->getRestoreModel()->restore(
-                            $this->bsock,
-                            $jobid,
-                            $client,
-                            $restoreclient,
-                            $restorejob,
-                            $where,
-                            $fileid,
-                            $dirid,
-                            $jobids,
-                            $replace,
-                            $pluginoptions
-                        );
-                    }
-                } catch (Exception $e) {
-                    echo $e->getMessage();
-                }
-
-                $this->bsock->disconnect();
-
-                return new ViewModel(array(
-                    'restore_params' => $this->restore_params,
-                    'form' => $form,
-                    'result' => $result,
-                    'errors' => $errors,
-                    'ndmp_advice_note' => $this->ndmp_advice_note,
-                    'checked_files' => '',
-                    'checked_directories' => ''
                 ));
             } else {
                 $this->bsock->disconnect();
