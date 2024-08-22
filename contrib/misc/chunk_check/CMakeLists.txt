@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,7 +17,11 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-add_subdirectory(bsmc)
-add_subdirectory(chunk_check)
-add_subdirectory(triggerjob)
-add_subdirectory(reschedule_job_as_full)
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+
+install(
+  FILES chunk_check.py
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+  DESTINATION "${bindir}"
+)

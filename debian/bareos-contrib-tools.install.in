@@ -1,3 +1,4 @@
+@bindir@/chunk_check.py
 @bindir@/bareos-triggerjob.py
 @bindir@/bsmc
 @confdir@/bsmc.conf
