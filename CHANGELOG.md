@@ -23,6 +23,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: scripts add option --no-psqlrc to psql [PR #1926]
 - python-bareos: fix backslash usage in regex [PR #1930]
 - webui: fixing selenium tests [PR #1924]
+- msgchan: fix deadlock [PR #1904]
 
 ### Fixed
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
@@ -518,6 +519,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1894]: https://github.com/bareos/bareos/pull/1894
 [PR #1896]: https://github.com/bareos/bareos/pull/1896
 [PR #1901]: https://github.com/bareos/bareos/pull/1901
+[PR #1904]: https://github.com/bareos/bareos/pull/1904
 [PR #1905]: https://github.com/bareos/bareos/pull/1905
 [PR #1906]: https://github.com/bareos/bareos/pull/1906
 [PR #1913]: https://github.com/bareos/bareos/pull/1913
