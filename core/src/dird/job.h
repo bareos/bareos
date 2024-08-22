@@ -25,6 +25,7 @@
 class JobControlRecord;
 
 #include "cats/cats.h"
+#include <mutex>
 
 namespace directordaemon {
 
@@ -58,6 +59,9 @@ void DirdFreeJcrPointers(JobControlRecord* jcr);
 void CancelStorageDaemonJob(JobControlRecord* jcr);
 bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd);
 void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig);
+void SdMsgThreadSendSignal(JobControlRecord* jcr,
+                           int sig,
+                           const std::unique_lock<std::mutex>& jcr_lock);
 void InitJobServer(int max_workers);
 void TermJobServer();
 
