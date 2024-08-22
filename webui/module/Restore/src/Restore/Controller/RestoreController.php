@@ -108,6 +108,10 @@ class RestoreController extends AbstractActionController
             $this->handleJobId();
             $this->handleJobMerge();
             $backups = $this->getClientBackups();
+            if(empty($backups)) {
+                $errors = 'No backups of client <strong>' . $this->restore_params['client'] . '</strong> found.';
+            }
+            $this->ndmp_advice_note = $this->isNDMPBackupClient($this->restore_params['client']);
             $this->updateBvfsCache();
         } else {
             $backups = null;
@@ -123,14 +127,6 @@ class RestoreController extends AbstractActionController
             echo $e->getMessage();
         }
 
-        if (isset($this->restore_params['client']) && empty($backups)) {
-            $errors = 'No backups of client <strong>' . $this->restore_params['client'] . '</strong> found.';
-        }
-
-        if (isset($this->restore_params['client'])) {
-            $this->ndmp_advice_note = $this->isNDMPBackupClient($this->restore_params['client']);
-        }
-
         // Create the form
         $form = new RestoreForm(
             $this->restore_params,
@@ -142,11 +138,18 @@ class RestoreController extends AbstractActionController
             $restore_target_clients
         );
 
+        // copy parameter for switching
+        // between normal- and version-restore in separate array.
+        $this->restore_params_generic = array();
+        foreach (array("jobid", "client", "restoreclient", "restorejob", "where", "replace", "pluginoptions", "mergefilesets", "mergejobs") as $key) {
+            if (isset($this->restore_params[$key])) {
+                $this->restore_params_generic[$key] = $this->restore_params[$key];
+            }
+        }
+
         // Set the method attribute for the form
         $form->setAttribute('method', 'post');
-
         $request = $this->getRequest();
-
         if ($request->isPost()) {
             $restore = new Restore();
             $form->setInputFilter($restore->getInputFilter());
@@ -209,6 +212,7 @@ class RestoreController extends AbstractActionController
 
                 return new ViewModel(array(
                     'restore_params' => $this->restore_params,
+                    'restore_params_generic' => $this->restore_params_generic,
                     'form' => $form,
                     'result' => $result,
                     'errors' => $errors,
@@ -220,6 +224,7 @@ class RestoreController extends AbstractActionController
 
                 return new ViewModel(array(
                     'restore_params' => $this->restore_params,
+                    'restore_params_generic' => $this->restore_params_generic,
                     'form' => $form,
                     'result' => $result,
                     'errors' => $errors,
@@ -231,6 +236,7 @@ class RestoreController extends AbstractActionController
 
             return new ViewModel(array(
                 'restore_params' => $this->restore_params,
+                'restore_params_generic' => $this->restore_params_generic,
                 'form' => $form,
                 'result' => $result,
                 'errors' => $errors,

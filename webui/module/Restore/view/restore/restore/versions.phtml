@@ -29,8 +29,8 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-   <li><a href="<?php echo $this->url('restore', array('action' => 'index')); ?>"><?php echo $this->translate('Restore multiple files'); ?></a></li>
-   <li class="active"><a href="<?php echo $this->url('restore', array('action' => 'versions')); ?>"><?php echo $this->translate('Restore specific file version'); ?></a></li>
+   <li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => $this->restore_params_generic)); ?>"><?php echo $this->translate('Restore multiple files'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('restore', array('action' => 'versions'), array('query' => $this->restore_params_generic)); ?>"><?php echo $this->translate('Restore specific file version'); ?></a></li>
 </ul>
 
 <br />
