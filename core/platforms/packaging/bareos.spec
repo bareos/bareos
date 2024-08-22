@@ -829,6 +829,7 @@ This package contains the tray monitor (QT based).
 %if 0%{?contrib}
 %replace_python_shebang contrib/misc/bsmc/bin/bsmc
 %replace_python_shebang contrib/misc/triggerjob/bareos-triggerjob.py
+%replace_python_shebang contrib/misc/chunk_check/chunk_check.py
 %endif
 
 
@@ -1509,6 +1510,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files       contrib-tools
 %defattr(-, root, root)
+%{_bindir}/chunk_check.py
 %{_bindir}/bareos-triggerjob.py
 %{_bindir}/bsmc
 %attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bsmc.conf
