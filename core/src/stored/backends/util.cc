@@ -18,12 +18,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#if defined HAVE_WIN32
+#  include "compat.h"
+#endif
+#include "include/baconfig.h"
+
 #include <vector>
 #include <algorithm>
-
 #include "stored/backends/util.h"
-
-#define ASSERT(...) (void)(__VA_ARGS__)
 
 namespace backends::util {
 
