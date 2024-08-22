@@ -355,11 +355,10 @@ extern "C" void* jobq_server(void* arg)
 
   for (;;) {
     struct timeval tv;
-    struct timezone tz;
 
     Dmsg0(2300, "Top of for loop\n");
     if (!work && !jq->quit) {
-      gettimeofday(&tv, &tz);
+      gettimeofday(&tv, NULL);
       timeout.tv_nsec = 0;
       timeout.tv_sec = tv.tv_sec + 4;
 

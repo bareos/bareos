@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2017 Planets Communications B.V.
-   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,22 +87,18 @@ void* ordered_circbuf::enqueue(void* data,
     while (full()) { pthread_cond_wait(&notfull_, &lock_); }
   }
 
-  /*
-   * Decrease the number of reserved slots if we should use a reserved slot.
+  /* Decrease the number of reserved slots if we should use a reserved slot.
    * We do this even when we don't really add a new item to the ordered
-   * circular list to keep the reserved slot counting consistent.
-   */
+   * circular list to keep the reserved slot counting consistent. */
   if (use_reserved_slot) { reserved_--; }
 
-  /*
-   * Binary insert the data into the ordered circular buffer. If the
+  /* Binary insert the data into the ordered circular buffer. If the
    * item returned is not our new_item it means there is already an
    * entry with the same keys on the ordered circular list. We then
    * just call the update function callback which should perform the
    * right actions to update the already existing item with the new
    * data in the new item. The compare function callback is used to binary
-   * insert the item at the right location in the ordered circular list.
-   */
+   * insert the item at the right location in the ordered circular list. */
   new_item = (struct ocbuf_item*)malloc(sizeof(struct ocbuf_item));
   new_item->data = data;
   new_item->data_size = data_size;
@@ -111,20 +107,16 @@ void* ordered_circbuf::enqueue(void* data,
   if (item == new_item) {
     size_++;
   } else {
-    /*
-     * Update the data on the ordered circular list with the new data.
+    /* Update the data on the ordered circular list with the new data.
      * e.g. replace the old with the new data but don't allocate a new
-     * item on the ordered circular list.
-     */
+     * item on the ordered circular list. */
     update(item->data, new_item->data);
 
     // Release the unused ocbuf_item.
     free(new_item);
 
-    /*
-     * Update data to point to the data that was attached to the original
-     * ocbuf_item.
-     */
+    /* Update data to point to the data that was attached to the original
+     * ocbuf_item. */
     data = item->data;
   }
 
@@ -136,10 +128,8 @@ void* ordered_circbuf::enqueue(void* data,
 
   pthread_mutex_unlock(&lock_);
 
-  /*
-   * Return the data that is current e.g. either the new data passed in or
-   * the already existing data on the ordered circular list.
-   */
+  /* Return the data that is current e.g. either the new data passed in or
+   * the already existing data on the ordered circular list. */
   return data;
 }
 
@@ -159,34 +149,27 @@ void* ordered_circbuf::dequeue(bool reserve_slot,
     // The requeued state is only valid one time so clear it.
     requeued = false;
 
-    /*
-     * See if we should block indefinitely or wake up
+    /* See if we should block indefinitely or wake up
      * after the given timer has expired and calculate
      * the next time we need to wakeup. This way we check
      * after the timer expired if there is work to be done
      * this is something we need if the worker threads can
      * put work back onto the circular queue and uses
-     * enqueue with the no_signal flag set.
-     */
+     * enqueue with the no_signal flag set. */
     if (ts) {
       pthread_cond_timedwait(&notempty_, &lock_, ts);
 
-      /*
-       * See if there is really work to be done.
+      /* See if there is really work to be done.
        * We could be woken by the broadcast but some other iothread
        * could take the work as we have to wait to reacquire the lock_.
        * Only one thread will be in the critical section and be able to
-       * hold the lock.
-       */
+       * hold the lock. */
       if (empty() && !flush_) {
         struct timeval tv;
-        struct timezone tz;
 
-        /*
-         * Calculate the next absolute timeout if we find
-         * out there is no work to be done.
-         */
-        gettimeofday(&tv, &tz);
+        /* Calculate the next absolute timeout if we find
+         * out there is no work to be done. */
+        gettimeofday(&tv, NULL);
         ts->tv_nsec = tv.tv_usec * 1000;
         ts->tv_sec = tv.tv_sec + timeout;
 
@@ -195,13 +178,11 @@ void* ordered_circbuf::dequeue(bool reserve_slot,
     } else {
       pthread_cond_wait(&notempty_, &lock_);
 
-      /*
-       * See if there is really work to be done.
+      /* See if there is really work to be done.
        * We could be woken by the broadcast but some other iothread
        * could take the work as we have to wait to reacquire the lock_.
        * Only one thread will be in the critical section and be able to
-       * hold the lock.
-       */
+       * hold the lock. */
       if (empty() && !flush_) { continue; }
     }
   }
@@ -250,10 +231,8 @@ void* ordered_circbuf::peek(enum oc_peek_types type,
   // There is nothing to be seen on an empty ordered circular buffer.
   if (empty()) { goto bail_out; }
 
-  /*
-   * Depending on the peek type start somewhere on the ordered list and
-   * walk forward or back.
-   */
+  /* Depending on the peek type start somewhere on the ordered list and
+   * walk forward or back. */
   switch (type) {
     case PEEK_FIRST:
       item = (struct ocbuf_item*)data_->first();
@@ -313,10 +292,8 @@ int ordered_circbuf::unreserve_slot()
 
   if (pthread_mutex_lock(&lock_) != 0) { goto bail_out; }
 
-  /*
-   * Make sure any slots are still reserved. Otherwise people
-   * are playing games and should pay the price for doing so.
-   */
+  /* Make sure any slots are still reserved. Otherwise people
+   * are playing games and should pay the price for doing so. */
   if (reserved_) {
     reserved_--;
 

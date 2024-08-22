@@ -706,10 +706,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
            "= ('%s','%s','%s','%s') WHERE FileSet='%s' AND MD5='%s' ",
            esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str(), esc_fs,
            esc_md5);
-      if (QUERY_DB(jcr, cmd)) {
-        SqlFreeResult();
-        return true;
-      } else {
+      if (!QUERY_DB(jcr, cmd)) {
         Mmsg1(errmsg, T_("error updating FileSet row: ERR=%s\n"),
               sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -717,8 +714,10 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
         return false;
       }
       SqlFreeResult();
+      return true;
+    } else {
+      SqlFreeResult();
     }
-    SqlFreeResult();
   }
 
   if (fsr->CreateTime == 0 && fsr->cCreateTime[0] == 0) {

@@ -260,7 +260,9 @@ bool GetNameAndResourceTypeAndVersionFromHello(
               bareos_version = static_cast<BareosVersionNumber>(v);
               ok = true;
             } catch (const std::exception& e) {
-              Dmsg0(100, "Could not read out any version from hello message\n");
+              Dmsg0(100,
+                    "Could not read out any version from hello message: %s\n",
+                    e.what());
             }
           }
         }
@@ -354,9 +356,8 @@ char* encode_time(utime_t utime, char* buf)
 bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds)
 {
   struct timeval tv;
-  struct timezone tz;
 
-  gettimeofday(&tv, &tz);
+  gettimeofday(&tv, NULL);
   timeout.tv_nsec = tv.tv_usec * 1000;
   timeout.tv_sec = tv.tv_sec + timeout_in_seconds;
 

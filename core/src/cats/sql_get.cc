@@ -1661,8 +1661,6 @@ int BareosDb::GetNdmpLevelMapping(JobControlRecord* jcr,
     Mmsg(errmsg, T_("NDMP Dump Level record not found in Catalog.\n"));
     return dumplevel;
   }
-
-  return dumplevel;
 }
 
 /**

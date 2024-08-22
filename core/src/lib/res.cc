@@ -528,16 +528,41 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
     // See if we are parsing an MD5 encoded password already.
     if (bstrncmp(lc->str, "[md5]", 5)) {
-      if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
         static const char* empty_password_md5_hash
             = "d41d8cd98f00b204e9800998ecf8427e";
         if (strncmp(lc->str + 5, empty_password_md5_hash,
                     strlen(empty_password_md5_hash))
             == 0) {
-          Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
-                (*item->allocated_resource)->resource_name_);
+          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                    (*item->allocated_resource)->resource_name_);
+          return;
         }
       }
+
+      std::string_view candidate{lc->str + 5};
+
+      constexpr size_t md5len = 32;
+
+      if (candidate.size() != md5len) {
+        scan_err2(lc,
+                  "md5 password does not have the right size; expected: %llu"
+                  ", got: %llu\n",
+                  static_cast<long long unsigned>(md5len),
+                  static_cast<long long unsigned>(candidate.size()));
+        *pwd = {};
+        return;
+      }
+
+      if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
+          bad != candidate.npos) {
+        scan_err1(
+            lc, "md5 password contains non hexadecimal characters, e.g. '%c'\n",
+            candidate[bad]);
+        *pwd = {};
+        return;
+      }
+
       pwd->encoding = p_encoding_md5;
       pwd->value = strdup(lc->str + 5);
     } else {
@@ -546,10 +571,11 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
       unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
       char sig[100];
 
-      if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
         if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-          Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
-                (*item->allocated_resource)->resource_name_);
+          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                    (*item->allocated_resource)->resource_name_);
+          return;
         }
       }
 
@@ -585,10 +611,12 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 
     if (pwd->value) { free(pwd->value); }
 
-    if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+    if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
       if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-        Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
-              (*item->allocated_resource)->resource_name_);
+        scan_err1(
+            lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
+            (*item->allocated_resource)->resource_name_);
+        return;
       }
     }
 

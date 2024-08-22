@@ -370,14 +370,14 @@ char* bregexp_build_where(char* dest,
   }
 
   if (add_suffix) {
-    if (len) dest[len++] = ',';
+    if (len > 0 && (len + 1) < str_size) dest[len++] = ',';
 
     len += Bsnprintf(dest + len, str_size - len, str_add_suffix,
                      bregexp_escape_string(str_tmp, add_suffix, regexp_sep));
   }
 
   if (add_prefix) {
-    if (len) dest[len++] = ',';
+    if (len > 0 && (len + 1) < str_size) dest[len++] = ',';
 
     len += Bsnprintf(dest + len, str_size - len, str_add_prefix,
                      bregexp_escape_string(str_tmp, add_prefix, regexp_sep));

@@ -400,7 +400,7 @@ ResourceItem job_items[] = {
   { "SelectionType", CFG_TYPE_MIGTYPE, ITEM(res_job, selection_type), 0, 0, NULL, NULL, NULL },
   { "Accurate", CFG_TYPE_BOOL, ITEM(res_job, accurate), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "AllowDuplicateJobs", CFG_TYPE_BOOL, ITEM(res_job, AllowDuplicateJobs), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "true", NULL, NULL },
   { "CancelLowerLevelDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelLowerLevelDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "CancelQueuedDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -2734,6 +2734,18 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
       }
       break;
     case R_CLIENT:
+      if (pass == 2) {
+        auto* res = dynamic_cast<ClientResource*>(my_config->GetResWithName(
+            R_CLIENT, (*item->allocated_resource)->resource_name_));
+        ASSERT(res);
+
+        if (res_client->Protocol != res->Protocol) {
+          scan_err1(lc,
+                    "Trying to store password to resource \"%s\", but protocol "
+                    "is not known.\n",
+                    (*item->allocated_resource)->resource_name_);
+        }
+      }
       switch (res_client->Protocol) {
         case APT_NDMPV2:
         case APT_NDMPV3:
@@ -2747,6 +2759,18 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
       }
       break;
     case R_STORAGE:
+      if (pass == 2) {
+        auto* res = dynamic_cast<StorageResource*>(my_config->GetResWithName(
+            R_STORAGE, (*item->allocated_resource)->resource_name_));
+        ASSERT(res);
+
+        if (res_store->Protocol != res->Protocol) {
+          scan_err1(lc,
+                    "Trying to store password to resource \"%s\", but protocol "
+                    "is not known.\n",
+                    (*item->allocated_resource)->resource_name_);
+        }
+      }
       switch (res_store->Protocol) {
         case APT_NDMPV2:
         case APT_NDMPV3:

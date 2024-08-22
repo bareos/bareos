@@ -660,8 +660,8 @@ DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type)
         Jmsg1(jcr, M_ERROR, 0, T_("Unsupported digest type: %d\n"), type);
         throw DigestInitException{};
     }
-  } catch (const DigestInitException& e) {
-    Dmsg0(150, "Digest init failed.\n");
+  } catch (const DigestInitException&) {
+    Dmsg0(150, "Digest init failed\n");
     OpensslPostErrors(jcr, M_ERROR, T_("OpenSSL digest initialization failed"));
     return NULL;
   }

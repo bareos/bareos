@@ -255,13 +255,10 @@ static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
       return handle_write_translation(ctx, value);
     case bSdEventJobEnd:
       return handleJobEnd(ctx);
-    default:
-      Dmsg(ctx, debuglevel, "autoxflate-sd: Unknown event %d\n",
-           event->eventType);
-      return bRC_Error;
   }
 
-  return bRC_OK;
+  Dmsg(ctx, debuglevel, "autoxflate-sd: Unknown event %d\n", event->eventType);
+  return bRC_Error;
 }
 
 // At end of job report how inflate/deflate ratio was.

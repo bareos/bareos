@@ -978,6 +978,7 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "true",
+          "deprecated": true,
           "equals": true
         },
         "CancelLowerLevelDuplicates": {
@@ -1467,6 +1468,7 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "true",
+          "deprecated": true,
           "equals": true
         },
         "CancelLowerLevelDuplicates": {
