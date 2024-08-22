@@ -28,8 +28,7 @@ Block
     header <#BlockHeader>`__ information followed by records. Clients of
     the Storage daemon (the File daemon) normally never see blocks.
     However, some of the Storage tools (`bls <#bls>`__, bscan, bextract,
-    …) may be use block header information. From Bacula >= 1.27 and
-    therefore Bareos, each block contains only records of a single job.
+    …) may be use block header information.
 Record
     A record consists of a Record Header, which is managed by the
     Storage daemon and Record Data, which is the data received from the
