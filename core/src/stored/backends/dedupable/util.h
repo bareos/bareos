@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_STORED_BACKENDS_DEDUP_UTIL_H_
-#define BAREOS_STORED_BACKENDS_DEDUP_UTIL_H_
+#ifndef BAREOS_STORED_BACKENDS_DEDUPABLE_UTIL_H_
+#define BAREOS_STORED_BACKENDS_DEDUPABLE_UTIL_H_
 
 #include <cstdint>
 #include "lib/network_order.h"
@@ -154,4 +154,4 @@ struct raii_fd {
 
 };  // namespace dedup
 
-#endif  // BAREOS_STORED_BACKENDS_DEDUP_UTIL_H_
+#endif  // BAREOS_STORED_BACKENDS_DEDUPABLE_UTIL_H_

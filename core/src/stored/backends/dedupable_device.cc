@@ -28,9 +28,9 @@
 #include "lib/util.h"
 #include "lib/edit.h"
 #include "lib/network_order.h"
-#include "dedup_device.h"
-#include "dedup/device_options.h"
-#include "dedup/util.h"
+#include "dedupable_device.h"
+#include "dedupable/device_options.h"
+#include "dedupable/util.h"
 #include "lib/bsys.h"
 
 #include <unistd.h>
@@ -486,6 +486,6 @@ bool dedup_device::ResetOpenVolume()
   }
 }
 
-REGISTER_SD_BACKEND(dedup, dedup_device);
+REGISTER_SD_BACKEND(dedupable, dedup_device);
 
 } /* namespace storagedaemon  */

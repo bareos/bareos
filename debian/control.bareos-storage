@@ -31,7 +31,7 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon FIFO backen
  should be used by the Bareos Storage Daemon.
 
 
-Package:        bareos-storage-dedup
+Package:        bareos-storage-dedupable
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
