@@ -23,7 +23,7 @@
 #endif
 
 #include "gtest/gtest.h"
-#include "stored/backends/dedup/fvec.h"
+#include "stored/backends/dedupable/fvec.h"
 
 #include <cstdio>
 #include <memory>

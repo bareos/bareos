@@ -18,8 +18,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_STORED_BACKENDS_DEDUP_FVEC_H_
-#define BAREOS_STORED_BACKENDS_DEDUP_FVEC_H_
+#ifndef BAREOS_STORED_BACKENDS_DEDUPABLE_FVEC_H_
+#define BAREOS_STORED_BACKENDS_DEDUPABLE_FVEC_H_
 
 #include <cstdlib>
 #include <stdexcept>
@@ -386,4 +386,4 @@ template <typename T> class fvec : access {
 };  // namespace dedup
 
 
-#endif  // BAREOS_STORED_BACKENDS_DEDUP_FVEC_H_
+#endif  // BAREOS_STORED_BACKENDS_DEDUPABLE_FVEC_H_

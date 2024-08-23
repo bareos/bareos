@@ -9,7 +9,7 @@ Device {
 
   Device Options = "block size=4k"
 
-  Device Type = dedup
+  Device Type = dedupable
   Label Media = yes                    # lets Bareos label unlabeled media
   Random Access = no
   Automatic Mount = yes                # when device opened, read it

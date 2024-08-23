@@ -24,22 +24,26 @@ if(HAVE_WIN32)
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   set_tests_properties(
-    system:dedup:create-backup PROPERTIES FIXTURES_SETUP
-                                          "system:dedup:backup-job-fixture"
+    system:dedupable:create-backup
+    PROPERTIES FIXTURES_SETUP "system:dedupable:backup-job-fixture"
   )
   set_tests_properties(
-    system:dedup:restore-file
+    system:dedupable:restore-file
     PROPERTIES FIXTURES_REQUIRED
-               "system:dedup:backup-job-fixture;system:dedup-fixture"
+               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
   )
   set_tests_properties(
-    system:dedup:restore-dir
+    system:dedupable:restore-dir
     PROPERTIES FIXTURES_REQUIRED
-               "system:dedup:backup-job-fixture;system:dedup-fixture"
+               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
   )
   set_tests_properties(
-    system:dedup:full-restore
+    system:dedupable:full-restore
     PROPERTIES FIXTURES_REQUIRED
-               "system:dedup:backup-job-fixture;system:dedup-fixture"
+               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
+  )
+  set_tests_properties(
+    system:dedupable:purge-truncate PROPERTIES FIXTURES_REQUIRED
+                                               "system:dedupable-fixture"
   )
 endif()

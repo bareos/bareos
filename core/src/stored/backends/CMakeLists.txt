@@ -66,13 +66,13 @@ else()
   target_sources(bareossd-file PRIVATE unix_file_device.cc)
   target_sources(bareossd-fifo PRIVATE unix_fifo_device.cc)
   target_sources(bareossd-tape PRIVATE unix_tape_device.cc)
-  add_sd_backend(bareossd-dedup)
+  add_sd_backend(bareossd-dedupable)
   target_sources(
-    bareossd-dedup PRIVATE dedup_device.cc dedup/device_options.cc
-                           dedup/volume.cc util.cc
+    bareossd-dedupable PRIVATE dedupable_device.cc dedupable/device_options.cc
+                               dedupable/volume.cc util.cc
   )
   target_link_libraries(
-    bareossd-dedup PRIVATE $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>
+    bareossd-dedupable PRIVATE $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>
   )
 endif()
 

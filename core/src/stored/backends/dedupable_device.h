@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_STORED_BACKENDS_DEDUP_DEVICE_H_
-#define BAREOS_STORED_BACKENDS_DEDUP_DEVICE_H_
+#ifndef BAREOS_STORED_BACKENDS_DEDUPABLE_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_DEDUPABLE_DEVICE_H_
 
 #include "stored/dev.h"
-#include "dedup/volume.h"
+#include "dedupable/volume.h"
 
 #include <optional>
 
@@ -67,4 +67,4 @@ class dedup_device : public Device {
 
 } /* namespace storagedaemon */
 
-#endif  // BAREOS_STORED_BACKENDS_DEDUP_DEVICE_H_
+#endif  // BAREOS_STORED_BACKENDS_DEDUPABLE_DEVICE_H_

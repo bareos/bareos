@@ -304,7 +304,7 @@ Requires(pre): shadow-utils
 Requires: bareos-tools
 %endif
 
-%package    storage-dedup
+%package    storage-dedupable
 Summary:    Dedupable storage format for the Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common  = %{version}
@@ -745,10 +745,10 @@ This package contains the Storage Daemon
 This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
 
-%description storage-dedup
+%description storage-dedupable
 %{dscr}
 
-This package contains the Storage Backend for Deduplication support.
+This package contains the Storage Backend for the dedupable storage format.
 
 %if 0%{?droplet}
 %description storage-droplet
@@ -1217,9 +1217,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/NULL.conf.example
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/NULL.conf.example
 
-%files storage-dedup
+%files storage-dedupable
 %defattr(-, root, root)
-%{backend_dir}/libbareossd-dedup*.so
+%{backend_dir}/libbareossd-dedupable*.so
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/dedup.conf.example
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup.conf.example
 
