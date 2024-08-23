@@ -1,0 +1,109 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+# Run a full, a diff and then an incremental backup.
+#  Finally we wait for some time and run an differential backup that
+#  that upgraded from an incremental.
+#  Then we can check whether the right since time was taken or not.
+#
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out ${log_home}/preparation.out
+status director
+status client
+status storage=File
+@$out ${log_home}/full.out
+run job=$JobName level=Full yes
+wait
+messages
+@exec "sh -c 'touch ${BackupDirectory:?}'"
+@$out ${log_home}/incr.out
+run job=$JobName yes
+wait
+messages
+@sleep 10
+@$out ${log_home}/upgraded.out
+run job=$JobName yes
+wait
+messages
+@$out ${log_home}/jobs.out
+list jobs
+@$out ${log_home}/query.out
+.api 2
+.sql query="select starttime from job order by jobid DESC Limit 3"
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+# query.out contains the start times of the last three jobs in reverse order,
+# i.e. upgraded, incr, full.  We want to extract the starttime of the full job
+full_start=$(grep "starttime" "${log_home}/query.out" | tail -n1 | cut -d: -f2- | cut -d\" -f2- | tr -d \")
+
+# first check that the setup is correct
+expect_grep "Backup Level:[[:space:]]*Full" \
+            "${log_home}/full.out" \
+            "First backup was not a full."
+expect_grep "Backup Level:[[:space:]]*Incremental" \
+            "${log_home}/incr.out" \
+            "Second backup was not an incremental."
+expect_grep "Backup Level:[[:space:]]*Differential" \
+            "${log_home}/upgraded.out" \
+            "Third backup was a differential."
+expect_grep "Backup Level:.*(upgraded from Incremental)" \
+            "${log_home}/upgraded.out" \
+            "Differential backup was an upgraded job."
+expect_grep "Backup Level:.*since=$full_start" \
+            "${log_home}/upgraded.out" \
+            "Differential backup does not use correct since time."
+
+# The differential job has to have backed up the same files as the incremental
+# job, as they use the same since time
+# This could be checked with two restores, but for now we just check that
+# it also backed up the single changed file
+
+expect_grep "  FD Files Written:[[:space:]]*1" \
+            "${log_home}/upgraded.out" \
+            "Differential backup does not contain the changed directory."
+
+end_test

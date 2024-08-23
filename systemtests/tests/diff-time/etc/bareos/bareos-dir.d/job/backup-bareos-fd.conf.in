@@ -1,0 +1,14 @@
+Job {
+  Name = "backup-bareos-fd"
+  Type = Backup
+  Level = Incremental
+  Client = bareos-fd
+  FileSet = "SelfTest"
+  Storage = File
+  Messages = Standard
+  Priority = 10
+  Write Bootstrap = "@working_dir@/%c.bsr"
+  Pool = Backup
+
+  Max Diff Interval = 10 seconds
+}

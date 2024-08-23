@@ -1,0 +1,6 @@
+Client {
+  Name = bareos-fd
+  Address = @hostname@
+  Password = "@fd_password@"
+  FD PORT = @fd_port@
+}

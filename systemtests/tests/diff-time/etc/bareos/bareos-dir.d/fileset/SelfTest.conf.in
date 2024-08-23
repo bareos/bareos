@@ -1,0 +1,11 @@
+FileSet {
+  Name = "SelfTest"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = xxh128
+      HardLinks = Yes
+    }
+    File=<@tmpdir@/file-list
+  }
+}
