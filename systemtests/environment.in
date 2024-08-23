@@ -188,3 +188,13 @@ MARIADB_MYSQL_INSTALL_DB_SCRIPT=@MARIADB_MYSQL_INSTALL_DB_SCRIPT@
 SUDO=@SUDO@
 IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT=@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
 NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
+
+
+# sanitizer paths
+export  ASAN_OPTIONS=log_path=${tmp}/asan.log
+export  TSAN_OPTIONS=log_path=${tmp}/tsan.log
+export  MSAN_OPTIONS=log_path=${tmp}/msan.log
+export  LSAN_OPTIONS=log_path=${tmp}/lsan.log
+export UBSAN_OPTIONS=log_path=${tmp}/ubsan.log
+
+SANITIZER_LOG_PREFIXES=("${tmp}/asan.log" "${tmp}/tsan.log" "${tmp}/msan.log" "${tmp}/lsan.log" "${tmp}/ubsan.log")

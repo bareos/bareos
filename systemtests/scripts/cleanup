@@ -26,8 +26,24 @@ function deletefiles(){
 }
 deletefiles
 
+export asan_error=0
+for prefix in ${SANITIZER_LOG_PREFIXES[@]};
+do
+    while read -r -d $'\0' file
+    do
+        echo "${file}"
+        cat "${file}"
+        asan_error=1
+    done < <(find "$(dirname "${prefix}")" -name "$(basename "${prefix}")*" -print0)
+done
+
 deletefiles
 
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
+
+if [ ${asan_error} -ne 0 ]; then
+    echo ">> Exiting with error as a sanitizer issue was detected <<"
+    exit 1
+fi
 
 exit 0
