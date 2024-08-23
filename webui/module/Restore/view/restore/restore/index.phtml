@@ -350,19 +350,29 @@ echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.c
       return params.join('&');
    }
 
-   function isRestoreFormReady()
-   {
-      const required_ids = ["client", "jobid", "restorejob", "restoreclient"];
-
-      for (let i = 0; i < required_ids.length; i++) {
-         let id = required_ids[i];
+   function hasValue(array) {
+      for (let i = 0; i < array.length; i++) {
+         let id = array[i];
          if(!document.getElementById(id).value) {
-            //console.log(id + ": missing");
             return false;
          }
-         //console.log(id + ": okay");
       }
       return true;
+   }
+
+   function isShowFileTreeReady()
+   {
+      const required_ids = ["client", "jobid"];
+      return hasValue(required_ids);
+   }
+
+   function isRestoreFormReady()
+   {
+      if(!isShowFileTreeReady()) {
+         return false;
+      }
+      const required_ids = ["restorejob", "restoreclient"];
+      return hasValue(required_ids);
    }
 
    function updateSubmitButtonStatus() {
@@ -544,7 +554,7 @@ echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.c
          show_file_tree = false;
       }
 
-      if(show_file_tree && ($('#client').val() !== "")) {
+      if(show_file_tree && isShowFileTreeReady()) {
           showFileTree();
       }
 

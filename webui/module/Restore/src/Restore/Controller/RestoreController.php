@@ -104,6 +104,9 @@ class RestoreController extends AbstractActionController
         $result = null;
         $restore_jobid = null;
 
+        $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
+        $this->updateClientParam($restore_source_clients);
+
         if ($this->restore_params['client'] != null) {
             $this->handleJobId();
             $this->handleJobMerge();
@@ -118,7 +121,6 @@ class RestoreController extends AbstractActionController
         }
 
         try {
-            $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
             $restore_target_clients = $this->getClientModel()->getClients($this->bsock);
             $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
@@ -126,6 +128,8 @@ class RestoreController extends AbstractActionController
         } catch (Exception $e) {
             echo $e->getMessage();
         }
+
+        $this->updateRestoreParams($restore_source_clients, $restore_target_clients, $restorejobresources);
 
         // Create the form
         $form = new RestoreForm(
@@ -583,6 +587,26 @@ class RestoreController extends AbstractActionController
             $this->restore_params['versions'] = null;
         }
 
+    }
+
+    public function updateClientParam($restore_source_clients)
+    {
+        // restore_params if only one option is available.
+        if($restore_source_clients && (count($restore_source_clients)) == 1) {
+            $this->restore_params['client'] = $restore_source_clients[0]['name'];
+        }
+    }
+
+    public function updateRestoreParams($restore_source_clients, $restore_target_clients, $restorejobresources)
+    {
+        // restore_params if only one option is available.
+        $this->updateClientParam($restore_source_clients);
+        if($restore_target_clients && (count($restore_target_clients) == 1)) {
+            $this->restore_params['restoreclient'] = $restore_target_clients[0]['name'];
+        }
+        if($restorejobresources && (count($restorejobresources) == 1)) {
+            $this->restore_params['restorejob'] = array_key_first($restorejobresources);
+        }
     }
 
     /**
