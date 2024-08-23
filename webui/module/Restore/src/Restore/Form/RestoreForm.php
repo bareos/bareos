@@ -32,23 +32,20 @@ class RestoreForm extends Form
 {
     protected $restore_params;
     protected $clients;
-    protected $filesets;
     protected $restorejobresources;
     protected $jobids;
     public $backups;
 
-    public function __construct($restore_params = null, $restore_source_clients = null, $filesets = null, $restorejobresources = null, $jobids = null, $backups = null, $restore_target_clients = null, $restore_jobid = null)
+    public function __construct($restore_params = null, $restore_source_clients = null, $restore_target_clients = null, $restorejobresources = null, $jobids = null, $backups = null)
     {
         parent::__construct('restore');
 
         $this->restore_params = $restore_params;
         $this->restore_source_clients = $this->getNameOptionsMap($restore_source_clients);
-        $this->filesets = $filesets;
+        $this->restore_target_clients = $this->getNameOptionsMap($restore_target_clients);
         $this->restorejobresources = $restorejobresources;
         $this->jobids = $jobids;
         $this->backups = $backups;
-        $this->restore_target_clients = $this->getNameOptionsMap($restore_target_clients);
-        $this->restore_jobid = $restore_jobid;
 
         // Client
         $this->add(array(
@@ -102,36 +99,6 @@ class RestoreForm extends Form
                 'disabled' => (!isset($restore_params['client']))
             )
         ));
-
-        // Fileset
-        if (isset($restore_params['fileset'])) {
-            $this->add(array(
-                'name' => 'fileset',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Fileset'),
-                    'empty_option' => _('Please choose a fileset'),
-                    'value_options' => $this->getFilesetList()
-                ),
-                'attributes' => array(
-                    'id' => 'fileset',
-                    'value' => $restore_params['fileset']
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'fileset',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Fileset'),
-                    'empty_option' => _('Please choose a fileset'),
-                    'value_options' => $this->getFilesetList()
-                ),
-                'attributes' => array(
-                    'id' => 'fileset'
-                )
-            ));
-        }
 
         // Restore Job
         $this->add(array(
@@ -546,20 +513,6 @@ class RestoreForm extends Form
     private function getJobIds()
     {
         return $this->jobids;
-    }
-
-    /**
-     *
-     */
-    private function getFilesetList()
-    {
-        $selectData = array();
-        if (!empty($this->filesets)) {
-            foreach ($this->filesets as $fileset) {
-                $selectData[$fileset['name']] = $fileset['name'];
-            }
-        }
-        return $selectData;
     }
 
     /**

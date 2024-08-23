@@ -40,7 +40,6 @@ class RestoreController extends AbstractActionController
     protected $restoreModel = null;
     protected $jobModel = null;
     protected $clientModel = null;
-    protected $filesetModel = null;
 
     protected $bsock = null;
     protected $restore_params = null;
@@ -122,7 +121,6 @@ class RestoreController extends AbstractActionController
 
         try {
             $restore_target_clients = $this->getClientModel()->getClients($this->bsock);
-            $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
             $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
         } catch (Exception $e) {
@@ -135,11 +133,10 @@ class RestoreController extends AbstractActionController
         $form = new RestoreForm(
             $this->restore_params,
             $restore_source_clients,
-            $filesets,
+            $restore_target_clients,
             $restorejobresources,
             $this->restore_params['jobids'],
-            $backups,
-            $restore_target_clients
+            $backups
         );
 
         // copy parameter for switching
@@ -503,12 +500,6 @@ class RestoreController extends AbstractActionController
             $this->restore_params['restorejob'] = null;
         }
 
-        if ($this->params()->fromQuery('fileset')) {
-            $this->restore_params['fileset'] = $this->params()->fromQuery('fileset');
-        } else {
-            $this->restore_params['fileset'] = null;
-        }
-
         if ($this->params()->fromQuery('before')) {
             $this->restore_params['before'] = $this->params()->fromQuery('before');
         } else {
@@ -697,18 +688,5 @@ class RestoreController extends AbstractActionController
             $this->clientModel = $sm->get('Client\Model\ClientModel');
         }
         return $this->clientModel;
-    }
-
-    /**
-     * Get the fileset model
-     * @return object
-     */
-    public function getFilesetModel()
-    {
-        if (!$this->filesetModel) {
-            $sm = $this->getServiceLocator();
-            $this->filesetModel = $sm->get('Fileset\Model\FilesetModel');
-        }
-        return $this->filesetModel;
     }
 }
