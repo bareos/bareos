@@ -142,7 +142,16 @@ static inline bool fill_restore_environment_ndmp_native(
       && SetFilesToRestoreNdmpNative(jcr, job, current_fi,
                                      destination_path.c_str(), ndmp_filesystem)
              == 0) {
-    Jmsg(jcr, M_INFO, 0, T_("No files selected for restore\n"));
+    Jmsg(jcr, M_INFO, 0,
+         T_("No files selected for restore, preparing namelist for full image "
+            "recovery\n"));
+    // add one single entry to the nlist as according to the rfc:
+    // At least one member shall be supplied.
+    // If original_path is the null string, the server shall recover all data
+    // contained in the backup image.
+    AddToNamelist(job, (char*)"", destination_path.c_str(), (char*)"",
+                  (char*)"", NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD,
+                  me->ndmp_fhinfo_set_zero_for_invalid_u_quad);
   }
   return true;
 }
