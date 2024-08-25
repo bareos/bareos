@@ -96,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python-bareos: fix backslash usage in regex [PR #1917]
 - Libcloud Accurate File Backup [PR #1903]
 - cats: add missing database locks [PR #1787]
+- webui: properly set focus to input box after each command [PR #1936]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -251,4 +252,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1908]: https://github.com/bareos/bareos/pull/1908
 [PR #1917]: https://github.com/bareos/bareos/pull/1917
 [PR #1919]: https://github.com/bareos/bareos/pull/1919
+[PR #1936]: https://github.com/bareos/bareos/pull/1936
 [unreleased]: https://github.com/bareos/bareos/tree/master
