@@ -378,6 +378,7 @@ bool NdmpBuildStorageJob(JobControlRecord* jcr,
 
   job->operation = operation;
   job->bu_type = jcr->dir_impl->backup_format;
+  job->use_eject = true;
 
   if (!fill_ndmp_agent_config(jcr, &job->data_agent, store->Protocol,
                               store->AuthType, store->address, store->SDport,
