@@ -946,6 +946,8 @@ PluginFunctions pluginFuncs
 
 }  // namespace
 
+static PyObject* bareosfd_module = nullptr;
+
 extern "C" {
 
 // Plugin called here when it is first loaded
@@ -965,8 +967,8 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   Py_DECREF(pluginPath);
 
   /* import the bareosfd module */
-  PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
-  if (!bareosfdModule) {
+  bareosfd_module = PyImport_ImportModule("bareosfd");
+  if (!bareosfd_module) {
     printf("loading of bareosfd extension module failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
@@ -1005,6 +1007,8 @@ bRC unloadPlugin()
   /* Terminate Python if it was initialized correctly */
   if (mainThreadState) {
     PyEval_RestoreThread(mainThreadState);
+    Py_XDECREF(bareosfd_module);
+    bareosfd_module = nullptr;
     Py_Finalize();
     mainThreadState = nullptr;
   }
