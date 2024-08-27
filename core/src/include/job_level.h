@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,8 +32,7 @@ enum JobLevelCode : char
   L_SINCE = 'S',
   L_VERIFY_CATALOG = 'C',           /**< Verify from catalog */
   L_VERIFY_INIT = 'V',              /**< Verify save (init DB) */
-  L_VERIFY_VOLUME_TO_CATALOG = 'O', /**< Verify Volume to catalog entries \
-                                     */
+  L_VERIFY_VOLUME_TO_CATALOG = 'O', /**< Verify Volume to catalog entries */
   L_VERIFY_DISK_TO_CATALOG = 'd',   /**< Verify Disk attributes to catalog */
   L_VERIFY_DATA = 'A',              /**< Verify data on volume */
   L_BASE = 'B',                     /**< Base level job */
