@@ -171,6 +171,75 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
   return retval;
 }
 
+bool BareosDbPostgresql::BigQuery(const char* query,
+                                  DB_RESULT_HANDLER* handler,
+                                  void* user)
+{
+  auto res = PQsendQuery(db_handle_, query);
+  if (res != 1) {
+    Mmsg(errmsg, "Could not submit query \"%s\": ERR=%s", query,
+         PQerrorMessage(db_handle_));
+    return false;
+  }
+
+  auto* cancel = PQgetCancel(db_handle_);
+
+  ASSERT(cancel);
+
+  auto single_row_mode = PQsetSingleRowMode(db_handle_);
+
+  Dmsg1(200, "single row mode: %s\n", single_row_mode ? "yes" : "no");
+
+  std::string error;
+
+  std::vector<char*> values;
+
+  bool have_error = false;
+  for (auto* result = PQgetResult(db_handle_); result != nullptr;
+       result = PQgetResult(db_handle_)) {
+    auto status = PQresultStatus(result);
+
+    bool skip = false;
+    if (status == PGRES_TUPLES_OK) {
+      skip = true;  // this is returned at the end of the query
+    } else if (status != PGRES_SINGLE_TUPLE) {
+      have_error = true;
+    }
+
+    if (!skip && !have_error) {
+      int num_cols = PQnfields(result);
+      values.resize(num_cols);
+      int num_rows = PQntuples(result);
+      for (int row = 0; row < num_rows; ++row) {
+        for (int col = 0; col < num_cols; ++col) {
+          values[col] = PQgetvalue(result, row, col);
+        }
+        if (handler(user, num_cols, values.data()) != 0) {
+          std::array<char, 256> cancel_error;
+          if (PQcancel(cancel, cancel_error.data(), cancel_error.size()) == 1) {
+            error += "(cancel: ";
+            error += cancel_error.data();
+            error += ")";
+          }
+          break;
+        }
+      }
+    }
+
+    PQclear(result);
+  }
+
+  PQfreeCancel(cancel);
+
+  if (have_error) {
+    error += PQerrorMessage(db_handle_);
+    Mmsg(errmsg, "Could not handle query: ERR=%s", error.c_str());
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Now actually open the database.  This can generate errors, which are returned
  * in the errmsg

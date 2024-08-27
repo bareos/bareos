@@ -994,6 +994,10 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                        AttributesDbRecord* ar)
       = 0;
+  virtual bool BigQuery(const char* query,
+                        DB_RESULT_HANDLER* ResultHandler,
+                        void* ctx)
+      = 0;
 };
 
 BareosDb* db_init_database(JobControlRecord* jcr,

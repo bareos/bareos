@@ -107,6 +107,10 @@ class BareosDbPostgresql : public BareosDb {
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 
+  bool BigQuery(const char* query,
+                DB_RESULT_HANDLER* ResultHandler,
+                void* ctx) override;
+
   int status_ = 0; /**< Status */
   bool fields_fetched_
       = false;         /**< Marker, if field descriptions are already fetched */

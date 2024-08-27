@@ -1238,8 +1238,11 @@ bool BareosDb::GetFileList(JobControlRecord*,
   if (!use_md5) { strip_md5(query.c_str()); }
 
   Dmsg1(100, "q=%s\n", query.c_str());
-
+#  if 1
   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
+#  else
+  return BigQuery(query.c_str(), ResultHandler, ctx);
+#  endif
 }
 
 bool BareosDb::GetUsedBaseJobids(JobControlRecord*,

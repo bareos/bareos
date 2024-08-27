@@ -224,6 +224,10 @@ class MockDatabase : public BareosDb {
   {
     return true;
   }
+  virtual bool BigQuery(const char*, DB_RESULT_HANDLER*, void*) override
+  {
+    return true;
+  }
   virtual bool SqlQueryWithoutHandler(const char*, int) override
   {
     return true;
