@@ -20,13 +20,12 @@
 */
 #include <cstring>
 #if defined(XXHASH_ENABLE_DISPATCH)
-#  include <xxh_x86dispatch.h>
+#  include "xxh_x86dispatch.h"
 #else
-#  include <xxhash.h>
+#  include "xxhash.h"
 #endif
 
 #include "crypto.h"
-#include "xxhash.h"
 
 class XxhashDigestState {
   XXH3_state_t* state;
