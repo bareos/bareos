@@ -802,8 +802,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       SetAclFilter(ua, 1, FileSet_ACL);
       if (optionslist.current) { SetResFilter(ua, 1, R_FILESET); }
 
-      SetQueryRange(query_range, ua, &jr);
-
       ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
       return true;
     } else {
@@ -818,8 +816,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List FILESETs
     SetAclFilter(ua, 1, FileSet_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_FILESET); }
-
-    SetQueryRange(query_range, ua, &jr);
 
     ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
     return true;
@@ -880,8 +876,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       SetAclFilter(ua, 2, Client_ACL);
     }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListLogRecords(ua->jcr, clientname, query_range.c_str(), reverse,
                            ua->send, llist);
     return true;
@@ -897,8 +891,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
     if (optionslist.current) { SetResFilter(ua, 1, R_POOL); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
     return true;
   }
@@ -912,8 +904,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetAclFilter(ua, 1, Pool_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_POOL); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
     return true;
   }
@@ -924,8 +914,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (optionslist.current) { SetResFilter(ua, 1, R_CLIENT); }
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_CLIENT); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_CLIENT); }
-
-    SetQueryRange(query_range, ua, &jr);
 
     ua->db->ListClientRecords(ua->jcr, NULL, ua->send, llist);
     return true;
@@ -938,8 +926,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_CLIENT); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_CLIENT); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListClientRecords(ua->jcr, ua->argv[1], ua->send, llist);
     return true;
   }
@@ -950,8 +936,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (optionslist.current) { SetResFilter(ua, 1, R_STORAGE); }
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_STORAGE); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_STORAGE); }
-
-    SetQueryRange(query_range, ua, &jr);
 
     ua->db->ListSqlQuery(ua->jcr, "SELECT * FROM Storage", ua->send, llist,
                          "storages");
