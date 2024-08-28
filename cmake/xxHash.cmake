@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,9 @@ else()
 endif()
 
 if("${CPM_SOURCE_CACHE}" MATCHES "^/.*$")
-  set(XXHASH_SRC_DIR "${CPM_SOURCE_CACHE}/xxhash/bd2cc5037bfb339335d743b9f59f6d54b3977030")
+  set(XXHASH_SRC_DIR
+      "${CPM_SOURCE_CACHE}/xxhash/bd2cc5037bfb339335d743b9f59f6d54b3977030"
+  )
 else()
   set(XXHASH_SRC_DIR "${CMAKE_CURRENT_BINARY_DIR}/_deps/xxhash-src")
 endif()
@@ -48,4 +50,3 @@ if(XXHASH_ENABLE_DISPATCH)
 endif()
 target_include_directories(xxhash INTERFACE ${XXHASH_SRC_DIR})
 add_library(xxHash::xxhash ALIAS xxhash)
-
