@@ -186,9 +186,7 @@ if(docs-build-json)
   endif()
 endif()
 
-if(docs-only
-   OR licenses-only
-)
+if(docs-only OR licenses-only)
   set(BUILD_BAREOS_BINARIES no)
 else()
   set(BUILD_BAREOS_BINARIES yes)
@@ -226,7 +224,7 @@ if(docs
   add_subdirectory(docs/manuals)
 endif()
 
-if (licenses-only)
+if(licenses-only)
   include(BareosCpmPackages)
 endif()
 
