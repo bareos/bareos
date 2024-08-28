@@ -33,21 +33,20 @@ endif()
 include(CPM)
 
 # Keep module alphabetically ordered
-
-CPMFindPackage(
+cpmfindpackage(
   NAME CLI11
   VERSION 2.4.2
   GITHUB_REPOSITORY CLIUtils/CLI11
   EXCLUDE_FROM_ALL YES
 )
 
-CPMFindPackage(
-  NAME CPMLicenses.cmake 
+cpmfindpackage(
+  NAME CPMLicenses.cmake
   GITHUB_REPOSITORY cpm-cmake/CPMLicenses.cmake
   VERSION 0.0.5
 )
 
-CPMFindPackage(
+cpmfindpackage(
   NAME fmt
   VERSION 6.2.1
   GITHUB_REPOSITORY fmtlib/fmt
@@ -55,21 +54,21 @@ CPMFindPackage(
   EXCLUDE_FROM_ALL YES
 )
 
-CPMFindPackage(
+cpmfindpackage(
   NAME xxHash
   VERSION 0.8.2
   GITHUB_REPOSITORY Cyan4973/xxHash
   EXCLUDE_FROM_ALL YES
   DOWNLOAD_ONLY True
 )
-if ( NOT licenses-only )
-  if (xxHash_ADDED)
+if(NOT licenses-only)
+  if(xxHash_ADDED)
     include("cmake/xxHash.cmake")
   endif()
 endif()
 
 # **IMPORTANT** keep this as last item!
 cpm_licenses_create_disclaimer_target(
-  write-licenses "${CMAKE_CURRENT_BINARY_DIR}/LICENSES_third_party.txt" "${CPM_PACKAGES}"
+  write-licenses "${CMAKE_CURRENT_BINARY_DIR}/LICENSES_third_party.txt"
+  "${CPM_PACKAGES}"
 )
-
