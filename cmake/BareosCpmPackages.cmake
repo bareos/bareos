@@ -62,10 +62,11 @@ CPMFindPackage(
   EXCLUDE_FROM_ALL YES
   DOWNLOAD_ONLY True
 )
-if (xxHash_ADDED)
-  include("cmake/xxHash.cmake")
+if ( NOT licenses-only )
+  if (xxHash_ADDED)
+    include("cmake/xxHash.cmake")
+  endif()
 endif()
-
 
 # **IMPORTANT** keep this as last item!
 cpm_licenses_create_disclaimer_target(

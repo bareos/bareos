@@ -168,6 +168,7 @@ endif()
 option(ENABLE_WEBUI "Build with WEBUI" ON)
 option(docs-only "Build only the documentation" OFF)
 option(docs-build-json "Update the configuration schema JSON files" OFF)
+option(licenses-only "Build only the third-party licenses" OFF)
 
 if(docs-build-json)
   # check for wrong combinations of build flags
@@ -185,7 +186,9 @@ if(docs-build-json)
   endif()
 endif()
 
-if(docs-only)
+if(docs-only
+   OR licenses-only
+)
   set(BUILD_BAREOS_BINARIES no)
 else()
   set(BUILD_BAREOS_BINARIES yes)
@@ -222,4 +225,9 @@ if(docs
 )
   add_subdirectory(docs/manuals)
 endif()
+
+if (licenses-only)
+  include(BareosCpmPackages)
+endif()
+
 set(SITE ${BAREOS_PLATFORM}-${DISTVER})
