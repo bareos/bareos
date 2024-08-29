@@ -45,10 +45,6 @@ endif()
 add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos CLI11::CLI11)
 
-add_executable(gentestdata)
-target_sources(gentestdata PRIVATE gentestdata.cc)
-target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
-
 add_executable(bscrypto bscrypto.cc)
 target_link_libraries(bscrypto bareos CLI11::CLI11)
 
