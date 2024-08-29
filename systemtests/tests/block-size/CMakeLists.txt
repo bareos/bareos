@@ -22,8 +22,9 @@ if(AUTOCHANGER_TEST_ENABLED)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   # Make sure these tests run sequentially.
   set_tests_properties(
-    ${SYSTEMTEST_PREFIX}block-size PROPERTIES RESOURCE_LOCK
-                                              autochanger_resource
+    ${SYSTEMTEST_PREFIX}block-size
+    PROPERTIES RESOURCE_LOCK autochanger_resource DEPENDS
+               "${SYSTEMTEST_PREFIX}autochanger:cleanup;${SYSTEMTEST_PREFIX}scsicrypto:cleanup"
   )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
