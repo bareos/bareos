@@ -22,8 +22,15 @@ if(AUTOCHANGER_TEST_ENABLED)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   # Make sure these tests run sequentially.
   set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${BASENAME}:setup
     ${SYSTEMTEST_PREFIX}${BASENAME}:backup-bscrypto
+    ${SYSTEMTEST_PREFIX}${BASENAME}:cleanup
     PROPERTIES RESOURCE_LOCK autochanger_resource
+  )
+  # ensure we only start after the autochanger test is cleaned up
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${BASENAME}:setup
+    PROPERTIES DEPENDS ${SYSTEMTEST_PREFIX}autochanger:cleanup
   )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
