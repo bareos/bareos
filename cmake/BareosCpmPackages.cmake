@@ -16,12 +16,22 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+# We may want to check also if CPM_DOWNLOAD_ALL is in use.
+
+# We may want to check also if CPM_DOWNLOAD_ALL is set,
+# so we force download.
+if(CPM_DOWNLOAD_ALL OR DEFINED ENV{CPM_DOWNLOAD_ALL})
+  set(CPM_USE_LOCAL_PACKAGES OFF)
+  set(CPM_LOCAL_PACKAGES_ONLY OFF)
+  set(FETCONTENT_FULLY_DISCONNECTED OFF)
+endif()
 
 if(NOT DEFINED CPM_USE_LOCAL_PACKAGES AND NOT DEFINED
                                           ENV{CPM_USE_LOCAL_PACKAGES}
 )
   set(CPM_USE_LOCAL_PACKAGES ON)
 endif()
+
 if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
   message(
     WARNING
@@ -33,20 +43,20 @@ endif()
 include(CPM)
 
 # Keep module alphabetically ordered
-cpmfindpackage(
+CPMAddPackage(
   NAME CLI11
   VERSION 2.4.2
   GITHUB_REPOSITORY CLIUtils/CLI11
   EXCLUDE_FROM_ALL YES
 )
 
-cpmfindpackage(
+CPMAddPackage(
   NAME CPMLicenses.cmake
   GITHUB_REPOSITORY cpm-cmake/CPMLicenses.cmake
   VERSION 0.0.5
 )
 
-cpmfindpackage(
+CPMAddPackage(
   NAME fmt
   VERSION 6.2.1
   GITHUB_REPOSITORY fmtlib/fmt
@@ -54,7 +64,7 @@ cpmfindpackage(
   EXCLUDE_FROM_ALL YES
 )
 
-cpmfindpackage(
+CPMAddPackage(
   NAME xxHash
   VERSION 0.8.2
   GITHUB_REPOSITORY Cyan4973/xxHash
@@ -69,6 +79,6 @@ endif()
 
 # **IMPORTANT** keep this as last item!
 cpm_licenses_create_disclaimer_target(
-  write-licenses "${CMAKE_CURRENT_BINARY_DIR}/LICENSES_third_party.txt"
+  licenses-third-party "${CMAKE_CURRENT_BINARY_DIR}/LICENSES_third_party.txt"
   "${CPM_PACKAGES}"
 )
