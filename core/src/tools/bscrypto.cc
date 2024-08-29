@@ -34,158 +34,280 @@
 #endif
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "lib/cli.h"
 #include "lib/crypto_cache.h"
 #include "lib/crypto_wrap.h"
 #include "lib/passphrase.h"
 #include "lib/scsi_crypto.h"
 #include "lib/base64.h"
 
-static void usage()
+
+static void TerminateBscrypto(int exitcode)
 {
-  fprintf(
-      stderr,
-      "\n"
-      "Usage: bscrypto <options> [<device_name>]\n"
-      "       -b              Perform base64 encoding of keydata\n"
-      "       -c              Clear encryption key\n"
-      "       -D <cachefile>  Dump content of given cachefile\n"
-      "       -d <nn>         Set debug level to <nn>\n"
-      "       -e              Show drive encryption status\n"
-      "       -g <keyfile>    Generate new encryption passphrase in keyfile\n"
-      "       -k <keyfile>    Show content of keyfile\n"
-      "       -p <cachefile>  Populate given cachefile with crypto keys\n"
-      "       -r <cachefile>  Reset expiry time for entries of given "
-      "cachefile\n"
-      "       -s <keyfile>    Set encryption key loaded from keyfile\n"
-      "       -v              Show volume encryption status\n"
-      "       -w <keyfile>    Wrap/Unwrap the key using RFC3394 aes-(un)wrap\n"
-      "                       using the key in keyfile as a Key Encryption "
-      "Key\n"
-      "       -?              print this message.\n"
-      "\n"
-      "       A keyfile named - is either stdin or stdout depending on the "
-      "option\n"
-      "\n");
+  TermMsg();
+  exit(exitcode);
+}
+
+/**
+ * Read the key bits from the keyfile.
+ * - == stdin
+ */
+static void ReadKeyBits(const std::string& keyfile,
+                        char* data,
+                        size_t sizeof_data)
+{
+  int kfd = 0;
+  if (bstrcmp(keyfile.c_str(), "-")) {
+    kfd = 0;
+    fprintf(stdout, T_("Enter Encryption Key (close with ^D): "));
+    fflush(stdout);
+  } else {
+    kfd = open(keyfile.c_str(), O_RDONLY);
+    if (kfd < 0) {
+      fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
+      TerminateBscrypto(1);
+    }
+  }
+  Dmsg1(5, "data size = %d\n", sizeof_data);
+  if (read(kfd, data, sizeof_data) == 0) {
+    fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
+    TerminateBscrypto(1);
+  }
+  if (kfd > 0) { close(kfd); }
+  StripTrailingJunk(data);
+  Dmsg1(10, "Key data = %s\n", data);
+}
+
+static void wrap_key(const std::string& wrap_keyfile,
+                     const char* passphrase,
+                     char* keydata,
+                     size_t keydata_len)
+{
+  char wrapdata[64];
+  memset(wrapdata, 0, sizeof(wrapdata));
+  ReadKeyBits(wrap_keyfile, wrapdata, sizeof(wrapdata));
+
+  memset(keydata, 0, keydata_len);
+  if (auto error
+      = AesWrap((unsigned char*)wrapdata, DEFAULT_PASSPHRASE_LENGTH / 8,
+                (unsigned char*)passphrase, (unsigned char*)keydata)) {
+    fprintf(stderr, T_("Cannot wrap passphrase ERR=%s\n"), error->c_str());
+    TerminateBscrypto(1);
+  }
+}
+
+static void unwrap_key(char* keydata,
+                       const std::string& keyfile,
+                       const std::string& wrap_keyfile)
+{
+  char wrapdata[64];
+  memset(wrapdata, 0, sizeof(wrapdata));
+  ReadKeyBits(wrap_keyfile, wrapdata, sizeof(wrapdata));
+
+  /* A wrapped key is base64 encoded after it was wrapped so first
+   * convert it from base64 to bin. As we first go from base64 to bin
+   * and the Base64ToBin has a check if the decoded string will fit
+   * we need to alocate some more bytes for the decoded buffer to be
+   * sure it will fit. */
+  size_t length = DEFAULT_PASSPHRASE_LENGTH + 12;
+  char* wrapped_passphrase = (char*)malloc(length);
+  memset(wrapped_passphrase, 0, length);
+  if (Base64ToBin(wrapped_passphrase, length, keydata, strlen(keydata)) == 0) {
+    fprintf(stderr,
+            T_("Failed to base64 decode the keydata read from %s, "
+               "aborting...\n"),
+            keyfile.c_str());
+    free(wrapped_passphrase);
+    TerminateBscrypto(0);
+  }
+
+  length = DEFAULT_PASSPHRASE_LENGTH;
+
+  if (auto error = AesUnwrap((unsigned char*)wrapdata, length / 8,
+                             (unsigned char*)wrapped_passphrase,
+                             (unsigned char*)keydata)) {
+    fprintf(stderr,
+            T_("Failed to aes unwrap the keydata read from %s using the "
+               "wrap data from %s ERR=%s, aborting...\n"),
+            keyfile.c_str(), wrap_keyfile.c_str(), error->c_str());
+    free(wrapped_passphrase);
+    TerminateBscrypto(0);
+  }
+  keydata[DEFAULT_PASSPHRASE_LENGTH] = '\0';
+  free(wrapped_passphrase);
 }
 
 int main(int argc, char* const* argv)
 {
-  int retval = 0;
-  int ch, kfd, length;
-  bool base64_transform = false, clear_encryption = false, dump_cache = false,
-       drive_encryption_status = false, generate_passphrase = false,
-       populate_cache = false, reset_cache = false, set_encryption = false,
-       show_keydata = false, volume_encryption_status = false,
-       wrapped_keys = false;
-  char* keyfile = NULL;
-  char* cache_file = NULL;
-  char* wrap_keyfile = NULL;
-  char keydata[64];
-  char wrapdata[64];
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 
-  while ((ch = getopt(argc, argv, "bcD:d:eg:k:p:r:s:vw:?")) != -1) {
-    switch (ch) {
-      case 'b':
-        base64_transform = true;
-        break;
+  CLI::App bscrypto_app;
+  InitCLIApp(bscrypto_app, "The Bareos encryption tool.");
 
-      case 'c':
-        clear_encryption = true;
-        break;
+  bool base64_transform = false;
+  bscrypto_app.add_flag("-b,--base64", base64_transform,
+                        "Perform base64 encoding of keydata.");
 
-      case 'D':
-        dump_cache = true;
-        cache_file = strdup(optarg);
-        break;
+  bool clear_encryption = false;
+  auto option_clear_encryption = bscrypto_app.add_flag(
+      "-c,--clear-encryption", clear_encryption, "Clear encryption key.");
 
-      case 'd':
-        debug_level = atoi(optarg);
-        if (debug_level <= 0) { debug_level = 1; }
-        break;
+  bool dump_cache = false;
+  std::string cache_file{};
+  auto option_dump_cache
+      = bscrypto_app
+            .add_option(
+                "-D,--dump-cache",
+                [&dump_cache, &cache_file](std::vector<std::string> val) {
+                  dump_cache = true;
+                  cache_file = val[0];
+                  return true;
+                },
+                "Dump content of given cachefile.")
+            ->type_name("<cachefile>")
+            ->excludes(option_clear_encryption);
 
-      case 'e':
-        drive_encryption_status = true;
-        break;
+  AddDebugOptions(bscrypto_app);
 
-      case 'g':
-        generate_passphrase = true;
-        if (keyfile) {
-          usage();
-          goto bail_out;
-        }
-        keyfile = strdup(optarg);
-        break;
+  bool drive_encryption_status = false;
+  auto option_drive_encryption_status
+      = bscrypto_app
+            .add_flag("-e,--drive-encryption-status", drive_encryption_status,
+                      "Show drive encryption status.")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_dump_cache);
 
-      case 'k':
-        show_keydata = true;
-        if (keyfile) {
-          usage();
-          goto bail_out;
-        }
-        keyfile = strdup(optarg);
-        break;
+  bool generate_passphrase = false;
+  std::string keyfile{};
+  auto option_generate_pass
+      = bscrypto_app
+            .add_option(
+                "-g,--generate-passphrase",
+                [&generate_passphrase, &keyfile](std::vector<std::string> val) {
+                  generate_passphrase = true;
+                  keyfile = val[0];
+                  return true;
+                },
+                "Generate new encryption passphrase in keyfile.")
+            ->type_name("<keyfile>")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 'p':
-        populate_cache = true;
-        cache_file = strdup(optarg);
-        break;
+  bool show_keydata = false;
+  auto option_show_keyfile
+      = bscrypto_app
+            .add_option(
+                "-k,--show-keyfile",
+                [&show_keydata, &keyfile](std::vector<std::string> val) {
+                  show_keydata = true;
+                  keyfile = val[0];
+                  return true;
+                },
+                "Show content of keyfile.")
+            ->type_name("<keyfile>")
+            ->excludes(option_generate_pass)
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 'r':
-        reset_cache = true;
-        cache_file = strdup(optarg);
-        break;
+  bool populate_cache = false;
+  auto option_populate_cache
+      = bscrypto_app
+            .add_option(
+                "-p,--populate-cachefile",
+                [&populate_cache, &cache_file](std::vector<std::string> val) {
+                  populate_cache = true;
+                  cache_file = val[0];
+                  return true;
+                },
+                "Populate given cachefile with crypto keys.")
+            ->type_name("<cachefile>")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 's':
-        set_encryption = true;
-        if (keyfile) {
-          usage();
-          goto bail_out;
-        }
-        keyfile = strdup(optarg);
-        break;
+  bool reset_cache = false;
+  auto option_reset_cache
+      = bscrypto_app
+            .add_option(
+                "-r,--reset-expiry-time",
+                [&reset_cache, &cache_file](std::vector<std::string> val) {
+                  reset_cache = true;
+                  cache_file = val[0];
+                  return true;
+                },
+                "Reset expiry time for entries of given cachefile.")
+            ->type_name("<cachefile>")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 'v':
-        volume_encryption_status = true;
-        break;
+  bool set_encryption = false;
+  auto option_set_encryption
+      = bscrypto_app
+            .add_option(
+                "-s,--set-encryption-key",
+                [&set_encryption, &keyfile](std::vector<std::string> val) {
+                  set_encryption = true;
+                  keyfile = val[0];
+                  return true;
+                },
+                "Set encryption key loaded from keyfile.")
+            ->type_name("<keyfile>")
+            ->excludes(option_show_keyfile)
+            ->excludes(option_clear_encryption)
+            ->excludes(option_reset_cache)
+            ->excludes(option_dump_cache)
+            ->excludes(option_drive_encryption_status)
+            ->excludes(option_generate_pass);
 
-      case 'w':
-        wrapped_keys = true;
-        wrap_keyfile = strdup(optarg);
-        break;
+  bool volume_encryption_status = false;
+  bscrypto_app
+      .add_flag("-v,--volume-encryption-status", volume_encryption_status,
+                "Show volume encryption status.")
+      ->excludes(option_clear_encryption)
+      ->excludes(option_set_encryption)
+      ->excludes(option_generate_pass)
+      ->excludes(option_show_keyfile)
+      ->excludes(option_dump_cache)
+      ->excludes(option_populate_cache)
+      ->excludes(option_reset_cache);
 
-      case '?':
-      default:
-        usage();
-        goto bail_out;
-    }
-  }
+  bool wrapped_keys = false;
+  std::string wrap_keyfile{};
+  bscrypto_app
+      .add_option(
+          "-w,--wrap-unwrap-key",
+          [&wrapped_keys, &wrap_keyfile](std::vector<std::string> val) {
+            wrapped_keys = true;
+            wrap_keyfile = val[0];
+            return true;
+          },
+          "Wrap/Unwrap the key using RFC3394 aes-(un)wrap using the key in "
+          "keyfile as a Key Encryption.")
+      ->type_name("<keyfile>");
 
-  argc -= optind;
-  argv += optind;
+  std::string device_name{};
+  bscrypto_app.add_option("device name", device_name, "Name of device.");
+
+  CLI11_PARSE(bscrypto_app, argc, argv);
+
+  InitMsg(nullptr, nullptr);
 
   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
-      && !reset_cache && argc < 1) {
+      && !reset_cache && device_name.empty()) {
     fprintf(stderr, T_("Missing device_name argument for this option\n"));
-    usage();
-    retval = 1;
-    goto bail_out;
+    TerminateBscrypto(1);
   }
 
   if (generate_passphrase && show_keydata) {
     fprintf(stderr, T_("Either use -g or -k not both\n"));
-    retval = 1;
-    goto bail_out;
+    TerminateBscrypto(1);
   }
 
   if (clear_encryption && set_encryption) {
     fprintf(stderr, T_("Either use -c or -s not both\n"));
-    retval = 1;
-    goto bail_out;
+    TerminateBscrypto(1);
   }
 
   if ((clear_encryption || set_encryption)
@@ -193,8 +315,7 @@ int main(int argc, char* const* argv)
     fprintf(
         stderr,
         T_("Either set or clear the crypto key or ask for status not both\n"));
-    retval = 1;
-    goto bail_out;
+    TerminateBscrypto(1);
   }
 
   if ((clear_encryption || set_encryption || drive_encryption_status
@@ -203,21 +324,20 @@ int main(int argc, char* const* argv)
           || reset_cache)) {
     fprintf(stderr, T_("Don't mix operations which are incompatible "
                        "e.g. generate/show vs set/clear etc.\n"));
-    retval = 1;
-    goto bail_out;
+    TerminateBscrypto(1);
   }
 
   OSDependentInit();
 
   if (dump_cache) {
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file);
+    ReadCryptoCache(cache_file.c_str());
 
     // Dump the content of the cache.
-    DumpCryptoCache(1);
+    DumpCryptoCache(STDOUT_FILENO);
 
     FlushCryptoCache();
-    goto bail_out;
+    TerminateBscrypto(0);
   }
 
   if (populate_cache) {
@@ -225,7 +345,7 @@ int main(int argc, char* const* argv)
     char new_cache_entry[256];
 
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file);
+    ReadCryptoCache(cache_file.c_str());
 
     /* Read new entries from stdin and parse them to update
      * the cache. */
@@ -247,101 +367,65 @@ int main(int argc, char* const* argv)
     }
 
     // Write out the new cache entries.
-    WriteCryptoCache(cache_file);
+    WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
-    goto bail_out;
+    TerminateBscrypto(0);
   }
 
   if (reset_cache) {
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file);
+    ReadCryptoCache(cache_file.c_str());
 
     // Reset all entries.
     ResetCryptoCache();
 
     // Write out the new cache entries.
-    WriteCryptoCache(cache_file);
+    WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
-    goto bail_out;
+    TerminateBscrypto(0);
   }
 
+
+  char keydata[64];
   memset(keydata, 0, sizeof(keydata));
-  memset(wrapdata, 0, sizeof(wrapdata));
-
-  if (wrapped_keys) {
-    /* Read the key bits from the keyfile.
-     * - == stdin */
-    if (bstrcmp(wrap_keyfile, "-")) {
-      kfd = 0;
-      fprintf(stdout, T_("Enter Key Encryption Key: "));
-      fflush(stdout);
-    } else {
-      kfd = open(wrap_keyfile, O_RDONLY);
-      if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), wrap_keyfile);
-        retval = 1;
-        goto bail_out;
-      }
-    }
-    if (read(kfd, wrapdata, sizeof(wrapdata))) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), wrap_keyfile);
-      retval = 1;
-      goto bail_out;
-    }
-    if (kfd > 0) { close(kfd); }
-    StripTrailingJunk(wrapdata);
-    Dmsg1(10, "Wrapped keydata = %s\n", wrapdata);
-  }
-
   /* Generate a new passphrase allow it to be wrapped using the given wrapkey
    * and base64 if specified or when wrapped. */
+  int length = DEFAULT_PASSPHRASE_LENGTH;
   if (generate_passphrase) {
     int cnt;
     char* passphrase;
 
     passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
-    if (!passphrase) {
-      retval = 1;
-      goto bail_out;
-    }
+    if (!passphrase) { TerminateBscrypto(1); }
 
-    Dmsg1(10, "Generated passphrase = %s\n", passphrase);
+    Dmsg1(10, T_("Generated passphrase = %.*s\n"), DEFAULT_PASSPHRASE_LENGTH,
+          passphrase);
 
     // See if we need to wrap the passphrase.
     if (wrapped_keys) {
-      char* wrapped_passphrase;
-
+      wrap_key(wrap_keyfile, passphrase, keydata, sizeof(keydata));
+      ASSERT(strlen(keydata) <= sizeof(keydata));
       length = DEFAULT_PASSPHRASE_LENGTH + 8;
-      wrapped_passphrase = (char*)malloc(length);
-      memset(wrapped_passphrase, 0, length);
-      if (auto error = AesWrap(
-              (unsigned char*)wrapdata, DEFAULT_PASSPHRASE_LENGTH / 8,
-              (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase)) {
-        fprintf(stderr, T_("Cannot wrap passphrase ERR=%s\n"), error->c_str());
-        free(passphrase);
-        retval = 1;
-        goto bail_out;
-      }
-
       free(passphrase);
-      passphrase = wrapped_passphrase;
+      passphrase = (char*)malloc(length);
+      memcpy(passphrase, keydata, length);
     } else {
       length = DEFAULT_PASSPHRASE_LENGTH;
     }
 
     /* See where to write the key.
      * - == stdout */
-    if (bstrcmp(keyfile, "-")) {
+    int kfd;
+    if (bstrcmp(keyfile.c_str(), "-")) {
       kfd = 1;
     } else {
-      kfd = open(keyfile, O_WRONLY | O_CREAT, 0644);
+      kfd = open(keyfile.c_str(), O_WRONLY | O_CREAT, 0644);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
         free(passphrase);
-        retval = 1;
-        goto bail_out;
+        TerminateBscrypto(1);
       }
     }
 
@@ -349,13 +433,13 @@ int main(int argc, char* const* argv)
       cnt = BinToBase64(keydata, sizeof(keydata), passphrase, length, true);
       if (write(kfd, keydata, cnt) != cnt) {
         fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
-                keyfile);
+                keyfile.c_str());
       }
     } else {
       cnt = DEFAULT_PASSPHRASE_LENGTH;
       if (write(kfd, passphrase, cnt) != cnt) {
         fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
-                keyfile);
+                keyfile.c_str());
       }
     }
 
@@ -366,108 +450,56 @@ int main(int argc, char* const* argv)
     } else {
       if (write(kfd, "\n", 1) == 0) {
         free(passphrase);
-        goto bail_out;
+        TerminateBscrypto(0);
       }
     }
     free(passphrase);
-    goto bail_out;
+    TerminateBscrypto(0);
   }
 
   if (show_keydata) {
+    ReadKeyBits(keyfile, keydata, sizeof(keydata));
     char* passphrase;
-
-    /* Read the key bits from the keyfile.
-     * - == stdin */
-    if (bstrcmp(keyfile, "-")) {
-      kfd = 0;
-      fprintf(stdout, T_("Enter Encryption Key: "));
-      fflush(stdout);
-    } else {
-      kfd = open(keyfile, O_RDONLY);
-      if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
-        retval = 1;
-        goto bail_out;
-      }
-    }
-    if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile);
-      retval = 1;
-      goto bail_out;
-    }
-    if (kfd > 0) { close(kfd); }
-    StripTrailingJunk(keydata);
-    Dmsg1(10, "Keydata = %s\n", keydata);
 
     // See if we need to unwrap the passphrase.
     if (wrapped_keys) {
-      char* wrapped_passphrase;
-      /* A wrapped key is base64 encoded after it was wrapped so first
-       * convert it from base64 to bin. As we first go from base64 to bin
-       * and the Base64ToBin has a check if the decoded string will fit
-       * we need to alocate some more bytes for the decoded buffer to be
-       * sure it will fit. */
-      length = DEFAULT_PASSPHRASE_LENGTH + 12;
-      wrapped_passphrase = (char*)malloc(length);
-      memset(wrapped_passphrase, 0, length);
-      if (Base64ToBin(wrapped_passphrase, length, keydata, strlen(keydata))
-          == 0) {
-        fprintf(stderr,
-                T_("Failed to base64 decode the keydata read from %s, "
-                   "aborting...\n"),
-                keyfile);
-        free(wrapped_passphrase);
-        goto bail_out;
-      }
-
-      length = DEFAULT_PASSPHRASE_LENGTH;
-      passphrase = (char*)malloc(length);
-      memset(passphrase, 0, length);
-
-      if (auto error = AesUnwrap((unsigned char*)wrapdata, length / 8,
-                                 (unsigned char*)wrapped_passphrase,
-                                 (unsigned char*)passphrase)) {
-        fprintf(stderr,
-                T_("Failed to aes unwrap the keydata read from %s using the "
-                   "wrap data from %s ERR=%s, aborting...\n"),
-                keyfile, wrap_keyfile, error->c_str());
-        free(wrapped_passphrase);
-        goto bail_out;
-      }
-
-      free(wrapped_passphrase);
+      unwrap_key(keydata, keyfile, wrap_keyfile);
+      length = strnlen(keydata, length);
+      passphrase = (char*)calloc(length, 1);
+      memcpy(passphrase, keydata, length);
     } else {
       if (base64_transform) {
         /* As we first go from base64 to bin and the Base64ToBin has a check
          * if the decoded string will fit we need to alocate some more bytes
          * for the decoded buffer to be sure it will fit. */
         length = DEFAULT_PASSPHRASE_LENGTH + 4;
-        passphrase = (char*)malloc(length);
-        memset(passphrase, 0, length);
-
+        passphrase = (char*)calloc(length, 1);
         Base64ToBin(passphrase, length, keydata, strlen(keydata));
       } else {
         length = DEFAULT_PASSPHRASE_LENGTH;
-        passphrase = (char*)malloc(length);
-        memset(passphrase, 0, length);
-        bstrncpy(passphrase, keydata, length);
+        // do not use bstrncpy here since it copies a 31 characters and appends
+        // a terminating NUL whereas passphrase is not a cstring and consists
+        // of 32 copied characters of keydata
+        length = strnlen(keydata, length);
+        passphrase = (char*)calloc(length, 1);
+        memcpy(passphrase, keydata, length);
       }
     }
 
-    Dmsg1(10, "Unwrapped passphrase = %s\n", passphrase);
-    fprintf(stdout, "%s\n", passphrase);
+    Dmsg1(10, "Unwrapped passphrase = %.*s\n", DEFAULT_PASSPHRASE_LENGTH,
+          passphrase);
+    fprintf(stdout, T_("%.*s\n"), DEFAULT_PASSPHRASE_LENGTH, passphrase);
 
     free(passphrase);
-    goto bail_out;
+    TerminateBscrypto(0);
   }
 
   // Clear the loaded encryption key of the given drive.
   if (clear_encryption) {
-    if (ClearScsiEncryptionKey(-1, argv[0])) {
-      goto bail_out;
+    if (ClearScsiEncryptionKey(-1, device_name.c_str())) {
+      TerminateBscrypto(0);
     } else {
-      retval = 1;
-      goto bail_out;
+      TerminateBscrypto(1);
     }
   }
 
@@ -475,45 +507,27 @@ int main(int argc, char* const* argv)
   if (drive_encryption_status) {
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 
-    if (GetScsiDriveEncryptionStatus(-1, argv[0], encryption_status, 0)) {
-      fprintf(stdout, "%s", encryption_status);
+    if (GetScsiDriveEncryptionStatus(-1, device_name.c_str(), encryption_status,
+                                     0)) {
+      fprintf(stdout, T_("%s"), encryption_status);
       FreePoolMemory(encryption_status);
     } else {
-      retval = 1;
       FreePoolMemory(encryption_status);
-      goto bail_out;
+      TerminateBscrypto(1);
     }
   }
 
   // Load a new encryption key onto the given drive.
   if (set_encryption) {
-    /* Read the key bits from the keyfile.
-     * - == stdin */
-    if (bstrcmp(keyfile, "-")) {
-      kfd = 0;
-      fprintf(stdout, T_("Enter Encryption Key (close with ^D): "));
-      fflush(stdout);
-    } else {
-      kfd = open(keyfile, O_RDONLY);
-      if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
-        retval = 1;
-        goto bail_out;
-      }
-    }
-    if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile);
-      retval = 1;
-      goto bail_out;
-    }
-    if (kfd > 0) { close(kfd); }
-    StripTrailingJunk(keydata);
+    ReadKeyBits(keyfile, keydata, sizeof(keydata));
 
-    if (SetScsiEncryptionKey(-1, argv[0], keydata)) {
-      goto bail_out;
+    if (wrapped_keys) { unwrap_key(keydata, keyfile, wrap_keyfile); }
+
+    Dmsg1(10, "keydata: %s\n", keydata);
+    if (SetScsiEncryptionKey(-1, device_name.c_str(), keydata)) {
+      TerminateBscrypto(0);
     } else {
-      retval = 1;
-      goto bail_out;
+      TerminateBscrypto(1);
     }
   }
 
@@ -522,22 +536,15 @@ int main(int argc, char* const* argv)
   if (volume_encryption_status) {
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 
-    if (GetScsiVolumeEncryptionStatus(-1, argv[0], encryption_status, 0)) {
-      fprintf(stdout, "%s", encryption_status);
+    if (GetScsiVolumeEncryptionStatus(-1, device_name.c_str(),
+                                      encryption_status, 0)) {
+      fprintf(stdout, T_("%s"), encryption_status);
       FreePoolMemory(encryption_status);
     } else {
-      retval = 1;
       FreePoolMemory(encryption_status);
-      goto bail_out;
+      TerminateBscrypto(1);
     }
   }
-
-bail_out:
-  if (cache_file) { free(cache_file); }
-
-  if (keyfile) { free(keyfile); }
-
-  if (wrap_keyfile) { free(wrap_keyfile); }
-
-  exit(retval);
+  TermMsg();
+  TerminateBscrypto(0);
 }

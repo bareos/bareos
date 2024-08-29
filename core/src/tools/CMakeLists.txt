@@ -58,7 +58,7 @@ if(NOT HAVE_MSVC)
   target_link_libraries(fstype bareos bareosfind)
 
   add_executable(bscrypto bscrypto.cc)
-  target_link_libraries(bscrypto bareos)
+  target_link_libraries(bscrypto bareos CLI11::CLI11)
 endif()
 
 if(NOT HAVE_WIN32)
