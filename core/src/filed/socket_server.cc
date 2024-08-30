@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -127,18 +127,9 @@ void StartSocketServer(dlist<IPADDR>* addrs)
                       my_config, nullptr, UserAgentShutdownCallback);
 }
 
-void StopSocketServer(bool wait)
+void StopSocketServer()
 {
   Dmsg0(100, "StopSocketServer\n");
-  if (sock_fds) {
-    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    /* before thread_servers terminates,
-     * it calls cleanup_bnet_thread_server_tcp */
-    if (wait) {
-      pthread_join(tcp_server_tid, NULL);
-      delete (sock_fds);
-      sock_fds = NULL;
-    }
-  }
+  if (sock_fds) { BnetStopAndWaitForThreadServerTcp(tcp_server_tid); }
 }
 } /* namespace filedaemon */

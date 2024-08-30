@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,26 +17,25 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
-
-option(USE_SYSTEM_CLI11 "Use the CLI11 lib of the operating system" OFF)
-if(USE_SYSTEM_CLI11)
-  find_package(CLI11 "2.2.0" CONFIG REQUIRED)
-  set_target_properties(CLI11::CLI11 PROPERTIES IMPORTED_GLOBAL TRUE)
-  message(STATUS "Using system CLI11 ${CLI11_VERSION}")
-else()
-  add_subdirectory(CLI11 EXCLUDE_FROM_ALL)
+if(NOT DEFINED CPM_USE_LOCAL_PACKAGES AND NOT DEFINED
+                                          ENV{CPM_USE_LOCAL_PACKAGES}
+)
+  set(CPM_USE_LOCAL_PACKAGES ON)
 endif()
-
-option(USE_SYSTEM_XXHASH "Use the xxHash lib of the operating system" OFF)
-if(USE_SYSTEM_XXHASH)
-  find_package(xxHash REQUIRED)
-  set_target_properties(xxHash::xxhash PROPERTIES IMPORTED_GLOBAL TRUE)
-  set(XXHASH_ENABLE_DISPATCH
-      OFF
-      CACHE INTERNAL ""
+if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
+  message(
+    WARNING
+      " Detected FETCHCONTENT_FULLY_DISCONNECTED is set.\n"
+      " As this will break fetching, only local packages will be considered!"
   )
-  message(STATUS "Using system xxHash ${XXHASH_VERSION}")
-else()
-  include(./xxHash.cmake)
+  set(CPM_LOCAL_PACKAGES_ONLY ON)
 endif()
+include(CPM)
+
+CPMAddPackage(
+  NAME fmt
+  VERSION 6.2.1
+  GITHUB_REPOSITORY fmtlib/fmt
+  GIT_TAG 10.2.1
+  EXCLUDE_FROM_ALL YES
+)

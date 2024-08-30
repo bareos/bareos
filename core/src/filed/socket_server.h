@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@ class IPADDR;
 namespace filedaemon {
 
 void StartSocketServer(dlist<IPADDR>* addrs);
-void StopSocketServer(bool wait = false);
+void StopSocketServer();
 
 } /* namespace filedaemon */
 

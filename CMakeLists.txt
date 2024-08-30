@@ -22,6 +22,8 @@ cmake_minimum_required(VERSION 3.17)
 cmake_policy(VERSION 3.17...3.19)
 
 project(bareos NONE)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
@@ -29,7 +31,6 @@ add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
-
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
@@ -38,7 +39,6 @@ include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(RemoveNDebugFlag)
-
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -124,6 +124,7 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
+  include(BareosCpmPackages)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS

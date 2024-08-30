@@ -36,6 +36,9 @@ start_test
 mysql_init
 mysql_server_start
 
+# Patch so mysqlclient find its default connection file
+cp my.cnf ~/.my.cnf || :
+
 echo "create database ${mariabackup_test_db}" | $MYSQL_CLIENT
 echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL_CLIENT "${mariabackup_test_db}"
 echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL_CLIENT "${mariabackup_test_db}"
