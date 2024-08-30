@@ -24,6 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - python-bareos: fix backslash usage in regex [PR #1930]
 - webui: fixing selenium tests [PR #1924]
 - msgchan: fix deadlock [PR #1904]
+- webui: properly set focus to input box after each command [PR #1940]
 
 ### Fixed
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
@@ -527,4 +528,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1924]: https://github.com/bareos/bareos/pull/1924
 [PR #1926]: https://github.com/bareos/bareos/pull/1926
 [PR #1930]: https://github.com/bareos/bareos/pull/1930
+[PR #1940]: https://github.com/bareos/bareos/pull/1940
 [unreleased]: https://github.com/bareos/bareos/tree/master
