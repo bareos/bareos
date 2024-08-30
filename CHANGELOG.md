@@ -25,6 +25,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: fixing selenium tests [PR #1924]
 - msgchan: fix deadlock [PR #1904]
 - webui: properly set focus to input box after each command [PR #1940]
+- build: enable building for Fedora40 and Ubuntu 24.04 [PR #1898]
 
 ### Fixed
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
@@ -519,6 +520,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1890]: https://github.com/bareos/bareos/pull/1890
 [PR #1894]: https://github.com/bareos/bareos/pull/1894
 [PR #1896]: https://github.com/bareos/bareos/pull/1896
+[PR #1898]: https://github.com/bareos/bareos/pull/1898
 [PR #1901]: https://github.com/bareos/bareos/pull/1901
 [PR #1904]: https://github.com/bareos/bareos/pull/1904
 [PR #1905]: https://github.com/bareos/bareos/pull/1905
