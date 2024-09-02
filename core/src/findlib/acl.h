@@ -85,29 +85,29 @@ static inline constexpr uint32_t BACL_FLAG_SAVE_AFS = 0x02;
 static inline constexpr uint32_t BACL_FLAG_RESTORE_NATIVE = 0x04;
 static inline constexpr uint32_t BACL_FLAG_RESTORE_AFS = 0x08;
 
-struct acl_build_data_t {
-  uint32_t content_length;
-  PoolMem content{PM_MESSAGE};
-};
-
 // Internal tracking data.
-struct AclData {
+class AclData {
+ public:
   int filetype;
   POOLMEM* last_fname;
   uint32_t flags{}; /* See BACL_FLAG_* */
   uint32_t current_dev{0};
   bool first_dev{true};
   uint32_t nr_errors;
-  union {
-    struct acl_build_data_t* build;
-  } u;
+  virtual ~AclData() noexcept = default;
+};
+
+class AclBuildData : public AclData {
+ public:
+  uint32_t content_length;
+  PoolMem content{PM_MESSAGE};
 };
 
 bacl_exit_code SendAclStream(JobControlRecord* jcr,
-                             AclData* acl_data,
+                             AclBuildData* acl_data,
                              int stream);
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               AclData* acl_data,
+                               AclBuildData* acl_data,
                                FindFilesPacket* ff_pkt);
 bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
                                  AclData* acl_data,
