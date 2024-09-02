@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,8 +23,11 @@ if(AUTOCHANGER_TEST_ENABLED)
   # Make sure these tests run sequentially.
   set_tests_properties(
     ${SYSTEMTEST_PREFIX}block-size
-    PROPERTIES RESOURCE_LOCK autochanger_resource DEPENDS
-               "${SYSTEMTEST_PREFIX}autochanger:cleanup;${SYSTEMTEST_PREFIX}scsicrypto:cleanup"
+    PROPERTIES
+      RESOURCE_LOCK
+      autochanger_resource
+      DEPENDS
+      "${SYSTEMTEST_PREFIX}autochanger:cleanup;${SYSTEMTEST_PREFIX}scsicrypto:cleanup"
   )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
