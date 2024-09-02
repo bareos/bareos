@@ -28,13 +28,26 @@
 #ifndef BAREOS_FINDLIB_ACL_H_
 #define BAREOS_FINDLIB_ACL_H_
 
-// Number of acl errors to report per job.
+#include "include/config.h"
 #include <cstdint>
 #include "include/bc_types.h"
+#include "lib/mem_pool.h"
+
+#ifdef HAVE_SYS_ACL_H
+#  include <sys/acl.h>
+/**
+ * This value is used as ostype when we encounter an invalid acl type.
+ * The way the code is build this should never happen.
+ */
+static inline constexpr acl_type_t ACL_TYPE_NONE = static_cast<acl_type_t>(0);
+#endif
+
 class JobControlRecord;
 struct FindFilesPacket;
 
-#define ACL_REPORT_ERR_MAX_PER_JOB 25
+// Number of acl errors to report per job.
+static inline constexpr uint32_t ACL_REPORT_ERR_MAX_PER_JOB = 25;
+
 
 // Return codes from acl subroutines.
 typedef enum
@@ -61,23 +74,16 @@ typedef enum
   BACL_TYPE_NFS4 = 5
 } bacl_type;
 
-/**
- * This value is used as ostype when we encounter an invalid acl type.
- * The way the code is build this should never happen.
- */
-#if !defined(ACL_TYPE_NONE)
-#  define ACL_TYPE_NONE 0x0
-#endif
 
 #if defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS) \
     || defined(HAVE_LINUX_OS)
 #  define BACL_ENOTSUP EOPNOTSUPP
 #endif
 
-#define BACL_FLAG_SAVE_NATIVE 0x01
-#define BACL_FLAG_SAVE_AFS 0x02
-#define BACL_FLAG_RESTORE_NATIVE 0x04
-#define BACL_FLAG_RESTORE_AFS 0x08
+static inline constexpr uint32_t BACL_FLAG_SAVE_NATIVE = 0x01;
+static inline constexpr uint32_t BACL_FLAG_SAVE_AFS = 0x02;
+static inline constexpr uint32_t BACL_FLAG_RESTORE_NATIVE = 0x04;
+static inline constexpr uint32_t BACL_FLAG_RESTORE_AFS = 0x08;
 
 struct acl_build_data_t {
   uint32_t nr_errors;
