@@ -87,7 +87,7 @@ static inline constexpr uint32_t BACL_FLAG_RESTORE_AFS = 0x08;
 
 struct acl_build_data_t {
   uint32_t content_length;
-  POOLMEM* content;
+  PoolMem content{PM_MESSAGE};
 };
 
 // Internal tracking data.

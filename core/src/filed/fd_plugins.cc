@@ -1364,12 +1364,12 @@ bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
     switch (PlugFunc(plugin)->getAcl(jcr->plugin_ctx, &ap)) {
       case bRC_OK:
         if (ap.content_length && ap.content) {
-          acl_data->u.build->content = CheckPoolMemorySize(
-              acl_data->u.build->content, ap.content_length + 1);
-          memcpy(acl_data->u.build->content, ap.content, ap.content_length);
+          acl_data->u.build->content.check_size(ap.content_length + 1);
+          PmMemcpy(acl_data->u.build->content, ap.content, ap.content_length);
           acl_data->u.build->content_length = ap.content_length;
           free(ap.content);
-          acl_data->u.build->content[acl_data->u.build->content_length] = '\0';
+          acl_data->u.build->content.c_str()[acl_data->u.build->content_length]
+              = '\0';
           retval = SendAclStream(jcr, acl_data, STREAM_ACL_PLUGIN);
         } else {
           retval = bacl_exit_ok;
