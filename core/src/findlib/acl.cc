@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -586,7 +586,7 @@ static acl_type_t BacToOsAcltype(bacl_type acltype)
     default:
       /* This should never happen, as the per OS version function only tries acl
        * types supported on a certain platform. */
-      ostype = (acl_type_t)ACL_TYPE_NONE;
+      ostype = ACL_TYPE_NONE;
       break;
   }
   return ostype;
