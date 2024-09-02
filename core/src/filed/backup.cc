@@ -155,10 +155,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   if (have_acl) {
     jcr->fd_impl->acl_data = std::make_unique<AclData>();
-    jcr->fd_impl->acl_data->u.build
-        = (acl_build_data_t*)malloc(sizeof(acl_build_data_t));
-    memset(jcr->fd_impl->acl_data->u.build, 0, sizeof(acl_build_data_t));
-    jcr->fd_impl->acl_data->u.build->content = GetPoolMemory(PM_MESSAGE);
+    jcr->fd_impl->acl_data->u.build = new acl_build_data_t();
   }
 
   if (have_xattr) {
@@ -194,8 +191,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   sd->signal(BNET_EOD); /* end of sending data */
 
   if (have_acl && jcr->fd_impl->acl_data) {
-    FreePoolMemory(jcr->fd_impl->acl_data->u.build->content);
-    free(jcr->fd_impl->acl_data->u.build);
+    delete jcr->fd_impl->acl_data->u.build;
   }
 
   if (jcr->fd_impl->big_buf) {
