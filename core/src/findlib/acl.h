@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,11 @@
 #define BAREOS_FINDLIB_ACL_H_
 
 // Number of acl errors to report per job.
+#include <cstdint>
+#include "include/bc_types.h"
+class JobControlRecord;
+struct FindFilesPacket;
+
 #define ACL_REPORT_ERR_MAX_PER_JOB 25
 
 // Return codes from acl subroutines.
