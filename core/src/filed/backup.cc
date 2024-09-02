@@ -153,10 +153,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   auto hb_send = MakeHeartbeatMonitor(jcr);
 
-  if (have_acl) {
-    jcr->fd_impl->acl_data = std::make_unique<AclData>();
-    jcr->fd_impl->acl_data->u.build = new acl_build_data_t();
-  }
+  if (have_acl) { jcr->fd_impl->acl_data = std::make_unique<AclBuildData>(); }
 
   if (have_xattr) {
     jcr->fd_impl->xattr_data = std::make_unique<XattrBuildData>();
@@ -189,10 +186,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   hb_send.reset();
 
   sd->signal(BNET_EOD); /* end of sending data */
-
-  if (have_acl && jcr->fd_impl->acl_data) {
-    delete jcr->fd_impl->acl_data->u.build;
-  }
 
   if (jcr->fd_impl->big_buf) {
     free(jcr->fd_impl->big_buf);
@@ -441,10 +434,12 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->fd_impl->acl_data->filetype = ff_pkt->type;
   jcr->fd_impl->acl_data->last_fname = jcr->fd_impl->last_fname;
 
+  auto* acl_build_data
+      = static_cast<AclBuildData*>(jcr->fd_impl->acl_data.get());
   if (jcr->IsPlugin()) {
-    retval = PluginBuildAclStreams(jcr, jcr->fd_impl->acl_data.get(), ff_pkt);
+    retval = PluginBuildAclStreams(jcr, acl_build_data, ff_pkt);
   } else {
-    retval = BuildAclStreams(jcr, jcr->fd_impl->acl_data.get(), ff_pkt);
+    retval = BuildAclStreams(jcr, acl_build_data, ff_pkt);
   }
 
   switch (retval) {
