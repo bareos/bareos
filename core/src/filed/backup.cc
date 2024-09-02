@@ -172,10 +172,10 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
-  if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
+  if (have_acl && jcr->fd_impl->acl_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Encountered %ld acl errors while doing backup\n"),
-         jcr->fd_impl->acl_data->u.build->nr_errors);
+         jcr->fd_impl->acl_data->nr_errors);
   }
   if (have_xattr && jcr->fd_impl->xattr_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
@@ -456,7 +456,7 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
       return false;
     case bacl_exit_error:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->fd_impl->acl_data->u.build->nr_errors++;
+      jcr->fd_impl->acl_data->nr_errors++;
       break;
     case bacl_exit_ok:
       break;

@@ -1840,7 +1840,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
       } else {
         /* Increment error count but don't log an error again for the same
          * filesystem. */
-        acl_data->u.parse->nr_errors++;
+        acl_data->nr_errors++;
         return bacl_exit_ok;
       }
       break;
@@ -1868,7 +1868,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
       } else {
         /* Increment error count but don't log an error again for the same
          * filesystem. */
-        acl_data->u.parse->nr_errors++;
+        acl_data->nr_errors++;
         return bacl_exit_ok;
       }
       break;

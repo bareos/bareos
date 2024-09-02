@@ -86,13 +86,8 @@ static inline constexpr uint32_t BACL_FLAG_RESTORE_NATIVE = 0x04;
 static inline constexpr uint32_t BACL_FLAG_RESTORE_AFS = 0x08;
 
 struct acl_build_data_t {
-  uint32_t nr_errors;
   uint32_t content_length;
   POOLMEM* content;
-};
-
-struct acl_parse_data_t {
-  uint32_t nr_errors;
 };
 
 // Internal tracking data.
@@ -102,9 +97,9 @@ struct AclData {
   uint32_t flags{}; /* See BACL_FLAG_* */
   uint32_t current_dev{0};
   bool first_dev{true};
+  uint32_t nr_errors;
   union {
     struct acl_build_data_t* build;
-    struct acl_parse_data_t* parse;
   } u;
 };
 
