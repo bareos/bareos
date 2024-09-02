@@ -74,7 +74,9 @@
  * Entry points when compiled without support for ACLs or on an unsupported
  * platform.
  */
-bacl_exit_code BuildAclStreams(JobControlRecord*, AclData*, FindFilesPacket*)
+bacl_exit_code BuildAclStreams(JobControlRecord*,
+                               AclBuildData*,
+                               FindFilesPacket*)
 {
   return bacl_exit_fatal;
 }
@@ -90,7 +92,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord*,
 #else
 // Send an ACL stream to the SD.
 bacl_exit_code SendAclStream(JobControlRecord* jcr,
-                             AclData* acl_data,
+                             AclBuildData* acl_data,
                              int stream)
 {
   BareosSocket* sd = jcr->store_bsock;
@@ -100,7 +102,7 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
 #  endif
 
   // Sanity check
-  if (acl_data->u.build->content_length <= 0) { return bacl_exit_ok; }
+  if (acl_data->content_length <= 0) { return bacl_exit_ok; }
 
   // Send header
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
@@ -110,10 +112,10 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
   }
 
   // Send the buffer to the storage daemon
-  Dmsg1(400, "Backing up ACL <%s>\n", acl_data->u.build->content.c_str());
+  Dmsg1(400, "Backing up ACL <%s>\n", acl_data->content.c_str());
   msgsave = sd->msg;
-  sd->msg = acl_data->u.build->content.c_str();
-  sd->message_length = acl_data->u.build->content_length + 1;
+  sd->msg = acl_data->content.c_str();
+  sd->message_length = acl_data->content_length + 1;
   if (!sd->send()) {
     sd->msg = msgsave;
     sd->message_length = 0;
@@ -177,7 +179,7 @@ static int os_access_acl_streams[3]
 static int os_default_acl_streams[1] = {-1};
 
 static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
-                                            AclData* acl_data,
+                                            AclBuildData* acl_data,
                                             FindFilesPacket* ff_pkt)
 {
   mode_t mode;
@@ -271,19 +273,19 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
   }
 
   // We have a non-trivial acl lets convert it into some ASCII form.
-  acltxtsize = SizeofPoolMemory(acl_data->u.build->content);
-  if (aclx_printStr(acl_data->u.build->content, &acltxtsize, aclbuf, aclsize,
-                    type, acl_data->last_fname, 0)
+  acltxtsize = SizeofPoolMemory(acl_data->content);
+  if (aclx_printStr(acl_data->content, &acltxtsize, aclbuf, aclsize, type,
+                    acl_data->last_fname, 0)
       < 0) {
     switch (errno) {
       case ENOSPC:
         /* Our buffer is not big enough, acltxtsize should be updated with the
          * value the aclx_printStr really need. So we increase the buffer and
          * try again. */
-        acl_data->u.build->content
-            = CheckPoolMemorySize(acl_data->u.build->content, acltxtsize + 1);
-        if (aclx_printStr(acl_data->u.build->content, &acltxtsize, aclbuf,
-                          aclsize, type, acl_data->last_fname, 0)
+        acl_data->content
+            = CheckPoolMemorySize(acl_data->content, acltxtsize + 1);
+        if (aclx_printStr(acl_data->content, &acltxtsize, aclbuf, aclsize, type,
+                          acl_data->last_fname, 0)
             < 0) {
           Mmsg1(jcr->errmsg,
                 T_("Failed to convert acl into text on file \"%s\"\n"),
@@ -303,7 +305,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
     }
   }
 
-  acl_data->u.build->content_length = strlen(acl_data->u.build->content) + 1;
+  acl_data->content_length = strlen(acl_data->content.c_str()) + 1;
   switch (type.u64) {
     case ACL_AIXC:
       retval = SendAclStream(jcr, acl_data, STREAM_ACL_AIX_AIXC);
@@ -473,14 +475,13 @@ static int os_access_acl_streams[1] = {STREAM_ACL_AIX_TEXT};
 static int os_default_acl_streams[1] = {-1};
 
 static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
-                                            AclData* acl_data,
+                                            AclBuildData* acl_data,
                                             FindFilesPacket* ff_pkt)
 {
   char* acl_text;
 
   if ((acl_text = acl_get(acl_data->last_fname)) != NULL) {
-    acl_data->u.build->content_length
-        = PmStrcpy(acl_data->u.build->content, acl_text);
+    acl_data->content_length = PmStrcpy(acl_data->content, acl_text);
     free(acl_text);
     return SendAclStream(jcr, acl_data, STREAM_ACL_AIX_TEXT);
   }
@@ -505,7 +506,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              AclData* acl_data,
+                                              AclBuildData* acl_data,
                                               FindFilesPacket* ff_pkt)
     = aix_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
@@ -651,7 +652,7 @@ static bool AclIsTrivial(acl_t acl)
 
 // Generic wrapper around acl_get_file call.
 static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
-                                              AclData* acl_data,
+                                              AclBuildData* acl_data,
                                               bacl_type acltype)
 {
   acl_t acl;
@@ -694,8 +695,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
 
     // Convert the internal acl representation into a text representation.
     if ((acl_text = acl_to_text(acl, NULL)) != NULL) {
-      acl_data->u.build->content_length
-          = PmStrcpy(acl_data->u.build->content, acl_text);
+      acl_data->content_length = PmStrcpy(acl_data->content, acl_text);
       acl_free(acl);
       acl_free(acl_text);
       return bacl_exit_ok;
@@ -739,8 +739,8 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
 
 bail_out:
   if (acl) { acl_free(acl); }
-  PmStrcpy(acl_data->u.build->content, "");
-  acl_data->u.build->content_length = 0;
+  PmStrcpy(acl_data->content, "");
+  acl_data->content_length = 0;
   return retval;
 }
 
@@ -866,7 +866,7 @@ static int os_access_acl_streams[1] = {STREAM_ACL_DARWIN_ACCESS_ACL};
 static int os_default_acl_streams[1] = {-1};
 
 static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
-                                               AclData* acl_data,
+                                               AclBuildData* acl_data,
                                                FindFilesPacket*)
 {
 #        if defined(HAVE_ACL_TYPE_EXTENDED)
@@ -887,7 +887,7 @@ static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
     return bacl_exit_fatal;
 #        endif
 
-  if (acl_data->u.build->content_length > 0) {
+  if (acl_data->content_length > 0) {
     return SendAclStream(jcr, acl_data, STREAM_ACL_DARWIN_ACCESS_ACL);
   }
   return bacl_exit_ok;
@@ -913,7 +913,7 @@ static bacl_exit_code darwin_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              AclData* acl_data,
+                                              AclBuildData* acl_data,
                                               FindFilesPacket* ff_pkt)
     = darwin_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
@@ -930,7 +930,7 @@ static int os_access_acl_streams[2]
 static int os_default_acl_streams[1] = {STREAM_ACL_FREEBSD_DEFAULT_ACL};
 
 static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
-                                                AclData* acl_data,
+                                                AclBuildData* acl_data,
                                                 FindFilesPacket*)
 {
   int acl_enabled = 0;
@@ -994,8 +994,8 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
    * when we change from one filesystem to another. */
   if (acl_enabled == 0) {
     acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
-    PmStrcpy(acl_data->u.build->content, "");
-    acl_data->u.build->content_length = 0;
+    PmStrcpy(acl_data->content, "");
+    acl_data->content_length = 0;
     return bacl_exit_ok;
   }
 
@@ -1007,7 +1007,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
           == bacl_exit_fatal)
         return bacl_exit_fatal;
 
-      if (acl_data->u.build->content_length > 0) {
+      if (acl_data->content_length > 0) {
         if (SendAclStream(jcr, acl_data, STREAM_ACL_FREEBSD_NFS4_ACL)
             == bacl_exit_fatal)
           return bacl_exit_fatal;
@@ -1019,7 +1019,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
           == bacl_exit_fatal)
         return bacl_exit_fatal;
 
-      if (acl_data->u.build->content_length > 0) {
+      if (acl_data->content_length > 0) {
         if (SendAclStream(jcr, acl_data, STREAM_ACL_FREEBSD_ACCESS_ACL)
             == bacl_exit_fatal)
           return bacl_exit_fatal;
@@ -1030,7 +1030,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
         if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT)
             == bacl_exit_fatal)
           return bacl_exit_fatal;
-        if (acl_data->u.build->content_length > 0) {
+        if (acl_data->content_length > 0) {
           if (SendAclStream(jcr, acl_data, STREAM_ACL_FREEBSD_DEFAULT_ACL)
               == bacl_exit_fatal)
             return bacl_exit_fatal;
@@ -1127,7 +1127,7 @@ static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              AclData* acl_data,
+                                              AclBuildData* acl_data,
                                               FindFilesPacket* ff_pkt)
     = freebsd_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
@@ -1143,7 +1143,7 @@ static int os_access_acl_streams[1] = {STREAM_ACL_LINUX_ACCESS_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_LINUX_DEFAULT_ACL};
 
 static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
-                                                AclData* acl_data,
+                                                AclBuildData* acl_data,
                                                 FindFilesPacket*)
 {
   // Read access ACLs for files, dirs and links
@@ -1151,7 +1151,7 @@ static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
       == bacl_exit_fatal)
     return bacl_exit_fatal;
 
-  if (acl_data->u.build->content_length > 0) {
+  if (acl_data->content_length > 0) {
     if (SendAclStream(jcr, acl_data, os_access_acl_streams[0])
         == bacl_exit_fatal)
       return bacl_exit_fatal;
@@ -1162,7 +1162,7 @@ static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
     if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT)
         == bacl_exit_fatal)
       return bacl_exit_fatal;
-    if (acl_data->u.build->content_length > 0) {
+    if (acl_data->content_length > 0) {
       if (SendAclStream(jcr, acl_data, os_default_acl_streams[0])
           == bacl_exit_fatal)
         return bacl_exit_fatal;
@@ -1210,7 +1210,7 @@ static bacl_exit_code generic_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              AclData* acl_data,
+                                              AclBuildData* acl_data,
                                               FindFilesPacket* ff_pkt)
     = generic_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
@@ -1272,7 +1272,7 @@ static int os_default_acl_streams[1] = {-1};
  * code)
  */
 static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
-                                                AclData* acl_data,
+                                                AclBuildData* acl_data,
                                                 FindFilesPacket*)
 {
   int acl_enabled, flags;
@@ -1289,8 +1289,8 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
        * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
        * when we change from one filesystem to another. */
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
-      PmStrcpy(acl_data->u.build->content, "");
-      acl_data->u.build->content_length = 0;
+      PmStrcpy(acl_data->content, "");
+      acl_data->content_length = 0;
       return bacl_exit_ok;
     case -1: {
       BErrNo be;
@@ -1329,8 +1329,8 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   if (!aclp) {
     /* The ACLs simply reflect the (already known) standard permissions
      * So we don't send an ACL stream to the SD. */
-    PmStrcpy(acl_data->u.build->content, "");
-    acl_data->u.build->content_length = 0;
+    PmStrcpy(acl_data->content, "");
+    acl_data->content_length = 0;
     return bacl_exit_ok;
   }
 
@@ -1342,8 +1342,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
 #        endif /* ACL_SID_FMT */
 
   if ((acl_text = acl_totext(aclp, flags)) != NULL) {
-    acl_data->u.build->content_length
-        = PmStrcpy(acl_data->u.build->content, acl_text);
+    acl_data->content_length = PmStrcpy(acl_data->content, acl_text);
     free(acl_text);
 
     switch (acl_type(aclp)) {
@@ -1526,7 +1525,7 @@ static bool AclIsTrivial(int count, aclent_t* entries)
 
 // OS specific functions for handling different types of acl streams.
 static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
-                                                AclData* acl_data,
+                                                AclBuildData* acl_data,
                                                 FindFilesPacket* ff_pkt)
 {
   int n;
@@ -1542,14 +1541,13 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
       /* The ACLs simply reflect the (already known) standard permissions
        * So we don't send an ACL stream to the SD. */
       free(acls);
-      PmStrcpy(acl_data->u.build->content, "");
-      acl_data->u.build->content_length = 0;
+      PmStrcpy(acl_data->content, "");
+      acl_data->content_length = 0;
       return bacl_exit_ok;
     }
 
     if ((acl_text = acltotext(acls, n)) != NULL) {
-      acl_data->u.build->content_length
-          = PmStrcpy(acl_data->u.build->content, acl_text);
+      acl_data->content_length = PmStrcpy(acl_data->content, acl_text);
       free(acl_text);
       free(acls);
       return SendAclStream(jcr, acl_data, STREAM_ACL_SOLARIS_ACLENT);
@@ -1558,8 +1556,8 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
     BErrNo be;
     Mmsg2(jcr->errmsg, T_("acltotext error on file \"%s\": ERR=%s\n"),
           acl_data->last_fname, be.bstrerror());
-    Dmsg3(100, "acltotext error acl=%s file=%s ERR=%s\n",
-          acl_data->u.build->content, acl_data->last_fname, be.bstrerror());
+    Dmsg3(100, "acltotext error acl=%s file=%s ERR=%s\n", acl_data->content,
+          acl_data->last_fname, be.bstrerror());
   }
 
   free(acls);
@@ -1616,7 +1614,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              AclData* acl_data,
+                                              AclBuildData* acl_data,
                                               FindFilesPacket* ff_pkt)
     = solaris_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
@@ -1648,7 +1646,7 @@ long pioctl(char* pathp, long opcode, struct ViceIoctl* blobp, int follow);
 }
 
 static bacl_exit_code afs_build_acl_streams(JobControlRecord* jcr,
-                                            AclData* acl_data,
+                                            AclBuildData* acl_data,
                                             FindFilesPacket* ff_pkt)
 {
   int error;
@@ -1674,8 +1672,7 @@ static bacl_exit_code afs_build_acl_streams(JobControlRecord* jcr,
           be.bstrerror());
     return bacl_exit_error;
   }
-  acl_data->u.build->content_length
-      = PmStrcpy(acl_data->u.build->content, acl_text);
+  acl_data->content_length = PmStrcpy(acl_data->content, acl_text);
   return SendAclStream(jcr, acl_data, STREAM_ACL_AFS_TEXT);
 }
 
@@ -1711,7 +1708,7 @@ static bacl_exit_code afs_parse_acl_stream(JobControlRecord* jcr,
 
 // Read and send an ACL for the last encountered file.
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               AclData* acl_data,
+                               AclBuildData* acl_data,
                                FindFilesPacket* ff_pkt)
 {
   /* See if we are changing from one device to another.
