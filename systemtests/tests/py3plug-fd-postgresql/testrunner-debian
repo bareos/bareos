@@ -13,7 +13,8 @@ set -u
 # Restart and check the PostgreSQL cluster.
 #
 # It can be used for any PostgreSQL version >= 10.
-
+# This test needs to be run as root, as it use system pg_*cluster
+# commands.
 
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -26,19 +27,25 @@ if ([ -z "${ID}" ] || [ "${ID}" != "debian" ] && [ "${ID}" != "ubuntu" ]);then
  echo "${TestName} test skipped: not debian/ubuntu"
  exit 77;
 fi
+if [ $UID -ne 0 ]; then
+# skip test
+ echo "${TestName} test skipped: needs to be root to use pg_*cluster system tools"
+ exit 77;
+fi
 
-PGVER=$(psql -V | awk '{gsub(".[0-9]{1,}$","",$3);print $3}')
-if [ ${PGVER} -lt 10 ]; then
+# We need the server version that will be used
+PG_VERSION=$(pg_lsclusters | awk -F " " '/^[0-9]{1,} .*/ {print $1}')
+if [ ${PG_VERSION} -lt 10 ]; then
 # skip test
  echo "${TestName} test skipped: not compatible with PG <= 10"
  exit 77;
 fi
-if [ $(pg_lsclusters ${PGVER} regress | grep "regress" -c) -eq 1 ];then
-    pg_dropcluster ${PGVER} regress --stop
+if [ $(pg_lsclusters ${PG_VERSION} regress | grep "regress" -c) -eq 1 ];then
+    pg_dropcluster ${PG_VERSION} regress --stop
     rm -rf /var/tmp/postgresql/wal_archives
 fi
 
-pg_createcluster ${PGVER} regress
+pg_createcluster ${PG_VERSION} regress
 mkdir -p /var/tmp/postgresql/wal_archives
 chown postgres:postgres /var/tmp/postgresql/wal_archives
 # Adjust configuration
@@ -54,22 +61,15 @@ chown postgres:postgres /var/tmp/postgresql/wal_archives
   echo "log_error_verbosity = verbose"
   echo "log_statement = 'all'"
   echo "log_temp_files = 0"
-} >> /etc/postgresql/${PGVER}/regress/conf.d/regress.conf
-pg_ctlcluster ${PGVER} regress start
+} >> /etc/postgresql/${PG_VERSION}/regress/conf.d/regress.conf
+pg_ctlcluster ${PG_VERSION} regress start
 
 # setup local database server
 DBNAME="backuptest"
 TESTPGHOST="/var/run/postgresql/"
 TESTPGPORT=5433
 PSQL="psql --host ${TESTPGHOST} --port ${TESTPGPORT} "
-
-if [ $UID -eq 0 ]; then
-   su postgres -c "psql -h \"${TESTPGHOST}\" -p ${TESTPGPORT} -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'"
-else
-  # create role and db root for podman test.
-  psql -h "${TESTPGHOST}" -p ${TESTPGPORT} -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'
-fi
-
+su postgres -c "${PSQL} -d postgres -c 'CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN'"
 # Create Test DB with table and 1 statement
 ${PSQL} postgres -c "create database ${DBNAME}"
 ${PSQL} ${DBNAME} -c "
@@ -151,7 +151,7 @@ fi
 
 # Now stop database and try a restore
 echo "destroy pg_cluster"
-pg_dropcluster ${PGVER} regress --stop
+pg_dropcluster ${PG_VERSION} regress --stop
 rm -rf /var/tmp/postgresql/wal_archives/*
 
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -180,31 +180,31 @@ check_two_logs "${tmp}/dlog1.out" "${tmp}/dlog4.out"
 # use either recovery.conf or recovery.signal
 # Those files should exist after restore, the plugin create them
 # postgres 11 and lower
-if (( ${PGVER} < 12 )); then
-  echo "PG_VERSION is ${PGVER} so lower than 12, using recovery.conf"
-  recovery_file="/var/lib/postgresql/${PGVER}/regress/recovery.conf"
+if (( ${PG_VERSION} < 12 )); then
+  echo "PG_VERSION is ${PG_VERSION} so lower than 12, using recovery.conf"
+  recovery_file="/var/lib/postgresql/${PG_VERSION}/regress/recovery.conf"
 else
   # postgres 12+
-  echo "PG_VERSION is ${PGVER} so 12+, using postgresql.conf and recovery.signal"
-  recovery_file="/var/lib/postgresql/${PGVER}/regress/recovery.signal"
+  echo "PG_VERSION is ${PG_VERSION} so 12+, using postgresql.conf and recovery.signal"
+  recovery_file="/var/lib/postgresql/${PG_VERSION}/regress/recovery.signal"
 fi
 if [ ! -f "${recovery_file}" ];then
  echo "${TestName} ${recovery_file} is missing from restore"
  exit 1;
 fi
 restore_command="restore_command = 'cp /var/tmp/postgresql/wal_archives/%f %p'"
-if (( ${PGVER} < 12 )); then
+if (( ${PG_VERSION} < 12 )); then
   echo "${restore_command}" >> "${recovery_file}"
 else
-  echo "${restore_command}" >> "/etc/postgresql/${PGVER}/regress/conf.d/restore.conf"
+  echo "${restore_command}" >> "/etc/postgresql/${PG_VERSION}/regress/conf.d/restore.conf"
 fi
 
-pg_lsclusters ${PGVER} regress
+pg_lsclusters ${PG_VERSION} regress
 
 echo ""
 echo "Restart restored pg_cluster"
 
-if ! pg_ctlcluster ${PGVER} regress start;then
+if ! pg_ctlcluster ${PG_VERSION} regress start;then
   echo "cluster restart failed after restore"
    estat=1
 fi
@@ -224,9 +224,9 @@ else
    estat=1
 fi
 
-if [ $(pg_lsclusters ${PGVER} regress | grep "regress" -c) -eq 1 ];then
+if [ $(pg_lsclusters ${PG_VERSION} regress | grep "regress" -c) -eq 1 ];then
     echo "cluster recovery completed"
-    pg_dropcluster ${PGVER} regress --stop
+    pg_dropcluster ${PG_VERSION} regress --stop
     rm -rf /var/tmp/postgresql/wal_archives
 fi
 
