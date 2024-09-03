@@ -546,13 +546,22 @@ SectionIn 1 2 3 4
   SetOutPath "$INSTDIR"
   File "bareos-config-deploy.bat"
   !cd "${CMAKE_BINARY_DIR}\core\src\filed\${CMAKE_CONFIG_TYPE}"
-  File "*.dll"
-  File "bareos-fd.exe"
+  File bareos-fd.exe
+  File bareos.dll
+  File bareosfastlz.dll
+  File bareosfind.dll
+  File bareoslmdb.dll
+  File iconv-2.dll
+  File intl-8.dll
+  File jansson.dll
+  File libcrypto-3-x64.dll
+  File libssl-3-x64.dll
+  File lzo2.dll
+  File pthreadVCE3.dll
+  File zlib1.dll
 
 ##  !cd "C:\Program Files\Git\mingw64\bin"
 #  File "openssl.exe"
-#  File libcrypto-3-x64.dll
-#  File libssl-3-x64.dll
 #  File "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
 
   !cd "C:\Program Files\Git\usr\bin"
