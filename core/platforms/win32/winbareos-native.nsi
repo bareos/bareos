@@ -560,18 +560,11 @@ SectionIn 1 2 3 4
   File pthreadVCE3.dll
   File zlib1.dll
 
-##  !cd "C:\Program Files\Git\mingw64\bin"
-#  File "openssl.exe"
-#  File "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
-
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
   File "msys-2.0.dll"
   File "msys-intl-8.dll"
   File "msys-iconv-2.dll"
-
-  # install unittests
-#  File "test_*.exe"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
