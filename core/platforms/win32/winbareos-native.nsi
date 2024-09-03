@@ -554,11 +554,13 @@ SectionIn 1 2 3 4
   File iconv-2.dll
   File intl-8.dll
   File jansson.dll
-  File libcrypto-3-x64.dll
-  File libssl-3-x64.dll
   File lzo2.dll
   File pthreadVCE3.dll
   File zlib1.dll
+
+  !cd "C:\vcpkg\installed\x64-windows\bin"
+  File libcrypto-3-x64.dll
+  File libssl-3-x64.dll
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
