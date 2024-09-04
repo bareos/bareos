@@ -532,7 +532,7 @@ SectionEnd
 SubSection "File Daemon (Client)" SUBSEC_FD
 
 Section "File Daemon and base libs" SEC_FD
-SectionIn 1 2 3 4
+SectionIn 1 2 3
   SetShellVarContext all
   # TODO: only do this if the file exists
   #  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
@@ -589,7 +589,7 @@ SectionEnd
 
 
 Section /o "File Daemon Plugins " SEC_FDPLUGINS
-SectionIn 1 2 3 4
+SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -605,7 +605,7 @@ SectionEnd
 
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
-SectionIn 1 2 3 4
+SectionIn 1 2 3
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     #
@@ -631,7 +631,7 @@ SubSectionEnd #FileDaemon Subsection
 SubSection "Storage Daemon" SUBSEC_SD
 
 Section /o "Storage Daemon" SEC_SD
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -655,7 +655,7 @@ SectionIn 2 3
 SectionEnd
 
 Section /o "Storage Daemon Plugins " SEC_SDPLUGINS
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -666,7 +666,7 @@ SectionEnd
 
 
 Section "Open Firewall for Storage Daemon" SEC_FIREWALL_SD
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     DetailPrint  "Opening Firewall, OS is Win7+"
@@ -688,7 +688,7 @@ SubSectionEnd # Storage Daemon Subsection
 SubSection "Director" SUBSEC_DIR
 
 Section /o "Director" SEC_DIR
-SectionIn 2 3
+SectionIn 2
 
   SetShellVarContext all
   CreateDirectory "$APPDATA\${PRODUCT_NAME}\logs"
@@ -802,7 +802,7 @@ SectionEnd
 
 
 Section /o "Director Plugins" SEC_DIRPLUGINS
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -815,7 +815,7 @@ SectionEnd
 
 
 Section "Open Firewall for Director" SEC_FIREWALL_DIR
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     DetailPrint  "Opening Firewall, OS is Win7+"
@@ -837,7 +837,7 @@ SubSectionEnd # Director Subsection
 SubSection "User Interfaces" SUBSEC_CONSOLES
 
 Section /o "Tray-Monitor" SEC_TRAYMON
-SectionIn 1 2 3
+SectionIn 1 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -872,7 +872,7 @@ SectionEnd
 
 
 Section "Bareos Webui" SEC_WEBUI
-   SectionIn 2 3
+   SectionIn 2
    ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
    StrCpy $InstallWebUI "yes"
    SetShellVarContext all
@@ -956,7 +956,7 @@ SectionEnd
 
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
