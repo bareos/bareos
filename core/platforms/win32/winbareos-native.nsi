@@ -530,7 +530,7 @@ Section -SetPasswords
 SectionEnd
 
 
-SubSection "File Daemon (Client)" SUBSEC_FD
+SectionGroup "File Daemon (Client)" SUBSEC_FD
 
 Section "File Daemon and base libs" SEC_FD
 SectionIn 1 2 3
@@ -625,10 +625,10 @@ SectionEnd
 
 
 
-SubSectionEnd #FileDaemon Subsection
+SectionGroupEnd #FileDaemon Subsection
 
 
-SubSection "Storage Daemon" SUBSEC_SD
+SectionGroup "Storage Daemon" SUBSEC_SD
 
 Section /o "Storage Daemon" SEC_SD
 SectionIn 2
@@ -681,11 +681,11 @@ SectionIn 2
   ${EndIf}
 SectionEnd
 
-SubSectionEnd # Storage Daemon Subsection
+SectionGroupEnd # Storage Daemon Subsection
 
 
 
-SubSection "Director" SUBSEC_DIR
+SectionGroup "Director" SUBSEC_DIR
 
 Section /o "Director" SEC_DIR
 SectionIn 2
@@ -833,11 +833,11 @@ SectionIn 2
   ${EndIf}
 SectionEnd
 
-SubSectionEnd # Director Subsection
+SectionGroupEnd # Director Subsection
 
 
 
-SubSection "User Interfaces" SUBSEC_CONSOLES
+SectionGroup "User Interfaces" SUBSEC_CONSOLES
 
 Section /o "Tray-Monitor" SEC_TRAYMON
 SectionIn 1 2
@@ -982,7 +982,7 @@ SectionIn 2
 SectionEnd
 
 
-SubSectionEnd # Consoles Subsection
+SectionGroupEnd # Consoles Subsection
 
 Section /o Sourcecode SEC_SOURCE
    SetShellVarContext all
