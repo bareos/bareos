@@ -65,9 +65,33 @@ empty_job=$(grep "jobid" "$tmp/zero-file_start.out" | tail -n 2 | head -n 1 | se
 second_job=$(grep "jobid" "$tmp/zero-file_start.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
 cons_job=$(grep "jobid" "$tmp/zero-file_consolidate.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
 
+
+
+# this is useful in case this test fails to remove the empty job
+# to diagnose the issue
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/empty-files.out
+sqlquery
+SELECT
+  path || name AS path,
+  to_timestamp(st_mtime) AS modify,
+  to_timestamp(st_atime) AS access,
+  to_timestamp(st_ctime) AS change
+FROM
+  file JOIN path USING (pathid), decode_lstat(lstat)
+WHERE
+  jobid=${empty_job};
+END_OF_DATA
+
+run_bconsole
+
 expect_grep "purging empty jobids ${empty_job}" \
             "$tmp/zero-file_messages.out" \
             "Removal of expected empty jobs was not successful"
+
+expect_grep "No results to list" \
+            "$tmp/empty-files.out" \
+            "Somehow the empty job contains files"
 
 expect_grep "purged JobIds .*${first_job} as they were consolidated into Job $((cons_job + 1))" \
             "$tmp/zero-file_messages.out" \
