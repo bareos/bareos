@@ -804,7 +804,7 @@ SectionEnd
 
 
 Section /o "Director Plugins" SEC_DIRPLUGINS
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
