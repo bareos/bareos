@@ -391,7 +391,15 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   // just in time reservation.  Keep in mind that from this point forward
   // trying to read from the filedaemon socked is still forbidden.  Only
   // writing is ok!
-  MessageHandler handler(bs->clone());
+
+
+  auto* cloned = bs->clone();
+  if (cloned->fd_ < 0) {
+    Jmsg2(jcr, M_FATAL, 0, T_("Could not clone socket (fd = %d): %s\n"),
+          cloned->fd_, cloned->errmsg);
+    return false;
+  }
+  MessageHandler handler(cloned);
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /* Read Stream header from the daemon.
@@ -475,8 +483,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       auto msg = handler.get_msg();
 
       if (!msg) {
-        Jmsg2(jcr, M_FATAL, 0,
-              T_("Internal Error reading data header from %s.\n"), what);
+        Jmsg2(jcr, M_FATAL, 0, T_("Internal Error reading data from %s.\n"),
+              what);
         ok = false;
         break;
       }

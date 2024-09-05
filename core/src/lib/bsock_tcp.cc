@@ -61,10 +61,10 @@ BareosSocketTCP::BareosSocketTCP() : BareosSocket() {}
 
 BareosSocketTCP::~BareosSocketTCP() { destroy(); }
 
-#ifdef HAVE_MSVC
 
 int DuplicateSocket(int fd, POOLMEM*& error)
 {
+#if defined(HAVE_WIN32)
   WSAPROTOCOL_INFOW info;
   int r = WSADuplicateSocketW(fd, GetCurrentProcessId(), &info);
 
@@ -83,10 +83,28 @@ int DuplicateSocket(int fd, POOLMEM*& error)
    * See https://stackoverflow.com/a/26496808 for more details */
   // static_assert(sizeof(s) == sizeof(int));
 
-  return (int)s;
-}
 
+  int ret = (int)s;
+
+  if (ret < 0) {
+    if (s == INVALID_SOCKET) {
+      Mmsg(error, "could not duplicate socket: WSASocketW failed (%d)",
+           WSAGetLastError());
+    } else {
+      Mmsg(error, "could not duplicate socket: bad conversion (s = %llu)", s);
+    }
+  }
+
+  return ret;
+#else
+  if (fd >= 0) {
+    return dup(fd);
+  } else {
+    Mmsg(error, "could not duplicate socket: fd is not valid.");
+    return -1;
+  }
 #endif
+}
 
 BareosSocket* BareosSocketTCP::clone()
 {
@@ -101,11 +119,8 @@ BareosSocket* BareosSocketTCP::clone()
   if (host_) { host_ = strdup(host_); }
 
   /* duplicate file descriptors */
-#ifdef HAVE_MSVC
   if (fd_ >= 0) { clone->fd_ = DuplicateSocket(fd_, clone->errmsg); }
-#else
-  if (fd_ >= 0) { clone->fd_ = dup(fd_); }
-#endif
+
   if (spool_fd_ >= 0) { clone->spool_fd_ = dup(spool_fd_); }
 
   clone->cloned_ = true;
