@@ -242,35 +242,32 @@ class MessageHandler {
   static void enlist(MessageHandler* handler) { handler->do_work(); }
 };
 
-// Append Data sent from File daemon
-bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
+static bool SetupDCR(JobControlRecord* jcr,
+                     std::int64_t& volid,
+                     uint32_t& blocknum)
 {
-  int32_t n, file_index, stream, last_file_index, job_elapsed;
-  bool ok = true;
-  char buf1[100];
-  Device* dev;
-  POOLMEM* rec_data;
-  char ec[50];
+  if (!jcr->sd_impl->dcr) {
+    jcr->sendJobStatus(JS_WaitSD);
+    if (TryReserveAfterUse(jcr, true)) {
+      Jmsg(jcr, M_INFO, 0, T_("Using Device %s to write.\n"),
+           jcr->sd_impl->dcr->dev->print_name());
+    } else {
+      Jmsg(jcr, M_FATAL, 0, T_("Could not reserve any device for this job.\n"));
+      return false;
+    }
+  }
 
   if (!jcr->sd_impl->dcr) {
     Jmsg0(jcr, M_FATAL, 0, T_("DeviceControlRecord is NULL!!!\n"));
     return false;
   }
-  dev = jcr->sd_impl->dcr->dev;
+  auto* dev = jcr->sd_impl->dcr->dev;
   if (!dev) {
     Jmsg0(jcr, M_FATAL, 0, T_("Device is NULL!!!\n"));
     return false;
   }
 
   Dmsg1(100, "Start append data. res=%d\n", dev->NumReserved());
-
-  if (!bs->SetBufferSize(
-          jcr->sd_impl->dcr->device_resource->max_network_buffer_size,
-          BNET_SETBUF_WRITE)) {
-    Jmsg0(jcr, M_FATAL, 0, T_("Unable to set network buffer size.\n"));
-    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-    return false;
-  }
 
   if (!AcquireDeviceForAppend(jcr->sd_impl->dcr)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -288,6 +285,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   if (dev->VolCatInfo.VolCatName[0] == 0) {
     Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
+    return false;
   }
   Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
@@ -305,6 +303,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   Dmsg0(100, "Just after AcquireDeviceForAppend\n");
   if (dev->VolCatInfo.VolCatName[0] == 0) {
     Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
+    return false;
   }
 
   // Write Begin Session Record
@@ -312,10 +311,50 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Jmsg1(jcr, M_FATAL, 0, T_("Write session label failed. ERR=%s\n"),
           dev->bstrerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-    ok = false;
   }
+
   if (dev->VolCatInfo.VolCatName[0] == 0) {
     Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
+    return false;
+  }
+
+  jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
+
+  volid = jcr->sd_impl->dcr->VolMediaId;
+
+  blocknum = jcr->sd_impl->dcr->block->BlockNumber;
+
+  return true;
+}
+
+// Append Data sent from File daemon
+bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
+{
+  int32_t n, file_index, stream, last_file_index, job_elapsed;
+  bool ok = true;
+  char buf1[100];
+  char ec[50];
+
+  int64_t current_volumeid = 0;
+  uint32_t current_block_number = 0;
+
+  if (jcr->sd_impl->dcr) {
+    // if the device was already reserved, we will now try to acquire it
+
+    // first we set the buffer size; this is only done with advance reservation
+    // since it does not make sense to do it after data starts arriving
+
+    if (!bs->SetBufferSize(me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
+      Jmsg0(jcr, M_FATAL, 0, T_("Unable to set network buffer size.\n"));
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
+    }
+
+    if (!SetupDCR(jcr, current_volumeid, current_block_number)) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Unable to setup pre reserved dcr for this job.\n"));
+      return false;
+    }
   }
 
   // Tell daemon to send data
@@ -341,19 +380,28 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    * So we get the (stream header, data, EOD) three time for each
    * file. 1. for the Attributes, 2. for the file data if any,
    * and 3. for the MD5 if any. */
-  jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
 
   const bool checkpoints_enabled = me->checkpoint_interval > 0;
   CheckpointHandler checkpoint_handler(me->checkpoint_interval);
 
   std::vector<ProcessedFile> processed_files{};
-  int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
 
   ProcessedFile file_currently_processed;
-  uint32_t current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
 
-  MessageHandler handler(std::exchange(bs, nullptr));
+  // we need to clone here as we need to send heartbeats in case of
+  // just in time reservation.  Keep in mind that from this point forward
+  // trying to read from the filedaemon socked is still forbidden.  Only
+  // writing is ok!
+
+
+  auto* cloned = bs->clone();
+  if (cloned->fd_ < 0) {
+    Jmsg2(jcr, M_FATAL, 0, T_("Could not clone socket (fd = %d): %s\n"),
+          cloned->fd_, cloned->errmsg);
+    return false;
+  }
+  MessageHandler handler(cloned);
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /* Read Stream header from the daemon.
@@ -432,13 +480,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     /* Read data stream from the daemon. The data stream is just raw bytes.
      * We save the original data pointer from the record so we can restore
      * that after the loop ends. */
-    rec_data = jcr->sd_impl->dcr->rec->data;
+    POOLMEM* rec_data = nullptr;
     while (!jcr->IsJobCanceled()) {
       auto msg2 = handler.get_msg();
 
       if (!msg2) {
-        Jmsg2(jcr, M_FATAL, 0,
-              T_("Internal Error reading data header from %s.\n"), what);
+        Jmsg2(jcr, M_FATAL, 0, T_("Internal Error reading data from %s.\n"),
+              what);
         ok = false;
         break;
       }
@@ -463,6 +511,16 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       auto content2 = std::get<message_type>(std::move(msg2).value());
       n = content2.size;
 
+      if (!jcr->sd_impl->dcr) {
+        Jmsg(jcr, M_INFO, 0,
+             T_("JustInTime Reservation: Finding drive to reserve.\n"));
+        if (!SetupDCR(jcr, current_volumeid, current_block_number)) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (rec_data == nullptr) { rec_data = jcr->sd_impl->dcr->rec->data; }
       jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
       jcr->sd_impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
       jcr->sd_impl->dcr->rec->FileIndex = file_index;
@@ -524,7 +582,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Dmsg2(650, "End read loop with %s. Stat=%d\n", what, n);
 
     // Restore the original data pointer.
-    jcr->sd_impl->dcr->rec->data = rec_data;
+    if (rec_data) { jcr->sd_impl->dcr->rec->data = rec_data; }
 
     if (auto* error = handler.error()) {
       if (!jcr->IsJobCanceled()) {
@@ -538,7 +596,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     }
   }
 
-  bs = handler.close_and_get_sock();
+  {
+    // delete the copy
+    auto* copy = handler.close_and_get_sock();
+    copy->close();
+    delete copy;
+  }
+
   // Create Job status for end of session label
   jcr->setJobStatusWithPriorityCheck(ok ? JS_Terminated : JS_ErrorTerminated);
 
@@ -552,54 +616,64 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     bs->fsend("3999 Failed append\n");
   }
 
-  Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
+  if (jcr->sd_impl->dcr) {
+    Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
 
-  /* Check if we can still write. This may not be the case
-   * if we are at the end of the tape or we got a fatal I/O error. */
-  if (ok || dev->CanWrite()) {
-    // take into account the fact that GetFileIndex() may return -1
-    // if no file is currently getting processed.
-    // This should only happen if no file was send to begin with!
-    jcr->JobFiles = std::max(file_currently_processed.GetFileIndex(), 0);
-    if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
-      // Print only if ok and not cancelled to avoid spurious messages
-      if (ok && !jcr->IsJobCanceled()) {
-        Jmsg1(jcr, M_FATAL, 0, T_("Error writing end session label. ERR=%s\n"),
-              dev->bstrerror());
+    /* Check if we can still write. This may not be the case
+     * if we are at the end of the tape or we got a fatal I/O error. */
+    if (ok || jcr->sd_impl->dcr->dev->CanWrite()) {
+      // take into account the fact that GetFileIndex() may return -1
+      // if no file is currently getting processed.
+      // This should only happen if no file was send to begin with!
+      jcr->JobFiles = std::max(file_currently_processed.GetFileIndex(), 0);
+      if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
+        // Print only if ok and not cancelled to avoid spurious messages
+        if (ok && !jcr->IsJobCanceled()) {
+          Jmsg1(jcr, M_FATAL, 0,
+                T_("Error writing end session label. ERR=%s\n"),
+                jcr->sd_impl->dcr->dev->bstrerror());
+        }
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+        ok = false;
       }
-      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-      ok = false;
+      Dmsg0(90, "back from write_end_session_label()\n");
+
+      // Flush out final partial block of this session
+      if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
+        // Print only if ok and not cancelled to avoid spurious messages
+        if (ok && !jcr->IsJobCanceled()) {
+          Jmsg2(jcr, M_FATAL, 0,
+                T_("Fatal append error on device %s: ERR=%s\n"),
+                jcr->sd_impl->dcr->dev->print_name(),
+                jcr->sd_impl->dcr->dev->bstrerror());
+          Dmsg0(100, T_("Set ok=FALSE after WriteBlockToDevice.\n"));
+        }
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+        ok = false;
+      } else if (ok && !jcr->IsJobCanceled()) {
+        // Send attributes of the final partial block of the session
+        if (file_currently_processed.GetFileIndex() > 0) {
+          processed_files.push_back(std::move(file_currently_processed));
+        }
+        SaveFullyProcessedFilesAttributes(jcr, processed_files);
+      }
     }
-    Dmsg0(90, "back from write_end_session_label()\n");
 
-    // Flush out final partial block of this session
-    if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
-      // Print only if ok and not cancelled to avoid spurious messages
-      if (ok && !jcr->IsJobCanceled()) {
-        Jmsg2(jcr, M_FATAL, 0, T_("Fatal append error on device %s: ERR=%s\n"),
-              dev->print_name(), dev->bstrerror());
-        Dmsg0(100, T_("Set ok=FALSE after WriteBlockToDevice.\n"));
-      }
-      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-      ok = false;
-    } else if (ok && !jcr->IsJobCanceled()) {
-      // Send attributes of the final partial block of the session
-      if (file_currently_processed.GetFileIndex() > 0) {
-        processed_files.push_back(std::move(file_currently_processed));
-      }
-      SaveFullyProcessedFilesAttributes(jcr, processed_files);
+    if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
+      DiscardDataSpool(jcr->sd_impl->dcr);
+    } else {
+      // Note: if commit is OK, the device will remain blocked
+      CommitDataSpool(jcr->sd_impl->dcr);
     }
-  }
 
-  if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
-    DiscardDataSpool(jcr->sd_impl->dcr);
+    // Release the device -- and send final Vol info to DIR and unlock it.
+    ReleaseDevice(jcr->sd_impl->dcr);
   } else {
-    // Note: if commit is OK, the device will remain blocked
-    CommitDataSpool(jcr->sd_impl->dcr);
+    Jmsg(jcr, M_INFO, 0,
+         "Because no backup data was received, no device was reserved. As such "
+         "no Session Labels were written for this job.\n");
+    Dmsg0(50, "No data for job %d => no data written.\n", jcr->JobId);
   }
-
-  // Release the device -- and send final Vol info to DIR and unlock it.
-  ReleaseDevice(jcr->sd_impl->dcr);
 
   if (!DeleteNullJobmediaRecords(jcr)) {
     Jmsg(jcr, M_WARNING, 0,
