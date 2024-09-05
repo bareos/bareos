@@ -790,7 +790,7 @@ SectionEnd
 # Check if database server is installed only in silent mode
 # otherwise this is done in the database dialog
 #
-Section -DataBaseCheck
+Section -DataBaseCheck SEC_DATABASE_CHECK
 
 IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
 
@@ -2090,6 +2090,14 @@ Function .onSelChange
   StrCmp $R0 ${SF_SELECTED} 0 +3
   StrCpy $InstallDirector "yes"
   SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
+
+  # Disable databsae check section if director is unselected
+  ${If} ${SectionIsSelected} ${SEC_DIR}
+    SectionSetFlags ${SEC_DATABASE_CHECK} ${SF_SELECTED}
+  ${Else}
+    SectionSetFlags ${SEC_DATABASE_CHECK} ${SF_UNSELECTED}
+  ${EndIF}
+
 
   Pop $R1
   Pop $R0
