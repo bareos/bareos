@@ -25,6 +25,6 @@ post-install:
 
 pre-package:
 	@echo pre-package ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
-	if [ -f ${WRKDIR}/.build/Testing/TAG ]; then echo "Testing/TAG exists, not running ctest a second time"; else cd ${WRKDIR}/.build && sudo REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"; fi
+	if [ -f ${WRKDIR}/.build/Testing/TAG ]; then echo "Testing/TAG exists, not running ctest a second time"; else cd ${WRKDIR}/.build && REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"; fi
 
 .include "${MASTERDIR}/BareosCommonMakefile"
