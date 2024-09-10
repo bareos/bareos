@@ -6,17 +6,19 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Changed
-- python-bareos: add missing `dirname` variable [PR #1848]
 - matrix remove obsolete SUSE [PR #1907]
-- filed: fix python plugin crash on python <3.10 [PR #1916]
 - Use only MinGW VSS [PR #1897]
-- python-bareos: fix backslash usage in regex [PR #1931]
-- webui: fixing selenium tests [PR #1925]
 - cats: scripts add option --no-psqlrc to psql [PR #1927]
 
 ### Fixed
+- webui: fixing selenium tests [PR #1925]
+- python-bareos: fix backslash usage in regex [PR #1931]
+- filed: fix python plugin crash on python <3.10 [PR #1916]
+- python-bareos: add missing `dirname` variable [PR #1848]
 - create_bareos_database: fix `db_name` not being double quoted [PR #1870]
-- Fix multiple ACL handling bugs [PR #1891]
+
+### Security
+- Fix multiple ACL handling bugs [PR #1891] [CVE-2024-45044](https://github.com/bareos/bareos/security/advisories/GHSA-jfww-q346-r2r8)
 
 ### Documentation
 - Update ReaR documentation [PR #1895]
