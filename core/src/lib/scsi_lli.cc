@@ -50,7 +50,7 @@
 #    endif
 
 // Core interface function to lowlevel SCSI interface.
-static inline bool do_scsi_cmd_page(int fd,
+static inline bool do_scsi_cmd_page([[maybe_unused]] int fd,
                                     const char* device_name,
                                     void* cdb,
                                     unsigned int cdb_len,
@@ -171,7 +171,7 @@ bool CheckScsiAtEod(int fd)
 #    endif
 
 // Core interface function to lowlevel SCSI interface.
-static inline bool do_scsi_cmd_page(int fd,
+static inline bool do_scsi_cmd_page([[maybe_unused]] int fd,
                                     const char* device_name,
                                     void* cdb,
                                     unsigned int cdb_len,
@@ -274,7 +274,7 @@ bool CheckScsiAtEod(int fd) { return false; }
 #    endif
 
 // Core interface function to lowlevel SCSI interface.
-static inline bool do_scsi_cmd_page(int fd,
+static inline bool do_scsi_cmd_page([[maybe_unused]] int fd,
                                     const char* device_name,
                                     void* cdb,
                                     unsigned int cdb_len,
@@ -387,7 +387,7 @@ bool send_scsi_cmd_page(int fd,
                           CAM_DIR_OUT);
 }
 
-bool CheckScsiAtEod(int fd) { return false; }
+bool CheckScsiAtEod([[maybe_unused]] int fd) { return false; }
 #  endif
 #else
 // Dummy lowlevel functions when no support for platform.
