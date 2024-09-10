@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [23.0.4] - 2024-09-10
 
 ### Added
 - build: enable building for Fedora40 and Ubuntu 24.04 [PR #1898]
@@ -314,6 +314,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [23.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.1
 [23.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.2
 [23.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.3
+[23.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.4
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
@@ -535,4 +536,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1926]: https://github.com/bareos/bareos/pull/1926
 [PR #1930]: https://github.com/bareos/bareos/pull/1930
 [PR #1940]: https://github.com/bareos/bareos/pull/1940
-[unreleased]: https://github.com/bareos/bareos/tree/master
