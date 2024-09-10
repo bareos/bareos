@@ -41,9 +41,9 @@ CPMAddPackage(
 
 CPMAddPackage(
   NAME fmt
-  VERSION 6.2.1
+  VERSION 11.0.2
   GITHUB_REPOSITORY fmtlib/fmt
-  GIT_TAG 10.2.1
+  GIT_TAG 11.0.2
   EXCLUDE_FROM_ALL YES
 )
 
