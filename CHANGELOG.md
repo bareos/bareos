@@ -5,35 +5,39 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
-### Documentation
-- Fix mistake in VolumeManagement.rst [PR #1834]
-- docs: improve Restoring a Bareos Server section [PR #1886]
-- Update ReaR documentation [PR #1894]
+### Added
+- build: enable building for Fedora40 and Ubuntu 24.04 [PR #1898]
 
 ### Changed
-- python-bareos: fix description [PR #1841]
 - VMware Plugin: Adapt to Python 3.12 [PR #1879]
-- freebsd: fix build issues with ports tree 2024Q3 [PR #1884]
 - matrix remove obsolete SUSE [PR #1906]
 - VMware Plugin: Add option restore_allow_disks_mismatch [PR #1905]
 - Use only MinGW VSS [PR #1896]
-- filed: fix python plugin crash on python <3.10 [PR #1913]
-- vadp-dumper: fix out of bounds read [PR #1918]
 - dird: disallow running always incremental virtual full jobs with empty jobid list [PR #1901]
 - cats: scripts add option --no-psqlrc to psql [PR #1926]
-- python-bareos: fix backslash usage in regex [PR #1930]
-- webui: fixing selenium tests [PR #1924]
-- msgchan: fix deadlock [PR #1904]
 - webui: properly set focus to input box after each command [PR #1940]
-- build: enable building for Fedora40 and Ubuntu 24.04 [PR #1898]
 
 ### Fixed
+- python-bareos: fix description [PR #1841]
 - fix sql error on bad virtualfull; detect parsing errors with strtod [PR #1842]
 - windows: fix some crashes, change handling of invalid paths; lex: add better error detection; accurate: fix out of bounds writes [PR #1860]
 - create_bareos_database: fix `db_name` not being double quoted [PR #1869]
 - dir: fix crash on purge with job without client [PR #1861]
 - fix runtime status [PR #1874]
-- Fix multiple ACL handling bugs [PR #1890]
+- msgchan: fix deadlock [PR #1904]
+- python-bareos: fix backslash usage in regex [PR #1930]
+- webui: fixing selenium tests [PR #1924]
+- vadp-dumper: fix out of bounds read [PR #1918]
+- filed: fix python plugin crash on python <3.10 [PR #1913]
+- freebsd: fix build issues with ports tree 2024Q3 [PR #1884]
+
+### Security
+- Fix multiple ACL handling bugs [PR #1890] [CVE-2024-45044](https://github.com/bareos/bareos/security/advisories/GHSA-jfww-q346-r2r8)
+
+### Documentation
+- Fix mistake in VolumeManagement.rst [PR #1834]
+- docs: improve Restoring a Bareos Server section [PR #1886]
+- Update ReaR documentation [PR #1894]
 
 ## [23.0.3] - 2024-06-04
 
