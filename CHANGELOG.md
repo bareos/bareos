@@ -5,12 +5,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
-### Changed
+### Fixed
 - python-bareos: add missing `dirname` variable [PR #1849]
 - python-bareos: fix backslash usage in regex [PR #1932]
 
-### Fixed
-- Fix multiple ACL handling bugs [PR #1892]
+### Security
+- Fix multiple ACL handling bugs [PR #1892] [CVE-2024-45044](https://github.com/bareos/bareos/security/advisories/GHSA-jfww-q346-r2r8)
 
 ## [21.1.10] - 2024-06-04
 
