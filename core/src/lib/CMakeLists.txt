@@ -105,6 +105,11 @@ set(BAREOS_SRCS
     watchdog_timer.cc
     xxhash.cc
 )
+if(HAVE_WIN32)
+  list(APPEND BAREOS_SRCS fs_win.cc)
+else()
+  list(APPEND BAREOS_SRCS fs_unix.cc)
+endif()
 
 if(HAVE_WIN32)
   list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
