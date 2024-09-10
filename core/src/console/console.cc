@@ -132,12 +132,14 @@ static struct cmdstruct commands[] = {
 };
 
 
+// Windows has its own predefined IsUserAnAdmin() function
+#if !defined(HAVE_WIN32) && !defined(HAVE_MSVC)
 static bool IsUserAnAdmin()
 {
   uid_t euid = geteuid();
   return (euid == 0);
 }
-
+#endif
 
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
