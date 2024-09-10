@@ -29,7 +29,7 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 case "$1" in
     start)
         if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
-            echo "Starting the Bareos File daemon"
+            echo "Starting the Bareos File daemon as $(whoami)"
             OPTIONS=''
             if [ "${BAREOS_FD_USER}" != '' ]; then
                 OPTIONS="${OPTIONS} -u ${BAREOS_FD_USER}"
