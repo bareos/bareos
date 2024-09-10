@@ -501,7 +501,7 @@ start_dir() {
 }
 
 start_fd() {
-  ${rscripts}/bareos-ctl-fd start
+   ${BAREOS_CTL_FD_RUNNER:-} ${rscripts}/bareos-ctl-fd start
 }
 
 start_sd() {
