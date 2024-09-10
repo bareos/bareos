@@ -132,7 +132,7 @@ static struct cmdstruct commands[] = {
 };
 
 
-static bool running_as_privileged_user()
+static bool IsUserAnAdmin()
 {
   uid_t euid = geteuid();
   return (euid == 0);
@@ -1146,7 +1146,7 @@ static int Versioncmd(FILE*, BareosSocket*)
 /* @input <input-filename> */
 static int InputCmd(FILE*, BareosSocket*)
 {
-  if (running_as_privileged_user()) {
+  if (IsUserAnAdmin()) {
     ConsoleOutput(T_("@input command is not allowed as privileged user.\n"));
     return 1;
   }
@@ -1174,7 +1174,7 @@ static int InputCmd(FILE*, BareosSocket*)
 /* Send output to both terminal and specified file */
 static int TeeCmd(FILE* input, BareosSocket* UA_sock)
 {
-  if (running_as_privileged_user()) {
+  if (IsUserAnAdmin()) {
     ConsoleOutput(T_("@tee command is not allowed as privileged user.\n"));
     return 1;
   }
@@ -1186,7 +1186,7 @@ static int TeeCmd(FILE* input, BareosSocket* UA_sock)
 /* Send output to specified "file" */
 static int OutputCmd(FILE* input, BareosSocket* UA_sock)
 {
-  if (running_as_privileged_user()) {
+  if (IsUserAnAdmin()) {
     ConsoleOutput(T_("@output command is not allowed as privileged user.\n"));
     return 1;
   }
@@ -1227,7 +1227,7 @@ static int ExecCmd(FILE*, BareosSocket*)
   int status;
   int wait = 0;
 
-  if (running_as_privileged_user()) {
+  if (IsUserAnAdmin()) {
     ConsoleOutput(T_("@exec command is not allowed as privileged user.\n"));
     return 1;
   }
