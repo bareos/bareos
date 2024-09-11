@@ -715,6 +715,10 @@ SectionIn 2
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
   File ${CMAKE_BINARY_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf
 
+  !cd ${CMAKE_SOURCE_DIR}\core\src\cats\ddl\updates
+  SetOutPath "$APPDATA\${PRODUCT_NAME}\scripts\updates"
+  File "*.sql"
+
   # edit sql ddl files
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-grant.sql"'
 
@@ -722,6 +726,8 @@ SectionIn 2
   Rename  "$PLUGINSDIR\postgresql-create.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-create.sql"
   Rename  "$PLUGINSDIR\postgresql-grant.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-grant.sql"
   Rename  "$PLUGINSDIR\postgresql-drop.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-drop.sql"
+
+
 
   # create db-create script
   FileOpen  $R1 $PLUGINSDIR\postgresql-createdb.sql w
@@ -785,6 +791,8 @@ SectionIn 2
   FileWrite $R1 'REM this script deletes the db dump $\r$\n'
   FileWrite $R1 'del $APPDATA\${PRODUCT_NAME}\working\bareos.sql $\r$\n'
   FileClose $R1
+
+
 SectionEnd
 
 
@@ -2006,6 +2014,8 @@ ConfDeleteSkip:
   Delete "$APPDATA\${PRODUCT_NAME}\fillup.sed"
 
   # batch scripts and sql files
+  RMDir  "$APPDATA\${PRODUCT_NAME}\scripts\updates\*.sql"
+  RMDir  "$APPDATA\${PRODUCT_NAME}\scripts\updates"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.bat"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.sql"
   RMDir  "$APPDATA\${PRODUCT_NAME}\scripts"

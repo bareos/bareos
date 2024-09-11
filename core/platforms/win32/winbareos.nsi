@@ -2052,6 +2052,8 @@ ConfDeleteSkip:
   Delete "$APPDATA\${PRODUCT_NAME}\fillup.sed"
 
   # batch scripts and sql files
+  RMDir  "$APPDATA\${PRODUCT_NAME}\scripts\updates\*.sql"
+  RMDir  "$APPDATA\${PRODUCT_NAME}\scripts\updates"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.bat"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.sql"
   RMDir  "$APPDATA\${PRODUCT_NAME}\scripts"
