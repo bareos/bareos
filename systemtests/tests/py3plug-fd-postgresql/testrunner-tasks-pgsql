@@ -20,7 +20,7 @@ JobName="backup-bareos-fd-tasks-pgsql"
 # setup local database server
 DBNAME="db_tasks_pgsql"
 TESTPGHOST="${dbHost}"
-PSQL="${POSTGRES_BIN_PATH}/psql --host ${TESTPGHOST}"
+PSQL="${POSTGRES_BIN_PATH}/psql --no-psqlrc --host ${TESTPGHOST}"
 RESTORE_DIR="$tmp/bareos-restores/@PGSQL/"
 
 [ -d "${TESTPGHOST}" ] && rm -R  "${TESTPGHOST}"
