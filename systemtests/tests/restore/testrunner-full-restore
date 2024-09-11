@@ -72,5 +72,5 @@ expect_grep "Restore OK" \
 	    "$log_home/restore-full.out" \
 	    "Restore job was not successful"
 
-check_restore_diff "${BackupDirectory}"
+check_restore_diff "${BackupDirectory}" | tee "${log_home}/diff.out"
 end_test

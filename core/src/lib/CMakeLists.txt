@@ -106,7 +106,7 @@ set(BAREOS_SRCS
     xxhash.cc
 )
 if(HAVE_WIN32)
-  list(APPEND BAREOS_SRCS fs_win.cc)
+  # list(APPEND BAREOS_SRCS fs_win.cc)
 else()
   list(APPEND BAREOS_SRCS fs_unix.cc)
 endif()

@@ -27,6 +27,7 @@
 namespace fs {
 
 namespace {
+#if 0
 uint64_t combine(LARGE_INTEGER i)
 {
   return static_cast<uint64_t>(i.HighPart) << 32
@@ -85,4 +86,11 @@ std::optional<file_attributes> file_attributes::of(native_handle h)
       .blocks = (size + 4095) / 4096,
   };
 }
+#else
+std::optional<file_attributes> file_attributes::of(native_handle h)
+{
+  (void)h;
+  return std::nullopt;
+}
+#endif
 }  // namespace fs
