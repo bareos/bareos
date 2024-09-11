@@ -1715,7 +1715,6 @@ int stat(const char* filename, struct stat* sb)
     sb->st_blksize = 4096;
     sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
 
-#if (_WIN32_WINNT >= 0x0600)
     // See if GetFileInformationByHandleEx API is available.
     if (p_GetFileInformationByHandleEx) {
       HANDLE h = INVALID_HANDLE_VALUE;
@@ -1732,6 +1731,7 @@ int stat(const char* filename, struct stat* sb)
 
       if (h != INVALID_HANDLE_VALUE) {
         FILE_BASIC_INFO basic_info;
+        FILE_STANDARD_INFO standard_info;
 
         if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &basic_info,
                                            sizeof(basic_info))) {
@@ -1741,10 +1741,14 @@ int stat(const char* filename, struct stat* sb)
           use_fallback_data = false;
         }
 
+        if (p_GetFileInformationByHandleEx(h, FileStandardInfo, &standard_info,
+                                           sizeof(standard_info))) {
+          sb->st_nlink = standard_info.NumberOfLinks;
+        }
+
         CloseHandle(h);
       }
     }
-#endif
 
     if (use_fallback_data) {
       // Fall back to the GetFileAttributesEx data.
