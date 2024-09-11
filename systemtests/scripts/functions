@@ -164,10 +164,7 @@ setup_data()
     weird-files/fifo-file \
     weird-files/soft-file2 \
     weird-files/softlink-to-softlinkee \
-    weird-files/a-file-with* \
-    weird-files/normalfile \
-    weird-files/another-hardlink-to-normalfile \
-    weird-files/hardlink-to-normalfile \
+    weird-files/a-file-with*
 
   do rm -Rvf "$f" || echo "failed to remove \"$f\""
   done
