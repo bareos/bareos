@@ -147,13 +147,6 @@ setup_data()
     weird-files/'  ' \
     weird-files/' ' \
     weird-files/'0 ' \
-    weird-files/another-hardlink-to-noalfile \
-    weird-files/hard-base-file \
-    weird-files/hard-file2 \
-    weird-files/hardlink-to-noalfile \
-    weird-files/noalfile \
-    weird-files/subdir/a-hardlink \
-    weird-files/subdir/another-hardlink \
     weird-files/*-with-accents* \
     weird-files/subdir/*softlink* \
     weird-files/This-Is-A-Very-Long-Directory-Name* \
