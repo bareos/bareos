@@ -503,6 +503,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
     i = FindArgWithValue(ua, "oldvolume");
     if (i >= 0) {
       bstrncpy(omr.VolumeName, ua->argv[i], sizeof(omr.VolumeName));
+      DbLocker _{ua->db};
       if (ua->db->GetMediaRecord(ua->jcr, &omr)) { goto checkVol; }
       ua->ErrorMsg("%s", ua->db->strerror());
     }
