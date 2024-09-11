@@ -93,6 +93,11 @@ if(NOT client-only)
 
 endif()
 
+if(HAVE_WIN32)
+  add_executable(finder finder.cc)
+  target_link_libraries(finder CLI11::CLI11)
+endif()
+
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 
