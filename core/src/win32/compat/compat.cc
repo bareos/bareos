@@ -3223,3 +3223,16 @@ void PreventOsSuspensions()
 }
 
 void AllowOsSuspensions() { SetThreadExecutionState(ES_CONTINUOUS); }
+
+int win32_link(const char* target, const char* link)
+{
+  std::wstring linkw = make_win32_path_UTF8_2_wchar(link);
+  std::wstring targetw = make_win32_path_UTF8_2_wchar(target);
+
+  if (!CreateHardLinkW(linkw.c_str(), targetw.c_str(), NULL)) {
+    errno = b_errno_win32;
+    return 1;
+  }
+
+  return 0;
+}
