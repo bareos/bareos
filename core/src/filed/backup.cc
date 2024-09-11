@@ -1604,7 +1604,12 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
   {
     std::unique_lock l(jcr->mutex_guard());
-    jcr->JobFiles++;                   /* increment number of files sent */
+    int IncreasedJobFiles;
+    if (__builtin_sadd_overflow(jcr->JobFiles, 1, &IncreasedJobFiles)) {
+      Jmsg0(jcr, M_FATAL, 0, T_("jcr->JobFiles overflow prevented!\n"));
+      return false;
+    }
+    jcr->JobFiles = IncreasedJobFiles; /* increment number of files sent */
     ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
     PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
   }
