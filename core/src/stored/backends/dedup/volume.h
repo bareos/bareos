@@ -22,7 +22,17 @@
 #ifndef BAREOS_STORED_BACKENDS_DEDUP_VOLUME_H_
 #define BAREOS_STORED_BACKENDS_DEDUP_VOLUME_H_
 
+#include <cstdlib>
+#include <string>
+#include "fvec.h"
+
 namespace dedup {
+struct block {};
+
+struct record {};
+
+struct save_state {};
+
 class volume {
  public:
   enum open_type
@@ -34,20 +44,24 @@ class volume {
   volume(open_type type,
          int creation_mode,
          const char* path,
-         std::size_t blocksize)
-      : sys_path{path}
-  {
-    (void)type;
-    (void)creation_mode;
-    (void)blocksize;
-  }
-  const char* path() const { return sys_path.c_str(); }
+         std::size_t blocksize);
 
-  int fileno() const { return fd; }
+  const char* path() const { return sys_path.c_str(); }
+  int fileno() const { return dird; }
+
+  save_state begin() { return {}; }
+  void abort(save_state) {}
+  void commit(save_state) {}
 
  private:
   std::string sys_path;
-  int fd;
+  int dird;
+  std::size_t blocksize;
+
+  fvec<char> aligned;
+  fvec<char> unaligned;
+  fvec<record> records;
+  fvec<block> blocks;
 };
 };  // namespace dedup
 
