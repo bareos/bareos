@@ -74,6 +74,7 @@ struct tree_node {
   tree_node()
       : type{tree_node_type::Root}
       , extract{false}
+      , extract_descendend{false}
       , hard_link{false}
       , soft_link{false}
       , inserted{false}
