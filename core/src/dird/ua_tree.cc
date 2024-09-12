@@ -387,12 +387,12 @@ static int SetExtract(UaContext* ua,
   }
   // Walk up tree marking any unextracted parent to be extracted.
   if (extract) {
-    while (node->parent) {
+    while (node->parent && !node->parent->extract_descendend) {
       node = node->parent;
       node->extract_descendend = true;
     }
   } else {
-    while (node->parent) {
+    while (node->parent && node->parent->extract_descendend) {
       node = node->parent;
       node->extract_descendend = false;
       tree_node* child;
@@ -465,31 +465,31 @@ static int MarkElements(UaContext* ua, TreeContext* tree, bool extract = true)
       stack.pop_back();
       auto& part = parts[current.part_index];
       auto* node = current.node;
-      if (fnmatch(part.c_str(), node->fname, 0) == 0) {
-        if (current.part_index + 1 == parts.size()) {
-          // if this is the last part, then we mark every found node
-          count += SetExtract(ua, node, tree, extract);
-        } else if (node->type != tree_node_type::File) {
-          // otherwise we check every child with the next part
-          tree_node* child;
 
-          if (part == "**") {
-            // ** matches any number of path parts, so we cannot just
-            //    skip this
-            foreach_child (child, node) {
-              stack.push_back({child, current.part_index});
+      // ** is treated specifically as it can match zero or more
+      // directories/subdirectory
+      bool special = (part == "**");
+
+      if (special) {
+        // special case: match 0 directories
+        stack.push_back({node, current.part_index + 1});
+      }
+
+      {
+        tree_node* child;
+        foreach_child (child, node) {
+          if (fnmatch(part.c_str(), child->fname, 0) == 0) {
+            if (current.part_index + 1 == parts.size()) {
+              count += SetExtract(ua, child, tree, extract);
+            } else if (child->type != tree_node_type::File) {
+              if (special) {
+                // special case: match 1+ directories
+                stack.push_back({child, current.part_index});
+              } else {
+                stack.push_back({child, current.part_index + 1});
+              }
             }
           }
-
-          foreach_child (child, node) {
-            stack.push_back({child, current.part_index + 1});
-          }
-        }
-      } else if (node->type == tree_node_type::Root) {
-        tree_node* child;
-
-        foreach_child (child, node) {
-          stack.push_back({child, current.part_index});
         }
       }
     }
