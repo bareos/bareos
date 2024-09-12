@@ -115,6 +115,24 @@ at our `security policy`_.
 .. _security policy: https://github.com/bareos/bareos/security/policy
 
 
+Documenting decisions
+---------------------
+
+Decisions on how to solve given problems that occur during development should be
+documented, especially in case:
+
+- the decision was not unanimous
+- the discussion took a long time
+- future development will be affected
+
+We use Architecture Decision Records to do this.
+These are kept along with a README in the directory ``docs/adr`` of the main
+repository.
+
+Most of these `Bareos Developer Notes`_, maybe including this section, should
+probably be migrated into ADRs at some point.
+
+
 Memory Leaks
 ------------
 
