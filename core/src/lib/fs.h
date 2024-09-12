@@ -25,7 +25,10 @@
 #include <cstdint>
 #include <ctime>
 #include <optional>
-#include <windows.h>
+
+#ifdef HAVE_WIN32
+#  include <windows.h>
+#endif
 
 namespace fs {
 
