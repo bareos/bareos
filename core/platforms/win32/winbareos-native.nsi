@@ -76,8 +76,6 @@ SetCompressor /solid lzma
 Var LocalHostAddress
 Var HostName
 
-var SEC_DIR_POSTGRES_DESCRIPTION
-
 # Config Parameters Dialog
 
 # Needed for Configuring client config file
@@ -461,7 +459,7 @@ ShowInstDetails show
 ShowUnInstDetails show
 
 InstType "Standard - FileDaemon + Plugins, Traymonitor"
-InstType "Full PostgreSQL - All Daemons,  Director PostgreSQL Backend (needs local PostgreSQL Server)"
+InstType "Full - All Daemons, Director with PostgreSQL Catalog Database (needs local PostgreSQL Server)"
 InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
 
@@ -532,10 +530,10 @@ Section -SetPasswords
 SectionEnd
 
 
-SubSection "File Daemon (Client)" SUBSEC_FD
+SectionGroup "File Daemon (Client)" SUBSEC_FD
 
 Section "File Daemon and base libs" SEC_FD
-SectionIn 1 2 3 4
+SectionIn 1 2 3
   SetShellVarContext all
   # TODO: only do this if the file exists
   #  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
@@ -548,23 +546,29 @@ SectionIn 1 2 3 4
   SetOutPath "$INSTDIR"
   File "bareos-config-deploy.bat"
   !cd "${CMAKE_BINARY_DIR}\core\src\filed\${CMAKE_CONFIG_TYPE}"
-  File "*.dll"
-  File "bareos-fd.exe"
+  File bareos-fd.exe
+  File bareos.dll
+  File bareosfastlz.dll
+  File bareosfind.dll
+  File bareoslmdb.dll
+  File iconv-2.dll
+  File intl-8.dll
+  File jansson.dll
+  File lzo2.dll
+  File pthreadVCE3.dll
+  File zlib1.dll
+  !cd "${CMAKE_BINARY_DIR}\core\src\cats\${CMAKE_CONFIG_TYPE}"
+  File libpq.dll
 
-##  !cd "C:\Program Files\Git\mingw64\bin"
-#  File "openssl.exe"
-#  File libcrypto-3-x64.dll
-#  File libssl-3-x64.dll
-#  File "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
+  !cd "C:\vcpkg\installed\x64-windows\bin"
+  File libcrypto-3-x64.dll
+  File libssl-3-x64.dll
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
   File "msys-2.0.dll"
   File "msys-intl-8.dll"
   File "msys-iconv-2.dll"
-
-  # install unittests
-#  File "test_*.exe"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
@@ -592,7 +596,7 @@ SectionEnd
 
 
 Section /o "File Daemon Plugins " SEC_FDPLUGINS
-SectionIn 1 2 3 4
+SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -603,7 +607,7 @@ SectionEnd
 
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
-SectionIn 1 2 3 4
+SectionIn 1 2 3
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     #
@@ -623,13 +627,13 @@ SectionEnd
 
 
 
-SubSectionEnd #FileDaemon Subsection
+SectionGroupEnd #FileDaemon Subsection
 
 
-SubSection "Storage Daemon" SUBSEC_SD
+SectionGroup "Storage Daemon" SUBSEC_SD
 
 Section /o "Storage Daemon" SEC_SD
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -654,7 +658,7 @@ SectionIn 2 3
 SectionEnd
 
 Section /o "Storage Daemon Plugins " SEC_SDPLUGINS
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -664,7 +668,7 @@ SectionEnd
 
 
 Section "Open Firewall for Storage Daemon" SEC_FIREWALL_SD
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     DetailPrint  "Opening Firewall, OS is Win7+"
@@ -679,14 +683,14 @@ SectionIn 2 3
   ${EndIf}
 SectionEnd
 
-SubSectionEnd # Storage Daemon Subsection
+SectionGroupEnd # Storage Daemon Subsection
 
 
 
-SubSection "Director" SUBSEC_DIR
+SectionGroup "Director" SUBSEC_DIR
 
 Section /o "Director" SEC_DIR
-SectionIn 2 3
+SectionIn 2
 
   SetShellVarContext all
   CreateDirectory "$APPDATA\${PRODUCT_NAME}\logs"
@@ -709,16 +713,11 @@ SectionIn 2 3
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
-  File "${CMAKE_BINARY_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf"
+  File ${CMAKE_BINARY_DIR}\core\src\defaultconfigs\tray-monitor.d\director\Director-local.conf
 
-SectionEnd
-
-
-Section /o "Director PostgreSQL Backend Support " SEC_DIR_POSTGRES
-SectionIn 2 3
-  SetShellVarContext all
-
-  SetOutPath "$INSTDIR"
+  !cd ${CMAKE_SOURCE_DIR}\core\src\cats\ddl\updates
+  SetOutPath "$APPDATA\${PRODUCT_NAME}\scripts\updates"
+  File "*.sql"
 
   # edit sql ddl files
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-grant.sql"'
@@ -727,6 +726,8 @@ SectionIn 2 3
   Rename  "$PLUGINSDIR\postgresql-create.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-create.sql"
   Rename  "$PLUGINSDIR\postgresql-grant.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-grant.sql"
   Rename  "$PLUGINSDIR\postgresql-drop.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-drop.sql"
+
+
 
   # create db-create script
   FileOpen  $R1 $PLUGINSDIR\postgresql-createdb.sql w
@@ -790,6 +791,8 @@ SectionIn 2 3
   FileWrite $R1 'REM this script deletes the db dump $\r$\n'
   FileWrite $R1 'del $APPDATA\${PRODUCT_NAME}\working\bareos.sql $\r$\n'
   FileClose $R1
+
+
 SectionEnd
 
 
@@ -797,15 +800,13 @@ SectionEnd
 # Check if database server is installed only in silent mode
 # otherwise this is done in the database dialog
 #
-Section -DataBaseCheck
+Section -DataBaseCheck SEC_DATABASE_CHECK
 
 IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
 
 StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not installing director
 
-${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
 !insertmacro CheckDbAdminConnection
-${EndIF}
 
 DataBaseCheckEnd:
 SectionEnd
@@ -813,7 +814,7 @@ SectionEnd
 
 
 Section /o "Director Plugins" SEC_DIRPLUGINS
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -827,7 +828,7 @@ SectionEnd
 
 
 Section "Open Firewall for Director" SEC_FIREWALL_DIR
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     DetailPrint  "Opening Firewall, OS is Win7+"
@@ -842,14 +843,14 @@ SectionIn 2 3
   ${EndIf}
 SectionEnd
 
-SubSectionEnd # Director Subsection
+SectionGroupEnd # Director Subsection
 
 
 
-SubSection "User Interfaces" SUBSEC_CONSOLES
+SectionGroup "User Interfaces" SUBSEC_CONSOLES
 
 Section /o "Tray-Monitor" SEC_TRAYMON
-SectionIn 1 2 3
+SectionIn 1 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -877,7 +878,7 @@ SectionEnd
 
 
 Section "Bareos Webui" SEC_WEBUI
-   SectionIn 2 3
+   SectionIn 2
    ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
    StrCpy $InstallWebUI "yes"
    SetShellVarContext all
@@ -977,7 +978,7 @@ SectionEnd
 
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
-SectionIn 2 3
+SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -991,7 +992,7 @@ SectionIn 2 3
 SectionEnd
 
 
-SubSectionEnd # Consoles Subsection
+SectionGroupEnd # Consoles Subsection
 
 Section /o Sourcecode SEC_SOURCE
    SetShellVarContext all
@@ -1019,14 +1020,6 @@ SectionEnd
   ; DIR
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR} "Installs the Bareos Director Daemon"
   !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_DIR} "Programs belonging to the Bareos Director"
-
-
-${If} $IsPostgresInstalled == yes
-  StrCpy $SEC_DIR_POSTGRES_DESCRIPTION "PostgreSQL Catalog Database Support - Needs PostgreSQL DB Server Installation which was found in $PostgresPath"
-${Else}
-  StrCpy $SEC_DIR_POSTGRES_DESCRIPTION "PostgreSQL Catalog Database Support - Needs PostgreSQL DB Server Installation which was NOT found"
-${EndIf}
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR_POSTGRES} "$SEC_DIR_POSTGRES_DESCRIPTION"
 
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIRPLUGINS} "Installs the Bareos Director Plugins"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_DIR} "Opens the needed ports for the Director Daemon in the windows firewall"
@@ -1493,20 +1486,10 @@ done:
     # also install bconsole if director is selected
     SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
 
-IfSilent 0 DbDriverCheckEnd
-  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
-DbDriverCheckEnd:
-
   IfSilent AutoSelecPostgresIfAvailableEnd
-  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
 AutoSelecPostgresIfAvailableEnd:
 
   dontInstDir:
-
-${If} $IsPostgresInstalled == no
-   SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
-   InstTypeSetText 2 "(!)Full PostgreSQL - All Daemons,  Director PostgreSQL Backend (needed local PostgreSQL Server missing (!)"
-${EndIf}
 
   StrCmp $InstallStorage "no" dontInstSD
     SectionSetFlags ${SEC_SD} ${SF_SELECTED} # storage daemon
@@ -1770,7 +1753,6 @@ Function getDatabaseParameters
   strcmp $Upgrading "yes" skip
   strcmp $InstallDirector "no" skip
 
-${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
   # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 3" "state" $DbAdminUser
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 4" "state" $DbAdminPassword
@@ -1779,7 +1761,6 @@ ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 7" "state" $DbName
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 8" "state" $DbPort
   InstallOptions::dialog $PLUGINSDIR\databasedialog.ini
-${EndIF}
 
 skip:
   Pop $R0
@@ -1796,10 +1777,10 @@ Function getDatabaseParametersLeave
 
    StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
 
-   ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
-     !insertmacro CheckDbAdminConnection
-     MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
-   ${EndIF}
+  ${If} ${SectionIsSelected} ${SEC_DIR}
+    !insertmacro CheckDbAdminConnection
+    MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
+  ${EndIF}
 SkipDbCheck:
 
 FunctionEnd
@@ -2033,6 +2014,8 @@ ConfDeleteSkip:
   Delete "$APPDATA\${PRODUCT_NAME}\fillup.sed"
 
   # batch scripts and sql files
+  RMDir  "$APPDATA\${PRODUCT_NAME}\scripts\updates\*.sql"
+  RMDir  "$APPDATA\${PRODUCT_NAME}\scripts\updates"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.bat"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.sql"
   RMDir  "$APPDATA\${PRODUCT_NAME}\scripts"
@@ -2106,12 +2089,6 @@ Function .onSelChange
   Push $R0
   Push $R1
 
-  # if Postgres was not detected always disable postgresql backend
-
-  ${If} $IsPostgresInstalled == no
-    SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
-  ${EndIf}
-
   # Check if WEBUI was just selected then select SEC_DIR
   SectionGetFlags ${SEC_WEBUI} $R0
   IntOp $R0 $R0 & ${SF_SELECTED}
@@ -2126,9 +2103,13 @@ Function .onSelChange
   StrCpy $InstallDirector "yes"
   SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
 
-  SectionGetFlags ${SEC_DIR_POSTGRES} $R0
-  IntOp $R0 $R0 & ${SF_SELECTED}
-  StrCmp $R0 ${SF_SELECTED} 0 +2
+  # Disable databsae check section if director is unselected
+  ${If} ${SectionIsSelected} ${SEC_DIR}
+    SectionSetFlags ${SEC_DATABASE_CHECK} ${SF_SELECTED}
+  ${Else}
+    SectionSetFlags ${SEC_DATABASE_CHECK} ${SF_UNSELECTED}
+  ${EndIF}
+
 
   Pop $R1
   Pop $R0
