@@ -190,11 +190,21 @@ IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT=@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
 NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 
 
-# sanitizer paths
-export  ASAN_OPTIONS=log_path=${tmp}/asan.log
-export  TSAN_OPTIONS=log_path=${tmp}/tsan.log
-export  MSAN_OPTIONS=log_path=${tmp}/msan.log
-export  LSAN_OPTIONS=log_path=${tmp}/lsan.log
-export UBSAN_OPTIONS=log_path=${tmp}/ubsan.log
+# sanitizer paths (ubsan_options sadly does not exist)
+ASAN_OPTIONS=log_path=${tmp}/asan.log:${ASAN_OPTIONS:-""}
+TSAN_OPTIONS=log_path=${tmp}/tsan.log:${TSAN_OPTIONS:-""}
+MSAN_OPTIONS=log_path=${tmp}/msan.log:${MSAN_OPTIONS:-""}
+LSAN_OPTIONS=log_path=${tmp}/lsan.log:${LSAN_OPTIONS:-""}
+# UBSAN_OPTIONS=log_path=${tmp}/ubsan.log:${UBSAN_OPTIONS:-""}
+
+# avoid problems in containers with sanitizers
+# see https://github.com/google/sanitizers/issues/1322
+ASAN_OPTIONS+=intercept_tls_get_addr=0:
+
+export  ASAN_OPTIONS
+export  TSAN_OPTIONS
+export  MSAN_OPTIONS
+export  LSAN_OPTIONS
+# export UBSAN_OPTIONS
 
 SANITIZER_LOG_PREFIXES=("${tmp}/asan.log" "${tmp}/tsan.log" "${tmp}/msan.log" "${tmp}/lsan.log" "${tmp}/ubsan.log")
