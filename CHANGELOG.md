@@ -99,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: properly set focus to input box after each command [PR #1936]
 - bscrypto: fix and update code, and move CLI parsing to cli11, add systemtests [PR #1734]
 - stored: reserve/acquire a device on first incoming write data [PR #1715]
+- docs: add ADR infrastructure and first ADRs [PR #1945]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -259,4 +260,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1917]: https://github.com/bareos/bareos/pull/1917
 [PR #1919]: https://github.com/bareos/bareos/pull/1919
 [PR #1936]: https://github.com/bareos/bareos/pull/1936
+[PR #1945]: https://github.com/bareos/bareos/pull/1945
 [unreleased]: https://github.com/bareos/bareos/tree/master
