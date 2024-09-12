@@ -383,12 +383,12 @@ static int SetExtract(UaContext* ua,
 
   // Walk up tree marking any unextracted parent to be extracted.
   if (extract) {
-    while (node->parent) {
+    while (node->parent && !node->parent->extract_descendant) {
       node = node->parent;
       node->extract_descendant = true;
     }
   } else {
-    while (node->parent) {
+    while (node->parent && node->parent->extract_descendant) {
       node = node->parent;
       node->extract_descendant = false;
       tree_node* child;
@@ -422,7 +422,14 @@ static std::vector<std::string> split_path(std::string_view v)
     auto pos = v.find_first_of('/');
 
     if (pos == v.npos) {
-      parts.emplace_back(v);
+      // ** at the end of a path is treated the same as *
+      // If we are given the path 'home/', then it should be treated as
+      // 'home/*', i.e. we replace an empty part at the end also with *
+      if (v.size() == 0 || v == "**") {
+        parts.emplace_back("*");
+      } else {
+        parts.emplace_back(v);
+      }
       break;
     }
 
@@ -453,39 +460,67 @@ static int MarkElements(UaContext* ua, TreeContext* tree, bool extract = true)
 
     std::vector<stack_elem> stack;
 
-    stack.push_back({tree->node, 0});
+    if (parts[0].size() == 0) {
+      // we are trying to mark from the root
+      stack.push_back({tree->root, 1});
+    } else if (parts[0].size() == 2 && parts[0][1] == ':') {
+      // maybe we are trying to mark from a windows root
 
+      tree_node* root_child;
+
+      bool found_root = false;
+      foreach_child (root_child, tree->root) {
+        if (root_child->type == tree_node_type::DirWin
+            && fnmatch(parts[0].c_str(), root_child->fname, 0) == 0) {
+          stack.push_back({root_child, 1});
+          found_root = true;
+        }
+      }
+
+      // we still need to try to mark from the current node in case
+      // we dont find anything.
+      // if we ever have a bug report because of this, we could easily
+      // allow the use of './' to make clear that we want a relative
+      // path
+      if (!found_root) { stack.push_back({tree->node, 0}); }
+    } else {
+      stack.push_back({tree->node, 0});
+    }
 
     while (!stack.empty()) {
       auto current = stack.back();
       stack.pop_back();
       auto& part = parts[current.part_index];
       auto* node = current.node;
-      if (fnmatch(part.c_str(), node->fname, 0) == 0) {
-        if (current.part_index + 1 == parts.size()) {
-          // if this is the last part, then we mark every found node
-          count += SetExtract(ua, node, tree, extract);
-        } else if (node->type != tree_node_type::File) {
-          // otherwise we check every child with the next part
-          tree_node* child;
 
-          if (part == "**") {
-            // ** matches any number of path parts, so we cannot just
-            //    skip this
-            foreach_child (child, node) {
-              stack.push_back({child, current.part_index});
-            }
-          }
+      // ** is special case as it can match zero or more
+      // directories/subdirectory
+      if (part == std::string_view{"**"}) {
+        // We know that we are not at the end of a path, as split_path
+        // takes care of that.
+        // ** inside a path means: match 0 or more subdirectories, so we take
+        // care of the "matcth 0 subdir" case
+        stack.push_back({node, current.part_index + 1});
+        tree_node* child;
+        foreach_child (child, node) {
+          // we already know that each (non-file) child matches **,
+          // so no need to check
 
-          foreach_child (child, node) {
-            stack.push_back({child, current.part_index + 1});
+          if (child->type != tree_node_type::File) {
+            // special case: match 1+ directories
+            stack.push_back({child, current.part_index});
           }
         }
-      } else if (node->type == tree_node_type::Root) {
+      } else {
         tree_node* child;
-
         foreach_child (child, node) {
-          stack.push_back({child, current.part_index});
+          if (fnmatch(part.c_str(), child->fname, 0) == 0) {
+            if (current.part_index + 1 == parts.size()) {
+              count += SetExtract(ua, child, tree, extract);
+            } else if (child->type != tree_node_type::File) {
+              stack.push_back({child, current.part_index + 1});
+            }
+          }
         }
       }
     }
