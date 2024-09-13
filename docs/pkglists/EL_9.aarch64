@@ -10,6 +10,7 @@ debug/aarch64/bareos-filedaemon-debuginfo
 debug/aarch64/bareos-filedaemon-glusterfs-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-python3-plugin-debuginfo
 debug/aarch64/bareos-storage-debuginfo
+debug/aarch64/bareos-storage-dedupable-debuginfo
 debug/aarch64/bareos-storage-droplet-debuginfo
 debug/aarch64/bareos-storage-fifo-debuginfo
 debug/aarch64/bareos-storage-glusterfs-debuginfo
@@ -43,6 +44,7 @@ aarch64/bareos-filedaemon-postgresql-python-plugin
 aarch64/bareos-filedaemon-python-plugins-common
 aarch64/bareos-filedaemon-python3-plugin
 aarch64/bareos-storage
+aarch64/bareos-storage-dedupable
 aarch64/bareos-storage-droplet
 aarch64/bareos-storage-fifo
 aarch64/bareos-storage-glusterfs

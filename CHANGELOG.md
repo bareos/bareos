@@ -101,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: reserve/acquire a device on first incoming write data [PR #1715]
 - docs: add ADR infrastructure and first ADRs [PR #1945]
 - nsi installers: remove postgresql backend [PR #1914]
+- stored: add dedupable backend [PR #1663]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -170,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1659]: https://github.com/bareos/bareos/pull/1659
 [PR #1661]: https://github.com/bareos/bareos/pull/1661
 [PR #1662]: https://github.com/bareos/bareos/pull/1662
+[PR #1663]: https://github.com/bareos/bareos/pull/1663
 [PR #1665]: https://github.com/bareos/bareos/pull/1665
 [PR #1670]: https://github.com/bareos/bareos/pull/1670
 [PR #1671]: https://github.com/bareos/bareos/pull/1671

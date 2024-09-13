@@ -66,6 +66,14 @@ else()
   target_sources(bareossd-file PRIVATE unix_file_device.cc)
   target_sources(bareossd-fifo PRIVATE unix_fifo_device.cc)
   target_sources(bareossd-tape PRIVATE unix_tape_device.cc)
+  add_sd_backend(bareossd-dedupable)
+  target_sources(
+    bareossd-dedupable PRIVATE dedupable_device.cc dedupable/device_options.cc
+                               dedupable/volume.cc util.cc
+  )
+  target_link_libraries(
+    bareossd-dedupable PRIVATE $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>
+  )
 endif()
 
 if(HAVE_DARWIN_OS)
