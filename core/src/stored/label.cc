@@ -521,7 +521,7 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
   bstrncpy(dev->VolHdr.Id, BareosId, sizeof(dev->VolHdr.Id));
   dev->VolHdr.VerNum = BareosTapeVersion;
 
-  dev->VolHdr.LabelType = PRE_LABEL; /* Mark tape as unused */
+  dev->VolHdr.LabelType = VOL_LABEL; /* Mark tape as unused */
   bstrncpy(dev->VolHdr.VolumeName, VolName, sizeof(dev->VolHdr.VolumeName));
   bstrncpy(dev->VolHdr.PoolName, PoolName, sizeof(dev->VolHdr.PoolName));
   bstrncpy(dev->VolHdr.MediaType, device_resource->media_type,
