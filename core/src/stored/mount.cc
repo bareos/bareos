@@ -313,7 +313,7 @@ read_volume:
         "Device previously written, moving to end of data. Expect %lld bytes\n",
         dev->VolCatInfo.VolCatBytes);
     Jmsg(jcr, M_INFO, 0,
-         T_("Volume \"%s\" previously written, moving to end of data.\n"),
+         T_("Moving to end of data on volume \"%s\"\n"),
          VolumeName);
 
     if (!dev->eod(dcr)) {
