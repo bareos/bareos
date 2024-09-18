@@ -993,12 +993,12 @@ replace()
                 else
                   info "replacing '${SEARCH}' with '${REPLACE}' in ${file}"
                 fi
+                # trying to refactor in place as a variable will lead to errors. 
                 if [ "$os_type" = "Darwin" ] || [ "$os_type" = "FreeBSD" ]; then
-                     inplace=" ''"
+                     sed -i "" "s#${SEARCH}#${REPLACE}#g" "${file}"
                 else
-                     inplace=""
+                     sed --in-place "s#${SEARCH}#${REPLACE}#g" "${file}"
                 fi
-                sed -i${inplace} "s#${SEARCH}#${REPLACE}#g" "${file}"
             fi
         fi
     done
