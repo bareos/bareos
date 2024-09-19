@@ -30,6 +30,15 @@ endif()
 project(bareos NONE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
+
+option(CPM_ONLY "Add CPM packages and exit" OFF)
+if(CPM_ONLY)
+  include(BareosCpmPackages)
+  return()
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
   string(REPLACE "Program Files (x86)" "Program Files" CMAKE_INSTALL_PREFIX
@@ -95,9 +104,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 else()
   set(TESTS_TO_SKIP)
 endif()
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
 add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
