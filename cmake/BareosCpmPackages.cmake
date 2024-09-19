@@ -22,6 +22,7 @@ if(NOT DEFINED CPM_USE_LOCAL_PACKAGES AND NOT DEFINED
 )
   set(CPM_USE_LOCAL_PACKAGES ON)
 endif()
+
 if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
   message(
     WARNING
@@ -32,6 +33,7 @@ if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
 endif()
 include(CPM)
 
+# Keep module alphabetically ordered
 CPMAddPackage(
   NAME CLI11
   VERSION 2.4.2
@@ -57,3 +59,16 @@ CPMAddPackage(
 if(xxHash_ADDED)
   include("cmake/xxHash.cmake")
 endif()
+
+# Dump package information from CPM into a YAML file
+file(WRITE "${CMAKE_BINARY_DIR}/cpm-packages.yaml"
+     "# List of packages provided by CPM\n" "---\n"
+)
+foreach(package ${CPM_PACKAGES})
+  file(
+    APPEND "${CMAKE_BINARY_DIR}/cpm-packages.yaml"
+    "${package}:\n" "    source_dir: ${CPM_PACKAGE_${package}_SOURCE_DIR}\n"
+    "    binary_dir: ${CPM_PACKAGE_${package}_BINARY_DIR}\n"
+    "    version: ${CPM_PACKAGE_${package}_VERSION}\n"
+  )
+endforeach()
