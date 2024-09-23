@@ -34,7 +34,7 @@ if [ $UID -ne 0 ]; then
 fi
 
 # We need the server version that will be used
-PG_VERSION=$(pg_lsclusters | awk -F " " '/^[0-9]{1,} .*/ {print $1}')
+PG_VERSION=$(pg_lsclusters --no-header | awk -F " " '{print $1}' | sort -n | head -n 1)
 if [ ${PG_VERSION} -lt 10 ]; then
 # skip test
  echo "${TestName} test skipped: not compatible with PG <= 10"
