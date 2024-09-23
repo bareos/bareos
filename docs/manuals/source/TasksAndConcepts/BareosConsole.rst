@@ -1591,6 +1591,8 @@ Normally, all commands entered to the Console program are immediately forwarded 
 @input <filename>
    :index:`\ <single: Console; Command; @input <filename>>`\  Read and execute the commands contained in the file specified.
 
+   Only available, if :command:`bconsole` is executed as normal system user, not available as  system administrator (root).
+
 @output <filename> <w|a>
    :index:`\ <single: Console; Command; @output <filename> <w|a>>`\  Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter @output without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example might be:
 
@@ -1600,16 +1602,12 @@ Normally, all commands entered to the Console program are immediately forwarded 
       commands ...
       @output
 
-   ::
-
-          @output /dev/null
-          commands ...
-          @output
-
-
+   Only available, if :command:`bconsole` is executed as normal system user, not available as  system administrator (root).
 
 @tee <filename> <w|a>
    :index:`\ <single: Console; Command; @tee <filename> <w|a>>`\  Send all subsequent output to both the specified file and the terminal. It is turned off by specifying @tee or @output without a filename.
+
+   Only available, if :command:`bconsole` is executed as normal system user, not available as  system administrator (root).
 
 @sleep <seconds>
    :index:`\ <single: Console; Command; @sleep <seconds>>`\  Sleep the specified number of seconds.
