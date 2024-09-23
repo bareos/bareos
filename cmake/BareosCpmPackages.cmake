@@ -54,10 +54,13 @@ CPMAddPackage(
   VERSION 0.8.2
   GITHUB_REPOSITORY Cyan4973/xxHash
   EXCLUDE_FROM_ALL YES
-  DOWNLOAD_ONLY True
+  SOURCE_SUBDIR cmake_unofficial
+  OPTIONS "XXHASH_BUILD_XXHSUM OFF" "DISPATCH ON"
 )
 if(xxHash_ADDED)
-  include("cmake/xxHash.cmake")
+  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|amd64|AMD64)$")
+    set(XXHASH_ENABLE_DISPATCH 1)
+  endif()
 endif()
 
 # Dump package information from CPM into a YAML file
