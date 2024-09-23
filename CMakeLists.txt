@@ -203,13 +203,13 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
-  include(BareosCpmPackages)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS
   )
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
   endif()
+  include(BareosCpmPackages)
   include(BareosCcache)
   include(PrefixMap)
   add_subdirectory(core)
