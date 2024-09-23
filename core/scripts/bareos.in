@@ -17,13 +17,13 @@ export MALLOC_CHECK_
 case "$1" in
    start)
       [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-sd $1 $2
-      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER} ${BAREOS_SCRIPTDIR}/bareos-ctl-fd $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTDIR}/bareos-ctl-fd $1 $2
       [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-dir $1 $2
       ;;
 
    stop)
       # Stop the FD first so that SD will fail jobs and update catalog
-      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER} ${BAREOS_SCRIPTDIR}/bareos-ctl-fd $1 $2
+      [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTDIR}/bareos-ctl-fd $1 $2
       [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-sd $1 $2
       [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-dir $1 $2
       ;;
@@ -44,7 +44,7 @@ case "$1" in
          status_sd=$?
       fi
       if [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && [ -n "${BAREOS_FILEDAEMON_BINARY}" ]; then
-         ${BAREOS_CTL_FD_RUNNER} ${BAREOS_SCRIPTDIR}/bareos-ctl-fd status
+         ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTDIR}/bareos-ctl-fd status
          status_fd=$?
       fi
       status_all=`expr ${status_dir:-0} + ${status_sd:-0} + ${status_fd:-0}`
