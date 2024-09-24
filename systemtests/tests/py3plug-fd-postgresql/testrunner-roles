@@ -21,7 +21,7 @@ JobName="backup-bareos-fd"
 # setup local database server
 DBNAME="backuptest"
 TESTPGHOST="${dbHost}"
-PSQL="${POSTGRES_BIN_PATH}/psql --host ${TESTPGHOST}"
+PSQL="${POSTGRES_BIN_PATH}/psql --no-psqlrc --host ${TESTPGHOST}"
 
 [ -d "${TESTPGHOST}" ] && rm -R  "${TESTPGHOST}"
 mkdir -p "${TESTPGHOST}"
@@ -29,13 +29,6 @@ mkdir -p "${TESTPGHOST}"
 
 pushd database > /dev/null
 setup_local_db "${TESTPGHOST}"
-# PG_VERSION will be pick from backuped PG data dir
-PG_VERSION="$(cut -d '.' -f1 data/PG_VERSION)"
-if [ ${PG_VERSION} -lt 10 ]; then
-# skip test
- echo "${TestName} test skipped: not compatible with PG <= 10"
- exit 77;
-fi
 
 # Create a backup group role with nologin but superuser
 ${PSQL} -d postgres -c "CREATE ROLE backup_group with SUPERUSER"
