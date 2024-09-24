@@ -29,10 +29,11 @@
  * Joerg Steffens, April 2015
  */
 
-
 #include "include/bareos.h"
 #define NEED_JANSSON_NAMESPACE
 #include "lib/output_formatter.h"
+
+#include "utf8.h"
 
 const char* json_error_message_template
     = "{ "
@@ -893,6 +894,30 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, uint64_t value)
   return true;
 }
 
+// std::string make_utf8(const char* in)
+// {
+//   // fails on freebsd. setlocale missing?
+//   std::mbstate_t state = std::mbstate_t();  // initial state
+//   const char* end = in + ::strlen(in);
+//   const char replacemendchar = '?';
+//   size_t len = 1;
+//   std::string out{};
+//   while ((in < end) && (len != 0)) {
+//     len = std::mbrtowc(nullptr, in, end - in, &state);
+//     if (len == static_cast<std::size_t>(-1)) {
+//       out.append(1, replacemendchar);
+//       in++;
+//     } else if (len == static_cast<std::size_t>(-2)) {
+//       out.append(end - in, replacemendchar);
+//       in = end;
+//     } else if (len > 0) {
+//       out.append(in, len);
+//       in += len;
+//     }
+//   }
+//   return out;
+// }
+
 bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
 {
   json_t* json_obj = NULL;
@@ -904,9 +929,21 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
     Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
     return false;
   }
-  json_object_set_new(json_obj, lkey.c_str(), json_string(value));
 
-  return true;
+  json_t* value_as_json_string = json_string(value);
+  if (value_as_json_string == nullptr) {
+    // value has not been a valid null terminated UTF-8 encoded Unicode string.
+    // value_as_json_string = json_string(make_utf8(value).c_str());
+    value_as_json_string = json_string(utf8::replace_invalid(std::string_view(value)).c_str());
+    // std::vector<char> value_as_utf8{};
+    // utf8::replace_invalid(value, value + ::strlen(value),
+    //                       back_inserter(value_as_utf8));
+    // value_as_json_string = json_string(value_as_utf8.data());
+  }
+  int rc = json_object_set_new(json_obj, lkey.c_str(), value_as_json_string);
+  if (rc != 0) { Dmsg2(100, "invalid json: %s => %s\n", lkey.c_str(), value); }
+
+  return (rc == 0);
 }
 
 void OutputFormatter::JsonAddMessage(const char* type, PoolMem& message)
