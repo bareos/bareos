@@ -7,13 +7,14 @@ verify_ssl = true
 
 [packages]
 black = "*"
-gitpython = "*"
-cmake-format = "*"
 check-sources = {editable = true, path = "."}
 clang-format = "*"
-importlib-resources = "*"
-python-magic = "*"
+cmake-format = "*"
 enlighten = "*"
+gitpython = "*"
+importlib-resources = "*"
+infer_license = "*"
+python-magic = "*"
 pyyaml = "*"
 
 [requires]
