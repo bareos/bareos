@@ -13,6 +13,38 @@ on:
       - dev/*/master/publish-pypi-*
     tags:
       - Release/*
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "The ref in the repository to checkout (use 'refs/tags/...' for tags)"
+        type: string
+        required: false
+      publish_testpypi:
+        # Using strings instead of boolean
+        # makes handling as variables easier.
+        description: 'Publish packages on test.pypi.org'
+        type: choice
+        options:
+        - true
+        - false
+        default: false
+      publish_pypi:
+        # Using strings instead of boolean
+        # makes handling as variables easier.
+        description: 'Publish packages on pypi.org'
+        type: choice
+        options:
+        - true
+        - false
+        default: false
+
+env:
+    # Note: env context is not available everywhere, see
+    # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs#context-availability
+    publish_pypi: ${{ inputs.publish_pypi || 'true' }}
+    publish_testpypi: ${{ inputs.publish_testpypi || 'true' }}
+    ref: ${{ inputs.ref || github.ref }}
+    is_release: ${{ startsWith( inputs.ref || github.ref, 'refs/tags/Release/') }}
 
 jobs:
   build:
@@ -20,11 +52,18 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+    - name: "Show env"
+      run: |
+        echo "publish_pypi=${{ env.publish_pypi }}"
+        echo "publish_testpypi=${{ env.publish_testpypi }}"
+        echo "env.ref: ${{ env.ref }}"
+        echo "is_release: ${{ env.is_release }}"
     - name: "Checkout source"
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         fetch-tags: true
+        ref: ${{ inputs.ref || github.ref }}
 
     - name: "Python: set up"
       uses: actions/setup-python@v4
@@ -88,6 +127,7 @@ jobs:
         name: python-bareos-dist
         path: dist/
     - name: "python-bareos -> https://test.pypi.org/"
+      if: ${{ env.publish_testpypi == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
@@ -95,7 +135,7 @@ jobs:
 
   publish-python-bareos-to-pypi:
     name: "[Release] python-bareos: publish to https://pypi.org"
-    if: startsWith(github.ref, 'refs/tags/Release/')  # only publish to PyPI on Release tag pushes
+    if: ${{ startsWith( inputs.ref || github.ref, 'refs/tags/Release/') }} # only publish to PyPI on Release tag pushes
     needs:
     - build
     runs-on: ubuntu-22.04
@@ -112,6 +152,7 @@ jobs:
         name: python-bareos-dist
         path: dist/
     - name: "python-bareos -> https://pypi.org/"
+      if: ${{ env.publish_pypi == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
 
 
@@ -135,6 +176,7 @@ jobs:
         name: restapi-dist
         path: dist/
     - name: "bareos-restapi -> https://test.pypi.org/"
+      if: ${{ env.publish_testpypi == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
@@ -142,7 +184,7 @@ jobs:
 
   publish-restapi-to-pypi:
     name: "[Release] bareos-restapi: publish to https://pypi.org"
-    if: startsWith(github.ref, 'refs/tags/Release/')  # only publish to PyPI on Release tag pushes
+    if: ${{ startsWith( inputs.ref || github.ref, 'refs/tags/Release/') }} # only publish to PyPI on Release tag pushes
     needs:
     - build
     runs-on: ubuntu-22.04
@@ -159,4 +201,5 @@ jobs:
         name: restapi-dist
         path: dist/
     - name: "bareos-restapi -> https://pypi.org/"
+      if: ${{ env.publish_pypi == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
