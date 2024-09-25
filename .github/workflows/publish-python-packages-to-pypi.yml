@@ -66,7 +66,7 @@ jobs:
         ref: ${{ inputs.ref || github.ref }}
 
     - name: "Python: set up"
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
 
@@ -85,7 +85,7 @@ jobs:
         python setup.py sdist bdist_wheel
 
     - name: "python-bareos: create artifact"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: python-bareos-dist
         path: python-bareos/dist/
@@ -101,7 +101,7 @@ jobs:
         python setup.py sdist bdist_wheel
 
     - name: "restapi: create artifact"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: restapi-dist
         path: restapi/dist/
@@ -122,7 +122,7 @@ jobs:
 
     steps:
     - name: "Download artifact"
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: python-bareos-dist
         path: dist/
@@ -147,7 +147,7 @@ jobs:
 
     steps:
     - name: "Download artifact"
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: python-bareos-dist
         path: dist/
@@ -171,7 +171,7 @@ jobs:
 
     steps:
     - name: "Download artifact"
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: restapi-dist
         path: dist/
@@ -196,7 +196,7 @@ jobs:
 
     steps:
     - name: "Download artifact"
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: restapi-dist
         path: dist/
