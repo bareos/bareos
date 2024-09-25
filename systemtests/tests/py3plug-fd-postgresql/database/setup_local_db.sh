@@ -46,7 +46,7 @@ local_db_prepare_files() {
     chown postgres  tmp data log wal_archive table_space index_space
     LANG= su postgres -c "${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data --log=log/postgres.log initdb"
   else
-    LANG= ${POSTGRES_BIN_PATH}/pg_ctl  --silent --pgdata=data --log=log/postgres.log initdb
+    LANG= ${POSTGRES_BIN_PATH}/pg_ctl --silent --pgdata=data --log=log/postgres.log initdb
   fi
 
   {
@@ -86,6 +86,17 @@ local_db_create_superuser_role() {
   fi
 }
 
+local_detect_pg_version(){
+  # PG_VERSION will be pick from backuped PG data dir
+  export PG_VERSION="$(cut -d '.' -f1 data/PG_VERSION)"
+  if [ ${PG_VERSION} -lt 10 ]; then
+    local_db_stop_server "$1" || true
+    # skip test
+    echo "${TestName} test skipped: not compatible with PG <= 10"
+    exit 77;
+  fi
+}
+
 setup_local_db() {
   local_db_stop_server "$1" || true
   local_db_prepare_files "$1"
@@ -96,6 +107,7 @@ setup_local_db() {
   else
     echo stop server with "${POSTGRES_BIN_PATH}/pg_ctl --pgdata=data stop"
   fi
+  local_detect_pg_version
   return 0
 }
 

@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- systemtests: fix plugin postgresql testrunner-*, old postgres `bc` call [PR #1948]
+
 ## [23.0.4] - 2024-09-10
 
 ### Added
@@ -538,4 +541,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1926]: https://github.com/bareos/bareos/pull/1926
 [PR #1930]: https://github.com/bareos/bareos/pull/1930
 [PR #1940]: https://github.com/bareos/bareos/pull/1940
+[PR #1948]: https://github.com/bareos/bareos/pull/1948
 [unreleased]: https://github.com/bareos/bareos/tree/master
