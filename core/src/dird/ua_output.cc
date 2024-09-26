@@ -344,6 +344,10 @@ bool list_cmd(UaContext* ua, const char* cmd)
   return DoListCmd(ua, cmd, HORZ_LIST);
 }
 
+// @return >0: jobid
+// @return 0: neither "jobid" nor "ujobid" parameter is provided.
+// @return -1: can't access jobid (because it doesn't exist or no permission to
+// access it).
 static int GetJobidFromCmdline(UaContext* ua)
 {
   JobDbRecord jr{};
@@ -473,25 +477,44 @@ static void SetQueryRange(std::string& query_range,
 }
 
 struct ListCmdOptions {
-  bool count;
-  bool last;
-  bool current;
-  bool enabled;
-  bool disabled;
+  bool count{};
+  bool last{};
+  bool current{};
+  bool enabled{};
+  bool disabled{};
+  // jobstatus=X,Y,Z....
+  std::vector<char> jobstatuslist{};
+  // joblevel=X
+  std::vector<char> joblevel_list{};
+  // jobtype=X
+  std::vector<char> jobtypes{};
 
-  ListCmdOptions(UaContext* ua)
+  bool parse(UaContext* ua)
   {
     current = FindArg(ua, NT_("current")) >= 0;
     enabled = FindArg(ua, NT_("enabled")) >= 0;
     disabled = FindArg(ua, NT_("disabled")) >= 0;
     count = FindArg(ua, NT_("count")) >= 0;
     last = FindArg(ua, NT_("last")) >= 0;
+    if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
+      ua->ErrorMsg(T_("invalid jobstatus parameter\n"));
+      return false;
+    }
+    if (!GetUserJobLevelSelection(ua, joblevel_list)) {
+      ua->ErrorMsg(T_("invalid joblevel parameter\n"));
+      return false;
+    }
+    if (!GetUserJobTypeListSelection(ua, jobtypes, false)) {
+      ua->ErrorMsg(T_("invalid jobtype parameter\n"));
+      return false;
+    }
+    return true;
   }
 };
 
 static bool ListMedia(UaContext* ua,
                       e_list_type llist,
-                      ListCmdOptions optionslist)
+                      const ListCmdOptions& optionslist)
 {
   JobDbRecord jr;
   std::string query_range;
@@ -593,21 +616,53 @@ static bool ListMedia(UaContext* ua,
 }
 
 
-static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
+static bool ListJobs(UaContext* ua,
+                     e_list_type llist,
+                     ListCmdOptions& optionslist)
 {
-  const int secs_in_day = 86400;
-  const int secs_in_hour = 3600;
+  // list jobs [...]
+  // list job=xxx [...]
+  // list jobid=nnn [...]
+  // list ujobid=xxx [...]
 
-  if (!OpenClientDb(ua, true)) { return true; }
+  JobDbRecord jr;
 
-  Dmsg1(20, "list: %s\n", cmd);
-
-  if (ua->argc <= 1) {
-    ua->ErrorMsg(T_("%s command requires a keyword\n"), NPRT(ua->argk[0]));
+  if (Bstrcasecmp(ua->argk[1], NT_("jobs")) && ua->argv[1]) {
+    ua->ErrorMsg(T_("'list jobs' does not allow an jobs parameter\n"));
     return false;
   }
 
+  if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
+                         || (value = GetArgValue(ua, NT_("job")))) {
+    jr.JobId = 0;
+    bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
+  } else if (Bstrcasecmp(ua->argk[1], NT_("job"))
+             || Bstrcasecmp(ua->argk[1], NT_("jobname"))) {
+    ua->ErrorMsg(T_("Missing %s parameter\n"), NPRT(ua->argk[1]));
+    return false;
+  }
+
+  int jobid = GetJobidFromCmdline(ua);
+  if (jobid > 0) {
+    jr.JobId = jobid;
+  } else if (jobid < 0) {
+    // jobid < 0: jobid does not exist or no permission to access it.
+    // This is not treated as error (to keep behavior of prior versions).
+    ua->send->ObjectStart("jobs");
+    ua->send->ObjectEnd("jobs");
+    return true;
+  } else /* if (jobid == 0) */ {
+    if (Bstrcasecmp(ua->argk[1], NT_("jobid"))
+        || Bstrcasecmp(ua->argk[1], NT_("ujobid"))) {
+      ua->ErrorMsg(T_("Missing %s parameter\n"), NPRT(ua->argk[1]));
+      return false;
+    }
+  }
+
   // days or hours given?
+  const int secs_in_day = 86400;
+  const int secs_in_hour = 3600;
+
   utime_t now = (utime_t)time(NULL);
   time_t schedtime = 0;
   if (const char* value = GetArgValue(ua, NT_("days"))) {
@@ -619,165 +674,119 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     schedtime = now - secs_in_hour * hours; /* Hours in the past */
   }
 
+  const char* clientname = nullptr;
+  int client_arg = FindClientArgFromDatabase(ua);
+  if (client_arg < 0) {
+    return false;
+  } else if (client_arg > 0) {
+    clientname = ua->argv[client_arg];
+  }
+
+  const char* volumename = GetArgValue(ua, NT_("volume"));
+  const char* poolname = GetArgValue(ua, NT_("pool"));
+
+  switch (llist) {
+    case VERT_LIST:
+      if (!optionslist.count) {  // count result is one column, no filtering
+        SetAclFilter(ua, 2, Job_ACL);
+        SetAclFilter(ua, 7, Client_ACL);
+        SetAclFilter(ua, 22, Pool_ACL);
+        SetAclFilter(ua, 25, FileSet_ACL);
+        if (optionslist.current) {
+          SetResFilter(ua, 2, R_JOB);
+          SetResFilter(ua, 7, R_CLIENT);
+          SetResFilter(ua, 22, R_POOL);
+          SetResFilter(ua, 25, R_FILESET);
+        }
+      }
+      if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
+      if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
+      break;
+    default:
+      if (!optionslist.count) {  // count result is one column, no filtering
+        SetAclFilter(ua, 1, Job_ACL);
+        SetAclFilter(ua, 2, Client_ACL);
+        if (optionslist.current) {
+          SetResFilter(ua, 1, R_JOB);
+          SetResFilter(ua, 2, R_CLIENT);
+        }
+      }
+      if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
+      if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
+      break;
+  }
+
   std::string query_range;
-  JobDbRecord jr;
   SetQueryRange(query_range, ua, &jr);
 
-  const char* clientname = nullptr;
-  if (const char* value = GetArgValue(ua, NT_("client"))) {
-    if (ua->GetClientResWithName(value)) {
-      clientname = value;
+  ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
+                         optionslist.jobstatuslist, optionslist.joblevel_list,
+                         optionslist.jobtypes, volumename, poolname, schedtime,
+                         optionslist.last, optionslist.count, ua->send, llist);
+
+  return true;
+}
+
+static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
+{
+  if (!OpenClientDb(ua, true)) { return true; }
+
+  Dmsg1(20, "list: %s\n", cmd);
+
+  if (ua->argc <= 1) {
+    ua->ErrorMsg(T_("%s command requires a keyword\n"), NPRT(ua->argk[0]));
+    return false;
+  }
+
+  ListCmdOptions optionslist{};
+  if (!optionslist.parse(ua)) { return false; }
+
+  // Select what to do based on the first argument.
+  if (Bstrcasecmp(ua->argk[1], NT_("jobs"))
+      || Bstrcasecmp(ua->argk[1], NT_("job"))
+      || Bstrcasecmp(ua->argk[1], NT_("jobname"))
+      || Bstrcasecmp(ua->argk[1], NT_("jobid"))
+      || Bstrcasecmp(ua->argk[1], NT_("ujobid"))) {
+    return ListJobs(ua, llist, optionslist);
+  }
+
+  JobDbRecord jr;
+  std::string query_range;
+  SetQueryRange(query_range, ua, &jr);
+
+  if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
+    // List JOBTOTALS
+    ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
+    // List BASEFILES
+    if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
+      ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send);
+      return true;
     } else {
-      ua->ErrorMsg(T_("invalid client parameter\n"));
+      ua->ErrorMsg(
+          T_("jobid not found in db, access to job or client denied by ACL, or "
+             "client not found in db\n"));
       return false;
     }
   }
 
-
-  // jobstatus=X,Y,Z....
-  std::vector<char> jobstatuslist;
-  if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
-    ua->ErrorMsg(T_("invalid jobstatus parameter\n"));
-    return false;
-  }
-
-  // joblevel=X
-  std::vector<char> joblevel_list;
-  if (!GetUserJobLevelSelection(ua, joblevel_list)) {
-    ua->ErrorMsg(T_("invalid joblevel parameter\n"));
-    return false;
-  }
-
-  // jobtype=X
-  std::vector<char> jobtypes{};
-  if (!GetUserJobTypeListSelection(ua, jobtypes, false)) {
-    ua->ErrorMsg(T_("invalid jobtype parameter\n"));
-    return false;
-  }
-
-  ListCmdOptions optionslist(ua);
-
-  // Select what to do based on the first argument.
-  if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
-      || ((Bstrcasecmp(ua->argk[1], NT_("job"))
-           || Bstrcasecmp(ua->argk[1], NT_("jobname")))
-          && ua->argv[1])) {
-    // List jobs or List job=xxx
-    if (const char* value; (value = GetArgValue(ua, NT_("jobname")))
-                           || (value = GetArgValue(ua, NT_("job")))) {
-      jr.JobId = 0;
-      bstrncpy(jr.Name, value, MAX_NAME_LENGTH);
-    }
-
-    const char* volumename = GetArgValue(ua, NT_("volume"));
-    const char* poolname = GetArgValue(ua, NT_("pool"));
-
-    switch (llist) {
-      case VERT_LIST:
-        if (!optionslist.count) {  // count result is one column, no filtering
-          SetAclFilter(ua, 2, Job_ACL);
-          SetAclFilter(ua, 7, Client_ACL);
-          SetAclFilter(ua, 22, Pool_ACL);
-          SetAclFilter(ua, 25, FileSet_ACL);
-          if (optionslist.current) {
-            SetResFilter(ua, 2, R_JOB);
-            SetResFilter(ua, 7, R_CLIENT);
-            SetResFilter(ua, 22, R_POOL);
-            SetResFilter(ua, 25, R_FILESET);
-          }
-        }
-        if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
-        if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
-        break;
-      default:
-        if (!optionslist.count) {  // count result is one column, no filtering
-          SetAclFilter(ua, 1, Job_ACL);
-          SetAclFilter(ua, 2, Client_ACL);
-          if (optionslist.current) {
-            SetResFilter(ua, 1, R_JOB);
-            SetResFilter(ua, 2, R_CLIENT);
-          }
-        }
-        if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
-        if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
-        break;
-    }
-
-    SetQueryRange(query_range, ua, &jr);
-
-    ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                           jobstatuslist, joblevel_list, jobtypes, volumename,
-                           poolname, schedtime, optionslist.last,
-                           optionslist.count, ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
-    // List JOBTOTALS
-    ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
-  } else if ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
-              || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
-             && ua->argv[1]) {
-    /* List JOBID=nn
-     * List UJOBID=xxx */
-    if (ua->argv[1]) {
-      int jobid = GetJobidFromCmdline(ua);
-      if (jobid > 0) {
-        jr.JobId = jobid;
-
-        const char* poolname = GetArgValue(ua, NT_("pool"));
-
-        switch (llist) {
-          case VERT_LIST:
-            SetAclFilter(ua, 2, Job_ACL);
-            SetAclFilter(ua, 7, Client_ACL);
-            SetAclFilter(ua, 22, Pool_ACL);
-            SetAclFilter(ua, 25, FileSet_ACL);
-            if (optionslist.current) {
-              SetResFilter(ua, 2, R_JOB);
-              SetResFilter(ua, 7, R_CLIENT);
-              SetResFilter(ua, 22, R_POOL);
-              SetResFilter(ua, 25, R_FILESET);
-            }
-            if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
-            if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
-            break;
-          default:
-            SetAclFilter(ua, 1, Job_ACL);
-            SetAclFilter(ua, 2, Client_ACL);
-            if (optionslist.current) {
-              SetResFilter(ua, 1, R_JOB);
-              SetResFilter(ua, 2, R_CLIENT);
-            }
-            if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
-            if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
-            break;
-        }
-
-        SetQueryRange(query_range, ua, &jr);
-
-        ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                               jobstatuslist, joblevel_list, jobtypes, nullptr,
-                               poolname, schedtime, optionslist.last,
-                               optionslist.count, ua->send, llist);
-      }
-    }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
-    // List BASEFILES
-    if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
-      ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send);
-    } else {
-      ua->ErrorMsg(
-          T_("jobid not found in db, access to job or client denied by ACL, or "
-             "client not found in db\n"));
-    }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
+  if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
     // List FILES
     if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
       ua->db->ListFilesForJob(ua->jcr, jobid, ua->send);
+      return true;
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
              "client not found in db\n"));
+      return false;
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("fileset"))) {
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("fileset"))) {
     int filesetid = 0;
 
     // List FileSet
@@ -793,47 +802,65 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       SetAclFilter(ua, 1, FileSet_ACL);
       if (optionslist.current) { SetResFilter(ua, 1, R_FILESET); }
 
-      SetQueryRange(query_range, ua, &jr);
-
       ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
+      return true;
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
              "client not found in db or missing filesetid\n"));
+      return false;
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("filesets"))) {
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("filesets"))) {
     // List FILESETs
     SetAclFilter(ua, 1, FileSet_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_FILESET); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
     // List JOBMEDIA
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send, llist);
+      return true;
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
              "client not found in db\n"));
+      return false;
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(),
                                 optionslist.count, ua->send, llist);
+      return true;
     } else {
       ua->ErrorMsg(
           T_("jobid not found in db, access to job or client denied by ACL, or "
              "client not found in db\n"));
+      return false;
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("log"))) {
-    bool reverse;
+  }
 
+  if (Bstrcasecmp(ua->argk[1], NT_("log"))) {
     /* List last <limit> LOG entries
      * default is DEFAULT_LOG_LINES entries */
-    reverse = FindArg(ua, NT_("reverse")) >= 0;
+
+    const char* clientname = nullptr;
+    int client_arg = FindClientArgFromDatabase(ua);
+    if (client_arg < 0) {
+      return false;
+    } else if (client_arg > 0) {
+      clientname = ua->argv[client_arg];
+    }
+
+    bool reverse = FindArg(ua, NT_("reverse")) >= 0;
 
     if (query_range.empty()) {
       query_range = " LIMIT " + std::to_string(kDefaultLogLines);
@@ -849,12 +876,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       SetAclFilter(ua, 2, Client_ACL);
     }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListLogRecords(ua->jcr, clientname, query_range.c_str(), reverse,
                            ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("pool"))
-             || Bstrcasecmp(ua->argk[1], NT_("pools"))) {
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("pool"))
+      || Bstrcasecmp(ua->argk[1], NT_("pools"))) {
     PoolDbRecord pr;
 
     // List POOLS
@@ -863,10 +891,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
     if (optionslist.current) { SetResFilter(ua, 1, R_POOL); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("poolid")) && ua->argv[1]) {
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("poolid")) && ua->argv[1]) {
     PoolDbRecord pr;
 
     // List POOLS
@@ -875,60 +904,66 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetAclFilter(ua, 1, Pool_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_POOL); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("clients"))) {
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("clients"))) {
     // List CLIENTS
     SetAclFilter(ua, 1, Client_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_CLIENT); }
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_CLIENT); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_CLIENT); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListClientRecords(ua->jcr, NULL, ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("client")) && ua->argv[1]) {
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("client")) && ua->argv[1]) {
     // List CLIENT=xxx
     SetAclFilter(ua, 1, Client_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_CLIENT); }
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_CLIENT); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_CLIENT); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListClientRecords(ua->jcr, ua->argv[1], ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("storages"))) {
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("storages"))) {
     // List STORAGES
     SetAclFilter(ua, 1, Storage_ACL);
     if (optionslist.current) { SetResFilter(ua, 1, R_STORAGE); }
     if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_STORAGE); }
     if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_STORAGE); }
 
-    SetQueryRange(query_range, ua, &jr);
-
     ua->db->ListSqlQuery(ua->jcr, "SELECT * FROM Storage", ua->send, llist,
                          "storages");
-  } else if (Bstrcasecmp(ua->argk[1], NT_("media"))
-             || Bstrcasecmp(ua->argk[1], NT_("volume"))
-             || Bstrcasecmp(ua->argk[1], NT_("volumes"))) {
+    return true;
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("media"))
+      || Bstrcasecmp(ua->argk[1], NT_("volume"))
+      || Bstrcasecmp(ua->argk[1], NT_("volumes"))) {
     return ListMedia(ua, llist, optionslist);
-  } else if ((Bstrcasecmp(ua->argk[1], NT_("mediaid"))
-              || Bstrcasecmp(ua->argk[1], NT_("volumeid")))
-             && ua->argv[1]) {
+  }
+
+  if ((Bstrcasecmp(ua->argk[1], NT_("mediaid"))
+       || Bstrcasecmp(ua->argk[1], NT_("volumeid")))
+      && ua->argv[1]) {
     MediaDbRecord mr;
     mr.MediaId = str_to_int64(ua->argv[1]);
     ua->send->ObjectStart("volume");
     ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
                              optionslist.count, ua->send, llist);
     ua->send->ObjectEnd("volume");
-  } else if (Bstrcasecmp(ua->argk[1], NT_("nextvol"))
-             || Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
-    int days;
+    return true;
+  }
 
+  if (Bstrcasecmp(ua->argk[1], NT_("nextvol"))
+      || Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
     // List next volume
-    days = 1;
-
+    int days = 1;
     if (const char* value = GetArgValue(ua, NT_("days"))) {
       days = atoi(value);
       if ((days < 0) || (days > kDefaultNumberOfDays)) {
@@ -937,19 +972,25 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
         days = 1;
       }
     }
-    ListNextvol(ua, days);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("copies"))) {
+    return ListNextvol(ua, days);
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("copies"))) {
     // List copies
     if (const char* value = GetArgValue(ua, NT_("jobid"))) {
       if (Is_a_number_list(value)) {
         ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), value, ua->send,
                                   llist);
+        return true;
       }
     } else {
       ua->db->ListCopiesRecords(ua->jcr, query_range.c_str(), NULL, ua->send,
                                 llist);
+      return true;
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("backups"))) {
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("backups"))) {
     if (ParseListBackupsCmd(ua, query_range.c_str(), llist)) {
       switch (llist) {
         case VERT_LIST:
@@ -970,22 +1011,23 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
           break;
       }
 
-      ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, llist, "backups");
+      return ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, llist, "backups");
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("jobstatistics"))
-             || Bstrcasecmp(ua->argk[1], NT_("jobstats"))) {
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("jobstatistics"))
+      || Bstrcasecmp(ua->argk[1], NT_("jobstats"))) {
     if (int jobid = GetJobidFromCmdline(ua); jobid > 0) {
       ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
+      return true;
     } else {
       ua->ErrorMsg(T_("no jobid given\n"));
       return false;
     }
-  } else {
-    ua->ErrorMsg(T_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
-    return false;
   }
 
-  return true;
+  ua->ErrorMsg(T_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
+  return false;
 }
 
 static inline bool parse_jobstatus_selection_param(
@@ -1133,21 +1175,21 @@ static bool ParseListBackupsCmd(UaContext* ua,
 {
   PoolMem temp(PM_MESSAGE), selection(PM_MESSAGE), criteria(PM_MESSAGE);
 
-  const char* client = GetArgValue(ua, "client");
-  if (!client) {
+  const char* clientname = nullptr;
+  int client_arg = FindClientArgFromDatabase(ua);
+  if (client_arg < 0) {
+    return false;
+  } else if (client_arg == 0) {
     ua->ErrorMsg(T_("missing parameter: client\n"));
     return false;
-  }
-
-  if (!ua->AclAccessOk(Client_ACL, client, true)) {
-    ua->ErrorMsg(T_("Access to specified Client not allowed.\n"));
-    return false;
+  } else if (client_arg > 0) {
+    clientname = ua->argv[client_arg];
   }
 
   /* allow jobtypes 'B' for Backup and 'A' or 'a' for archive (update job
    * doesn't enforce a valid jobtype, so people have 'a' in their catalogs */
   selection.bsprintf("AND Job.Type IN('B', 'A', 'a') AND Client.Name='%s' ",
-                     client);
+                     clientname);
 
   // Build a selection pattern based on the jobstatus and level arguments.
   parse_jobstatus_selection_param(temp, ua, "AND JobStatus IN ('T','W') ");
@@ -1252,10 +1294,8 @@ get_out:
   return true;
 }
 
-/**
- * For a given job, we examine all his run records
- *  to see if it is scheduled today or tomorrow.
- */
+/* For a given job, we examine all his run records
+ *  to see if it is scheduled today or tomorrow. */
 RunResource* find_next_run(RunResource* run,
                            JobResource* job,
                            utime_t& runtime,
@@ -1559,13 +1599,11 @@ bool sprintit(void* ctx, const char* fmt, ...)
 }
 
 
-/**
- * Format message and send to other end.
+/* Format message and send to other end.
 
  * If the UA_sock is NULL, it means that there is no user
  * agent, so we are being called from BAREOS core. In
- * that case direct the messages to the Job.
- */
+ * that case direct the messages to the Job. */
 void bmsg(UaContext* ua, const char* fmt, va_list arg_ptr)
 {
   BareosSocket* bs = ua->UA_sock;
@@ -1606,10 +1644,8 @@ bool bsendmsg(void* ctx, const char* fmt, ...)
   return true;
 }
 
-/*
- * The following UA methods are mainly intended for GUI
- * programs
- */
+/* The following UA methods are mainly intended for GUI
+ * programs */
 
 void UaContext::vSendMsg(int signal,
                          const char* messagetype,
@@ -1630,10 +1666,8 @@ void UaContext::vSendMsg(int signal,
   }
 }
 
-/**
- * This is a message that should be displayed on the user's
- *  console.
- */
+/* This is a message that should be displayed on the user's
+ *  console. */
 void UaContext::SendMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -1645,10 +1679,8 @@ void UaContext::SendMsg(const char* fmt, ...)
 void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
 
 
-/**
- * This is an error condition with a command. The gui should put
- *  up an error or critical dialog box.  The command is aborted.
- */
+/* This is an error condition with a command. The gui should put
+ *  up an error or critical dialog box.  The command is aborted. */
 void UaContext::ErrorMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -1657,11 +1689,9 @@ void UaContext::ErrorMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-/**
- * This is a warning message, that should bring up a warning
+/* This is a warning message, that should bring up a warning
  *  dialog box on the GUI. The command is not aborted, but something
- *  went wrong.
- */
+ *  went wrong. */
 void UaContext::WarningMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -1670,10 +1700,8 @@ void UaContext::WarningMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-/**
- * This is an information message that should probably be put
- *  into the status line of a GUI program.
- */
+/* This is an information message that should probably be put
+ *  into the status line of a GUI program. */
 void UaContext::InfoMsg(const char* fmt, ...)
 {
   va_list arg_ptr;

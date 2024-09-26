@@ -99,6 +99,7 @@ int FindArgKeyword(UaContext* ua, const char** list);
 int FindArg(UaContext* ua, const char* keyword);
 int FindArgWithValue(UaContext* ua, const char* keyword);
 const char* GetArgValue(UaContext* ua, const char* keyword);
+int FindClientArgFromDatabase(UaContext* ua);
 int DoKeywordPrompt(UaContext* ua, const char* msg, const char** list);
 bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg);
 bool GetLevelFromName(JobControlRecord* jcr, const char* level_name);

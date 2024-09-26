@@ -58,10 +58,12 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             **self.director_extra_options,
         )
 
-        director.call("run job=backup-bareos-fd yes")
-        director.call("wait")
-        director.call("restore client=bareos-fd fileset=SelfTest select all done yes")
-        director.call("wait")
+        backup_jobname = "backup-bareos-fd"
+        backup_jobid = self.get_backup_jobid(director, backup_jobname, level="Full")
+        self.run_restore(director, client="bareos-fd", jobid=backup_jobid, wait=True)
+        backup_jobid_incremental = self.get_backup_jobid(
+            director, backup_jobname, level="Incremental"
+        )
 
         # Regular list jobs
         result = director.call("list jobs")
@@ -245,9 +247,9 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             self.assertTrue(job["jobstatus"], "T")
 
         # running a job a canceling
-        director.call("run job=backup-bareos-fd yes")
-        director.call("cancel job=backup-bareos-fd all yes")
-        director.call("wait")
+        jobid = self.run_job(director, "backup-bareos-fd")
+        director.call(f"cancel jobid={jobid} yes")
+        director.call(f"wait jobid={jobid}")
 
         # list jobs jobstatus=X,Y,z
         result = director.call("list jobs jobstatus=T,A")
@@ -318,6 +320,53 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         self.assertTrue(full_jobs >= 1)
         self.assertTrue(incremental_jobs >= 1)
 
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list jobs=x")
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list job")
+
+        result = director.call("list job=invalid_jobname")
+        self.assertEqual(len(result["jobs"]), 0)
+
+        result = director.call(f"list job={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        # this is not required to work.
+        result = director.call(f"list jobs job={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        result = director.call(f"list jobname={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        # this is not required to work.
+        result = director.call(f"list jobs jobname={backup_jobname}")
+        self.assertGreater(len(result["jobs"]), 1)
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list jobid")
+
+        result = director.call(f"llist jobid={backup_jobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+        backup_job_ujobid = result["jobs"][0]["job"]
+
+        # this is not required to work.
+        result = director.call(f"llist jobs jobid={backup_jobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("list ujobid")
+
+        result = director.call(f"llist ujobid={backup_job_ujobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+
+        # this is not required to work.
+        result = director.call(f"llist jobs ujobid={backup_job_ujobid}")
+        self.assertEqual(result["jobs"][0]["jobid"], backup_jobid)
+
+        result = director.call(f"llist ujobid=invalid_ujobid")
+        self.assertEqual(len(result["jobs"]), 0)
+
     def test_list_media(self):
         """
         verifying `list media` and `llist media ...` outputs correct data
@@ -335,8 +384,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             **self.director_extra_options,
         )
 
-        director.call("run job=backup-bareos-fd yes")
-        director.call("wait")
+        self.get_backup_jobid(director, "backup-bareos-fd", level="Full")
 
         # check for expected keys
         result = director.call("list media")
@@ -366,9 +414,18 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
 
         # check expected behavior when asking for specific volume by name
         test_volume = "test_volume0001"
+
+        result = director.call("list volume={}".format(test_volume))
+        if len(result["volume"]) >= 1:
+            director.call("delete volume={} yes".format(test_volume))
+        try:
+            os.remove("storage/{}".format(test_volume))
+        except FileNotFoundError:
+            pass
+
         director.call("label volume={} pool=Full".format(test_volume))
-        director.call("wait")
-        result = director.call("list media=test_volume0001")
+
+        result = director.call("list media={}".format(test_volume))
         self.assertEqual(
             result["volume"]["volumename"],
             test_volume,
@@ -379,30 +436,32 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             test_volume,
         )
 
+        mediaid = result["volume"]["mediaid"]
+        # raises an exception if not an integer
+        int(mediaid)
+
         # check expected behavior when asking for specific volume by mediaid
-        result = director.call("list mediaid=2")
+        result = director.call(f"list mediaid={mediaid}")
         self.assertEqual(
             result["volume"]["mediaid"],
-            "2",
+            mediaid,
         )
-        result = director.call("list volumeid=2")
+        result = director.call(f"list volumeid={mediaid}")
         self.assertEqual(
             result["volume"]["mediaid"],
-            "2",
+            mediaid,
         )
 
-        result = director.call("llist mediaid=2")
+        result = director.call(f"llist mediaid={mediaid}")
         self.assertEqual(
             result["volume"]["mediaid"],
-            "2",
+            mediaid,
         )
-        result = director.call("llist volumeid=2")
+        result = director.call(f"llist volumeid={mediaid}")
         self.assertEqual(
             result["volume"]["mediaid"],
-            "2",
+            mediaid,
         )
-        director.call("delete volume=test_volume0001 yes")
-        os.remove("storage/{}".format(test_volume))
 
     def test_list_pool(self):
         """
@@ -421,8 +480,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             **self.director_extra_options,
         )
 
-        director.call("run job=backup-bareos-fd yes")
-        director.call("wait")
+        self.get_backup_jobid(director, "backup-bareos-fd")
 
         result = director.call("list pool")
         expected_list_pool_keys = [
@@ -449,6 +507,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             result["pools"][0]["name"],
             "Incremental",
         )
+
+        result = director.call("list pool=Full")
+        self.assertEqual(
+            result["pools"][0]["name"],
+            "Full",
+        )
+        # raises an exception, if pool_id_full is not an integer.
+        pool_id_full = int(result["pools"][0]["poolid"])
 
         result = director.call("llist pool")
         expected_long_list_pool_keys = [
@@ -488,26 +554,26 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "Incremental",
         )
 
-        result = director.call("list poolid=3")
+        result = director.call(f"list poolid={pool_id_full}")
         self.assertEqual(
             result["pools"][0]["name"],
             "Full",
         )
 
         self.assertEqual(
-            result["pools"][0]["poolid"],
-            "3",
+            int(result["pools"][0]["poolid"]),
+            pool_id_full,
         )
 
-        result = director.call("llist poolid=3")
+        result = director.call(f"llist poolid={pool_id_full}")
         self.assertEqual(
             result["pools"][0]["name"],
             "Full",
         )
 
         self.assertEqual(
-            result["pools"][0]["poolid"],
-            "3",
+            int(result["pools"][0]["poolid"]),
+            pool_id_full,
         )
 
     def test_list_files(self):
@@ -531,7 +597,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             director_json,
             jobname="backup-bareos-fd",
             level="Full",
-            extra="fileset=NumberedFiles",
+            fileset="NumberedFiles",
             wait=True,
         )
         result = director_json.call(f"list files jobid={jobid}")

@@ -36,14 +36,12 @@ class ClientModel
      */
     public function getClients(&$bsock = null)
     {
-        if (isset($bsock)) {
-            $cmd = 'llist clients current';
-            $result = $bsock->send_command($cmd, 2);
-            $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $clients['result']['clients'];
-        } else {
+        if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
         }
+
+        $result = $bsock->call_json("llist clients current");
+        return $result["clients"];
     }
 
     /**
@@ -55,14 +53,29 @@ class ClientModel
      */
     public function getDotClients(&$bsock = null)
     {
-        if (isset($bsock)) {
-            $cmd = '.clients';
-            $result = $bsock->send_command($cmd, 2);
-            $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $clients['result']['clients'];
-        } else {
+        if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
         }
+
+        $result = $bsock->call_json(".clients");
+        return $result["clients"];
+    }
+
+    /**
+     * Get all known clients.
+     *
+     * @param $bsock
+     *
+     * @return array
+     */
+    public function getClientsWithBackups(&$bsock = null)
+    {
+        if (!isset($bsock)) {
+            throw new \Exception('Missing argument.');
+        }
+
+        $result = $bsock->call_json("list clients");
+        return $result["clients"];
     }
 
     /**
@@ -73,16 +86,15 @@ class ClientModel
      *
      * @return array
      */
-    public function getClient(&$bsock = null, $client = null)
+    public function getClient(&$bsock = null, $client)
     {
-        if (isset($bsock, $client)) {
-            $cmd = 'llist client="' . $client . '"';
-            $result = $bsock->send_command($cmd, 2);
-            $client = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $client['result']['clients'];
-        } else {
+        if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
         }
+
+        $cmd = 'llist client="' . $client . '"';
+        $result = $bsock->call_json($cmd);
+        return $result["clients"];
     }
 
     /**

@@ -26,7 +26,7 @@ To run the test you must set certain environment variables:
 
  * `BAREOS_WEBUI_BROWSER_RESOLUTION`: e.g. "1200x800"
  * `BAREOS_WEBUI_CHROMEDRIVER_PATH`: Set the path to your chromedriver here.
- * `BAREOS_WEBUI_CHROME_HEADLESS`: By default, tests with chrome are performed headless. Setting it to "yes" will start (and end) a browser window.
+ * `BAREOS_WEBUI_CHROME_HEADLESS`: By default, tests with chrome are performed headless. Setting it to "no" will start (and end) a browser window.
  * `BAREOS_WEBUI_TESTNAME`: internally, just for logging.
 
 ## Running the test

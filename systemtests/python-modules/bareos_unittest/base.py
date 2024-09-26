@@ -2,7 +2,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,7 @@ class Base(unittest.TestCase):
 
     config_directory = "/etc/bareos"
 
-    director_name = u"bareos-dir"
+    director_name = "bareos-dir"
 
     director_address = "localhost"
     director_port = 9101
@@ -50,7 +50,7 @@ class Base(unittest.TestCase):
 
     filedaemon_address = "localhost"
     filedaemon_port = 9102
-    filedaemon_director_password = u"secret"
+    filedaemon_director_password = "secret"
 
     dbcheck_binary = "dbcheck"
 
@@ -73,13 +73,6 @@ class Base(unittest.TestCase):
         logger = logging.getLogger()
         if cls.debug:
             logger.setLevel(logging.DEBUG)
-
-        # assertRegexpMatches has been renamed
-        # to assertRegex in Python 3.2
-        # and is deprecated now.
-        # This prevents a deprecation warning.
-        if hasattr(cls, "assertRegexpMatches") and not hasattr(cls, "assertRegex"):
-            cls.assertRegex = cls.assertRegexpMatches
         logger.debug("setUpClass")
 
     def setUp(self):
@@ -100,12 +93,12 @@ class Base(unittest.TestCase):
             else:
                 tls = False
         if tls:
-            return u"admin-tls"
+            return "admin-tls"
         else:
-            return u"admin-notls"
+            return "admin-notls"
 
     def get_operator_password(self, username=None):
-        return bareos.bsock.Password(u"secret")
+        return bareos.bsock.Password("secret")
 
     @staticmethod
     def append_to_file(filename, data):

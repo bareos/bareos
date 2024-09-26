@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,7 @@ class PythonBareosDeleteTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        jobname = u"backup-bareos-fd"
+        jobname = "backup-bareos-fd"
 
         director = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -57,7 +57,7 @@ class PythonBareosDeleteTest(bareos_unittest.Json):
             **self.director_extra_options
         )
 
-        jobid = self.run_job(director, jobname, wait=True)
+        jobid = self.get_backup_jobid(director, jobname)
         job = self.list_jobid(director, jobid)
         result = director.call("delete jobid={}".format(jobid))
         logger.debug(str(result))
@@ -146,7 +146,7 @@ class PythonBareosDeleteTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        jobname = u"backup-bareos-fd"
+        jobname = "backup-bareos-fd"
 
         director = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -156,7 +156,7 @@ class PythonBareosDeleteTest(bareos_unittest.Json):
             **self.director_extra_options
         )
 
-        jobid = self.run_job(director, jobname, level="Full", wait=True)
+        jobid = self.get_backup_jobid(director, jobname, "Full")
         job = self.list_jobid(director, jobid)
         result = director.call("list volume jobid={}".format(jobid))
         volume = result["volumes"][0]["volumename"]

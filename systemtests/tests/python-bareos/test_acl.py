@@ -65,19 +65,12 @@ class PythonBareosAclTest(bareos_unittest.Json):
             **self.director_extra_options
         )
 
-        result = director_root.call("run job=backup-bareos-fd level=Full yes")
-        logger.debug(str(result))
-
-        jobIdBareosFdFull = result["run"]["jobid"]
-
-        result = director_root.call("wait jobid={}".format(jobIdBareosFdFull))
-
-        result = director_root.call("run job=backup-test2-fd level=Full yes")
-        logger.debug(str(result))
-
-        jobIdTestFdFull = result["run"]["jobid"]
-
-        result = director_root.call("wait jobid={}".format(jobIdTestFdFull))
+        jobIdBareosFdFull = self.get_backup_jobid(
+            director_root, "backup-bareos-fd", level="Full"
+        )
+        jobIdTestFdFull = self.get_backup_jobid(
+            director_root, "backup-test2-fd", level="Full"
+        )
 
         #
         # login as console with ACLs
@@ -202,15 +195,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             **self.director_extra_options
         )
 
-        # result = director_root.call('run job=backup-bareos-fd level=Full yes')
-        # logger.debug(str(result))
-
-        # jobIdFull = result['run']['jobid']
-
-        # wait for job to finish, otherwise next incremental is upgraded to Full.
-        # result = director_root.call('wait jobid={}'.format(jobIdFull))
-
-        jobIdFull = self.run_job(director_root, "backup-bareos-fd", "Full", wait=True)
+        jobIdFull = self.get_backup_jobid(director_root, "backup-bareos-fd", "Full")
 
         # make sure, timestamp differs
         sleep(2)
@@ -218,13 +203,6 @@ class PythonBareosAclTest(bareos_unittest.Json):
         self.append_to_file("{}/extrafile.txt".format(self.backup_directory), "Test\n")
 
         sleep(2)
-
-        # result = director_root.call('run job=backup-bareos-fd level=Incremental yes')
-        # logger.debug(str(result))
-
-        # jobIdIncr = result['run']['jobid']
-
-        # result = director_root.call('wait jobid={}'.format(jobIdIncr))
 
         jobIdIncr = self.run_job(
             director_root, "backup-bareos-fd", "Incremental", wait=True
@@ -332,8 +310,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
             **self.director_extra_options
         )
 
-        jobid1 = self.run_job(
-            director=director_root, jobname=jobname1, level="Full", wait=True
+        jobid1 = self.get_backup_jobid(
+            director=director_root, jobname=jobname1, level="Full"
         )
 
         self.configure_add(
@@ -343,8 +321,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
             "job name={} client=bareos-fd jobdefs=DefaultJob".format(jobname2),
         )
 
-        jobid2 = self.run_job(
-            director=director_root, jobname=jobname2, level="Full", wait=True
+        jobid2 = self.get_backup_jobid(
+            director=director_root, jobname=jobname2, level="Full"
         )
 
         #
@@ -470,7 +448,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         )
 
         # retrieve or create a jobid of a valid backup job
-        backup_jobid = self.get_backup_jobid(console, jobname)
+        backup_jobid = self.get_backup_jobid(console, jobname, level="Full")
 
         # restore with default where path
         restore_jobid = self.run_restore(console, client=client, jobid=backup_jobid)
