@@ -385,6 +385,8 @@ Dedupable Backend
 
 **Dedupable**
 
+.. note:: This backend is still experimental and subject to enhancements and changes.
+
 A dedupable device splits up the data it receives into bareos specific data and file data
 to store them separately.  It tries to store the file data blocks it receives only at certain intervals
 in its storage. This should make it possible for your filesystem to deduplicate its the actual file data.
@@ -394,4 +396,4 @@ your filesystem uses to deduplicate.  It is also important that :config:option:`
 divisible by this size.
 
 
-:sinceVersion:`2X.?.?: Dedup Storage`
+:sinceVersion:`23.1.0: Dedup Storage`
