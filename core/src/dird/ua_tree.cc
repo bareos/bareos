@@ -426,7 +426,14 @@ static std::vector<std::string> split_path(std::string_view v)
     auto pos = v.find_first_of('/');
 
     if (pos == v.npos) {
-      parts.emplace_back(v);
+      // ** at the end of a path is treated the same as *
+      // If we are given the path 'home/', then it should be treated as
+      // 'home/*', i.e. we replace an empty part at the end also with *
+      if (v.size() == 0 || v == "**") {
+        parts.emplace_back("*");
+      } else {
+        parts.emplace_back(v);
+      }
       break;
     }
 
@@ -457,8 +464,32 @@ static int MarkElements(UaContext* ua, TreeContext* tree, bool extract = true)
 
     std::vector<stack_elem> stack;
 
-    stack.push_back({tree->node, 0});
+    if (parts[0].size() == 0) {
+      // we are trying to mark from the root
+      stack.push_back({tree->root, 1});
+    } else if (parts[0].size() == 2 && parts[0][1] == ':') {
+      // maybe we are trying to mark from a windows root
 
+      tree_node* root_child;
+
+      bool found_root = false;
+      foreach_child (root_child, tree->root) {
+        if (root_child->type == tree_node_type::DirWin
+            && fnmatch(parts[0].c_str(), root_child->fname, 0) == 0) {
+          stack.push_back({root_child, 1});
+          found_root = true;
+        }
+      }
+
+      // we still need to try to mark from the current node in case
+      // we dont find anything.
+      // if we ever have a bug report because of this, we could easily
+      // allow the use of './' to make clear that we want a relative
+      // path
+      if (!found_root) { stack.push_back({tree->node, 0}); }
+    } else {
+      stack.push_back({tree->node, 0});
+    }
 
     while (!stack.empty()) {
       auto current = stack.back();
@@ -471,109 +502,34 @@ static int MarkElements(UaContext* ua, TreeContext* tree, bool extract = true)
       bool special = (part == "**");
 
       if (special) {
-        // special case: match 0 directories
+        // We know that we are not at the end of a path, as split_path
+        // takes care of that.
+        // ** inside a path means: match 0 or more subdirectories, so we take
+        // care of the "matcth 0 subdir" case
         stack.push_back({node, current.part_index + 1});
-      }
+        tree_node* child;
+        foreach_child (child, node) {
+          // we already know that each (non-file) child matches **,
+          // so no need to check
 
-      {
+          if (child->type != tree_node_type::File) {
+            // special case: match 1+ directories
+            stack.push_back({child, current.part_index});
+          }
+        }
+      } else {
         tree_node* child;
         foreach_child (child, node) {
           if (fnmatch(part.c_str(), child->fname, 0) == 0) {
             if (current.part_index + 1 == parts.size()) {
               count += SetExtract(ua, child, tree, extract);
             } else if (child->type != tree_node_type::File) {
-              if (special) {
-                // special case: match 1+ directories
-                stack.push_back({child, current.part_index});
-              } else {
-                stack.push_back({child, current.part_index + 1});
-              }
+              stack.push_back({child, current.part_index + 1});
             }
           }
         }
       }
     }
-#if 0
-    // See if this is a complex path.
-    if (strchr(ua->argk[i], '/')) {
-
-
-      int pnl, fnl;
-      PoolMem given_file_pattern(PM_FNAME);
-      PoolMem given_path_pattern(PM_FNAME);
-
-      // Split the argument into a path pattern and file pattern.
-      SplitPathAndFilename(ua->argk[i], given_path_pattern.addr(), &pnl,
-                           given_file_pattern.addr(), &fnl);
-
-      if (!tree_cwd(given_path_pattern.c_str(), tree->root, tree->node)) {
-        ua->WarningMsg(T_("Invalid path %s given.\n"),
-                       given_path_pattern.c_str());
-        continue;
-      }
-
-      // std::string fullpath_pattern{};
-      // if (ua->argk[i][0] != '/') {
-      //   POOLMEM* path = tree_getpath(tree->node);
-      //   fullpath_pattern.append(path);
-      //   FreePoolMemory(path);
-      // }
-
-      // fullpath_pattern.append(given_path_pattern);
-
-      tree_node* node{nullptr};
-      {
-        POOLMEM* path = tree_getpath(tree->node);
-        if (strcmp(path, "/") == 0) {
-          node = FirstTreeNode(tree->root);
-        } else {
-          node = tree->node;
-        }
-        FreePoolMemory(path);
-      }
-
-      PoolMem temp;
-
-      auto len = given_path_pattern.strlen();
-      char* pp = given_path_pattern.c_str();
-      if (pp[len - 1] == '/') {
-        // getpathsegment does not include a trailing slash
-        pp[len-1] = '\0';
-      }
-      for (; node; node = NextTreeNode(node)) {
-
-        if (!tree_getpathsegment(temp.addr(), tree->node, node->parent)) {
-          continue;
-        }
-
-        // temp is now always a relative path, more often than not starting with
-        // ./
-        // We should probably actually do our own delimited matching
-        // so we can do this properly. But for now this workaround should be
-        // enough
-
-        const char* fname = temp.c_str();
-        if (temp.strlen() > 2) {
-          fname += 2;
-        }
-
-
-        if (fnmatch(given_path_pattern.c_str(), fname, 0) == 0) {
-          if (fnmatch(given_file_pattern.c_str(), node->fname, 0) == 0) {
-            count += SetExtract(ua, node, tree, true);
-          }
-        }
-      }
-    } else {
-      // Only a pattern without a / so do things relative to CWD.
-      tree_node* node;
-      foreach_child (node, tree->node) {
-        if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
-          count += SetExtract(ua, node, tree, true);
-        }
-      }
-    }
-#endif
   }
   return count;
 }
