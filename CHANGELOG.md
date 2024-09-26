@@ -103,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - nsi installers: remove postgresql backend [PR #1914]
 - stored: add dedupable backend [PR #1663]
 - systemtests: fix plugin postgresql testrunner-* [PR #1947]
+- webui: fix handling deleted clients in restore browser [PR #1933]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -264,6 +265,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1914]: https://github.com/bareos/bareos/pull/1914
 [PR #1917]: https://github.com/bareos/bareos/pull/1917
 [PR #1919]: https://github.com/bareos/bareos/pull/1919
+[PR #1933]: https://github.com/bareos/bareos/pull/1933
 [PR #1936]: https://github.com/bareos/bareos/pull/1936
 [PR #1945]: https://github.com/bareos/bareos/pull/1945
 [PR #1947]: https://github.com/bareos/bareos/pull/1947
