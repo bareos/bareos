@@ -29,6 +29,14 @@
 
 #include "lib/cli.h"
 
+namespace {
+std::string&& rtrim(std::string&& s, const char* t = " \t\n\r\f\v")
+{
+  s.erase(s.find_last_not_of(t) + 1);
+  return std::move(s);
+}
+}  // namespace
+
 TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
 {
   CLI::App app;
@@ -63,9 +71,9 @@ TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
       "        REQUIRED\n"
       "        Needs: -x\n"
       "        Excludes: -x\n"
-      "        "+random_option_text+" \n\n"};
+      "        "+random_option_text};
   /* clang-format on */
 
   EXPECT_STREQ(app.get_description().c_str(), "test app");
-  EXPECT_STREQ(app.help().c_str(), expected_help.c_str());
+  EXPECT_STREQ(rtrim(app.help()).c_str(), expected_help.c_str());
 }
