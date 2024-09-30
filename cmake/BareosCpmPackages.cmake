@@ -33,17 +33,19 @@ if(FETCHCONTENT_FULLY_DISCONNECTED AND NOT CPM_LOCAL_PACKAGES_ONLY)
 endif()
 include(CPM)
 
-# Keep module alphabetically ordered
+# Set VERSION to the the minimum required version. Point GIT_TAG to the "best"
+# version we'd bundle. Keep module alphabetically ordered.
 CPMAddPackage(
   NAME CLI11
-  VERSION 2.4.2
+  VERSION 2.1.2
   GITHUB_REPOSITORY CLIUtils/CLI11
+  GIT_TAG v2.4.2
   EXCLUDE_FROM_ALL YES
 )
 
 CPMAddPackage(
   NAME fmt
-  VERSION 11.0.2
+  VERSION 6.2.1
   GITHUB_REPOSITORY fmtlib/fmt
   GIT_TAG 11.0.2
   EXCLUDE_FROM_ALL YES
@@ -51,8 +53,9 @@ CPMAddPackage(
 
 CPMAddPackage(
   NAME xxHash
-  VERSION 0.8.2
+  VERSION 0.8.0
   GITHUB_REPOSITORY Cyan4973/xxHash
+  GIT_TAG v0.8.2
   EXCLUDE_FROM_ALL YES
   SOURCE_SUBDIR cmake_unofficial
   OPTIONS "XXHASH_BUILD_XXHSUM OFF" "DISPATCH ON"
