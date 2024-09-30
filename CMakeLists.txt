@@ -118,6 +118,7 @@ include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
+include(ForceOption)
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -140,34 +141,15 @@ if(BUILD_UNIVERSAL_CLIENT)
       FATAL_ERROR "Building the universal client requires at least CMake 3.18"
     )
   endif()
-  set(ENABLE_PYTHON
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_GFAPI_FD
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_JANSSON
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_LZO
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_CAPABILITY
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_BCONSOLE
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_STATIC_RUNTIME_LIBS
-      ON
-      CACHE BOOL "" FORCE
-  )
+  force_option(FETCHCONTENT_FULLY_DISCONNECTED OFF)
+  force_option(CPM_USE_LOCAL_PACKAGES OFF)
+  force_option(ENABLE_PYTHON OFF)
+  force_option(ENABLE_GFAPI_FD OFF)
+  force_option(ENABLE_JANSSON OFF)
+  force_option(ENABLE_LZO OFF)
+  force_option(ENABLE_CAPABILITY OFF)
+  force_option(ENABLE_BCONSOLE OFF)
+  force_option(ENABLE_STATIC_RUNTIME_LIBS ON)
   set(client-only ON)
 endif()
 
