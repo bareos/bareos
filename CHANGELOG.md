@@ -141,6 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix runtime status [PR #1872]
 - Fix multiple ACL handling bugs [PR #1875]
 - fix #1775 plugin: fd mariabackup add support mariadb 11+ [PR #1835]
+- deb control files: depend on python3-bareos [PR #1956]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -269,4 +270,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1936]: https://github.com/bareos/bareos/pull/1936
 [PR #1945]: https://github.com/bareos/bareos/pull/1945
 [PR #1947]: https://github.com/bareos/bareos/pull/1947
+[PR #1956]: https://github.com/bareos/bareos/pull/1956
 [unreleased]: https://github.com/bareos/bareos/tree/master
