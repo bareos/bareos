@@ -246,7 +246,6 @@ ResourceItem newinc_items[] = {
 ResourceItem options_items[] = {
   { "Compression", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Signature", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "BaseJob", CFG_TYPE_OPTION, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Accurate", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Verify", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "OneFs", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
@@ -398,12 +397,6 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
   } else if (keyword == INC_KW_ACCURATE) { /* special case */
     IsInPermittedSet(lc, T_("accurate"), PERMITTED_ACCURATE_OPTIONS);
     bstrncat(opts, "C", optlen); /* indicate Accurate */
-    bstrncat(opts, lc->str, optlen);
-    bstrncat(opts, ":", optlen); /* Terminate it */
-    Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
-  } else if (keyword == INC_KW_BASEJOB) { /* special case */
-    IsInPermittedSet(lc, T_("base job"), PERMITTED_BASEJOB_OPTIONS);
-    bstrncat(opts, "J", optlen); /* indicate BaseJob */
     bstrncat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
