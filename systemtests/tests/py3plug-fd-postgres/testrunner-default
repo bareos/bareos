@@ -111,18 +111,18 @@ rm -f database/data/postmaster.pid
 # use either recovery.conf or recovery.signal
 # Those files should exist after restore, the plugin create them
 # postgres 11 and lower
+restore_command="restore_command = 'cp ${current_test_directory}/database/wal_archive/%f %p'"
 if (( ${PG_VERSION} < 12 )); then
   echo "PG_VERSION is ${PG_VERSION} so lower than 12, using recovery.conf"
   recovery_file="${current_test_directory}/database/data/recovery.conf"
 else
   # postgres 12+
   echo "PG_VERSION is ${PG_VERSION} so 12+, using postgresql.conf and recovery.signal"
+  echo "${restore_command}" >> "${current_test_directory}/database/data/postgresql.conf"
   recovery_file="${current_test_directory}/database/data/recovery.signal"
 fi
-restore_command="restore_command = 'cp ${current_test_directory}/database/wal_archive/%f %p'"
 echo "${restore_command}" >> "${recovery_file}"
 [ $EUID -eq 0 ] && chown postgres ${recovery_file}
-echo "${restore_command}" >> "${current_test_directory}/database/data/postgresql.conf"
 
 # start DB again - shall recover to latest possible state
 pushd database > /dev/null
