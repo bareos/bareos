@@ -57,6 +57,7 @@
 #include "lib/util.h"
 #include "filed/backup.h"
 #include "lib/compression.h"
+#include "filed/accurate.h"
 
 #if defined(WIN32_VSS)
 #  include "win32/findlib/win32.h"
@@ -2371,6 +2372,8 @@ static void FiledFreeJcr(JobControlRecord* jcr)
     delete jcr->dir_bsock;
     jcr->dir_bsock = nullptr;
   }
+
+  AccurateFree(jcr);
 
   if (jcr->fd_impl->last_fname) { FreePoolMemory(jcr->fd_impl->last_fname); }
 

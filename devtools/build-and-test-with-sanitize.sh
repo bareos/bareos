@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -46,10 +46,6 @@ cmake \
   -DENABLE_SANITIZERS=yes \
   -Dpostgresql=yes
 cmake --build cmake-build
-
-# avoid problems in containers with sanitizers
-# see https://github.com/google/sanitizers/issues/1322
-export ASAN_OPTIONS=intercept_tls_get_addr=0
 
 cd cmake-build
 export REGRESS_DEBUG=1
