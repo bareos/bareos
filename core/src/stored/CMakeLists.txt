@@ -78,7 +78,6 @@ set(LIBBAREOSSD_SRCS
 
 set(SDSRCS
     append.cc
-    askdir.cc
     authenticate.cc
     checkpoint_handler.cc
     dir_cmd.cc
