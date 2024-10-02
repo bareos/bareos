@@ -326,7 +326,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   set(HAVE_FREEBSD_OS 1)
-  include_directories(/usr/local/include)
+  include_directories(SYSTEM /usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
   check_cxx_compiler_flag(
