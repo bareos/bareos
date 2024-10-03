@@ -20,8 +20,8 @@ BackupFile="${tmp}/file-with-chflags"
 RestoreFile="${tmp}/bareos-restores/${BackupFile}"
 
 # allow delition of test files
-[ -f "${BackupFile}" ] && chflags nosunlink "${BackupFile}"
-[ -f "${RestoreFile}" ] && chflags nosunlink "${RestoreFile}"
+[ -f "${BackupFile}" ] && sudo chflags nosunlink "${BackupFile}"
+[ -f "${RestoreFile}" ] && sudo chflags nosunlink "${RestoreFile}"
 
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -32,7 +32,7 @@ chflags_is="${tmp}/chflags_is.txt"
 
 mkdir -p "${BackupDirectory}"
 touch "${BackupFile}"
-chflags sunlink "${BackupFile}"
+sudo chflags sunlink "${BackupFile}"
 ls -lo "${BackupFile}" | cut -b -40 > ${chflags_should}
 
 start_test
@@ -70,7 +70,7 @@ ls -lo "${RestoreFile}" | cut -b -40 > "$chflags_is"
 diff -u "$chflags_should" "$chflags_is" || estat=1
 
 # allow deletion of files
-chflags nosunlink "${BackupFile}"
-chflags nosunlink "${RestoreFile}"
+sudo chflags nosunlink "${BackupFile}"
+sudo chflags nosunlink "${RestoreFile}"
 
 end_test

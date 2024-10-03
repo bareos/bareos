@@ -1,0 +1,2 @@
+# execute bareos-ctl-fd via sudo
+export BAREOS_CTL_FD_RUNNER="$SUDO --preserve-env"

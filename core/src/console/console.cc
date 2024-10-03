@@ -130,6 +130,17 @@ static struct cmdstruct commands[] = {
     {NT_("help"), HelpCmd, T_("help listing")},
     {NT_("separator"), EolCmd, T_("set command separator")},
 };
+
+
+// Windows has its own predefined IsUserAnAdmin() function
+#if !defined(HAVE_WIN32) && !defined(HAVE_MSVC)
+static bool IsUserAnAdmin()
+{
+  uid_t euid = geteuid();
+  return (euid == 0);
+}
+#endif
+
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
 static int Do_a_command(FILE* input, BareosSocket* UA_sock)
@@ -502,7 +513,8 @@ static char** readline_completion(const char* text, int start, int)
   cmd = get_first_keyword();
   if (s) {
     for (int i = 0; i < key_size; i++) {
-      // See if this keyword is allowed with the current file_selection setting.
+      // See if this keyword is allowed with the current file_selection
+      // setting.
       if (cpl_keywords[i].file_selection != file_selection) { continue; }
 
       if (Bstrcasecmp(s, cpl_keywords[i].key)) {
@@ -1136,8 +1148,10 @@ static int Versioncmd(FILE*, BareosSocket*)
 /* @input <input-filename> */
 static int InputCmd(FILE*, BareosSocket*)
 {
-  FILE* fd;
-
+  if (IsUserAnAdmin()) {
+    ConsoleOutput(T_("@input command is not allowed as privileged user.\n"));
+    return 1;
+  }
   if (g_argc > 2) {
     ConsoleOutput(T_("Too many arguments on input command.\n"));
     return 1;
@@ -1146,7 +1160,7 @@ static int InputCmd(FILE*, BareosSocket*)
     ConsoleOutput(T_("First argument to input command must be a filename.\n"));
     return 1;
   }
-  fd = fopen(g_argk[1], "rb");
+  FILE* fd = fopen(g_argk[1], "rb");
   if (!fd) {
     BErrNo be;
     ConsoleOutputFormat(T_("Cannot open file %s for input. ERR=%s\n"),
@@ -1162,6 +1176,10 @@ static int InputCmd(FILE*, BareosSocket*)
 /* Send output to both terminal and specified file */
 static int TeeCmd(FILE* input, BareosSocket* UA_sock)
 {
+  if (IsUserAnAdmin()) {
+    ConsoleOutput(T_("@tee command is not allowed as privileged user.\n"));
+    return 1;
+  }
   EnableTeeOut();
   return DoOutputcmd(input, UA_sock);
 }
@@ -1170,6 +1188,10 @@ static int TeeCmd(FILE* input, BareosSocket* UA_sock)
 /* Send output to specified "file" */
 static int OutputCmd(FILE* input, BareosSocket* UA_sock)
 {
+  if (IsUserAnAdmin()) {
+    ConsoleOutput(T_("@output command is not allowed as privileged user.\n"));
+    return 1;
+  }
   DisableTeeOut();
   return DoOutputcmd(input, UA_sock);
 }
@@ -1206,6 +1228,11 @@ static int ExecCmd(FILE*, BareosSocket*)
   char line[5000];
   int status;
   int wait = 0;
+
+  if (IsUserAnAdmin()) {
+    ConsoleOutput(T_("@exec command is not allowed as privileged user.\n"));
+    return 1;
+  }
 
   if (g_argc > 3) {
     ConsoleOutput(
