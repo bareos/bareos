@@ -69,10 +69,21 @@ static std::unique_ptr<directordaemon::DirectorResource> dir_dir_config;
 static std::unique_ptr<console::DirectorResource> cons_dir_config;
 static std::unique_ptr<console::ConsoleResource> cons_cons_config;
 
+static void InitSignalHandler()
+{
+#if !defined(HAVE_WIN32)
+  struct sigaction sig = {};
+  sig.sa_handler = SIG_IGN;
+  sigaction(SIGUSR2, &sig, nullptr);
+  sigaction(SIGPIPE, &sig, nullptr);
+#endif
+}
+
 void InitForTest()
 {
   OSDependentInit();
   InitOpenSsl();
+  InitSignalHandler();
   dir_cons_config.reset(
       directordaemon::CreateAndInitializeNewConsoleResource());
   dir_dir_config.reset(
@@ -400,6 +411,8 @@ class BareosSocketTCPMock : public BareosSocketTCP {
 
 TEST(bsock, create_bareos_socket_unique_ptr)
 {
+  InitForTest();
+
   std::string test_variable;
   {
     std::unique_ptr<BareosSocketTCPMock, std::function<void(BareosSocket*)>> p;
@@ -419,6 +432,8 @@ TEST(bsock, create_bareos_socket_unique_ptr)
 
 TEST(BNet, FormatAndSendResponseMessage)
 {
+  InitForTest();
+
   std::unique_ptr<TestSockets> test_sockets(
       create_connected_server_and_client_bareos_socket());
   EXPECT_NE(test_sockets.get(), nullptr)
