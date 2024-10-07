@@ -6,7 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Changed
-- systemtests: fix plugin postgresql testrunner-*, old postgres `bc` call [PR #1948]
+- systemtests: fix plugin postgresql testrunners, old postgres `bc` call [PR #1948]
 
 ## [23.0.4] - 2024-09-10
 
