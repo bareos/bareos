@@ -61,6 +61,51 @@ BareosSocketTCP::BareosSocketTCP() : BareosSocket() {}
 
 BareosSocketTCP::~BareosSocketTCP() { destroy(); }
 
+
+int DuplicateSocket(int fd, POOLMEM*& error)
+{
+#if defined(HAVE_WIN32)
+  WSAPROTOCOL_INFOW info;
+  int r = WSADuplicateSocketW(fd, GetCurrentProcessId(), &info);
+
+  if (r != 0) {
+    Mmsg(error, "could not duplicate socket: %d", WSAGetLastError());
+    return -1;
+  }
+  SOCKET s = WSASocketW(info.iAddressFamily, info.iSocketType, info.iProtocol,
+                        &info, 0, WSA_FLAG_OVERLAPPED);
+
+  /* NOTE: sadly this is not the case.  In fact sizeof(SOCKET) == 8
+   * where as sizeof(int) == 4.  This is definitely not ok, but its ok for now.
+   * SOCKET is actually (just like handle) just an index into a table.
+   * As such it should be ok to discard the 4 most significant bytes, as
+   * they should hopefully always be 0.
+   * See https://stackoverflow.com/a/26496808 for more details */
+  // static_assert(sizeof(s) == sizeof(int));
+
+
+  int ret = (int)s;
+
+  if (ret < 0) {
+    if (s == INVALID_SOCKET) {
+      Mmsg(error, "could not duplicate socket: WSASocketW failed (%d)",
+           WSAGetLastError());
+    } else {
+      Mmsg(error, "could not duplicate socket: bad conversion (s = %llu)", s);
+    }
+  }
+
+  return ret;
+#else
+  if (fd >= 0) {
+    return dup(fd);
+  } else {
+    Mmsg(error, "could not duplicate socket: fd is not valid.");
+    return -1;
+  }
+#endif
+}
+
 BareosSocket* BareosSocketTCP::clone()
 {
   BareosSocketTCP* clone = new BareosSocketTCP(*this);
@@ -74,7 +119,8 @@ BareosSocket* BareosSocketTCP::clone()
   if (host_) { host_ = strdup(host_); }
 
   /* duplicate file descriptors */
-  if (fd_ >= 0) { clone->fd_ = dup(fd_); }
+  if (fd_ >= 0) { clone->fd_ = DuplicateSocket(fd_, clone->errmsg); }
+
   if (spool_fd_ >= 0) { clone->spool_fd_ = dup(spool_fd_); }
 
   clone->cloned_ = true;

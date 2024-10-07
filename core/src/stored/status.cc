@@ -734,22 +734,11 @@ static void ListRunningJobs(StatusPacket* sp)
 static inline void SendDriveReserveMessages(JobControlRecord* jcr,
                                             StatusPacket* sp)
 {
-  int i;
-  alist<const char*>* msgs;
-  char* msg;
+  std::unique_lock lock(jcr->mutex_guard());
 
-  std::unique_lock l(jcr->mutex_guard());
-
-  msgs = jcr->sd_impl->reserve_msgs;
-  if (!msgs || msgs->size() == 0) { return; }
-  for (i = msgs->size() - 1; i >= 0; i--) {
-    msg = (char*)msgs->get(i);
-    if (msg) {
-      sp->send("   ");
-      sp->send(msg, strlen(msg));
-    } else {
-      break;
-    }
+  for (auto& msg : jcr->sd_impl->reserve_msgs) {
+    sp->send("   ");
+    sp->send(msg.c_str());
   }
 }
 
@@ -765,7 +754,7 @@ static void ListJobsWaitingOnReservation(StatusPacket* sp)
   }
 
   foreach_jcr (jcr) {
-    if (!jcr->sd_impl->reserve_msgs) { continue; }
+    if (!jcr->sd_impl->reserve_msgs.size()) { continue; }
     SendDriveReserveMessages(jcr, sp);
   }
   endeach_jcr(jcr);
