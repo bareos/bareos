@@ -63,9 +63,15 @@ CPMAddPackage(
   NAME tl-expected
   VERSION "1.1.0"
   GITHUB_REPOSITORY "TartanLlama/expected"
-  EXCLUDE_FROM_ALL
-  OPTIONS "EXPECTED_BUILD_PACKAGE OFF" "EXPECTED_BUILD_TESTS OFF"
+  DOWNLOAD_ONLY YES
 )
+if(tl-expected_ADDED)
+  add_library(expected INTERFACE)
+  target_include_directories(
+    expected INTERFACE ${CPM_PACKAGE_tl-expected_SOURCE_DIR}/include
+  )
+  add_library(tl::expected ALIAS expected)
+endif()
 
 CPMAddPackage(
   NAME utf8cpp
