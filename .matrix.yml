@@ -5,3 +5,17 @@ OS:
       IMAGE: "debian11"
       ARCH:
         - x86_64
+  EL:
+    "9":
+      TYPE: rpm
+      IMAGE: rhel9
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
+      ARCH:
+        - x86_64
+        - aarch64
+    "8":
+      TYPE: rpm
+      IMAGE: rhel8
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, RHEL ]
+      ARCH:
+        - x86_64
