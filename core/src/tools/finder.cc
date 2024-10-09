@@ -412,7 +412,11 @@ int main(int argc, const char* argv[])
   FindAll(root, strategy);
   auto end = std::chrono::steady_clock::now();
 
-  std::cout << "took " << (end - start) << std::endl;
+  std::cout << "took "
+            << std::chrono::duration_cast<std::chrono::microseconds>(end
+                                                                     - start)
+                   .count()
+            << "ms" << std::endl;
 
   return 0;
 }
