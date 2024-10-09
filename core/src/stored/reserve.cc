@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/protocol_types.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
@@ -317,7 +318,9 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     return false;
   }
 
-  if (me->just_in_time_reservation && append) {
+  // jit is only available for native backups
+  if (jcr->getJobProtocol() == PT_NATIVE && me->just_in_time_reservation
+      && append) {
     PmStrcpy(dev_name, "JustInTime Device");
     jcr->sd_impl->dcr = nullptr;  // signal to rest of storage daemon that no
                                   // device was reserved.
