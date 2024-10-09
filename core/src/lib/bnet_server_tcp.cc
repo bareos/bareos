@@ -87,11 +87,7 @@ static void CleanupBnetThreadServerTcp(alist<s_sockfd*>* sockfds,
   Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
 
   if (sockfds && !sockfds->empty()) {
-    s_sockfd* fd_ptr = (s_sockfd*)sockfds->first();
-    while (fd_ptr) {
-      close(fd_ptr->fd);
-      fd_ptr = (s_sockfd*)sockfds->next();
-    }
+    for (s_sockfd* fd_ptr : sockfds) { close(fd_ptr->fd); }
     sockfds->destroy();
   }
 
@@ -312,7 +308,6 @@ void BnetThreadServerTcp(
   events |= POLLPRI;
 #  endif
 
-  s_sockfd* fd_ptr = nullptr;
   int i = 0;
 
   for (auto* fd_ptr : sockfds) {
