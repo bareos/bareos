@@ -33,6 +33,9 @@ start_test
 
 # Consolidating zero-file incremental backups
 
+# we need to sleep before the consolidate because the
+# job retention is 1 second.  Otherwise we might not
+# consider the last job eligable
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/extra.out
 messages
@@ -44,6 +47,7 @@ run job=$JobName level=Incremental yes
 wait
 run job=$JobName level=Incremental yes
 wait
+@sleep 1
 @$out $tmp/consolidate-empty-incrementals_consolidate.out
 run job=Consolidate yes
 wait
