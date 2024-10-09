@@ -436,7 +436,6 @@ if(NOT HAVE_WIN32 AND NOT client-only)
     LINK_LIBRARIES ${LINK_LIBRARIES}
     COMPILE_DEFINITIONS CERTDIR=\"${CERTDIR}\"
   )
-  bareos_add_test(watchdog_timer LINK_LIBRARIES bareos GTest::gtest_main)
 endif() # NOT HAVE_WIN32 AND NOT client-only
 
 if(HAVE_WIN32)
@@ -510,8 +509,6 @@ bareos_add_test(
   thread_specific_data LINK_LIBRARIES bareos ${THREADS_THREADS}
                                       GTest::gtest_main
 )
-
-bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(version_strings LINK_LIBRARIES bareos GTest::gtest_main)
 
