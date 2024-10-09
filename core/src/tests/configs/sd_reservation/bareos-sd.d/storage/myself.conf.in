@@ -1,4 +1,5 @@
 Storage {
   Name = test-sd
   @UNCOMMENT_SD_BACKEND_DIRECTORY@Backend Directory = @PROJECT_BINARY_DIR@/src/stored/backends
+  Just In Time Reservation = No
 }
