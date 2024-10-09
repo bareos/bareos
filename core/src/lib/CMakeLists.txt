@@ -90,7 +90,6 @@ set(BAREOS_SRCS
     status_packet.cc
     thread_list.cc
     thread_specific_data.cc
-    timer_thread.cc
     tls.cc
     tls_conf.cc
     tls_openssl.cc
@@ -102,7 +101,6 @@ set(BAREOS_SRCS
     util.cc
     var.cc
     watchdog.cc
-    watchdog_timer.cc
     xxhash.cc
 )
 
