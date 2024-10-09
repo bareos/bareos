@@ -20,6 +20,7 @@ LIB_DEPENDS+=  libbareosfind.so:sysutils/bareos.com-common
 LIB_DEPENDS+=  libbareossql.so:sysutils/bareos.com-database-common
 
 RUN_DEPENDS+=  bareos-dbcheck:sysutils/bareos.com-database-tools
+RUN_DEPENDS+=  /usr/local/lib/bareos/scripts/ddl/creates/postgresql.sql:sysutils/bareos.com-database-postgresql
 
 # optional overrides, used by build system.
 .-include "overrides.mk"

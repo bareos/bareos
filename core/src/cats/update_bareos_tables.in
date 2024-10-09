@@ -107,18 +107,19 @@ do
 
    info "Upgrading database schema from version ${start_version} to ${end_version}"
    retval=0
-   if [[ "$(uname -s)" =~ _NT ]]; then
-     PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "$(cygpath -w ${temp_sql_schema})" -d "${db_name}" || retval=$?
-   else
-     PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
-   fi
-
-   rm -f "${temp_sql_schema}"
-
+   case $(uname -s) in
+    *_NT)
+      PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "$(cygpath -w "${temp_sql_schema}")" -d "${db_name}" || retval=$?
+      ;;
+    *)
+      PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
+      ;;
+   esac
    if [ ${retval} -ne 0 ]; then
       error "Failed to upgrade database schema from version ${start_version} to ${end_version}"
       exit ${retval}
    fi
+   rm -f "${temp_sql_schema}"
    #
    # return value of psql is does says OK when transaction was rolled back.
    # So we verify that the version was set to what we expect.
