@@ -354,7 +354,8 @@ static int SetExtract(UaContext* ua,
   tree_node* n;
   int count = 0;
 
-  if (node->extract != extract && node->type != tree_node_type::NewDir) {
+  if (node->extract != extract && node->type != tree_node_type::NewDir
+      && node->type != tree_node_type::Root) {
     count++;
   }
 
@@ -376,7 +377,7 @@ static int SetExtract(UaContext* ua,
       HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
       if (entry && entry->node) {
         n = entry->node;
-        SetExtract(ua, n, tree, extract);
+        count += SetExtract(ua, n, tree, extract);
       }
     }
   }
@@ -544,11 +545,12 @@ static int markcmd(UaContext* ua, TreeContext* tree)
   int count = MarkElements(ua, tree);
 
   if (count == 0) {
-    ua->SendMsg(T_("No files marked.\n"));
+    ua->SendMsg(T_("No files newly marked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(T_("1 file marked.\n"));
+    ua->SendMsg(T_("1 file newly marked.\n"));
   } else {
-    ua->SendMsg(T_("%s files marked.\n"), edit_uint64_with_commas(count, ec1));
+    ua->SendMsg(T_("%s files newly marked.\n"),
+                edit_uint64_with_commas(count, ec1));
   }
 
   return 1;
@@ -561,7 +563,7 @@ static int Markdircmd(UaContext* ua, TreeContext* tree)
   char ec1[50];
 
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(T_("No files marked.\n"));
+    ua->SendMsg(T_("No directories marked.\n"));
     return 1;
   }
   for (int i = 1; i < ua->argc; i++) {
@@ -577,11 +579,11 @@ static int Markdircmd(UaContext* ua, TreeContext* tree)
     }
   }
   if (count == 0) {
-    ua->SendMsg(T_("No directories marked.\n"));
+    ua->SendMsg(T_("No directories newly marked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(T_("1 directory marked.\n"));
+    ua->SendMsg(T_("1 directory newly marked.\n"));
   } else {
-    ua->SendMsg(T_("%s directories marked.\n"),
+    ua->SendMsg(T_("%s directories newly marked.\n"),
                 edit_uint64_with_commas(count, ec1));
   }
   return 1;
@@ -1008,7 +1010,7 @@ static int DotPwdcmd(UaContext* ua, TreeContext* tree)
 static int Unmarkcmd(UaContext* ua, TreeContext* tree)
 {
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(T_("No files unmarked.\n"));
+    ua->SendMsg(T_("No files newly unmarked.\n"));
     return 1;
   }
 
@@ -1017,11 +1019,11 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
   int count = MarkElements(ua, tree, false);
 
   if (count == 0) {
-    ua->SendMsg(T_("No files unmarked.\n"));
+    ua->SendMsg(T_("No files newly unmarked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(T_("1 file unmarked.\n"));
+    ua->SendMsg(T_("1 file newly unmarked.\n"));
   } else {
-    ua->SendMsg(T_("%s files unmarked.\n"),
+    ua->SendMsg(T_("%s files newly unmarked.\n"),
                 edit_uint64_with_commas(count, ec1));
   }
 
@@ -1034,7 +1036,7 @@ static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
   int count = 0;
 
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(T_("No directories unmarked.\n"));
+    ua->SendMsg(T_("No directories newly unmarked.\n"));
     return 1;
   }
 
@@ -1052,11 +1054,11 @@ static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
   }
 
   if (count == 0) {
-    ua->SendMsg(T_("No directories unmarked.\n"));
+    ua->SendMsg(T_("No directories newly unmarked.\n"));
   } else if (count == 1) {
-    ua->SendMsg(T_("1 directory unmarked.\n"));
+    ua->SendMsg(T_("1 directory newly unmarked.\n"));
   } else {
-    ua->SendMsg(T_("%d directories unmarked.\n"), count);
+    ua->SendMsg(T_("%d directories newly unmarked.\n"), count);
   }
   return 1;
 }
