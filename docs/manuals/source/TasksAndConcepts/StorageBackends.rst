@@ -19,7 +19,7 @@ A Bareos Storage Daemon can use various storage backends:
    is used to access a GlusterFS storage.
 
 **Dedupable**
-   is used to support filesystem block-based deduplication, see :ref:`SdBackendDedup`.
+   is used to support filesystem block-based deduplication, see :ref:`SdBackendDedupable`.
 
 .. _SdBackendDroplet:
 
@@ -378,7 +378,7 @@ Adapt server and volume name to your environment.
 
 :sinceVersion:`15.2.0: GlusterFS Storage`
 
-.. _SdBackendDedup:
+.. _SdBackendDedupable:
 
 Dedupable Backend
 -----------------
@@ -393,5 +393,8 @@ For this to work correctly, the device option **BlockSize** needs to be set to t
 your filesystem uses to deduplicate.  It is also important that :config:option:`fd/client/MaximumNetworkBufferSize`\ is
 divisible by this size.
 
+   .. literalinclude:: /include/config/SdDeviceDeviceOptionsDedupable.conf
+      :language: bareosconfig
+      :caption: example configuration
 
-:sinceVersion:`2X.?.?: Dedup Storage`
+:sinceVersion:`23.1.0: Dedupable Storage`
