@@ -766,9 +766,10 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
 
       // The following 3000 OK label. string is scanned in ua_label.c
-      dir->fsend("3000 OK label. VolBytes=%s Volume=\"%s\" Device=%s\n",
-                 edit_uint64(dev->VolCatInfo.VolCatBytes, ed1), newname,
-                 dev->print_name());
+      dir->fsend(
+          "3000 OK label. VolFiles=%lu VolBytes=%s Volume=\"%s\" Device=%s\n",
+          dev->file, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1), newname,
+          dev->print_name());
       break;
     case VOL_NO_MEDIA:
       dir->fsend(T_("3914 Failed to label Volume (no media): ERR=%s\n"),

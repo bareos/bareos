@@ -417,9 +417,9 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "VolStatus,Slot,VolBytes,InChanger,VolReadTime,VolWriteTime,"
        "EndFile,EndBlock,LabelType,StorageId,DeviceId,LocationId,"
        "ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge,EncryptionKey,"
-       "MinBlocksize,MaxBlocksize) "
+       "MinBlocksize,MaxBlocksize,VolFiles) "
        "VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,0,0,%d,%s,"
-       "%s,%s,%s,%s,%d,%d,'%s',%d,%d)",
+       "%s,%s,%s,%s,%d,%d,'%s',%d,%d,%d)",
        esc_medianame,
        esc_mtype, mr->PoolId,
        edit_uint64(mr->MaxVolBytes,ed1),
@@ -443,7 +443,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        edit_int64(mr->RecyclePoolId, ed12),
        mr->Enabled, mr->ActionOnPurge,
        mr->EncrKey, mr->MinBlocksize,
-       mr->MaxBlocksize);
+       mr->MaxBlocksize, mr->VolFiles);
   /* clang-format on */
 
   Dmsg1(500, "Create Volume: %s\n", cmd);

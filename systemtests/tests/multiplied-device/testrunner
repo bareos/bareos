@@ -125,9 +125,9 @@ fi
 
 
 #make sure all volumes are correctly truncated with the correct drive
-grep "3000 OK label. VolBytes=... Volume=\"Full-0001\" Device=\"MultiFileStorage0001\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "3000 OK label. VolBytes=... Volume=\"Full-0002\" Device=\"MultiFileStorage0002\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "3000 OK label. VolBytes=... Volume=\"Full-0003\" Device=\"MultiFileStorage0003\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0001\" Device=\"MultiFileStorage0001\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0002\" Device=\"MultiFileStorage0002\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0003\" Device=\"MultiFileStorage0003\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
 grep "The volume 'Full-0001' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1 &&
 grep "The volume 'Full-0002' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1 &&
 grep "The volume 'Full-0003' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1
@@ -146,7 +146,7 @@ for i in 1 2 3; do
 done
 
 # check if the relabel went correctly
-grep "3000 OK label. VolBytes=... Volume=\"fakevolume\" Device=\"FileStorage\" (storage)" "${tmp}"/log4.out >/dev/null 2>&1
+grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"fakevolume\" Device=\"FileStorage\" (storage)" "${tmp}"/log4.out >/dev/null 2>&1
 if test $? -ne 0 ; then
   echo "The fakevolume relabel failed."
   estat=1;

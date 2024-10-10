@@ -131,14 +131,17 @@ struct DeviceRecord {
  * Note, these values are negative to distinguish them
  * from user records where the FileIndex is forced positive.
  */
-#define PRE_LABEL -1 /**< Vol label on unwritten tape */
-#define VOL_LABEL -2 /**< Volume label first file */
-#define EOM_LABEL -3 /**< Writen at end of tape */
-#define SOS_LABEL -4 /**< Start of Session */
-#define EOS_LABEL -5 /**< End of Session */
-#define EOT_LABEL -6 /**< End of physical tape (2 eofs) */
-#define SOB_LABEL -7 /**< Start of object -- file/directory */
-#define EOB_LABEL -8 /**< End of object (after all streams) */
+enum : int32_t
+{
+  PRE_LABEL = -1, /**< Vol label on unwritten tape */
+  VOL_LABEL = -2, /**< Volume label first file */
+  EOM_LABEL = -3, /**< Writen at end of tape */
+  SOS_LABEL = -4, /**< Start of Session */
+  EOS_LABEL = -5, /**< End of Session */
+  EOT_LABEL = -6, /**< End of physical tape (2 eofs) */
+  SOB_LABEL = -7, /**< Start of object -- file/directory */
+  EOB_LABEL = -8, /**< End of object (after all streams) */
+};
 
 /*
  * Volume Label Record.  This is the in-memory definition. The
