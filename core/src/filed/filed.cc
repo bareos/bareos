@@ -230,7 +230,9 @@ int main(int argc, char* argv[])
                 GetFirstPortHostOrder(me->FDaddrs));
   LoadFdPlugins(me->plugin_directory, me->plugin_names);
 
+  LockJcrChain();
   InitJcrChain();
+  UnlockJcrChain();
   if (!no_signals) {
     StartWatchdog(); /* start watchdog thread */
     if (me->jcr_watchdog_time) {
