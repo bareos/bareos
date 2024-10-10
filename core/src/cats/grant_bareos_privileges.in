@@ -53,7 +53,7 @@ fi
 
 retval=0
 case $(uname -s) in
-  *_NT)
+  *_NT*)
     PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "$(cygpath -w "${temp_sql_grants}")" -d "${db_name}" || retval=$?
     ;;
   *)
