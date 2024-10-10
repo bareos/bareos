@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,7 @@ macro(create_systemtests_directory)
 
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
+  configurefilestosystemtest("systemtests" "scripts" "redirect_output" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "mysql.sh" @ONLY "")
   configurefilestosystemtest(
     "systemtests" "scripts" "run_python_unittests.sh" @ONLY ""
@@ -41,6 +42,12 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "scripts" "diff.pl.in" @ONLY "")
   configurefilestosystemtest(
     "systemtests" "scripts" "generate_minio_certs.sh.in" @ONLY ""
+  )
+  configurefilestosystemtest(
+    "systemtests" "scripts" "create_autochanger_configs.sh.in" @ONLY ""
+  )
+  configurefilestosystemtest(
+    "systemtests" "scripts" "invalidate_tapes.sh" @ONLY ""
   )
   file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/systemtests/tls/minio/)
 

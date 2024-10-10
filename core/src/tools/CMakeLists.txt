@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -46,7 +46,7 @@ add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos CLI11::CLI11)
 
 add_executable(bscrypto bscrypto.cc)
-target_link_libraries(bscrypto bareos)
+target_link_libraries(bscrypto bareos CLI11::CLI11)
 
 if(NOT HAVE_WIN32)
   add_executable(btestls btestls.cc)

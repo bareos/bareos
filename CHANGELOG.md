@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtests: fix plugin postgresql testrunners, old postgres `bc` call [PR #1948]
 - stored: reserve/acquire a device on first incoming write data [PR #1951]
 - stored: add dedupable backend [PR #1955]
+- bscrypto: fix and update code, and move CLI parsing to cli11, add systemtests [PR #1946]
 
 ### Fixed
 - fix include-ordering on FreeBSD that could cause build issues [PR #1973]
@@ -546,6 +547,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1926]: https://github.com/bareos/bareos/pull/1926
 [PR #1930]: https://github.com/bareos/bareos/pull/1930
 [PR #1940]: https://github.com/bareos/bareos/pull/1940
+[PR #1946]: https://github.com/bareos/bareos/pull/1946
 [PR #1948]: https://github.com/bareos/bareos/pull/1948
 [PR #1951]: https://github.com/bareos/bareos/pull/1951
 [PR #1955]: https://github.com/bareos/bareos/pull/1955

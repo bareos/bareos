@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -396,7 +396,7 @@ endif()
 
 # scsi-crypto
 if(NOT DEFINED scsi-crypto)
-  set(scsi-crypto OFF)
+  set(scsi-crypto ON)
 endif()
 
 # lmdb
