@@ -46,6 +46,8 @@ info "Making ${db_name} tables"
 
 sql_definitions="${bareos_sql_ddl}/creates/postgresql.sql"
 
+info "Definitions = ${sql_definitions}"
+
 if [ -n "${sql_definitions}" ]; then
    if [ ! -f "${sql_definitions}" ]; then
       error "Unable to open database table definitions in file ${sql_definitions}"
@@ -56,17 +58,22 @@ if [ -n "${sql_definitions}" ]; then
         error "Failed to translate SQL definitions in ${sql_definitions}"
         exit 1
    fi
+else
+    info "\"${sql_definitions}\" is empty!?"
 fi
 
+info "uname = $(uname -s)"
 retval=0
 case $(uname -s) in
   *_NT)
+    info "${temp_sql_schema} -> $(cygpath -w ${temp_sql_schema})"
     PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "$(cygpath -w "${temp_sql_schema}")" -d "${db_name}" || retval=$?
     ;;
   *)
     PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
     ;;
-esac   
+esac
+
 if [ $retval -eq 0 ]; then
    info "Creation ${db_name} tables succeeded."
 else
