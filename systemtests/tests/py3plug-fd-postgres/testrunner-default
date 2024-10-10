@@ -107,6 +107,8 @@ sleep 1
 
 #sometimes the pid file remains
 rm -f database/data/postmaster.pid
+#empty also pg_wal which will be filled by the restore command
+rm -f database/data/pg_wal/*
 
 # use either recovery.conf or recovery.signal
 # Those files should exist after restore, the plugin create them
