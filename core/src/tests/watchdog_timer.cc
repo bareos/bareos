@@ -47,7 +47,7 @@ static void InstallSignalHandler()
   action.sa_flags = SA_SIGINFO;
   action.sa_sigaction = SignalHandler;
 
-  EXPECT_EQ(sigaction(TIMEOUT_SIGNAL, &action, NULL), 0);
+  EXPECT_EQ(sigaction(kTimeoutSignal, &action, NULL), 0);
 }
 
 TEST(watchdog, legacy_thread_timer)
@@ -56,7 +56,7 @@ TEST(watchdog, legacy_thread_timer)
 
   signal_handler_called = false;
 
-  start_thread_timer(nullptr, pthread_self(), 1);
+  StartThreadTimer(nullptr, pthread_self(), 1);
   int timeout = 0;
   while (!signal_handler_called && ++timeout < 20) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

@@ -18,5 +18,6 @@
 #   02110-1301, USA.
 
 add_subdirectory(bsmc)
+add_subdirectory(chunk_check)
 add_subdirectory(triggerjob)
 add_subdirectory(reschedule_job_as_full)

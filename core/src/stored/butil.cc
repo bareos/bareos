@@ -161,7 +161,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
       /* Try stripping file part */
       p = dev_name + strlen(dev_name);
 
-      while (p >= dev_name && !IsPathSeparator(*p)) p--;
+      while (p > dev_name && !IsPathSeparator(*p)) p--;
       if (IsPathSeparator(*p)) {
         bstrncpy(VolName, p + 1, sizeof(VolName));
         *p = 0;

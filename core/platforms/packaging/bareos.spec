@@ -318,6 +318,12 @@ Requires:   %{name}-common  = %{version}
 Requires:   %{name}-storage = %{version}
 %endif
 
+%package    storage-dplcompat
+Summary:    Object Storage support for the Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
+
 %if 0%{?glusterfs}
 %package    storage-glusterfs
 Summary:    GlusterFS support for the Bareos Storage daemon
@@ -757,6 +763,11 @@ This package contains the Storage Backend for the dedupable storage format.
 This package contains the Storage backend for Object Storage (through libdroplet).
 %endif
 
+%description storage-dplcompat
+%{dscr}
+
+This package contains the Storage backend for Object Storage (via scripts).
+
 %if 0%{?glusterfs}
 %description storage-glusterfs
 %{dscr}
@@ -818,6 +829,7 @@ This package contains the tray monitor (QT based).
 %if 0%{?contrib}
 %replace_python_shebang contrib/misc/bsmc/bin/bsmc
 %replace_python_shebang contrib/misc/triggerjob/bareos-triggerjob.py
+%replace_python_shebang contrib/misc/chunk_check/chunk_check.py
 %endif
 
 
@@ -1233,6 +1245,13 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/*.example
 %endif
 
+%files storage-dplcompat
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-dplcompat*.so
+%{script_dir}/s3cmd-wrapper.sh
+#%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example
+#%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/S3_ObjectStorage.conf.example
+
 %if 0%{?glusterfs}
 %files storage-glusterfs
 %defattr(-, root, root)
@@ -1491,6 +1510,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files       contrib-tools
 %defattr(-, root, root)
+%{_bindir}/chunk_check.py
 %{_bindir}/bareos-triggerjob.py
 %{_bindir}/bsmc
 %attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bsmc.conf

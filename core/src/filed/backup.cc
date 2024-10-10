@@ -748,7 +748,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     int noatime;
 
     if (ff_pkt->type == FT_FIFO) {
-      tid = start_thread_timer(jcr, pthread_self(), 60);
+      tid = StartThreadTimer(jcr, pthread_self(), 60);
     } else {
       tid = NULL;
     }

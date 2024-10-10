@@ -244,6 +244,8 @@
         "ScriptsDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
+          "default_value": "/usr/local/lib/bareos/scripts",
+          "platform_specific": true,
           "equals": true
         },
         "MaximumConcurrentJobs": {
