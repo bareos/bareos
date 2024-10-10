@@ -288,7 +288,7 @@ int main(int argc, char* const* argv)
       ->type_name("<keyfile>");
 
   std::string device_name{};
-  bscrypto_app.add_option("device name", device_name, "Name of device.");
+  bscrypto_app.add_option("device_name", device_name, "Name of device.");
 
   CLI11_PARSE(bscrypto_app, argc, argv);
 

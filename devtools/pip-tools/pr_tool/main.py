@@ -38,7 +38,12 @@ from changelog_utils import (
     update_links,
     guess_section,
 )
-from license_utils import LICENSE_FILENAME, LICENSE_TEMPLATE, generate_license_file
+from license_utils import (
+    LICENSE_FILENAME,
+    LICENSE_TEMPLATE,
+    generate_license_file,
+    get_cpm_licenses,
+)
 
 from check_sources.main import main_program as check_sources
 from . import backport
@@ -367,7 +372,9 @@ def update_license_file(repo):
     if not path.isfile(license_template_path):
         print(f"skipped, template file '{LICENSE_TEMPLATE}' not found.")
         return None
-    generate_license_file(license_template_path, license_file_path)
+    cpm_licenses = get_cpm_licenses(repo.working_tree_dir)
+
+    generate_license_file(license_template_path, license_file_path, cpm_licenses)
     if get_git_file_modified(repo, LICENSE_FILENAME):
         print(f"Updating {LICENSE_FILENAME}")
         repo.git.commit("-m", f"Update {LICENSE_FILENAME}", LICENSE_FILENAME)

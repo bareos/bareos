@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -77,6 +77,16 @@ if(XXHASH_FOUND)
   set(XXHASH_LIBRARIES ${XXHASH_LIBRARY})
   set(XXHASH_INCLUDE_DIRS ${XXHASH_INCLUDE_DIR})
   set(HAVE_XXHASH 1)
+
+  # check for dispatch-support
+  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|amd64|AMD64)$")
+    include(CMakePushCheckState)
+    include(CheckIncludeFiles)
+    cmake_push_check_state()
+    set(CMAKE_REQUIRED_INCLUDES "${XXHASH_INCLUDE_DIRS}")
+    check_include_files("xxh_x86dispatch.h" XXHASH_ENABLE_DISPATCH)
+    cmake_pop_check_state()
+  endif()
 endif()
 
 mark_as_advanced(XXHASH_INCLUDE_DIR XXHASH_LIBRARY)
