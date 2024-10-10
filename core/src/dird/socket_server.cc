@@ -172,7 +172,14 @@ bool StartSocketServer(std::vector<s_sockfd>&& bound_sockets)
   int wait_ms = 100;
   do {
     Bmicrosleep(0, wait_ms * 1000);
-    if (server_state.load() != BnetServerState::kUndefined) { break; }
+
+    auto current_state = server_state.load();
+
+    if (current_state == BnetServerState::kStarted
+        || current_state == BnetServerState::kError) {
+      // waiting longer wont change anything
+      break;
+    }
   } while (--tries);
 
   if (server_state != BnetServerState::kStarted) {
