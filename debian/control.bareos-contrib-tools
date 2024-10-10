@@ -1,9 +1,9 @@
 Package:        bareos-contrib-tools
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-# bareos-triggerjob: python-bareos
-# bsmc: python-bareos, bareos-filedaemon
-Depends:        python-bareos, bareos-filedaemon
+# bareos-triggerjob: python3-bareos
+# bsmc: python3-bareos, bareos-filedaemon
+Depends:        python3-bareos, bareos-filedaemon
 Description: Backup Archiving Recovery Open Sourced - contributed tools
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
