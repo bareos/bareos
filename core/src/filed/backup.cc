@@ -1605,13 +1605,14 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   {
     std::unique_lock l(jcr->mutex_guard());
     jcr->JobFiles++;                   /* increment number of files sent */
-    ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
-    if (ff_pkt->FileIndex < 0) {
+    if (jcr->JobFiles < MAXIMUM_ALLOWED_FILES_PER_JOB) {
       Jmsg1(jcr, M_FATAL, 0,
             "FileIndex overflow detected. Please split the fileset to backup "
             "less files.\n");
       return false;
     }
+
+    ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
     PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
   }
 
