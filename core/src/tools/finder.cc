@@ -277,7 +277,7 @@ struct get_information_ex {
     ~strategy()
     {
       if (hnd != INVALID_HANDLE_VALUE) { CloseHandle(hnd); }
-      if (buffer) { delete buffer; }
+      if (buffer) { delete[] buffer; }
     }
   };
 
