@@ -65,7 +65,7 @@ fi
 info "uname = $(uname -s)"
 retval=0
 case $(uname -s) in
-  *_NT)
+  *_NT*)
     info "${temp_sql_schema} -> $(cygpath -w ${temp_sql_schema})"
     PAGER="" PGOPTIONS="--client-min-messages=warning" psql --no-psqlrc -f "$(cygpath -w "${temp_sql_schema}")" -d "${db_name}" || retval=$?
     ;;
