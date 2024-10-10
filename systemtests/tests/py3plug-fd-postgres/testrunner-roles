@@ -95,6 +95,10 @@ expect_grep "Backup OK" "$tmp/rlog1.out" "No Role Backup OK not found in job log
 expect_grep "Backup OK" "$tmp/rlog2.out" "Set Role Backup OK not found in job log"
 
 
+pushd database/ > /dev/null
+local_db_stop_server "$TESTPGHOST"
+popd > /dev/null
+
 check_for_zombie_jobs storage=File
 sleep 1
 
