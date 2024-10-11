@@ -107,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - console.cc: forbid @exec etc. as privileged user [PR #1950]
 - github actions python-bareos: add workflow_dispatch [PR #1966]
 - FreeBSD: fix sed inplace usage, use bin/sh as shebang for script, pkg make director dependent of database-postgresql [PR #1961]
+- dir: fix DbLocker usage [PR #1953]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -275,6 +276,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1945]: https://github.com/bareos/bareos/pull/1945
 [PR #1947]: https://github.com/bareos/bareos/pull/1947
 [PR #1950]: https://github.com/bareos/bareos/pull/1950
+[PR #1953]: https://github.com/bareos/bareos/pull/1953
 [PR #1956]: https://github.com/bareos/bareos/pull/1956
 [PR #1961]: https://github.com/bareos/bareos/pull/1961
 [PR #1966]: https://github.com/bareos/bareos/pull/1966
