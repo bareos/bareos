@@ -107,7 +107,6 @@ static inline bool native_send_label_request(UaContext* ua,
   BareosSocket* sd;
   char dev_name[MAX_NAME_LENGTH];
   bool retval = false;
-  uint64_t VolBytes = 0;
 
   if (!(sd = open_sd_bsock(ua))) { return false; }
 
@@ -152,9 +151,17 @@ static inline bool native_send_label_request(UaContext* ua,
    * without a 3xxx prefix we set the allow_any_message of
    * BgetDirmsg to true and as such is behaves like a normal
    * BnetRecv for any non protocol messages. */
+
+  uint32_t VolFiles{0};
+  uint64_t VolBytes{0};
   while (BgetDirmsg(sd, true) >= 0) {
     ua->SendMsg("%s", sd->msg);
-    if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
+    if (sscanf(sd->msg, "3000 OK label. VolFiles=%lu VolBytes=%llu ", &VolFiles,
+               &VolBytes)
+        == 2) {
+      retval = true;
+    } else if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes)
+               == 1) {
       retval = true;
     }
   }
@@ -164,6 +171,7 @@ static inline bool native_send_label_request(UaContext* ua,
   UnbashSpaces(pr->Name);
   mr->LabelDate = time(NULL);
   mr->set_label_date = true;
+  mr->VolFiles = VolFiles;
   mr->VolBytes = VolBytes;
 
   return retval;
