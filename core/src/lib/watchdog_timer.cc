@@ -65,7 +65,7 @@ void BThreadWatchdog::Callback(TimerThread::Timer* item)
           timer->jcr_->Job);
   }
 
-  pthread_kill(timer->thread_id_, TIMEOUT_SIGNAL);
+  pthread_kill(timer->thread_id_, kTimeoutSignal);
 }
 
 void BThreadWatchdog::Init()

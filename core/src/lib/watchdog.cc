@@ -156,7 +156,7 @@ int StopWatchdog(void)
   return status;
 }
 
-watchdog_t* new_watchdog(void)
+watchdog_t* NewWatchdog(void)
 {
   watchdog_t* wd = (watchdog_t*)malloc(sizeof(watchdog_t));
 

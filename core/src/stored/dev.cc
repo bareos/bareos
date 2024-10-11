@@ -138,6 +138,11 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   device_resource->dev = dev;
 
   InitiateDevice(jcr, dev);
+  if (!dev->setup()) {
+    Jmsg1(jcr, M_ERROR, 0, T_("Failed to setup device %s.\n"),
+          device_resource->archive_device_string);
+    return nullptr;
+  }
   return dev;
 }
 

@@ -64,3 +64,14 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon tape suppor
  a tape drive, but alternatively other storage media, such as files.
  .
  This adds the tape specific support files for the storage daemon.
+
+
+Package:        bareos-storage-dplcompat
+Architecture:   any
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-storage (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - storage daemon droplet compatible backend
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the dplcompat backend for the storage daemon.

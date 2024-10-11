@@ -3113,7 +3113,7 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool)
 
   if (wait > 0) {
     // the cast here is ok as the child timer only uses the pid for printing
-    bpipe->timer_id = start_child_timer(NULL, (pid_t)bpipe->worker_pid, wait);
+    bpipe->timer_id = StartChildTimer(NULL, (pid_t)bpipe->worker_pid, wait);
   }
 
   return bpipe;

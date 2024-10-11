@@ -56,7 +56,7 @@ static void BuildArgcArgv(char* cmd, int* bargc, char* bargv[], int max_arg);
  * a bi-directional pipe so that the user can read from and
  * write to the program.
  */
-Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
+Bpipe* OpenBpipe(const char* prog, int wait, const char* mode, bool dup_stderr, const std::unordered_map<std::string, std::string>& env_vars)
 {
   char* bargv[MAX_ARGV];
   int bargc, i;
@@ -136,15 +136,27 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
       }
 #  endif
 
+      // merge environment variables into our environment
+      for(auto& [var_name, var_value]: env_vars) {
+        if(var_value.empty()) {
+          unsetenv(var_name.c_str());
+        } else {
+          setenv(var_name.c_str(), var_value.c_str(), 1);
+        }
+      }
+
       execvp(bargv[0], bargv); /* call the program */
+
+      // execvp will only return on error
+      perror("Program execution failed");
 
       // Convert errno into an exit code for later analysis
       for (i = 0; i < num_execvp_errors; i++) {
         if (execvp_errors[i] == errno) {
-          exit(200 + i); /* exit code => errno */
+          std::quick_exit(200 + i); /* exit code => errno */
         }
       }
-      exit(255); /* unknown errno */
+      std::quick_exit(255); /* unknown errno */
 
     default: /* parent */
       break;
@@ -166,7 +178,7 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
   bpipe->wait = wait;
 
   if (wait > 0) {
-    bpipe->timer_id = start_child_timer(NULL, bpipe->worker_pid, wait);
+    bpipe->timer_id = StartChildTimer(NULL, bpipe->worker_pid, wait);
   }
 
   return bpipe;

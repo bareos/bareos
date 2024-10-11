@@ -601,7 +601,7 @@ static
       fd = jcr->file_bsock;
       if (fd) {
         fd->SetTimedOut();
-        jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+        jcr->MyThreadSendSignal(kTimeoutSignal);
         Dmsg1(100, "term_stored killing JobId=%d\n", jcr->JobId);
         /* ***FIXME*** wiffle through all dcrs */
         if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->dev

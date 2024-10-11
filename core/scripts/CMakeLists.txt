@@ -98,6 +98,7 @@ if(NOT client-only)
           ${CMAKE_CURRENT_BINARY_DIR}/bareos-glusterfind-wrapper
           ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-dir
           ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-sd
+          s3cmd-wrapper.sh
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
                 WORLD_READ WORLD_EXECUTE
     DESTINATION "${scriptdir}"
