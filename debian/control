@@ -21,18 +21,20 @@ Build-Depends: acl-dev,
  apache2 | httpd,
  bc,
  chrpath,
- cmake (>= 3.17.0) | cmake-mozilla,
- debhelper (>= 7.0.50~),
+ cmake (>= 3.17.0),
+ debhelper (>= 9.20160709),
  dpkg-dev (>= 1.13.19),
  libacl1-dev,
  libcap-dev [linux-any],
  liblzo2-dev,
  qt6-base-dev | qtbase5-dev,
- libfmt-dev,
  libreadline-dev,
  libssl-dev,
  libx11-dev,
  libxml2-dev,
+ libxxhash-dev (>= 0.8.0) <bookworm> <bullseye> <noble> <jammy>,
+ libcli11-dev (>= 2.1.2) <bookworm> <noble> <jammy>,
+ libfmt-dev (>= 6.3.1) <bookworm> <bullseye> <noble> <jammy>,
  libpq-dev,
  libjansson-dev,
  libjson-c-dev,
@@ -43,13 +45,9 @@ Build-Depends: acl-dev,
  openssl (>= 1.1.1),
  pkg-config,
  po-debconf (>= 0.8.2),
- python-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
+ python3-dev,
  zlib1g-dev,
- systemd,
- dh-systemd <buster> <stretch> <xenial> <bionic>,
- ucslint <univention>,
- univention-config-dev <univention>,
- wget <univention>
+ systemd
 # required for bareos-storage-glusterfs and bareos-filedaemon-glusterfs-plugin
 # glusterfs-common <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
 # libglusterfs-dev <bullseye> <buster> <focal> <jammy>,
@@ -240,11 +238,11 @@ Package:        bareos-storage-dedupable
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - storage daemon DEDUPABLE backend
+Description: Backup Archiving Recovery Open Sourced - storage daemon DEDUP backend
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package contains the Storage backend for the dedupable storage format.
+ This package contains the Storage backend for DEDUP files.
  This package is only required, when a resource "Archive Device = dedup"
  should be used by the Bareos Storage Daemon.
 
