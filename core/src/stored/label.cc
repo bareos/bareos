@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -519,7 +519,7 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
   bstrncpy(dev->VolHdr.Id, BareosId, sizeof(dev->VolHdr.Id));
   dev->VolHdr.VerNum = BareosTapeVersion;
 
-  dev->VolHdr.LabelType = PRE_LABEL; /* Mark tape as unused */
+  dev->VolHdr.LabelType = VOL_LABEL; /* Mark tape as unused */
   bstrncpy(dev->VolHdr.VolumeName, VolName, sizeof(dev->VolHdr.VolumeName));
   bstrncpy(dev->VolHdr.PoolName, PoolName, sizeof(dev->VolHdr.PoolName));
   bstrncpy(dev->VolHdr.MediaType, device_resource->media_type,

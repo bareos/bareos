@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: reserve/acquire a device on first incoming write data [PR #1951]
 - stored: add dedupable backend [PR #1955]
 - bscrypto: fix and update code, and move CLI parsing to cli11, add systemtests [PR #1946]
+- Disable writing PRE_LABEL label-type to support WORM media [PR #1979]
 
 ### Fixed
 - fix include-ordering on FreeBSD that could cause build issues [PR #1973]
@@ -556,4 +557,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1964]: https://github.com/bareos/bareos/pull/1964
 [PR #1967]: https://github.com/bareos/bareos/pull/1967
 [PR #1973]: https://github.com/bareos/bareos/pull/1973
+[PR #1979]: https://github.com/bareos/bareos/pull/1979
 [unreleased]: https://github.com/bareos/bareos/tree/master
