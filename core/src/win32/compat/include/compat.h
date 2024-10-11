@@ -440,4 +440,6 @@ void Win32ResetConversionCache();
  */
 #define USE_READDIR_R
 
+int win32_link(const char* target, const char* link);
+
 #endif  // BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_

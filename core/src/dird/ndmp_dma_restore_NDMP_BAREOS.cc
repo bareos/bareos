@@ -66,7 +66,7 @@ static char OKbootstrap[] = "3000 OK bootstrap\n";
  */
 static inline char* lookup_fileindex(JobControlRecord* jcr, int32_t FileIndex)
 {
-  TREE_NODE *node, *parent;
+  tree_node *node, *parent;
   PoolMem restore_pathname, tmp;
 
   node = FirstTreeNode(jcr->dir_impl->restore_tree_root);
@@ -101,7 +101,7 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
 {
   int len;
   int cnt = 0;
-  TREE_NODE *node, *parent;
+  tree_node *node, *parent;
   PoolMem restore_pathname, tmp;
 
   node = FirstTreeNode(jcr->dir_impl->restore_tree_root);

@@ -1299,16 +1299,16 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     /* Walk down through the tree finding all files marked to be
      *  extracted making a bootstrap file. */
     if (OK) {
-      for (TREE_NODE* node = FirstTreeNode(tree.root); node;
+      for (tree_node* node = FirstTreeNode(tree.root); node;
            node = NextTreeNode(node)) {
         Dmsg2(400, "FI=%d node=0x%x\n", node->FileIndex, node);
-        if (node->extract || node->extract_dir) {
+        if (node->extract) {
           Dmsg3(400, "JobId=%lld type=%d FI=%d\n", (uint64_t)node->JobId,
                 node->type, node->FileIndex);
           /* TODO: optimize bsr insertion when jobid are non sorted */
           AddDeltaListFindex(rx, node->delta_list);
           AddFindex(rx->bsr.get(), node->JobId, node->FileIndex);
-          if (node->extract && node->type != TN_NEWDIR) {
+          if (node->extract && node->type != tree_node_type::NewDir) {
             rx->selected_files++; /* count only saved files */
           }
         }

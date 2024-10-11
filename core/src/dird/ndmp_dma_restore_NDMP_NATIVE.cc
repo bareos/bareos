@@ -157,7 +157,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
 {
   int len;
   int cnt = 0;
-  TREE_NODE *node, *parent;
+  tree_node *node, *parent;
   PoolMem restore_pathname, tmp;
 
   node = FirstTreeNode(jcr->dir_impl->restore_tree_root);
@@ -174,7 +174,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
      * Restoring a whole directory using this mechanism is much more efficient
      * than creating an namelist entry for every single file and directory below
      * the selected one. */
-    if (node->extract_dir || node->extract) {
+    if (node->extract) {
       PmStrcpy(restore_pathname, node->fname);
       // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
