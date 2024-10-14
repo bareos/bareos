@@ -725,7 +725,6 @@ bool GetPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
  */
 bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 {
-  PoolDbRecord opr;
   DBId_t* ids = nullptr;
   int num_pools;
   char name[MAX_NAME_LENGTH];
@@ -762,12 +761,13 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   if (bstrcmp(argk, NT_("recyclepool"))) { AddPrompt(ua, T_("*None*")); }
 
   for (int i = 0; i < num_pools; i++) {
-    opr.PoolId = ids[i];
-    if (!ua->db->GetPoolRecord(ua->jcr, &opr)
-        || !ua->AclAccessOk(Pool_ACL, opr.Name)) {
+    PoolDbRecord candidate{};
+    candidate.PoolId = ids[i];
+    if (!ua->db->GetPoolRecord(ua->jcr, &candidate)
+        || !ua->AclAccessOk(Pool_ACL, candidate.Name)) {
       continue;
     }
-    AddPrompt(ua, opr.Name);
+    AddPrompt(ua, candidate.Name);
   }
   if (ids) { free(ids); }
 
@@ -775,23 +775,22 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
     return false;
   }
 
-  new (&opr) PoolDbRecord();  // placement new instead of memset
+  PoolDbRecord selected{};
 
   /* *None* is only returned when selecting a recyclepool, and in that case
    * the calling code is only interested in opr.Name, so then we can leave
    * pr as all zero. */
   if (!bstrcmp(name, T_("*None*"))) {
-    bstrncpy(opr.Name, name, sizeof(opr.Name));
+    bstrncpy(selected.Name, name, sizeof(selected.Name));
 
-    DbLocker _{ua->db};
-    if (!ua->db->GetPoolRecord(ua->jcr, &opr)) {
+    if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &selected)) {
       ua->ErrorMsg(T_("Could not find Pool \"%s\": ERR=%s"), name,
                    ua->db->strerror());
       return false;
     }
   }
 
-  memcpy(pr, &opr, sizeof(opr));
+  *pr = std::move(selected);
 
   return true;
 }
