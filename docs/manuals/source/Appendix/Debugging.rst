@@ -158,26 +158,59 @@ Installing debug symbols packages
 .. index::
    single: debug symbols package; dbg; debuginfo; debug
 
-Our Linux packages are stripped of debugging symbols, so you need an extra step to install their rpm debuginfo or deb dbg equivalent
+Our binaries do not contain debug symbols, but as they are needed for proper debugging, we package the debug symbols separately.
+
+.. code-block:: shell-session
+   :caption: Installing bareos debug symbols package on deb system
+
+   apt install bareos-dbg gdb
+
+
+.. code-block:: shell-session
+   :caption: Installing all Bareos debug symbols on (RH)EL system
+
+   dnf debuginfo-install bareos-*-debuginfo
+
+
+.. code-block:: shell-session
+   :caption: Installing all Bareos debug symbols on (open)SUSE system
+
+   zypper --plus-content bareos-debuginfo --plus-content bareos-debugsource install bareos*debuginfo bareos*debugsource
+
+
+
+.. Note:: If you want to debug only a specific daemon, you only need to install its related **-debuginfo** packages. For example with |fd|
+
+.. code-block:: shell-session
+   :caption: Installing |fd| debug symbols package on deb system
+
+   apt install bareos-dbg gdb
+
+
+.. code-block:: shell-session
+   :caption: Installing |fd| debug symbols on (RH)EL system
+
+   dnf debuginfo-install gdb bareos-debuginfo bareos-filedaemon*-debuginfo bareos-common-debuginfo bareos-debugsource
+
+
+.. code-block:: shell-session
+   :caption: Installing |fd| debug symbols on (open)SUSE system
+
+   zypper --plus-content bareos-debuginfo --plus-content bareos-debugsource install gdb bareos-debuginfo bareos-filedaemon*-debuginfo bareos-common-debuginfo bareos-debugsource
+
+
+You may encounter a message like `ptrace: Operation not permitted.` in the traceback file if you
+have loaded the security module [Yama](https://www.kernel.org/doc/Documentation/security/Yama.txt).
+This module restricts processes from inspecting the memory of other processes.
+Note that parents may still inspect their children, so  “gdb bareos-dir” should still work.
+
+   .. code-block:: shell-session
+      :caption: To enable debugging running programs, as root do:
+
+      echo 0 > /proc/sys/kernel/yama/ptrace_scope
 
 
    .. code-block:: shell-session
-      :caption: Installing bareos debug symbols package on deb system
+      :caption: To enable debugging running programs permanently, as root do:
 
-      apt install bareos-dbg gdb
-
-
-   .. code-block:: shell-session
-      :caption: Installing Bareos debug symbols on (RH)EL system
-
-      dnf --enablerepo bareos-debuginfo install bareos-director-debuginfo
-
-   .. code-block:: shell-session
-      :caption: Installing Bareos debug symbols on (open)SUSE system
-
-      # Enable and activate bareos-debuginfo repository
-      zypper modifyrepo --enable --refresh --gpgcheck bareos-debuginfo
-
-      zypper install bareos-director-debuginfo
-
-**Notice** For rpm: you maybe want to install all corresponding -debuginfo of installed bareos- packages if you want to debug all.
+      echo kernel.yama.ptrace_scope = 0 > /etc/sysctl.d/10-ptrace.conf
