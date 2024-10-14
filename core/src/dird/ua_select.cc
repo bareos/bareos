@@ -775,7 +775,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
     return false;
   }
 
-  new (&opr) PoolDbRecord();  // placement new instead of memset
+  opr = {};
 
   /* *None* is only returned when selecting a recyclepool, and in that case
    * the calling code is only interested in opr.Name, so then we can leave
@@ -783,8 +783,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   if (!bstrcmp(name, T_("*None*"))) {
     bstrncpy(opr.Name, name, sizeof(opr.Name));
 
-    DbLocker _{ua->db};
-    if (!ua->db->GetPoolRecord(ua->jcr, &opr)) {
+    if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &opr)) {
       ua->ErrorMsg(T_("Could not find Pool \"%s\": ERR=%s"), name,
                    ua->db->strerror());
       return false;
