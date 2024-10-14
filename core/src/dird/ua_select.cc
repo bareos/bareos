@@ -734,7 +734,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
     if (Bstrcasecmp(ua->argk[i], argk) && ua->argv[i]
         && ua->AclAccessOk(Pool_ACL, ua->argv[i])) {
       bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
-      if (!ua->db->GetPoolRecord(ua->jcr, pr)) {
+      if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, pr)) {
         ua->ErrorMsg(T_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i],
                      ua->db->strerror());
         pr->PoolId = 0;
@@ -745,7 +745,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   }
 
   pr->PoolId = 0;
-  if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
+  if (DbLocker _{ua->db}; !ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
     ua->ErrorMsg(T_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
     if (ids) { free(ids); }
     return 0;
@@ -775,7 +775,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
     return false;
   }
 
-  new (&opr) PoolDbRecord();  // placement new instead of memset
+  opr = {};
 
   /* *None* is only returned when selecting a recyclepool, and in that case
    * the calling code is only interested in opr.Name, so then we can leave
@@ -783,7 +783,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   if (!bstrcmp(name, T_("*None*"))) {
     bstrncpy(opr.Name, name, sizeof(opr.Name));
 
-    if (!ua->db->GetPoolRecord(ua->jcr, &opr)) {
+    if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &opr)) {
       ua->ErrorMsg(T_("Could not find Pool \"%s\": ERR=%s"), name,
                    ua->db->strerror());
       return false;
