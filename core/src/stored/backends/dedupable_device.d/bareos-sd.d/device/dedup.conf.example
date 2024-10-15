@@ -9,6 +9,8 @@ Device {
 
   Device Options = "block size=4k"
 
+  ArchiveDevice = "path/to/storage"
+
   Device Type = dedupable
   Label Media = yes                    # lets Bareos label unlabeled media
   Random Access = no
