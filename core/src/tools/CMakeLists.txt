@@ -91,6 +91,13 @@ if(NOT client-only)
   target_link_libraries(bdedupestimate bareos bareossd CLI11::CLI11)
   list(APPEND TOOLS_SBIN bdedupestimate)
 
+  add_executable(
+    dedup-conf dedup_conf.cc ../stored/backends/dedupable/volume.cc
+  )
+
+  target_link_libraries(dedup-conf bareos CLI11::CLI11)
+  list(APPEND TOOLS_BIN dedup-conf)
+
 endif()
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
