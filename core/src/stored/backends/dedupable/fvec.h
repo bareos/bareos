@@ -51,7 +51,7 @@ struct access {
 namespace {
 template <std::size_t Size> constexpr std::size_t MinGrowthSize()
 {
-  // We want to grow at least 1KiB each time.
+  // We want to grow at least 2MiB each time.
   std::size_t min_growth_size = 1024ull * 1024ull * 2;
 
   return (min_growth_size + Size - 1) / Size;
