@@ -63,7 +63,7 @@ struct block {
 };
 
 struct part {
-  net_u32 FileIdx; /* wich data file has the record */
+  net_u32 FileIdx; /* which data file has the record */
   net_u32 Size;    /* payload size of record */
   net_u64 Begin;   /* offset into datafile from where to start reading */
 };
