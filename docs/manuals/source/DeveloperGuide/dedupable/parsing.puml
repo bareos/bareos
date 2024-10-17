@@ -1,0 +1,18 @@
+.. uml::
+  @startuml
+
+  state "Parse Record" as PR
+  state "Block Header" as B
+  state "Record Header" as R
+  state "Data" as D
+
+  [*] --> PR : stream start
+  PR -left-> [*] : stream end
+  PR -> B : block start
+  PR -> R
+  B --> R
+  R --> D
+  D --> B : split record
+  D -up-> PR
+
+  @enduml
