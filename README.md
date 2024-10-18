@@ -8,15 +8,15 @@
 
 **Key features:**
  • **True Open Source:** Licensed under AGPLv3 with no open-core or restrictions.
-	•	**Cross-Platform:** Supports Linux, Windows, FreeBSD, macOS, and more.
-	•	**Network-Based:** Flexible, network-based backups with multiple clients and storage options.
-	•	**Multiple Backends:** Supports disk, tape, and cloud storage.
-	•	**Python Plugin Interface:** Extendable with custom plugins, including VMware integration.
-	•	**NDMP SAN Backups:** High-speed SAN backups using NDMP with DAR/DDAR support.
-	•	**Always Incremental Backups:** Efficient, incremental backup scheme to save storage.
-	•	**Encryption:** Secure backups with built-in encryption.
-	•	**Scriptable CLI:** Automate with the CLI or use the web-based interface (WebUI).
-	•	**Role-Based ACL:** Secure access control with role-based permissions.
+  - **Cross-Platform:** Supports Linux, Windows, FreeBSD, macOS, and more.
+  - **Network-Based:** Flexible, network-based backups with multiple clients and storage options.
+  - **Multiple Backends:** Supports disk, tape, and cloud storage.
+  - **Python Plugin Interface:** Extendable with custom plugins, including VMware integration.
+  - **NDMP SAN Backups:** High-speed SAN backups using NDMP with DAR/DDAR support.
+  - **Always Incremental Backups:** Efficient, incremental backup scheme to save storage.
+  - **Encryption:** Secure backups with built-in encryption.
+  - **Scriptable CLI:** Automate with the CLI or use the web-based interface (WebUI).
+  - **Role-Based ACL:** Secure access control with role-based permissions.
 
 The source code of Bareos is available on https://github.com/bareos/ under the AGPL v3 license.
 Additionally Bareos offers binary package repositories for the major Linux distributions, FreeBSD, Windows and macOS.
