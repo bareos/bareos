@@ -1,21 +1,22 @@
 # <img src="https://raw.githubusercontent.com/bareos/bareos/master/docs/manuals/images/bareos-full-logo.png" alt="Bareos" width="50%" height="50%" />
 
-### Bareos - Archiving, Backup test test
+### Bareos:
+![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)
 
-[Bareos (Backup Archiving Recovery Open Sourced)](https://www.bareos.org/) is a reliable, cross-network open source software for backup, archiving and recovery of data for all well-established operating systems. Features of Bareos include amongst others:
 
-- True open source software; no open-core or other restrictions; License AGPLv3
-- network based
-- multiple backends
-- multiple clients and storages possible; Active / passive clients possible
-- Backup Clients ('Bareos-FD') available on Linux, FreeBSD, Windows, macOS and others
-- Python plugin interface, used by the VMWare Plugin and others
-- SAN-Backups using NDMP (with DAR/DDAR); NDMP tape support
-- Always Incremental Backup scheme
-- Encryption
-- Scriptable CLI
-- web based graphical interface (webui)
-- Role-based ACL support for commands and objects
+[Bareos (Backup Archiving Recovery Open Sourced)](https://www.bareos.org/) is a reliable, cross-network open-source backup solution for data protection, archiving, and recovery. It supports Linux, Windows, macOS, and other well-established operating systems. Bareos offers scalable, enterprise-grade features for businesses of all sizes, ensuring secure and efficient data management. 
+
+**Key features:**
+ • **True Open Source:** Licensed under AGPLv3 with no open-core or restrictions.
+	•	**Cross-Platform:** Supports Linux, Windows, FreeBSD, macOS, and more.
+	•	**Network-Based:** Flexible, network-based backups with multiple clients and storage options.
+	•	**Multiple Backends:** Supports disk, tape, and cloud storage.
+	•	**Python Plugin Interface:** Extendable with custom plugins, including VMware integration.
+	•	**NDMP SAN Backups:** High-speed SAN backups using NDMP with DAR/DDAR support.
+	•	**Always Incremental Backups:** Efficient, incremental backup scheme to save storage.
+	•	**Encryption:** Secure backups with built-in encryption.
+	•	**Scriptable CLI:** Automate with the CLI or use the web-based interface (WebUI).
+	•	**Role-Based ACL:** Secure access control with role-based permissions.
 
 The source code of Bareos is available on https://github.com/bareos/ under the AGPL v3 license.
 Additionally Bareos offers binary package repositories for the major Linux distributions, FreeBSD, Windows and macOS.
@@ -38,6 +39,7 @@ If you want to report a security-related problem, please take a look at our [sec
 
 ### Mailing list
 
+ * https://bareos.com/sign-up/
  * https://groups.google.com/forum/#!forum/bareos-users
 
 ### Issue tracker
