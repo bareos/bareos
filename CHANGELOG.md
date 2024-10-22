@@ -17,6 +17,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD: fix sed inplace usage, pkg make director dependent of database-postgresql [PR #1964]
 - deb control files: depend on python3-bareos [PR #1967]
 
+### Documentation
+- docs: improve debuginfo install description (fix issue #1943) [PR #1985]
+
 ## [23.0.4] - 2024-09-10
 
 ### Added
@@ -558,4 +561,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1967]: https://github.com/bareos/bareos/pull/1967
 [PR #1973]: https://github.com/bareos/bareos/pull/1973
 [PR #1979]: https://github.com/bareos/bareos/pull/1979
+[PR #1985]: https://github.com/bareos/bareos/pull/1985
 [unreleased]: https://github.com/bareos/bareos/tree/master
