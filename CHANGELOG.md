@@ -123,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix mistake in VolumeManagement.rst [PR #1829]
 - docs: improve Restoring a Bareos Server section [PR #1878]
 - Update ReaR documentation [PR #1871]
+- docs: improve debuginfo install description (fix issue #1943) [PR #1980]
 
 ### Fixed
 - dird: fix `purge oldest volume` [PR #1628]
@@ -283,4 +284,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1961]: https://github.com/bareos/bareos/pull/1961
 [PR #1966]: https://github.com/bareos/bareos/pull/1966
 [PR #1972]: https://github.com/bareos/bareos/pull/1972
+[PR #1980]: https://github.com/bareos/bareos/pull/1980
 [unreleased]: https://github.com/bareos/bareos/tree/master
