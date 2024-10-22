@@ -9,6 +9,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix include-ordering on FreeBSD that could cause build issues [PR #1974]
 - deb control files: depend on python3-bareos [PR #1968]
 
+### Documentation
+- docs: improve debuginfo install description (fix issue #1943) [PR #1986]
+
 ## [22.1.6] - 2024-09-10
 
 ### Changed
@@ -713,4 +716,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1931]: https://github.com/bareos/bareos/pull/1931
 [PR #1968]: https://github.com/bareos/bareos/pull/1968
 [PR #1974]: https://github.com/bareos/bareos/pull/1974
+[PR #1986]: https://github.com/bareos/bareos/pull/1986
 [unreleased]: https://github.com/bareos/bareos/tree/master
