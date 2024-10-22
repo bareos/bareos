@@ -197,15 +197,17 @@ and `Label Records <#Label>`__ are written using Bareos’s serialization
 routines. These routines guarantee that the data is written to the
 output volume in a machine independent format.
 
+.. _sd-block-header:
+
 Block Header
 ------------
 
 The current Block Header version is **BB02**. (The prior version
-`BB01 <#BB01>`__ is unsupported.)
+**BB01** is unsupported.)
 
 Each session or Job use their own private blocks.
 
-The format of a `Block Header <#BlockHeader>`__ is:
+The format of a :ref:`sd-block-header` is:
 
 ::
 
@@ -221,12 +223,14 @@ The Block Header is a fixed length and fixed format.
 The CheckSum field is a 32 bit checksum of the block data and the block
 header but not including the CheckSum field.
 
-The Block Header is always immediately followed by a `Record
-Header <#RecordHeader>`__. If the tape is damaged, a Bareos utility will
+The Block Header is always immediately followed by a :ref:`sd-record-header`.
+If the tape is damaged, a Bareos utility will
 be able to recover as much information as possible from the tape by
 recovering blocks which are valid. The Block header is written using the
 Bareos serialization routines and thus is guaranteed to be in machine
 independent format.
+
+.. _sd-record-header:
 
 Record Header
 -------------

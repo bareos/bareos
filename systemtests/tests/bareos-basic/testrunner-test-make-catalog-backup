@@ -67,32 +67,32 @@ stop_bareos
 
 # Check diff file can't be done as delete_backup_catalog has cleaned up everything.
 
-OLDVERSIONID="$(psql -q -d "${db_name}" -t -c "select max(versionid) from version;")"
+OLDVERSIONID="$(psql --no-psqlrc -q -d "${db_name}" -t -c "select max(versionid) from version;" | head -n1 | sed -e 's, ,,g')"
 
 print_debug "Deleting tables in database \"${db_name}\" "
 "${scripts}/drop_bareos_tables" "${DBTYPE}" >/dev/null 2>&1
 
 # Check if the drop remove all tables
-if [ -n "$(psql -q -d "${db_name}" -t -c "\dt+")" ];then
+if [ -n "$(psql --no-psqlrc -q -d "${db_name}" -t -c "\dt+")" ]; then
     print_debug "There's still tables on \"${db_name}\" the rest of the test is invalid"
     estat=1
     end_test
 fi
 
 print_debug "Restore the database \"${db_name}\" with sql dump"
-if ! psql -q -d "${db_name}" -f "${CATALOG_BACKUP_FILE}"; then
+if ! psql --no-psqlrc -q -d "${db_name}" -f "${CATALOG_BACKUP_FILE}"; then
     print_debug "The restore psql command failed on \"${db_name}\" "
     estat=2
     end_test
 fi
 
-if [ -z "$(psql -q -d "${db_name}" -t -c "\dt+")" ]; then
+if [ -z "$(psql --no-psqlrc -q -d "${db_name}" -t -c "\dt+")" ]; then
     print_debug "There not enough tables restored on \"${db_name}\" test failed"
     estat=3
     end_test
 fi
 
-NEWVERSIONID="$(psql -q -d "${db_name}" -t -c "select max(versionid) from version;")"
+NEWVERSIONID="$(psql --no-psqlrc -q -d "${db_name}" -t -c "select max(versionid) from version;" | head -n1 | sed -e 's, ,,g')"
 print_debug "Compare Old version ${OLDVERSIONID} to ${NEWVERSIONID}"
 
 if [ "$OLDVERSIONID" -ne "$NEWVERSIONID" ]; then

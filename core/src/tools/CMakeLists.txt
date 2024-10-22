@@ -75,6 +75,22 @@ if(NOT client-only)
     testfind dird_objects fd_objects bareosfind CLI11::CLI11
   )
   list(APPEND TOOLS_SBIN testfind)
+  if(NOT HAVE_WIN32)
+    add_executable(
+      dedup-conf dedup_conf.cc ../stored/backends/dedupable/volume.cc
+    )
+
+    target_link_libraries(dedup-conf bareos CLI11::CLI11)
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION
+                                                VERSION_LESS "8.6.0"
+    )
+      # workaround for rhel 8.  It uses an old stdlibc++ that does not yet
+      # contain the filesystem library.
+      message(INFO "enabling rhel 8 filesystem workaround")
+      target_link_libraries(dedup-conf stdc++fs)
+    endif()
+  endif()
 endif()
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
