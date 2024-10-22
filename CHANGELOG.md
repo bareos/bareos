@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - FreeBSD: fix sed inplace usage, use bin/sh as shebang for script, pkg make director dependent of database-postgresql [PR #1961]
 - dir: fix DbLocker usage [PR #1953]
 - Disable writing PRE_LABEL label-type to support WORM media [PR #1958]
+- debian: fix dedupable backend names [PR #1977]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -284,5 +285,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1961]: https://github.com/bareos/bareos/pull/1961
 [PR #1966]: https://github.com/bareos/bareos/pull/1966
 [PR #1972]: https://github.com/bareos/bareos/pull/1972
+[PR #1977]: https://github.com/bareos/bareos/pull/1977
 [PR #1980]: https://github.com/bareos/bareos/pull/1980
 [unreleased]: https://github.com/bareos/bareos/tree/master
