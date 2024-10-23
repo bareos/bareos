@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,14 @@
 #endif
 
 #include "lib/cli.h"
+
+namespace {
+std::string&& rtrim(std::string&& s, const char* t = " \t\n\r\f\v")
+{
+  s.erase(s.find_last_not_of(t) + 1);
+  return std::move(s);
+}
+}  // namespace
 
 TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
 {
@@ -63,9 +71,9 @@ TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
       "        REQUIRED\n"
       "        Needs: -x\n"
       "        Excludes: -x\n"
-      "        "+random_option_text+" \n\n\n"};
+      "        "+random_option_text};
   /* clang-format on */
 
   EXPECT_STREQ(app.get_description().c_str(), "test app");
-  EXPECT_STREQ(app.help().c_str(), expected_help.c_str());
+  EXPECT_STREQ(rtrim(app.help()).c_str(), expected_help.c_str());
 }

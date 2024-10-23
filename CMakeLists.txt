@@ -30,6 +30,15 @@ endif()
 project(bareos NONE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
+
+option(CPM_ONLY "Add CPM packages and exit" OFF)
+if(CPM_ONLY)
+  include(BareosCpmPackages)
+  return()
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)
   string(REPLACE "Program Files (x86)" "Program Files" CMAKE_INSTALL_PREFIX
@@ -96,9 +105,6 @@ else()
   set(TESTS_TO_SKIP)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
-
 add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
@@ -112,6 +118,7 @@ include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
+include(ForceOption)
 set(BUILDNAME
     "${BAREOS_FULL_VERSION}"
     CACHE STRING "site name variable for CDash"
@@ -134,34 +141,15 @@ if(BUILD_UNIVERSAL_CLIENT)
       FATAL_ERROR "Building the universal client requires at least CMake 3.18"
     )
   endif()
-  set(ENABLE_PYTHON
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_GFAPI_FD
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_JANSSON
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_LZO
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_CAPABILITY
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_BCONSOLE
-      OFF
-      CACHE BOOL "" FORCE
-  )
-  set(ENABLE_STATIC_RUNTIME_LIBS
-      ON
-      CACHE BOOL "" FORCE
-  )
+  force_option(FETCHCONTENT_FULLY_DISCONNECTED OFF)
+  force_option(CPM_USE_LOCAL_PACKAGES OFF)
+  force_option(ENABLE_PYTHON OFF)
+  force_option(ENABLE_GFAPI_FD OFF)
+  force_option(ENABLE_JANSSON OFF)
+  force_option(ENABLE_LZO OFF)
+  force_option(ENABLE_CAPABILITY OFF)
+  force_option(ENABLE_BCONSOLE OFF)
+  force_option(ENABLE_STATIC_RUNTIME_LIBS ON)
   set(client-only ON)
 endif()
 
@@ -197,16 +185,15 @@ endif()
 
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
-  include(BareosCpmPackages)
   if(NOT CMAKE_BUILD_TYPE
      AND NOT CMAKE_C_FLAGS
      AND NOT CMAKE_CXX_FLAGS
   )
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
   endif()
+  include(BareosCpmPackages)
   include(BareosCcache)
   include(PrefixMap)
-  add_subdirectory(third-party EXCLUDE_FROM_ALL)
   add_subdirectory(core)
   if(ENABLE_WEBUI)
     add_subdirectory(webui)
