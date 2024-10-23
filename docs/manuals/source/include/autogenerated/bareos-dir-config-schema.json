@@ -1028,12 +1028,6 @@
           "code": 0,
           "equals": true
         },
-        "Base": {
-          "datatype": "RESOURCE_LIST",
-          "code": 3,
-          "deprecated": true,
-          "equals": true
-        },
         "MaxConcurrentCopies": {
           "datatype": "PINT32",
           "code": 0,
@@ -1516,12 +1510,6 @@
         "DirPluginOptions": {
           "datatype": "STRING_LIST",
           "code": 0,
-          "equals": true
-        },
-        "Base": {
-          "datatype": "RESOURCE_LIST",
-          "code": 3,
-          "deprecated": true,
           "equals": true
         },
         "MaxConcurrentCopies": {
@@ -3202,12 +3190,6 @@
         "Signature": {
           "datatype": "OPTION",
           "code": 0,
-          "equals": true
-        },
-        "BaseJob": {
-          "datatype": "OPTION",
-          "code": 0,
-          "deprecated": true,
           "equals": true
         },
         "Accurate": {
