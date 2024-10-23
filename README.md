@@ -10,6 +10,7 @@
 ![Contributors](https://img.shields.io/github/contributors/bareos/bareos)
 [![GitHub Stars](https://img.shields.io/github/stars/bareos/bareos?style=social)](https://github.com/bareos)
 
+
 **Bareos** is a reliable, cross-network open-source backup solution for data protection, archiving, and recovery. It supports Linux, Windows, macOS, and other well-established operating systems. Bareos offers scalable, enterprise-grade features for businesses of all sizes, ensuring secure and efficient data management. 
 
 ### Key features:
@@ -25,6 +26,7 @@
   - **Role-Based ACL:** Secure access control with role-based permissions.
 
 [![Contact Sales](https://img.shields.io/badge/Contact%20Sales-Get%20a%20Quote-009688?logo=megaphone)](https://www.bareos.com/contact/)
+[![Sponsor Bareos](https://img.shields.io/badge/Sponsor-Donate%20Now-pink?style=flat&logo=github)](https://github.com/sponsors/bareos)
 
 ### Supported Operating Systems
 ![Linux](https://img.shields.io/badge/Linux-black?logo=linux&logoColor=white)
