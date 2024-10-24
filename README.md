@@ -48,15 +48,16 @@
 ![Fedora](https://img.shields.io/badge/Fedora-294172?logo=fedora&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
 
-![Linux](https://img.shields.io/badge/Linux-0078D6)
-![SUSE](https://img.shields.io/badge/SUSE-0078D6)
-![Red Hat](https://img.shields.io/badge/Red%20Hat-0078D6)
-![FreeBSD](https://img.shields.io/badge/FreeBSD-0078D6)
-![Debian](https://img.shields.io/badge/Debian-0078D6)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-0078D6)
-![macOS](https://img.shields.io/badge/macOS-0078D6)
-![Fedora](https://img.shields.io/badge/Fedora-0078D6)
-![Windows](https://img.shields.io/badge/Windows-0078D6)
+![Linux](https://img.shields.io/badge/Linux-0078D6?logo=linux&logoColor=white)
+![SUSE](https://img.shields.io/badge/SUSE-0078D6?logo=suse&logoColor=white)
+![Red Hat](https://img.shields.io/badge/Red%20Hat-0078D6?logo=redhat&logoColor=white)
+![FreeBSD](https://img.shields.io/badge/FreeBSD-0078D6?logo=freebsd&logoColor=white)
+![Debian](https://img.shields.io/badge/Debian-0078D6?logo=debian&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-0078D6?logo=ubuntu&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-0078D6?logo=apple&logoColor=white)
+![Fedora](https://img.shields.io/badge/Fedora-0078D6?logo=fedora&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
+
 
 
 [![Free Packages](https://img.shields.io/badge/Free%20Packages-Download-brightgreen?style=flat&logo=download)](https://download.bareos.org)
