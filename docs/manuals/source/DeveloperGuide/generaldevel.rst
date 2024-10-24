@@ -197,14 +197,14 @@ Do's
 - when in doubt always prefer the standard library over a custom implementation
 - follow the `Google C++ Style Guide`_
 - follow the `C++ Core Guidelines`_
-- get in touch with us on the `bareos-devel`_ mailing list
+- get in touch with us, preferably as `GitHub discussion`_
 
 .. _RAII:                      https://en.cppreference.com/w/cpp/language/raii
 .. _Rule of three:             https://en.cppreference.com/w/cpp/language/rule_of_three
 .. _fixed width integer types: https://en.cppreference.com/w/cpp/types/integer
 .. _Google C++ Style Guide:    https://google.github.io/styleguide/cppguide.html
 .. _C++ Core Guidelines:       http://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
-.. _bareos-devel:              https://groups.google.com/forum/#!forum/bareos-devel
+.. _GitHub discussion:              https://github.com/bareos/bareos/discussions
 
 Don'ts
 ------

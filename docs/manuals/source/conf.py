@@ -81,6 +81,7 @@ rst_epilog = """
 .. |ndmpnative| replace:: :ref:`section-NdmpNative`
 
 .. |ktls| replace:: Kernel TLS
+.. |github| replace:: GitHub
 
 """
 
