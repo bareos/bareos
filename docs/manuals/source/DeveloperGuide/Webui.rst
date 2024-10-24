@@ -23,7 +23,7 @@ You are welcome to join our translation community via https://poeditor.com/join/
 After selecting the languages you want to contribute to,
 you can add and modify translation strings.
 You can mark strings as fuzzy and leave comments, in case there is need for further discussions.
-In doubt, contact us via bareos-devel@googlegroups.com.
+In doubt, contact us via https://github.com/bareos/bareos/discussions
 
 How can I add a new language?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
