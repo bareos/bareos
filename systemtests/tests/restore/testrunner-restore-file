@@ -23,7 +23,7 @@
 # restore some single files from archives
 #
 
-set -e
+set -ex
 set -o pipefail
 set -u
 TestName="$(basename "$(pwd)")"
@@ -40,15 +40,25 @@ export TestName
 
 start_test
 
-file1="$(pwd)/tmp/data/build/src/tests/cats_test.c"
-file2="$(pwd)/tmp/data/build/src/tests/bregtest.c"
-file3="$(pwd)/tmp/data/build/src/tests/bbatch.c"
+origfile1="$(pwd)/tmp/data/build/src/tests/cats_test.c"
+origfile2="$(pwd)/tmp/data/build/src/tests/bregtest.c"
+origfile3="$(pwd)/tmp/data/build/src/tests/bbatch.c"
 
-for f in "$file1" "$file2" "$file3" ; do
+for f in "$origfile1" "$origfile2" "$origfile3" ; do
     if [[ -f "$tmp/bareos-restores/$f" ]]; then
       rm "$tmp/bareos-restores/$f"
     fi;
 done
+
+if [[ "$(uname -s)" =~ _NT ]]; then
+    file1=$(cygpath -w "$origfile1")
+    file2=$(cygpath -w "$origfile2")
+    file3=$(cygpath -w "$origfile3")
+else
+    file1="$origfile1"
+    file2="$origfile2"
+    file3="$origfile3"
+fi
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -109,15 +119,25 @@ expect_grep "1 file selected to be restored." \
 	    "$log_home/should-work.out" \
  	    "Expected success; found failure"
 
-if ! cmp -s "$tmp/bareos-restores/$file1" "$file1"; then
+dest1="$tmp/bareos-restores/$file1"
+dest2="$tmp/bareos-restores/$file2"
+dest3="$tmp/bareos-restores/$file3"
+if [[ "$(uname -s)" =~ _NT ]]; then
+    dest1=$(remove_colon_from_windows_path "$dest1")
+    dest2=$(remove_colon_from_windows_path "$dest2")
+    dest3=$(remove_colon_from_windows_path "$dest3")
+fi
+
+if ! cmp -s "$dest1" "$origfile1"; then
     exit 2
 fi
 
-if ! cmp -s "$tmp/bareos-restores/$file2" "$file2"; then
+if ! cmp -s "$dest2" "$origfile2"; then
     exit 3
 fi
 
-if ! cmp -s "$tmp/bareos-restores/$file3" "$file3"; then
+if ! cmp -s "$dest3" "$origfile3"; then
     exit 4
 fi
+
 end_test

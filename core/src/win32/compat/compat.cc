@@ -1715,9 +1715,7 @@ int stat(const char* filename, struct stat* sb)
     sb->st_blksize = 4096;
     sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
 
-#if (_WIN32_WINNT >= 0x0600)
-    // See if GetFileInformationByHandleEx API is available.
-    if (p_GetFileInformationByHandleEx) {
+    {
       HANDLE h = INVALID_HANDLE_VALUE;
 
       /* The GetFileInformationByHandleEx need a file handle so we have to
@@ -1731,20 +1729,27 @@ int stat(const char* filename, struct stat* sb)
       }
 
       if (h != INVALID_HANDLE_VALUE) {
-        FILE_BASIC_INFO basic_info;
+        BY_HANDLE_FILE_INFORMATION info;
 
-        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &basic_info,
-                                           sizeof(basic_info))) {
-          sb->st_atime = CvtFtimeToUtime(basic_info.LastAccessTime);
-          sb->st_mtime = CvtFtimeToUtime(basic_info.LastWriteTime);
-          sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
+        if (GetFileInformationByHandle(h, &info)) {
+          sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
+          sb->st_mtime = CvtFtimeToUtime(info.ftLastWriteTime);
+          sb->st_ctime = CvtFtimeToUtime(info.ftCreationTime);
+          sb->st_dev = info.dwVolumeSerialNumber;
+          sb->st_ino = info.nFileIndexHigh;
+          sb->st_ino <<= 32;
+          sb->st_ino |= info.nFileIndexLow;
+          sb->st_nlink = (short)info.nNumberOfLinks;
+          if (sb->st_nlink > 1) {
+            Dmsg1(debuglevel, "st_nlink=%d\n", sb->st_nlink);
+          }
           use_fallback_data = false;
         }
+
 
         CloseHandle(h);
       }
     }
-#endif
 
     if (use_fallback_data) {
       // Fall back to the GetFileAttributesEx data.
@@ -3219,3 +3224,16 @@ void PreventOsSuspensions()
 }
 
 void AllowOsSuspensions() { SetThreadExecutionState(ES_CONTINUOUS); }
+
+int win32_link(const char* target, const char* link)
+{
+  std::wstring linkw = make_win32_path_UTF8_2_wchar(link);
+  std::wstring targetw = make_win32_path_UTF8_2_wchar(target);
+
+  if (!CreateHardLinkW(linkw.c_str(), targetw.c_str(), NULL)) {
+    errno = b_errno_win32;
+    return 1;
+  }
+
+  return 0;
+}

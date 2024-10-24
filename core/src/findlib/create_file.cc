@@ -378,9 +378,18 @@ int CreateFile(JobControlRecord* jcr,
 #  endif /* HAVE_CHFLAGS */
           }
           return CF_CREATED;
-
-#endif /* HAVE_WIN32 */
-#ifdef HAVE_WIN32
+        case FT_LNK:
+          // Unix/Linux symlink handling
+          Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname,
+                attr->olname);
+          if (symlink(attr->olname, attr->ofname) != 0 && errno != EEXIST) {
+            BErrNo be;
+            Qmsg3(jcr, M_ERROR, 0, T_("Could not symlink %s -> %s: ERR=%s\n"),
+                  attr->ofname, attr->olname, be.bstrerror());
+            return CF_ERROR;
+          }
+          return CF_CREATED;
+#else /* HAVE_WIN32 */
         case FT_LNK:
           /* Handle Windows Symlink-Like Reparse Points
            * - Directory Symlinks
@@ -403,21 +412,23 @@ int CreateFile(JobControlRecord* jcr,
             return CF_ERROR;
           }
           return CF_CREATED;
-#else
-        case FT_LNK:
-          // Unix/Linux symlink handling
-          Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname,
-                attr->olname);
-          if (symlink(attr->olname, attr->ofname) != 0 && errno != EEXIST) {
+        case FT_LNKSAVED: {
+          Dmsg2(130, "Hard link %s => %s\n", attr->ofname, attr->olname);
+          if (win32_link(attr->olname, attr->ofname) != 0) {
             BErrNo be;
-            Qmsg3(jcr, M_ERROR, 0, T_("Could not symlink %s -> %s: ERR=%s\n"),
+            Qmsg3(jcr, M_ERROR, 0, T_("Could not hard link %s -> %s: ERR=%s\n"),
                   attr->ofname, attr->olname, be.bstrerror());
+            Dmsg3(200, "Could not hard link %s -> %s: ERR=%s\n", attr->ofname,
+                  attr->olname, be.bstrerror());
             return CF_ERROR;
           }
           return CF_CREATED;
-#endif
+        } break;
+
+#endif  /* HAVE_WIN32 */
       } /* End inner switch */
-      [[fallthrough]];
+      Qmsg3(jcr, M_ERROR, 0, T_("unhandled type: %d\n"), attr->type);
+      return CF_ERROR;
     case FT_REPARSE:
     case FT_JUNCTION:
       bfd->reparse_point = true;
