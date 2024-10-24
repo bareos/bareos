@@ -216,14 +216,16 @@ void BuildAttrOutputFnames(JobControlRecord* jcr, Attributes* attr)
        *  on user request to soft links
        */
       bool is_absolute_path = IsPathSeparator(attr->lname[0]);
+      bool allow_prefix = (attr->type == FT_LNKSAVED || jcr->prefix_links);
 #if defined(HAVE_WIN32)
-      if (attr->lname[1] == ':') {
-        attr->lname[1] = '/'; /* convert : to / */
+      // for hardlinks (i.e. LNKSAVED), we need to fixup the lname,
+      // so that the where prefixing works, otherwise we dont
+      if (allow_prefix && attr->lname[1] == ':') {
+        attr->lname[1] = '/'; /* convert : to / for where prefix */
         is_absolute_path = true;
       }
 #endif
-      if (is_absolute_path
-          && (attr->type == FT_LNKSAVED || jcr->prefix_links)) {
+      if (is_absolute_path && allow_prefix) {
         PmStrcpy(attr->olname, jcr->where);
         add_link = true;
       } else {
