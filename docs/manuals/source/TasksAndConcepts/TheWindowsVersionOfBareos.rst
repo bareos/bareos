@@ -508,7 +508,7 @@ Antivirus Program
 If you are not using the portable option, and you have :config:option:`dir/fileset/EnableVss`\  (Volume Shadow Copy) enabled in the |dir| and you experience problems with Bareos not being able to open files, it is most likely that you are running an antivirus program that blocks Bareos from doing certain operations. In this case, disable the antivirus program and try another backup. If it succeeds, either get a different (better) antivirus program or use
 something like :config:option:`dir/job/ClientRunBeforeJob`\ /:config:option:`dir/job/ClientRunAfterJob`\  to turn off the antivirus program while the backup is running.
 
-If turning off anti-virus software does not resolve your VSS problems, you might have to turn on VSS debugging. The following link describes how to do this: https://learn.microsoft.com/en-US/troubleshoot/windows-server/backup-and-storage/enable-debug-tracing-features-vss.
+If turning off anti-virus software does not resolve your VSS problems, you might have to turn on VSS debugging. The following link describes how to do this: https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/enable-debug-tracing-features-vss.
 
 Enable Debugging
 ~~~~~~~~~~~~~~~~~
