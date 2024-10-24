@@ -69,7 +69,7 @@ Requirements
 
 As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 7.0.1. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
 
-Since Bareos :sinceVersion:`22.0.0: VMware Plugin: VDDK 8.0.0` the plugin is using the Virtual Disk Development Kit (VDDK) 8.0.0, as of the VDDK 8.0 release notes, it should be compatible with vSphere 8 and the next major release (except new features) and backward compatible with vSphere 6.7 and 7, see VDDK release notes at https://developer.vmware.com/web/sdk/8.0/vddk for details.
+Since Bareos :sinceVersion:`22.0.0: VMware Plugin: VDDK 8.0.0` the plugin is using the Virtual Disk Development Kit (VDDK) 8.0.0, as of the VDDK 8.0 release notes, it should be compatible with vSphere 8 and the next major release (except new features) and backward compatible with vSphere 6.7 and 7, see VDDK release notes at https://developer.broadcom.com/sdks/vmware-virtual-disk-development-kit-vddk/8.0 for details.
 
 This plugin requires the pyVmomi module version 7.0.2 or greater. Since Bareos :sinceVersion:`21.0.0: VMware Plugin: pyVmomi` the package **bareos-vmware-plugin** no longer includes a dependency on a pyVmomi package, because some Linux distributions don't provide current versions. Consequently, pyVmomi must be either installed by using :command:`pip install pyvmomi` or by manually installing a distribution provided pyVmomi package.
 
@@ -78,9 +78,7 @@ Since :sinceVersion:`23.0.3: VMware Plugin` the plugin requires the modules
 There is no dependency in the package. In most Linux distributions,
 the packages providing these modules can be used. The minimum version of
 **requests** must be 2.20.0 and **urllib3** must be at least 1.24.1.
-On RHEL 7 or CentOS 7, the package
-https://forensics.cert.org/centos/cert/7/x86_64/python36-requests-2.27.1-1.el7.noarch.rpm
-can be used to fulfill this requirement.
+
 
 Installation
 ^^^^^^^^^^^^
@@ -199,7 +197,7 @@ For ease of use (but less secure) when the :command:`vcthumbprint` is not given,
 
 Also since :sinceVersion:`17.2.4: VMware Plugin: transport=nbdssl` another optional plugin option has been added that can be used for trying to force a given transport method. Normally, when no transport method is given, VDDK will negotiate available transport methods and select the best one. For a description of transport methods, see
 
-https://developer.vmware.com/docs/16967/virtual-disk-development-kit-programming-guide/GUID-15395099-5300-4D3F-BCC3-E50DCDC954C2.html
+https://knowledge.broadcom.com/external/article?legacyId=2075984
 
 When the plugin runs in a VMware virtual machine which has access to datastore where the virtual disks to be backed up reside, VDDK will use the hotadd transport method. On a physical server without SAN access, it will use the NBD transport method, hotadd transport is not available in this case.
 
@@ -317,7 +315,7 @@ this to the VMware Tools config:
    [vmbackup]
    vss.disableAppQuiescing = true
 
-For details see https://kb.vmware.com/s/article/2146204
+For details see https://knowledge.broadcom.com/external/article?legacyId=2146204
 
 For consistent backups of MS SQL server, please use the Bareos **MSSQL Plugin**.
 
@@ -330,7 +328,7 @@ Since :sinceVersion:`22.1.1: VMware Plugin: enable_cbt` the plugin will try to
 enable CBT automatically when the plugin option **enable_cbt=yes** is set (see below).
 Since :sinceVersion:`23.0.0: VMware Plugin: enable_cbt` this option is set to **yes** by default.
 
-As of https://kb.vmware.com/s/article/2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
+As of https://knowledge.broadcom.com/external/article?legacyId=2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
 
 .. code-block:: shell-session
    :caption: usage of vmware\_cbt\_tool.py
