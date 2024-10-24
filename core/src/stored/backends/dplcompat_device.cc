@@ -196,10 +196,10 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
 
   // OptionConsumer should have consumed all options at this point
   if (!options.empty()) {
-    std::vector<std::string> option_names;
+    BStringList option_names;
     for (const auto& [name, value] : options) { option_names.push_back(name); }
     return tl::unexpected(fmt::format("Unknown options encountered: {}\n",
-                                      fmt::join(option_names, ", ")));
+                                      option_names.Join(", ")));
   }
   return {};
 }
