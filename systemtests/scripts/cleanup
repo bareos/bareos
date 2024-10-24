@@ -26,8 +26,6 @@ function deletefiles(){
 }
 deletefiles
 
-deletefiles
-
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
 
 exit 0
