@@ -26,6 +26,8 @@
  * Configuration file parser for Bareos Storage daemon
  */
 
+#include <fmt/core.h>
+
 #include "include/bareos.h"
 #include "stored/stored_conf.h"
 #include "stored/autochanger_resource.h"
@@ -494,6 +496,10 @@ static void CheckDropletDevices(ConfigurationParser& config)
   while ((p = config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d && d->device_type == DeviceType::B_DROPLET_DEV) {
+      my_config->AddWarning(
+          fmt::format("device {} uses the droplet backend, "
+                      "please consider using the newer dplcompat backend.",
+                      d->archive_device_string));
       if (d->max_concurrent_jobs == 0) {
         /* 0 is the general default. However, for this device_type, only 1
          * works. So we set it to this value. */
