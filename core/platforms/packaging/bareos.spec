@@ -1322,7 +1322,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir %{script_dir}
 %{script_dir}/bareos-config
 %{script_dir}/bareos-config-lib.sh
-%{script_dir}/bareos-explorer
 %{script_dir}/btraceback.gdb
 %if "%{_libdir}" != "/usr/lib/"
 %dir %{_libdir}/%{name}/
