@@ -10,6 +10,15 @@
 ![Contributors](https://img.shields.io/github/contributors/bareos/bareos)
 [![GitHub Stars](https://img.shields.io/github/stars/bareos/bareos?style=social)](https://github.com/bareos)
 
+![License](https://img.shields.io/badge/License-AGPLv3-0078D6)
+![Release](https://img.shields.io/github/v/release/bareos/bareos?color=0078D6&label=Release)
+[![Documentation](https://img.shields.io/badge/Documentation-Read%20Docs-0078D6)](https://docs.bareos.org)
+[![Newsletter Signup](https://img.shields.io/badge/Newsletter-Sign%20Up-0078D6)](https://www.bareos.com/sign-up/)
+![Pull Requests](https://img.shields.io/github/issues-pr/bareos/bareos?color=0078D6&label=Pull%20Requests)
+![Contributors](https://img.shields.io/github/contributors/bareos/bareos?color=0078D6&label=Contributors)
+[![GitHub Stars](https://img.shields.io/github/stars/bareos/bareos?style=social&color=0078D6)](https://github.com/bareos)
+
+
 
 **Bareos** is a reliable, cross-network open-source backup solution for data protection, archiving, and recovery. It supports Linux, Windows, macOS, and other well-established operating systems. Bareos offers scalable, enterprise-grade features for businesses of all sizes, ensuring secure and efficient data management. 
 
@@ -38,6 +47,16 @@
 ![macOS](https://img.shields.io/badge/macOS-black?logo=apple&logoColor=white)
 ![Fedora](https://img.shields.io/badge/Fedora-294172?logo=fedora&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
+
+![Linux](https://img.shields.io/badge/Linux-0078D6)
+![SUSE](https://img.shields.io/badge/SUSE-0078D6)
+![Red Hat](https://img.shields.io/badge/Red%20Hat-0078D6)
+![FreeBSD](https://img.shields.io/badge/FreeBSD-0078D6)
+![Debian](https://img.shields.io/badge/Debian-0078D6)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-0078D6)
+![macOS](https://img.shields.io/badge/macOS-0078D6)
+![Fedora](https://img.shields.io/badge/Fedora-0078D6)
+![Windows](https://img.shields.io/badge/Windows-0078D6)
 
 
 [![Free Packages](https://img.shields.io/badge/Free%20Packages-Download-brightgreen?style=flat&logo=download)](https://download.bareos.org)
