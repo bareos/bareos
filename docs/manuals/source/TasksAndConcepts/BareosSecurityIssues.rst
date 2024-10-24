@@ -110,10 +110,10 @@ RedHat RHEL 8
 ^^^^^^^^^^^^^
 
 For RedHat RHEL 8 follow the editor instructions located at:
-https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/security_hardening/assembly_installing-a-rhel-8-system-with-fips-mode-enabled_security-hardening
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/security_hardening/switching-rhel-to-fips-mode_security-hardening
 
 For RedHat RHEL 9 follow the editor instructions located at:
-https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/security_hardening/assembly_installing-the-system-in-fips-mode_security-hardening
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/security_hardening/switching-rhel-to-fips-mode_security-hardening#proc_installing-the-system-with-fips-mode-enabled_assembly_installing-the-system-in-fips-mode
 
 The above test procedure should work out of the box, and Bareos daemons should select only FIPS approved protocols.
 
