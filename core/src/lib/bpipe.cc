@@ -50,6 +50,17 @@ int num_execvp_errors = (int)(sizeof(execvp_errors) / sizeof(int));
 #if !defined(HAVE_WIN32)
 static void BuildArgcArgv(char* cmd, int* bargc, char* bargv[], int max_arg);
 
+namespace {
+// Convert errno into an exit code for later analysis
+int get_error_code()
+{
+  for (int i = 0; i < num_execvp_errors; i++) {
+    if (execvp_errors[i] == errno) { return 200 + i; /* exit code => errno */ }
+  }
+  return 255;  // unknown errno
+}
+}  // namespace
+
 /*
  * Run an external program. Optionally wait a specified number
  * of seconds. Program killed if wait exceeded. We open
@@ -63,7 +74,7 @@ Bpipe* OpenBpipe(const char* prog,
                  const std::unordered_map<std::string, std::string>& env_vars)
 {
   char* bargv[MAX_ARGV];
-  int bargc, i;
+  int bargc;
   int readp[2], writep[2];
   POOLMEM* tprog;
   int mode_read, mode_write;
@@ -135,7 +146,7 @@ Bpipe* OpenBpipe(const char* prog,
       // closefrom needs the lowest filedescriptor to close.
       closefrom(3);
 #  else
-      for (i = 3; i <= 32; i++) { /* close any open file descriptors */
+      for (int i = 3; i <= 32; i++) { /* close any open file descriptors */
         close(i);
       }
 #  endif
@@ -154,13 +165,12 @@ Bpipe* OpenBpipe(const char* prog,
       // execvp will only return on error
       perror("Program execution failed");
 
-      // Convert errno into an exit code for later analysis
-      for (i = 0; i < num_execvp_errors; i++) {
-        if (execvp_errors[i] == errno) {
-          std::quick_exit(200 + i); /* exit code => errno */
-        }
-      }
-      std::quick_exit(255); /* unknown errno */
+#  if defined(HAVE_DARWIN_OS)
+      // MacOS does not like std::quick_exit()
+      std::_Exit(get_error_code());
+#  else
+      std::quick_exit(get_error_code());
+#  endif
 
     default: /* parent */
       break;
