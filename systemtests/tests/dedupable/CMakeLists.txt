@@ -20,26 +20,30 @@
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-set_tests_properties(
-  system:dedupable:create-backup
-  PROPERTIES FIXTURES_SETUP "system:dedupable:backup-job-fixture"
-)
-set_tests_properties(
-  system:dedupable:restore-file
-  PROPERTIES FIXTURES_REQUIRED
-             "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-)
-set_tests_properties(
-  system:dedupable:restore-dir
-  PROPERTIES FIXTURES_REQUIRED
-             "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-)
-set_tests_properties(
-  system:dedupable:full-restore
-  PROPERTIES FIXTURES_REQUIRED
-             "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-)
-set_tests_properties(
-  system:dedupable:purge-truncate PROPERTIES FIXTURES_REQUIRED
-                                             "system:dedupable-fixture"
-)
+
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # it would be better if we could just check if create_systemtest succeeded
+  set_tests_properties(
+    system:dedupable:create-backup
+    PROPERTIES FIXTURES_SETUP "system:dedupable:backup-job-fixture"
+  )
+  set_tests_properties(
+    system:dedupable:restore-file
+    PROPERTIES FIXTURES_REQUIRED
+               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
+  )
+  set_tests_properties(
+    system:dedupable:restore-dir
+    PROPERTIES FIXTURES_REQUIRED
+               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
+  )
+  set_tests_properties(
+    system:dedupable:full-restore
+    PROPERTIES FIXTURES_REQUIRED
+               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
+  )
+  set_tests_properties(
+    system:dedupable:purge-truncate PROPERTIES FIXTURES_REQUIRED
+                                               "system:dedupable-fixture"
+  )
+endif()
