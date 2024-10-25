@@ -18,6 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#include "include/bareos.h"
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <thread>
@@ -29,6 +30,7 @@ using ::testing::NotNull;
 
 #undef fgets
 
+#if !defined(HAVE_WIN32)
 static int events[NSIG];
 class SignalCatcher {
   static void SignalHandler(int signal) { events[signal]++; }
@@ -50,6 +52,7 @@ class SignalCatcher {
   }
   int num_events() const { return events[sig_num]; }
 };
+#endif
 
 /* wait up to timeout seconds for process to be killed */
 static void wait_kill(btimer_t* timer, std::chrono::milliseconds timeout)
@@ -182,6 +185,7 @@ TEST(bpipe, child_operates_flaky)
 }
 
 /* Write to a command that already exited. */
+#if !defined(HAVE_WIN32)
 TEST(bpipe, sigpipe)
 {
   using namespace std::chrono_literals;
@@ -198,7 +202,7 @@ TEST(bpipe, sigpipe)
   EXPECT_EQ(sigpipe.num_events(), 1);  // and we got a SIGPIPE
   EXPECT_EQ(CloseBpipe(bp), 0);
 }
-
+#endif
 /* Read from a command that doesn't write to stdout and be killed. */
 TEST(bpipe, stalled_read)
 {
