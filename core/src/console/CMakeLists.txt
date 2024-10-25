@@ -37,12 +37,18 @@ if(HAVE_PAM)
 endif()
 
 add_executable(bconsole console.cc)
+add_executable(bconsole-unsafe console.cc)
+
+target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
 
 add_library(console_objects STATIC ${BCONSSRCS})
 
 target_link_libraries(console_objects PRIVATE bareos)
 target_link_libraries(
   bconsole PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
+)
+target_link_libraries(
+  bconsole-unsafe PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
 )
 
 bareos_configure_file(FILES bconsole.conf.in)

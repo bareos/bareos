@@ -110,25 +110,46 @@ extern "C" void GotSigcontinue(int) { stop = false; }
 extern "C" void GotSigtout(int) {}
 extern "C" void GotSigtin(int) {}
 
+enum class CommandSafety
+{
+  Safe,
+  Unsafe
+};
+
 // These are the @commands that run only in bconsole
 struct cmdstruct {
   const char* key;
   int (*func)(FILE* input, BareosSocket* UA_sock);
   const char* help;
+  CommandSafety type;
 };
+
+#if !defined(DISABLE_SAFETY_CHECK)
+constexpr bool safety_check_enabled = true;
+#else
+constexpr bool safety_check_enabled = false;
+#endif  // !DISABLE_SAFETY_CHECK
+
 static struct cmdstruct commands[] = {
-    {NT_("input"), InputCmd, T_("input from file")},
-    {NT_("output"), OutputCmd, T_("output to file")},
-    {NT_("quit"), QuitCmd, T_("quit")},
-    {NT_("tee"), TeeCmd, T_("output to file and terminal")},
-    {NT_("sleep"), SleepCmd, T_("sleep specified time")},
-    {NT_("time"), TimeCmd, T_("print current time")},
-    {NT_("version"), Versioncmd, T_("print Console's version")},
-    {NT_("echo"), EchoCmd, T_("echo command string")},
-    {NT_("exec"), ExecCmd, T_("execute an external command")},
-    {NT_("exit"), QuitCmd, T_("exit = quit")},
-    {NT_("help"), HelpCmd, T_("help listing")},
-    {NT_("separator"), EolCmd, T_("set command separator")},
+    // unsafe commands
+    {NT_("input"), InputCmd, T_("input from file"), CommandSafety::Unsafe},
+    {NT_("output"), OutputCmd, T_("output to file"), CommandSafety::Unsafe},
+    {NT_("tee"), TeeCmd, T_("output to file and terminal"),
+     CommandSafety::Unsafe},
+    {NT_("exec"), ExecCmd, T_("execute an external command"),
+     CommandSafety::Unsafe},
+
+    // safe commands
+    {NT_("quit"), QuitCmd, T_("quit"), CommandSafety::Safe},
+    {NT_("sleep"), SleepCmd, T_("sleep specified time"), CommandSafety::Safe},
+    {NT_("time"), TimeCmd, T_("print current time"), CommandSafety::Safe},
+    {NT_("version"), Versioncmd, T_("print Console's version"),
+     CommandSafety::Safe},
+    {NT_("echo"), EchoCmd, T_("echo command string"), CommandSafety::Safe},
+    {NT_("exit"), QuitCmd, T_("exit = quit"), CommandSafety::Safe},
+    {NT_("help"), HelpCmd, T_("help listing"), CommandSafety::Safe},
+    {NT_("separator"), EolCmd, T_("set command separator"),
+     CommandSafety::Safe},
 };
 
 
@@ -164,7 +185,16 @@ static int Do_a_command(FILE* input, BareosSocket* UA_sock)
   len = strlen(cmd);
   for (i = 0; i < comsize; i++) { /* search for command */
     if (bstrncasecmp(cmd, T_(commands[i].key), len)) {
-      status = (*commands[i].func)(input, UA_sock); /* go execute command */
+      if (commands[i].type == CommandSafety::Unsafe && IsUserAnAdmin()
+          && safety_check_enabled) {
+        ConsoleOutputFormat(
+            T_("@%s command is not allowed as privileged user.\n"),
+            commands[i].key);
+        status = 1;  // pretend it worked
+      } else {
+        status = (*commands[i].func)(input, UA_sock); /* go execute command */
+      }
+
       found = 1;
       break;
     }
@@ -1148,10 +1178,6 @@ static int Versioncmd(FILE*, BareosSocket*)
 /* @input <input-filename> */
 static int InputCmd(FILE*, BareosSocket*)
 {
-  if (IsUserAnAdmin()) {
-    ConsoleOutput(T_("@input command is not allowed as privileged user.\n"));
-    return 1;
-  }
   if (g_argc > 2) {
     ConsoleOutput(T_("Too many arguments on input command.\n"));
     return 1;
@@ -1176,10 +1202,6 @@ static int InputCmd(FILE*, BareosSocket*)
 /* Send output to both terminal and specified file */
 static int TeeCmd(FILE* input, BareosSocket* UA_sock)
 {
-  if (IsUserAnAdmin()) {
-    ConsoleOutput(T_("@tee command is not allowed as privileged user.\n"));
-    return 1;
-  }
   EnableTeeOut();
   return DoOutputcmd(input, UA_sock);
 }
@@ -1188,10 +1210,6 @@ static int TeeCmd(FILE* input, BareosSocket* UA_sock)
 /* Send output to specified "file" */
 static int OutputCmd(FILE* input, BareosSocket* UA_sock)
 {
-  if (IsUserAnAdmin()) {
-    ConsoleOutput(T_("@output command is not allowed as privileged user.\n"));
-    return 1;
-  }
   DisableTeeOut();
   return DoOutputcmd(input, UA_sock);
 }
@@ -1228,11 +1246,6 @@ static int ExecCmd(FILE*, BareosSocket*)
   char line[5000];
   int status;
   int wait = 0;
-
-  if (IsUserAnAdmin()) {
-    ConsoleOutput(T_("@exec command is not allowed as privileged user.\n"));
-    return 1;
-  }
 
   if (g_argc > 3) {
     ConsoleOutput(
