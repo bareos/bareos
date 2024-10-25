@@ -19,31 +19,27 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-if(HAVE_WIN32)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-  set_tests_properties(
-    system:dedupable:create-backup
-    PROPERTIES FIXTURES_SETUP "system:dedupable:backup-job-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:restore-file
-    PROPERTIES FIXTURES_REQUIRED
-               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:restore-dir
-    PROPERTIES FIXTURES_REQUIRED
-               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:full-restore
-    PROPERTIES FIXTURES_REQUIRED
-               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:purge-truncate PROPERTIES FIXTURES_REQUIRED
-                                               "system:dedupable-fixture"
-  )
-endif()
+create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+set_tests_properties(
+  system:dedupable:create-backup
+  PROPERTIES FIXTURES_SETUP "system:dedupable:backup-job-fixture"
+)
+set_tests_properties(
+  system:dedupable:restore-file
+  PROPERTIES FIXTURES_REQUIRED
+             "system:dedupable:backup-job-fixture;system:dedupable-fixture"
+)
+set_tests_properties(
+  system:dedupable:restore-dir
+  PROPERTIES FIXTURES_REQUIRED
+             "system:dedupable:backup-job-fixture;system:dedupable-fixture"
+)
+set_tests_properties(
+  system:dedupable:full-restore
+  PROPERTIES FIXTURES_REQUIRED
+             "system:dedupable:backup-job-fixture;system:dedupable-fixture"
+)
+set_tests_properties(
+  system:dedupable:purge-truncate PROPERTIES FIXTURES_REQUIRED
+                                             "system:dedupable-fixture"
+)

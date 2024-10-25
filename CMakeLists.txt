@@ -61,6 +61,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:checkpoints:checkpoints-on-stop
       system:commandline-options
       system:dedupestimate:do-estimation
+      system:dedupable
       system:fileset-multiple-blocks:include-blocks
       system:fileset-multiple-blocks:options-blocks
       system:heartbeat-interval:check
