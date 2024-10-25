@@ -26,9 +26,9 @@
  * Configuration file parser for Bareos Storage daemon
  */
 
+#include "include/bareos.h"
 #include <fmt/core.h>
 
-#include "include/bareos.h"
 #include "stored/stored_conf.h"
 #include "stored/autochanger_resource.h"
 #include "stored/device_resource.h"

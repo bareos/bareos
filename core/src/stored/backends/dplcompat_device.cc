@@ -59,7 +59,16 @@ static const utl::options option_defaults{
 // delete this, so only specializations will be considered
 template <typename T> void convert_value(T&, const std::string&) = delete;
 
-template <> void convert_value<>(unsigned long& to, const std::string& from)
+template <>
+[[maybe_unused]] void convert_value<>(unsigned long long& to,
+                                      const std::string& from)
+{
+  to = std::stoull(from);
+}
+
+template <>
+[[maybe_unused]] void convert_value<>(unsigned long& to,
+                                      const std::string& from)
 {
   to = std::stoul(from);
 }
