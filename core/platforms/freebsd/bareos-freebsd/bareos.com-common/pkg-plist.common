@@ -40,7 +40,6 @@ lib/libbareossd.so.%%LIBVERSION%%
 lib/libbareossd.so
 lib/bareos/scripts/bareos-config
 lib/bareos/scripts/bareos-config-lib.sh
-lib/bareos/scripts/bareos-explorer
 lib/bareos/scripts/btraceback.gdb
 @dir(bareos,bareos,750) lib/bareos/plugins
 bin/bsmtp

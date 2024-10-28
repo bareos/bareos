@@ -26,7 +26,6 @@ bareos_configure_file(
   bareos-ctl-dir.in
   bareos-ctl-fd.in
   bareos-ctl-sd.in
-  bareos-explorer.in
   bareos-glusterfind-wrapper.in
   bareos.in
   btraceback.in
@@ -94,7 +93,6 @@ if(NOT client-only)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/mtx-changer
           ${CMAKE_CURRENT_BINARY_DIR}/disk-changer
-          ${CMAKE_CURRENT_BINARY_DIR}/bareos-explorer
           ${CMAKE_CURRENT_BINARY_DIR}/bareos-glusterfind-wrapper
           ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-dir
           ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-sd

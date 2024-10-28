@@ -6,7 +6,6 @@
 @libdir@/libbareossd.so*
 @scriptdir@/bareos-config
 @scriptdir@/bareos-config-lib.sh
-@scriptdir@/bareos-explorer
 @scriptdir@/btraceback.gdb
 /usr/bin/bsmtp
 /usr/sbin/bsmtp

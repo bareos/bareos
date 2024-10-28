@@ -111,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disable writing PRE_LABEL label-type to support WORM media [PR #1958]
 - debian: fix dedupable backend names [PR #1977]
 - external packages: use CPM packages instead of third-party directory [PR #1963]
+- scripts: remove unmaintained bareos-explorer [PR #1990]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -289,4 +290,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1972]: https://github.com/bareos/bareos/pull/1972
 [PR #1977]: https://github.com/bareos/bareos/pull/1977
 [PR #1980]: https://github.com/bareos/bareos/pull/1980
+[PR #1990]: https://github.com/bareos/bareos/pull/1990
 [unreleased]: https://github.com/bareos/bareos/tree/master
