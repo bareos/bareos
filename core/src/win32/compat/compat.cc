@@ -2705,40 +2705,6 @@ bail_out:
   return retval;
 }
 
-BOOL CreateChildProcess(VOID);
-VOID WriteToPipe(VOID);
-VOID ReadFromPipe(VOID);
-VOID ErrorExit(LPCSTR);
-VOID ErrMsg(LPTSTR, BOOL);
-
-/**
- * Check for a quoted path,  if an absolute path name is given and it contains
- * spaces it will need to be quoted.  i.e.  "c:/Program Files/foo/bar.exe"
- * CreateProcess() says the best way to ensure proper results with executables
- * with spaces in path or filename is to quote the string.
- */
-const char* getArgv0(const char* cmdline)
-{
-  int inquote = 0;
-  const char* cp;
-  for (cp = cmdline; *cp; cp++) {
-    if (*cp == '"') { inquote = !inquote; }
-    if (!inquote && isspace(*cp)) break;
-  }
-
-
-  int len = cp - cmdline;
-  char* rval = (char*)malloc(len + 1);
-
-  cp = cmdline;
-  char* rp = rval;
-
-  while (len--) *rp++ = *cp++;
-
-  *rp = 0;
-  return rval;
-}
-
 int kill(int pid, int signal)
 {
   int rval = 0;
