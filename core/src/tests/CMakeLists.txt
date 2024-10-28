@@ -467,6 +467,11 @@ bareos_add_test(test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main)
 bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(test_bpipe LINK_LIBRARIES bareos GTest::gtest_main)
+target_compile_definitions(
+  test_bpipe PRIVATE "-DPROGRAM_BIN_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+)
+add_executable(test_bpipe_prog)
+target_sources(test_bpipe_prog PRIVATE test_bpipe_prog.cc)
 
 bareos_add_test(
   test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
