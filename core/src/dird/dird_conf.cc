@@ -1945,6 +1945,9 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
       case 'A':
         send.KeyBool("AclSupport", true);
         break;
+      case 'N':
+        send.KeyBool("HonorNoDumpFlag", true);
+        break;
       case 'V': /* verify options */
         send.KeyQuotedString("Verify", GetOptionValue(&p));
         break;
