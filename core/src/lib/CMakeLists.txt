@@ -105,6 +105,12 @@ set(BAREOS_SRCS
 )
 
 if(HAVE_WIN32)
+  list(APPEND BAREOS_SRCS bpipe_win32.cc)
+else()
+  list(APPEND BAREOS_SRCS bpipe_unix.cc)
+endif()
+
+if(HAVE_WIN32)
   list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
        ../win32/compat/winapi.cc
   )
