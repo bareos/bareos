@@ -1,0 +1,4 @@
+lib/libbareossd-dplcompat.so
+lib/bareos/scripts/s3cmd-wrapper.sh
+#@(bareos,bareos,0640)  %%ETCDIR%%/bareos-dir.d/storage/NULL.conf.example
+#@(bareos,bareos,0640)   %%ETCDIR%%/bareos-sd.d/device/NULL.conf.example
