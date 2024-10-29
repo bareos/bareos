@@ -1,5 +1,6 @@
 director
 storage
+storage-dplcompat
 storage-tape
 storage-fifo
 filedaemon
