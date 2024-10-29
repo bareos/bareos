@@ -29,12 +29,12 @@
 
 #include <string>
 #include <optional>
-#include <unordered_map>
 #include <fmt/format.h>
 #include <gsl/gsl>
 #include "util.h"
 
 namespace utl = backends::util;
+using namespace std::literals::string_literals;
 
 namespace {
 std::string get_chunk_name(storagedaemon::chunk_io_request* request)
@@ -182,7 +182,7 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   }
 
   if (program.empty()) {
-    return tl::unexpected("Option 'program' is required\n");
+    return tl::unexpected("Option 'program' is required\n"s);
   }
 
   if (auto result = m_storage.set_program(program); !result) { return result; }
