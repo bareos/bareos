@@ -147,7 +147,8 @@ tl::expected<void, std::string> CrudStorage::set_option(
     const std::string& value)
 {
   if (!is_valid_env_name(name)) {
-    return tl::unexpected("Name '{}' is not usable as environment variable\n");
+    return tl::unexpected(
+        fmt::format("Name '{}' is not usable as environment variable\n", name));
   }
   Dmsg0(dlvl, "program environment variable '%s' set to '%s'\n", name.c_str(),
         value.c_str());
