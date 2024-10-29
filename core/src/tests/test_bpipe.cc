@@ -82,7 +82,7 @@ static void wait_kill(btimer_t* timer, std::chrono::milliseconds timeout)
 /* Run a command with exit code == 0 */
 TEST(bpipe, success)
 {
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog true", 30, "r");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " true", 30, "r");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, IsNull());
   ASSERT_THAT(bp->rfd, NotNull());
@@ -95,7 +95,7 @@ TEST(bpipe, success)
 /* Run a command with exit code != 0 */
 TEST(bpipe, failure)
 {
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog false", 30, "r");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " false", 30, "r");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, IsNull());
   ASSERT_THAT(bp->rfd, NotNull());
@@ -107,7 +107,7 @@ TEST(bpipe, failure)
 /* Write data into a pipe */
 TEST(bpipe, simple_write)
 {
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog cat", 30, "w");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 30, "w");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, IsNull());
@@ -128,7 +128,7 @@ TEST(bpipe, timeout)
   // even though we don't intend to write, we have to attach a pipe to our
   // childs stdin, otherwise it will inherit ours which might be closed and
   // would make `cat` exit immediately.
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog cat", 1, "rw");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 1, "rw");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->timer_id, NotNull());
   ASSERT_FALSE(bp->timer_id->killed);
@@ -141,7 +141,7 @@ TEST(bpipe, timeout)
 TEST(bpipe, child_operates_properly)
 {
   using namespace std::chrono_literals;
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog cat", 1, "w");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 1, "w");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, IsNull());
@@ -176,7 +176,7 @@ TEST(bpipe, child_operates_properly)
 TEST(bpipe, child_operates_flaky)
 {
   using namespace std::chrono_literals;
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog cat", 1, "w");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 1, "w");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, IsNull());
@@ -206,7 +206,7 @@ TEST(bpipe, sigpipe)
 #else
   using namespace std::chrono_literals;
   SignalCatcher sigpipe{SIGPIPE};
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog true", 30, "w");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " true", 30, "w");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, IsNull());
@@ -233,7 +233,7 @@ TEST(bpipe, stalled_read)
   // even though we don't intend to write, we have to attach a pipe to our
   // childs stdin, otherwise it will inherit ours which might be closed and
   // would make `cat` exit immediately.
-  Bpipe* bp = OpenBpipe(PROGRAM_BIN_DIR "/test_bpipe_prog cat", 1, "rw");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 1, "rw");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, NotNull());
