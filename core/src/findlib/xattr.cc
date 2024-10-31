@@ -2812,7 +2812,7 @@ BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
   } else {
     /* Increment error count but don't log an error again for the same
      * filesystem. */
-    xattr_data->u.parse->nr_errors++;
+    if (xattr_data->u.parse) xattr_data->u.parse->nr_errors++;
     retval = BxattrExitCode::kSuccess;
     goto bail_out;
   }
