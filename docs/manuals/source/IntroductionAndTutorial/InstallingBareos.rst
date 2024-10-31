@@ -311,12 +311,30 @@ Please remark, the Bareos Daemons need to have access to the TCP ports 9101-9103
 Linux
 ~~~~~
 
-.. code-block:: shell-session
-   :caption: Enable and start the Bareos Daemons
+Depending on the Linux distribution,
+the name of the Bareos services either correspond to the
+package names (Debian and derivatives)
+or to the binary names (e.g. RPM based distributions).
 
-   root@host:~# systemctl enable --now bareos-dir
-   root@host:~# systemctl enable --now bareos-sd
-   root@host:~# systemctl enable --now bareos-fd
+To enable and start the daemon,
+either use
+
+.. code-block:: shell-session
+   :caption: Enable and start the Bareos Daemons (Debian/Ubuntu/UCS)
+
+   root@host:~# systemctl enable --now bareos-director.service
+   root@host:~# systemctl enable --now bareos-storage.service
+   root@host:~# systemctl enable --now bareos-filedamon.service
+
+or
+
+.. code-block:: shell-session
+   :caption: Enable and start the Bareos Daemons (RPM based distributions)
+
+   root@host:~# systemctl enable --now bareos-dir.service
+   root@host:~# systemctl enable --now bareos-sd.service
+   root@host:~# systemctl enable --now bareos-fd.service
+
 
 FreeBSD
 ~~~~~~~
