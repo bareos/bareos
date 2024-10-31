@@ -20,6 +20,14 @@
 
 set -Eeuo pipefail
 
+get_filesize() {
+  if [ "$(uname)" = "FreeBSD" ]; then
+    stat -f %z "$1"
+  else
+    stat "--format=%s" "$1"
+  fi
+}
+
 case "$1" in
   options)
     cat << '_EOT_'
@@ -32,11 +40,11 @@ _EOT_
   list)
     for f in "$storage_path/$2".*; do
       base="$(basename "$f")"
-      printf "%s %d\n" "${base##*.}" "$(stat "--format=%s" "$f")"
+      printf "%s %d\n" "${base##*.}" "$(get_filesize "$f")"
     done
     ;;
   stat)
-    exec stat "--format=%s" "$storage_path/$2.$3"
+    get_filesize "$storage_path/$2.$3"
     ;;
   upload)
     exec cat >"$storage_path/$2.$3"
