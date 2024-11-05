@@ -86,7 +86,7 @@ PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 namespace {
 
-unsigned long PyVersion()
+uint32_t PyVersion()
 {
 #if PY_VERSION_HEX < VERSION_HEX(3, 11, 0)
   // bake it in statically
@@ -281,6 +281,7 @@ bRC freePlugin(PluginContext* plugin_ctx)
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
   Py_EndInterpreter(ts);
+
   if (PyVersion() < VERSION_HEX(3, 12, 0)) {
     // release gil a different way
     PyThreadState_Swap(mainThreadState);
