@@ -78,7 +78,7 @@ void InitWinAPIWrapper();
 #else /* HAVE_WIN32 */
 
 #  define ClearThreadId(x) x = 0
-#  define OSDependentInit()
+#  define OSDependentInit() ((void)0)
 
 #endif /* HAVE_WIN32 */
 
