@@ -46,29 +46,36 @@ Starting the Daemons
    single: Starting the Daemons
    single: Daemon; Start
 
-Assuming you have installed the packages, to start the three daemons, from your
-installation directory, simply enter:
+Assuming you have installed the packages,
+to start the three daemons, simply enter:
 
-.. code-block:: bconsole
-   :caption: start services
-
-   service bareos-dir start
-   service bareos-sd start
-   service bareos-fd start
-
-With systemd enabled  it is even easier:
-
-.. code-block:: bconsole
+.. code-block:: shell-session
    :caption: systemctl start services
 
    systemctl start bareos-dir bareos-sd bareos-fd
 
 Or enable and start services in one go
 
-.. code-block:: bconsole
+.. code-block:: shell-session
    :caption: systemctl enable --now services
 
    systemctl enable --now bareos-dir bareos-sd bareos-fd
+
+On Debian based distribution you have to use
+
+.. code-block:: shell-session
+   :caption: systemctl start services (Debian)
+
+   systemctl start bareos-director bareos-storage bareos-filedaemon
+
+instead (systemd services need to be named after the package name, not the binary),
+respectively
+
+.. code-block:: shell-session
+   :caption: systemctl enable --now services
+
+   systemctl enable --now bareos-director bareos-storage bareos-filedaemon
+
 
 
 .. _section-TutorialBconsole:
