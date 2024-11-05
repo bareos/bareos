@@ -40,7 +40,6 @@
 static const int debuglevel = 500;
 #define MAX_PATHLENGTH 1024
 
-BOOL CreateChildProcess(VOID);
 static VOID ErrorExit(LPCSTR);
 
 static void ErrorExit(LPCSTR lpszMessage) { Dmsg1(0, "%s", lpszMessage); }
@@ -200,11 +199,10 @@ static BOOL CreateChildProcessW(const char* comspec,
                                 PROCESS_INFORMATION* hProcInfo,
                                 HANDLE in,
                                 HANDLE out,
-                                HANDLE err)
+                                HANDLE err,
+                                const wchar_t* env_block)
 {
   STARTUPINFOW siStartInfo;
-  BOOL bFuncRetn = FALSE;
-  POOLMEM *cmdLine_wchar, *comspec_wchar;
 
   // Setup members of the STARTUPINFO structure.
   ZeroMemory(&siStartInfo, sizeof(siStartInfo));
@@ -219,71 +217,32 @@ static BOOL CreateChildProcessW(const char* comspec,
   siStartInfo.hStdError = err;
 
   // Convert argument to WCHAR
-  cmdLine_wchar = GetPoolMemory(PM_FNAME);
-  comspec_wchar = GetPoolMemory(PM_FNAME);
-
-  UTF8_2_wchar(cmdLine_wchar, cmdLine);
-  UTF8_2_wchar(comspec_wchar, comspec);
-
-  // Create the child process.
-  Dmsg2(debuglevel, "Calling CreateProcess(%s, %s, ...)\n", comspec_wchar,
-        cmdLine_wchar);
-
-  // Try to execute program
-  bFuncRetn = p_CreateProcessW((wchar_t*)comspec_wchar,
-                               (wchar_t*)cmdLine_wchar, /* Command line */
-                               NULL, /* Process security attributes */
-                               NULL, /* Primary thread security attributes */
-                               TRUE, /* Handles are inherited */
-                               0,    /* Creation flags */
-                               NULL, /* Use parent's environment */
-                               NULL, /* Use parent's current directory */
-                               &siStartInfo, /* STARTUPINFO pointer */
-                               hProcInfo);   /* Receives PROCESS_INFORMATION */
-  FreePoolMemory(cmdLine_wchar);
-  FreePoolMemory(comspec_wchar);
-
-  return bFuncRetn;
-}
-
-
-// Create the process with ANSI API
-static BOOL CreateChildProcessA(const char* comspec,
-                                char* cmdLine,
-                                PROCESS_INFORMATION* hProcInfo,
-                                HANDLE in,
-                                HANDLE out,
-                                HANDLE err)
-{
-  STARTUPINFOA siStartInfo;
-  BOOL bFuncRetn = FALSE;
-
-  // Set up members of the STARTUPINFO structure.
-  ZeroMemory(&siStartInfo, sizeof(siStartInfo));
-  siStartInfo.cb = sizeof(siStartInfo);
-
-  // setup new process to use supplied handles for stdin,stdout,stderr
-  siStartInfo.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-  siStartInfo.wShowWindow = SW_SHOWMINNOACTIVE;
-
-  siStartInfo.hStdInput = in;
-  siStartInfo.hStdOutput = out;
-  siStartInfo.hStdError = err;
+  std::wstring cline = FromUtf8(cmdLine);
+  std::wstring cspec = FromUtf8(comspec);
 
   // Create the child process.
   Dmsg2(debuglevel, "Calling CreateProcess(%s, %s, ...)\n", comspec, cmdLine);
 
   // Try to execute program
-  bFuncRetn = p_CreateProcessA(comspec, cmdLine, /* Command line */
-                               NULL, /* Process security attributes */
-                               NULL, /* Primary thread security attributes */
-                               TRUE, /* Handles are inherited */
-                               0,    /* Creation flags */
-                               NULL, /* Use parent's environment */
-                               NULL, /* Use parent's current directory */
-                               &siStartInfo, /* STARTUPINFO pointer */
-                               hProcInfo);   /* Receives PROCESS_INFORMATION */
-  return bFuncRetn;
+  BOOL res = CreateProcessW(
+      const_cast<wchar_t*>(cspec.c_str()),
+      const_cast<wchar_t*>(cline.c_str()), /* Command line */
+      NULL,                                /* Process security attributes */
+      NULL,                            /* Primary thread security attributes */
+      TRUE,                            /* Handles are inherited */
+      CREATE_UNICODE_ENVIRONMENT,      /* Creation flags */
+      const_cast<wchar_t*>(env_block), /* Use parent's environment if null */
+      NULL,                            /* Use parent's current directory */
+      &siStartInfo,                    /* STARTUPINFO pointer */
+      hProcInfo);                      /* Receives PROCESS_INFORMATION */
+
+  // NOTE: just because CreateProcessW succeded does not mean that the process
+  //       was actually spawend.  It just means that the creation successfully
+  //       started.  Its possible that the creation actually fails because e.g.
+  //       a required dll is missing.
+  Dmsg2(debuglevel, "  -> %s\n", (res != 0) ? "OK" : "ERROR");
+
+  return res;
 }
 
 /**
@@ -293,13 +252,12 @@ static BOOL CreateChildProcessA(const char* comspec,
 static HANDLE CreateChildProcess(const char* cmdline,
                                  HANDLE in,
                                  HANDLE out,
-                                 HANDLE err)
+                                 HANDLE err,
+                                 const wchar_t* env_block)
 {
   static const char* comspec = NULL;
   PROCESS_INFORMATION piProcInfo;
   BOOL bFuncRetn = FALSE;
-
-  if (!p_CreateProcessA || !p_CreateProcessW) return INVALID_HANDLE_VALUE;
 
   if (comspec == NULL) comspec = getenv("COMSPEC");
   if (comspec == NULL)  // should never happen
@@ -329,13 +287,8 @@ static HANDLE CreateChildProcess(const char* cmdline,
   free(exeFile);
 
   // New function disabled
-  if (p_CreateProcessW && p_MultiByteToWideChar) {
-    bFuncRetn = CreateChildProcessW(comspec, cmdLine.c_str(), &piProcInfo, in,
-                                    out, err);
-  } else {
-    bFuncRetn = CreateChildProcessA(comspec, cmdLine.c_str(), &piProcInfo, in,
-                                    out, err);
-  }
+  bFuncRetn = CreateChildProcessW(comspec, cmdLine.c_str(), &piProcInfo, in,
+                                  out, err, env_block);
 
   if (bFuncRetn == 0) {
     ErrorExit("CreateProcess failed\n");
@@ -359,15 +312,92 @@ static void CloseHandleIfValid(HANDLE handle)
   if (handle != INVALID_HANDLE_VALUE) { CloseHandle(handle); }
 }
 
+class EnvironmentBlock {
+ public:
+  EnvironmentBlock(const wchar_t* initial)
+  {
+    auto* end = initial;
+    // an environment block is a sequence of key=value pairs, separated by
+    // a null terminator each.  The block itself is terminated by _two_
+    // null terminators next to each other.
+    while (*end != NUL || *(end + 1) != NUL) {
+      // not at end yet, continue
+      end += 1;
+    }
+
+    // copy the first NUL to satisfy our invariant
+    data = std::vector<wchar_t>(initial, end + 1);
+  }
+
+
+  void set(std::wstring_view key, std::wstring_view value)
+  {
+    // windows requires the environment block to be sorted.  Sadly the way
+    // to correctly sort the environment is underspecified.  Thankfully
+    // this requirement is not enforced, so we choose to ignore it
+    // see https://nullprogram.com/blog/2023/08/23/ for more details.
+    // If this becomes a problem in the future: Look into
+    // RtlCompareUnicodeString.  Maybe the windows people will have created
+    // a userspace binding for it!
+
+
+    // As both EQ and NUL are special characters, they are not allowed in the
+    // key and -- at least NUL -- not in the value.
+    // Currently we do not check for this
+    data.insert(data.end(), key.begin(), key.end());
+    data.push_back(EQ);
+    data.insert(data.end(), value.begin(), value.end());
+    data.push_back(NUL);
+  }
+
+
+  std::vector<wchar_t> transmute() &&
+  {
+    if (data.empty()) {
+      // the logical separator for an empty environment block would just be a
+      // single NUL, but sadly this is not the case.  Windows assumes that
+      // an environment block is suffixed by at least two NULs
+      data.push_back(NUL);
+    }
+    ASSERT(data.back() == NUL);
+    data.push_back(NUL);
+    return std::move(data);
+  }
+
+ private:
+  static constexpr wchar_t EQ = L'=';
+  static constexpr wchar_t NUL = L'\0';
+
+
+  // INVARIANT: data is either empty or ends with NUL
+  std::vector<wchar_t> data;
+};
+
+static std::vector<wchar_t> MakeEnvironment(
+    const std::unordered_map<std::string, std::string>& additional)
+{
+  // the pointer returned by GetEnvironmentStringsW() is read only!
+  const wchar_t* env = GetEnvironmentStringsW();
+  EnvironmentBlock b{env};
+
+  FreeEnvironmentStringsW(const_cast<wchar_t*>(env));
+
+  std::wstring wk, wv;
+  for (auto& [k, v] : additional) {
+    wk = FromUtf8(k);
+    wv = FromUtf8(v);
+    b.set(wk, wv);
+  }
+
+  return std::move(b).transmute();
+}
+
 Bpipe* OpenBpipe(const char* prog,
                  int wait,
                  const char* mode,
                  bool,
                  const std::unordered_map<std::string, std::string>& env_vars)
 {
-  // TODO: passing environment variables should be supported on Windows, too.
-  //       for now, we will just crash intentionally.
-  ASSERT(env_vars.empty());
   int mode_read, mode_write;
   SECURITY_ATTRIBUTES saAttr;
   BOOL fSuccess;
@@ -434,10 +464,23 @@ Bpipe* OpenBpipe(const char* prog,
   }
 
   // Spawn program with redirected handles as appropriate
-  bpipe->worker_pid = CreateChildProcess(prog,            /* Commandline */
-                                         hChildStdinRd,   /* stdin HANDLE */
-                                         hChildStdoutWr,  /* stdout HANDLE */
-                                         hChildStdoutWr); /* stderr HANDLE */
+  if (env_vars.size()) {
+    // create environment
+    std::vector<wchar_t> environment = MakeEnvironment(env_vars);
+    bpipe->worker_pid = CreateChildProcess(prog,           /* Commandline */
+                                           hChildStdinRd,  /* stdin HANDLE */
+                                           hChildStdoutWr, /* stdout HANDLE */
+                                           hChildStdoutWr, /* stderr HANDLE */
+                                           environment.data() /* custom env */
+    );
+  } else {
+    bpipe->worker_pid = CreateChildProcess(prog,           /* Commandline */
+                                           hChildStdinRd,  /* stdin HANDLE */
+                                           hChildStdoutWr, /* stdout HANDLE */
+                                           hChildStdoutWr, /* stderr HANDLE */
+                                           nullptr         /* inherit env */
+    );
+  }
 
   if (bpipe->worker_pid == INVALID_HANDLE_VALUE) goto cleanup;
 
