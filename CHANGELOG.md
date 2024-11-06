@@ -153,6 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix #1775 plugin: fd mariabackup add support mariadb 11+ [PR #1835]
 - deb control files: depend on python3-bareos [PR #1956]
 - fix include-ordering on FreeBSD that could cause build issues [PR #1972]
+- stored: fix volume size mismatch [PR #1992]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -292,5 +293,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1977]: https://github.com/bareos/bareos/pull/1977
 [PR #1980]: https://github.com/bareos/bareos/pull/1980
 [PR #1990]: https://github.com/bareos/bareos/pull/1990
+[PR #1992]: https://github.com/bareos/bareos/pull/1992
 [PR #1998]: https://github.com/bareos/bareos/pull/1998
 [unreleased]: https://github.com/bareos/bareos/tree/master

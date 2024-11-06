@@ -740,7 +740,6 @@ int DeviceControlRecord::TryAutolabel(bool opened)
     }
     Dmsg0(150, "dir_update_vol_info. Set Append\n");
     /* Copy Director's info into the device info */
-    dev->VolCatInfo = VolCatInfo; /* structure assignment */
     if (!dcr->DirUpdateVolumeInfo(
             is_labeloperation::True)) { /* indicate tape labeled */
       return try_error;
