@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix include-ordering on FreeBSD that could cause build issues [PR #1973]
 - FreeBSD: fix sed inplace usage, pkg make director dependent of database-postgresql [PR #1964]
 - deb control files: depend on python3-bareos [PR #1967]
+- stored: fix volume size mismatch [PR #2003]
 
 ### Documentation
 - docs: improve debuginfo install description (fix issue #1943) [PR #1985]
@@ -566,4 +567,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1979]: https://github.com/bareos/bareos/pull/1979
 [PR #1985]: https://github.com/bareos/bareos/pull/1985
 [PR #1999]: https://github.com/bareos/bareos/pull/1999
+[PR #2003]: https://github.com/bareos/bareos/pull/2003
 [unreleased]: https://github.com/bareos/bareos/tree/master
