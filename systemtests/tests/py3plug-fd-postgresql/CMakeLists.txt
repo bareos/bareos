@@ -24,7 +24,7 @@ if(TARGET python3-fd)
   if(PYMODULE_3_PG8000_FOUND
      AND PostgreSQL_FOUND
      AND PYMODULE_3_DATEUTIL_FOUND
-     AND (${PostgreSQL_VERSION_STRING} VERSION_GREATER "10.0")
+     AND (${PostgreSQL_VERSION_STRING} VERSION_GREATER_EQUAL "10")
   )
     create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-postgresql")
   else()
