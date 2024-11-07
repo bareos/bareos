@@ -59,6 +59,9 @@ int RwlReadunlock(brwlock_t* rwl);
 int RwlWritelock(brwlock_t* rwl);
 int RwlWritetrylock(brwlock_t* rwl);
 int RwlWriteunlock(brwlock_t* rwl);
-void RwlAssertWriterIsMe(brwlock_t* rwl);
+void RwlAssertWriterIsMe(brwlock_t* rwl,
+                         const char* function,
+                         const char* file,
+                         int line);
 
 #endif  // BAREOS_LIB_RWLOCK_H_
