@@ -887,8 +887,6 @@ bool BareosDb::OpenBatchConnection(JobControlRecord* jcr)
 
 void BareosDb::DbDebugPrint(FILE* fp)
 {
-  AssertOwnership();
-
   fprintf(fp, "BareosDb=%p db_name=%s db_user=%s connected=%s\n", this,
           NPRTB(get_db_name()), NPRTB(get_db_user()),
           IsConnected() ? "true" : "false");
