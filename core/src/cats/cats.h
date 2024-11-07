@@ -586,22 +586,18 @@ class BareosDb : public BareosDbQueryEnum {
   char* strerror();
   bool CheckMaxConnections(JobControlRecord* jcr, uint32_t max_concurrent_jobs);
   bool CheckTablesVersion(JobControlRecord* jcr);
-  bool QueryDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* select_cmd);
-  int InsertDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* select_cmd);
-  int DeleteDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* DeleteCmd);
-  int UpdateDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* UpdateCmd);
+  bool QueryDb(JobControlRecord* jcr,
+               const char* select_cmd,
+               brs::source_location loc = brs::source_location::current());
+  int InsertDb(JobControlRecord* jcr,
+               const char* select_cmd,
+               brs::source_location loc = brs::source_location::current());
+  int DeleteDb(JobControlRecord* jcr,
+               const char* DeleteCmd,
+               brs::source_location loc = brs::source_location::current());
+  int UpdateDb(JobControlRecord* jcr,
+               const char* UpdateCmd,
+               brs::source_location loc = brs::source_location::current());
   int GetSqlRecordMax(JobControlRecord* jcr);
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
   int ListResult(void* vctx, int nb_col, char** row);
@@ -1026,12 +1022,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 /* flush the batch insert connection every x changes */
 #define BATCH_FLUSH 800000
-
-/* Use for better error location printing */
-#define UPDATE_DB(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd)
-#define INSERT_DB(jcr, cmd) InsertDB(__FILE__, __LINE__, jcr, cmd)
-#define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
-#define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)
 
 class DbLocker {
   BareosDb* db_handle_;
