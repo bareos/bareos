@@ -95,3 +95,31 @@ else()
   set(HAVE_GLOB 1)
   set(HAVE_LCHOWN 1)
 endif()
+
+check_cxx_source_compiles(
+  "
+#include <source_location>
+int main() {
+ std::source_location l{};
+ return 0;
+}
+"
+  HAVE_SOURCE_LOCATION
+)
+
+check_cxx_source_compiles(
+  "
+int main() {
+ constexpr auto function = __builtin_FUNCTION();
+ constexpr auto file = __builtin_FILE();
+ constexpr auto line = __builtin_LINE();
+
+ (void) function;
+ (void) file;
+ (void) line;
+
+ return 0;
+}
+"
+  HAVE_BUILTIN_LOCATION
+)
