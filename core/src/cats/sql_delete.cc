@@ -62,7 +62,7 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 
   pr->PoolId = pr->NumVols = 0;
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 0) {
       Mmsg(errmsg, T_("No pool record %s exists\n"), pr->Name);
@@ -84,12 +84,12 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   /* Delete Media owned by this pool */
   Mmsg(cmd, "DELETE FROM Media WHERE Media.PoolId = %d", pr->PoolId);
 
-  pr->NumVols = DELETE_DB(jcr, cmd);
+  pr->NumVols = DeleteDB(jcr, cmd);
   Dmsg1(200, "Deleted %d Media records\n", pr->NumVols);
 
   /* Delete Pool */
   Mmsg(cmd, "DELETE FROM Pool WHERE Pool.PoolId = %d", pr->PoolId);
-  pr->PoolId = DELETE_DB(jcr, cmd);
+  pr->PoolId = DeleteDB(jcr, cmd);
   Dmsg1(200, "Deleted %d Pool records\n", pr->PoolId);
 
   return true;
@@ -135,7 +135,7 @@ int BareosDb::DeleteNullJobmediaRecords(JobControlRecord* jcr,
        jobid);
   Dmsg1(200, "DeleteNullJobmediaRecords: %s\n", cmd);
 
-  int numrows = DELETE_DB(jcr, cmd);
+  int numrows = DeleteDB(jcr, cmd);
 
   return numrows;
 }
@@ -198,7 +198,7 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   }
 
   Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
-  return DELETE_DB(jcr, cmd) != -1;
+  return DeleteDB(jcr, cmd) != -1;
 }
 
 void BareosDb::PurgeFiles(const char* jobids)

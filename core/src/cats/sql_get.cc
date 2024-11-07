@@ -133,7 +133,7 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
 
   Dmsg1(100, "Query=%s\n", cmd);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     Dmsg1(050, "GetFileRecord num_rows=%d\n", num_rows);
     if (num_rows >= 1) {
@@ -185,7 +185,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
   }
 
   Mmsg(cmd, "SELECT PathId FROM Path WHERE Path='%s'", esc_name);
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     char ed1[30];
     num_rows = SqlNumRows();
     if (num_rows > 1) {
@@ -260,7 +260,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          edit_int64(jr->JobId, ed1));
   }
 
-  if (!QUERY_DB(jcr, cmd)) { return false; }
+  if (!QueryDB(jcr, cmd)) { return false; }
 
   if ((row = SqlFetchRow()) == NULL) {
     if (search_by_jobname) {
@@ -342,7 +342,7 @@ int BareosDb::GetJobVolumeNames(JobControlRecord* jcr,
 
   Dmsg1(130, "VolNam=%s\n", cmd);
   VolumeNames[0] = '\0';
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     Dmsg1(130, "Num rows=%d\n", num_rows);
     if (num_rows <= 0) {
@@ -401,7 +401,7 @@ int BareosDb::GetJobVolumeParameters(JobControlRecord* jcr,
        edit_int64(JobId, ed1));
 
   Dmsg1(130, "VolNam=%s\n", cmd);
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     Dmsg1(200, "Num rows=%d\n", num_rows);
     if (num_rows <= 0) {
@@ -449,7 +449,7 @@ int BareosDb::GetJobVolumeParameters(JobControlRecord* jcr,
         if (SId[i] != 0) {
           Mmsg(cmd, "SELECT Name from Storage WHERE StorageId=%s",
                edit_int64(SId[i], ed1));
-          if (QUERY_DB(jcr, cmd)) {
+          if (QueryDB(jcr, cmd)) {
             if ((row = SqlFetchRow()) && row[0]) {
               bstrncpy(Vols[i].Storage, row[0], MAX_NAME_LENGTH);
             }
@@ -480,7 +480,7 @@ int BareosDb::GetPoolIds(JobControlRecord* jcr, int* num_ids, DBId_t** ids)
   DbLocker _{this};
   *ids = NULL;
   Mmsg(cmd, "SELECT PoolId FROM Pool");
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     *num_ids = SqlNumRows();
     if (*num_ids > 0) {
       id = (DBId_t*)malloc(*num_ids * sizeof(DBId_t));
@@ -515,7 +515,7 @@ int BareosDb::GetStorageIds(JobControlRecord* jcr, int* num_ids, DBId_t* ids[])
   DbLocker _{this};
   *ids = NULL;
   Mmsg(cmd, "SELECT StorageId FROM Storage");
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     *num_ids = SqlNumRows();
     if (*num_ids > 0) {
       id = (DBId_t*)malloc(*num_ids * sizeof(DBId_t));
@@ -549,7 +549,7 @@ bool BareosDb::GetClientIds(JobControlRecord* jcr, int* num_ids, DBId_t* ids[])
   DbLocker _{this};
   *ids = NULL;
   Mmsg(cmd, "SELECT ClientId FROM Client ORDER BY Name");
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     *num_ids = SqlNumRows();
     if (*num_ids > 0) {
       id = (DBId_t*)malloc(*num_ids * sizeof(DBId_t));
@@ -604,7 +604,7 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
         "Pool.Name='%s'",
         esc);
   }
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("More than one Pool!: %s\n"),
@@ -693,7 +693,7 @@ bool BareosDb::GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr)
          "Storage.Name='%s'",
          esc);
   }
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("More than one Storage!: %s\n"),
@@ -747,7 +747,7 @@ bool BareosDb::GetClientRecord(JobControlRecord* jcr, ClientDbRecord* cdbr)
          esc);
   }
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("More than one Client!: %s\n"),
@@ -796,7 +796,7 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
 
   FillQuery(SQL_QUERY::select_counter_values, esc);
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
     if (num_rows > 1) {
@@ -860,7 +860,7 @@ int BareosDb::GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
          esc);
   }
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("Error got %s FileSets but expected only one!\n"),
@@ -968,7 +968,7 @@ bool BareosDb::GetMediaIds(JobControlRecord* jcr,
     return false;
   }
 
-  if (!QUERY_DB(jcr, cmd)) {
+  if (!QueryDB(jcr, cmd)) {
     Mmsg(errmsg, T_("Media id select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     return false;
@@ -1003,7 +1003,7 @@ bool BareosDb::GetQueryDbids(JobControlRecord* jcr,
 
   DbLocker _{this};
   ids.num_ids = 0;
-  if (QUERY_DB(jcr, query.c_str())) {
+  if (QueryDB(jcr, query.c_str())) {
     ids.num_ids = SqlNumRows();
     if (ids.num_ids > 0) {
       if (ids.max_ids < ids.num_ids) {
@@ -1095,7 +1095,7 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          esc);
   }
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("More than one Volume!: %s\n"),
@@ -1503,7 +1503,7 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
 
   FillQuery(SQL_QUERY::get_quota_jobbytes, edit_uint64(jr->ClientId, ed1),
             edit_uint64(jr->JobId, ed2), dt);
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       row = SqlFetchRow();
@@ -1552,7 +1552,7 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
 
   FillQuery(SQL_QUERY::get_quota_jobbytes_nofailed,
             edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       row = SqlFetchRow();
@@ -1588,7 +1588,7 @@ bool BareosDb::GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cdbr)
        "FROM Quota "
        "WHERE ClientId = %s",
        edit_int64(cdbr->ClientId, ed1));
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {
@@ -1638,7 +1638,7 @@ int BareosDb::GetNdmpLevelMapping(JobControlRecord* jcr,
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
        esc_name);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       if ((row = SqlFetchRow()) == NULL) {

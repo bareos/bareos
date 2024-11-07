@@ -198,20 +198,21 @@ bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::QueryDB(const char* file,
-                       int line,
-                       JobControlRecord* jcr,
-                       const char* select_cmd)
+bool BareosDb::QueryDB(JobControlRecord* jcr,
+                       const char* select_cmd,
+                       brs::source_location loc)
 {
   AssertOwnership();
 
   SqlFreeResult();
   Dmsg1(1000, "query: %s\n", select_cmd);
   if (!SqlQuery(select_cmd, QF_STORE_RESULT)) {
-    msg_(file, line, errmsg, T_("query %s failed:\n%s\n"), select_cmd,
-         sql_strerror());
-    j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
-    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
+    msg_(loc.file_name(), loc.line(), errmsg, T_("query %s failed:\n%s\n"),
+         select_cmd, sql_strerror());
+    j_msg(loc.file_name(), loc.line(), jcr, M_FATAL, 0, "%s", errmsg);
+    if (g_verbose) {
+      j_msg(loc.file_name(), loc.line(), jcr, M_INFO, 0, "%s\n", select_cmd);
+    }
     return false;
   }
 
@@ -223,27 +224,31 @@ bool BareosDb::QueryDB(const char* file,
  * Returns: false on failure
  *          true on success
  */
-int BareosDb::InsertDB(const char* file,
-                       int line,
-                       JobControlRecord* jcr,
-                       const char* select_cmd)
+int BareosDb::InsertDB(JobControlRecord* jcr,
+                       const char* select_cmd,
+                       brs::source_location loc)
 {
   AssertOwnership();
   int num_rows;
 
   if (!SqlQuery(select_cmd)) {
-    msg_(file, line, errmsg, T_("insert %s failed:\n%s\n"), select_cmd,
-         sql_strerror());
-    j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
-    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
+    msg_(loc.file_name(), loc.line(), errmsg, T_("insert %s failed:\n%s\n"),
+         select_cmd, sql_strerror());
+    j_msg(loc.file_name(), loc.line(), jcr, M_FATAL, 0, "%s", errmsg);
+    if (g_verbose) {
+      j_msg(loc.file_name(), loc.line(), jcr, M_INFO, 0, "%s\n", select_cmd);
+    }
     return -1;
   }
   num_rows = SqlAffectedRows();
   if (num_rows != 1) {
     char ed1[30];
-    msg_(file, line, errmsg, T_("Insertion problem: affected_rows=%s\n"),
+    msg_(loc.file_name(), loc.line(), errmsg,
+         T_("Insertion problem: affected_rows=%s\n"),
          edit_uint64(num_rows, ed1));
-    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
+    if (g_verbose) {
+      j_msg(loc.file_name(), loc.line(), jcr, M_INFO, 0, "%s\n", select_cmd);
+    }
     return num_rows;
   }
   changes++;
@@ -255,17 +260,18 @@ int BareosDb::InsertDB(const char* file,
  * Returns: false on failure
  *          true on success
  */
-int BareosDb::UpdateDB(const char* file,
-                       int line,
-                       JobControlRecord* jcr,
-                       const char* UpdateCmd)
+int BareosDb::UpdateDB(JobControlRecord* jcr,
+                       const char* UpdateCmd,
+                       brs::source_location loc)
 {
   AssertOwnership();
   if (!SqlQuery(UpdateCmd)) {
-    msg_(file, line, errmsg, T_("update %s failed:\n%s\n"), UpdateCmd,
-         sql_strerror());
-    j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
-    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd); }
+    msg_(loc.file_name(), loc.line(), errmsg, T_("update %s failed:\n%s\n"),
+         UpdateCmd, sql_strerror());
+    j_msg(loc.file_name(), loc.line(), jcr, M_ERROR, 0, "%s", errmsg);
+    if (g_verbose) {
+      j_msg(loc.file_name(), loc.line(), jcr, M_INFO, 0, "%s\n", UpdateCmd);
+    }
     return -1;
   }
 
@@ -279,17 +285,18 @@ int BareosDb::UpdateDB(const char* file,
  * Returns: -1 on error
  *           n number of rows affected
  */
-int BareosDb::DeleteDB(const char* file,
-                       int line,
-                       JobControlRecord* jcr,
-                       const char* DeleteCmd)
+int BareosDb::DeleteDB(JobControlRecord* jcr,
+                       const char* DeleteCmd,
+                       brs::source_location loc)
 {
   AssertOwnership();
   if (!SqlQuery(DeleteCmd)) {
-    msg_(file, line, errmsg, T_("delete %s failed:\n%s\n"), DeleteCmd,
-         sql_strerror());
-    j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
-    if (g_verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", DeleteCmd); }
+    msg_(loc.file_name(), loc.line(), errmsg, T_("delete %s failed:\n%s\n"),
+         DeleteCmd, sql_strerror());
+    j_msg(loc.file_name(), loc.line(), jcr, M_ERROR, 0, "%s", errmsg);
+    if (g_verbose) {
+      j_msg(loc.file_name(), loc.line(), jcr, M_INFO, 0, "%s\n", DeleteCmd);
+    }
     return -1;
   }
   changes++;
@@ -310,7 +317,7 @@ int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
   SQL_ROW row;
   int retval = 0;
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     if ((row = SqlFetchRow()) == NULL) {
       Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
       retval = -1;

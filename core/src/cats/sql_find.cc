@@ -88,7 +88,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
        *  that a Full backup was done (cmd edited above)
        *  then we do a second look to find the most recent
        *  backup */
-      if (!QUERY_DB(jcr, cmd)) {
+      if (!QueryDB(jcr, cmd)) {
         Mmsg2(errmsg,
               T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
               sql_strerror(), cmd);
@@ -118,7 +118,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
          edit_int64(jr->JobId, ed1));
   }
 
-  if (!QUERY_DB(jcr, cmd)) {
+  if (!QueryDB(jcr, cmd)) {
     PmStrcpy(stime, ""); /* set EOS */
     Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
@@ -185,7 +185,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
        " ORDER BY StartTime DESC LIMIT 1",
        esc_jobname.data(), esc_clientname.data());
 
-  if (!QUERY_DB(jcr, cmd)) {
+  if (!QueryDB(jcr, cmd)) {
     Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return SqlFindResult::kError;
@@ -243,7 +243,7 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
        "ORDER BY StartTime DESC LIMIT 1",
        jr->JobType, JobLevel, esc_jobname, edit_int64(jr->ClientId, ed1),
        edit_int64(jr->FileSetId, ed2));
-  if (!QUERY_DB(jcr, cmd)) {
+  if (!QueryDB(jcr, cmd)) {
     Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
     return false;
@@ -290,7 +290,7 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
        "ORDER BY StartTime DESC LIMIT 1",
        jr->JobType, L_FULL, L_DIFFERENTIAL, esc_jobname,
        edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2), stime);
-  if (!QUERY_DB(jcr, cmd)) { return false; }
+  if (!QueryDB(jcr, cmd)) { return false; }
 
   if ((row = SqlFetchRow()) == NULL) {
     SqlFreeResult();
@@ -351,7 +351,7 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
     return false;
   }
   Dmsg1(100, "Query: %s\n", cmd);
-  if (!QUERY_DB(jcr, cmd)) { return false; }
+  if (!QueryDB(jcr, cmd)) { return false; }
   if ((row = SqlFetchRow()) == NULL) {
     Mmsg1(errmsg, T_("No Job found for: %s.\n"), cmd);
     SqlFreeResult();
@@ -381,7 +381,7 @@ bool BareosDb::FindJobById(JobControlRecord* jcr, std::string id)
   DbLocker _{this};
   std::string query = "SELECT JobId FROM Job WHERE JobId=" + id;
   Dmsg1(100, "Query: %s\n", query.c_str());
-  if (!QUERY_DB(jcr, query.c_str())) { return false; }
+  if (!QueryDB(jcr, query.c_str())) { return false; }
   if (SqlFetchRow() == NULL) {
     Mmsg1(errmsg, T_("No Job found with id: %d.\n"), id.c_str());
     SqlFreeResult();
@@ -510,7 +510,7 @@ retry_fetch:
   }
 
   Dmsg1(100, "fnextvol=%s\n", cmd);
-  if (!QUERY_DB(jcr, cmd)) {
+  if (!QueryDB(jcr, cmd)) {
     Dmsg1(050, "Rtn numrows=%d\n", num_rows);
     return num_rows;
   }

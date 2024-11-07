@@ -126,14 +126,14 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
   /* clang-format on */
 
   Dmsg0(300, cmd);
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create JobMedia record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
   } else {
     // Worked, now update the Media record with the EndFile and EndBlock
     Mmsg(cmd, "UPDATE Media SET EndFile=%lu, EndBlock=%lu WHERE MediaId=%lu",
          jm->EndFile, jm->EndBlock, jm->MediaId);
-    if (UPDATE_DB(jcr, cmd) == -1) {
+    if (UpdateDB(jcr, cmd) == -1) {
       Mmsg2(errmsg, T_("Update Media record %s failed: ERR=%s\n"), cmd,
             sql_strerror());
     } else {
@@ -164,7 +164,7 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   Mmsg(cmd, "SELECT PoolId,Name FROM Pool WHERE Name='%s'", esc_poolname);
   Dmsg1(200, "selectpool: %s\n", cmd);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 0) {
       Mmsg1(errmsg, T_("pool record %s already exists\n"), pr->Name);
@@ -232,7 +232,7 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
        esc, edit_int64(dr->StorageId, ed1));
   Dmsg1(200, "selectdevice: %s\n", cmd);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
     if (num_rows > 1) {
@@ -291,7 +291,7 @@ bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
   sr->StorageId = 0;
   sr->created = false;
   // Check if it already exists
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("More than one Storage record!: %d\n"), num_rows);
@@ -348,7 +348,7 @@ bool BareosDb::CreateMediatypeRecord(JobControlRecord* jcr,
        esc);
   Dmsg1(200, "selectmediatype: %s\n", cmd);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 0) {
       Mmsg1(errmsg, T_("mediatype record %s already exists\n"), mr->MediaType);
@@ -400,7 +400,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   Mmsg(cmd, "SELECT MediaId FROM Media WHERE VolumeName='%s'", esc_medianame);
   Dmsg1(500, "selectpool: %s\n", cmd);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 0) {
       Mmsg1(errmsg, T_("Volume \"%s\" already exists.\n"), mr->VolumeName);
@@ -462,7 +462,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
            "UPDATE Media SET LabelDate='%s' "
            "WHERE MediaId=%d",
            dt, mr->MediaId);
-      retval = UPDATE_DB(jcr, cmd) > 0;
+      retval = UpdateDB(jcr, cmd) > 0;
     }
     /* Make sure that if InChanger is non-zero any other identical slot
      * has InChanger zero. */
@@ -492,7 +492,7 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
        esc_clientname);
 
   cr->ClientId = 0;
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       Mmsg1(errmsg, T_("More than one Client!: %d\n"), num_rows);
@@ -562,7 +562,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
 
   Mmsg(cmd, "SELECT PathId FROM Path WHERE Path='%s'", esc_name);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows > 1) {
       char ed1[30];
@@ -637,7 +637,7 @@ bool BareosDb::CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   FillQuery(SQL_QUERY::insert_counter_values, esc, cr->MinValue, cr->MaxValue,
             cr->CurrentValue, cr->WrapCounter);
 
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB Counters record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -671,7 +671,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
        esc_fs, esc_md5);
 
   fsr->FileSetId = 0;
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
     if (num_rows > 1) {
@@ -706,7 +706,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
            "= ('%s','%s','%s','%s') WHERE FileSet='%s' AND MD5='%s' ",
            esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str(), esc_fs,
            esc_md5);
-      if (!QUERY_DB(jcr, cmd)) {
+      if (!QueryDB(jcr, cmd)) {
         Mmsg1(errmsg, T_("error updating FileSet row: ERR=%s\n"),
               sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1024,7 +1024,7 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
   Mmsg(cmd, "INSERT INTO basefile%lld (Path, Name) VALUES ('%s','%s')",
        (uint64_t)jcr->JobId, esc_path, esc_name);
 
-  return INSERT_DB(jcr, cmd) == 1;
+  return InsertDB(jcr, cmd) == 1;
 }
 
 void BareosDb::CleanupBaseFile(JobControlRecord* jcr)
@@ -1163,7 +1163,7 @@ bool BareosDb::CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr)
   Mmsg(cmd, "SELECT ClientId FROM Quota WHERE ClientId='%s'",
        edit_uint64(cr->ClientId, ed1));
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       SqlFreeResult();
@@ -1177,7 +1177,7 @@ bool BareosDb::CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr)
        " VALUES ('%s', '%s', %s)",
        edit_uint64(cr->ClientId, ed1), "0", "0");
 
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB Quota record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1210,7 +1210,7 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
        esc_name);
 
-  if (QUERY_DB(jcr, cmd)) {
+  if (QueryDB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       SqlFreeResult();
@@ -1224,7 +1224,7 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
        " VALUES ('%s', '%s', '%s', %s)",
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
        esc_name, "0");
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB NDMP Level Map record %s failed. ERR=%s\n"),
           cmd, sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1259,7 +1259,7 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
        " VALUES ('%s', '%s', '%s', '%s')",
        edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_envname,
        esc_envvalue);
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg,
           T_("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
@@ -1296,7 +1296,7 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
        edit_uint64(jsr->JobBytes, ed3), edit_int64(jsr->DeviceId, ed4));
   Dmsg1(200, "Create job stats: %s\n", cmd);
 
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB JobStats record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1349,7 +1349,7 @@ bool BareosDb::CreateDeviceStatistics(JobControlRecord* jcr,
 
   Dmsg1(200, "Create device stats: %s\n", cmd);
 
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB DeviceStats record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1390,7 +1390,7 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
 
   Dmsg1(200, "Create tapealert: %s\n", cmd);
 
-  if (INSERT_DB(jcr, cmd) != 1) {
+  if (InsertDB(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB TapeAlerts record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);

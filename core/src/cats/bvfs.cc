@@ -85,7 +85,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
       Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %llu",
            pathid);
 
-      if (!QUERY_DB(jcr, cmd)) { goto bail_out; /* Query failed, just leave */ }
+      if (!QueryDB(jcr, cmd)) { goto bail_out; /* Query failed, just leave */ }
 
       if (SqlNumRows() > 0) {
         ppathid_cache.insert(pathid);
@@ -106,7 +106,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
         Mmsg(cmd,
              "INSERT INTO PathHierarchy (PathId, PPathId) VALUES (%llu,%llu)",
              pathid, (uint64_t)parent.PathId);
-        if (!INSERT_DB(jcr, cmd)) {
+        if (!InsertDB(jcr, cmd)) {
           goto bail_out; /* Can't insert the record, just leave */
         }
 
@@ -142,7 +142,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
 
   Mmsg(cmd, "SELECT 1 FROM Job WHERE JobId = %s AND HasCache=1", jobid);
 
-  if (!QUERY_DB(jcr, cmd) || SqlNumRows() > 0) {
+  if (!QueryDB(jcr, cmd) || SqlNumRows() > 0) {
     Dmsg1(dbglevel, "Already computed %d\n", (uint32_t)JobId);
     retval = true;
     goto bail_out;
@@ -151,7 +151,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   /* prevent from DB lock waits when already in progress */
   Mmsg(cmd, "SELECT 1 FROM Job WHERE JobId = %s AND HasCache=-1", jobid);
 
-  if (!QUERY_DB(jcr, cmd) || SqlNumRows() > 0) {
+  if (!QueryDB(jcr, cmd) || SqlNumRows() > 0) {
     Dmsg1(dbglevel, "already in progress %d\n", (uint32_t)JobId);
     retval = false;
     goto bail_out;
@@ -159,7 +159,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
 
   /* set HasCache to -1 in Job (in progress) */
   Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
-  UPDATE_DB(jcr, cmd);
+  UpdateDB(jcr, cmd);
 
   /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
    * see the current HasCache value. A new transaction must only be started
@@ -178,7 +178,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
        "WHERE BaseFiles.JobId = %s) AS B",
        jobid, jobid);
 
-  if (!QUERY_DB(jcr, cmd)) {
+  if (!QueryDB(jcr, cmd)) {
     Dmsg1(dbglevel, "Can't fill PathVisibility %d\n", (uint32_t)JobId);
     goto bail_out;
   }
@@ -198,7 +198,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
        "ORDER BY Path",
        jobid);
 
-  if (!QUERY_DB(jcr, cmd)) {
+  if (!QueryDB(jcr, cmd)) {
     Dmsg1(dbglevel, "Can't get new Path %d\n", (uint32_t)JobId);
     goto bail_out;
   }
@@ -224,7 +224,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
      * bvfs update operations are run simultaneously.
      */
     FillQuery(cmd, SQL_QUERY::bvfs_lock_pathhierarchy_0);
-    if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+    if (!QueryDB(jcr, cmd)) { goto bail_out; }
 
     i = 0;
     while (num > 0) {
@@ -236,7 +236,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
     free(result);
 
     FillQuery(cmd, SQL_QUERY::bvfs_unlock_tables_0);
-    if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+    if (!QueryDB(jcr, cmd)) { goto bail_out; }
   }
 
   StartTransaction(jcr);
@@ -244,11 +244,11 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   FillQuery(cmd, SQL_QUERY::bvfs_update_path_visibility_3, jobid, jobid, jobid);
 
   do {
-    retval = QUERY_DB(jcr, cmd);
+    retval = QueryDB(jcr, cmd);
   } while (retval && SqlAffectedRows() > 0);
 
   Mmsg(cmd, "UPDATE Job SET HasCache=1 WHERE JobId=%s", jobid);
-  UPDATE_DB(jcr, cmd);
+  UpdateDB(jcr, cmd);
 
 bail_out:
   EndTransaction(jcr);
@@ -278,7 +278,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
        "DELETE FROM PathVisibility "
        "WHERE NOT EXISTS "
        "(SELECT 1 FROM Job WHERE JobId=PathVisibility.JobId)");
-  nb = DELETE_DB(jcr, cmd);
+  nb = DeleteDB(jcr, cmd);
   Dmsg1(dbglevel, "Affected row(s) = %d\n", nb);
   EndTransaction(jcr);
 }

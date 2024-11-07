@@ -548,7 +548,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
 /**
  * Note, if this routine returns false (failure), BAREOS expects
  * that no result has been stored.
- * This is where QUERY_DB comes with Postgresql.
+ * This is where QueryDB comes with Postgresql.
  *
  * Returns:  true  on success
  *           false on failure
