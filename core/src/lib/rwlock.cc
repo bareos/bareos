@@ -261,9 +261,22 @@ int RwlWriteunlock(brwlock_t* rwl)
   return (status == 0 ? status2 : status);
 }
 
-void RwlAssertWriterIsMe(brwlock_t* rwl)
+void RwlAssertWriterIsMe(brwlock_t* rwl,
+                         const char* function,
+                         const char* file,
+                         int line)
 {
-  ASSERT(rwl->valid == RWLOCK_VALID);
-  ASSERT(rwl->w_active > 0);
-  ASSERT(pthread_equal(rwl->writer_id, pthread_self()));
+  bool is_ok = rwl->valid == RWLOCK_VALID;
+  bool is_locked = rwl->w_active > 0;
+  bool is_me = pthread_equal(rwl->writer_id, pthread_self());
+
+  if (!is_ok || !is_locked || !is_me) {
+    Emsg1(M_ERROR, 0, T_("Failed assert called from %s %s:%d\n"), function,
+          file, line);
+    Pmsg1(000, T_("Failed assert called from %s %s:%d\n"), function, file,
+          line);
+  }
+  ASSERT(is_ok);
+  ASSERT(is_locked);
+  ASSERT(is_me);
 }

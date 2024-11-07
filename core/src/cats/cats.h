@@ -41,6 +41,7 @@
 #include "lib/output_formatter.h"
 #include "lib/crypto.h"
 #include "lib/base64.h"
+#include "lib/source_location.h"
 
 #include <string>
 #include <stdexcept>
@@ -998,9 +999,11 @@ class BareosDb : public BareosDbQueryEnum {
       = 0;
 
  protected:
-  void AssertOwnership()
+  void AssertOwnership(brs::source_location l = brs::source_location::current())
   {
-    if (!is_private_) { RwlAssertWriterIsMe(&lock_); }
+    if (!is_private_) {
+      RwlAssertWriterIsMe(&lock_, l.function_name(), l.file_name(), l.line());
+    }
   }
 };
 
