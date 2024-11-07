@@ -511,6 +511,9 @@ extern char win_os[];
 #define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
 
+#cmakedefine HAVE_SOURCE_LOCATION @HAVE_SOURCE_LOCATION@
+#cmakedefine HAVE_BUILTIN_LOCATION @HAVE_BUILTIN_LOCATION@
+
 #endif /* defined(WIN32) */
 // clang-format on
 

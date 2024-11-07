@@ -159,4 +159,7 @@
 /* Define to 1 if you have the `inet_ntop' function. */
 #define HAVE_INET_NTOP 1
 
+/* #undef HAVE_SOURCE_LOCATION */
+#define HAVE_BUILTIN_LOCATION 1
+
 #endif  // BAREOS_WIN32_COMPAT_INCLUDE_MINGWCONFIG_H_
