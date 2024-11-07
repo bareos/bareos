@@ -1035,13 +1035,19 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 class DbLocker {
   BareosDb* db_handle_;
+  const char* file;
+  int line;
 
  public:
-  DbLocker(BareosDb* db_handle) : db_handle_(db_handle)
+  DbLocker(BareosDb* db_handle,
+           brs::source_location l = brs::source_location::current())
+      : db_handle_(db_handle)
+      , file{l.file_name()}
+      , line{static_cast<int>(l.line())}
   {
-    db_handle_->LockDb(__FILE__, __LINE__);
+    db_handle_->LockDb(file, line);
   }
-  ~DbLocker() { db_handle_->UnlockDb(__FILE__, __LINE__); }
+  ~DbLocker() { db_handle_->UnlockDb(file, line); }
 
   DbLocker(const DbLocker& other) = delete;
   DbLocker& operator=(const DbLocker&) = delete;
