@@ -51,7 +51,6 @@ namespace directordaemon {
 
 #define PERMITTED_VERIFY_OPTIONS (const char*)"ipnugsamcd51"
 #define PERMITTED_ACCURATE_OPTIONS (const char*)"ipnugsamcd51A"
-#define PERMITTED_BASEJOB_OPTIONS (const char*)"ipnugsamcd51"
 
 typedef struct {
   bool configured;
