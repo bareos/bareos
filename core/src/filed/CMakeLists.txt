@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -65,13 +65,28 @@ endif()
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(fd_objects STATIC ${FDSRCS})
+add_library(fd_test_objects STATIC ${FDSRCS})
+
 target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES})
+target_link_libraries(fd_test_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES})
+
 
 if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)
+  target_link_libraries(fd_test_objects PRIVATE bareoslmdb)
 endif()
 
-add_executable(bareos-fd filed.cc)
+if(HAVE_WIN32)
+  add_executable(
+    bareos-fd WIN32 filed.cc ../win32/filed/filedres.rc
+  )
+  add_executable(
+    bareos-test-fd WIN32 filed.cc ../win32/filed/filedres.rc
+  )
+else()
+  add_executable(bareos-fd filed.cc)
+  add_executable(bareos-test-fd filed.cc)
+endif()
 
 set(BAREOS_FD_LIBRARIES bareosfind bareos Threads::Threads)
 if(HAVE_WIN32)
@@ -85,11 +100,17 @@ if(HAVE_WIN32)
   endif()
 
   target_compile_definitions(fd_objects PRIVATE ${FD_COMPILE_DEFINITIONS})
+  target_compile_definitions(fd_test_objects PRIVATE ${FD_COMPILE_DEFINITIONS} MAXIMUM_ALLOWED_FILES_PER_JOB=10)
+
   target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
+  target_compile_definitions(bareos-test-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
 endif()
 
 target_link_libraries(
   bareos-fd PRIVATE fd_objects ${BAREOS_FD_LIBRARIES} CLI11::CLI11
+)
+target_link_libraries(
+  bareos-test-fd PRIVATE fd_test_objects ${BAREOS_FD_LIBRARIES} CLI11::CLI11
 )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
