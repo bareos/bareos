@@ -366,14 +366,6 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
       case 'i':
         SetBit(FO_IGNORECASE, fo->flags);
         break;
-      case 'J': /* Basejob options */
-        // Copy BaseJob Options
-        for (j = 0; *p && *p != ':'; p++) {
-          fo->BaseJobOpts[j] = *p;
-          if (j < (int)sizeof(fo->BaseJobOpts) - 1) { j++; }
-        }
-        fo->BaseJobOpts[j] = 0;
-        break;
       case 'K':
         SetBit(FO_NOATIME, fo->flags);
         break;
