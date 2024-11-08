@@ -29,7 +29,6 @@ void InitDirGlobals()
 #endif
   directordaemon::my_config = nullptr;
   directordaemon::me = nullptr;
-  //debug_level = 900;
 }
 
 PConfigParser DirectorPrepareResources(const std::string& path_to_config)
