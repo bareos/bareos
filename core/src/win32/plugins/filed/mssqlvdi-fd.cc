@@ -29,6 +29,7 @@
 #include "include/filetypes.h"
 #include "fd_plugins.h"
 #include "plugins/include/common.h"
+#include <map>
 
 // Microsoft® Component Object Model (COM)
 #include <comutil.h>
@@ -1475,9 +1476,34 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
   // Check if the VDI device is closed.
   if (p_ctx->VDIDevice) {
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
+    // Return Value	Explanation
+    // NOERROR	A command was fetched.
+    // VD_E_CLOSE	The device has been closed by the server.
+    // VD_E_TIMEOUT	No command was available and the time-out expired.
+    // VD_E_ABORT	Either the client or the server has used the SignalAbort
+    // to force a shutdown.
+    static const std::map<int, std::string> VdiRetVals{
+        {VD_E_CLOSE, "VD_E_CLOSE"},
+        {VD_E_TIMEOUT, "VD_E_TIMEOUT"},
+        {VD_E_ABORT, "VD_E_ABORT"},
+        {NO_ERROR, "NO_ERROR"},
+    };
+
+    std::string error_string;
+    if (auto found = VdiRetVals.find(hr); found != VdiRetVals.end()) {
+      error_string = found->second.c_str();
+    } else {
+      error_string = "Unknown error (res=";
+      error_string += std::to_string(hr);
+      error_string += ")";
+    }
     if (hr != VD_E_CLOSE) {
-      Jmsg(ctx, M_ERROR, "Abnormal termination, VDIDevice not closed.\n");
-      Dmsg(ctx, debuglevel, "Abnormal termination, VDIDevice not closed.\n");
+      Jmsg(ctx, M_ERROR,
+           "Abnormal termination, VDIDevice not closed. Result = %s\n",
+           error_string.c_str());
+      Dmsg(ctx, debuglevel,
+           "Abnormal termination, VDIDevice not closed. Result = %s\n",
+           error_string.c_str());
       goto bail_out;
     }
   }
