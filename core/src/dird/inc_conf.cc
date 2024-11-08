@@ -66,7 +66,6 @@ enum
   INC_KW_DIGEST,
   INC_KW_ENCRYPTION,
   INC_KW_VERIFY,
-  INC_KW_BASEJOB,
   INC_KW_ACCURATE,
   INC_KW_ONEFS,
   INC_KW_RECURSE,
@@ -104,7 +103,6 @@ static struct s_kw FS_option_kw[]
        {"signature", INC_KW_DIGEST},
        {"encryption", INC_KW_ENCRYPTION},
        {"verify", INC_KW_VERIFY},
-       {"basejob", INC_KW_BASEJOB},
        {"accurate", INC_KW_ACCURATE},
        {"onefs", INC_KW_ONEFS},
        {"recurse", INC_KW_RECURSE},
@@ -259,7 +257,6 @@ ResourceItem options_items[] = {
   { "Regex", CFG_TYPE_REGEX, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "RegexDir", CFG_TYPE_REGEX, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "RegexFile", CFG_TYPE_REGEX, 0, nullptr, 2, 0, NULL, NULL, NULL },
-  { "Base", CFG_TYPE_BASE, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Wild", CFG_TYPE_WILD, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "WildDir", CFG_TYPE_WILD, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "WildFile", CFG_TYPE_WILD, 0, nullptr, 2, 0, NULL, NULL, NULL },
@@ -487,17 +484,6 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
         scan_err1(lc, T_("Expected a regex string, got: %s\n"), lc->str);
         return;
     }
-  }
-  ScanToEol(lc);
-}
-
-// Store Base info
-static void StoreBase(LEX* lc, ResourceItem*, int pass)
-{
-  LexGetToken(lc, BCT_NAME);
-  if (pass == 1) {
-    // Pickup Base Job Name
-    res_incexe->current_opts->base.append(strdup(lc->str));
   }
   ScanToEol(lc);
 }
@@ -751,9 +737,6 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
             break;
           case CFG_TYPE_REGEX:
             StoreRegex(lc, &options_items[i], pass);
-            break;
-          case CFG_TYPE_BASE:
-            StoreBase(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_WILD:
             StoreWild(lc, &options_items[i], pass);
