@@ -77,6 +77,5 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);
 #  define MAXIMUM_ALLOWED_FILES_PER_JOB \
     std::numeric_limits<decltype(JobControlRecord::JobFiles)>::max()
 #endif
-
 } /* namespace filedaemon */
 #endif  // BAREOS_FILED_BACKUP_H_
