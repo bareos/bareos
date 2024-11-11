@@ -573,11 +573,6 @@ void AddFileset(JobControlRecord* jcr, const char* item)
     case 'R': /* Regex */
       state = AddRegexToFileset(jcr, item, subcode);
       break;
-    case 'B':
-      current_opts = start_options(ff);
-      current_opts->base.append(strdup(item));
-      state = state_options;
-      break;
     case 'X': /* Filetype or Drive type */
       current_opts = start_options(ff);
       state = state_options;

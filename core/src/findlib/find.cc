@@ -512,7 +512,6 @@ findFOPTS* start_options(FindFilesPacket* ff)
     fo->wilddir.init(1, true);
     fo->wildfile.init(1, true);
     fo->wildbase.init(1, true);
-    fo->base.init(1, true);
     fo->fstype.init(1, true);
     fo->Drivetype.init(1, true);
     incexe->current_opts = fo;
@@ -536,7 +535,6 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   fo->wilddir.init(1, true);
   fo->wildfile.init(1, true);
   fo->wildbase.init(1, true);
-  fo->base.init(1, true);
   fo->fstype.init(1, true);
   fo->Drivetype.init(1, true);
   incexe->current_opts = fo;
