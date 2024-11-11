@@ -36,7 +36,6 @@ Patches
 
 Patches should be sent as a pull-request to the master branch of the GitHub repository.
 A detailed description can be found in the chapter :ref:`git-workflow`.
-If you don't want to sign up to GitHub, you can also send us your patches via E-Mail in **git format-patch** format to the `bareos-devel`_ mailing list.
 
 Please make sure to use the Bareos `Automatic Sourcecode Formatting`_.
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
