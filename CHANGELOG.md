@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - docs: improve debuginfo install description (fix issue #1943) [PR #1985]
 - docs: add debian howto start daemons instructions [PR #1999]
+- docs: move bareos-devel to github discussion [PR #2010]
 
 ## [23.0.4] - 2024-09-10
 
@@ -568,4 +569,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1985]: https://github.com/bareos/bareos/pull/1985
 [PR #1999]: https://github.com/bareos/bareos/pull/1999
 [PR #2003]: https://github.com/bareos/bareos/pull/2003
+[PR #2010]: https://github.com/bareos/bareos/pull/2010
 [unreleased]: https://github.com/bareos/bareos/tree/master

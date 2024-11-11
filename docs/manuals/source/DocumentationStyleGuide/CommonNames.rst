@@ -88,6 +88,7 @@ Products
 .. csv-table:: Product Names
    :header: "Text to be Displayed", "Text Formatting"
 
+   |github|,     ``|github|``
    |ktls|,       ``|ktls|``
    |mysql|,      ``|mysql|``
    open-source,  open-source

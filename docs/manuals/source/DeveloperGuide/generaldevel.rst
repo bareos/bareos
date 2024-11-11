@@ -36,7 +36,6 @@ Patches
 
 Patches should be sent as a pull-request to the master branch of the GitHub repository.
 A detailed description can be found in the chapter :ref:`git-workflow`.
-If you don't want to sign up to GitHub, you can also send us your patches via E-Mail in **git format-patch** format to the `bareos-devel`_ mailing list.
 
 Please make sure to use the Bareos `Automatic Sourcecode Formatting`_.
 Don’t forget any Copyrights and acknowledgments if it isn’t 100% your code.
@@ -197,14 +196,14 @@ Do's
 - when in doubt always prefer the standard library over a custom implementation
 - follow the `Google C++ Style Guide`_
 - follow the `C++ Core Guidelines`_
-- get in touch with us on the `bareos-devel`_ mailing list
+- get in touch with us, preferably as `GitHub discussion`_
 
 .. _RAII:                      https://en.cppreference.com/w/cpp/language/raii
 .. _Rule of three:             https://en.cppreference.com/w/cpp/language/rule_of_three
 .. _fixed width integer types: https://en.cppreference.com/w/cpp/types/integer
 .. _Google C++ Style Guide:    https://google.github.io/styleguide/cppguide.html
 .. _C++ Core Guidelines:       http://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
-.. _bareos-devel:              https://groups.google.com/forum/#!forum/bareos-devel
+.. _GitHub discussion:              https://github.com/bareos/bareos/discussions
 
 Don'ts
 ------
