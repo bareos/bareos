@@ -3262,12 +3262,6 @@
           "code": 2,
           "equals": true
         },
-        "Base": {
-          "datatype": "BASEJOB",
-          "code": 0,
-          "deprecated": true,
-          "equals": true
-        },
         "Wild": {
           "datatype": "WILDCARD",
           "code": 0,
