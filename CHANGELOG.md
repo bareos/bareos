@@ -128,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update ReaR documentation [PR #1871]
 - docs: improve debuginfo install description (fix issue #1943) [PR #1980]
 - docs: add debian howto start daemons instructions [PR #1998]
+- docs: move bareos-devel to github discussion [PR #1989]
 
 ### Fixed
 - dird: fix `purge oldest volume` [PR #1628]
@@ -293,6 +294,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1972]: https://github.com/bareos/bareos/pull/1972
 [PR #1977]: https://github.com/bareos/bareos/pull/1977
 [PR #1980]: https://github.com/bareos/bareos/pull/1980
+[PR #1989]: https://github.com/bareos/bareos/pull/1989
 [PR #1990]: https://github.com/bareos/bareos/pull/1990
 [PR #1992]: https://github.com/bareos/bareos/pull/1992
 [PR #1994]: https://github.com/bareos/bareos/pull/1994
