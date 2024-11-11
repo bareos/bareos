@@ -90,22 +90,28 @@ else()
 endif()
 
 set(BAREOS_FD_LIBRARIES bareosfind bareos ${THREADS_THREADS})
+
 if(HAVE_WIN32)
   target_sources(bareos-fd PRIVATE ../win32/generic/main.cc)
+  target_sources(bareos-test-fd PRIVATE ../win32/generic/main.cc)
   list(APPEND BAREOS_FD_LIBRARIES comctl32)
 
-  set(FD_COMPILE_DEFINITIONS -DWIN32_VSS)
+  set(FD_COMPILE_DEFINITIONS WIN32_VSS)
 
   if("${WINDOWS_BITS}" STREQUAL "64")
-    list(APPEND FD_COMPILE_DEFINITIONS -DHAVE_VSS64)
+    list(APPEND FD_COMPILE_DEFINITIONS HAVE_VSS64)
   endif()
-
-  target_compile_definitions(fd_objects PRIVATE ${FD_COMPILE_DEFINITIONS})
-  target_compile_definitions(fd_test_objects PRIVATE ${FD_COMPILE_DEFINITIONS} MAXIMUM_ALLOWED_FILES_PER_JOB=10)
-
-  target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
-  target_compile_definitions(bareos-test-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
+else()
+  set(FD_COMPILE_DEFINITIONS "")
+  set(FD_TEST_COMPILE_DEFINITIONS "")
 endif()
+
+list(APPEND FD_TEST_COMPILE_DEFINITIONS ${FD_COMPILE_DEFINITIONS} MAXIMUM_ALLOWED_FILES_PER_JOB=10)
+target_compile_definitions(fd_objects PRIVATE ${FD_COMPILE_DEFINITIONS})
+target_compile_definitions(fd_test_objects PRIVATE ${FD_TEST_COMPILE_DEFINITIONS})
+
+target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
+target_compile_definitions(bareos-test-fd PRIVATE ${FD_TEST_COMPILE_DEFINITIONS})
 
 target_link_libraries(
   bareos-fd PRIVATE fd_objects ${BAREOS_FD_LIBRARIES} CLI11::CLI11
