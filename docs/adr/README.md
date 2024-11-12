@@ -21,7 +21,7 @@ That file should then be added to your Git branch in an individual commit.
 ### Accepting an ADR
 When an ADR had been discussed and agreed upon, its *Status* will be changed to **accepted**. If the ADR isn't numbered yet, a number must be assigned and the name of the file must be updated.
 Please double-check that the filename still matches the title of your ADR, because the title might have been changed during discussion.
-The changes applied during this process should again result in an indivdual commit to your Git branch and the ADR will be published when your branch is merged into the default branch.
+The changes applied during this process should again result in an individual commit to your Git branch and the ADR will be published when your branch is merged into the default branch.
 
 ### Changing an accepted ADR
 Once an ADR has been accepted, it should not be changed. If it is already on the default branch, it must not be changed.
