@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [23.1.0] - 2024-11-13
 
 ### Changed
 - systemtests: fix plugin postgresql testrunners, old postgres `bc` call [PR #1948]
@@ -338,6 +338,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [23.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.2
 [23.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.3
 [23.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.4
+[23.1.0]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.0
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
@@ -574,4 +575,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2007]: https://github.com/bareos/bareos/pull/2007
 [PR #2010]: https://github.com/bareos/bareos/pull/2010
 [PR #2012]: https://github.com/bareos/bareos/pull/2012
-[unreleased]: https://github.com/bareos/bareos/tree/master
