@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -276,7 +276,7 @@ ResourceItem options_items[] = {
   { "DriveType", CFG_TYPE_DRIVETYPE, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "CheckFileChanges", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "StripPath", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "HonornoDumpFlag", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
+  { "HonorNoDumpFlag", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "XAttrSupport", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Size", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Shadowing", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },

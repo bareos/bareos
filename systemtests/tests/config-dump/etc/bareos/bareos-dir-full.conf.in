@@ -1350,6 +1350,7 @@ FileSet {
       Exclude = Yes
       AclSupport = Yes
       XattrSupport = Yes
+      HonorNoDumpFlag = Yes
       HardLinks = No
       WildDir = "[A-Z]:/RECYCLER"
       WildDir = "[A-Z]:/$RECYCLE.BIN"
