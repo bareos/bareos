@@ -188,6 +188,7 @@ debian/bareos-filedaemon.preinst
 debian/bareos-filedaemon-python3-plugin.install
 debian/bareos-filedaemon-python-plugins-common.install
 debian/bareos-filedaemon.service
+debian/bareos-storage-dedupable.install
 debian/bareos-storage-droplet.install
 debian/bareos-storage-fifo.install
 debian/bareos-storage-glusterfs.install
