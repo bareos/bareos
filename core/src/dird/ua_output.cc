@@ -284,7 +284,7 @@ bool show_cmd(UaContext* ua, const char*)
           type = command.second;
           res = (BareosResource*)ua->GetResWithName(type, ua->argv[i], true);
           if (!res) {
-            ua->ErrorMsg(T_("%s resource %s not found.\n"), res_name,
+            ua->ErrorMsg(T_("%s resource %s not found.\n"), command.first,
                          ua->argv[i]);
             return true;
           }
