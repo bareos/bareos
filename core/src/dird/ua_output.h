@@ -29,9 +29,9 @@
 
 namespace directordaemon {
 
-static std::unordered_map<std::string, int> show_cmd_available_resources = {
-    {"directors", R_DIRECTOR}, {"clients", R_CLIENT},   {"jobdefs", R_JOBDEFS},
-    {"jobs", R_JOB},           {"storages", R_STORAGE}, {"catalogs", R_CATALOG},
+static std::vector<std::pair<const char*, int>> show_cmd_available_resources = {
+    {"directors", R_DIRECTOR}, {"clients", R_CLIENT},   {"jobs", R_JOB},
+    {"jobdefs", R_JOBDEFS},    {"storages", R_STORAGE}, {"catalogs", R_CATALOG},
     {"schedules", R_SCHEDULE}, {"filesets", R_FILESET}, {"pools", R_POOL},
     {"messages", R_MSGS},      {"counters", R_COUNTER}, {"profiles", R_PROFILE},
     {"consoles", R_CONSOLE},   {"users", R_USER}};

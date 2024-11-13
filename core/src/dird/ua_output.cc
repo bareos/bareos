@@ -224,7 +224,7 @@ bool show_cmd(UaContext* ua, const char*)
   if (FindArg(ua, "help") > 0) {
     ua->InfoMsg(T_("Keywords for the show command are:\n"));
     for (const auto& command : show_cmd_available_resources) {
-      ua->InfoMsg("%s\n", command.first.c_str());
+      ua->InfoMsg("%s\n", command.first);
     }
     return true;
   }
@@ -269,7 +269,7 @@ bool show_cmd(UaContext* ua, const char*)
       // No name, dump all resources of specified type
       recurse = 1;
       for (const auto& command : show_cmd_available_resources) {
-        if (bstrncasecmp(res_name, command.first.c_str(), len)) {
+        if (bstrncasecmp(res_name, command.first, len)) {
           type = command.second;
           res = my_config->config_resources_container_
                     ->configuration_resources_[type];
@@ -280,7 +280,7 @@ bool show_cmd(UaContext* ua, const char*)
       // Dump a single resource with specified name
       recurse = 0;
       for (const auto& command : show_cmd_available_resources) {
-        if (bstrncasecmp(res_name, command.first.c_str(), len)) {
+        if (bstrncasecmp(res_name, command.first, len)) {
           type = command.second;
           res = (BareosResource*)ua->GetResWithName(type, ua->argv[i], true);
           if (!res) {
