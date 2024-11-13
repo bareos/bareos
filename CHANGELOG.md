@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - deb control files: depend on python3-bareos [PR #1967]
 - stored: fix volume size mismatch [PR #2003]
 - add Honor No Dump Flag to config output [PR #2007]
+- backport configuration parser fixes [PR #2012]
 
 ### Documentation
 - docs: improve debuginfo install description (fix issue #1943) [PR #1985]
@@ -572,4 +573,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2003]: https://github.com/bareos/bareos/pull/2003
 [PR #2007]: https://github.com/bareos/bareos/pull/2007
 [PR #2010]: https://github.com/bareos/bareos/pull/2010
+[PR #2012]: https://github.com/bareos/bareos/pull/2012
 [unreleased]: https://github.com/bareos/bareos/tree/master
