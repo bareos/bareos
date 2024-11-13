@@ -29,7 +29,7 @@ wildcard_log="$tmp"/wildcard_log.out
 error_log="$logdir"/bareos.log
 
 if [[ "$(uname -s)" =~ _NT ]]; then
-  expected_files_1=38
+  expected_files_1=45
   expected_files_2=19
 else
   expected_files_1=68
