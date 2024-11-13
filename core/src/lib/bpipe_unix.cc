@@ -148,11 +148,7 @@ Bpipe* OpenBpipe(const char* prog,
 
       // merge environment variables into our environment
       for (auto& [var_name, var_value] : env_vars) {
-        if (var_value.empty()) {
-          unsetenv(var_name.c_str());
-        } else {
-          setenv(var_name.c_str(), var_value.c_str(), 1);
-        }
+        setenv(var_name.c_str(), var_value.c_str(), 1);
       }
 
       execvp(bargv[0], bargv); /* call the program */
