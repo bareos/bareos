@@ -44,6 +44,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   string(REPLACE "Program Files (x86)" "Program Files" CMAKE_INSTALL_PREFIX
                  "${CMAKE_INSTALL_PREFIX}"
   )
+  set(TESTS_THAT_REQUIRE_SH
+    system:filesets
+    system:ignoreduplicatecheck
+  )
   # these tests do not work on windows
   set(TESTS_TO_SKIP
       system:always-incremental-consolidate:04-virtualfull
@@ -101,7 +105,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:sparse-file
       system:strippath:02-restore
       system:strippath:03-verify
+      system:always-incremental-consolidate
   )
+  list(APPEND TESTS_TO_SKIP ${TESTS_THAT_REQUIRE_SH})
 else()
   set(TESTS_TO_SKIP)
 endif()
