@@ -22,7 +22,6 @@
 #ifndef BAREOS_TESTS_BPIPE_ENV_TEST_H_
 #define BAREOS_TESTS_BPIPE_ENV_TEST_H_
 
-#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -35,7 +34,8 @@ constexpr const char* env_tester = "./env_tester";
 
 inline std::string format(std::string_view val)
 {
-  return (std::stringstream{} << "Got Value '" << val << "'").str();
+  using namespace std::literals;
+  return "Got Value '"s + std::string(val) + "'"s;
 }
 
 #endif  // BAREOS_TESTS_BPIPE_ENV_TEST_H_
