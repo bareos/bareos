@@ -36,6 +36,11 @@ JobName=backup-bareos-fd
 
 setup_data
 
+# FreeBSD will not work nicely with FIFO files Xattr
+if [ $(uname) = "FreeBSD" ]; then
+  find "${BackupDirectory}" -type p -delete
+fi
+
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
