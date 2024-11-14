@@ -1557,6 +1557,17 @@ bail_out:
   return 0;
 }
 
+// jcr->mutex_guard() needs to be unlocked!
+static std::optional<int32_t> get_next_findex(JobControlRecord* jcr)
+{
+  std::unique_lock l(jcr->mutex_guard());
+  if (jcr->JobFiles == MAXIMUM_ALLOWED_FILES_PER_JOB) {
+    // maximum reached, we cannot add a next one
+    return std::nullopt;
+  }
+  return ++jcr->JobFiles; /* increment number of files sent */
+}
+
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream)
@@ -1594,18 +1605,15 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   Dmsg3(300, "File %s\nattribs=%s\nattribsEx=%s\n", ff_pkt->fname,
         attribs.c_str(), attribsEx);
 
-  {
-    std::unique_lock l(jcr->mutex_guard());
-    jcr->JobFiles++;                   /* increment number of files sent */
-    if (jcr->JobFiles > MAXIMUM_ALLOWED_FILES_PER_JOB) {
-      Jmsg1(jcr, M_FATAL, 0,
-            "FileIndex overflow detected. Please split the fileset to backup "
-            "less files.\n");
-      return false;
-    }
-
-    ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
+  if (std::optional findex = get_next_findex(jcr)) {
+    ff_pkt->FileIndex = *findex;
     PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
+  } else {
+    Jmsg1(jcr, M_FATAL, 0,
+          "FileIndex overflow detected. Please split the fileset to backup "
+          "less files.\n");
+    ff_pkt->FileIndex = -1;
+    return false;
   }
 
   // Debug code: check if we must hangup
