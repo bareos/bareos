@@ -88,7 +88,8 @@ TEST(statefile, read)
 
   ASSERT_TRUE(CopyTestStateFileFromOriginal(
       orig_path, test_path, std::string(fname) + ".42001.state"));
-  ASSERT_TRUE(StateFileExists(test_path, fname, 42001));
+  ASSERT_TRUE(StateFileExists(test_path, fname, 42001))
+    << "path = " << test_path;
   ReadStateFile(test_path, fname, 42001);
 
   auto recent_jobs{RecentJobResultsList::Get()};
@@ -115,7 +116,8 @@ TEST(statefile, write)
 
   ASSERT_TRUE(CopyTestStateFileFromOriginal(orig_path.c_str(),
                                             test_path.c_str(), statefile_name));
-  ASSERT_TRUE(StateFileExists(test_path.c_str(), fname, 42001));
+  ASSERT_TRUE(StateFileExists(test_path.c_str(), fname, 42001))
+    << "path = " << test_path;
   ReadStateFile(test_path.c_str(), fname, 42001);
 
   std::string write_path{TEST_TEMP_DIR "/write-test"};
