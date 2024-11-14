@@ -19,7 +19,7 @@ start_test
 rm -f "$tmp/jobmsg-backup.out" "$tmp/jobmsg-restore.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/jobmsg-backup.out
 run job=$JobName yes

@@ -30,7 +30,7 @@ incremental_3_id=$(( last_job_id + 4 ))
 
 # Create some incremental backups
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/full.out
 label volume=TestVolume001 storage=File pool=Full

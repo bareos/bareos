@@ -33,7 +33,7 @@ export BackupDirectory="${tmp}/data"
 export RestoreDirectory="${tmp}/bareos-restores"
 systemtests_s3_use_https=@systemtests_s3_use_https@
 
-
+export NULL_DEV=@OS_NULL_DEVICE@
 
 dumps=${current_test_directory}/dumps
 rscripts=${PROJECT_BINARY_DIR}/scripts

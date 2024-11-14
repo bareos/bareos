@@ -25,7 +25,7 @@ setup_data
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $log
 label volume=TestVolume001 storage=File pool=Full

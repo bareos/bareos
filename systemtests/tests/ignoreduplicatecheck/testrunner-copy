@@ -19,7 +19,7 @@ copied_job_id=$(( last_job_id + 3 ))
 new_backup_id=$(( last_job_id + 4 ))
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/copy.out
 run job=Copy yes

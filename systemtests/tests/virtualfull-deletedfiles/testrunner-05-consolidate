@@ -20,7 +20,7 @@ find "${tmp}/data/" -type f -delete
 echo "$0" >"${tmp}/data/$myname"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/$myname.log
 run job=backup-bareos-fd level=VirtualFull jobid=3,4 yes

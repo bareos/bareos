@@ -43,7 +43,7 @@ if [[ -d "$tmp/bareos-restores/$dir" ]]; then
     rm -r "$tmp/bareos-restores/$dir"
 fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 setdebug level=100 storage=Dedup
 @$out $log_home/log1.out
 status director

@@ -16,7 +16,7 @@ JobName=backup-bareos-fd
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/backup.out
 label volume=TestVolume001 storage=File pool=Full

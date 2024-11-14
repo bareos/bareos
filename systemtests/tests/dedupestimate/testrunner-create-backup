@@ -41,7 +41,7 @@ JobName=backup-bareos-fd
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $log_home/misc.out
 setdebug level=100 storage=File trace=1

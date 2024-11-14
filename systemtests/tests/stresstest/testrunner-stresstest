@@ -26,7 +26,7 @@ rm -f $csvlog
 echo "runnumber,duration" >> $csvlog
 
 cat << END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $backup_log
 run job=${backupjob} level=Full yes

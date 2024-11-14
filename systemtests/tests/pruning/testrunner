@@ -37,7 +37,7 @@ prune_volume_log="$tmp"/prune_volume_log.out
 prune_all_log="$tmp"/prune_all_log.out
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $label_backup_log
 label volume=TestVolume001 storage=File pool=Full

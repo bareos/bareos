@@ -49,7 +49,7 @@ popd > /dev/null
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out ${tmp}/rlog1.out
 setdebug level=150 trace=1 timestamp=1 client=bareos-fd
@@ -74,7 +74,7 @@ ${PSQL} -d postgres -c "grant backup_group to db_backup;"
 
 echo "run new full with granted role"
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out ${tmp}/rlog2.out
 setdebug level=100 trace=1 timestamp=1 client=bareos-fd

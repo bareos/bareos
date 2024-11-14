@@ -54,7 +54,7 @@ if [ ! -e "${SPARSEFILE_PATH}" ]; then
 fi
 
 cat >${cwd}/tmp/bconcmds <<END_OF_DATA
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out ${cwd}/tmp/log1.out
 run job=$JobName yes

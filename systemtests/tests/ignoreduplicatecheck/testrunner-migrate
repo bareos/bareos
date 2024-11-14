@@ -19,7 +19,7 @@ migrated_job_id=$(( last_job_id + 3 ))
 new_backup_id=$(( last_job_id + 4 ))
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/migrate.out
 run job=Migrate yes
@@ -42,7 +42,7 @@ messages
 llist jobid=${migrate_work_id}
 @$out $tmp/migrate_incremental_status.out
 llist jobid=${new_backup_id}
-@$out /dev/null
+@$out ${NULL_DEV}
 quit
 END_OF_DATA
 run_bconsole

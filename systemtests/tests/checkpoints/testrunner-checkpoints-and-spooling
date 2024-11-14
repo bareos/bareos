@@ -26,7 +26,7 @@ rm -rf "$restore_directory"
 slowjob="slow-backup-bareos-fd"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $backup_log
 run job=$slowjob fileset=SelfTest level=Full spooldata=yes yes
@@ -48,7 +48,7 @@ expect_not_grep "Volume changed, doing checkpoint:" \
 slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $restore_log
 restore jobid=${slowjobid} where=$restore_directory all done yes

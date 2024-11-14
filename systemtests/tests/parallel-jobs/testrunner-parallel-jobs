@@ -25,7 +25,7 @@ rm -f $parallelbackuplog
 rm -f $parallelrestorelog
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $parallelbackuplog
 run job=${backupjob} level=Full yes

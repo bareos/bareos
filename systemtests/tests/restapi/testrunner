@@ -167,7 +167,7 @@ api/restapi.sh stop
 
 # wait for Director commands to finish
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 status director
 wait
 status director

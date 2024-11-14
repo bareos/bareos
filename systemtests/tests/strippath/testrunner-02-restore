@@ -17,7 +17,7 @@ restorepath="$tmp/bareos-restores/${BackupDirectory}"
 restorepath=$(remove_colon_from_windows_path "$restorepath")
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/file-list.out
 list files jobid=1

@@ -41,7 +41,7 @@ export TestName
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $log_home/setup.out
 setdebug level=500 client trace=1

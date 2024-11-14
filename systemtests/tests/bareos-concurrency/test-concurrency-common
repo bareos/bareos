@@ -28,7 +28,7 @@ touch "$tmp/file-list"
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/$JobName.out
 run job=$JobName yes
