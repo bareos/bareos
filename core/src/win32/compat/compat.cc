@@ -515,47 +515,79 @@ static std::wstring Encode(std::wstring_view p)
    * \x1Y <-> #('a' + Y)
    */
 
-  bool inside_root = p.size() >= 2 && p[1] == ':';
-  for (wchar_t c : p) {
-    switch (c) {
-      case '.':
-        [[fallthrough]];
-      case '!':
-        [[fallthrough]];
-      case '<':
-        [[fallthrough]];
-      case '>':
-        [[fallthrough]];
-      case ':':
-        [[fallthrough]];
-      case '"':
-        [[fallthrough]];
-      case '|':
-        [[fallthrough]];
-      case '?':
-        [[fallthrough]];
-      case '*':
-        [[fallthrough]];
-      case ' ': {
-        // escape special characters, but not at the root of the path
-        if (inside_root) {
-          str += c;
-        } else {
-          str += '!';
+  Dmsg1(500, "encoding \"%s\"\n", FromUtf16(p).c_str());
+
+  bool first = true;
+  for (auto comp : path_components(p)) {
+    Dmsg1(500, "  -> component \"%s\"\n", FromUtf16(comp).c_str());
+    if (first) {
+      first = false;
+      // if the first component is of the form "_:" then we are inside
+      // the root: just copy it without changing anything
+      if (comp.size() == 2 && comp[1] == ':') {
+        str += comp;
+        continue;
+      }
+    } else {
+      str += L'\\';
+    }
+
+    if (comp.size() > 0) {
+      // .. and . are special cases where . is allowed at the end of a name,
+      // so handle them separately
+      if (comp == L".." || comp == L".") {
+        str += comp;
+        continue;
+      }
+
+      for (size_t i = 0; i < comp.size(); ++i) {
+        wchar_t c = comp[i];
+        switch (c) {
+        case L'!':
+          [[fallthrough]];
+        case L'<':
+          [[fallthrough]];
+        case L'>':
+          [[fallthrough]];
+        case L':':
+          [[fallthrough]];
+        case L'"':
+          [[fallthrough]];
+        case L'|':
+          [[fallthrough]];
+        case L'?':
+          [[fallthrough]];
+        case L'*': {
+          // escape special characters, but not at the root of the path
+          str += L'!';
           str += enc.table[c];
+        } break;
+
+        case L'.':
+          [[fallthrough]];
+        case L' ':  {
+          // . and SPC are only disallowed at the end of a component
+          if (i == comp.size() - 1) {
+            str += L'!';
+            str += enc.table[c];
+          } else {
+            str += c;
+          }
+        } break;
+        default: {
+          str += c;
         }
-      } break;
-      case '/':
-        [[fallthrough]];
-      case '\\': {
-        inside_root = false;
-        str += c;
-      } break;
-      default: {
-        str += c;
+        }
       }
     }
   }
+
+  // make sure we pick up the final separator
+  if (p.size() > 0 && (p.back() == L'/' || p.back() == L'\\')) {
+    str += L'\\';
+  }
+
+  Dmsg1(500, " -> result \"%s\"\n", FromUtf16(str).c_str());
 
   return str;
 }
@@ -620,8 +652,11 @@ static std::wstring AsFullPath(std::wstring_view p)
    * .     <-> !9 */
 
   std::wstring encoded = Encode(p);
+  Dmsg1(500, "encoded = %s\n", FromUtf16(encoded).c_str());
   std::wstring normalized = NormalizePath(encoded);
+  Dmsg1(500, "normalized = %s\n", FromUtf16(normalized).c_str());
   std::wstring decoded = Decode(normalized);
+  Dmsg1(500, "decoded = %s\n", FromUtf16(decoded).c_str());
 
   return decoded;
 }

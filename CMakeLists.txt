@@ -71,7 +71,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:fileset-multiple-blocks:options-blocks
       system:heartbeat-interval:check
       system:messages
-      system:parser
       system:py3plug-dir
       system:py3plug-fd-local-fileset-restoreobject
       system:py3plug-sd
