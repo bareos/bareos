@@ -25,9 +25,10 @@ if [ $ret -ne 0 ]; then
   exit $ret
 fi
 
-if ! grep -q "weird-files/dangling-link" "$tmp/bls.out"; then
-  echo 'Expected string \"weird-files/dangling-link\" not found in  bls output'
-  stop_bareos
+FILE="weird-files/softlinkee"
+
+if ! grep -q "${FILE}" "$tmp/bls.out"; then
+  echo "Expected string \"${FILE}\" not found in bls output"
   exit 1
 fi
 
