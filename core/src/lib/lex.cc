@@ -292,6 +292,8 @@ LEX* lex_open_file(LEX* lf,
     glob_t fileglob;
     char* filename_expanded = NULL;
 
+    Dmsg1(500, "Trying glob match with %s\n", filename);
+
     /* Flag GLOB_NOMAGIC is a GNU extension, therefore manually check if string
      * is a wildcard string. */
 
@@ -302,9 +304,11 @@ LEX* lex_open_file(LEX* lf,
     if ((globrc == GLOB_NOMATCH) && (IsWildcardString(filename))) {
       /* fname is a wildcard string, but no matching files have been found.
        * Ignore this include statement and continue. */
+      Dmsg1(500, "glob => nothing found for wildcard %s\n", filename);
       return lf;
     } else if (globrc != 0) {
       // glob() error has occurred. Giving up.
+      Dmsg1(500, "glob => error\n");
       return NULL;
     }
 
@@ -319,6 +323,7 @@ LEX* lex_open_file(LEX* lf,
     }
     globfree(&fileglob);
 #else
+    Dmsg1(500, "Trying open file %s\n", filename);
     if ((fd = fopen(filename, "rb")) == NULL) { return NULL; }
     lf = lex_add(lf, filename, fd, bpipe, ScanError, scan_warning);
 #endif
