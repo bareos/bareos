@@ -50,7 +50,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   # these tests do not work on windows
   set(TESTS_TO_SKIP
-      system:always-incremental-consolidate:04-virtualfull
+      system:always-incremental-consolidate
       system:autoxflate:setup
       system:autoxflate:copy-to-local
       system:autoxflate:copy-to-offsite
@@ -60,6 +60,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:autoxflate:cleanup
       system:bareos-basic:hardlinks
       system:bareos-basic:test-make-catalog-backup
+      system:bareos-concurrency
       system:catalog
       system:checkpoints:checkpoints-on-kill
       system:checkpoints:checkpoints-on-stop
@@ -105,7 +106,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:sparse-file
       system:strippath:02-restore
       system:strippath:03-verify
-      system:always-incremental-consolidate
   )
   list(APPEND TESTS_TO_SKIP ${TESTS_THAT_REQUIRE_SH})
 else()
