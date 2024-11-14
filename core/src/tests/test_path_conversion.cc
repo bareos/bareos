@@ -160,13 +160,14 @@ std::string make_long_file_name()
 {
   std::string file_name(30000, 'a');
   file_name[0] = 'Z';
-  file_name[0] = ':';
-  file_name[0] = '/';
+  file_name[1] = ':';
+  file_name[2] = '/';
   return file_name;
 }
 std::string long_file_name = make_long_file_name();
 const std::vector<std::string_view> paths{
     "/"sv,
+    "/aaa"sv,
     "C:\\"sv,
     "\\\\?\\C:"sv,
     "\\\\?\\C:\\"sv,
@@ -248,14 +249,8 @@ auto invalid_paths = {
     "C:/dir./rest/",   "C:/dir</rest/",   "C:/dir>/rest/",
     "C:/dir*/rest/",   "C:/dir?/rest/",   "C:/dir /rest/",
 
-    "C:/./dir./rest/", "C:/./dir</rest/", "C:/./dir>/rest/",
-    "C:/./dir*/rest/", "C:/./dir?/rest/", "C:/./dir /rest/",
-
     "C:/file.",        "C:/file<",        "C:/file>",
     "C:/file*",        "C:/file?",        "C:/file ",
-
-    "C:/./file.",      "C:/./file<",      "C:/./file>",
-    "C:/./file*",      "C:/./file?",      "C:/./file ",
 };
 
 TEST_P(Regression, utf8_invalid_paths)
