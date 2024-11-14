@@ -1,5 +1,6 @@
 FileSet {
   Name = FS_TESTJOB
+  Enable VSS = No
   Include {
     Options {
       Signature = XXH128
