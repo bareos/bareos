@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2409,7 +2409,6 @@ static void unfillcmd()
  */
 static bool do_unfill()
 {
-  DeviceBlock* block = g_dcr->block;
   int autochanger;
   bool rc = false;
 
@@ -2493,7 +2492,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(last_block, block)) {
+  if (CompareBlocks(last_block, g_dcr->block)) {
     if (simple) {
       Pmsg0(-1,
             T_("\nThe last block on the tape matches. Test succeeded.\n\n"));
@@ -2544,7 +2543,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(first_block, block)) {
+  if (CompareBlocks(first_block, g_dcr->block)) {
     Pmsg0(-1, T_("\nThe first block on the second tape matches.\n\n"));
   }
 
@@ -2561,7 +2560,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(last_block, block)) {
+  if (CompareBlocks(last_block, g_dcr->block)) {
     Pmsg0(-1, T_("\nThe last block on the second tape matches. Test "
                  "succeeded.\n\n"));
     rc = true;
