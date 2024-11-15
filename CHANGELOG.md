@@ -112,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - debian: fix dedupable backend names [PR #1977]
 - external packages: use CPM packages instead of third-party directory [PR #1963]
 - scripts: remove unmaintained bareos-explorer [PR #1990]
+- build: add support for Fedora 41 [PR #1996]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -298,5 +299,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1990]: https://github.com/bareos/bareos/pull/1990
 [PR #1992]: https://github.com/bareos/bareos/pull/1992
 [PR #1994]: https://github.com/bareos/bareos/pull/1994
+[PR #1996]: https://github.com/bareos/bareos/pull/1996
 [PR #1998]: https://github.com/bareos/bareos/pull/1998
 [unreleased]: https://github.com/bareos/bareos/tree/master

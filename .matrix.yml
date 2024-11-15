@@ -1,8 +1,8 @@
 OS:
   Sanitize:
-    "F40":
+    "F41":
       TYPE: scripted
-      IMAGE: fedora40
+      IMAGE: fedora41
       BUILD_SCRIPT: bareos/devtools/build-and-test-with-sanitize.sh
       FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
       ARCH:
@@ -22,7 +22,7 @@ OS:
       IMAGE: "rhel9"
       BUILD_SCRIPT: CD/rpm/build-ulc.sh
       FINISH_SCRIPT: CD/rpm/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ Rocky-9, Fedora-40, SLE-15_sp6, Mageia-9 ]
+      CUSTOM_TEST_IMAGES: [ Rocky-9, Fedora-41, SLE-15_sp6, Mageia-9 ]
       ARCH:
         - x86_64
         - aarch64
@@ -69,19 +69,14 @@ OS:
       ARCH:
       - x86_64
   Fedora:
+    "41":
+      TYPE: rpm
+      IMAGE: fedora41
+      ARCH:
+      - x86_64
     "40":
       TYPE: rpm
       IMAGE: fedora40
-      ARCH:
-      - x86_64
-    "39":
-      TYPE: rpm
-      IMAGE: fedora39
-      ARCH:
-      - x86_64
-    "38":
-      TYPE: rpm
-      IMAGE: fedora38
       ARCH:
       - x86_64
   Debian:
