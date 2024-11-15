@@ -780,15 +780,6 @@ The directives within an Options resource may be one of the following:
 
 
 
-.. config:option:: dir/fileset/include/options/BaseJob
-
-   :type: <options>
-
-
-   The options letters specified are used when running a :strong:`Backup Level=Full`
-   with BaseJobs. The options letters are the same than in the :strong:`verify=`
-   option below.
-
 .. config:option:: dir/fileset/include/options/accurate
 
    :type: <options>

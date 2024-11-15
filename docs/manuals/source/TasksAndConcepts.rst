@@ -14,7 +14,6 @@ Tasks and Concepts
       /TasksAndConcepts/MigrationAndCopy.rst
       /TasksAndConcepts/AlwaysIncrementalBackupScheme.rst
       /TasksAndConcepts/HowToManuallyTransferDataVolumes.rst
-      /TasksAndConcepts/FileDeduplicationUsingBaseJobs.rst
       /TasksAndConcepts/Plugins.rst
       /TasksAndConcepts/TheWindowsVersionOfBareos.rst
       /TasksAndConcepts/NetworkSetup.rst
