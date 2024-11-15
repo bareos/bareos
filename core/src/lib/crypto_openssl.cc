@@ -1515,13 +1515,6 @@ int InitCrypto(void)
   /* Register OpenSSL ciphers and digests */
   OpenSSL_add_all_algorithms();
 
-#  ifdef HAVE_ENGINE_LOAD_PK11
-#  else
-  // Load all the builtin engines.
-  IGNORE_DEPRECATED_ON;
-  IGNORE_DEPRECATED_OFF;
-#  endif
-
   crypto_initialized = true;
 
   return status;
@@ -1539,10 +1532,6 @@ int CleanupCrypto(void)
   /* Ensure that we've actually been initialized; Doing this here decreases the
    * complexity of client's termination/cleanup code. */
   if (!crypto_initialized) { return 0; }
-
-#  ifndef HAVE_SUN_OS
-  // Cleanup the builtin engines.
-#  endif
 
   OpensslCleanupThreads();
 
