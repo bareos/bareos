@@ -2520,11 +2520,18 @@ static bool do_unfill()
     goto bail_out;
   }
 
+  // read volume label
+  if (int err = ReadDevVolumeLabel(dcr); err != VOL_OK) {
+    Pmsg1(-1, T_("Error reading label. ERR=%d\n"), err);
+    goto bail_out;
+  }
+
   /* Space to "first" block which is last block not written
    * on the previous tape.
    */
-  Pmsg2(-1, T_("Reposition from %u:%u to 0:1\n"), dev->file, dev->block_num);
-  if (!dev->Reposition(dcr, 0, 1)) {
+  Pmsg2(-1, T_("Reposition from %u:%u to 1:0\n"), dev->file,
+        dev->block_num);
+  if (!dev->Reposition(g_dcr, 1, 0)) {
     Pmsg1(-1, T_("Reposition error. ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
