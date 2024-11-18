@@ -21,7 +21,8 @@ get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+get_test_property(${SYSTEMTEST_PREFIX}${BASENAME} DISABLED ISDISABLED)
+if(NOT ISDISABLED)
   # it would be better if we could just check if create_systemtest succeeded
   set_tests_properties(
     system:dedupable:create-backup
