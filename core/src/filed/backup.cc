@@ -1619,7 +1619,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   } else {
     Jmsg1(jcr, M_FATAL, 0,
           "FileIndex overflow detected. Please split the fileset to backup "
-          "less files.\n");
+          "fewer files.\n");
     ff_pkt->FileIndex = -1;
     return false;
   }

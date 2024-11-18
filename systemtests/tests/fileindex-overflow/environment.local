@@ -1,0 +1,2 @@
+# use the test binary as the filedaemon
+export BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY/bareos_fd/bareos_test_fd}
