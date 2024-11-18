@@ -118,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bareosfd_test.py: allow a delta of 1.1 [PR #2031]
 - mssql TearDownVdiDevice(): enhance error reporting [PR #2008]
 - macos: update build environment [PR #2035]
+- vmware: upgrade vmware vix disklib to version 8.0.3
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
