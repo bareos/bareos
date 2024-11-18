@@ -241,3 +241,82 @@ TEST_F(Globbing, globbing_in_markcmd)
   //  EXPECT_EQ(FakeMarkCmd(&ua, tree, "{*tory1,*tory2}/file1"), 1);
   //  EXPECT_EQ(fnmatch("{*tory1,*tory2}", "subdirectory1", 0), 0);
 }
+
+TEST_F(Globbing, double_star_globbing_in_markcmd)
+{
+  const std::vector<std::string> files = {
+      "/some/weirdfiles/normalefile",
+      "/some/weirdfiles/nottooweird",
+      "/some/weirdfiles/potato",
+      "/some/weirdfiles/potatomashed",
+      "/some/weirdfiles/subdirectory1/file1",
+      "/some/weirdfiles/subdirectory1/file2",
+      "/some/weirdfiles/subdirectory2/file3",
+      "/some/weirdfiles/subdirectory2/file4",
+      "/some/weirdfiles/subdirectory3/file5",
+      "/some/weirdfiles/subdirectory3/file6",
+      "/some/weirdfiles/lonesubdirectory/whatever",
+      "/some/wastefiles/normalefile",
+      "/some/wastefiles/nottooweird",
+      "/some/wastefiles/potato",
+      "/some/wastefiles/potatomashed",
+      "/some/wastefiles/subdirectory1/file1",
+      "/some/wastefiles/subdirectory1/file2",
+      "/some/wastefiles/subdirectory2/file3",
+      "/some/wastefiles/subdirectory2/file4",
+      "/some/wastefiles/subdirectory3/file5",
+      "/some/wastefiles/subdirectory3/file6",
+      "/some/wastefiles/lonesubdirectory/whatever",
+      "/testingwildcards/normalefile",
+      "/testingwildcards/nottooweird",
+      "/testingwildcards/potato",
+      "/testingwildcards/potatomashed",
+      "/testingwildcards/subdirectory1/file1",
+      "/testingwildcards/subdirectory1/file2",
+      "/testingwildcards/subdirectory2/file3",
+      "/testingwildcards/subdirectory2/file4",
+      "/testingwildcards/subdirectory3/file5",
+      "/testingwildcards/subdirectory3/file6",
+      "/testingwildcards/lonesubdirectory/whatever",
+      // how we handle windows files is a bit weird.
+      // since "C:" is a WinDir (because it has no leading slash)
+      // it _cannot_ also be a NewDir (i.e. a directory thats not backed up)
+      // For this to work correctly we have to add this as an actually
+      // backed up file!
+      "C:/",
+      "C:/windir/file1",
+      "C:/windir/file2",
+      "C:/windir/file3",
+      "C:/windir/file4",
+  };
+
+  PopulateTree(files, &tree);
+
+  // testing full paths
+  FakeCdCmd(ua, &tree, "/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "**/file1"), 4);
+  FakeUnmarkCmd(ua, &tree, "*");
+
+  // Using while being in a different folder than root
+  FakeCdCmd(ua, &tree, "/some/weirdfiles/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "**/file1"), 1);
+  FakeUnmarkCmd(ua, &tree, "*");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "**/f*1"), 1);
+  FakeUnmarkCmd(ua, &tree, "*");
+
+  // Using ** not at the start
+  FakeCdCmd(ua, &tree, "/some/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "weirdfiles/**/file1"), 1);
+  FakeUnmarkCmd(ua, &tree, "*");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "weirdfiles/**/f*1"), 1);
+  FakeUnmarkCmd(ua, &tree, "*");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "w*files/**/file1"), 2);
+  FakeUnmarkCmd(ua, &tree, "*");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "w**files/**/file1"), 2);
+  FakeUnmarkCmd(ua, &tree, "*");
+
+  // testing empty match
+  FakeCdCmd(ua, &tree, "/testingwildcards/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "**/p?tato"), 1);
+  FakeUnmarkCmd(ua, &tree, "*");
+}
