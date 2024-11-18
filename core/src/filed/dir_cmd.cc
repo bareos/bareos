@@ -312,7 +312,6 @@ void CleanupFileset(JobControlRecord* jcr)
         fo->wilddir.destroy();
         fo->wildfile.destroy();
         fo->wildbase.destroy();
-        fo->base.destroy();
         fo->fstype.destroy();
         fo->Drivetype.destroy();
       }
@@ -336,7 +335,6 @@ void CleanupFileset(JobControlRecord* jcr)
         fo->wilddir.destroy();
         fo->wildfile.destroy();
         fo->wildbase.destroy();
-        fo->base.destroy();
         fo->fstype.destroy();
         fo->Drivetype.destroy();
       }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -366,14 +366,6 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
       case 'i':
         SetBit(FO_IGNORECASE, fo->flags);
         break;
-      case 'J': /* Basejob options */
-        // Copy BaseJob Options
-        for (j = 0; *p && *p != ':'; p++) {
-          fo->BaseJobOpts[j] = *p;
-          if (j < (int)sizeof(fo->BaseJobOpts) - 1) { j++; }
-        }
-        fo->BaseJobOpts[j] = 0;
-        break;
       case 'K':
         SetBit(FO_NOATIME, fo->flags);
         break;
@@ -580,11 +572,6 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
     case 'R': /* Regex */
       state = AddRegexToFileset(jcr, item, subcode);
-      break;
-    case 'B':
-      current_opts = start_options(ff);
-      current_opts->base.append(strdup(item));
-      state = state_options;
       break;
     case 'X': /* Filetype or Drive type */
       current_opts = start_options(ff);

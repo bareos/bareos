@@ -409,7 +409,6 @@ ResourceItem job_items[] = {
   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), 0, 0, NULL, NULL, NULL },
-  { "Base", CFG_TYPE_ALIST_RES, ITEM(res_job, base), R_JOB, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "MaxConcurrentCopies", CFG_TYPE_PINT32, ITEM(res_job, MaxConcurrentCopies), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
    /* Settings for always incremental */
   { "AlwaysIncremental", CFG_TYPE_BOOL, ITEM(res_job, AlwaysIncremental), 0, CFG_ITEM_DEFAULT, "false", "16.2.4-",
@@ -1887,9 +1886,6 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
         break;
       case 'i':
         send.KeyBool("IgnoreCase", true);
-        break;
-      case 'J': /* Base Job */
-        send.KeyQuotedString("BaseJob", GetOptionValue(&p));
         break;
       case 'M': /* MD5 */
         send.KeyQuotedString("Signature", "MD5");

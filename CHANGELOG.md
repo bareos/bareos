@@ -118,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: remove old deprecated postgres plugin [PR #1606]
 - Remove EOL platforms [PR #1684]
 - core: fix some overlooked issues in msvc merge [PR #1912]
+- dird: remove BaseJob directives [PR #1969]
 
 ### Documentation
 - docs: improvements for droplet, jobdefs [PR #1581]
@@ -292,6 +293,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1961]: https://github.com/bareos/bareos/pull/1961
 [PR #1963]: https://github.com/bareos/bareos/pull/1963
 [PR #1966]: https://github.com/bareos/bareos/pull/1966
+[PR #1969]: https://github.com/bareos/bareos/pull/1969
 [PR #1972]: https://github.com/bareos/bareos/pull/1972
 [PR #1977]: https://github.com/bareos/bareos/pull/1977
 [PR #1980]: https://github.com/bareos/bareos/pull/1980

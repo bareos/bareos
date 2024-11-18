@@ -163,9 +163,6 @@ int FindFiles(JobControlRecord* jcr,
           bstrncpy(ff->AccurateOpts, fo->AccurateOpts,
                    sizeof(ff->AccurateOpts));
         }
-        if (fo->BaseJobOpts[0]) {
-          bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
-        }
       }
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
@@ -515,7 +512,6 @@ findFOPTS* start_options(FindFilesPacket* ff)
     fo->wilddir.init(1, true);
     fo->wildfile.init(1, true);
     fo->wildbase.init(1, true);
-    fo->base.init(1, true);
     fo->fstype.init(1, true);
     fo->Drivetype.init(1, true);
     incexe->current_opts = fo;
@@ -539,7 +535,6 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   fo->wilddir.init(1, true);
   fo->wildfile.init(1, true);
   fo->wildbase.init(1, true);
-  fo->base.init(1, true);
   fo->fstype.init(1, true);
   fo->Drivetype.init(1, true);
   incexe->current_opts = fo;

@@ -51,7 +51,6 @@ namespace directordaemon {
 
 #define PERMITTED_VERIFY_OPTIONS (const char*)"ipnugsamcd51"
 #define PERMITTED_ACCURATE_OPTIONS (const char*)"ipnugsamcd51A"
-#define PERMITTED_BASEJOB_OPTIONS (const char*)"ipnugsamcd51"
 
 typedef struct {
   bool configured;
@@ -67,7 +66,6 @@ enum
   INC_KW_DIGEST,
   INC_KW_ENCRYPTION,
   INC_KW_VERIFY,
-  INC_KW_BASEJOB,
   INC_KW_ACCURATE,
   INC_KW_ONEFS,
   INC_KW_RECURSE,
@@ -105,7 +103,6 @@ static struct s_kw FS_option_kw[]
        {"signature", INC_KW_DIGEST},
        {"encryption", INC_KW_ENCRYPTION},
        {"verify", INC_KW_VERIFY},
-       {"basejob", INC_KW_BASEJOB},
        {"accurate", INC_KW_ACCURATE},
        {"onefs", INC_KW_ONEFS},
        {"recurse", INC_KW_RECURSE},
@@ -246,7 +243,6 @@ ResourceItem newinc_items[] = {
 ResourceItem options_items[] = {
   { "Compression", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Signature", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "BaseJob", CFG_TYPE_OPTION, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Accurate", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Verify", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "OneFs", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
@@ -261,7 +257,6 @@ ResourceItem options_items[] = {
   { "Regex", CFG_TYPE_REGEX, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "RegexDir", CFG_TYPE_REGEX, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "RegexFile", CFG_TYPE_REGEX, 0, nullptr, 2, 0, NULL, NULL, NULL },
-  { "Base", CFG_TYPE_BASE, 0, nullptr, 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "Wild", CFG_TYPE_WILD, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "WildDir", CFG_TYPE_WILD, 0, nullptr, 1, 0, NULL, NULL, NULL },
   { "WildFile", CFG_TYPE_WILD, 0, nullptr, 2, 0, NULL, NULL, NULL },
@@ -401,12 +396,6 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
     bstrncat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
-  } else if (keyword == INC_KW_BASEJOB) { /* special case */
-    IsInPermittedSet(lc, T_("base job"), PERMITTED_BASEJOB_OPTIONS);
-    bstrncat(opts, "J", optlen); /* indicate BaseJob */
-    bstrncat(opts, lc->str, optlen);
-    bstrncat(opts, ":", optlen); /* Terminate it */
-    Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_STRIPPATH) { /* special case */
     if (!IsAnInteger(lc->str)) {
       scan_err1(lc, T_("Expected a strip path positive integer, got: %s:"),
@@ -495,17 +484,6 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
         scan_err1(lc, T_("Expected a regex string, got: %s\n"), lc->str);
         return;
     }
-  }
-  ScanToEol(lc);
-}
-
-// Store Base info
-static void StoreBase(LEX* lc, ResourceItem*, int pass)
-{
-  LexGetToken(lc, BCT_NAME);
-  if (pass == 1) {
-    // Pickup Base Job Name
-    res_incexe->current_opts->base.append(strdup(lc->str));
   }
   ScanToEol(lc);
 }
@@ -759,9 +737,6 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
             break;
           case CFG_TYPE_REGEX:
             StoreRegex(lc, &options_items[i], pass);
-            break;
-          case CFG_TYPE_BASE:
-            StoreBase(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_WILD:
             StoreWild(lc, &options_items[i], pass);

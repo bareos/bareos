@@ -297,8 +297,10 @@ void test_CFG_TYPE_ALIST_RES(DirectorResource*)
 {
   JobResource* job1
       = (JobResource*)my_config->GetResWithName(R_JOB, "resultjob");
+  EXPECT_TRUE(job1 != nullptr);
+  EXPECT_TRUE(job1->resource_name_ != nullptr);
   EXPECT_STREQ("resultjob", job1->resource_name_);
-  EXPECT_EQ(job1->base->size(), 8);
+  EXPECT_EQ(job1->storage->size(), 8);
 }
 
 TEST_F(ConfigParser_Dir, CFG_TYPE_ALIST_RES)

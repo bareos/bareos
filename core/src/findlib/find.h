@@ -137,7 +137,6 @@ struct findFOPTS {
       check_shadow_none};        /**< Perform fileset shadowing check ? */
   char VerifyOpts[MAX_OPTS]{};   /**< Verify options */
   char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
-  char BaseJobOpts[MAX_OPTS]{};  /**< Basejob mode options */
   char* plugin{};                /**< Plugin that handle this section */
   alist<regex_t*> regex;         /**< Regex string(s) */
   alist<regex_t*> regexdir;      /**< Regex string(s) for directories */
@@ -146,7 +145,6 @@ struct findFOPTS {
   alist<const char*> wilddir;    /**< Wild card strings for directories */
   alist<const char*> wildfile;   /**< Wild card strings for files */
   alist<const char*> wildbase;   /**< Wild card strings for basenames */
-  alist<const char*> base;       /**< List of base names */
   alist<const char*> fstype;     /**< File system type limitation */
   alist<const char*> Drivetype;  /**< Drive type limitation */
 };
