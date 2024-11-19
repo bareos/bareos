@@ -147,6 +147,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bareos-dir
     bareos-dbcheck
     bareos-fd
+    bareos-test-fd
     bareos-sd
     bcopy
     btape
