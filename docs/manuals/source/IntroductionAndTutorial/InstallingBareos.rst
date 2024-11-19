@@ -324,7 +324,7 @@ either use
 
    root@host:~# systemctl enable --now bareos-director.service
    root@host:~# systemctl enable --now bareos-storage.service
-   root@host:~# systemctl enable --now bareos-filedamon.service
+   root@host:~# systemctl enable --now bareos-filedaemon.service
 
 or
 
