@@ -66,8 +66,9 @@ add_library(fd_objects STATIC ${FDSRCS})
 add_library(fd_test_objects STATIC ${FDSRCS})
 
 target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES})
-target_link_libraries(fd_test_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES})
-
+target_link_libraries(
+  fd_test_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES}
+)
 
 if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)
@@ -82,7 +83,7 @@ if(HAVE_WIN32)
   )
   add_executable(
     bareos-test-fd WIN32 filed.cc
-                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc
+                         ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc
   )
 else()
   add_executable(bareos-fd filed.cc)
@@ -106,12 +107,18 @@ else()
   set(FD_TEST_COMPILE_DEFINITIONS "")
 endif()
 
-list(APPEND FD_TEST_COMPILE_DEFINITIONS ${FD_COMPILE_DEFINITIONS} MAXIMUM_ALLOWED_FILES_PER_JOB=10)
+list(APPEND FD_TEST_COMPILE_DEFINITIONS ${FD_COMPILE_DEFINITIONS}
+     MAXIMUM_ALLOWED_FILES_PER_JOB=10
+)
 target_compile_definitions(fd_objects PRIVATE ${FD_COMPILE_DEFINITIONS})
-target_compile_definitions(fd_test_objects PRIVATE ${FD_TEST_COMPILE_DEFINITIONS})
+target_compile_definitions(
+  fd_test_objects PRIVATE ${FD_TEST_COMPILE_DEFINITIONS}
+)
 
 target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
-target_compile_definitions(bareos-test-fd PRIVATE ${FD_TEST_COMPILE_DEFINITIONS})
+target_compile_definitions(
+  bareos-test-fd PRIVATE ${FD_TEST_COMPILE_DEFINITIONS}
+)
 
 target_link_libraries(
   bareos-fd PRIVATE fd_objects ${BAREOS_FD_LIBRARIES} CLI11::CLI11

@@ -3,7 +3,7 @@
 
    Copyright (C) 2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,7 +74,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);
 
 // allow to set the allowed maximum to something lower for testing purposes
 #ifndef MAXIMUM_ALLOWED_FILES_PER_JOB
-#define MAXIMUM_ALLOWED_FILES_PER_JOB std::numeric_limits<decltype(JobControlRecord::JobFiles)>::max()
+#  define MAXIMUM_ALLOWED_FILES_PER_JOB \
+    std::numeric_limits<decltype(JobControlRecord::JobFiles)>::max()
 #endif
 } /* namespace filedaemon */
 #endif  // BAREOS_FILED_BACKUP_H_
