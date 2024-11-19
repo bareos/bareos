@@ -25,24 +25,24 @@ if(NOT ISDISABLED)
   set_tests_properties(
     system:ignoreduplicatecheck:create-backups
     PROPERTIES FIXTURES_REQUIRED "system:ignoreduplicatecheck-fixture"
-    FIXTURES_SETUP "system:ignoreduplicatechecks:backups-fixture"
+               FIXTURES_SETUP "system:ignoreduplicatechecks:backups-fixture"
   )
   set_tests_properties(
     system:ignoreduplicatecheck:copy
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
+      FIXTURES_REQUIRED
+      "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
   )
   set_tests_properties(
     system:ignoreduplicatecheck:migrate
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
+      FIXTURES_REQUIRED
+      "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
   )
   set_tests_properties(
     system:ignoreduplicatecheck:consolidate
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
+      FIXTURES_REQUIRED
+      "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
   )
 endif()

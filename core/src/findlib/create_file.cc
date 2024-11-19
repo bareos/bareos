@@ -425,7 +425,7 @@ int CreateFile(JobControlRecord* jcr,
           return CF_CREATED;
         } break;
 
-#endif  /* HAVE_WIN32 */
+#endif /* HAVE_WIN32 */
       } /* End inner switch */
       Qmsg3(jcr, M_ERROR, 0, T_("unhandled type: %d\n"), attr->type);
       return CF_ERROR;

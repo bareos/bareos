@@ -44,10 +44,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   string(REPLACE "Program Files (x86)" "Program Files" CMAKE_INSTALL_PREFIX
                  "${CMAKE_INSTALL_PREFIX}"
   )
-  set(TESTS_THAT_REQUIRE_SH
-    system:filesets
-    system:ignoreduplicatecheck
-  )
+  set(TESTS_THAT_REQUIRE_SH system:filesets system:ignoreduplicatecheck)
   # these tests do not work on windows
   set(TESTS_TO_SKIP
       system:always-incremental-consolidate

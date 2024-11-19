@@ -1046,7 +1046,7 @@ int main(int argc, char* argv[])
     TerminateConsole(0);
     return 1;
 #endif /* HAVE_PAM */
-  }    /* kMessageIdPamRequired */
+  } /* kMessageIdPamRequired */
 
   if (response_id == kMessageIdOk) {
     ConsoleOutput(response_args.JoinReadable().c_str());

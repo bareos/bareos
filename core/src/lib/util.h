@@ -157,22 +157,18 @@ class timer {
   std::string formatted{};
 };
 
-template <typename CharT>
-struct path_components{
+template <typename CharT> struct path_components {
   using view_type = std::basic_string_view<CharT>;
-  path_components(view_type v)
-    : path{v}
-  {}
+  path_components(view_type v) : path{v} {}
 
   struct iter {
-    iter(view_type input) noexcept
-      : path{input}
+    iter(view_type input) noexcept : path{input}
     {
       const CharT separator[] = {
 #if defined(HAVE_WIN32)
-        CharT{'/'}, CharT{'\\'}, CharT{0}
+          CharT{'/'}, CharT{'\\'}, CharT{0}
 #else
-        CharT{'/'}, CharT{0}
+          CharT{'/'}, CharT{0}
 #endif
       };
 
@@ -189,36 +185,33 @@ struct path_components{
       return path.substr(0, component_end);
     }
 
-    iter& operator++() noexcept {
+    iter& operator++() noexcept
+    {
       if (component_end == path.size()) {
         *this = iter(path.substr(path.size()));
       } else {
-        *this = iter(path.substr(component_end+1));
+        *this = iter(path.substr(component_end + 1));
       }
       return *this;
     }
 
-    bool operator!=(const iter& other) const noexcept {
+    bool operator!=(const iter& other) const noexcept
+    {
       // no need to check component_end, because its computed from path
       // directly
       return path.data() != other.path.data()
-        || path.size() != other.path.size();
+             || path.size() != other.path.size();
     }
 
-  private:
+   private:
     view_type path{};
     typename view_type::size_type component_end{};
-
   };
 
-  iter begin() {
-    return iter{path};
-  }
-  iter end() {
-    return iter{path.substr(path.size())};
-  }
+  iter begin() { return iter{path}; }
+  iter end() { return iter{path.substr(path.size())}; }
 
-private:
+ private:
   view_type path;
 };
 

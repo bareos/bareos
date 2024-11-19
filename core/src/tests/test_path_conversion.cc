@@ -243,14 +243,14 @@ TEST_P(Regression, wchar_long_path)
 }
 
 auto invalid_paths = {
-    "C:/dir./",        "C:/dir</",        "C:/dir>/",
-    "C:/dir*/",        "C:/dir?/",        "C:/dir /",
+    "C:/dir./",      "C:/dir</",      "C:/dir>/",
+    "C:/dir*/",      "C:/dir?/",      "C:/dir /",
 
-    "C:/dir./rest/",   "C:/dir</rest/",   "C:/dir>/rest/",
-    "C:/dir*/rest/",   "C:/dir?/rest/",   "C:/dir /rest/",
+    "C:/dir./rest/", "C:/dir</rest/", "C:/dir>/rest/",
+    "C:/dir*/rest/", "C:/dir?/rest/", "C:/dir /rest/",
 
-    "C:/file.",        "C:/file<",        "C:/file>",
-    "C:/file*",        "C:/file?",        "C:/file ",
+    "C:/file.",      "C:/file<",      "C:/file>",
+    "C:/file*",      "C:/file?",      "C:/file ",
 };
 
 TEST_P(Regression, utf8_invalid_paths)

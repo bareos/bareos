@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,12 +84,13 @@ TEST(statefile, read)
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
   char test_path[]{TEST_TEMP_DIR};
 
-  const char* fname = Is32BitAligned() ? "bareos-dir-32bit-read" : "bareos-dir-read";
+  const char* fname
+      = Is32BitAligned() ? "bareos-dir-32bit-read" : "bareos-dir-read";
 
   ASSERT_TRUE(CopyTestStateFileFromOriginal(
       orig_path, test_path, std::string(fname) + ".42001.state"));
   ASSERT_TRUE(StateFileExists(test_path, fname, 42001))
-    << "path = " << test_path;
+      << "path = " << test_path;
   ReadStateFile(test_path, fname, 42001);
 
   auto recent_jobs{RecentJobResultsList::Get()};
@@ -117,7 +118,7 @@ TEST(statefile, write)
   ASSERT_TRUE(CopyTestStateFileFromOriginal(orig_path.c_str(),
                                             test_path.c_str(), statefile_name));
   ASSERT_TRUE(StateFileExists(test_path.c_str(), fname, 42001))
-    << "path = " << test_path;
+      << "path = " << test_path;
   ReadStateFile(test_path.c_str(), fname, 42001);
 
   std::string write_path{TEST_TEMP_DIR "/write-test"};

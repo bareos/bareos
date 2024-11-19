@@ -25,39 +25,40 @@ if(NOT ISDISABLED)
   set_tests_properties(
     system:always-incremental-consolidate:01-full+incr
     PROPERTIES FIXTURES_SETUP
-    "system:always-incremental-consolidate:full+incr-fixture"
-    FIXTURES_REQURIED "system:always-incremental-consolidate-fixture"
+               "system:always-incremental-consolidate:full+incr-fixture"
+               FIXTURES_REQURIED
+               "system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
     system:always-incremental-consolidate:02-empty-incrementals
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
-    FIXTURES_SETUP
-    "system:always-incremental-consolidate:empty-incrementals-fixture"
+      FIXTURES_REQUIRED
+      "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+      FIXTURES_SETUP
+      "system:always-incremental-consolidate:empty-incrementals-fixture"
   )
   set_tests_properties(
     system:always-incremental-consolidate:03-zero-file
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+      FIXTURES_REQUIRED
+      "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
     system:always-incremental-consolidate:04-virtualfull
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+      FIXTURES_REQUIRED
+      "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
     system:always-incremental-consolidate:05-priority
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+      FIXTURES_REQUIRED
+      "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
     system:always-incremental-consolidate:06-consolidate-duplicates
     PROPERTIES
-    FIXTURES_REQUIRED
-    "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+      FIXTURES_REQUIRED
+      "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
 endif()

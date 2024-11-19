@@ -82,16 +82,16 @@ bool InitializeComSecurity()
    public:
     ComSecurityInitializer()
         : h{CoInitializeSecurity(
-            NULL, /*  Allow *all* VSS writers to communicate back! */
-            -1,   /*  Default COM authentication service */
-            NULL, /*  Default COM authorization service */
-            NULL, /*  reserved parameter */
-            RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
-                                              level */
-            RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
-            NULL,                     /*  Default COM authentication settings */
-            EOAC_NONE,                /*  No special options */
-            NULL) /* reserved */}
+              NULL, /*  Allow *all* VSS writers to communicate back! */
+              -1,   /*  Default COM authentication service */
+              NULL, /*  Default COM authorization service */
+              NULL, /*  reserved parameter */
+              RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
+                                                level */
+              RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
+              NULL,      /*  Default COM authentication settings */
+              EOAC_NONE, /*  No special options */
+              NULL) /* reserved */}
     {
       if (!InitSuccessFull()) {
         Dmsg1(0,
@@ -543,49 +543,47 @@ static std::wstring Encode(std::wstring_view p)
       for (size_t i = 0; i < comp.size(); ++i) {
         wchar_t c = comp[i];
         switch (c) {
-        case L'!':
-          [[fallthrough]];
-        case L'<':
-          [[fallthrough]];
-        case L'>':
-          [[fallthrough]];
-        case L':':
-          [[fallthrough]];
-        case L'"':
-          [[fallthrough]];
-        case L'|':
-          [[fallthrough]];
-        case L'?':
-          [[fallthrough]];
-        case L'*': {
-          // escape special characters, but not at the root of the path
-          str += L'!';
-          str += enc.table[c];
-        } break;
-
-        case L'.':
-          [[fallthrough]];
-        case L' ':  {
-          // . and SPC are only disallowed at the end of a component
-          if (i == comp.size() - 1) {
+          case L'!':
+            [[fallthrough]];
+          case L'<':
+            [[fallthrough]];
+          case L'>':
+            [[fallthrough]];
+          case L':':
+            [[fallthrough]];
+          case L'"':
+            [[fallthrough]];
+          case L'|':
+            [[fallthrough]];
+          case L'?':
+            [[fallthrough]];
+          case L'*': {
+            // escape special characters, but not at the root of the path
             str += L'!';
             str += enc.table[c];
-          } else {
+          } break;
+
+          case L'.':
+            [[fallthrough]];
+          case L' ': {
+            // . and SPC are only disallowed at the end of a component
+            if (i == comp.size() - 1) {
+              str += L'!';
+              str += enc.table[c];
+            } else {
+              str += c;
+            }
+          } break;
+          default: {
             str += c;
           }
-        } break;
-        default: {
-          str += c;
-        }
         }
       }
     }
   }
 
   // make sure we pick up the final separator
-  if (p.size() > 0 && (p.back() == L'/' || p.back() == L'\\')) {
-    str += L'\\';
-  }
+  if (p.size() > 0 && (p.back() == L'/' || p.back() == L'\\')) { str += L'\\'; }
 
   Dmsg1(500, " -> result \"%s\"\n", FromUtf16(str).c_str());
 
