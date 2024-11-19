@@ -158,6 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix include-ordering on FreeBSD that could cause build issues [PR #1972]
 - stored: fix volume size mismatch [PR #1992]
 - add Honor No Dump Flag to config output [PR #1994]
+- JSON API: make sure, strings are valid UTF8 [PR #1922]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -282,6 +283,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1914]: https://github.com/bareos/bareos/pull/1914
 [PR #1917]: https://github.com/bareos/bareos/pull/1917
 [PR #1919]: https://github.com/bareos/bareos/pull/1919
+[PR #1922]: https://github.com/bareos/bareos/pull/1922
 [PR #1933]: https://github.com/bareos/bareos/pull/1933
 [PR #1936]: https://github.com/bareos/bareos/pull/1936
 [PR #1945]: https://github.com/bareos/bareos/pull/1945
