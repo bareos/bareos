@@ -132,6 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: improve debuginfo install description (fix issue #1943) [PR #1980]
 - docs: add debian howto start daemons instructions [PR #1998]
 - docs: move bareos-devel to github discussion [PR #1989]
+- docs: fixed typo in the filedaemon service name [PR #2027]
 
 ### Fixed
 - dird: fix `purge oldest volume` [PR #1628]
@@ -307,4 +308,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1994]: https://github.com/bareos/bareos/pull/1994
 [PR #1996]: https://github.com/bareos/bareos/pull/1996
 [PR #1998]: https://github.com/bareos/bareos/pull/1998
+[PR #2027]: https://github.com/bareos/bareos/pull/2027
 [unreleased]: https://github.com/bareos/bareos/tree/master
