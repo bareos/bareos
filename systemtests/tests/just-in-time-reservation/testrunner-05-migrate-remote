@@ -42,7 +42,7 @@ query_results="$log_home/query_results.out"
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $log_home/setup.out
 status director
@@ -59,7 +59,7 @@ run_bconsole
 copy_job_id=$(grep ".*|.*C.*|.*" "$log_home/jobs.out" | cut -d'|' -f2 | sed 's/[[:space:]]//g')
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $migrate_log
 label volume=RemoteVol storage=RemoteFile pool=CopyMigrate

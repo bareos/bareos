@@ -82,16 +82,16 @@ bool InitializeComSecurity()
    public:
     ComSecurityInitializer()
         : h{CoInitializeSecurity(
-            NULL, /*  Allow *all* VSS writers to communicate back! */
-            -1,   /*  Default COM authentication service */
-            NULL, /*  Default COM authorization service */
-            NULL, /*  reserved parameter */
-            RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
-                                              level */
-            RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
-            NULL,                     /*  Default COM authentication settings */
-            EOAC_NONE,                /*  No special options */
-            NULL) /* reserved */}
+              NULL, /*  Allow *all* VSS writers to communicate back! */
+              -1,   /*  Default COM authentication service */
+              NULL, /*  Default COM authorization service */
+              NULL, /*  reserved parameter */
+              RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
+                                                level */
+              RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
+              NULL,      /*  Default COM authentication settings */
+              EOAC_NONE, /*  No special options */
+              NULL) /* reserved */}
     {
       if (!InitSuccessFull()) {
         Dmsg1(0,
@@ -515,47 +515,77 @@ static std::wstring Encode(std::wstring_view p)
    * \x1Y <-> #('a' + Y)
    */
 
-  bool inside_root = p.size() >= 2 && p[1] == ':';
-  for (wchar_t c : p) {
-    switch (c) {
-      case '.':
-        [[fallthrough]];
-      case '!':
-        [[fallthrough]];
-      case '<':
-        [[fallthrough]];
-      case '>':
-        [[fallthrough]];
-      case ':':
-        [[fallthrough]];
-      case '"':
-        [[fallthrough]];
-      case '|':
-        [[fallthrough]];
-      case '?':
-        [[fallthrough]];
-      case '*':
-        [[fallthrough]];
-      case ' ': {
-        // escape special characters, but not at the root of the path
-        if (inside_root) {
-          str += c;
-        } else {
-          str += '!';
-          str += enc.table[c];
+  Dmsg1(500, "encoding \"%s\"\n", FromUtf16(p).c_str());
+
+  bool first = true;
+  for (auto comp : path_components(p)) {
+    Dmsg1(500, "  -> component \"%s\"\n", FromUtf16(comp).c_str());
+    if (first) {
+      first = false;
+      // if the first component is of the form "_:" then we are inside
+      // the root: just copy it without changing anything
+      if (comp.size() == 2 && comp[1] == ':') {
+        str += comp;
+        continue;
+      }
+    } else {
+      str += L'\\';
+    }
+
+    if (comp.size() > 0) {
+      // .. and . are special cases where . is allowed at the end of a name,
+      // so handle them separately
+      if (comp == L".." || comp == L".") {
+        str += comp;
+        continue;
+      }
+
+      for (size_t i = 0; i < comp.size(); ++i) {
+        wchar_t c = comp[i];
+        switch (c) {
+          case L'!':
+            [[fallthrough]];
+          case L'<':
+            [[fallthrough]];
+          case L'>':
+            [[fallthrough]];
+          case L':':
+            [[fallthrough]];
+          case L'"':
+            [[fallthrough]];
+          case L'|':
+            [[fallthrough]];
+          case L'?':
+            [[fallthrough]];
+          case L'*': {
+            // escape special characters, but not at the root of the path
+            str += L'!';
+            str += enc.table[c];
+          } break;
+
+          case L'.':
+            [[fallthrough]];
+          case L' ': {
+            // . and SPC are only disallowed at the end of a component
+            if (i == comp.size() - 1) {
+              str += L'!';
+              str += enc.table[c];
+            } else {
+              str += c;
+            }
+          } break;
+          default: {
+            str += c;
+          }
         }
-      } break;
-      case '/':
-        [[fallthrough]];
-      case '\\': {
-        inside_root = false;
-        str += c;
-      } break;
-      default: {
-        str += c;
       }
     }
   }
+
+  // make sure we pick up the final separator
+  if (p.size() > 0 && (p.back() == L'/' || p.back() == L'\\')) { str += L'\\'; }
+
+  Dmsg1(500, " -> result \"%s\"\n", FromUtf16(str).c_str());
 
   return str;
 }
@@ -620,8 +650,11 @@ static std::wstring AsFullPath(std::wstring_view p)
    * .     <-> !9 */
 
   std::wstring encoded = Encode(p);
+  Dmsg1(500, "encoded = %s\n", FromUtf16(encoded).c_str());
   std::wstring normalized = NormalizePath(encoded);
+  Dmsg1(500, "normalized = %s\n", FromUtf16(normalized).c_str());
   std::wstring decoded = Decode(normalized);
+  Dmsg1(500, "decoded = %s\n", FromUtf16(decoded).c_str());
 
   return decoded;
 }
@@ -1715,9 +1748,7 @@ int stat(const char* filename, struct stat* sb)
     sb->st_blksize = 4096;
     sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
 
-#if (_WIN32_WINNT >= 0x0600)
-    // See if GetFileInformationByHandleEx API is available.
-    if (p_GetFileInformationByHandleEx) {
+    {
       HANDLE h = INVALID_HANDLE_VALUE;
 
       /* The GetFileInformationByHandleEx need a file handle so we have to
@@ -1731,20 +1762,27 @@ int stat(const char* filename, struct stat* sb)
       }
 
       if (h != INVALID_HANDLE_VALUE) {
-        FILE_BASIC_INFO basic_info;
+        BY_HANDLE_FILE_INFORMATION info;
 
-        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &basic_info,
-                                           sizeof(basic_info))) {
-          sb->st_atime = CvtFtimeToUtime(basic_info.LastAccessTime);
-          sb->st_mtime = CvtFtimeToUtime(basic_info.LastWriteTime);
-          sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
+        if (GetFileInformationByHandle(h, &info)) {
+          sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
+          sb->st_mtime = CvtFtimeToUtime(info.ftLastWriteTime);
+          sb->st_ctime = CvtFtimeToUtime(info.ftCreationTime);
+          sb->st_dev = info.dwVolumeSerialNumber;
+          sb->st_ino = info.nFileIndexHigh;
+          sb->st_ino <<= 32;
+          sb->st_ino |= info.nFileIndexLow;
+          sb->st_nlink = (short)info.nNumberOfLinks;
+          if (sb->st_nlink > 1) {
+            Dmsg1(debuglevel, "st_nlink=%d\n", sb->st_nlink);
+          }
           use_fallback_data = false;
         }
+
 
         CloseHandle(h);
       }
     }
-#endif
 
     if (use_fallback_data) {
       // Fall back to the GetFileAttributesEx data.
@@ -3219,3 +3257,16 @@ void PreventOsSuspensions()
 }
 
 void AllowOsSuspensions() { SetThreadExecutionState(ES_CONTINUOUS); }
+
+int win32_link(const char* target, const char* link)
+{
+  std::wstring linkw = make_win32_path_UTF8_2_wchar(link);
+  std::wstring targetw = make_win32_path_UTF8_2_wchar(target);
+
+  if (!CreateHardLinkW(linkw.c_str(), targetw.c_str(), NULL)) {
+    errno = b_errno_win32;
+    return 1;
+  }
+
+  return 0;
+}

@@ -66,7 +66,7 @@ find "${tmp}/data" -type l -exec rm '{}' \;
 start_test
 
 cat <<END_OF_DATA_BACKUP >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/log1.out
 setdebug level=150 storage=File client

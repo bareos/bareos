@@ -14,7 +14,7 @@ TestName=03-verify
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/verify-initcatalog.out
 run job="verify-initcatalog-bareos-fd" yes

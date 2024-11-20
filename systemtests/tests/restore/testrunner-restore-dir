@@ -48,7 +48,7 @@ if [[ "$(uname -s)" =~ _NT ]]; then
   dir="$(cygpath -w -m $dir)"
 fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 setdebug level=100 storage=File
 @$out $log_home/log1.out
 status director

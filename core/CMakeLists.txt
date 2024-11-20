@@ -58,6 +58,16 @@ if(ENABLE_SANITIZERS)
     set(CMAKE_C_FLAGS
         "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
     )
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    )
+    set(CMAKE_C_FLAGS
+        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    )
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
   else()
     message(
       FATAL_ERROR

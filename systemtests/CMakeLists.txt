@@ -68,9 +68,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   set(COMMENT_POD_USAGE_IN_DIFF_PL "#")
   # "Pod:Usage" is not available on windows, so we comment it out in diff.pl
+  set(OS_NULL_DEVICE "NUL")
 else()
   set(DISABLED_TESTS)
   set(COMMENT_POD_USAGE_IN_DIFF_PL "")
+  set(OS_NULL_DEVICE "/dev/null")
 endif()
 
 project(bareos-systemtests)
@@ -155,7 +157,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bareos-sd
     bls
     bscan
-    bconsole
+    bconsole-unsafe
     bwild
     bpluginfo
     bsmtp

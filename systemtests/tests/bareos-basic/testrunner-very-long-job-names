@@ -23,7 +23,7 @@ long_name_log=$tmp/long_name_log.out
 
 # Run immediately the job before anything else so tls-psk cache is empty
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $long_name_log
 setdebug level=1000 client=bareos-fd trace=1

@@ -33,7 +33,7 @@ export BackupDirectory="${tmp}/data"
 export RestoreDirectory="${tmp}/bareos-restores"
 systemtests_s3_use_https=@systemtests_s3_use_https@
 
-
+export NULL_DEV=@OS_NULL_DEVICE@
 
 dumps=${current_test_directory}/dumps
 rscripts=${PROJECT_BINARY_DIR}/scripts
@@ -82,7 +82,7 @@ export BAREOS_CTL_FD_RUNNER=
 
 export BAREOS_BSCAN_BINARY=$(dirname "@BSCAN_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BSCAN_BINARY@")
 export BAREOS_BLS_BINARY=$(dirname "@BLS_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BLS_BINARY@")
-export BAREOS_BCONSOLE_BINARY=$(dirname "@BCONSOLE_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BCONSOLE_BINARY@")
+export BAREOS_BCONSOLE_BINARY=$(dirname "@BCONSOLE_UNSAFE_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BCONSOLE_UNSAFE_BINARY@")
 export BAREOS_BEXTRACT_BINARY=$(dirname "@BEXTRACT_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BEXTRACT_BINARY@")
 export BAREOS_DBCHECK_BINARY=$(dirname "@BAREOS_DBCHECK_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_DBCHECK_BINARY@")
 export BAREOS_BCOPY_BINARY=$(dirname "@BCOPY_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BCOPY_BINARY@")

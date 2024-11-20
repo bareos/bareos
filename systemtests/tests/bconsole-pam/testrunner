@@ -157,7 +157,7 @@ echo "Console {
 }" > $usepam_and_acl_config
 
 cat <<END_OF_DATA >"$tmp"/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/usepam_acl.out
 reload

@@ -42,7 +42,7 @@ query_results="$log_home/query_results.out"
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $copy_log
 label volume=CopyVol storage=File2 pool=FullCopy

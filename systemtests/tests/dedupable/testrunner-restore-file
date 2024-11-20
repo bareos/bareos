@@ -47,7 +47,7 @@ for f in "$file1" "$file2" "$file3" ; do
     fi;
 done
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 setdebug level=100 storage=Dedup
 @$out $log_home/log1.out
 status director

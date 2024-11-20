@@ -397,7 +397,7 @@ typedef DWORD EXECUTION_STATE;
 #endif
 
 #if !defined(INVALID_FILE_ATTRIBUTES)
-#  define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#  define INVALID_FILE_ATTRIBUTES ((DWORD) - 1)
 #endif
 
 #if defined(HAVE_MSVC)
@@ -439,5 +439,7 @@ void Win32ResetConversionCache();
  * an emulation for this call
  */
 #define USE_READDIR_R
+
+int win32_link(const char* target, const char* link);
 
 #endif  // BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_

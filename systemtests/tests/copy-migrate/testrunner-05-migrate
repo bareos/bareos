@@ -19,7 +19,7 @@ migration_volume="TestMigrateVolume001"
 query_results="$tmp/query_results.out"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $log
 label volume=TestVolume002 storage=File pool=Full

@@ -61,7 +61,7 @@ void InitContexts(UaContext* t_ua, TreeContext* t_tree)
   t_tree->all = false;
   t_tree->FileEstimate = 100;
   t_tree->DeltaCount = 1;
-  t_tree->node = (TREE_NODE*)t_tree->root;
+  t_tree->node = t_tree->root;
 }
 
 int FakeCdCmd(UaContext* t_ua, TreeContext* t_tree, std::string path)

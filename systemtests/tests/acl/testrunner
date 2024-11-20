@@ -33,7 +33,7 @@ getfacl "${BackupFile}" | grep -vF file: >"$acl_should"
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/log1.out
 setdebug level=1000 client=bareos-fd trace=1

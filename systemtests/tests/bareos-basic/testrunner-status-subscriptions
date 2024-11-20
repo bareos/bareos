@@ -22,7 +22,7 @@ start_test
 rm -f "$tmp"/status-subscription*.txt
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 use
 @$out $tmp/status-subscriptions.txt
 status subscriptions

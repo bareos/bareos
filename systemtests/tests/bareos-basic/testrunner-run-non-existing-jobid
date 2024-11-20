@@ -22,7 +22,7 @@ JobName=RestoreFiles
 rm -f $run_log
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $run_log
 setdebug level=100 storage=File

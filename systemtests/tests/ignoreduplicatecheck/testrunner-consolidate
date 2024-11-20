@@ -18,7 +18,7 @@ consolidate_work_id=$(( last_job_id + 2 ))
 new_backup_id=$(( last_job_id + 3 ))
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/consolidate.out
 run job=Consolidate yes
@@ -41,7 +41,7 @@ messages
 llist jobid=${consolidate_work_id}
 @$out $tmp/consolidate_incremental_status.out
 llist jobid=${new_backup_id}
-@$out /dev/null
+@$out ${NULL_DEV}
 quit
 END_OF_DATA
 run_bconsole

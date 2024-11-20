@@ -30,7 +30,7 @@ rm -f "$backup_log"
 rm -f "$restore_log"
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $backup_log
 setdebug level=100 storage=File

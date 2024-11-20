@@ -49,7 +49,7 @@ if [[ -f "$tmp/bareos-restores/$file" ]]; then
 fi;
 echo "i overwrite the file" > "$file"
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 setdebug level=100 storage=File
 @$out $log_home/log1.out
 status director
@@ -72,7 +72,7 @@ run_bconsole
 # find the new job id
 backupid=$(grep 'Job queued. JobId=' "$log_home/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 setdebug level=100 storage=File
 @$out $log_home/log1.out
 status director

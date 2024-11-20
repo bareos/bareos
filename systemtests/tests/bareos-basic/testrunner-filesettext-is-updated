@@ -26,7 +26,7 @@ rm -f $run_log $filesetwithtext $filesetwithouttext
 
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $run_log
 @# first do an estimate to be sure the fileset db entry exists

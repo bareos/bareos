@@ -44,9 +44,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   string(REPLACE "Program Files (x86)" "Program Files" CMAKE_INSTALL_PREFIX
                  "${CMAKE_INSTALL_PREFIX}"
   )
+  set(TESTS_THAT_REQUIRE_SH system:filesets system:ignoreduplicatecheck)
   # these tests do not work on windows
   set(TESTS_TO_SKIP
-      system:always-incremental-consolidate:04-virtualfull
+      system:always-incremental-consolidate
       system:autoxflate:setup
       system:autoxflate:copy-to-local
       system:autoxflate:copy-to-offsite
@@ -56,16 +57,17 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:autoxflate:cleanup
       system:bareos-basic:hardlinks
       system:bareos-basic:test-make-catalog-backup
+      system:bareos-concurrency
       system:catalog
       system:checkpoints:checkpoints-on-kill
       system:checkpoints:checkpoints-on-stop
       system:commandline-options
       system:dedupestimate:do-estimation
+      system:dedupable
       system:fileset-multiple-blocks:include-blocks
       system:fileset-multiple-blocks:options-blocks
       system:heartbeat-interval:check
       system:messages
-      system:parser
       system:py3plug-dir
       system:py3plug-fd-local-fileset-restoreobject
       system:py3plug-sd
@@ -101,6 +103,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:strippath:02-restore
       system:strippath:03-verify
   )
+  list(APPEND TESTS_TO_SKIP ${TESTS_THAT_REQUIRE_SH})
 else()
   set(TESTS_TO_SKIP)
 endif()
@@ -198,9 +201,11 @@ if(BUILD_BAREOS_BINARIES)
   if(ENABLE_WEBUI)
     add_subdirectory(webui)
   endif()
-  if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  if(NOT client-only)
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+      add_subdirectory(contrib)
+    endif()
     add_subdirectory(systemtests)
-    add_subdirectory(contrib)
   endif()
 endif()
 

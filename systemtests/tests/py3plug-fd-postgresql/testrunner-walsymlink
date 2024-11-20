@@ -50,7 +50,7 @@ popd > /dev/null
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out ${tmp}/slog1.out
 setdebug level=150 trace=1 timestamp=1 client=bareos-fd
@@ -79,7 +79,7 @@ fi
 ${PSQL} ${DBNAME} -c "insert into t (text, created_on) values ('test for INCR backup', current_timestamp)"
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out ${tmp}/slog2.out
 setdebug level=150 trace=1 timestamp=1 client=bareos-fd
@@ -99,7 +99,7 @@ fi
 
 # run another Incr without db changes - should result in empty backup job (only restore object)
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/slog3.out
 setdebug level=150 trace=1 timestamp=1 client=bareos-fd
@@ -129,7 +129,7 @@ echo "------------ stopped"
 popd > /dev/null
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out ${tmp}/slog4.out
 setdebug level=150 trace=1 timestamp=1 client=bareos-fd

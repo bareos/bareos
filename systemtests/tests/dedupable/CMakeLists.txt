@@ -19,10 +19,11 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-if(HAVE_WIN32)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+
+get_test_property(${SYSTEMTEST_PREFIX}${BASENAME} DISABLED ISDISABLED)
+if(NOT ISDISABLED)
+  # it would be better if we could just check if create_systemtest succeeded
   set_tests_properties(
     system:dedupable:create-backup
     PROPERTIES FIXTURES_SETUP "system:dedupable:backup-job-fixture"

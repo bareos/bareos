@@ -1563,13 +1563,20 @@ struct CRYPTO_dynlock_value {
  *   a NULL.  Passing a NULL causes the messages to be
  *   printed by the daemon -- not very good :-(
  */
-void OpensslPostErrors(int type, const char* errstring)
+void OpensslPostErrors_impl(const char* file,
+                            int line,
+                            int type,
+                            const char* errstring)
 {
-  OpensslPostErrors(NULL, type, errstring);
+  OpensslPostErrors_impl(file, line, NULL, type, errstring);
 }
 
 // Post all per-thread openssl errors
-void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
+void OpensslPostErrors_impl(const char* file,
+                            int line,
+                            JobControlRecord* jcr,
+                            int type,
+                            const char* errstring)
 {
   char buf[512];
   unsigned long sslerr;
@@ -1578,8 +1585,8 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
   while ((sslerr = ERR_get_error()) != 0) {
     /* Acquire the human readable string */
     ERR_error_string_n(sslerr, buf, sizeof(buf));
-    Dmsg3(50, "jcr=%p %s: ERR=%s\n", jcr, errstring, buf);
-    Qmsg(jcr, type, 0, "%s: ERR=%s\n", errstring, buf);
+    d_msg(file, line, 50, "jcr=%p %s: ERR=%s\n", jcr, errstring, buf);
+    q_msg(file, line, jcr, type, 0, "%s: ERR=%s\n", errstring, buf);
   }
 }
 

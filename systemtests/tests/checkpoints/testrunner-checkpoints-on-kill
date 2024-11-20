@@ -30,7 +30,7 @@ for daemon in "dir" "sd" "fd"; do
     rm -rf "$restore_directory"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $backup_log
 run job=$slowjob fileset=bigfileset level=Full yes

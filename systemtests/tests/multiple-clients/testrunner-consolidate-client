@@ -20,7 +20,7 @@ consolidate_log="$tmp"/consolidate.out
 rm -rf $backup_log $consolidate_log
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $backup_log
 run job=$first_client_job level=Incremental yes

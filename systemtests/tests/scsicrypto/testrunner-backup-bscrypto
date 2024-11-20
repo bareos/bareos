@@ -134,7 +134,7 @@ reset_eject_drive
 
 # Bareos tests
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $backup_log
 setdebug level=250 trace=1 timestamp=1 storage=Tape-0
@@ -162,7 +162,7 @@ volume=$(awk '/^.*Volume name\(s\):.*/ {print $3}' ${backup_log})
 
 # Test a restore
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $restore_log
 setdebug level=250 trace=1 timestamp=1 storage=Tape-0

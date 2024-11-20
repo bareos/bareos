@@ -23,7 +23,7 @@ start_test
 logf="$tmp/cancel-check-no-wait.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $logf
 run job=$JobName fileset=CancelNoWaitFileset yes

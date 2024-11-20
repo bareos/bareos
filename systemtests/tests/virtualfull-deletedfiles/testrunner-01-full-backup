@@ -21,7 +21,7 @@ start_test
 echo "$0" >"${tmp}/data/$myname"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 @$out $tmp/$myname.log
 run job=backup-bareos-fd level=Full yes

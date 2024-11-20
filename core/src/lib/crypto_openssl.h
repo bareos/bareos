@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,8 +24,23 @@
 #include "crypto.h"
 
 #ifdef HAVE_OPENSSL
-void OpensslPostErrors(int type, const char* errstring);
-void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring);
+#  define VarArgMacroSelect(_1, _2, _3, _4, ...) _4
+#  define OpensslPostErrors(...)                        \
+    VarArgMacroSelect(__VA_ARGS__, OpensslPostErrors_2, \
+                      OpensslPostErrors_1)(__VA_ARGS__)
+#  define OpensslPostErrors_1(type, errstring) \
+    OpensslPostErrors_impl(__FILE__, __LINE__, (type), (errstring))
+#  define OpensslPostErrors_2(jcr, type, errstring) \
+    OpensslPostErrors_impl(__FILE__, __LINE__, (jcr), (type), (errstring))
+void OpensslPostErrors_impl(const char* file,
+                            int line,
+                            int type,
+                            const char* errstring);
+void OpensslPostErrors_impl(const char* file,
+                            int line,
+                            JobControlRecord* jcr,
+                            int type,
+                            const char* errstring);
 int OpensslInitThreads(void);
 void OpensslCleanupThreads(void);
 DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type);

@@ -42,7 +42,7 @@ no_test_was_ok=true
 
 function check_tls()
 {
-  output=$(echo "exit" | sbin/${CMAKE_CONFIG_TYPE}/bconsole-tls-suites -c etc/bareos/"$1")
+  output=$(echo "exit" | ${BAREOS_BCONSOLE_BINARY} -c etc/bareos/"$1")
   if ! [ "$?" = "0" ]; then
       echo "unexpected error while connecting with '$1'"
       exit 3

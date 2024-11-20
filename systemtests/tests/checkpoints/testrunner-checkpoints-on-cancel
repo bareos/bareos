@@ -27,7 +27,7 @@ rm -rf "$restore_directory"
 slowjob="slow-backup-bareos-fd"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${NULL_DEV}
 messages
 setdebug level=100 trace=1 all
 @$out $backup_log
