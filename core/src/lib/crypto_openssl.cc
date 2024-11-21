@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,6 @@
 #    include <openssl/x509v3.h>
 #    include <openssl/asn1.h>
 #    include <openssl/asn1t.h>
-#    include <openssl/engine.h>
 #    include <openssl/evp.h>
 #    include <iomanip>
 #    include <sstream>
@@ -1514,14 +1513,6 @@ int InitCrypto(void)
   /* Register OpenSSL ciphers and digests */
   OpenSSL_add_all_algorithms();
 
-#  ifdef HAVE_ENGINE_LOAD_PK11
-  ENGINE_load_pk11();
-#  else
-  // Load all the builtin engines.
-  ALLOW_DEPRECATED(ENGINE_load_builtin_engines();
-                   ENGINE_register_all_complete();)
-#  endif
-
   crypto_initialized = true;
 
   return status;
@@ -1539,11 +1530,6 @@ int CleanupCrypto(void)
   /* Ensure that we've actually been initialized; Doing this here decreases the
    * complexity of client's termination/cleanup code. */
   if (!crypto_initialized) { return 0; }
-
-#  ifndef HAVE_SUN_OS
-  // Cleanup the builtin engines.
-  ENGINE_cleanup();
-#  endif
 
   OpensslCleanupThreads();
 
