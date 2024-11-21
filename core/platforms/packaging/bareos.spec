@@ -1220,8 +1220,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files storage-dedupable
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-dedupable*.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/dedup.conf.example
-%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/dedup.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Dedupable.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/Dedupable.conf.example
 
 %if 0%{?droplet}
 %files storage-droplet
