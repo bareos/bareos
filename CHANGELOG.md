@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - docs: fixed typo in the filedaemon service name [PR #2028]
 
+### Changed
+- core: add support for Fedora 41 [PR #2021]
+
 ## [23.1.0] - 2024-11-13
 
 ### Changed
@@ -580,5 +583,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2007]: https://github.com/bareos/bareos/pull/2007
 [PR #2010]: https://github.com/bareos/bareos/pull/2010
 [PR #2012]: https://github.com/bareos/bareos/pull/2012
+[PR #2021]: https://github.com/bareos/bareos/pull/2021
 [PR #2028]: https://github.com/bareos/bareos/pull/2028
 [unreleased]: https://github.com/bareos/bareos/tree/master
