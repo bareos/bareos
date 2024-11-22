@@ -115,6 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - build: add support for Fedora 41 [PR #1996]
 - filed: detect integer overflow during backup [PR #1952]
 - dedupable device: fix example files [PR #2029]
+- bareosfd_test.py: allow a delta of 1.1 [PR #2031]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -313,4 +314,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1998]: https://github.com/bareos/bareos/pull/1998
 [PR #2027]: https://github.com/bareos/bareos/pull/2027
 [PR #2029]: https://github.com/bareos/bareos/pull/2029
+[PR #2031]: https://github.com/bareos/bareos/pull/2031
 [unreleased]: https://github.com/bareos/bareos/tree/master
