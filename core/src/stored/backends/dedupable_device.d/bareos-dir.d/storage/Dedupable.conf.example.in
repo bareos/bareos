@@ -1,0 +1,7 @@
+Storage {
+  Name = Dedupable
+  Address = @hostname@                # N.B. Use a fully qualified name here (do not use "localhost" here).
+  Password = "@sd_password@"
+  Device = DedupableDevice
+  Media Type = dedupable
+}
