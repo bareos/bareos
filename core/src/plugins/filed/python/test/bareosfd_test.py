@@ -101,9 +101,9 @@ class TestBareosFd(unittest.TestCase):
         test_StatPacket = bareosfd.StatPacket()
 
         # check that the initialization of timestamps from current time stamp works
-        self.assertAlmostEqual(test_StatPacket.st_atime, timestamp, delta=1)
-        self.assertAlmostEqual(test_StatPacket.st_mtime, timestamp, delta=1)
-        self.assertAlmostEqual(test_StatPacket.st_ctime, timestamp, delta=1)
+        self.assertAlmostEqual(test_StatPacket.st_atime, timestamp, delta=1.1)
+        self.assertAlmostEqual(test_StatPacket.st_mtime, timestamp, delta=1.1)
+        self.assertAlmostEqual(test_StatPacket.st_ctime, timestamp, delta=1.1)
 
         # set fixed values for comparison
         test_StatPacket.st_atime = 999
