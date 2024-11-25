@@ -209,7 +209,7 @@ The second way to know that the job was backed up with VSS is to look at the Job
 ::
 
    23-Jul 13:25 rufus-dir: Start Backup JobId 1, Job=NightlySave.2005-07-23_13.25.45
-   23-Jul 13:26 rufus-sd: Wrote label to prelabeled Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
+   23-Jul 13:26 rufus-sd: Labeled new Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
    23-Jul 13:26 rufus-sd: Spooling data ...
    23-Jul 13:26 Tibs: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
    23-Jul 13:26 Tibs: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
