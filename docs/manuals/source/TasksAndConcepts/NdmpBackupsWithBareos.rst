@@ -633,7 +633,7 @@ Now we are ready to do our first NDMP backup:
     2016-01-14 10:57:53 bareos-dir JobId 1: Using Device "FileStorage" to write.
     2016-01-14 10:57:53 bareos-dir JobId 1: Opening tape drive LPDA-DEJC-ENJL-AHAI-JCBD-LICP-LKHL-IEDK@/ifs/home%0 read/write
     2016-01-14 10:57:53 bareos-sd JobId 1: Labeled new Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
-    2016-01-14 10:57:53 bareos-sd JobId 1: Wrote label to prelabeled Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage)
+    2016-01-14 10:57:53 bareos-sd JobId 1: Labeled new Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage)
     2016-01-14 10:57:53 bareos-dir JobId 1: Commanding tape drive to rewind
     2016-01-14 10:57:53 bareos-dir JobId 1: Waiting for operation to start
     2016-01-14 10:57:53 bareos-dir JobId 1: Async request NDMP4_LOG_MESSAGE
