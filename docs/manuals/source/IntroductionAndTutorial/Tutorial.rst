@@ -437,7 +437,7 @@ something like:
    2023-09-23T09:50:06+0000 bareos-fd  JobId 1: Extended attribute support is enabled
    2023-09-23T09:50:06+0000 bareos-fd  JobId 1: ACL support is enabled
    2023-09-23T09:50:06+0000 bareos-sd  JobId 1: Labeled new Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
-   2023-09-23T09:50:06+0000 bareos-sd  JobId 1: Wrote label to prelabeled Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage)
+   2023-09-23T09:50:06+0000 bareos-sd  JobId 1: Labeled new Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage)
    2023-09-23T09:50:07+0000 bareos-sd  JobId 1: Releasing device "FileStorage" (/var/lib/bareos/storage).
    2023-09-23T09:50:07+0000 bareos-sd  JobId 1: Elapsed time=00:00:01, Transfer rate=62.68 M Bytes/second
    2023-09-23T09:50:07+0000 bareos-dir JobId 1: Insert of attributes batch table with 173 entries start
