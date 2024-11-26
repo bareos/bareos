@@ -1,0 +1,15 @@
+#
+# If you are using mtx-changer in debug mode, to
+# have your log file compressed, rotated, and after a time
+# deleted, after possibly editing the values below,
+# copy this file to:
+#
+# /etc/logrotate.d/bareos-mtx
+#
+@logdir@/mtx.log {
+    monthly
+    rotate 6
+    notifempty
+    missingok
+    su @sd_user@ @sd_group@
+}
