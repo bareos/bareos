@@ -90,8 +90,6 @@ macro(bareos_gtest_add_tests testname)
   if(BAREOS_GTEST_ADD_TESTS_DISABLE)
     message("DISABELING ${found_tests}")
     set_tests_properties(${found_tests} PROPERTIES DISABLED TRUE)
-  else()
-    message("NOT DISABELING ${found_tests}")
   endif()
 
   set_tests_properties(

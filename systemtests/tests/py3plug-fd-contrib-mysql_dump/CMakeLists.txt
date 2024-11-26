@@ -27,11 +27,11 @@ if(TARGET python3-fd
    AND MYSQL_DAEMON_BINARY
    AND MYSQL_CLIENT_BINARY
 )
-  create_systemtest(${SYSTEMTEST_PREFIX} py3plug-fd-contrib-mysql_dump)
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX}
-    py3plug-fd-contrib-mysql_dump
+    ${BASENAME}
     DISABLED
     COMMENT
     "

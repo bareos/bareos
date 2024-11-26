@@ -5,7 +5,7 @@ FileSet {
     Options {
       signature = XXH128
     }
-    Plugin = "@python_module_name@"
+    Plugin = "@python_module_name@@python_module_suffix@"
              ":module_path=@current_test_directory@/python-modules"
              ":module_name=bareos-fd-postgresql"
              ":db_host=/run/postgresql/"

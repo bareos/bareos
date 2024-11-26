@@ -23,6 +23,7 @@
 # MARIADB_DAEMON_BINARY=/usr/bin/mariadbd \ -D
 # MARIADB_CLIENT_BINARY=/usr/bin/mariadb \ -D
 # MARIADB_MYSQL_INSTALL_DB_SCRIPT=/usr/bin/mysql_install_db
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
 if(TARGET python3-fd
    AND MARIADB_BACKUP_BINARY
@@ -30,11 +31,11 @@ if(TARGET python3-fd
    AND MARIADB_CLIENT_BINARY
    AND MARIADB_MYSQL_INSTALL_DB_SCRIPT
 )
-  create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup")
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX}
-    "py3plug-fd-mariabackup"
+    ${BASENAME}
     DISABLED
     COMMENT
     "

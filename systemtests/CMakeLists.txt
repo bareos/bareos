@@ -367,7 +367,7 @@ else()
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
     message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
 
-    prepare_test(${TEST_NAME})
+    prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     prepare_testdir_for_daemon_run()
     # split WEBUI_TEST_NAME into PROFILE and TESTNAME
     string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})

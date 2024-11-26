@@ -17,10 +17,11 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(TARGET python3-dir)
-  create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-dir")
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} "py3plug-dir" DISABLED COMMENT "no python3-dir"
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "no python3-dir"
   )
 endif()
