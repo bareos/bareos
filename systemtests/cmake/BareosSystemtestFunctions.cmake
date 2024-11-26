@@ -558,6 +558,7 @@ endmacro()
 macro(prepare_test_python)
   string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
   string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
+  string(REGEX MATCH "pygrpc" py_v3_grpc "${TEST_NAME}")
   # use python3 by default, exepts the name of test starts with py2plug.
   set(python_module_name python3)
   if(py_v2)
