@@ -64,7 +64,7 @@ mysql_init()
         MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=my.cnf"
     else
         echo "MySQL init with mysql_install_db"
-        mysql_install_db --auth-root-authentication-method=socket --user=$USER --auth-root-socket-user=$USER --defaults-file=mysqldefaults > mysql/mysql_init.log
+        ${MYSQL_INSTALL_DB_SCRIPT} --auth-root-authentication-method=socket --user=$USER --auth-root-socket-user=$USER --defaults-file=mysqldefaults > mysql/mysql_init.log
         {
             echo "[client]"
             echo "socket=${dbHost}/mysql.sock"

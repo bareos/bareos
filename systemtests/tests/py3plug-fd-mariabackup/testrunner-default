@@ -5,7 +5,7 @@ set -u
 #
 # This systemtest tests the mariadb plugin functionality
 # of the Bareos FD by using the supplied module
-#   BareosFdPluginMariabackup.py
+# bareos-fd-mariabackup.py
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -24,6 +24,7 @@ mariabackup_test_db="${db_name}_mariabackup"
 # override MYSQL_*_BINARY variables to be able to use mysql.sh
 MYSQL_DAEMON_BINARY="${MARIADB_DAEMON_BINARY}"
 MYSQL_CLIENT_BINARY="${MARIADB_CLIENT_BINARY}"
+MYSQL_INSTALL_DB_SCRIPT="${MARIADB_INSTALL_DB_SCRIPT}"
 
 #shellcheck source=../scripts/mysql.sh
 . "${rscripts}"/mysql.sh
