@@ -944,6 +944,14 @@ static int CompareVolumeName(void* item1, void* item2)
 // Get the current size of a volume.
 ssize_t ChunkedDevice::ChunkedVolumeSize()
 {
+  /* Check if the current chunk needs flushing. In that case, we just wrote to
+   * the chunk. As we can only ever write to the last chunk, it is safe to
+   * assume that the end of the last write in this chunk is the end of the
+   * volume. */
+  if (current_chunk_->need_flushing) {
+    return current_chunk_->start_offset + current_chunk_->buflen;
+  }
+
   /* See if we are using io-threads or not and the ordered CircularBuffer is
    * created. We try to make sure that nothing of the volume being requested is
    * still inflight as then the RemoteVolumeSize() method will fail to
