@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+# Run a simple backup
+#
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/create-backup.out
+setdebug level=100 storage=File trace=1
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Start Backup JobId" \
+	    "$log_home/create-backup.out" \
+	    "Backup job was not started."
+
+expect_grep "FileIndex overflow detected" \
+	    "$log_home/create-backup.out" \
+	    "FileIndex overflow was not detected."
+
+expect_grep "Backup Error" \
+	    "$log_home/create-backup.out" \
+	    "Backup did not end in error."
+
+end_test
