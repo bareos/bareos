@@ -946,11 +946,14 @@ struct plugin_thread {
 
   ~plugin_thread() { join(); }
 
+  PluginContext* ctx() { return &pctx; }
+
  private:
   plugin_thread(channel::channel_pair<callback> p)
       : in{std::move(p.first)}, out{std::move(p.second)}
       , t{+[](plugin_thread* pt) { pt->run(); }, this}
   {
+    pctx.core_private_context = this;
   }
 
   bool enqueue_task(callback&& c) { return in.emplace(std::move(c)); }
@@ -978,14 +981,20 @@ struct plugin_thread {
   std::thread t;
 };
 
-plugin_thread plugin;
+template <typename F>
+bRC plugin_run(PluginContext* ctx,
+               F&& f)
+{
+  auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
+  return thrd->submit(f);
+}
 
 std::optional<std::string_view> inferior_setup(PluginContext* ctx,
                                                std::string_view cmd);
 namespace filedaemon {
-bRC Wrapper_newPlugin(PluginContext*)
+bRC Wrapper_newPlugin(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext*) {
+  return plugin_run(outer_ctx, [](PluginContext*) {
     // we do not do anything here
     auto events = std::array{
         bc::EventType::Event_JobStart,
@@ -1004,23 +1013,23 @@ bRC Wrapper_newPlugin(PluginContext*)
     return bRC_OK;
   });
 }
-bRC Wrapper_freePlugin(PluginContext*)
+bRC Wrapper_freePlugin(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->freePlugin(ctx);
   });
 }
-bRC Wrapper_getPluginValue(PluginContext*, pVariable var, void* value)
+bRC Wrapper_getPluginValue(PluginContext* outer_ctx, pVariable var, void* value)
 {
-  return plugin.submit([var, value](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->getPluginValue(ctx, var, value);
   });
 }
-bRC Wrapper_setPluginValue(PluginContext*, pVariable var, void* value)
+bRC Wrapper_setPluginValue(PluginContext* outer_ctx, pVariable var, void* value)
 {
-  return plugin.submit([var, value](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setPluginValue(ctx, var, value);
   });
@@ -1096,9 +1105,9 @@ static const char* event_type_to_str(int type)
   }
 }
 
-bRC Wrapper_handlePluginEvent(PluginContext*, bEvent* event, void* value)
+bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx, bEvent* event, void* value)
 {
-  return plugin.submit([event, value](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [event, value](PluginContext* ctx) {
     DebugLog(100, FMT_STRING("handling event of type \"{}\" ({})"),
              event_type_to_str(event->eventType), event->eventType);
 
@@ -1147,88 +1156,88 @@ bRC Wrapper_handlePluginEvent(PluginContext*, bEvent* event, void* value)
     return plugin_funs->handlePluginEvent(ctx, event, value);
   });
 }
-bRC Wrapper_startBackupFile(PluginContext*, save_pkt* sp)
+bRC Wrapper_startBackupFile(PluginContext* outer_ctx, save_pkt* sp)
 {
-  return plugin.submit([sp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [sp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->startBackupFile(ctx, sp);
   });
 }
-bRC Wrapper_endBackupFile(PluginContext*)
+bRC Wrapper_endBackupFile(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->endBackupFile(ctx);
     return bRC_Error;
   });
 }
-bRC Wrapper_startRestoreFile(PluginContext*, const char* cmd)
+bRC Wrapper_startRestoreFile(PluginContext* outer_ctx, const char* cmd)
 {
-  return plugin.submit([cmd](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [cmd](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->startRestoreFile(ctx, cmd);
   });
 }
-bRC Wrapper_endRestoreFile(PluginContext*)
+bRC Wrapper_endRestoreFile(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->endRestoreFile(ctx);
   });
 }
-bRC Wrapper_pluginIO(PluginContext*, io_pkt* io)
+bRC Wrapper_pluginIO(PluginContext* outer_ctx, io_pkt* io)
 {
-  return plugin.submit([io](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [io](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->pluginIO(ctx, io);
   });
 }
-bRC Wrapper_createFile(PluginContext*, restore_pkt* rp)
+bRC Wrapper_createFile(PluginContext* outer_ctx, restore_pkt* rp)
 {
-  return plugin.submit([rp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->createFile(ctx, rp);
   });
 }
-bRC Wrapper_setFileAttributes(PluginContext*, restore_pkt* rp)
+bRC Wrapper_setFileAttributes(PluginContext* outer_ctx, restore_pkt* rp)
 {
-  return plugin.submit([rp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setFileAttributes(ctx, rp);
   });
 }
-bRC Wrapper_checkFile(PluginContext*, char* fname)
+bRC Wrapper_checkFile(PluginContext* outer_ctx, char* fname)
 {
-  return plugin.submit([fname](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [fname](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->checkFile(ctx, fname);
   });
 }
-bRC Wrapper_getAcl(PluginContext*, acl_pkt* ap)
+bRC Wrapper_getAcl(PluginContext* outer_ctx, acl_pkt* ap)
 {
-  return plugin.submit([ap](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->getAcl(ctx, ap);
   });
 }
-bRC Wrapper_setAcl(PluginContext*, acl_pkt* ap)
+bRC Wrapper_setAcl(PluginContext* outer_ctx, acl_pkt* ap)
 {
-  return plugin.submit([ap](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setAcl(ctx, ap);
   });
 }
-bRC Wrapper_getXattr(PluginContext*, xattr_pkt* xp)
+bRC Wrapper_getXattr(PluginContext* outer_ctx, xattr_pkt* xp)
 {
-  return plugin.submit([xp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->getXattr(ctx, xp);
     return bRC_Error;
   });
 }
-bRC Wrapper_setXattr(PluginContext*, xattr_pkt* xp)
+bRC Wrapper_setXattr(PluginContext* outer_ctx, xattr_pkt* xp)
 {
-  return plugin.submit([xp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setXattr(ctx, xp);
   });
@@ -1364,9 +1373,10 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
   auto barrier = shutdown_signal.get_future();
 
+  plugin_thread plugin;
 
   con = connection_builder{std::make_unique<PluginService>(
-                               nullptr, io_sock, funcs,
+                               plugin.ctx(), io_sock, funcs,
                                std::move(shutdown_signal))}
             .connect_client(client_sock)
             .connect_server(server_sock)
@@ -1376,7 +1386,6 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
     fprintf(stderr, "Could not establish grpc connection ...\n");
     exit(1);
   }
-
 
   DebugLog(100, FMT_STRING("setting up ..."));
   if (!setup()) {
