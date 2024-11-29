@@ -164,6 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add Honor No Dump Flag to config output [PR #1994]
 - JSON API: make sure, strings are valid UTF8 [PR #1922]
 - dird: fix mark command not accepting full windows paths [PR #1938]
+- stored: explicitly flush after labeling [PR #2022]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -312,6 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1994]: https://github.com/bareos/bareos/pull/1994
 [PR #1996]: https://github.com/bareos/bareos/pull/1996
 [PR #1998]: https://github.com/bareos/bareos/pull/1998
+[PR #2022]: https://github.com/bareos/bareos/pull/2022
 [PR #2027]: https://github.com/bareos/bareos/pull/2027
 [PR #2029]: https://github.com/bareos/bareos/pull/2029
 [PR #2031]: https://github.com/bareos/bareos/pull/2031
