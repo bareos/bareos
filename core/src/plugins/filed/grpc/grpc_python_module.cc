@@ -50,72 +50,48 @@
 #include "plugin_service_python.h"
 #include "test_module_python.h"
 
-struct grpc_connection {
-  std::unique_ptr<bc::Core::Stub> stub;
-  std::unique_ptr<grpc::Server> server;
-  std::vector<std::unique_ptr<grpc::Service>> services;
-
-  grpc_connection() = delete;
-};
 
 struct connection_builder {
-  std::optional<std::unique_ptr<bc::Core::Stub>> opt_stub;
-  std::unique_ptr<grpc::Server> opt_server;
-  std::vector<std::unique_ptr<grpc::Service>> services;
-
-  template <typename... Args> connection_builder(Args&&... args)
+  static std::optional<std::unique_ptr<bc::Core::Stub>> connect_client(int sockfd)
   {
-    (services.emplace_back(std::forward<Args>(args)), ...);
+    try {
+      return bc::Core::NewStub(grpc::CreateInsecureChannelFromFd("", sockfd));
+    } catch (...) {
+      return std::nullopt;
+    }
   }
 
-  connection_builder& connect_client(int sockfd)
-  {
-    opt_stub = bc::Core::NewStub(grpc::CreateInsecureChannelFromFd("", sockfd));
-
-    return *this;
-  }
-
-  connection_builder& connect_server(int sockfd)
+  static std::optional<std::unique_ptr<grpc::Server>> connect_server(int sockfd,
+                                                                     const std::vector<std::unique_ptr<grpc::Service>>& services)
   {
     try {
       grpc::ServerBuilder builder;
 
       for (auto& service : services) { builder.RegisterService(service.get()); }
 
-      opt_server = builder.BuildAndStart();
+      auto server = builder.BuildAndStart();
 
-      if (!opt_server) { return *this; }
+      if (!server) { return std::nullopt; }
 
-      grpc::AddInsecureChannelFromFd(opt_server.get(), sockfd);
+      grpc::AddInsecureChannelFromFd(server.get(), sockfd);
+
+      return server;
     } catch (const std::exception& e) {
       // DebugLog(50, FMT_STRING("could not attach socket {} to server:
       // Err={}"),
       //          sockfd, e.what());
-      opt_server.reset();
+      return std::nullopt;
     } catch (...) {
-      opt_server.reset();
+      return std::nullopt;
     }
-    return *this;
-  }
-
-
-  std::optional<grpc_connection> build()
-  {
-    if (!opt_stub) { return std::nullopt; }
-    if (!opt_server) { return std::nullopt; }
-
-    grpc_connection con{std::move(opt_stub.value()), std::move(opt_server),
-                        std::move(services)};
-
-    return con;
   }
 };
 
 #include <fcntl.h>
 
-std::optional<grpc_connection> con;
+bc::Core::Stub* global_stub{nullptr};
 
-static inline bc::Core::Stub* stub() { return con->stub.get(); }
+static inline bc::Core::Stub* stub() { return global_stub; }
 
 bool Register(std::basic_string_view<bc::EventType> types)
 {
@@ -951,9 +927,10 @@ struct plugin_thread {
  private:
   plugin_thread(channel::channel_pair<callback> p)
       : in{std::move(p.first)}, out{std::move(p.second)}
-      , t{+[](plugin_thread* pt) { pt->run(); }, this}
   {
     pctx.core_private_context = this;
+    // only start the thread once the plugin context is setup
+    t = std::thread{+[](plugin_thread* pt) { pt->run(); }, this};
   }
 
   bool enqueue_task(callback&& c) { return in.emplace(std::move(c)); }
@@ -982,8 +959,7 @@ struct plugin_thread {
 };
 
 template <typename F>
-bRC plugin_run(PluginContext* ctx,
-               F&& f)
+bRC plugin_run(PluginContext* ctx, F&& f)
 {
   auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
   return thrd->submit(f);
@@ -1373,17 +1349,29 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
   auto barrier = shutdown_signal.get_future();
 
-  plugin_thread plugin;
+  std::optional client = connection_builder::connect_client(client_sock);
 
-  con = connection_builder{std::make_unique<PluginService>(
-                               plugin.ctx(), io_sock, funcs,
-                               std::move(shutdown_signal))}
-            .connect_client(client_sock)
-            .connect_server(server_sock)
-            .build();
+  if (!client) {
+    fprintf(stderr, "could not create client grpc connection ...\n");
+    exit(1);
+  }
 
-  if (!con) {
-    fprintf(stderr, "Could not establish grpc connection ...\n");
+  global_stub = client->get();
+
+  plugin_thread plugin{};
+
+  std::vector<std::unique_ptr<grpc::Service>> services{
+  };
+  services.push_back(
+    std::make_unique<PluginService>(plugin.ctx(), io_sock, funcs,
+                                    std::move(shutdown_signal))
+                    );
+
+  std::optional server = connection_builder::connect_server(server_sock,
+                                                            services);
+
+  if (!server) {
+    fprintf(stderr, "Could not establish server grpc connection ...\n");
     exit(1);
   }
 
@@ -1400,8 +1388,16 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
     DebugLog(100, FMT_STRING("grpc server finished: closing connections"));
   }
+  // destroy the server before killing the plugin thread
+  DebugLog(100, FMT_STRING("shutdown - shutting down the grpc server"));
+  server->get()->Shutdown();
+  // destroy the services (as they have a reference to the plugin_thread)
+  DebugLog(100, FMT_STRING("shutdown - stopping the server services"));
+  services.clear();
+  // finally destroy the plugin thread
+  DebugLog(100, FMT_STRING("shutdown - stopping plugin thread"));
   plugin.join();
-  con.reset();
+  DebugLog(100, FMT_STRING("shutdown - finished"));
   if (plugin_data.plugin_handle) { dlclose(plugin_data.plugin_handle); }
 }
 
