@@ -19,6 +19,16 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+set(ndmp_data_agent_address "" CACHE STRING "address of the ndmp data agent")
+set(ndmp_data_agent_user "ndmpadmin" CACHE STRING "user to access the ndmp data agent")
+set(ndmp_data_agent_password "test" CACHE STRING "password to access the ndmp data agent")
+
+set(ndmp_tape_and_robot_agent_address CACHE STRING "address of the ndmp robot and tape agents")
+set(ndmp_tape_and_robot_agent_user "ndmpadmin" CACHE STRING "user of the ndmp robot and tape agents")
+set(ndmp_tape_and_robot_agent_password "test" CACHE STRING "password of the ndmp robot and tape agents")
+set(ndmp_tape_and_robot_agent_changer_device "" CACHE STRING "changer device of the ndmp robot agent")
+set(ndmp_tape_and_robot_agent_tape_device "" CACHE STRING "tape device of the ndmp robot agent")
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(DISABLED_TESTS
       system:always-incremental-consolidate:02-empty-incrementals
