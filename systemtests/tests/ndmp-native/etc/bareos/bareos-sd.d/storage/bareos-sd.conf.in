@@ -1,0 +1,12 @@
+Storage {
+  Name = bareos-sd
+  Maximum Concurrent Jobs = 20
+  NDMP Enable = yes
+  NDMP Log Level = 7
+  NDMP Snooping = yes
+  Plugin Directory = "@SD_PLUGINS_DIR_TO_TEST@"
+  Plugin Names = "autoxflate"
+  Working Directory =  "@working_dir@"
+  SD Port = @sd_port@
+  @sd_backend_config@
+}
