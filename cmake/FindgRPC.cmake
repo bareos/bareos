@@ -60,7 +60,7 @@ if(NOT gRPC_FOUND)
 
   find_package_handle_standard_args(
     gRPC
-    REQUIRED_VARS gRPC_INCLUDE_DIRS gRPC_LINK_LIBRARIES
+    REQUIRED_VARS gRPC_LINK_LIBRARIES
     VERSION_VAR gRPC_VERSION
   )
 
