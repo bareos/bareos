@@ -45,7 +45,7 @@ This module will set the following variables in your project:
 
 #]=======================================================================]
 
-
+include(FindPackageHandleStandardArgs)
 
 # Find gRPC installation Looks for gRPCConfig.cmake file installed by gRPC's
 # cmake installation.
@@ -57,14 +57,62 @@ if(NOT gRPC_FOUND)
   message(DEBUG "grpc not (yet) found, fallback to pkg_check_modules()")
   find_package(PkgConfig QUIET REQUIRED)
   pkg_check_modules (gRPC grpc++ REQUIRED)
-  find_library(grpc++_reflection
+
+  find_package_handle_standard_args(
+    gRPC
+    REQUIRED_VARS gRPC_INCLUDE_DIRS gRPC_LINK_LIBRARIES
+    VERSION_VAR gRPC_VERSION
+  )
+
+  find_library(
+    REFLECTION_LIBRARY
     NAMES grpc++_reflection
     HINTS ${gRPC_LIBRARY_DIRS}
-    REQUIRED)
-  find_library(grpc++
+    REQUIRED
+  )
+
+  if (NOT TARGET grpc++_reflection
+      AND NOT TARGET gRPC::grpc++_reflection)
+    message(DEBUG "adding grpc++_reflection library")
+    add_library(grpc++_reflection UNKNOWN IMPORTED)
+    set_target_properties(
+      grpc++_reflection PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+      "${gRPC_INCLUDE_DIRS}"
+    )
+    set_target_properties(
+      grpc++_reflection PROPERTIES INTERFACE_LINK_LIBRARIES
+      "${gRPC_LINK_LIBRARIES}"
+    )
+    set_property(
+      TARGET grpc++_reflection
+      APPEND
+      PROPERTY IMPORTED_LOCATION "${REFLECTION_LIBRARY}"
+    )
+  endif()
+
+  find_library(CPP_BINDINGS
     NAMES grpc++
     HINTS ${gRPC_LIBRARY_DIRS}
     REQUIRED)
+
+  if (NOT TARGET grpc++ AND NOT TARGET gRPC::grpc++)
+    message(DEBUG "adding grpc++ library")
+    add_library(grpc++ UNKNOWN IMPORTED)
+    set_target_properties(
+      grpc++ PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+      "${gRPC_INCLUDE_DIRS}"
+    )
+    set_target_properties(
+      grpc++ PROPERTIES INTERFACE_LINK_LIBRARIES
+      "${gRPC_LINK_LIBRARIES}"
+    )
+    set_property(
+      TARGET grpc++
+      APPEND
+      PROPERTY IMPORTED_LOCATION "${CPP_BINDINGS}"
+    )
+  endif()
+
   message(DEBUG "gRPC_VERSION: ${gRPC_VERSION}")
 endif()
 
@@ -91,7 +139,6 @@ else()
 endif()
 message(DEBUG "plugin = ${gRPC_CPP_PROTO_PLUGIN}")
 
-include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   gRPC
   REQUIRED_VARS gRPC_CPP_PROTO_PLUGIN
