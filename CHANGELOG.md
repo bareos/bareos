@@ -116,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - filed: detect integer overflow during backup [PR #1952]
 - dedupable device: fix example files [PR #2029]
 - bareosfd_test.py: allow a delta of 1.1 [PR #2031]
+- mssql TearDownVdiDevice(): enhance error reporting [PR #2008]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -313,6 +314,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1994]: https://github.com/bareos/bareos/pull/1994
 [PR #1996]: https://github.com/bareos/bareos/pull/1996
 [PR #1998]: https://github.com/bareos/bareos/pull/1998
+[PR #2008]: https://github.com/bareos/bareos/pull/2008
 [PR #2022]: https://github.com/bareos/bareos/pull/2022
 [PR #2027]: https://github.com/bareos/bareos/pull/2027
 [PR #2029]: https://github.com/bareos/bareos/pull/2029
