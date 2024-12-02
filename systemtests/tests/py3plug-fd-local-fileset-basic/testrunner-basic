@@ -85,7 +85,7 @@ expect_grep 'name="XATTR name 3", value="XATTR value 3"' tmp/log2.out "could not
 expect_grep 'content="Hello ACL"' tmp/log2.out "could not find recovered ACL in restore log"
 
 expect_grep "Readin.*from file"\
-  working/py?plug-fd-local-fileset-basic-fd.trace \
+  working/py*-fd-local-fileset-basic-fd.trace \
   "io was not handled in python according to trace file."
 
 end_test
