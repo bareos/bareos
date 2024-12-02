@@ -28,8 +28,21 @@
 #include "stored/stored_globals.h"
 #include <sys/stat.h>
 #include <cctype>
+#if defined(HAVE_WIN32)
+#  include <shlwapi.h>  // for PathIsRelativeA()
+#endif
 
 namespace {
+
+bool path_is_relative(const std::string& path)
+{
+#if defined(HAVE_WIN32)
+  return PathIsRelativeA(path.c_str());
+#else
+  return path[0] != '/';
+#endif
+}
+
 class BPipeHandle {
   Bpipe* bpipe;
 
@@ -97,7 +110,7 @@ bool is_valid_env_name(const std::string& name)
 tl::expected<void, std::string> CrudStorage::set_program(
     const std::string& program)
 {
-  if (program[0] != '/') {
+  if (path_is_relative(program)) {
     m_program
         = fmt::format("{}/{}", storagedaemon::me->scripts_directory, program);
   } else {
