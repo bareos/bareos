@@ -13,6 +13,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareosfd_test.py: allow a delta of 1.1 [PR #2032]
 - filed: detect integer overflow during backup [PR #2024]
 
+### Fixed
+- stored: explicitly flush after labeling [PR #2044]
+
 ## [23.1.0] - 2024-11-13
 
 ### Changed
@@ -589,4 +592,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2024]: https://github.com/bareos/bareos/pull/2024
 [PR #2028]: https://github.com/bareos/bareos/pull/2028
 [PR #2032]: https://github.com/bareos/bareos/pull/2032
+[PR #2044]: https://github.com/bareos/bareos/pull/2044
 [unreleased]: https://github.com/bareos/bareos/tree/master
