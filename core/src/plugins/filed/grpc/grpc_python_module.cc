@@ -50,72 +50,48 @@
 #include "plugin_service_python.h"
 #include "test_module_python.h"
 
-struct grpc_connection {
-  std::unique_ptr<bc::Core::Stub> stub;
-  std::unique_ptr<grpc::Server> server;
-  std::vector<std::unique_ptr<grpc::Service>> services;
-
-  grpc_connection() = delete;
-};
 
 struct connection_builder {
-  std::optional<std::unique_ptr<bc::Core::Stub>> opt_stub;
-  std::unique_ptr<grpc::Server> opt_server;
-  std::vector<std::unique_ptr<grpc::Service>> services;
-
-  template <typename... Args> connection_builder(Args&&... args)
+  static std::optional<std::unique_ptr<bc::Core::Stub>> connect_client(int sockfd)
   {
-    (services.emplace_back(std::forward<Args>(args)), ...);
+    try {
+      return bc::Core::NewStub(grpc::CreateInsecureChannelFromFd("", sockfd));
+    } catch (...) {
+      return std::nullopt;
+    }
   }
 
-  connection_builder& connect_client(int sockfd)
-  {
-    opt_stub = bc::Core::NewStub(grpc::CreateInsecureChannelFromFd("", sockfd));
-
-    return *this;
-  }
-
-  connection_builder& connect_server(int sockfd)
+  static std::optional<std::unique_ptr<grpc::Server>> connect_server(int sockfd,
+                                                                     const std::vector<std::unique_ptr<grpc::Service>>& services)
   {
     try {
       grpc::ServerBuilder builder;
 
       for (auto& service : services) { builder.RegisterService(service.get()); }
 
-      opt_server = builder.BuildAndStart();
+      auto server = builder.BuildAndStart();
 
-      if (!opt_server) { return *this; }
+      if (!server) { return std::nullopt; }
 
-      grpc::AddInsecureChannelFromFd(opt_server.get(), sockfd);
+      grpc::AddInsecureChannelFromFd(server.get(), sockfd);
+
+      return server;
     } catch (const std::exception& e) {
       // DebugLog(50, FMT_STRING("could not attach socket {} to server:
       // Err={}"),
       //          sockfd, e.what());
-      opt_server.reset();
+      return std::nullopt;
     } catch (...) {
-      opt_server.reset();
+      return std::nullopt;
     }
-    return *this;
-  }
-
-
-  std::optional<grpc_connection> build()
-  {
-    if (!opt_stub) { return std::nullopt; }
-    if (!opt_server) { return std::nullopt; }
-
-    grpc_connection con{std::move(opt_stub.value()), std::move(opt_server),
-                        std::move(services)};
-
-    return con;
   }
 };
 
 #include <fcntl.h>
 
-std::optional<grpc_connection> con;
+bc::Core::Stub* global_stub{nullptr};
 
-static inline bc::Core::Stub* stub() { return con->stub.get(); }
+static inline bc::Core::Stub* stub() { return global_stub; }
 
 bool Register(std::basic_string_view<bc::EventType> types)
 {
@@ -946,11 +922,15 @@ struct plugin_thread {
 
   ~plugin_thread() { join(); }
 
+  PluginContext* ctx() { return &pctx; }
+
  private:
   plugin_thread(channel::channel_pair<callback> p)
       : in{std::move(p.first)}, out{std::move(p.second)}
-      , t{+[](plugin_thread* pt) { pt->run(); }, this}
   {
+    pctx.core_private_context = this;
+    // only start the thread once the plugin context is setup
+    t = std::thread{+[](plugin_thread* pt) { pt->run(); }, this};
   }
 
   bool enqueue_task(callback&& c) { return in.emplace(std::move(c)); }
@@ -978,14 +958,19 @@ struct plugin_thread {
   std::thread t;
 };
 
-plugin_thread plugin;
+template <typename F>
+bRC plugin_run(PluginContext* ctx, F&& f)
+{
+  auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
+  return thrd->submit(f);
+}
 
 std::optional<std::string_view> inferior_setup(PluginContext* ctx,
                                                std::string_view cmd);
 namespace filedaemon {
-bRC Wrapper_newPlugin(PluginContext*)
+bRC Wrapper_newPlugin(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext*) {
+  return plugin_run(outer_ctx, [](PluginContext*) {
     // we do not do anything here
     auto events = std::array{
         bc::EventType::Event_JobStart,
@@ -1004,23 +989,23 @@ bRC Wrapper_newPlugin(PluginContext*)
     return bRC_OK;
   });
 }
-bRC Wrapper_freePlugin(PluginContext*)
+bRC Wrapper_freePlugin(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->freePlugin(ctx);
   });
 }
-bRC Wrapper_getPluginValue(PluginContext*, pVariable var, void* value)
+bRC Wrapper_getPluginValue(PluginContext* outer_ctx, pVariable var, void* value)
 {
-  return plugin.submit([var, value](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->getPluginValue(ctx, var, value);
   });
 }
-bRC Wrapper_setPluginValue(PluginContext*, pVariable var, void* value)
+bRC Wrapper_setPluginValue(PluginContext* outer_ctx, pVariable var, void* value)
 {
-  return plugin.submit([var, value](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setPluginValue(ctx, var, value);
   });
@@ -1096,9 +1081,9 @@ static const char* event_type_to_str(int type)
   }
 }
 
-bRC Wrapper_handlePluginEvent(PluginContext*, bEvent* event, void* value)
+bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx, bEvent* event, void* value)
 {
-  return plugin.submit([event, value](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [event, value](PluginContext* ctx) {
     DebugLog(100, FMT_STRING("handling event of type \"{}\" ({})"),
              event_type_to_str(event->eventType), event->eventType);
 
@@ -1147,88 +1132,88 @@ bRC Wrapper_handlePluginEvent(PluginContext*, bEvent* event, void* value)
     return plugin_funs->handlePluginEvent(ctx, event, value);
   });
 }
-bRC Wrapper_startBackupFile(PluginContext*, save_pkt* sp)
+bRC Wrapper_startBackupFile(PluginContext* outer_ctx, save_pkt* sp)
 {
-  return plugin.submit([sp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [sp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->startBackupFile(ctx, sp);
   });
 }
-bRC Wrapper_endBackupFile(PluginContext*)
+bRC Wrapper_endBackupFile(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->endBackupFile(ctx);
     return bRC_Error;
   });
 }
-bRC Wrapper_startRestoreFile(PluginContext*, const char* cmd)
+bRC Wrapper_startRestoreFile(PluginContext* outer_ctx, const char* cmd)
 {
-  return plugin.submit([cmd](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [cmd](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->startRestoreFile(ctx, cmd);
   });
 }
-bRC Wrapper_endRestoreFile(PluginContext*)
+bRC Wrapper_endRestoreFile(PluginContext* outer_ctx)
 {
-  return plugin.submit([](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->endRestoreFile(ctx);
   });
 }
-bRC Wrapper_pluginIO(PluginContext*, io_pkt* io)
+bRC Wrapper_pluginIO(PluginContext* outer_ctx, io_pkt* io)
 {
-  return plugin.submit([io](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [io](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->pluginIO(ctx, io);
   });
 }
-bRC Wrapper_createFile(PluginContext*, restore_pkt* rp)
+bRC Wrapper_createFile(PluginContext* outer_ctx, restore_pkt* rp)
 {
-  return plugin.submit([rp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->createFile(ctx, rp);
   });
 }
-bRC Wrapper_setFileAttributes(PluginContext*, restore_pkt* rp)
+bRC Wrapper_setFileAttributes(PluginContext* outer_ctx, restore_pkt* rp)
 {
-  return plugin.submit([rp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setFileAttributes(ctx, rp);
   });
 }
-bRC Wrapper_checkFile(PluginContext*, char* fname)
+bRC Wrapper_checkFile(PluginContext* outer_ctx, char* fname)
 {
-  return plugin.submit([fname](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [fname](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->checkFile(ctx, fname);
   });
 }
-bRC Wrapper_getAcl(PluginContext*, acl_pkt* ap)
+bRC Wrapper_getAcl(PluginContext* outer_ctx, acl_pkt* ap)
 {
-  return plugin.submit([ap](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->getAcl(ctx, ap);
   });
 }
-bRC Wrapper_setAcl(PluginContext*, acl_pkt* ap)
+bRC Wrapper_setAcl(PluginContext* outer_ctx, acl_pkt* ap)
 {
-  return plugin.submit([ap](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setAcl(ctx, ap);
   });
 }
-bRC Wrapper_getXattr(PluginContext*, xattr_pkt* xp)
+bRC Wrapper_getXattr(PluginContext* outer_ctx, xattr_pkt* xp)
 {
-  return plugin.submit([xp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->getXattr(ctx, xp);
     return bRC_Error;
   });
 }
-bRC Wrapper_setXattr(PluginContext*, xattr_pkt* xp)
+bRC Wrapper_setXattr(PluginContext* outer_ctx, xattr_pkt* xp)
 {
-  return plugin.submit([xp](PluginContext* ctx) {
+  return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     return plugin_funs->setXattr(ctx, xp);
   });
@@ -1364,19 +1349,31 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
   auto barrier = shutdown_signal.get_future();
 
+  std::optional client = connection_builder::connect_client(client_sock);
 
-  con = connection_builder{std::make_unique<PluginService>(
-                               nullptr, io_sock, funcs,
-                               std::move(shutdown_signal))}
-            .connect_client(client_sock)
-            .connect_server(server_sock)
-            .build();
-
-  if (!con) {
-    fprintf(stderr, "Could not establish grpc connection ...\n");
+  if (!client) {
+    fprintf(stderr, "could not create client grpc connection ...\n");
     exit(1);
   }
 
+  global_stub = client->get();
+
+  plugin_thread plugin{};
+
+  std::vector<std::unique_ptr<grpc::Service>> services{
+  };
+  services.push_back(
+    std::make_unique<PluginService>(plugin.ctx(), io_sock, funcs,
+                                    std::move(shutdown_signal))
+                    );
+
+  std::optional server = connection_builder::connect_server(server_sock,
+                                                            services);
+
+  if (!server) {
+    fprintf(stderr, "Could not establish server grpc connection ...\n");
+    exit(1);
+  }
 
   DebugLog(100, FMT_STRING("setting up ..."));
   if (!setup()) {
@@ -1391,8 +1388,16 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
     DebugLog(100, FMT_STRING("grpc server finished: closing connections"));
   }
+  // destroy the server before killing the plugin thread
+  DebugLog(100, FMT_STRING("shutdown - shutting down the grpc server"));
+  server->get()->Shutdown();
+  // destroy the services (as they have a reference to the plugin_thread)
+  DebugLog(100, FMT_STRING("shutdown - stopping the server services"));
+  services.clear();
+  // finally destroy the plugin thread
+  DebugLog(100, FMT_STRING("shutdown - stopping plugin thread"));
   plugin.join();
-  con.reset();
+  DebugLog(100, FMT_STRING("shutdown - finished"));
   if (plugin_data.plugin_handle) { dlclose(plugin_data.plugin_handle); }
 }
 

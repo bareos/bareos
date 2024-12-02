@@ -26,6 +26,7 @@ if(ENABLE_GRPC)
   endif()
 
   set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/proto")
+  make_directory(${PROTO_OUTPUT_DIR})
   # Proto file
   function(target_add_proto_sources target)
     set(protosrcs)

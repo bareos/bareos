@@ -136,9 +136,9 @@ class PluginService : public bp::Plugin::Service {
                   const bp::setXattrRequest* request,
                   bp::setXattrResponse* response) override;
 
-  PluginFunctions funcs;
-  PluginContext* ctx;
-  int io;
+  PluginFunctions funcs{};
+  PluginContext* ctx{nullptr};
+  int io{};
 
   std::promise<void> shutdown;
 
