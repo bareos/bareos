@@ -1,5 +1,0 @@
-Storage {
-  Name = DedupStorage
-  Device = DedupDevice
-  Media Type = dedup
-}

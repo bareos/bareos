@@ -1,6 +1,6 @@
 Device {
-  Name = DedupDevice
-  Media Type = dedup
+  Name = DedupableDevice
+  Media Type = dedupable
 
   #
   # Device Options:
@@ -9,7 +9,7 @@ Device {
 
   Device Options = "block size=4k"
 
-  ArchiveDevice = "path/to/storage"
+  Archive Device = @archivedir@
 
   Device Type = dedupable
   Label Media = yes                    # lets Bareos label unlabeled media
@@ -17,6 +17,6 @@ Device {
   Automatic Mount = yes                # when device opened, read it
   Removable Media = no
   Always Open = no
-  Description = "dedup device"
+  Description = "dedupable device"
   Maximum Concurrent Jobs = 1
 }
