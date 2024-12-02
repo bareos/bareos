@@ -18,6 +18,11 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+if(CMAKE_HOST_WIN32)
+  set(DPLCOMPAT_TEST_PROGRAM "localfile-wrapper.cmd")
+else()
+  set(DPLCOMPAT_TEST_PROGRAM "localfile-wrapper.sh")
+endif()
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 set_tests_properties(
   system:dplcompat:restore
