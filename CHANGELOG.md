@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - stored: explicitly flush after labeling [PR #2044]
+- JSON API: make sure, strings are valid UTF8 [PR #2023]
 
 ## [23.1.0] - 2024-11-13
 
@@ -589,6 +590,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2010]: https://github.com/bareos/bareos/pull/2010
 [PR #2012]: https://github.com/bareos/bareos/pull/2012
 [PR #2021]: https://github.com/bareos/bareos/pull/2021
+[PR #2023]: https://github.com/bareos/bareos/pull/2023
 [PR #2024]: https://github.com/bareos/bareos/pull/2024
 [PR #2028]: https://github.com/bareos/bareos/pull/2028
 [PR #2032]: https://github.com/bareos/bareos/pull/2032
