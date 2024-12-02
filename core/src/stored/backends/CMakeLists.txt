@@ -57,6 +57,9 @@ target_link_libraries(
   bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt-header-only
                              tl::expected
 )
+if(HAVE_WIN32)
+  target_link_libraries(bareossd-dplcompat PRIVATE shlwapi)
+endif()
 
 add_sd_backend(bareossd-file)
 add_sd_backend(bareossd-fifo)
