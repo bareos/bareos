@@ -44,7 +44,7 @@ bool path_is_relative(const std::string& path)
 }
 
 class BPipeHandle {
-  Bpipe* bpipe;
+  Bpipe* bpipe{nullptr};
 
  public:
   BPipeHandle(const char* prog,
@@ -55,6 +55,11 @@ class BPipeHandle {
   {
     if (!bpipe) { throw std::system_error(ENOENT, std::generic_category()); }
   }
+  BPipeHandle(const BPipeHandle&) = delete;
+  BPipeHandle& operator=(const BPipeHandle&) = delete;
+  BPipeHandle(BPipeHandle&&) = delete;
+  BPipeHandle& operator=(BPipeHandle&&) = delete;
+
   ~BPipeHandle()
   {
     if (bpipe) { CloseBpipe(bpipe); }
@@ -68,9 +73,7 @@ class BPipeHandle {
     char iobuf[1024];
     while (!feof(bpipe->rfd)) {
       size_t rsize = fread(iobuf, 1, 1024, bpipe->rfd);
-      if (rsize > 0 && !ferror(bpipe->rfd)) {
-        output += std::string(iobuf, rsize);
-      }
+      if (rsize > 0 && !ferror(bpipe->rfd)) { output.append(iobuf, rsize); }
     }
     return output;
   }
