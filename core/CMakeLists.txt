@@ -713,6 +713,7 @@ else()
   if(TARGET droplet)
     list(APPEND BACKENDS droplet_device.d)
   endif()
+  list(APPEND BACKENDS dplcompat_device.d)
 endif()
 
 if(HAVE_MSVC)
