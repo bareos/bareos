@@ -231,7 +231,8 @@
           "code": 0,
           "default_value": "/usr/local/lib/bareos/scripts",
           "platform_specific": true,
-          "equals": true
+          "equals": true,
+          "description": "Path to directory containing script files"
         },
         "MaximumConcurrentJobs": {
           "datatype": "PINT32",
@@ -529,7 +530,8 @@
           "code": 0,
           "default_value": "/usr/local/lib/bareos/scripts",
           "platform_specific": true,
-          "equals": true
+          "equals": true,
+          "description": "Path to directory containing script files"
         },
         "MaximumConcurrentJobs": {
           "datatype": "PINT32",
