@@ -37,6 +37,9 @@ namespace utl = backends::util;
 using namespace std::literals::string_literals;
 
 namespace {
+static constexpr int debug_info = 100;
+static constexpr int debug_trace = 120;
+
 std::string get_chunk_name(storagedaemon::chunk_io_request* request)
 {
   return fmt::format(FMT_STRING("{:04d}"), request->chunk);
@@ -161,9 +164,9 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   // apply default values
   options.merge(utl::options(option_defaults));
 
-  Dmsg0(dlvl, "dev_options: %s\n", dev_options);
+  Dmsg0(debug_info, "dev_options: %s\n", dev_options);
   for (const auto& [key, value] : options) {
-    Dmsg0(dlvl, "'%s' = '%s'\n", key.c_str(), value.c_str());
+    Dmsg0(debug_trace, "'%s' = '%s'\n", key.c_str(), value.c_str());
   }
 
   std::string program;
@@ -215,7 +218,7 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
 
 bool DropletCompatibleDevice::CheckRemoteConnection()
 {
-  Dmsg0(dlvl, "CheckRemoteConnection called\n");
+  Dmsg0(debug_trace, "CheckRemoteConnection called\n");
   return setup() && m_storage.test_connection();
 }
 
@@ -224,15 +227,16 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   const std::string obj_name = request->volname;
   const std::string obj_chunk = get_chunk_name(request);
   if (request->wbuflen == 0) {
-    Dmsg1(dlvl, "Not flushing empty chunk %s/%s\n", obj_name.c_str(),
+    Dmsg1(debug_info, "Not flushing empty chunk %s/%s\n", obj_name.c_str(),
           obj_chunk.c_str());
     return true;
   }
-  Dmsg1(dlvl, "Flushing chunk %s/%s\n", obj_name.c_str(), obj_chunk.c_str());
+  Dmsg1(debug_trace, "Flushing chunk %s/%s\n", obj_name.c_str(),
+        obj_chunk.c_str());
 
   auto inflight_lease = getInflightLease(request);
   if (!inflight_lease) {
-    Dmsg0(dlvl, "Could not acquire inflight lease for %s %s\n",
+    Dmsg0(debug_info, "Could not acquire inflight lease for %s %s\n",
           obj_name.c_str(), obj_chunk.c_str());
     return false;
   }
@@ -248,7 +252,7 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
 
   if (obj_stat && obj_stat->size > request->wbuflen) {
-    Dmsg1(100,
+    Dmsg1(debug_info,
           "Not uploading chunk %s with size %d, as chunk with size %d is "
           "already present\n",
           obj_name.c_str(), obj_stat->size, request->wbuflen);
@@ -256,7 +260,7 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   }
 
   auto obj_data = gsl::span{request->buffer, request->wbuflen};
-  Dmsg1(dlvl, "Uploading %zu bytes of data\n", request->wbuflen);
+  Dmsg1(debug_info, "Uploading %zu bytes of data\n", request->wbuflen);
   if (auto result = m_storage.upload(obj_name, obj_chunk, obj_data)) {
     return true;
   } else {
@@ -271,13 +275,13 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   const std::string obj_name = request->volname;
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(dlvl, "Reading chunk %s\n", obj_name.c_str());
+  Dmsg1(debug_trace, "Reading chunk %s\n", obj_name.c_str());
 
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
   if (!obj_stat) {
     PmStrcpy(errmsg, obj_stat.error().c_str());
-    Dmsg1(dlvl, "%s", errmsg);
+    Dmsg1(debug_info, "%s", errmsg);
     dev_errno = EIO;
     return false;
   } else if (obj_stat->size > request->wbuflen) {
@@ -285,7 +289,7 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
           T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
              "bytes\n"),
           obj_name.c_str(), obj_stat->size, request->wbuflen);
-    Dmsg1(dlvl, "%s", errmsg);
+    Dmsg1(debug_info, "%s", errmsg);
     dev_errno = EINVAL;
     return false;
   }
@@ -296,7 +300,7 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
     return true;
   } else {
     PmStrcpy(errmsg, obj_data.error().c_str());
-    Dmsg1(dlvl, "%s", errmsg);
+    Dmsg1(debug_info, "%s", errmsg);
     dev_errno = EIO;
     return false;
   }
@@ -386,7 +390,7 @@ boffset_t DropletCompatibleDevice::d_lseek(DeviceControlRecord*,
 
       volumesize = ChunkedVolumeSize();
 
-      Dmsg1(100, "Current volumesize: %lld\n", volumesize);
+      Dmsg1(debug_info, "Current volumesize: %lld\n", volumesize);
 
       if (volumesize >= 0) {
         offset_ = volumesize + offset;
