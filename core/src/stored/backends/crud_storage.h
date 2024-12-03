@@ -23,15 +23,12 @@
 #define BAREOS_STORED_BACKENDS_CRUD_STORAGE_H_
 
 #include <map>
-#include <optional>
 #include <string_view>
 #include <unordered_map>
 #include <gsl/span>
 #include <cstdint>
 #include "lib/bstringlist.h"
 #include "tl/expected.hpp"
-
-static constexpr int dlvl = 10;
 
 class CrudStorage {
   struct Stat {
