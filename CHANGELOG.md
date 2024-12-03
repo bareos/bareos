@@ -117,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dedupable device: fix example files [PR #2029]
 - bareosfd_test.py: allow a delta of 1.1 [PR #2031]
 - mssql TearDownVdiDevice(): enhance error reporting [PR #2008]
+- macos: update build environment [PR #2035]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -319,4 +320,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2027]: https://github.com/bareos/bareos/pull/2027
 [PR #2029]: https://github.com/bareos/bareos/pull/2029
 [PR #2031]: https://github.com/bareos/bareos/pull/2031
+[PR #2035]: https://github.com/bareos/bareos/pull/2035
 [unreleased]: https://github.com/bareos/bareos/tree/master
