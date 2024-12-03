@@ -136,7 +136,7 @@ void CrudStorage::set_program_timeout(uint32_t timeout)
 tl::expected<BStringList, std::string> CrudStorage::get_supported_options()
 {
   Dmsg0(dlvl, "options called\n");
-  std::string cmdline = fmt::format("'{}' options", m_program);
+  std::string cmdline = fmt::format("\"{}\" options", m_program);
   auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r")};
   auto output = bph.getOutput();
   auto ret = bph.close();
@@ -148,7 +148,7 @@ tl::expected<BStringList, std::string> CrudStorage::get_supported_options()
         ret, output.c_str());
   if (ret != 0) {
     return tl::unexpected(
-        fmt::format("Running '{}' returned {}\n", cmdline, ret));
+        fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
   }
   BStringList options{output, '\n'};
   if (!options.empty() && options.back().empty()) { options.pop_back(); }
@@ -160,8 +160,8 @@ tl::expected<void, std::string> CrudStorage::set_option(
     const std::string& value)
 {
   if (!is_valid_env_name(name)) {
-    return tl::unexpected(
-        fmt::format("Name '{}' is not usable as environment variable\n", name));
+    return tl::unexpected(fmt::format(
+        "Name \"{}\" is not usable as environment variable\n", name));
   }
   Dmsg0(dlvl, "program environment variable '%s' set to '%s'\n", name.c_str(),
         value.c_str());
@@ -172,7 +172,7 @@ tl::expected<void, std::string> CrudStorage::set_option(
 tl::expected<void, std::string> CrudStorage::test_connection()
 {
   Dmsg0(dlvl, "test_connection called\n");
-  std::string cmdline = fmt::format("'{}' testconnection", m_program);
+  std::string cmdline = fmt::format("\"{}\" testconnection", m_program);
   auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto output = bph.getOutput();
   auto ret = bph.close();
@@ -184,7 +184,7 @@ tl::expected<void, std::string> CrudStorage::test_connection()
         ret, output.c_str());
   if (ret != 0) {
     return tl::unexpected(
-        fmt::format("Running '{}' returned {}\n", cmdline, ret));
+        fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
   }
   return {};
 }
@@ -194,7 +194,7 @@ auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
 {
   Dmsg1(dlvl, "stat %s called\n", obj_name.data());
   std::string cmdline
-      = fmt::format("'{}' stat '{}' '{}'", m_program, obj_name, obj_part);
+      = fmt::format("\"{}\" stat \"{}\" \"{}\"", m_program, obj_name, obj_part);
   auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
   Stat stat;
@@ -205,7 +205,7 @@ auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
   if (auto ret = bph.close(); ret != 0) {
     Dmsg1(dlvl, "stat returned %d\n", ret);
     return tl::unexpected(
-        fmt::format("Running '{}' returned {}\n", cmdline, ret));
+        fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
   }
   Dmsg1(dlvl, "stat returns %zu\n", stat.size);
   return stat;
@@ -215,7 +215,7 @@ auto CrudStorage::list(std::string_view obj_name)
     -> tl::expected<std::map<std::string, Stat>, std::string>
 {
   Dmsg1(dlvl, "list %s called\n", obj_name.data());
-  std::string cmdline = fmt::format("'{}' list '{}'", m_program, obj_name);
+  std::string cmdline = fmt::format("\"{}\" list \"{}\"", m_program, obj_name);
   auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
 
@@ -239,7 +239,7 @@ auto CrudStorage::list(std::string_view obj_name)
   if (auto ret = bph.close(); ret != 0) {
     Dmsg1(dlvl, "list returned %d\n", ret);
     return tl::unexpected(
-        fmt::format("Running '{}' returned {}\n", cmdline, ret));
+        fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
   }
   return result;
 }
@@ -249,8 +249,8 @@ tl::expected<void, std::string> CrudStorage::upload(std::string_view obj_name,
                                                     gsl::span<char> obj_data)
 {
   Dmsg1(dlvl, "upload %s/%s called\n", obj_name.data(), obj_part.data());
-  std::string cmdline
-      = fmt::format("'{}' upload '{}' '{}'", m_program, obj_name, obj_part);
+  std::string cmdline = fmt::format("\"{}\" upload \"{}\" \"{}\"", m_program,
+                                    obj_name, obj_part);
 
   auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "rw", m_env_vars)};
   auto wfh = bph.getWriteFd();
@@ -292,8 +292,8 @@ tl::expected<gsl::span<char>, std::string> CrudStorage::download(
 {
   Dmsg1(dlvl, "download %s/%s called\n", obj_name.data(), obj_part.data());
   // download data from somewhere
-  std::string cmdline
-      = fmt::format("'{}' download '{}' '{}'", m_program, obj_name, obj_part);
+  std::string cmdline = fmt::format("\"{}\" download \"{}\" \"{}\"", m_program,
+                                    obj_name, obj_part);
 
   auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto rfh = bph.getReadFd();
@@ -336,8 +336,8 @@ tl::expected<void, std::string> CrudStorage::remove(std::string_view obj_name,
                                                     std::string_view obj_part)
 {
   Dmsg1(dlvl, "remove %s/%s called\n", obj_name.data(), obj_part.data());
-  std::string cmdline
-      = fmt::format("'{}' remove '{}' '{}'", m_program, obj_name, obj_part);
+  std::string cmdline = fmt::format("\"{}\" remove \"{}\" \"{}\"", m_program,
+                                    obj_name, obj_part);
   auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   auto output = bph.getOutput();
   auto ret = bph.close();
@@ -350,7 +350,7 @@ tl::expected<void, std::string> CrudStorage::remove(std::string_view obj_name,
         ret, output.c_str());
   if (ret != 0) {
     return tl::unexpected(
-        fmt::format("Running '{}' returned {}\n", cmdline, ret));
+        fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
   }
   return {};
 }
