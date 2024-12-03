@@ -42,6 +42,7 @@ if(NOT build_client_only)
   if(TARGET droplet)
     list(APPEND BACKENDS droplet_device.d)
   endif()
+  list(APPEND BACKENDS dplcompat_device.d)
   set(BACKENDS
       ${BACKENDS}
       PARENT_SCOPE
