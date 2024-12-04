@@ -439,7 +439,7 @@ Provides:   bareos-filedaemon-grpc-python-plugin
 Obsoletes:  bareos-filedaemon-grpc-python-plugin <= %{version}
 Provides:   bareos-filedaemon-python-plugin
 Obsoletes:  bareos-filedaemon-python-plugin <= %{version}
-%endif # enable_grpc
+%endif
 
 %package    filedaemon-python3-plugin
 Summary:    Python plugin for Bareos File daemon
@@ -574,7 +574,7 @@ This package contains the common files for the python director plugins.
 
 This package contains the grpc python 3 plugin for the file daemon
 
-%endif # enable_grpc
+%endif
 %description filedaemon-python3-plugin
 %{dscr}
 
@@ -1444,7 +1444,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/grpc-fd.so
 %{plugin_dir}/grpc-python-module
 %{plugin_dir}/grpc-test-module
-%endif # enable_grpc
+%endif
 
 %files filedaemon-python3-plugin
 %defattr(-, root, root)
