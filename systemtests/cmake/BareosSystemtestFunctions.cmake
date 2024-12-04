@@ -614,11 +614,11 @@ macro(prepare_test_python)
   endif()
 endmacro()
 
-macro(prepare_test test_subdir)
-  set(TEST_NAME ${test_subdir})
+macro(prepare_test test_name test_srcdir test_dir)
   # base directory for this test
-  set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
-  set(current_test_source_directory ${PROJECT_SOURCE_DIR}/tests/${TEST_NAME})
+  set(TEST_NAME "${test_name}")
+  set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${test_dir})
+  set(current_test_source_directory ${PROJECT_SOURCE_DIR}/tests/${test_srcdir})
   set(basename ${TEST_NAME})
 
   # db parameters
@@ -743,10 +743,7 @@ function(add_systemtest name file)
   endif()
 endfunction()
 
-function(add_systemtest_from_directory tests_basedir prefix test_subdir)
-  set(test_dir "${tests_basedir}/${test_subdir}")
-  set(test_basename "${prefix}${test_subdir}")
-
+function(add_systemtest_from_directory test_dir test_basename)
   if(EXISTS ${test_dir}/testrunner)
     # single test directory
     add_systemtest(${test_basename} ${test_dir}/testrunner)
@@ -829,27 +826,26 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
 
 endfunction()
 
-macro(create_systemtest_for_real prefix test_subdir)
-  set(test_basename "${prefix}${test_subdir}")
-  message(STATUS "✓ ${test_basename} (baseport=${BASEPORT})")
+macro(create_enabled_systemtest prefix test_name test_srcdir test_dir)
+  set(test_fullname "${prefix}${test_name}")
 
-  prepare_test(${test_subdir})
+  message(STATUS "✓ ${test_fullname} (baseport=${BASEPORT})")
+
+  prepare_test(${test_name} ${test_srcdir} ${test_dir})
   configurefilestosystemtest(
-    "systemtests" "tests/${test_subdir}" "*" @ONLY ""
+    "systemtests" "tests/${test_dir}" "*" @ONLY "tests/${test_srcdir}"
   )
   configure_file(
-    "${PROJECT_SOURCE_DIR}/environment.in"
-    "${PROJECT_BINARY_DIR}/tests/${test_subdir}/environment" @ONLY
-    NEWLINE_STYLE UNIX
+   "${PROJECT_SOURCE_DIR}/environment.in"
+   "${PROJECT_BINARY_DIR}/tests/${test_dir}/environment" @ONLY
+   NEWLINE_STYLE UNIX
   )
-
-  add_systemtest_from_directory(${tests_dir} ${prefix} ${test_subdir})
-
+  add_systemtest_from_directory(${tests_dir}/${test_dir} "${test_fullname}")
   # Increase global BASEPORT variable
   math(EXPR BASEPORT "${BASEPORT} + 10")
   set(BASEPORT
-    "${BASEPORT}"
-    PARENT_SCOPE
+   "${BASEPORT}"
+   PARENT_SCOPE
   )
 endmacro()
 
@@ -877,11 +873,11 @@ macro(create_systemtest prefix test_subdir)
       string(REGEX MATCH "^py3.*-fd" is_fd_python "${test_subdir}")
 
       if (is_fd_python AND ENABLE_GRPC)
-        create_systemtest_for_real(${prefix} ${test_subdir})
+        create_enabled_systemtest(${prefix} ${test_subdir} ${test_subdir} ${test_subdir})
         string(REPLACE "py3plug" "py3grpc" grpc_subdir ${test_subdir})
-        create_systemtest_for_real(${prefix} ${grpc_subdir})
+        create_enabled_systemtest(${prefix} ${grpc_subdir} ${test_subdir} ${grpc_subdir})
       else()
-        create_systemtest_for_real(${prefix} ${test_subdir})
+        create_enabled_systemtest(${prefix} ${test_subdir} ${test_subdir} ${test_subdir})
       endif()
 
     endif()
