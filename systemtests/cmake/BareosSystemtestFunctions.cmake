@@ -556,17 +556,11 @@ macro(prepare_testdir_for_daemon_run)
 endmacro()
 
 macro(prepare_test_python)
-  string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
-  string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
-  string(REGEX MATCH "py3grpc" py_v3_grpc "${TEST_NAME}")
-  # use python3 by default, exepts the name of test starts with py2plug.
+  string(REGEX MATCH "py3grpc" is_grpc "${TEST_NAME}")
   set(python_module_name python3)
   set(python_module_suffix)
-  if(py_v2)
-    set(python_module_name python)
-  endif()
   set(python_module_subdir_prefix ${python_module_name})
-  if(py_v3_grpc)
+  if(is_grpc)
     set(python_module_name grpc)
     set(python_module_suffix :grpc-python-module:python3)
   endif()
@@ -835,6 +829,30 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
 
 endfunction()
 
+macro(create_systemtest_for_real prefix test_subdir)
+  set(test_basename "${prefix}${test_subdir}")
+  message(STATUS "✓ ${test_basename} (baseport=${BASEPORT})")
+
+  prepare_test(${test_subdir})
+  configurefilestosystemtest(
+    "systemtests" "tests/${test_subdir}" "*" @ONLY ""
+  )
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/environment.in"
+    "${PROJECT_BINARY_DIR}/tests/${test_subdir}/environment" @ONLY
+    NEWLINE_STYLE UNIX
+  )
+
+  add_systemtest_from_directory(${tests_dir} ${prefix} ${test_subdir})
+
+  # Increase global BASEPORT variable
+  math(EXPR BASEPORT "${BASEPORT} + 10")
+  set(BASEPORT
+    "${BASEPORT}"
+    PARENT_SCOPE
+  )
+endmacro()
+
 macro(create_systemtest prefix test_subdir)
   # cmake-format: off
   #
@@ -856,26 +874,16 @@ macro(create_systemtest prefix test_subdir)
       message(STATUS "⛔ ${test_basename} (baseport=${BASEPORT}, SKIPPED)")
       add_disabled_systemtest(${prefix} ${test_subdir} COMMENT "${ARG_COMMENT}")
     else()
-      message(STATUS "✓ ${test_basename} (baseport=${BASEPORT})")
+      string(REGEX MATCH "^py3.*-fd" is_fd_python "${test_subdir}")
 
-      prepare_test(${test_subdir})
-      configurefilestosystemtest(
-        "systemtests" "tests/${test_subdir}" "*" @ONLY ""
-      )
-      configure_file(
-        "${PROJECT_SOURCE_DIR}/environment.in"
-        "${PROJECT_BINARY_DIR}/tests/${test_subdir}/environment" @ONLY
-        NEWLINE_STYLE UNIX
-      )
+      if (is_fd_python AND ENABLE_GRPC)
+        create_systemtest_for_real(${prefix} ${test_subdir})
+        string(REPLACE "py3plug" "py3grpc" grpc_subdir ${test_subdir})
+        create_systemtest_for_real(${prefix} ${grpc_subdir})
+      else()
+        create_systemtest_for_real(${prefix} ${test_subdir})
+      endif()
 
-      add_systemtest_from_directory(${tests_dir} ${prefix} ${test_subdir})
-
-      # Increase global BASEPORT variable
-      math(EXPR BASEPORT "${BASEPORT} + 10")
-      set(BASEPORT
-          "${BASEPORT}"
-          PARENT_SCOPE
-      )
     endif()
   endif()
 endmacro()
