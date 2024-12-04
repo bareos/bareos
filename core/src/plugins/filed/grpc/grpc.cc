@@ -27,6 +27,7 @@
 #include "filed/fd_plugins.h"
 
 #include <fmt/format.h>
+#include <optional>
 
 #include "bareos_api.h"
 
@@ -70,6 +71,46 @@ bool next_section(std::string_view& input, std::string& output, char delimiter)
 
 
 struct plugin_ctx {
+  struct parsed_plugin_options {
+    std::string plugin_name;
+    std::string inferior_name;
+    std::string inferior_options;
+  };
+
+  std::optional<parsed_plugin_options> parse_options(std::string_view options)
+  {
+    // we expect options_string to be a ':'-delimited list of kv pairs;
+    // the first "pair" is just the name of the plugin that we are supposed
+    // to load.
+
+    std::string pname{};
+    std::string inferior_name{};
+
+    if (!next_section(options, pname, ':')) {
+      DebugLog(50, FMT_STRING("could not parse plugin name in {}"),
+               options);
+      return std::nullopt;
+    }
+
+    if (pname != std::string_view{"grpc"}) {
+      DebugLog(50, FMT_STRING("wrong plugin name ({}) supplied"),
+               pname);
+      return std::nullopt;
+    }
+
+    // TODO: we probably want to allow some options for the grpc plugin itself
+    //       as well.  Maybe the separator could be :: ? I.e.
+    //       grpc:opt=val:opt=val::child:childopt=val:childopt=val:...
+    if (!next_section(options, inferior_name, ':')) {
+      DebugLog(50, FMT_STRING("could not parse name in {}"), options);
+      return std::nullopt;
+    }
+
+    DebugLog(100, FMT_STRING("found name = {}"), inferior_name);
+
+    return parsed_plugin_options{ pname, inferior_name, std::string(options) };
+  }
+
   bool re_setup(PluginContext* bareos_ctx, const void* data)
   {
     if (needs_setup()) { return setup(bareos_ctx, data); }
@@ -78,40 +119,17 @@ struct plugin_ctx {
 
     std::string_view options_string{(const char*)data};
 
-    std::string new_plugin_name{};
-    std::string inferior_name{};
+    auto options = parse_options(options_string);
+    if (!options) { return false; }
 
-    if (!next_section(options_string, new_plugin_name, ':')) {
-      DebugLog(50, FMT_STRING("could not parse plugin name in {}"),
-               options_string);
-      return false;
-    }
-
-    if (new_plugin_name != std::string_view{"grpc"}) {
-      DebugLog(50, FMT_STRING("wrong plugin name ({}) supplied"),
-               new_plugin_name);
-      return false;
-    }
-
-
-    if (!next_section(options_string, inferior_name, ':')) {
-      DebugLog(50, FMT_STRING("could not parse name in {}"), options_string);
-      return false;
-    }
-
-    DebugLog(100, FMT_STRING("found name = {}"), inferior_name);
-
-    // TODO: we probably want to allow some options for the grpc plugin itself
-    //       as well.  Maybe the separator could be :: ? I.e.
-    //       grpc:opt=val:opt=val::child:childopt=val:childopt=val:...
-    if (new_plugin_name != plugin_name) {
+    if (options->plugin_name != plugin_name) {
       DebugLog(50, FMT_STRING("not same name ({} != {}) supplied"), plugin_name,
-               new_plugin_name);
+               options->plugin_name);
       return false;
     }
 
-    cmd = options_string;
-    name = std::move(inferior_name);
+    cmd = std::move(options->inferior_options);
+    name = std::move(options->inferior_name);
 
     return true;
   }
@@ -121,75 +139,11 @@ struct plugin_ctx {
   {
     if (!bareos_ctx || !data) { return false; }
 
-    std::string_view options_string{(const char*)data};
+    auto options = parse_options((const char*) data);
 
-    // we expect options_string to be a ':'-delimited list of kv pairs;
-    // the first "pair" is just the name of the plugin that we are supposed
-    // to load.
-
-    if (!next_section(options_string, plugin_name, ':')) {
-      DebugLog(50, FMT_STRING("could not parse plugin name in {}"),
-               options_string);
-      return false;
-    }
-
-    if (plugin_name != std::string_view{"grpc"}) {
-      DebugLog(50, FMT_STRING("wrong plugin name ({}) supplied"), plugin_name);
-      return false;
-    }
-
-
-    if (!next_section(options_string, name, ':')) {
-      DebugLog(50, FMT_STRING("could not parse name in {}"), options_string);
-      return false;
-    }
-
-    DebugLog(100, FMT_STRING("found name = {}"), name);
-
-    // TODO: we probably want to allow some options for the grpc plugin itself
-    //       as well.  Maybe the separator could be :: ? I.e.
-    //       grpc:opt=val:opt=val::child:childopt=val:childopt=val:...
-    cmd = options_string;
-    // {
-    //   std::string kv;
-
-    //   while (kv.clear(), next_section(options_string, kv, ':')) {
-    //     auto eq = kv.find_first_of("=");
-
-    //     if (eq == kv.npos) {
-    //       DebugLog(50, FMT_STRING("kv pair '{}' does not contain '='"), kv);
-    //       return false;
-    //     }
-
-    //     std::string_view key = std::string_view{kv}.substr(0, eq);
-    //     std::string_view value = std::string_view{kv}.substr(eq + 1);
-
-    //     if (key.size() == 0) {
-    //       DebugLog(50, FMT_STRING("kv pair '{}' does not contain a key"),
-    //       kv); return false;
-    //     }
-
-    //     if (value.size() == 0) {
-    //       DebugLog(
-    //           50,
-    //           FMT_STRING("kv pair '{}' does not contain a value (key = {})"),
-    //           kv, key);
-    //       return false;
-    //     }
-
-    //     DebugLog(100, FMT_STRING("{} => {}"), key, value);
-
-    //     options.emplace_back(key, value);
-    //   }
-
-    //   if (options_string.size() > 0) {
-    //     // we stopped prematurely for some reason, so just refuse to
-    //     continue! DebugLog(50, FMT_STRING("premature exit detected"),
-    //     options_string);
-
-    //     return false;
-    //   }
-    // }
+    plugin_name = std::move(options->plugin_name);
+    name =        std::move(options->inferior_name);
+    cmd =       std::move(options->inferior_options);
 
     std::optional opath = bVar::Get<bVar::PluginPath>(nullptr);
     if (!opath) {
@@ -215,8 +169,6 @@ struct plugin_ctx {
 
 
  public:
-  // using option = std::pair<std::string, std::string>;
-
   std::string name;
   std::string cmd;
   std::string plugin_name;
