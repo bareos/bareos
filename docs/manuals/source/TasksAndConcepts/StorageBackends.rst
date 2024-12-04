@@ -15,6 +15,9 @@ A Bareos Storage Daemon can use various storage backends:
 **Droplet**
    is used to access an object store supported by **libdroplet**, most notably S3. For details, refer to :ref:`SdBackendDroplet`.
 
+**Dplcompat**
+   replacement for Droplet with compatible storage format (i.e. you can switch from Droplet to Dplcompat and back), see :ref:`SdBackendDplcompat`.
+
 **GFAPI** (GlusterFS)
    is used to access a GlusterFS storage.
 
@@ -22,6 +25,7 @@ A Bareos Storage Daemon can use various storage backends:
    is used to support filesystem block-based deduplication, see :ref:`SdBackendDedupable`.
 
 .. include:: StorageBackends/Droplet.rst.inc
+.. include:: StorageBackends/Dplcompat.rst.inc
 
 .. _SdBackendGfapi:
 
