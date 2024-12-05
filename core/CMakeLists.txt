@@ -38,10 +38,10 @@ include(BareosHelper)
 
 # switch on CXX 17 Support
 #
-if(NOT MSVC)
-  set(CMAKE_CXX_STANDARD 17)
-else()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_CXX_STANDARD 20)
+else()
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # enable PIC/PIE by default

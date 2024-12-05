@@ -32,6 +32,9 @@
 #define DIR_DEFAULT_PORT "@dir_port@"
 #define NDMP_DEFAULT_PORT "10000"
 
+#cmakedefine HAVE_SOURCE_LOCATION @HAVE_SOURCE_LOCATION@
+#cmakedefine HAVE_BUILTIN_LOCATION @HAVE_BUILTIN_LOCATION@
+
 // Define to 1 if you use gcc
 #cmakedefine HAVE_GCC @HAVE_GCC@
 
@@ -510,9 +513,6 @@ extern char win_os[];
 
 #define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
-
-#cmakedefine HAVE_SOURCE_LOCATION @HAVE_SOURCE_LOCATION@
-#cmakedefine HAVE_BUILTIN_LOCATION @HAVE_BUILTIN_LOCATION@
 
 #endif /* defined(WIN32) */
 // clang-format on
