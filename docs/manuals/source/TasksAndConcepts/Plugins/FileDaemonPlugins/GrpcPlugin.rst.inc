@@ -11,9 +11,9 @@ This executable talks to the core via [grpc](https://grpc.io) remote procedure c
 
 This has multiple upsides for users, such as:
 
-   * A crash inside a plugin will not also crash the daemon,
-   * eliminates some classes of concurrency problems related to the
-     use of global state inside plugins,
+   * A crash inside a plugin will not also crash the daemon
+   * It eliminates some classes of concurrency problems related to the
+     use of global state inside plugins
 
 This plugin on its own is not very useful.  Its only a bridge between the bareos core and
 the actual plugin doing the work.
