@@ -510,7 +510,8 @@ extern "C" void* msg_thread(void* arg)
     Qmsg(jcr, M_FATAL, 0, T_("Director's comm line to SD dropped.\n"));
   }
   if (IsBnetError(sd)) { jcr->dir_impl->SDJobStatus = JS_ErrorTerminated; }
-  pthread_cleanup_pop(1); /* remove and execute the handler */
+  pthread_cleanup_pop(0); /* remove and execute the handler */
+  MsgThreadCleanup(arg);
   return NULL;
 }
 
