@@ -998,7 +998,7 @@ class BareosDb : public BareosDbQueryEnum {
   void AssertOwnership(brs::source_location l = brs::source_location::current())
   {
     if (!is_private_) {
-      RwlAssertWriterIsMe(&lock_, l.function_name(), l.file_name(), l.line());
+      RwlAssertWriterIsMe(&lock_, l);
     }
   }
 };

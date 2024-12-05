@@ -261,11 +261,12 @@ int RwlWriteunlock(brwlock_t* rwl)
   return (status == 0 ? status2 : status);
 }
 
-void RwlAssertWriterIsMe(brwlock_t* rwl,
-                         const char* function,
-                         const char* file,
-                         int line)
+void RwlAssertWriterIsMe(brwlock_t* rwl, brs::source_location loc)
 {
+  auto* function = loc.function_name();
+  auto* file = loc.file_name();
+  auto line = loc.line();
+
   bool is_ok = rwl->valid == RWLOCK_VALID;
   bool is_locked = rwl->w_active > 0;
   bool is_me = pthread_equal(rwl->writer_id, pthread_self());
