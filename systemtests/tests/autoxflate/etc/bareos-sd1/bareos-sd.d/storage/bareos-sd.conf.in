@@ -1,6 +1,5 @@
 Storage {
   Name = bareos-sd-1
-  Maximum Concurrent Jobs = 20
 
   Working Directory =  "@working_dir@"
   SD Port = @sd2_port@
