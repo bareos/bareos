@@ -18,11 +18,6 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-// Kern Sibbald, 2000
-/**
- * @file
- * Define Message Types for BAREOS
- */
 
 #ifndef BAREOS_LIB_SOURCE_LOCATION_H_
 #define BAREOS_LIB_SOURCE_LOCATION_H_
@@ -58,21 +53,7 @@ struct source_location {
 };
 }  // namespace brs
 #else
-#warning "No real source_location implementation available, using dummy one"
-#  include <cstdint>
-namespace brs {
-struct source_location {
-  constexpr static source_location current() noexcept
-  {
-    return source_location{};
-  }
-
-  constexpr const char* file_name() const noexcept { return "unknown"; }
-  constexpr const char* function_name() const noexcept { return "unknown"; }
-  constexpr std::uint_least32_t line() const noexcept { return 0; }
-  constexpr std::uint_least32_t column() const noexcept { return 0; }
-};
-}  // namespace brs
+#error "No source_location implementation available"
 #endif
 
 #include <string_view>
