@@ -586,16 +586,16 @@ class BareosDb : public BareosDbQueryEnum {
   char* strerror();
   bool CheckMaxConnections(JobControlRecord* jcr, uint32_t max_concurrent_jobs);
   bool CheckTablesVersion(JobControlRecord* jcr);
-  bool QueryDB(JobControlRecord* jcr,
+  bool QueryDb(JobControlRecord* jcr,
                const char* select_cmd,
                brs::source_location loc = brs::source_location::current());
-  int InsertDB(JobControlRecord* jcr,
+  int InsertDb(JobControlRecord* jcr,
                const char* select_cmd,
                brs::source_location loc = brs::source_location::current());
-  int DeleteDB(JobControlRecord* jcr,
+  int DeleteDb(JobControlRecord* jcr,
                const char* DeleteCmd,
                brs::source_location loc = brs::source_location::current());
-  int UpdateDB(JobControlRecord* jcr,
+  int UpdateDb(JobControlRecord* jcr,
                const char* UpdateCmd,
                brs::source_location loc = brs::source_location::current());
   int GetSqlRecordMax(JobControlRecord* jcr);

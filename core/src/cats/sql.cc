@@ -198,7 +198,7 @@ bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::QueryDB(JobControlRecord* jcr,
+bool BareosDb::QueryDb(JobControlRecord* jcr,
                        const char* select_cmd,
                        brs::source_location loc)
 {
@@ -224,7 +224,7 @@ bool BareosDb::QueryDB(JobControlRecord* jcr,
  * Returns: false on failure
  *          true on success
  */
-int BareosDb::InsertDB(JobControlRecord* jcr,
+int BareosDb::InsertDb(JobControlRecord* jcr,
                        const char* select_cmd,
                        brs::source_location loc)
 {
@@ -260,7 +260,7 @@ int BareosDb::InsertDB(JobControlRecord* jcr,
  * Returns: false on failure
  *          true on success
  */
-int BareosDb::UpdateDB(JobControlRecord* jcr,
+int BareosDb::UpdateDb(JobControlRecord* jcr,
                        const char* UpdateCmd,
                        brs::source_location loc)
 {
@@ -285,7 +285,7 @@ int BareosDb::UpdateDB(JobControlRecord* jcr,
  * Returns: -1 on error
  *           n number of rows affected
  */
-int BareosDb::DeleteDB(JobControlRecord* jcr,
+int BareosDb::DeleteDb(JobControlRecord* jcr,
                        const char* DeleteCmd,
                        brs::source_location loc)
 {
@@ -317,7 +317,7 @@ int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
   SQL_ROW row;
   int retval = 0;
 
-  if (QueryDB(jcr, cmd)) {
+  if (QueryDb(jcr, cmd)) {
     if ((row = SqlFetchRow()) == NULL) {
       Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
       retval = -1;
