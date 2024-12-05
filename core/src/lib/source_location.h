@@ -32,20 +32,32 @@ using source_location = std::source_location;
 #elif defined(HAVE_BUILTIN_LOCATION)
 #  include <cstdint>
 namespace brs {
-struct source_location {
+class source_location {
+public:
   constexpr static source_location current(const char* function
                                            = __builtin_FUNCTION(),
                                            const char* file = __builtin_FILE(),
                                            std::uint_least32_t line
                                            = __builtin_LINE()) noexcept
   {
-    return source_location{function, file, line};
+    return source_location{ function, file, line };
   }
 
   constexpr const char* file_name() const noexcept { return file_; }
   constexpr const char* function_name() const noexcept { return function_; }
   constexpr std::uint_least32_t line() const noexcept { return line_; }
   constexpr std::uint_least32_t column() const noexcept { return 0; }
+
+  constexpr source_location() = default;
+
+private:
+  constexpr source_location(const char* function,
+                  const char* file,
+                  std::uint_least32_t line)
+    : function_{function}
+    , file_{file}
+    , line_{line}
+  {}
 
   const char* function_{"unset"};
   const char* file_{"unset"};
