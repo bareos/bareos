@@ -23,3 +23,4 @@ File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`
 .. include:: Plugins/FileDaemonPlugins/PostgreSQLPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/PythonFdPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/VMwarePlugin.rst.inc
+.. include:: Plugins/FileDaemonPlugins/GrpcPlugin.rst.inc

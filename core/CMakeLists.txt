@@ -871,6 +871,10 @@ message(
 message(
   "   Python3 support:              ${Python3_FOUND} ${Python3_VERSION} ${Python3_INCLUDE_DIRS} ${Python3_EXECUTABLE}"
 )
+message(
+  "   Protobuf support:             ${Protobuf_FOUND} ${Protobuf_VERSION}"
+)
+message("   GRPC support:                 ${gRPC_FOUND} ${gRPC_VERSION}")
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
 message(

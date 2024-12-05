@@ -792,14 +792,14 @@ int BareosSocketTCP::SetNonblocking()
   // Get current flags
   if ((oflags = fcntl(fd_, F_GETFL, 0)) < 0) {
     BErrNo be;
-    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_GETFL error. ERR=%s\n"),
+    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_GETFL error. fd=%d ERR=%s\n"), fd_,
           be.bstrerror());
   }
 
   // Set O_NONBLOCK flag
   if ((fcntl(fd_, F_SETFL, oflags | O_NONBLOCK)) < 0) {
     BErrNo be;
-    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_SETFL error. ERR=%s\n"),
+    Qmsg1(get_jcr(), M_ABORT, 0, T_("fcntl F_SETFL error. fd=%d ERR=%s\n"), fd_,
           be.bstrerror());
   }
 

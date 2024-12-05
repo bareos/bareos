@@ -264,7 +264,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
   if ((row = SqlFetchRow()) == NULL) {
     if (search_by_jobname) {
-      Mmsg1(errmsg, T_("No Job found for JobName %s\n"), esc);
+      Mmsg1(errmsg, T_("No Job found for JobName '%s'\n"), esc);
     } else {
       Mmsg1(errmsg, T_("No Job found for JobId %s\n"),
             edit_int64(jr->JobId, ed1));

@@ -17,11 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+
 if(TARGET python3-fd AND enable_vmware_test)
-  create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-vmware")
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} "py3plug-fd-vmware" DISABLED COMMENT
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
     "no python3-fd or vmware_server not set"
   )
 endif()

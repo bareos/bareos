@@ -1,0 +1,307 @@
+syntax = "proto3";
+
+package bareos.core;
+
+import "google/protobuf/timestamp.proto";
+
+import "common.proto";
+
+service Core {
+  rpc Events_Register (RegisterRequest) returns (RegisterResponse);
+  rpc Events_Unregister (UnregisterRequest) returns (UnregisterResponse);
+  rpc Fileset_AddExclude (AddExcludeRequest) returns (AddExcludeResponse);
+  rpc Fileset_AddInclude (AddIncludeRequest) returns (AddIncludeResponse);
+  rpc Fileset_AddOptions (AddOptionsRequest) returns (AddOptionsResponse);
+  rpc Fileset_AddRegex (AddRegexRequest) returns (AddRegexResponse);
+  rpc Fileset_AddWild (AddWildRequest) returns (AddWildResponse);
+  rpc Fileset_NewOptions (NewOptionsRequest) returns (NewOptionsResponse);
+  rpc Fileset_NewInclude (NewIncludeRequest) returns (NewIncludeResponse);
+  rpc Fileset_NewPreInclude (NewPreIncludeRequest) returns (NewPreIncludeResponse);
+  rpc Bareos_getInstanceCount (getInstanceCountRequest) returns (getInstanceCountResponse);
+  rpc Bareos_checkChanges (checkChangesRequest) returns (checkChangesResponse);
+  rpc Bareos_AcceptFile (AcceptFileRequest) returns (AcceptFileResponse);
+  rpc Bareos_SetSeen (SetSeenRequest) returns (SetSeenResponse);
+  rpc Bareos_ClearSeen (ClearSeenRequest) returns (ClearSeenResponse);
+  rpc Bareos_JobMessage (JobMessageRequest) returns (JobMessageResponse);
+  rpc Bareos_DebugMessage (DebugMessageRequest) returns (DebugMessageResponse);
+
+
+  rpc Bareos_SetString (SetStringRequest) returns (SetStringResponse);
+  rpc Bareos_GetString (GetStringRequest) returns (GetStringResponse);
+  rpc Bareos_SetInt (SetIntRequest) returns (SetIntResponse);
+  rpc Bareos_GetInt (GetIntRequest) returns (GetIntResponse);
+  rpc Bareos_SetFlag (SetFlagRequest) returns (SetFlagResponse);
+  rpc Bareos_GetFlag (GetFlagRequest) returns (GetFlagResponse);
+};
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+
+  Event_JobStart = 1;
+  Event_JobEnd = 2;
+  Event_StartBackupJob = 3;
+  Event_EndBackupJob = 4;
+  Event_StartRestoreJob = 5;
+  Event_EndRestoreJob = 6;
+  Event_StartVerifyJob = 7;
+  Event_EndVerifyJob = 8;
+  Event_BackupCommand = 9;
+  Event_RestoreCommand = 10;
+  Event_EstimateCommand = 11;
+  Event_Level = 12;
+  Event_Since = 13;
+  Event_CancelCommand = 14;
+  Event_RestoreObject = 15;
+  Event_EndFileSet = 16;
+  Event_PluginCommand = 17;
+  Event_OptionPlugin = 18;
+  Event_HandleBackupFile = 19;
+  Event_NewPluginOptions = 20;
+  Event_VssInitializeForBackup = 21;
+  Event_VssInitializeForRestore = 22;
+  Event_VssSetBackupState = 23;
+  Event_VssPrepareForBackup = 24;
+  Event_VssBackupAddComponents = 25;
+  Event_VssPrepareSnapshot = 26;
+  Event_VssCreateSnapshots = 27;
+  Event_VssRestoreLoadComponentMetadata = 28;
+  Event_VssRestoreSetComponentsSelected = 29;
+  Event_VssCloseRestore = 30;
+  Event_VssBackupComplete = 31;
+};
+
+message RegisterRequest {
+  repeated EventType event_types = 1;
+};
+message RegisterResponse {
+};
+message UnregisterRequest {
+  repeated EventType event_types = 1;
+};
+message UnregisterResponse {
+};
+
+message AddExcludeRequest {
+};
+message AddExcludeResponse {
+};
+message AddIncludeRequest {
+};
+message AddIncludeResponse {
+};
+message AddOptionsRequest {
+};
+message AddOptionsResponse {
+};
+message AddRegexRequest {
+};
+message AddRegexResponse {
+};
+message AddWildRequest {
+};
+message AddWildResponse {
+};
+message NewOptionsRequest {
+};
+message NewOptionsResponse {
+};
+message NewIncludeRequest {
+};
+message NewIncludeResponse {
+};
+message NewPreIncludeRequest {
+};
+message NewPreIncludeResponse {
+};
+
+message getInstanceCountRequest {
+};
+message getInstanceCountResponse {
+  uint64 instance_count = 1;
+};
+
+message checkChangesRequest {
+  bareos.common.FileType type = 1;
+  bytes file = 2;
+  optional google.protobuf.Timestamp since_time = 3;
+  bytes stats = 4;
+};
+message checkChangesResponse {
+  bool old = 1; // file has not changed since 'since_time'
+  optional int64 delta_seq = 2;
+};
+message AcceptFileRequest {
+  bytes file = 1;
+  bytes stats = 2;
+};
+message AcceptFileResponse {
+  bool skip = 1;
+};
+message SetSeenRequest {
+  // if no file given, then all files are marked as seen
+  optional bytes file = 1;
+};
+message SetSeenResponse {
+};
+message ClearSeenRequest {
+  // if no file given, then all files are marked as unseen
+  optional bytes file = 1;
+};
+message ClearSeenResponse {
+};
+
+/**
+ * Most of these message levels are more or less obvious.
+ * They have evolved somewhat during the development of BAREOS,
+ * and here are some of the details of where I am trying to
+ * head (in the process of changing the code) as of 15 June 2002.
+ *
+ * JMSG_ABORT       BAREOS immediately aborts and tries to produce a traceback
+ *                  This is for really serious errors like segmentation fault.
+ * JMSG_ERROR_TERM  BAREOS immediately terminates but no dump. This is for
+ *                  "obvious" serious errors like daemon already running or
+ *                  cannot open critical file, ... where a dump is not wanted.
+ * JMSG_TERM        BAREOS daemon shutting down because of request (SIGTERM).
+ * JMSG_DEBUG       Debug Messages
+ *
+ * The remaining apply to Jobs rather than the daemon.
+ *
+ * JMSG_FATAL       BAREOS detected a fatal Job error. The Job will be killed,
+ *                  but BAREOS continues running.
+ * JMSG_ERROR       BAREOS detected a Job error. The Job will continue running
+ *                  but the termination status will be error.
+ * JMSG_WARNING     Job warning message.
+ * JMSG_INFO        Job information message.
+ * JMSG_SAVED       Info on saved file
+ * JMSG_NOTSAVED    Info on not saved file
+ * JMSG_RESTORED    An ls -l of each restored file.
+ * JMSG_SKIPPED     File skipped during backup by option setting
+ * JMSG_SECURITY    For security viloations. This is equivalent to FATAL.
+ * JMSG_ALERT       For Tape Alert messages.
+ * JMSG_VOLMGMT     Volume Management message
+ * JMSG_AUDIT       Auditing message
+ * JMSG_MOUNT       Mount requests
+ */
+enum JMsgType {
+  JMSG_TYPE_UNSPECIFIED = 0;
+  JMSG_ABORT = 1;
+  JMSG_DEBUG = 2;
+  JMSG_FATAL = 3;
+  JMSG_ERROR = 4;
+  JMSG_WARNING = 5;
+  JMSG_INFO = 6;
+  JMSG_SAVED = 7;
+  JMSG_NOTSAVED = 8;
+  JMSG_SKIPPED = 9;
+  JMSG_MOUNT = 10;
+  JMSG_ERROR_TERM = 11;
+  JMSG_TERM = 12;
+  JMSG_RESTORED = 13;
+  JMSG_SECURITY = 14;
+  JMSG_ALERT = 15;
+  JMSG_VOLMGMT = 16;
+  JMSG_AUDIT = 17;
+  JMSG_CONFIG_ERROR = 18;
+};
+
+message JobMessageRequest {
+  JMsgType type = 1;
+  bytes msg = 2;
+
+  int64 line = 3;
+  string file = 4;
+  string function = 5;
+};
+message JobMessageResponse {
+};
+message DebugMessageRequest {
+  int64 level = 1;
+
+  bytes msg = 2;
+
+  int64 line = 3;
+  string file = 4;
+  string function = 5;
+};
+message DebugMessageResponse {
+};
+
+enum BareosStringVariable {
+  BAREOS_STRING_VARIABLE_UNSPECIFIED = 0;
+  BV_FDName = 1;
+  BV_ClientName = 2;
+  BV_JobName = 3;
+  BV_WorkingDir = 4;
+  BV_Where = 5;
+  BV_RegexWhere = 6;
+  BV_ExePath = 7;
+  BV_BareosVersion = 8;
+  BV_PreviousJobName = 9;
+  BV_UsedConfig = 10;
+  BV_PluginPath = 11;
+};
+
+message SetStringRequest {
+  BareosStringVariable var = 1;
+  bytes value = 2;
+};
+
+message SetStringResponse {
+};
+
+message GetStringRequest {
+  BareosStringVariable var = 1;
+};
+
+message GetStringResponse {
+  bytes value = 1;
+};
+
+enum BareosIntVariable {
+  BAREOS_INT_VARIABLE_UNSPECIFIED = 0;
+  BV_JobId = 1;
+  BV_JobLevel = 2;
+  BV_JobType = 3;
+  BV_JobStatus = 4;
+  BV_SinceTime = 5;
+  BV_Accurate = 6;
+  BV_PrefixLinks = 7;
+};
+
+message SetIntRequest {
+  BareosIntVariable var = 1;
+  int64 value = 2;
+};
+
+message SetIntResponse {
+};
+
+message GetIntRequest {
+  BareosIntVariable var = 1;
+};
+
+message GetIntResponse {
+  int64 value = 1;
+};
+
+enum BareosFlagVariable {
+  BAREOS_FLAG_VARIABLE_UNSPECIFIED = 0;
+  BV_FileSeen = 1;
+  BV_CheckChanges = 2;
+};
+
+message SetFlagRequest {
+  BareosFlagVariable var = 1;
+  bool value = 2;
+};
+
+message SetFlagResponse {
+};
+
+message GetFlagRequest {
+  BareosFlagVariable var = 1;
+};
+
+message GetFlagResponse {
+  bool value = 1;
+};
