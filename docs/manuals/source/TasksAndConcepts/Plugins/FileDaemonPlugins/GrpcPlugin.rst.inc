@@ -53,9 +53,22 @@ The Grpc Python Plugin is a Grpc Plugin that can be used to start the
 a separate process.  This ensures that no python state is shared between
 different jobs.
 
+.. uml::
+   :caption: a quick overview of the architecture
+
+   @startuml
+   package "Bareos File Daemon Process" {
+     [core] <-> [grpc-fd] : Bareos Plugin API
+   }
+   package "Inferior Process" {
+     [grpc-python-module] <-> [python-fd] : Bareos Plugin API
+     [python-fd] <-> [python files] : Python Plugin API
+   }
+   [grpc-fd] <--> [grpc-python-module] : Grpc Plugin API
+   @enduml
+
 This plugin does not take any options, but expects its arguments to be a
 valid python-fd plugin definition.
-
 
 Example
 ^^^^^^^
