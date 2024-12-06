@@ -876,7 +876,7 @@ int JobCount()
  */
 bool InitJcrSubsystem(int timeout)
 {
-  watchdog_t* wd = new_watchdog();
+  watchdog_t* wd = NewWatchdog();
 
   watch_dog_timeout = timeout;
   wd->one_shot = false;
@@ -928,7 +928,7 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
              T_("Watchdog sending kill after %d secs to thread stalled reading "
                 "Storage daemon.\n"),
              watchdog_time - timer_start);
-        jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+        jcr->MyThreadSendSignal(kTimeoutSignal);
       }
     }
     bs = jcr->file_bsock;
@@ -941,7 +941,7 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
              T_("Watchdog sending kill after %d secs to thread stalled reading "
                 "File daemon.\n"),
              watchdog_time - timer_start);
-        jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+        jcr->MyThreadSendSignal(kTimeoutSignal);
       }
     }
     bs = jcr->dir_bsock;
@@ -954,7 +954,7 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
              T_("Watchdog sending kill after %d secs to thread stalled reading "
                 "Director.\n"),
              watchdog_time - timer_start);
-        jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
+        jcr->MyThreadSendSignal(kTimeoutSignal);
       }
     }
   }
