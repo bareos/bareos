@@ -761,3 +761,30 @@ parameters set to off.
 
    Labeling WORM tapes with Bareos before 23.1.0 will result in an :strong:`unusable tape` that you
    can only discard.
+
+LTO-9 Media Initialization
+--------------------------
+
+With the introduction of LTO Generation 9, every new cartridge is required to be
+initialized before it can be used. The media initialization enhances LTO tape
+long-term media durability. The initialization is a one-time
+process and should be carried out under the same ambient conditions that will
+prevail later on. The initialization and cannot be disabled.
+
+The initialization happens automatically on the first load of the new tape into
+the drive and can take between **40 Minutes** and **2 hours**.
+
+If uninitialized tapes are used with Bareos, the first labelling of the tapes
+will fail as the automatically happening initialization takes much longer than
+the timeout values set in Bareos for any tape operation.
+
+Therefore we recommend to initialize all LTO-9 tapes before using them with
+Bareos.
+
+
+.. attention::
+
+   It is recommended to initialize your LTO-9 tape cartridges before using them
+   with Bareos. Modern tape changers usually have an automatic procedure to
+   initialize all tapes.
+
