@@ -69,8 +69,21 @@ private:
 #endif
 
 #include <string_view>
+// make sure this works at all
 static_assert(std::string_view{libbareos::source_location::current().file_name()}
               == std::string_view{__FILE__});
 static_assert(libbareos::source_location::current().line() == __LINE__);
+
+namespace {
+  // make sure this works as intended, when used as a defaulted parameter
+  // This was bugged on e.g. clang 15
+  constexpr auto make_source_loc(libbareos::source_location loc = libbareos::source_location::current()) {
+    return loc;
+  }
+
+static_assert(make_source_loc().line() == __LINE__);
+  static_assert(std::string_view{make_source_loc().file_name()}
+                == std::string_view{__FILE__});
+};  // namespace
 
 #endif  // BAREOS_LIB_SOURCE_LOCATION_H_
