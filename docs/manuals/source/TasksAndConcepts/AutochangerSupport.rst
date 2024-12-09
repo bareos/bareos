@@ -790,4 +790,3 @@ Bareos.
    It is recommended to initialize your LTO-9 tape cartridges before using them
    with Bareos. Modern tape changers usually have an automatic procedure to
    initialize all tapes.
-
