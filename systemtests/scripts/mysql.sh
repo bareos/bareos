@@ -60,8 +60,6 @@ mysql_init()
             echo "[client]"
             echo "socket=${dbHost}/mysql.sock"
             echo "user=root"
-            echo "[mysqld]"
-            echo "tmpdir = ${dbHost}"
         } > my.cnf
         MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=my.cnf"
     else
@@ -71,8 +69,6 @@ mysql_init()
             echo "[client]"
             echo "socket=${dbHost}/mysql.sock"
             echo "user=${USER}"
-            echo "[mysqld]"
-            echo "tmpdir = ${dbHost}"
         } > my.cnf
         MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=my.cnf"
     fi

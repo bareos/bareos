@@ -10,3 +10,5 @@ datadir=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/data
 pid-file=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/mysqld.pid
 # Workaround for Ubuntu 22
 innodb-use-native-aio = OFF
+# Use local tmp dir
+tmpdir=@dbHost@
