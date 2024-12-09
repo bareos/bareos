@@ -137,6 +137,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: add debian howto start daemons instructions [PR #1998]
 - docs: move bareos-devel to github discussion [PR #1989]
 - docs: fixed typo in the filedaemon service name [PR #2027]
+- docs: add worm support paragraph [PR #2037]
 
 ### Fixed
 - dird: fix `purge oldest volume` [PR #1628]
@@ -321,4 +322,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2029]: https://github.com/bareos/bareos/pull/2029
 [PR #2031]: https://github.com/bareos/bareos/pull/2031
 [PR #2035]: https://github.com/bareos/bareos/pull/2035
+[PR #2037]: https://github.com/bareos/bareos/pull/2037
 [unreleased]: https://github.com/bareos/bareos/tree/master
