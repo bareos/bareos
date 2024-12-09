@@ -75,8 +75,10 @@
         "ScriptsDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
+          "default_value": "/usr/local/lib/bareos/scripts",
+          "platform_specific": true,
           "equals": true,
-          "description": "This directive is currently unused."
+          "description": "Path to directory containing script files"
         },
         "Subscriptions": {
           "datatype": "PINT32",

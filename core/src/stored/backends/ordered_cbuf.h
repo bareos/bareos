@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2017 Planets Communications B.V.
-   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,11 @@
 
 #ifndef BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
 #define BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
+
+#include <cstdint>
+#include <pthread.h>
+#include <lib/dlink.h>
+template <typename T> class dlist;
 
 #define OQSIZE 10 /* # of pointers in the queue */
 
@@ -79,6 +84,7 @@ class ordered_circbuf {
   int flush();
   bool full() { return size_ == (capacity_ - reserved_); }
   bool empty() { return size_ == 0; }
+  bool empty_with_no_reserve() { return size_ + reserved_ == 0; }
   bool IsFlushing() { return flush_; }
   int capacity() const { return capacity_; }
 };

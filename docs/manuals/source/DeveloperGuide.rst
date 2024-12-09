@@ -27,6 +27,7 @@ Developer Guide
    DeveloperGuide/netprotocol.rst
    DeveloperGuide/directorConsole.rst
    DeveloperGuide/reservation.rst
+   DeveloperGuide/dplcompat-wrappers.rst
    DeveloperGuide/dedupable.rst
    DeveloperGuide/jobexec.rst
    DeveloperGuide/Python.rst
