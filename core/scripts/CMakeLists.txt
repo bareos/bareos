@@ -32,6 +32,7 @@ bareos_configure_file(
   disk-changer.in
   logrotate.in
   mtx-changer.in
+  mtx-logrotate.in
 )
 
 install(
@@ -107,5 +108,11 @@ if(NOT client-only)
     FILES ${CMAKE_CURRENT_BINARY_DIR}/logrotate
     DESTINATION "${sysconfdir}/logrotate.d"
     RENAME bareos-dir
+  )
+
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/mtx-logrotate
+    DESTINATION "${sysconfdir}/logrotate.d"
+    RENAME bareos-mtx
   )
 endif()
