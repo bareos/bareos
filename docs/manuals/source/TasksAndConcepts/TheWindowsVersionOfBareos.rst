@@ -209,7 +209,7 @@ The second way to know that the job was backed up with VSS is to look at the Job
 ::
 
    23-Jul 13:25 rufus-dir: Start Backup JobId 1, Job=NightlySave.2005-07-23_13.25.45
-   23-Jul 13:26 rufus-sd: Wrote label to prelabeled Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
+   23-Jul 13:26 rufus-sd: Labeled new Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
    23-Jul 13:26 rufus-sd: Spooling data ...
    23-Jul 13:26 Tibs: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
    23-Jul 13:26 Tibs: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
@@ -523,6 +523,22 @@ In case of problems, you can enable the creation of log files. For this you have
    2000 OK setdebug=200 trace=1 hangup=0 tracefile=c:\bareos-fd.trace
 
 Please see the chapter :ref:`section-Debugging` for additional information.
+
+
+.. index:: Windows; Event Log; extraction
+
+Extracting Windows Event Log
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In case of problems, you can extract Windows Event Log to text based files, which are often easier to parse.
+For this you have to use the :command:`powershell` console
+
+.. code-block:: powershell
+   :caption: Extract the last 1'000 lines of log from Bareos Application to a csv file in powershell
+
+   Get-EventLog -LogName Application -Source Bareos | Select -First 1000 | Export-Csv "C:\temp\bareos.csv" -NoTypeInformation -UseCulture
+
+Please consult the `powershell reference book <https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-eventlog>`_ for additional information.
 
 
 .. index:: Windows; Access is denied
