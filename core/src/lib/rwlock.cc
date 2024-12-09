@@ -261,7 +261,7 @@ int RwlWriteunlock(brwlock_t* rwl)
   return (status == 0 ? status2 : status);
 }
 
-void RwlAssertWriterIsMe(brwlock_t* rwl, brs::source_location loc)
+void RwlAssertWriterIsMe(brwlock_t* rwl, libbareos::source_location loc)
 {
   auto* function = loc.function_name();
   auto* file = loc.file_name();

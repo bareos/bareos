@@ -200,7 +200,7 @@ bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
  */
 bool BareosDb::QueryDb(JobControlRecord* jcr,
                        const char* select_cmd,
-                       brs::source_location loc)
+                       libbareos::source_location loc)
 {
   AssertOwnership();
 
@@ -226,7 +226,7 @@ bool BareosDb::QueryDb(JobControlRecord* jcr,
  */
 int BareosDb::InsertDb(JobControlRecord* jcr,
                        const char* select_cmd,
-                       brs::source_location loc)
+                       libbareos::source_location loc)
 {
   AssertOwnership();
   int num_rows;
@@ -262,7 +262,7 @@ int BareosDb::InsertDb(JobControlRecord* jcr,
  */
 int BareosDb::UpdateDb(JobControlRecord* jcr,
                        const char* UpdateCmd,
-                       brs::source_location loc)
+                       libbareos::source_location loc)
 {
   AssertOwnership();
   if (!SqlQuery(UpdateCmd)) {
@@ -287,7 +287,7 @@ int BareosDb::UpdateDb(JobControlRecord* jcr,
  */
 int BareosDb::DeleteDb(JobControlRecord* jcr,
                        const char* DeleteCmd,
-                       brs::source_location loc)
+                       libbareos::source_location loc)
 {
   AssertOwnership();
   if (!SqlQuery(DeleteCmd)) {
