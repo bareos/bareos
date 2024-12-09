@@ -26,12 +26,12 @@
 
 #if defined(HAVE_SOURCE_LOCATION)
 #  include <source_location>
-namespace brs {
+namespace libbareos {
 using source_location = std::source_location;
 };
 #elif defined(HAVE_BUILTIN_LOCATION)
 #  include <cstdint>
-namespace brs {
+namespace libbareos {
 class source_location {
 public:
   constexpr static source_location current(const char* function
@@ -69,8 +69,8 @@ private:
 #endif
 
 #include <string_view>
-static_assert(std::string_view{brs::source_location::current().file_name()}
+static_assert(std::string_view{libbareos::source_location::current().file_name()}
               == std::string_view{__FILE__});
-static_assert(brs::source_location::current().line() == __LINE__);
+static_assert(libbareos::source_location::current().line() == __LINE__);
 
 #endif  // BAREOS_LIB_SOURCE_LOCATION_H_
