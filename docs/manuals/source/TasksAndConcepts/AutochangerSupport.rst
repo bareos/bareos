@@ -3,7 +3,8 @@
 Autochanger & Tape drive Support
 ================================
 
-:index:`\ <single: Support; Autochanger>`\  :index:`\ <single: Autochanger; Support>`\
+.. index:: Support; Autochanger
+.. index:: Autochanger; Support
 
 Bareos provides autochanger support for reading and writing tapes. In order to work with an autochanger, Bareos requires a number of things, each of which is explained in more detail after this list:
 
@@ -37,7 +38,9 @@ Some users have reported that the the Storage daemon blocks under certain circum
 Knowing What SCSI Devices You Have
 ----------------------------------
 
-:index:`\ <single: SCSI devices>`\  :index:`\ <single: Devices; SCSI>`\  :index:`\ <single: Devices; Detecting>`\
+.. index:: SCSI devices
+.. index:: Devices; SCSI
+.. index:: Devices; Detecting
 
 Linux
 ~~~~~
@@ -119,7 +122,7 @@ On Solaris, the changer device will typically be some file under :file:`/dev/rds
 Slots
 -----
 
-:index:`\ <single: Slots>`\
+.. index:: single: Slots
 
 .. _Slots:
 
@@ -142,7 +145,8 @@ You can check if the Slot number and InChanger flag by:
 Multiple Devices
 ----------------
 
-:index:`\ <single: Devices; Multiple>`\  :index:`\ <single: Multiple Devices>`\
+.. index:: Devices; Multiple
+.. index:: Multiple Devices
 
 Some autochangers have more than one read/write device (drive). The :ref:`Autochanger resource <AutochangerRes>` permits you to group Device resources, where each device represents a drive. The Director may still reference the Devices (drives) directly, but doing so, bypasses the proper functioning of the drives together. Instead, the Director (in the Storage resource) should reference the Autochanger resource name. Doing so permits the Storage daemon to ensure that only one drive
 uses the mtx-changer script at a time, and also that two drives don’t reference the same Volume.
@@ -154,7 +158,7 @@ As a default, Bareos jobs will prefer to write to a Volume that is already mount
 Device Configuration Records
 ----------------------------
 
-:index:`\ <single: Device Configuration Records>`\
+.. index:: Device Configuration Records
 
 Configuration of autochangers within Bareos is done in the Device resource of the Storage daemon.
 
@@ -176,7 +180,8 @@ Following records control how Bareos uses the autochanger:
 Specifying Slots When Labeling
 ------------------------------
 
-:index:`\ <single: Specifying Slots When Labeling>`\  :index:`\ <single: Label; Specifying Slots When Labeling>`\
+.. index:: Specifying Slots When Labeling
+.. index:: Label; Specifying Slots When Labeling
 
 .. _SpecifyingSlots:
 
@@ -209,7 +214,9 @@ Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape and 
 Changing Cartridges
 -------------------
 
-:index:`\ <single: Cartridges; Changing>`\  If you wish to insert or remove cartridges in your autochanger or you manually run the mtx program, you must first tell Bareos to release the autochanger by doing:
+.. index:: Cartridges; Changing
+
+If you wish to insert or remove cartridges in your autochanger or you manually run the `mtx` program, you must first tell Bareos to release the autochanger by doing:
 
 
 
@@ -226,7 +233,7 @@ If you do not do the unmount before making such a change, Bareos will become com
 Dealing with Multiple Magazines
 -------------------------------
 
-:index:`\ <single: Magazines; Dealing with Multiple>`\
+.. index:: Magazines; Dealing with Multiple
 
 If you have several magazines or if you insert or remove cartridges from a magazine, you should notify Bareos of this. By doing so, Bareos will as a preference, use Volumes that it knows to be in the autochanger before accessing Volumes that are not in the autochanger. This prevents unneeded operator intervention.
 
@@ -268,7 +275,7 @@ If you do not have a barcode reader on your autochanger, you have several altern
 Update Slots Command
 --------------------
 
-:index:`\ <single: Console; Command; update slots>`\
+.. index:: Console; Command; update slots
 
 .. _updateslots:
 
@@ -313,7 +320,7 @@ will read the barcoded Volume names for slots 1,2,3 and 6 and make the appropria
 Using the Autochanger
 ---------------------
 
-:index:`\ <single: Autochanger; Using the>`\
+.. index:: Autochanger; Using the
 
 .. _using:
 
@@ -325,7 +332,7 @@ Now you fill your autochanger with say six blank tapes.
 
 What do you do to make Bareos access those tapes?
 
-One strategy is to prelabel each of the tapes. Do so by starting Bareos, then with the Console program, enter the label command:
+One strategy is to label in advance each of the tapes. Do so by starting Bareos, then with the Console program, enter the label command:
 
 
 
@@ -425,8 +432,8 @@ To "see" how you have labeled your Volumes, simply enter the list volumes comman
 Barcode Support
 ---------------
 
-:index:`\ <single: Support; Barcode>`
-:index:`\ <single: Barcode Support>`
+.. index:: Support; Barcode
+.. index:: Barcode Support
 
 Bareos provides barcode support with two Console commands, label barcodes and update slots.
 
@@ -460,7 +467,7 @@ If you see a near the slot number, you have to run update slots command to synch
 Bareos Autochanger Interface
 ----------------------------
 
-:index:`\ <single: Autochanger; Interface>`\
+.. index:: Autochanger; Interface
 
 .. _autochanger-interface:
 
@@ -500,10 +507,10 @@ Bareos checks the exit status of the program called, and if it is zero, the data
 Tapespeed and blocksizes
 ------------------------
 
-:index:`\ <single: Tuning; Tape>`
-:index:`\ <single: Tuning; blocksize>`
-:index:`\ <single: Tape; speed>`
-:index:`\ <single: Blocksize; optimize>`
+.. index:: Tuning; Tape
+.. index:: Tuning; blocksize
+.. index:: Tape; speed
+.. index:: Blocksize; optimize
 
 .. note::
   As of Bareos 23, the default block size has been increased to 1 MiB (1.048.576 bytes).
@@ -623,7 +630,10 @@ Here, the block was written with 1M block size but we only read 64k.
 Direct access to Volumes with with non-default block sizes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: bls; block size>`\  :index:`\ <single: bextract; block size>`\  :index:`\ <single: Command; bls; block size>`\  :index:`\ <single: Command; bextract; block size>`\
+.. index:: bls; block size
+.. index:: bextract; block size
+.. index:: Command; bls; block size
+.. index:: Command; bextract; block size
 
 :command:`bls` and :command:`bextract` can directly access Bareos volumes without catalog database. This means that these programs don’t have information about the used block size.
 
@@ -701,6 +711,11 @@ The following chart shows how to set the directives for maximum block size and l
 Tape Drive Cleaning
 -------------------
 
+.. index:: Tape; Drive; Cleaning
+.. index:: Cleaning
+.. index:: CLN
+
+
 Bareos has no build-in functionality for tape drive cleaning. Fortunately this is not required as most modern tape libraries have build in auto-cleaning functionality. This functionality might require an empty tape drive, so the tape library gets aware, that it is currently not used. However, by default Bareos keeps tapes in the drives, in case the same tape is required again.
 
 The directive :config:option:`dir/pool/CleaningPrefix`\  is only used for making sure that Bareos does not try to write backups on a cleaning tape.
@@ -725,3 +740,53 @@ If your tape libraries auto-cleaning won’t work when there are tapes in the dr
    }
 
 Replace :config:option:`Dir/Storage = Tape`\  by the storage name of your tape library. Use the highest :config:option:`dir/job/Priority`\  value to make sure no other jobs are running. In the default configuration for example, the :config:option:`dir/job = CatalogBackup`\  job has Priority = 100. The higher the number, the lower the job priority.
+
+
+
+WORM Tape support
+-----------------
+
+.. index:: WORM, tape
+
+:strong:`WORM` (Write Once Read Many) tapes family are supported in Bareos :sinceVersion:`23.1.0: version`
+
+To accomplish this, the new 23.1.0 code version has removed the ``PRE_LABEL`` operation during
+the initial phase of volume management.
+
+There's no configuration changes needed. We recommend to use a dedicated pool having all recycling
+parameters set to off.
+
+
+.. warning::
+
+   Labeling WORM tapes with Bareos before 23.1.0 will result in an :strong:`unusable tape` that you
+   can only discard.
+
+
+.. index:: LTO-9,LTO9
+
+LTO-9 Media Initialization
+--------------------------
+
+With the introduction of LTO Generation 9, every new cartridge is required to be
+initialized before it can be used. The media initialization enhances LTO tape
+long-term media durability. The initialization is a one-time
+process and should be carried out under the same ambient conditions that will
+prevail later on. The initialization is mandatory and cannot be disabled.
+
+The initialization happens automatically on the first load of the new tape into
+the drive and can take between **40 Minutes** and **2 hours**.
+
+If uninitialized tapes are used with Bareos, the first labelling of the tapes
+will fail as the automatically happening initialization takes much longer than
+the timeout values set in Bareos for any tape operation.
+
+Therefore we recommend to initialize all LTO-9 tapes before using them with
+Bareos.
+
+
+.. warning::
+
+   It is recommended to initialize your LTO-9 tape cartridges before using them
+   with Bareos. Modern tape changers usually have an automatic procedure to
+   initialize all tapes.

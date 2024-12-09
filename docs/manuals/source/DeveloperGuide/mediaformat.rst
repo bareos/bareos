@@ -537,7 +537,7 @@ Overall Storage Format
 
        Id: 32 byte identifier "Bareos 2.0 immortal\n"
        LabelType (Saved in the FileIndex of the Header record).
-           PRE_LABEL -1    Volume label on unwritten tape
+           PRE_LABEL -1    Volume label on unwritten tape (deprecated :sinceVersion:`23.1.0: worm support`)
            VOL_LABEL -2    Volume label after tape written
            EOM_LABEL -3    Label at EOM (not currently implemented)
            SOS_LABEL -4    Start of Session label (format given below)
