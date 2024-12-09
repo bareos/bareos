@@ -1257,7 +1257,7 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO NDMPJobEnvironment (JobId, FileIndex, EnvName, EnvValue)"
        " VALUES ('%s', '%s', '%s', '%s')"
-       " ON CONFLICT ON CONSTRAINT ndmpjobenvironment_pkey"
+       " ON CONFLICT (JobId, FileIndex, EnvName)"
        " DO UPDATE SET"
        " EnvValue='%s'",
        edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_envname,
