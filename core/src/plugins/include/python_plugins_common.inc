@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,19 +23,25 @@
 // Strip any backslashes in the string.
 static inline void StripBackSlashes(char* value)
 {
-  char* bp;
+  char* in = value;
 
-  bp = value;
-  while (*bp) {
-    switch (*bp) {
-      case '\\':
-        bstrinlinecpy(bp, bp + 1);
-        break;
-      default:
-        break;
+  while (*in != '\0' && *in != '\\') {
+    in += 1;
+  }
+
+  char* out = in;
+
+  while (*in) {
+    switch (*in) {
+      case '\\': {
+        in += 1;
+      } break;
+      default: {
+        *out = *in;
+        in += 1;
+        out += 1;
+      } break;
     }
-
-    bp++;
   }
 }
 
@@ -59,12 +65,22 @@ static inline int64_t parse_integer(const char* argument_value)
   return str_to_int64(argument_value);
 }
 
+// this is needed because windows does not come with strndup ...
+static char* CopyStringView(std::string_view value)
+{
+        char* x = reinterpret_cast<char*>(malloc(value.size() + 1));
+
+        x[value.size()] = 0;
+        memcpy(x, value.data(), value.size());
+        return x;
+}
+
 // Always set destination to value and clean any previous one.
-static inline void SetString(char** destination, char* value)
+static inline void SetString(char** destination, std::string_view value)
 {
   if (*destination) { free(*destination); }
 
-  *destination = strdup(value);
+  *destination = CopyStringView(value);
   StripBackSlashes(*destination);
 }
 

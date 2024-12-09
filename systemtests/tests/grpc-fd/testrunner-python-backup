@@ -1,0 +1,103 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+# Run a simple backup
+#
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/create-backup.out
+setdebug level=200 client trace=1
+run job=$JobName fileset=PythonTest yes
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File
+
+expect_grep "Backup OK" \
+	    "$log_home/create-backup.out" \
+	    "Backup was not created correctly."
+
+res_dir="${tmp:?}/python-restores"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/restore-setup.out
+setdebug level=200 client trace=1
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/restore-full.out
+restore client=bareos-fd fileset=PythonTest where=${res_dir} select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+expect_grep "Start Restore Job" \
+	    "$log_home/restore-full.out" \
+	    "Required restore job was not started."
+
+expect_grep "Restore OK" \
+	    "$log_home/restore-full.out" \
+	    "Restore job was not successful"
+
+check_restore_diff "${BackupDirectory}" "${res_dir}"
+
+end_test

@@ -23,16 +23,18 @@
 # MYSQL_DAEMON_BINARY=/opt/mysql/bin/mysqld \ -D
 # MYSQL_CLIENT_BINARY=/usr/bin/mysql \
 
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+
 if(TARGET python3-fd
    AND XTRABACKUP_BINARY
    AND MYSQL_DAEMON_BINARY
    AND MYSQL_CLIENT_BINARY
 )
-  create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-percona-xtrabackup")
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX}
-    "py3plug-fd-percona-xtrabackup"
+    ${BASENAME}
     DISABLED
     COMMENT
     "

@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package bareos.common;
+
+enum FileType {
+  FILE_TYPE_UNSPECIFIED = 0;
+  RegularFile = 1;
+  Directory = 2;
+  SoftLink = 3;
+  SpecialFile = 4;
+  BlockDevice = 5;
+  Fifo = 6;
+  ReparsePoint = 7;
+  Junction = 8;
+  Deleted = 9;
+  HardlinkCopy = 10; // hardlink pointing to file already backed up
+};
+
+enum FileErrorType {
+  FILE_ERROR_TYPE_UNSPECIFIED = 0;
+  InvalidFileSystem = 1;
+  InvalidDriveType = 2;
+  CouldNotOpenDirectory = 3;
+  CouldNotChangeFilesystem = 4;
+  RecursionDisabled = 5;
+  CouldNotStat = 6;
+  CouldNotFollowLink = 7;
+  CouldNotAccessFile = 8;
+};
+
+enum ObjectType {
+  OBJECT_TYPE_UNSPECIFIED = 0;
+  Blob = 1;
+  Config = 2;
+  FilledConfig = 3;
+};
+
+message plugin_object {
+  bytes name = 1;
+  bytes data = 2;
+  int64 index = 3;
+  ObjectType type = 4;
+};
+
+message plugin_file {
+  bytes file = 1;
+  bytes link = 9; // only used when type == LNK
+  bytes stats = 2;
+  FileType ft = 3;
+  optional int64 delta_seq = 4;
+
+
+  bool no_read = 5;
+  bool portable = 6; // no idea what this means!
+
+  // these flags change how the data is getting backed up
+  // but neither of them are supported for now
+  bool offset_backup = 7;
+  bool sparse_backup = 8;
+};
+
+message plugin_file_error {
+  bytes file = 1;
+  FileErrorType error = 2;
+};
+
+enum ReplaceType {
+  REPLACE_TYPE_UNSPECIFIED = 0;
+  ReplaceIfNewer = 1;
+  ReplaceIfOlder = 2;
+  ReplaceNever = 3;
+  ReplaceAlways = 4;
+};

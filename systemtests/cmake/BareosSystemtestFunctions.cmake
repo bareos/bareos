@@ -556,12 +556,13 @@ macro(prepare_testdir_for_daemon_run)
 endmacro()
 
 macro(prepare_test_python)
-  string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
-  string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
-  # use python3 by default, exepts the name of test starts with py2plug.
+  string(REGEX MATCH "py3grpc" is_grpc "${TEST_NAME}")
   set(python_module_name python3)
-  if(py_v2)
-    set(python_module_name python)
+  set(python_module_suffix)
+  set(python_module_subdir_prefix ${python_module_name})
+  if(is_grpc)
+    set(python_module_name grpc)
+    set(python_module_suffix :grpc-python-module:python3)
   endif()
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     string(CONCAT pythonpath ${PYTHON_PLUGINS_DIR_TO_TEST})
@@ -582,9 +583,9 @@ macro(prepare_test_python)
           "${CMAKE_SOURCE_DIR}/contrib/fd-plugins;"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles;"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles;"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules/\${CMAKE_CONFIG_TYPE};"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules/\${CMAKE_CONFIG_TYPE};"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules/\${CMAKE_CONFIG_TYPE};"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_subdir_prefix}modules/\${CMAKE_CONFIG_TYPE};"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_subdir_prefix}modules/\${CMAKE_CONFIG_TYPE};"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_subdir_prefix}modules/\${CMAKE_CONFIG_TYPE};"
           "${CMAKE_SOURCE_DIR}/systemtests/python-modules;"
           "\""
       )
@@ -603,9 +604,9 @@ macro(prepare_test_python)
           "${CMAKE_SOURCE_DIR}/contrib/fd-plugins:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_subdir_prefix}modules:"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_subdir_prefix}modules:"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_subdir_prefix}modules:"
           "${CMAKE_SOURCE_DIR}/systemtests/python-modules:"
           "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
       )
@@ -613,11 +614,11 @@ macro(prepare_test_python)
   endif()
 endmacro()
 
-macro(prepare_test test_subdir)
-  set(TEST_NAME ${test_subdir})
+macro(prepare_test test_name test_srcdir test_dir)
   # base directory for this test
-  set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${TEST_NAME})
-  set(current_test_source_directory ${PROJECT_SOURCE_DIR}/tests/${TEST_NAME})
+  set(TEST_NAME "${test_name}")
+  set(current_test_directory ${PROJECT_BINARY_DIR}/tests/${test_dir})
+  set(current_test_source_directory ${PROJECT_SOURCE_DIR}/tests/${test_srcdir})
   set(basename ${TEST_NAME})
 
   # db parameters
@@ -742,10 +743,7 @@ function(add_systemtest name file)
   endif()
 endfunction()
 
-function(add_systemtest_from_directory tests_basedir prefix test_subdir)
-  set(test_dir "${tests_basedir}/${test_subdir}")
-  set(test_basename "${prefix}${test_subdir}")
-
+function(add_systemtest_from_directory test_dir test_basename)
   if(EXISTS ${test_dir}/testrunner)
     # single test directory
     add_systemtest(${test_basename} ${test_dir}/testrunner)
@@ -828,6 +826,29 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
 
 endfunction()
 
+macro(create_enabled_systemtest prefix test_name test_srcdir test_dir)
+  set(test_fullname "${prefix}${test_name}")
+
+  message(STATUS "✓ ${test_fullname} (baseport=${BASEPORT})")
+
+  prepare_test(${test_name} ${test_srcdir} ${test_dir})
+  configurefilestosystemtest(
+    "systemtests" "tests/${test_dir}" "*" @ONLY "tests/${test_srcdir}"
+  )
+  configure_file(
+   "${PROJECT_SOURCE_DIR}/environment.in"
+   "${PROJECT_BINARY_DIR}/tests/${test_dir}/environment" @ONLY
+   NEWLINE_STYLE UNIX
+  )
+  add_systemtest_from_directory(${tests_dir}/${test_dir} "${test_fullname}")
+  # Increase global BASEPORT variable
+  math(EXPR BASEPORT "${BASEPORT} + 10")
+  set(BASEPORT
+   "${BASEPORT}"
+   PARENT_SCOPE
+  )
+endmacro()
+
 macro(create_systemtest prefix test_subdir)
   # cmake-format: off
   #
@@ -849,26 +870,16 @@ macro(create_systemtest prefix test_subdir)
       message(STATUS "⛔ ${test_basename} (baseport=${BASEPORT}, SKIPPED)")
       add_disabled_systemtest(${prefix} ${test_subdir} COMMENT "${ARG_COMMENT}")
     else()
-      message(STATUS "✓ ${test_basename} (baseport=${BASEPORT})")
+      string(REGEX MATCH "^py3.*-fd" is_fd_python "${test_subdir}")
 
-      prepare_test(${test_subdir})
-      configurefilestosystemtest(
-        "systemtests" "tests/${test_subdir}" "*" @ONLY ""
-      )
-      configure_file(
-        "${PROJECT_SOURCE_DIR}/environment.in"
-        "${PROJECT_BINARY_DIR}/tests/${test_subdir}/environment" @ONLY
-        NEWLINE_STYLE UNIX
-      )
+      if (is_fd_python AND ENABLE_GRPC)
+        create_enabled_systemtest(${prefix} ${test_subdir} ${test_subdir} ${test_subdir})
+        string(REPLACE "py3plug" "py3grpc" grpc_subdir ${test_subdir})
+        create_enabled_systemtest(${prefix} ${grpc_subdir} ${test_subdir} ${grpc_subdir})
+      else()
+        create_enabled_systemtest(${prefix} ${test_subdir} ${test_subdir} ${test_subdir})
+      endif()
 
-      add_systemtest_from_directory(${tests_dir} ${prefix} ${test_subdir})
-
-      # Increase global BASEPORT variable
-      math(EXPR BASEPORT "${BASEPORT} + 10")
-      set(BASEPORT
-          "${BASEPORT}"
-          PARENT_SCOPE
-      )
     endif()
   endif()
 endmacro()

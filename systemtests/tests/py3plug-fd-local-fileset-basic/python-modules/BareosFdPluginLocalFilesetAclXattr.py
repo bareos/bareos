@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2022-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,9 @@ import os
 import re
 from BareosFdPluginLocalFilesBaseclass import BareosFdPluginLocalFilesBaseclass
 import stat
+import locale
+import sys
+import os
 
 
 class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # noqa
@@ -75,6 +78,10 @@ class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # 
         We try to read from filename and setup the list of file to backup
         in self.files_to_backup
         """
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            f"locale = {locale.getlocale()}\nencoding = {sys.getfilesystemencoding()}\nLANG={os.environ['LANG']}",
+        )
         bareosfd.DebugMessage(
             100,
             "Using %s to search for local files\n" % self.options["filename"],
@@ -100,6 +107,8 @@ class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # 
             self.deny = re.compile(self.options["deny"])
 
         for listItem in config_file.read().splitlines():
+            bareosfd.JobMessage(bareosfd.M_INFO, f"entry -> {listItem}\n")
+
             if os.path.isfile(listItem) and self.filename_is_allowed(
                 listItem, self.allow, self.deny
             ):
@@ -117,8 +126,14 @@ class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # 
                             self.allow,
                             self.deny,
                         ):
+                            bareosfd.JobMessage(
+                                bareosfd.M_INFO, f"name -> {repr(fileName)}\n"
+                            )
                             self.append_file_to_backup(os.path.join(topdir, fileName))
                     for dirName in dirNames:
+                        bareosfd.JobMessage(
+                            bareosfd.M_INFO, f"dirname -> {repr(dirName)}\n"
+                        )
                         fullDirName = os.path.join(topdir, dirName) + "/"
                         self.append_file_to_backup(fullDirName)
         bareosfd.DebugMessage(150, "Filelist: %s\n" % (self.files_to_backup))

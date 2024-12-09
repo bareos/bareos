@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1744,6 +1744,8 @@ static PyObject* PyBareosCheckChanges(PyObject*, PyObject* args)
   }
   sp.save_time = pSavePkt->save_time;
 
+  /* TODO: this is incorrect!  We need to set a lot more!
+   * AccurateCheckChanges uses the stat block to determine the file type! */
   retval = bareos_core_functions->checkChanges(plugin_ctx, &sp);
 
   // Copy back the two fields that are changed by checkChanges().

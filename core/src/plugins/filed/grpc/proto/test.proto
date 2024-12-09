@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package bareos.plugin;
+
+service Plugin {
+  rpc Test (TestRequest) returns (TestResponse);
+};
+
+message TestRequest {
+  int64 input = 1;
+};
+
+message TestResponse {
+  int64 output = 1;
+};

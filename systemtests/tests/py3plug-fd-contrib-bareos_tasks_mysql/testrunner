@@ -30,6 +30,7 @@ start_test
 
 mysql_init
 mysql_server_start
+start_bareos
 
 echo "create database ${test_db_name}" | $MYSQL_CLIENT
 echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL_CLIENT "${test_db_name}"
@@ -39,12 +40,13 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/log1.out
 run job=$JobName yes
 wait
+messages
 
 status dir
 llist jobs job=$JobName
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 check_log $tmp/log1.out
 
 # insert data and run incremental
@@ -55,21 +57,23 @@ cat <<END_OF_DATA2 >"$tmp/bconcmds"
 @# run incremental again without any new data
 run job=$JobName yes
 wait
+messages
 status dir
 END_OF_DATA2
 
-run_bareos "$@"
+run_bconsole "$@"
 check_log $tmp/log1i.out
 
 cat <<END_OF_DATA3 >"$tmp/bconcmds"
 @$out $tmp/log2.out
 restore restorejob=RestoreFile client=bareos-fd fileset=bareos_tasks_mysql yes select all done
 wait
+messages
 status dir
 llist jobs job=RestoreFile
 END_OF_DATA3
 
-run_bareos "$@"
+run_bconsole "$@"
 check_log $tmp/log2.out
 
 check_for_zombie_jobs storage=File
@@ -101,5 +105,6 @@ if ! $MYSQL_CLIENT "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" >/dev/
 fi
 
 mysql_server_stop
+stop_bareos
 
 end_test

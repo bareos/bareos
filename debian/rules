@@ -14,6 +14,7 @@ STORAGE_DAEMON_USER = $(DAEMON_USER)
 FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | sed 's/Version: //g')
+DIST_ID_REL := $(shell lsb_release --id --release --short | tr -d '\n')
 
 define CONFIGURE_COMMON
   -Dsbindir=/usr/sbin \
@@ -51,12 +52,25 @@ define CONFIGURE_COMMON
   -DVERSION_STRING=$(BAREOS_VERSION)
 endef
 
+
+
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
 CONFIGURE_COMMON       += -Dacl=no -Dxattr=no -Dscsi-crypto=no -Dndmp=no
 endif
 ifeq ($(DEB_HOST_ARCH_OS),hurd)
 CONFIGURE_COMMON       += -Dscsi-crypto=no -Dndmp=no
 endif
+
+
+# no gprc for universal client, Ubuntu20.04 and Debian11
+ifneq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
+	ifneq ($(DIST_ID_REL),Ubuntu20.04))
+		ifneq ($(DIST_ID_REL),Debian11))
+	CONFIGURE_COMMON       += -DENABLE_GRPC=yes
+		endif
+	endif
+endif
+
 
 override_dh_auto_configure:
 ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))

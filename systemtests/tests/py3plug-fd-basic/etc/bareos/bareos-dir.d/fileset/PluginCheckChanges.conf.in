@@ -5,6 +5,9 @@ FileSet {
     Options {
       signature = XXH128
     }
-    Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=force-backup-module:mode=checkchanges"
+    Plugin = "@python_module_name@@python_module_suffix@"
+             ":module_path=@python_plugin_module_src_test_dir@"
+             ":module_name=force-backup-module"
+             ":mode=checkchanges"
   }
 }
