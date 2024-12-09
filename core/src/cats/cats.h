@@ -588,16 +588,16 @@ class BareosDb : public BareosDbQueryEnum {
   bool CheckTablesVersion(JobControlRecord* jcr);
   bool QueryDb(JobControlRecord* jcr,
                const char* select_cmd,
-               brs::source_location loc = brs::source_location::current());
+               libbareos::source_location loc = libbareos::source_location::current());
   int InsertDb(JobControlRecord* jcr,
                const char* select_cmd,
-               brs::source_location loc = brs::source_location::current());
+               libbareos::source_location loc = libbareos::source_location::current());
   int DeleteDb(JobControlRecord* jcr,
                const char* DeleteCmd,
-               brs::source_location loc = brs::source_location::current());
+               libbareos::source_location loc = libbareos::source_location::current());
   int UpdateDb(JobControlRecord* jcr,
                const char* UpdateCmd,
-               brs::source_location loc = brs::source_location::current());
+               libbareos::source_location loc = libbareos::source_location::current());
   int GetSqlRecordMax(JobControlRecord* jcr);
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
   int ListResult(void* vctx, int nb_col, char** row);
@@ -995,7 +995,7 @@ class BareosDb : public BareosDbQueryEnum {
       = 0;
 
  protected:
-  void AssertOwnership(brs::source_location l = brs::source_location::current())
+  void AssertOwnership(libbareos::source_location l = libbareos::source_location::current())
   {
     if (!is_private_) {
       RwlAssertWriterIsMe(&lock_, l);
@@ -1030,7 +1030,7 @@ class DbLocker {
 
  public:
   DbLocker(BareosDb* db_handle,
-           brs::source_location l = brs::source_location::current())
+           libbareos::source_location l = libbareos::source_location::current())
       : db_handle_(db_handle)
       , file{l.file_name()}
       , line{static_cast<int>(l.line())}
