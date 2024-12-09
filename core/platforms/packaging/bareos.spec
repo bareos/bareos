@@ -112,7 +112,11 @@ BuildRequires: devtoolset-8-gcc-c++
 %endif
 
 # rhel <=8 does not have grpc
-%if 0%{?rhel} <= 8
+%if %{defined rhel} && (0%{?rhel} <= 8)
+%define enable_grpc 0
+%endif
+# fedora <=39 does not have grpc
+%if %{defined fedora} && (0%{?fedora} <= 39)
 %define enable_grpc 0
 %endif
 
