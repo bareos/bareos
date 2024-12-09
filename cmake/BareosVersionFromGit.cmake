@@ -38,7 +38,7 @@ if(GIT_COMMIT_TIMESTAMP_RESULT EQUAL 0)
   )
   if(NOT GIT_DESCRIBE_RELEASE_RESULT EQUAL 0)
     execute_process(
-      COMMAND ${GIT_EXECUTABLE} describe --tags --match "WIP/*" --dirty=.dirty
+      COMMAND ${GIT_EXECUTABLE} describe --tags --match "WIP/*" --long --dirty=.dirty
       RESULT_VARIABLE GIT_DESCRIBE_WIP_RESULT
       OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
       WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
