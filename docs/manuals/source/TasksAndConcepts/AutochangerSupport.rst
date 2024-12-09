@@ -233,7 +233,7 @@ If you do not do the unmount before making such a change, Bareos will become com
 Dealing with Multiple Magazines
 -------------------------------
 
-..index:: Magazines; Dealing with Multiple
+.. index:: Magazines; Dealing with Multiple
 
 If you have several magazines or if you insert or remove cartridges from a magazine, you should notify Bareos of this. By doing so, Bareos will as a preference, use Volumes that it knows to be in the autochanger before accessing Volumes that are not in the autochanger. This prevents unneeded operator intervention.
 
@@ -762,6 +762,9 @@ parameters set to off.
    Labeling WORM tapes with Bareos before 23.1.0 will result in an :strong:`unusable tape` that you
    can only discard.
 
+
+.. index:: LTO-9,LTO9
+
 LTO-9 Media Initialization
 --------------------------
 
@@ -769,7 +772,7 @@ With the introduction of LTO Generation 9, every new cartridge is required to be
 initialized before it can be used. The media initialization enhances LTO tape
 long-term media durability. The initialization is a one-time
 process and should be carried out under the same ambient conditions that will
-prevail later on. The initialization and cannot be disabled.
+prevail later on. The initialization is mandatory and cannot be disabled.
 
 The initialization happens automatically on the first load of the new tape into
 the drive and can take between **40 Minutes** and **2 hours**.
@@ -782,7 +785,7 @@ Therefore we recommend to initialize all LTO-9 tapes before using them with
 Bareos.
 
 
-.. attention::
+.. warning::
 
    It is recommended to initialize your LTO-9 tape cartridges before using them
    with Bareos. Modern tape changers usually have an automatic procedure to
