@@ -3125,7 +3125,9 @@ class BareosVADPWrapper(object):
 
         for vm in all_vms:
             if isinstance(vm.config, type(None)):
-                bareosfd.DebugMessage(100,"cannot read vm.config from VM %s\n" % (vm.name))
+                bareosfd.DebugMessage(
+                    100, "cannot read vm.config from VM %s\n" % (vm.name)
+                )
                 continue
 
             for dev in vm.config.hardware.device:
