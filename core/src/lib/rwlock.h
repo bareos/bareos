@@ -33,6 +33,7 @@
 #define BAREOS_LIB_RWLOCK_H_
 
 #include <pthread.h>
+#include "lib/source_location.h"
 
 struct brwlock_t {
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -59,6 +60,8 @@ int RwlReadunlock(brwlock_t* rwl);
 int RwlWritelock(brwlock_t* rwl);
 int RwlWritetrylock(brwlock_t* rwl);
 int RwlWriteunlock(brwlock_t* rwl);
-void RwlAssertWriterIsMe(brwlock_t* rwl);
+void RwlAssertWriterIsMe(brwlock_t* rwl,
+                         libbareos::source_location loc
+                         = libbareos::source_location::current());
 
 #endif  // BAREOS_LIB_RWLOCK_H_

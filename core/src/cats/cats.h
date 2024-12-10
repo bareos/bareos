@@ -41,6 +41,7 @@
 #include "lib/output_formatter.h"
 #include "lib/crypto.h"
 #include "lib/base64.h"
+#include "lib/source_location.h"
 
 #include <string>
 #include <stdexcept>
@@ -585,22 +586,22 @@ class BareosDb : public BareosDbQueryEnum {
   char* strerror();
   bool CheckMaxConnections(JobControlRecord* jcr, uint32_t max_concurrent_jobs);
   bool CheckTablesVersion(JobControlRecord* jcr);
-  bool QueryDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* select_cmd);
-  int InsertDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* select_cmd);
-  int DeleteDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* DeleteCmd);
-  int UpdateDB(const char* file,
-               int line,
-               JobControlRecord* jcr,
-               const char* UpdateCmd);
+  bool QueryDb(JobControlRecord* jcr,
+               const char* select_cmd,
+               libbareos::source_location loc
+               = libbareos::source_location::current());
+  int InsertDb(JobControlRecord* jcr,
+               const char* select_cmd,
+               libbareos::source_location loc
+               = libbareos::source_location::current());
+  int DeleteDb(JobControlRecord* jcr,
+               const char* DeleteCmd,
+               libbareos::source_location loc
+               = libbareos::source_location::current());
+  int UpdateDb(JobControlRecord* jcr,
+               const char* UpdateCmd,
+               libbareos::source_location loc
+               = libbareos::source_location::current());
   int GetSqlRecordMax(JobControlRecord* jcr);
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
   int ListResult(void* vctx, int nb_col, char** row);
@@ -998,9 +999,10 @@ class BareosDb : public BareosDbQueryEnum {
       = 0;
 
  protected:
-  void AssertOwnership()
+  void AssertOwnership(libbareos::source_location l
+                       = libbareos::source_location::current())
   {
-    if (!is_private_) { RwlAssertWriterIsMe(&lock_); }
+    if (!is_private_) { RwlAssertWriterIsMe(&lock_, l); }
   }
 };
 
@@ -1024,21 +1026,21 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 /* flush the batch insert connection every x changes */
 #define BATCH_FLUSH 800000
 
-/* Use for better error location printing */
-#define UPDATE_DB(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd)
-#define INSERT_DB(jcr, cmd) InsertDB(__FILE__, __LINE__, jcr, cmd)
-#define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
-#define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)
-
 class DbLocker {
   BareosDb* db_handle_;
+  const char* file;
+  int line;
 
  public:
-  DbLocker(BareosDb* db_handle) : db_handle_(db_handle)
+  DbLocker(BareosDb* db_handle,
+           libbareos::source_location l = libbareos::source_location::current())
+      : db_handle_(db_handle)
+      , file{l.file_name()}
+      , line{static_cast<int>(l.line())}
   {
-    db_handle_->LockDb(__FILE__, __LINE__);
+    db_handle_->LockDb(file, line);
   }
-  ~DbLocker() { db_handle_->UnlockDb(__FILE__, __LINE__); }
+  ~DbLocker() { db_handle_->UnlockDb(file, line); }
 
   DbLocker(const DbLocker& other) = delete;
   DbLocker& operator=(const DbLocker&) = delete;

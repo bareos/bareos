@@ -404,7 +404,6 @@ bool DoNativeRestore(JobControlRecord* jcr)
   return true;
 
 bail_out:
-  NativeRestoreCleanup(jcr, JS_ErrorTerminated);
   return false;
 }
 
