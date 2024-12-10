@@ -118,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bareosfd_test.py: allow a delta of 1.1 [PR #2031]
 - mssql TearDownVdiDevice(): enhance error reporting [PR #2008]
 - macos: update build environment [PR #2035]
+- NDMP_NATIVE: enable full restore, eject tape before unload, enable update of NDMP environment [PR #1862]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -273,6 +274,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1857]: https://github.com/bareos/bareos/pull/1857
 [PR #1858]: https://github.com/bareos/bareos/pull/1858
 [PR #1859]: https://github.com/bareos/bareos/pull/1859
+[PR #1862]: https://github.com/bareos/bareos/pull/1862
 [PR #1865]: https://github.com/bareos/bareos/pull/1865
 [PR #1868]: https://github.com/bareos/bareos/pull/1868
 [PR #1871]: https://github.com/bareos/bareos/pull/1871

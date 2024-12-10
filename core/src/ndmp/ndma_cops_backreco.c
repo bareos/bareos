@@ -207,7 +207,7 @@ int ndmca_monitor_backup(struct ndm_session* sess)
       }
     }
 
-    ndmca_mon_wait_for_something(sess, count <= 1 ? 30 : 10);
+    ndmca_mon_wait_for_something(sess, count <= 1 ? 300 : 10);
     if (ndmca_monitor_get_states(sess) < 0) break;
 
     ds = ca->data_state.state;

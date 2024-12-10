@@ -166,7 +166,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
   for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
        devinfo != store->runtime_storage_status->ndmp_deviceinfo.end();
        devinfo++) {
-    Jmsg(jcr, M_INFO, 0, " %s\n", devinfo->device.c_str(),
+    Jmsg(jcr, M_INFO, 0, " %s:(%s)\n", devinfo->device.c_str(),
          devinfo->model.c_str());
   }
   return true;
@@ -1031,7 +1031,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   }
 
   tapedevice = reserve_ndmp_tapedevice_for_job(store, jcr);
-  ndmp_job.tape_device = (char*)tapedevice.c_str();
+  ndmp_job.tape_device = strdup(tapedevice.c_str());
 
   int driveindex = lookup_ndmp_driveindex_by_name(store, ndmp_job.tape_device);
 
@@ -1056,6 +1056,8 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   // unload tape if tape is in drive
   ndmp_job.auto_remedy = 1;
   ndmp_job.record_size = jcr->dir_impl->res.client->ndmp_blocksize;
+  ndmp_job.robot_timeout = 300;
+  ndmp_job.tape_timeout = 300;
 
   Jmsg(jcr, M_INFO, 0, T_("Using Data  host %s\n"), ndmp_job.data_agent.host);
   Jmsg(jcr, M_INFO, 0, T_("Using Tape  host:device:address  %s:%s:@%d\n"),
@@ -1064,6 +1066,8 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
        ndmp_job.robot_agent.host, ndmp_job.robot_target,
        store->runtime_storage_status->smc_ident);
   Jmsg(jcr, M_INFO, 0, T_("Using Tape record size %d\n"), ndmp_job.record_size);
+  Jmsg(jcr, M_INFO, 0, T_("Using Robot timeout %d\n"), ndmp_job.robot_timeout);
+  Jmsg(jcr, M_INFO, 0, T_("Using Tape timeout %d\n"), ndmp_job.tape_timeout);
 
   return true;
 }

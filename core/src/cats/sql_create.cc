@@ -1256,9 +1256,12 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
   EscapeString(jcr, esc_envvalue, value, strlen(value));
   Mmsg(cmd,
        "INSERT INTO NDMPJobEnvironment (JobId, FileIndex, EnvName, EnvValue)"
-       " VALUES ('%s', '%s', '%s', '%s')",
+       " VALUES ('%s', '%s', '%s', '%s')"
+       " ON CONFLICT (JobId, FileIndex, EnvName)"
+       " DO UPDATE SET"
+       " EnvValue='%s'",
        edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_envname,
-       esc_envvalue);
+       esc_envvalue, esc_envvalue);
   if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg,
           T_("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), cmd,
