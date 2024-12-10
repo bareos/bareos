@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2019-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -38,7 +38,8 @@ if(GIT_COMMIT_TIMESTAMP_RESULT EQUAL 0)
   )
   if(NOT GIT_DESCRIBE_RELEASE_RESULT EQUAL 0)
     execute_process(
-      COMMAND ${GIT_EXECUTABLE} describe --tags --match "WIP/*" --dirty=.dirty
+      COMMAND ${GIT_EXECUTABLE} describe --tags --match "WIP/*" --long
+              --dirty=.dirty
       RESULT_VARIABLE GIT_DESCRIBE_WIP_RESULT
       OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
       WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
