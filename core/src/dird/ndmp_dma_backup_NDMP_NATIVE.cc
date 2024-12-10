@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -125,11 +125,12 @@ int NdmpLoadNext(struct ndm_session* sess)
 
     media->slot_addr = mr.Slot;
 
-// the next lines creates some kind of race condition as it seems so we need to disable it
-//    if (!NdmpUpdateStorageMappings(jcr, store)) {
-//      Jmsg(jcr, M_ERROR, 0, T_("ERROR in NdmpUpdateStorageMappings\n"));
-//      goto bail_out;
-//    }
+    // the next lines creates some kind of race condition as it seems so we need
+    // to disable it
+    //    if (!NdmpUpdateStorageMappings(jcr, store)) {
+    //      Jmsg(jcr, M_ERROR, 0, T_("ERROR in NdmpUpdateStorageMappings\n"));
+    //      goto bail_out;
+    //    }
 
     slot_number_t slotnumber = GetElementAddressByBareosSlotNumber(
         &store->runtime_storage_status->storage_mapping,
