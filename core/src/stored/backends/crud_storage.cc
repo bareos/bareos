@@ -54,17 +54,37 @@ class BPipeHandle {
               const std::unordered_map<std::string, std::string>& env_vars = {})
       : bpipe(OpenBpipe(prog, wait.count(), mode, true, env_vars))
   {
-    if (!bpipe) { throw std::system_error(ENOENT, std::generic_category()); }
+    if (!bpipe) { throw std::runtime_error("opening Bpipe"); }
   }
   BPipeHandle(const BPipeHandle&) = delete;
   BPipeHandle& operator=(const BPipeHandle&) = delete;
-  BPipeHandle(BPipeHandle&&) = delete;
-  BPipeHandle& operator=(BPipeHandle&&) = delete;
+
+  BPipeHandle(BPipeHandle&& other) { std::swap(bpipe, other.bpipe); }
+
+  BPipeHandle& operator=(BPipeHandle&& other)
+  {
+    std::swap(bpipe, other.bpipe);
+    return *this;
+  }
 
   ~BPipeHandle()
   {
     if (bpipe) { CloseBpipe(bpipe); }
   }
+
+  static tl::expected<BPipeHandle, std::string> create(
+      const char* prog,
+      std::chrono::seconds wait,
+      const char* mode,
+      const std::unordered_map<std::string, std::string>& env_vars = {})
+  {
+    try {
+      return BPipeHandle(prog, wait, mode, env_vars);
+    } catch (const std::runtime_error& e) {
+      return tl::unexpected(e.what());
+    }
+  }
+
   FILE* getReadFd() { return bpipe->rfd; }
   FILE* getWriteFd() { return bpipe->wfd; }
   std::string getOutput()
@@ -153,9 +173,10 @@ tl::expected<BStringList, std::string> CrudStorage::get_supported_options()
 {
   Dmsg0(debug_trace, "options called\n");
   std::string cmdline = fmt::format("\"{}\" options", m_program);
-  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r")};
-  auto output = bph.getOutput();
-  auto ret = bph.close();
+  auto bph{BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r")};
+  if (!bph) { return tl::unexpected(bph.error()); }
+  auto output = bph->getOutput();
+  auto ret = bph->close();
   Dmsg1(debug_trace,
         "options returned %d\n"
         "== Output ==\n"
@@ -189,9 +210,11 @@ tl::expected<void, std::string> CrudStorage::test_connection()
 {
   Dmsg0(debug_trace, "test_connection called\n");
   std::string cmdline = fmt::format("\"{}\" testconnection", m_program);
-  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
-  auto output = bph.getOutput();
-  auto ret = bph.close();
+  auto bph{
+      BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
+  if (!bph) { return tl::unexpected(bph.error()); }
+  auto output = bph->getOutput();
+  auto ret = bph->close();
   Dmsg1(debug_trace,
         "testconnection returned %d\n"
         "== Output ==\n"
@@ -211,14 +234,16 @@ auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
   Dmsg1(debug_trace, "stat %s called\n", obj_name.data());
   std::string cmdline
       = fmt::format("\"{}\" stat \"{}\" \"{}\"", m_program, obj_name, obj_part);
-  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
-  auto rfh = bph.getReadFd();
+  auto bph{
+      BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
+  if (!bph) { return tl::unexpected(bph.error()); }
+  auto rfh = bph->getReadFd();
   Stat stat;
   if (int n = fscanf(rfh, "%zu\n", &stat.size); n != 1) {
     return tl::unexpected(
         fmt::format("could not parse data returned by {}\n", cmdline));
   }
-  if (auto ret = bph.close(); ret != 0) {
+  if (auto ret = bph->close(); ret != 0) {
     Dmsg1(debug_info, "stat returned %d\n", ret);
     return tl::unexpected(
         fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
@@ -232,8 +257,10 @@ auto CrudStorage::list(std::string_view obj_name)
 {
   Dmsg1(debug_trace, "list %s called\n", obj_name.data());
   std::string cmdline = fmt::format("\"{}\" list \"{}\"", m_program, obj_name);
-  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
-  auto rfh = bph.getReadFd();
+  auto bph{
+      BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
+  if (!bph) { return tl::unexpected(bph.error()); }
+  auto rfh = bph->getReadFd();
 
   std::map<std::string, Stat> result;
   while (!feof(rfh)) {
@@ -252,7 +279,7 @@ auto CrudStorage::list(std::string_view obj_name)
           obj_part.c_str(), stat.size);
   }
 
-  if (auto ret = bph.close(); ret != 0) {
+  if (auto ret = bph->close(); ret != 0) {
     Dmsg1(debug_info, "list returned %d\n", ret);
     return tl::unexpected(
         fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
@@ -268,8 +295,10 @@ tl::expected<void, std::string> CrudStorage::upload(std::string_view obj_name,
   std::string cmdline = fmt::format("\"{}\" upload \"{}\" \"{}\"", m_program,
                                     obj_name, obj_part);
 
-  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "rw", m_env_vars)};
-  auto wfh = bph.getWriteFd();
+  auto bph{BPipeHandle::create(cmdline.c_str(), m_program_timeout, "rw",
+                               m_env_vars)};
+  if (!bph) { return tl::unexpected(bph.error()); }
+  auto wfh = bph->getWriteFd();
 
   constexpr size_t max_write_size{256 * 1024};
   size_t remaining_bytes{obj_data.size()};
@@ -295,11 +324,11 @@ tl::expected<void, std::string> CrudStorage::upload(std::string_view obj_name,
             errno, has_written, write_size, offset, obj_name, obj_part));
       }
     }
-    bph.reset_timeout();
+    bph->reset_timeout();
     remaining_bytes -= write_size;
   }
-  auto output = bph.getOutput();
-  auto ret = bph.close();
+  auto output = bph->getOutput();
+  auto ret = bph->close();
   Dmsg1(debug_trace,
         "upload returned %d\n"
         "== Output ==\n"
@@ -324,8 +353,10 @@ tl::expected<gsl::span<char>, std::string> CrudStorage::download(
   std::string cmdline = fmt::format("\"{}\" download \"{}\" \"{}\"", m_program,
                                     obj_name, obj_part);
 
-  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
-  auto rfh = bph.getReadFd();
+  auto bph{
+      BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
+  if (!bph) { return tl::unexpected(bph.error()); }
+  auto rfh = bph->getReadFd();
   size_t total_read{0};
   constexpr size_t max_read_size{256 * 1024};
   do {
@@ -333,7 +364,7 @@ tl::expected<gsl::span<char>, std::string> CrudStorage::download(
         = std::min(buffer.size_bytes() - total_read, max_read_size);
     const size_t bytes_read
         = fread(buffer.data() + total_read, 1, read_size, rfh);
-    bph.reset_timeout();
+    bph->reset_timeout();
     total_read += bytes_read;
     if (bytes_read < read_size) {
       if (feof(rfh)) {
@@ -358,7 +389,7 @@ tl::expected<gsl::span<char>, std::string> CrudStorage::download(
         "additional data after expected end of stream while downloading {}/{}",
         obj_name, obj_part));
   }
-  if (auto ret = bph.close(); ret != 0) {
+  if (auto ret = bph->close(); ret != 0) {
     return tl::unexpected(fmt::format(
         "Download failed with returncode={} after data was received\n", ret));
   }
@@ -372,9 +403,11 @@ tl::expected<void, std::string> CrudStorage::remove(std::string_view obj_name,
   Dmsg1(debug_trace, "remove %s/%s called\n", obj_name.data(), obj_part.data());
   std::string cmdline = fmt::format("\"{}\" remove \"{}\" \"{}\"", m_program,
                                     obj_name, obj_part);
-  auto bph{BPipeHandle(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
-  auto output = bph.getOutput();
-  auto ret = bph.close();
+  auto bph{
+      BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
+  if (!bph) { return tl::unexpected(bph.error()); }
+  auto output = bph->getOutput();
+  auto ret = bph->close();
 
   Dmsg1(debug_trace,
         "remove returned %d\n"
