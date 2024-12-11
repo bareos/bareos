@@ -143,7 +143,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   // jobs share a connection otherwise
   if (!BatchInsertAvailable()) return true;
 
-  struct max_connections_context context {};
+  struct max_connections_context context{};
   PoolMem query(PM_MESSAGE);
 
   // Check max_connections setting
