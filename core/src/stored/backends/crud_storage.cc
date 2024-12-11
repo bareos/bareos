@@ -27,7 +27,6 @@
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
 #include <sys/stat.h>
-#include <cctype>
 #if defined(HAVE_WIN32)
 #  include <shlwapi.h>  // for PathIsRelativeA()
 #endif
@@ -101,13 +100,25 @@ class BPipeHandle {
   }
 };
 
+// std::isalnum is locale-sensitive but we need ASCII-only
+bool is_ascii_alnum(char c)
+{
+  return std::isdigit(c) || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
 bool is_valid_env_name(const std::string& name)
 {
-  // according to IEEE Std 1003.1-2017 names should be
-  // non-empty, alphanumeric and not starting with a digit.
+  // According to IEEE Std 1003.1-2024 / POSIX.1-2024 the namespace used for
+  // system environment variables is uppercase letters, digits and underscore.
+  // Additionally variable names containing lowercase letters are reserved for
+  // application use. As a result we allow upper- and lowercase letters, digits
+  // and underscores.
+  // As the standard also advises not to use variable names starting with a
+  // digit, we prevent that, too.
+
   return !name.empty() && !std::isdigit(name[0])
          && std::all_of(name.cbegin(), name.cend(),
-                        [](char c) { return std::isalnum(c) || c == '_'; });
+                        [](char c) { return is_ascii_alnum(c) || c == '_'; });
 }
 
 }  // namespace
