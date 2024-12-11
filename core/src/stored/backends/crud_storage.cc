@@ -49,10 +49,10 @@ class BPipeHandle {
 
  public:
   BPipeHandle(const char* prog,
-              int wait,
+              std::chrono::seconds wait,
               const char* mode,
               const std::unordered_map<std::string, std::string>& env_vars = {})
-      : bpipe(OpenBpipe(prog, wait, mode, true, env_vars))
+      : bpipe(OpenBpipe(prog, wait.count(), mode, true, env_vars))
   {
     if (!bpipe) { throw std::system_error(ENOENT, std::generic_category()); }
   }
@@ -144,7 +144,7 @@ tl::expected<void, std::string> CrudStorage::set_program(
   return {};
 }
 
-void CrudStorage::set_program_timeout(uint32_t timeout)
+void CrudStorage::set_program_timeout(std::chrono::seconds timeout)
 {
   m_program_timeout = timeout;
 }

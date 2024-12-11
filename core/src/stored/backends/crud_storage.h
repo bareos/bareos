@@ -26,7 +26,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <gsl/span>
-#include <cstdint>
+#include <chrono>
 #include "lib/bstringlist.h"
 #include "tl/expected.hpp"
 
@@ -35,12 +35,12 @@ class CrudStorage {
     size_t size{0};
   };
   std::string m_program{"/bin/false"};
-  uint32_t m_program_timeout{30};
+  std::chrono::seconds m_program_timeout{30};
   std::unordered_map<std::string, std::string> m_env_vars{};
 
  public:
   tl::expected<void, std::string> set_program(const std::string& program);
-  void set_program_timeout(uint32_t timeout);
+  void set_program_timeout(std::chrono::seconds timeout);
   tl::expected<BStringList, std::string> get_supported_options();
   tl::expected<void, std::string> set_option(const std::string& name,
                                              const std::string& value);
