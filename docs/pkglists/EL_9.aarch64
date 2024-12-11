@@ -8,6 +8,7 @@ debug/aarch64/bareos-director-debuginfo
 debug/aarch64/bareos-director-python3-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-debuginfo
 debug/aarch64/bareos-filedaemon-glusterfs-plugin-debuginfo
+debug/aarch64/bareos-filedaemon-grpc-python3-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-python3-plugin-debuginfo
 debug/aarch64/bareos-storage-debuginfo
 debug/aarch64/bareos-storage-dedupable-debuginfo
@@ -36,6 +37,7 @@ aarch64/bareos-director-python-plugins-common
 aarch64/bareos-director-python3-plugin
 aarch64/bareos-filedaemon
 aarch64/bareos-filedaemon-glusterfs-plugin
+aarch64/bareos-filedaemon-grpc-python3-plugin
 aarch64/bareos-filedaemon-ldap-python-plugin
 aarch64/bareos-filedaemon-libcloud-python-plugin
 aarch64/bareos-filedaemon-mariabackup-python-plugin

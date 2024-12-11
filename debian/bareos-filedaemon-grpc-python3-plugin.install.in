@@ -1,0 +1,3 @@
+@plugindir@/grpc-fd.so
+@plugindir@/grpc-python-module
+@plugindir@/grpc-test-module
