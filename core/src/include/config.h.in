@@ -502,6 +502,9 @@ extern char win_os[];
 // Directory for backend files
 #cmakedefine PATH_BAREOS_BACKENDDIR @PATH_BAREOS_BACKENDDIR@
 
+// Directory for backend files
+#cmakedefine PATH_BAREOS_SCRIPTDIR @PATH_BAREOS_SCRIPTDIR@
+
 // Directory for daemon files
 #cmakedefine PATH_BAREOS_WORKINGDIR @PATH_BAREOS_WORKINGDIR@
 

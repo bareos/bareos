@@ -1,0 +1,7 @@
+Storage {
+  Name = dplcompat # or any other name you want
+  Address  = "Replace this by the Bareos Storage Daemon FQDN or IP address"
+  Password = "Replace this by the Bareos Storage Daemon director password"
+  Device = dplcompat # name of the device on the SD
+  Media Type = dplcompat # a unique type per storage location
+}

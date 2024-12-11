@@ -132,6 +132,9 @@
 /* Directory for backend drivers */
 #define PATH_BAREOS_BACKENDDIR "."
 
+/* Directory for scripts */
+#define PATH_BAREOS_SCRIPTDIR "."
+
 /* Default path for Bareos Python modules */
 #define PYTHON_MODULE_PATH "."
 
