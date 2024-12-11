@@ -279,9 +279,21 @@ tl::expected<void, std::string> CrudStorage::upload(std::string_view obj_name,
     const size_t offset = obj_data.size() - remaining_bytes;
     if (auto has_written = fwrite(obj_data.data() + offset, 1, write_size, wfh);
         has_written != write_size) {
-      return tl::unexpected(fmt::format(
-          "Broken pipe after writing {} of {} bytes at offset {} into {}/{}\n",
-          has_written, write_size, offset, obj_name, obj_part));
+      if (errno == EINTR) {
+        ASSERT(has_written == 0);
+        clearerr(wfh);
+        continue;
+      } else if (errno == EPIPE) {
+        return tl::unexpected(
+            fmt::format("Broken pipe after writing {} of {} bytes at offset {} "
+                        "into {}/{}\n",
+                        has_written, write_size, offset, obj_name, obj_part));
+      } else {
+        return tl::unexpected(fmt::format(
+            "Got errno={} after writing {} of {} bytes at offset {} "
+            "into {}/{}\n",
+            errno, has_written, write_size, offset, obj_name, obj_part));
+      }
     }
     bph.reset_timeout();
     remaining_bytes -= write_size;
@@ -330,6 +342,11 @@ tl::expected<gsl::span<char>, std::string> CrudStorage::download(
                         "downloading {}/{}",
                         total_read, buffer.size_bytes(), obj_name, obj_part));
       } else if (ferror(rfh)) {
+        if (errno == EINTR) {
+          ASSERT(bytes_read == 0);
+          clearerr(rfh);
+          continue;
+        }
         return tl::unexpected(fmt::format(
             "stream error after reading {} of {} bytes while downloading {}/{}",
             total_read, buffer.size_bytes(), obj_name, obj_part));
