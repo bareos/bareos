@@ -33,14 +33,14 @@ using source_location = std::source_location;
 #  include <cstdint>
 namespace libbareos {
 class source_location {
-public:
+ public:
   constexpr static source_location current(const char* function
                                            = __builtin_FUNCTION(),
                                            const char* file = __builtin_FILE(),
                                            std::uint_least32_t line
                                            = __builtin_LINE()) noexcept
   {
-    return source_location{ function, file, line };
+    return source_location{function, file, line};
   }
 
   constexpr const char* file_name() const noexcept { return file_; }
@@ -50,40 +50,42 @@ public:
 
   constexpr source_location() = default;
 
-private:
+ private:
   constexpr source_location(const char* function,
-                  const char* file,
-                  std::uint_least32_t line)
-    : function_{function}
-    , file_{file}
-    , line_{line}
-  {}
+                            const char* file,
+                            std::uint_least32_t line)
+      : function_{function}, file_{file}, line_{line}
+  {
+  }
 
   const char* function_{"unset"};
   const char* file_{"unset"};
   std::uint_least32_t line_{0};
 };
-}  // namespace brs
+}  // namespace libbareos
 #else
-#error "No source_location implementation available"
+#  error "No source_location implementation available"
 #endif
 
 #include <string_view>
 // make sure this works at all
-static_assert(std::string_view{libbareos::source_location::current().file_name()}
+static_assert(std::string_view{
+                  libbareos::source_location::current().file_name()}
               == std::string_view{__FILE__});
 static_assert(libbareos::source_location::current().line() == __LINE__);
 
 namespace {
-  // make sure this works as intended, when used as a defaulted parameter
-  // This was bugged on e.g. clang 15
-  constexpr auto make_source_loc(libbareos::source_location loc = libbareos::source_location::current()) {
-    return loc;
-  }
+// make sure this works as intended, when used as a defaulted parameter
+// This was bugged on e.g. clang 15
+constexpr auto make_source_loc(libbareos::source_location loc
+                               = libbareos::source_location::current())
+{
+  return loc;
+}
 
 static_assert(make_source_loc().line() == __LINE__);
-  static_assert(std::string_view{make_source_loc().file_name()}
-                == std::string_view{__FILE__});
+static_assert(std::string_view{make_source_loc().file_name()}
+              == std::string_view{__FILE__});
 };  // namespace
 
 #endif  // BAREOS_LIB_SOURCE_LOCATION_H_

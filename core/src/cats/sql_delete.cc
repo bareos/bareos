@@ -152,7 +152,7 @@ int BareosDb::DeleteNullJobmediaRecords(JobControlRecord* jcr,
 static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
 {
   char ed1[50];
-  struct s_del_ctx del {};
+  struct s_del_ctx del{};
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query, "SELECT JobId from JobMedia WHERE MediaId=%d", mr->MediaId);
