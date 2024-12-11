@@ -119,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mssql TearDownVdiDevice(): enhance error reporting [PR #2008]
 - macos: update build environment [PR #2035]
 - NDMP_NATIVE: enable full restore, eject tape before unload, enable update of NDMP environment [PR #1862]
+- vmware: upgrade vmware vix disklib to version 8.0.3
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -169,6 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON API: make sure, strings are valid UTF8 [PR #1922]
 - dird: fix mark command not accepting full windows paths [PR #1938]
 - stored: explicitly flush after labeling [PR #2022]
+- bareos-version-from-git: fix output for wip tags [PR #2019]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -319,6 +321,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1996]: https://github.com/bareos/bareos/pull/1996
 [PR #1998]: https://github.com/bareos/bareos/pull/1998
 [PR #2008]: https://github.com/bareos/bareos/pull/2008
+[PR #2019]: https://github.com/bareos/bareos/pull/2019
 [PR #2022]: https://github.com/bareos/bareos/pull/2022
 [PR #2027]: https://github.com/bareos/bareos/pull/2027
 [PR #2029]: https://github.com/bareos/bareos/pull/2029

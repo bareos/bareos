@@ -1,6 +1,5 @@
 Client {
   Name = @basename@-fd
-  Maximum Concurrent Jobs = 20
 
   Lmdb Threshold = 0
 
