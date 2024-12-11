@@ -80,7 +80,7 @@ check_two_logs
 check_restore_diff ${BackupDirectory}
 
 expect_grep "bread handled in core"\
-  working/py?plug-fd-local-fileset-basic-fd.trace \
+  working/py*-fd-local-fileset-basic-fd.trace \
   "io was not handled in core according to trace file."
 
 

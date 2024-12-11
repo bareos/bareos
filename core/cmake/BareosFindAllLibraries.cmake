@@ -38,7 +38,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(Python3_FOUND 0)
 
 else()
-  find_package(Python3 COMPONENTS Interpreter Development)
+  find_package(Python3 COMPONENTS Interpreter Development Development.Module)
 
   set(Python3_VERSION_MAJOR
       ${Python3_VERSION_MAJOR}
@@ -186,6 +186,13 @@ find_package(Readline)
 option(ENABLE_JANSSON "Build with Jansson library (required for director)" ON)
 if(ENABLE_JANSSON)
   find_package(Jansson)
+endif()
+
+option(ENABLE_GRPC "Build with grpc support" OFF)
+
+if(ENABLE_GRPC)
+  find_package(Protobuf 3.12.0 REQUIRED)
+  find_package(gRPC REQUIRED)
 endif()
 
 if(NOT MSVC)

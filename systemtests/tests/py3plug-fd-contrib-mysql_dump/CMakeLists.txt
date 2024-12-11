@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -27,11 +27,11 @@ if(TARGET python3-fd
    AND MYSQL_DAEMON_BINARY
    AND MYSQL_CLIENT_BINARY
 )
-  create_systemtest(${SYSTEMTEST_PREFIX} py3plug-fd-contrib-mysql_dump)
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX}
-    py3plug-fd-contrib-mysql_dump
+    ${BASENAME}
     DISABLED
     COMMENT
     "

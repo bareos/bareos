@@ -250,7 +250,7 @@ bRC newPlugin(PluginContext* plugin_ctx)
  * Release everything concerning a particular instance of a
  * plugin. Normally called when the Job terminates.
  */
-bRC freePlugin(PluginContext* plugin_ctx)
+extern "C" bRC freePlugin(PluginContext* plugin_ctx)
 {
   struct plugin_private_context* plugin_priv_ctx
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
@@ -275,7 +275,12 @@ bRC freePlugin(PluginContext* plugin_ctx)
 
   // Stop any sub interpreter started per plugin instance.
   auto* ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
-  ASSERT(ts);
+  if (!ts) {
+    Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "No associated thread state found\n");
+    free(plugin_priv_ctx);
+    plugin_ctx->plugin_private_context = NULL;
+    return bRC_Error;
+  }
   PyEval_AcquireThread(ts);
 
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
@@ -576,12 +581,20 @@ bail_out:
 }
 
 // Only set destination to value when it has no previous setting.
-void SetStringIfNull(char** destination, char* value)
+void SetStringIfNull(char** destination, std::string_view val)
 {
   if (!*destination) {
-    *destination = strdup(value);
+    *destination = CopyStringView(val);
     StripBackSlashes(*destination);
   }
+}
+
+// Allows one or both pointers to be NULL
+static bool bstrcmp(const char* s1, const char* s2)
+{
+  if (s1 == s2) return true;
+  if (s1 == NULL || s2 == NULL) return false;
+  return strcmp(s1, s2) == 0;
 }
 
 /**
@@ -592,14 +605,14 @@ void SetStringIfNull(char** destination, char* value)
  * python:module_path=<path>:module_name=<python_module_name>:...
  */
 bRC parse_plugin_definition(PluginContext* plugin_ctx,
-                            void* value,
-                            PoolMem& plugin_options)
+                            const void* value,
+                            std::string& plugin_options)
 {
   bool found;
   int i, cnt;
   bool keep_existing;
-  PoolMem plugin_definition(PM_FNAME);
-  char *bp, *argument, *argument_value;
+  std::string plugin_definition;
+  const char *bp, *argument, *argument_value;
   plugin_private_context* plugin_priv_ctx
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
@@ -620,15 +633,12 @@ bRC parse_plugin_definition(PluginContext* plugin_ctx,
   /* Parse the plugin definition.
    * Make a private copy of the whole string. */
   if (!plugin_priv_ctx->python_loaded && plugin_priv_ctx->plugin_options) {
-    int len;
-
     /* We got some option string which got pushed before we actual were able to
      * send it to the python module as the entry point was not instantiated. So
      * we prepend that now in the option string and append the new option string
      * with the first argument being the pluginname removed as that is already
      * part of the other plugin option string. */
-    len = strlen(plugin_priv_ctx->plugin_options);
-    PmStrcpy(plugin_definition, plugin_priv_ctx->plugin_options);
+    plugin_definition = plugin_priv_ctx->plugin_options;
 
     bp = strchr((char*)value, ':');
     if (!bp) {
@@ -640,13 +650,13 @@ bRC parse_plugin_definition(PluginContext* plugin_ctx,
     }
 
     // See if option string end with ':'
-    if (plugin_priv_ctx->plugin_options[len - 1] != ':') {
-      PmStrcat(plugin_definition, (char*)bp);
+    if (plugin_definition.size() == 0 || plugin_definition.back() != ':') {
+      plugin_definition += bp;
     } else {
-      PmStrcat(plugin_definition, (char*)bp + 1);
+      plugin_definition += (bp + 1);
     }
   } else {
-    PmStrcpy(plugin_definition, (char*)value);
+    plugin_definition = (const char*)value;
   }
 
   bp = strchr(plugin_definition.c_str(), ':');
@@ -663,7 +673,7 @@ bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   cnt = 0;
   while (bp) {
-    if (strlen(bp) == 0) { break; }
+    if (*bp == '\0') { break; }
 
     /* Each argument is in the form:
      *    <argument> = <argument_value>
@@ -672,33 +682,41 @@ bRC parse_plugin_definition(PluginContext* plugin_ctx,
      * of the argument, argument_value to the beginning of the argument_value.
      */
     argument = bp;
-    argument_value = strchr(bp, '=');
-    if (!argument_value) {
+    const char* eq = strchr(bp, '=');
+    if (!eq) {
       Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal argument %s without value\n",
            argument);
       Dmsg(plugin_ctx, debuglevel,
            LOGPREFIX "Illegal argument %s without value\n", argument);
       goto bail_out;
     }
-    *argument_value++ = '\0';
+    argument_value = eq + 1;
 
     // See if there are more arguments and setup for the next run.
+    const char* vend = argument_value;
     bp = argument_value;
-    do {
+    for (;;) {
       bp = strchr(bp, ':');
       if (bp) {
         if (*(bp - 1) != '\\') {
-          *bp++ = '\0';
+          vend = bp;
+          bp += 1;
           break;
         } else {
           bp++;
         }
+      } else {
+        vend = &*plugin_definition.end();
+        break;
       }
-    } while (bp);
+    }
+
+    size_t arg_len = eq - argument;
+    size_t val_len = vend - argument_value;
 
     found = false;
     for (i = 0; plugin_arguments[i].name; i++) {
-      if (Bstrcasecmp(argument, plugin_arguments[i].name)) {
+      if (strncasecmp(argument, plugin_arguments[i].name, arg_len) == 0) {
         char** str_destination = NULL;
         bool* bool_destination = NULL;
 
@@ -716,9 +734,11 @@ bRC parse_plugin_definition(PluginContext* plugin_ctx,
         // Keep the first value, ignore any next setting.
         if (str_destination) {
           if (keep_existing) {
-            SetStringIfNull(str_destination, argument_value);
+            SetStringIfNull(str_destination,
+                            std::string_view{argument_value, val_len});
           } else {
-            SetString(str_destination, argument_value);
+            SetString(str_destination,
+                      std::string_view{argument_value, val_len});
           }
         }
 
@@ -735,20 +755,15 @@ bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
     // If we didn't consume this parameter we add it to the plugin_options list.
     if (!found) {
-      PoolMem option(PM_FNAME);
-
-      if (cnt) {
-        Mmsg(option, ":%s=%s", argument, argument_value);
-        PmStrcat(plugin_options, option.c_str());
-      } else {
-        Mmsg(option, "%s=%s", argument, argument_value);
-        PmStrcat(plugin_options, option.c_str());
-      }
+      if (cnt) { plugin_options += ":"; }
+      plugin_options += std::string_view{argument, arg_len};
+      plugin_options += "=";
+      plugin_options += std::string_view{argument_value, val_len};
       cnt++;
     }
   }
 
-  if (cnt > 0) { PmStrcat(plugin_options, ":"); }
+  if (cnt > 0) { plugin_options += ":"; }
 
   return bRC_OK;
 
@@ -760,7 +775,7 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
 {
   bRC retval = bRC_Error;
   bool event_dispatched = false;
-  PoolMem plugin_options(PM_FNAME);
+  std::string plugin_options;
   plugin_private_context* plugin_priv_ctx
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
@@ -846,7 +861,7 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
         /* Only try to call when the loading succeeded. */
         if (retval == bRC_OK) {
           retval = Bareosfd_PyParsePluginDefinition(plugin_ctx,
-                                                    plugin_options.c_str());
+                                                    plugin_options.data());
         }
         break;
       case bEventRestoreObject: {
@@ -865,7 +880,7 @@ bRC handlePluginEvent(PluginContext* plugin_ctx, bEvent* event, void* value)
             /* Only try to call when the loading succeeded. */
             if (retval == bRC_OK) {
               retval = Bareosfd_PyParsePluginDefinition(plugin_ctx,
-                                                        plugin_options.c_str());
+                                                        plugin_options.data());
               if (retval == bRC_OK) {
                 retval = Bareosfd_PyRestoreObjectData(plugin_ctx, rop);
               }

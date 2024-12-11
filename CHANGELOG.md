@@ -120,6 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - macos: update build environment [PR #2035]
 - NDMP_NATIVE: enable full restore, eject tape before unload, enable update of NDMP environment [PR #1862]
 - vmware: upgrade vmware vix disklib to version 8.0.3
+- plugin: add new grpc plugin allowing to run python plugins in own process [PR #1993]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
@@ -317,6 +318,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1989]: https://github.com/bareos/bareos/pull/1989
 [PR #1990]: https://github.com/bareos/bareos/pull/1990
 [PR #1992]: https://github.com/bareos/bareos/pull/1992
+[PR #1993]: https://github.com/bareos/bareos/pull/1993
 [PR #1994]: https://github.com/bareos/bareos/pull/1994
 [PR #1996]: https://github.com/bareos/bareos/pull/1996
 [PR #1998]: https://github.com/bareos/bareos/pull/1998

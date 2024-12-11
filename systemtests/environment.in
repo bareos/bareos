@@ -174,7 +174,10 @@ SYSTEMTEST_LDAP_BASEDN="@SYSTEMTEST_LDAP_BASEDN@"
 SYSTEMTEST_LDAP_BINDDN="@SYSTEMTEST_LDAP_BINDDN@"
 SYSTEMTEST_LDAP_PASSWORD="@SYSTEMTEST_LDAP_PASSWORD@"
 
-LANG=en_US.UTF-8
+# we need to ensure that an utf-8 locale is used
+# C.UTF-8 should hopefully always be available
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
 
 # path to real postgres binaries, NOT debian wrappers
 POSTGRES_BIN_PATH="@POSTGRES_BIN_PATH@"

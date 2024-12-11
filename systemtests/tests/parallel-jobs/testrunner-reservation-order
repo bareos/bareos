@@ -22,6 +22,7 @@ start_test
 sleeping_job="runscriptjob"
 regular_job="backup-bareos-fd"
 reservationlog="$tmp/reservation-order.out"
+querylog="$tmp/reservation-query.out"
 
 rm -f $reservationlog
 
@@ -32,9 +33,9 @@ messages
 run job=${sleeping_job} level=Full yes
 @sleep 3
 run job=${regular_job} storage=File2 level=Full yes
-wait JobName=$regular_job
+wait job=${regular_job}
+wait
 messages
-quit
 END_OF_DATA
 
 run_bconsole
@@ -42,13 +43,23 @@ run_bconsole
 sleepjob_id=$(awk '/Job queued./{i++}i==1 {print; exit;}' "$reservationlog" | sed -n -e 's/^.*JobId=//p')
 regularjob_id=$(awk '/Job queued./{i++}i==2 {print; exit;}' "$reservationlog" | sed -n -e 's/^.*JobId=//p')
 
-if [[ $(grep "JobId $sleepjob_id" "$reservationlog" | tail -1 | grep "run ClientBeforeJob \"sleep 10\"") == "" ]]; then
-    echo "Log contains more entries after 'sleep 10' for sleeping job. This means the regular job had to wait for it to finish first."
-fi
+# this query will return _something_ when the regular job _did not_ wait
+# and nothing if it _did_ wait.
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $querylog
+sqlquery
+SELECT regular.starttime, regular.endtime, sleep.starttime, sleep.endtime
+FROM job regular, job sleep
+WHERE regular.jobid=${regularjob_id}
+  AND sleep.jobid=${sleepjob_id}
+  AND regular.endtime <= sleep.endtime;
+END_OF_DATA
 
-expect_not_grep "JobId $sleepjob_id: Using Device \"FileStorage2\" to write." \
-                "$reservationlog" \
-                "Sleeping job should not be reserving the device!"
+run_bconsole
+
+expect_not_grep "No results to list" \
+                "$querylog" \
+                "The regular job had to wait for the sleepy job!"
 
 expect_grep "JobId $regularjob_id: Using Device \"FileStorage2\" to write." \
             "$reservationlog" \

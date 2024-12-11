@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(TARGET python3-fd)
   check_pymodule_available(3 libcloud)
   if(S3CMD
@@ -25,16 +26,15 @@ if(TARGET python3-fd)
      AND ("${Python3_VERSION_MAJOR}" EQUAL 3)
      AND ("${Python3_VERSION_MINOR}" LESS 8)
   )
-    create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-libcloud")
+    create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   else()
     create_systemtest(
-      ${SYSTEMTEST_PREFIX} "py3plug-fd-libcloud" DISABLED COMMENT
+      ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
       "S3CMD, MINIO or LIBCLOUD MODULE not found or Python >= 3.8"
     )
   endif()
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} "py3plug-fd-libcloud" DISABLED COMMENT
-    "requires python3-fd"
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "requires python3-fd"
   )
 endif()

@@ -45,6 +45,7 @@ Vendor:     The Bareos Team
 %define python_plugins 1
 %define contrib 1
 %define webui 1
+%define enable_grpc 1
 
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
@@ -110,9 +111,19 @@ BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
 
+# rhel <=8 does not have grpc
+%if %{defined rhel} && (0%{?rhel} <= 8)
+%define enable_grpc 0
+%endif
+# fedora <=39 does not have grpc
+%if %{defined fedora} && (0%{?fedora} <= 39)
+%define enable_grpc 0
+%endif
+
 %if 0%{?suse_version}
 BuildRequires: gcc13
 BuildRequires: gcc13-c++
+%define enable_grpc 0
 %endif
 
 %if 0%{?systemd_support}
@@ -422,6 +433,17 @@ Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
 
+%if 0%{?enable_grpc}
+%package    filedaemon-grpc-python3-plugin
+Summary:    Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugins-common = %{version}
+Provides:   bareos-filedaemon-grpc-python-plugin
+Obsoletes:  bareos-filedaemon-grpc-python-plugin <= %{version}
+Provides:   bareos-filedaemon-python-plugin
+Obsoletes:  bareos-filedaemon-python-plugin <= %{version}
+%endif
 
 %package    filedaemon-python3-plugin
 Summary:    Python plugin for Bareos File daemon
@@ -550,6 +572,13 @@ This package contains the python 3 plugin for the director daemon
 
 This package contains the common files for the python director plugins.
 
+%if 0%{?enable_grpc}
+%description filedaemon-grpc-python3-plugin
+%{dscr}
+
+This package contains the grpc python 3 plugin for the file daemon
+
+%endif
 %description filedaemon-python3-plugin
 %{dscr}
 
@@ -901,9 +930,11 @@ cmake  .. \
 %if !0%{?webui}
   -DENABLE_WEBUI=no \
 %endif
+%if 0%{?enable_grpc}
+  -DENABLE_GRPC=yes \
+%endif
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
-  -DVERSION_STRING=%version \
-
+  -DVERSION_STRING=%version
 %if 0%{?make_build:1}
 %make_build
 %else
@@ -1411,6 +1442,14 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %endif
 
 %if 0%{?python_plugins}
+%if 0%{?enable_grpc}
+%files filedaemon-grpc-python3-plugin
+%defattr(-, root, root)
+%{plugin_dir}/grpc-fd.so
+%{plugin_dir}/grpc-python-module
+%{plugin_dir}/grpc-test-module
+%endif
+
 %files filedaemon-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-fd.so

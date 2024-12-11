@@ -56,12 +56,20 @@ mysql_init()
     if ${MYSQL_DAEMON_BINARY} --verbose --help | grep -q initialize-insecure; then
         echo "MySQL init with --initialize-insecure"
         ${MYSQL_DAEMON_BINARY} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" 2>&1 | tee mysql/mysql_init.log
-        printf "[client]\nsocket=%s/mysql.sock\nuser=%s\n" "${dbHost}" "root" > my.cnf
+        {
+            echo "[client]"
+            echo "socket=${dbHost}/mysql.sock"
+            echo "user=root"
+        } > my.cnf
         MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=my.cnf"
     else
         echo "MySQL init with mysql_install_db"
         mysql_install_db --auth-root-authentication-method=socket --user=$USER --auth-root-socket-user=$USER --defaults-file=mysqldefaults > mysql/mysql_init.log
-        printf "[client]\nsocket=%s/mysql.sock\nuser=%s\n" "${dbHost}" "$USER" > my.cnf
+        {
+            echo "[client]"
+            echo "socket=${dbHost}/mysql.sock"
+            echo "user=${USER}"
+        } > my.cnf
         MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=my.cnf"
     fi
 }

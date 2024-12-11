@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +22,7 @@
 static void PyErrorHandler()
 {
   std::string error_string = GetStringFromPyErrorHandler();
-  printf("Error: %s\n", error_string.c_str());
+  fprintf(stderr, "Error: %s\n", error_string.c_str());
 
   exit(1);
 }
@@ -35,7 +35,7 @@ static void PyErrorHandler()
  * module path and the module to load. We also load the dictionary used
  * for looking up the Python methods.
  */
-static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
+static bRC PyLoadModule(PluginContext* plugin_ctx, const void* value)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -92,7 +92,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     if (pFunc && PyCallable_Check(pFunc)) {
       PyObject *pPluginDefinition, *pRetVal;
 
-      pPluginDefinition = PyUnicode_FromString((char*)value);
+      pPluginDefinition = PyUnicode_FromString((const char*)value);
       if (!pPluginDefinition) { goto bail_out; }
 
       pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);

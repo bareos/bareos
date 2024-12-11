@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,16 +23,18 @@
 # MYSQL_DAEMON_BINARY=/opt/mysql/bin/mysqld \ -D
 # MYSQL_CLIENT_BINARY=/usr/bin/mysql \
 
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+
 if(TARGET python3-fd
    AND XTRABACKUP_BINARY
    AND MYSQL_DAEMON_BINARY
    AND MYSQL_CLIENT_BINARY
 )
-  create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-percona-xtrabackup")
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX}
-    "py3plug-fd-percona-xtrabackup"
+    ${BASENAME}
     DISABLED
     COMMENT
     "

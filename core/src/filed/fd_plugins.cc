@@ -1805,7 +1805,7 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   io.flags = flags;
   io.mode = mode;
 
-  PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
+  auto res = PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
   bfd->BErrNo = io.io_errno;
 
   if (io.win32) {
@@ -1814,6 +1814,8 @@ static int MyPluginBopen(BareosFilePacket* bfd,
     errno = io.io_errno;
     bfd->lerror = io.lerror;
   }
+
+  if (res == bRC_Error) { return -1; }
 
   //  The plugin has two options for the read/write during the IO_OPEN call:
   //  1.: - Set io.status to IoStatus::do_io_in_core, and
@@ -2005,10 +2007,13 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
       *((char**)value) = my_name;
       break;
     case bVarWorkingDir:
-      *(void**)value = me->working_directory;
+      *(char**)value = me->working_directory;
+      break;
+    case bVarPluginPath:
+      *(const char**)value = me->plugin_directory;
       break;
     case bVarUsedConfig:
-      *(const void**)value = my_config->get_base_config_path().c_str();
+      *(const char**)value = my_config->get_base_config_path().c_str();
       break;
     case bVarExePath:
       *(char**)value = exepath;
@@ -2242,7 +2247,7 @@ static bRC bareosJobMsg(PluginContext* ctx,
   return bRC_OK;
 }
 
-static bRC bareosDebugMsg(PluginContext*,
+static bRC bareosDebugMsg(PluginContext* ctx,
                           const char* fname,
                           int line,
                           int level,
@@ -2255,7 +2260,8 @@ static bRC bareosDebugMsg(PluginContext*,
   va_start(arg_ptr, fmt);
   buffer.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
-  d_msg(fname, line, level, "%s", buffer.c_str());
+  d_msg(fname, line, level, "%s: %s",
+        ctx ? ctx->plugin->file : "<unknown plugin>", buffer.c_str());
 
   return bRC_OK;
 }
