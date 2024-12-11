@@ -103,5 +103,15 @@ if(ENABLE_GRPC)
     COMPONENT filedaemon
   )
 
+  add_executable(
+    grpc-python-module grpc_python_module.cc plugin_service_python.cc
+  )
+  target_link_libraries(grpc-python-module fmt::fmt grpc-proto Python3::Module)
+  install(
+    TARGETS grpc-python-module
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
+  )
+
   include(DebugEdit)
 endif()
