@@ -35,7 +35,7 @@ fi
 s3cmd_common_args=(--no-progress)
 s3cmd_put_args=()
 
-if [ -n "${s3cfg:+x}" ]; then
+if [ -n "${s3cfg}" ]; then
   if [ ! -r "${s3cfg}" ]; then
     echo "provided configuration file '${s3cfg}' is not readable" >&2
     exit 1
@@ -44,7 +44,7 @@ if [ -n "${s3cfg:+x}" ]; then
   fi
 fi
 
-if [ -z "${s3cmd_prog:+x}" ]; then
+if [ -z "${s3cmd_prog}" ]; then
   echo "Cannot find s3cmd command" >&2
   exit 1
 elif [ ! -x "${s3cmd_prog}" ]; then
