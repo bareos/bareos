@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package bareos.plugin.events;
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+message JobStart {
+  string data = 1;
+};
+
+message JobEnd {
+};
+
+message StartBackupJob {
+};
+
+message EndBackupJob {
+};
+
+message StartRestoreJob {
+};
+
+message EndRestoreJob {
+};
+
+message StartVerifyJob {
+};
+
+message EndVerifyJob {
+};
+
+message BackupCommand {
+  string data = 1;
+};
+
+message RestoreCommand {
+  string data = 1;
+};
+
+message EstimateCommand {
+  string data = 1;
+};
+
+message Level {
+  int64 level = 1;
+};
+
+message Since {
+  google.protobuf.Timestamp since = 1;
+};
+
+message CancelCommand {
+};
+
+message RestoreObjectPacket {
+  bareos.common.plugin_object sent = 1; // this was created by the plugin
+
+  string used_cmd_string = 2;
+  int64 jobid = 3;
+};
+
+message RestoreObject {
+  // ????
+  RestoreObjectPacket rop = 1;
+
+};
+
+message EndRestoreObject {
+};
+
+message EndFileSet {
+};
+
+message PluginCommand {
+  string data = 1;
+};
+
+message OptionPlugin {
+};
+
+message HandleBackupFile {
+  // ????
+  // this is only used for option plugins and we do not support them at
+  // the moment
+};
+
+message NewPluginOptions {
+  string data = 1;
+};
+
+message VssInitializeForBackup {
+};
+
+message VssInitializeForRestore {
+};
+
+message VssSetBackupState {
+};
+
+message VssPrepareForBackup {
+};
+
+message VssBackupAddComponents {
+};
+
+message VssPrepareSnapshot {
+};
+
+message VssCreateSnapshots {
+};
+
+message VssRestoreLoadComponentMetadata {
+};
+
+message VssRestoreSetComponentsSelected {
+};
+
+message VssCloseRestore {
+};
+
+message VssBackupComplete {
+};
+
+message Event {
+  oneof event {
+    JobStart job_start = 1;
+    JobEnd job_end = 2;
+    StartBackupJob start_backup_job = 3;
+    EndBackupJob end_backup_job = 4;
+    StartRestoreJob start_restore_job = 5;
+    EndRestoreJob end_restore_job = 6;
+    StartVerifyJob start_verify_job = 7;
+    EndVerifyJob end_verify_job = 8;
+    BackupCommand backup_command = 30;
+    RestoreCommand restore_command = 31;
+    EstimateCommand estimate_command = 9;
+    Level level = 10;
+    Since since = 11;
+    CancelCommand cancel_command = 12;
+    RestoreObject restore_object = 13;
+    EndRestoreObject end_restore_object = 32;
+    EndFileSet end_fileset = 14;
+    PluginCommand plugin_command = 15;
+    OptionPlugin option_plugin = 16;
+    HandleBackupFile handle_backup_file = 17;
+    NewPluginOptions new_plugin_options = 18;
+    VssInitializeForBackup vss_init_backup = 19;
+    VssInitializeForRestore vss_init_restore = 20;
+    VssSetBackupState vss_set_backup_state = 21;
+    VssPrepareForBackup vss_prepare_for_backup = 22;
+    VssBackupAddComponents vss_backup_add_components = 23;
+    VssPrepareSnapshot vss_prepare_snapshot = 24;
+    VssCreateSnapshots vss_create_snapshot = 25;
+    VssRestoreLoadComponentMetadata vss_restore_load_companents_metadata = 26;
+    VssRestoreSetComponentsSelected vss_restore_set_components_selected = 27;
+    VssCloseRestore vss_close_restore = 28;
+    VssBackupComplete vss_backup_complete = 29;
+  };
+};
