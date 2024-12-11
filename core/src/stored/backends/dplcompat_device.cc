@@ -226,20 +226,20 @@ bool DropletCompatibleDevice::CheckRemoteConnection()
 
 bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
 {
-  const std::string obj_name = request->volname;
+  const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
   if (request->wbuflen == 0) {
-    Dmsg1(debug_info, "Not flushing empty chunk %s/%s\n", obj_name.c_str(),
+    Dmsg1(debug_info, "Not flushing empty chunk %s/%s\n", obj_name.data(),
           obj_chunk.c_str());
     return true;
   }
-  Dmsg1(debug_trace, "Flushing chunk %s/%s\n", obj_name.c_str(),
+  Dmsg1(debug_trace, "Flushing chunk %s/%s\n", obj_name.data(),
         obj_chunk.c_str());
 
   auto inflight_lease = getInflightLease(request);
   if (!inflight_lease) {
     Dmsg0(debug_info, "Could not acquire inflight lease for %s %s\n",
-          obj_name.c_str(), obj_chunk.c_str());
+          obj_name.data(), obj_chunk.c_str());
     return false;
   }
 
@@ -257,7 +257,7 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
     Dmsg1(debug_info,
           "Not uploading chunk %s with size %d, as chunk with size %d is "
           "already present\n",
-          obj_name.c_str(), obj_stat->size, request->wbuflen);
+          obj_name.data(), obj_stat->size, request->wbuflen);
     return true;
   }
 
@@ -275,9 +275,9 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
 // Internal method for reading a chunk from the remote backing store.
 bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 {
-  const std::string obj_name = request->volname;
+  const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(debug_trace, "Reading chunk %s\n", obj_name.c_str());
+  Dmsg1(debug_trace, "Reading chunk %s\n", obj_name.data());
 
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
@@ -290,7 +290,7 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
     Mmsg3(errmsg,
           T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
              "bytes\n"),
-          obj_name.c_str(), obj_stat->size, request->wbuflen);
+          obj_name.data(), obj_stat->size, request->wbuflen);
     Dmsg1(debug_info, "%s", errmsg);
     dev_errno = EINVAL;
     return false;
@@ -355,7 +355,7 @@ int DropletCompatibleDevice::d_open(const char* pathname, int flags, int mode)
 {
   if (!setup()) {
     dev_errno = EIO;
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
   }
   return SetupChunk(pathname, flags, mode);
 }
