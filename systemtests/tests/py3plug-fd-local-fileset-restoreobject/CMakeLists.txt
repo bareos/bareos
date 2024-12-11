@@ -19,11 +19,7 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(TARGET python3-fd)
-  create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} 
-  )
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
-  create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED
-  )
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
 endif()

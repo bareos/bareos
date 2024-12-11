@@ -35,7 +35,6 @@ if(TARGET python3-fd)
   endif()
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
-    "requires python3-fd"
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "requires python3-fd"
   )
 endif()

@@ -61,7 +61,7 @@ else()
     )
   endif()
 
-  if (ENABLE_GRPC)
+  if(ENABLE_GRPC)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-grpc-python3-plugin")
   endif()
   if(NOT client-only AND TARGET droplet)

@@ -51,12 +51,12 @@ include(FindPackageHandleStandardArgs)
 # cmake installation.
 find_package(gRPC CONFIG)
 
-# On some systems this file is not distributed, so if we cannot find it,
-# then try with pkg-config instead.
+# On some systems this file is not distributed, so if we cannot find it, then
+# try with pkg-config instead.
 if(NOT gRPC_FOUND)
   message(DEBUG "grpc not (yet) found, fallback to pkg_check_modules()")
   find_package(PkgConfig QUIET REQUIRED)
-  pkg_check_modules (gRPC grpc++ REQUIRED)
+  pkg_check_modules(gRPC grpc++ REQUIRED)
 
   find_package_handle_standard_args(
     gRPC
@@ -67,21 +67,19 @@ if(NOT gRPC_FOUND)
   find_library(
     REFLECTION_LIBRARY
     NAMES grpc++_reflection
-    HINTS ${gRPC_LIBRARY_DIRS}
-    REQUIRED
+    HINTS ${gRPC_LIBRARY_DIRS} REQUIRED
   )
 
-  if (NOT TARGET grpc++_reflection
-      AND NOT TARGET gRPC::grpc++_reflection)
+  if(NOT TARGET grpc++_reflection AND NOT TARGET gRPC::grpc++_reflection)
     message(DEBUG "adding grpc++_reflection library")
     add_library(grpc++_reflection UNKNOWN IMPORTED)
     set_target_properties(
       grpc++_reflection PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-      "${gRPC_INCLUDE_DIRS}"
+                                   "${gRPC_INCLUDE_DIRS}"
     )
     set_target_properties(
       grpc++_reflection PROPERTIES INTERFACE_LINK_LIBRARIES
-      "${gRPC_LINK_LIBRARIES}"
+                                   "${gRPC_LINK_LIBRARIES}"
     )
     set_property(
       TARGET grpc++_reflection
@@ -90,21 +88,20 @@ if(NOT gRPC_FOUND)
     )
   endif()
 
-  find_library(CPP_BINDINGS
+  find_library(
+    CPP_BINDINGS
     NAMES grpc++
-    HINTS ${gRPC_LIBRARY_DIRS}
-    REQUIRED)
+    HINTS ${gRPC_LIBRARY_DIRS} REQUIRED
+  )
 
-  if (NOT TARGET grpc++ AND NOT TARGET gRPC::grpc++)
+  if(NOT TARGET grpc++ AND NOT TARGET gRPC::grpc++)
     message(DEBUG "adding grpc++ library")
     add_library(grpc++ UNKNOWN IMPORTED)
     set_target_properties(
-      grpc++ PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-      "${gRPC_INCLUDE_DIRS}"
+      grpc++ PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${gRPC_INCLUDE_DIRS}"
     )
     set_target_properties(
-      grpc++ PROPERTIES INTERFACE_LINK_LIBRARIES
-      "${gRPC_LINK_LIBRARIES}"
+      grpc++ PROPERTIES INTERFACE_LINK_LIBRARIES "${gRPC_LINK_LIBRARIES}"
     )
     set_property(
       TARGET grpc++

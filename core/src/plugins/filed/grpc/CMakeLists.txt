@@ -22,7 +22,9 @@ include(BareosConfigureFile)
 
 if(ENABLE_GRPC)
   if(HAVE_WIN32)
-    message(FATAL_ERROR "The grpc plugin is currently not compatible with windows")
+    message(
+      FATAL_ERROR "The grpc plugin is currently not compatible with windows"
+    )
   endif()
 
   set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/proto")
@@ -45,7 +47,9 @@ if(ENABLE_GRPC)
       set(grpc_hdr "${PROTO_OUTPUT_DIR}/${stem}.grpc.pb.h")
 
       if(Protobuf_VERSION VERSION_LESS 3.15.0)
-        set(_PROTOBUF_PROTOC_EXTRA_PARAMS "--experimental_allow_proto3_optional")
+        set(_PROTOBUF_PROTOC_EXTRA_PARAMS
+            "--experimental_allow_proto3_optional"
+        )
       else()
         set(_PROTOBUF_PROTOC_EXTRA_PARAMS "")
       endif()
@@ -55,8 +59,7 @@ if(ENABLE_GRPC)
           $<TARGET_FILE:protobuf::protoc> ARGS --grpc_out "${PROTO_OUTPUT_DIR}"
           --cpp_out "${PROTO_OUTPUT_DIR}" -I "${path}"
           --plugin=protoc-gen-grpc="${gRPC_CPP_PROTO_PLUGIN}"
-          ${_PROTOBUF_PROTOC_EXTRA_PARAMS}
-          "${absolute}"
+          ${_PROTOBUF_PROTOC_EXTRA_PARAMS} "${absolute}"
         DEPENDS "${absolute}" protobuf::protoc
         COMMENT "Compiling proto file ${absolute}"
       )
@@ -76,12 +79,13 @@ if(ENABLE_GRPC)
   endfunction()
 
   add_library(grpc-proto OBJECT)
-  target_add_proto_sources(grpc-proto
-    "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
+  target_add_proto_sources(
+    grpc-proto "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
     "proto/common.proto"
   )
   target_link_libraries(
-    grpc-proto PUBLIC gRPC::grpc++_reflection gRPC::grpc++ protobuf::libprotobuf
+    grpc-proto PUBLIC gRPC::grpc++_reflection gRPC::grpc++
+                      protobuf::libprotobuf
   )
 
   add_library(grpc-fd MODULE grpc.cc grpc_impl.cc bareos_api.cc)

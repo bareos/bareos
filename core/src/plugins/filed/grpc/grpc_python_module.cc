@@ -52,7 +52,8 @@
 
 
 struct connection_builder {
-  static std::optional<std::unique_ptr<bc::Core::Stub>> connect_client(int sockfd)
+  static std::optional<std::unique_ptr<bc::Core::Stub>> connect_client(
+      int sockfd)
   {
     try {
       return bc::Core::NewStub(grpc::CreateInsecureChannelFromFd("", sockfd));
@@ -61,8 +62,9 @@ struct connection_builder {
     }
   }
 
-  static std::optional<std::unique_ptr<grpc::Server>> connect_server(int sockfd,
-                                                                     const std::vector<std::unique_ptr<grpc::Service>>& services)
+  static std::optional<std::unique_ptr<grpc::Server>> connect_server(
+      int sockfd,
+      const std::vector<std::unique_ptr<grpc::Service>>& services)
   {
     try {
       grpc::ServerBuilder builder;
@@ -958,8 +960,7 @@ struct plugin_thread {
   std::thread t;
 };
 
-template <typename F>
-bRC plugin_run(PluginContext* ctx, F&& f)
+template <typename F> bRC plugin_run(PluginContext* ctx, F&& f)
 {
   auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
   return thrd->submit(f);
@@ -1081,7 +1082,9 @@ static const char* event_type_to_str(int type)
   }
 }
 
-bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx, bEvent* event, void* value)
+bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
+                              bEvent* event,
+                              void* value)
 {
   return plugin_run(outer_ctx, [event, value](PluginContext* ctx) {
     DebugLog(100, FMT_STRING("handling event of type \"{}\" ({})"),
@@ -1360,15 +1363,12 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
   plugin_thread plugin{};
 
-  std::vector<std::unique_ptr<grpc::Service>> services{
-  };
-  services.push_back(
-    std::make_unique<PluginService>(plugin.ctx(), io_sock, funcs,
-                                    std::move(shutdown_signal))
-                    );
+  std::vector<std::unique_ptr<grpc::Service>> services{};
+  services.push_back(std::make_unique<PluginService>(
+      plugin.ctx(), io_sock, funcs, std::move(shutdown_signal)));
 
-  std::optional server = connection_builder::connect_server(server_sock,
-                                                            services);
+  std::optional server
+      = connection_builder::connect_server(server_sock, services);
 
   if (!server) {
     fprintf(stderr, "Could not establish server grpc connection ...\n");

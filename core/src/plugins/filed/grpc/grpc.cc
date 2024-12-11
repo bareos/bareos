@@ -87,14 +87,12 @@ struct plugin_ctx {
     std::string inferior_name{};
 
     if (!next_section(options, pname, ':')) {
-      DebugLog(50, FMT_STRING("could not parse plugin name in {}"),
-               options);
+      DebugLog(50, FMT_STRING("could not parse plugin name in {}"), options);
       return std::nullopt;
     }
 
     if (pname != std::string_view{"grpc"}) {
-      DebugLog(50, FMT_STRING("wrong plugin name ({}) supplied"),
-               pname);
+      DebugLog(50, FMT_STRING("wrong plugin name ({}) supplied"), pname);
       return std::nullopt;
     }
 
@@ -108,7 +106,7 @@ struct plugin_ctx {
 
     DebugLog(100, FMT_STRING("found name = {}"), inferior_name);
 
-    return parsed_plugin_options{ pname, inferior_name, std::string(options) };
+    return parsed_plugin_options{pname, inferior_name, std::string(options)};
   }
 
   bool re_setup(PluginContext* bareos_ctx, const void* data)
@@ -139,11 +137,11 @@ struct plugin_ctx {
   {
     if (!bareos_ctx || !data) { return false; }
 
-    auto options = parse_options((const char*) data);
+    auto options = parse_options((const char*)data);
 
     plugin_name = std::move(options->plugin_name);
-    name =        std::move(options->inferior_name);
-    cmd =       std::move(options->inferior_options);
+    name = std::move(options->inferior_name);
+    cmd = std::move(options->inferior_options);
 
     std::optional opath = bVar::Get<bVar::PluginPath>(nullptr);
     if (!opath) {
@@ -379,13 +377,13 @@ constexpr PluginInformation my_info = {
     .plugin_author = "Sebastian Sura",
     .plugin_date = "September 2024",
     .plugin_version = "0.1.0",
-    .plugin_description =
-    "This plugin is a shim that allows you to run separate programs as a"
-    "bareos plugin by the use of a grpc interface.",
-    .plugin_usage =
-    "grpc:<grpc executable>:...\n"
-    "Additional paramenters are parsed by the executable instead.\n"
-    "EXAMPLE grpc:grpc-test-module:file=/my/file",
+    .plugin_description
+    = "This plugin is a shim that allows you to run separate programs as a"
+      "bareos plugin by the use of a grpc interface.",
+    .plugin_usage
+    = "grpc:<grpc executable>:...\n"
+      "Additional paramenters are parsed by the executable instead.\n"
+      "EXAMPLE grpc:grpc-test-module:file=/my/file",
 };
 
 constexpr filedaemon::PluginFunctions my_functions = {

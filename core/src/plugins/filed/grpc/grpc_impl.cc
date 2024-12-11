@@ -90,7 +90,8 @@ bool SetNonBlocking(PluginContext* ctx, OSFile& f)
 struct flush_fd {
   int fd;
   const char* name;
-  enum {
+  enum
+  {
     OUTPUT_DEBUG,
     OUTPUT_JOB_ERROR,
   } output;
@@ -101,10 +102,7 @@ struct flush_fd {
   std::array<char, 4096> buffer{};
   size_t buffer_free{buffer.size()};
 
-  void reset_buffer()
-  {
-    buffer_free = buffer.size();
-  }
+  void reset_buffer() { buffer_free = buffer.size(); }
 
   void remove_printed_bytes(size_t byte_count)
   {
@@ -113,8 +111,7 @@ struct flush_fd {
     auto leftover_size = read_size() - byte_count;
 
     // we printed something, so move everything back to create space
-    memmove(buffer.data() + byte_count,
-            buffer.data(), leftover_size);
+    memmove(buffer.data() + byte_count, buffer.data(), leftover_size);
 
     buffer_free += byte_count;
   }
@@ -125,25 +122,13 @@ struct flush_fd {
     buffer_free -= byte_count;
   }
 
-  char* write_start()
-  {
-    return buffer.data() + (buffer.size() - buffer_free);
-  }
+  char* write_start() { return buffer.data() + (buffer.size() - buffer_free); }
 
-  size_t write_size() const noexcept
-  {
-    return buffer_free;
-  }
+  size_t write_size() const noexcept { return buffer_free; }
 
-  const char* read_start() const noexcept
-  {
-    return buffer.data();
-  }
+  const char* read_start() const noexcept { return buffer.data(); }
 
-  size_t read_size() const noexcept
-  {
-    return buffer.size() - buffer_free;
-  }
+  size_t read_size() const noexcept { return buffer.size() - buffer_free; }
 };
 
 void do_std_io(std::atomic<bool>* quit,
@@ -162,8 +147,8 @@ void do_std_io(std::atomic<bool>* quit,
   SetNonBlocking(ctx, err);
 
   std::array fds = {
-    flush_fd{out.get(), "stdout", flush_fd::OUTPUT_DEBUG},
-    flush_fd{err.get(), "stderr", flush_fd::OUTPUT_JOB_ERROR},
+      flush_fd{out.get(), "stdout", flush_fd::OUTPUT_DEBUG},
+      flush_fd{err.get(), "stderr", flush_fd::OUTPUT_JOB_ERROR},
   };
 
   size_t fd_count = fds.size();
@@ -176,7 +161,6 @@ void do_std_io(std::atomic<bool>* quit,
 
   std::optional<std::chrono::steady_clock::time_point> end_time{};
   while (!end_time || end_time.value() >= std::chrono::steady_clock::now()) {
-
     if (!end_time && quit->load()) {
       auto current_time = std::chrono::steady_clock::now();
       end_time = current_time + std::chrono::seconds(5);
@@ -187,22 +171,18 @@ void do_std_io(std::atomic<bool>* quit,
                end_time->time_since_epoch().count());
     }
 
-    std::array pfds = {
-      pollfd{fds[0].fd, POLLIN, 0},
-      pollfd{fds[1].fd, POLLIN, 0}
-    };
+    std::array pfds
+        = {pollfd{fds[0].fd, POLLIN, 0}, pollfd{fds[1].fd, POLLIN, 0}};
 
     auto num_fired = poll(pfds.data(), fd_count, 500);
     if (num_fired < 0) {
-      DebugLog(ctx, 50,
-               FMT_STRING("io thread poll returned {}: Err={}"),
+      DebugLog(ctx, 50, FMT_STRING("io thread poll returned {}: Err={}"),
                num_fired, strerror(errno));
       break;
     }
 
     if (num_fired == 0) {
-      DebugLog(ctx, 500,
-               FMT_STRING("io thread - no news"));
+      DebugLog(ctx, 500, FMT_STRING("io thread - no news"));
       continue;
     }
 
@@ -216,8 +196,8 @@ void do_std_io(std::atomic<bool>* quit,
         DebugLog(ctx, 200, FMT_STRING("io thread - {} (fd: {}) has data"),
                  fds[i].name, fds[i].fd);
 
-        ssize_t bytes_read = read(fds[i].fd, fds[i].write_start(),
-                                  fds[i].write_size());
+        ssize_t bytes_read
+            = read(fds[i].fd, fds[i].write_start(), fds[i].write_size());
 
         if (bytes_read < 0) {
           // ?? how is this possible ??
@@ -244,14 +224,13 @@ void do_std_io(std::atomic<bool>* quit,
                                   static_cast<size_t>(line_end - print_start)};
 
             switch (fds[i].output) {
-            case flush_fd::OUTPUT_DEBUG: {
-              DebugLog(ctx, 100, FMT_STRING("{}: {}"),
-                       fds[i].name, line);
-            } break;
-            case flush_fd::OUTPUT_JOB_ERROR: {
-              JobLog(ctx, M_ERROR, FMT_STRING("{}: {}"), fds[i].name, line);
+              case flush_fd::OUTPUT_DEBUG: {
+                DebugLog(ctx, 100, FMT_STRING("{}: {}"), fds[i].name, line);
+              } break;
+              case flush_fd::OUTPUT_JOB_ERROR: {
+                JobLog(ctx, M_ERROR, FMT_STRING("{}: {}"), fds[i].name, line);
 
-            } break;
+              } break;
             }
             // if we found a newline then we print it as debug message
 
@@ -268,19 +247,18 @@ void do_std_io(std::atomic<bool>* quit,
             // if our buffer is full, we need to flush it completely
             // to make room for more data
 
-            std::string_view content{fds[i].read_start(),
-                                     fds[i].read_size()};
+            std::string_view content{fds[i].read_start(), fds[i].read_size()};
 
             switch (fds[i].output) {
-            case flush_fd::OUTPUT_DEBUG: {
-              DebugLog(ctx, 100, FMT_STRING("{} (full): {}"),
-                       fds[i].name, content);
-            } break;
-            case flush_fd::OUTPUT_JOB_ERROR: {
-              JobLog(ctx, M_ERROR, FMT_STRING("{} (full): {}"),
-                     fds[i].name, content);
+              case flush_fd::OUTPUT_DEBUG: {
+                DebugLog(ctx, 100, FMT_STRING("{} (full): {}"), fds[i].name,
+                         content);
+              } break;
+              case flush_fd::OUTPUT_JOB_ERROR: {
+                JobLog(ctx, M_ERROR, FMT_STRING("{} (full): {}"), fds[i].name,
+                       content);
 
-            } break;
+              } break;
             }
 
             fds[i].reset_buffer();
@@ -306,20 +284,15 @@ void do_std_io(std::atomic<bool>* quit,
   // this can happen if the data was not properly suffixed by \n
   for (auto& buf : fds) {
     if (buf.read_size() > 0) {
-      auto content = std::string_view{
-        buf.read_start(),
-        buf.read_size()
-      };
+      auto content = std::string_view{buf.read_start(), buf.read_size()};
       switch (buf.output) {
-      case flush_fd::OUTPUT_DEBUG: {
-        DebugLog(ctx, 100, FMT_STRING("{} (dump): {}"),
-                 buf.name, content);
-      } break;
-      case flush_fd::OUTPUT_JOB_ERROR: {
-        JobLog(ctx, M_ERROR, FMT_STRING("{} (dump): {}"),
-               buf.name, content);
+        case flush_fd::OUTPUT_DEBUG: {
+          DebugLog(ctx, 100, FMT_STRING("{} (dump): {}"), buf.name, content);
+        } break;
+        case flush_fd::OUTPUT_JOB_ERROR: {
+          JobLog(ctx, M_ERROR, FMT_STRING("{} (dump): {}"), buf.name, content);
 
-      } break;
+        } break;
       }
     }
   }
@@ -1984,9 +1957,7 @@ struct grpc_connection_builder {
 
   bool move_fd(int fd, int newfd)
   {
-    if (dup2(fd, newfd) != newfd) {
-      return false;
-    }
+    if (dup2(fd, newfd) != newfd) { return false; }
 
     close(fd);
 
@@ -2010,8 +1981,8 @@ struct grpc_connection_builder {
       int std_in = open("/dev/null", O_RDONLY);
 
       int dummy_fd = maximum_of(io.grpc_parent.get(), io.grpc_child.get(),
-                              io.grpc_io.get(), std_in, io.std_out.get(),
-                              io.std_err.get())
+                                io.grpc_io.get(), std_in, io.std_out.get(),
+                                io.std_err.get())
                      + 1;  // we dont care
                            // about fds
                            // apart from these 6
