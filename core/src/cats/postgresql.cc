@@ -308,6 +308,7 @@ void BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
                                       const char* old,
                                       int len)
 {
+  DbLocker _{this};
   int error;
 
   PQescapeStringConn(db_handle_, snew, old, len, &error);
@@ -327,6 +328,7 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
                                        char* old,
                                        int len)
 {
+  DbLocker _{this};
   size_t new_len;
   unsigned char* obj;
 
@@ -546,7 +548,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
 /**
  * Note, if this routine returns false (failure), BAREOS expects
  * that no result has been stored.
- * This is where QUERY_DB comes with Postgresql.
+ * This is where QueryDb comes with Postgresql.
  *
  * Returns:  true  on success
  *           false on failure

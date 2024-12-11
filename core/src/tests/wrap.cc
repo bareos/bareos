@@ -30,6 +30,7 @@
 #include <cstdio>
 #include <cinttypes>
 #include <vector>
+#include <memory>
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
