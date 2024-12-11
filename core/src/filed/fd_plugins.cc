@@ -1805,7 +1805,7 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   io.flags = flags;
   io.mode = mode;
 
-  PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
+  auto res = PlugFunc(plugin)->pluginIO(jcr->plugin_ctx, &io);
   bfd->BErrNo = io.io_errno;
 
   if (io.win32) {
@@ -1814,6 +1814,8 @@ static int MyPluginBopen(BareosFilePacket* bfd,
     errno = io.io_errno;
     bfd->lerror = io.lerror;
   }
+
+  if (res == bRC_Error) { return -1; }
 
   //  The plugin has two options for the read/write during the IO_OPEN call:
   //  1.: - Set io.status to IoStatus::do_io_in_core, and
