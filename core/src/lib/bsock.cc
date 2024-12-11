@@ -44,11 +44,11 @@ static constexpr int debuglevel = 50;
 
 BareosSocket::BareosSocket()
     /* public */
-    : fd_(-1)
+    : fd_(kInvalidFiledescriptor)
     , read_seqno(0)
     , msg(GetPoolMemory(PM_BSOCK))
     , errmsg(GetPoolMemory(PM_MESSAGE))
-    , spool_fd_(-1)
+    , spool_fd_(kInvalidFiledescriptor)
     , src_addr(nullptr)
     , in_msg_no(0)
     , out_msg_no(0)

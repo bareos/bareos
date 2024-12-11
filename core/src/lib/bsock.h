@@ -67,7 +67,7 @@ class BareosSocket {
   /* Note, keep this public part before the private otherwise
    *  bat breaks on some systems such as RedHat. */
  public:
-  int fd_;                         /* Socket file descriptor */
+  int fd_{kInvalidFiledescriptor}; /* Socket file descriptor */
   uint64_t read_seqno;             /* Read sequence number */
   POOLMEM* msg;                    /* Message pool buffer */
   POOLMEM* errmsg;                 /* Edited error message */
