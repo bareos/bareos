@@ -1,6 +1,5 @@
 FileSet {
   Name = "Catalog"
-  Description = "Backup the catalog dump and Bareos configuration files."
   Include {
     Options {
       Signature = XXH128
