@@ -311,16 +311,16 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 bool DropletCompatibleDevice::TruncateRemoteVolume(DeviceControlRecord*)
 {
   const char* vol_name = getVolCatName();
-  const auto list = m_storage.list(vol_name);
-  if (!list) {
-    PmStrcpy(errmsg, list.error().c_str());
+  const auto chunk_map = m_storage.list(vol_name);
+  if (!chunk_map) {
+    PmStrcpy(errmsg, chunk_map.error().c_str());
     dev_errno = EIO;
     return false;
   }
-  for (const auto& [chunk_name, stat] : *list) {
+  for (const auto& [chunk_name, stat] : *chunk_map) {
     if (is_chunk_name(chunk_name)) {
       if (auto res = m_storage.remove(vol_name, chunk_name); !res) {
-        PmStrcpy(errmsg, list.error().c_str());
+        PmStrcpy(errmsg, chunk_map.error().c_str());
         dev_errno = EIO;
         return false;
       }
@@ -331,15 +331,15 @@ bool DropletCompatibleDevice::TruncateRemoteVolume(DeviceControlRecord*)
 
 ssize_t DropletCompatibleDevice::RemoteVolumeSize()
 {
-  const auto list = m_storage.list(getVolCatName());
-  if (!list) {
-    PmStrcpy(errmsg, list.error().c_str());
+  const auto chunk_map = m_storage.list(getVolCatName());
+  if (!chunk_map) {
+    PmStrcpy(errmsg, chunk_map.error().c_str());
     dev_errno = EIO;
     return false;
   }
-  if (list->empty()) { return -1; }
+  if (chunk_map->empty()) { return -1; }
   ssize_t total_size{0};
-  for (const auto& [name, stat] : *list) {
+  for (const auto& [name, stat] : *chunk_map) {
     if (is_chunk_name(name)) { total_size += stat.size; }
   }
   return total_size;
