@@ -33,9 +33,6 @@ from sys import version
 import stat
 import time
 from collections import deque
-import datetime
-import dateutil
-import dateutil.parser
 import bareosfd
 from bareosfd import *
 
@@ -64,6 +61,14 @@ except ImportError as err_import:
 except Exception as err_unknown:
     bareosfd.JobMessage(bareosfd.M_FATAL, f"Unknown error {err_unknown}\n")
 
+NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000
+# values smaller than this were definitely done without nanosecond support
+# for values larger than this we assume that you already used a version of
+# this plugin with ns support.
+# To avoid loading datetime just for this value we directly use the result.
+# int(datetime.datetime(2038,1,1).timestamp())
+LAST_BACKUP_TIME_WITH_SECONDS = 2145913200
+
 
 def parse_row(row):
     """
@@ -79,6 +84,26 @@ def parse_row(row):
     backup_label = backup_label[1:-1]
     tablespace = tablespace[1:-1]
     return [lsn, backup_label, tablespace]
+
+
+def convert_to_ns(data):
+    """
+    This function is used as a replacement when system doesn't have ns native support
+    in time and os function.
+    """
+    return int(data * NANOSECONDS_PER_SECOND)
+
+
+def current_time_ns():
+    """
+    unified function to return current time in ns
+    time.time_ns() exist since python 3.7 when no more supported
+    remove this function.
+    """
+    try:
+        return time.time_ns()
+    except AttributeError:
+        return convert_to_ns(time.time())
 
 
 @BareosPlugin
@@ -162,7 +187,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.start_fast = False
         self.stop_wait_wal_archive = True
         self.switch_wal = True
+        # keep the timeout in sync with your PG checkpoint/archive timeout parameters
         self.switch_wal_timeout = 60
+        self.wal_filename = None
+        self.wal_offset = None
 
         # virtual files populates when using pg_backup_stop()
         self.virtual_files = []
@@ -186,7 +214,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # We need to get the stat-packet in set_file_attributes() and use it again
         # in end_restore_file(), and this may be mixed up with different files
         self.stat_packets = {}
-        self.last_lsn = 0
+        self.last_lsn = None
         # True if backup level is Full
         self.is_full_backup = False
         # True between select pg_backup_start() and pg_backup_stop(). (while backing up
@@ -195,7 +223,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # We will store the `starttime` from `backup_label` here
         self.backup_start_time = None
         # PostgreSQL last backup stop time
-        self.last_backup_stop_time = 0
+        self.last_backup_stop_time = None
         # Our label, will be used as `backup label` in `select pg_start_backup()`
         self.backup_label_string = ""
         # Raw restore object data (json-string)
@@ -213,7 +241,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.pg_major_version = None
         self.last_pg_major = None
         # TODO create support for external_config file
-
         self.statp = {}
 
         if chr(self.level) == "D":
@@ -250,6 +277,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             for topdir, dirnames, filenames in os.walk(start_dir, topdown=True):
                 # Usually Bareos takes care about timestamps when doing incremental backups
                 # but there we have to compare against last BackupPostgreSQL finish timestamp.
+                # to ensure valid comparison we will handle microsecond
 
                 # Filter out any ignored subdirectory
                 dirnames[:] = [
@@ -268,7 +296,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                         try:
                             # Avoid checking os.stat for Full we took them all.
                             if chr(self.level) != "F":
-                                mtime = os.stat(fullname).st_mtime
+                                mtime = os.stat(fullname).st_mtime_ns
                                 if mtime > self.last_backup_stop_time:
                                     bareosfd.DebugMessage(
                                         150,
@@ -345,7 +373,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # store parameters we will drop from self.cluster_configuration_parameters at the end
         parameters_to_remove = ["archive_mode", "archive_command"]
 
-        # - drop all file parameters and the logging directory if they are part of the data_directory
+        # drop all file parameters and the logging directory if they are part of the data_directory
         for parameter, setting in self.cluster_configuration_parameters.items():
             if parameter.startswith("archive_"):
                 continue
@@ -382,8 +410,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             del self.cluster_configuration_parameters[parameter]
 
         # On Debian system postgresql.conf is usually set to /etc/postgresql/<version>/<instance>
-        # there's a number of files there the cluster doesn't know about but are useful to manage it.
-        # We will do our best to backup them all.
+        # there's a number of files there the cluster doesn't know about but are useful
+        # to manage it. We will do our best to backup them all.
         if (
             "config_file" in self.cluster_configuration_parameters
             and self.cluster_configuration_parameters["config_file"].startswith(
@@ -408,9 +436,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 if os.path.isfile(os.path.join(conf_d_dir, item)) and item.endswith(
                     ".conf"
                 ):
-                    self.cluster_configuration_parameters[
-                        os.path.splitext(item)[0]
-                    ] = os.path.join(conf_d_dir, item)
+                    self.cluster_configuration_parameters[os.path.splitext(item)[0]] = (
+                        os.path.join(conf_d_dir, item)
+                    )
             # and finally the subdir & dir
             self.cluster_configuration_parameters["conf_dir"] = os.path.join(
                 conf_dir, "conf.d"
@@ -431,8 +459,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
     def __check_for_wal_files(self):
         """
         Look for new WAL files and backup
-        Backup start time is timezone aware, we need to add timezone
-        to files' mtime to make them comparable
         """
         # We have to add local timezone to the file's timestamp in order
         # to compare them with the backup `starttime`, which has a timezone.
@@ -448,11 +474,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     f"Could not get stat-info for file {full_path}: {os_err}\n",
                 )
                 continue
-            file_mtime = datetime.datetime.fromtimestamp(wal_st.st_mtime)
-            if (
-                file_mtime.replace(tzinfo=dateutil.tz.tzoffset(None, self.tz_offset))
-                > self.backup_start_time
-            ):
+            # store time as ns
+            file_mtime = wal_st.st_mtime_ns
+            bareosfd.DebugMessage(
+                150,
+                (f"comparing if {file_mtime} > {self.backup_start_time}\n"),
+            )
+            if file_mtime > self.backup_start_time:
                 bareosfd.DebugMessage(150, f"Adding WAL file {filename} for backup\n")
                 self.paths_to_backup.append(full_path)
 
@@ -479,12 +507,19 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
             if result > 0:
                 diff_exist = True
-                msg = "A difference was found"
+                msg = f"pg_wal_lsn_diff() return a difference of {result}"
             else:
                 msg = "No difference found"
 
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
+                (
+                    f"{msg},"
+                    f" between current_lsn {current_lsn} and last LSN: {last_lsn}\n"
+                ),
+            )
+            bareosfd.DebugMessage(
+                100,
                 (
                     f"{msg},"
                     f" between current_lsn {current_lsn} and last LSN: {last_lsn}\n"
@@ -684,7 +719,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     f"with data {self.recovery_data}\n"
                 ),
             )
-            self.last_backup_stop_time = int(time.time())
+            # store time as ns
+            self.last_backup_stop_time = current_time_ns()
+            bareosfd.DebugMessage(
+                100, f"last_backup_stop_time set {self.last_backup_stop_time}\n"
+            )
 
         except pg8000.Error as pg_err:
             bareosfd.JobMessage(
@@ -761,15 +800,75 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
     def __do_switch_wal(self):
         """
-        Let PostgreSQL write latest transaction into a new WAL file now
+        Let PostgreSQL write latest transaction into a new WAL file now and return the new lsn.
         """
         try:
-            self.db_con.run("select pg_switch_wal()")
+            lsn = self.db_con.run("select pg_switch_wal()")[0][0]
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                f"pg_switch_wal to LSN '{lsn}'\n",
+            )
         except pg8000.Error as pg_err:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
                 f"Could not switch to next WAL segment: {pg_err}\n",
             )
+        return lsn
+
+    def __decode_lsn_filename_offset(self, lsn):
+        """
+        Let PostgreSQL describe filename and bytes offset for the given lsn
+        if decoded we set self.wal_filename and self.wal_offset and return True if the offset is
+        zero; which mean we won't have to wait the corresponding wal, as it will not be archived.
+        """
+        bareosfd.DebugMessage(100, "__do_lsn_filename_offset start\n")
+        try:
+            row = self.db_con.run(f"select pg_walfile_name_offset('{lsn}')")[0][0]
+        except pg8000.Error as pg_err:
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                f"Could not decode filename offset of {lsn}: {pg_err}\n",
+            )
+        try:
+            if isinstance(row, str):
+                # buggy pg8000 < 1.30 return a string for 0/7002250
+                # '(000000010000000000000007,8784)'
+                bareosfd.DebugMessage(
+                    100,
+                    f"__do_lsn_filename_offset return an str instead tuples: {row}\n",
+                )
+                remove_parens = row[1:-1]
+                [filename, offset] = remove_parens.split(",")
+                row = [filename, offset]
+                bareosfd.DebugMessage(
+                    100, f"__do_lsn_filename_offset row str fixed as tuples: {row}\n"
+                )
+            self.wal_filename, self.wal_offset = row
+            # WARNING returned offset is type pg:offset which look like an int but is not.
+            self.wal_offset = int(self.wal_offset)
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                (
+                    f"LSN {lsn} decoded as filename '{self.wal_filename},"
+                    f" offset {self.wal_offset}'\n"
+                ),
+            )
+        except ValueError as val_err:
+            # ValueError: too many values to unpack (expected 2)
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR,
+                (
+                    f"Not able to parse row from pg_walfile_name_offset for {lsn}"
+                    f", ValueError={val_err}"
+                    f", row={row}\n"
+                ),
+            )
+            raise
+
+        bareosfd.DebugMessage(150, f"decoded wal_filename {self.wal_filename}\n")
+        bareosfd.DebugMessage(150, f"decoded wal_segment {self.wal_offset}\n")
+        bareosfd.DebugMessage(100, "__do_lsn_filename_offset stop\n")
+        return self.wal_offset == 0
 
     def __get_current_lsn(self):
         """
@@ -868,10 +967,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
         bareosfd.DebugMessage(100, f"Send 'select {start_stmt}' to PostgreSQL\n")
         bareosfd.DebugMessage(100, f"backup label = {self.backup_label_string}\n")
-        # We tell PostgreSQL that we want to start to backup file now
-        self.backup_start_time = datetime.datetime.now(
-            tz=dateutil.tz.tzoffset(None, self.tz_offset)
-        )
+        # We tell PostgreSQL that we want to start to backup file now store time as ns
+        self.backup_start_time = current_time_ns()
         try:
             result = self.db_con.run(f"select {start_stmt};")
         except pg8000.Error as pg_err:
@@ -882,32 +979,14 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         bareosfd.DebugMessage(150, f"Start response LSN: {str(result)}\n")
         bareosfd.DebugMessage(100, "__pg_backup_start() ended\n")
 
-    def __wait_for_wal_archiving(self, lsn):
+    def __wait_for_wal_archiving(self):
         """
         Wait for wal archiving to be finished by checking if the wal file
-        for the given LSN is present in the filesystem.
+        for self.wal_filename.
         """
         bareosfd.DebugMessage(100, "__wait_for_wal_archiving() started\n")
-        if self.pg_major_version >= 10:
-            wal_filename_func = "pg_walfile_name"
-        else:
-            wal_filename_func = "pg_xlogfile_name"
 
-        walfile_stmt = f"select {wal_filename_func}('{lsn}')"
-
-        try:
-            wal_filename = self.db_con.run(walfile_stmt)[0][0]
-            bareosfd.DebugMessage(
-                100,
-                f"__wait_for_wal_archiving({lsn}): wal filename={wal_filename}\n",
-            )
-        except Exception as err:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"Error getting WAL filename for LSN {lsn}\n{err}\n"
-            )
-            return False
-
-        wal_file_path = self.options["wal_archive_dir"] + wal_filename
+        wal_file_path = self.options["wal_archive_dir"] + self.wal_filename
 
         # To finish as quick as possible but with low impact on a heavy loaded
         # system, we use increasing sleep times here, starting with a small value
@@ -927,7 +1006,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             bareosfd.M_FATAL,
             (
                 f"Timeout waiting {self.switch_wal_timeout} sec."
-                f" for wal file {wal_filename} to be archived\n"
+                f" for wal file {self.wal_filename} to be archived\n"
             ),
         )
         bareosfd.DebugMessage(100, "__wait_for_wal_archiving() ended timeout\n")
@@ -1206,7 +1285,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             try:
                 self.__check_pg_major_version()
             except ValueError as val_error:
-                bareosfd.JobMessage(bareosfd.M_FATAL, val_error)
+                bareosfd.JobMessage(bareosfd.M_FATAL, f"{val_error}")
                 return bareosfd.bRC_Error
 
             start_dir = self.options["wal_archive_dir"]
@@ -1216,22 +1295,42 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
             current_lsn = self.__get_current_lsn()
             lsn_diff = self.__check_lsn_diff(current_lsn, self.last_lsn)
-            if self.switch_wal and lsn_diff:
-                # Ask pg to switch wal
-                self.__do_switch_wal()
-                # Pick the new lsn and update our last_lsn
-                current_lsn = self.__get_current_lsn()
+            if self.switch_wal or lsn_diff:
+                # Ask pg to switch wal and pick the returned lsn
+                wal_lsn = self.__do_switch_wal()
+                # PG will not archive a freshly created wal (segment 0)
+                # in that case we can skip waiting the wal archiving
+                offset_zero = self.__decode_lsn_filename_offset(wal_lsn)
                 bareosfd.DebugMessage(
                     150,
                     (
-                        f"after pg_switch_wal(): current_lsn: {current_lsn}"
+                        f"after __do_switch_wal(): current_lsn: {current_lsn},"
+                        f" wal_lsn: {wal_lsn},"
                         f" last_lsn: {self.last_lsn}\n"
+                        f" wal_file: {self.wal_filename}, wal_offset:{self.wal_offset}\n"
                     ),
                 )
-                self.last_lsn = current_lsn
+                if offset_zero:
+                    bareosfd.JobMessage(
+                        bareosfd.M_INFO,
+                        (
+                            f"LSN {wal_lsn} with offset_zero = {offset_zero},"
+                            f" previous wal already archived\n"
+                        ),
+                    )
+                else:
+                    bareosfd.DebugMessage(
+                        150,
+                        (
+                            f"offset_zero = {offset_zero} / LSN {wal_lsn} with "
+                            f"offset = {self.wal_offset}, start waiting archiving\n"
+                        ),
+                    )
+                    if not self.__wait_for_wal_archiving():
+                        return bareosfd.bRC_Error
 
-                if not self.__wait_for_wal_archiving(current_lsn):
-                    return bareosfd.bRC_Error
+                # last_lsn is now the new switched one
+                self.last_lsn = wal_lsn
 
             else:
                 # Nothing has changed since last backup - only send ROP this time
@@ -1272,6 +1371,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
+        # If level is not Full, we are done here and set the new
+        # last_backup_stop_time as reference for future jobs
+        # Will be written into the Restore Object
+        if not chr(self.level) == "F":
+            self.last_backup_stop_time = current_time_ns()
+            return bareosfd.bRC_OK
+
         # In non-exclusive mode we can't know if there's already a running job.
         # Documentation stipulates how to set `Allow Duplicate Job = no`
         # to exclude that case in job config.
@@ -1280,13 +1386,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except pg8000.Error as pg8000_error:
             bareosfd.JobMessage(bareosfd.M_FATAL, pg8000_error)
             return bareosfd.bRC_Error
-
-        # If level is not Full, we are done here and set the new
-        # last_backup_stop_time as reference for future jobs
-        # Will be written into the Restore Object
-        if not chr(self.level) == "F":
-            self.last_backup_stop_time = int(time.time())
-            return bareosfd.bRC_OK
 
         # For full we add the rest of configuration files and dirs
         for parameter, setting in self.cluster_configuration_parameters.items():
@@ -1328,7 +1427,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             savepkt.object_name = savepkt.fname
             savepkt.object = bytearray(json.dumps(self.rop_data), "utf-8")
             savepkt.object_len = len(savepkt.object)
-            savepkt.object_index = int(time.time())
+            savepkt.object_index = current_time_ns()
             savepkt.statp = my_statp
             savepkt.no_read = True
             bareosfd.DebugMessage(150, f"rop data: {str(self.rop_data)}\n")
@@ -1339,9 +1438,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 my_statp.st_mode = self.ref_statp.st_mode
                 my_statp.st_uid = self.ref_statp.st_uid
                 my_statp.st_gid = self.ref_statp.st_gid
-                my_statp.st_atime = int(time.time())
-                my_statp.st_mtime = int(time.time())
-                my_statp.st_ctime = int(time.time())
+                statp_time = current_time_ns()
+                my_statp.st_atime = statp_time
+                my_statp.st_mtime = statp_time
+                my_statp.st_ctime = statp_time
                 savepkt.type = bareosfd.FT_REG
                 if self.file_to_backup == self.backup_label_filename:
                     my_statp.st_size = len(self.backup_label_data)
@@ -1435,9 +1535,21 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             return bareosfd.bRC_Error
 
         if "last_backup_stop_time" in self.rop_data[ROP.jobid]:
-            self.last_backup_stop_time = int(
-                self.rop_data[ROP.jobid]["last_backup_stop_time"]
-            )
+            self.last_backup_stop_time = self.rop_data[ROP.jobid][
+                "last_backup_stop_time"
+            ]
+            # We check if the ROP has time_ns value otherwise we upgrade its value
+            # which will be the case with previous version of this plugin.
+            # 2038-01-01
+            if self.last_backup_stop_time < LAST_BACKUP_TIME_WITH_SECONDS:
+                self.last_backup_stop_time = convert_to_ns(self.last_backup_stop_time)
+                bareosfd.DebugMessage(
+                    100,
+                    (
+                        "rop_data[last_backup_stop_time] < LAST_BACKUP_TIME_WITH_SECONDS\n"
+                        f" convert_to_ns returned {self.last_backup_stop_time}\n",
+                    ),
+                )
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
                 (

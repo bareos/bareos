@@ -49,6 +49,9 @@ local_db_prepare_files() {
     LANG= ${POSTGRES_BIN_PATH}/pg_ctl --silent --pgdata=data --log=log/postgres.log initdb
   fi
 
+# In case we saw too much timeout issue because maybe not checkpoint occurs
+# we can add the following parameters to the cluster configuration
+# echo "checkpoint_timeout = 45"
   {
     echo "listen_addresses = ''"
     echo "unix_socket_directories = '$1'"
