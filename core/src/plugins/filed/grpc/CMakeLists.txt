@@ -95,5 +95,13 @@ if(ENABLE_GRPC)
     COMPONENT filedaemon
   )
 
+  add_executable(grpc-test-module grpc_test_module.cc plugin_service.cc)
+  target_link_libraries(grpc-test-module fmt::fmt grpc-proto)
+  install(
+    TARGETS grpc-test-module
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
+  )
+
   include(DebugEdit)
 endif()
