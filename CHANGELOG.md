@@ -5,11 +5,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes
+- Support for base jobs is phased out. You can still restore jobs that use a base job, but you cannot create new backups using a base job anymore. Bareos 25 might remove restore-support for this, too.
+- When running `bconsole` as superuser, critical local commands `@input` `@output` `@tee` and `@exec` are disabled
+- Bareos will no longer write PRE_LABEL labels on empty media, but instead write normal labels.
+
 ### Added
-- add openssl 3 ulc [PR #1683]
-- Add backport tool [PR #1639]
-- Add FreeBSD 13.3 and 14.0 [PR #1765]
+- Add dedupable backend [PR #1663]
 - Add droplet compatible storage backend [PR #1790]
+- Add just in time reservation:  reserve/acquire a device on first incoming write data [PR #1715]
+- Add new grpc plugin allowing to run python plugins in own process [PR #1993]
+- Add support for WORM media [PR #1958]
+- Add openssl 3 ulc [PR #1683]
 
 ### Changed
 - github actions: PyPi: install setuptools [PR #1589]
@@ -70,6 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bsmtp: add fixes to be more rfc compliant [PR #1795]
 - pr-tool: update LICENSE.txt [PR #1773]
 - tools: add dedup estimation tool `bdedupestimate` [PR #1654]
+- pr-tool: add backport tool [PR #1639]
+- Build FreeBSD 13.3 and 14.0 [PR #1765]
 - Build ULC and EL_9 for aarch64 [PR #1821]
 - webui: fix and improve update check [PR #1809]
 - python-bareos: fix description [PR #1840]
@@ -99,17 +108,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: add missing database locks [PR #1787]
 - webui: properly set focus to input box after each command [PR #1936]
 - bscrypto: fix and update code, and move CLI parsing to cli11, add systemtests [PR #1734]
-- stored: reserve/acquire a device on first incoming write data [PR #1715]
 - docs: add ADR infrastructure and first ADRs [PR #1945]
 - nsi installers: remove postgresql backend [PR #1914]
-- stored: add dedupable backend [PR #1663]
 - systemtests: fix plugin postgresql testrunner-* [PR #1947]
 - webui: fix handling deleted clients in restore browser [PR #1933]
 - console.cc: forbid @exec etc. as privileged user [PR #1950]
 - github actions python-bareos: add workflow_dispatch [PR #1966]
 - FreeBSD: fix sed inplace usage, use bin/sh as shebang for script, pkg make director dependent of database-postgresql [PR #1961]
 - dir: fix DbLocker usage [PR #1953]
-- Disable writing PRE_LABEL label-type to support WORM media [PR #1958]
 - debian: fix dedupable backend names [PR #1977]
 - external packages: use CPM packages instead of third-party directory [PR #1963]
 - scripts: remove unmaintained bareos-explorer [PR #1990]
@@ -121,12 +127,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - macos: update build environment [PR #2035]
 - NDMP_NATIVE: enable full restore, eject tape before unload, enable update of NDMP environment [PR #1862]
 - vmware: upgrade vmware vix disklib to version 8.0.3
-- plugin: add new grpc plugin allowing to run python plugins in own process [PR #1993]
 
 ### Removed
 - plugins: remove old deprecated postgres plugin [PR #1606]
 - Remove EOL platforms [PR #1684]
-- core: fix some overlooked issues in msvc merge [PR #1912]
 - dird: remove BaseJob directives [PR #1969]
 
 ### Documentation
@@ -144,6 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: add worm support paragraph [PR #2037]
 
 ### Fixed
+- core: fix some overlooked issues in msvc merge [PR #1912]
 - dird: fix `purge oldest volume` [PR #1628]
 - Fix continuation on colons in plugin baseclass [PR #1637]
 - plugins: fix cancel handling crash [PR #1595]
