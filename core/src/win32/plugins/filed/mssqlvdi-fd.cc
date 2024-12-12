@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -939,11 +939,11 @@ static void SetAdoConnectString(PluginContext* ctx)
 
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
     Mmsg(ado_connect_string,
-         "Provider=SQLOLEDB.1;Data Source=%s;Initial Catalog=master",
+         "Provider=MSOLEDBSQL.1;Data Source=%s;Initial Catalog=master",
          p_ctx->server_address);
   } else {
     Mmsg(ado_connect_string,
-         "Provider=SQLOLEDB.1;Data Source=%s\\%s;Initial Catalog=master",
+         "Provider=MSOLEDBSQL.1;Data Source=%s\\%s;Initial Catalog=master",
          p_ctx->server_address, p_ctx->instance);
   }
 
