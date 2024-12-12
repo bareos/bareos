@@ -1,0 +1,4 @@
+@backenddir@/libbareossd-dplcompat.so*
+@scriptdir@/s3cmd-wrapper.sh
+@configtemplatedir@/bareos-dir.d/storage/dplcompat.conf.example
+@configtemplatedir@/bareos-sd.d/device/dplcompat.conf.example

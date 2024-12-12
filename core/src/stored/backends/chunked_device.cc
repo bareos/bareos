@@ -204,6 +204,16 @@ void ChunkedDevice::StopThreads()
   }
 }
 
+auto ChunkedDevice::getInflightLease(chunk_io_request* request)
+    -> std::optional<InflightLease>
+{
+  try {
+    return InflightLease(this, request);
+  } catch (InflightChunkException&) {
+    return std::nullopt;
+  }
+}
+
 // Set the inflight flag for a chunk.
 bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
 {
@@ -301,10 +311,10 @@ static int CompareChunkIoRequest(ocbuf_item* ocbuf1, ocbuf_item* ocbuf2)
 }
 
 // Call back function for updating two chunk_io_requests.
-static void UpdateChunkIoRequest(void* item1, void* item2)
+static void UpdateChunkIoRequest(void* old_item, void* new_item)
 {
-  chunk_io_request* chunk1 = (chunk_io_request*)item1;
-  chunk_io_request* chunk2 = (chunk_io_request*)item2;
+  chunk_io_request* old_req = (chunk_io_request*)old_item;
+  chunk_io_request* new_req = (chunk_io_request*)new_item;
 
   /* See if the new chunk_io_request has more bytes then
    * the chunk_io_request currently on the ordered circular
@@ -315,11 +325,16 @@ static void UpdateChunkIoRequest(void* item1, void* item2)
    * means all pointers are the same only the wbuflen and the
    * release flag of the chunk_io_request differ. So we only
    * copy those two fields and not the others. */
-  if (chunk2->buffer == chunk1->buffer && chunk2->wbuflen > chunk1->wbuflen) {
-    chunk1->wbuflen = chunk2->wbuflen;
-    chunk1->release = chunk2->release;
+  Dmsg0(200, "Updating chunk request at %p from new request at %p\n", old_req,
+        new_req);
+  ASSERT(new_req->wbuflen >= old_req->wbuflen);
+  if (new_req->buffer == old_req->buffer) {
+    old_req->wbuflen = new_req->wbuflen;
+    old_req->release = new_req->release;
+    new_req->release = false;
+  } else {
+    std::swap(*old_req, *new_req);
   }
-  chunk2->release = false;
 }
 
 // Enqueue a chunk flush request onto the ordered circular buffer.
@@ -327,8 +342,8 @@ bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
 {
   chunk_io_request *new_request, *enqueued_request;
 
-  Dmsg2(100, "Enqueueing chunk %d of volume %s\n", request->chunk,
-        request->volname);
+  Dmsg2(100, "Enqueueing chunk %d of volume %s (%d bytes)\n", request->chunk,
+        request->volname, request->wbuflen);
 
   if (!io_threads_started_) {
     if (!StartIoThreads()) { return false; }
@@ -1048,7 +1063,7 @@ bool ChunkedDevice::is_written()
   }
 
   if (io_threads_ > 0 && cb_) {
-    if (!cb_->empty()) {
+    if (!cb_->empty_with_no_reserve()) {
       chunk_io_request* request;
 
       /* Peek on the ordered circular queue if there are any pending IO-requests
@@ -1064,6 +1079,10 @@ bool ChunkedDevice::is_written()
               current_volname_);
         return false;
       }
+      Dmsg0(100,
+            "storage is pending, as there are queued write requests for "
+            "previous volumes.\n");
+      return false;
     }
   }
 
@@ -1089,6 +1108,7 @@ bool ChunkedDevice::is_written()
 // Busy waits until write buffer is empty.
 bool ChunkedDevice::WaitUntilChunksWritten()
 {
+  if (!current_chunk_) { return true; }
   if (current_chunk_->need_flushing) {
     if (!FlushChunk(false /* release */, false /* move_to_next_chunk */)) {
       dev_errno = EIO;
@@ -1162,6 +1182,8 @@ bool ChunkedDevice::LoadChunk()
            * latest data anyway. */
           if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest)
               == &request) {
+            current_chunk_->end_offset
+                = start_offset + (current_chunk_->chunk_size - 1);
             goto bail_out;
           }
         }

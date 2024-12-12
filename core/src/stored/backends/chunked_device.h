@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,10 +28,17 @@
 #ifndef BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 
+#include <sys/types.h>
+#include "stored/dev.h"
+#include "ordered_cbuf.h"
+#include <optional>
+
 template <typename T> class alist;
 
-#include "ordered_cbuf.h"
 namespace storagedaemon {
+
+class DeviceControlRecord;
+struct DeviceStatusInformation;
 
 // Let io-threads check for work every 300 seconds.
 #define DEFAULT_RECHECK_INTERVAL 300
@@ -97,8 +104,43 @@ struct chunk_descriptor {
   bool opened;        /* An open call was done */
 };
 
+class InflightChunkException : public std::exception {};
 
 class ChunkedDevice : public Device {
+  class InflightLease {
+    ChunkedDevice* m_device;
+    chunk_io_request* m_request;
+
+   public:
+    InflightLease(ChunkedDevice* t_device, chunk_io_request* t_request)
+        : m_device(t_device), m_request(t_request)
+    {
+      if (!m_device->SetInflightChunk(m_request)) {
+        throw InflightChunkException();
+      }
+    }
+    ~InflightLease()
+    {
+      if (m_device && m_request) { m_device->ClearInflightChunk(m_request); }
+    }
+
+    InflightLease(const InflightLease&) = delete;
+    InflightLease& operator=(const InflightLease&) = delete;
+
+    InflightLease(InflightLease&& other) noexcept
+        : m_device(other.m_device), m_request(other.m_request)
+    {
+      other.m_device = nullptr;
+      other.m_request = nullptr;
+    };
+    InflightLease& operator=(InflightLease&& other) noexcept
+    {
+      std::swap(m_device, other.m_device);
+      std::swap(m_request, other.m_request);
+      return *this;
+    };
+  };
+
  private:
   // Private Members
   bool io_threads_started_{};
@@ -131,6 +173,7 @@ class ChunkedDevice : public Device {
   bool use_mmap_{};
 
   // Protected Methods
+  std::optional<InflightLease> getInflightLease(chunk_io_request* request);
   bool SetInflightChunk(chunk_io_request* request);
   void ClearInflightChunk(chunk_io_request* request);
   bool IsInflightChunk(chunk_io_request* request);

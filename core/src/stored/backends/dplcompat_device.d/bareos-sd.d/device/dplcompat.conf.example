@@ -1,0 +1,46 @@
+Device {
+  Name = dplcompat # device name from director's storage resource
+  Media Type = dplcompat # media type from director's storage resource
+  Archive Device = S3 Object Storage # currently unused, but required
+
+  #
+  # Device Options (for the backend itself):
+  #    program         - Program/script to use for up/download. This is either an absolute path
+  #                      or path relative to the Scripts Directory
+  #                      e.g. "program=s3cmd-wrapper.sh"  # use s3cmd-wrapper.sh from Scripts Directory
+  #    program_timeout - Timeout for the program in seconds (defaults to 30s), timer is reset whenever
+  #                      data was read or written, so large up/downloads are not a problem
+  #    chunksize=      - Size of Volume Chunks (default = 10 Mb)
+  #                      e.g. chunksize=262144000" # use chunks of 256 MB each
+  #    iothreads=      - Number of IO-threads to use for upload (use blocking uploads if not defined)
+  #                      e.g. "iothreads=4" # do a maximum of four uploads in parallel
+  #    ioslots=        - Number of IO-slots per IO-thread (0-255, default 10)
+  #                      e.g. "ioslots=2" # have at most two chunks per iothread queued
+  #    retries=        - Number of retires if a write fails (0-255, default = 0, which means unlimited retries)
+  #
+  # Device Options (for s3cmd-wrapper.sh, other programs need different options):
+  #    s3cmd_prog      - Full path to s3cmd program, autodetected by default
+  #    s3cfg           - Path to s3cmd configuration file (created using s3md --configure)
+  #                      e.g. "s3cfg=/etc/bareos/s3cfg" # make s3cmd read config from /etc/bareos/s3cfg
+  #    bucket          - Name of the S3 bucket to use (default: backup)
+  #                      e.g. "bucket=bareos-backup" # store data in bucket "bareos-backup"
+  #    base_url        - Base-URL passed to s3cmd, usually not needed (default: s3://$bucket)
+  #    storage_class   - Storage class to pass to s3cmd
+  #                      e.g. "storage_class=STANDARD_IA" # use "infrequent access" storage class
+  #
+  Device Options = "iothreads=4"
+                   ",ioslots=2"
+                   ",chunksize=262144000"
+                   ",program=s3cmd-wrapper.sh"
+                   ",s3cfg=/etc/bareos/s3cfg"
+                   ",bucket=bareos-backup"
+                   ",storage_class=STANDARD_IA"
+
+  Device Type = dplcompat      # select dplcompat backend type
+  Label Media = yes
+  Random Access = yes
+  Automatic Mount = yes
+  Removable Media = no
+  Always Open = no
+  Description = "droplet compatible device"
+}

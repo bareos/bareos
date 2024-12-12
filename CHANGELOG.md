@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add openssl 3 ulc [PR #1683]
 - Add backport tool [PR #1639]
 - Add FreeBSD 13.3 and 14.0 [PR #1765]
+- Add droplet compatible storage backend [PR #1790]
 
 ### Changed
 - github actions: PyPi: install setuptools [PR #1589]
@@ -259,6 +260,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #1787]: https://github.com/bareos/bareos/pull/1787
 [PR #1788]: https://github.com/bareos/bareos/pull/1788
 [PR #1789]: https://github.com/bareos/bareos/pull/1789
+[PR #1790]: https://github.com/bareos/bareos/pull/1790
 [PR #1793]: https://github.com/bareos/bareos/pull/1793
 [PR #1795]: https://github.com/bareos/bareos/pull/1795
 [PR #1805]: https://github.com/bareos/bareos/pull/1805

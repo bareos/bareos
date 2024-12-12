@@ -27,7 +27,9 @@
 #ifndef BAREOS_LIB_BPIPE_H_
 #define BAREOS_LIB_BPIPE_H_
 
-struct btimer_t;
+#include "btimers.h"
+#include <string>
+#include <unordered_map>
 
 #ifdef HAVE_WIN32
 using ProcessId = HANDLE;
@@ -45,10 +47,12 @@ class Bpipe {
   FILE* wfd;
 };
 
-Bpipe* OpenBpipe(char* prog,
+Bpipe* OpenBpipe(const char* prog,
                  int wait,
                  const char* mode,
-                 bool dup_stderr = true);
+                 bool dup_stderr = true,
+                 const std::unordered_map<std::string, std::string>& env_vars
+                 = {});
 int CloseWpipe(Bpipe* bpipe);
 int CloseBpipe(Bpipe* bpipe);
 

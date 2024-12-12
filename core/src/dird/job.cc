@@ -99,7 +99,7 @@ void InitJobServer(int max_workers)
     Emsg1(M_ABORT, 0, T_("Could not init job queue: ERR=%s\n"),
           be.bstrerror(status));
   }
-  wd = new_watchdog();
+  wd = NewWatchdog();
   wd->callback = JobMonitorWatchdog;
   wd->destructor = JobMonitorDestructor;
   wd->one_shot = false;

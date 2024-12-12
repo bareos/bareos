@@ -466,6 +466,13 @@ bareos_add_test(test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
 
+add_executable(test_bpipe_prog)
+target_sources(test_bpipe_prog PRIVATE test_bpipe_prog.cc)
+bareos_add_test(test_bpipe LINK_LIBRARIES bareos GTest::gtest_main)
+target_compile_definitions(
+  test_bpipe PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:test_bpipe_prog>\""
+)
+
 bareos_add_test(
   test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
                                        GTest::gtest_main
@@ -527,6 +534,10 @@ bareos_add_test(
   LINK_LIBRARIES bareos GTest::gtest_main
   ADDITIONAL_SOURCES "../stored/backends/util.cc"
 )
+
+add_executable(env_tester env_tester.cc)
+target_link_libraries(env_tester PRIVATE bareos)
+bareos_add_test(bpipe_env_test LINK_LIBRARIES GTest::gtest_main bareos)
 
 bareoscopydllstobindir()
 include(DebugEdit)

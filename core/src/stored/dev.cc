@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,6 +138,11 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   device_resource->dev = dev;
 
   InitiateDevice(jcr, dev);
+  if (!dev->setup()) {
+    Jmsg1(jcr, M_ERROR, 0, T_("Failed to setup device %s.\n"),
+          device_resource->archive_device_string);
+    return nullptr;
+  }
   return dev;
 }
 

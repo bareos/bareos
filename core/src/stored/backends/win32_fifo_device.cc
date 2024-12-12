@@ -60,7 +60,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 
   if (timeout) {
     // Set open timer
-    tid = start_thread_timer(dcr->jcr, pthread_self(), timeout);
+    tid = StartThreadTimer(dcr->jcr, pthread_self(), timeout);
   }
 
   Dmsg2(100, "Try open %s mode=%s\n", prt_name, mode_to_str(omode));

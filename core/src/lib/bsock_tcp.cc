@@ -156,7 +156,7 @@ bool BareosSocketTCP::connect(JobControlRecord* jcr,
 
   // Try to trap out of OS call when time expires
   if (max_retry_time) {
-    tid = start_thread_timer(jcr, pthread_self(), (uint32_t)max_retry_time);
+    tid = StartThreadTimer(jcr, pthread_self(), (uint32_t)max_retry_time);
   }
 
   for (i = 0; !open(jcr, name, host, service, port, heart_beat, &fatal);

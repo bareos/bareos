@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -161,7 +161,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
       /* Try stripping file part */
       p = dev_name + strlen(dev_name);
 
-      while (p >= dev_name && !IsPathSeparator(*p)) p--;
+      while (p > dev_name && !IsPathSeparator(*p)) p--;
       if (IsPathSeparator(*p)) {
         bstrncpy(VolName, p + 1, sizeof(VolName));
         *p = 0;

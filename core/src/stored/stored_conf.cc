@@ -27,6 +27,8 @@
  */
 
 #include "include/bareos.h"
+#include <fmt/core.h>
+
 #include "stored/stored_conf.h"
 #include "stored/autochanger_resource.h"
 #include "stored/device_resource.h"
@@ -89,7 +91,7 @@ static ResourceItem store_items[] = {
    "  This option also means that no session label gets written if the job is empty."},
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_store, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store, plugin_names), 0, 0, NULL, NULL, NULL},
-  {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_store, scripts_directory), 0, 0, NULL, NULL, NULL},
+  {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_store, scripts_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_SCRIPTDIR, NULL, "Path to directory containing script files"},
   {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "1000", NULL, NULL},
   {"Messages", CFG_TYPE_RES, ITEM(res_store, messages), R_MSGS, 0, NULL, NULL, NULL},
   {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
@@ -494,6 +496,10 @@ static void CheckDropletDevices(ConfigurationParser& config)
   while ((p = config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d && d->device_type == DeviceType::B_DROPLET_DEV) {
+      my_config->AddWarning(
+          fmt::format("device {} uses the droplet backend, "
+                      "please consider using the newer dplcompat backend.",
+                      d->archive_device_string));
       if (d->max_concurrent_jobs == 0) {
         /* 0 is the general default. However, for this device_type, only 1
          * works. So we set it to this value. */

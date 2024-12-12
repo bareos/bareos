@@ -48,6 +48,18 @@ if(TARGET droplet)
   )
   target_link_libraries(bareossd-droplet PRIVATE droplet)
 endif()
+add_sd_backend(bareossd-dplcompat)
+target_sources(
+  bareossd-dplcompat PRIVATE dplcompat_device.cc ordered_cbuf.cc
+                             chunked_device.cc crud_storage.cc util.cc
+)
+target_link_libraries(
+  bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt-header-only
+                             tl::expected
+)
+if(HAVE_WIN32)
+  target_link_libraries(bareossd-dplcompat PRIVATE shlwapi)
+endif()
 
 add_sd_backend(bareossd-file)
 add_sd_backend(bareossd-fifo)
