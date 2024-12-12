@@ -941,11 +941,11 @@ static void SetAdoConnectString(PluginContext* ctx)
 
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
     Mmsg(ado_connect_string,
-         "Provider=SQLOLEDB.1;Data Source=%s;Initial Catalog=master",
+         "Provider=MSOLEDBSQL.1;Data Source=%s;Initial Catalog=master",
          p_ctx->server_address);
   } else {
     Mmsg(ado_connect_string,
-         "Provider=SQLOLEDB.1;Data Source=%s\\%s;Initial Catalog=master",
+         "Provider=MSOLEDBSQL.1;Data Source=%s\\%s;Initial Catalog=master",
          p_ctx->server_address, p_ctx->instance);
   }
 
