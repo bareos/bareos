@@ -1,7 +1,7 @@
 <div align="left" style="display: flex; flex-direction: column; align-items: center;">
     <!-- Image on top -->
     <a href="https://www.bareos.com" style="flex-shrink: 0;">
-        <img src="https://github.com/agrigorev99/bareos/blob/update_README/bareos-github-banner.png" width="80%">
+        <img src="bareos-github-banner.png" width="80%">
     </a>
   <!-- Supported Systems row below -->
     <div style="margin-top: 20px;">
