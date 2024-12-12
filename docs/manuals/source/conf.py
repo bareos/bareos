@@ -380,14 +380,13 @@ import re
 # settings for sphinxcontrib-versioning
 scv_whitelist_branches = (
     re.compile(r"^master$"),
-    re.compile(r"^bareos-19.2$"),
     re.compile(r"^bareos-2.$"),
 )
 scv_whitelist_tags = (re.compile(r"^not-exisiting-tag$"),)
 scv_show_banner = True
 scv_priority = "branches"
-scv_root_ref = "bareos-23"
-scv_banner_main_ref = "bareos-23"
+scv_root_ref = "bareos-24"
+scv_banner_main_ref = "bareos-24"
 
 
 plantuml_output_format = "svg_img"
