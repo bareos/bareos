@@ -152,6 +152,7 @@ struct plugin_ctx {
   VDConfig VDIConfig;
   bool AdoThreadStarted;
   pthread_t ADOThread;
+  bool completion_support;
 };
 
 struct adoThreadContext {
@@ -1189,7 +1190,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
   // Setup the VDI configuration.
   memset(&p_ctx->VDIConfig, 0, sizeof(p_ctx->VDIConfig));
   p_ctx->VDIConfig.deviceCount = 1;
-  p_ctx->VDIConfig.features = VDF_LikePipe;
+  p_ctx->VDIConfig.features = VDF_LikePipe | VDF_RequestComplete;
 
   // Create the VDI device set.
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
@@ -1258,6 +1259,15 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     const char* fmt
         = "mssqlvdi-fd: IClientVirtualDeviceSet2::GetConfiguration "
           "%s: %0#x (%s)\n";
+
+    if (!(p_ctx->VDIConfig.features & VDF_CompleteEnabled)) {
+      Jmsg(ctx, M_INFO,
+           "VDI does not support VDC_Complete."
+           " Filestreams are not supported\n.");
+      p_ctx->completion_support = false;
+    } else {
+      p_ctx->completion_support = true;
+    }
 
     if (success) {
       snprintf(error_msg.data(), error_msg.size(), fmt, "successful",
@@ -1397,6 +1407,7 @@ const char* command_name(DWORD commandCode)
   case VDC_PrepareToFreeze: { return "prepare-to-freeze"; }
   case VDC_FileInfoBegin: { return "file-info-begin"; }
   case VDC_FileInfoEnd: { return "file-info-end"; }
+  case VDC_Complete: { return "complete"; }
   default: { return "unknown"; }
   }
 }
@@ -1410,23 +1421,25 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   VDC_Command* cmd;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  // See what command is available on the VDIDevice.
-  hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
-  if (!SUCCEEDED(hr)) {
-    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n",
-         hr);
+  bool quit = false;
+  while (!quit) {
+    // See what command is available on the VDIDevice.
+    hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
+    if (!SUCCEEDED(hr)) {
+      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n",
+           hr);
+      Dmsg(ctx, debuglevel,
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
+      goto bail_out;
+    }
+
+
     Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
-    goto bail_out;
-  }
+         "mssqlvdi-fd: Command: %d:%s (size=%d)\n", cmd->commandCode,
+         command_name(cmd->commandCode),
+         cmd->size);
 
-
-  Dmsg(ctx, debuglevel,
-       "mssqlvdi-fd: Command: %d:%s (size=%d)\n", cmd->commandCode,
-       command_name(cmd->commandCode),
-       cmd->size);
-
-  switch (cmd->commandCode) {
+    switch (cmd->commandCode) {
     case VDC_Read:
       Dmsg(ctx, debuglevel,
            "mssqlvdi-fd: Read: %d bytes\n", cmd->size);
@@ -1440,6 +1453,7 @@ static inline bool PerformVdiIo(PluginContext* ctx,
         io->status = io->count;
         *completionCode = ERROR_SUCCESS;
       }
+      quit = true;
       break;
     case VDC_Write:
       Dmsg(ctx, debuglevel,
@@ -1454,30 +1468,40 @@ static inline bool PerformVdiIo(PluginContext* ctx,
         io->status = cmd->size;
         *completionCode = ERROR_SUCCESS;
       }
+      quit = true;
       break;
     case VDC_Flush:
       Dmsg(ctx, debuglevel, "mssqlvdi-fd: Flush\n");
       io->status = 0;
       *completionCode = ERROR_SUCCESS;
+      if (!p_ctx->completion_support) { quit = true; }
       break;
     case VDC_ClearError:
       Dmsg(ctx, debuglevel, "mssqlvdi-fd: ClearError\n");
       *completionCode = ERROR_SUCCESS;
       break;
+    case VDC_Complete:
+      Dmsg(ctx, debuglevel, "mssqlvdi-fd: Complete\n");
+      io->status = 0;
+      *completionCode = ERROR_SUCCESS;
+      quit = true;
+      break;
     default:
       Dmsg(ctx, debuglevel, "mssqlvdi-fd: Unknown = %d\n",
-          cmd->commandCode);
+           cmd->commandCode);
       *completionCode = ERROR_NOT_SUPPORTED;
+      quit = true;
       goto bail_out;
-  }
+    }
 
-  hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
-  if (!SUCCEEDED(hr)) {
-    Jmsg(ctx, M_ERROR,
-         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
-    Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
-    goto bail_out;
+    hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
+    if (!SUCCEEDED(hr)) {
+      Jmsg(ctx, M_ERROR,
+           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+      Dmsg(ctx, debuglevel,
+           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+      goto bail_out;
+    }
   }
 
   io->io_errno = 0;
@@ -1488,7 +1512,7 @@ static inline bool PerformVdiIo(PluginContext* ctx,
 
 bail_out:
   Dmsg(ctx, debuglevel,
-       "mssqlvdi-fd: IO: reached bailout ...\n", cmd->size);
+       "mssqlvdi-fd: IO: reached bailout ...\n");
   // Report any COM errors.
   comReportError(ctx, hr);
 
