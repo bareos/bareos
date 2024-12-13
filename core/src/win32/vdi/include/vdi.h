@@ -161,8 +161,10 @@ enum VDFeatures
   VDF_SnapshotPrepare = 0x400,
   VDF_EnumFrozenFiles = 0x800,
   VDF_VSSWriter = 0x1000,
+  VDF_RequestComplete = 0x2000,
   VDF_WriteMedia = 0x10000,
   VDF_ReadMedia = 0x20000,
+  VDF_CompleteEnabled = 0x40000,
   VDF_LatchStats = 0x80000000,
   VDF_LikePipe = 0,
   VDF_LikeTape
@@ -190,7 +192,9 @@ enum VDCommands
   VDC_MountSnapshot = (VDC_Snapshot + 1),
   VDC_PrepareToFreeze = (VDC_MountSnapshot + 1),
   VDC_FileInfoBegin = (VDC_PrepareToFreeze + 1),
-  VDC_FileInfoEnd = (VDC_FileInfoBegin + 1)
+  VDC_FileInfoEnd = (VDC_FileInfoBegin + 1),
+  VDC_GetError = (VDC_FileInfoEnd + 1),
+  VDC_Complete = (VDC_GetError + 1)
 };
 
 enum VDWhence
