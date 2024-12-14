@@ -180,6 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bareos-version-from-git: fix output for wip tags [PR #2019]
 - lib: add source_location; fix test crash [PR #2006]
 - plugins: postgresql add support for PostgreSQL 17 + improvements [PR #2004]
+- cats: fix version.map.in [PR #2065]
 
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
@@ -341,4 +342,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2031]: https://github.com/bareos/bareos/pull/2031
 [PR #2035]: https://github.com/bareos/bareos/pull/2035
 [PR #2037]: https://github.com/bareos/bareos/pull/2037
+[PR #2065]: https://github.com/bareos/bareos/pull/2065
 [unreleased]: https://github.com/bareos/bareos/tree/master
