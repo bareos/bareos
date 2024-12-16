@@ -49,7 +49,7 @@ namespace storagedaemon {
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests from the Director daemon */
-static char jobcmd[]
+constexpr const char jobcmd[]
     = "JobId=%d job=%127s job_name=%127s client_name=%127s "
       "type=%d level=%d FileSet=%127s NoAttr=%d SpoolAttr=%d FileSetMD5=%127s "
       "SpoolData=%d PreferMountedVols=%d SpoolSize=%127s "
@@ -57,10 +57,11 @@ static char jobcmd[]
       "Protocol=%d BackupFormat=%127s\n";
 
 /* Responses sent to Director daemon */
-static char OK_job[] = "3000 OK Job SDid=%u SDtime=%u Authorization=%s\n";
-static char OK_nextrun[] = "3000 OK Job Authorization=%s\n";
-static char BAD_job[] = "3915 Bad Job command. stat=%d CMD: %s\n";
-static char Job_end[]
+constexpr const char OK_job[]
+    = "3000 OK Job SDid=%u SDtime=%u Authorization=%s\n";
+constexpr const char OK_nextrun[] = "3000 OK Job Authorization=%s\n";
+constexpr const char BAD_job[] = "3915 Bad Job command. stat=%d CMD: %s\n";
+constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**
@@ -152,7 +153,7 @@ bool job_cmd(JobControlRecord* jcr)
   PmStrcpy(jcr->sd_impl->backup_format, backup_format);
   jcr->authenticated = false;
 
-  Dmsg1(50, "Quota set as %llu\n", quota);
+  Dmsg1(50, "Quota set as %" PRIu64 "\n", quota);
 
   // Pass back an authorization key for the File daemon
   if (!MakeSessionKey(auth_key)) {
@@ -196,8 +197,8 @@ static void WaitFD(JobControlRecord* jcr)
     wait_time = 1800;
   }
 
-  Dmsg3(50, "%s waiting %d sec for FD to contact SD key=%s\n", jcr->Job,
-        wait_time, jcr->sd_auth_key);
+  Dmsg3(50, "%s waiting %" PRId64 " sec for FD to contact SD key=%s\n",
+        jcr->Job, wait_time, jcr->sd_auth_key);
   Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
 
   /* Wait for the File daemon to contact us to start the Job,

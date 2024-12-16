@@ -724,7 +724,7 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
     if (pass == 2) {
-      Dmsg4(900, "Append %s to vector %p size=%d %s\n", lc->str, list,
+      Dmsg4(900, "Append %s to vector %p size=%" PRIuz " %s\n", lc->str, list,
             list->size(), item->name);
 
       /* See if we need to drop the default value.

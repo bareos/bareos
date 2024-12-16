@@ -211,7 +211,8 @@ char* BareosRegex::replace(const char* fname)
     result = CheckPoolMemorySize(result, len);
     EditSubst(fname, regs);
     success = true;
-    Dmsg2(500, "bregexp: len = %i, result_len = %i\n", len, strlen(result));
+    Dmsg2(500, "bregexp: len = %i, result_len = %" PRIuz "\n", len,
+          strlen(result));
 
   } else { /* error in substitution */
     Dmsg0(100, "bregexp: error in substitution\n");

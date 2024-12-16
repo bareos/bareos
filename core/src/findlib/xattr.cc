@@ -109,7 +109,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   if (xattr_data->content_length <= 0) { return BxattrExitCode::kSuccess; }
 
   // Send header
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;

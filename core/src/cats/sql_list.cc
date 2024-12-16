@@ -72,7 +72,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
 
   if (!SqlQuery(query, QF_STORE_RESULT)) {
     Mmsg(errmsg, T_("Query failed: %s\n"), sql_strerror());
-    if (verbose) { sendit->Decoration(errmsg); }
+    if (verbose) { sendit->Decoration("%s", errmsg); }
     return false;
   }
 
@@ -81,7 +81,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
          T_("Query returned %d rows. In collapsed mode, only one row is "
             "accepted.\n"),
          SqlNumRows());
-    if (verbose) { sendit->Decoration(errmsg); }
+    if (verbose) { sendit->Decoration("%s", errmsg); }
     return false;
   }
 
