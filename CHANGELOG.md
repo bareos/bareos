@@ -146,6 +146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: move bareos-devel to github discussion [PR #1989]
 - docs: fixed typo in the filedaemon service name [PR #2027]
 - docs: add worm support paragraph [PR #2037]
+- docs: fix grpc-fd plugin call [PR #2069]
 
 ### Fixed
 - core: fix some overlooked issues in msvc merge [PR #1912]
@@ -343,4 +344,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2035]: https://github.com/bareos/bareos/pull/2035
 [PR #2037]: https://github.com/bareos/bareos/pull/2037
 [PR #2065]: https://github.com/bareos/bareos/pull/2065
+[PR #2069]: https://github.com/bareos/bareos/pull/2069
 [unreleased]: https://github.com/bareos/bareos/tree/master
