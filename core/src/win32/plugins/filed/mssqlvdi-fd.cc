@@ -233,6 +233,29 @@ BAREOS_EXPORT bRC unloadPlugin() { return bRC_OK; }
 }
 #endif
 
+static const char* explain_hr(DWORD hr)
+{
+  // Return Value	Explanation
+  // NOERROR	A command was fetched.
+  // VD_E_CLOSE	The device has been closed by the server.
+  // VD_E_TIMEOUT	No command was available and the time-out expired.
+  // VD_E_ABORT	Either the client or the server has used the SignalAbort
+  // to force a shutdown.
+  static const std::map<int, const char*> VdiRetVals{
+    {VD_E_CLOSE, "VD_E_CLOSE"},
+    {VD_E_TIMEOUT, "VD_E_TIMEOUT"},
+    {VD_E_ABORT, "VD_E_ABORT"},
+    {NO_ERROR, "NO_ERROR"},
+  };
+
+  if (auto found = VdiRetVals.find(hr); found != VdiRetVals.end()) {
+    return found->second;
+  } else {
+    return "unknown";
+  }
+}
+
+
 /**
  * The following entry points are accessed through the function pointers we
  * supplied to Bareos. Each plugin type (dir, fd, sd) has its own set of entry
@@ -1426,10 +1449,12 @@ static inline bool PerformVdiIo(PluginContext* ctx,
     // See what command is available on the VDIDevice.
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
     if (!SUCCEEDED(hr)) {
-      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n",
-           hr);
+      auto* explanation = explain_hr(hr);
+      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (x%X)\n",
+           explanation, hr);
       Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (x%X)\n",
+           explanation, hr);
       goto bail_out;
     }
 
@@ -1496,10 +1521,13 @@ static inline bool PerformVdiIo(PluginContext* ctx,
 
     hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
     if (!SUCCEEDED(hr)) {
+      auto* explanation = explain_hr(hr);
       Jmsg(ctx, M_ERROR,
-           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (x%X)\n",
+           explanation, hr);
       Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (x%X)\n",
+           explanation, hr);
       goto bail_out;
     }
   }
@@ -1539,30 +1567,9 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
 
   // Check if the VDI device is closed.
   if (p_ctx->VDIDevice) {
-    // Return Value	Explanation
-    // NOERROR	A command was fetched.
-    // VD_E_CLOSE	The device has been closed by the server.
-    // VD_E_TIMEOUT	No command was available and the time-out expired.
-    // VD_E_ABORT	Either the client or the server has used the SignalAbort
-    // to force a shutdown.
-    static const std::map<int, std::string> VdiRetVals{
-        {VD_E_CLOSE, "VD_E_CLOSE"},
-        {VD_E_TIMEOUT, "VD_E_TIMEOUT"},
-        {VD_E_ABORT, "VD_E_ABORT"},
-        {NO_ERROR, "NO_ERROR"},
-    };
-
-    std::string error_string;
 
   tryagain:
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
-    if (auto found = VdiRetVals.find(hr); found != VdiRetVals.end()) {
-      error_string = found->second.c_str();
-    } else {
-      error_string = "Unknown error (res=";
-      error_string += std::to_string(hr);
-      error_string += ")";
-    }
 
     if (hr == NO_ERROR) {
       // we got another command for some reason
@@ -1584,12 +1591,14 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
     }
 
     if (hr != VD_E_CLOSE) {
+      auto* explanation = explain_hr(hr);
+
       Jmsg(ctx, M_ERROR,
-           "Abnormal termination, VDIDevice not closed. Result = %s\n",
-           error_string.c_str());
+           "Abnormal termination, VDIDevice not closed. Err=%s (x%X)\n",
+           explanation, hr);
       Dmsg(ctx, debuglevel,
-           "Abnormal termination, VDIDevice not closed. Result = %s\n",
-           error_string.c_str());
+           "Abnormal termination, VDIDevice not closed. Err=%s (x%X)\n",
+           explanation, hr);
       goto bail_out;
     }
   }
@@ -1714,7 +1723,56 @@ static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
-static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
+static bRC endRestoreFile(PluginContext* ctx) {
+  auto* p_ctx = reinterpret_cast<plugin_ctx*>(ctx->plugin_private_context);
+
+  // if we did not request completion support, then we are not expecting
+  // anything to happen here ...
+  if (!p_ctx->completion_support) { return bRC_OK; }
+
+  VDI_Command* cmd{nullptr};
+  // ... otherwise we expect a VDC_Complete after the restore is done
+  auto hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
+
+  if (!SUCCEEDED(hr)) {
+    auto* explanation = explain_hr(hr);
+    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
+         " IClientVirtualDevice::GetCommand: Err=%s (x%X)\n", explanation, hr);
+    Dmsg(ctx, debuglevel,
+         "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::GetCommand:"
+         " Err=%s (x%X)\n", explanation, hr);
+    return bRC_Fatal;
+  }
+
+  if (cmd->commandCode != VDC_Complete) {
+    // something went wrong
+    // not sure what the best error to return here is
+    const char* type = command_name(cmd->commandCode);
+    int size = 0;
+
+    switch (cmd->commandCode) {
+    case VDC_Read: { size = cmd->size; } break;
+    case VDC_Write: { size = cmd->size; } break;
+    }
+
+    Jmsg(ctx, M_ERROR,
+         "Received command %d:%s (size = %d) when trying to close device\n",
+         cmd->commandCode, type, size);
+    hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_BAD_COMMAND, 0, 0);
+    if (!SUCCEEDED(hr)) {
+      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
+           " IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+      Dmsg(ctx, debuglevel,
+           "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::CompleteCommand:"
+           " x%X\n", hr);
+      return bRC_Fatal;
+    }
+
+
+  }
+
+  return bRC_OK;
+}
 
 /**
  * This is called during restore to create the file (if necessary) We must
