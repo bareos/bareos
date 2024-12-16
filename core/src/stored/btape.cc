@@ -202,10 +202,12 @@ int main(int margc, char* margv[])
           TAPE_BSIZE);
   }
   if (sizeof(boffset_t) < 8) {
-    Pmsg1(-1,
-          T_("\n\n!!!! Warning large disk addressing disabled. boffset_t=%d "
-             "should be 8 or more !!!!!\n\n\n"),
-          sizeof(boffset_t));
+    Pmsg1(
+        -1,
+        T_("\n\n!!!! Warning large disk addressing disabled. boffset_t=%" PRIuz
+           " "
+           "should be 8 or more !!!!!\n\n\n"),
+        sizeof(boffset_t));
   }
 
   uint32_t x32 = 123456789;
@@ -222,13 +224,15 @@ int main(int margc, char* margv[])
   uint64_t x64 = 123456789;
   x64 = x64 << 32;
   x64 += 123456789;
-  Bsnprintf(buf2, sizeof(buf2), "%llu", x64);
+  Bsnprintf(buf2, sizeof(buf2), "%" PRIu64, x64);
 
   uint64_t y64;
-  i = bsscanf(buf2, "%llu", &y64);
+  i = bsscanf(buf2, "%" PRIu64, &y64);
   if (i != 1 || x64 != y64) {
-    Pmsg3(-1, T_("64 bit printf/scanf problem. i=%d x64=%llu y64=%llu\n"), i,
-          x64, y64);
+    Pmsg3(-1,
+          T_("64 bit printf/scanf problem. i=%d x64=%" PRIu64 " y64=%" PRIu64
+             "\n"),
+          i, x64, y64);
     exit(BEXIT_FAILURE);
   }
 
@@ -1091,12 +1095,12 @@ static bool write_two_files()
   } else {
     dev->max_file_size = 2LL * num_recs * (uint64_t)DEFAULT_BLOCK_SIZE;
   }
-  Dmsg1(100, "max_file_size was set to %lld\n", dev->max_file_size);
+  Dmsg1(100, "max_file_size was set to %" PRIu64 "\n", dev->max_file_size);
 
   Pmsg2(-1,
         T_("\n=== Write, rewind, and re-read test ===\n\n"
-           "I'm going to write %d records and an EOF\n"
-           "then write %d records and an EOF, then rewind,\n"
+           "I'm going to write %" PRIu64 " records and an EOF\n"
+           "then write %" PRIu64 " records and an EOF, then rewind,\n"
            "and re-read the data to verify that it is correct.\n\n"
            "This is an *essential* feature ...\n\n"),
         num_recs, num_recs);
@@ -1125,7 +1129,8 @@ static bool write_two_files()
       goto bail_out;
     }
   }
-  Pmsg2(0, T_("Wrote %d blocks of %d bytes.\n"), num_recs, rec->data_len);
+  Pmsg2(0, T_("Wrote %" PRIu64 " blocks of %" PRIu32 " bytes.\n"), num_recs,
+        rec->data_len);
   weofcmd();
   for (uint32_t i = num_recs + 1; i <= 2 * num_recs; i++) {
     p = (uint32_t*)rec->data;
@@ -1139,7 +1144,8 @@ static bool write_two_files()
       goto bail_out;
     }
   }
-  Pmsg2(0, T_("Wrote %d blocks of %d bytes.\n"), num_recs, rec->data_len);
+  Pmsg2(0, T_("Wrote %" PRIu64 "blocks of %" PRIu32 " bytes.\n"), num_recs,
+        rec->data_len);
   weofcmd();
   if (dev->HasCap(CAP_TWOEOF)) { weofcmd(); }
   rc = true;
@@ -1215,7 +1221,7 @@ static bool write_read_test()
       p++;
     }
     if (i == num_recs || i == 2 * num_recs) {
-      Pmsg1(-1, T_("%d blocks re-read correctly.\n"), num_recs);
+      Pmsg1(-1, T_("%" PRIu64 " blocks re-read correctly.\n"), num_recs);
     }
   }
   Pmsg0(-1,
@@ -2616,7 +2622,8 @@ static bool CompareBlocks(DeviceBlock* t_last_block, DeviceBlock* block)
     DumpBlock(t_last_block, T_("Last block written"));
     Pmsg0(-1, "\n");
     DumpBlock(block, T_("Block read back"));
-    Pmsg1(-1, T_("\n\nThe blocks differ at byte %u\n"), p - t_last_block->buf);
+    Pmsg1(-1, T_("\n\nThe blocks differ at byte %" PRIiz "\n"),
+          static_cast<ssize_t>(p - t_last_block->buf));
     Pmsg0(-1, T_("\n\n!!!! The last block written and the block\n"
                  "that was read back differ. The test FAILED !!!!\n"
                  "This must be corrected before you use Bareos\n"

@@ -517,7 +517,7 @@ static void eliminate_orphaned_storage_records()
   std::vector<std::string> orphaned_storage_names_list
       = get_orphaned_storages_names(db);
 
-  printf(T_("Found %zu orphaned Storage records.\n"),
+  printf(T_("Found %" PRIuz " orphaned Storage records.\n"),
          orphaned_storage_names_list.size());
 
   std::vector<int> storages_to_be_deleted;
@@ -535,7 +535,7 @@ static void eliminate_orphaned_storage_records()
   }
   if (quit) { return; }
   if (fix && storages_to_be_deleted.size() > 0) {
-    printf(T_("Deleting %zu orphaned storage records.\n"),
+    printf(T_("Deleting %" PRIuz " orphaned storage records.\n"),
            storages_to_be_deleted.size());
     fflush(stdout);
     delete_storages(db, storages_to_be_deleted);

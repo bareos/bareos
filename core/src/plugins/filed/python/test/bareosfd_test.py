@@ -110,7 +110,7 @@ class TestBareosFd(unittest.TestCase):
         test_StatPacket.st_mtime = 1000
         test_StatPacket.st_ctime = 1001
         self.assertEqual(
-            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=-1, atime=999, mtime=1000, ctime=1001, blksize=4096, blocks=1)",
+            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=999, mtime=1000, ctime=1001, blksize=4096, blocks=1)",
             str(test_StatPacket),
         )
         sp2 = bareosfd.StatPacket(
@@ -129,7 +129,7 @@ class TestBareosFd(unittest.TestCase):
             blocks=1,
         )
         self.assertEqual(
-            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=-1, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)",
+            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)",
             str(sp2),
         )
 

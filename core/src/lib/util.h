@@ -28,6 +28,7 @@
 #include <variant>
 #include <chrono>
 #include <optional>
+#include <type_traits>
 
 #if defined(HAVE_WIN32)
 #  include "bregex.h"
@@ -216,5 +217,10 @@ template <typename CharT> struct path_components {
  private:
   view_type path;
 };
+
+template <class Enum> inline constexpr auto to_underlying(Enum e)
+{
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
 
 #endif  // BAREOS_LIB_UTIL_H_

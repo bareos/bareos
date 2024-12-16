@@ -1351,7 +1351,8 @@ RunResource* find_next_run(RunResource* run,
             runtm.tm_min = run->minute;
             runtm.tm_sec = 0;
             runtime = mktime(&runtm);
-            Dmsg2(200, "now=%d runtime=%lld\n", now, runtime);
+            Dmsg2(200, "now=%lld runtime=%lld\n", static_cast<long long>(now),
+                  static_cast<long long>(runtime));
             if ((runtime > now) && (runtime < endtime)) {
               Dmsg2(200, "Found it level=%d %c\n", run->level, run->level);
               return run; /* found it, return run resource */
@@ -1676,7 +1677,7 @@ void UaContext::SendMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
+void UaContext::SendRawMsg(const char* msg) { SendMsg("%s", msg); }
 
 
 /* This is an error condition with a command. The gui should put

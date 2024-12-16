@@ -800,7 +800,8 @@ static inline void DumpVolblock(storagedaemon::BsrVolumeBlock* volblock)
 static inline void DumpVoladdr(storagedaemon::BsrVolumeAddress* voladdr)
 {
   if (voladdr) {
-    Pmsg2(-1, T_("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
+    Pmsg2(-1, T_("VolAddr    : %" PRIu64 "-%" PRIu64 "\n"), voladdr->saddr,
+          voladdr->eaddr);
     DumpVoladdr(voladdr->next);
   }
 }
@@ -886,8 +887,8 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse)
     debug_level = save_debug;
     return;
   }
-  Pmsg1(-1, T_("Next        : 0x%x\n"), bsr->next);
-  Pmsg1(-1, T_("Root bsr    : 0x%x\n"), bsr->root);
+  Pmsg1(-1, T_("Next        : %p\n"), bsr->next);
+  Pmsg1(-1, T_("Root bsr    : %p\n"), bsr->root);
   DumpVolume(bsr->volume);
   DumpSessid(bsr->sessid);
   DumpSesstime(bsr->sesstime);
