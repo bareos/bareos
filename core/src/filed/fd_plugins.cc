@@ -1024,7 +1024,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   if (auto [cmd, ctx] = find_plugin_from_list(
           jcr, original_cmd, plugin_ctx_list, bEventEstimateCommand);
       ctx) {
-    Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
+    Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%zu\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd.c_str(), cmd.size());
 
     /* We put the current plugin pointer, and the plugin context into the jcr,
@@ -1129,7 +1129,7 @@ bail_out:
 bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 {
   int status;
-  int index = jcr->JobFiles;
+  auto index = jcr->JobFiles;
   save_pkt* sp = (save_pkt*)jcr->fd_impl->plugin_sp;
 
   if (!sp) {
@@ -1142,7 +1142,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
   Dmsg1(debuglevel, "SendPluginName=%s\n", sp->cmd);
 
   // Send stream header
-  if (!sd->fsend("%ld %d 0", index, STREAM_PLUGIN_NAME)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", index, STREAM_PLUGIN_NAME)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return false;
@@ -1151,10 +1151,11 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 
   if (start) {
     // Send data -- not much
-    status = sd->fsend("%ld 1 %d %s%c", index, sp->portable, sp->cmd, 0);
+    status
+        = sd->fsend("%" PRIu32 " 1 %d %s%c", index, sp->portable, sp->cmd, 0);
   } else {
     // Send end of data
-    status = sd->fsend("%ld 0", jcr->JobFiles);
+    status = sd->fsend("%" PRIu32 " 0", jcr->JobFiles);
   }
   if (!status) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
@@ -1837,7 +1838,8 @@ static bool IsPluginCompatible(Plugin* plugin)
   }
   if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
-         T_("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"),
+         T_("Plugin size incorrect. Plugin=%s wanted=%" PRIuz " got=%" PRIu32
+            "\n"),
          plugin->file, sizeof(PluginInformation), info->size);
     return false;
   }

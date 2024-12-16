@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,7 @@
 
 #include "lib/messages_resource.h"
 #include "lib/message_destination_info.h"
+#include "lib/util.h"
 
 #include <algorithm>
 #include <iostream>
@@ -128,7 +129,7 @@ bool MessagesResource::AddToExistingChain(MessageDestinationCode dest_code,
   if (pos != dest_chain_.rend()) {
     MessageDestinationInfo* d = *pos;
     Dmsg4(850, "add to existing d=%p msgtype=%d destcode=%d where=%s\n", d,
-          msg_type, dest_code, NSTDPRNT(where));
+          msg_type, to_underlying(dest_code), NSTDPRNT(where));
     SetBit(msg_type, d->msg_types_);
     SetBit(msg_type, send_msg_types_);
     return true;
@@ -157,8 +158,8 @@ void MessagesResource::AddToNewChain(MessageDestinationCode dest_code,
   Dmsg6(850,
         "add new d=%p msgtype=%d destcode=%d where=%s mailcmd=%s "
         "timestampformat=%s\n",
-        d, msg_type, dest_code, NSTDPRNT(where), NSTDPRNT(d->mail_cmd_),
-        NSTDPRNT(d->timestamp_format_));
+        d, msg_type, to_underlying(dest_code), NSTDPRNT(where),
+        NSTDPRNT(d->mail_cmd_), NSTDPRNT(d->timestamp_format_));
 }
 
 void MessagesResource::AddMessageDestination(
@@ -184,7 +185,7 @@ void MessagesResource::RemoveMessageDestination(
     if (BitIsSet(msg_type, d->msg_types_) && (dest_code == d->dest_code_)
         && ((where.empty() && d->where_.empty()) || (where == d->where_))) {
       Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n", d, msg_type,
-            dest_code);
+            to_underlying(dest_code));
       ClearBit(msg_type, d->msg_types_);
       Dmsg0(850, "Return RemoveMessageDestination\n");
       return;

@@ -109,7 +109,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   if (xattr_data->content_length <= 0) { return BxattrExitCode::kSuccess; }
 
   // Send header
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;
@@ -300,12 +300,12 @@ BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
                             xattr_value_list)) {
     Mmsg1(jcr->errmsg,
           T_("Failed to Serialize extended attributes on file \"%s\" (expected "
-             "len %lu != actual len %lu)\n"),
+             "len %" PRIu32 " != actual len %" PRIu32 ")\n"),
           xattr_data->last_fname, expected_serialize_len,
           xattr_data->content_length);
     Dmsg1(100,
           T_("Failed to Serialize extended attributes on file \"%s\" (expected "
-             "len %lu != actual len %lu)\n"),
+             "len %" PRIu32 " != actual len %" PRIu32 ")\n"),
           xattr_data->last_fname, expected_serialize_len,
           xattr_data->content_length);
     return BxattrExitCode::kError;

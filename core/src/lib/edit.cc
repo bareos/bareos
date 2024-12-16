@@ -279,8 +279,8 @@ static std::pair<std::uint64_t, const char*> parse_number_with_mod(
         }
       }
       if (!found) {
-        Dmsg1(900, "Unknown modifier: \"%.*s\"\n", modifier.size(),
-              modifier.data());
+        Dmsg1(900, "Unknown modifier: \"%.*s\"\n",
+              static_cast<int>(modifier.size()), modifier.data());
         return {total, str};
       }
     }

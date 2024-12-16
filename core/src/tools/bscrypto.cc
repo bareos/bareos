@@ -68,7 +68,7 @@ static void ReadKeyBits(const std::string& keyfile,
       TerminateBscrypto(1);
     }
   }
-  Dmsg1(5, "data size = %d\n", sizeof_data);
+  Dmsg1(5, "data size = %zu\n", sizeof_data);
   if (read(kfd, data, sizeof_data) == 0) {
     fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
     TerminateBscrypto(1);

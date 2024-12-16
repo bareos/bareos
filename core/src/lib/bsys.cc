@@ -188,7 +188,8 @@ int Bmicrosleep(int32_t sec, int32_t usec)
     timeout.tv_sec++;
   }
 
-  Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
+  Dmsg2(200, "pthread_cond_timedwait sec=%" PRId32 " usec=%" PRId32 "\n", sec,
+        usec);
 
   // Note, this unlocks mutex during the sleep
   lock_mutex(timer_mutex);
@@ -623,7 +624,8 @@ void ReadStateFile(const char* dir, const char* progname, int port)
     }
   } catch (const std::system_error& e) {
     BErrNo be;
-    Dmsg3(100, "Could not open and read state file. size=%d: ERR=%s - %s\n",
+    Dmsg3(100,
+          "Could not open and read state file. size=%" PRIuz ": ERR=%s - %s\n",
           sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
     return;
   } catch (const std::exception& e) {

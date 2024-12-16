@@ -136,8 +136,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
 
   drive = dcr->dev->drive_index;
   wanted_slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
-  Dmsg3(100, "autoload: slot=%hd InChgr=%d Vol=%s\n", dcr->VolCatInfo.Slot,
-        dcr->VolCatInfo.InChanger, dcr->getVolCatName());
+  Dmsg3(100, "autoload: slot=%" PRId32 " InChgr=%d Vol=%s\n",
+        dcr->VolCatInfo.Slot, dcr->VolCatInfo.InChanger, dcr->getVolCatName());
 
   /* Handle autoloaders here.  If we cannot autoload it, we will return 0 so
    * that the sysop will be asked to load it. */
@@ -684,8 +684,8 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
     AutochangerResource* changer_res = dcr->device_resource->changer_res;
     int drives = 1;
     if (changer_res) { drives = changer_res->device_resources->size(); }
-    dir->fsend("drives=%hd\n", drives);
-    Dmsg1(100, "drives=%hd\n", drives);
+    dir->fsend("drives=%d\n", drives);
+    Dmsg1(100, "drives=%d\n", drives);
     return true;
   }
 

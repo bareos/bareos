@@ -82,8 +82,8 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     if (fd < 0) {
       BErrNo be;
       dev_errno = errno;
-      Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-            prt_name, omode, oflags, errno, be.bstrerror());
+      Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
+            prt_name, dev_mode_to_str(omode), oflags, errno, be.bstrerror());
     } else {
       // Tape open, now rewind it
       Dmsg0(100, "Rewind after open\n");
@@ -107,8 +107,9 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
         if (fd < 0) {
           BErrNo be;
           dev_errno = errno;
-          Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-                prt_name, omode, oflags, errno, be.bstrerror());
+          Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
+                prt_name, dev_mode_to_str(omode), oflags, errno,
+                be.bstrerror());
           break;
         }
         dev_errno = 0;
@@ -196,7 +197,7 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
       UpdatePos(dcr);
       Mmsg2(errmsg, T_("ioctl MTEOM error on %s. ERR=%s.\n"), prt_name,
             be.bstrerror());
-      Dmsg0(100, errmsg);
+      Dmsg0(100, "%s", errmsg);
       return false;
     }
 
@@ -206,7 +207,7 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
       clrerror(-1);
       Mmsg2(errmsg, T_("ioctl MTIOCGET error on %s. ERR=%s.\n"), prt_name,
             be.bstrerror());
-      Dmsg0(100, errmsg);
+      Dmsg0(100, "%s", errmsg);
       return false;
     }
     Dmsg1(100, "EOD file=%d\n", os_file);
@@ -340,14 +341,14 @@ bool generic_tape_device::weof(int num)
   if (!IsOpen()) {
     dev_errno = EBADF;
     Mmsg0(errmsg, T_("Bad call to weof_dev. Device not open\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
   file_size = 0;
 
   if (!CanAppend()) {
     Mmsg0(errmsg, T_("Attempt to WEOF on non-appendable Volume\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 
@@ -388,7 +389,7 @@ bool generic_tape_device::fsf(int num)
   if (!IsOpen()) {
     dev_errno = EBADF;
     Mmsg0(errmsg, T_("Bad call to fsf. Device not open\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 
@@ -561,7 +562,7 @@ bool generic_tape_device::bsf(int num)
   if (!IsOpen()) {
     dev_errno = EBADF;
     Mmsg0(errmsg, T_("Bad call to bsf. Device not open\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 
@@ -608,7 +609,7 @@ bool generic_tape_device::fsr(int num)
   if (!IsOpen()) {
     dev_errno = EBADF;
     Mmsg0(errmsg, T_("Bad call to fsr. Device not open\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 
@@ -664,7 +665,7 @@ bool generic_tape_device::bsr(int num)
   if (!IsOpen()) {
     dev_errno = EBADF;
     Mmsg0(errmsg, T_("Bad call to bsr_dev. Device not open\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 
@@ -707,7 +708,7 @@ bool generic_tape_device::LoadDev()
   if (fd < 0) {
     dev_errno = EBADF;
     Mmsg0(errmsg, T_("Bad call to LoadDev. Device not open\n"));
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 
@@ -895,7 +896,7 @@ void generic_tape_device::HandleError(int func)
       dev_errno = ENOSYS;
       Mmsg1(errmsg, T_("I/O function \"%s\" not supported on this device.\n"),
             msg.c_str());
-      Emsg0(M_ERROR, 0, errmsg);
+      Emsg0(M_ERROR, 0, "%s", errmsg);
     }
   }
 }
@@ -974,7 +975,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
     dev->dev_errno = errno; /* save errno */
     Mmsg2(dev->errmsg, T_("Unable to set eotmodel on device %s: ERR=%s\n"),
           dev->print_name(), be.bstrerror(dev->dev_errno));
-    Jmsg(dcr->jcr, M_FATAL, 0, dev->errmsg);
+    Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
   }
 #  endif
   return;

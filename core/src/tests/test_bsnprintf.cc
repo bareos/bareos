@@ -94,7 +94,6 @@ TEST(bsnprintf, char)
   // literal %
   EXPECT_EQ(Bsnprintf(dest, 100, "%%"), 1);
   EXPECT_STREQ(dest, "%");
-
 }
 
 TEST(bsnprintf, integers)
@@ -139,11 +138,8 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%lli", llint), 4);
   EXPECT_STREQ(dest, "-123");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%qi", llint), 4);
-  EXPECT_STREQ(dest, "-123");
-
   ssize_t ss_int = -123;
-  EXPECT_EQ(Bsnprintf(dest, 100, "%zi", ss_int), 4);
+  EXPECT_EQ(Bsnprintf(dest, 100, "%" PRIiz, ss_int), 4);
   EXPECT_STREQ(dest, "-123");
 
   unsigned int uns_int = 123;
@@ -162,11 +158,8 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%llu", ullint), 3);
   EXPECT_STREQ(dest, "123");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%qu", ullint), 3);
-  EXPECT_STREQ(dest, "123");
-
   size_t s_int = 123;
-  EXPECT_EQ(Bsnprintf(dest, 100, "%zu", s_int), 3);
+  EXPECT_EQ(Bsnprintf(dest, 100, "%" PRIuz, s_int), 3);
   EXPECT_STREQ(dest, "123");
 
   EXPECT_EQ(Bsnprintf(dest, 100, "%o", 8), 2);

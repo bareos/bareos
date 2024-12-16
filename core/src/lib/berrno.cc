@@ -43,7 +43,7 @@ const char* BErrNo::bstrerror()
 {
   *buf_ = 0;
 #ifdef HAVE_WIN32
-  if (berrno_ & b_errno_win32 || berrno_ == 0) {
+  if ((berrno_ & b_errno_win32) || berrno_ == 0) {
     FormatWin32Message();
     return (const char*)buf_;
   }
@@ -52,7 +52,7 @@ const char* BErrNo::bstrerror()
 
   char* msg = strerror(berrno_);
   Mmsg(buf_, "%s (errno=%d | win_error=0x%08X)", msg, berrno_,
-       windows_error_code, berrno_ & b_errno_win32);
+       windows_error_code);
 #else
   int status = 0;
 

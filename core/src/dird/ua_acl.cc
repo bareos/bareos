@@ -92,8 +92,9 @@ static inline bool CompareAclListValueWithItem(
     regmatch_t pmatch[1]{};
     if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
       // Make sure its not a partial match but a full match.
-      Dmsg2(1400, "Found match start offset %d end offset %d\n",
-            pmatch[0].rm_so, pmatch[0].rm_eo);
+      Dmsg2(1400, "Found match start offset %" PRIiz " end offset %" PRIiz "\n",
+            static_cast<ssize_t>(pmatch[0].rm_so),
+            static_cast<ssize_t>(pmatch[0].rm_eo));
       if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= item_length) {
         Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl,
               acl_list_value);

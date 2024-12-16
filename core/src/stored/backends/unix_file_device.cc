@@ -305,7 +305,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
     dev_errno = errno;
     Mmsg2(errmsg, T_("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(),
           be.bstrerror());
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
 
     return false;
   }

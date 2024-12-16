@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -204,8 +204,7 @@ int installService(const char* cmdOpts)
   char path[maxlen];
   char svcmd[maxlen];
 
-  Bsnprintf(svcmd, sizeof(svcmd), "service: install: %s", cmdOpts, APP_DESC,
-            MB_OK);
+  Bsnprintf(svcmd, sizeof(svcmd), "service: install: %s", cmdOpts);
 
   // Get our filename
   if (GetModuleFileName(NULL, path, maxlen - 11) == 0) {

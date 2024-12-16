@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include "dird/ua_update.h"
 #include "dird/ua_select.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 
@@ -551,7 +552,8 @@ static inline slot_number_t auto_fill_slot_selection(
     // Make sure slot_type and slot_status match.
     if (vl->slot_type != type || vl->slot_status != content) {
       Dmsg3(100, "Skipping slot %hd, Type %hd, Content %hd\n",
-            vl->bareos_slot_number, vl->slot_type, vl->slot_status);
+            vl->bareos_slot_number, to_underlying(vl->slot_type),
+            to_underlying(vl->slot_status));
       continue;
     }
 
@@ -565,7 +567,8 @@ static inline slot_number_t auto_fill_slot_selection(
       Dmsg3(100,
             "Skipping slot %hd, Type %hd, Content %hd is empty but loaded in "
             "drive\n",
-            vl->bareos_slot_number, vl->slot_type, vl->slot_status);
+            vl->bareos_slot_number, to_underlying(vl->slot_type),
+            to_underlying(vl->slot_status));
       continue;
     }
 
@@ -573,7 +576,8 @@ static inline slot_number_t auto_fill_slot_selection(
      * And increase the number of slots selected. */
     Dmsg3(100,
           "Selected slot %hd which has slot_type %hd and content_type %hd\n",
-          vl->bareos_slot_number, vl->slot_type, vl->slot_status);
+          vl->bareos_slot_number, to_underlying(vl->slot_type),
+          to_underlying(vl->slot_status));
     SetBit(vl->bareos_slot_number - 1, slot_list);
     cnt++;
   }
@@ -620,7 +624,8 @@ static inline bool verify_slot_list(StorageResource* store,
                   Dmsg3(100,
                         "Skipping slot %hd, Type %hd, Content %hd is empty but "
                         "loaded in drive\n",
-                        vl->bareos_slot_number, vl->slot_type, vl->slot_status);
+                        vl->bareos_slot_number, to_underlying(vl->slot_type),
+                        to_underlying(vl->slot_status));
                   return false;
                 }
                 break;
@@ -638,7 +643,8 @@ static inline bool verify_slot_list(StorageResource* store,
 
           // Not the wanted type or content and not a special case.
           Dmsg3(100, "Skipping slot %hd, Type %hd, Content %hd\n",
-                vl->bareos_slot_number, vl->slot_type, vl->slot_status);
+                vl->bareos_slot_number, to_underlying(vl->slot_type),
+                to_underlying(vl->slot_status));
           return false;
         }
         break;
@@ -695,7 +701,8 @@ static inline bool update_internal_slot_list(changer_vol_list_t* vol_list,
           "Update internal slotlist slot %hd with volname %s, content %hd and "
           "slot %hd with content %hd and volname NULL\n",
           vl2->bareos_slot_number, (vl2->VolName) ? vl2->VolName : "NULL",
-          vl2->slot_status, vl1->bareos_slot_number, vl1->slot_status);
+          to_underlying(vl2->slot_status), vl1->bareos_slot_number,
+          to_underlying(vl1->slot_status));
     return true;
   }
   return false;
@@ -756,7 +763,8 @@ static bool release_loaded_volume(UaContext* ua,
           "Update internal slotlist slot %hd with volname %s, content %hd and "
           "slot %hd with content %hd and volname NULL\n",
           vl2->bareos_slot_number, (vl2->VolName) ? vl2->VolName : "NULL",
-          vl2->slot_status, vl1->bareos_slot_number, vl1->slot_status);
+          to_underlying(vl2->slot_status), vl1->bareos_slot_number,
+          to_underlying(vl1->slot_status));
     return true;
   }
   return false;

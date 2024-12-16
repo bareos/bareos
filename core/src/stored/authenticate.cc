@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,8 +38,8 @@ namespace storagedaemon {
 
 const int debuglevel = 50;
 
-static char Dir_sorry[] = "3999 No go\n";
-static char OK_hello[] = "3000 OK Hello\n";
+constexpr const char Dir_sorry[] = "3999 No go\n";
+constexpr const char OK_hello[] = "3000 OK Hello\n";
 
 /**
  * Initiate the message channel with the Director.

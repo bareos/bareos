@@ -279,7 +279,8 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     Jmsg(jcr, M_ERROR, 0, T_("%s: mtime changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s mtime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          (int64_t)ff_pkt->statp.st_mtime, (int64_t)statp.st_mtime);
+          static_cast<long long>(ff_pkt->statp.st_mtime),
+          static_cast<long long>(statp.st_mtime));
     return true;
   }
 
@@ -287,7 +288,8 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     Jmsg(jcr, M_ERROR, 0, T_("%s: ctime changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s ctime (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          (int64_t)ff_pkt->statp.st_ctime, (int64_t)statp.st_ctime);
+          static_cast<long long>(ff_pkt->statp.st_ctime),
+          static_cast<long long>(statp.st_ctime));
     return true;
   }
 
@@ -296,7 +298,8 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          (int64_t)ff_pkt->statp.st_size, (int64_t)statp.st_size);
+          static_cast<long long>(ff_pkt->statp.st_size),
+          static_cast<long long>(statp.st_size));
     return true;
   }
 
@@ -305,7 +308,8 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     Jmsg(jcr, M_ERROR, 0, T_("%s: size changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
-          (int64_t)ff_pkt->statp.st_blocks, (int64_t)statp.st_blocks);
+          static_cast<long long>(ff_pkt->statp.st_blocks),
+          static_cast<long long>(statp.st_blocks));
     return true;
   }
 

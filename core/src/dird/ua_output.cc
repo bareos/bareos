@@ -1605,7 +1605,7 @@ void UaContext::SendMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
+void UaContext::SendRawMsg(const char* msg) { SendMsg("%s", msg); }
 
 
 /* This is an error condition with a command. The gui should put

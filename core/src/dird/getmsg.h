@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@ namespace directordaemon {
 
 bool response(JobControlRecord* jcr,
               BareosSocket* fd,
-              char* resp,
+              const char* resp,
               const char* cmd,
               e_prtmsg PrintMessage);
 

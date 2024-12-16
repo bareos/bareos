@@ -114,8 +114,8 @@ static const char* record_compression_to_str(PoolMem& resultbuffer,
 
     buf += sizeof(uint64_t);
 
-    Dmsg1(400, "Sparse data stream found: start address=%llu\n", faddr);
-    tmp.bsprintf("Sparse: StartAddress=%llu. ", faddr);
+    Dmsg1(400, "Sparse data stream found: start address=%" PRIu64 "\n", faddr);
+    tmp.bsprintf("Sparse: StartAddress=%" PRIu64 ". ", faddr);
     resultbuffer.strcat(tmp);
   }
 

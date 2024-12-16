@@ -283,7 +283,7 @@ inline bool IsSlotNumberValid(slot_number_t slot)
 
 /**
  * As of C++11 varargs macros are part of the standard.
- * We keep the kludgy versions for backwards compatability for now
+ * We keep the kludgy versions for backwards compatibility for now
  * but they're going to go away soon.
  */
 /** Debug Messages that are printed */
@@ -557,6 +557,17 @@ inline const char* first_path_separator(const char* path)
 #else
 #  define Enter(lvl)
 #  define Leave(lvl)
+#endif
+
+#if defined(HAVE_WIN32)
+// mingw/windows does not understand "%zu/%zi" by default
+#  define PRIuz PRIu64
+#  define PRIiz PRIi64
+#  define PRItime "lld"
+#else
+#  define PRIuz "zu"
+#  define PRIiz "zi"
+#  define PRItime "ld"
 #endif
 
 #endif  // BAREOS_INCLUDE_BACONFIG_H_

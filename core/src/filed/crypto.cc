@@ -127,9 +127,9 @@ bool CryptoSessionSend(JobControlRecord* jcr, BareosSocket* sd)
   POOLMEM* msgsave;
 
   /** Send our header */
-  Dmsg2(100, "Send hdr fi=%ld stream=%d\n", jcr->JobFiles,
+  Dmsg2(100, "Send hdr fi=%d stream=%d\n", jcr->JobFiles,
         STREAM_ENCRYPTED_SESSION_DATA);
-  sd->fsend("%ld %d 0", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
+  sd->fsend("%d %d 0", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
 
   msgsave = sd->msg;
   sd->msg = jcr->fd_impl->crypto.pki_session_encoded;

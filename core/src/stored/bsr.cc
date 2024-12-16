@@ -418,7 +418,7 @@ static int MatchAll(BootStrapRecord* bsr,
 
   if (!MatchVoladdr(bsr, bsr->voladdr, rec, 1)) {
     if (bsr->voladdr) {
-      Dmsg3(dbglevel, "Fail on Addr=%llu. bsr=%llu,%llu\n",
+      Dmsg3(dbglevel, "Fail on Addr=%" PRIu64 ". bsr=%" PRIu64 ",%" PRIu64 "\n",
             GetRecordAddress(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
     }
     goto no_match;
@@ -623,8 +623,9 @@ static int MatchVoladdr(BootStrapRecord* bsr,
 
   uint64_t addr = GetRecordAddress(rec);
   Dmsg6(dbglevel,
-        "MatchVoladdr: saddr=%llu eaddr=%llu recaddr=%llu sfile=%u efile=%u "
-        "recfile=%u\n",
+        "MatchVoladdr: saddr=%" PRIu64 " eaddr=%" PRIu64 " recaddr=%" PRIu64
+        " "
+        "sfile=%" PRIu64 " efile=%" PRIu64 " recfile=%" PRIu64 "\n",
         voladdr->saddr, voladdr->eaddr, addr, voladdr->saddr >> 32,
         voladdr->eaddr >> 32, addr >> 32);
 
@@ -639,7 +640,8 @@ static int MatchVoladdr(BootStrapRecord* bsr,
   if (voladdr->done && done) {
     bsr->done = true;
     bsr->root->Reposition = true;
-    Dmsg2(dbglevel, "bsr done from voladdr rec=%llu voleaddr=%llu\n", addr,
+    Dmsg2(dbglevel,
+          "bsr done from voladdr rec=%" PRIu64 " voleaddr=%" PRIu64 "\n", addr,
           voladdr->eaddr);
   }
   return 0;

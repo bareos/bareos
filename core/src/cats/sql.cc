@@ -66,7 +66,7 @@ int DbIntHandler(void* ctx, int, char** row)
 {
   uint32_t* val = (uint32_t*)ctx;
 
-  Dmsg1(800, "int_handler starts with row pointing at %x\n", row);
+  Dmsg1(800, "int_handler starts with row pointing at %p\n", row);
 
   if (row[0]) {
     Dmsg1(800, "int_handler finds '%s'\n", row[0]);

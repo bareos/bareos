@@ -124,7 +124,7 @@ bool fstype(const char* fname, char* fs, int fslen)
      * other OSes */
     lcase(fs);
   } else {
-    Dmsg2(10, "GetVolumeInformation() failed for \"%s\", Error = %d.\n",
+    Dmsg2(10, "GetVolumeInformation() failed for \"%s\", Error = %lu.\n",
           rootpath, GetLastError());
   }
 

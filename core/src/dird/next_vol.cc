@@ -102,8 +102,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       // 2. Try finding a recycled volume
       ok = FindRecycledVolume(jcr, InChanger, mr, store, unwanted_volumes);
       SetStorageidInMr(store, mr);
-      Dmsg2(debuglevel, "FindRecycledVolume ok=%d FW=%d\n", ok,
-            mr->FirstWritten);
+      Dmsg2(debuglevel, "FindRecycledVolume ok=%d FW=%lld\n", ok,
+            static_cast<long long>(mr->FirstWritten));
       if (!ok) {
         // 3. Try recycling any purged volume
         ok = RecycleOldestPurgedVolume(jcr, InChanger, mr, store,
@@ -184,8 +184,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       }
     }
 
-    Dmsg2(debuglevel, "VolJobs=%d FirstWritten=%d\n", mr->VolJobs,
-          mr->FirstWritten);
+    Dmsg2(debuglevel, "VolJobs=%d FirstWritten=%lld\n", mr->VolJobs,
+          static_cast<long long>(mr->FirstWritten));
     if (ok) {
       // If we can use the volume, check if it is expired
       if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {

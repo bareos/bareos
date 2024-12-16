@@ -562,8 +562,8 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
       case DPL_SUCCESS:
         if (sysmd->size > request->wbuflen) {
           Mmsg3(errmsg,
-                T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
-                   "bytes\n"),
+                T_("Failed to read %s (%" PRIu64
+                   ") to big to fit in chunksize of %" PRIu32 " bytes\n"),
                 chunk_name.c_str(), sysmd->size, request->wbuflen);
           Dmsg1(100, "%s", errmsg);
           dev_errno = EINVAL;
@@ -714,7 +714,7 @@ bool DropletDevice::initialize()
 
     if (!dev_options) {
       Mmsg0(errmsg, T_("No device options configured\n"));
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       return -1;
     }
 
@@ -792,7 +792,7 @@ bool DropletDevice::initialize()
 
       if (!done) {
         Mmsg1(errmsg, T_("Unable to parse device option: %s\n"), bp);
-        Emsg0(M_FATAL, 0, errmsg);
+        Emsg0(M_FATAL, 0, "%s", errmsg);
         goto bail_out;
       }
 
@@ -801,7 +801,7 @@ bool DropletDevice::initialize()
 
     if (!profile_) {
       Mmsg0(errmsg, T_("No droplet profile configured\n"));
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       goto bail_out;
     }
   }
@@ -818,7 +818,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
       sysmd_.location_constraint = dpl_location_constraint(temp.c_str());
       if (sysmd_.location_constraint == -1) {
-        Mmsg2(errmsg, T_("Illegal location argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal location argument %s for device %s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -829,7 +829,7 @@ bool DropletDevice::initialize()
       sysmd_.mask |= DPL_SYSMD_MASK_CANNED_ACL;
       sysmd_.canned_acl = dpl_canned_acl(temp.c_str());
       if (sysmd_.canned_acl == -1) {
-        Mmsg2(errmsg, T_("Illegal canned_acl argument %s for device %s%s\n"),
+        Mmsg2(errmsg, T_("Illegal canned_acl argument %s for device %s\n"),
               temp.c_str(), archive_device_string);
         goto bail_out;
       }
@@ -954,7 +954,7 @@ ssize_t DropletDevice::RemoteVolumeSize()
 bail_out:
   if (sysmd) { dpl_sysmd_free(sysmd); }
 
-  Dmsg2(100, "Size of volume %s: %lld\n", chunk_dir.c_str(), volumesize);
+  Dmsg2(100, "Size of volume %s: %" PRIiz "\n", chunk_dir.c_str(), volumesize);
 
   return volumesize;
 }
@@ -975,7 +975,7 @@ boffset_t DropletDevice::d_lseek(DeviceControlRecord*,
 
       volumesize = ChunkedVolumeSize();
 
-      Dmsg1(100, "Current volumesize: %lld\n", volumesize);
+      Dmsg1(100, "Current volumesize: %" PRIiz "\n", volumesize);
 
       if (volumesize >= 0) {
         offset_ = volumesize + offset;

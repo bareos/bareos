@@ -752,8 +752,8 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   source = BSTR_2_str(pSource);
   description = BSTR_2_str(pDescription);
   if (source && description) {
-    Jmsg(ctx, M_FATAL, "%s(0x%X): %s\n", source, hrErr, description);
-    Dmsg(ctx, debuglevel, "%s(0x%X): %s\n", source, hrErr, description);
+    Jmsg(ctx, M_FATAL, "%s(0x%08lX): %s\n", source, hrErr, description);
+    Dmsg(ctx, debuglevel, "%s(0x%08lX): %s\n", source, hrErr, description);
   } else {
     Dmsg(ctx, debuglevel, "mssqlvdi-fd: could not print error\n");
   }
@@ -1355,13 +1355,13 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     if (success) {
       snprintf(error_msg.data(), error_msg.size(), fmt, "successful",
                static_cast<unsigned int>(hr), err);
-      Jmsg(ctx, M_INFO, error_msg.data());
-      Dmsg(ctx, debuglevel, error_msg.data());
+      Jmsg(ctx, M_INFO, "%s", error_msg.data());
+      Dmsg(ctx, debuglevel, "%s", error_msg.data());
     } else {
       sprintf(error_msg.data(), fmt, "failed", static_cast<unsigned int>(hr),
               err);
-      Jmsg(ctx, M_FATAL, error_msg.data());
-      Dmsg(ctx, debuglevel, error_msg.data());
+      Jmsg(ctx, M_FATAL, "%s", error_msg.data());
+      Dmsg(ctx, debuglevel, "%s", error_msg.data());
       goto bail_out;
     }
   }  // GetConfiguration
@@ -1549,14 +1549,13 @@ static inline bool PerformVdiIo(PluginContext* ctx,
     if (!SUCCEEDED(hr)) {
       auto* explanation = explain_hr(hr);
       Jmsg(ctx, M_ERROR,
-           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%08lX)\n",
            explanation, hr);
       Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%08lX)\n",
            explanation, hr);
       goto bail_out;
     }
-
 
     Dmsg(ctx, debuglevel, "mssqlvdi-fd: Command: %d:%s (size=%d)\n",
          cmd->commandCode, command_name(cmd->commandCode), cmd->size);

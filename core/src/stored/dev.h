@@ -88,6 +88,24 @@ enum class DeviceMode : int
   OPEN_WRITE_ONLY
 };
 
+inline constexpr const char* dev_mode_to_str(DeviceMode mode)
+{
+  switch (mode) {
+    case DeviceMode::CREATE_READ_WRITE:
+      return "Create/Read/Write";
+    case DeviceMode::OPEN_READ_WRITE:
+      return "Read/Write";
+    case DeviceMode::OPEN_READ_ONLY:
+      return "Read";
+    case DeviceMode::OPEN_WRITE_ONLY:
+      return "Write";
+    case DeviceMode::kUndefined:
+      return "<undefined>";
+    default:
+      return "<bad value>";
+  }
+}
+
 // Generic status bits returned from StatusDev()
 enum
 {
