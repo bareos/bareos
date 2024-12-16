@@ -83,7 +83,7 @@ Example
        Options {
          Signature = XXH128
        }
-       Plugin = "grpc-fd"
+       Plugin = "grpc"
                 ":grpc-python-module"
                 ":python3"
                 ":module_name=pyplug"
