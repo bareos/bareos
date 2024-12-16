@@ -770,7 +770,8 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
 
       // The following 3000 OK label. string is scanned in ua_label.c
       dir->fsend(
-          "3000 OK label. VolFiles=%lu VolBytes=%s Volume=\"%s\" Device=%s\n",
+          "3000 OK label. VolFiles=%" PRIu32 " VolBytes=%s Volume=\"%s\""
+          " Device=%s\n",
           dev->file, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1), newname,
           dev->print_name());
       break;
