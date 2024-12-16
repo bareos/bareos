@@ -7,5 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - cats: fix version.map.in [PR #2064]
 
+### Documentation
+- docs: fix grpc-fd plugin call [PR #2068]
+
 [PR #2064]: https://github.com/bareos/bareos/pull/2064
+[PR #2068]: https://github.com/bareos/bareos/pull/2068
 [unreleased]: https://github.com/bareos/bareos/tree/master
