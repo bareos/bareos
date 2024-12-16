@@ -596,7 +596,8 @@ class RestoreController extends AbstractActionController
             $this->restore_params['restoreclient'] = $restore_target_clients[0]['name'];
         }
         if($restorejobresources && (count($restorejobresources) == 1)) {
-            $this->restore_params['restorejob'] = array_key_first($restorejobresources);
+            // PHP < 7.3 requires  array_keys(...)[0] instead of array_key_first(...)
+            $this->restore_params['restorejob'] = array_keys($restorejobresources)[0];
         }
     }
 

@@ -141,7 +141,7 @@ class SeleniumTest(unittest.TestCase):
     base_url = "http://127.0.0.1/bareos-webui"
     username = "admin"
     password = "secret"
-    profile = None
+    profile = "admin"
     client = "bareos-fd"
     restorefile = "/usr/sbin/bconsole"
     # path to store logging files
