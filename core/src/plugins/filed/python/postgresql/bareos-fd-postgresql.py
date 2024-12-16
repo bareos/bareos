@@ -1547,7 +1547,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     100,
                     (
                         "rop_data[last_backup_stop_time] < LAST_BACKUP_TIME_WITH_SECONDS\n"
-                        f" convert_to_ns returned {self.last_backup_stop_time}\n",
+                        f" convert_to_ns returned {self.last_backup_stop_time}\n"
                     ),
                 )
             bareosfd.JobMessage(
