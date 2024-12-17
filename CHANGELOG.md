@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - bareosfd_test.py: allow a delta of 1.1 [PR #2033]
+- macos: update build environment [PR #2075]
 
 ## [22.1.6] - 2024-09-10
 
@@ -721,4 +722,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1974]: https://github.com/bareos/bareos/pull/1974
 [PR #1986]: https://github.com/bareos/bareos/pull/1986
 [PR #2033]: https://github.com/bareos/bareos/pull/2033
+[PR #2075]: https://github.com/bareos/bareos/pull/2075
 [unreleased]: https://github.com/bareos/bareos/tree/master
