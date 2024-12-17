@@ -601,7 +601,10 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\core\src\plugins\filed\${CMAKE_CONFIG_TYPE}"
-  File "*-fd.dll"
+  File "bpipe-fd.dll"
+  File "mssqlvdi-fd.dll"
+  # do not package python3-fd for now
+  # File "python3-fd.dll"
 SectionEnd
 
 
