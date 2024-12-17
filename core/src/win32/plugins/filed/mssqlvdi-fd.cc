@@ -1316,13 +1316,18 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
           "%s: %0#x (%s)\n";
 
     if (!(p_ctx->VDIConfig.features & VDF_CompleteEnabled)) {
-      Jmsg(ctx, M_INFO,
-           "VDI does not support VDC_Complete."
-           " Filestreams are not supported\n.");
+      if (p_ctx->mode == Mode::Backup) {
+        Jmsg(ctx, M_INFO,
+             "VDI does not support VDC_Complete."
+             " Backing up Filestreams are not supported\n.");
+      }
       p_ctx->completion_support = false;
     } else {
       p_ctx->completion_support = true;
     }
+
+    Dmsg(ctx, debuglevel, "completion_support = %s\n",
+         p_ctx->completion_support ? "Yes" : "No");
 
     if (success) {
       snprintf(error_msg.data(), error_msg.size(), fmt, "successful",
