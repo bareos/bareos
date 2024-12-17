@@ -124,6 +124,9 @@ static PluginFunctions pluginFuncs
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, nullptr, nullptr, nullptr, nullptr};
 
+enum class Mode {
+  Backup, Restore,
+};
 // Plugin private context
 struct plugin_ctx {
   int RestoreFD;
@@ -153,6 +156,7 @@ struct plugin_ctx {
   bool AdoThreadStarted;
   pthread_t ADOThread;
   bool completion_support;
+  Mode mode;
 };
 
 struct adoThreadContext {
@@ -1064,7 +1068,7 @@ static inline void perform_aDoRestore(PluginContext* ctx)
   wchar_2_UTF8(vdsname, p_ctx->vdsname);
 
   switch (p_ctx->backup_level) {
-    case L_INCREMENTAL:
+   case L_INCREMENTAL:
       Mmsg(ado_query,
            "RESTORE LOG [%s] FROM VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, "
            "BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d, %s",
@@ -1203,6 +1207,16 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     return false;
   }
 
+  // TODO: there is probably a better location to set this up
+  // ~> StartBackupJob/StartRestoreJob
+  if (io->flags & (O_CREAT | O_WRONLY)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: creating restore vdi device\n");
+    p_ctx->mode = Mode::Restore;
+  } else {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: creating backup vdi device\n");
+    p_ctx->mode = Mode::Backup;
+  }
+
   CoCreateGuid(&vdsId);
   p_ctx->vdsname = (wchar_t*)malloc((VDS_NAME_LENGTH * sizeof(wchar_t)) + 2);
   StringFromGUID2(vdsId, p_ctx->vdsname, VDS_NAME_LENGTH);
@@ -1220,7 +1234,15 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
   // Setup the VDI configuration.
   memset(&p_ctx->VDIConfig, 0, sizeof(p_ctx->VDIConfig));
   p_ctx->VDIConfig.deviceCount = 1;
-  p_ctx->VDIConfig.features = VDF_LikePipe | VDF_RequestComplete;
+  p_ctx->VDIConfig.features = VDF_LikePipe;
+  if (p_ctx->mode == Mode::Backup) {
+    // for proper filestream backup support we need to distinguish between
+    // a VDC_Flush command and the end of the backup.  We do this
+    // by relying on VDC_Complete if its available.
+    // If its not available, we are not able to correctly handle a VDC_Flush
+    // in the middle of a backup.
+    p_ctx->VDIConfig.features |= VDF_RequestComplete;
+  }
 
   // Create the VDI device set.
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
@@ -1241,10 +1263,9 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
   }
 
   // Setup the right backup or restore cmdline and connect info.
-  if (io->flags & (O_CREAT | O_WRONLY)) {
-    perform_aDoRestore(ctx);
-  } else {
-    PerformAdoBackup(ctx);
+  switch (p_ctx->mode) {
+  case Mode::Restore: { perform_aDoRestore(ctx); } break;
+  case Mode::Backup: { PerformAdoBackup(ctx); } break;
   }
 
   /* Ask the database server to start a backup or restore via another thread.
@@ -1705,71 +1726,6 @@ bail_out:
   return bRC_Error;
 }
 
-static bool expect_complete(PluginContext* ctx)
-{
-  auto* p_ctx = reinterpret_cast<plugin_ctx*>(ctx->plugin_private_context);
-
-  // if we did not request completion support, then we are not expecting
-  // anything to happen here ...
-  if (!p_ctx->completion_support) { return true; }
-
-  VDC_Command* cmd{nullptr};
-  // ... otherwise we expect a VDC_Complete after the restore is done
-  auto hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
-
-  if (!SUCCEEDED(hr)) {
-    auto* explanation = explain_hr(hr);
-    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
-         " IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n", explanation, hr);
-    Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::GetCommand:"
-         " Err=%s (0x%X)\n", explanation, hr);
-    return false;
-  }
-
-  if (cmd->commandCode != VDC_Complete) {
-    // something went wrong
-    // not sure what the best error to return here is
-    const char* type = command_name(cmd->commandCode);
-    int size = 0;
-
-    switch (cmd->commandCode) {
-    case VDC_Read: { size = cmd->size; } break;
-    case VDC_Write: { size = cmd->size; } break;
-    }
-
-    Jmsg(ctx, M_ERROR,
-         "Received command %d:%s (size = %d) when trying to close device\n",
-         cmd->commandCode, type, size);
-    hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_BAD_COMMAND, 0, 0);
-    if (!SUCCEEDED(hr)) {
-      auto* explanation = explain_hr(hr);
-      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
-           " IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
-           explanation, hr);
-      Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::CompleteCommand:"
-           " Err=%s (0x%X)\n", explanation, hr);
-      return false;
-    }
-  }
-
-  Dmsg(ctx, debuglevel, "mssqlvdi-fd: received VDC_Complete\n");
-  hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_SUCCESS, 0, 0);
-  if (!SUCCEEDED(hr)) {
-    auto* explanation = explain_hr(hr);
-    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
-         " IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
-         explanation, hr);
-    Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::CompleteCommand:"
-         " Err=%s (0x%X)\n", explanation, hr);
-    return false;
-  }
-
-  return true;
-}
-
 // See if we need to do any postprocessing after the restore.
 static bRC end_restore_job(PluginContext* ctx, void*)
 {
@@ -1799,10 +1755,7 @@ static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
-static bRC endRestoreFile(PluginContext* ctx) {
-  if (!expect_complete(ctx)) { return bRC_Error; }
-  return bRC_OK;
-}
+static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
 
 /**
  * This is called during restore to create the file (if necessary) We must
