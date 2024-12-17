@@ -720,6 +720,7 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   // Get the description of the COM error.
   hr = pErrorInfo->GetDescription(&pDescription);
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: GetDescription failed\n");
     pErrorInfo->Release();
     return;
   }
@@ -727,6 +728,7 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   // Get the source of the COM error.
   hr = pErrorInfo->GetSource(&pSource);
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: GetSource failed\n");
     SysFreeString(pDescription);
     pErrorInfo->Release();
     return;
@@ -738,6 +740,8 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   if (source && description) {
     Jmsg(ctx, M_FATAL, "%s(0x%X): %s\n", source, hrErr, description);
     Dmsg(ctx, debuglevel, "%s(0x%X): %s\n", source, hrErr, description);
+  } else {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: could not print error\n");
   }
 
   if (source) { free(source); }
@@ -833,6 +837,8 @@ static bool adoReportError(PluginContext* ctx)
     p_ctx->ado_errorstr = NULL;
 
     return true;
+  } else {
+    Dmsg(ctx, debuglevel, "Tried reporting error, but none were available\n");
   }
 
   return false;
@@ -1206,6 +1212,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
                         CLSCTX_INPROC_SERVER, IID_IClientVirtualDeviceSet2,
                         (void**)&p_ctx->VDIDeviceSet);
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: CoCreateInstance failed\n");
     comReportError(ctx, hr);
     return false;
   }
@@ -1228,6 +1235,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     FreePoolMemory(instance_name);
   }
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: VDIDeviceSet::CreateEx failed\n");
     comReportError(ctx, hr);
     return false;
   }
@@ -1242,7 +1250,10 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
   /* Ask the database server to start a backup or restore via another thread.
    * We create a new thread that handles the connection to the database. */
   status = pthread_create(&p_ctx->ADOThread, NULL, adoThread, (void*)ctx);
-  if (status != 0) { return false; }
+  if (status != 0) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: pthread_create failed\n");
+    return false;
+  }
 
   /* Track that we have started the thread and as such need to kill it when
    * we perform a close of the VDI device. */
@@ -1810,10 +1821,12 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
   if (!p_ctx) { return bRC_Error; }
 
   if (strlen(rp->where) > 0) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: create file -> file io\n");
     p_ctx->RestoreToFile = true;
     p_ctx->RestoreFD = -1;
     rp->create_status = CF_CORE;
   } else {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: create file -> vdi io\n");
     rp->create_status = CF_EXTRACT;
   }
 
