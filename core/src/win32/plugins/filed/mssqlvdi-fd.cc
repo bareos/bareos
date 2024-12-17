@@ -736,8 +736,8 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   source = BSTR_2_str(pSource);
   description = BSTR_2_str(pDescription);
   if (source && description) {
-    Jmsg(ctx, M_FATAL, "%s(x%X): %s\n", source, hrErr, description);
-    Dmsg(ctx, debuglevel, "%s(x%X): %s\n", source, hrErr, description);
+    Jmsg(ctx, M_FATAL, "%s(0x%X): %s\n", source, hrErr, description);
+    Dmsg(ctx, debuglevel, "%s(0x%X): %s\n", source, hrErr, description);
   }
 
   if (source) { free(source); }
@@ -1450,10 +1450,10 @@ static inline bool PerformVdiIo(PluginContext* ctx,
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
     if (!SUCCEEDED(hr)) {
       auto* explanation = explain_hr(hr);
-      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (x%X)\n",
+      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
            explanation, hr);
       Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (x%X)\n",
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
            explanation, hr);
       goto bail_out;
     }
@@ -1523,10 +1523,10 @@ static inline bool PerformVdiIo(PluginContext* ctx,
     if (!SUCCEEDED(hr)) {
       auto* explanation = explain_hr(hr);
       Jmsg(ctx, M_ERROR,
-           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (x%X)\n",
+           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
            explanation, hr);
       Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (x%X)\n",
+           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
            explanation, hr);
       goto bail_out;
     }
@@ -1594,10 +1594,10 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
       auto* explanation = explain_hr(hr);
 
       Jmsg(ctx, M_ERROR,
-           "Abnormal termination, VDIDevice not closed. Err=%s (x%X)\n",
+           "Abnormal termination, VDIDevice not closed. Err=%s (0x%X)\n",
            explanation, hr);
       Dmsg(ctx, debuglevel,
-           "Abnormal termination, VDIDevice not closed. Err=%s (x%X)\n",
+           "Abnormal termination, VDIDevice not closed. Err=%s (0x%X)\n",
            explanation, hr);
       goto bail_out;
     }
@@ -1694,6 +1694,71 @@ bail_out:
   return bRC_Error;
 }
 
+static bool expect_complete(PluginContext* ctx)
+{
+  auto* p_ctx = reinterpret_cast<plugin_ctx*>(ctx->plugin_private_context);
+
+  // if we did not request completion support, then we are not expecting
+  // anything to happen here ...
+  if (!p_ctx->completion_support) { return true; }
+
+  VDC_Command* cmd{nullptr};
+  // ... otherwise we expect a VDC_Complete after the restore is done
+  auto hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
+
+  if (!SUCCEEDED(hr)) {
+    auto* explanation = explain_hr(hr);
+    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
+         " IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n", explanation, hr);
+    Dmsg(ctx, debuglevel,
+         "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::GetCommand:"
+         " Err=%s (0x%X)\n", explanation, hr);
+    return false;
+  }
+
+  if (cmd->commandCode != VDC_Complete) {
+    // something went wrong
+    // not sure what the best error to return here is
+    const char* type = command_name(cmd->commandCode);
+    int size = 0;
+
+    switch (cmd->commandCode) {
+    case VDC_Read: { size = cmd->size; } break;
+    case VDC_Write: { size = cmd->size; } break;
+    }
+
+    Jmsg(ctx, M_ERROR,
+         "Received command %d:%s (size = %d) when trying to close device\n",
+         cmd->commandCode, type, size);
+    hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_BAD_COMMAND, 0, 0);
+    if (!SUCCEEDED(hr)) {
+      auto* explanation = explain_hr(hr);
+      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
+           " IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
+           explanation, hr);
+      Dmsg(ctx, debuglevel,
+           "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::CompleteCommand:"
+           " Err=%s (0x%X)\n", explanation, hr);
+      return false;
+    }
+  }
+
+  Dmsg(ctx, debuglevel, "mssqlvdi-fd: received VDC_Complete\n");
+  hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_SUCCESS, 0, 0);
+  if (!SUCCEEDED(hr)) {
+    auto* explanation = explain_hr(hr);
+    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
+         " IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
+         explanation, hr);
+    Dmsg(ctx, debuglevel,
+         "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::CompleteCommand:"
+         " Err=%s (0x%X)\n", explanation, hr);
+    return false;
+  }
+
+  return true;
+}
+
 // See if we need to do any postprocessing after the restore.
 static bRC end_restore_job(PluginContext* ctx, void*)
 {
@@ -1724,53 +1789,7 @@ static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
  * so the restore for this particular file is done.
  */
 static bRC endRestoreFile(PluginContext* ctx) {
-  auto* p_ctx = reinterpret_cast<plugin_ctx*>(ctx->plugin_private_context);
-
-  // if we did not request completion support, then we are not expecting
-  // anything to happen here ...
-  if (!p_ctx->completion_support) { return bRC_OK; }
-
-  VDI_Command* cmd{nullptr};
-  // ... otherwise we expect a VDC_Complete after the restore is done
-  auto hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
-
-  if (!SUCCEEDED(hr)) {
-    auto* explanation = explain_hr(hr);
-    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
-         " IClientVirtualDevice::GetCommand: Err=%s (x%X)\n", explanation, hr);
-    Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::GetCommand:"
-         " Err=%s (x%X)\n", explanation, hr);
-    return bRC_Fatal;
-  }
-
-  if (cmd->commandCode != VDC_Complete) {
-    // something went wrong
-    // not sure what the best error to return here is
-    const char* type = command_name(cmd->commandCode);
-    int size = 0;
-
-    switch (cmd->commandCode) {
-    case VDC_Read: { size = cmd->size; } break;
-    case VDC_Write: { size = cmd->size; } break;
-    }
-
-    Jmsg(ctx, M_ERROR,
-         "Received command %d:%s (size = %d) when trying to close device\n",
-         cmd->commandCode, type, size);
-    hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_BAD_COMMAND, 0, 0);
-    if (!SUCCEEDED(hr)) {
-      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: endRestoreFile"
-           " IClientVirtualDevice::CompleteCommand: x%X\n", hr);
-      Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: endRestoreFile IClientVirtualDevice::CompleteCommand:"
-           " x%X\n", hr);
-      return bRC_Fatal;
-    }
-
-
-  }
-
+  if (!expect_complete(ctx)) { return bRC_Error; }
   return bRC_OK;
 }
 
