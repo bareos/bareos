@@ -42,7 +42,7 @@
 #include "lib/bpipe.h"
 
 #ifdef HAVE_WIN32
-#  include "win32/findlib/win32.h"
+#  include "findlib/win32.h"
 #endif
 
 namespace filedaemon {
