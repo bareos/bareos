@@ -44,6 +44,9 @@ void OpensslPostErrors_impl(const char* file,
 int OpensslInitThreads(void);
 void OpensslCleanupThreads(void);
 DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type);
+
+void LogSSLError(int ssl_error);
+
 #endif /* HAVE_OPENSSL */
 
 #endif  // BAREOS_LIB_CRYPTO_OPENSSL_H_
