@@ -410,8 +410,6 @@ option(xattr "Enable extended file attributes (xattr) support" ON)
 mark_as_advanced(xattr)
 option(scsi-crypto "Enable scsi-crypto" ON)
 option(ndmp "Enable NDMP support" ON)
-option(build_ndmjob "Building ndmpjob" OFF)
-mark_as_advanced(build_ndmjob)
 
 option(traymonitor "Build bareos-traymonitor" OFF)
 

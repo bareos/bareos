@@ -152,11 +152,6 @@ set(NDMP_AGENT_SRCS
 
 set(NDMP_HELPER_SRCS md5c.c ndmos.c smc_api.c smc_parse.c smc_pp.c wraplib.c)
 
-set(NDMJOB_SRCS
-    ndmjob_args.c ndmjob_fhdb.c ndmjob_job.c ndmjob_main.c ndmjob_main_util.c
-    ndmjob_rules.c ndmjob_simulator.c ndmjr_none.c
-)
-
 set(LIBBAREOSNDMP_SRCS ${NDMP_PROTO_SRCS} ${NDMP_LIB_SRCS} ${NDMP_AGENT_SRCS}
                        ${NDMP_HELPER_SRCS}
 )
@@ -206,9 +201,5 @@ set_target_properties(
   bareosndmp PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                         SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-if(build_ndmjob)
-  add_executable(ndmjob ${NDMJOB_SRCS})
-  target_link_libraries(ndmjob bareosndmp)
-endif()
 
 include(DebugEdit)
