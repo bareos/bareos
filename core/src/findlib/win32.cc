@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,16 +25,14 @@
 
 #include "include/bareos.h"
 
-#if defined(HAVE_WIN32)
+#include "include/jcr.h"
+#include "findlib/find.h"
+#include "lib/cbuf.h"
+#include "findlib/drivetype.h"
+#include "findlib/fstype.h"
+#include "win32.h"
 
-#  include "include/jcr.h"
-#  include "findlib/find.h"
-#  include "lib/cbuf.h"
-#  include "findlib/drivetype.h"
-#  include "findlib/fstype.h"
-#  include "win32/findlib/win32.h"
-
-#  include <array>
+#include <array>
 
 /**
  * We need to analyze if a fileset contains onefs=no as option, because only
@@ -219,9 +217,9 @@ static inline int CountIncludeListFileEntries(FindFilesPacket* ff)
  *
  */
 
-#  define MAX_VALUE_NAME 16383
-#  define REGISTRY_KEY \
-    "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
+#define MAX_VALUE_NAME 16383
+#define REGISTRY_KEY \
+  "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
 
 bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
                                                   FindFilesPacket* ff)
@@ -643,4 +641,3 @@ void win32_cleanup_copy_thread(JobControlRecord* jcr)
   free(jcr->cp_thread);
   jcr->cp_thread = NULL;
 }
-#endif
