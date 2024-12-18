@@ -128,7 +128,7 @@ TEST(bpipe, timeout)
   // even though we don't intend to write, we have to attach a pipe to our
   // childs stdin, otherwise it will inherit ours which might be closed and
   // would make `cat` exit immediately.
-  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 1, "rw");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 5, "rw");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->timer_id, NotNull());
   ASSERT_FALSE(bp->timer_id->killed);
