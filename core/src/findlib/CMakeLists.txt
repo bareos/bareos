@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -67,10 +67,6 @@ set_target_properties(
 )
 if(HAVE_WIN32)
   set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-endif()
-
-if(NOT HAVE_WIN32 AND GTest_FOUND)
-  # add_subdirectory(unittests)
 endif()
 
 include(DebugEdit)
