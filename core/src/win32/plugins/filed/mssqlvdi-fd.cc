@@ -124,8 +124,10 @@ static PluginFunctions pluginFuncs
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, nullptr, nullptr, nullptr, nullptr};
 
-enum class Mode {
-  Backup, Restore,
+enum class Mode
+{
+  Backup,
+  Restore,
 };
 // Plugin private context
 struct plugin_ctx {
@@ -246,10 +248,10 @@ static const char* explain_hr(DWORD hr)
   // VD_E_ABORT	Either the client or the server has used the SignalAbort
   // to force a shutdown.
   static const std::map<int, const char*> VdiRetVals{
-    {VD_E_CLOSE, "VD_E_CLOSE"},
-    {VD_E_TIMEOUT, "VD_E_TIMEOUT"},
-    {VD_E_ABORT, "VD_E_ABORT"},
-    {NO_ERROR, "NO_ERROR"},
+      {VD_E_CLOSE, "VD_E_CLOSE"},
+      {VD_E_TIMEOUT, "VD_E_TIMEOUT"},
+      {VD_E_ABORT, "VD_E_ABORT"},
+      {NO_ERROR, "NO_ERROR"},
   };
 
   if (auto found = VdiRetVals.find(hr); found != VdiRetVals.end()) {
@@ -1068,7 +1070,7 @@ static inline void perform_aDoRestore(PluginContext* ctx)
   wchar_2_UTF8(vdsname, p_ctx->vdsname);
 
   switch (p_ctx->backup_level) {
-   case L_INCREMENTAL:
+    case L_INCREMENTAL:
       Mmsg(ado_query,
            "RESTORE LOG [%s] FROM VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, "
            "BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d, %s",
@@ -1264,8 +1266,12 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
 
   // Setup the right backup or restore cmdline and connect info.
   switch (p_ctx->mode) {
-  case Mode::Restore: { perform_aDoRestore(ctx); } break;
-  case Mode::Backup: { PerformAdoBackup(ctx); } break;
+    case Mode::Restore: {
+      perform_aDoRestore(ctx);
+    } break;
+    case Mode::Backup: {
+      PerformAdoBackup(ctx);
+    } break;
   }
 
   /* Ask the database server to start a backup or restore via another thread.
@@ -1450,25 +1456,63 @@ bail_out:
 const char* command_name(DWORD commandCode)
 {
   switch (commandCode) {
-  case VDC_Read: { return "read"; }
-  case VDC_Write: { return "write"; }
-  case VDC_ClearError: { return "clear-error"; }
-  case VDC_Rewind: { return "rewind"; }
-  case VDC_WriteMark: { return "write-mark"; }
-  case VDC_SkipMarks: { return "skip-marks"; }
-  case VDC_SkipBlocks: { return "skip-blocks"; }
-  case VDC_Load: { return "load"; }
-  case VDC_GetPosition: { return "get-position"; }
-  case VDC_SetPosition: { return "set-position"; }
-  case VDC_Discard: { return "discard"; }
-  case VDC_Flush: { return "flush"; }
-  case VDC_Snapshot: { return "snapshot"; }
-  case VDC_MountSnapshot: { return "mount-snapshot"; }
-  case VDC_PrepareToFreeze: { return "prepare-to-freeze"; }
-  case VDC_FileInfoBegin: { return "file-info-begin"; }
-  case VDC_FileInfoEnd: { return "file-info-end"; }
-  case VDC_Complete: { return "complete"; }
-  default: { return "unknown"; }
+    case VDC_Read: {
+      return "read";
+    }
+    case VDC_Write: {
+      return "write";
+    }
+    case VDC_ClearError: {
+      return "clear-error";
+    }
+    case VDC_Rewind: {
+      return "rewind";
+    }
+    case VDC_WriteMark: {
+      return "write-mark";
+    }
+    case VDC_SkipMarks: {
+      return "skip-marks";
+    }
+    case VDC_SkipBlocks: {
+      return "skip-blocks";
+    }
+    case VDC_Load: {
+      return "load";
+    }
+    case VDC_GetPosition: {
+      return "get-position";
+    }
+    case VDC_SetPosition: {
+      return "set-position";
+    }
+    case VDC_Discard: {
+      return "discard";
+    }
+    case VDC_Flush: {
+      return "flush";
+    }
+    case VDC_Snapshot: {
+      return "snapshot";
+    }
+    case VDC_MountSnapshot: {
+      return "mount-snapshot";
+    }
+    case VDC_PrepareToFreeze: {
+      return "prepare-to-freeze";
+    }
+    case VDC_FileInfoBegin: {
+      return "file-info-begin";
+    }
+    case VDC_FileInfoEnd: {
+      return "file-info-end";
+    }
+    case VDC_Complete: {
+      return "complete";
+    }
+    default: {
+      return "unknown";
+    }
   }
 }
 
@@ -1487,7 +1531,8 @@ static inline bool PerformVdiIo(PluginContext* ctx,
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
     if (!SUCCEEDED(hr)) {
       auto* explanation = explain_hr(hr);
-      Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
+      Jmsg(ctx, M_ERROR,
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
            explanation, hr);
       Dmsg(ctx, debuglevel,
            "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
@@ -1496,75 +1541,72 @@ static inline bool PerformVdiIo(PluginContext* ctx,
     }
 
 
-    Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: Command: %d:%s (size=%d)\n", cmd->commandCode,
-         command_name(cmd->commandCode),
-         cmd->size);
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: Command: %d:%s (size=%d)\n",
+         cmd->commandCode, command_name(cmd->commandCode), cmd->size);
 
     switch (cmd->commandCode) {
-    case VDC_Read:
-      Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: Read: %d bytes\n", cmd->size);
-      /* Make sure the write to the VDIDevice will fit e.g. not a to big IO and
-       * that we are currently writing to the device. */
-      if ((DWORD)io->count > cmd->size || io->func != IO_WRITE) {
-        *completionCode = ERROR_BAD_ENVIRONMENT;
-        goto bail_out;
-      } else {
-        memcpy(cmd->buffer, io->buf, io->count);
-        io->status = io->count;
+      case VDC_Read:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Read: %d bytes\n", cmd->size);
+        /* Make sure the write to the VDIDevice will fit e.g. not a to big IO
+         * and that we are currently writing to the device. */
+        if ((DWORD)io->count > cmd->size || io->func != IO_WRITE) {
+          *completionCode = ERROR_BAD_ENVIRONMENT;
+          goto bail_out;
+        } else {
+          memcpy(cmd->buffer, io->buf, io->count);
+          io->status = io->count;
+          *completionCode = ERROR_SUCCESS;
+        }
+        quit = true;
+        break;
+      case VDC_Write:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Write: %d bytes\n", cmd->size);
+        /* Make sure the read from the VDIDevice will fit e.g. not a to big IO
+         * and that we are currently reading from the device. */
+        if (cmd->size > (DWORD)io->count || io->func != IO_READ) {
+          *completionCode = ERROR_BAD_ENVIRONMENT;
+          goto bail_out;
+        } else {
+          memcpy(io->buf, cmd->buffer, cmd->size);
+          io->status = cmd->size;
+          *completionCode = ERROR_SUCCESS;
+        }
+        quit = true;
+        break;
+      case VDC_Flush:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Flush\n");
+        io->status = 0;
         *completionCode = ERROR_SUCCESS;
-      }
-      quit = true;
-      break;
-    case VDC_Write:
-      Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: Write: %d bytes\n", cmd->size);
-      /* Make sure the read from the VDIDevice will fit e.g. not a to big IO and
-       * that we are currently reading from the device. */
-      if (cmd->size > (DWORD)io->count || io->func != IO_READ) {
-        *completionCode = ERROR_BAD_ENVIRONMENT;
-        goto bail_out;
-      } else {
-        memcpy(io->buf, cmd->buffer, cmd->size);
-        io->status = cmd->size;
+        if (!p_ctx->completion_support) { quit = true; }
+        break;
+      case VDC_ClearError:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: ClearError\n");
         *completionCode = ERROR_SUCCESS;
-      }
-      quit = true;
-      break;
-    case VDC_Flush:
-      Dmsg(ctx, debuglevel, "mssqlvdi-fd: Flush\n");
-      io->status = 0;
-      *completionCode = ERROR_SUCCESS;
-      if (!p_ctx->completion_support) { quit = true; }
-      break;
-    case VDC_ClearError:
-      Dmsg(ctx, debuglevel, "mssqlvdi-fd: ClearError\n");
-      *completionCode = ERROR_SUCCESS;
-      break;
-    case VDC_Complete:
-      Dmsg(ctx, debuglevel, "mssqlvdi-fd: Complete\n");
-      io->status = 0;
-      *completionCode = ERROR_SUCCESS;
-      quit = true;
-      break;
-    default:
-      Dmsg(ctx, debuglevel, "mssqlvdi-fd: Unknown = %d\n",
-           cmd->commandCode);
-      *completionCode = ERROR_NOT_SUPPORTED;
-      quit = true;
-      goto bail_out;
+        break;
+      case VDC_Complete:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Complete\n");
+        io->status = 0;
+        *completionCode = ERROR_SUCCESS;
+        quit = true;
+        break;
+      default:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Unknown = %d\n", cmd->commandCode);
+        *completionCode = ERROR_NOT_SUPPORTED;
+        quit = true;
+        goto bail_out;
     }
 
     hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
     if (!SUCCEEDED(hr)) {
       auto* explanation = explain_hr(hr);
-      Jmsg(ctx, M_ERROR,
-           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
-           explanation, hr);
-      Dmsg(ctx, debuglevel,
-           "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
-           explanation, hr);
+      Jmsg(
+          ctx, M_ERROR,
+          "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
+          explanation, hr);
+      Dmsg(
+          ctx, debuglevel,
+          "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
+          explanation, hr);
       goto bail_out;
     }
   }
@@ -1576,8 +1618,7 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   return true;
 
 bail_out:
-  Dmsg(ctx, debuglevel,
-       "mssqlvdi-fd: IO: reached bailout ...\n");
+  Dmsg(ctx, debuglevel, "mssqlvdi-fd: IO: reached bailout ...\n");
   // Report any COM errors.
   comReportError(ctx, hr);
 
@@ -1604,7 +1645,6 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
 
   // Check if the VDI device is closed.
   if (p_ctx->VDIDevice) {
-
   tryagain:
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
 
@@ -1615,8 +1655,12 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
       int status = 0;
 
       switch (cmd->commandCode) {
-      case VDC_Read: { status = cmd->size; } break;
-      case VDC_Write: { status = cmd->size; } break;
+        case VDC_Read: {
+          status = cmd->size;
+        } break;
+        case VDC_Write: {
+          status = cmd->size;
+        } break;
       }
 
       Jmsg(ctx, M_ERROR,
