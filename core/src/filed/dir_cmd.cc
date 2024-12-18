@@ -59,7 +59,7 @@
 #include "lib/compression.h"
 
 #if defined(WIN32_VSS)
-#  include "win32/findlib/win32.h"
+#  include "findlib/win32.h"
 #  include "vss.h"
 #endif
 
