@@ -18,39 +18,43 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(BAREOSFIND_SRCS
-    acl.cc
-    attribs.cc
-    bfile.cc
-    create_file.cc
-    drivetype.cc
-    enable_priv.cc
-    find_one.cc
-    find.cc
-    fstype.cc
-    match.cc
-    mkpath.cc
-    shadowing.cc
-    xattr.cc
+add_library(bareosfind SHARED)
+target_sources(
+  bareosfind
+  PRIVATE acl.cc
+          attribs.cc
+          bfile.cc
+          create_file.cc
+          drivetype.cc
+          enable_priv.cc
+          find_one.cc
+          find.cc
+          fstype.cc
+          match.cc
+          mkpath.cc
+          shadowing.cc
+          xattr.cc
 )
-
 if(HAVE_WIN32)
-  list(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
+  target_sources(bareosfind PRIVATE win32.cc win32.h)
 endif()
 
-include_directories(${OPENSSL_INCLUDE_DIR})
-
-add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
+target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
 if(MSVC)
-  target_link_libraries(
-    bareosfind PRIVATE bareos ${ACL_LIBRARIES} ${THREADS_THREADS}
-  )
-else()
-  target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
+  target_link_libraries(bareosfind PRIVATE ${THREADS_THREADS})
 endif()
+
 if(HAVE_DARWIN_OS)
-  target_compile_options(bareosfind PRIVATE -Wno-sign-compare)
   # dev_t is signed on Darwin
+  target_compile_options(bareosfind PRIVATE -Wno-sign-compare)
+endif()
+
+set_target_properties(
+  bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                        SOVERSION "${BAREOS_VERSION_MAJOR}"
+)
+if(HAVE_WIN32)
+  set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
 endif()
 
 install(
@@ -58,15 +62,5 @@ install(
   DESTINATION ${libdir}
   COMPONENT filedaemon
 )
-
-set_target_properties(
-  bareosfind
-  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-             SOVERSION "${BAREOS_VERSION_MAJOR}"
-             DEFINE_SYMBOL "BUILDING_DLL"
-)
-if(HAVE_WIN32)
-  set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-endif()
 
 include(DebugEdit)
