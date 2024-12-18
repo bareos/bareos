@@ -1422,7 +1422,9 @@ static inline bool PerformVdiIo(PluginContext* ctx,
 
 
   Dmsg(ctx, debuglevel,
-       "mssqlvdi-fd: Command: %s\n", command_name(cmd->commandCode));
+       "mssqlvdi-fd: Command: %d:%s (size=%d)\n", cmd->commandCode,
+       command_name(cmd->commandCode),
+       cmd->size);
 
   switch (cmd->commandCode) {
     case VDC_Read:
@@ -1550,8 +1552,8 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
       }
 
       Jmsg(ctx, M_ERROR,
-           "Received command %s (size = %d) when trying to close device\n",
-           type, status);
+           "Received command %d:%s (size = %d) when trying to close device\n",
+           cmd->commandCode, type, status);
 
       hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_SUCCESS, status, 0);
       goto tryagain;
