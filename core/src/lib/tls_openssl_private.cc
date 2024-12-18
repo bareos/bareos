@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -324,9 +324,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
     }
 
     int ssl_error = SSL_get_error(openssl_, nwritten);
-    if (ssl_error != SSL_ERROR_NONE) {
-      Dmsg1(50, "SSL_get_error() returned error value %d\n", ssl_error);
-    }
+    LogSSLError(ssl_error);
     switch (ssl_error) {
       case SSL_ERROR_NONE:
         nleft -= nwritten;
@@ -401,9 +399,7 @@ bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
     }
 
     int ssl_error = SSL_get_error(openssl_, err_accept);
-    if (ssl_error != SSL_ERROR_NONE) {
-      Dmsg1(50, "SSL_get_error() returned error value %d\n", ssl_error);
-    }
+    LogSSLError(ssl_error);
     switch (ssl_error) {
       case SSL_ERROR_NONE:
         bsock->SetTlsEstablished();
