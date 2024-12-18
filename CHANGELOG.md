@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - cats: fix version.map.in [PR #2064]
 - webui: fix for PHP < 7.3 [PR #2067]
+- cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2040]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -14,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - plugins: Fix typo in postgresql plugin [PR #2066]
 
+[PR #2040]: https://github.com/bareos/bareos/pull/2040
 [PR #2064]: https://github.com/bareos/bareos/pull/2064
 [PR #2066]: https://github.com/bareos/bareos/pull/2066
 [PR #2067]: https://github.com/bareos/bareos/pull/2067

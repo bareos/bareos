@@ -18,32 +18,42 @@
 #   02110-1301, USA.
 
 # This test requires the following variables to be set:
-#
-# -D MARIADB_BACKUP_BINARY=/usr/bin/mariadb-backup \ -D
-# MARIADB_DAEMON_BINARY=/usr/bin/mariadbd \ -D
-# MARIADB_CLIENT_BINARY=/usr/bin/mariadb \ -D
-# MARIADB_MYSQL_INSTALL_DB_SCRIPT=/usr/bin/mysql_install_db
+# ~~~
+# -D MARIADB_BACKUP_BINARY=/usr/bin/mariadb-backup \
+# -D MARIADB_DAEMON_BINARY=/usr/bin/mariadbd \
+# -D MARIADB_CLIENT_BINARY=/usr/bin/mariadb \
+# -D MARIADB_INSTALL_DB_SCRIPT=/usr/bin/mariadb-install-db
+# ~~~
+
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-if(TARGET python3-fd
-   AND MARIADB_BACKUP_BINARY
-   AND MARIADB_DAEMON_BINARY
-   AND MARIADB_CLIENT_BINARY
-   AND MARIADB_MYSQL_INSTALL_DB_SCRIPT
-)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-else()
+message("BareosPlatForm ${BAREOS_PLATFORM}\n")
+
+if(NOT TARGET python3-fd)
   create_systemtest(
-    ${SYSTEMTEST_PREFIX}
-    ${BASENAME}
-    DISABLED
-    COMMENT
-    "
-    no python3-fd or MARIADB_BACKUP_BINARY,MARIADB_DAEMON_BINARY,MARIADB_CLIENT_BINARY or MARIADB_MYSQL_INSTALL_DB_SCRIPT not set.
-    example:
-    cmake -D MARIADB_BACKUP_BINARY=/usr/bin/mariadb-backup \
-    -D MARIADB_DAEMON_BINARY=/usr/libexec/mysqld \
-    -D MARIADB_CLIENT_BINARY=/usr/bin/mariadb \
-    -D MARIADB_MYSQL_INSTALL_DB_SCRIPT=/usr/bin/mysql_install_db"
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup" DISABLED COMMENT
+    "python3-fd is not being build."
   )
+elseif(NOT MARIADB_BACKUP_BINARY)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup" DISABLED COMMENT
+    "MARIABACKUP_BINARY is not set."
+  )
+elseif(NOT MARIADB_DAEMON_BINARY)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup" DISABLED COMMENT
+    "MARIADB_DAEMON_BINARY is not set."
+  )
+elseif(NOT MARIADB_CLIENT_BINARY)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup" DISABLED COMMENT
+    "MARIADB_CLIENT_BINARY is not set."
+  )
+elseif(NOT MARIADB_INSTALL_DB_SCRIPT)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup" DISABLED COMMENT
+    "MARIADB_INSTALL_DB_SCRIPT is not set."
+  )
+else()
+  create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup")
 endif()
