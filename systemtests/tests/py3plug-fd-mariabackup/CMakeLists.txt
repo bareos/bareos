@@ -18,11 +18,13 @@
 #   02110-1301, USA.
 
 # This test requires the following variables to be set:
-#
+# ~~~
 # -D MARIADB_BACKUP_BINARY=/usr/bin/mariadb-backup \
 # -D MARIADB_DAEMON_BINARY=/usr/bin/mariadbd \
 # -D MARIADB_CLIENT_BINARY=/usr/bin/mariadb \
 # -D MARIADB_INSTALL_DB_SCRIPT=/usr/bin/mariadb-install-db
+# ~~~
+
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
 message("BareosPlatForm ${BAREOS_PLATFORM}\n")
