@@ -28,7 +28,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 COMPONENTS Core Widgets)
+find_package(Qt6 QUIET COMPONENTS Core Widgets)
 if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
 else()
