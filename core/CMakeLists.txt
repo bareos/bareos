@@ -306,18 +306,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(HAVE_WIN32 1)
 
-  if(NOT MSVC)
-    set(Python3_LIBRARIES python38.dll)
-  endif()
-  if(${WINDOWS_BITS} MATCHES "32")
-    set(cross-prefix i686-w64-mingw32)
-  else()
-    set(cross-prefix x86_64-w64-mingw32)
-  endif()
 
-  if(NOT MSVC)
-    set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
-  endif()
   if(MSVC)
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
@@ -367,14 +356,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")
     # export all symbols of dlls trick in cmake
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-  else()
-    add_definitions(
-      -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW
-      -D_WIN32_WINNT=${WINDOWS_VERSION}
-    )
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads"
-    )
   endif()
 
   set(Python3_SITEARCH ${plugindir})
