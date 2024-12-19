@@ -325,8 +325,13 @@ endif()
 
 include(FindIntl)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wshadow")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wshadow")
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+endif()
 
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
