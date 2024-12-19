@@ -686,7 +686,11 @@ if(${lmdb})
 endif()
 
 # info what the config files need to be installed PLUGINS  ############
-set(PLUGINS python-ldap)
+if(ENABLE_PYTHON)
+  set(PLUGINS python-ldap)
+else()
+  set(PLUGINS "")
+endif ()
 
 if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
