@@ -666,7 +666,8 @@ SectionIn 2
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\core\src\plugins\stored\${CMAKE_CONFIG_TYPE}"
-  File "*-sd.dll"
+  File "autoxflate-sd.dll"
+  # File "python3-sd.dll"
 SectionEnd
 
 
