@@ -180,43 +180,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(Intl_ROOT_DIR ${HOMEBREW_PREFIX}/opt/gettext)
 endif()
 
-if(NOT MSVC)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX})
-    set(MINGW_BINDIR "${MINGW_PREFIX}/bin")
-    if(${WINDOWS_BITS} MATCHES "32")
-      set(CMAKE_CROSSCOMPILING_EMULATOR wine)
-      set(SITE
-          "${CMAKE_SYSTEM}-32"
-          CACHE STRING "build name variable for CDash"
-      )
-    else()
-      set(CMAKE_CROSSCOMPILING_EMULATOR wine64)
-      set(SITE
-          "${CMAKE_SYSTEM}-64"
-          CACHE STRING "build name variable for CDash"
-      )
-    endif()
-
-    # search for dll.a files before .dll
-    set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
-    set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
-
-    # set WINEPATH so that cross-compiled .exe tests find their dlls
-    set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
-    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
-    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
-    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib\\\\;")
-    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/stored\\\\;")
-    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats\\\\;")
-
-    message(${WINEPATH})
-    # replace slash with backslash everywhere MESSAGE(FATAL_ERROR ${WINEPATH})
-
-    set(ENV{WINEPATH} ${WINEPATH})
-  endif()
-endif()
-
 include(BareosFindAllLibraries)
 
 if(MSVC)
