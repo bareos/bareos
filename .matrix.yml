@@ -131,11 +131,3 @@ OS:
        - x86_64
       WINVERSIONS:
          - windows-11-64
-    cross:
-      TYPE: win
-      STAGES:
-        - win-64-release
-      ARCH:
-       - x86_64
-      WINVERSIONS:
-         - windows-10-64
