@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -142,8 +142,16 @@ static inline bool fill_restore_environment_ndmp_native(
       && SetFilesToRestoreNdmpNative(jcr, job, current_fi,
                                      destination_path.c_str(), ndmp_filesystem)
              == 0) {
-    Jmsg(jcr, M_INFO, 0, T_("No files selected for restore\n"));
-    return false;
+    Jmsg(jcr, M_INFO, 0,
+         T_("No files selected for restore, preparing namelist for full image "
+            "recovery\n"));
+    // add one single entry to the nlist as according to the rfc:
+    // At least one member shall be supplied.
+    // If original_path is the null string, the server shall recover all data
+    // contained in the backup image.
+    AddToNamelist(job, (char*)"", destination_path.c_str(), (char*)"",
+                  (char*)"", NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD,
+                  me->ndmp_fhinfo_set_zero_for_invalid_u_quad);
   }
   return true;
 }
