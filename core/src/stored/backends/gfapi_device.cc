@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -272,7 +272,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
 
     if (!dev_options) {
       Mmsg0(errmsg, T_("No device options configured\n"));
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       goto bail_out;
     }
 
@@ -301,7 +301,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
               break;
             default:
               Mmsg1(errmsg, T_("Unable to parse device option: %s\n"), bp);
-              Emsg0(M_FATAL, 0, errmsg);
+              Emsg0(M_FATAL, 0, "%s", errmsg);
               goto bail_out;
               break;
           }
@@ -313,14 +313,14 @@ int gfapi_device::d_open(const char*, int flags, int mode)
 
     if (!gfapi_uri_) {
       Mmsg0(errmsg, T_("No GFAPI URI configured\n"));
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       goto bail_out;
     }
 
     if (!parse_gfapi_devicename(gfapi_uri_, &transport_, &servername_,
                                 &volumename_, &basedir_, &serverport_)) {
       Mmsg1(errmsg, T_("Unable to parse device URI %s.\n"), dev_options);
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       goto bail_out;
     }
   }
@@ -332,7 +332,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
       Mmsg1(errmsg,
             T_("Unable to create new Gluster context for volumename %s.\n"),
             volumename_);
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       goto bail_out;
     }
 
@@ -341,7 +341,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
         Mmsg3(errmsg,
               T_("Unable to initialize Gluster logging file=%s level=%d\n"),
               gfapi_logfile_, gfapi_loglevel_);
-        Emsg0(M_FATAL, 0, errmsg);
+        Emsg0(M_FATAL, 0, "%s", errmsg);
         goto bail_out;
       }
     }
@@ -353,7 +353,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
             T_("Unable to initialize Gluster management server for transport "
                "%s, servername %s, serverport %d\n"),
             (transport_) ? transport_ : "tcp", servername_, serverport_);
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       goto bail_out;
     }
 
@@ -361,7 +361,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
     if (status < 0) {
       Mmsg1(errmsg, T_("Unable to initialize Gluster for volumename %s.\n"),
             volumename_);
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       goto bail_out;
     }
   }
@@ -385,7 +385,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
             Mmsg1(errmsg,
                   T_("Specified glusterfs directory %s cannot be created.\n"),
                   virtual_filename_);
-            Emsg0(M_FATAL, 0, errmsg);
+            Emsg0(M_FATAL, 0, "%s", errmsg);
             goto bail_out;
           }
           break;
@@ -397,7 +397,7 @@ int gfapi_device::d_open(const char*, int flags, int mode)
         Mmsg1(errmsg,
               T_("Specified glusterfs directory %s is not a directory.\n"),
               virtual_filename_);
-        Emsg0(M_FATAL, 0, errmsg);
+        Emsg0(M_FATAL, 0, "%s", errmsg);
         goto bail_out;
       }
     }
@@ -489,7 +489,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord*)
 
       Mmsg2(errmsg, T_("Unable to truncate device %s. ERR=%s\n"), prt_name,
             be.bstrerror());
-      Emsg0(M_FATAL, 0, errmsg);
+      Emsg0(M_FATAL, 0, "%s", errmsg);
       return false;
     }
 
@@ -522,7 +522,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord*)
         dev_errno = errno;
         Mmsg2(errmsg, T_("Could not reopen: %s, ERR=%s\n"), virtual_filename_,
               be.bstrerror());
-        Emsg0(M_FATAL, 0, errmsg);
+        Emsg0(M_FATAL, 0, "%s", errmsg);
 
         return false;
       }

@@ -78,10 +78,11 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
   if (file_list_->insert(item->fname, item)) {
     if (chksum) {
       Dmsg4(debuglevel,
-            "[file_nr = %lld] add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n",
+            "[file_nr = %" PRIuz
+            "] add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n",
             item->payload.filenr, fname, lstat, delta_seq, chksum);
     } else {
-      Dmsg2(debuglevel, "[file_nr = %lld] add fname=<%s> lstat=%s\n",
+      Dmsg2(debuglevel, "[file_nr = %" PRIuz "] add fname=<%s> lstat=%s\n",
             item->payload.filenr, fname, lstat);
     }
     seen_bitmap_.push_back(false);
@@ -97,7 +98,8 @@ bool BareosAccurateFilelistHtable::EndLoad()
 {
   if (duplicate_files_ > 0) {
     Jmsg1(jcr_, M_ERROR, 0,
-          T_("%llu duplicate files were sent by the director and removed. This "
+          T_("%" PRIuz
+             " duplicate files were sent by the director and removed. This "
              "may indicate problems with the database.\n"),
           duplicate_files_);
   }
@@ -106,7 +108,8 @@ bool BareosAccurateFilelistHtable::EndLoad()
   if (seen_bitmap_.size() > initial_capacity_) {
     Jmsg1(
         jcr_, M_ERROR, 0,
-        T_("The director send too many files. %llu were sent but only %llu "
+        T_("The director send too many files. %" PRIuz
+           " were sent but only %" PRIuz " "
            "were anticipated. The accurate job may be in a corrupted state.\n"),
         seen_bitmap_.size(), initial_capacity_);
   }

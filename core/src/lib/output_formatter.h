@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,6 +52,7 @@ typedef struct json_t json_t;
 
 #include "lib/alist.h"
 #include "lib/api_mode.h"
+#include "include/compiler_macro.h"
 #include <stdint.h>
 
 class PoolMem;
@@ -107,7 +108,7 @@ typedef struct of_filter_tuple {
 class OutputFormatter {
  public:
   // Typedefs.
-  typedef bool(SEND_HANDLER)(void* ctx, const char* fmt, ...);
+  typedef bool(SEND_HANDLER)(void* ctx, const char* fmt, ...) PRINTF_LIKE(2, 3);
 
   typedef of_filter_state(FILTER_HANDLER)(void* ctx,
                                           void* data,
@@ -170,7 +171,7 @@ class OutputFormatter {
   void SetCompact(bool value) { compact = value; }
   bool GetCompact() { return compact; }
 
-  void Decoration(const char* fmt, ...);
+  void Decoration(const char* fmt, ...) PRINTF_LIKE(2, 3);
 
   void ArrayStart(const char* name, const char* fmt = NULL);
   void ArrayEnd(const char* name, const char* fmt = NULL);

@@ -606,7 +606,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           wsize = rec->data_len;
         }
         total += wsize;
-        Dmsg2(8, "Write %u bytes, total=%u\n", wsize, total);
+        Dmsg2(8, "Write %u bytes, total=%ld\n", wsize, total);
         StoreData(&g_bfd, wbuf, wsize);
         fileAddr += wsize;
       }
@@ -650,7 +650,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         if (DecompressData(jcr, attr->ofname, rec->maskedStream, &wbuf, &wsize,
                            false)) {
-          Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n",
+          Dmsg2(100, "Write uncompressed %d bytes, total before write=%ld\n",
                 wsize, total);
           StoreData(&g_bfd, wbuf, wsize);
           total += wsize;

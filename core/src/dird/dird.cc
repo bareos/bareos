@@ -82,11 +82,11 @@ BAREOS_IMPORT bool ParseDirConfig(const char* configfile, int exit_code);
 extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 /* Imported subroutines */
-void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass);
+void StoreJobtype(lexer* lc, ResourceItem* item, int index, int pass);
+void StoreProtocoltype(lexer* lc, ResourceItem* item, int index, int pass);
+void StoreLevel(lexer* lc, ResourceItem* item, int index, int pass);
+void StoreReplace(lexer* lc, ResourceItem* item, int index, int pass);
+void StoreMigtype(lexer* lc, ResourceItem* item, int index, int pass);
 void InitDeviceResources();
 
 static bool test_config = false;

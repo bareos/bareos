@@ -60,7 +60,7 @@ bRC handlePluginEvent(PluginContext*, bEvent*, void*) { return bRC_OK; }
 bRC startBackupFile(PluginContext* ctx, save_pkt*)
 {
   if (num_messages < 50'000) {
-    Jmsg(ctx, M_INFO, "I am spamming (%llu)\n", num_messages++);
+    Jmsg(ctx, M_INFO, "I am spamming (%" PRIuz ")\n", num_messages++);
     return bRC_Skip;
   }
 

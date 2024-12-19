@@ -42,9 +42,6 @@
 
 namespace filedaemon {
 
-/* Data received from Storage Daemon */
-static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
-
 /* Forward referenced functions */
 
 
@@ -96,8 +93,10 @@ void DoVerifyVolume(JobControlRecord* jcr)
   // Get a record from the Storage daemon
   while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // First we expect a Stream Record Header
-    if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
-               &stream, &size)
+    if (sscanf(sd->msg,
+               "rechdr %" SCNu32 " %" SCNu32 " %" SCNd32 " %" SCNd32
+               " %" SCNu32,
+               &VolSessionId, &VolSessionTime, &file_index, &stream, &size)
         != 5) {
       Jmsg1(jcr, M_FATAL, 0, T_("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
@@ -289,7 +288,7 @@ ok_out:
 
   FreePoolMemory(fname);
   FreePoolMemory(lname);
-  Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%lld\n", jcr->JobFiles,
-        jcr->JobBytes);
+  Dmsg2(050, "End Verify-Vol. Files=%" PRIu32 "d Bytes=%" PRIu64 "\n",
+        jcr->JobFiles, jcr->JobBytes);
 }
 } /* namespace filedaemon */

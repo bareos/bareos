@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,8 +35,8 @@ class ConfigParserStateMachine {
  public:
   ConfigParserStateMachine(const char* config_file_name,
                            void* caller_ctx,
-                           LEX_ERROR_HANDLER* ScanError,
-                           LEX_WARNING_HANDLER* scan_warning,
+                           lexer::error_handler* ScanError,
+                           lexer::warning_handler* scan_warning,
                            ConfigurationParser& my_config);
   ~ConfigParserStateMachine();
   ConfigParserStateMachine(ConfigParserStateMachine& ohter) = delete;
@@ -60,7 +60,7 @@ class ConfigParserStateMachine {
   void DumpResourcesAfterSecondPass();
 
  public:
-  LEX* lexical_parser_ = nullptr;
+  lexer* lexical_parser_ = nullptr;
 
  private:
   enum class ParseInternalReturnCode
@@ -78,8 +78,8 @@ class ConfigParserStateMachine {
   int parser_pass_number_ = 0;
   std::string config_file_name_;
   void* caller_ctx_ = nullptr;
-  LEX_ERROR_HANDLER* scan_error_ = nullptr;
-  LEX_WARNING_HANDLER* scan_warning_ = nullptr;
+  lexer::error_handler* scan_error_ = nullptr;
+  lexer::warning_handler* scan_warning_ = nullptr;
   ConfigurationParser& my_config_;
 
   struct {

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -341,7 +341,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
    *  LastIndex is correct. */
   if (jcr->is_JobStatus(JS_Incomplete)) {
     dcr->VolLastIndex = dir->get_FileIndex();
-    Dmsg1(100, "======= Set FI=%ld\n", dir->get_FileIndex());
+    Dmsg1(100, "======= Set FI=%" PRId32 "\n", dir->get_FileIndex());
   }
 
   if (!dcr->DirCreateJobmediaRecord(false)) {
@@ -440,11 +440,11 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
       Jmsg(dcr->jcr, M_FATAL, 0, T_("Spool header read error. ERR=%s\n"),
            be.bstrerror());
     } else {
-      Pmsg2(000, T_("Spool read error. Wanted %u bytes, got %d\n"), rlen,
-            status);
+      Pmsg2(000, T_("Spool read error. Wanted %u bytes, got %" PRIiz "\n"),
+            rlen, status);
       Jmsg2(jcr, M_FATAL, 0,
-            T_("Spool header read error. Wanted %u bytes, got %d\n"), rlen,
-            status);
+            T_("Spool header read error. Wanted %u bytes, got %" PRIiz "\n"),
+            rlen, status);
     }
     jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     return RB_ERROR;
@@ -460,10 +460,11 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
   }
   status = read(dcr->spool_fd, (char*)block->buf, (size_t)rlen);
   if (status != (ssize_t)rlen) {
-    Pmsg2(000, T_("Spool data read error. Wanted %u bytes, got %d\n"), rlen,
-          status);
+    Pmsg2(000, T_("Spool data read error. Wanted %u bytes, got %" PRIiz "\n"),
+          rlen, status);
     Jmsg2(dcr->jcr, M_FATAL, 0,
-          T_("Spool data read error. Wanted %u bytes, got %d\n"), rlen, status);
+          T_("Spool data read error. Wanted %u bytes, got %" PRIiz "\n"), rlen,
+          status);
     jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     return RB_ERROR;
   }
@@ -770,8 +771,8 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
           jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
           goto bail_out;
         }
-        Dmsg2(100, "=== Attrib spool truncated from %lld to %lld\n", size,
-              data_end);
+        Dmsg2(100, "=== Attrib spool truncated from %lld to %lld\n",
+              static_cast<long long>(size), static_cast<long long>(data_end));
         size = data_end;
       }
     }

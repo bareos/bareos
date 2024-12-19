@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,9 +53,9 @@ const int debuglevel = 50;
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
  */
-static char OK_hello[] = "2000 OK Hello 54\n";
+constexpr const char OK_hello[] = "2000 OK Hello 54\n";
 
-static char Dir_sorry[] = "2999 Authentication failed.\n";
+constexpr const char Dir_sorry[] = "2999 Authentication failed.\n";
 
 /**
  * To prevent DOS attacks,
@@ -72,10 +72,11 @@ static inline void delay()
   unlock_mutex(mutex);
 }
 
-static inline void AuthenticateFailed(JobControlRecord* jcr, PoolMem& message)
+static inline void AuthenticateFailed(JobControlRecord* jcr,
+                                      const char* message)
 {
-  Dmsg0(debuglevel, message.c_str());
-  Jmsg0(jcr, M_FATAL, 0, message.c_str());
+  Dmsg0(debuglevel, "%s", message);
+  Jmsg0(jcr, M_FATAL, 0, "%s", message);
   delay();
 }
 
@@ -99,7 +100,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
     errormsg.bsprintf(T_("Bad Hello command from Director at %s. Len=%d.\n"),
                       who, dir->message_length);
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
@@ -111,7 +112,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     dir->msg[100] = 0;
     errormsg.bsprintf(T_("Bad Hello command from Director at %s: %s\n"), who,
                       dir->msg);
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
@@ -125,14 +126,14 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     errormsg.bsprintf(
         T_("Connection from unknown Director %s at %s rejected.\n"),
         dirname.c_str(), who);
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
   if (!director->conn_from_dir_to_fd) {
     errormsg.bsprintf(T_("Connection from Director %s rejected.\n"),
                       dirname.c_str());
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
@@ -141,7 +142,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     dir->fsend("%s", Dir_sorry);
     errormsg.bsprintf(T_("Unable to authenticate Director %s.\n"),
                       dirname.c_str());
-    AuthenticateFailed(jcr, errormsg);
+    AuthenticateFailed(jcr, errormsg.c_str());
     return false;
   }
 
