@@ -227,11 +227,11 @@ int process_args(int argc, char* argv[])
 
       case 'p': /* -p N -- port number for daemon mode (10000) */
       {
-        long p = strtol(optarg, NULL, 10);
-        if (p < 1 || p > 65535 || (!p && EINVAL == errno)) {
+        long p_l = strtol(optarg, NULL, 10);
+        if (p_l < 1 || p_l > 65535 || (!p_l && EINVAL == errno)) {
           error_byebye("bad -p option");
         }
-        p_ndmp_port = (int)p;
+        p_ndmp_port = (int)p_l;
         break;
       }
 
@@ -257,15 +257,15 @@ int process_args(int argc, char* argv[])
           error_byebye("too many of -E");
         }
         {
-          char* p;
+          char* p_E;
           ndmp9_pval pv;
 
-          p = optarg;
-          pv.name = p;
-          while (*p && *p != '=') p++;
-          if (*p != '=') { error_byebye("missing value in -E"); }
-          *p++ = 0;
-          pv.value = p;
+          p_E = optarg;
+          pv.name = p_E;
+          while (*p_E && *p_E != '=') p++;
+          if (*p_E != '=') { error_byebye("missing value in -E"); }
+          *p_E++ = 0;
+          pv.value = p_E;
           ndma_store_env_list(&E_environment, &pv);
         }
         break;
@@ -280,9 +280,9 @@ int process_args(int argc, char* argv[])
       case 'F': /* -F FILE -- add to list of files */
         if (n_file_arg >= MAX_FILE_ARG) { error_byebye("too many FILE args"); }
         if (strchr(optarg, '=')) {
-          char* p = strchr(optarg, '=');
-          *p++ = 0;
-          file_arg[n_file_arg] = p;
+          char* p_F = strchr(optarg, '=');
+          *p_F++ = 0;
+          file_arg[n_file_arg] = p_F;
           file_arg_new[n_file_arg] = optarg;
           n_file_arg++;
         } else {
@@ -393,9 +393,9 @@ int process_args(int argc, char* argv[])
   for (c = optind; c < ac; c++) {
     if (n_file_arg >= MAX_FILE_ARG) { error_byebye("too many file args"); }
     if (strchr(av[c], '=')) {
-      char* p = strchr(av[c], '=');
-      *p++ = 0;
-      file_arg[n_file_arg] = p;
+      char* p_local = strchr(av[c], '=');
+      *p_local++ = 0;
+      file_arg[n_file_arg] = p_local;
       file_arg_new[n_file_arg] = av[c];
     } else {
       file_arg[n_file_arg] = av[c];
@@ -414,11 +414,11 @@ int process_args(int argc, char* argv[])
 
     /* clean up old load_files_list */
     while (load_files_list) {
-      struct load_file_entry* p;
-      p = load_files_list;
-      load_files_list = p->next;
-      p->next = 0;
-      free(p);
+      struct load_file_entry* p_lfe;
+      p_lfe = load_files_list;
+      load_files_list = p_lfe->next;
+      p_lfe->next = 0;
+      free(p_lfe);
     }
 
     fp = fopen(o_load_files_file, "r");
@@ -428,7 +428,7 @@ int process_args(int argc, char* argv[])
       /* no return */
     }
     while (fgets(buf, sizeof buf, fp) != NULL) {
-      char *bp = buf, *p, *ep;
+      char *bp = buf, *p_loop, *ep;
       int len, slen;
       struct load_file_entry* lfe;
 
@@ -452,18 +452,18 @@ int process_args(int argc, char* argv[])
       lfe->next = 0;
 
       /* see if we have destination */
-      if ((p = strchr(bp, '=')) != 0) {
+      if ((p_loop = strchr(bp, '=')) != 0) {
         int plen;
-        char ch = *p;
+        char ch = *p_loop;
         *p = 0;
 
         /* double conversion -- assume the strings shrink */
-        plen = (p - bp);
-        ndmcstr_to_str(p, &lfe->name[plen + 2], slen - plen - 2);
+        plen = (p_loop - bp);
+        ndmcstr_to_str(p_loop, &lfe->name[plen + 2], slen - plen - 2);
         ndmcstr_to_str(bp, lfe->name, plen + 1);
         file_arg[n_file_arg] = &lfe->name[plen + 2];
         file_arg_new[n_file_arg] = lfe->name;
-        *p = ch;
+        *p_loop = ch;
       } else {
         /* simple conversion copy */
         ndmcstr_to_str(bp, lfe->name, slen - 1);
