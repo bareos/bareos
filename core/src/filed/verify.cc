@@ -374,6 +374,7 @@ static int ReadDigest(BareosFilePacket* bfd,
     if (jcr->is_JobType(JT_VERIFY)) { jcr->JobBytes += n; }
     jcr->ReadBytes += n;
   }
+  Dmsg0(50, "=== ReadDigest END\n");
   if (n < 0) {
     BErrNo be;
     be.SetErrno(bfd->BErrNo);
