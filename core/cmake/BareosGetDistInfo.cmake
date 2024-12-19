@@ -17,15 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# get DIST info in format "$PLATFORM;$DISTVER"
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  if(DEFINED ENV{VSCMD_ARG_TGT_ARCH}) # Native Build
-    set(PLATFORM Windows-native)
-    set(DISTVER $ENV{VSCMD_ARG_TGT_ARCH})
-  else() #  Cross Compile
-    set(PLATFORM Cross-compile)
-    set(DISTVER Win64)
-  endif()
+  set(PLATFORM Windows-native)
+  set(DISTVER $ENV{VSCMD_ARG_TGT_ARCH})
   set(Host ${CMAKE_SYSTEM})
   set(Distribution ${PLATFORM})
 else() # NOT Windows
@@ -38,7 +33,6 @@ else() # NOT Windows
   list(LENGTH DISTINFO DISTINFO_LENGTH)
   list(GET DISTINFO 0 PLATFORM)
   list(GET DISTINFO 1 DISTVER)
-
   set(Distribution ${LSB_RELEASE_ID_SHORT})
   set(DISTVER ${DISTVER})
   set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
