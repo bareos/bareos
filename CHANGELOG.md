@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - docs: add worm support paragraph [PR #2054]
 
+### Changed
+- macos: update build environment [PR #2074]
+
 ## [23.1.1] - 2024-12-02
 
 ### Documentation
@@ -602,4 +605,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2032]: https://github.com/bareos/bareos/pull/2032
 [PR #2044]: https://github.com/bareos/bareos/pull/2044
 [PR #2054]: https://github.com/bareos/bareos/pull/2054
+[PR #2074]: https://github.com/bareos/bareos/pull/2074
 [unreleased]: https://github.com/bareos/bareos/tree/master
