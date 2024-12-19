@@ -11,6 +11,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - macos: update build environment [PR #2074]
 
+### Fixed
+- plugins: postgresql add support for PostgreSQL 17 + improvements [PR #2049]
+
 ## [23.1.1] - 2024-12-02
 
 ### Documentation
@@ -604,6 +607,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2028]: https://github.com/bareos/bareos/pull/2028
 [PR #2032]: https://github.com/bareos/bareos/pull/2032
 [PR #2044]: https://github.com/bareos/bareos/pull/2044
+[PR #2049]: https://github.com/bareos/bareos/pull/2049
 [PR #2054]: https://github.com/bareos/bareos/pull/2054
 [PR #2074]: https://github.com/bareos/bareos/pull/2074
 [unreleased]: https://github.com/bareos/bareos/tree/master
