@@ -19,8 +19,13 @@
 
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(PLATFORM Windows-native)
-  set(DISTVER $ENV{VSCMD_ARG_TGT_ARCH})
+  set(DISTARCH $ENV{VSCMD_ARG_TGT_ARCH})
+  set(PLATFORM Windows-${DISTARCH})
+
+  # DISTVER is only used in GetOsInfoString() on Non-Windows O
+  # However, we set it to DISTARCH to have at least a valid value
+  set(DISTVER ${DISTARCH})
+
   set(Host ${CMAKE_SYSTEM})
   set(Distribution ${PLATFORM})
 else() # NOT Windows
