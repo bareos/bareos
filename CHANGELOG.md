@@ -12,10 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
 
+### Added
+- added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
+
 ### Changed
 - plugins: Fix typo in postgresql plugin [PR #2066]
 
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
+[PR #2056]: https://github.com/bareos/bareos/pull/2056
 [PR #2064]: https://github.com/bareos/bareos/pull/2064
 [PR #2066]: https://github.com/bareos/bareos/pull/2066
 [PR #2067]: https://github.com/bareos/bareos/pull/2067
