@@ -21,10 +21,10 @@
    02110-1301, USA.
 */
 
+// clang-format off
 #ifndef BAREOS_INCLUDE_CONFIG_H_
 #define BAREOS_INCLUDE_CONFIG_H_
 
-// clang-format off
 
 #define BAREOS "@BAREOS@"
 #define FD_DEFAULT_PORT "@fd_port@"
@@ -508,10 +508,11 @@ extern char win_os[];
 // Default path for Bareos Python modules
 #cmakedefine PYTHON_MODULE_PATH "@PYTHON_MODULE_PATH@"
 
-#define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
 
 #endif /* defined(WIN32) */
-// clang-format on
+
+#define BAREOS_PLATFORM "@PLATFORM@"
 
 #endif  // BAREOS_INCLUDE_CONFIG_H_
+// clang-format on

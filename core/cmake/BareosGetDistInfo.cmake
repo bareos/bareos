@@ -44,4 +44,3 @@ else() # NOT Windows
   set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
 endif()
 set(BAREOS_PLATFORM ${PLATFORM})
-
