@@ -508,10 +508,11 @@ extern char win_os[];
 // Default path for Bareos Python modules
 #cmakedefine PYTHON_MODULE_PATH "@PYTHON_MODULE_PATH@"
 
-#define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
 
 #endif /* defined(WIN32) */
 // clang-format on
+
+#define BAREOS_PLATFORM "@PLATFORM@"
 
 #endif  // BAREOS_INCLUDE_CONFIG_H_
