@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2077]
+- Fix building ndmjob program [PR #2084]
 
 ## [24.0.0] - 2024-12-16
 
@@ -356,4 +357,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2070]: https://github.com/bareos/bareos/pull/2070
 [PR #2071]: https://github.com/bareos/bareos/pull/2071
 [PR #2077]: https://github.com/bareos/bareos/pull/2077
+[PR #2084]: https://github.com/bareos/bareos/pull/2084
 [unreleased]: https://github.com/bareos/bareos/tree/master
