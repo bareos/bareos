@@ -130,7 +130,7 @@ bool AccurateFinish(JobControlRecord* jcr)
 
     AccurateFree(jcr);
     if (jcr->is_JobLevel(L_FULL)) {
-      Jmsg(jcr, M_INFO, 0, T_("Space saved with Base jobs: %lld MB\n"),
+      Jmsg(jcr, M_INFO, 0, T_("Space saved with Base jobs: %" PRIu64 " MB\n"),
            jcr->fd_impl->base_size / (1024 * 1024));
     }
   }

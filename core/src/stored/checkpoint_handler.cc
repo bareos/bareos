@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+Copyright (C) 2023-2024 Bareos GmbH & Co. KG
 
 This program is Free Software; you can redistribute it and/or
 modify it under the terms of version three of the GNU Affero General Public
@@ -53,8 +53,8 @@ void CheckpointHandler::UpdateJobmediaRecord(JobControlRecord* jcr)
 
 void CheckpointHandler::UpdateJobrecord(JobControlRecord* jcr)
 {
-  Dmsg2(100, T_("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
-        jcr->JobFiles);
+  Dmsg2(100, T_("... update job record: %" PRIu64 " bytes %" PRIu32 " files\n"),
+        jcr->JobBytes, jcr->JobFiles);
   jcr->sd_impl->dcr->DirAskToUpdateJobRecord();
 }
 
@@ -85,8 +85,8 @@ void CheckpointHandler::DoTimedCheckpoint(JobControlRecord* jcr)
       next_checkpoint_time_ += checkpoint_interval_;
     }
     Jmsg(jcr, M_INFO, 0,
-         T_("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
-         checkpoint_interval_);
+         T_("Doing timed backup checkpoint. Next checkpoint in %llu seconds\n"),
+         static_cast<long long unsigned>(checkpoint_interval_));
     DoBackupCheckpoint(jcr);
   }
 }
