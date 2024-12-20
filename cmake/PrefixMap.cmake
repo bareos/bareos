@@ -33,6 +33,7 @@ if(c_compiler_debug_prefix_map AND cxx_compiler_debug_prefix_map)
   set(CMAKE_CXX_FLAGS
       "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${BAREOS_PREFIX_MAP}"
   )
+  set(CCACHE_MAY_HASHDIR ON)
 endif()
 
 check_c_compiler_flag(
