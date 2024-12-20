@@ -283,8 +283,8 @@ struct EvpDigest : public Digest {
   EVP_MD_CTX ctx;
 
  public:
-  EvpDigest(JobControlRecord* jcr, crypto_digest_t type, const EVP_MD* md)
-      : Digest(jcr, type)
+  EvpDigest(JobControlRecord* t_jcr, crypto_digest_t t_type, const EVP_MD* md)
+      : Digest(t_jcr, t_type)
   {
     EVP_MD_CTX_init(&ctx);
     if (EVP_DigestInit_ex(&ctx, md, NULL) == 0) { throw DigestInitException{}; }
