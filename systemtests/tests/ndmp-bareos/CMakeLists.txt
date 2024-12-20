@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(ndmp_data_agent_address)
 
   find_program(IP_COMMAND ip)
@@ -53,21 +54,21 @@ if(ndmp_data_agent_address)
         set(ndmp_data_agent_password test)
       endif()
 
-      create_systemtest(${SYSTEMTEST_PREFIX} "ndmp")
+      create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
     else()
       create_systemtest(
-        ${SYSTEMTEST_PREFIX} "ndmp" DISABLED COMMENT
+        ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
         "failed to get IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT"
       )
     endif()
   else()
     create_systemtest(
-      ${SYSTEMTEST_PREFIX} "ndmp" DISABLED COMMENT "ip command not found"
+      ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "ip command not found"
     )
   endif()
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} "ndmp" DISABLED COMMENT
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
     "ndmp_data_agent_address not given"
   )
 endif()

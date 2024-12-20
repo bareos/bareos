@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -379,6 +379,7 @@ bool NdmpBuildStorageJob(JobControlRecord* jcr,
 
   job->operation = operation;
   job->bu_type = jcr->dir_impl->backup_format;
+  job->use_eject = true;
 
   if (!fill_ndmp_agent_config(jcr, &job->data_agent, store->Protocol,
                               store->AuthType, store->address, store->SDport,
