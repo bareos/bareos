@@ -1,0 +1,9 @@
+Storage {
+  Name = diskchanger-0
+  Description = "virtual disk autochanger with autonumbered device"
+  Address  = "Replace this by the Bareos Storage Daemon FQDN or IP address"
+  Password = "Replace this by the Bareos Storage Daemon director password"
+  Device = diskchanger-0
+  Media Type = File
+  Auto Changer = yes
+}
