@@ -1,0 +1,14 @@
+Device {
+ Name = "vdisk-0000"
+ Description = "This device with autoselect=no is reserved for restores and labeling volumes"
+ Auto Select = No
+ Media Type = "File"
+ Device Type = "File"
+ Archive device = "/var/lib/bareos/storage"
+ LabelMedia = Yes
+ Random Access = Yes
+ AutomaticMount = Yes
+ RemovableMedia = No
+ Maximum Concurrent Jobs = 1
+ Maximum File Size = 100GB
+}
