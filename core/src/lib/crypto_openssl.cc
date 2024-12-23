@@ -1756,4 +1756,37 @@ void OpensslCleanupThreads(void)
   CRYPTO_set_dynlock_destroy_callback(NULL);
 }
 
+void LogSSLError(int ssl_error)
+{
+  struct ssl_error_code {
+    int error_code;
+    int level;
+    const char* name;
+  };
+
+  std::array ssl_error_codes = {
+    ssl_error_code{ SSL_ERROR_NONE, 1000, "no-error" },
+    ssl_error_code{ SSL_ERROR_SSL, 50, "ssl-error" },
+    ssl_error_code{ SSL_ERROR_WANT_READ, 500, "want-read" },
+    ssl_error_code{ SSL_ERROR_WANT_WRITE, 500, "want-write" },
+    ssl_error_code{ SSL_ERROR_WANT_X509_LOOKUP, 50, "want-x509-lookup" },
+    ssl_error_code{ SSL_ERROR_SYSCALL, 50, "syscall-error" },
+    ssl_error_code{ SSL_ERROR_ZERO_RETURN, 100, "zero-return-error" },
+    ssl_error_code{ SSL_ERROR_WANT_CONNECT, 100, "want-connect" },
+    ssl_error_code{ SSL_ERROR_WANT_ACCEPT, 100, "want-accept" },
+    ssl_error_code{ SSL_ERROR_WANT_ASYNC, 100, "want-async" },
+    ssl_error_code{ SSL_ERROR_WANT_ASYNC_JOB, 100, "want-async-job" },
+    ssl_error_code{ SSL_ERROR_WANT_CLIENT_HELLO_CB, 100, "want-client-hello-cb" },
+    ssl_error_code{ SSL_ERROR_WANT_RETRY_VERIFY, 100, "want-retry-verify" },
+  };
+
+  for (auto [code, level, name] : ssl_error_codes) {
+    if (ssl_error == code) {
+      Dmsg1(level, "SSL_get_error() returned %s\n", name);
+      return;
+    }
+  }
+  Dmsg1(50, "SSL_get_error() returned unknown error value %d\n");
+}
+
 #endif /* HAVE_OPENSSL */
