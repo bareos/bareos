@@ -17,23 +17,30 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# get DIST info in format "$PLATFORM;$DISTVER"
 
-execute_process(
-  COMMAND ${CMAKE_CURRENT_LIST_DIR}/distname.sh
-  OUTPUT_VARIABLE DISTINFOTXT
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(DISTARCH $ENV{VSCMD_ARG_TGT_ARCH})
+  set(PLATFORM Windows-${DISTARCH})
 
-set(DISTINFO ${DISTINFOTXT})
+  # DISTVER is only used in GetOsInfoString() on Non-Windows O
+  # However, we set it to DISTARCH to have at least a valid value
+  set(DISTVER ${DISTARCH})
 
-list(LENGTH DISTINFO DISTINFO_LENGTH)
-
-list(GET DISTINFO 0 PLATFORM)
-list(GET DISTINFO 1 DISTVER)
-
+  set(Host ${CMAKE_SYSTEM})
+  set(Distribution ${PLATFORM})
+else() # NOT Windows
+  execute_process(
+    COMMAND ${CMAKE_CURRENT_LIST_DIR}/distname.sh
+    OUTPUT_VARIABLE DISTINFOTXT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set(DISTINFO ${DISTINFOTXT})
+  list(LENGTH DISTINFO DISTINFO_LENGTH)
+  list(GET DISTINFO 0 PLATFORM)
+  list(GET DISTINFO 1 DISTVER)
+  set(Distribution ${LSB_RELEASE_ID_SHORT})
+  set(DISTVER ${DISTVER})
+  set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
+endif()
 set(BAREOS_PLATFORM ${PLATFORM})
-set(DISTVER ${DISTVER})
 
-set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
-set(Distribution ${LSB_RELEASE_ID_SHORT})
