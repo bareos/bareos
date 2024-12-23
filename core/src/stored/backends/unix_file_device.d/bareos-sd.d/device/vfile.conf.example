@@ -1,0 +1,29 @@
+# The declaration order is important.
+Device {
+ Name = "vfile0000"
+ Description = "This device with autoselect=no is reserved for restores and labeling volumes"
+ Auto Select = No
+ Media Type = "File"
+ Device Type = "File"
+ Archive device = "/var/lib/bareos/storage"
+ Label Media = Yes
+ Random Access = Yes
+ Automatic Mount = Yes
+ Removable Media = No
+}
+
+Device {
+ Name = "vfile"
+ Description = "autonumbered disk devices for file backups"
+ # Will create multiple devices vfile0001 to vfile0010
+ # Adjust your needs depending of your storage performances.
+ # Then ajdust dir->storage->filechanger MaximumConcurrentJobs to this number.
+ Count = 10
+ Media Type = "File"
+ Device Type = "File"
+ Archive device = "/var/lib/bareos/storage"
+ Label Media = Yes
+ Random Access = Yes
+ Automatic Mount = Yes
+ Removable Media = No
+}
