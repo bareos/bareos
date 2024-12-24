@@ -1,0 +1,14 @@
+Autochanger {
+  Name = FileStorage
+  Description = "Virtual Autochanger for files based devices"
+  # Setting Changer Device to "/dev/null" and Changer command to "" enables the virtual autochanger
+  Changer Device = /dev/null
+  Changer Command = ""
+  # the Autochanger will contain multiple drive devices,
+  # we use the autonumbering bareos function for that by setting the "Count" directive
+  # the following order is important
+  # Reserved inactive drive autoselect=no for labeling and restores
+  Device = File0000
+  # The rest are the auto-numbered drives
+  Device = File
+}

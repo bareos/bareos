@@ -1,0 +1,28 @@
+# The declaration order is important.
+Device {
+  Name = "File0000"
+  Description = "This device with autoselect=no is reserved for restores and labeling volumes"
+  Auto Select = No
+  Media Type = "File"
+  Device Type = "File"
+  Archive device = "/var/lib/bareos/storage"
+  Label Media = Yes
+  Random Access = Yes
+  Automatic Mount = Yes
+  Removable Media = No
+}
+
+Device {
+  Name = "File"
+  Description = "autonumbered disk devices for file backups"
+  # Will create multiple devices vfile0001 to vfile<Count Value>
+  # Adjust to the number of jobs you want to run in parallel.
+  Count = 10
+  Media Type = "File"
+  Device Type = "File"
+  Archive device = "/var/lib/bareos/storage"
+  Label Media = Yes
+  Random Access = Yes
+  Automatic Mount = Yes
+  Removable Media = No
+}
