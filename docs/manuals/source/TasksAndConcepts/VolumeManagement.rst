@@ -27,10 +27,10 @@ Getting Bareos to write to disk rather than tape in the simplest case is rather 
      Name = FileBackup
      Media Type = File
      Archive Device = /var/lib/bareos/storage
-     Random Access = Yes;
-     AutomaticMount = yes;
-     RemovableMedia = no;
-     AlwaysOpen = no;
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
    }
 
 
@@ -128,11 +128,11 @@ The second change that is necessary to make automatic labeling work is to give t
      Media Type = File
      Archive Device = /var/lib/bareos/storage/
      Maximum Concurrent Jobs = 1
-     Random Access = yes
-     Automatic Mount = yes
-     Removable Media = no
-     Always Open = no
-     Label Media = yes
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
    }
 
 See :config:option:`dir/pool/LabelFormat`\  for details about the labeling format.
@@ -354,11 +354,11 @@ and the |sd| configuration is:
      Media Type = File1
      Maximum Concurrent Jobs = 1
      Archive Device = /var/lib/bareos/storage/backups1
-     LabelMedia = yes;
-     Random Access = Yes;
-     AutomaticMount = yes;
-     RemovableMedia = no;
-     AlwaysOpen = no;
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
    }
 
    Device {
@@ -366,11 +366,11 @@ and the |sd| configuration is:
      Media Type = File2
      Maximum Concurrent Jobs = 1
      Archive Device = /var/lib/bareos/storage/backups2
-     LabelMedia = yes;
-     Random Access = Yes;
-     AutomaticMount = yes;
-     RemovableMedia = no;
-     AlwaysOpen = no;
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
    }
 
    Messages {
@@ -449,11 +449,11 @@ Example: use four storage devices pointing to the same directory
      Name = FileStorage1
      Media Type = File
      Archive Device = /var/lib/bareos/storage
-     Label Media = yes
-     Random Access = yes
-     Automatic Mount = yes
-     Removable Media = no
-     Always Open = no
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
      Maximum Concurrent Jobs = 1
    }
 
@@ -461,11 +461,11 @@ Example: use four storage devices pointing to the same directory
      Name = FileStorage2
      Media Type = File
      Archive Device = /var/lib/bareos/storage
-     Label Media = yes
-     Random Access = yes
-     Automatic Mount = yes
-     Removable Media = no
-     Always Open = no
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
      Maximum Concurrent Jobs = 1
    }
 
@@ -473,11 +473,11 @@ Example: use four storage devices pointing to the same directory
      Name = FileStorage3
      Media Type = File
      Archive Device = /var/lib/bareos/storage
-     Label Media = yes
-     Random Access = yes
-     Automatic Mount = yes
-     Removable Media = no
-     Always Open = no
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
      Maximum Concurrent Jobs = 1
    }
 
@@ -485,11 +485,11 @@ Example: use four storage devices pointing to the same directory
      Name = FileStorage4
      Media Type = File
      Archive Device = /var/lib/bareos/storage
-     Label Media = yes
-     Random Access = yes
-     Automatic Mount = yes
-     Removable Media = no
-     Always Open = no
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
      Maximum Concurrent Jobs = 1
    }
 
@@ -506,7 +506,7 @@ Compared to the previous example, you will not be forced to declare each device 
 only the autochanger name will be declared, and with the use of :config:option:`sd/device/Count`\  auto-numbering device you can adjust the number of needed drives.
 See also :ref:`StorageResourceMultipliedDevice`
 
-:file:`/etc/bareos/bareos-dir.d/storage/diskchanger-0.conf.example`
+:file:`/etc/bareos/bareos-dir.d/storage/diskchanger-0.conf`
 
 .. code-block:: bareosconfig
    :caption: |dir| configuration: using an virtual disk autochanger with 10 drives
@@ -527,9 +527,8 @@ See also :ref:`StorageResourceMultipliedDevice`
      Media Type = File
    }
 
-:file:`/etc/bareos/bareos-sd.d/autochanger/diskchanger-0.conf.example`
-:file:`/etc/bareos/bareos-dir.d/device/vdisk-0.conf.example`
-:file:`/etc/bareos/bareos-dir.d/device/vdisk-.conf.example`
+:file:`/etc/bareos/bareos-sd.d/autochanger/diskchanger-0.conf``
+:file:`/etc/bareos/bareos-dir.d/device/vdisk-.conf`
 
 
 .. code-block:: bareosconfig
@@ -571,8 +570,6 @@ See also :ref:`StorageResourceMultipliedDevice`
      Random Access = Yes
      Automatic Mount = Yes
      Removable Media = No
-     Maximum Concurrent Jobs = 1
-     Maximum File Size = 100GB
    }
 
    Device {
@@ -588,8 +585,6 @@ See also :ref:`StorageResourceMultipliedDevice`
      Random Access = Yes
      Automatic Mount = Yes
      Removable Media = No
-     Maximum Concurrent Jobs = 1
-     Maximum File Size = 100GB
    }
 
 
@@ -1119,11 +1114,11 @@ In addition, you will need to add the following to your Storage daemon’s confi
      Name = FileStorage
      Media Type = File
      Archive Device = /tmp
-     LabelMedia = yes;
-     Random Access = Yes;
-     AutomaticMount = yes;
-     RemovableMedia = no;
-     AlwaysOpen = no;
+     Label Media = Yes
+     Random Access = Yes
+     Automatic Mount = Yes
+     Removable Media = No
+     Always Open = No
      Maximum Concurrent Jobs = 1
    }
 
