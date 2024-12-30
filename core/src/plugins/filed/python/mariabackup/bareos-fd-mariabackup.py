@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2024 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -19,29 +19,28 @@
 #
 # Author: Philipp Storz
 #
-# Uses mariabackup for backup and restore of mariadb databases
-
-# This module contains the wrapper functions called by the Bareos-FD, the functions call the corresponding
-# methods from your plugin class
-from BareosFdWrapper import *
-
-from bareosfd import *
+"""
+bareos-fd-mariabckup is a plugin to backup and restore MariaDB with mariadb-backup and mbstream
+"""
 import os
-from subprocess import *
-from BareosFdPluginBaseclass import *
-import BareosFdWrapper
-import datetime
+import json
 import time
+import datetime
 import tempfile
 import shutil
-import json
+from subprocess import *
+import bareosfd
+from bareosfd import *
+
+from BareosFdPluginBaseclass import BareosFdPluginBaseclass
+from BareosFdWrapper import *  # noqa
 
 
 @BareosPlugin
 class BareosFdMariabackup(BareosFdPluginBaseclass):
     """
     Plugin for backing up all innodb databases found in a specific mariadb server
-    using the native mariabackup tool.
+    using the native mariadb-backup tool.
     """
 
     def __init__(self, plugindef):
@@ -53,27 +52,36 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         self.tempdir = tempfile.mkdtemp()
         # self.logdir = GetValue(bVarWorkingDir)
         self.logdir = "/var/log/bareos/"
-        self.log = "bareos-plugin-mariabackup.log"
+        self.log = "bareos-plugin-mariadb-backup.log"
         self.rop_data = {}
         self.max_to_lsn = 0
         self.err_fd = None
+        self.dumpbinary = "mariadb-backup"
+        self.restorecommand = None
+        self.mysqlcmd = None
+        self.mycnf = ""
+        self.strictIncremental = False
+        self.dumpoptions = ""
+        # xtrabackup_checkpoints for <11 and mariadb_backup_checkpoints for >=11
+        # version needs to be retrieved with
+        # mariadb --batch --skip-column-names --execute "select version();"
+        self.checkpoints_filename = None
 
     def parse_plugin_definition(self, plugindef):
         """
-        We have default options that should work out of the box in the most  use cases
-        that the mysql/mariadb is on the same host and can be accessed without user/password information,
+        We have default options that should work out of the box in the most use cases
+        when the mysql/mariadb is on the same host and can be accessed without user/password
+        information,
         e.g. with a valid my.cnf for user root.
         """
         BareosFdPluginBaseclass.parse_plugin_definition(self, plugindef)
 
         if "dumpbinary" in self.options:
             self.dumpbinary = self.options["dumpbinary"]
-        else:
-            self.dumpbinary = "mariabackup"
 
-        if "restorecommand" not in self.options:
-            self.restorecommand = "mbstream -x -C "
-        else:
+        # The reset to default is needed for each file.
+        self.restorecommand = "mbstream -x -C "
+        if "restorecommand" in self.options:
             self.restorecommand = self.options["restorecommand"]
 
         # Default is not to write an extra logfile
@@ -86,13 +94,15 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         else:
             self.log = os.path.join(self.logdir, self.options["log"])
 
-        # By default, standard mysql-config files will be used, set
-        # this option to use extra files
+        # By default, standard mysql-config files will be used,
+        # set this option to use extra files
         self.connect_options = {"read_default_group": "client"}
         if "mycnf" in self.options:
             self.connect_options["read_default_file"] = self.options["mycnf"]
-            self.mycnf = "--defaults-extra-file=%s " % self.options["mycnf"]
-        else:
+            # self.mycnf = "--defaults-extra-file=%s " % self.options["mycnf"]
+            # defaults-extra-file can't be added after default-file which is
+            # set in the fileset, mycnf will be mainly used by mysqlclient
+            # python module. Can be improved.
             self.mycnf = ""
 
         # If true, incremental jobs will only be performed, if LSN has increased
@@ -102,8 +112,6 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             and self.options["strictIncremental"] == "true"
         ):
             self.strictIncremental = True
-        else:
-            self.strictIncremental = False
 
         self.dumpoptions = self.mycnf
 
@@ -118,11 +126,11 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         if "extradumpoptions" in self.options:
             self.dumpoptions += " " + self.options["extradumpoptions"]
 
-        # We need to call mysql to get the current Log Sequece Number (LSN)
+        # We need to call mariadb to get the current Log Sequece Number (LSN)
         if "mysqlcmd" in self.options:
             self.mysqlcmd = self.options["mysqlcmd"]
         else:
-            self.mysqlcmd = "mysql %s -r" % self.mycnf
+            self.mysqlcmd = "mariadb %s -r" % self.mycnf
 
         return bRC_OK
 
@@ -137,10 +145,87 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         else:
             return bRC_OK
 
+    def check_plugin_mariadb_version(self):
+        get_version_command = self.mysqlcmd.split()
+        get_version_command.extend(
+            ["--batch", "--skip-column-names", "--execute", "select version();"]
+        )
+        DebugMessage(100, f'mariadb version check: "{get_version_command}"\n')
+        try:
+            ret = check_output(get_version_command).decode().split(".")[0]
+            mariadb_major_version = int(ret)
+            if mariadb_major_version is not None and mariadb_major_version != 0:
+                if mariadb_major_version < 11:
+                    self.checkpoints_filename = "xtrabackup_checkpoints"
+                elif mariadb_major_version >= 11:
+                    self.checkpoints_filename = "mariadb_backup_checkpoints"
+                DebugMessage(
+                    100,
+                    (
+                        f"Detected mariadb version {mariadb_major_version} "
+                        f": {self.checkpoints_filename}\n"
+                    ),
+                )
+                return bRC_OK
+        except CalledProcessError as run_err:
+            DebugMessage(
+                100,
+                f"No mariadb version detected: {run_err}\n",
+            )
+            return bRC_Error
+        except ValueError as val_err:
+            DebugMessage(
+                100,
+                f"mariadb version detected seems wrong: {val_err}\n",
+            )
+            return bRC_Error
+
+    def get_lsn_by_command(self):
+        get_lsn_cmd = self.mysqlcmd.split()
+        get_lsn_cmd.extend(
+            [
+                "--batch",
+                "--skip-column-names",
+                "--execute",
+                "SHOW ENGINE INNODB STATUS;",
+            ]
+        )
+        DebugMessage(100, f'get_lsn_by_command: "{get_lsn_cmd}"\n')
+        try:
+            ret = check_output(get_lsn_cmd).decode()
+            return ret
+        except CalledProcessError as run_err:
+            JobMessage(
+                M_FATAL,
+                f"Error while looking for LSN: {run_err}\n",
+            )
+            return bRC_Error
+
+    def parse_innodb_status(self, res):
+        last_lsn = None
+        try:
+            for line in res.split("\n"):
+                if line.startswith("Log sequence number"):
+                    last_lsn = int(line.split(" ")[-1])
+        except ValueError as val_err:
+            JobMessage(
+                M_FATAL,
+                f"Returned LSN seems wrong: {val_err}\n",
+            )
+            return bRC_Error
+        if last_lsn is None:
+            JobMessage(
+                M_FATAL,
+                f"Could not get LSN from {res}\n",
+            )
+            return bRC_Error
+        return last_lsn
+
     def create_file(self, restorepkt):
         """
         On restore we create a subdirectory for the first base backup and each incremental backup.
-        Because mariabackup expects an empty directory, we create a tree starting with jobId/ of restore job
+        Because mariadb-backup expects an empty directory, we create a tree starting with jobId/
+        of restore job
         """
         FNAME = restorepkt.ofname
         DebugMessage(100, "create file with %s called\n" % FNAME)
@@ -150,7 +235,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         if origJobId in self.rop_data:
             rop_from_lsn = int(self.rop_data[origJobId]["from_lsn"])
             rop_to_lsn = int(self.rop_data[origJobId]["to_lsn"])
-            self.writeDir += "/%020d_" % rop_from_lsn
+            self.writeDir += "%020d_" % rop_from_lsn
             self.writeDir += "%020d_" % rop_to_lsn
             self.writeDir += "%010d" % origJobId
         else:
@@ -167,17 +252,17 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                 "Directory %s does not exist, creating it now\n" % self.writeDir,
             )
             os.makedirs(self.writeDir)
-        # Mariabackup requires empty directory
+        # mbstream requires empty directory
         if os.listdir(self.writeDir):
             JobMessage(
                 M_FATAL,
-                "Restore with xbstream needs empty directory: %s\n" % self.writeDir,
+                "Restore with mbstream needs empty directory: %s\n" % self.writeDir,
             )
             return bRC_Error
         self.restorecommand += self.writeDir
         DebugMessage(
             100,
-            'Restore using xbstream to extract files with "%s"\n' % self.restorecommand,
+            'Restore using mbstream to extract files with "%s"\n' % self.restorecommand,
         )
         restorepkt.create_status = CF_EXTRACT
         return bRC_OK
@@ -187,6 +272,13 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         We will check, if database has changed since last backup
         in the incremental case
         """
+        check_version_bRC = self.check_plugin_mariadb_version()
+        if check_version_bRC != bRC_OK:
+            JobMessage(
+                M_FATAL,
+                "Unable to determine mariadb version\n",
+            )
+            return check_version_bRC
         check_option_bRC = self.check_plugin_options()
         if check_option_bRC != bRC_OK:
             return check_option_bRC
@@ -211,6 +303,8 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                     100,
                     "Import of module MySQLdb failed. Using command pipe instead\n",
                 )
+            # TODO Fix as this doesn't use the mysqldefault passed file and always try to connect
+            # to default instance.
             # contributed by https://github.com/kjetilho
             if hasMySQLdbModule:
                 try:
@@ -224,11 +318,8 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                             "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
                         )
                         return bRC_Error
-                    info = result[0][2]
+                    innodb_status = result[0][2]
                     conn.close()
-                    for line in info.split("\n"):
-                        if line.startswith("Log sequence number"):
-                            last_lsn = int(line.split(" ")[-1])
                 except Exception as e:
                     JobMessage(
                         M_FATAL,
@@ -237,32 +328,11 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                     return bRC_Error
             # use old method as fallback, if module MySQLdb not available
             else:
-                get_lsn_command = (
-                    "echo 'SHOW ENGINE INNODB STATUS' | %s | grep 'Log sequence number' | awk '{ print $4 }'"
-                    % self.mysqlcmd
-                )
-                last_lsn_proc = Popen(
-                    get_lsn_command, shell=True, stdout=PIPE, stderr=PIPE
-                )
-                last_lsn_proc.wait()
-                returnCode = last_lsn_proc.poll()
-                (mysqlStdOut, mysqlStdErr) = last_lsn_proc.communicate()
-                if returnCode != 0 or mysqlStdErr:
-                    JobMessage(
-                        M_FATAL,
-                        'Could not get LSN with command "%s", Error: %s'
-                        % (get_lsn_command, mysqlStdErr),
-                    )
-                    return bRC_Error
-                else:
-                    try:
-                        last_lsn = int(mysqlStdOut)
-                    except:
-                        JobMessage(
-                            M_FATAL,
-                            'Error reading LSN: "%s" not an integer' % mysqlStdOut,
-                        )
-                        return bRC_Error
+                innodb_status = self.get_lsn_by_command()
+
+            last_lsn = self.parse_innodb_status(innodb_status)
+            if last_lsn == bRC_Error:
+                return bRC_Error
             JobMessage(M_INFO, "Backup until LSN: %d\n" % last_lsn)
             if (
                 self.max_to_lsn > 0
@@ -275,7 +345,6 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                     % (last_lsn, self.max_to_lsn),
                 )
                 self.files_to_backup = ["lsn_only"]
-                return bRC_OK
         return bRC_OK
 
     def start_backup_file(self, savepkt):
@@ -294,7 +363,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
 
         if self.file_to_backup == "stream":
             # This is the database backup as xbstream
-            savepkt.fname = "/_mariabackup/xbstream.%010d" % self.jobId
+            savepkt.fname = "/_mariadb-backup/xbstream.%010d" % self.jobId
             savepkt.type = FT_REG
             if self.max_to_lsn > 0:
                 self.dumpoptions += " --incremental-lsn=%d" % self.max_to_lsn
@@ -305,11 +374,11 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             # Read checkpoints and create restore object
             checkpoints = {}
             # improve: Error handling
-            with open("%s/xtrabackup_checkpoints" % self.tempdir) as lsnfile:
+            with open(f"{self.tempdir}/{self.checkpoints_filename}") as lsnfile:
                 for line in lsnfile:
                     key, value = line.partition("=")[::2]
                     checkpoints[key.strip()] = value.strip()
-            savepkt.fname = "/_mariabackup/xtrabackup_checkpoints"
+            savepkt.fname = f"/_mariadb-backup/{self.checkpoints_filename}"
             savepkt.type = FT_RESTORE_FIRST
             savepkt.object_name = savepkt.fname
             savepkt.object = bytearray(json.dumps(checkpoints), encoding="utf8")
@@ -319,7 +388,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         elif self.file_to_backup == "lsn_only":
             # We have nothing to backup incremental, so we just have to pass
             # the restore object from previous job
-            savepkt.fname = "/_mariabackup/xtrabackup_checkpoints"
+            savepkt.fname = f"/_mariadb-backup/{self.checkpoints_filename}"
             savepkt.type = FT_RESTORE_FIRST
             savepkt.object_name = savepkt.fname
             savepkt.object = bytearray(self.row_rop_raw)
@@ -341,7 +410,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
     def plugin_io(self, IOP):
         """
         Called for io operations. We read from pipe into buffers or on restore
-        send to xbstream
+        send to mbstream
         """
         DebugMessage(200, "plugin_io called with " + str(IOP.func) + "\n")
 
@@ -405,7 +474,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                         M_ERROR,
                         "Dump / restore command not finished properly\n",
                     )
-                    bRC_Error
+                    return bRC_Error
                 return bRC_OK
             else:
                 DebugMessage(
@@ -429,8 +498,9 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         """
         Check if dump was successful.
         """
-        # Usually the mariabackup process should have terminated here, but on some servers
-        # it has not always.
+        # Usually the mariadb-backup process should have terminated here,
+        # but on some servers it has not always.
+        DebugMessage(100, "end_backup_file() entry point in Python called\n")
         if self.file_to_backup == "stream":
             returnCode = self.subprocess_returnCode
             if returnCode is None:
@@ -442,8 +512,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             else:
                 DebugMessage(
                     100,
-                    "end_backup_file() entry point in Python called. Returncode: %d\n"
-                    % self.stream.returncode,
+                    "end_backup_file() Returncode: %d\n" % self.stream.returncode,
                 )
                 if returnCode != 0:
                     msg = [
@@ -453,8 +522,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                     if self.log:
                         msg += ['log file: "%s"' % self.log]
                     JobMessage(M_FATAL, ", ".join(msg) + "\n")
-            if returnCode != 0:
-                return bRC_Error
+                    return bRC_Error
 
             if self.log:
                 self.err_fd.write(
@@ -486,7 +554,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                 % self.stream.returncode,
             )
             if returnCode != 0:
-                msg = ["Restore command returned non-zero value: %d" % return_code]
+                msg = ["Restore command returned non-zero value: %d" % returnCode]
                 if self.log:
                     msg += ['log file: "%s"' % self.log]
                 JobMessage(M_ERROR, ", ".join(msg) + "\n")
