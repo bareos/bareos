@@ -21,10 +21,9 @@
    02110-1301, USA.
 */
 
+// clang-format off
 #ifndef BAREOS_INCLUDE_CONFIG_H_
 #define BAREOS_INCLUDE_CONFIG_H_
-
-// clang-format off
 
 #define BAREOS "@BAREOS@"
 #define FD_DEFAULT_PORT "@fd_port@"
@@ -43,18 +42,6 @@
 
 // Define to 1 if you use msvc
 #cmakedefine HAVE_MSVC @HAVE_MSVC@
-
-#if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
-#  include "mingwconfig.h"
-#define _POSIX_C_SOURCE 1
-extern char win_os[];
-#  define BAREOS_PLATFORM "Cross-compile"
-#  if defined(_WIN64)
-#    define DISTVER "Win64"
-#  else
-#    define DISTVER "Win32"
-#  endif
-#else
 
 // Where are Bareos config files stored
 #cmakedefine CONFDIR @CONFDIR@
@@ -516,8 +503,5 @@ extern char win_os[];
 
 #define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
-
-#endif /* defined(WIN32) */
-// clang-format on
-
 #endif  // BAREOS_INCLUDE_CONFIG_H_
+// clang-format on
