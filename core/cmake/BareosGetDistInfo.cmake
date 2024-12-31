@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +22,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(DEFINED ENV{VSCMD_ARG_TGT_ARCH}) # Native Build
     set(PLATFORM Windows-native)
     set(DISTVER $ENV{VSCMD_ARG_TGT_ARCH})
-  else() #  Cross Compile
+  else() # Cross Compile
     set(PLATFORM Cross-compile)
     set(DISTVER Win64)
   endif()
