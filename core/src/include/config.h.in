@@ -21,10 +21,9 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_INCLUDE_CONFIG_H_
-#  define BAREOS_INCLUDE_CONFIG_H_
-
 // clang-format off
+#ifndef BAREOS_INCLUDE_CONFIG_H_
+#define BAREOS_INCLUDE_CONFIG_H_
 
 #define BAREOS "@BAREOS@"
 #define FD_DEFAULT_PORT "@fd_port@"
