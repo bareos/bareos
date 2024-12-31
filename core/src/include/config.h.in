@@ -22,7 +22,7 @@
 */
 
 #ifndef BAREOS_INCLUDE_CONFIG_H_
-#define BAREOS_INCLUDE_CONFIG_H_
+#  define BAREOS_INCLUDE_CONFIG_H_
 
 // clang-format off
 
