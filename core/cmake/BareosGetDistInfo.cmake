@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,13 +17,12 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(DISTARCH $ENV{VSCMD_ARG_TGT_ARCH})
   set(PLATFORM Windows-${DISTARCH})
 
-  # DISTVER is only used in GetOsInfoString() on Non-Windows O
-  # However, we set it to DISTARCH to have at least a valid value
+  # DISTVER is only used in GetOsInfoString() on Non-Windows O However, we set
+  # it to DISTARCH to have at least a valid value
   set(DISTVER ${DISTARCH})
 
   set(Host ${CMAKE_SYSTEM})
@@ -43,4 +42,3 @@ else() # NOT Windows
   set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
 endif()
 set(BAREOS_PLATFORM ${PLATFORM})
-

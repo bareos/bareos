@@ -306,7 +306,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(HAVE_WIN32 1)
 
-
   if(MSVC)
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
@@ -634,7 +633,7 @@ if(ENABLE_PYTHON)
   set(PLUGINS python-ldap)
 else()
   set(PLUGINS "")
-endif ()
+endif()
 
 if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
