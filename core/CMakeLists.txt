@@ -690,7 +690,7 @@ if(ENABLE_PYTHON)
   set(PLUGINS python-ldap)
 else()
   set(PLUGINS "")
-endif ()
+endif()
 
 if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
