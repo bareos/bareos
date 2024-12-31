@@ -70,8 +70,8 @@ static void StatusSlots(UaContext* ua, StorageResource* store);
 static void StatusContentApi(UaContext* ua, StorageResource* store);
 static void StatusContentJson(UaContext* ua, StorageResource* store);
 
-static char OKdotstatus[] = "1000 OK .status\n";
-static char DotStatusJob[] = "JobId=%s JobStatus=%c JobErrors=%d\n";
+constexpr const char OKdotstatus[] = "1000 OK .status\n";
+constexpr const char DotStatusJob[] = "JobId=%s JobStatus=%c JobErrors=%d\n";
 
 static void ClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 {
@@ -112,7 +112,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
 
   if (Bstrcasecmp(ua->argk[1], "dir")) {
     if (Bstrcasecmp(ua->argk[2], "current")) {
-      ua->SendMsg(OKdotstatus, ua->argk[2]);
+      ua->SendMsg(OKdotstatus);
       foreach_jcr (njcr) {
         if (njcr->JobId != 0
             && ua->AclAccessOk(Job_ACL,
@@ -123,7 +123,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
       }
       endeach_jcr(njcr);
     } else if (Bstrcasecmp(ua->argk[2], "last")) {
-      ua->SendMsg(OKdotstatus, ua->argk[2]);
+      ua->SendMsg(OKdotstatus);
       if (RecentJobResultsList::Count() > 0) {
         RecentJobResultsList::JobResult job
             = RecentJobResultsList::GetMostRecentJobResult();
@@ -348,10 +348,10 @@ void ListDirStatusHeader(UaContext* ua)
               kBareosVersionStrings.Full, kBareosVersionStrings.Date,
               kBareosVersionStrings.GetOsInfo());
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  ua->SendMsg(
-      T_("Daemon started %s. Jobs: run=%zu, running=%d db:postgresql, %s "
-         "binary\n"),
-      dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
+  ua->SendMsg(T_("Daemon started %s. Jobs: run=%" PRIuz
+                 ", running=%d db:postgresql, %s "
+                 "binary\n"),
+              dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
 
   if (me->secure_erase_cmdline) {
     ua->SendMsg(T_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
@@ -772,7 +772,7 @@ start_again:
               T_("Overrides"));
   ua->SendMsg(
       "==============================================================\n");
-  ua->SendMsg(overview.c_str());
+  ua->SendMsg("%s", overview.c_str());
   ua->SendMsg("====\n");
 }
 

@@ -104,7 +104,7 @@ typedef enum
   VOL_LIST_PARTIAL
 } vol_list_type;
 
-enum class slot_type_t
+enum class slot_type_t : short
 {
   kSlotTypeUnknown,
   kSlotTypeDrive,
@@ -113,7 +113,7 @@ enum class slot_type_t
   kSlotTypePicker  /**< Robotics */
 };
 
-enum class slot_status_t
+enum class slot_status_t : short
 {
   kSlotStatusUnknown,
   kSlotStatusEmpty,
@@ -212,9 +212,9 @@ struct RuntimeJobStatus {
   int32_t NumConcurrentJobs{0}; /**< Number of concurrent jobs running */
 };
 
-#define INDEX_DRIVE_OFFSET 0
-#define INDEX_MAX_DRIVES 100
-#define INDEX_SLOT_OFFSET 100
+inline constexpr slot_number_t INDEX_DRIVE_OFFSET = 0;
+inline constexpr slot_number_t INDEX_MAX_DRIVES = 100;
+inline constexpr slot_number_t INDEX_SLOT_OFFSET = 100;
 
 #define FD_VERSION_1 1
 #define FD_VERSION_2 2

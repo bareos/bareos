@@ -82,8 +82,8 @@ bool RunHourValidator::TriggersOn(const DateTimeBitfield& date_time_bitfield)
 
 void RunHourValidator::PrintDebugMessage(int debuglevel) const
 {
-  Dmsg8(debuglevel, "now = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
-        time_, hour_, month_, mday_, wday_, wom_, woy_, yday_);
+  Dmsg8(debuglevel, "now = %lx: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
+        (long unsigned)time_, hour_, month_, mday_, wday_, wom_, woy_, yday_);
 }
 
 }  // namespace directordaemon

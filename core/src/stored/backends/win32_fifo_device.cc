@@ -72,16 +72,16 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     if (fd < 0) {
       BErrNo be;
       dev_errno = errno;
-      Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-            prt_name, omode, oflags, errno, be.bstrerror());
+      Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
+            prt_name, dev_mode_to_str(omode), oflags, errno, be.bstrerror());
     } else {
       d_close(fd);
       fd = d_open(archive_device_string, oflags, 0); /* open normally */
       if (fd < 0) {
         BErrNo be;
         dev_errno = errno;
-        Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-              prt_name, omode, oflags, errno, be.bstrerror());
+        Dmsg5(100, "Open error on %s omode=%s oflags=%x errno=%d: ERR=%s\n",
+              prt_name, dev_mode_to_str(omode), oflags, errno, be.bstrerror());
         break;
       }
       dev_errno = 0;

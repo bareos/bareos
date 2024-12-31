@@ -88,14 +88,15 @@ void DumpBlock(DeviceBlock* b, const char* msg)
   }
 
   if (block_len > 4000000) {
-    Dmsg3(20, "Dump block %s 0x%x blocksize too big %u\n", msg, b, block_len);
+    Dmsg3(20, "Dump block %s %p blocksize too big %" PRIu32 "\n", msg, b,
+          block_len);
     return;
   }
 
   BlockCheckSum = crc32_fast((uint8_t*)b->buf + BLKHDR_CS_LENGTH,
                              block_len - BLKHDR_CS_LENGTH);
   Pmsg6(000,
-        T_("Dump block %s %x: size=%d BlkNum=%d\n"
+        T_("Dump block %s %p: size=%d BlkNum=%d\n"
            "               Hdrcksum=%x cksum=%x\n"),
         msg, b, block_len, BlockNumber, CheckSum, BlockCheckSum);
   p = b->buf + bhl;
@@ -108,7 +109,9 @@ void DumpBlock(DeviceBlock* b, const char* msg)
     unser_int32(FileIndex);
     unser_int32(Stream);
     unser_uint32(data_len);
-    Pmsg6(000, T_("   Rec: VId=%u VT=%u FI=%s Strm=%s len=%d p=%x\n"),
+    Pmsg6(000,
+          T_("   Rec: VId=%" PRIu32 " VT=%" PRIu32
+             " FI=%s Strm=%s len=%d p=%p\n"),
           VolSessionId, VolSessionTime, FI_to_ascii(buf1, FileIndex),
           stream_to_ascii(buf2, Stream, FileIndex), data_len, p);
     p += data_len + rhl;
@@ -142,7 +145,7 @@ DeviceBlock* new_block(Device* dev)
   block->buf = GetMemory(block->buf_len);
   EmptyBlock(block);
   block->BlockVer = BLOCK_VER; /* default write version */
-  Dmsg1(650, "Returning new block=%x\n", block);
+  Dmsg1(650, "Returning new block=%p\n", block);
   return block;
 }
 
@@ -174,9 +177,9 @@ void PrintBlockReadErrors(JobControlRecord* jcr, DeviceBlock* block)
 void FreeBlock(DeviceBlock* block)
 {
   if (block) {
-    Dmsg1(999, "FreeBlock buffer %x\n", block->buf);
+    Dmsg1(999, "FreeBlock buffer %p\n", block->buf);
     FreeMemory(block->buf);
-    Dmsg1(999, "FreeBlock block %x\n", block);
+    Dmsg1(999, "FreeBlock block %p\n", block);
     FreeMemory((POOLMEM*)block);
   }
 }
@@ -711,8 +714,8 @@ bool DeviceControlRecord::WriteBlockToDev()
   do {
     if (retry > 0 && status == -1 && errno == EBUSY) {
       BErrNo be;
-      Dmsg4(100, "===== write retry=%d status=%d errno=%d: ERR=%s\n", retry,
-            status, errno, be.bstrerror());
+      Dmsg4(100, "===== write retry=%d status=%" PRIiz " errno=%d: ERR=%s\n",
+            retry, status, errno, be.bstrerror());
       Bmicrosleep(5, 0); /* pause a bit if busy or lots of errors */
       dev->clrerror(-1);
     }
@@ -758,7 +761,7 @@ bool DeviceControlRecord::WriteBlockToDev()
     if (dev->dev_errno == ENOSPC) {
       Jmsg(jcr, M_INFO, 0,
            T_("End of Volume \"%s\" at %u:%u on device %s. Write of %u bytes "
-              "got %d.\n"),
+              "got %" PRIiz ".\n"),
            dev->getVolCatName(), dev->file, dev->block_num, dev->print_name(),
            wlen, status);
     } else {
@@ -781,7 +784,8 @@ bool DeviceControlRecord::WriteBlockToDev()
 
       be.SetErrno(dev->dev_errno);
       Dmsg7(100,
-            "=== Write error. fd=%d size=%u rtn=%d dev_blk=%d blk_blk=%d "
+            "=== Write error. fd=%d size=%u rtn=%" PRIiz
+            " dev_blk=%d blk_blk=%d "
             "errno=%d: ERR=%s\n",
             dev->fd, wlen, status, dev->block_num, block->BlockNumber,
             dev->dev_errno, be.bstrerror(dev->dev_errno));
@@ -985,8 +989,8 @@ reread:
   do {
     if (retry) {
       BErrNo be;
-      Dmsg4(100, "===== read retry=%d status=%d errno=%d: ERR=%s\n", retry,
-            status, errno, be.bstrerror());
+      Dmsg4(100, "===== read retry=%d status=%" PRIiz " errno=%d: ERR=%s\n",
+            retry, status, errno, be.bstrerror());
       Bmicrosleep(10, 0); /* pause a bit if busy or lots of errors */
       dev->clrerror(-1);
     }
@@ -1016,7 +1020,7 @@ reread:
     return ReadStatus::Error;
   }
 
-  Dmsg3(250, "Read device got %d bytes at %u:%u\n", status, dev->file,
+  Dmsg3(250, "Read device got %" PRIiz " bytes at %u:%u\n", status, dev->file,
         dev->block_num);
 
   if (status == 0) { /* EOF (Berkley I/O Conventions) */

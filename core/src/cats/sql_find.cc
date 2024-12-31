@@ -383,7 +383,7 @@ bool BareosDb::FindJobById(JobControlRecord* jcr, std::string id)
   Dmsg1(100, "Query: %s\n", query.c_str());
   if (!QueryDb(jcr, query.c_str())) { return false; }
   if (SqlFetchRow() == NULL) {
-    Mmsg1(errmsg, T_("No Job found with id: %d.\n"), id.c_str());
+    Mmsg1(errmsg, T_("No Job found with id: %s.\n"), id.c_str());
     SqlFreeResult();
     return false;
   } else {
@@ -544,7 +544,7 @@ retry_fetch:
       Dmsg1(50, "Volume %s is on unwanted_volume_list, skipping\n", row[1]);
       num_rows--;
       if (num_rows <= 0) {
-        Dmsg1(50, "No more volumes in result, bailing out\n", row[1]);
+        Dmsg1(50, "No more volumes in result, bailing out\n");
         SqlFreeResult();
         Dmsg1(050, "Rtn numrows=%d\n", num_rows);
         return num_rows;
