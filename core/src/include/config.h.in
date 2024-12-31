@@ -48,12 +48,6 @@
 #  include "mingwconfig.h"
 #define _POSIX_C_SOURCE 1
 extern char win_os[];
-#  define BAREOS_PLATFORM "Cross-compile"
-#  if defined(_WIN64)
-#    define DISTVER "Win64"
-#  else
-#    define DISTVER "Win32"
-#  endif
 #else
 
 // Where are Bareos config files stored
@@ -514,10 +508,11 @@ extern char win_os[];
 // Default path for Bareos Python modules
 #cmakedefine PYTHON_MODULE_PATH "@PYTHON_MODULE_PATH@"
 
-#define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
 
 #endif /* defined(WIN32) */
 // clang-format on
+
+#define BAREOS_PLATFORM "@PLATFORM@"
 
 #endif  // BAREOS_INCLUDE_CONFIG_H_
