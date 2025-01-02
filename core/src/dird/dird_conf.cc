@@ -2398,7 +2398,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
   // Don't allow the JobDefs pointing to itself.
   if (res->jobdefs == res) { return false; }
 
-  if (res_type == R_JOB) {
+  if (res_type == R_JOB || res_type == R_JOBDEFS) {
     jobdefs = res->jobdefs;
 
     // Handle RunScripts alists specifically
