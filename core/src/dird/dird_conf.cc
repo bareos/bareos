@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2398,7 +2398,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
   // Don't allow the JobDefs pointing to itself.
   if (res->jobdefs == res) { return false; }
 
-  if (res_type == R_JOB) {
+  if (res_type == R_JOB || res_type == R_JOBDEFS) {
     jobdefs = res->jobdefs;
 
     // Handle RunScripts alists specifically
