@@ -1,0 +1,34 @@
+@startmindmap
++ Backup
+++ Regular
++++_ When?
++++_ Interval?
+++ Copy of data
++++_ Filedata
++++_ Metadata
++++_ Databases
++++_ VM Images
++++_ Other
+++ Store Elsewhere
++++_ Local Disk
++++_ SAN Volume
++++_ Network Share
++++_ Cloud Storage
++++_ Tape Library
+++ Restore original
++++_ Data Integrity
++++_ Recovery speed
++++_ Restore tests
+++ Data Loss
++++_ Accident
+++++_ Hardware Failure
+++++_ Software Failure
+++++_ Human Failure
++++_ Attack
+++++_ Hacking and insider activity
+++++_ Malicious Software
++++_ Higher Violence
+++++_ Fire
+++++_ Flood
+++++_ Power Outage
+@endmindmap

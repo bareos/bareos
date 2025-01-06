@@ -10,5 +10,6 @@ Introduction and Tutorial
       /IntroductionAndTutorial/UpdatingBareos.rst
       /IntroductionAndTutorial/BareosWebui.rst
       /IntroductionAndTutorial/GettingStartedWithBareos.rst
+      /IntroductionAndTutorial/BackupBasics.rst
       /IntroductionAndTutorial/Tutorial.rst
       /IntroductionAndTutorial/CriticalItemsToImplementBeforeProduction.rst
