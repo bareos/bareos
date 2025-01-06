@@ -557,12 +557,20 @@ endmacro()
 
 macro(prepare_test_python)
   string(REGEX MATCH "py3grpc" is_grpc "${TEST_NAME}")
-  set(python_module_name python3)
-  set(python_module_suffix)
-  set(python_module_subdir_prefix ${python_module_name})
+  string(REGEX MATCH "py3agrpc" is_auto_grpc "${TEST_NAME}")
+  set(python_module_subdir_prefix "python3")
   if(is_grpc)
-    set(python_module_name grpc)
-    set(python_module_suffix :grpc-python-module:python3)
+    set(python_module_name "grpc")
+    set(dir_python_module_name "grpc:grpc-python-module:python3")
+  elseif(is_auto_grpc)
+    # this is a total hack ...
+    set(python_module_name "grpc\"
+Grpc Module = \"grpc-python-module"
+    )
+    set(dir_python_module_name "python3")
+  else()
+    set(python_module_name "python3")
+    set(dir_python_module_name "python3")
   endif()
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     string(CONCAT pythonpath ${PYTHON_PLUGINS_DIR_TO_TEST})
@@ -893,6 +901,11 @@ macro(create_systemtest prefix test_subdir)
         string(REPLACE "py3plug" "py3grpc" grpc_subdir ${test_subdir})
         create_enabled_systemtest(
           ${prefix} ${grpc_subdir} ${test_subdir} ${grpc_subdir}
+          ${ARG_IGNORE_CONFIG_WARNINGS}
+        )
+        string(REPLACE "py3plug" "py3agrpc" agrpc_subdir ${test_subdir})
+        create_enabled_systemtest(
+          ${prefix} ${agrpc_subdir} ${test_subdir} ${agrpc_subdir}
           ${ARG_IGNORE_CONFIG_WARNINGS}
         )
       else()
