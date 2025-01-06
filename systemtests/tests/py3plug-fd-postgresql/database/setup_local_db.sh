@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -91,13 +91,16 @@ local_db_create_superuser_role() {
 
 local_detect_pg_version(){
   # PG_VERSION will be pick from backuped PG data dir
-  export PG_VERSION="$(cut -d '.' -f1 data/PG_VERSION)"
+  PG_VERSION="$(cut -d '.' -f1 data/PG_VERSION)"
+  export PG_VERSION
   if [ ${PG_VERSION} -lt 10 ]; then
     local_db_stop_server "$1" || true
     # skip test
     echo "${TestName} test skipped: not compatible with PG <= 10"
     exit 77;
   fi
+
+  echo "VERSION = ${PG_VERSION}"
 }
 
 setup_local_db() {
@@ -110,7 +113,7 @@ setup_local_db() {
   else
     echo stop server with "${POSTGRES_BIN_PATH}/pg_ctl --pgdata=data stop"
   fi
-  local_detect_pg_version
+  local_detect_pg_version "$1"
   return 0
 }
 
