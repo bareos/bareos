@@ -80,17 +80,19 @@ typedef enum
 #  define BACL_ENOTSUP EOPNOTSUPP
 #endif
 
-static inline constexpr uint32_t BACL_FLAG_SAVE_NATIVE = 0x01;
-static inline constexpr uint32_t BACL_FLAG_SAVE_AFS = 0x02;
-static inline constexpr uint32_t BACL_FLAG_RESTORE_NATIVE = 0x04;
-static inline constexpr uint32_t BACL_FLAG_RESTORE_AFS = 0x08;
+struct bacl_flags {
+  bool SaveNative{false};
+  bool SaveAfs{false};
+  bool RestoreNative{false};
+  bool RestoreAfs{false};
+};
 
 // Internal tracking data.
 class AclData {
  public:
   int filetype;
   POOLMEM* last_fname;
-  uint32_t flags{}; /* See BACL_FLAG_* */
+  bacl_flags flags{};
   uint32_t current_dev{0};
   bool first_dev{true};
   uint32_t nr_errors;
