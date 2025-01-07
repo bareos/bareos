@@ -91,6 +91,13 @@ OS:
       ARCH:
         - x86_64
   EL:
+    "10":
+      TYPE: rpm
+      IMAGE: rhel10
+      CUSTOM_TEST_IMAGES: [ RHEL ]
+      ARCH:
+        - x86_64
+        - aarch64
     "9":
       TYPE: rpm
       IMAGE: rhel9
