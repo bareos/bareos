@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -175,10 +175,10 @@ void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
  * This is repeated 1 or more times.
  *
  */
-uint32_t SerializeXattrStream(JobControlRecord*,
-                              XattrBuildData* xattr_data,
-                              uint32_t expected_serialize_len,
-                              alist<xattr_t*>* xattr_value_list)
+static bool SerializeXattrStream(JobControlRecord*,
+                                 XattrBuildData* xattr_data,
+                                 uint32_t expected_serialize_len,
+                                 alist<xattr_t*>* xattr_value_list)
 {
   ser_declare;
 
@@ -212,7 +212,7 @@ uint32_t SerializeXattrStream(JobControlRecord*,
   SerEnd(xattr_data->content.c_str(), expected_serialize_len + 10);
   xattr_data->content_length = SerLength(xattr_data->content.c_str());
 
-  return xattr_data->content_length;
+  return xattr_data->content_length == expected_serialize_len;
 }
 
 BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
@@ -296,14 +296,18 @@ BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
                                            int stream_type)
 {
   // Serialize the datastream.
-  const uint32_t serialize_len = SerializeXattrStream(
-      jcr, xattr_data, expected_serialize_len, xattr_value_list);
-  if (serialize_len < expected_serialize_len) {
+  if (!SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
+                            xattr_value_list)) {
     Mmsg1(jcr->errmsg,
-          T_("Failed to Serialize extended attributes on file \"%s\"\n"),
-          xattr_data->last_fname);
-    Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-          xattr_data->last_fname);
+          T_("Failed to Serialize extended attributes on file \"%s\" (expected "
+             "len %lu != actual len %lu)\n"),
+          xattr_data->last_fname, expected_serialize_len,
+          xattr_data->content_length);
+    Dmsg1(100,
+          T_("Failed to Serialize extended attributes on file \"%s\" (expected "
+             "len %lu != actual len %lu)\n"),
+          xattr_data->last_fname, expected_serialize_len,
+          xattr_data->content_length);
     return BxattrExitCode::kError;
   }
   return SendXattrStream(jcr, xattr_data, stream_type);

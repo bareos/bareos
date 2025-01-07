@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -435,7 +435,7 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->fd_impl->acl_data->last_fname = jcr->fd_impl->last_fname;
 
   auto* acl_build_data
-      = static_cast<AclBuildData*>(jcr->fd_impl->acl_data.get());
+      = dynamic_cast<AclBuildData*>(jcr->fd_impl->acl_data.get());
   if (jcr->IsPlugin()) {
     retval = PluginBuildAclStreams(jcr, acl_build_data, ff_pkt);
   } else {
@@ -464,11 +464,11 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (jcr->IsPlugin()) {
     retval = PluginBuildXattrStreams(
-        jcr, static_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        jcr, dynamic_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
         ff_pkt);
   } else {
     retval = BuildXattrStreams(
-        jcr, static_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        jcr, dynamic_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
         ff_pkt);
   }
 

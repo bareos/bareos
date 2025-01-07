@@ -88,8 +88,7 @@ struct bacl_flags {
 };
 
 // Internal tracking data.
-class AclData {
- public:
+struct AclData {
   int filetype;
   POOLMEM* last_fname;
   bacl_flags flags{};
@@ -99,8 +98,7 @@ class AclData {
   virtual ~AclData() noexcept = default;
 };
 
-class AclBuildData : public AclData {
- public:
+struct AclBuildData : public AclData {
   uint32_t content_length;
   PoolMem content{PM_MESSAGE};
 };

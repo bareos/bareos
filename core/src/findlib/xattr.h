@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,8 +71,7 @@ struct xattr_link_cache_entry_t {
 #define BXATTR_FLAG_RESTORE_NATIVE 0x02
 
 // Internal tracking data.
-class XattrData {
- public:
+struct XattrData {
   POOLMEM* last_fname{nullptr};
   uint32_t flags{0}; /* See BXATTR_FLAG_* */
   uint32_t current_dev{0};
@@ -81,8 +80,7 @@ class XattrData {
   virtual ~XattrData() noexcept = default;
 };
 
-class XattrBuildData : public XattrData {
- public:
+struct XattrBuildData : public XattrData {
   uint32_t nr_saved{0};
   PoolMem content{PM_MESSAGE};
   uint32_t content_length{0};
@@ -104,10 +102,6 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
                                XattrBuildData* xattr_data,
                                int stream);
 void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list);
-uint32_t SerializeXattrStream(JobControlRecord* jcr,
-                              XattrBuildData* xattr_data,
-                              uint32_t expected_serialize_len,
-                              alist<xattr_t*>* xattr_value_list);
 BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
                                       XattrData* xattr_data,
                                       char* content,
