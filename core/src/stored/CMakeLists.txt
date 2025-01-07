@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -99,10 +99,7 @@ set(SDSRCS
 )
 
 if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/storedres.rc.in)
-  list(APPEND SDSRCS ../win32/generic/main.cc ../win32/generic/service.cc
-       ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/storedres.rc
-  )
+  list(APPEND SDSRCS ../win32/generic/main.cc ../win32/generic/service.cc)
 endif()
 
 set(BTAPESRCS btape.cc)
@@ -126,6 +123,10 @@ if(HAVE_WIN32)
 endif()
 
 set(BSCANSRCS bscan.cc)
+if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/stored/bscanres.rc.in)
+  list(APPEND BSCANSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bscanres.rc)
+endif()
 
 set(BCOPYSRCS bcopy.cc)
 
@@ -174,10 +175,10 @@ endif()
 add_library(stored_objects STATIC ${SDSRCS})
 
 if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/bscanres.rc.in)
+  bareos_configure_file(FILES ../win32/stored/storedres.rc.in)
   add_executable(
     bareos-sd WIN32 stored.cc
-                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bscanres.rc
+                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/storedres.rc
   )
 else()
   add_executable(bareos-sd WIN32 stored.cc)
