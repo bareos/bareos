@@ -31,8 +31,8 @@
 #include <atomic>
 
 struct FindFilesPacket;
-class AclData;
-class XattrData;
+struct AclData;
+struct XattrData;
 class RunScript;
 
 namespace filedaemon {

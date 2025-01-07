@@ -435,7 +435,7 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->fd_impl->acl_data->last_fname = jcr->fd_impl->last_fname;
 
   auto* acl_build_data
-      = static_cast<AclBuildData*>(jcr->fd_impl->acl_data.get());
+      = dynamic_cast<AclBuildData*>(jcr->fd_impl->acl_data.get());
   if (jcr->IsPlugin()) {
     retval = PluginBuildAclStreams(jcr, acl_build_data, ff_pkt);
   } else {
@@ -464,11 +464,11 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (jcr->IsPlugin()) {
     retval = PluginBuildXattrStreams(
-        jcr, static_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        jcr, dynamic_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
         ff_pkt);
   } else {
     retval = BuildXattrStreams(
-        jcr, static_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        jcr, dynamic_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
         ff_pkt);
   }
 
