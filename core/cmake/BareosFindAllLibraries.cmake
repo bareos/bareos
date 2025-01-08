@@ -198,3 +198,7 @@ endif()
 if(MSVC)
   find_package(Intl)
 endif()
+
+find_package(json-c REQUIRED)
+find_package(LibXml2 REQUIRED)
+find_package(LZO2 REQUIRED)
