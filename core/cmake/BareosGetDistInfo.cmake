@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,22 +18,29 @@
 #   02110-1301, USA.
 
 # get DIST info in format "$PLATFORM;$DISTVER"
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  if(DEFINED ENV{VSCMD_ARG_TGT_ARCH}) # Native Build
+    set(PLATFORM Windows-native)
+    set(DISTVER $ENV{VSCMD_ARG_TGT_ARCH})
+  else() # Cross Compile
+    set(PLATFORM Cross-compile)
+    set(DISTVER Win64)
+  endif()
+  set(Host ${CMAKE_SYSTEM})
+  set(Distribution ${PLATFORM})
+else() # NOT Windows
+  execute_process(
+    COMMAND ${CMAKE_CURRENT_LIST_DIR}/distname.sh
+    OUTPUT_VARIABLE DISTINFOTXT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set(DISTINFO ${DISTINFOTXT})
+  list(LENGTH DISTINFO DISTINFO_LENGTH)
+  list(GET DISTINFO 0 PLATFORM)
+  list(GET DISTINFO 1 DISTVER)
 
-execute_process(
-  COMMAND ${CMAKE_CURRENT_LIST_DIR}/distname.sh
-  OUTPUT_VARIABLE DISTINFOTXT
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-set(DISTINFO ${DISTINFOTXT})
-
-list(LENGTH DISTINFO DISTINFO_LENGTH)
-
-list(GET DISTINFO 0 PLATFORM)
-list(GET DISTINFO 1 DISTVER)
-
+  set(Distribution ${LSB_RELEASE_ID_SHORT})
+  set(DISTVER ${DISTVER})
+  set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
+endif()
 set(BAREOS_PLATFORM ${PLATFORM})
-set(DISTVER ${DISTVER})
-
-set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
-set(Distribution ${LSB_RELEASE_ID_SHORT})

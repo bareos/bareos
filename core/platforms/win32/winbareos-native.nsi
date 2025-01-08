@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2024 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2025 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -601,7 +601,10 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\core\src\plugins\filed\${CMAKE_CONFIG_TYPE}"
-  File "*-fd.dll"
+  File "bpipe-fd.dll"
+  File "mssqlvdi-fd.dll"
+  # do not package python3-fd for now
+  # File "python3-fd.dll"
 SectionEnd
 
 
@@ -663,7 +666,8 @@ SectionIn 2
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\core\src\plugins\stored\${CMAKE_CONFIG_TYPE}"
-  File "*-sd.dll"
+  File "autoxflate-sd.dll"
+  # File "python3-sd.dll"
 SectionEnd
 
 
@@ -957,10 +961,10 @@ Section "Bareos Webui" SEC_WEBUI
    ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"'
    ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
 
-   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
+   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\bareos-webui" \
                      "Description" "Bareos Webui php service"
 
-   nsExec::ExecToLog "net start Bareos-webui"
+   nsExec::ExecToLog "net start bareos-webui"
 
    # Shortcuts
    !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
