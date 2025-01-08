@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -946,15 +946,15 @@ apply_dbconfig_settings()
     fi
 
     if [ -n "${dbc_dbuser}" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbuser" "${dbc_dbuser}"
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbuser" "\"${dbc_dbuser}\""
     fi
 
     if [ -n "${dbc_dbname}" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbname" "${dbc_dbname}"
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbname" "\"${dbc_dbname}\""
     fi
 
     if [ "${dbc_authmethod_user}" != "ident" ] && [ "${dbc_dbpass}" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbpassword" "${dbc_dbpass}"
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbpassword" "\"${dbc_dbpass}\""
     fi
 }
 
