@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2077]
 - Fix building ndmjob program [PR #2084]
 
+### Changed
+- winbareos-native.nsi: do not package python3 plugins [PR #2085]
+
 ## [24.0.0] - 2024-12-16
 
 ### Breaking changes
@@ -358,4 +361,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2071]: https://github.com/bareos/bareos/pull/2071
 [PR #2077]: https://github.com/bareos/bareos/pull/2077
 [PR #2084]: https://github.com/bareos/bareos/pull/2084
+[PR #2085]: https://github.com/bareos/bareos/pull/2085
 [unreleased]: https://github.com/bareos/bareos/tree/master
