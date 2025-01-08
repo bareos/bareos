@@ -158,10 +158,6 @@ endif()
 include(BareosFindLibrary)
 
 bareosfindlibrary("tirpc")
-if(NOT ${TIRPC_FOUND})
-  message(FATAL_ERROR "FATAL ERROR: tirpc is required but was not found.")
-endif()
-
 bareosfindlibrary("util")
 bareosfindlibrary("dl")
 bareosfindlibrary("acl")
