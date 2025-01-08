@@ -103,7 +103,7 @@ if(ENABLE_GRPC)
   target_link_libraries(grpc-test-module fmt::fmt grpc-proto)
   install(
     TARGETS grpc-test-module
-    DESTINATION ${plugindir}
+    DESTINATION ${plugindir}/grpc
     COMPONENT filedaemon
   )
 
@@ -113,7 +113,7 @@ if(ENABLE_GRPC)
   target_link_libraries(grpc-python-module fmt::fmt grpc-proto Python3::Module)
   install(
     TARGETS grpc-python-module
-    DESTINATION ${plugindir}
+    DESTINATION ${plugindir}/grpc
     COMPONENT filedaemon
   )
 
