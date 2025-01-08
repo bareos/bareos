@@ -250,7 +250,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(HAVE_LINUX_OS 1)
   include_directories(/usr/include/tirpc)
   if(NOT ${TIRPC_FOUND})
-    message(FATAL_ERROR "FATAL ERROR: tirpc is required but was not found.")
+    message(FATAL_ERROR "tirpc is required but was not found.")
   endif()
 endif()
 
