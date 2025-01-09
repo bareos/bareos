@@ -157,7 +157,7 @@ endif()
 
 include(BareosFindLibrary)
 
-bareosfindlibrary("tirpc")
+bareosfindlibraryandheaders("tirpc" "rpc/rpc.h" "/usr/include/tirpc")
 bareosfindlibrary("util")
 bareosfindlibrary("dl")
 bareosfindlibrary("acl")
