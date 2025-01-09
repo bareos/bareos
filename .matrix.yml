@@ -18,16 +18,6 @@ OS:
       ARCH:
         - x86_64
         - aarch64
-    "OpenSSL_3.0":
-      TYPE: scripted
-      IMAGE: "rhel10"
-      BUILD_SCRIPT: CD/rpm/build-ulc.sh
-      FINISH_SCRIPT: CD/rpm/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ Rocky-9, Fedora-41, SLE-15_sp6, Mageia-9 ]
-      ARCH:
-        - x86_64
-        - aarch64
-        - x86_64
   EL:
     "10":
       TYPE: rpm
