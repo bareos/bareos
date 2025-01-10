@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1158,6 +1158,21 @@ static int CheckResources()
              "Without that I don't how to speak to the Director :-(\n"),
           configfile_name.c_str());
     OK = false;
+  }
+
+  std::size_t console_count = 0;
+  for (BareosResource* console = nullptr;
+       (console = my_config->GetNextRes(R_CONSOLE, console));) {
+    ++console_count;
+  }
+  director = dynamic_cast<DirectorResource*>(
+      my_config->GetNextRes(R_DIRECTOR, nullptr));
+  if (console_count == 0
+      && director->item_present_.find("Password")
+             == director->item_present_.end()) {
+    Emsg2(M_ABORT, 0,
+          T_("Password item is required in Director resource (since no Console "
+             "resource is specified), but not found.\n"));
   }
 
   me = (ConsoleResource*)my_config->GetNextRes(R_CONSOLE, NULL);
