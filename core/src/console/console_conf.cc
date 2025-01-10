@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -70,7 +70,7 @@ static ResourceItem dir_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), 0, 0, NULL, NULL, NULL },
   { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
   { "Address", CFG_TYPE_STR, ITEM(res_dir, address), 0, 0, NULL, NULL, NULL },
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), 0, 0, NULL, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_dir),
   TLS_CERT_CONFIG(res_dir),
