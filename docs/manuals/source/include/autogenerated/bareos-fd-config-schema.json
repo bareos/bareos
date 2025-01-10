@@ -374,6 +374,7 @@
         "GrpcModule": {
           "datatype": "STRING",
           "code": 0,
+          "default_value": "grpc-compat-module",
           "equals": true,
           "versions": "25.0.0-",
           "description": "The grpc module to use for grpc fallback."
@@ -680,6 +681,7 @@
         "GrpcModule": {
           "datatype": "STRING",
           "code": 0,
+          "default_value": "grpc-compat-module",
           "equals": true,
           "versions": "25.0.0-",
           "description": "The grpc module to use for grpc fallback."
