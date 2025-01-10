@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,6 +46,7 @@
 #include <condition_variable>
 #include <cstdarg>
 #include <future>
+#include <sstream>
 
 #include "plugin_service_python.h"
 #include "test_module_python.h"
@@ -1243,6 +1244,27 @@ static const PluginFunctions funcs = {
     .setXattr = filedaemon::Wrapper_setXattr,
 };
 
+static std::string join(const std::vector<std::string>& x)
+{
+  std::stringstream output;
+
+  output << "[";
+
+  bool first = true;
+  for (auto& m : x) {
+    if (first) {
+      first = false;
+    } else {
+      output << ", ";
+    }
+    output << "\"" << m << "\"";
+  }
+
+  output << "]";
+
+  return output.str();
+}
+
 std::optional<std::string_view> inferior_setup(PluginContext* ctx,
                                                std::string_view cmd)
 {
@@ -1255,24 +1277,58 @@ std::optional<std::string_view> inferior_setup(PluginContext* ctx,
     }
     auto plugin_name = cmd.substr(0, ires);
 
+    static constexpr std::string_view python_prefix = "python";
+
+    // we want to treat "python", "python2", "python3", etc. as the same
+    bool have_python = false;
+    if (plugin_name >= python_prefix
+        && plugin_name.size() <= python_prefix.size() + 1) {
+      DebugLog(100, FMT_STRING("detected {} as python"), plugin_name);
+      have_python = true;
+    }
+
     JobLog(bc::JMSG_INFO, FMT_STRING("selected inferior: {}"), plugin_name);
 
     ctx->plugin = &plugin_data;
-    auto inferior_path = plugin_path;
-    inferior_path += plugin_name;
-    inferior_path += "-fd.so";
 
-    DebugLog(100, FMT_STRING("loading inferior from path '{}'"), inferior_path);
+    std::vector<std::string> candidates;
 
-    void* inferior_lib = dlopen(inferior_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-
-    if (!inferior_lib) {
-      JobLog(bc::JMSG_ERROR, FMT_STRING("could not load inferior: {}"),
-             inferior_path);
-      return std::nullopt;
+    if (have_python) {
+      // prefer python3 over python, as python-fd uses python2 if both
+      // python3-fd and python-fd are installable
+      candidates = std::vector<std::string>{
+          plugin_path + "python3-fd.so", plugin_path + "python-fd.so",
+          plugin_path + "python2-fd.so",  // python2 should be the last resort
+      };
+    } else {
+      auto inferior_path = plugin_path;
+      inferior_path += plugin_name;
+      inferior_path += "-fd.so";
+      candidates.emplace_back(std::move(inferior_path));
     }
 
-    DebugLog(100, FMT_STRING("loaded {} at {}"), inferior_path, inferior_lib);
+    auto candidates_string = join(candidates);
+    DebugLog(100, FMT_STRING("loading inferior from candidates: {}"),
+             candidates_string);
+
+    void* inferior_lib = nullptr;
+
+    for (auto& candidate : candidates) {
+      DebugLog(100, FMT_STRING("loading inferior from path '{}'"), candidate);
+
+      inferior_lib = dlopen(candidate.c_str(), RTLD_NOW | RTLD_GLOBAL);
+
+      if (inferior_lib) {
+        DebugLog(100, FMT_STRING("loaded {} at {}"), candidate, inferior_lib);
+        break;
+      }
+    }
+
+    if (!inferior_lib) {
+      JobLog(bc::JMSG_ERROR, FMT_STRING("could not load inferior. Tried {}"),
+             candidates_string);
+      return std::nullopt;
+    }
 
     void* load_plugin = dlsym(inferior_lib, "loadPlugin");
 
