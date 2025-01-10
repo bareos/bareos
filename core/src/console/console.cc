@@ -1144,13 +1144,10 @@ static int CheckResources()
 {
   bool OK = true;
   ResLocker _{my_config};
+  auto* director = dynamic_cast<DirectorResource*>(my_config->GetNextRes(R_DIRECTOR, nullptr));
+  auto* console = dynamic_cast<ConsoleResource*>(my_config->GetNextRes(R_CONSOLE, nullptr));
 
-  std::size_t director_count = 0;
-  for (BareosResource* console = nullptr;
-       (console = my_config->GetNextRes(R_DIRECTOR, console));) {
-    ++director_count;
-  }
-  if (director_count == 0) {
+  if (!director) {
     const std::string& configfile_name = my_config->get_base_config_path();
     Emsg1(M_FATAL, 0,
           T_("No Director resource defined in %s\n"
@@ -1159,25 +1156,14 @@ static int CheckResources()
     OK = false;
   }
 
-  std::size_t console_count = 0;
-  for (BareosResource* console = nullptr;
-       (console = my_config->GetNextRes(R_CONSOLE, console));) {
-    ++console_count;
+  if (!console && !director->IsMemberPresent("Password")) {
+    Emsg2(
+        M_ABORT, 0,
+        T_("Password item is required in Director resource (since no Console "
+            "resource is specified), but not found.\n"));
   }
 
-  if (console_count == 0) {
-    DirectorResource* director = dynamic_cast<DirectorResource*>(
-        my_config->GetNextRes(R_DIRECTOR, nullptr));
-    if (director->item_present_.find("Password")
-        == director->item_present_.end()) {
-      Emsg2(
-          M_ABORT, 0,
-          T_("Password item is required in Director resource (since no Console "
-             "resource is specified), but not found.\n"));
-    }
-  }
-
-  me = (ConsoleResource*)my_config->GetNextRes(R_CONSOLE, NULL);
+  me = console;
   my_config->own_resource_ = me;
 
   return OK;
