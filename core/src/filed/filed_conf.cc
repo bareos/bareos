@@ -122,7 +122,8 @@ static ResourceItem cli_items[] = {
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL},
-  {"GrpcModule", CFG_TYPE_STDSTR, ITEM(res_client, grpc_module), 0, 0, NULL, "25.0.0-", "The grpc module to use for grpc fallback."},
+  {"GrpcModule", CFG_TYPE_STDSTR, ITEM(res_client, grpc_module), 0, CFG_ITEM_DEFAULT, "grpc-python-module",
+   "25.0.0-", "The grpc module to use for grpc fallback."},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
