@@ -199,7 +199,7 @@ bareos_disable_warnings(
 
 target_include_directories(bareosndmp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if(${HAVE_LINUX_OS})
   if ("${TIRPC_INCLUDE_DIRS}" STREQUAL "")
     message(FATAL_ERROR "tirpc is required but was not found.")
   endif()
