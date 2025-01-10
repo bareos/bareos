@@ -71,7 +71,6 @@ static BareosSocket* g_UA_sock = NULL;
 static bool stop = false;
 static int timeout = 0;
 static int g_argc;
-static int g_numdir;
 static POOLMEM* g_args;
 static char* g_argk[MAX_CMD_ARGS];
 static char* g_argv[MAX_CMD_ARGS];
@@ -1144,18 +1143,18 @@ static void TerminateConsole(int sig)
 static int CheckResources()
 {
   bool OK = true;
-  DirectorResource* director;
-
   ResLocker _{my_config};
 
-  g_numdir = 0;
-  foreach_res (director, R_DIRECTOR) { g_numdir++; }
-
-  if (g_numdir == 0) {
+  std::size_t director_count = 0;
+  for (BareosResource* console = nullptr;
+       (console = my_config->GetNextRes(R_DIRECTOR, console));) {
+    ++director_count;
+  }
+  if (director_count == 0) {
     const std::string& configfile_name = my_config->get_base_config_path();
     Emsg1(M_FATAL, 0,
           T_("No Director resource defined in %s\n"
-             "Without that I don't how to speak to the Director :-(\n"),
+             "Without that I don't know how to speak to the Director :-(\n"),
           configfile_name.c_str());
     OK = false;
   }
@@ -1165,14 +1164,17 @@ static int CheckResources()
        (console = my_config->GetNextRes(R_CONSOLE, console));) {
     ++console_count;
   }
-  director = dynamic_cast<DirectorResource*>(
-      my_config->GetNextRes(R_DIRECTOR, nullptr));
-  if (console_count == 0
-      && director->item_present_.find("Password")
-             == director->item_present_.end()) {
-    Emsg2(M_ABORT, 0,
+
+  if (console_count == 0) {
+    DirectorResource* director = dynamic_cast<DirectorResource*>(
+        my_config->GetNextRes(R_DIRECTOR, nullptr));
+    if (director->item_present_.find("Password")
+        == director->item_present_.end()) {
+      Emsg2(
+          M_ABORT, 0,
           T_("Password item is required in Director resource (since no Console "
              "resource is specified), but not found.\n"));
+    }
   }
 
   me = (ConsoleResource*)my_config->GetNextRes(R_CONSOLE, NULL);
