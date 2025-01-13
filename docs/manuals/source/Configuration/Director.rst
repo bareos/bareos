@@ -1425,8 +1425,7 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-   The default is :strong:`no`.  On Windows systems, you will almost surely
-   want to set this to :strong:`yes`.  When this directive is set to :strong:`yes`
+   The default is :strong:`no`.  When this directive is set to :strong:`yes`
    all the case of character will be ignored in wild-card and regex
    comparisons.  That is an uppercase A will match a lowercase a.
 
