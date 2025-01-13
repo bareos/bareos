@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,18 +21,18 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_RUN_HOUR_VALIDATOR_H_
-#define BAREOS_DIRD_RUN_HOUR_VALIDATOR_H_
+#ifndef BAREOS_DIRD_RUN_VALIDATOR_H_
+#define BAREOS_DIRD_RUN_VALIDATOR_H_
 
 namespace directordaemon {
-
 struct DateTimeBitfield;
 
-class RunHourValidator {
+class RunValidator {
  public:
-  RunHourValidator(time_t time);
+  RunValidator(time_t time);
   void PrintDebugMessage(int debuglevel) const;
-  bool TriggersOn(const DateTimeBitfield& date_time_bitfield);
+  bool TriggersOnDay(const DateTimeBitfield& date_time_bitfield);
+  bool TriggersOnHour(const DateTimeBitfield& date_time_bitfield);
   time_t Time() const { return time_; }
 
  private:
@@ -49,4 +49,4 @@ class RunHourValidator {
 
 }  // namespace directordaemon
 
-#endif  // BAREOS_DIRD_RUN_HOUR_VALIDATOR_H_
+#endif  // BAREOS_DIRD_RUN_VALIDATOR_H_

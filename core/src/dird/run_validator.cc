@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,7 @@
 
 #include "include/bareos.h"
 #include "dird/date_time_bitfield.h"
-#include "dird/run_hour_validator.h"
+#include "dird/run_validator.h"
 
 #include <array>
 #include <iostream>
@@ -54,7 +54,7 @@ static bool IsDayOfYearInLastWeek(int year, int day_of_year)
 }
 
 // calculate the current hour of the year
-RunHourValidator::RunHourValidator(time_t time) : time_(time)
+RunValidator::RunValidator(time_t time) : time_(time)
 {
   struct tm tm = {};
   Blocaltime(&time_, &tm);
@@ -69,18 +69,22 @@ RunHourValidator::RunHourValidator(time_t time) : time_(time)
 }
 
 // check if the calculated hour matches the runtime bitfiled
-bool RunHourValidator::TriggersOn(const DateTimeBitfield& date_time_bitfield)
+bool RunValidator::TriggersOnDay(const DateTimeBitfield& date_time_bitfield)
 {
-  return BitIsSet(hour_, date_time_bitfield.hour)
-         && BitIsSet(mday_, date_time_bitfield.mday)
+  return BitIsSet(mday_, date_time_bitfield.mday)
          && BitIsSet(wday_, date_time_bitfield.wday)
          && BitIsSet(month_, date_time_bitfield.month)
          && (BitIsSet(wom_, date_time_bitfield.wom)
              || (is_last_week_ && date_time_bitfield.last_week_of_month))
          && BitIsSet(woy_, date_time_bitfield.woy);
 }
+bool RunValidator::TriggersOnHour(const DateTimeBitfield& date_time_bitfield)
+{
+  return TriggersOnDay(date_time_bitfield)
+         && BitIsSet(hour_, date_time_bitfield.hour);
+}
 
-void RunHourValidator::PrintDebugMessage(int debuglevel) const
+void RunValidator::PrintDebugMessage(int debuglevel) const
 {
   Dmsg8(debuglevel, "now = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
         time_, hour_, month_, mday_, wday_, wom_, woy_, yday_);
