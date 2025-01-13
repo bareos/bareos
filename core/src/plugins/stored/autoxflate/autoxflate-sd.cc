@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -431,16 +431,15 @@ static bRC handle_write_translation(PluginContext* ctx, void* value)
 // Setup deflate for auto deflate of data streams.
 static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 {
-  JobControlRecord* jcr = dcr->jcr;
-  bool retval = false;
-  uint32_t compress_buf_size = 0;
   const char* compressorname = COMPRESSOR_NAME_UNSET;
+  JobControlRecord* jcr = dcr->jcr;
 
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
 
+  uint32_t compress_buf_size = 0;
   if (!SetupCompressionBuffers(jcr, dcr->device_resource->autodeflate_algorithm,
                                &compress_buf_size)) {
-    goto bail_out;
+    return false;
   }
 
   // See if we need to create a new compression buffer or make sure the
@@ -456,71 +455,58 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
     }
   }
 
-  switch (dcr->device_resource->autodeflate_algorithm) {
+  auto algorithm = dcr->device_resource->autodeflate_algorithm;
 #if defined(HAVE_LIBZ)
-    case COMPRESS_GZIP: {
-      compressorname = COMPRESSOR_NAME_GZIP;
-      int zstat;
-      z_stream* pZlibStream;
-
-      pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
-      if ((zstat
-           = deflateParams(pZlibStream, dcr->device_resource->autodeflate_level,
-                           Z_DEFAULT_STRATEGY))
-          != Z_OK) {
-        Jmsg(ctx, M_FATAL,
-             T_("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
-        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-        goto bail_out;
-      }
-      break;
+  if (algorithm == COMPRESS_GZIP) {
+    compressorname = COMPRESSOR_NAME_GZIP;
+    auto* pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
+    int zstat
+        = deflateParams(pZlibStream, dcr->device_resource->autodeflate_level,
+                        Z_DEFAULT_STRATEGY);
+    if (zstat != Z_OK) {
+      Jmsg(ctx, M_FATAL,
+           T_("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
     }
+  }
 #endif
-#if defined(HAVE_LZO)
-    case COMPRESS_LZO1X:
-      compressorname = COMPRESSOR_NAME_LZO;
-      break;
-#endif
-    case COMPRESS_FZFZ:
-      compressorname = COMPRESSOR_NAME_FZLZ;
-      [[fallthrough]];
-    case COMPRESS_FZ4L:
-      compressorname = COMPRESSOR_NAME_FZ4L;
-      [[fallthrough]];
-    case COMPRESS_FZ4H: {
-      compressorname = COMPRESSOR_NAME_FZ4H;
-      int zstat;
-      zfast_stream* pZfastStream;
-      zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
-
-      switch (dcr->device_resource->autodeflate_algorithm) {
-        case COMPRESS_FZ4L:
-        case COMPRESS_FZ4H:
-          compressor = COMPRESSOR_LZ4;
-          break;
-      }
-
-      pZfastStream = (zfast_stream*)jcr->compress.workset.pZFAST;
-      if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
-        Jmsg(ctx, M_FATAL,
-             T_("autoxflate-sd: Compression fastlzlibSetCompressor error: "
-                "%d\n"),
-             zstat);
-        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-        goto bail_out;
-      }
-      break;
+  if (algorithm == COMPRESS_LZO1X) { compressorname = COMPRESSOR_NAME_LZO; }
+  if (algorithm == COMPRESS_FZFZ || algorithm == COMPRESS_FZ4L
+      || algorithm == COMPRESS_FZ4H) {
+    zfast_stream_compressor compressor = COMPRESSOR_DEFAULT;
+    switch (algorithm) {
+      case COMPRESS_FZFZ:
+        compressorname = COMPRESSOR_NAME_FZLZ;
+        compressor = COMPRESSOR_FASTLZ;
+        break;
+      case COMPRESS_FZ4L:
+        compressorname = COMPRESSOR_NAME_FZ4L;
+        compressor = COMPRESSOR_LZ4;
+        break;
+      case COMPRESS_FZ4H:
+        compressorname = COMPRESSOR_NAME_FZ4H;
+        compressor = COMPRESSOR_LZ4;
+        break;
+      default:
+        break;
     }
-    default:
-      break;
+
+    int zstat = fastlzlibSetCompressor(
+        (zfast_stream*)jcr->compress.workset.pZFAST, compressor);
+    if (zstat != Z_OK) {
+      Jmsg(ctx, M_FATAL,
+           T_("autoxflate-sd: Compression fastlzlibSetCompressor error: "
+              "%d\n"),
+           zstat);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
+    }
   }
 
   Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),
        dcr->dev_name, compressorname);
-  retval = true;
-
-bail_out:
-  return retval;
+  return true;
 }
 
 // Setup inflation for auto inflation of data streams.
