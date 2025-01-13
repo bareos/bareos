@@ -15,7 +15,7 @@ BEGIN
       VALUE "ProductName", "Bareos Wildcard Testprogram"
       VALUE "ProductVersion", "@BAREOS_FULL_VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
-                              "Copyright 2015-2015 Bareos GmbH & Co. KG "
+                              "Copyright 2015-@BAREOS_YEAR@ Bareos GmbH & Co. KG "
       VALUE "LegalTrademarks", "Licensed under GNU AGPLv3."
                                "This program is distributed in the hope that it will be useful, "
                                "but WITHOUT ANY WARRANTY; without even the implied warranty of "
