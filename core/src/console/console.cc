@@ -57,7 +57,7 @@
 using namespace console;
 
 static void TerminateConsole(int sig);
-static int CheckResources();
+static bool CheckResources();
 int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int sec);
 static int DoOutputcmd(FILE* input, BareosSocket* UA_sock);
 
@@ -1140,33 +1140,34 @@ static void TerminateConsole(int sig)
   return;
 }
 
-static int CheckResources()
+static bool CheckResources()
 {
-  bool OK = true;
   ResLocker _{my_config};
-  auto* director = dynamic_cast<DirectorResource*>(my_config->GetNextRes(R_DIRECTOR, nullptr));
-  auto* console = dynamic_cast<ConsoleResource*>(my_config->GetNextRes(R_CONSOLE, nullptr));
+  auto* director = dynamic_cast<DirectorResource*>(
+      my_config->GetNextRes(R_DIRECTOR, nullptr));
+  auto* console = dynamic_cast<ConsoleResource*>(
+      my_config->GetNextRes(R_CONSOLE, nullptr));
 
   if (!director) {
     const std::string& configfile_name = my_config->get_base_config_path();
-    Emsg1(M_FATAL, 0,
+    Emsg1(M_CONFIG_ERROR, 0,
           T_("No Director resource defined in %s\n"
              "Without that I don't know how to speak to the Director :-(\n"),
           configfile_name.c_str());
-    OK = false;
+    return false;
   }
 
   if (!console && !director->IsMemberPresent("Password")) {
-    Emsg2(
-        M_ABORT, 0,
-        T_("Password item is required in Director resource (since no Console "
-            "resource is specified), but not found.\n"));
+    Emsg2(M_CONFIG_ERROR, 0,
+          T_("Password item is required in Director resource (since no Console "
+             "resource is specified), but not found.\n"));
+    return false;
   }
 
   me = console;
   my_config->own_resource_ = me;
 
-  return OK;
+  return true;
 }
 
 /* @version */
