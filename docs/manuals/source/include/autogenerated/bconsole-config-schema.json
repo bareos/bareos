@@ -175,8 +175,7 @@
         "Password": {
           "datatype": "MD5PASSWORD",
           "code": 0,
-          "equals": true,
-          "required": true
+          "equals": true
         },
         "HeartbeatInterval": {
           "datatype": "TIME",
