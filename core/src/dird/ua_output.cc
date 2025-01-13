@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,7 @@
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/ua_cmdstruct.h"
+#include "dird/run_validator.h"
 #include "cats/sql_pooling.h"
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
@@ -1296,73 +1297,48 @@ get_out:
 
 /* For a given job, we examine all his run records
  *  to see if it is scheduled today or tomorrow. */
-RunResource* find_next_run(RunResource* run,
+RunResource* find_next_run(RunResource* prev_run,
                            JobResource* job,
-                           utime_t& runtime,
+                           utime_t& found_runtime,
                            int ndays)
 {
-  time_t now, future, endtime;
-  ScheduleResource* sched;
-  struct tm tm, runtm;
-  int mday, wday, month, wom, i;
-  int woy;
-  int day;
+  if (!job->schedule) { return nullptr; }
 
-  sched = job->schedule;
-  if (sched == NULL) { /* scheduled? */
-    return NULL;       /* no nothing to report */
-  }
+  /* current time */
+  time_t now = time(NULL);
+  time_t endtime = now + (ndays * 60 * 60 * 24);
 
-  /* Break down the time into components */
-  now = time(NULL);
-  endtime = now + (ndays * 60 * 60 * 24);
-
-  if (run == NULL) {
-    run = sched->run;
-  } else {
-    run = run->next;
-  }
-  for (; run; run = run->next) {
+  for (RunResource* current = (prev_run ? prev_run->next : job->schedule->run);
+       current; current = current->next) {
     /* Find runs in next 24 hours.  Day 0 is today, so if
      *   ndays=1, look at today and tomorrow. */
-    for (day = 0; day <= ndays; day++) {
-      future = now + (day * 60 * 60 * 24);
-
-      /* Break down the time into components */
-      Blocaltime(&future, &tm);
-      mday = tm.tm_mday - 1;
-      wday = tm.tm_wday;
-      month = tm.tm_mon;
-      wom = mday / 7;
-      woy = TmWoy(future);
-
-      bool is_scheduled = BitIsSet(mday, run->date_time_bitfield.mday)
-                          && BitIsSet(wday, run->date_time_bitfield.wday)
-                          && BitIsSet(month, run->date_time_bitfield.month)
-                          && BitIsSet(wom, run->date_time_bitfield.wom)
-                          && BitIsSet(woy, run->date_time_bitfield.woy);
-
-      if (is_scheduled) { /* Jobs scheduled on that day */
-        /* find time (time_t) job is to be run */
+    for (int day = 0; day <= ndays; ++day) {
+      time_t future = now + (day * 60 * 60 * 24);
+      RunValidator validator(future);
+      if (validator.TriggersOnDay(
+              current->date_time_bitfield)) { /* Job is scheduled on that day */
+        tm runtm;
         Blocaltime(&future, &runtm);
-        for (i = 0; i < 24; i++) {
-          if (BitIsSet(i, run->date_time_bitfield.hour)) {
-            runtm.tm_hour = i;
-            runtm.tm_min = run->minute;
-            runtm.tm_sec = 0;
-            runtime = mktime(&runtm);
+        runtm.tm_min = current->minute;
+        for (int hour = 0; hour < 24; ++hour) {
+          runtm.tm_hour = hour;
+          time_t runtime = mktime(&runtm);
+          if (RunValidator(runtime).TriggersOnHour(
+                  current->date_time_bitfield)) { /* Job is scheduled on that
+                                                     day and hour */
             Dmsg2(200, "now=%d runtime=%lld\n", now, runtime);
             if ((runtime > now) && (runtime < endtime)) {
-              Dmsg2(200, "Found it level=%d %c\n", run->level, run->level);
-              return run; /* found it, return run resource */
+              Dmsg2(200, "Found it level=%d %c\n", current->level,
+                    current->level);
+              found_runtime = runtime;
+              return current; /* found */
             }
           }
         }
       }
     }
   } /* end for loop over runs */
-  /* Nothing found */
-  return NULL;
+  return nullptr; /* nothing found */
 }
 
 // Fill in the remaining fields of the jcr as if it is going to run the job.
