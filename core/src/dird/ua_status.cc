@@ -883,20 +883,10 @@ static int CompareByRuntimePriority(sched_pkt* p1, sched_pkt* p2)
 // Find all jobs to be run in roughly the next 24 hours.
 static void ListScheduledJobs(UaContext* ua)
 {
-  utime_t runtime;
-  RunResource* run;
-  JobResource* job;
-  int level, num_jobs = 0;
-  int priority;
-  bool hdr_printed = false;
-  auto sched = std::make_unique<dlist<sched_pkt>>();
-  sched_pkt* sp;
-  int days, i;
-
   Dmsg0(200, "enter list_sched_jobs()\n");
 
-  days = 1;
-  i = FindArgWithValue(ua, NT_("days"));
+  int days = 1;
+  int i = FindArgWithValue(ua, NT_("days"));
   if (i >= 0) {
     days = atoi(ua->argv[i]);
     if (((days < 0) || (days > 500)) && !ua->api) {
@@ -906,28 +896,32 @@ static void ListScheduledJobs(UaContext* ua)
   }
 
   // Loop through all jobs
+  JobResource* job = nullptr;
+  bool hdr_printed = false;
+  auto sched = std::make_unique<dlist<sched_pkt>>();
+  int num_jobs = 0;
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
         || (job->client && !job->client->enabled)) {
       continue;
     }
-    for (run = NULL; (run = find_next_run(run, job, runtime, days));) {
+    foreach_run(*job, days, [&](RunResource& run, utime_t runtime) {
       UnifiedStorageResource store;
-      level = job->JobLevel;
-      if (run->level) { level = run->level; }
-      priority = job->Priority;
-      if (run->Priority) { priority = run->Priority; }
+      int level = job->JobLevel;
+      if (run.level) { level = run.level; }
+      int priority = job->Priority;
+      if (run.Priority) { priority = run.Priority; }
       if (!hdr_printed) {
         PrtRunhdr(ua);
         hdr_printed = true;
       }
-      sp = (sched_pkt*)malloc(sizeof(sched_pkt));
+      auto* sp = (sched_pkt*)malloc(sizeof(sched_pkt));
       sp->job = job;
       sp->level = level;
       sp->priority = priority;
       sp->runtime = runtime;
-      sp->pool = run->pool;
-      GetJobStorage(&store, job, run);
+      sp->pool = run.pool;
+      GetJobStorage(&store, job, &run);
       sp->store = store.store;
       if (sp->store) {
         Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
@@ -937,9 +931,10 @@ static void ListScheduledJobs(UaContext* ua)
       }
       sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
       num_jobs++;
-    }
+    });
   } /* end for loop over resources */
 
+  sched_pkt* sp = nullptr;
   foreach_dlist (sp, sched) { PrtRuntime(ua, sp); }
   if (num_jobs == 0 && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");

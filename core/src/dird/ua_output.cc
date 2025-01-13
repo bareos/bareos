@@ -1233,10 +1233,6 @@ static bool ListNextvol(UaContext* ua, int ndays)
   JobResource* job{nullptr};
   JobControlRecord* jcr;
   UnifiedStorageResource store;
-  RunResource* run;
-  utime_t runtime;
-  bool found = false;
-
   if (const char* job_name = GetArgValue(ua, "job")) {
     job = ua->GetJobResWithName(job_name);
     if (!job) {
@@ -1248,40 +1244,45 @@ static bool ListNextvol(UaContext* ua, int ndays)
   }
 
   jcr = NewDirectorJcr(DirdFreeJcr);
-  for (run = NULL; (run = find_next_run(run, job, runtime, ndays));) {
-    if (!CompleteJcrForJob(jcr, job, run->pool)) {
-      found = false;
-      goto get_out;
-    }
-    if (!jcr->dir_impl->jr.PoolId) {
-      ua->ErrorMsg(T_("Could not find Pool for Job %s\n"), job->resource_name_);
-      continue;
-    }
-    PoolDbRecord pr;
-    pr.PoolId = jcr->dir_impl->jr.PoolId;
-    if (!ua->db->GetPoolRecord(jcr, &pr)) {
-      bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
-    }
-    MediaDbRecord mr;
-    mr.PoolId = jcr->dir_impl->jr.PoolId;
-    GetJobStorage(&store, job, run);
-    SetStorageidInMr(store.store, &mr);
-    /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
-    if (!FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
-                                 fnv_prune)) {
-      ua->ErrorMsg(
-          T_("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
-          job->resource_name_, pr.Name, JobLevelToString(run->level));
-    } else {
-      ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
-                     "Level=%s) will be %s\n"),
-                  job->resource_name_, pr.Name, JobLevelToString(run->level),
-                  mr.VolumeName);
-      found = true;
-    }
-  }
+  bool found = false, done = false;
+  foreach_run(
+      *job, ndays, [&](RunResource& run, [[maybe_unused]] utime_t runtime) {
+        if (done) { return; }
+        if (!CompleteJcrForJob(jcr, job, run.pool)) {
+          found = false;
+          done = true;
+          return;
+        }
+        if (!jcr->dir_impl->jr.PoolId) {
+          ua->ErrorMsg(T_("Could not find Pool for Job %s\n"),
+                       job->resource_name_);
+          return;
+        }
+        PoolDbRecord pr;
+        pr.PoolId = jcr->dir_impl->jr.PoolId;
+        if (!ua->db->GetPoolRecord(jcr, &pr)) {
+          bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
+        }
+        MediaDbRecord mr;
+        mr.PoolId = jcr->dir_impl->jr.PoolId;
+        GetJobStorage(&store, job, &run);
+        SetStorageidInMr(store.store, &mr);
+        /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
+        if (!FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
+                                     fnv_prune)) {
+          ua->ErrorMsg(T_("Could not find next Volume for Job %s (Pool=%s, "
+                          "Level=%s).\n"),
+                       job->resource_name_, pr.Name,
+                       JobLevelToString(run.level));
+        } else {
+          ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
+                         "Level=%s) will be %s\n"),
+                      job->resource_name_, pr.Name, JobLevelToString(run.level),
+                      mr.VolumeName);
+          found = true;
+        }
+      });
 
-get_out:
   if (jcr->db) {
     DbSqlClosePooledConnection(jcr, jcr->db);
     jcr->db = NULL;
@@ -1297,48 +1298,43 @@ get_out:
 
 /* For a given job, we examine all his run records
  *  to see if it is scheduled today or tomorrow. */
-RunResource* find_next_run(RunResource* prev_run,
-                           JobResource* job,
-                           utime_t& found_runtime,
-                           int ndays)
+void foreach_run(JobResource& job,
+                 int ndays,
+                 std::function<void(RunResource&, utime_t)> func)
 {
-  if (!job->schedule) { return nullptr; }
+  if (!job.schedule) { return; }
 
   /* current time */
   time_t now = time(NULL);
   time_t endtime = now + (ndays * 60 * 60 * 24);
 
-  for (RunResource* current = (prev_run ? prev_run->next : job->schedule->run);
-       current; current = current->next) {
+  for (auto* run = job.schedule->run; run; run = run->next) {
     /* Find runs in next 24 hours.  Day 0 is today, so if
      *   ndays=1, look at today and tomorrow. */
     for (int day = 0; day <= ndays; ++day) {
       time_t future = now + (day * 60 * 60 * 24);
       RunValidator validator(future);
       if (validator.TriggersOnDay(
-              current->date_time_bitfield)) { /* Job is scheduled on that day */
+              run->date_time_bitfield)) { /* Job is scheduled on that day */
         tm runtm;
         Blocaltime(&future, &runtm);
-        runtm.tm_min = current->minute;
+        runtm.tm_min = run->minute;
         for (int hour = 0; hour < 24; ++hour) {
           runtm.tm_hour = hour;
           time_t runtime = mktime(&runtm);
           if (RunValidator(runtime).TriggersOnHour(
-                  current->date_time_bitfield)) { /* Job is scheduled on that
+                  run->date_time_bitfield)) { /* Job is scheduled on that
                                                      day and hour */
             Dmsg2(200, "now=%d runtime=%lld\n", now, runtime);
             if ((runtime > now) && (runtime < endtime)) {
-              Dmsg2(200, "Found it level=%d %c\n", current->level,
-                    current->level);
-              found_runtime = runtime;
-              return current; /* found */
+              Dmsg2(200, "Found it level=%d %c\n", run->level, run->level);
+              func(*run, runtime);
             }
           }
         }
       }
     }
-  } /* end for loop over runs */
-  return nullptr; /* nothing found */
+  }
 }
 
 // Fill in the remaining fields of the jcr as if it is going to run the job.
