@@ -100,11 +100,15 @@ OS:
       TYPE: freebsd
       ARCH:
         - amd64
+    "14.3":
+      TYPE: freebsd
+      ARCH:
+        - amd64
     "13.3":
       TYPE: freebsd
       ARCH:
         - amd64
-    "13.2":
+    "13.5":
       TYPE: freebsd
       ARCH:
         - amd64
