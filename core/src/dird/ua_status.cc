@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
-#include "dird/run_hour_validator.h"
+#include "dird/run_validator.h"
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
@@ -381,13 +381,13 @@ static bool show_scheduled_preview(UaContext*,
   RunResource* run;
   PoolMem temp(PM_NAME);
 
-  RunHourValidator run_hour_validator(time_to_check);
+  RunValidator run_validator(time_to_check);
 
   for (run = sched->run; run; run = run->next) {
     bool run_now;
     int cnt = 0;
 
-    run_now = run_hour_validator.TriggersOn(run->date_time_bitfield);
+    run_now = run_validator.TriggersOnHour(run->date_time_bitfield);
 
     if (run_now) {
       // Find time (time_t) job is to be run
