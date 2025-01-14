@@ -4,7 +4,7 @@ In that case the `Plugin=` directives from the fileset interpreted as if they we
 If this value is unset or if the grpc plugin is not loaded, then this is not attempted.
 
 .. note::
-   The `grpc-python-module` that is distributed alongside the grpc plugin is designed to be used in this manner.
+   The `bareos-grpc-fd-plugin-bridge` that is distributed alongside the grpc plugin is designed to be used in this manner.
 
 The backups created this way are treated as if they were created by the requested plugin.
 This means that they may be restored on a client that did not use this feature but loaded the plugin directly, but they cannot be restored on a client that uses the grpc plugin without this feature enabled.

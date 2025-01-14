@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 
-#include "plugin_service_python.h"
+#include "plugin_service.h"
 #include <fcntl.h>
 #include <poll.h>
 #include <grpc/compression.h>
@@ -28,7 +28,7 @@
 #include "filed/fd_plugins.h"
 #include "include/filetypes.h"
 #include "plugin.pb.h"
-#include "test_module_python.h"
+#include "bridge_module.h"
 
 #include <sys/sendfile.h>
 
