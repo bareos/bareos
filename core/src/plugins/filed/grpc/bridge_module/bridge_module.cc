@@ -48,8 +48,8 @@
 #include <future>
 #include <sstream>
 
-#include "plugin_service_python.h"
-#include "test_module_python.h"
+#include "plugin_service.h"
+#include "bridge_module.h"
 
 
 struct connection_builder {
