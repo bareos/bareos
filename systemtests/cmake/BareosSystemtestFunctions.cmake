@@ -561,12 +561,9 @@ macro(prepare_test_python)
   set(python_module_subdir_prefix "python3")
   if(is_grpc)
     set(python_module_name "grpc")
-    set(dir_python_module_name "grpc:grpc-python-module:python3")
+    set(dir_python_module_name "grpc:bareos-grpc-fd-plugin-bridge:python3")
   elseif(is_auto_grpc)
-    # this is a total hack ...
-    set(python_module_name "grpc\"
-Grpc Module = \"grpc-python-module"
-    )
+    set(python_module_name "grpc")
     set(dir_python_module_name "python3")
   else()
     set(python_module_name "python3")
