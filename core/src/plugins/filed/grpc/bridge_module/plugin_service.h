@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_FILED_GRPC_PLUGIN_SERVICE_PYTHON_H_
-#define BAREOS_PLUGINS_FILED_GRPC_PLUGIN_SERVICE_PYTHON_H_
+#ifndef BAREOS_PLUGINS_FILED_GRPC_BRIDGE_MODULE_PLUGIN_SERVICE_H_
+#define BAREOS_PLUGINS_FILED_GRPC_BRIDGE_MODULE_PLUGIN_SERVICE_H_
 
 #include <sys/stat.h>
 #include <future>
@@ -152,4 +152,4 @@ class PluginService : public bp::Plugin::Service {
   }
 };
 
-#endif  // BAREOS_PLUGINS_FILED_GRPC_PLUGIN_SERVICE_PYTHON_H_
+#endif  // BAREOS_PLUGINS_FILED_GRPC_BRIDGE_MODULE_PLUGIN_SERVICE_H_
