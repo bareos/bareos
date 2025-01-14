@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_PYTHON_H_
-#define BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_PYTHON_H_
+#ifndef BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_COMPAT_H_
+#define BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_COMPAT_H_
 
 #include <optional>
 #include <sys/stat.h>
@@ -132,4 +132,4 @@ std::optional<int> Bareos_GetInt(bc::BareosIntVariable var);
 bool Bareos_SetFlag(bc::BareosFlagVariable var, bool val);
 std::optional<bool> Bareos_GetFlag(bc::BareosFlagVariable var);
 
-#endif  // BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_PYTHON_H_
+#endif  // BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_COMPAT_H_

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -108,11 +108,11 @@ if(ENABLE_GRPC)
   )
 
   add_executable(
-    grpc-python-module grpc_python_module.cc plugin_service_python.cc
+    grpc-compat-module grpc_compat_module.cc plugin_service_compat.cc
   )
-  target_link_libraries(grpc-python-module fmt::fmt grpc-proto Python3::Module)
+  target_link_libraries(grpc-compat-module fmt::fmt grpc-proto Python3::Module)
   install(
-    TARGETS grpc-python-module
+    TARGETS grpc-compat-module
     DESTINATION ${plugindir}/grpc
     COMPONENT filedaemon
   )
