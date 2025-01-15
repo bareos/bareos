@@ -1319,6 +1319,7 @@ void foreach_run(JobResource& job,
         tm runtm;
         Blocaltime(&future, &runtm);
         runtm.tm_min = run->minute;
+        runtm.tm_sec = 0;
         for (int hour = 0; hour < 24; ++hour) {
           runtm.tm_hour = hour;
           time_t runtime = mktime(&runtm);

@@ -69,7 +69,8 @@ RunValidator::RunValidator(time_t time) : time_(time)
 }
 
 // check if the calculated hour matches the runtime bitfiled
-bool RunValidator::TriggersOnDay(const DateTimeBitfield& date_time_bitfield)
+bool RunValidator::TriggersOnDay(
+    const DateTimeBitfield& date_time_bitfield) const
 {
   return BitIsSet(mday_, date_time_bitfield.mday)
          && BitIsSet(wday_, date_time_bitfield.wday)
@@ -78,7 +79,8 @@ bool RunValidator::TriggersOnDay(const DateTimeBitfield& date_time_bitfield)
              || (is_last_week_ && date_time_bitfield.last_week_of_month))
          && BitIsSet(woy_, date_time_bitfield.woy);
 }
-bool RunValidator::TriggersOnDayAndHour(const DateTimeBitfield& date_time_bitfield)
+bool RunValidator::TriggersOnDayAndHour(
+    const DateTimeBitfield& date_time_bitfield) const
 {
   return TriggersOnDay(date_time_bitfield)
          && BitIsSet(hour_, date_time_bitfield.hour);

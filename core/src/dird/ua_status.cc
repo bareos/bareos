@@ -907,18 +907,14 @@ static void ListScheduledJobs(UaContext* ua)
     }
     foreach_run(*job, days, [&](RunResource& run, utime_t runtime) {
       UnifiedStorageResource store;
-      int level = job->JobLevel;
-      if (run.level) { level = run.level; }
-      int priority = job->Priority;
-      if (run.Priority) { priority = run.Priority; }
       if (!hdr_printed) {
         PrtRunhdr(ua);
         hdr_printed = true;
       }
-      auto* sp = (sched_pkt*)malloc(sizeof(sched_pkt));
+      auto* sp = new sched_pkt;
       sp->job = job;
-      sp->level = level;
-      sp->priority = priority;
+      sp->level = (run.level ? run.level : job->JobLevel);
+      sp->priority = (run.Priority ? run.Priority : job->Priority);
       sp->runtime = runtime;
       sp->pool = run.pool;
       GetJobStorage(&store, job, &run);
