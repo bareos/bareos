@@ -194,11 +194,11 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 {
   Dmsg0(local_debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
 
-  RunValidator this_hour(time_adapter->time_source_->SystemTime());
-  this_hour.PrintDebugMessage(local_debuglevel);
+  RunValidator validator_now(time_adapter->time_source_->SystemTime());
+  validator_now.PrintDebugMessage(local_debuglevel);
 
-  RunValidator next_hour(this_hour.Time() + seconds_per_hour.count());
-  next_hour.PrintDebugMessage(local_debuglevel);
+  RunValidator validator_next_hour(validator_now.Time() + seconds_per_hour.count());
+  validator_next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
 
@@ -209,20 +209,20 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
-      bool run_this_hour = this_hour.TriggersOnDayAndHour(run->date_time_bitfield);
-      bool run_next_hour = next_hour.TriggersOnDayAndHour(run->date_time_bitfield);
+      bool run_this_hour = validator_now.TriggersOnDayAndHour(run->date_time_bitfield);
+      bool run_next_hour = validator_next_hour.TriggersOnDayAndHour(run->date_time_bitfield);
 
       Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);
 
       if (run_this_hour || run_next_hour) {
-        time_t runtime = CalculateRuntime(this_hour.Time(), run->minute);
+        time_t runtime = CalculateRuntime(validator_now.Time(), run->minute);
         if (run_this_hour) {
-          AddJobToQueue(job, run, this_hour.Time(), runtime,
+          AddJobToQueue(job, run, validator_now.Time(), runtime,
                         JobTrigger::kScheduler);
         }
         if (run_next_hour) {
-          AddJobToQueue(job, run, this_hour.Time(),
+          AddJobToQueue(job, run, validator_now.Time(),
                         runtime + seconds_per_hour.count(),
                         JobTrigger::kScheduler);
         }
