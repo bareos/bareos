@@ -209,8 +209,8 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
-      bool run_this_hour = this_hour.TriggersOnHour(run->date_time_bitfield);
-      bool run_next_hour = next_hour.TriggersOnHour(run->date_time_bitfield);
+      bool run_this_hour = this_hour.TriggersOnDayAndHour(run->date_time_bitfield);
+      bool run_next_hour = next_hour.TriggersOnDayAndHour(run->date_time_bitfield);
 
       Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);

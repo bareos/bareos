@@ -387,7 +387,7 @@ static bool show_scheduled_preview(UaContext*,
     bool run_now;
     int cnt = 0;
 
-    run_now = run_validator.TriggersOnHour(run->date_time_bitfield);
+    run_now = run_validator.TriggersOnDayAndHour(run->date_time_bitfield);
 
     if (run_now) {
       // Find time (time_t) job is to be run

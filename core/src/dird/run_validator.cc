@@ -78,7 +78,7 @@ bool RunValidator::TriggersOnDay(const DateTimeBitfield& date_time_bitfield)
              || (is_last_week_ && date_time_bitfield.last_week_of_month))
          && BitIsSet(woy_, date_time_bitfield.woy);
 }
-bool RunValidator::TriggersOnHour(const DateTimeBitfield& date_time_bitfield)
+bool RunValidator::TriggersOnDayAndHour(const DateTimeBitfield& date_time_bitfield)
 {
   return TriggersOnDay(date_time_bitfield)
          && BitIsSet(hour_, date_time_bitfield.hour);
