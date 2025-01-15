@@ -31,8 +31,8 @@ class RunValidator {
  public:
   RunValidator(time_t time);
   void PrintDebugMessage(int debuglevel) const;
-  bool TriggersOnDay(const DateTimeBitfield& date_time_bitfield);
-  bool TriggersOnDayAndHour(const DateTimeBitfield& date_time_bitfield);
+  bool TriggersOnDay(const DateTimeBitfield& date_time_bitfield) const;
+  bool TriggersOnDayAndHour(const DateTimeBitfield& date_time_bitfield) const;
   time_t Time() const { return time_; }
 
  private:

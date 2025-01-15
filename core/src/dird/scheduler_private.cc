@@ -197,7 +197,8 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
   RunValidator validator_now(time_adapter->time_source_->SystemTime());
   validator_now.PrintDebugMessage(local_debuglevel);
 
-  RunValidator validator_next_hour(validator_now.Time() + seconds_per_hour.count());
+  RunValidator validator_next_hour(validator_now.Time()
+                                   + seconds_per_hour.count());
   validator_next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
@@ -209,8 +210,10 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
-      bool run_this_hour = validator_now.TriggersOnDayAndHour(run->date_time_bitfield);
-      bool run_next_hour = validator_next_hour.TriggersOnDayAndHour(run->date_time_bitfield);
+      bool run_this_hour
+          = validator_now.TriggersOnDayAndHour(run->date_time_bitfield);
+      bool run_next_hour
+          = validator_next_hour.TriggersOnDayAndHour(run->date_time_bitfield);
 
       Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);
