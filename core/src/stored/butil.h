@@ -44,6 +44,7 @@ JobControlRecord* SetupJcr(const char* name,
                            const std::string& VolumeName,
                            bool readonly);
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
+std::string AvailableDevicesListing();
 
 } /* namespace storagedaemon */
 
