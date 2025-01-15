@@ -1322,7 +1322,7 @@ void foreach_run(JobResource& job,
         for (int hour = 0; hour < 24; ++hour) {
           runtm.tm_hour = hour;
           time_t runtime = mktime(&runtm);
-          if (RunValidator(runtime).TriggersOnHour(
+          if (RunValidator(runtime).TriggersOnDayAndHour(
                   run->date_time_bitfield)) { /* Job is scheduled on that
                                                      day and hour */
             Dmsg2(200, "now=%d runtime=%lld\n", now, runtime);
