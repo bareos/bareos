@@ -1,4 +1,5 @@
 /etc/bareos/mtx-changer.conf
+/etc/logrotate.d/bareos-mtx
 @configtemplatedir@/bareos-dir.d/storage/Tape.conf.example
 @configtemplatedir@/bareos-sd.d/autochanger/autochanger-0.conf.example
 @configtemplatedir@/bareos-sd.d/device/tapedrive-0.conf.example

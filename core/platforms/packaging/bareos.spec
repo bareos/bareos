@@ -309,6 +309,7 @@ Provides:   %{name}-sd
 %if 0%{?suse_version}
 Requires(pre): shadow
 Recommends: bareos-tools
+Recommends: logrotate
 %else
 Requires(pre): shadow-utils
 # Recommends would be enough, however only supported by Fedora >= 24.
@@ -992,6 +993,7 @@ for F in  \
     %{_mandir}/man8/bscrypto.8.gz \
     %{_mandir}/man8/btape.8.gz \
     %{_sysconfdir}/logrotate.d/bareos-dir \
+    %{_sysconfdir}/logrotate.d/bareos-mtx \
     %{_sysconfdir}/rc.d/init.d/bareos-dir \
     %{_sysconfdir}/rc.d/init.d/bareos-sd \
     %{script_dir}/disk-changer \
@@ -1244,6 +1246,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{backend_dir}/libbareossd-tape*.so
 %{script_dir}/mtx-changer
 %config(noreplace) %{_sysconfdir}/%{name}/mtx-changer.conf
+%config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-mtx
 %{_mandir}/man8/bscrypto.8.gz
 %{_mandir}/man8/btape.8.gz
 %{_sbindir}/bscrypto
