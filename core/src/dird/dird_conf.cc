@@ -1585,7 +1585,7 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
 
-  /* run->wom output is 1st, 2nd... 5th comma separated
+  /* run->wom output is 1st, 2nd... 5th or last comma separated
    *                    first, second, third... is also allowed
    *                    but we ignore that for now */
   all_set = true;
@@ -1636,6 +1636,10 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcat(temp, " ");
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+  }
+  if (run->date_time_bitfield.last_week_of_month) {
+    PmStrcat(run_str, "last");
+    PmStrcat(run_str, " ");
   }
 
   // run->wday output is Sun, Mon, ..., Sat comma separated
