@@ -7,9 +7,17 @@ Volume Management
    single: Volume; Management
    single: Disk Volumes
 
-This chapter presents most all the features needed to do Volume management. Most of the concepts apply equally well to both tape and disk Volumes. However, the chapter was originally written to explain backing up to disk, so you will see it is slanted in that direction, but all the directives presented here apply equally well whether your volume is disk or tape.
+This chapter presents most all the features needed to do Volume management. Most of the concepts
+apply equally well to both tape and disk Volumes.
+However, the chapter was originally written to explain backing up to disk, so you will see it is
+slanted in that direction, but all the directives presented here apply equally well whether your
+volume is disk or tape.
 
-If you have a lot of hard disk storage or you absolutely must have your backups run within a small time window, you may want to direct Bareos to backup to disk Volumes rather than tape Volumes. This chapter is intended to give you some of the options that are available to you so that you can manage either disk or tape volumes.
+If you have a lot of hard disk storage or you absolutely must have your backups run within a small
+time window, you may want to direct Bareos to backup to disk Volumes rather than tape Volumes.
+
+This chapter is intended to give you some of the options that are available to you so that
+you can manage either disk or tape volumes.
 
 Key Concepts and Resource Records
 ---------------------------------
@@ -17,14 +25,17 @@ Key Concepts and Resource Records
 .. index::
    single: Volume; Management; Key Concepts and Resource Records
 
-Getting Bareos to write to disk rather than tape in the simplest case is rather easy. In the Storage daemon’s configuration file, you simply define an :config:option:`sd/device/ArchiveDevice`\  to be a directory. The default directory to store backups on disk is :file:`/var/lib/bareos/storage`:
+Getting Bareos to write to disk rather than tape in the simplest case is rather easy.
+In the Storage daemon’s configuration file, you simply define an :config:option:`sd/device/ArchiveDevice`\
+to be a directory.
 
+The default directory to store backups on disk is :file:`/var/lib/bareos/storage`:
 
 
 ::
 
    Device {
-     Name = FileBackup
+     Name = File
      Media Type = File
      Archive Device = /var/lib/bareos/storage
      Random Access = Yes
@@ -35,8 +46,8 @@ Getting Bareos to write to disk rather than tape in the simplest case is rather 
 
 
 
-Assuming you have the appropriate :config:option:`Dir/Storage`\  resource in your Director’s configuration file that references the above Device resource,
-
+Assuming you have the appropriate :config:option:`Dir/Storage`\  resource in your Director’s
+configuration file that references the above Device resource,
 
 
 ::
@@ -45,18 +56,27 @@ Assuming you have the appropriate :config:option:`Dir/Storage`\  resource in you
      Name = FileStorage
      Address = ...
      Password = ...
-     Device = FileBackup
+     Device = File
      Media Type = File
    }
 
 
 
-Bareos will then write the archive to the file `/var/lib/bareos/storage/<volume-name>` where `<volume-name>` is the volume name of a Volume defined in the Pool. For example, if you have labeled a Volume named Vol001, Bareos will write to the file /var/lib/bareos/storage/Vol001. Although you can later move the archive file to another directory, you should not rename it or it will become unreadable by Bareos. This is because each archive has the filename as part of the internal label, and the internal
-label must agree with the system filename before Bareos will use it.
+Bareos will then write the archive to the file `/var/lib/bareos/storage/<volume-name>` where
+`<volume-name>` is the volume name of a Volume defined in the Pool. For example, if you have labeled
+a Volume named Vol001, Bareos will write to the file /var/lib/bareos/storage/Vol001. Although you
+can later move the archive file to another directory, you should not rename it or it will become
+unreadable by Bareos.
+This is because each archive has the filename as part of the internal label, and the internal label
+must agree with the system filename before Bareos will use it.
 
-Although this is quite simple, there are a number of problems. The first is that unless you specify otherwise, Bareos will always write to the same volume until you run out of disk space. This problem is addressed below.
+Although this is quite simple, there are a number of problems. The first is that unless you specify
+otherwise, Bareos will always write to the same volume until you run out of disk space.
+This problem is addressed below.
 
-In addition, if you want to use concurrent jobs that write to several different volumes at the same time, you will need to understand a number of other details. An example of such a configuration is given at the end of this chapter under :ref:`ConcurrentDiskJobs`.
+In addition, if you want to use concurrent jobs that write to several different volumes at the same
+time, you will need to understand a number of other details. An example of such a configuration is
+given at the end of this chapter under :ref:`ConcurrentDiskJobs`.
 
 Pool Options to Limit the Volume Usage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,11 +90,16 @@ Some of the options you have, all of which are specified in the Pool record, are
 
 -  :config:option:`dir/pool/MaximumVolumeBytes`\ : limit the maximum size of each Volume.
 
-   Note, if you use disk volumes you should probably limit the Volume size to some reasonable value. If you ever have a partial hard disk failure, you are more likely to be able to recover more data if they are in smaller Volumes.
+   Note, if you use disk volumes you should probably limit the Volume size to some reasonable value.
+   If you ever have a partial hard disk failure, you are more likely to be able to recover more data
+   if they are in smaller Volumes.
 
 -  :config:option:`dir/pool/VolumeUseDuration`\ : restrict the time between first and last data written to Volume.
 
-Note that although you probably would not want to limit the number of bytes on a tape as you would on a disk Volume, the other options can be very useful in limiting the time Bareos will use a particular Volume (be it tape or disk). For example, the above directives can allow you to ensure that you rotate through a set of daily Volumes if you wish.
+Note that although you probably would not want to limit the number of bytes on a tape as you would
+on a disk Volume, the other options can be very useful in limiting the time Bareos will use a
+particular Volume (be it tape or disk). For example, the above directives can allow you to ensure
+that you rotate through a set of daily Volumes if you wish.
 
 As mentioned above, each of those directives is specified in the Pool or Pools that you use for your Volumes. In the case of :config:option:`dir/pool/MaximumVolumeJobs`\ , :config:option:`dir/pool/MaximumVolumeBytes`\  and :config:option:`dir/pool/VolumeUseDuration`\ , you can actually specify the desired value on a Volume by Volume basis. The value specified in the Pool record becomes the default when labeling new Volumes. Once a
 Volume has been created, it gets its own copy of the Pool defaults, and subsequently changing the Pool will have no effect on existing Volumes. You can either manually change the Volume values, or refresh them from the Pool defaults using the :bcommand:`update volume` command in the Console. As an example of the use of one of the above, suppose your Pool resource contains:
@@ -501,91 +526,25 @@ Example: use four storage devices pointing to the same directory
 Example: use a virtual disk autochanger
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In default installation you will find 4 files that might help you to setup a virtual disk autochanger.
+In default installation you will find examples files that might help you to setup a virtual file autochanger.
 Compared to the previous example, you will not be forced to declare each device in the dir storage definition,
-only the autochanger name will be declared, and with the use of :config:option:`sd/device/Count`\  auto-numbering device you can adjust the number of needed drives.
+only the autochanger name will be declared, and with the use of :config:option:`sd/device/Count`\  auto-numbering
+device you can adjust the number of needed drives.
+
 See also :ref:`StorageResourceMultipliedDevice`
 
-:file:`/etc/bareos/bareos-dir.d/storage/diskchanger-0.conf`
 
-.. code-block:: bareosconfig
-   :caption: |dir| configuration: using an virtual disk autochanger with 10 drives
+.. literalinclude:: /include/config/bareos-dir.d/storage/Filechanger.conf.example
+   :language: bareosconfig
+   :caption: bareos-dir.d/storage/Filechanger.conf configuration: using an virtual file autochanger with 10 drives
 
-   Director {
-     Name = bareos-dir.example.com
-     Maximum Concurrent Jobs = 10
-     Password = "<secret>"
-   }
+.. literalinclude:: /include/config/bareos-sd.d/autochanger/FilechangerStorage.conf.example
+   :language: bareosconfig
+   :caption: bareos-sd.d/autochanger/FilechangerStorage.conf using a virtual file autochanger with auto-numbered devices
 
-   Storage {
-     Name = diskchanger-0
-     Description = "virtual disk autochanger with auto-numbered device"
-     Address  = bareos-sd.example.com
-     Password = "<secret>"
-     Maximum Concurrent Jobs = 10
-     Device = diskchanger-0
-     Media Type = File
-   }
-
-:file:`/etc/bareos/bareos-sd.d/autochanger/diskchanger-0.conf``
-:file:`/etc/bareos/bareos-dir.d/device/vdisk-.conf`
-
-
-.. code-block:: bareosconfig
-   :caption: |sd| configuraton: using a virtual disk autochanger and auto-numbered devices
-
-   Storage {
-     Name = bareos-sd.example.com
-   }
-
-   Director {
-     Name = bareos-dir.example.com
-     Password = "<sd-secret>"
-   }
-
-   Autochanger {
-     Name = "diskchanger-0"
-     Description = "Virtual Autochanger for disk based devices"
-     # We don't have a real changer
-     Changer Device = /dev/null
-     # We don't have yet a smart disk changer
-     Changer Command = ""
-     # the Autochanger will contain multiple drive devices,
-     # we use the auto-numbering bareos function for that.
-     # the proposed order is important!
-     # Reserved inactive drive with autoselect=no for labeling and restores
-     Device = vdisk-0000
-     # The rest are the auto-numbered drives
-     Device = vdisk-
-   }
-
-   Device {
-     Name = "vdisk-0000"
-     Description = "This device with autoselect=no is reserved for restores and labeling volumes"
-     Auto Select = No
-     Media Type = "File"
-     Device Type = "File"
-     Archive device = "/var/lib/bareos/storage"
-     Label Media = Yes
-     Random Access = Yes
-     Automatic Mount = Yes
-     Removable Media = No
-   }
-
-   Device {
-     Name = "vdisk-"
-     Description = "auto-umbered disk devices for file backups"
-     # Will create multiple devices vdisk-0001 to vdisk-0010
-     # Adjust your needs depending of your storage performances.
-     Count = 10
-     Media Type = "File"
-     Device Type = "File"
-     Archive device = "/var/lib/bareos/storage"
-     Label Media = Yes
-     Random Access = Yes
-     Automatic Mount = Yes
-     Removable Media = No
-   }
+.. literalinclude:: /include/config/bareos-sd.d/device/vfile.conf.example
+   :language: bareosconfig
+   :caption: bareos-sd.d/device/vfile.conf
 
 
 
