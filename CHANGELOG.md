@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: Fix typo in postgresql plugin [PR #2066]
 - Sync EvpDigest between OpenSSL <1.1 and 1.1+ [PR #2086]
 - winbareos-native.nsi: do not package python3 plugins [PR #2076]
+- logrotate: add mtx-changer debug log config [PR #2039]
 
+[PR #2039]: https://github.com/bareos/bareos/pull/2039
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
 [PR #2056]: https://github.com/bareos/bareos/pull/2056
 [PR #2064]: https://github.com/bareos/bareos/pull/2064
