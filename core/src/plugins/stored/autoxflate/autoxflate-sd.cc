@@ -471,7 +471,9 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
     }
   }
 #endif
+#if defined(HAVE_LZO)
   if (algorithm == COMPRESS_LZO1X) { compressorname = COMPRESSOR_NAME_LZO; }
+#endif
   if (algorithm == COMPRESS_FZFZ || algorithm == COMPRESS_FZ4L
       || algorithm == COMPRESS_FZ4H) {
     zfast_stream_compressor compressor = COMPRESSOR_DEFAULT;
