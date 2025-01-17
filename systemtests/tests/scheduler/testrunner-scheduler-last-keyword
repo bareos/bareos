@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+#
+# Run test to check correct output of #`status dir days=45`,
+# i.e. whether the job 'LastSundayJob' is listed as scheduled
+#
+
+start_test
+
+log="$tmp"/last_keyword_log.out
+
+cat <<END_OF_DATA >$tmp/bconcmds
+messages
+@$out $log
+enable client=bareos-fd
+status dir days=45
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+#check that `status scheduler job=...` returns scheduled copy jobs
+expect_grep "LastSundayJob .*" \
+            "$log" \
+            "LastSundayJob is not listed as scheduled in 'status dir days=45' but it should!"
+
+end_test
