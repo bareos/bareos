@@ -24,7 +24,6 @@ log="$tmp"/last_keyword_log.out
 cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $log
-enable client=bareos-fd
 status dir days=45
 wait
 messages
