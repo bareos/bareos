@@ -534,15 +534,15 @@ device you can adjust the number of needed drives.
 See also :ref:`StorageResourceMultipliedDevice`
 
 
-.. literalinclude:: /include/config/bareos-dir.d/storage/Filechanger.conf.example
+.. literalinclude:: ../../../../core/src/stored/backends/unix_file_device.d/bareos-dir.d/storage/Filechanger.conf.example
    :language: bareosconfig
    :caption: bareos-dir.d/storage/Filechanger.conf configuration: using an virtual file autochanger with 10 drives
 
-.. literalinclude:: /include/config/bareos-sd.d/autochanger/FilechangerStorage.conf.example
+.. literalinclude:: ../../../../core/src/stored/backends/unix_file_device.d/bareos-sd.d/autochanger/FilechangerStorage.conf.example
    :language: bareosconfig
    :caption: bareos-sd.d/autochanger/FilechangerStorage.conf using a virtual file autochanger with auto-numbered devices
 
-.. literalinclude:: /include/config/bareos-sd.d/device/vfile.conf.example
+.. literalinclude:: ../../../../core/src/stored/backends/unix_file_device.d/bareos-sd.d/device/vfile.conf.example
    :language: bareosconfig
    :caption: bareos-sd.d/device/vfile.conf
 
