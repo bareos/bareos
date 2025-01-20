@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -157,7 +157,7 @@ endif()
 
 include(BareosFindLibrary)
 
-bareosfindlibrary("tirpc")
+bareosfindlibraryandheaders("tirpc" "rpc/rpc.h" "/usr/include/tirpc")
 bareosfindlibrary("util")
 bareosfindlibrary("dl")
 bareosfindlibrary("acl")
