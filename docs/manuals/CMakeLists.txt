@@ -23,24 +23,30 @@ set_directory_properties(PROPERTIES CLEAN_NO_CUSTOM 1)
 
 if(${docs-build-json})
   # create the list of *.sql files for the pkg-plist.database-postgresql
-  file(GLOB_RECURSE sqlfiles RELATIVE ${CMAKE_SOURCE_DIR}/core/src/cats ${CMAKE_SOURCE_DIR}/core/src/cats/ddl/*.sql)
+  file(
+    GLOB_RECURSE sqlfiles
+    RELATIVE ${CMAKE_SOURCE_DIR}/core/src/cats
+    ${CMAKE_SOURCE_DIR}/core/src/cats/ddl/*.sql
+  )
   list(TRANSFORM sqlfiles PREPEND lib/bareos/scripts/)
   list(SORT sqlfiles)
-  list(APPEND sqlfiles "\n")
   string(REGEX REPLACE ";" "\n" sqlfiles "${sqlfiles}")
-  file(WRITE "${CMAKE_SOURCE_DIR}/core/platforms/freebsd/bareos-freebsd/bareos.com-common/pkg-plist.database-postgresql" ${sqlfiles})
-
+  list(APPEND sqlfiles "\n")
+  file(
+    WRITE
+    "${CMAKE_SOURCE_DIR}/core/platforms/freebsd/bareos-freebsd/bareos.com-common/pkg-plist.database-postgresql"
+    ${sqlfiles}
+  )
 
   add_custom_target(
     check-freebsd-pkglist
-    COMMAND git diff -p --exit-code --stat=80
-            ${CMAKE_SOURCE_DIR}/core/platforms/freebsd/bareos-freebsd/bareos.com-common
+    COMMAND
+      git diff -p --exit-code --stat=80
+      ${CMAKE_SOURCE_DIR}/core/platforms/freebsd/bareos-freebsd/bareos.com-common
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT
       "Comparing pkg-plist files in \"${CMAKE_SOURCE_DIR}/core/platforms/freebsd/bareos-freebsd/bareos.com-common\" with git repo"
   )
-
-
 
   # commands building json files ######
   add_custom_command(
