@@ -88,10 +88,25 @@ static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
                             cl.do_connection_test_only_,
                             "Test connection only.");
 
+  std::string trace_directory;
+  auto* trace_dir_opt
+      = tray_monitor_app
+            .add_option("--trace-dir", trace_directory,
+                        "Create a debug trace in this directory")
+            ->check(CLI::ExistingDirectory);
+
   try {
     (tray_monitor_app).parse((argc), (argv));
   } catch (const CLI::ParseError& e) {
     exit((tray_monitor_app).exit(e));
+  }
+
+  if (!trace_dir_opt->empty()) {
+    /* traces by default land in the working directory.
+     * as there are no other uses for this in the tray monitor,
+     * we can just overwrite it with the trace directory. */
+    working_directory = strdup(trace_directory.c_str());
+    SetTrace(1);
   }
 }
 
