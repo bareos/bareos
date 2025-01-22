@@ -53,21 +53,27 @@
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
-const char* cmprs_algo_to_text(uint32_t compression_algorithm)
+static constexpr std::string_view kCompressorNameUnknown = "Unknown";
+static constexpr std::string_view kCompressorNameGZIP = "GZIP";
+static constexpr std::string_view kCompressorNameLZO = "LZO";
+static constexpr std::string_view kCompressorNameFZLZ = "FASTLZ";
+static constexpr std::string_view kCompressorNameFZ4L = "LZ4";
+static constexpr std::string_view kCompressorNameFZ4H = "LZ4HC";
+std::string_view CompressorName(uint32_t compression_algorithm)
 {
   switch (compression_algorithm) {
     case COMPRESS_GZIP:
-      return "GZIP";
+      return kCompressorNameGZIP;
     case COMPRESS_LZO1X:
-      return "LZO2";
+      return kCompressorNameLZO;
     case COMPRESS_FZFZ:
-      return "LZFZ";
+      return kCompressorNameFZLZ;
     case COMPRESS_FZ4L:
-      return "LZ4";
+      return kCompressorNameFZ4L;
     case COMPRESS_FZ4H:
-      return "LZ4HC";
+      return kCompressorNameFZ4H;
     default:
-      return "Unknown";
+      return kCompressorNameUnknown;
   }
 }
 
@@ -99,7 +105,7 @@ static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
                                                uint32_t compression_algorithm)
 {
   Jmsg(jcr, M_FATAL, 0, T_("%s compression not supported on this platform\n"),
-       cmprs_algo_to_text(compression_algorithm));
+       CompressorName(compression_algorithm));
 }
 
 std::size_t RequiredCompressionOutputBufferSize(uint32_t algo,

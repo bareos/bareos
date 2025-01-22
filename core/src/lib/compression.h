@@ -23,7 +23,7 @@
 
 #include "lib/util.h"
 
-const char* cmprs_algo_to_text(uint32_t compression_algorithm);
+std::string_view CompressorName(uint32_t compression_algorithm);
 
 bool SetupCompressionBuffers(JobControlRecord* jcr,
                              uint32_t compression_algorithm,

@@ -58,13 +58,6 @@ using namespace storagedaemon;
 #define SETTING_NO (char*)"no"
 #define SETTING_UNSET (char*)"unknown"
 
-#define COMPRESSOR_NAME_GZIP (char*)"GZIP"
-#define COMPRESSOR_NAME_LZO (char*)"LZO"
-#define COMPRESSOR_NAME_FZLZ (char*)"FASTLZ"
-#define COMPRESSOR_NAME_FZ4L (char*)"LZ4"
-#define COMPRESSOR_NAME_FZ4H (char*)"LZ4HC"
-#define COMPRESSOR_NAME_UNSET (char*)"unknown"
-
 // Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
@@ -431,7 +424,6 @@ static bRC handle_write_translation(PluginContext* ctx, void* value)
 // Setup deflate for auto deflate of data streams.
 static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 {
-  const char* compressorname = COMPRESSOR_NAME_UNSET;
   JobControlRecord* jcr = dcr->jcr;
 
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
@@ -457,29 +449,10 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 
   auto algo = dcr->device_resource->autodeflate_algorithm;
   if (!SetupSpecificCompressionContext(*jcr, algo, dcr->device_resource->autodeflate_level)) {
-      return false;
-    }
-  switch (algo) {
-    case COMPRESS_GZIP:
-      compressorname = COMPRESSOR_NAME_GZIP;
-      break;
-    case COMPRESS_LZO1X:
-      compressorname = COMPRESSOR_NAME_LZO;
-      break;
-      case COMPRESS_FZFZ:
-        compressorname = COMPRESSOR_NAME_FZLZ;
-        break;
-      case COMPRESS_FZ4L:
-        compressorname = COMPRESSOR_NAME_FZ4L;
-        break;
-      case COMPRESS_FZ4H:
-        compressorname = COMPRESSOR_NAME_FZ4H;
-        break;
-      default:
-        break;
-    }
+    return false;
+  }
   Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),
-       dcr->dev_name, compressorname);
+       dcr->dev_name, CompressorName(algo));
   return true;
 }
 
