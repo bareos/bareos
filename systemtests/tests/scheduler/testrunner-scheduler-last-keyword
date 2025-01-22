@@ -13,7 +13,7 @@ export TestName
 . "${rscripts}"/functions
 
 #
-# Run test to check correct output of #`status dir days=45`,
+# Run test to check correct output of `status dir days=45`,
 # i.e. whether the job 'LastSundayJob' is listed as scheduled
 #
 
@@ -32,7 +32,7 @@ END_OF_DATA
 
 run_bconsole
 
-#check that `status scheduler job=...` returns scheduled copy jobs
+# check that `status dir days=45` lists 'LastSundayJob' as scheduled
 expect_grep "LastSundayJob .*" \
             "$log" \
             "LastSundayJob is not listed as scheduled in 'status dir days=45' but it should!"
