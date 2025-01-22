@@ -886,9 +886,8 @@ static void ListScheduledJobs(UaContext* ua)
   Dmsg0(200, "enter list_sched_jobs()\n");
 
   int days = 1;
-  int i = FindArgWithValue(ua, NT_("days"));
-  if (i >= 0) {
-    days = atoi(ua->argv[i]);
+  if (const char* value = GetArgValue(ua, NT_("days"))) {
+    days = atoi(value);
     if (((days < 0) || (days > 500)) && !ua->api) {
       ua->SendMsg(T_("Ignoring invalid value for days. Max is 500.\n"));
       days = 1;
@@ -911,7 +910,7 @@ static void ListScheduledJobs(UaContext* ua)
         PrtRunhdr(ua);
         hdr_printed = true;
       }
-      auto* sp = new sched_pkt;
+        auto* sp = (sched_pkt*)malloc(sizeof(sched_pkt));
       sp->job = job;
       sp->level = (run.level ? run.level : job->JobLevel);
       sp->priority = (run.Priority ? run.Priority : job->Priority);
