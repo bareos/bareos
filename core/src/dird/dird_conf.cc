@@ -1539,14 +1539,14 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 31;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.mday)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.mday)) { all_set = false; }
   }
 
   if (!all_set) {
     interval_start = -1;
 
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.mday)) {
+      if (BitIsSet(i, run->date_time_mask.mday)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1556,7 +1556,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.mday)) {
+      if (!BitIsSet(i, run->date_time_mask.mday)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %d to %d\n",
@@ -1572,7 +1572,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.mday)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.mday)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1,
               i + 1);
@@ -1591,7 +1591,7 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 5;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.wom)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.wom)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1599,7 +1599,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.wom)) {
+      if (BitIsSet(i, run->date_time_mask.wom)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1609,7 +1609,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.wom)) {
+      if (!BitIsSet(i, run->date_time_mask.wom)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
@@ -1625,7 +1625,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wom)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.wom)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %s to %s\n",
               ordinals[interval_start], ordinals[i]);
@@ -1637,7 +1637,7 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(temp, " ");
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
-  if (run->date_time_bitfield.last_week_of_month) {
+  if (run->date_time_mask.last_7days_of_month) {
     PmStrcat(run_str, "last");
     PmStrcat(run_str, " ");
   }
@@ -1646,7 +1646,7 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 7;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.wday)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.wday)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1654,7 +1654,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.wday)) {
+      if (BitIsSet(i, run->date_time_mask.wday)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1664,7 +1664,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.wday)) {
+      if (!BitIsSet(i, run->date_time_mask.wday)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
@@ -1680,7 +1680,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wday)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.wday)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %s to %s\n",
               weekdays[interval_start], weekdays[i]);
@@ -1697,7 +1697,7 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 12;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.month)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.month)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1705,7 +1705,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.month)) {
+      if (BitIsSet(i, run->date_time_mask.month)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1715,7 +1715,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.month)) {
+      if (!BitIsSet(i, run->date_time_mask.month)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
@@ -1731,7 +1731,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.month)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.month)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %s to %s\n",
               months[interval_start], months[i]);
@@ -1748,7 +1748,7 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 54;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.woy)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.woy)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1756,7 +1756,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.woy)) {
+      if (BitIsSet(i, run->date_time_mask.woy)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1766,7 +1766,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.woy)) {
+      if (!BitIsSet(i, run->date_time_mask.woy)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from w%02d to w%02d\n",
@@ -1782,7 +1782,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.woy)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.woy)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from w%02d to w%02d\n",
               interval_start, i);
@@ -1799,7 +1799,7 @@ static std::string PrintConfigRun(RunResource* run)
    * only "hourly" sets all bits. */
   PmStrcpy(temp, "");
   for (i = 0; i < 24; i++) {
-    if (BitIsSet(i, run->date_time_bitfield.hour)) {
+    if (BitIsSet(i, run->date_time_mask.hour)) {
       Mmsg(temp, "at %02d:%02d", i, run->minute);
       PmStrcat(run_str, temp.c_str());
     }

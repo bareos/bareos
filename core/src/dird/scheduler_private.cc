@@ -211,9 +211,9 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
       bool run_this_hour
-          = validator_now.TriggersOnDayAndHour(run->date_time_bitfield);
+          = validator_now.TriggersOnDayAndHour(run->date_time_mask;
       bool run_next_hour
-          = validator_next_hour.TriggersOnDayAndHour(run->date_time_bitfield);
+          = validator_next_hour.TriggersOnDayAndHour(run->date_time_mask);
 
       Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);
