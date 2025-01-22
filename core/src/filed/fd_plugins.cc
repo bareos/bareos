@@ -219,47 +219,6 @@ static bool IsCtxGood(PluginContext* ctx,
 }
 
 // Test if event is for this plugin
-static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
-{
-  Dmsg4(debuglevel, "IsEventForThisPlugin? name=%s len=%d plugin=%s plen=%d\n",
-        name, len, plugin->file, plugin->file_len);
-  if (!name) { /* if no plugin name, all plugins get it */
-    return true;
-  }
-
-  // Return global VSS job metadata to all plugins
-  if (bstrcmp("job", name)) { /* old V4.0 name for VSS job metadata */
-    return true;
-  }
-
-  if (bstrcmp("*all*", name)) { /* new v6.0 name for VSS job metadata */
-    return true;
-  }
-
-  // Check if this is the correct plugin
-  if (len == plugin->file_len && bstrncmp(plugin->file, name, len)) {
-    Dmsg4(debuglevel,
-          "IsEventForThisPlugin: yes, full match (plugin=%s, name=%s)\n",
-          plugin->file, name);
-    return true;
-  }
-  // To be able to restore "python" plugin streams with the "python3" plugin,
-  // we check if the required name is the same as the plugin name without the
-  // last character
-  if (len == plugin->file_len - 1 && bstrncmp(plugin->file, name, len)) {
-    Dmsg4(debuglevel,
-          "IsEventForThisPlugin: yes, without last character: (plugin=%s, "
-          "name=%s)\n",
-          plugin->file, name);
-    return true;
-  }
-
-  Dmsg4(debuglevel, "IsEventForThisPlugin: no (plugin=%s, name=%s)\n",
-        plugin->file, name);
-
-  return false;
-}
-
 // Raise a certain plugin event.
 static inline bool trigger_plugin_event(JobControlRecord*,
                                         bEventType eventType,
@@ -340,14 +299,116 @@ bail_out:
   return stop;
 }
 
+static bool IsEventForThisPlugin(Plugin* plugin, const char* name, int len)
+{
+  Dmsg4(debuglevel, "IsEventForThisPlugin? name=%s len=%d plugin=%s plen=%d\n",
+        name, len, plugin->file, plugin->file_len);
+  if (!name) { /* if no plugin name, all plugins get it */
+    return true;
+  }
+
+  // Return global VSS job metadata to all plugins
+  if (bstrcmp("job", name)) { /* old V4.0 name for VSS job metadata */
+    return true;
+  }
+
+  if (bstrcmp("*all*", name)) { /* new v6.0 name for VSS job metadata */
+    return true;
+  }
+
+  // Check if this is the correct plugin
+  if (len == plugin->file_len && bstrncmp(plugin->file, name, len)) {
+    Dmsg4(debuglevel,
+          "IsEventForThisPlugin: yes, full match (plugin=%s, name=%s)\n",
+          plugin->file, name);
+    return true;
+  }
+  // To be able to restore "python" plugin streams with the "python3" plugin,
+  // we check if the required name is the same as the plugin name without the
+  // last character
+  if (len == plugin->file_len - 1 && bstrncmp(plugin->file, name, len)) {
+    Dmsg4(debuglevel,
+          "IsEventForThisPlugin: yes, without last character: (plugin=%s, "
+          "name=%s)\n",
+          plugin->file, name);
+    return true;
+  }
+
+  Dmsg4(debuglevel, "IsEventForThisPlugin: no (plugin=%s, name=%s)\n",
+        plugin->file, name);
+
+  return false;
+}
+
+PluginContext* grpc_plugin_context(alist<PluginContext*>* plugin_ctx_list)
+{
+  for (auto* ctx : plugin_ctx_list) {
+    if (ctx->plugin->file_len < 0) {
+      Dmsg0(50, "plugin context list contains plugin with file_len < 0!!!\n");
+      continue;
+    }
+    std::string_view pname{ctx->plugin->file,
+                           static_cast<size_t>(ctx->plugin->file_len)};
+
+    if (pname == std::string_view{"grpc"} && !IsPluginDisabled(ctx)) {
+      return ctx;
+    }
+  }
+  return nullptr;
+}
+
+PluginContext* find_plugin(alist<PluginContext*>* plugin_list,
+                           std::string& cmd,
+                           int name_len,
+                           bEventType eventType)
+{
+  for (auto* ctx : plugin_list) {
+    Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
+          ctx->plugin->file_len, cmd.c_str(), name_len);
+    if (!IsEventForThisPlugin(ctx->plugin, cmd.c_str(), name_len)) { continue; }
+
+    if (!IsEventEnabled(ctx, eventType)) {
+      Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
+      continue;
+    }
+
+    return ctx;
+  }
+
+  ResLocker _{my_config};
+
+  ClientResource* res
+      = dynamic_cast<ClientResource*>(my_config->GetNextRes(R_CLIENT, nullptr));
+
+  PluginContext* ctx;
+
+  if (res && !res->grpc_module.empty()
+      && (ctx = grpc_plugin_context(plugin_list))) {
+    std::string grpc_cmd = "grpc:";
+    grpc_cmd += res->grpc_module;
+    grpc_cmd += ":";
+    grpc_cmd += cmd;
+
+    if (!IsEventEnabled(ctx, eventType)) { return nullptr; }
+
+    Dmsg1(100, "using grpc to handle this event\n'%s' -> '%s'\n", cmd.c_str(),
+          grpc_cmd.c_str());
+
+    cmd = std::move(grpc_cmd);
+
+    return ctx;
+  }
+
+  return nullptr;
+}
+
 /**
  * Create a plugin event When receiving bEventCancelCommand, this function is
  * called by another thread.
  */
 bRC GeneratePluginEvent(JobControlRecord* jcr,
                         bEventType eventType,
-                        void* value,
-                        bool reverse)
+                        void* value)
 {
   bEvent event;
   char* name = NULL;
@@ -382,6 +443,15 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       name = (char*)value;
       if (!GetPluginName(jcr, name, &len)) { goto bail_out; }
       break;
+    case bEventNewPluginOptions: {
+      // If this event contains a name, then we need to fix it up
+      // It may be possible for it to not contain a name: in that case
+      // we dont touch the value.
+      // This has some problems of course, but the values should be plugin
+      // specific most of the time.
+      name = (char*)value;
+      if (!GetPluginName(jcr, name, &len)) { name = nullptr; }
+    } break;
     case bEventRestoreObject:
       // After all RestoreObject, we have it one more time with value = NULL
       if (value) {
@@ -423,20 +493,26 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * name is set). If name is set, we pass it only to the plugin with that name.
    *
    * See if we need to trigger the loaded plugins in reverse order. */
-  if (reverse) {
-    PluginContext* ctx;
-    int i{};
-    foreach_alist_rindex (i, ctx, plugin_ctx_list) {
-      if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
-        Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
-              (name == NULL) ? 1 : 0);
-        continue;
-      }
 
-      if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
-                               plugin_ctx_list, &i, &rc)) {
-        break;
-      }
+  if (name) {
+    // we want to sent this to a specific plugin
+    std::string cmd = name;
+    auto* ctx = find_plugin(plugin_ctx_list, cmd, len, eventType);
+
+    Dmsg2(debuglevel, "updated cmd = '%s'\n", cmd.c_str());
+    void* updated_value = const_cast<char*>(cmd.c_str());
+
+    restore_object_pkt updated_rop;
+    if (eventType == bEventRestoreObject) {
+      updated_rop = *(restore_object_pkt*)value;
+      updated_rop.plugin_name = const_cast<char*>(cmd.c_str());
+      updated_value = &updated_rop;
+    }
+
+    if (ctx) {
+      int unused{};
+      trigger_plugin_event(jcr, eventType, &event, ctx, updated_value,
+                           plugin_ctx_list, &unused, &rc);
     }
   } else {
     PluginContext* ctx;
@@ -652,7 +728,6 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   int ret = 1;  // everything ok
   int len;
-  char* cmd;
   bEvent event;
   bEventType eventType;
   PoolMem fname(PM_FNAME);
@@ -660,14 +735,15 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   alist<PluginContext*>* plugin_ctx_list;
   char flags[FOPTS_BYTES];
 
-  cmd = ff_pkt->top_fname;
+  const char* original_cmd = ff_pkt->top_fname;
+  std::string cmd = original_cmd;
   plugin_ctx_list = jcr->plugin_ctx_list;
 
   if (!fd_plugin_list || !plugin_ctx_list) {
     Jmsg1(jcr, M_FATAL, 0,
           "PluginSave: Command plugin \"%s\" requested, but is not "
           "loaded.\n",
-          cmd);
+          cmd.c_str());
     goto bail_out; /* Return if no plugins loaded */
   }
 
@@ -675,7 +751,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     Jmsg1(jcr, M_FATAL, 0,
           "PluginSave: Command plugin \"%s\" requested, but job is "
           "already cancelled.\n",
-          cmd);
+          cmd.c_str());
     goto bail_out; /* Return if job is cancelled */
   }
 
@@ -684,29 +760,29 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   eventType = bEventBackupCommand;
   event.eventType = eventType;
 
-  if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
+  if (!GetPluginName(jcr, cmd.data(), &len)) { goto bail_out; }
+
 
   // Note, we stop the loop on the first plugin that matches the name
-  for (auto* ctx : plugin_ctx_list) {
-    Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
-          ctx->plugin->file_len, cmd, len);
-    if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
+  {
+    auto* ctx = find_plugin(plugin_ctx_list, cmd, len, eventType);
 
-    /* We put the current plugin pointer, and the plugin context into the jcr,
-     * because during SaveFile(), the plugin will be called many times and
-     * these values are needed. */
-    if (!IsEventEnabled(ctx, eventType)) {
-      Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
-      continue;
+    if (!ctx) {
+      Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" not found.\n", cmd.c_str());
+      goto bail_out;
     }
 
     if (IsPluginDisabled(ctx)) { goto bail_out; }
 
+    /* We put the current plugin pointer, and the plugin context into the jcr,
+     * because during SaveFile(), the plugin will be called many times and
+     * these values are needed. */
     jcr->plugin_ctx = ctx;
 
     // Send the backup command to the right plugin
-    Dmsg1(debuglevel, "Command plugin = %s\n", cmd);
-    if (PlugFunc(ctx->plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd)
+    Dmsg1(debuglevel, "Command plugin = %s\n", cmd.c_str());
+    if (PlugFunc(ctx->plugin)
+            ->handlePluginEvent(jcr->plugin_ctx, &event, cmd.data())
         != bRC_OK) {
       goto bail_out;
     }
@@ -717,48 +793,47 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       sp.portable = true;
       sp.no_read = false;
       CopyBits(FO_MAX, ff_pkt->flags, sp.flags);
-      sp.cmd = cmd;
+      sp.cmd = const_cast<char*>(cmd.c_str());
       Dmsg3(debuglevel, "startBackup st_size=%p st_blocks=%p sp=%p\n",
             &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
       // Get the file save parameters. I.e. the stat pkt ...
-      {
-        switch (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp)) {
-          case bRC_OK:
-            if (sp.type == 0) {
-              Jmsg1(jcr, M_FATAL, 0,
-                    T_("Command plugin \"%s\": no type in startBackupFile "
-                       "packet.\n"),
-                    cmd);
-              goto bail_out;
-            }
-            break;
-          case bRC_Stop:
-            Dmsg0(debuglevel,
-                  "Plugin returned bRC_Stop, continue with next steps\n");
-            goto fun_end;
-          case bRC_Skip:
-            Dmsg0(debuglevel,
-                  "Plugin returned bRC_Skip, continue with next file\n");
-            continue;
-          case bRC_Error:
+      switch (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp)) {
+        case bRC_OK:
+          if (sp.type == 0) {
             Jmsg1(jcr, M_FATAL, 0,
-                  T_("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
+                  T_("Command plugin \"%s\": no type in startBackupFile "
+                     "packet.\n"),
+                  cmd.c_str());
             goto bail_out;
-          case PYTHON_UNDEFINED_RETURN_VALUE:
-          case bRC_Cancel:
-          case bRC_Core:
-          case bRC_Max:
-          case bRC_More:
-          case bRC_Seen:
-          case bRC_Term:
-            Jmsg1(jcr, M_ERROR, 0,
-                  T_("Command plugin \"%s\": unhandled returncode from "
-                     "startBackupFile.\n"),
-                  cmd);
+          }
+          break;
+        case bRC_Stop:
+          Dmsg0(debuglevel,
+                "Plugin returned bRC_Stop, continue with next steps\n");
+          goto fun_end;
+        case bRC_Skip:
+          Dmsg0(debuglevel,
+                "Plugin returned bRC_Skip, continue with next file\n");
+          continue;
+        case bRC_Error:
+          Jmsg1(jcr, M_FATAL, 0,
+                T_("Command plugin \"%s\": startBackupFile failed.\n"),
+                cmd.c_str());
+          goto bail_out;
+        case PYTHON_UNDEFINED_RETURN_VALUE:
+        case bRC_Cancel:
+        case bRC_Core:
+        case bRC_Max:
+        case bRC_More:
+        case bRC_Seen:
+        case bRC_Term:
+          Jmsg1(jcr, M_ERROR, 0,
+                T_("Command plugin \"%s\": unhandled returncode from "
+                   "startBackupFile.\n"),
+                cmd.c_str());
 
-            goto fun_end;
-        }
+          goto fun_end;
       }
 
       jcr->fd_impl->plugin_sp = &sp;
@@ -775,10 +850,11 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Command plugin \"%s\": no object_name in startBackupFile "
                    "packet.\n"),
-                cmd);
+                cmd.c_str());
           goto bail_out;
         }
-        ff_pkt->fname = cmd; /* full plugin string */
+        ff_pkt->fname
+            = const_cast<char*>(original_cmd); /* full plugin string */
         ff_pkt->object_name = sp.object_name;
         ff_pkt->object_index = sp.index; /* restore object index */
         ff_pkt->object_compression = 0;  /* no compression for now */
@@ -789,7 +865,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Command plugin \"%s\": no fname in startBackupFile "
                    "packet.\n"),
-                cmd);
+                cmd.c_str());
           goto bail_out;
         }
 
@@ -858,6 +934,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         }
       }
 
+      sp.cmd = const_cast<char*>(original_cmd);
+
       // Call Bareos core code to backup the plugin's file
       SaveFile(jcr, ff_pkt, true);
 
@@ -877,8 +955,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     } /* end while loop */
 
     goto fun_end;
-  } /* end loop over all plugins */
-  Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" not found.\n", cmd);
+  }
 
 bail_out:
   ret = 0;
@@ -1185,6 +1262,60 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
       goto bail_out;
     }
   }
+
+  // try using grpc if the plugin was not found normally
+  {
+    ResLocker _{my_config};
+
+    ClientResource* res = dynamic_cast<ClientResource*>(
+        my_config->GetNextRes(R_CLIENT, nullptr));
+
+    PluginContext* ctx;
+
+    if (res && !res->grpc_module.empty()
+        && (ctx = grpc_plugin_context(plugin_ctx_list))) {
+      std::string grpc_cmd = "grpc:";
+      grpc_cmd += res->grpc_module;
+      grpc_cmd += ":";
+      grpc_cmd += cmd;
+
+      Dmsg1(100, "using grpc to handle this event\n'%s' -> '%s'\n", cmd,
+            grpc_cmd.c_str());
+
+      jcr->plugin_ctx = ctx;
+      jcr->cmd_plugin = true;
+      auto* b_ctx
+          = reinterpret_cast<FiledPluginContext*>(ctx->core_private_context);
+
+      bEvent event = {bEventRestoreCommand};
+      if (PlugFunc(ctx->plugin)
+              ->handlePluginEvent(jcr->plugin_ctx, &event, grpc_cmd.data())
+          != bRC_OK) {
+        Dmsg1(debuglevel, "Handle event failed. Plugin=%s\n", grpc_cmd.c_str());
+        goto bail_out;
+      }
+
+      if (b_ctx->restoreFileStarted) {
+        Jmsg2(jcr, M_FATAL, 0,
+              "Second call to startRestoreFile. plugin=%s cmd=%s\n",
+              ctx->plugin->file, grpc_cmd.c_str());
+        b_ctx->restoreFileStarted = false;
+        goto bail_out;
+      }
+
+      if (PlugFunc(ctx->plugin)
+              ->startRestoreFile(jcr->plugin_ctx, grpc_cmd.c_str())
+          == bRC_OK) {
+        b_ctx->restoreFileStarted = true;
+        goto bail_out;
+      } else {
+        Dmsg1(debuglevel, "startRestoreFile failed. plugin=%s\n",
+              grpc_cmd.c_str());
+        goto bail_out;
+      }
+    }
+  }
+
   Jmsg1(jcr, M_WARNING, 0, T_("Plugin=%s not found.\n"), cmd);
 
 bail_out:
