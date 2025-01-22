@@ -455,57 +455,29 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
     }
   }
 
-  auto algorithm = dcr->device_resource->autodeflate_algorithm;
-#if defined(HAVE_LIBZ)
-  if (algorithm == COMPRESS_GZIP) {
-    compressorname = COMPRESSOR_NAME_GZIP;
-    auto* pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
-    int zstat
-        = deflateParams(pZlibStream, dcr->device_resource->autodeflate_level,
-                        Z_DEFAULT_STRATEGY);
-    if (zstat != Z_OK) {
-      Jmsg(ctx, M_FATAL,
-           T_("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
-      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+  auto algo = dcr->device_resource->autodeflate_algorithm;
+  if (!SetupSpecificCompressionContext(*jcr, algo, dcr->device_resource->autodeflate_level)) {
       return false;
     }
-  }
-#endif
-#if defined(HAVE_LZO)
-  if (algorithm == COMPRESS_LZO1X) { compressorname = COMPRESSOR_NAME_LZO; }
-#endif
-  if (algorithm == COMPRESS_FZFZ || algorithm == COMPRESS_FZ4L
-      || algorithm == COMPRESS_FZ4H) {
-    zfast_stream_compressor compressor = COMPRESSOR_DEFAULT;
-    switch (algorithm) {
+  switch (algo) {
+    case COMPRESS_GZIP:
+      compressorname = COMPRESSOR_NAME_GZIP;
+      break;
+    case COMPRESS_LZO1X:
+      compressorname = COMPRESSOR_NAME_LZO;
+      break;
       case COMPRESS_FZFZ:
         compressorname = COMPRESSOR_NAME_FZLZ;
-        compressor = COMPRESSOR_FASTLZ;
         break;
       case COMPRESS_FZ4L:
         compressorname = COMPRESSOR_NAME_FZ4L;
-        compressor = COMPRESSOR_LZ4;
         break;
       case COMPRESS_FZ4H:
         compressorname = COMPRESSOR_NAME_FZ4H;
-        compressor = COMPRESSOR_LZ4;
         break;
       default:
         break;
     }
-
-    int zstat = fastlzlibSetCompressor(
-        (zfast_stream*)jcr->compress.workset.pZFAST, compressor);
-    if (zstat != Z_OK) {
-      Jmsg(ctx, M_FATAL,
-           T_("autoxflate-sd: Compression fastlzlibSetCompressor error: "
-              "%d\n"),
-           zstat);
-      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-      return false;
-    }
-  }
-
   Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),
        dcr->dev_name, compressorname);
   return true;

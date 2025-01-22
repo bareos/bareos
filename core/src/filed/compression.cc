@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -91,8 +91,6 @@ bool AdjustDecompressionBuffers(JobControlRecord* jcr)
 
 bool SetupCompressionContext(b_ctx& bctx)
 {
-  bool retval = false;
-
   if (BitIsSet(FO_COMPRESS, bctx.ff_pkt->flags)) {
     memset(&bctx.ch, 0, sizeof(comp_stream_header));
 
@@ -120,78 +118,11 @@ bool SetupCompressionContext(b_ctx& bctx)
               bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
     bctx.ch.magic = bctx.ff_pkt->Compress_algo;
     bctx.ch.version = COMP_HEAD_VERSION;
-
-    /* Do compression specific actions and set the magic, header version and
-     * compression level. */
-    switch (bctx.ff_pkt->Compress_algo) {
-#if defined(HAVE_LIBZ)
-      case COMPRESS_GZIP: {
-        z_stream* pZlibStream;
-
-        /* Only change zlib parameters if there is no pending operation.
-         * This should never happen as deflateReset is called after each
-         * deflate. */
-        pZlibStream = (z_stream*)bctx.jcr->compress.workset.pZLIB;
-        if (pZlibStream->total_in == 0) {
-          int zstat;
-
-          // Set gzip compression level - must be done per file
-          if ((zstat = deflateParams(pZlibStream, bctx.ff_pkt->Compress_level,
-                                     Z_DEFAULT_STRATEGY))
-              != Z_OK) {
-            Jmsg(bctx.jcr, M_FATAL, 0,
-                 T_("Compression deflateParams error: %d\n"), zstat);
-            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-            goto bail_out;
-          }
-        }
-        bctx.ch.level = bctx.ff_pkt->Compress_level;
-        break;
-      }
-#endif
-#if defined(HAVE_LZO)
-      case COMPRESS_LZO1X:
-        break;
-#endif
-      case COMPRESS_FZFZ:
-      case COMPRESS_FZ4L:
-      case COMPRESS_FZ4H: {
-        int zstat;
-        zfast_stream* pZfastStream;
-        zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
-
-        /* Only change fastlz parameters if there is no pending operation.
-         * This should never happen as fastlzlibCompressReset is called after
-         * each fastlzlibCompress. */
-        pZfastStream = (zfast_stream*)bctx.jcr->compress.workset.pZFAST;
-        if (pZfastStream->total_in == 0) {
-          switch (bctx.ff_pkt->Compress_algo) {
-            case COMPRESS_FZ4L:
-            case COMPRESS_FZ4H:
-              compressor = COMPRESSOR_LZ4;
-              break;
-          }
-
-          if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor))
-              != Z_OK) {
-            Jmsg(bctx.jcr, M_FATAL, 0,
-                 T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
-            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-            goto bail_out;
-          }
-        }
-        bctx.ch.level = bctx.ff_pkt->Compress_level;
-        break;
-      }
-      default:
-        break;
-    }
+    bctx.ch.level = bctx.ff_pkt->Compress_level;
+    return SetupSpecificCompressionContext(*bctx.jcr, bctx.ff_pkt->Compress_algo,
+                                   bctx.ff_pkt->Compress_level);
   }
-
-  retval = true;
-
-bail_out:
-  return retval;
+  return true;
 }
 
 } /* namespace filedaemon */
