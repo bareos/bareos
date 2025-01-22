@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -539,8 +539,8 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
 }
 
 bool SetupSpecificCompressionContext(JobControlRecord& jcr,
-                                    uint32_t algo,
-                                    uint32_t compression_level)
+                                     uint32_t algo,
+                                     uint32_t compression_level)
 {
 #if defined(HAVE_LIBZ)
   if (algo == COMPRESS_GZIP) {
@@ -549,7 +549,8 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
       int zstatus
           = deflateParams(pZlibStream, compression_level, Z_DEFAULT_STRATEGY);
       if (zstatus != Z_OK) {
-        Jmsg(&jcr, M_FATAL, 0, T_("Compression deflateParams error: %d\n"), zstatus);
+        Jmsg(&jcr, M_FATAL, 0, T_("Compression deflateParams error: %d\n"),
+             zstatus);
         jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         return false;
       }
@@ -572,18 +573,18 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
         break;
     }
 
-    auto* pZFastStream = reinterpret_cast<zfast_stream*>(jcr.compress.workset.pZFAST);
+    auto* pZFastStream
+        = reinterpret_cast<zfast_stream*>(jcr.compress.workset.pZFAST);
     if (pZFastStream->total_in == 0) {
-      int zstat = fastlzlibSetCompressor(
-        pZFastStream , compressor);
+      int zstat = fastlzlibSetCompressor(pZFastStream, compressor);
       if (zstat != Z_OK) {
-        Jmsg(&jcr, M_FATAL, 0, T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+        Jmsg(&jcr, M_FATAL, 0,
+             T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
         jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         return false;
       }
-    }
-    else {
-        // Jmsg(&jcr, M_ERROR, 0, T_("Compression error: %d\n"), zstat);
+    } else {
+      // Jmsg(&jcr, M_ERROR, 0, T_("Compression error: %d\n"), zstat);
     }
   }
   return true;

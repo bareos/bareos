@@ -448,7 +448,8 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
   }
 
   auto algo = dcr->device_resource->autodeflate_algorithm;
-  if (!SetupSpecificCompressionContext(*jcr, algo, dcr->device_resource->autodeflate_level)) {
+  if (!SetupSpecificCompressionContext(
+          *jcr, algo, dcr->device_resource->autodeflate_level)) {
     return false;
   }
   Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),

@@ -119,8 +119,8 @@ bool SetupCompressionContext(b_ctx& bctx)
     bctx.ch.magic = bctx.ff_pkt->Compress_algo;
     bctx.ch.version = COMP_HEAD_VERSION;
     bctx.ch.level = bctx.ff_pkt->Compress_level;
-    return SetupSpecificCompressionContext(*bctx.jcr, bctx.ff_pkt->Compress_algo,
-                                   bctx.ff_pkt->Compress_level);
+    return SetupSpecificCompressionContext(
+        *bctx.jcr, bctx.ff_pkt->Compress_algo, bctx.ff_pkt->Compress_level);
   }
   return true;
 }

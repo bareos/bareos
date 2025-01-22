@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,8 +31,8 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
 bool SetupDecompressionBuffers(JobControlRecord* jcr,
                                uint32_t* decompress_buf_size);
 bool SetupSpecificCompressionContext(JobControlRecord& jcr,
-                                    uint32_t algo,
-                                    uint32_t compression_level);
+                                     uint32_t algo,
+                                     uint32_t compression_level);
 
 // return the number of bytes written to the output on success
 // or std::nullopt on error
