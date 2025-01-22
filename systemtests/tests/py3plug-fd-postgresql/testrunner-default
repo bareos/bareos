@@ -145,6 +145,17 @@ if [ ${estat} -ne 0 ]; then
 fi
 check_for_zombie_jobs storage=File
 
+# Check restore objectindex order the sql should not return result
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/objectindex_check.out
+sqlquery
+select j1.jobid, j1.objectindex, j2.jobid, j2.objectindex from restoreobject j1, restoreobject j2 where j1.jobid < j2.jobid and j1.objectindex > j2.objectindex;
+END_OF_DATA
+run_bconsole
+expect_grep "No results to list." "${tmp}/objectindex_check.out" "The object indices were created out of order."
+
 sleep 1
 
 pushd database > /dev/null
