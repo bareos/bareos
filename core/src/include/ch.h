@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,13 +28,31 @@
 #ifndef BAREOS_INCLUDE_CH_H_
 #define BAREOS_INCLUDE_CH_H_
 
+#include <cstdint>
+
+namespace {
+constexpr std::uint32_t compression_constant(const char (&txt)[5])
+{
+  std::uint32_t a32 = txt[0];
+  std::uint32_t b32 = txt[1];
+  std::uint32_t c32 = txt[2];
+  std::uint32_t d32 = txt[3];
+
+  return (a32 << 24) | (b32 << 16) | (c32 << 8) | d32;
+}
+};  // namespace
+
 // Compression algorithm signature. 4 letters as a 32bits integer
-#define COMPRESS_NONE 0x4e4f4e45 /* used for incompressible block */
-#define COMPRESS_GZIP 0x475a4950
-#define COMPRESS_LZO1X 0x4c5a4f58
-#define COMPRESS_FZFZ 0x465A465A
-#define COMPRESS_FZ4L 0x465A344C
-#define COMPRESS_FZ4H 0x465A3448
+enum compression_type : std::uint32_t
+{
+  COMPRESS_NONE
+  = compression_constant("NONE"), /* used for incompressible block */
+  COMPRESS_GZIP = compression_constant("GZIP"),
+  COMPRESS_LZO1X = compression_constant("LZOX"),
+  COMPRESS_FZFZ = compression_constant("FZFZ"),
+  COMPRESS_FZ4L = compression_constant("FZ4L"),
+  COMPRESS_FZ4H = compression_constant("FZ4H"),
+};
 
 // Compression header version
 #define COMP_HEAD_VERSION 0x1
