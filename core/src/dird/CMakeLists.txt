@@ -40,6 +40,8 @@ set(DIRD_OBJECTS_SRCS
     check_catalog.cc
     consolidate.cc
     console_connection_lease.cc
+    date_time.cc
+    date_time_mask.cc
     dbcheck_utils.cc
     dird_globals.cc
     dir_plugins.cc
@@ -131,7 +133,7 @@ if(HAVE_WIN32)
   )
 endif()
 
-set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
+set(DBCHKSRCS date_time.cc date_time_mask.cc dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
               ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc
 )
 
