@@ -30,7 +30,9 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
                              uint32_t* compress_buf_size);
 bool SetupDecompressionBuffers(JobControlRecord* jcr,
                                uint32_t* decompress_buf_size);
-
+bool SetupSpecificCompressionContext(JobControlRecord& jcr,
+                                    uint32_t algo,
+                                    uint32_t compression_level);
 
 // return the number of bytes written to the output on success
 // or std::nullopt on error
