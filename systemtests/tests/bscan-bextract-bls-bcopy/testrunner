@@ -47,6 +47,26 @@ END_OF_DATA
 
 run_bconsole "$tmp/bconcmds"
 
+expect_device_listing()
+{
+  log_invalid_device="${tmp}/invalid-device.out"
+  set +e
+  "$1" -c "${conf}" InvalidDevice "${@:2}" &> "$log_invalid_device"
+  set -e
+  cat $log_invalid_device
+  if ! grep -q "\"FileStorage\"" "$log_invalid_device" || ! grep -q "\"FileStorage2\"" "$log_invalid_device"; then
+    echo "Expected listing of available devices if invalid device is specified but not found in output, instead got:"
+    cat $log_invalid_device
+    stop_bareos
+    exit 1
+  fi
+}
+expect_device_listing $BAREOS_BSCAN_BINARY
+expect_device_listing $BAREOS_BEXTRACT_BINARY .
+expect_device_listing $BAREOS_BLS_BINARY
+expect_device_listing $BAREOS_BCOPY_BINARY OtherInvalidDevice
+
+
 run_bls -vv -V TestVolume001 FileStorage
 ret=$?
 if [ $ret -ne 0 ]; then
