@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2040]
 - Fix building ndmjob program [PR #2079]
 - bareos-config-libs: double quote dbconfig values [PR #2111]
+- freebsd: automate creation of pkg-plist.database-postgresql [PR #2102]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2076]: https://github.com/bareos/bareos/pull/2076
 [PR #2079]: https://github.com/bareos/bareos/pull/2079
 [PR #2086]: https://github.com/bareos/bareos/pull/2086
+[PR #2102]: https://github.com/bareos/bareos/pull/2102
 [PR #2109]: https://github.com/bareos/bareos/pull/2109
 [PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116
