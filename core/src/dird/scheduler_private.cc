@@ -27,7 +27,7 @@
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
-#include "dird/run_validator.h"
+#include "dird/date_time.h"
 #include "dird/scheduler.h"
 #include "dird/scheduler_job_item_queue.h"
 #include "dird/scheduler_private.h"
@@ -194,12 +194,10 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 {
   Dmsg0(local_debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
 
-  RunValidator validator_now(time_adapter->time_source_->SystemTime());
-  validator_now.PrintDebugMessage(local_debuglevel);
-
-  RunValidator validator_next_hour(validator_now.Time()
-                                   + seconds_per_hour.count());
-  validator_next_hour.PrintDebugMessage(local_debuglevel);
+  DateTime date_time_now(time_adapter->time_source_->SystemTime());
+  date_time_now.PrintDebugMessage(local_debuglevel);
+  DateTime date_time_next_hour(date_time_now.time + seconds_per_hour.count());
+  date_time_next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
 
@@ -211,21 +209,21 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
       bool run_this_hour
-          = validator_now.TriggersOnDayAndHour(run->date_time_mask;
+          = run->date_time_mask.TriggersOnDayAndHour(date_time_now.time);
       bool run_next_hour
-          = validator_next_hour.TriggersOnDayAndHour(run->date_time_mask);
+          = run->date_time_mask.TriggersOnDayAndHour(date_time_next_hour.time);
 
       Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);
 
       if (run_this_hour || run_next_hour) {
-        time_t runtime = CalculateRuntime(validator_now.Time(), run->minute);
+        time_t runtime = CalculateRuntime(date_time_now.time, run->minute);
         if (run_this_hour) {
-          AddJobToQueue(job, run, validator_now.Time(), runtime,
+          AddJobToQueue(job, run, date_time_now.time, runtime,
                         JobTrigger::kScheduler);
         }
         if (run_next_hour) {
-          AddJobToQueue(job, run, validator_now.Time(),
+          AddJobToQueue(job, run, date_time_next_hour.time,
                         runtime + seconds_per_hour.count(),
                         JobTrigger::kScheduler);
         }

@@ -48,6 +48,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/inc_conf.h"
+#include "dird/date_time.h"
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "include/auth_protocol_types.h"
@@ -1412,6 +1413,24 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
   send.ArrayEnd(item.name, inherited, "");
 }
 
+time_t RunResource::NextScheduleTime(time_t start) const {
+    for (int d = 0; d <= 500; ++d) {
+        if (date_time_mask.TriggersOnDay(start)) {
+          struct tm tm = {};
+          Blocaltime(&start, &tm);
+          for (int h = (d == 0 ? tm.tm_hour : 0); h < 24; ++h) {
+              if (BitIsSet(h, date_time_mask.hour)) {
+                tm.tm_hour = h;
+                tm.tm_min = minute;
+                tm.tm_sec = 0;
+                return mktime(&tm);
+              }
+          }
+        }
+        start += 24 * 60 * 60;
+    }
+    return 0; /* is not be reached if date_time_mask is valid */
+}
 
 static std::string PrintConfigRun(RunResource* run)
 {

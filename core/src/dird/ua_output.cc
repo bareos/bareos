@@ -35,7 +35,7 @@
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/ua_cmdstruct.h"
-#include "dird/run_validator.h"
+#include "dird/date_time.h"
 #include "cats/sql_pooling.h"
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
@@ -1244,19 +1244,19 @@ static bool ListNextvol(UaContext* ua, int ndays)
   }
 
   jcr = NewDirectorJcr(DirdFreeJcr);
-  bool found = false, done = false;
-  foreach_run(
-      *job, ndays, [&](RunResource& run, [[maybe_unused]] utime_t runtime) {
-        if (done) { return; }
-        if (!CompleteJcrForJob(jcr, job, run.pool)) {
+  time_t now = time(NULL);
+  bool found = false;
+  for (RunResource* run = job->schedule->run; run; run = run->next) {
+    time_t next_scheduled = run->NextScheduleTime(now);
+    if (next_scheduled < now + ndays * 24 * 60 * 60) {
+        if (!CompleteJcrForJob(jcr, job, run->pool)) {
           found = false;
-          done = true;
-          return;
+          break;
         }
         if (!jcr->dir_impl->jr.PoolId) {
           ua->ErrorMsg(T_("Could not find Pool for Job %s\n"),
                        job->resource_name_);
-          return;
+          continue;
         }
         PoolDbRecord pr;
         pr.PoolId = jcr->dir_impl->jr.PoolId;
@@ -1265,7 +1265,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
         }
         MediaDbRecord mr;
         mr.PoolId = jcr->dir_impl->jr.PoolId;
-        GetJobStorage(&store, job, &run);
+        GetJobStorage(&store, job, run);
         SetStorageidInMr(store.store, &mr);
         /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
         if (!FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
@@ -1273,16 +1273,16 @@ static bool ListNextvol(UaContext* ua, int ndays)
           ua->ErrorMsg(T_("Could not find next Volume for Job %s (Pool=%s, "
                           "Level=%s).\n"),
                        job->resource_name_, pr.Name,
-                       JobLevelToString(run.level));
+                       JobLevelToString(run->level));
         } else {
           ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
                          "Level=%s) will be %s\n"),
-                      job->resource_name_, pr.Name, JobLevelToString(run.level),
+                      job->resource_name_, pr.Name, JobLevelToString(run->level),
                       mr.VolumeName);
           found = true;
         }
-      });
-
+    }
+  }
   if (jcr->db) {
     DbSqlClosePooledConnection(jcr, jcr->db);
     jcr->db = NULL;
@@ -1294,48 +1294,6 @@ static bool ListNextvol(UaContext* ua, int ndays)
     return false;
   }
   return true;
-}
-
-/* For a given job, we examine all his run records
- *  to see if it is scheduled today or tomorrow. */
-void foreach_run(JobResource& job,
-                 int ndays,
-                 std::function<void(RunResource&, utime_t)> func)
-{
-  if (!job.schedule) { return; }
-
-  /* current time */
-  time_t now = time(NULL);
-  time_t endtime = now + (ndays * 60 * 60 * 24);
-
-  for (auto* run = job.schedule->run; run; run = run->next) {
-    /* Find runs in next 24 hours.  Day 0 is today, so if
-     *   ndays=1, look at today and tomorrow. */
-    for (int day = 0; day <= ndays; ++day) {
-      time_t future = now + (day * 60 * 60 * 24);
-      RunValidator validator(future);
-      if (validator.TriggersOnDay(
-              run->date_time_bitfield)) { /* Job is scheduled on that day */
-        tm runtm;
-        Blocaltime(&future, &runtm);
-        runtm.tm_min = run->minute;
-        runtm.tm_sec = 0;
-        for (int hour = 0; hour < 24; ++hour) {
-          runtm.tm_hour = hour;
-          time_t runtime = mktime(&runtm);
-          if (RunValidator(runtime).TriggersOnDayAndHour(
-                  run->date_time_bitfield)) { /* Job is scheduled on that
-                                                     day and hour */
-            Dmsg2(200, "now=%d runtime=%lld\n", now, runtime);
-            if ((runtime > now) && (runtime < endtime)) {
-              Dmsg2(200, "Found it level=%d %c\n", run->level, run->level);
-              func(*run, runtime);
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 // Fill in the remaining fields of the jcr as if it is going to run the job.
