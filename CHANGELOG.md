@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: fix for PHP < 7.3 [PR #2067]
 - cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2040]
 - Fix building ndmjob program [PR #2079]
+- bareos-config-libs: double quote dbconfig values [PR #2111]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -35,5 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2079]: https://github.com/bareos/bareos/pull/2079
 [PR #2086]: https://github.com/bareos/bareos/pull/2086
 [PR #2109]: https://github.com/bareos/bareos/pull/2109
+[PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116
 [unreleased]: https://github.com/bareos/bareos/tree/master
