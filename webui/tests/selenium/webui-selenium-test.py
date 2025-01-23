@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -470,9 +470,16 @@ class SeleniumTest(unittest.TestCase):
         # )
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
-        driver.find_element(By.XPATH, '(//button[@type="button"])[1]').click()
-        driver.find_element(By.LINK_TEXT, "English").click()
-        driver.find_element(By.XPATH, '//input[@id="submit"]').click()
+
+        # we want to wait until the dropdown is visible before trying
+        # to select an option
+        dropdown_element = WebDriverWait(driver, self.maxwait).until(
+            EC.presence_of_element_located((By.ID, "locale"))
+        )
+        dropdown = Select(dropdown_element)
+        dropdown.select_by_visible_text("English")
+
+        driver.find_element(By.ID, "submit").click()
         try:
             driver.find_element(By.XPATH, '//div[@role="alert"]')
         except:
