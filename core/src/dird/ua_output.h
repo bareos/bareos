@@ -46,8 +46,5 @@ bool sprintit(void* ctx, const char* fmt, ...);
 bool CompleteJcrForJob(JobControlRecord* jcr,
                        JobResource* job,
                        PoolResource* pool);
-void foreach_run(JobResource& job,
-                 int ndays,
-                 std::function<void(RunResource&, utime_t)> func);
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_OUTPUT_H_

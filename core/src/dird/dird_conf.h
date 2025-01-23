@@ -640,7 +640,7 @@ class RunResource : public BareosResource {
  public:
   RunResource() = default;
   virtual ~RunResource() = default;
-  
+
   RunResource* next = nullptr; /**< points to next run record */
   uint32_t level = 0;          /**< level override */
   int32_t Priority = 0;        /**< priority override */
@@ -663,6 +663,9 @@ class RunResource : public BareosResource {
   uint32_t minute = 0;                /* minute to run job */
   time_t scheduled_last = {0};
   DateTimeMask date_time_mask;
+
+  /* Methods */
+  time_t NextScheduleTime(time_t start) const;
 };
 
 ConfigurationParser* InitDirConfig(const char* configfile, int exit_code);

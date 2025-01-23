@@ -34,7 +34,7 @@ static constexpr int kMonthsPerYear{12};
 static constexpr int kDaysPerWeek{7};
 
 static bool IsLeapYear(int year) {
-   return (year % 400 == 0) || (year % 400 != 0 && year % 4 == 0);
+   return (year % 400 == 0) || (year % 100 != 0 && year % 4 == 0);
 }
 static int LastDayOfMonth(int year, int month)
 {
@@ -69,7 +69,7 @@ DateTime::DateTime(time_t time_)
 }
 
 void DateTime::PrintDebugMessage(int debug_level) const {
-   Dmsg8(debug_level, "now = %x: mh=%d m=%d md=%d wd=%d woy=%d yday=%d\n ",
+   Dmsg8(debug_level, "now = %x: h=%d m=%d md=%d wd=%d woy=%d yday=%d\n ",
    time, hour, month, day_of_month, day_of_week, week_of_year, day_of_year);
 }
 

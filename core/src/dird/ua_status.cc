@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
-#include "dird/run_validator.h"
+#include "dird/date_time.h"
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
@@ -381,13 +381,11 @@ static bool show_scheduled_preview(UaContext*,
   RunResource* run;
   PoolMem temp(PM_NAME);
 
-  RunValidator run_validator(time_to_check);
-
   for (run = sched->run; run; run = run->next) {
     bool run_now;
     int cnt = 0;
 
-    run_now = run_validator.TriggersOnDayAndHour(run->date_time_bitfield);
+    run_now = run->date_time_mask.TriggersOnDayAndHour(time_to_check);
 
     if (run_now) {
       // Find time (time_t) job is to be run
@@ -899,34 +897,41 @@ static void ListScheduledJobs(UaContext* ua)
   bool hdr_printed = false;
   auto sched = std::make_unique<dlist<sched_pkt>>();
   int num_jobs = 0;
+  time_t now = time(nullptr);
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
         || (job->client && !job->client->enabled)) {
       continue;
     }
-    foreach_run(*job, days, [&](RunResource& run, utime_t runtime) {
-      UnifiedStorageResource store;
-      if (!hdr_printed) {
-        PrtRunhdr(ua);
-        hdr_printed = true;
-      }
+    if (!job->schedule) {
+      continue;
+    }
+    for (RunResource* run = job->schedule->run; run; run = run->next) {
+      time_t next_scheduled = run->NextScheduleTime(now);
+      if (next_scheduled < now + days * 24 * 60 * 60) {
+        UnifiedStorageResource store;
+        if (!hdr_printed) {
+          PrtRunhdr(ua);
+          hdr_printed = true;
+        }
         auto* sp = (sched_pkt*)malloc(sizeof(sched_pkt));
-      sp->job = job;
-      sp->level = (run.level ? run.level : job->JobLevel);
-      sp->priority = (run.Priority ? run.Priority : job->Priority);
-      sp->runtime = runtime;
-      sp->pool = run.pool;
-      GetJobStorage(&store, job, &run);
-      sp->store = store.store;
-      if (sp->store) {
-        Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
-              sp->store->resource_name_, sp->store->media_type);
-      } else {
-        Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
+        sp->job = job;
+        sp->level = (run->level ? run->level : job->JobLevel);
+        sp->priority = (run->Priority ? run->Priority : job->Priority);
+        sp->runtime = next_scheduled;
+        sp->pool = run->pool;
+        GetJobStorage(&store, job, run);
+        sp->store = store.store;
+        if (sp->store) {
+          Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
+                sp->store->resource_name_, sp->store->media_type);
+        } else {
+          Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
+        }
+        sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
+        num_jobs++;
       }
-      sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
-      num_jobs++;
-    });
+    }
   } /* end for loop over resources */
 
   sched_pkt* sp = nullptr;

@@ -75,7 +75,6 @@ set(DIRD_OBJECTS_SRCS
     newvol.cc
     next_vol.cc
     quota.cc
-    run_validator.cc
     socket_server.cc
     recycle.cc
     reload.cc

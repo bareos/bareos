@@ -35,7 +35,7 @@ bool DateTimeMask::TriggersOnDay(time_t time) const {
     return BitIsSet(date_time.day_of_month - 1, mday)
         && BitIsSet(date_time.day_of_week ,wday)
         && BitIsSet(date_time.month, month)
-        && (BitIsSet(date_time.week_of_year / 7, wom)
+        && (BitIsSet(date_time.day_of_month / 7, wom)
             || (date_time.OnLast7DaysOfMonth() && last_7days_of_month))
         && BitIsSet(date_time.week_of_year, woy);
 }
@@ -44,7 +44,7 @@ bool DateTimeMask::TriggersOnDayAndHour(time_t time) const {
     return BitIsSet(date_time.day_of_month - 1, mday)
         && BitIsSet(date_time.day_of_week ,wday)
         && BitIsSet(date_time.month, month)
-        && (BitIsSet(date_time.week_of_year / 7, wom)
+        && (BitIsSet(date_time.day_of_month / 7, wom)
             || (date_time.OnLast7DaysOfMonth() && last_7days_of_month))
         && BitIsSet(date_time.week_of_year, woy)
         && BitIsSet(date_time.hour, hour);
