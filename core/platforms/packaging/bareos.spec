@@ -96,8 +96,11 @@ BuildRequires: fmt-devel
 %endif
 
 %if 0%{?rhel} >= 7
-%define glusterfs 1
 %define systemd_support 1
+%endif
+
+%if 0%{?rhel} >= 7 && (0%{?rhel} <= 9)
+%define glusterfs 1
 %endif
 
 %if 0%{?rhel} == 7
