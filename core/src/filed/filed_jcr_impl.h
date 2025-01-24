@@ -30,12 +30,16 @@
 
 #include <atomic>
 
+struct FindFilesPacket;
 struct AclData;
 struct XattrData;
+class RunScript;
 
 namespace filedaemon {
 class BareosAccurateFilelist;
-}
+class DirectorResource;
+struct save_pkt;
+}  // namespace filedaemon
 
 /* clang-format off */
 struct CryptoContext {
