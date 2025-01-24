@@ -33,7 +33,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:bareos-basic:bls-autoxflate
       system:bareos-basic:bscan-autoxflate
       system:bareos-basic:volume-recycling
-      system:bscan-bextract-bls-bcopy
+      system:bscan-bextract-bls-bcopy-btape
       system:checkpoints:checkpoints-regular-backup
       system:client-initiated
       system:commandline-options
