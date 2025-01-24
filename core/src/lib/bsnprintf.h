@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,12 @@
 */
 #ifndef BAREOS_LIB_BSNPRINTF_H_
 #define BAREOS_LIB_BSNPRINTF_H_
+#include <stdarg.h>
+#include <stdint.h>
+#include "include/compiler_macro.h"
 
-int Bsnprintf(char* str, int32_t size, const char* format, ...);
-int Bvsnprintf(char* str, int32_t size, const char* format, va_list ap);
+int Bsnprintf(char* str, int32_t size, const char* format, ...)
+    PRINTF_LIKE(3, 4);
+int Bvsnprintf(char* str, int32_t size, const char* format, va_list ap)
+    PRINTF_LIKE(3, 0);
 #endif  // BAREOS_LIB_BSNPRINTF_H_

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -165,18 +165,18 @@ struct s_kw RunFields[] = {{"pool", 'P'},
  *   together.
  *
  */
-void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
+void StoreRun(lexer* lc, ResourceItem* item, int index, int pass)
 {
   char* p;
   int i, j;
-  int options = lc->options;
+  auto options = lc->options;
   int token, state, state2 = 0, code = 0, code2 = 0;
   bool found;
   utime_t utime;
   BareosResource* res;
   RunResource res_run;
 
-  lc->options |= LOPT_NO_IDENT; /* Want only "strings" */
+  lc->options.set(lexer::options::NoIdent); /* Want only "strings" */
 
   // Scan for Job level "full", "incremental", ...
   for (found = true; found;) {
