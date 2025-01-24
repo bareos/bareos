@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+# Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -1427,7 +1427,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             savepkt.object_name = savepkt.fname
             savepkt.object = bytearray(json.dumps(self.rop_data), "utf-8")
             savepkt.object_len = len(savepkt.object)
-            savepkt.object_index = current_time_ns()
+            savepkt.object_index = int(time.time())
             savepkt.statp = my_statp
             savepkt.no_read = True
             bareosfd.DebugMessage(150, f"rop data: {str(self.rop_data)}\n")

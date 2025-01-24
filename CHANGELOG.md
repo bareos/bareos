@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2077]
 - Fix building ndmjob program [PR #2084]
 - freebsd: automate creation of pkg-plist.database-postgresql [PR #2103]
+- plugin: postgresql use integer for savepkt.object_index [PR #2135]
 
 ### Changed
 - winbareos-native.nsi: do not package python3 plugins [PR #2085]
@@ -364,4 +365,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2084]: https://github.com/bareos/bareos/pull/2084
 [PR #2085]: https://github.com/bareos/bareos/pull/2085
 [PR #2103]: https://github.com/bareos/bareos/pull/2103
+[PR #2135]: https://github.com/bareos/bareos/pull/2135
 [unreleased]: https://github.com/bareos/bareos/tree/master
