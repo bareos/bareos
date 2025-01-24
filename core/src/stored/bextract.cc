@@ -212,21 +212,23 @@ int main(int argc, char* argv[])
                   "Specify the input device name (either as name of a Bareos "
                   "Storage Daemon Device resource or identical to the Archive "
                   "Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   std::string directory_to_store_files;
   bextract_app
       .add_option("target-directory", directory_to_store_files,
                   "Specify directory where to store files.")
-      ->required()
       ->type_name(" ");
-
 
   ParseBareosApp(bextract_app, argc, argv);
 
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
+
+  if (archive_device_name.empty()) {
+    printf(T_("%sNothing done."), AvailableDevicesListing().c_str());
+    return BEXIT_SUCCESS;
+  }
 
   static DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {

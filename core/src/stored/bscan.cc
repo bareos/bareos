@@ -236,13 +236,17 @@ int main(int argc, char* argv[])
                   "Specify the input device name (either as name of a Bareos "
                   "Storage Daemon Device resource or identical to the Archive "
                   "Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   ParseBareosApp(bscan_app, argc, argv);
 
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
+
+  if (device_name.empty()) {
+    printf(T_("%sNothing done."), AvailableDevicesListing().c_str());
+    return BEXIT_SUCCESS;
+  }
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {

@@ -289,7 +289,6 @@ int main(int margc, char* margv[])
                   "Specify the input device name (either as name of a Bareos "
                   "Storage Daemon Device resource or identical to the Archive "
                   "Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   btape_app.add_option_group("Interactive commands",
@@ -308,6 +307,11 @@ int main(int margc, char* margv[])
 
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
+
+  if (archive_name.empty()) {
+    printf(T_("%sNothing done."), AvailableDevicesListing().c_str());
+    return BEXIT_SUCCESS;
+  }
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {

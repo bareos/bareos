@@ -149,7 +149,6 @@ int main(int argc, char* argv[])
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
                   "Archive Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   std::string output_archive;
@@ -159,7 +158,6 @@ int main(int argc, char* argv[])
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
                   "Archive Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   ParseBareosApp(bcopy_app, argc, argv);
@@ -172,6 +170,11 @@ int main(int argc, char* argv[])
 
   my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
   ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
+
+  if (input_archive.empty() || output_archive.empty()) {
+    printf(T_("%sNothing done."), AvailableDevicesListing().c_str());
+    return BEXIT_SUCCESS;
+  }
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
