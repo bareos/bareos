@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,12 +22,6 @@ include(BareosConfigureFile)
 set(BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc
               console_output.cc
 )
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/console/consoleres.rc.in)
-  list(APPEND BCONSSRCS
-       ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
-  )
-endif()
 
 include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
@@ -36,8 +30,20 @@ if(HAVE_PAM)
   list(APPEND BCONSSRCS auth_pam.cc)
 endif()
 
-add_executable(bconsole console.cc)
-add_executable(bconsole-unsafe console.cc)
+if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/console/consoleres.rc.in)
+  add_executable(
+    bconsole console.cc
+             ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
+  )
+  add_executable(
+    bconsole-unsafe console.cc
+                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
+  )
+else()
+  add_executable(bconsole console.cc)
+  add_executable(bconsole-unsafe console.cc)
+endif()
 
 target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
 

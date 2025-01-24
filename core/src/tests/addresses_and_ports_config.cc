@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,39 +32,86 @@
 
 #ifdef HAVE_WIN32
 #  define socketClose(fd) ::closesocket(fd)
+#  define socketOk(fd) ((fd) != INVALID_SOCKET)
 #else
 #  define socketClose(fd) ::close(fd)
+#  define socketOk(fd) ((fd) >= 0)
 #endif
 
-static bool create_and_bind_v4socket(int test_fd, int port)
+struct raii_socket {
+  using socket_type = decltype(socket(0, 0, 0));
+#ifdef HAVE_WIN32
+  static constexpr socket_type invalid_socket = INVALID_SOCKET;
+#else
+  static constexpr socket_type invalid_socket = -1;
+#endif
+  constexpr raii_socket() = default;
+  // explicitly implicit
+  raii_socket(socket_type s) : sock_fd{s} {}
+  raii_socket(const raii_socket&) = delete;
+  raii_socket& operator=(const raii_socket&) = delete;
+  raii_socket(raii_socket&& other) noexcept { *this = std::move(other); }
+  raii_socket& operator=(raii_socket&& other) noexcept
+  {
+    std::swap(sock_fd, other.sock_fd);
+    return *this;
+  }
+
+  socket_type get() const noexcept { return sock_fd; }
+
+  operator socket_type() const noexcept { return sock_fd; }
+
+  constexpr bool ok() const noexcept { return socketOk(sock_fd); }
+
+  ~raii_socket()
+  {
+    if (socketOk(sock_fd)) { socketClose(sock_fd); }
+  }
+
+ private:
+  socket_type sock_fd = invalid_socket;
+};
+
+static bool test_bind_v4socket(int port)
 {
   int family = AF_INET;
 
-  EXPECT_TRUE((test_fd = socket(AF_INET, SOCK_STREAM, 0)) >= 0);
+  raii_socket test_fd = socket(AF_INET, SOCK_STREAM, 0);
+  EXPECT_TRUE(socketOk(test_fd));
 
   struct sockaddr_in v4_address;
   v4_address.sin_family = family;
   v4_address.sin_port = htons(port);
   v4_address.sin_addr.s_addr = INADDR_ANY;
 
-
   if (bind(test_fd, (struct sockaddr*)&v4_address, sizeof(v4_address)) == 0) {
+    struct sockaddr_in result_addr = {};
+    socklen_t namelen = sizeof(result_addr);
+
+    auto sock_res = getsockname(test_fd, (sockaddr*)&result_addr, &namelen);
+    EXPECT_EQ(sock_res, 0);
+    EXPECT_EQ(namelen, sizeof(result_addr));
+
+    char* ip = inet_ntoa(result_addr.sin_addr);
+
+    printf("%s\n", ip);
+
     return true;
   } else {
 #ifdef HAVE_WIN32
     auto i = WSAGetLastError();
-    socketClose(test_fd);
     std::cout << "WSAError: " << i << std::endl;
 #endif
     return false;
   }
 }
 
-static bool create_and_bind_v6socket(int test_fd, int port)
+static bool test_bind_v6socket(int port)
 {
   int family = AF_INET6;
 
-  EXPECT_TRUE((test_fd = socket(family, SOCK_STREAM, 0)) >= 0);
+  raii_socket test_fd = socket(family, SOCK_STREAM, 0);
+  EXPECT_TRUE(socketOk(test_fd));
 
   struct sockaddr_in6 v6_address;
   v6_address.sin6_family = family;
@@ -80,15 +127,12 @@ static bool create_and_bind_v6socket(int test_fd, int port)
     BErrNo be;
     Emsg1(M_WARNING, 0, T_("Cannot set IPV6_V6ONLY on socket: %s\n"),
           be.bstrerror());
-    socketClose(test_fd);
     return false;
   }
 
-
-  if (bind(test_fd, (struct sockaddr*)&v6_address, sizeof(v6_address)) == 0) {
+  if (bind(test_fd, (struct sockaddr*)&v6_address, sizeof(v6_address)) >= 0) {
     return true;
   } else {
-    socketClose(test_fd);
     return false;
   }
 }
@@ -96,25 +140,19 @@ static bool create_and_bind_v6socket(int test_fd, int port)
 // Only to check port binding, not full addresses
 static bool test_sockets(int family, int port)
 {
-  int v4_fd = -1;
-  int v6_fd = -1;
   bool result = true;
 
   if (family == 0) {
-    bool result_v4 = create_and_bind_v4socket(v4_fd, port);
-    bool result_v6 = create_and_bind_v6socket(v6_fd, port);
+    bool result_v4 = test_bind_v4socket(port);
+    bool result_v6 = test_bind_v6socket(port);
     result = result_v4 && result_v6;
-    if (result_v4) socketClose(v4_fd);
-    if (result_v6) socketClose(v6_fd);
   } else {
     switch (family) {
       case AF_INET:
-        result = create_and_bind_v4socket(v4_fd, port);
-        if (result) socketClose(v4_fd);
+        result = test_bind_v4socket(port);
         break;
       case AF_INET6:
-        result = create_and_bind_v6socket(v6_fd, port);
-        if (result) socketClose(v6_fd);
+        result = test_bind_v6socket(port);
         break;
       default:
         EXPECT_TRUE(false);
@@ -236,7 +274,7 @@ TEST_F(AddressesAndPortsConfigurationSetup,
   std::string path_to_config = std::string(
       "configs/addresses-and-ports/old-style/dir-v4port-and-address-set/");
 
-  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29997]"};
+  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;29997]"};
 
   check_addresses_list(path_to_config, expected_addresses);
 

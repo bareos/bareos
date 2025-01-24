@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -158,9 +158,9 @@ target_link_libraries(
 )
 
 if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/dird/dbcheckres.rc.in)
+  bareos_configure_file(FILES ../win32/dird/dirdres.rc.in)
   add_executable(
-    bareos-dir WIN32 ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dbcheckres.rc
+    bareos-dir WIN32 ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dirdres.rc
   )
 else()
   add_executable(bareos-dir)
@@ -191,7 +191,15 @@ if(HAVE_PAM)
   target_link_libraries(dird_objects PRIVATE ${PAM_LIBRARIES})
 endif()
 
-add_executable(bareos-dbcheck ${DBCHKSRCS})
+if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/dird/dbcheckres.rc.in)
+  add_executable(
+    bareos-dbcheck ${DBCHKSRCS}
+                   ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dbcheckres.rc
+  )
+else()
+  add_executable(bareos-dbcheck ${DBCHKSRCS})
+endif()
 
 target_link_libraries(
   bareos-dbcheck PRIVATE bareossql bareos bareosfind ${OPENSSL_LIBRARIES}
