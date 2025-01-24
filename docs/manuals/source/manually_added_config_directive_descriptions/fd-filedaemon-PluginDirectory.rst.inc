@@ -1,0 +1,1 @@
+fd-client-PluginDirectory.rst.inc
