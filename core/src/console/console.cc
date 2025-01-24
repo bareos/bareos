@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,7 +57,7 @@
 using namespace console;
 
 static void TerminateConsole(int sig);
-static int CheckResources();
+static bool CheckResources();
 int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int sec);
 static int DoOutputcmd(FILE* input, BareosSocket* UA_sock);
 
@@ -71,7 +71,6 @@ static BareosSocket* g_UA_sock = NULL;
 static bool stop = false;
 static int timeout = 0;
 static int g_argc;
-static int g_numdir;
 static POOLMEM* g_args;
 static char* g_argk[MAX_CMD_ARGS];
 static char* g_argv[MAX_CMD_ARGS];
@@ -1141,29 +1140,34 @@ static void TerminateConsole(int sig)
   return;
 }
 
-static int CheckResources()
+static bool CheckResources()
 {
-  bool OK = true;
-  DirectorResource* director;
-
   ResLocker _{my_config};
+  auto* director = dynamic_cast<DirectorResource*>(
+      my_config->GetNextRes(R_DIRECTOR, nullptr));
+  auto* console = dynamic_cast<ConsoleResource*>(
+      my_config->GetNextRes(R_CONSOLE, nullptr));
 
-  g_numdir = 0;
-  foreach_res (director, R_DIRECTOR) { g_numdir++; }
-
-  if (g_numdir == 0) {
+  if (!director) {
     const std::string& configfile_name = my_config->get_base_config_path();
-    Emsg1(M_FATAL, 0,
+    Emsg1(M_CONFIG_ERROR, 0,
           T_("No Director resource defined in %s\n"
-             "Without that I don't how to speak to the Director :-(\n"),
+             "Without that I don't know how to speak to the Director :-(\n"),
           configfile_name.c_str());
-    OK = false;
+    return false;
   }
 
-  me = (ConsoleResource*)my_config->GetNextRes(R_CONSOLE, NULL);
+  if (!console && !director->IsMemberPresent("Password")) {
+    Emsg2(M_CONFIG_ERROR, 0,
+          T_("Password item is required in Director resource (since no Console "
+             "resource is specified), but not found.\n"));
+    return false;
+  }
+
+  me = console;
   my_config->own_resource_ = me;
 
-  return OK;
+  return true;
 }
 
 /* @version */

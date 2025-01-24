@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - winbareos-native.nsi: do not package python3 plugins [PR #2085]
+- bconsole: require only one password in the configuration [PR #2125]
 
 ## [24.0.0] - 2024-12-16
 
@@ -366,6 +367,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2084]: https://github.com/bareos/bareos/pull/2084
 [PR #2085]: https://github.com/bareos/bareos/pull/2085
 [PR #2103]: https://github.com/bareos/bareos/pull/2103
+[PR #2125]: https://github.com/bareos/bareos/pull/2125
 [PR #2133]: https://github.com/bareos/bareos/pull/2133
 [PR #2135]: https://github.com/bareos/bareos/pull/2135
 [unreleased]: https://github.com/bareos/bareos/tree/master
