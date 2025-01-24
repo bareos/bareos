@@ -32,7 +32,7 @@ namespace directordaemon {
 
 bool DateTimeMask::TriggersOnDay(time_t time) const {
     DateTime date_time(time);
-    return BitIsSet(date_time.day_of_month - 1, mday)
+    return BitIsSet(date_time.day_of_month, mday)
         && BitIsSet(date_time.day_of_week ,wday)
         && BitIsSet(date_time.month, month)
         && (BitIsSet(date_time.day_of_month / 7, wom)
@@ -41,7 +41,7 @@ bool DateTimeMask::TriggersOnDay(time_t time) const {
 }
 bool DateTimeMask::TriggersOnDayAndHour(time_t time) const {
     DateTime date_time(time);
-    return BitIsSet(date_time.day_of_month - 1, mday)
+    return BitIsSet(date_time.day_of_month, mday)
         && BitIsSet(date_time.day_of_week ,wday)
         && BitIsSet(date_time.month, month)
         && (BitIsSet(date_time.day_of_month / 7, wom)
