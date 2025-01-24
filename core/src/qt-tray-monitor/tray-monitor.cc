@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,11 +88,66 @@ static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
                             cl.do_connection_test_only_,
                             "Test connection only.");
 
+  std::string trace_directory;
+  auto* trace_dir_opt
+      = tray_monitor_app
+            .add_option("--trace-dir", trace_directory,
+                        "Create a debug trace in this directory")
+            ->check(CLI::ExistingDirectory);
+
   try {
     (tray_monitor_app).parse((argc), (argv));
   } catch (const CLI::ParseError& e) {
     exit((tray_monitor_app).exit(e));
   }
+
+  if (!trace_dir_opt->empty()) {
+    /* traces by default land in the working directory.
+     * as there are no other uses for this in the tray monitor,
+     * we can just overwrite it with the trace directory. */
+    working_directory = strdup(trace_directory.c_str());
+    SetTrace(1);
+  }
+}
+
+static std::pair<int, const char*> debug_header(QtMsgType type)
+{
+  switch (type) {
+    case QtDebugMsg:
+      return {500, "Qt-Debug"};
+    case QtInfoMsg:
+      return {200, "Qt-Info"};
+    case QtWarningMsg:
+      return {100, "Qt-Warning"};
+    case QtCriticalMsg:
+      return {40, "Qt-Critical"};
+    case QtFatalMsg:
+      return {20, "Qt-Fatal"};
+  }
+
+  return {5, "Qt-Unknown"};
+}
+
+QtMessageHandler original_handler{nullptr};
+
+static void QtMessageOutputHandler(QtMsgType type,
+                                   const QMessageLogContext& context,
+                                   const QString& msg)
+{
+  QByteArray localMsg = msg.toLocal8Bit();
+  const char* file = context.file ? context.file : "<unknown>";
+  const char* function = context.function ? context.function : nullptr;
+
+  auto [level, name] = debug_header(type);
+
+  if (function) {
+    d_msg(file, context.line, level, "%s %s: %s\n", function, name,
+          localMsg.constData());
+  } else {
+    d_msg(file, context.line, level, "%s: %s\n", name, localMsg.constData());
+  }
+
+  if (original_handler) { original_handler(type, context, msg); }
 }
 
 static void setupQtObjects()
@@ -187,6 +242,8 @@ int main(int argc, char* argv[])
   if (InitCrypto() != 0) {
     Emsg0(M_ERROR_TERM, 0, T_("Cryptography library initialization failed.\n"));
   }
+
+  original_handler = qInstallMessageHandler(QtMessageOutputHandler);
 
   if (cl.do_connection_test_only_) {
     /* do not initialize a GUI */

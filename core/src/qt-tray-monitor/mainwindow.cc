@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,8 +51,8 @@ MainWindow::MainWindow(QWidget* parent)
   // This will setup the tab-window and auto-connect signals and slots.
   ui->setupUi(this);
   setWindowTitle(tr("Bareos Tray Monitor"));
-  setWindowIcon(QIcon(":images/bareos_1.png"));
-  ui->pushButton_Close->setIcon(QIcon(":images/f.png"));
+  setWindowIcon(QIcon(":/images/bareos_1.png"));
+  ui->pushButton_Close->setIcon(QIcon(":/images/f.png"));
 
   // Prepare the tabWidget
   while (ui->tabWidget->count()) { ui->tabWidget->removeTab(0); }
@@ -199,7 +199,7 @@ void MainWindow::onStatusChanged(const QString& tabRef, int state)
       default:
         break;
     } /* switch(state) */
-  }   /* if (tab) */
+  } /* if (tab) */
 }
 
 void MainWindow::onFdJobIsRunning(bool running)
