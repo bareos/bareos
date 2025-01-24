@@ -223,7 +223,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
                         JobTrigger::kScheduler);
         }
         if (run_next_hour) {
-          AddJobToQueue(job, run, date_time_next_hour.time,
+          AddJobToQueue(job, run, date_time_now.time,
                         runtime + seconds_per_hour.count(),
                         JobTrigger::kScheduler);
         }
