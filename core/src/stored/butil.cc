@@ -44,6 +44,8 @@
 #include "lib/parse_conf.h"
 #include "include/jcr.h"
 
+#include <algorithm>
+
 namespace storagedaemon {
 
 /* Forward referenced functions */
@@ -123,10 +125,11 @@ JobControlRecord* SetupJcr(const char* name,
   return jcr;
 }
 
-std::string AvailableDevicesListing() {
+std::string AvailableDevicesListing()
+{
   std::vector<std::string> devices;
   for (BareosResource* resource = nullptr;
-        (resource = my_config->GetNextRes(R_DEVICE, resource));) {
+       (resource = my_config->GetNextRes(R_DEVICE, resource));) {
     DeviceResource* device = dynamic_cast<DeviceResource*>(resource);
     std::string device_str;
     device_str += " \"";
@@ -138,9 +141,7 @@ std::string AvailableDevicesListing() {
   }
   std::sort(devices.begin(), devices.end());
   std::string devices_str = "Available Devices:\n";
-  for (const std::string& device : devices) {
-    devices_str += device;
-  }
+  for (const std::string& device : devices) { devices_str += device; }
   return devices_str;
 }
 /**
@@ -190,26 +191,9 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   }
 
   if ((device_resource = find_device_res(dev_name, readonly)) == NULL) {
-    std::vector<std::string> devices;
-    for (BareosResource* resource = nullptr;
-         (resource = my_config->GetNextRes(R_DEVICE, resource));) {
-      DeviceResource* device = dynamic_cast<DeviceResource*>(resource);
-      std::string device_str;
-      device_str += " \"";
-      device_str += device->resource_name_;
-      device_str += "\" (";
-      device_str += device->archive_device_string;
-      device_str += ")\n";
-      devices.emplace_back(std::move(device_str));
-    }
-    std::sort(devices.begin(), devices.end());
-    std::string devices_str;
-    for (const std::string& device : devices) {
-      devices_str += device;
-    }
     Jmsg2(jcr, M_FATAL, 0,
-          T_("Cannot find device \"%s\" in config file %s.\n%s"),
-          dev_name, configfile, AvailableDevicesListing().c_str());
+          T_("Cannot find device \"%s\" in config file %s.\n%s"), dev_name,
+          configfile, AvailableDevicesListing().c_str());
     return false;
   }
 
