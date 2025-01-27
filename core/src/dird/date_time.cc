@@ -61,7 +61,7 @@ bool DateTime::WeekOfMonth() const {
 bool DateTime::OnLast7DaysOfMonth() const {
    auto last_day = LastDayOfMonth(year, month);
    ASSERT(last_day >= day_of_year);
-   return last_day - kDaysPerWeek < day_of_year; 
+   return last_day - kDaysPerWeek < day_of_year;
 }
 
 DateTime::DateTime(time_t time_)

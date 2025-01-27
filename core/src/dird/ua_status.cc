@@ -52,6 +52,8 @@
 #include "lib/version.h"
 
 #include <memory>
+#include <vector>
+#include <algorithm>
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 
@@ -799,7 +801,6 @@ static void PrtRunhdr(UaContext* ua)
 
 /* Scheduling packet */
 struct sched_pkt {
-  dlink<sched_pkt> link; /* keep this as first item!!! */
   JobResource* job;
   int level;
   int priority;
@@ -861,17 +862,17 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
 }
 
 // Sort items by runtime, priority
-static int CompareByRuntimePriority(sched_pkt* p1, sched_pkt* p2)
+static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
 {
-  if (p1->runtime < p2->runtime) {
+  if (p1.runtime < p2.runtime) {
     return -1;
-  } else if (p1->runtime > p2->runtime) {
+  } else if (p1.runtime > p2.runtime) {
     return 1;
   }
 
-  if (p1->priority < p2->priority) {
+  if (p1.priority < p2.priority) {
     return -1;
-  } else if (p1->priority > p2->priority) {
+  } else if (p1.priority > p2.priority) {
     return 1;
   }
 
@@ -894,9 +895,8 @@ static void ListScheduledJobs(UaContext* ua)
 
   // Loop through all jobs
   JobResource* job = nullptr;
-  bool hdr_printed = false;
-  auto sched = std::make_unique<dlist<sched_pkt>>();
-  int num_jobs = 0;
+  std::vector<sched_pkt> sched;
+  uint32_t num_jobs = 0;
   time_t now = time(nullptr);
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
@@ -912,32 +912,34 @@ static void ListScheduledJobs(UaContext* ua)
         continue;
       }
 
-      UnifiedStorageResource store;
-      if (!hdr_printed) {
+      if (num_jobs == 0) {
         PrtRunhdr(ua);
-        hdr_printed = true;
       }
-      auto* sp = (sched_pkt*)malloc(sizeof(sched_pkt));
-      sp->job = job;
-      sp->level = (run->level ? run->level : job->JobLevel);
-      sp->priority = (run->Priority ? run->Priority : job->Priority);
-      sp->runtime = next_scheduled.value();
-      sp->pool = run->pool;
-      GetJobStorage(&store, job, run);
-      sp->store = store.store;
-      if (sp->store) {
+
+      UnifiedStorageResource storage_res;
+      GetJobStorage(&storage_res, job, run);
+      sched.push_back({
+        .job = job,
+        .level = int(run->level ? run->level : job->JobLevel),
+        .priority = (run->Priority ? run->Priority : job->Priority),
+        .runtime = next_scheduled.value(),
+        .pool = run->pool,
+        .store = storage_res.store
+      });
+      if (sched.back().store) {
         Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
-              sp->store->resource_name_, sp->store->media_type);
+              sched.back().store->resource_name_, sched.back().store->media_type);
       } else {
         Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
       }
-      sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
       num_jobs++;
     }
   } /* end for loop over resources */
 
-  sched_pkt* sp = nullptr;
-  foreach_dlist (sp, sched) { PrtRuntime(ua, sp); }
+  std::sort(sched.begin(), sched.end(), CompareByRuntimePriority);
+  for (sched_pkt& sp : sched) {
+    PrtRuntime(ua, &sp);
+  }
   if (num_jobs == 0 && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
