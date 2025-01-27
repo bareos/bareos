@@ -23,7 +23,7 @@
 
 #include "lib/util.h"
 
-std::string_view CompressorName(uint32_t compression_algorithm);
+const std::string& CompressorName(uint32_t compression_algorithm);
 
 bool SetupCompressionBuffers(JobControlRecord* jcr,
                              uint32_t compression_algorithm,

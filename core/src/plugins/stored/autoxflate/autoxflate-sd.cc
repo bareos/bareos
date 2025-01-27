@@ -447,13 +447,15 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
     }
   }
 
-  auto algo = dcr->device_resource->autodeflate_algorithm;
-  if (!SetupSpecificCompressionContext(
-          *jcr, algo, dcr->device_resource->autodeflate_level)) {
+  uint32_t algo = dcr->device_resource->autodeflate_algorithm;
+  uint16_t compression_level = dcr->device_resource->autodeflate_level;
+  if (!SetupSpecificCompressionContext(*jcr, algo, compression_level)) {
+    Jmsg(ctx, M_FATAL, 0,
+         T_("autoxflate-sd: failed setting up auto-deflation\n"));
     return false;
   }
   Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),
-       dcr->dev_name, CompressorName(algo));
+       dcr->dev_name, CompressorName(algo).c_str());
   return true;
 }
 

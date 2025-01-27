@@ -53,13 +53,13 @@
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
-static constexpr std::string_view kCompressorNameUnknown = "Unknown";
-static constexpr std::string_view kCompressorNameGZIP = "GZIP";
-static constexpr std::string_view kCompressorNameLZO = "LZO";
-static constexpr std::string_view kCompressorNameFZLZ = "FASTLZ";
-static constexpr std::string_view kCompressorNameFZ4L = "LZ4";
-static constexpr std::string_view kCompressorNameFZ4H = "LZ4HC";
-std::string_view CompressorName(uint32_t compression_algorithm)
+static const std::string kCompressorNameUnknown = "Unknown";
+static const std::string kCompressorNameGZIP = "GZIP";
+static const std::string kCompressorNameLZO = "LZO";
+static const std::string kCompressorNameFZLZ = "FASTLZ";
+static const std::string kCompressorNameFZ4L = "LZ4";
+static const std::string kCompressorNameFZ4H = "LZ4HC";
+const std::string& CompressorName(uint32_t compression_algorithm)
 {
   switch (compression_algorithm) {
     case COMPRESS_GZIP:
@@ -105,7 +105,7 @@ static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
                                                uint32_t compression_algorithm)
 {
   Jmsg(jcr, M_FATAL, 0, T_("%s compression not supported on this platform\n"),
-       CompressorName(compression_algorithm));
+       CompressorName(compression_algorithm).c_str());
 }
 
 std::size_t RequiredCompressionOutputBufferSize(uint32_t algo,
@@ -545,15 +545,13 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
 #if defined(HAVE_LIBZ)
   if (algo == COMPRESS_GZIP) {
     auto* pZlibStream = reinterpret_cast<z_stream*>(jcr.compress.workset.pZLIB);
-    if (pZlibStream->total_in == 0) {
-      int zstatus
-          = deflateParams(pZlibStream, compression_level, Z_DEFAULT_STRATEGY);
-      if (zstatus != Z_OK) {
-        Jmsg(&jcr, M_FATAL, 0, T_("Compression deflateParams error: %d\n"),
-             zstatus);
-        jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-        return false;
-      }
+    int zstatus
+        = deflateParams(pZlibStream, compression_level, Z_DEFAULT_STRATEGY);
+    if (zstatus != Z_OK) {
+      Jmsg(&jcr, M_FATAL, 0, T_("Compression deflateParams error: %d\n"),
+           zstatus);
+      jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
     }
   }
 #endif
@@ -575,16 +573,12 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
 
     auto* pZFastStream
         = reinterpret_cast<zfast_stream*>(jcr.compress.workset.pZFAST);
-    if (pZFastStream->total_in == 0) {
-      int zstat = fastlzlibSetCompressor(pZFastStream, compressor);
-      if (zstat != Z_OK) {
-        Jmsg(&jcr, M_FATAL, 0,
-             T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
-        jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-        return false;
-      }
-    } else {
-      // Jmsg(&jcr, M_ERROR, 0, T_("Compression error: %d\n"), zstat);
+    int zstat = fastlzlibSetCompressor(pZFastStream, compressor);
+    if (zstat != Z_OK) {
+      Jmsg(&jcr, M_FATAL, 0,
+           T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+      jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
     }
   }
   return true;

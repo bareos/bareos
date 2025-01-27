@@ -1628,7 +1628,7 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
                    "%s compression support requested in fileset but not "
                    "available on this platform. Disabling "
                    "...\n",
-                   CompressorName(fo->Compress_algo));
+                   CompressorName(fo->Compress_algo).c_str());
               ClearBit(FO_COMPRESS, fo->flags);
               fo->Compress_algo = 0;
               break;

@@ -118,7 +118,19 @@ bool SetupCompressionContext(b_ctx& bctx)
               bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
     bctx.ch.magic = bctx.ff_pkt->Compress_algo;
     bctx.ch.version = COMP_HEAD_VERSION;
-    bctx.ch.level = bctx.ff_pkt->Compress_level;
+    switch (bctx.ff_pkt->Compress_algo) {
+      case COMPRESS_GZIP:
+        [[fallthrough]];
+      case COMPRESS_FZFZ:
+        [[fallthrough]];
+      case COMPRESS_FZ4L:
+        [[fallthrough]];
+      case COMPRESS_FZ4H:
+        bctx.ch.level = bctx.ff_pkt->Compress_level;
+        break;
+      default:
+        break;
+    }
     return SetupSpecificCompressionContext(
         *bctx.jcr, bctx.ff_pkt->Compress_algo, bctx.ff_pkt->Compress_level);
   }

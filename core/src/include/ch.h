@@ -54,6 +54,14 @@ enum compression_type : std::uint32_t
   COMPRESS_FZ4H = compression_constant("FZ4H"),
 };
 
+// double check our constants with the previously defined values
+static_assert(0x4e4f4e45 == compression_constant("NONE"));
+static_assert(0x475a4950 == compression_constant("GZIP"));
+static_assert(0x4c5a4f58 == compression_constant("LZOX"));
+static_assert(0x465A465A == compression_constant("FZFZ"));
+static_assert(0x465A344C == compression_constant("FZ4L"));
+static_assert(0x465A3448 == compression_constant("FZ4H"));
+
 // Compression header version
 #define COMP_HEAD_VERSION 0x1
 
