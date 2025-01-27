@@ -1247,40 +1247,42 @@ static bool ListNextvol(UaContext* ua, int ndays)
   time_t now = time(NULL);
   bool found = false;
   for (RunResource* run = job->schedule->run; run; run = run->next) {
-    time_t next_scheduled = run->NextScheduleTime(now);
-    if (next_scheduled < now + ndays * 24 * 60 * 60) {
-        if (!CompleteJcrForJob(jcr, job, run->pool)) {
-          found = false;
-          break;
-        }
-        if (!jcr->dir_impl->jr.PoolId) {
-          ua->ErrorMsg(T_("Could not find Pool for Job %s\n"),
-                       job->resource_name_);
-          continue;
-        }
-        PoolDbRecord pr;
-        pr.PoolId = jcr->dir_impl->jr.PoolId;
-        if (!ua->db->GetPoolRecord(jcr, &pr)) {
-          bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
-        }
-        MediaDbRecord mr;
-        mr.PoolId = jcr->dir_impl->jr.PoolId;
-        GetJobStorage(&store, job, run);
-        SetStorageidInMr(store.store, &mr);
-        /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
-        if (!FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
-                                     fnv_prune)) {
-          ua->ErrorMsg(T_("Could not find next Volume for Job %s (Pool=%s, "
-                          "Level=%s).\n"),
-                       job->resource_name_, pr.Name,
-                       JobLevelToString(run->level));
-        } else {
-          ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
-                         "Level=%s) will be %s\n"),
-                      job->resource_name_, pr.Name, JobLevelToString(run->level),
-                      mr.VolumeName);
-          found = true;
-        }
+    std::optional<time_t> next_scheduled = run->NextScheduleTime(now, ndays);
+    if (!next_scheduled.has_value()) {
+      continue;
+    }
+    
+    if (!CompleteJcrForJob(jcr, job, run->pool)) {
+      found = false;
+      break;
+    }
+    if (!jcr->dir_impl->jr.PoolId) {
+      ua->ErrorMsg(T_("Could not find Pool for Job %s\n"),
+                    job->resource_name_);
+      continue;
+    }
+    PoolDbRecord pr;
+    pr.PoolId = jcr->dir_impl->jr.PoolId;
+    if (!ua->db->GetPoolRecord(jcr, &pr)) {
+      bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
+    }
+    MediaDbRecord mr;
+    mr.PoolId = jcr->dir_impl->jr.PoolId;
+    GetJobStorage(&store, job, run);
+    SetStorageidInMr(store.store, &mr);
+    /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
+    if (!FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
+                                  fnv_prune)) {
+      ua->ErrorMsg(T_("Could not find next Volume for Job %s (Pool=%s, "
+                      "Level=%s).\n"),
+                    job->resource_name_, pr.Name,
+                    JobLevelToString(run->level));
+    } else {
+      ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
+                      "Level=%s) will be %s\n"),
+                  job->resource_name_, pr.Name, JobLevelToString(run->level),
+                  mr.VolumeName);
+      found = true;
     }
   }
   if (jcr->db) {
