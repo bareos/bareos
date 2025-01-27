@@ -34,26 +34,34 @@ static constexpr int kMonthsPerYear{12};
 static constexpr int kDaysPerWeek{7};
 
 static bool IsLeapYear(int year) {
-   return (year % 400 == 0) || (year % 100 != 0 && year % 4 == 0);
+   if (year % 400 == 0) { return true; }
+   if (year % 100 == 0) { return false; }
+   if (year % 4 == 0) { return true; }
+   return false;
 }
 static int LastDayOfMonth(int year, int month)
 {
    if (IsLeapYear(year)) {
-      static const std::array<int, kMonthsPerYear> kLastDaysInMonth = {
-         31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
+      static constexpr std::array<int, kMonthsPerYear> kLastDaysInMonth = {
+         30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
       };
       return kLastDaysInMonth.at(month);
    }
    else {
-      static const std::array<int, kMonthsPerYear> kLastDaysInMonth = {
-         31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
+      static constexpr std::array<int, kMonthsPerYear> kLastDaysInMonth = {
+         30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
       };
       return kLastDaysInMonth.at(month);
    }
 }
 
+bool DateTime::WeekOfMonth() const {
+   return day_of_month / 7;
+}
 bool DateTime::OnLast7DaysOfMonth() const {
-   return LastDayOfMonth(year, month) - kDaysPerWeek < day_of_year; 
+   auto last_day = LastDayOfMonth(year, month);
+   ASSERT(last_day >= day_of_year);
+   return last_day - kDaysPerWeek < day_of_year; 
 }
 
 DateTime::DateTime(time_t time_)

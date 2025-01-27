@@ -30,6 +30,7 @@
 
 #include <openssl/md5.h>
 #include <memory>
+#include <optional>
 
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/date_time_mask.h"
@@ -665,7 +666,7 @@ class RunResource : public BareosResource {
   DateTimeMask date_time_mask;
 
   /* Methods */
-  time_t NextScheduleTime(time_t start) const;
+  std::optional<time_t> NextScheduleTime(time_t start, uint32_t ndays) const;
 };
 
 ConfigurationParser* InitDirConfig(const char* configfile, int exit_code);

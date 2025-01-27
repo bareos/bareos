@@ -1413,8 +1413,8 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
   send.ArrayEnd(item.name, inherited, "");
 }
 
-time_t RunResource::NextScheduleTime(time_t start) const {
-    for (int d = 0; d <= 500; ++d) {
+std::optional<time_t> RunResource::NextScheduleTime(time_t start, uint32_t ndays) const {
+    for (uint32_t d = 0; d <= ndays; ++d) {
         if (date_time_mask.TriggersOnDay(start)) {
           struct tm tm = {};
           Blocaltime(&start, &tm);
@@ -1429,7 +1429,7 @@ time_t RunResource::NextScheduleTime(time_t start) const {
         }
         start += 24 * 60 * 60;
     }
-    return 0; /* is not be reached if date_time_mask is valid */
+    return std::nullopt;
 }
 
 static std::string PrintConfigRun(RunResource* run)

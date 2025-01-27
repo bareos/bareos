@@ -907,30 +907,32 @@ static void ListScheduledJobs(UaContext* ua)
       continue;
     }
     for (RunResource* run = job->schedule->run; run; run = run->next) {
-      time_t next_scheduled = run->NextScheduleTime(now);
-      if (next_scheduled < now + days * 24 * 60 * 60) {
-        UnifiedStorageResource store;
-        if (!hdr_printed) {
-          PrtRunhdr(ua);
-          hdr_printed = true;
-        }
-        auto* sp = (sched_pkt*)malloc(sizeof(sched_pkt));
-        sp->job = job;
-        sp->level = (run->level ? run->level : job->JobLevel);
-        sp->priority = (run->Priority ? run->Priority : job->Priority);
-        sp->runtime = next_scheduled;
-        sp->pool = run->pool;
-        GetJobStorage(&store, job, run);
-        sp->store = store.store;
-        if (sp->store) {
-          Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
-                sp->store->resource_name_, sp->store->media_type);
-        } else {
-          Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
-        }
-        sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
-        num_jobs++;
+      std::optional<time_t> next_scheduled = run->NextScheduleTime(now, days);
+      if (!next_scheduled.has_value()) {
+        continue;
       }
+
+      UnifiedStorageResource store;
+      if (!hdr_printed) {
+        PrtRunhdr(ua);
+        hdr_printed = true;
+      }
+      auto* sp = (sched_pkt*)malloc(sizeof(sched_pkt));
+      sp->job = job;
+      sp->level = (run->level ? run->level : job->JobLevel);
+      sp->priority = (run->Priority ? run->Priority : job->Priority);
+      sp->runtime = next_scheduled.value();
+      sp->pool = run->pool;
+      GetJobStorage(&store, job, run);
+      sp->store = store.store;
+      if (sp->store) {
+        Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
+              sp->store->resource_name_, sp->store->media_type);
+      } else {
+        Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
+      }
+      sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
+      num_jobs++;
     }
   } /* end for loop over resources */
 
