@@ -67,12 +67,12 @@ expect_device_listing()
     exit 1
   fi
 }
+
 expect_device_listing bscan $BAREOS_BSCAN_BINARY
 expect_device_listing bextract $BAREOS_BEXTRACT_BINARY .
 expect_device_listing bls $BAREOS_BLS_BINARY
 expect_device_listing bcopy $BAREOS_BCOPY_BINARY OtherInvalidDevice
 expect_device_listing btape $BAREOS_BTAPE_BINARY
-
 
 run_bls -vv -V TestVolume001 FileStorage
 ret=$?

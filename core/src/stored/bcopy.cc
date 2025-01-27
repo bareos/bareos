@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
   ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
 
   if (input_archive.empty()) {
-    printf(T_("Missing input and output device. %sNothing done.\n"),
+    printf(T_("Missing input device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
   } else if (output_archive.empty()) {

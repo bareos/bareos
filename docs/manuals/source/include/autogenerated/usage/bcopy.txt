@@ -1,14 +1,12 @@
-Usage: bcopy [OPTIONS] input-archive output-archive
+Usage: bcopy [OPTIONS] [input-archive] [output-archive]
 
 Positionals:
     input-archive  
-        REQUIRED
         Specify the input device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
         Storage Daemon Device resource). 
 
     output-archive  
-        REQUIRED
         Specify the output device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
         Storage Daemon Device resource). 

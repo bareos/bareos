@@ -1,8 +1,7 @@
-Usage: btape [OPTIONS] bareos-archive-device-name
+Usage: btape [OPTIONS] [bareos-archive-device-name]
 
 Positionals:
     bareos-archive-device-name  
-        REQUIRED
         Specify the input device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
         Storage Daemon Device resource). 

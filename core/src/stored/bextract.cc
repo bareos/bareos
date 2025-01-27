@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
   ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (archive_device_name.empty()) {
-    printf(T_("Missing input device. %sNothing done.\n"),
+    printf(T_("Missing device. %sNothing done.\n"),
            AvailableDevicesListing().c_str());
     return BEXIT_CLI_PARSING_ERROR;
   }
