@@ -49,13 +49,6 @@ OS:
       CUSTOM_TEST_IMAGES: [ SLE-15_SP3, SLE-15_SP4, openSUSE-Leap_15.4, SLE-15_SP5, openSUSE-Leap_15.5, SLE-15_SP6, openSUSE-Leap_15.6 ]
       ARCH:
       - x86_64
-  SLE:
-    "12_SP5":
-      TYPE: rpm
-      IMAGE: sles12sp5
-      CUSTOM_TEST_IMAGES: []
-      ARCH:
-      - x86_64
   Fedora:
     "40":
       TYPE: rpm
