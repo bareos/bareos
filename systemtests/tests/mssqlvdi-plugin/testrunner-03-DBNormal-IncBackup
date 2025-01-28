@@ -1,0 +1,66 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+myname=$(basename "$0")
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+# update first line in samples
+"${SQLCMD}" -Q "UPDATE dbnormaltest.tests.samples SET sample_name='Bareos' WHERE sample_id=1"
+
+mkdir -p "${tmp}/data"
+echo "$0" >"${tmp}/data/${myname}"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/${myname}.log
+setdebug level=300 client trace=1
+run job=backup-DBNormal level=Incremental yes
+wait
+setdebug level=10 client trace=0
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+print_delete_trace
+
+check_for_zombie_jobs storage=File
+
+expect_grep "IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)" \
+            "${tmp}/${myname}.log" \
+            "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
+
+end_test
