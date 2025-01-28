@@ -1,0 +1,7 @@
+export FD_TRACE_NAME="${working_dir}/$(basename "$(pwd)")-fd.trace"
+
+print_delete_trace()
+{
+        cat "${FD_TRACE_NAME}" || echo "Trace does not exist"
+        rm "${FD_TRACE_NAME}" || :
+}
