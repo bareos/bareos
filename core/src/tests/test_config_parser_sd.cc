@@ -36,6 +36,10 @@ TEST(ConfigParser_SD, test_stored_config)
 {
   OSDependentInit();
 
+#if HAVE_WIN32
+  WSA_Init();
+#endif
+
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests");
   my_config = InitSdConfig(path_to_config_file.c_str(), M_CONFIG_ERROR);
@@ -66,6 +70,10 @@ TEST(ConfigParser_SD, CFG_TYPE_STR_VECTOR_OF_DIRS)
       ::testing::UnitTest::GetInstance()->current_test_info()->name());
 
   OSDependentInit();
+
+#if HAVE_WIN32
+  WSA_Init();
+#endif
 
   InitMsg(nullptr, nullptr);
 
