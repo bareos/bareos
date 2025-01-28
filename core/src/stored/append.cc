@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -252,6 +252,8 @@ static bool SetupDCR(JobControlRecord* jcr,
       Jmsg(jcr, M_INFO, 0, T_("Using Device %s to write.\n"),
            jcr->sd_impl->dcr->dev->print_name());
     } else {
+      FreeDeviceControlRecord(jcr->sd_impl->dcr);
+      jcr->sd_impl->dcr = nullptr;
       Jmsg(jcr, M_FATAL, 0, T_("Could not reserve any device for this job.\n"));
       return false;
     }
@@ -668,11 +670,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
     // Release the device -- and send final Vol info to DIR and unlock it.
     ReleaseDevice(jcr->sd_impl->dcr);
-  } else {
+  } else if (ok) {
     Jmsg(jcr, M_INFO, 0,
          "Because no backup data was received, no device was reserved. As such "
          "no Session Labels were written for this job.\n");
     Dmsg0(50, "No data for job %d => no data written.\n", jcr->JobId);
+  } else {
+    Jmsg(jcr, M_FATAL, 0, T_("Unable to setup device for this job.\n"));
   }
 
   if (!DeleteNullJobmediaRecords(jcr)) {
