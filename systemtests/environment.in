@@ -182,6 +182,8 @@ SUDO=@SUDO@
 IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT=@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
 NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 
+export SQLCMD="@SQLCMD@"
+
 if [ -f environment.local ]; then
   source environment.local
 fi
