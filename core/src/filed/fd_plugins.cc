@@ -866,7 +866,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
                 cmd.c_str());
           goto bail_out;
         }
-        ff_pkt->fname = cmd.data(); /* full plugin string */
+        ff_pkt->fname
+            = const_cast<char*>(original_cmd); /* full plugin string */
         ff_pkt->object_name = sp.object_name;
         ff_pkt->object_index = sp.index; /* restore object index */
         ff_pkt->object_compression = 0;  /* no compression for now */
