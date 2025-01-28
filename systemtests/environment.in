@@ -204,3 +204,5 @@ export IGNORE_CONFIG_WARNINGS=@IGNORE_CONFIG_WARNINGS@
 if [ -f environment.local ]; then
   source environment.local
 fi
+
+export SQLCMD="@SQLCMD@"
