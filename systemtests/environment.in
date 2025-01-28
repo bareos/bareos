@@ -202,3 +202,5 @@ NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 if [ -f environment.local ]; then
   source environment.local
 fi
+
+export IGNORE_DAEMON_CONFIG_WARNINGS=@IGNORE_DAEMON_CONFIG_WARNINGS@

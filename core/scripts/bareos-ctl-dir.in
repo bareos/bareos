@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # bareos-ctl-dir This shell script takes care of starting and stopping
 #		 the Bareos Director daemon
@@ -43,11 +43,17 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
-            checkcfg
-            if [ $? != 0 ]; then
-                exit 1
+            log_file="${tmp}/bareos-dir-config-test.out"
+            "${BAREOS_DIRECTOR_BINARY}" -t $2 $3 ${OPTIONS} &> "$log_file"
+            if ! ${IGNORE_DAEMON_CONFIG_WARNINGS}; then
+                if grep -q "There are configuration warnings" "$log_file"; then
+                    echo "Fail: There are configuration warnings for the director when running ${BAREOS_DIRECTOR_BINARY} -t $2 $3 ${OPTIONS}, see below." >&2
+                    cat "$log_file"
+                    exit 7
+                fi
+            else
+                cat "$log_file"
             fi
-
             "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
         fi
         ;;

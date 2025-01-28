@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # bareos-ctl-fd  This shell script takes care of starting and stopping
 #		 the Bareos File daemon.
@@ -43,6 +43,17 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
+            log_file="${tmp}/bareos-fd-config-test.out"
+            "${BAREOS_FILEDAEMON_BINARY}" -t $2 $3 ${OPTIONS} &> "$log_file"
+            if ! ${IGNORE_DAEMON_CONFIG_WARNINGS}; then
+                if grep -q "There are configuration warnings" "$log_file"; then
+                    echo "Fail: There are configuration warnings for the file-daemon when running ${BAREOS_FILEDAEMON_BINARY} -t $2 $3 ${OPTIONS}, see below." >&2
+                    cat "$log_file"
+                    exit 7
+                fi
+            else
+                cat "$log_file"
+            fi
             if [ "x${VALGRIND_FD}" = "x1" ]; then
                 valgrind --leak-check=full ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             else
