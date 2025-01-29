@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -837,7 +837,10 @@ macro(create_enabled_systemtest prefix test_name test_srcdir test_dir)
   )
 
   if(NOT DEFINED IGNORE_DAEMON_CONFIG_WARNINGS)
-    set(IGNORE_DAEMON_CONFIG_WARNINGS false CACHE INTERNAL "")
+    set(IGNORE_DAEMON_CONFIG_WARNINGS
+        false
+        CACHE INTERNAL ""
+    )
   endif()
   if(IGNORE_DAEMON_CONFIG_WARNINGS)
     message(STATUS "ignoring deamon config warnings for test ${test_fullname}")
@@ -847,7 +850,10 @@ macro(create_enabled_systemtest prefix test_name test_srcdir test_dir)
     "${PROJECT_BINARY_DIR}/tests/${test_dir}/environment" @ONLY
     NEWLINE_STYLE UNIX
   )
-  set(IGNORE_DAEMON_CONFIG_WARNINGS false CACHE INTERNAL "")
+  set(IGNORE_DAEMON_CONFIG_WARNINGS
+      false
+      CACHE INTERNAL ""
+  )
 
   add_systemtest_from_directory(${tests_dir}/${test_dir} "${test_fullname}")
   # Increase global BASEPORT variable
