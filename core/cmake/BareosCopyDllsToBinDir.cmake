@@ -44,7 +44,7 @@ macro(BareosCopyDllsToBinDir)
       )
         add_custom_command(
           TARGET ${TGT}
-          POST_BUILD JOB_POOL copy
+          POST_BUILD
           COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TGT}>
                   $<TARGET_RUNTIME_DLLS:${TGT}>;${DLLS_TO_COPY_MANUALLY}
           COMMAND_EXPAND_LISTS

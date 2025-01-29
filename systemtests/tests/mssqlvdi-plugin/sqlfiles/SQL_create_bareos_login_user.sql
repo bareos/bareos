@@ -1,6 +1,13 @@
--- CREATE LOGIN bareos WITH PASSWORD = 'Sup3rS3crEt24';
+
+DROP LOGIN bareos;
+go 
+
+CREATE LOGIN bareos WITH PASSWORD = 'Sup3rS3crEt24';
+go
 
 USE [$(myDB)]
 go
 
-create user bareos for login bareos;
+DROP user IF EXISTS bareos ;
+
+CREATE user bareos for login bareos;

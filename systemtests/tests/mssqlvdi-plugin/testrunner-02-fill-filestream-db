@@ -14,6 +14,7 @@ myname=$(basename "$0")
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
+"${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_create_bareos_login_user.sql
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_db_filestream_drop_create.sql
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_create_schema_tables.sql
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_load_data.sql

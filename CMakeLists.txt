@@ -18,6 +18,9 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+cmake_policy(SET CMP0174 OLD)
+cmake_policy(SET CMP0175 OLD)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   cmake_minimum_required(VERSION 3.25)
   cmake_policy(SET CMP0141 NEW) # allow to disable /Zi from cmake debug switches
