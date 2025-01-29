@@ -479,6 +479,15 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       name = (char*)value;
       if (!GetPluginName(jcr, name, &len)) { goto bail_out; }
       break;
+    case bEventNewPluginOptions: {
+      // If this event contains a name, then we need to fix it up
+      // It may be possible for it to not contain a name: in that case
+      // we dont touch the value.
+      // This has some problems of course, but the values should be plugin
+      // specific most of the time.
+      name = (char*)value;
+      if (!GetPluginName(jcr, name, &len)) { name = nullptr; }
+    } break;
     case bEventRestoreObject:
       // After all RestoreObject, we have it one more time with value = NULL
       if (value) {
