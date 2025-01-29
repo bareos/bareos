@@ -7,7 +7,7 @@ Grpc Plugin
    pair: Plugin; Grpc
 
 The grpc plugin is a plugin that allows you to run a separate executable as a bareos plugin.
-This executable talks to the core via [grpc](https://grpc.io) remote procedure calls.
+This executable talks to the core via`grpc <https://grpc.io/>`_ remote procedure calls.
 
 This has multiple upsides for users, such as:
 
