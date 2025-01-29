@@ -7,44 +7,6 @@ OS:
       FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
       ARCH:
         - x86_64
-  ULC_rpm:
-    "OpenSSL_1.1":
-      TYPE: scripted
-      IMAGE: "rhel8"
-      BUILD_SCRIPT: CD/rpm/build-ulc.sh
-      FINISH_SCRIPT: CD/rpm/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ Rocky-8, Rocky-9, Fedora-37, SLE-15_sp6 ]
-      ARCH:
-        - x86_64
-        - aarch64
-    "OpenSSL_3.0":
-      TYPE: scripted
-      IMAGE: "rhel9"
-      BUILD_SCRIPT: CD/rpm/build-ulc.sh
-      FINISH_SCRIPT: CD/rpm/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ Rocky-9, Fedora-41, SLE-15_sp6, Mageia-9 ]
-      ARCH:
-        - x86_64
-        - aarch64
-  ULC_deb:
-    "OpenSSL_1.1":
-      TYPE: scripted
-      IMAGE: "ubuntu20.04"
-      BUILD_SCRIPT: CD/deb/build-ulc.sh
-      FINISH_SCRIPT: CD/deb/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ "Ubuntu-20.04", "Debian-10", "Debian-11" ]
-      ARCH:
-        - x86_64
-        - aarch64
-    "OpenSSL_3.0":
-      TYPE: scripted
-      IMAGE: "ubuntu22.04"
-      BUILD_SCRIPT: CD/deb/build-ulc.sh
-      FINISH_SCRIPT: CD/deb/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ "Ubuntu-22.04", "Ubuntu-24.04", "Debian-12" ]
-      ARCH:
-        - x86_64
-        - aarch64
   xUbuntu:
     "24.04":
       TYPE: deb
@@ -113,21 +75,3 @@ OS:
       TYPE: freebsd
       ARCH:
         - amd64
-    "13.2":
-      TYPE: freebsd
-      ARCH:
-        - amd64
-  MacOS:
-    "10.13.6":
-      TYPE: macos
-      ARCH:
-        - x64
-  win:
-    native:
-      TYPE: win-native
-      STAGES:
-        - win-native-64-release
-      ARCH:
-       - x86_64
-      WINVERSIONS:
-         - windows-11-64
