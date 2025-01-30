@@ -33,8 +33,10 @@ END_OF_DATA
 
 run_bconsole
 
-if ! grep -q "FD Files Written:.*${expected_files}" "$tmp/$myname.log"; then
-  echo "Number of files mismatch!"
+check_for_zombie_jobs storage=File
+
+if ! grep -q "IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)" "$tmp/$myname.log"; then
+  echo "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
   exit 2
 fi
 
