@@ -14,7 +14,7 @@ myname=$(basename "$0")
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-"${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_db_normal_drop.sql
+"${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBNormalTest -i  sqlfiles/SQL_drop_db.sql
 
 if "${SQLCMD}" -Q "SELECT * FROM DBNormalTest.production.brands"  | grep Electra; then
   echo "Database is not empty"
