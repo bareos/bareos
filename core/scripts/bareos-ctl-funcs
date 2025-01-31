@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # A function to find the pid of a program.
 pidofproc() {
@@ -113,18 +113,35 @@ killproc() {
    return $RC
 }
 
-# Function that checks if the configuration is OK and the Database can be connected
-checkcfg() {
-   RC=0
-   echo "Checking Configuration and Database connection ... "
-   if [ ! -z "${DIR_USER}" -a "${DIR_USER}" != "${USER}" ]; then
-      su -s /bin/sh "${DIR_USER}" -c "${BAREOS_DIRECTOR_BINARY}" ${OPTIONS} -f -t
-      RC=$?
-   else
-      "${BAREOS_DIRECTOR_BINARY}" ${OPTIONS} -f -t
-      RC=$?
+# Checks if the Database can be connected to
+check_database() {
+   echo "Checking Database connection for $1"
+   log_file="${tmp}/bareos-$1-config-test.out"
+   "$2" -f -t "${@:3}" &> "$log_file"
+   
+   if grep -q "Could not open Catalog" "$log_file"; then
+      echo "Fail: Could not connect to the Catalog when running $2 -t ${*:3}, see below." >&2
+      cat "$log_file"
+      return 2
    fi
-   return $RC
+   return 0
+}
+# Checks if the configuration outputs warnings
+check_config() {
+   echo "Checking Configuration for $1"
+   log_file="${tmp}/bareos-$1-config-test.out"
+   "$2" -f -t "${@:3}" &> "$log_file"
+
+   if ! ${IGNORE_CONFIG_WARNINGS}; then
+      if grep -q "There are configuration warnings" "$log_file"; then
+         echo "Fail: There are configuration warnings for the director when running $2 -t ${*:3}, see below." >&2
+         cat "$log_file"
+         return 7
+      fi
+   else
+      cat "$log_file"
+   fi
+   return 0
 }
 
 status() {

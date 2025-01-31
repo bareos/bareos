@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -835,11 +835,19 @@ macro(create_enabled_systemtest prefix test_name test_srcdir test_dir)
   configurefilestosystemtest(
     "systemtests" "tests/${test_dir}" "*" @ONLY "tests/${test_srcdir}"
   )
+
+  if(ARG_IGNORE_CONFIG_WARNINGS)
+    set(IGNORE_CONFIG_WARNINGS true)
+    message(STATUS "ignoring config warnings for test ${test_fullname}")
+  else()
+    set(IGNORE_CONFIG_WARNINGS false)
+  endif()
   configure_file(
     "${PROJECT_SOURCE_DIR}/environment.in"
     "${PROJECT_BINARY_DIR}/tests/${test_dir}/environment" @ONLY
     NEWLINE_STYLE UNIX
   )
+
   add_systemtest_from_directory(${tests_dir}/${test_dir} "${test_fullname}")
   # Increase global BASEPORT variable
   math(EXPR BASEPORT "${BASEPORT} + 10")
@@ -856,12 +864,15 @@ macro(create_systemtest prefix test_subdir)
   #   * prefix STRING
   #   * test_subdir STRING
   #   * DISABLED option
+  #   * IGNORE_CONFIG_WARNINGS option
   #   * COMMENT "..." (optional)
   #
   # Made as a macro, not as a function to be able to update BASEPORT.
   #
   # cmake-format: on
-  cmake_parse_arguments(ARG "DISABLED" "COMMENT" "" ${ARGN})
+  cmake_parse_arguments(
+    ARG "DISABLED;IGNORE_CONFIG_WARNINGS" "COMMENT" "" ${ARGN}
+  )
   set(test_basename "${prefix}${test_subdir}")
   if(ARG_DISABLED)
     add_disabled_systemtest(${prefix} ${test_subdir} COMMENT "${ARG_COMMENT}")

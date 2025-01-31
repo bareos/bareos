@@ -4,6 +4,4 @@ Client {
   Address = @hostname@
   Password = "@fd_password@"          # password for FileDaemon
   FD PORT = @fd_port@
-  Job Retention = 1 sec
-  File Retention = 1 sec
 }
