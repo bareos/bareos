@@ -21,23 +21,26 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_DATE_TIME_BITFIELD_H_
-#define BAREOS_DIRD_DATE_TIME_BITFIELD_H_
+#ifndef BAREOS_DIRD_DATE_TIME_MASK_H_
+#define BAREOS_DIRD_DATE_TIME_MASK_H_
 
 #include "lib/bits.h"
 
 namespace directordaemon {
 
-struct DateTimeBitfield {
+struct DateTimeMask {
   char hour[NbytesForBits(24 + 1)]{0};
   char mday[NbytesForBits(31 + 1)]{0};
   char month[NbytesForBits(12 + 1)]{0};
   char wday[NbytesForBits(7 + 1)]{0};
   char wom[NbytesForBits(5 + 1)]{0};
   char woy[NbytesForBits(54 + 1)]{0};
-  bool last_week_of_month{false};
+  bool last_7days_of_month{false};
+
+  bool TriggersOnDay(time_t time) const;
+  bool TriggersOnDayAndHour(time_t time) const;
 };
 
 }  // namespace directordaemon
 
-#endif  // BAREOS_DIRD_DATE_TIME_BITFIELD_H_
+#endif  // BAREOS_DIRD_DATE_TIME_MASK_H_

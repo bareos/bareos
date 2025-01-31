@@ -129,12 +129,12 @@ static void set_defaults(RunResource& res_run)
 {
   have_hour = have_mday = have_wday = have_month = have_wom = have_woy = false;
   have_at = false;
-  SetBitRange(0, 23, res_run.date_time_bitfield.hour);
-  SetBitRange(0, 30, res_run.date_time_bitfield.mday);
-  SetBitRange(0, 6, res_run.date_time_bitfield.wday);
-  SetBitRange(0, 11, res_run.date_time_bitfield.month);
-  SetBitRange(0, 4, res_run.date_time_bitfield.wom);
-  SetBitRange(0, 53, res_run.date_time_bitfield.woy);
+  SetBitRange(0, 23, res_run.date_time_mask.hour);
+  SetBitRange(0, 30, res_run.date_time_mask.mday);
+  SetBitRange(0, 6, res_run.date_time_mask.wday);
+  SetBitRange(0, 11, res_run.date_time_mask.month);
+  SetBitRange(0, 4, res_run.date_time_mask.wom);
+  SetBitRange(0, 53, res_run.date_time_mask.woy);
 }
 
 // Keywords (RHS) permitted in Run records
@@ -400,38 +400,38 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         continue;
       case s_mday: /* Day of month */
         if (!have_mday) {
-          ClearBitRange(0, 30, res_run.date_time_bitfield.mday);
+          ClearBitRange(0, 30, res_run.date_time_mask.mday);
           have_mday = true;
         }
-        SetBit(code, res_run.date_time_bitfield.mday);
+        SetBit(code, res_run.date_time_mask.mday);
         break;
       case s_month: /* Month of year */
         if (!have_month) {
-          ClearBitRange(0, 11, res_run.date_time_bitfield.month);
+          ClearBitRange(0, 11, res_run.date_time_mask.month);
           have_month = true;
         }
-        SetBit(code, res_run.date_time_bitfield.month);
+        SetBit(code, res_run.date_time_mask.month);
         break;
       case s_wday: /* Week day */
         if (!have_wday) {
-          ClearBitRange(0, 6, res_run.date_time_bitfield.wday);
+          ClearBitRange(0, 6, res_run.date_time_mask.wday);
           have_wday = true;
         }
-        SetBit(code, res_run.date_time_bitfield.wday);
+        SetBit(code, res_run.date_time_mask.wday);
         break;
       case s_wom: /* Week of month 1st, ... */
         if (!have_wom) {
-          ClearBitRange(0, 4, res_run.date_time_bitfield.wom);
+          ClearBitRange(0, 4, res_run.date_time_mask.wom);
           have_wom = true;
         }
-        SetBit(code, res_run.date_time_bitfield.wom);
+        SetBit(code, res_run.date_time_mask.wom);
         break;
       case s_woy:
         if (!have_woy) {
-          ClearBitRange(0, 53, res_run.date_time_bitfield.woy);
+          ClearBitRange(0, 53, res_run.date_time_mask.woy);
           have_woy = true;
         }
-        SetBit(code, res_run.date_time_bitfield.woy);
+        SetBit(code, res_run.date_time_mask.woy);
         break;
       case s_time: /* Time */
         if (!have_at) {
@@ -439,7 +439,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           return;
         }
         if (!have_hour) {
-          ClearBitRange(0, 23, res_run.date_time_bitfield.hour);
+          ClearBitRange(0, 23, res_run.date_time_mask.hour);
         }
         //       Dmsg1(000, "s_time=%s\n", lc->str);
         p = strchr(lc->str, ':');
@@ -475,7 +475,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           scan_err0(lc, T_("Bad time specification."));
           return;
         }
-        SetBit(code, res_run.date_time_bitfield.hour);
+        SetBit(code, res_run.date_time_mask.hour);
         res_run.minute = code2;
         have_hour = true;
         break;
@@ -483,9 +483,9 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         have_at = true;
         break;
       case s_last:
-        res_run.date_time_bitfield.last_week_of_month = true;
+        res_run.date_time_mask.last_7days_of_month = true;
         if (!have_wom) {
-          ClearBitRange(0, 4, res_run.date_time_bitfield.wom);
+          ClearBitRange(0, 4, res_run.date_time_mask.wom);
           have_wom = true;
         }
         break;
@@ -511,13 +511,13 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_mday) {
-            ClearBitRange(0, 30, res_run.date_time_bitfield.mday);
+            ClearBitRange(0, 30, res_run.date_time_mask.mday);
             have_mday = true;
           }
           // Set the bits according to the modulo specification.
           for (i = 0; i < 31; i++) {
             if (i % code2 == 0) {
-              SetBit(i + code, res_run.date_time_bitfield.mday);
+              SetBit(i + code, res_run.date_time_mask.mday);
             }
           }
         } else if (strlen(lc->str) == 3 && strlen(p) == 3
@@ -537,13 +537,13 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_woy) {
-            ClearBitRange(0, 53, res_run.date_time_bitfield.woy);
+            ClearBitRange(0, 53, res_run.date_time_mask.woy);
             have_woy = true;
           }
           // Set the bits according to the modulo specification.
           for (i = 0; i < 53; i++) {
             if (i % code2 == 0) {
-              SetBit(i + code, res_run.date_time_bitfield.woy);
+              SetBit(i + code, res_run.date_time_mask.woy);
             }
           }
         } else {
@@ -569,14 +569,14 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_mday) {
-            ClearBitRange(0, 30, res_run.date_time_bitfield.mday);
+            ClearBitRange(0, 30, res_run.date_time_mask.mday);
             have_mday = true;
           }
           if (code < code2) {
-            SetBitRange(code, code2, res_run.date_time_bitfield.mday);
+            SetBitRange(code, code2, res_run.date_time_mask.mday);
           } else {
-            SetBitRange(code, 30, res_run.date_time_bitfield.mday);
-            SetBitRange(0, code2, res_run.date_time_bitfield.mday);
+            SetBitRange(code, 30, res_run.date_time_mask.mday);
+            SetBitRange(0, code2, res_run.date_time_mask.mday);
           }
         } else if (strlen(lc->str) == 3 && strlen(p) == 3
                    && (lc->str[0] == 'w' || lc->str[0] == 'W')
@@ -590,14 +590,14 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_woy) {
-            ClearBitRange(0, 53, res_run.date_time_bitfield.woy);
+            ClearBitRange(0, 53, res_run.date_time_mask.woy);
             have_woy = true;
           }
           if (code < code2) {
-            SetBitRange(code, code2, res_run.date_time_bitfield.woy);
+            SetBitRange(code, code2, res_run.date_time_mask.woy);
           } else {
-            SetBitRange(code, 53, res_run.date_time_bitfield.woy);
-            SetBitRange(0, code2, res_run.date_time_bitfield.woy);
+            SetBitRange(code, 53, res_run.date_time_mask.woy);
+            SetBitRange(0, code2, res_run.date_time_mask.woy);
           }
         } else {
           // lookup first half of keyword range (week days or months).
@@ -632,59 +632,59 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
           if (state == s_wday) {
             if (!have_wday) {
-              ClearBitRange(0, 6, res_run.date_time_bitfield.wday);
+              ClearBitRange(0, 6, res_run.date_time_mask.wday);
               have_wday = true;
             }
             if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_bitfield.wday);
+              SetBitRange(code, code2, res_run.date_time_mask.wday);
             } else {
-              SetBitRange(code, 6, res_run.date_time_bitfield.wday);
-              SetBitRange(0, code2, res_run.date_time_bitfield.wday);
+              SetBitRange(code, 6, res_run.date_time_mask.wday);
+              SetBitRange(0, code2, res_run.date_time_mask.wday);
             }
           } else if (state == s_month) {
             if (!have_month) {
-              ClearBitRange(0, 11, res_run.date_time_bitfield.month);
+              ClearBitRange(0, 11, res_run.date_time_mask.month);
               have_month = true;
             }
             if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_bitfield.month);
+              SetBitRange(code, code2, res_run.date_time_mask.month);
             } else {
               // This is a bit odd, but we accept it anyway
-              SetBitRange(code, 11, res_run.date_time_bitfield.month);
-              SetBitRange(0, code2, res_run.date_time_bitfield.month);
+              SetBitRange(code, 11, res_run.date_time_mask.month);
+              SetBitRange(0, code2, res_run.date_time_mask.month);
             }
           } else {
             // Must be position
             if (!have_wom) {
-              ClearBitRange(0, 4, res_run.date_time_bitfield.wom);
+              ClearBitRange(0, 4, res_run.date_time_mask.wom);
               have_wom = true;
             }
             if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_bitfield.wom);
+              SetBitRange(code, code2, res_run.date_time_mask.wom);
             } else {
-              SetBitRange(code, 4, res_run.date_time_bitfield.wom);
-              SetBitRange(0, code2, res_run.date_time_bitfield.wom);
+              SetBitRange(code, 4, res_run.date_time_mask.wom);
+              SetBitRange(0, code2, res_run.date_time_mask.wom);
             }
           }
         }
         break;
       case s_hourly:
         have_hour = true;
-        SetBitRange(0, 23, res_run.date_time_bitfield.hour);
+        SetBitRange(0, 23, res_run.date_time_mask.hour);
         break;
       case s_weekly:
         have_mday = have_wom = have_woy = true;
-        SetBitRange(0, 30, res_run.date_time_bitfield.mday);
-        SetBitRange(0, 4, res_run.date_time_bitfield.wom);
-        SetBitRange(0, 53, res_run.date_time_bitfield.woy);
+        SetBitRange(0, 30, res_run.date_time_mask.mday);
+        SetBitRange(0, 4, res_run.date_time_mask.wom);
+        SetBitRange(0, 53, res_run.date_time_mask.woy);
         break;
       case s_daily:
         have_mday = true;
-        SetBitRange(0, 6, res_run.date_time_bitfield.wday);
+        SetBitRange(0, 6, res_run.date_time_mask.wday);
         break;
       case s_monthly:
         have_month = true;
-        SetBitRange(0, 11, res_run.date_time_bitfield.month);
+        SetBitRange(0, 11, res_run.date_time_mask.month);
         break;
       default:
         scan_err0(lc, T_("Unexpected run state\n"));

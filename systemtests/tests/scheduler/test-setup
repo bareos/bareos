@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,12 @@ currenttime=$(date +"%H:%M")
 echo "Schedule {
   Name = \"TestCycle\"
   Run = Level=Full daily at $currenttime
-}" > "$conf"/bareos-dir.d/schedule/schedule.conf
+}" > "$conf"/bareos-dir.d/schedule/TestCycle.conf
+
+echo "Schedule {
+  Name = \"LastSunday\"
+  Run = last Sun at $currenttime
+}" > "$conf"/bareos-dir.d/schedule/LastSunday.conf
 
 bin/bareos start
 bin/bareos status

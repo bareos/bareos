@@ -215,6 +215,10 @@ void test_config_directive_type(
 
   OSDependentInit();
 
+#if HAVE_WIN32
+  WSA_Init();
+#endif
+
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests/bareos-dir-") + test_name
         + std::string(".conf");

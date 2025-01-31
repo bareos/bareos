@@ -1317,6 +1317,13 @@ Schedule {
   # Enabled = Yes
 }
 
+Schedule {
+  Name = "LastSunday"
+  # Description =
+  Run = last Sun at 20:00
+  # Enabled = Yes
+}
+
 FileSet {
   Name = "Windows All Drives"
   Include {

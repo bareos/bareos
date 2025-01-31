@@ -36,6 +36,10 @@ TEST(ConfigParser, test_console_config)
 {
   OSDependentInit();
 
+#if HAVE_WIN32
+  WSA_Init();
+#endif
+
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests");
 
