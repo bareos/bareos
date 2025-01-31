@@ -23,7 +23,7 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 #
 # Source the generic functions.
 #
-. @scriptdir@/bareos-ctl-funcs
+. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
 
 case "$1" in
     start)
@@ -42,17 +42,7 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
-            log_file="${tmp}/bareos-sd-config-test.out"
-            "${BAREOS_STORAGEDAEMON_BINARY}" -t $2 $3 ${OPTIONS} &> "$log_file"
-            if ! ${IGNORE_DAEMON_CONFIG_WARNINGS}; then
-                if grep -q "There are configuration warnings" "$log_file"; then
-                    echo "Fail: There are configuration warnings for the storage-daemon when running ${BAREOS_STORAGEDAEMON_BINARY} -t $2 $3 ${OPTIONS}, see below." >&2
-                    cat "$log_file"
-                    exit 7
-                fi
-            else
-                cat "$log_file"
-            fi
+            check_daemon sd ${BAREOS_STORAGEDAEMON_BINARY} $2 $3 ${OPTIONS} || exit $?
             if [ "x${VALGRIND_SD}" = "x1" ]; then
                 valgrind --leak-check=full ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             else

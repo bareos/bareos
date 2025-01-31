@@ -43,17 +43,7 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
-            log_file="${tmp}/bareos-dir-config-test.out"
-            "${BAREOS_DIRECTOR_BINARY}" -t $2 $3 ${OPTIONS} &> "$log_file"
-            if ! ${IGNORE_DAEMON_CONFIG_WARNINGS}; then
-                if grep -q "There are configuration warnings" "$log_file"; then
-                    echo "Fail: There are configuration warnings for the director when running ${BAREOS_DIRECTOR_BINARY} -t $2 $3 ${OPTIONS}, see below." >&2
-                    cat "$log_file"
-                    exit 7
-                fi
-            else
-                cat "$log_file"
-            fi
+            check_daemon dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
             "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
         fi
         ;;
