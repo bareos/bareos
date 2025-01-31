@@ -43,7 +43,8 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
-            check_daemon dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
+            check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
+            check_config dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
             "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
         fi
         ;;

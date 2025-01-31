@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,12 +17,11 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# requires deprecated directive 'Block Size (Sd -> Device)'
-set(IGNORE_DAEMON_CONFIG_WARNINGS CACHE INTERNAL "")
-
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(AUTOCHANGER_TEST_ENABLED)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+  # IGNORE_CONFIG_WARNINGS: requires directive 'Maximum Block Size (Sd ->
+  # Device)'
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} IGNORE_CONFIG_WARNINGS)
   # Make sure these tests run sequentially.
   set_tests_properties(
     ${SYSTEMTEST_PREFIX}block-size

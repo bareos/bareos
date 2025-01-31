@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,15 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# device S3 requires droplet backend
-set(IGNORE_DAEMON_CONFIG_WARNINGS CACHE INTERNAL "")
-
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(TARGET droplet
    AND S3CMD
    AND MINIO
 )
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+  # IGNORE_CONFIG_WARNINGS: device S3 requires droplet backend
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} IGNORE_CONFIG_WARNINGS)
   set_tests_properties(
     system:droplet-s3:backup
     PROPERTIES FIXTURES_REQUIRED
