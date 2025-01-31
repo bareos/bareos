@@ -17,6 +17,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+# requires deprecated directive 'Block Size (Sd -> Device)'
+set(IGNORE_DAEMON_CONFIG_WARNINGS CACHE INTERNAL "")
+
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(AUTOCHANGER_TEST_ENABLED)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
