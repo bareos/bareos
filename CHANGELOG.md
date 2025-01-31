@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - logrotate: add mtx-changer debug log config [PR #2039]
 - cmake: add cmake check whether tirpc is installed [PR #2109]
 - bconsole: require only one password in the configuration [PR #2116]
+- openssl: unify ssl error logging [PR #2078]
 
 [PR #2039]: https://github.com/bareos/bareos/pull/2039
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2067]: https://github.com/bareos/bareos/pull/2067
 [PR #2068]: https://github.com/bareos/bareos/pull/2068
 [PR #2076]: https://github.com/bareos/bareos/pull/2076
+[PR #2078]: https://github.com/bareos/bareos/pull/2078
 [PR #2079]: https://github.com/bareos/bareos/pull/2079
 [PR #2086]: https://github.com/bareos/bareos/pull/2086
 [PR #2102]: https://github.com/bareos/bareos/pull/2102
