@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,14 +23,16 @@
 
 #include "lib/util.h"
 
-const char* cmprs_algo_to_text(uint32_t compression_algorithm);
+const std::string& CompressorName(uint32_t compression_algorithm);
 
 bool SetupCompressionBuffers(JobControlRecord* jcr,
                              uint32_t compression_algorithm,
                              uint32_t* compress_buf_size);
 bool SetupDecompressionBuffers(JobControlRecord* jcr,
                                uint32_t* decompress_buf_size);
-
+bool SetupSpecificCompressionContext(JobControlRecord& jcr,
+                                     uint32_t algo,
+                                     uint32_t compression_level);
 
 // return the number of bytes written to the output on success
 // or std::nullopt on error
