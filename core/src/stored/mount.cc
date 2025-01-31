@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -362,31 +362,29 @@ bool DeviceControlRecord::find_a_volume()
 {
   DeviceControlRecord* dcr = this;
 
-  if (!IsSuitableVolumeMounted()) {
-    bool have_vol = false;
+  bool have_vol = false;
 
-    // Do we have a candidate volume?
-    if (dev->vol) {
-      bstrncpy(VolumeName, dev->vol->vol_name, sizeof(VolumeName));
-      have_vol = dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE);
-    }
+  // Do we have a candidate volume?
+  if (dev->vol) {
+    bstrncpy(VolumeName, dev->vol->vol_name, sizeof(VolumeName));
+    have_vol = dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE);
+  }
 
-    /* Get Director's idea of what tape we should have mounted, in
-     * dcr->VolCatInfo */
-    if (!have_vol) {
-      Dmsg0(200, "Before DirFindNextAppendableVolume.\n");
-      while (!dcr->DirFindNextAppendableVolume()) {
-        Dmsg0(200, "not dir_find_next\n");
-        if (jcr->IsJobCanceled()) { return false; }
-        unlock_mutex(mount_mutex);
-        if (!dcr->DirAskSysopToCreateAppendableVolume()) {
-          lock_mutex(mount_mutex);
-          return false;
-        }
+  /* Get Director's idea of what tape we should have mounted, in
+   * dcr->VolCatInfo */
+  if (!have_vol) {
+    Dmsg0(200, "Before DirFindNextAppendableVolume.\n");
+    while (!dcr->DirFindNextAppendableVolume()) {
+      Dmsg0(200, "not dir_find_next\n");
+      if (jcr->IsJobCanceled()) { return false; }
+      unlock_mutex(mount_mutex);
+      if (!dcr->DirAskSysopToCreateAppendableVolume()) {
         lock_mutex(mount_mutex);
-        if (jcr->IsJobCanceled()) { return false; }
-        Dmsg0(150, "Again dir_find_next_append...\n");
+        return false;
       }
+      lock_mutex(mount_mutex);
+      if (jcr->IsJobCanceled()) { return false; }
+      Dmsg0(150, "Again dir_find_next_append...\n");
     }
   }
 
@@ -538,16 +536,6 @@ check_bail_out:
 
 check_read_volume:
   return check_read_vol;
-}
-
-bool DeviceControlRecord::IsSuitableVolumeMounted()
-{
-  /* Volume mounted? */
-  if (dev->VolHdr.VolumeName[0] == 0 || dev->swap_dev || dev->MustUnload()) {
-    return false; /* no */
-  }
-  bstrncpy(VolumeName, dev->VolHdr.VolumeName, sizeof(VolumeName));
-  return DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE);
 }
 
 bool DeviceControlRecord::DoUnload()
