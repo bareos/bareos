@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,6 +44,9 @@ void OpensslPostErrors_impl(const char* file,
 int OpensslInitThreads(void);
 void OpensslCleanupThreads(void);
 DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type);
+
+void LogSSLError(int ssl_error);
+
 #endif /* HAVE_OPENSSL */
 
 #endif  // BAREOS_LIB_CRYPTO_OPENSSL_H_

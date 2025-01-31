@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,6 +48,7 @@
 #    include <openssl/evp.h>
 #    include <iomanip>
 #    include <sstream>
+#    include <algorithm>
 
 
 /*
@@ -1754,6 +1755,42 @@ void OpensslCleanupThreads(void)
   CRYPTO_set_dynlock_create_callback(NULL);
   CRYPTO_set_dynlock_lock_callback(NULL);
   CRYPTO_set_dynlock_destroy_callback(NULL);
+}
+
+void LogSSLError(int ssl_error)
+{
+  struct ssl_error_code {
+    int error_code;
+    int level;
+    const char* name;
+  };
+
+  static constexpr std::initializer_list<ssl_error_code> ssl_error_codes{
+      {SSL_ERROR_NONE, 1000, "no-error"},
+      {SSL_ERROR_SSL, 50, "ssl-error"},
+      {SSL_ERROR_WANT_READ, 500, "want-read"},
+      {SSL_ERROR_WANT_WRITE, 500, "want-write"},
+      {SSL_ERROR_WANT_X509_LOOKUP, 50, "want-x509-lookup"},
+      {SSL_ERROR_SYSCALL, 50, "syscall-error"},
+      {SSL_ERROR_ZERO_RETURN, 100, "zero-return-error"},
+      {SSL_ERROR_WANT_CONNECT, 100, "want-connect"},
+      {SSL_ERROR_WANT_ACCEPT, 100, "want-accept"},
+      {SSL_ERROR_WANT_ASYNC, 100, "want-async"},
+      {SSL_ERROR_WANT_ASYNC_JOB, 100, "want-async-job"},
+      {SSL_ERROR_WANT_CLIENT_HELLO_CB, 100, "want-client-hello-cb"},
+#  if defined(SSL_ERROR_WANT_RETRY_VERIFY)
+      {SSL_ERROR_WANT_RETRY_VERIFY, 100, "want-retry-verify"},
+#  endif
+  };
+
+  if (auto iter = std::find_if(
+          std::begin(ssl_error_codes), std::end(ssl_error_codes),
+          [ssl_error](const auto& val) { return val.error_code == ssl_error; });
+      iter != std::end(ssl_error_codes)) {
+    Dmsg1(iter->level, "SSL_get_error() returned %s\n", iter->name);
+    return;
+  }
+  Dmsg1(50, "SSL_get_error() returned unknown error value %d\n", ssl_error);
 }
 
 #endif /* HAVE_OPENSSL */
