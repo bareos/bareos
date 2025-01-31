@@ -1,4 +1,4 @@
-# Always use integer when comparing timestamps numbers in Python
+# Always use integers when comparing timestamps numbers in Python
 
 * Status: accepted
 * Deciders: Bruno Friedmann, Sebastian Sura
