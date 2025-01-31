@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -289,7 +289,6 @@ int main(int margc, char* margv[])
                   "Specify the input device name (either as name of a Bareos "
                   "Storage Daemon Device resource or identical to the Archive "
                   "Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   btape_app.add_option_group("Interactive commands",
@@ -308,6 +307,12 @@ int main(int margc, char* margv[])
 
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
+
+  if (archive_name.empty()) {
+    printf(T_("Missing input device. %sNothing done.\n"),
+           AvailableDevicesListing().c_str());
+    return BEXIT_CLI_PARSING_ERROR;
+  }
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
