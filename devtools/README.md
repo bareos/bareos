@@ -20,6 +20,8 @@ Then simply run `php-cs-fixer/install-php-cs-fixer.sh`.
 ## Tool Usage
 
 ### Check Sources
+
+#### Bareos Check Sources
 Make sure that
 - Pip-Tools are properly installed
 - You are inside a git repo
@@ -43,8 +45,6 @@ Pass the following options
 - `--since-merge` to check all commited and uncommited changes since last merged
 - `--diff` to  print the difference of your source and the requested formatting
 - `--modify` to automatically apply all requested changes to the checked files
-
-#### Bareos Check Sources
 
 #### Format PHP source (for WebUI)
 Make sure that you installed php-cs-fixer as described above.
@@ -82,12 +82,41 @@ checks the following requirements:
 
 
 #### Add Changelog
+> [!NOTE]  
+> When merging, the changelog is automatically updated. So in most cases this command should never be used manually.
+
+Make sure that
+- You have no uncommitted changes
+- Your local branch is associated, and matches, with an upstream branch
+- Your upstream branch is associated with a pull-request
+
+Running `pr-tool add-changelog` adds an entry of the current pull-request in the changelog
 
 #### Update-license
+Running `pr-tool update-license` updates the LICENSE.txt located at the root of the bareos repo.
 
 #### Merge
+Make sure that
+- You have no uncommitted changes
+- Your local branch is associated, and matches, with an upstream branch
+- Your upstream branch is associated with a pull-request
+
+Running `pr-tool merge` does the following:
+- check if the pull-request is mergeable
+> `--ignore-status-checks` will ignore the status checks (jenkins) 
+- adds an entry of the current pull-request in the changelog
+- pushes the changes
+- merges the pull-request
+> Use `--admin-override` to use `--admin` when merging the pull-request
+
+The last step is skipped if `--skip-merge` is set.
 
 #### Dump
+Make sure that
+- Your local branch is associated with an upstream branch
+- Your upstream branch is associated with a pull-request
+
+Running `pr-tool dump` outputs the fetched data of the pull-request associated with the local branch.
 
 #### Backport
 Create a backport branch and PR based of an existing PR.
@@ -161,13 +190,29 @@ or (outside the docbuild container):
 
 If you decide not to push, nothing will be released.
 
-#### Update Changelog
+#### New Changelog Release
+> [!NOTE]  
+> When preparing a release using ???, a new changelog relase is automatically added. So in most cases, this command should never be used manually.
+
+Run the following commands:
+- `new-changelog-release.sh unreleased` to add a new changelog section called 'Unreleased'
+- `new-changelog-release.sh <version> <date>` to add a new changelog section based on the provided version and date.
+
+#### Update Changelog Links
+> [!NOTE]  
+> When preparing a release using ???, the changelog links are automatically updated. So in most cases, this command should never be used manually.
+
+Simply run `update-changelog-links.sh` to update the links in the CHANGELOG.md
 
 ---
 
 ### Build
 
-#### Build and Test with sanitize
+#### Build and Test with Sanitize
+Make sure that
+- You are at the root of the bareos repo
+
+Run `build-and-test-with-sanitize.sh` to build and test with sanitize.
 
 #### Build RPM
 
