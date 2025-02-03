@@ -3,7 +3,7 @@ Backup Basics
 =============
 
 In this chapter I would like to look at the basics of backups. This should
-initially be done independently of bareos to familiarize yourself with the
+initially be done independently of Bareos to familiarize yourself with the
 topic.
 
 Let us start with the basic question: What is backup?
@@ -15,7 +15,7 @@ Let us start with the basic question: What is backup?
 That sounds very simple at first glance. Let us have a look at the different parts of the definition.
 The following mindmap shows the parts of the definition:
 
-.. uml:: /IntroductionAndTutorial/BackupBasics0.puml
+.. uml:: BackupBasics0.puml
 
 
 .. Additionally, a backup should use the required resources intelligently to
@@ -53,15 +53,18 @@ restore the original
 
 data loss
   Data loss means no longer being able to access your primary data. Data
-  availability is the goal of a successful backup strategy. Data loss in the
-  sense of unauthorized data access is not meant here. Nevertheless, data
-  security in this sense must also be taken into account during backup.
+  availability is the goal of a successful backup strategy. 
+ 
+.. note::  Data loss in the sense of unauthorized data access is not meant here. Nevertheless, data security in this sense must also be taken into account during backup.
 
 
 
-Let's take a closer look at the points below.
+Let's take a closer look at the part of the definition below.
 
-.. uml:: /IntroductionAndTutorial/BackupBasics1.puml
+.. uml:: BackupBasics1.puml
+
+Automatic and regular backups
+-----------------------------
 
 Regarding regular backups, the following items need to be determined:
   * At what time of day should the backup be carried out?
@@ -72,29 +75,55 @@ The interval also determines what is the maximum age of a new datum before it is
 by a backup.
 
 
-Computer data that needs to be backed up is stored in a lot of different ways today, including:
+Copying the data
+---------------
+
+Computer **data that needs to be backed up** exists in a lot of different ways today, including:
   * Files
-  * Metadata
+  * Metadata (like access rights, ownership ...)
   * Databases
   * Virtual Machines
   * Other
+
 To determine which data needs to be backed up (and which not) is very important.
-Often also there exist multiple ways to backup certain data.
- 
-The location of the data that was backed up also is very important.
+Often also there exist multiple ways to back up certain data.
+
+Store the backups in a safe place
+---------------------------------
+
+The **location** where backed up data is stored is very important:
 The closer the backup data is to the original data, the faster usually backup
 and restore operations are. At the same time, the probability that the backup
 data will be lost at the same time as the original data also is higher the
 closer the backup data and the original data are.
 
-Being able to restore the 
+Restore the original data
+-------------------------
+Restoring the original data is of course the main goal of all the backup
+operation. Being able to restore the original data is only possible if the data
+integrity is guaranteed. This is usually done by securing the data with
+checksums. As the recovery operation is crucial but usually relatively seldom
+required, it is good practice to regularly test the recovery operation.
+Depending on the recovery objective, the restore speed is also a very important
+parameter that needs to be taken into account.
+
+
+Copying over all original data again and again will quickly require a multiple
+of the original space as backup space. Also, copying over all data every time
+will result in a very high load on all involved components like CPU, Memory,
+Network and Disk I/O.
+
+
+Data loss
+---------
 
 
 
 
-Copying over all original data again and again will quickly r	e	quire a multiple of the original space as backup space. Also, copying over all data every time will result in a very high load on all involved components like CPU, Memory, Network and Disk I/O.
 
-Data backup in modern environments has many dimensions. To successfully operate a backup system, these must be taken into account and integrated into a backup concept.
+Data backup in modern environments has many dimensions. To successfully operate
+a backup system, these must be taken into account and integrated into a backup
+concept.
 
 The first thing that needs to be determined is what is to be backed up.
 What kind of data is it? 
@@ -112,10 +141,6 @@ Depending on the requirements on which data loss event should be recoverable, al
 decision is a different one.
 Depending on the requirements, also different technologies can be combined so fullfill the requirements.
 
-Restoring the original data is of course the main goal of all the backup operation. Being able to restore the original data is only possible if the data integrity is guaranteed. This is usually done by securing the data with checksums.
-As the recovery operation is crucial but usually relatively seldomly required, it is good practice to regularly test the recovery operation.
-Depending on the recovery objective, the restore speed is also a very important parameter that needs to be taken into acccount.
-
 How does data loss happen? What are the main reasons for data loss?
 We have three main reasons for data loss: 
 
@@ -132,7 +157,13 @@ Higher violence:
 Fire, flooding and power outage
 
 
-All of the things presented here must be taken into account for a successful backup solution. If you include these things in your backup planning, you can set up a successful backup scheme.
+
+
+
+
+All of the things presented here must be taken into account for a successful
+backup solution. If you include these things in your backup planning, you can
+set up a successful backup scheme.
 
 How to create a backup scheme:
 
