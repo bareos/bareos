@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: add cmake check whether tirpc is installed [PR #2109]
 - bconsole: require only one password in the configuration [PR #2116]
 - openssl: unify ssl error logging [PR #2078]
+- Inherit RunScript elements between JobDef resources [PR #2097]
 
 [PR #2039]: https://github.com/bareos/bareos/pull/2039
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2078]: https://github.com/bareos/bareos/pull/2078
 [PR #2079]: https://github.com/bareos/bareos/pull/2079
 [PR #2086]: https://github.com/bareos/bareos/pull/2086
+[PR #2097]: https://github.com/bareos/bareos/pull/2097
 [PR #2102]: https://github.com/bareos/bareos/pull/2102
 [PR #2105]: https://github.com/bareos/bareos/pull/2105
 [PR #2109]: https://github.com/bareos/bareos/pull/2109
