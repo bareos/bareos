@@ -1294,8 +1294,10 @@ std::optional<std::string_view> inferior_setup(PluginContext* ctx,
     std::vector<std::string> candidates;
 
     if (have_python) {
+      // prefer python3 over python, as python-fd uses python2 if both
+      // python3-fd and python-fd are installable
       candidates = std::vector<std::string>{
-          plugin_path + "python-fd.so", plugin_path + "python3-fd.so",
+          plugin_path + "python3-fd.so", plugin_path + "python-fd.so",
           plugin_path + "python2-fd.so",  // python2 should be the last resort
       };
     } else {
