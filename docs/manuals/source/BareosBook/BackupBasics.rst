@@ -6,10 +6,13 @@ In this chapter I would like to look at the basics of backups. This should
 initially be done independently of Bareos to familiarize yourself with the
 topic.
 
-Let us start with the basic question: What is backup?
+Let us start with the basic question:
 
-  *Backup is the regular copying of computer data taken and stored elsewhere so
-  that it may be used to restore the original after a data loss event.*
+What is backup?
+---------------
+
+  **Backup is the regular copying of computer data taken and stored elsewhere so
+  that it may be used to restore the original after a data loss event.**
 
 
 That sounds very simple at first glance. Let us have a look at the different parts of the definition.
@@ -116,9 +119,36 @@ Network and Disk I/O.
 
 Data loss
 ---------
+The reasons for data loss are manifold and can basically be classified into the
+three categories Accident, Attack and Force majeure.
+
+Protection against these dangers also becomes more difficult in the order
+indicated.
 
 
+Accident
+~~~~~~~~
+This is the most common reason for data loss.
+Failing or malfunctioning hardware has always been a reason for data loss.
+With the computer hardware becoming more and more reliable, this problem is decreasing in my view. 
+Failing software can of course also be a source of data loss and have a big impact depending on
+what software fails.
 
+Human errors like accidentally deleting the wrong data also can quickly destroy data.
+
+Attack
+~~~~~~
+Malicious attacks against the computer systems are increasing.
+Besides of legacy problems like trojans and viruses, ransomware attacks are a
+big thread of losing access to data.
+Malicious insiders also are a big threat to the availability of data.
+
+Force majeure
+~~~~~~~~~~~~~
+Natural events like earthquakes, flooding and fires can lead to
+major data loss and usually have an impact on the whole infrastructure.
+Protecting the backup system against these risks is much more complex and costly
+than the previous two data loss classes.
 
 
 Data backup in modern environments has many dimensions. To successfully operate
@@ -136,7 +166,7 @@ The interval depends on the requirements on the one hand, but also on the techni
 A common interval is a nightly backup, as this is often a good compromise between data availability and resource consumption.
 
 Every storage technology has its own properties which influence the overall system performance and cost.
-The simplest solution usually is storing the backups on disk.
+The simplest solution is usually storing the backups on disk.
 Depending on the requirements on which data loss event should be recoverable, also the storage technology
 decision is a different one.
 Depending on the requirements, also different technologies can be combined so fullfill the requirements.
