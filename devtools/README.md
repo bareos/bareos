@@ -1,243 +1,243 @@
 # Bareos Developer Tools
 
-This directory contains tools to work with the Bareos sourcecode. As a user, you will probably never need them.
+This directory contains tools for working with the Bareos source code. As a user, you will likely never need them.
 
 ## Tool Installation
 
 ### Pip Tools
-1. Navigate to `devtools/`
-2. Run `install-pip-tools.sh` (you probably need root privileges!)
-3. Yeah! You should now be able to run the pip-tools from every directory
-4. Test the correct installation with `bareos-check-sources` from a directory outside of `devtools/`
----
+1. Navigate to the `devtools/` directory.
+2. Run `install-pip-tools.sh`.
+3. Once installed, you should be able to run the pip-tools from any directory.
+4. Test the installation by running `bareos-check-sources` from outside the `devtools/` directory.
+
+If step 2 fails, ensure that the environment variable `$PATH` includes a directory that is writable by the current user.
 
 ### PHP CS Fixer (for WebUI)
-Make sure that
-- You have `composer` installed
+Ensure that:
+- `composer` is installed.
 
-Then simply run `php-cs-fixer/install-php-cs-fixer.sh`.
+Then, simply run `php-cs-fixer/install-php-cs-fixer.sh`.
 
 ## Tool Usage
 
 ### Check Sources
 
 #### Bareos Check Sources
-Make sure that
-- Pip-Tools are properly installed
-- You are inside a git repo
+Ensure that:
+- Pip-Tools are properly installed.
+- You are inside a Git repository.
 
-Run `bareos-check-sources` to check your uncommited files for the following requirements:
-* clang-format
-* cmake-format
-* python black
-* trailing spaces
-* trailing newlines
-* dos line-endings
-* missing copyright notices
-* copyright notices with wrong end-year
-* merge conflicts
-* executables have a shebang
-* python executables have a sane shebang
-* check C/C++ header guards
-* check/fix comments wasting space
+Run `bareos-check-sources` to check your uncommitted files for the following requirements:
+- `clang-format`
+- `cmake-format`
+- Python `black`
+- Trailing spaces
+- Trailing newlines
+- DOS line endings
+- Missing copyright notices
+- Incorrect copyright end years
+- Merge conflicts
+- Executables missing a shebang
+- Python executables missing a proper shebang
+- C/C++ header guards
+- Comments wasting space
 
-Pass the following options
-- `--since-merge` to check all commited and uncommited changes since last merged
-- `--diff` to  print the difference of your source and the requested formatting
-- `--modify` to automatically apply all requested changes to the checked files
+Options:
+- `--since-merge` – Check all committed and uncommitted changes since the last merge.
+- `--diff` – Print the difference between your source and the requested formatting.
+- `--modify` – Automatically apply the requested changes to the checked files.
 
-#### Format PHP source (for WebUI)
-Make sure that you installed php-cs-fixer as described above.
+#### Format PHP Source (for WebUI)
+Ensure that `php-cs-fixer` is installed as described above.
 
-Running `php-cs-fixer/run-php-cs-fixer.sh`
-- scans all php files in the webui folder for rule violations
-- if it finds a file that violates rules, apply the necessary fixes to the file and stop
+Run `php-cs-fixer/run-php-cs-fixer.sh` to:
+- Scan all PHP files in the WebUI folder for rule violations.
+- If a file violates the rules, apply necessary fixes and stop.
+
+> **NOTE**: Only one file is fixed at a time.
 
 ---
 
 ### PR Tool
-The PR Tool provides various workflows to simplify PR development, merging or backporting.
+The PR Tool provides various workflows to simplify PR development, merging, and backporting.
 
 #### Check
-Check which merge requirements of your PR are met.
+Verify which merge requirements for your PR are met.
 
-Make sure that
-- Pip-Tools are properly installed
-- You are inside a git repo
-- Your local branchs upstream branch is part of a Pull Request
+Ensure that:
+- Pip-Tools are properly installed.
+- You are inside a Git repository.
+- Your local branch's upstream branch is part of a pull request.
 
+Run:
 ```shell
-pr-tool check 
+pr-tool check
 ```
-checks the following requirements:
-- PR state is OPEN
-- Local and PR head commit match
-- PR is mergeable
-- PR is not a draft
-- All Changes requested during review have been addressed
-- All checkboxes in the PR description are ticked
-- Repository has no dirty files (uncommitted changes)
-- Commit format checks pass
-- Bareos Check Sources (`--since-merge`) suceeds
-
+This command checks the following:
+- PR state is OPEN.
+- Local and PR head commits match.
+- PR is mergeable.
+- PR is not a draft.
+- All requested review changes have been addressed.
+- All checkboxes in the PR description are ticked.
+- No uncommitted changes exist in the repository.
+- Commit format checks pass.
+- `bareos-check-sources --since-merge` succeeds.
 
 #### Add Changelog
-> [!NOTE]  
-> When merging, the changelog is automatically updated. So in most cases this command should never be used manually.
+> **NOTE**: When merging, the changelog is updated automatically. This command is rarely needed manually.
 
-Make sure that
-- You have no uncommitted changes
-- Your local branch is associated, and matches, with an upstream branch
-- Your upstream branch is associated with a pull-request
+Ensure that:
+- There are no uncommitted changes.
+- Your local branch is associated with, and matches, an upstream branch.
+- Your upstream branch is linked to a pull request.
 
-Running `pr-tool add-changelog` adds an entry of the current pull-request in the changelog
+Run:
+```shell
+pr-tool add-changelog
+```
+This command adds an entry for the current pull request in the changelog.
 
-#### Update-license
-Running `pr-tool update-license` updates the LICENSE.txt located at the root of the bareos repo.
+#### Update License
+Run:
+```shell
+pr-tool update-license
+```
+This updates the `LICENSE.txt` file at the root of the Bareos repository.
 
 #### Merge
-Make sure that
-- You have no uncommitted changes
-- Your local branch is associated, and matches, with an upstream branch
-- Your upstream branch is associated with a pull-request
+Ensure that:
+- There are no uncommitted changes.
+- Your local branch is associated with, and matches, an upstream branch.
+- Your upstream branch is linked to a pull request.
 
-Running `pr-tool merge` does the following:
-- check if the pull-request is mergeable
-> `--ignore-status-checks` will ignore the status checks (jenkins) 
-- adds an entry of the current pull-request in the changelog
-- pushes the changes
-- merges the pull-request
-> Use `--admin-override` to use `--admin` when merging the pull-request
+Run:
+```shell
+pr-tool merge
+```
+This command:
+- Checks if the pull request is mergeable.
+  > Use `--ignore-status-checks` to bypass status checks (e.g., Jenkins).
+- Adds an entry for the current pull request in the changelog.
+- Pushes the changes.
+- Merges the pull request.
+  > Use `--admin-override` to apply `--admin` privileges when merging.
 
-The last step is skipped if `--skip-merge` is set.
+Skipping the last step is possible with `--skip-merge`.
 
 #### Dump
-Make sure that
-- Your local branch is associated with an upstream branch
-- Your upstream branch is associated with a pull-request
+Ensure that:
+- Your local branch is associated with an upstream branch.
+- Your upstream branch is linked to a pull request.
 
-Running `pr-tool dump` outputs the fetched data of the pull-request associated with the local branch.
+Run:
+```shell
+pr-tool dump
+```
+This command outputs the fetched data of the pull request associated with the local branch.
 
 #### Backport
-Create a backport branch and PR based of an existing PR.
+Create a backport branch and PR based on an existing PR.
 
-Make sure that
-- Pip-Tools are properly installed
-- You are inside a git repo
-- Your local branchs upstream branch is part of a Pull Request
+Ensure that:
+- Pip-Tools are properly installed.
+- You are inside a Git repository.
+- Your local branch's upstream branch is part of a pull request.
 
-Doing a backport:
-1. Checkout your git to the branch you want to backport to (e.g. `bareos-24`)
-2. `pr-tool backport create <pr-number>` the PR you want to backport
-3. Check if everything is fine with the new created local backport branch
-4. `pr-tool backport publish` to create a PR with your newly created backport branch
-
-If Step 2 fails, make sure your environment variable `$PATH` contains a path which is writable by the user executing the script.
+Steps:
+1. Checkout the branch you want to backport to (e.g., `bareos-24`).
+2. Run:
+   ```shell
+   pr-tool backport create <pr-number>
+   ```
+   to backport the specified PR.
+3. Verify the new local backport branch.
+4. Run:
+   ```shell
+   pr-tool backport publish
+   ```
+   push the local branch and create a PR for the backport branch.
 
 ---
 
 ### Release
 
 #### Prepare Release
-This script does most of the hard work when releasing Bareos.
-It is used to prepare and tag the release-commit and a following base-commit for the ongoing work on the branch.
+This script handles the preparation and tagging of release commits and base commits for future work.
 
-Make sure that
-- You are on the branch you want to release
+Ensure that:
+- You are on the branch you want to release.
+  > For a major release, use the release branch, not `master`.
+- You have no uncommitted changes.
 
-> For a major release you should be on the release-branch, not the master
-branch. While you can move around branch pointers later, it is a lot
-easier to branch first.
-- You have no uncommited changes
+Run:
+```shell
+prepare-release.sh [<version>]
+```
+This performs the following:
+1. Creates a release commit.
+2. Cleans up after the release commit.
+3. Sets up a new base for future work (not for pre-releases).
+4. Creates tags for the release and WIP state (if applicable).
 
-Running `prepare-release.sh [<version>]` will do the following:
+Before pushing, ensure that you are on the correct branch and review the commits, tags, and branch pointers.
 
-1. Create release commit
-
-1a. create empty commit with version timestamp
-
-1b. generate and add cmake/BareosVersion.cmake
-
-1c. update CHANGELOG.md to reflect new release
-
-1d. amend commit from a. with changes from b. and c.
-
-2. Clean up after release commit
-
-2a. remove cmake/BareosVersion.cmake
-
-2b. commit the removed files
-
-3. Set up a new base for future work (not for pre-releases)
-
-3a. add a new "unreleased" section to CHANGELOG.md
-
-3b. commit updated CHANGELOG.md
-
-4. Set tags
-
-4a. add the release-tag pointing to the commit from 1d.
-
-4b. add WIP tag pointing to the commit form 3b. if applicable
-
-Please make sure you're on the right branch before continuing and review
-the commits, tags and branch pointers before you push!
-
-Verify the documentation external links by calling:
-* sphinx-build -M linkcheck docs/manuals/source out/ -j2
+Verify external documentation links using:
+```shell
+sphinx-build -M linkcheck docs/manuals/source out/ -j2
+```
 or (outside the docbuild container):
-* make docs-check-urls
-
-If you decide not to push, nothing will be released.
+```shell
+make docs-check-urls
+```
 
 #### New Changelog Release
-> [!NOTE]  
-> When preparing a release using ???, a new changelog relase is automatically added. So in most cases, this command should never be used manually.
+> **Note:** When preparing a release, a new changelog release is automatically added.
 
-Run the following commands:
-- `new-changelog-release.sh unreleased` to add a new changelog section called 'Unreleased'
-- `new-changelog-release.sh <version> <date>` to add a new changelog section based on the provided version and date.
+Run:
+- `new-changelog-release.sh unreleased` to add an "Unreleased" section.
+- `new-changelog-release.sh <version> <date>` to add a new changelog section with the provided version and date.
 
 #### Update Changelog Links
-> [!NOTE]  
-> When preparing a release using ???, the changelog links are automatically updated. So in most cases, this command should never be used manually.
+> **Note:** Changelog links are automatically updated when preparing a release.
 
-Simply run `update-changelog-links.sh` to update the links in the CHANGELOG.md
+Run:
+```shell
+update-changelog-links.sh
+```
+to update links in `CHANGELOG.md`.
 
 ---
 
 ### Build
 
 #### Build and Test with Sanitize
-Make sure that
-- You are at the root of the bareos repo
+Ensure that:
+- You are at the root of the Bareos repository.
 
-Run `build-and-test-with-sanitize.sh` to build and test with sanitize.
+Run:
+```shell
+build-and-test-with-sanitize.sh
+```
+to build and test with sanitization enabled.
 
 #### Build RPM
+_(No details provided in the original file)_
 
 #### Build Tarball
-Create a tarball of the entire git repo.
-Make sure that
-- You are inside a git repo
-- The git repo does not have uncommitted changes
-- You have `xz` installed (compresssion)
+Create a tarball of the entire Git repository.
 
-Running `dist-tarball.sh <directory>` creates a tarball of the entire git repo and stores it under `/temp` or the specified directory
-- `--fast` sets the compression-level to fast
-- `--best` sets the compression-level to best
+Ensure that:
+- You are inside a Git repository.
+- The repository has no uncommitted changes.
+- `xz` is installed (for compression).
 
-## `prepare-release.sh`
+Run:
+```shell
+dist-tarball.sh [<directory>]
+```
+This creates a tarball and stores it under `/temp` or the specified directory.
 
-
-## `update-changelog-links.sh`
-
-Script to find common link references in CHANGELOG.md (i.e. versions and bugs) and add the correct reference to the end of the file. Should be called after adding a link reference to CHANGELOG.md, but will not hurt if called too often.
-
-## `new-changelog-release.sh`
-
-Update the changelog when a release is made. Will either add a new "Unreleased" chapter in the changelog or replace an existing one with a provided version number and release-date.
-
-## tools in pip-tools
-
-There are several tools in the pip-tools directory that have frontends installed here. See the pip-tools directory for more details.
+Options:
+- `--fast` – Uses fast compression.
+- `--best` – Uses best compression.
