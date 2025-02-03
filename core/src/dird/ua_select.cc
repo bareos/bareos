@@ -1231,8 +1231,9 @@ int DoPrompt(UaContext* ua,
   // If running non-interactive, bail out
   if (ua->batch) {
     // First print the choices he wanted to make
-    ua->SendMsg(ua->prompt[0]);
-    ua->SendMsg(FormatPrompts(ua, window_width, min_lines_threshold).c_str());
+    ua->SendMsg("%s", ua->prompt[0]);
+    ua->SendMsg("%s",
+                FormatPrompts(ua, window_width, min_lines_threshold).c_str());
 
     // Now print error message
     ua->SendMsg(T_("Your request has multiple choices for \"%s\". Selection is "
@@ -1244,7 +1245,7 @@ int DoPrompt(UaContext* ua,
 
   if (ua->api) { user->signal(BNET_START_SELECT); }
 
-  ua->SendMsg(ua->prompt[0]);
+  ua->SendMsg("%s", ua->prompt[0]);
 
 
   if (ua->api) {
@@ -1252,7 +1253,8 @@ int DoPrompt(UaContext* ua,
       ua->SendMsg("%s", ua->prompt[i]);
     }
   } else {
-    ua->SendMsg(FormatPrompts(ua, window_width, min_lines_threshold).c_str());
+    ua->SendMsg("%s",
+                FormatPrompts(ua, window_width, min_lines_threshold).c_str());
   }
 
 

@@ -259,7 +259,8 @@ bool BareosAccurateFilelistLmdb::EndLoad()
 
   if (excess_files_ > 0) {
     Jmsg2(jcr_, M_FATAL, 0,
-          T_("The director send too many files. %llu were sent but only %llu "
+          T_("The director send too many files. %" PRIuz
+             " were sent but only %" PRIuz " "
              "were anticipated. The lmdb backend requested an abort.\n"),
           seen_bitmap_.size() + excess_files_, initial_capacity_);
     return false;
@@ -267,7 +268,8 @@ bool BareosAccurateFilelistLmdb::EndLoad()
 
   if (duplicate_files_ > 0) {
     Jmsg1(jcr_, M_ERROR, 0,
-          T_("%llu duplicate files were sent by the director and removed. This "
+          T_("%" PRIuz
+             " duplicate files were sent by the director and removed. This "
              "may indicate problems with the database.\n"),
           duplicate_files_);
   }
@@ -439,7 +441,8 @@ bool BareosAccurateFilelistLmdb::SendBaseFileList()
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
       payload = (accurate_payload*)data.mv_data;
       if (seen_bitmap_.at(payload->filenr)) {
-        Dmsg1(debuglevel, "base file fname=%s\n", key.mv_data);
+        Dmsg1(debuglevel, "base file fname=%s\n",
+              static_cast<const char*>(key.mv_data));
         DecodeStat(payload->lstat, &ff_pkt->statp, sizeof(struct stat),
                    &LinkFIc); /* decode catalog stat */
         ff_pkt->fname = (char*)key.mv_data;
@@ -508,7 +511,8 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
         continue;
       }
 
-      Dmsg1(debuglevel, "deleted fname=%s\n", key.mv_data);
+      Dmsg1(debuglevel, "deleted fname=%s\n",
+            static_cast<const char*>(key.mv_data));
       DecodeStat(payload.lstat, &statp, sizeof(struct stat),
                  &LinkFIc); /* decode catalog stat */
       ff_pkt->fname = (char*)key.mv_data;

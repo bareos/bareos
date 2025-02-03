@@ -785,7 +785,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           }
           break;
         case 'P': /* Process Id */
-          Bsnprintf(add, sizeof(add), "%lu", (uint32_t)getpid());
+          Bsnprintf(add, sizeof(add), "%llu", (long long unsigned)getpid());
           str = add;
           break;
         case 'b': /* Job Bytes */

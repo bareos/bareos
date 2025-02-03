@@ -76,8 +76,8 @@ int JobDeleteHandler(void* ctx, int, char** row)
   if (jobs_todelete->size() >= MAX_DEL_LIST_LEN) { return 1; }
 
   jobs_todelete->push_back(static_cast<JobId_t>(str_to_int64(row[0])));
-  Dmsg2(60, "JobDeleteHandler row=%d val=%d\n", jobs_todelete->size(),
-        jobs_todelete->back());
+  Dmsg2(60, "JobDeleteHandler row=%" PRIuz " val=%" PRIu32 "\n",
+        jobs_todelete->size(), jobs_todelete->back());
   return 0;
 }
 
@@ -458,7 +458,8 @@ static bool prune_set_filter(UaContext* ua,
 
   now = (utime_t)time(NULL);
   edit_int64(now - period, ed1);
-  Dmsg3(150, "now=%lld period=%lld JobTDate=%s\n", now, period, ed1);
+  Dmsg3(150, "now=%" PRId64 " period=%" PRId64 " JobTDate=%s\n", now, period,
+        ed1);
   Mmsg(tmp, " AND JobTDate < %s ", ed1);
   PmStrcat(*add_where, tmp.c_str());
 
@@ -767,7 +768,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   PurgeJobListFromCatalog(ua, prune_list);
 
   if (prune_list.size() > 0) {
-    ua->InfoMsg(T_("Pruned %d %s for client %s from catalog.\n"),
+    ua->InfoMsg(T_("Pruned %" PRIuz " %s for client %s from catalog.\n"),
                 prune_list.size(),
                 prune_list.size() == 1 ? T_("Job") : T_("Jobs"),
                 client->resource_name_);
@@ -874,10 +875,9 @@ int GetPruneListForVolume(UaContext* ua,
 
   int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
   if (NumJobsToBePruned > 0) {
-    ua->SendMsg(
-        T_("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs "
-           "that will be pruned\n"),
-        mr->VolumeName, VolRetention, NumJobsToBePruned);
+    ua->SendMsg(T_("Volume \"%s\" has Volume Retention of %" PRId64
+                   " sec. and has %d jobs that will be pruned\n"),
+                mr->VolumeName, VolRetention, NumJobsToBePruned);
   }
   return NumJobsToBePruned;
 }
