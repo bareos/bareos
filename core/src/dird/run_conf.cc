@@ -438,9 +438,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           scan_err0(lc, T_("Time must be preceded by keyword AT."));
           return;
         }
-        if (!have_hour) {
-          ClearBitRange(0, 23, res_run.date_time_mask.hour);
-        }
+        if (!have_hour) { ClearBitRange(0, 23, res_run.date_time_mask.hour); }
         //       Dmsg1(000, "s_time=%s\n", lc->str);
         p = strchr(lc->str, ':');
         if (!p) {

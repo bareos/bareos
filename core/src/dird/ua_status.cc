@@ -896,51 +896,41 @@ static void ListScheduledJobs(UaContext* ua)
   // Loop through all jobs
   JobResource* job = nullptr;
   std::vector<sched_pkt> sched;
-  uint32_t num_jobs = 0;
   time_t now = time(nullptr);
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
         || (job->client && !job->client->enabled)) {
       continue;
     }
-    if (!job->schedule) {
-      continue;
-    }
+    if (!job->schedule) { continue; }
     for (RunResource* run = job->schedule->run; run; run = run->next) {
       std::optional<time_t> next_scheduled = run->NextScheduleTime(now, days);
-      if (!next_scheduled.has_value()) {
-        continue;
-      }
+      if (!next_scheduled.has_value()) { continue; }
 
-      if (num_jobs == 0) {
-        PrtRunhdr(ua);
-      }
+      if (sched.empty()) { PrtRunhdr(ua); }
 
       UnifiedStorageResource storage_res;
       GetJobStorage(&storage_res, job, run);
-      sched.push_back({
-        .job = job,
-        .level = int(run->level ? run->level : job->JobLevel),
-        .priority = (run->Priority ? run->Priority : job->Priority),
-        .runtime = next_scheduled.value(),
-        .pool = run->pool,
-        .store = storage_res.store
-      });
+      sched.push_back(
+          {.job = job,
+           .level = int(run->level ? run->level : job->JobLevel),
+           .priority = (run->Priority ? run->Priority : job->Priority),
+           .runtime = next_scheduled.value(),
+           .pool = run->pool,
+           .store = storage_res.store});
       if (sched.back().store) {
         Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
-              sched.back().store->resource_name_, sched.back().store->media_type);
+              sched.back().store->resource_name_,
+              sched.back().store->media_type);
       } else {
         Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
       }
-      num_jobs++;
     }
   } /* end for loop over resources */
 
   std::sort(sched.begin(), sched.end(), CompareByRuntimePriority);
-  for (sched_pkt& sp : sched) {
-    PrtRuntime(ua, &sp);
-  }
-  if (num_jobs == 0 && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
+  for (sched_pkt& sp : sched) { PrtRuntime(ua, &sp); }
+  if (sched.empty() && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
 }
