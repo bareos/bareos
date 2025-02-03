@@ -100,6 +100,57 @@ Doing a backport:
 
 #### Prepare Release
 
+This script does most of the hard work when releasing Bareos.
+It is used to prepare and tag the release-commit and a following base-commit for the ongoing work on the branch.
+
+Make sure that
+- You are on the branch you want to release
+
+> For a major release you should be on the release-branch, not the master
+branch. While you can move around branch pointers later, it is a lot
+easier to branch first.
+- You have no uncommited changes
+
+Running `prepare-release.sh [<version>]` will do the following:
+
+1. Create release commit
+
+1a. create empty commit with version timestamp
+
+1b. generate and add cmake/BareosVersion.cmake
+
+1c. update CHANGELOG.md to reflect new release
+
+1d. amend commit from a. with changes from b. and c.
+
+2. Clean up after release commit
+
+2a. remove cmake/BareosVersion.cmake
+
+2b. commit the removed files
+
+3. Set up a new base for future work (not for pre-releases)
+
+3a. add a new "unreleased" section to CHANGELOG.md
+
+3b. commit updated CHANGELOG.md
+
+4. Set tags
+
+4a. add the release-tag pointing to the commit from 1d.
+
+4b. add WIP tag pointing to the commit form 3b. if applicable
+
+Please make sure you're on the right branch before continuing and review
+the commits, tags and branch pointers before you push!
+
+Verify the documentation external links by calling:
+* sphinx-build -M linkcheck docs/manuals/source out/ -j2
+or (outside the docbuild container):
+* make docs-check-urls
+
+If you decide not to push, nothing will be released.
+
 #### Update Changelog
 
 ---
@@ -114,7 +165,6 @@ Doing a backport:
 
 ## `prepare-release.sh`
 
-This script does most of the hard work when releasing Bareos. It is used to prepare and tag the release-commit and a following base-commit for the ongoing work on the branch.
 
 ## `update-changelog-links.sh`
 
