@@ -18,32 +18,36 @@ created by the same device, so have the same `MediaType`and same
 
 Install python3-bareos if not yet on your system.
 
-Place the script in an appropriate location
-`/usr/lib/bareos/scripts/` 
+`chech_chunk.py` can be installed system wide by installing package
+`bareos-contrib-tools`.
 
-Prepare a dedicated console with pair user/password
+Otherwise the script in an appropriate location like
+`/usr/lib/bareos/scripts/` or `/usr/local/bin/`
+
+Prepare a dedicated, named console to use with the script.
+if you don't have tls psk python support, you have to set
+`TLS Enable = No`
 
 ```conf 
 Console {
-  Name = "admin-notls"
+  Name = "chunk_check"
   Password = "secret"
-  Description = "Restricted console used by chunk_check.py script"
-  Profile = "operator"
-  TLS Enable = No
+  Description = "Restricted console used by chunk_check.py tool"
+  Profile = "chunk_check"
 }
 ```
 
-be sure to have .api available in operateor profile
+Make sure to have the `.api` and `list volumes` command allowed in
+the profile, by either allowing them explicitly, or checking that
+they are not.
 
 ```
 Profile {
-   Name = operator
-   Description = "Profile allowing normal Bareos operations."
+   Name = "chunk_check"
+   Description = "Restricted profile to use with chunk_check.py tool"
 
-   Command ACL = !.bvfs_clear_cache, !.exit, !.sql
-   Command ACL = !configure, !create, !delete, !purge, !prune, !sqlquery, !umount, !unmount
-   Command ACL = .api
-   Command ACL = *all*
+   Command ACL = ".api"
+   Command ACL = "list"
 
    Catalog ACL = *all*
    Client ACL = *all*
@@ -69,8 +73,8 @@ python3 ./chunk_check.py \
     --dir_port=9101 \
     --console_user="admin-notls" \
     --console_pw="secret" \
-    --s3cmd=/usr/lib/bareos/scripts/s3cmd-wrapper.sh
-    --chunk_size=131072000 \
+    --s3cmd=/usr/lib/bareos/scripts/s3cmd-wrapper.sh \
+    --chunk_size=262144000 \
     --pool="Full" \
 
 UserWarning: Connection encryption via TLS-PSK is not available
@@ -86,5 +90,4 @@ UserWarning: Connection encryption via TLS-PSK is not available
   OK
 
 ```
-
 
