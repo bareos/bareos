@@ -12,6 +12,10 @@ This directory contains tools to work with the Bareos sourcecode. As a user, you
 ---
 
 ### PHP CS Fixer (for WebUI)
+Make sure that
+- You have `composer` installed
+
+Then simply run `php-cs-fixer/install-php-cs-fixer.sh`.
 
 ## Tool Usage
 
@@ -43,6 +47,11 @@ Pass the following options
 #### Bareos Check Sources
 
 #### Format PHP source (for WebUI)
+Make sure that you installed php-cs-fixer as described above.
+
+Running `php-cs-fixer/run-php-cs-fixer.sh`
+- scans all php files in the webui folder for rule violations
+- if it finds a file that violates rules, apply the necessary fixes to the file and stop
 
 ---
 
@@ -91,15 +100,16 @@ Make sure that
 Doing a backport:
 1. Checkout your git to the branch you want to backport to (e.g. `bareos-24`)
 2. `pr-tool backport create <pr-number>` the PR you want to backport
-3. Check if everything is fine with the new created backport branch
+3. Check if everything is fine with the new created local backport branch
 4. `pr-tool backport publish` to create a PR with your newly created backport branch
+
+If Step 2 fails, make sure your environment variable `$PATH` contains a path which is writable by the user executing the script.
 
 ---
 
 ### Release
 
 #### Prepare Release
-
 This script does most of the hard work when releasing Bareos.
 It is used to prepare and tag the release-commit and a following base-commit for the ongoing work on the branch.
 
@@ -162,6 +172,15 @@ If you decide not to push, nothing will be released.
 #### Build RPM
 
 #### Build Tarball
+Create a tarball of the entire git repo.
+Make sure that
+- You are inside a git repo
+- The git repo does not have uncommitted changes
+- You have `xz` installed (compresssion)
+
+Running `dist-tarball.sh <directory>` creates a tarball of the entire git repo and stores it under `/temp` or the specified directory
+- `--fast` sets the compression-level to fast
+- `--best` sets the compression-level to best
 
 ## `prepare-release.sh`
 
