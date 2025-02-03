@@ -222,7 +222,20 @@ build-and-test-with-sanitize.sh
 to build and test with sanitization enabled.
 
 #### Build RPM
-_(No details provided in the original file)_
+Build a RPM package of the entire Git repository.
+
+Ensure that:
+- The required RPM tools are properly installed.
+
+Run:
+```shell
+build-rpm.sh
+```
+
+Options:
+- `--ulc` – Package to `bareos-universal-client` instead of `bareos`.
+- `--tarball` – Create a tarball.
+- `--fast-tarball` – Create a tarball with `--fast` option.
 
 #### Build Tarball
 Create a tarball of the entire Git repository.
