@@ -1413,23 +1413,25 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
   send.ArrayEnd(item.name, inherited, "");
 }
 
-std::optional<time_t> RunResource::NextScheduleTime(time_t start, uint32_t ndays) const {
-    for (uint32_t d = 0; d <= ndays; ++d) {
-        if (date_time_mask.TriggersOnDay(start)) {
-          struct tm tm = {};
-          Blocaltime(&start, &tm);
-          for (int h = (d == 0 ? tm.tm_hour : 0); h < 24; ++h) {
-              if (BitIsSet(h, date_time_mask.hour)) {
-                tm.tm_hour = h;
-                tm.tm_min = minute;
-                tm.tm_sec = 0;
-                return mktime(&tm);
-              }
-          }
+std::optional<time_t> RunResource::NextScheduleTime(time_t start,
+                                                    uint32_t ndays) const
+{
+  for (uint32_t d = 0; d <= ndays; ++d) {
+    if (date_time_mask.TriggersOnDay(start)) {
+      struct tm tm = {};
+      Blocaltime(&start, &tm);
+      for (int h = (d == 0 ? tm.tm_hour : 0); h < 24; ++h) {
+        if (BitIsSet(h, date_time_mask.hour)) {
+          tm.tm_hour = h;
+          tm.tm_min = minute;
+          tm.tm_sec = 0;
+          return mktime(&tm);
         }
-        start += 24 * 60 * 60;
+      }
     }
-    return std::nullopt;
+    start += 24 * 60 * 60;
+  }
+  return std::nullopt;
 }
 
 static std::string PrintConfigRun(RunResource* run)

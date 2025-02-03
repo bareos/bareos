@@ -27,20 +27,20 @@
 namespace directordaemon {
 
 struct DateTime {
-   DateTime(time_t time);
+  DateTime(time_t time);
 
-   bool WeekOfMonth() const;
-   bool OnLast7DaysOfMonth() const;
-   void PrintDebugMessage(int debug_level) const;
+  bool WeekOfMonth() const;
+  bool OnLast7DaysOfMonth() const;
+  void PrintDebugMessage(int debug_level) const;
 
-   int year{0};
-   int month{0};
-   int week_of_year{0};
-   int day_of_year{0};
-   int day_of_month{0};
-   int day_of_week{0};
-   int hour{0};
-   time_t time;
+  int year{0};
+  int month{0};
+  int week_of_year{0};
+  int day_of_year{0};
+  int day_of_month{0};
+  int day_of_week{0};
+  int hour{0};
+  time_t time;
 };
 
 }  // namespace directordaemon

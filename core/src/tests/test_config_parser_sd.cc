@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,9 +71,9 @@ TEST(ConfigParser_SD, CFG_TYPE_STR_VECTOR_OF_DIRS)
 
   OSDependentInit();
 
-#if HAVE_WIN32
+#  if HAVE_WIN32
   WSA_Init();
-#endif
+#  endif
 
   InitMsg(nullptr, nullptr);
 
