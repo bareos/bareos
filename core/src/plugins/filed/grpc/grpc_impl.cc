@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1504,6 +1504,7 @@ class PluginClient {
     req.set_soft_link_to(pkt->olname);
     req.set_replace(*replace_type);
     req.set_delta_seq(pkt->delta_seq);
+    req.set_where(pkt->where);
 
     bp::createFileResponse resp;
     grpc::ClientContext ctx;

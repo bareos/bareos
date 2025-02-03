@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1022,6 +1022,7 @@ auto PluginService::createFile(ServerContext*,
   memcpy(&rp.statp, request->stats().c_str(), sizeof(rp.statp));
   rp.ofname = request->output_name().c_str();
   rp.olname = request->soft_link_to().c_str();
+  rp.where = request->where().c_str();
   switch (request->replace()) {
     case bareos::common::ReplaceIfNewer: {
       rp.replace = REPLACE_IFNEWER;
