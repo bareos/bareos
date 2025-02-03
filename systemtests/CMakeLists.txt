@@ -133,7 +133,7 @@ endif()
 find_program(
   PG_CTL
   NAMES pg_ctl pg_ctl.exe
-  PATHS /usr/lib/postgresql/*/bin /usr/bin /bin REQUIRED
+  PATHS /usr/lib/postgresql/*/bin /usr/bin /bin /usr/pgsql-16/bin /usr/pgsql-15/bin /usr/pgsql-14/bin /usr/pgsql-13/bin /usr/pgsql-12/bin REQUIRED
 )
 
 get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
