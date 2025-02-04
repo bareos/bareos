@@ -12,11 +12,14 @@ This directory contains tools for working with the Bareos source code. As a user
 
 If step 2 fails, ensure that the environment variable `$PATH` includes a directory that is writable by the current user.
 
+---
+
 ### PHP CS Fixer (for WebUI)
 Ensure that:
 - `composer` is installed.
 
-Then, simply run `php-cs-fixer/install-php-cs-fixer.sh`.
+1. Navigate to the `devtools/` directory.
+2. Run `php-cs-fixer/install-php-cs-fixer.sh`.
 
 ## Tool Usage
 
@@ -43,9 +46,11 @@ Run `bareos-check-sources` to check your uncommitted files for the following req
 - Comments wasting space
 
 Options:
-- `--since-merge` – Check all committed and uncommitted changes since the last merge.
-- `--diff` – Print the difference between your source and the requested formatting.
+- `--since-merge` – Additionally check all files that were part of a commit since the last merge.
+- `--diff` – Print the difference between your source and the requested changes.
 - `--modify` – Automatically apply the requested changes to the checked files.
+
+---
 
 #### Format PHP Source (for WebUI)
 Ensure that `php-cs-fixer` is installed as described above.
@@ -66,7 +71,6 @@ Verify which merge requirements for your PR are met.
 
 Ensure that:
 - Pip-Tools are properly installed.
-- You are inside a Git repository.
 - Your local branch's upstream branch is part of a pull request.
 
 Run:
@@ -89,14 +93,15 @@ This command checks the following:
 
 Ensure that:
 - There are no uncommitted changes.
-- Your local branch is associated with, and matches, an upstream branch.
-- Your upstream branch is linked to a pull request.
+- Your local branch's upstream branch is part of a pull request.
 
 Run:
 ```shell
 pr-tool add-changelog
 ```
 This command adds an entry for the current pull request in the changelog.
+
+---
 
 #### Update License
 Run:
@@ -105,11 +110,12 @@ pr-tool update-license
 ```
 This updates the `LICENSE.txt` file at the root of the Bareos repository.
 
+---
+
 #### Merge
 Ensure that:
 - There are no uncommitted changes.
-- Your local branch is associated with, and matches, an upstream branch.
-- Your upstream branch is linked to a pull request.
+- Your local branch's upstream branch is part of a pull request.
 
 Run:
 ```shell
@@ -117,7 +123,7 @@ pr-tool merge
 ```
 This command:
 - Checks if the pull request is mergeable.
-  > Use `--ignore-status-checks` to bypass status checks (e.g., Jenkins).
+  > Use `--ignore-status-checks` to bypass status checks (e.g. Jenkins).
 - Adds an entry for the current pull request in the changelog.
 - Pushes the changes.
 - Merges the pull request.
@@ -127,8 +133,7 @@ Skipping the last step is possible with `--skip-merge`.
 
 #### Dump
 Ensure that:
-- Your local branch is associated with an upstream branch.
-- Your upstream branch is linked to a pull request.
+- Your local branch's upstream branch is part of a pull request.
 
 Run:
 ```shell
@@ -136,12 +141,13 @@ pr-tool dump
 ```
 This command outputs the fetched data of the pull request associated with the local branch.
 
+---
+
 #### Backport
 Create a backport branch and PR based on an existing PR.
 
 Ensure that:
 - Pip-Tools are properly installed.
-- You are inside a Git repository.
 - Your local branch's upstream branch is part of a pull request.
 
 Steps:
@@ -236,6 +242,8 @@ Options:
 - `--ulc` – Package to `bareos-universal-client` instead of `bareos`.
 - `--tarball` – Create a tarball.
 - `--fast-tarball` – Create a tarball with `--fast` option.
+
+---
 
 #### Build Tarball
 Create a tarball of the entire Git repository.
