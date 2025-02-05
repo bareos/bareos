@@ -1422,7 +1422,7 @@ static int GetWindowsFileInfo(const char* filename,
           slt = GetPoolMemory(PM_NAME);
           slt = CheckPoolMemorySize(slt, MAX_PATH * sizeof(wchar_t));
 
-          if (GetSymlinkData(filename, slt)) {
+          if (GetSymlinkData(filename, slt) >= 0) {
             Dmsg2(debuglevel, "Symlinked Directory %s points to: %s\n",
                   filename, slt);
           }
@@ -1446,7 +1446,7 @@ static int GetWindowsFileInfo(const char* filename,
           Dmsg0(debuglevel, "We have a symlinked file!\n");
           sb->st_mode |= S_IFLNK;
 
-          if (GetSymlinkData(filename, slt)) {
+          if (GetSymlinkData(filename, slt) >= 0) {
             Dmsg2(debuglevel, "Symlinked File %s points to: %s\n", filename,
                   slt);
           }
@@ -1856,7 +1856,7 @@ ssize_t readlink(const char* path, char* buf, size_t bufsiz)
   POOLMEM* slt = GetPoolMemory(PM_NAME);
 
   Dmsg1(debuglevel, "readlink called for path %s\n", path);
-  GetSymlinkData(path, slt);
+  if (GetSymlinkData(path, slt) < 0) { return -1; }
 
   strncpy(buf, slt, bufsiz - 1);
   buf[bufsiz] = '\0';
