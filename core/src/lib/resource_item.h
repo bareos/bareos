@@ -24,6 +24,9 @@
 #ifndef BAREOS_LIB_RESOURCE_ITEM_H_
 #define BAREOS_LIB_RESOURCE_ITEM_H_
 
+#include <vector>
+#include <string>
+
 struct s_password;
 template <typename T> class alist;
 template <typename T> class dlist;
@@ -49,6 +52,8 @@ struct ResourceItem {
    * Full sentence.
    * Every new directive should have a description. */
   const char* description;
+
+  std::vector<std::string> aliases = {};
 
   void SetPresent() { (*allocated_resource)->SetMemberPresent(name); }
 
