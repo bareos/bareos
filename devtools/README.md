@@ -47,7 +47,7 @@ Run `bareos-check-sources` to check your uncommitted files for the following req
 
 Options:
 - `--since-merge` – Additionally check all files that were part of a commit since the last merge.
-- `--diff` – Print the difference between your source and the requested changes.
+- `--diff` – Output the difference between your source and the requested changes.
 - `--modify` – Automatically apply the requested changes to the checked files.
 
 ---
@@ -56,7 +56,7 @@ Options:
 Ensure that `php-cs-fixer` is installed as described above.
 
 Run `php-cs-fixer/run-php-cs-fixer.sh` to:
-- Scan all PHP files in the WebUI folder for rule violations.
+- Scan all PHP files in the WebUI folder for rule violations according to [PSR-12](https://www.php-fig.org/psr/psr-12/).
 - If a file violates the rules, apply necessary fixes and stop.
 
 > **NOTE**: Only one file is fixed at a time.
@@ -123,7 +123,7 @@ pr-tool merge
 ```
 This command:
 - Checks if the pull request is mergeable.
-  > Use `--ignore-status-checks` to bypass status checks (e.g. Jenkins).
+  > Use `--ignore-status-checks` to bypass status checks (i.e. Jenkins).
 - Adds an entry for the current pull request in the changelog.
 - Pushes the changes.
 - Merges the pull request.
@@ -132,6 +132,8 @@ This command:
 Skipping the last step is possible with `--skip-merge`.
 
 #### Dump
+This command outputs the fetched data of the pull request associated with the local branch.
+
 Ensure that:
 - Your local branch's upstream branch is part of a pull request.
 
@@ -139,7 +141,6 @@ Run:
 ```shell
 pr-tool dump
 ```
-This command outputs the fetched data of the pull request associated with the local branch.
 
 ---
 
