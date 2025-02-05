@@ -1082,41 +1082,45 @@ static inline ssize_t GetSymlinkData(const char* filename,
   if (h != INVALID_HANDLE_VALUE) {
     bool ok;
     POOLMEM* buf;
-    int buf_length;
-    REPARSE_DATA_BUFFER* rdb;
     DWORD bytes;
 
-    // Create a buffer big enough to hold all data.
-    buf_length = sizeof(REPARSE_DATA_BUFFER) + MAX_PATH * sizeof(wchar_t);
+    // we want to write a single NUL after the result of GET_REPARSE_POINT;
+    // The result has size at most MAXIMUM_REPARSE_DATA_BUFFER_SIZE, so
+    // buf_length is always enough
+    const DWORD buf_length = MAXIMUM_REPARSE_DATA_BUFFER_SIZE + sizeof(wchar_t);
+
     buf = GetPoolMemory(PM_NAME);
     buf = CheckPoolMemorySize(buf, buf_length);
-    rdb = (REPARSE_DATA_BUFFER*)buf;
 
     memset(buf, 0, buf_length);
+    REPARSE_DATA_BUFFER* rdb = reinterpret_cast<REPARSE_DATA_BUFFER*>(buf);
     rdb->ReparseTag = IO_REPARSE_TAG_SYMLINK;
     ok = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL,
                          0,                              /* in buffer, bytes */
                          (LPVOID)buf, (DWORD)buf_length, /* out buffer, btyes */
                          (LPDWORD)&bytes, (LPOVERLAPPED)0);
     if (ok) {
-      POOLMEM* path;
-      int len, offset, ofs;
+      int len = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength
+                / sizeof(wchar_t);
+      int offset = rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset
+                   / sizeof(wchar_t);
 
-      len = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength
-            / sizeof(wchar_t);
-      offset = rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset
-               / sizeof(wchar_t);
+      // make sure our buffer is big enough
+      ASSERT((uintptr_t)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset
+                         + len + 1)
+                 - (uintptr_t)rdb
+             <= buf_length);
 
       // null-Terminate pathbuffer
       *(wchar_t*)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset + len)
           = L'\0';
 
       // convert to UTF-8
-      path = GetPoolMemory(PM_FNAME);
+      POOLMEM* path = GetPoolMemory(PM_FNAME);
       nrconverted = wchar_2_UTF8(
           path, (wchar_t*)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset));
 
-      ofs = 0;
+      int ofs = 0;
       if (bstrncasecmp(path, "\\??\\", 4)) { /* skip \\??\\ if exists */
         ofs = 4;
         Dmsg0(debuglevel, "\\??\\ was in filename, skipping\n");
