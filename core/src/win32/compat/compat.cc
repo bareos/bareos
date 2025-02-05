@@ -853,9 +853,11 @@ std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8)
 
   /* Helper to convert from utf-8 to utf-16 and to complete a path for 32K path
    * syntax */
+  Dmsg1(debuglevel, "FromUtf8\n");
   std::wstring utf16 = FromUtf8(utf8);
 
   {
+    Dmsg1(debuglevel, "convert\n");
     // Add \\?\ to support 32K long filepaths
     std::wstring converted = make_wchar_win32_path(utf16);
     // this is done for debugability;
@@ -865,7 +867,9 @@ std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8)
   }
 
   // Populate cache
+  Dmsg1(debuglevel, "update cache ...\n");
   if (tcc) {
+    Dmsg1(debuglevel, "... done\n");
     tcc->utf8.assign(utf8);
     tcc->utf16.assign(utf16);
   }
@@ -1174,8 +1178,13 @@ static inline ssize_t GetSymlinkData(const char* filename,
   ssize_t nrconverted = -1;
   HANDLE h = INVALID_HANDLE_VALUE;
 
+  Dmsg1(debuglevel, "Symlink data from %s\n", filename);
+
   if (p_GetFileAttributesW && p_CreateFileW) {
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
+
+    Dmsg1(debuglevel, "Trying to get attributes from (W) %s\n",
+          FromUtf16(utf16).c_str());
 
     h = CreateFileW(
         utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
@@ -1188,6 +1197,8 @@ static inline ssize_t GetSymlinkData(const char* filename,
   } else if (p_GetFileAttributesA) {
     PoolMem win32_fname(PM_FNAME);
     unix_name_to_win32(win32_fname.addr(), filename);
+    Dmsg1(debuglevel, "Trying to get attributes from (A) %s\n",
+          win32_fname.c_str());
     h = CreateFileA(
         win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
@@ -1198,6 +1209,8 @@ static inline ssize_t GetSymlinkData(const char* filename,
       return -1;
     }
   }
+  Dmsg1(debuglevel, "Opened file handle=%lld\n",
+        reinterpret_cast<long long>(h));
   if (h != INVALID_HANDLE_VALUE) {
     bool ok;
     POOLMEM* buf;
@@ -1218,6 +1231,10 @@ static inline ssize_t GetSymlinkData(const char* filename,
                          0,                              /* in buffer, bytes */
                          (LPVOID)buf, (DWORD)buf_length, /* out buffer, btyes */
                          (LPDWORD)&bytes, (LPOVERLAPPED)0);
+
+    Dmsg1(debuglevel, "Received %d bytes (op was %s)\n", bytes,
+          ok ? "ok" : "not ok");
+
     if (ok) {
       int len = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength
                 / sizeof(wchar_t);
@@ -1234,10 +1251,16 @@ static inline ssize_t GetSymlinkData(const char* filename,
       *(wchar_t*)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset + len)
           = L'\0';
 
+      static_assert(sizeof(*rdb->SymbolicLinkReparseBuffer.PathBuffer)
+                    == sizeof(wchar_t));
+
       // convert to UTF-8
       POOLMEM* path = GetPoolMemory(PM_FNAME);
       nrconverted = wchar_2_UTF8(
           path, (wchar_t*)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset));
+
+      Dmsg1(debuglevel, "Substitute Name = %s (converted = %d)\n", path,
+            nrconverted);
 
       int ofs = 0;
       if (bstrncasecmp(path, "\\??\\", 4)) { /* skip \\??\\ if exists */
@@ -1263,6 +1286,7 @@ static inline ssize_t GetSymlinkData(const char* filename,
     CloseHandle(h);
     FreePoolMemory(buf);
   } else {
+    Dmsg1(debuglevel, "Could not open link\n");
     return -1;
   }
 
@@ -1462,6 +1486,8 @@ static int GetWindowsFileInfo(const char* filename,
           if (GetSymlinkData(filename, slt) >= 0) {
             Dmsg2(debuglevel, "Symlinked Directory %s points to: %s\n",
                   filename, slt);
+          } else {
+            Dmsg1(debuglevel, "Coud not read target of symlink %s\n", filename);
           }
           FreePoolMemory(slt);
           break;
@@ -1486,6 +1512,8 @@ static int GetWindowsFileInfo(const char* filename,
           if (GetSymlinkData(filename, slt) >= 0) {
             Dmsg2(debuglevel, "Symlinked File %s points to: %s\n", filename,
                   slt);
+          } else {
+            Dmsg1(debuglevel, "Coud not read target of symlink %s\n", filename);
           }
           FreePoolMemory(slt);
           break;
@@ -1699,8 +1727,10 @@ int stat(const char* filename, struct stat* sb)
   memset(sb, 0, sizeof(*sb));
 
   PoolMem win32_fname(PM_FNAME);
+  Dmsg1(debuglevel, "stat ascii conversion\n");
   unix_name_to_win32(win32_fname.addr(), filename);
 
+  Dmsg1(debuglevel, "stat unicode conversion\n");
   std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
   if (p_GetFileAttributesExW) {
