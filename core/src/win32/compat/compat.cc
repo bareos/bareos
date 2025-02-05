@@ -1139,14 +1139,12 @@ static inline ssize_t GetSymlinkData(const char* filename,
   ssize_t nrconverted = -1;
   HANDLE h = INVALID_HANDLE_VALUE;
 
-  if (p_GetFileAttributesW) {
+  if (p_GetFileAttributesW && p_CreateFileW) {
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
-    if (p_CreateFileW) {
-      h = CreateFileW(
-          utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
-    }
+    h = CreateFileW(
+        utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
       Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", utf16.c_str());
