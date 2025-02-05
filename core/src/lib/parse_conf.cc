@@ -52,6 +52,7 @@
  */
 
 #include <algorithm>
+#include <string_view>
 
 #include "include/bareos.h"
 #include "include/jcr.h"
@@ -319,17 +320,19 @@ ResourceTable* ConfigurationParser::GetResourceTable(
 int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
                                               const char* item)
 {
-  int result = -1;
-  int i;
-
-  for (i = 0; resource_items_[i].name; i++) {
+  for (int i = 0; resource_items_[i].name; i++) {
     if (Bstrcasecmp(resource_items_[i].name, item)) {
-      result = i;
-      break;
+      return i;
+    }
+    else {
+      for (const auto& alias : resource_items_[i].aliases) {
+        if (Bstrcasecmp(alias.c_str(), item)) {
+          return i;
+        }
+      }
     }
   }
-
-  return result;
+  return -1;
 }
 
 ResourceItem* ConfigurationParser::GetResourceItem(
