@@ -1,0 +1,12 @@
+FileSet {
+  Name = "bareos-mariadb-dump"
+  Description = "Test the Plugin functionality."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "@python_module_name@@python_module_suffix@"
+      ":module_name=bareos-fd-mariadb-dump"
+      ":defaultsfile=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/my.cnf"
+  }
+}

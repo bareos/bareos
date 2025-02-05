@@ -1,0 +1,112 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This systemtest tests the python-fd contrib plugin
+# bareos_mariadb_dump
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=backup-bareos-fd
+test_db_name="${db_name}_test"
+RESTORE_DIR="$tmp/bareos-restores/@mariadbbackup@/"
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+skip_if_root
+
+#shellcheck source=../scripts/mysql.sh
+. "${rscripts}"/mariadb.sh
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+start_test
+
+mariadbd_init
+mariadbd_server_start
+
+echo "create database ${test_db_name}" | ${MARIADB_CLIENT}
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | ${MARIADB_CLIENT} "${test_db_name}"
+echo "insert into test (data) VALUES ('test entry 1') " | ${MARIADB_CLIENT} "${test_db_name}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log1.out
+run job=$JobName yes
+wait
+
+status dir
+llist jobs job=$JobName
+time
+END_OF_DATA
+
+run_bareos "$@"
+check_log $tmp/log1.out
+
+# insert data and run incremental
+echo "insert into test (data) VALUES ('test entry 2') " | ${MARIADB_CLIENT} "${test_db_name}"
+
+cat <<END_OF_DATA2 >"$tmp/bconcmds"
+@$out $tmp/log1i.out
+@# run incremental again without any new data
+run job=$JobName yes
+wait
+status dir
+<<<<<<<< HEAD:systemtests/tests/py3plug-fd-contrib-mariadb-dump/testrunner
+========
+wait
+messages
+time
+llist jobs job=RestoreFile
+>>>>>>>> 0cb8c6a71 (contrib: rename to mariadb-dump/bareos-fd-mariadb-dump.py):systemtests/tests/py3plug-fd-contrib-mariadb-dump/testrunner-default
+END_OF_DATA2
+
+run_bareos "$@"
+check_log $tmp/log1i.out
+
+cat <<END_OF_DATA3 >"$tmp/bconcmds"
+@$out $tmp/log2.out
+restore restorejob=RestoreFile client=bareos-fd fileset=bareos_mariadb_dump yes select all done
+wait
+status dir
+llist jobs job=RestoreFile
+END_OF_DATA3
+
+run_bareos "$@"
+check_log $tmp/log2.out
+
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+# Check if some files are restored
+ls -lR "${RESTORE_DIR}"
+if [ -z "$(ls -A "${RESTORE_DIR}")" ]; then
+       echo "No restore data found"
+       estat=1
+fi
+
+# delete database
+${MARIADB_CLIENT} <<< "DROP DATABASE ${test_db_name};"
+
+if ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/dev/null; then
+    echo "database ${test_db_name} should be deleted and command should fail."
+    estat=2
+fi
+
+# restore db
+${MARIADB_CLIENT} < "${RESTORE_DIR}/${test_db_name}.sql"
+
+if ! ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" >/dev/null; then
+    echo "test entry not found after restore"
+    estat=3
+fi
+
+mariadbd_server_stop
+
+end_test
