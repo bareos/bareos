@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1263,7 +1263,7 @@ static int GetWindowsFileInfo(const char* filename,
   if (p_FindFirstFileW) { /* use unicode */
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
-    Dmsg1(debuglevel, "FindFirstFileW=%s\n", utf16.c_str());
+    Dmsg1(debuglevel, "FindFirstFileW=%s\n", FromUtf16(utf16).c_str());
     fh = p_FindFirstFileW(utf16.c_str(), &info_w);
 #if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
