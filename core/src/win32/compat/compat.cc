@@ -1007,15 +1007,13 @@ static inline bool GetVolumeMountPointData(const char* filename,
    * Explicitly open the file to read the reparse point, then call
    * DeviceIoControl to find out if it points to a Volume or to a directory.
    */
-  if (p_GetFileAttributesW) {
+  if (p_GetFileAttributesW && p_CreateFileW) {
     POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
     make_win32_path_UTF8_2_wchar(pwszBuf, filename);
 
-    if (p_CreateFileW) {
-      h = CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
-    }
+    h = CreateFileW(
+        (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
       Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
