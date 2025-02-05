@@ -5,7 +5,7 @@ FileSet {
     Options {
       Signature = XXH128
     }
-    Plugin = "@python_module_name@@python_module_suffix@"
+    Plugin = "@dir_python_module_name@"
              ":module_path=@python_plugin_module_src_test_dir@"
              ":module_name=cancel-check-module"
   }
