@@ -39,7 +39,7 @@ import hashlib
 import re
 import traceback
 from sys import version_info
-import urllib3.util
+import urllib3
 import requests
 
 try:
@@ -3425,6 +3425,7 @@ class BareosVADPWrapper(object):
         verify_cert = True
         if self.options.get("verifyssl") != "yes":
             verify_cert = False
+            urllib3.disable_warnings()
         cookie = self._get_cookie_from_si()
         request_params = {}
         request_params["dsName"] = datastore_name
@@ -3466,6 +3467,7 @@ class BareosVADPWrapper(object):
         verify_cert = True
         if self.options.get("verifyssl") != "yes":
             verify_cert = False
+            urllib3.disable_warnings()
         cookie = self._get_cookie_from_si()
         request_params = {}
         request_params["dsName"] = datastore_name
