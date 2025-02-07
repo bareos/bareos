@@ -547,10 +547,17 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
     auto* pZlibStream = reinterpret_cast<z_stream*>(jcr.compress.workset.pZLIB);
     int zstatus
         = deflateParams(pZlibStream, compression_level, Z_DEFAULT_STRATEGY);
-    if (zstatus != Z_OK) {
-      Jmsg(&jcr, M_FATAL, 0, T_("Compression deflateParams error: %d\n"),
-           zstatus);
-      jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    if (pZlibStream->total_in == 0) {
+      if (zstatus != Z_OK) {
+        Jmsg(&jcr, M_FATAL, 0, T_("Compression deflateParams error: %d\n"),
+             zstatus);
+        jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+        return false;
+      }
+    } else {
+      Jmsg(&jcr, M_FATAL, 0,
+           T_("Cannot set up compression context while the buffer still "
+              "contains data."));
       return false;
     }
   }
@@ -573,11 +580,18 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
 
     auto* pZFastStream
         = reinterpret_cast<zfast_stream*>(jcr.compress.workset.pZFAST);
-    int zstat = fastlzlibSetCompressor(pZFastStream, compressor);
-    if (zstat != Z_OK) {
+    if (pZFastStream->total_in == 0) {
+      int zstat = fastlzlibSetCompressor(pZFastStream, compressor);
+      if (zstat != Z_OK) {
+        Jmsg(&jcr, M_FATAL, 0,
+             T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+        jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+        return false;
+      }
+    } else {
       Jmsg(&jcr, M_FATAL, 0,
-           T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
-      jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+           T_("Cannot set up compression context while the buffer still "
+              "contains data."));
       return false;
     }
   }
