@@ -11,7 +11,7 @@ OS:
     native:
       TYPE: win-native
       STAGES:
-        - win-native-64-release
+        - win-native-64-release-coretest
       ARCH:
        - x86_64
       WINVERSIONS:
