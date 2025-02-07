@@ -1824,9 +1824,6 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
   Dmsg3(200, "%s (inherited: %d, verbose: %d):\n", item.name, inherited,
         verbose);
 
-  // If this is an alias for another config keyword suppress it.
-  if (item.flags & CFG_ITEM_ALIAS) { return; }
-
   if (inherited && (!verbose)) {
     // If not in verbose mode, skip inherited directives.
     return;
@@ -2087,9 +2084,6 @@ json_t* json_item(ResourceItem* item)
                       json_string(DatatypeToString(item->type)));
   json_object_set_new(json, "code", json_integer(item->code));
 
-  if (item->flags & CFG_ITEM_ALIAS) {
-    json_object_set_new(json, "alias", json_true());
-  }
   if (item->flags & CFG_ITEM_DEFAULT) {
     /* FIXME? would it be better to convert it to the right type before
      * returning? */
