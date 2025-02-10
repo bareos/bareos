@@ -56,10 +56,10 @@ static ResourceItem cons_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_cons, description_), 0, 0, NULL, NULL, NULL },
   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), 0, 0, NULL, NULL, NULL },
   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), 0, 0, NULL, NULL, NULL },
-  { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons, history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
+  { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons, history_length), 0, 0, "100", NULL, NULL },
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Director", CFG_TYPE_STR, ITEM(res_cons, director), 0, 0, NULL, NULL, NULL },
-  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), 0, 0, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_cons),
   TLS_CERT_CONFIG(res_cons),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -68,10 +68,10 @@ static ResourceItem cons_items[] = {
 static ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), 0, 0, NULL, NULL, NULL },
-  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL, { "DirPort" } },
+  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), 0, 0, DIR_DEFAULT_PORT, NULL, NULL, { "DirPort" } },
   { "Address", CFG_TYPE_STR, ITEM(res_dir, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "DirAddress" } },
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), 0, 0, NULL, NULL, NULL },
-  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, 0, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_dir),
   TLS_CERT_CONFIG(res_dir),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}

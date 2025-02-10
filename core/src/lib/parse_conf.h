@@ -85,7 +85,6 @@ struct ResourceTable {
 
 // Config item flags.
 #define CFG_ITEM_REQUIRED 0x1   /* Item required */
-#define CFG_ITEM_DEFAULT 0x2    /* Default supplied */
 #define CFG_ITEM_NO_EQUALS 0x4  /* Don't scan = after name */
 #define CFG_ITEM_DEPRECATED 0x8 /* Deprecated config option */
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,14 +28,14 @@
 
 // Common TLS-Settings for both (Certificate and PSK).
 #define TLS_COMMON_CONFIG(res) \
-  { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res, authenticate_), 0, CFG_ITEM_DEFAULT, "false", \
+  { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res, authenticate_), 0, 0, "false", \
      NULL, "Use TLS only to authenticate, not for encryption."}, \
-  { "TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), 0, CFG_ITEM_DEFAULT, "true", \
+  { "TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), 0, 0, "true", \
      NULL, "Enable TLS support."}, \
-  { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "true", \
+  { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, 0, "true", \
      NULL, "If set to \"no\", Bareos can fall back to use unencrypted " \
      "connections. " }, \
-  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res, enable_ktls_), 0, CFG_ITEM_DEFAULT, "false", \
+  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res, enable_ktls_), 0, 0, "false", \
      NULL, "If set to \"yes\", Bareos will allow the SSL implementation to use " \
      "Kernel TLS. " }, \
   { "TlsCipherList", CFG_TYPE_STDSTR, ITEM(res, cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
@@ -54,7 +54,7 @@
 
 // TLS Settings for Certificate only
 #define TLS_CERT_CONFIG(res)                                                \
-  { "TlsVerifyPeer",  CFG_TYPE_BOOL, ITEM(res, tls_cert_.verify_peer_), 0, CFG_ITEM_DEFAULT, "false", \
+  { "TlsVerifyPeer",  CFG_TYPE_BOOL, ITEM(res, tls_cert_.verify_peer_), 0, 0, "false", \
      NULL, "If disabled, all certificates signed by a known CA will be accepted. "  \
      "If enabled, the CN of a certificate must the Address or in the \"TLS "  \
      "Allowed CN\" list."}, \
