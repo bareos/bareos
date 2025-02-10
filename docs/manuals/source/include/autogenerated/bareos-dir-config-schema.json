@@ -128,7 +128,8 @@
           "code": 0,
           "default_value": "160704000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-22.0.0"
         },
         "StatisticsCollectInterval": {
           "datatype": "PINT32",
@@ -136,7 +137,7 @@
           "default_value": "0",
           "deprecated": true,
           "equals": true,
-          "versions": "14.2.0-"
+          "versions": "14.2.0-22.0.0"
         },
         "VerId": {
           "datatype": "STRING",
@@ -453,14 +454,16 @@
           "code": 0,
           "default_value": "5184000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "JobRetention": {
           "datatype": "TIME",
           "code": 0,
           "default_value": "15552000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "HeartbeatInterval": {
           "datatype": "TIME",
@@ -473,7 +476,8 @@
           "code": 0,
           "default_value": "false",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "MaximumConcurrentJobs": {
           "datatype": "PINT32",
@@ -986,7 +990,8 @@
           "code": 0,
           "default_value": "true",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-24.0.0"
         },
         "CancelLowerLevelDuplicates": {
           "datatype": "BOOLEAN",
@@ -1471,7 +1476,8 @@
           "code": 0,
           "default_value": "true",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-24.0.0"
         },
         "CancelLowerLevelDuplicates": {
           "datatype": "BOOLEAN",
@@ -1723,7 +1729,8 @@
           "code": 0,
           "default_value": "false",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-22.0.0"
         },
         "NdmpChangerDevice": {
           "datatype": "STRNAME",
@@ -2064,7 +2071,8 @@
           "datatype": "LABEL",
           "code": 0,
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "CleaningPrefix": {
           "datatype": "STRNAME",

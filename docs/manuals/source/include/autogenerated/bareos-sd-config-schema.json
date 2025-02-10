@@ -254,7 +254,8 @@
           "code": 0,
           "default_value": "1000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-24.0.0"
         },
         "Messages": {
           "datatype": "RES",
@@ -367,21 +368,24 @@
           "code": 0,
           "default_value": "false",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-22.0.0"
         },
         "CollectJobStatistics": {
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-22.0.0"
         },
         "StatisticsCollectInterval": {
           "datatype": "PINT32",
           "code": 0,
           "default_value": "0",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-22.0.0"
         },
         "DeviceReserveByMediaType": {
           "datatype": "BOOLEAN",
@@ -665,7 +669,8 @@
           "code": 22,
           "default_value": "off",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "RequiresMount": {
           "datatype": "BIT",
@@ -733,8 +738,10 @@
         },
         "MaximumNetworkBufferSize": {
           "datatype": "PINT32",
-          "code": 8,
+          "code": 0,
+          "deprecated": true,
           "equals": true,
+          "versions": "-24.0.0",
           "description": "Replaced by MaximumNetworkBufferSize (SD->Storage)."
         },
         "VolumePollInterval": {
@@ -822,7 +829,8 @@
           "datatype": "LABEL",
           "code": 0,
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "NoRewindOnClose": {
           "datatype": "BOOLEAN",

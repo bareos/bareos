@@ -239,7 +239,8 @@
           "code": 0,
           "default_value": "1000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-24.0.0"
         },
         "MaximumWorkersPerJob": {
           "datatype": "PINT32",
@@ -349,6 +350,7 @@
           "default_value": "false",
           "deprecated": true,
           "equals": true,
+          "versions": "-24.0.0",
           "description": "Ensure that bareos always chooses the lmdb backend for accurate information regardless of the file list size.  Use LmdbThreshold = 0 instead."
         },
         "LmdbThreshold": {
