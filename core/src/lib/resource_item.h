@@ -36,6 +36,27 @@ template <typename T> class dlist;
  * each resource. It is used to define the configuration tables.
  */
 struct ResourceItem {
+  ResourceItem(const char* name_,
+               const int type_,
+               std::size_t offset_,
+               BareosResource** allocated_resource_,
+               int32_t code_,
+               uint32_t flags_,
+               const char* default_value_,
+               const char* versions_,
+               const char* description_)
+    : name{name_}
+    , type{type_}
+    , offset{offset_}
+    , allocated_resource{allocated_resource_}
+    , code{code_}
+    , flags{flags_}
+    , default_value{default_value_}
+    , versions{versions_}
+    , description{description_}
+  {
+  }
+
   const char* name; /* Resource name i.e. Director, ... */
   const int type;
   std::size_t offset;
