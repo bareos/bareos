@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - freebsd: automate creation of pkg-plist.database-postgresql [PR #2102]
 - plugin: postgresql use integer for savepkt.object_index [PR #2132]
 - bconsole: enable app icon on windows [PR #2105]
+- windows: fix readlink buffer size issue [PR #2153]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -48,4 +49,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116
 [PR #2132]: https://github.com/bareos/bareos/pull/2132
+[PR #2153]: https://github.com/bareos/bareos/pull/2153
 [unreleased]: https://github.com/bareos/bareos/tree/master
