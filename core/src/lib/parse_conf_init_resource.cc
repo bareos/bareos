@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,29 +37,12 @@ static void MakePathName(PoolMem& pathname, const char* str)
   }
 }
 
-static void CheckIfItemDefaultBitIsSet(ResourceItem* item)
-{
-  /* Items with a default value but without the CFG_ITEM_DEFAULT flag
-   * set are most of the time an indication of a programmers error. */
-  if (item->default_value != nullptr && !(item->flags & CFG_ITEM_DEFAULT)) {
-    Pmsg1(000,
-          T_("Found config item %s which has default value but no "
-             "CFG_ITEM_DEFAULT flag set\n"),
-          item->name);
-    item->flags |= CFG_ITEM_DEFAULT;
-  }
-}
-
 void ConfigurationParser::SetResourceDefaultsParserPass1(ResourceItem* item)
 {
-  Dmsg3(900, "Item=%s def=%s defval=%s\n", item->name,
-        (item->flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
-        (item->default_value) ? item->default_value : "None");
+  Dmsg3(900, "Item=%s defval=%s\n", item->name,
+        (item->default_value) ? item->default_value : "<None>");
 
-
-  CheckIfItemDefaultBitIsSet(item);
-
-  if (item->flags & CFG_ITEM_DEFAULT && item->default_value) {
+  if (item->default_value) {
     switch (item->type) {
       case CFG_TYPE_BIT:
         if (Bstrcasecmp(item->default_value, "on")) {
@@ -131,11 +114,10 @@ void ConfigurationParser::SetResourceDefaultsParserPass1(ResourceItem* item)
 
 void ConfigurationParser::SetResourceDefaultsParserPass2(ResourceItem* item)
 {
-  Dmsg3(900, "Item=%s def=%s defval=%s\n", item->name,
-        (item->flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
-        (item->default_value) ? item->default_value : "None");
+  Dmsg3(900, "Item=%s defval=%s\n", item->name,
+        (item->default_value) ? item->default_value : "<None>");
 
-  if (item->flags & CFG_ITEM_DEFAULT && item->default_value) {
+  if (item->default_value) {
     switch (item->type) {
       case CFG_TYPE_ALIST_STR: {
         alist<const char*>** alistvalue

@@ -724,10 +724,10 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
 
       /* See if we need to drop the default value.
        *
-       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * We first check to see if the config item has the
        * flag set and currently has exactly one entry. */
       if (!item->IsPresent()) {
-        if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+        if (item->default_value && list->size() == 1) {
           if (list->at(0) == item->default_value) { list->clear(); }
         }
       }
@@ -764,10 +764,10 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
 
       /* See if we need to drop the default value from the alist.
        *
-       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * We first check to see if the config item has the
        * flag set and currently has exactly one entry. */
       if (!item->IsPresent()) {
-        if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+        if (item->default_value && list->size() == 1) {
           char* entry = (char*)list->first();
           if (bstrcmp(entry, item->default_value)) {
             list->destroy();
@@ -812,9 +812,9 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
 
     /* See if we need to drop the default value from the alist.
      *
-     * We first check to see if the config item has the CFG_ITEM_DEFAULT
+     * We first check to see if the config item has the
      * flag set and currently has exactly one entry. */
-    if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+    if (item->default_value && list->size() == 1) {
       char* entry;
 
       entry = (char*)list->first();
@@ -1680,7 +1680,7 @@ bool HasDefaultValue(ResourceItem& item, s_kw* keywords)
 {
   bool is_default = false;
   const char* name = GetName(item, keywords);
-  if (item.flags & CFG_ITEM_DEFAULT) {
+  if (item.default_value) {
     is_default = Bstrcasecmp(name, item.default_value);
   } else {
     if (name == nullptr) { is_default = true; }
@@ -1692,7 +1692,7 @@ static bool HasDefaultValue(ResourceItem& item)
 {
   bool is_default = false;
 
-  if (item.flags & CFG_ITEM_DEFAULT) {
+  if (item.default_value) {
     // Check for default values.
     switch (item.type) {
       case CFG_TYPE_STR:
@@ -2085,7 +2085,7 @@ json_t* json_item(ResourceItem* item, bool is_alias)
   json_object_set_new(json, "code", json_integer(item->code));
 
   if (is_alias) { json_object_set_new(json, "alias", json_true()); }
-  if (item->flags & CFG_ITEM_DEFAULT) {
+  if (item->default_value) {
     /* FIXME? would it be better to convert it to the right type before
      * returning? */
     json_object_set_new(json, "default_value",
