@@ -150,6 +150,7 @@ Create a backport branch and PR based on an existing PR.
 Ensure that:
 - Pip-Tools are properly installed.
 - Your local branch's upstream branch is part of a pull request.
+- The remote your upstream branch is on is a ssh connection (not https)
 
 Steps:
 1. Checkout the branch you want to backport to (e.g., `bareos-24`).
