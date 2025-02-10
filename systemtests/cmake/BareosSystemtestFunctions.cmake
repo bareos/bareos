@@ -23,7 +23,7 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "redirect_output" @ONLY "")
-  configurefilestosystemtest("systemtests" "scripts" "mysql.sh" @ONLY "")
+  configurefilestosystemtest("systemtests" "scripts" "mariadb.sh" @ONLY "")
   configurefilestosystemtest(
     "systemtests" "scripts" "run_python_unittests.sh" @ONLY ""
   )
@@ -507,7 +507,7 @@ macro(prepare_testdir_for_daemon_run)
   set(dbHost ${current_test_directory}/tmp)
   string(LENGTH ${dbHost} dbHostLength)
   if(${dbHostLength} GREATER 90)
-    # unix domain sockets (used by mysql and psql) cannot be longer than 107
+    # unix domain sockets (used by mariadb and psql) cannot be longer than 107
     # chars. If too long, the socket is created under /tmp
     set(dbHost /tmp/${TEST_NAME})
     file(MAKE_DIRECTORY ${dbHost})
