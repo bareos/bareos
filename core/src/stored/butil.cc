@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,6 +43,8 @@
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 #include "include/jcr.h"
+
+#include <algorithm>
 
 namespace storagedaemon {
 
@@ -123,6 +125,25 @@ JobControlRecord* SetupJcr(const char* name,
   return jcr;
 }
 
+std::string AvailableDevicesListing()
+{
+  std::vector<std::string> devices;
+  for (BareosResource* resource = nullptr;
+       (resource = my_config->GetNextRes(R_DEVICE, resource));) {
+    DeviceResource* device = dynamic_cast<DeviceResource*>(resource);
+    std::string device_str;
+    device_str += " \"";
+    device_str += device->resource_name_;
+    device_str += "\" (";
+    device_str += device->archive_device_string;
+    device_str += ")\n";
+    devices.emplace_back(std::move(device_str));
+  }
+  std::sort(devices.begin(), devices.end());
+  std::string devices_str = "Available Devices:\n";
+  for (const std::string& device : devices) { devices_str += device; }
+  return devices_str;
+}
 /**
  * Setup device, jcr, and prepare to access device.
  *   If the caller wants read access, acquire the device, otherwise,
@@ -170,8 +191,9 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   }
 
   if ((device_resource = find_device_res(dev_name, readonly)) == NULL) {
-    Jmsg2(jcr, M_FATAL, 0, T_("Cannot find device \"%s\" in config file %s.\n"),
-          dev_name, configfile);
+    Jmsg2(jcr, M_FATAL, 0,
+          T_("Cannot find device \"%s\" in config file %s.\n%s"), dev_name,
+          configfile, AvailableDevicesListing().c_str());
     return false;
   }
 

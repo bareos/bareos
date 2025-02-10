@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,7 @@ add_subdirectory(bareos-acl)
 add_subdirectory(bconsole-basic)
 add_subdirectory(bconsole-pam)
 add_subdirectory(block-size)
-add_subdirectory(bscan-bextract-bls-bcopy)
+add_subdirectory(bscan-bextract-bls-bcopy-btape)
 add_subdirectory(catalog)
 add_subdirectory(checkpoints)
 add_subdirectory(chflags)

@@ -1,8 +1,7 @@
-Usage: bls [OPTIONS] device-names...
+Usage: bls [OPTIONS] [device-names...]
 
 Positionals:
     device-names   ...
-        REQUIRED
         Specify the input device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
         Storage Daemon Device resource). 

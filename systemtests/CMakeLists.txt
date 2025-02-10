@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:bareos-basic:bls-autoxflate
       system:bareos-basic:bscan-autoxflate
       system:bareos-basic:volume-recycling
-      system:bscan-bextract-bls-bcopy
+      system:bscan-bextract-bls-bcopy-btape
       system:checkpoints:checkpoints-regular-backup
       system:client-initiated
       system:commandline-options

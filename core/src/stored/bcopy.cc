@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -149,7 +149,6 @@ int main(int argc, char* argv[])
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
                   "Archive Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   std::string output_archive;
@@ -159,7 +158,6 @@ int main(int argc, char* argv[])
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
                   "Archive Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   ParseBareosApp(bcopy_app, argc, argv);
@@ -172,6 +170,17 @@ int main(int argc, char* argv[])
 
   my_config = InitSdConfig(configFile.c_str(), M_CONFIG_ERROR);
   ParseSdConfig(configFile.c_str(), M_CONFIG_ERROR);
+
+  if (input_archive.empty()) {
+    printf(T_("Missing input device. %sNothing done.\n"),
+           AvailableDevicesListing().c_str());
+    return BEXIT_CLI_PARSING_ERROR;
+  } else if (output_archive.empty()) {
+    printf(T_("Missing output device. %sNothing done.\n"),
+           AvailableDevicesListing().c_str());
+    return BEXIT_CLI_PARSING_ERROR;
+  }
+
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {

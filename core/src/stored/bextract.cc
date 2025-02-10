@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -212,21 +212,24 @@ int main(int argc, char* argv[])
                   "Specify the input device name (either as name of a Bareos "
                   "Storage Daemon Device resource or identical to the Archive "
                   "Device in a Bareos Storage Daemon Device resource).")
-      ->required()
       ->type_name(" ");
 
   std::string directory_to_store_files;
   bextract_app
       .add_option("target-directory", directory_to_store_files,
                   "Specify directory where to store files.")
-      ->required()
       ->type_name(" ");
-
 
   ParseBareosApp(bextract_app, argc, argv);
 
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
+
+  if (archive_device_name.empty()) {
+    printf(T_("Missing device. %sNothing done.\n"),
+           AvailableDevicesListing().c_str());
+    return BEXIT_CLI_PARSING_ERROR;
+  }
 
   static DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
