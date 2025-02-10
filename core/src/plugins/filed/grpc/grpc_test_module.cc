@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@
 #include <condition_variable>
 #include <future>
 #include <clocale>
+#include <fcntl.h>
 
 #include "plugin_service.h"
 #include "test_module.h"
@@ -41,6 +42,11 @@ struct grpc_connection {
   std::unique_ptr<bc::Core::Stub> stub;
   std::unique_ptr<grpc::Server> server;
   std::vector<std::unique_ptr<grpc::Service>> services;
+
+  void connect(int sockfd)
+  {
+    grpc::AddInsecureChannelFromFd(server.get(), sockfd);
+  }
 
   grpc_connection() = delete;
 };
@@ -62,7 +68,7 @@ struct connection_builder {
     return *this;
   }
 
-  connection_builder& connect_server(int sockfd)
+  connection_builder& create_server()
   {
     try {
       grpc::ServerBuilder builder;
@@ -70,14 +76,10 @@ struct connection_builder {
       for (auto& service : services) { builder.RegisterService(service.get()); }
 
       opt_server = builder.BuildAndStart();
-
-      if (!opt_server) { return *this; }
-
-      grpc::AddInsecureChannelFromFd(opt_server.get(), sockfd);
     } catch (const std::exception& e) {
-      // DebugLog(50, FMT_STRING("could not attach socket {} to server:
-      // Err={}"),
-      //          sockfd, e.what());
+      std::cerr << fmt::format(FMT_STRING("could not start server: Err={}"),
+                               e.what())
+                << std::endl;
       opt_server.reset();
     } catch (...) {
       opt_server.reset();
@@ -97,8 +99,6 @@ struct connection_builder {
     return con;
   }
 };
-
-#include <fcntl.h>
 
 std::optional<grpc_connection> con;
 
@@ -344,16 +344,18 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
   con = connection_builder{std::make_unique<PluginService>(
                                io_sock, std::move(shutdown_signal))}
             .connect_client(client_sock)
-            .connect_server(server_sock)
+            .create_server()
             .build();
 
   if (!con) { exit(1); }
 
+  /* we have to first create `con` and only then start accepting client
+   * requests, as these requests will use the global con variable! */
+  con->connect(server_sock);
+
   DebugLog(100, FMT_STRING("waiting for server to finish ..."));
 
   barrier.wait();
-
-  // con->server->Wait();
 
   DebugLog(100, FMT_STRING("grpc server finished: closing connections"));
   con.reset();
