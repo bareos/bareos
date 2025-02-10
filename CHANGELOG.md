@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - openssl: unify ssl error logging [PR #2078]
 - Inherit RunScript elements between JobDef resources [PR #2097]
 - python-bareos: Add missing dh-python build dep [PR #2130]
+- stored: list all devices if device is invalid/missing [PR #2122]
 
 [PR #2039]: https://github.com/bareos/bareos/pull/2039
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2109]: https://github.com/bareos/bareos/pull/2109
 [PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116
+[PR #2122]: https://github.com/bareos/bareos/pull/2122
 [PR #2130]: https://github.com/bareos/bareos/pull/2130
 [PR #2132]: https://github.com/bareos/bareos/pull/2132
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
