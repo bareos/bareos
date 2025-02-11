@@ -20,8 +20,6 @@
 find_program(
   SQLCMD
   NAMES sqlcmd.exe
-  HINTS C:/Program Files/Microsoft SQL Server/Client
-        SDK/ODBC/170/Tools/Binn/sqlcmd.exe REQUIRED
 )
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
