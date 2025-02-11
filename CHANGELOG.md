@@ -32,7 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inherit RunScript elements between JobDef resources [PR #2097]
 - python-bareos: Add missing dh-python build dep [PR #2130]
 - stored: list all devices if device is invalid/missing [PR #2122]
+- Refactor some Xattr and Acl internals [PR #1893]
 
+[PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2039]: https://github.com/bareos/bareos/pull/2039
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
 [PR #2056]: https://github.com/bareos/bareos/pull/2056
