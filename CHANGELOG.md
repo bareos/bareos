@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python-bareos: Add missing dh-python build dep [PR #2130]
 - stored: list all devices if device is invalid/missing [PR #2122]
 - Refactor some Xattr and Acl internals [PR #1893]
+- debian: Add missing build dependencies [PR #2128]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2039]: https://github.com/bareos/bareos/pull/2039
@@ -53,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116
 [PR #2122]: https://github.com/bareos/bareos/pull/2122
+[PR #2128]: https://github.com/bareos/bareos/pull/2128
 [PR #2130]: https://github.com/bareos/bareos/pull/2130
 [PR #2132]: https://github.com/bareos/bareos/pull/2132
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
