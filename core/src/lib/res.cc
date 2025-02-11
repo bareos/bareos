@@ -528,7 +528,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
     // See if we are parsing an MD5 encoded password already.
     if (bstrncmp(lc->str, "[md5]", 5)) {
-      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if (item->is_required()) {
         static const char* empty_password_md5_hash
             = "d41d8cd98f00b204e9800998ecf8427e";
         if (strncmp(lc->str + 5, empty_password_md5_hash,
@@ -571,7 +571,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
       unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
       char sig[100];
 
-      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if (item->is_required()) {
         if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
           scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
                     (*item->allocated_resource)->resource_name_);
@@ -611,7 +611,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 
     if (pwd->value) { free(pwd->value); }
 
-    if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+    if (item->is_required()) {
       if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
         scan_err1(
             lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
@@ -1829,7 +1829,7 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
     return;
   }
 
-  if (item.flags & CFG_ITEM_REQUIRED) {
+  if (item.is_required()) {
     // Always print required items
     print_item = true;
   }
@@ -1837,7 +1837,7 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
   if (HasDefaultValue(item)) {
     Dmsg1(200, "%s: default value\n", item.name);
 
-    if ((verbose) && (!(item.flags & CFG_ITEM_DEPRECATED))) {
+    if (verbose && !item.is_deprecated()) {
       /* If value has a expliciet default value and verbose mode is on,
        * display directive as inherited. */
       print_item = true;
@@ -2091,18 +2091,18 @@ json_t* json_item(ResourceItem* item, bool is_alias)
     json_object_set_new(json, "default_value",
                         json_string(item->default_value));
   }
-  if (item->flags & CFG_ITEM_PLATFORM_SPECIFIC) {
+  if (item->is_platform_specific()) {
     json_object_set_new(json, "platform_specific", json_true());
   }
-  if (item->flags & CFG_ITEM_DEPRECATED) {
+  if (item->is_deprecated()) {
     json_object_set_new(json, "deprecated", json_true());
   }
-  if (item->flags & CFG_ITEM_NO_EQUALS) {
+  if (item->has_no_eq()) {
     json_object_set_new(json, "equals", json_false());
   } else {
     json_object_set_new(json, "equals", json_true());
   }
-  if (item->flags & CFG_ITEM_REQUIRED) {
+  if (item->is_required()) {
     json_object_set_new(json, "required", json_true());
   }
   if (item->versions) {

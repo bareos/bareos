@@ -931,14 +931,14 @@ static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
   const char* mod_start = nomod;
   const char* mod_end = nomod;
 
-  if (item->flags & CFG_ITEM_DEPRECATED) { return false; }
+  if (item->is_deprecated()) { return false; }
 
-  if (item->flags & CFG_ITEM_NO_EQUALS) {
+  if (item->has_no_eq()) {
     /* TODO: currently not supported */
     return false;
   }
 
-  if (!(item->flags & CFG_ITEM_REQUIRED)) {
+  if (!item->is_required()) {
     mod_start = "[";
     mod_end = "]";
   }
@@ -1196,7 +1196,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
   }
 
   for (int i = 0; items[i].name; i++) {
-    if (items[i].flags & CFG_ITEM_REQUIRED) {
+    if (items[i].is_required()) {
       if (!res->IsMemberPresent(items[i].name)) {
         Jmsg(NULL, M_ERROR, 0,
              T_("\"%s\" directive in %s \"%s\" resource is required, but not "
@@ -3455,10 +3455,10 @@ static void PrintConfigCb(ResourceItem& item,
 
   bool print = false;
 
-  if (item.flags & CFG_ITEM_REQUIRED) { print = true; }
+  if (item.is_required()) { print = true; }
 
   if (HasDefaultValue(item)) {
-    if ((verbose) && (!(item.flags & CFG_ITEM_DEPRECATED))) {
+    if (verbose && !item.is_deprecated()) {
       print = true;
       inherited = true;
     }
@@ -4023,7 +4023,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     case R_JOB:
       /* Check Job requirements after applying JobDefs
        * Ensure that the name item is present however. */
-      if (items[0].flags & CFG_ITEM_REQUIRED) {
+      if (items[0].is_required()) {
         if (!allocated_resource->IsMemberPresent(items[0].name)) {
           Emsg2(M_ERROR, 0,
                 T_("%s item is required in %s resource, but not found.\n"),

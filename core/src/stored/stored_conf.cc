@@ -748,7 +748,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
-    if (items[i].flags & CFG_ITEM_REQUIRED) {
+    if (items[i].is_required()) {
       if (!items[i].IsPresent()) {
         Emsg2(
             M_ERROR_TERM, 0,
