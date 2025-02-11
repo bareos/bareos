@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - plugins: postgresql add support for PostgreSQL 17 + improvements [PR #2049]
 - bareos-config-libs: double quote dbconfig values [PR #2134]
+- windows: fix readlink buffer size issue [PR #2162]
 
 ## [23.1.1] - 2024-12-02
 
@@ -616,4 +617,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2054]: https://github.com/bareos/bareos/pull/2054
 [PR #2074]: https://github.com/bareos/bareos/pull/2074
 [PR #2134]: https://github.com/bareos/bareos/pull/2134
+[PR #2162]: https://github.com/bareos/bareos/pull/2162
 [unreleased]: https://github.com/bareos/bareos/tree/master
