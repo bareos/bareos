@@ -24,7 +24,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
                                 # on MSVC
 else()
   cmake_minimum_required(VERSION 3.17)
-  cmake_policy(VERSION 3.17...3.19)
+  cmake_policy(VERSION 3.17...3.31)
 endif()
 
 project(bareos NONE)
