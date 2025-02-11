@@ -82,16 +82,16 @@ bool InitializeComSecurity()
    public:
     ComSecurityInitializer()
         : h{CoInitializeSecurity(
-            NULL, /*  Allow *all* VSS writers to communicate back! */
-            -1,   /*  Default COM authentication service */
-            NULL, /*  Default COM authorization service */
-            NULL, /*  reserved parameter */
-            RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
-                                              level */
-            RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
-            NULL,                     /*  Default COM authentication settings */
-            EOAC_NONE,                /*  No special options */
-            NULL) /* reserved */}
+              NULL, /*  Allow *all* VSS writers to communicate back! */
+              -1,   /*  Default COM authentication service */
+              NULL, /*  Default COM authorization service */
+              NULL, /*  reserved parameter */
+              RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
+                                                level */
+              RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
+              NULL,      /*  Default COM authentication settings */
+              EOAC_NONE, /*  No special options */
+              NULL) /* reserved */}
     {
       if (!InitSuccessFull()) {
         Dmsg1(0,
