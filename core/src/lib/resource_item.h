@@ -137,8 +137,8 @@ struct ResourceItem {
       , allocated_resource{allocated_resource_}
       , description{description_}
   {
-    if (resource_flags.deprecated_since) { flags |= CFG_ITEM_DEPRECATED; }
-    if (resource_flags.required) { flags |= CFG_ITEM_REQUIRED; }
+    if (resource_flags.deprecated_since) { deprecated = true; }
+    if (resource_flags.required) { required = true; }
     default_value = resource_flags.default_value;
     code = resource_flags.extra.value_or(0);
   }
@@ -158,7 +158,10 @@ struct ResourceItem {
       , offset{offset_}
       , allocated_resource{allocated_resource_}
       , code{code_}
-      , flags{flags_}
+      , required{(flags_ & CFG_ITEM_REQUIRED) != 0}
+      , deprecated{(flags_ & CFG_ITEM_DEPRECATED) != 0}
+      , platform_specific{(flags_ & CFG_ITEM_PLATFORM_SPECIFIC) != 0}
+      , no_equal{(flags_ & CFG_ITEM_NO_EQUALS) != 0}
       , default_value{default_value_}
       , versions{versions_}
       , description{description_}
@@ -170,8 +173,11 @@ struct ResourceItem {
   const int type;
   std::size_t offset;
   BareosResource** allocated_resource;
-  int32_t code;              /* Item code/additional info */
-  uint32_t flags;            /* Flags: See CFG_ITEM_* */
+  int32_t code; /* Item code/additional info */
+  bool required;
+  bool deprecated;
+  bool platform_specific;
+  bool no_equal;
   const char* default_value; /* Default value */
   /* version string in format: [start_version]-[end_version]
    * start_version: directive has been introduced in this version
@@ -191,6 +197,11 @@ struct ResourceItem {
   {
     return (*allocated_resource)->IsMemberPresent(name);
   }
+
+  bool is_required() const { return required; }
+  bool is_platform_specific() const { return platform_specific; }
+  bool is_deprecated() const { return deprecated; }
+  bool has_no_eq() const { return no_equal; }
 };
 
 static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item)

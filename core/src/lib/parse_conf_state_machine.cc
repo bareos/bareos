@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -125,7 +125,7 @@ ConfigParserStateMachine::ScanResource(int token)
       if (resource_item_index >= 0) {
         ResourceItem* item = nullptr;
         item = &currently_parsed_resource_.resource_items_[resource_item_index];
-        if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
+        if (!item->has_no_eq()) {
           token = LexGetToken(lexical_parser_, BCT_SKIP_EOL);
           Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
           if (token != BCT_EQUALS) {
@@ -135,7 +135,7 @@ ConfigParserStateMachine::ScanResource(int token)
           }
         }
 
-        if (parser_pass_number_ == 1 && item->flags & CFG_ITEM_DEPRECATED) {
+        if (parser_pass_number_ == 1 && item->is_deprecated()) {
           my_config_.AddWarning(std::string("using deprecated keyword ")
                                 + item->name + " on line "
                                 + std::to_string(lexical_parser_->line_no)
