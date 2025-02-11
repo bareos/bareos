@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -153,20 +153,10 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   auto hb_send = MakeHeartbeatMonitor(jcr);
 
-  if (have_acl) {
-    jcr->fd_impl->acl_data = std::make_unique<AclData>();
-    jcr->fd_impl->acl_data->u.build
-        = (acl_build_data_t*)malloc(sizeof(acl_build_data_t));
-    memset(jcr->fd_impl->acl_data->u.build, 0, sizeof(acl_build_data_t));
-    jcr->fd_impl->acl_data->u.build->content = GetPoolMemory(PM_MESSAGE);
-  }
+  if (have_acl) { jcr->fd_impl->acl_data = std::make_unique<AclBuildData>(); }
 
   if (have_xattr) {
-    jcr->fd_impl->xattr_data = std::make_unique<XattrData>();
-    jcr->fd_impl->xattr_data->u.build
-        = (xattr_build_data_t*)malloc(sizeof(xattr_build_data_t));
-    memset(jcr->fd_impl->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
-    jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
+    jcr->fd_impl->xattr_data = std::make_unique<XattrBuildData>();
   }
 
   // Subroutine SaveFile() is called for each file
@@ -176,15 +166,15 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
-  if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
+  if (have_acl && jcr->fd_impl->acl_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Encountered %ld acl errors while doing backup\n"),
-         jcr->fd_impl->acl_data->u.build->nr_errors);
+         jcr->fd_impl->acl_data->nr_errors);
   }
-  if (have_xattr && jcr->fd_impl->xattr_data->u.build->nr_errors > 0) {
+  if (have_xattr && jcr->fd_impl->xattr_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Encountered %ld xattr errors while doing backup\n"),
-         jcr->fd_impl->xattr_data->u.build->nr_errors);
+         jcr->fd_impl->xattr_data->nr_errors);
   }
 
 #if defined(WIN32_VSS)
@@ -196,16 +186,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   hb_send.reset();
 
   sd->signal(BNET_EOD); /* end of sending data */
-
-  if (have_acl && jcr->fd_impl->acl_data) {
-    FreePoolMemory(jcr->fd_impl->acl_data->u.build->content);
-    free(jcr->fd_impl->acl_data->u.build);
-  }
-
-  if (have_xattr && jcr->fd_impl->xattr_data) {
-    FreePoolMemory(jcr->fd_impl->xattr_data->u.build->content);
-    free(jcr->fd_impl->xattr_data->u.build);
-  }
 
   if (jcr->fd_impl->big_buf) {
     free(jcr->fd_impl->big_buf);
@@ -454,10 +434,12 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->fd_impl->acl_data->filetype = ff_pkt->type;
   jcr->fd_impl->acl_data->last_fname = jcr->fd_impl->last_fname;
 
+  auto* acl_build_data
+      = dynamic_cast<AclBuildData*>(jcr->fd_impl->acl_data.get());
   if (jcr->IsPlugin()) {
-    retval = PluginBuildAclStreams(jcr, jcr->fd_impl->acl_data.get(), ff_pkt);
+    retval = PluginBuildAclStreams(jcr, acl_build_data, ff_pkt);
   } else {
-    retval = BuildAclStreams(jcr, jcr->fd_impl->acl_data.get(), ff_pkt);
+    retval = BuildAclStreams(jcr, acl_build_data, ff_pkt);
   }
 
   switch (retval) {
@@ -465,7 +447,7 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
       return false;
     case bacl_exit_error:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->fd_impl->acl_data->u.build->nr_errors++;
+      jcr->fd_impl->acl_data->nr_errors++;
       break;
     case bacl_exit_ok:
       break;
@@ -481,10 +463,13 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->fd_impl->xattr_data->last_fname = jcr->fd_impl->last_fname;
 
   if (jcr->IsPlugin()) {
-    retval
-        = PluginBuildXattrStreams(jcr, jcr->fd_impl->xattr_data.get(), ff_pkt);
+    retval = PluginBuildXattrStreams(
+        jcr, dynamic_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        ff_pkt);
   } else {
-    retval = BuildXattrStreams(jcr, jcr->fd_impl->xattr_data.get(), ff_pkt);
+    retval = BuildXattrStreams(
+        jcr, dynamic_cast<XattrBuildData*>(jcr->fd_impl->xattr_data.get()),
+        ff_pkt);
   }
 
   switch (retval) {
@@ -495,7 +480,7 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
       break;
     case BxattrExitCode::kError:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->fd_impl->xattr_data->u.build->nr_errors++;
+      jcr->fd_impl->xattr_data->nr_errors++;
       break;
     case BxattrExitCode::kSuccess:
       break;

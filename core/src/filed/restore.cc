@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -239,11 +239,10 @@ static inline bool do_reStoreAcl(JobControlRecord* jcr,
       /* Non-fatal errors, count them and when the number is under
        * ACL_REPORT_ERR_MAX_PER_JOB print the error message set by the lower
        * level routine in jcr->errmsg. */
-      if (jcr->fd_impl->acl_data->u.parse->nr_errors
-          < ACL_REPORT_ERR_MAX_PER_JOB) {
+      if (jcr->fd_impl->acl_data->nr_errors < ACL_REPORT_ERR_MAX_PER_JOB) {
         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
       }
-      jcr->fd_impl->acl_data->u.parse->nr_errors++;
+      jcr->fd_impl->acl_data->nr_errors++;
       break;
     case bacl_exit_ok:
       break;
@@ -283,7 +282,7 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
       break;
     case BxattrExitCode::kError:
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
-      jcr->fd_impl->xattr_data->u.parse->nr_errors++;
+      jcr->fd_impl->xattr_data->nr_errors++;
       break;
     case BxattrExitCode::kSuccess:
       break;
@@ -473,18 +472,8 @@ void DoRestore(JobControlRecord* jcr)
   binit(&rctx.bfd);
   binit(&rctx.forkbfd);
   attr = rctx.attr = new_attr(jcr);
-  if (have_acl) {
-    jcr->fd_impl->acl_data = std::make_unique<AclData>();
-    jcr->fd_impl->acl_data->u.parse
-        = (acl_parse_data_t*)malloc(sizeof(acl_parse_data_t));
-    memset(jcr->fd_impl->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
-  }
-  if (have_xattr) {
-    jcr->fd_impl->xattr_data = std::make_unique<XattrData>();
-    jcr->fd_impl->xattr_data->u.parse
-        = (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
-    memset(jcr->fd_impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
-  }
+  if (have_acl) { jcr->fd_impl->acl_data = std::make_unique<AclData>(); }
+  if (have_xattr) { jcr->fd_impl->xattr_data = std::make_unique<XattrData>(); }
 
   while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // Remember previous stream type
@@ -1033,7 +1022,7 @@ void DoRestore(JobControlRecord* jcr)
         Dmsg2(0, "Unknown stream=%d data=%s\n", rctx.stream, sd->msg);
         break;
     } /* end switch(stream) */
-  }   /* end while get_msg() */
+  } /* end while get_msg() */
 
   /* If output file is still open, it was the last one in the
    * archive since we just hit an end of file, so close the file. */
@@ -1057,15 +1046,15 @@ ok_out:
   // First output the statistics.
   Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
         edit_uint64(jcr->JobBytes, ec1));
-  if (have_acl && jcr->fd_impl->acl_data->u.parse->nr_errors > 0) {
+  if (have_acl && jcr->fd_impl->acl_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Encountered %ld acl errors while doing restore\n"),
-         jcr->fd_impl->acl_data->u.parse->nr_errors);
+         jcr->fd_impl->acl_data->nr_errors);
   }
-  if (have_xattr && jcr->fd_impl->xattr_data->u.parse->nr_errors > 0) {
+  if (have_xattr && jcr->fd_impl->xattr_data->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
          T_("Encountered %ld xattr errors while doing restore\n"),
-         jcr->fd_impl->xattr_data->u.parse->nr_errors);
+         jcr->fd_impl->xattr_data->nr_errors);
   }
   if (non_support_data > 1 || non_support_attr > 1) {
     Jmsg(jcr, M_WARNING, 0,
@@ -1122,14 +1111,6 @@ ok_out:
   if (rctx.fork_cipher_ctx.buf) {
     FreePoolMemory(rctx.fork_cipher_ctx.buf);
     rctx.fork_cipher_ctx.buf = NULL;
-  }
-
-  if (have_acl && jcr->fd_impl->acl_data) {
-    free(jcr->fd_impl->acl_data->u.parse);
-  }
-
-  if (have_xattr && jcr->fd_impl->xattr_data) {
-    free(jcr->fd_impl->xattr_data->u.parse);
   }
 
   // Free the delayed stream stack list.

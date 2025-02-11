@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,13 @@
 
 #ifndef BAREOS_FINDLIB_XATTR_H_
 #define BAREOS_FINDLIB_XATTR_H_
+
+#include <cstdint>
+#include "include/bc_types.h"
+#include "lib/mem_pool.h"
+template <typename T> class alist;
+class JobControlRecord;
+struct FindFilesPacket;
 
 // Return codes from xattr subroutines.
 enum class BxattrExitCode
@@ -63,28 +70,21 @@ struct xattr_link_cache_entry_t {
 #define BXATTR_FLAG_SAVE_NATIVE 0x01
 #define BXATTR_FLAG_RESTORE_NATIVE 0x02
 
-struct xattr_build_data_t {
-  uint32_t nr_errors;
-  uint32_t nr_saved;
-  POOLMEM* content;
-  uint32_t content_length;
-  alist<xattr_link_cache_entry_t*>* link_cache;
-};
-
-struct xattr_parse_data_t {
-  uint32_t nr_errors;
-};
-
 // Internal tracking data.
 struct XattrData {
-  POOLMEM* last_fname;
+  POOLMEM* last_fname{nullptr};
   uint32_t flags{0}; /* See BXATTR_FLAG_* */
   uint32_t current_dev{0};
   bool first_dev{true};
-  union {
-    struct xattr_build_data_t* build;
-    struct xattr_parse_data_t* parse;
-  } u;
+  uint32_t nr_errors{0};
+  virtual ~XattrData() noexcept = default;
+};
+
+struct XattrBuildData : public XattrData {
+  uint32_t nr_saved{0};
+  PoolMem content{PM_MESSAGE};
+  uint32_t content_length{0};
+  alist<xattr_link_cache_entry_t*>* link_cache{nullptr};
 };
 
 // Maximum size of the XATTR stream this prevents us from blowing up the filed.
@@ -92,26 +92,26 @@ struct XattrData {
 
 // Upperlimit on a xattr internal buffer
 #define XATTR_BUFSIZ 1024
-template <typename T> class alist;
 
+BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
+                                           XattrBuildData* xattr_data,
+                                           uint32_t expected_serialize_len,
+                                           alist<xattr_t*>* xattr_value_list,
+                                           int stream_type);
 BxattrExitCode SendXattrStream(JobControlRecord* jcr,
-                               XattrData* xattr_data,
+                               XattrBuildData* xattr_data,
                                int stream);
 void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list);
-uint32_t SerializeXattrStream(JobControlRecord* jcr,
-                              XattrData* xattr_data,
-                              uint32_t expected_serialize_len,
-                              alist<xattr_t*>* xattr_value_list);
 BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
                                       XattrData* xattr_data,
                                       char* content,
                                       uint32_t content_length,
                                       alist<xattr_t*>* xattr_value_list);
 BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
-                                 struct XattrData* xattr_data,
+                                 XattrBuildData* xattr_data,
                                  FindFilesPacket* ff_pkt);
 BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
-                                 struct XattrData* xattr_data,
+                                 XattrData* xattr_data,
                                  int stream,
                                  char* content,
                                  uint32_t content_length);

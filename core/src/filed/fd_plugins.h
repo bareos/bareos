@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -283,7 +283,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
                          Attributes* attr,
                          BareosFilePacket* ofd);
 bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
-                                     AclData* acl_data,
+                                     AclBuildData* acl_data,
                                      FindFilesPacket* ff_pkt);
 bacl_exit_code plugin_parse_acl_streams(JobControlRecord* jcr,
                                         AclData* acl_data,
@@ -291,10 +291,10 @@ bacl_exit_code plugin_parse_acl_streams(JobControlRecord* jcr,
                                         char* content,
                                         uint32_t content_length);
 BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
-                                       struct XattrData* xattr_data,
+                                       XattrBuildData* xattr_data,
                                        FindFilesPacket* ff_pkt);
 BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
-                                       struct XattrData* xattr_data,
+                                       XattrData* xattr_data,
                                        int stream,
                                        char* content,
                                        uint32_t content_length);

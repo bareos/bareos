@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,8 +28,26 @@
 #ifndef BAREOS_FINDLIB_ACL_H_
 #define BAREOS_FINDLIB_ACL_H_
 
+#include "include/config.h"
+#include <cstdint>
+#include "include/bc_types.h"
+#include "lib/mem_pool.h"
+
+#ifdef HAVE_SYS_ACL_H
+#  include <sys/acl.h>
+/**
+ * This value is used as ostype when we encounter an invalid acl type.
+ * The way the code is build this should never happen.
+ */
+static inline constexpr acl_type_t ACL_TYPE_NONE = static_cast<acl_type_t>(0);
+#endif
+
+class JobControlRecord;
+struct FindFilesPacket;
+
 // Number of acl errors to report per job.
-#define ACL_REPORT_ERR_MAX_PER_JOB 25
+static inline constexpr uint32_t ACL_REPORT_ERR_MAX_PER_JOB = 25;
+
 
 // Return codes from acl subroutines.
 typedef enum
@@ -56,52 +74,40 @@ typedef enum
   BACL_TYPE_NFS4 = 5
 } bacl_type;
 
-/**
- * This value is used as ostype when we encounter an invalid acl type.
- * The way the code is build this should never happen.
- */
-#if !defined(ACL_TYPE_NONE)
-#  define ACL_TYPE_NONE 0x0
-#endif
 
 #if defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS) \
     || defined(HAVE_LINUX_OS)
 #  define BACL_ENOTSUP EOPNOTSUPP
 #endif
 
-#define BACL_FLAG_SAVE_NATIVE 0x01
-#define BACL_FLAG_SAVE_AFS 0x02
-#define BACL_FLAG_RESTORE_NATIVE 0x04
-#define BACL_FLAG_RESTORE_AFS 0x08
-
-struct acl_build_data_t {
-  uint32_t nr_errors;
-  uint32_t content_length;
-  POOLMEM* content;
-};
-
-struct acl_parse_data_t {
-  uint32_t nr_errors;
+struct bacl_flags {
+  bool SaveNative{false};
+  bool SaveAfs{false};
+  bool RestoreNative{false};
+  bool RestoreAfs{false};
 };
 
 // Internal tracking data.
 struct AclData {
   int filetype;
   POOLMEM* last_fname;
-  uint32_t flags{}; /* See BACL_FLAG_* */
+  bacl_flags flags{};
   uint32_t current_dev{0};
   bool first_dev{true};
-  union {
-    struct acl_build_data_t* build;
-    struct acl_parse_data_t* parse;
-  } u;
+  uint32_t nr_errors;
+  virtual ~AclData() noexcept = default;
+};
+
+struct AclBuildData : public AclData {
+  uint32_t content_length;
+  PoolMem content{PM_MESSAGE};
 };
 
 bacl_exit_code SendAclStream(JobControlRecord* jcr,
-                             AclData* acl_data,
+                             AclBuildData* acl_data,
                              int stream);
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               AclData* acl_data,
+                               AclBuildData* acl_data,
                                FindFilesPacket* ff_pkt);
 bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
                                  AclData* acl_data,

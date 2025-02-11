@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -196,8 +196,9 @@ if(BUILD_BAREOS_BINARIES)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
   endif()
   include(BareosCpmPackages)
-  include(BareosCcache)
+  # include PrefixMap before BareosCcache so hash_dir is set correctly
   include(PrefixMap)
+  include(BareosCcache)
   add_subdirectory(core)
   if(ENABLE_WEBUI)
     add_subdirectory(webui)
