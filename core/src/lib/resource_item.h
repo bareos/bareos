@@ -57,11 +57,36 @@ struct Code {
 };
 
 struct Required {};
+
+struct Alias {
+  std::vector<std::string> aliases;
+
+  template <typename... Ts>
+  Alias(Ts... args)
+    : aliases{ std::forward<Ts>(args)...}
+  {
+    static_assert(sizeof...(Ts) > 0, "You need to specify at least one alias.");
+  }
+};
+
+struct UsesNoEquals {};
+
+struct Description {
+  const char* text;
+};
+
+struct PlatformSpecific {};
 };  // namespace config
 
 
 template <typename What, typename... Args> struct occurances {
-  static constexpr size_t value{(std::is_same_v<What, Args> + ...)};
+  static constexpr size_t value = []() {
+    if constexpr (sizeof...(Args) == 0) {
+      return 0;
+    } else {
+      return (std::is_same_v<What, Args> + ...);
+    }
+  }();
 };
 
 template <typename What, typename... Args> struct is_present {
@@ -82,16 +107,22 @@ struct ResourceItemFlags {
   std::optional<config::Version> introduced_in{};
   std::optional<config::Version> deprecated_since{};
   const char* default_value{};
-  std::optional<size_t> extra{};
+  std::optional<int> extra{};
   bool required{};
+  std::vector<std::string> aliases{};
+  bool platform_specific{};
+  bool no_equals{};
+  const char* description{};
 
   template <typename... Types> ResourceItemFlags(Types&&... values)
   {
-    static_assert((is_present<Types, config::DefaultValue, config::IntroducedIn,
-                              config::DeprecatedSince, config::Code,
-                              config::Required>::value
-                   && ...),
-                  "only allowed flags may be used");
+    static_assert(
+        (is_present<Types, config::DefaultValue, config::IntroducedIn,
+                    config::DeprecatedSince, config::Code, config::Required,
+                    config::Alias, config::Description,
+                    config::PlatformSpecific, config::UsesNoEquals>::value
+         && ...),
+        "only allowed flags may be used");
 
     static_assert(occurances<config::DefaultValue, Types...>::value <= 1,
                   "flag may only be specified once");
@@ -102,6 +133,14 @@ struct ResourceItemFlags {
     static_assert(occurances<config::Code, Types...>::value <= 1,
                   "flag may only be specified once");
     static_assert(occurances<config::Required, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::Alias, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::Description, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::PlatformSpecific, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::UsesNoEquals, Types...>::value <= 1,
                   "flag may only be specified once");
 
     std::tuple<Types...> tup{std::forward<Types>(values)...};
@@ -117,6 +156,16 @@ struct ResourceItemFlags {
     }
     if (auto* code = get_if<config::Code>(tup)) { extra = code->value; }
     if (auto* _ = get_if<config::Required>(tup)) { required = true; }
+    if (auto* alias = get_if<config::Alias>(tup)) {
+      aliases = std::move(alias->aliases);
+    }
+    if (auto* _ = get_if<config::UsesNoEquals>(tup)) { no_equals = true; }
+    if (auto* _ = get_if<config::PlatformSpecific>(tup)) {
+      platform_specific = true;
+    }
+    if (auto* desc = get_if<config::Description>(tup)) {
+      description = desc->text;
+    }
   }
 };
 
@@ -129,67 +178,46 @@ struct ResourceItem {
                const int type_,
                std::size_t offset_,
                BareosResource** allocated_resource_,
-               const char* description_,
                ResourceItemFlags&& resource_flags)
       : name{name_}
       , type{type_}
       , offset{offset_}
       , allocated_resource{allocated_resource_}
-      , description{description_}
-  {
-    if (resource_flags.deprecated_since) { flags |= CFG_ITEM_DEPRECATED; }
-    if (resource_flags.required) { flags |= CFG_ITEM_REQUIRED; }
-    default_value = resource_flags.default_value;
-    code = resource_flags.extra.value_or(0);
-  }
-
-  ResourceItem(const char* name_,
-               const int type_,
-               std::size_t offset_,
-               BareosResource** allocated_resource_,
-               int32_t code_,
-               uint32_t flags_,
-               const char* default_value_,
-               const char* versions_,
-               const char* description_)
-      : name{name_}
-      , type{type_}
-      , offset{offset_}
-      , allocated_resource{allocated_resource_}
-      , code{code_}
-      , alias{(flags_ & CFG_ITEM_ALIAS) != 0}
-      , required{(flags_ & CFG_ITEM_REQUIRED) != 0}
-      , deprecated{(flags_ & CFG_ITEM_DEPRECATED) != 0}
-      , platform_specific{(flags_ & CFG_ITEM_PLATFORM_SPECIFIC) != 0}
-      , no_equal{(flags_ & CFG_ITEM_NO_EQUALS) != 0}
-      , default_value{default_value_}
-      , versions{versions_}
-      , description{description_}
+      , code{resource_flags.extra.value_or(0)}
+      , aliases{std::move(resource_flags.aliases)}
+      , required{resource_flags.required}
+      , deprecated{resource_flags.deprecated_since.has_value()}
+      , platform_specific{resource_flags.platform_specific}
+      , no_equal{resource_flags.no_equals}
+      , default_value{resource_flags.default_value}
+      , introduced_in{resource_flags.introduced_in}
+      , deprecated_since{resource_flags.deprecated_since}
+      , description{resource_flags.description}
   {
   }
 
-  const char* name; /* Resource name i.e. Director, ... */
-  const int type;
-  std::size_t offset;
-  BareosResource** allocated_resource;
-  int32_t code; /* Item code/additional info */
-  bool alias;
-  bool required;
-  bool deprecated;
-  bool platform_specific;
-  bool no_equal;
-  const char* default_value; /* Default value */
-  /* version string in format: [start_version]-[end_version]
-   * start_version: directive has been introduced in this version
-   * end_version:   directive is deprecated since this version */
-  const char* versions;
+  ResourceItem() = default;
+
+  const char* name{}; /* Resource name i.e. Director, ... */
+  const int type{};
+  std::size_t offset{};
+  BareosResource** allocated_resource{};
+  int32_t code{}; /* Item code/additional info */
+  std::vector<std::string> aliases{};
+  bool required{};
+  bool deprecated{};
+  bool platform_specific{};
+  bool no_equal{};
+  const char* default_value{}; /* Default value */
+
+  std::optional<config::Version> introduced_in{};
+  std::optional<config::Version> deprecated_since{};
+
   /* short description of the directive, in plain text,
    * used for the documentation.
    * Full sentence.
    * Every new directive should have a description. */
-  const char* description;
-
-  std::vector<std::string> aliases = {};
+  const char* description{};
 
   void SetPresent() { (*allocated_resource)->SetMemberPresent(name); }
 
@@ -199,7 +227,6 @@ struct ResourceItem {
   }
 
   bool is_required() const { return required; }
-  bool is_alias() const { return alias; }
   bool is_platform_specific() const { return platform_specific; }
   bool is_deprecated() const { return deprecated; }
   bool has_no_eq() const { return no_equal; }

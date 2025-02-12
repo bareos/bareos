@@ -83,18 +83,6 @@ struct ResourceTable {
 #define MAX_RES_NAME_LENGTH \
   (MAX_NAME_LENGTH - 1) /* maximum resource name length */
 
-// Config item flags.
-#define CFG_ITEM_REQUIRED 0x1   /* Item required */
-#define CFG_ITEM_NO_EQUALS 0x4  /* Don't scan = after name */
-#define CFG_ITEM_DEPRECATED 0x8 /* Deprecated config option */
-
-/*
- * CFG_ITEM_DEFAULT_PLATFORM_SPECIFIC: the value may differ between different
- * platforms (or configure settings). This information is used for the
- * documentation.
- */
-#define CFG_ITEM_PLATFORM_SPECIFIC 0x20
-
 enum
 {
   // Standard resource types. handlers in res.c
