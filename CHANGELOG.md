@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactor some Xattr and Acl internals [PR #1893]
 - debian: Add missing build dependencies [PR #2128]
 - systemtests: fail if daemons have config warnings [PR #2144]
+- contrib: check_chunk.py improve README.md instructions [PR #2147]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -61,5 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2130]: https://github.com/bareos/bareos/pull/2130
 [PR #2132]: https://github.com/bareos/bareos/pull/2132
 [PR #2144]: https://github.com/bareos/bareos/pull/2144
+[PR #2147]: https://github.com/bareos/bareos/pull/2147
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
 [unreleased]: https://github.com/bareos/bareos/tree/master
