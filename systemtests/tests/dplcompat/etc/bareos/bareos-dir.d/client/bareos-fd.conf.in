@@ -2,5 +2,5 @@ Client {
   Name = bareos-fd
   Address = localhost
   Password = "@fd_password@"
-  Fd Port = @fd_port@
+  Port = @fd_port@
 }

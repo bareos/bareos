@@ -4,7 +4,7 @@ Storage {
   Password = "@sd_password@"
   Device = RemoteFileStorage
   Media Type = File
-  SD Port = @sd2_port@
+  Port = @sd2_port@
 }
 
 Storage {
@@ -13,5 +13,5 @@ Storage {
   Password = "@sd_password@"
   Device = RemoteFileStorage2
   Media Type = File
-  SD Port = @sd2_port@
+  Port = @sd2_port@
 }

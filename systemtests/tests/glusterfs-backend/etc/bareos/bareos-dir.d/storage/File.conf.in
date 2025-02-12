@@ -4,5 +4,5 @@ Storage {
   Password = "@sd_password@"
   Device = GlusterStorage
   Media Type = GlusterFile
-  SD Port = @sd_port@
+  Port = @sd_port@
 }
