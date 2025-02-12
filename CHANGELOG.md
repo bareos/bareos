@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugin: postgresql use integer for savepkt.object_index [PR #2132]
 - bconsole: enable app icon on windows [PR #2105]
 - windows: fix readlink buffer size issue [PR #2153]
+- Fix btape fill-test problem [PR #2018]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - debian: Add missing build dependencies [PR #2128]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
+[PR #2018]: https://github.com/bareos/bareos/pull/2018
 [PR #2039]: https://github.com/bareos/bareos/pull/2039
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
 [PR #2056]: https://github.com/bareos/bareos/pull/2056
