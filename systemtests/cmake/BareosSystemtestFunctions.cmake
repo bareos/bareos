@@ -826,7 +826,9 @@ function(add_systemtest_from_directory test_dir test_basename)
 
 endfunction()
 
-macro(create_enabled_systemtest prefix test_name test_srcdir test_dir ignore_config_warnings)
+macro(create_enabled_systemtest prefix test_name test_srcdir test_dir
+      ignore_config_warnings
+)
   set(test_fullname "${prefix}${test_name}")
 
   message(STATUS "✓ ${test_fullname} (baseport=${BASEPORT})")
@@ -885,15 +887,18 @@ macro(create_systemtest prefix test_subdir)
 
       if(is_fd_python AND ENABLE_GRPC)
         create_enabled_systemtest(
-          ${prefix} ${test_subdir} ${test_subdir} ${test_subdir} ${ARG_IGNORE_CONFIG_WARNINGS}
+          ${prefix} ${test_subdir} ${test_subdir} ${test_subdir}
+          ${ARG_IGNORE_CONFIG_WARNINGS}
         )
         string(REPLACE "py3plug" "py3grpc" grpc_subdir ${test_subdir})
         create_enabled_systemtest(
-          ${prefix} ${grpc_subdir} ${test_subdir} ${grpc_subdir} ${ARG_IGNORE_CONFIG_WARNINGS}
+          ${prefix} ${grpc_subdir} ${test_subdir} ${grpc_subdir}
+          ${ARG_IGNORE_CONFIG_WARNINGS}
         )
       else()
         create_enabled_systemtest(
-          ${prefix} ${test_subdir} ${test_subdir} ${test_subdir} ${ARG_IGNORE_CONFIG_WARNINGS}
+          ${prefix} ${test_subdir} ${test_subdir} ${test_subdir}
+          ${ARG_IGNORE_CONFIG_WARNINGS}
         )
       endif()
 
