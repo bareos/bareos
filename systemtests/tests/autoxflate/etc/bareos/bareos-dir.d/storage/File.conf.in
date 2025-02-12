@@ -4,7 +4,7 @@ Storage {
   Password = "@sd_password@"
   Device = LD1
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
 }
 
 Storage {
@@ -13,7 +13,7 @@ Storage {
   Password = "@sd_password@"
   Device = LD2
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
 }
 
 Storage {
@@ -22,7 +22,7 @@ Storage {
   Password = "@sd_password@"
   Device = 1D1
   Media Type = File
-  SD Port = @sd2_port@
+  Port = @sd2_port@
 }
 
 Storage {
@@ -31,5 +31,5 @@ Storage {
   Password = "@sd_password@"
   Device = 1D2
   Media Type = File
-  SD Port = @sd2_port@
+  Port = @sd2_port@
 }
