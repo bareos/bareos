@@ -84,16 +84,16 @@ static ConsoleFontResource* res_font;
  * name handler value code flags default_value
  */
 static ResourceItem mon_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_monitor,resource_name_), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_monitor,description_), 0, 0, 0, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor,RefreshInterval), 0, 0, "60", NULL, NULL},
-  {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,FDConnectTimeout), 0, 0, "10", NULL, NULL},
-  {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,SDConnectTimeout), 0, 0, "10", NULL, NULL},
-  {"DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,DIRConnectTimeout), 0, 0, "10", NULL, NULL},
+  { "Name", CFG_TYPE_NAME, ITEM(res_monitor, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_monitor, description_), {}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor, password), {config::Required{}}},
+  { "RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor, RefreshInterval), {config::DefaultValue{"60"}}},
+  { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor, FDConnectTimeout), {config::DefaultValue{"10"}}},
+  { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor, SDConnectTimeout), {config::DefaultValue{"10"}}},
+  { "DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor, DIRConnectTimeout), {config::DefaultValue{"10"}}},
     TLS_COMMON_CONFIG(res_monitor),
     TLS_CERT_CONFIG(res_monitor),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -102,13 +102,13 @@ static ResourceItem mon_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem dir_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_dir,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_dir,description_), 0, 0, NULL, NULL, NULL},
-  {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir,DIRport), 0, 0, DIR_DEFAULT_PORT, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_dir,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
+  { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), {config::Required{}}},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -117,14 +117,14 @@ static ResourceItem dir_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem client_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_client,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_client,description_), 0, 0, NULL, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_client,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"FdPort", CFG_TYPE_PINT32, ITEM(res_client,FDport), 0, 0, FD_DEFAULT_PORT, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
+  { "Address", CFG_TYPE_STR, ITEM(res_client, address), {config::Required{}}},
+  { "FdPort", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client, password), {config::Required{}}},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -133,16 +133,16 @@ static ResourceItem client_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem store_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_store,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_store,description_), 0, 0, NULL, NULL, NULL},
-  {"SdPort", CFG_TYPE_PINT32, ITEM(res_store,SDport), 0, 0, SD_DEFAULT_PORT, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_store,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdAddress", CFG_TYPE_STR, ITEM(res_store,address), 0, 0, NULL, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, 0, NULL, NULL, NULL},
+  { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
+  { "SdPort", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Required{}}},
+  { "SdAddress", CFG_TYPE_STR, ITEM(res_store, address), {}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password), {config::Required{}}},
+  { "SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password), {}},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -151,10 +151,10 @@ static ResourceItem store_items[] = {
  * name handler value code flags default_value
  */
 static ResourceItem con_font_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_font,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_font,description_), 0, 0, NULL, NULL, NULL},
-  {"Font", CFG_TYPE_STR, ITEM(res_font,fontface), 0, 0, NULL, NULL, NULL},
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  { "Name", CFG_TYPE_NAME, ITEM(res_font, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_font, description_), {}},
+  { "Font", CFG_TYPE_STR, ITEM(res_font, fontface), {}},
+  {}
 };
 
 /*

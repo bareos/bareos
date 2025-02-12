@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,24 +34,24 @@
 /* clang-format off */
 
 static ResourceItem msgs_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_msgs, resource_name_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
-   { "Description", CFG_TYPE_STR, ITEM(res_msgs, description_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
-   { "MailCommand", CFG_TYPE_STDSTR, ITEM(res_msgs, mail_cmd_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
-   { "OperatorCommand", CFG_TYPE_STDSTR, ITEM(res_msgs, operator_cmd_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
-   { "TimestampFormat", CFG_TYPE_STDSTR, ITEM(res_msgs, timestamp_format_), static_cast<int>(MessageDestinationCode::kUndefined), 0, NULL, NULL, NULL },
-   { "Syslog", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kSyslog), 0, NULL, NULL, NULL },
-   { "Mail", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kMail), 0, NULL, NULL, NULL },
-   { "MailOnError", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::KMailOnError), 0, NULL, NULL, NULL },
-   { "MailOnSuccess", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kMailOnSuccess), 0, NULL, NULL, NULL },
-   { "File", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kFile), 0, NULL, NULL, NULL },
-   { "Append", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kAppend), 0, NULL, NULL, NULL },
-   { "Stdout", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kStdout), 0, NULL, NULL, NULL },
-   { "Stderr", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kStderr), 0, NULL, NULL, NULL },
-   { "Director", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kDirector), 0, NULL, NULL, NULL },
-   { "Console", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kConsole), 0, NULL, NULL, NULL },
-   { "Operator", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kOperator), 0, NULL, NULL, NULL },
-   { "Catalog", CFG_TYPE_MSGS, ITEMC(res_msgs), static_cast<int>(MessageDestinationCode::kCatalog), 0, NULL, NULL, NULL },
-   {nullptr, 0, 0, nullptr, static_cast<int>(MessageDestinationCode::kUndefined), 0, nullptr, nullptr, nullptr}
+  { "Name", CFG_TYPE_NAME, ITEM(res_msgs, resource_name_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_msgs, description_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},
+  { "MailCommand", CFG_TYPE_STDSTR, ITEM(res_msgs, mail_cmd_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},
+  { "OperatorCommand", CFG_TYPE_STDSTR, ITEM(res_msgs, operator_cmd_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},
+  { "TimestampFormat", CFG_TYPE_STDSTR, ITEM(res_msgs, timestamp_format_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},
+  { "Syslog", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kSyslog)}}},
+  { "Mail", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kMail)}}},
+  { "MailOnError", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::KMailOnError)}}},
+  { "MailOnSuccess", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kMailOnSuccess)}}},
+  { "File", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kFile)}}},
+  { "Append", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kAppend)}}},
+  { "Stdout", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kStdout)}}},
+  { "Stderr", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kStderr)}}},
+  { "Director", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kDirector)}}},
+  { "Console", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kConsole)}}},
+  { "Operator", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kOperator)}}},
+  { "Catalog", CFG_TYPE_MSGS, ITEMC(res_msgs), {config::Code{static_cast<int>(MessageDestinationCode::kCatalog)}}},
+  {}
 };
 
 /* clang-format on */

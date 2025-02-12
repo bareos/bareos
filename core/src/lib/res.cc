@@ -43,6 +43,8 @@
 #include "include/compiler_macro.h"
 #include "lib/crypto.h"
 
+#include <sstream>
+
 // Set default indention e.g. 2 spaces.
 #define DEFAULT_INDENT_STRING "  "
 
@@ -2105,8 +2107,22 @@ json_t* json_item(ResourceItem* item, bool is_alias)
   if (item->is_required()) {
     json_object_set_new(json, "required", json_true());
   }
-  if (item->versions) {
-    json_object_set_new(json, "versions", json_string(item->versions));
+
+  if (item->introduced_in || item->deprecated_since) {
+    std::stringstream version_string;
+    if (item->introduced_in) {
+      version_string << item->introduced_in->major << "."
+                     << item->introduced_in->minor << "."
+                     << item->introduced_in->patch;
+    }
+    version_string << "-";
+    if (item->deprecated_since) {
+      version_string << item->deprecated_since->major << "."
+                     << item->deprecated_since->minor << "."
+                     << item->deprecated_since->patch;
+    }
+    json_object_set_new(json, "versions",
+                        json_string(version_string.str().c_str()));
   }
   if (!is_alias) {
     if (item->description) {

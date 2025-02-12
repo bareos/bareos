@@ -32,7 +32,7 @@
           "code": 0,
           "default_value": "9101",
           "equals": true,
-          "versions": "16.2.2",
+          "versions": "16.2.2-",
           "description": "Director Network Port. Only used if \"Connection From Client To Director\" is enabled."
         },
         "ConnectionFromDirectorToClient": {
@@ -40,7 +40,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "versions": "16.2.2",
+          "versions": "16.2.2-",
           "description": "This Client will accept incoming network connection from this Director."
         },
         "ConnectionFromClientToDirector": {
@@ -48,7 +48,7 @@
           "code": 0,
           "default_value": "false",
           "equals": true,
-          "versions": "16.2.2",
+          "versions": "16.2.2-",
           "description": "Let the Filedaemon initiate network connections to the Director."
         },
         "Monitor": {

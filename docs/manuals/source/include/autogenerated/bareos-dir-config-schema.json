@@ -402,7 +402,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "versions": "16.2.2",
+          "versions": "16.2.2-",
           "description": "Let the Director initiate the network connection to the Client."
         },
         "ConnectionFromClientToDirector": {
@@ -410,7 +410,7 @@
           "code": 0,
           "default_value": "false",
           "equals": true,
-          "versions": "16.2.2",
+          "versions": "16.2.2-",
           "description": "The Director will accept incoming network connection from this Client."
         },
         "Enabled": {
@@ -456,7 +456,8 @@
           "default_value": "5184000",
           "deprecated": true,
           "equals": true,
-          "versions": "-23.0.0"
+          "versions": "-23.0.0",
+          "description": "File retention"
         },
         "JobRetention": {
           "datatype": "TIME",
@@ -1878,13 +1879,15 @@
         "DbUser": {
           "datatype": "STRING",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "required": true
         },
         "User": {
           "datatype": "STRING",
           "code": 0,
           "alias": true,
           "equals": true,
+          "required": true,
           "description": "This is an alias, consider using \"DbUser\" instead."
         },
         "DbName": {
