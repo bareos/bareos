@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -363,22 +363,18 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     name++;
   }
 
-  /**
-   * Strip any trailing slash, if we stored something
-   * but leave "c:\" with backslash (root directory case)
-   */
+  /* Strip any trailing slash, if we stored something
+   * but leave "c:\" with backslash (root directory case) */
   if (*fname != 0 && win32_name[-1] == '\\' && strlen(fname) != 3) {
     win32_name[-1] = 0;
   } else {
     *win32_name = 0;
   }
 
-  /**
-   * Here we convert to VSS specific file name which
+  /* Here we convert to VSS specific file name which
    * can get longer because VSS will make something like
    * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
-   * from c:\bareos\uninstall.exe
-   */
+   * from c:\bareos\uninstall.exe */
   Dmsg1(debuglevel, "path=%s\n", tname);
   if (tvpc) {
     POOLMEM* pszBuf = GetPoolMemory(PM_FNAME);
@@ -397,10 +393,8 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
 {
   DWORD dwSize;
 
-  /*
-   * One extra byte should suffice, but we double it
-   * add MAX_PATH bytes for VSS shadow copy name.
-   */
+  /* One extra byte should suffice, but we double it
+   * add MAX_PATH bytes for VSS shadow copy name. */
   dwSize = 2 * strlen(name) + MAX_PATH;
   win32_name = CheckPoolMemorySize(win32_name, dwSize);
   conv_unix_to_vss_win32_path(name, win32_name, dwSize);
@@ -445,11 +439,9 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
   pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
                                           dwBufCharsNeeded * sizeof(wchar_t));
 
-  /*
-   * Add \\?\ to support 32K long filepaths
+  /* Add \\?\ to support 32K long filepaths
    * it is important to make absolute paths, so we add drive and
-   * current path if necessary
-   */
+   * current path if necessary */
   BOOL bAddDrive = TRUE;
   BOOL bAddCurrentPath = TRUE;
   BOOL bAddPrefix = TRUE;
@@ -487,10 +479,8 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
   if (bAddDrive || bAddCurrentPath) {
     dwCurDirPathSize = p_GetCurrentDirectoryW(0, NULL);
     if (dwCurDirPathSize > 0) {
-      /*
-       * Get directory into own buffer as it may either return c:\... or
-       * \\?\C:\....
-       */
+      /* Get directory into own buffer as it may either return c:\... or
+       * \\?\C:\.... */
       pwszCurDirBuf = (wchar_t*)CheckPoolMemorySize(
           (POOLMEM*)pwszCurDirBuf, (dwCurDirPathSize + 1) * sizeof(wchar_t));
       p_GetCurrentDirectoryW(dwCurDirPathSize, pwszCurDirBuf);
@@ -528,10 +518,8 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
     pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
                                             dwBufCharsNeeded * sizeof(wchar_t));
 
-    /*
-     * Get directory into own buffer as it may either return c:\... or
-     * \\?\C:\....
-     */
+    /* Get directory into own buffer as it may either return c:\... or
+     * \\?\C:\.... */
     if (IsPathSeparator(pwszCurDirBuf[0]) && IsPathSeparator(pwszCurDirBuf[1])
         && pwszCurDirBuf[2] == '?' && IsPathSeparator(pwszCurDirBuf[3])) {
       // Copy complete string
@@ -556,10 +544,8 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
   wchar_t next_char = 0;
 
   while (*name) {
-    /*
-     * Check for Unix separator and convert to Win32, eliminating duplicate
-     * separators.
-     */
+    /* Check for Unix separator and convert to Win32, eliminating duplicate
+     * separators. */
     if (IsPathSeparator(*name)) {
       // Don't add a trailing slash.
       next_char = *(name + 1);
@@ -570,10 +556,8 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
       previous_char = '\\';
       *win32_name++ = '\\'; /* convert char */
 
-      /*
-       * Eliminate consecutive slashes, but not at the start so that \\.\ still
-       * works.
-       */
+      /* Eliminate consecutive slashes, but not at the start so that \\.\ still
+       * works. */
       if (name_start != name && IsPathSeparator(name[1])) { name++; }
     } else {
       previous_char = *name;
@@ -585,12 +569,10 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
   // NULL Terminate string
   *win32_name = 0;
 
-  /*
-   * Here we convert to VSS specific file name which can get longer because VSS
+  /* Here we convert to VSS specific file name which can get longer because VSS
    * will make something like
    * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
-   * from c:\bareos\uninstall.exe
-   */
+   * from c:\bareos\uninstall.exe */
   thread_vss_path_convert* tvpc = Win32GetPathConvert();
   if (tvpc) {
     // Is output buffer large enough?
@@ -621,10 +603,8 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
 // Convert from WCHAR (UCS) to UTF-8
 int wchar_2_UTF8(POOLMEM*& pszUTF, const WCHAR* pszUCS)
 {
-  /**
-   * The return value is the number of bytes written to the buffer.
-   * The number includes the byte for the null terminator.
-   */
+  /* The return value is the number of bytes written to the buffer.
+   * The number includes the byte for the null terminator. */
   if (p_WideCharToMultiByte) {
     int nRet
         = p_WideCharToMultiByte(CP_UTF8, 0, pszUCS, -1, NULL, 0, NULL, NULL);
@@ -639,10 +619,8 @@ int wchar_2_UTF8(POOLMEM*& pszUTF, const WCHAR* pszUCS)
 // Convert from WCHAR (UCS) to UTF-8
 int wchar_2_UTF8(char* pszUTF, const WCHAR* pszUCS, int cchChar)
 {
-  /**
-   * The return value is the number of bytes written to the buffer.
-   * The number includes the byte for the null terminator.
-   */
+  /* The return value is the number of bytes written to the buffer.
+   * The number includes the byte for the null terminator. */
   if (p_WideCharToMultiByte) {
     int nRet = p_WideCharToMultiByte(CP_UTF8, 0, pszUCS, -1, pszUTF, cchChar,
                                      NULL, NULL);
@@ -655,11 +633,9 @@ int wchar_2_UTF8(char* pszUTF, const WCHAR* pszUCS, int cchChar)
 
 int UTF8_2_wchar(POOLMEM*& ppszUCS, const char* pszUTF)
 {
-  /*
-   * The return value is the number of wide characters written to the buffer.
+  /* The return value is the number of wide characters written to the buffer.
    * convert null terminated string from utf-8 to ucs2, enlarge buffer if
-   * necessary
-   */
+   * necessary */
   if (p_MultiByteToWideChar) {
     // strlen of UTF8 +1 is enough
     DWORD cchSize = (strlen(pszUTF) + 1);
@@ -730,11 +706,9 @@ int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
   int nRet;
   thread_conversion_cache* tcc;
 
-  /*
-   * If we find the utf8 string in cache, we use the cached ucs2 version.
+  /* If we find the utf8 string in cache, we use the cached ucs2 version.
    * we compare the stringlength first (quick check) and then compare the
-   * content.
-   */
+   * content. */
   tcc = Win32GetCache();
   if (!tcc) {
     tcc = Win32ConvInitCache();
@@ -751,10 +725,8 @@ int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
     }
   }
 
-  /*
-   * Helper to convert from utf-8 to UCS-2 and to complete a path for 32K path
-   * syntax
-   */
+  /* Helper to convert from utf-8 to UCS-2 and to complete a path for 32K path
+   * syntax */
   nRet = UTF8_2_wchar(pszUCS, pszUTF);
 
 #ifdef USE_WIN32_32KPATHCONVERSION
@@ -876,10 +848,8 @@ bool CreateJunction(const char* szJunction, const char* szPath)
   PoolMem szDestDir(PM_FNAME);
   POOLMEM *buf, *szJunctionW, *szPrintName, *szSubstituteName;
 
-  /*
-   * We only implement a Wide string version of CreateJunction.
-   * So if p_CreateDirectoryW is not available we refuse to do anything.
-   */
+  /* We only implement a Wide string version of CreateJunction.
+   * So if p_CreateDirectoryW is not available we refuse to do anything. */
   if (!p_CreateDirectoryW) {
     Dmsg0(debuglevel,
           "CreateJunction: CreateDirectoryW not found, doing nothing\n");
@@ -949,10 +919,8 @@ bool CreateJunction(const char* szJunction, const char* szPath)
       = rdb->ReparseDataLength + MOUNTPOINTREPARSEBUFFER_FIXED_HEADER_SIZE;
   rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
 
-  /*
-   * Write reparse point
-   * For debugging use "fsutil reparsepoint query"
-   */
+  /* Write reparse point
+   * For debugging use "fsutil reparsepoint query" */
   if (!DeviceIoControl(hDir, FSCTL_SET_REPARSE_POINT, (LPVOID)buf, data_length,
                        NULL, 0, &dwRet, 0)) {
     Dmsg1(debuglevel, "DeviceIoControl Failed:%s\n", errorString());
@@ -1002,20 +970,16 @@ static inline bool GetVolumeMountPointData(const char* filename,
 {
   HANDLE h = INVALID_HANDLE_VALUE;
 
-  /*
-   * Now to find out if the directory is a mount point or a reparse point.
+  /* Now to find out if the directory is a mount point or a reparse point.
    * Explicitly open the file to read the reparse point, then call
-   * DeviceIoControl to find out if it points to a Volume or to a directory.
-   */
-  if (p_GetFileAttributesW) {
+   * DeviceIoControl to find out if it points to a Volume or to a directory. */
+  if (p_GetFileAttributesW && p_CreateFileW) {
     POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
     make_win32_path_UTF8_2_wchar(pwszBuf, filename);
 
-    if (p_CreateFileW) {
-      h = CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
-    }
+    h = CreateFileW(
+        (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
       Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
@@ -1118,41 +1082,45 @@ static inline ssize_t GetSymlinkData(const char* filename,
   if (h != INVALID_HANDLE_VALUE) {
     bool ok;
     POOLMEM* buf;
-    int buf_length;
-    REPARSE_DATA_BUFFER* rdb;
     DWORD bytes;
 
-    // Create a buffer big enough to hold all data.
-    buf_length = sizeof(REPARSE_DATA_BUFFER) + MAX_PATH * sizeof(wchar_t);
+    // we want to write a single NUL after the result of GET_REPARSE_POINT;
+    // The result has size at most MAXIMUM_REPARSE_DATA_BUFFER_SIZE, so
+    // buf_length is always enough
+    const DWORD buf_length = MAXIMUM_REPARSE_DATA_BUFFER_SIZE + sizeof(wchar_t);
+
     buf = GetPoolMemory(PM_NAME);
     buf = CheckPoolMemorySize(buf, buf_length);
-    rdb = (REPARSE_DATA_BUFFER*)buf;
 
     memset(buf, 0, buf_length);
+    REPARSE_DATA_BUFFER* rdb = reinterpret_cast<REPARSE_DATA_BUFFER*>(buf);
     rdb->ReparseTag = IO_REPARSE_TAG_SYMLINK;
     ok = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL,
                          0,                              /* in buffer, bytes */
                          (LPVOID)buf, (DWORD)buf_length, /* out buffer, btyes */
                          (LPDWORD)&bytes, (LPOVERLAPPED)0);
     if (ok) {
-      POOLMEM* path;
-      int len, offset, ofs;
+      int len = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength
+                / sizeof(wchar_t);
+      int offset = rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset
+                   / sizeof(wchar_t);
 
-      len = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength
-            / sizeof(wchar_t);
-      offset = rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset
-               / sizeof(wchar_t);
+      // make sure our buffer is big enough
+      ASSERT((uintptr_t)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset
+                         + len + 1)
+                 - (uintptr_t)rdb
+             <= buf_length);
 
       // null-Terminate pathbuffer
       *(wchar_t*)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset + len)
           = L'\0';
 
       // convert to UTF-8
-      path = GetPoolMemory(PM_FNAME);
+      POOLMEM* path = GetPoolMemory(PM_FNAME);
       nrconverted = wchar_2_UTF8(
           path, (wchar_t*)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset));
 
-      ofs = 0;
+      int ofs = 0;
       if (bstrncasecmp(path, "\\??\\", 4)) { /* skip \\??\\ if exists */
         ofs = 4;
         Dmsg0(debuglevel, "\\??\\ was in filename, skipping\n");
@@ -1304,11 +1272,9 @@ static int GetWindowsFileInfo(const char* filename,
     }
 #endif
 
-    /*
-     * See if we got anything from the GetFileInformationByHandleEx() call if
+    /* See if we got anything from the GetFileInformationByHandleEx() call if
      * not fallback to the normal info data returned by FindFirstFileW() or
-     * FindFirstFileA()
-     */
+     * FindFirstFileA() */
     if (use_fallback_data) {
       if (p_FindFirstFileW) { /* use unicode */
         pftLastAccessTime = &info_w.ftLastAccessTime;
@@ -1325,10 +1291,8 @@ static int GetWindowsFileInfo(const char* filename,
   } else {
     const char* err = errorString();
 
-    /*
-     * Note, in creating leading paths, it is normal that the file does not
-     * exist.
-     */
+    /* Note, in creating leading paths, it is normal that the file does not
+     * exist. */
     Dmsg2(2099, "FindFirstFile(%s):%s\n", filename, err);
     LocalFree((void*)err);
     errno = b_errno_win32;
@@ -1350,24 +1314,20 @@ static int GetWindowsFileInfo(const char* filename,
     // Directory
     sb->st_mode |= S_IFDIR;
 
-    /*
-     * Store reparse/mount point info in st_rdev.  Note a Win32 reparse point
+    /* Store reparse/mount point info in st_rdev.  Note a Win32 reparse point
      * (junction point) is like a link though it can have many properties
      * (directory link, soft link, hard link, HSM, ...
      * The IO_REPARSE_TAG_* tag values describe what type of reparse point
      * it actually is.
      *
      * A mount point is a reparse point where another volume is mounted,
-     * so it is like a Unix mount point (change of filesystem).
-     */
+     * so it is like a Unix mount point (change of filesystem). */
     if ((*pdwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
       switch (*pdwReserved0) {
         case IO_REPARSE_TAG_MOUNT_POINT: {
-          /*
-           * A mount point can be:
+          /* A mount point can be:
            * Volume Mount Point "\\??\\volume{..."
-           * Junction Point     "\\??\\..."
-           */
+           * Junction Point     "\\??\\..." */
           POOLMEM* vmp = GetPoolMemory(PM_NAME);
           if (GetVolumeMountPointData(filename, vmp)) {
             if (bstrncasecmp(vmp, "\\??\\volume{", 11)) {
@@ -1396,7 +1356,7 @@ static int GetWindowsFileInfo(const char* filename,
           slt = GetPoolMemory(PM_NAME);
           slt = CheckPoolMemorySize(slt, MAX_PATH * sizeof(wchar_t));
 
-          if (GetSymlinkData(filename, slt)) {
+          if (GetSymlinkData(filename, slt) >= 0) {
             Dmsg2(debuglevel, "Symlinked Directory %s points to: %s\n",
                   filename, slt);
           }
@@ -1420,7 +1380,7 @@ static int GetWindowsFileInfo(const char* filename,
           Dmsg0(debuglevel, "We have a symlinked file!\n");
           sb->st_mode |= S_IFLNK;
 
-          if (GetSymlinkData(filename, slt)) {
+          if (GetSymlinkData(filename, slt) >= 0) {
             Dmsg2(debuglevel, "Symlinked File %s points to: %s\n", filename,
                   slt);
           }
@@ -1600,11 +1560,9 @@ static int stat2(const char* filename, struct stat* sb)
   rval = fstat((intptr_t)h, sb);
   CloseHandle(h);
 
-  /*
-   * See if this is a directory or a reparse point and its not a single drive
+  /* See if this is a directory or a reparse point and its not a single drive
    * letter. If so we call GetWindowsFileInfo() which retrieves the lowlevel
-   * information we need.
-   */
+   * information we need. */
   if (((attr & FILE_ATTRIBUTE_DIRECTORY)
        || (attr & FILE_ATTRIBUTE_REPARSE_POINT))
       && !IsDriveLetterOnly(filename)) {
@@ -1648,13 +1606,11 @@ int stat(const char* filename, struct stat* sb)
     goto bail_out;
   }
 
-  /*
-   * See if this is a directory or a reparse point and not a single drive
+  /* See if this is a directory or a reparse point and not a single drive
    * letter. If so we call GetWindowsFileInfo() which retrieves the lowlevel
    * information we need. As GetWindowsFileInfo() fills the complete stat
    * structs we only need to perform the other part of the code when we don't
-   * call the GetWindowsFileInfo() function.
-   */
+   * call the GetWindowsFileInfo() function. */
   if (((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
        || (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
       && !IsDriveLetterOnly(filename)) {
@@ -1691,10 +1647,8 @@ int stat(const char* filename, struct stat* sb)
     if (p_GetFileInformationByHandleEx) {
       HANDLE h = INVALID_HANDLE_VALUE;
 
-      /*
-       * The GetFileInformationByHandleEx need a file handle so we have to
-       * open the file or directory read-only.
-       */
+      /* The GetFileInformationByHandleEx need a file handle so we have to
+       * open the file or directory read-only. */
       if (p_CreateFileW) {
         POOLMEM* pwszBuf;
 
@@ -1849,7 +1803,7 @@ ssize_t readlink(const char* path, char* buf, size_t bufsiz)
   POOLMEM* slt = GetPoolMemory(PM_NAME);
 
   Dmsg1(debuglevel, "readlink called for path %s\n", path);
-  GetSymlinkData(path, slt);
+  if (GetSymlinkData(path, slt) < 0) { return -1; }
 
   strncpy(buf, slt, bufsiz - 1);
   buf[bufsiz] = '\0';
@@ -1883,12 +1837,10 @@ int win32_symlink(const char* name1, const char* name2, _dev_t st_rdev)
 
   Dmsg2(debuglevel, "symlink called name1=%s, name2=%s\n", name1, name2);
   if (p_CreateSymbolicLinkW) {
-    /*
-     * Dynamically allocate enough space for UCS2 filename
+    /* Dynamically allocate enough space for UCS2 filename
      *
      * pwszBuf1: lpTargetFileName
-     * pwszBuf2: lpSymlinkFileName
-     */
+     * pwszBuf2: lpSymlinkFileName */
     POOLMEM* pwszBuf1 = GetPoolMemory(PM_FNAME);
     POOLMEM* pwszBuf2 = GetPoolMemory(PM_FNAME);
 
@@ -2212,10 +2164,8 @@ static DWORD fill_attribute(DWORD attr, mode_t mode, _dev_t rdev)
     attr &= ~FILE_ATTRIBUTE_HIDDEN;
   }
 
-  /*
-   * Other can read/write/execute ?
-   * => Not system
-   */
+  /* Other can read/write/execute ?
+   * => Not system */
   if (mode & S_IRWXO) {
     attr &= ~FILE_ATTRIBUTE_SYSTEM;
   } else {
@@ -2223,12 +2173,10 @@ static DWORD fill_attribute(DWORD attr, mode_t mode, _dev_t rdev)
     compatible = true;
   }
 
-  /*
-   * See if there are any compatible mode settings in the to restore mode.
+  /* See if there are any compatible mode settings in the to restore mode.
    * If so we don't trust the rdev setting as it is from an Bacula compatible
    * Filedaemon and as such doesn't encode the windows file flags in st_rdev
-   * but uses st_rdev for marking reparse points.
-   */
+   * but uses st_rdev for marking reparse points. */
   if (!compatible) {
     // Based on the setting of rdev restore any special file flags.
     if (rdev & FILE_ATTRIBUTE_READONLY) {
@@ -2400,10 +2348,8 @@ char* win32_getcwd(char* buf, int maxlen)
 
 int win32_fputs(const char* string, FILE* stream)
 {
-  /*
-   * We use WriteConsoleA / WriteConsoleA so we can be sure that unicode support
-   * works on win32. with fallback if something fails
-   */
+  /* We use WriteConsoleA / WriteConsoleA so we can be sure that unicode support
+   * works on win32. with fallback if something fails */
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
   if (hOut && (hOut != INVALID_HANDLE_VALUE) && p_WideCharToMultiByte
       && p_MultiByteToWideChar && (stream == stdout)) {
@@ -2442,10 +2388,8 @@ int win32_fputs(const char* string, FILE* stream)
 
 char* win32_cgets(char* buffer, int len)
 {
-  /*
-   * We use console ReadConsoleA / ReadConsoleW to be able to read unicode
-   * from the win32 console and fallback if seomething fails
-   */
+  /* We use console ReadConsoleA / ReadConsoleW to be able to read unicode
+   * from the win32 console and fallback if seomething fails */
   HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
   if (hIn && (hIn != INVALID_HANDLE_VALUE) && p_WideCharToMultiByte
       && p_MultiByteToWideChar) {
@@ -2722,11 +2666,9 @@ bool GetApplicationName(const char* cmdline, char** pexe, const char** pargs)
   *pargs = NULL;
   *pexe = NULL;
 
-  /*
-   * Scan command line looking for path separators (/ and \\) and the
+  /* Scan command line looking for path separators (/ and \\) and the
    * terminator, either a quote or a blank.  The location of the
-   * extension is also noted.
-   */
+   * extension is also noted. */
   for (; *current != '\0'; current++) {
     if (*current == '.') {
       pExtension = current;
@@ -2742,10 +2684,8 @@ bool GetApplicationName(const char* cmdline, char** pexe, const char** pargs)
       if (*current != ' ') { continue; }
     }
 
-    /*
-     * Hit terminator, remember end of name (address of terminator) and start of
-     * arguments
-     */
+    /* Hit terminator, remember end of name (address of terminator) and start of
+     * arguments */
     pExeEnd = current;
 
     if (bQuoted && *current == '"') {
@@ -2765,10 +2705,8 @@ bool GetApplicationName(const char* cmdline, char** pexe, const char** pargs)
 
   bool bHasPathSeparators = pExeStart != pBasename;
 
-  /*
-   * We have pointers to all the useful parts of the name
-   * Default extensions in the order cmd.exe uses to search
-   */
+  /* We have pointers to all the useful parts of the name
+   * Default extensions in the order cmd.exe uses to search */
   static const char ExtensionList[][5] = {".com", ".exe", ".bat", ".cmd"};
   DWORD dwBasePathLength = pExeEnd - pExeStart;
 
@@ -2947,10 +2885,8 @@ HANDLE CreateChildProcess(const char* cmdline,
   // Set up members of the PROCESS_INFORMATION structure.
   ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
-  /*
-   * if supplied handles are not used the send a copy of our STD_HANDLE as
-   * appropriate.
-   */
+  /* if supplied handles are not used the send a copy of our STD_HANDLE as
+   * appropriate. */
   if (in == INVALID_HANDLE_VALUE) in = GetStdHandle(STD_INPUT_HANDLE);
 
   if (out == INVALID_HANDLE_VALUE) out = GetStdHandle(STD_OUTPUT_HANDLE);
