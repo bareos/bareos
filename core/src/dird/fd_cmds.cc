@@ -958,9 +958,7 @@ static int RestoreObjectHandler(void* ctx, int, char** row)
 bool SendPluginOptions(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
-  int i;
   PoolMem cur_plugin_options(PM_MESSAGE);
-  const char* plugin_options;
   POOLMEM* msg;
 
   if (jcr->dir_impl->plugin_options) {
