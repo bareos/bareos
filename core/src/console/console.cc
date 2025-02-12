@@ -979,6 +979,14 @@ int main(int argc, char* argv[])
           my_config->get_base_config_path().c_str());
   }
 
+  if (my_config->HasWarnings()) {
+    // messaging not initialized, so Jmsg with  M_WARNING doesn't work
+    fprintf(stderr, T_("There are configuration warnings:\n"));
+    for (auto& warning : my_config->GetWarnings()) {
+      fprintf(stderr, " * %s\n", warning.c_str());
+    }
+  }
+
   if (list_directors) {
     foreach_res (director_resource, R_DIRECTOR) {
       ConsoleOutputFormat("%s\n", director_resource->resource_name_);
