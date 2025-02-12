@@ -150,7 +150,7 @@ run job=$regularjob_name Level=Full yes
 wait
 @sleep 2
 messages
-prune jobs yes
+prune jobs pool=Full yes
 wait
 quit
 END_OF_DATA
@@ -163,7 +163,7 @@ file_pruning_log="$tmp"/file_pruning_log.out
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $file_pruning_log
-prune files yes
+prune files pool=Full yes
 wait
 restore jobid=11
 no
@@ -260,12 +260,12 @@ expect_grep "Volume \"TestVolumeIncremental\" contains no jobs after pruning." \
             "Volume.*contains no jobs after pruning."
 
 ## Pruning jobs
-expect_grep "Purging the following 3 JobIds: 3,8,10" \
+expect_grep "Purging the following 2 JobIds: 8,10" \
             "$job_pruning_log" \
             "Expected pruned jobids not found" \
             "Purging the"
 
-expect_grep "Pruned 3 Jobs for client bareos-fd from catalog." \
+expect_grep "Pruned 2 Jobs for client bareos-fd from catalog." \
             "$job_pruning_log" \
             "Expected number of jobs pruned not found"
 

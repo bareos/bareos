@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -826,7 +826,9 @@ function(add_systemtest_from_directory test_dir test_basename)
 
 endfunction()
 
-macro(create_enabled_systemtest prefix test_name test_srcdir test_dir)
+macro(create_enabled_systemtest prefix test_name test_srcdir test_dir
+      ignore_config_warnings
+)
   set(test_fullname "${prefix}${test_name}")
 
   message(STATUS "✓ ${test_fullname} (baseport=${BASEPORT})")
@@ -835,11 +837,19 @@ macro(create_enabled_systemtest prefix test_name test_srcdir test_dir)
   configurefilestosystemtest(
     "systemtests" "tests/${test_dir}" "*" @ONLY "tests/${test_srcdir}"
   )
+
+  if(${ignore_config_warnings})
+    set(IGNORE_CONFIG_WARNINGS true)
+    message(STATUS "ignoring config warnings for test ${test_fullname}")
+  else()
+    set(IGNORE_CONFIG_WARNINGS false)
+  endif()
   configure_file(
     "${PROJECT_SOURCE_DIR}/environment.in"
     "${PROJECT_BINARY_DIR}/tests/${test_dir}/environment" @ONLY
     NEWLINE_STYLE UNIX
   )
+
   add_systemtest_from_directory(${tests_dir}/${test_dir} "${test_fullname}")
   # Increase global BASEPORT variable
   math(EXPR BASEPORT "${BASEPORT} + 10")
@@ -856,12 +866,15 @@ macro(create_systemtest prefix test_subdir)
   #   * prefix STRING
   #   * test_subdir STRING
   #   * DISABLED option
+  #   * IGNORE_CONFIG_WARNINGS option
   #   * COMMENT "..." (optional)
   #
   # Made as a macro, not as a function to be able to update BASEPORT.
   #
   # cmake-format: on
-  cmake_parse_arguments(ARG "DISABLED" "COMMENT" "" ${ARGN})
+  cmake_parse_arguments(
+    ARG "DISABLED;IGNORE_CONFIG_WARNINGS" "COMMENT" "" ${ARGN}
+  )
   set(test_basename "${prefix}${test_subdir}")
   if(ARG_DISABLED)
     add_disabled_systemtest(${prefix} ${test_subdir} COMMENT "${ARG_COMMENT}")
@@ -875,14 +888,17 @@ macro(create_systemtest prefix test_subdir)
       if(is_fd_python AND ENABLE_GRPC)
         create_enabled_systemtest(
           ${prefix} ${test_subdir} ${test_subdir} ${test_subdir}
+          ${ARG_IGNORE_CONFIG_WARNINGS}
         )
         string(REPLACE "py3plug" "py3grpc" grpc_subdir ${test_subdir})
         create_enabled_systemtest(
           ${prefix} ${grpc_subdir} ${test_subdir} ${grpc_subdir}
+          ${ARG_IGNORE_CONFIG_WARNINGS}
         )
       else()
         create_enabled_systemtest(
           ${prefix} ${test_subdir} ${test_subdir} ${test_subdir}
+          ${ARG_IGNORE_CONFIG_WARNINGS}
         )
       endif()
 

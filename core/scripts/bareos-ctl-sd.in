@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # bareos-ctl-sd  This shell script takes care of starting and stopping
 #		 the Bareos Storage daemon
@@ -23,7 +23,7 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 #
 # Source the generic functions.
 #
-. @scriptdir@/bareos-ctl-funcs
+. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
 
 case "$1" in
     start)
@@ -42,6 +42,7 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
+            check_config sd ${BAREOS_STORAGEDAEMON_BINARY} $2 $3 ${OPTIONS} || exit $?
             if [ "x${VALGRIND_SD}" = "x1" ]; then
                 valgrind --leak-check=full ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
             else

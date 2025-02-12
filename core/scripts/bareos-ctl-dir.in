@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 #
 # bareos-ctl-dir This shell script takes care of starting and stopping
 #		 the Bareos Director daemon
@@ -43,11 +43,8 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
             fi
 
-            checkcfg
-            if [ $? != 0 ]; then
-                exit 1
-            fi
-
+            check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
+            check_config dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
             "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
         fi
         ;;

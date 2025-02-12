@@ -152,10 +152,7 @@ Client {
   SoftQuotaGracePeriod = 1 weeks 2 days
   StrictQuotas = Yes
   QuotaIncludeFailedJobs = No
-  FileRetention = 10 months
-  JobRetention = 11 months
   HeartbeatInterval = 10 seconds
-  AutoPrune = Yes
   MaximumConcurrentJobs = 10
   MaximumBandwidthPerJob = 10000
   NdmpLogLevel = 40
@@ -1590,7 +1587,7 @@ Pool {
   # Description =
   # PoolType = Backup
   LabelFormat = "Full-"
-  LabelType = "bareos"
+  # LabelType = "bareos"
   # CleaningPrefix = "CLN"
   UseCatalog = No
   PurgeOldestVolume = Yes

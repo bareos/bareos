@@ -244,6 +244,11 @@ the test should be displayed as disabled when running the tests.
 
 Adapt the test configuration and the :file:`testrunner` script to your requirements.
 
+.. note::
+   Configuration warnings are treated as errors in system tests.
+   If your test relies on e.g. deprecated configuration options, you can disable this by
+   passing `IGNORE_CONFIG_WARNINGS` to `create_systemtest` in the system test's `CMakeLists.txt` file.
+
 Directory Structures
 ~~~~~~~~~~~~~~~~~~~~
 
