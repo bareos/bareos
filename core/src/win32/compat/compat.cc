@@ -1106,9 +1106,9 @@ static inline ssize_t GetSymlinkData(const char* filename,
                    / sizeof(wchar_t);
 
       // make sure our buffer is big enough
-      ASSERT((intptr_t)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset + len
-                        + 1)
-                 - (intptr_t)rdb
+      ASSERT((uintptr_t)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset
+                         + len + 1)
+                 - (uintptr_t)rdb
              <= buf_length);
 
       // null-Terminate pathbuffer
