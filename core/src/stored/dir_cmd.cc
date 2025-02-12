@@ -924,8 +924,8 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
           }
           if (!target_device) {
             Jmsg(jcr, M_ERROR, 0,
-                 _("Drive number \"%d\" for device \"%s\" not found.\n"),
-                 drive, devname.c_str());
+                 _("Drive number \"%d\" for device \"%s\" not found.\n"), drive,
+                 devname.c_str());
           }
         }
         break; /* we found it but could not open a device */
