@@ -41,11 +41,10 @@ bareos_add_plugin(autoxflate-sd)
 target_sources(autoxflate-sd PRIVATE autoxflate/autoxflate-sd.cc)
 
 if(MSVC)
-  target_link_libraries(autoxflate-sd bareos bareosfastlz ${ZLIB_LIBRARIES})
+  target_link_libraries(autoxflate-sd bareos bareosfastlz ZLIB::ZLIB)
 else()
   target_link_libraries(
-    autoxflate-sd bareos bareosfastlz
-    $<$<PLATFORM_ID:Windows>:${ZLIB_LIBRARIES}>
+    autoxflate-sd bareos bareosfastlz $<$<PLATFORM_ID:Windows>:ZLIB::ZLIB>
   )
 endif()
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
