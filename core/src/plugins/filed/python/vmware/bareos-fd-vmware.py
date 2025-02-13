@@ -2362,9 +2362,10 @@ class BareosVADPWrapper(object):
         Get CBT info for a disk
         """
         self.disk_change_info["startOffset"] = 0
-        self.disk_change_info["length"] = 0
+        self.disk_change_info["length"] = self.disk_device_to_backup["capacityInBytes"]
         self.disk_change_info["changedArea"] = []
         start_position = 0
+        lengths_sum = 0
 
         if cbt_change_id == "*":
             # Using CBT for full level backups is deprecated. Instead we send
@@ -2396,7 +2397,14 @@ class BareosVADPWrapper(object):
                 "CBT Query: Got %s changedArea entries\n"
                 % (len(changed_disk_areas.changedArea),),
             )
-            start_position = changed_disk_areas.startOffset + changed_disk_areas.length
+            if changed_disk_areas.startOffset != start_position:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "CBT Query: Got bad startOffset %s (must be %s)\n"
+                    % (changed_disk_areas.startOffset, start_position),
+                )
+                return False
+            start_position += changed_disk_areas.length
             bareosfd.DebugMessage(
                 100,
                 "CBT Query: New startOffset: %s (%s + %s)\n"
@@ -2406,15 +2414,23 @@ class BareosVADPWrapper(object):
                     changed_disk_areas.length,
                 ),
             )
-            self.disk_change_info["length"] += changed_disk_areas.length
+            lengths_sum += changed_disk_areas.length
             bareosfd.DebugMessage(
                 100,
-                "CBT Query: New length: %s\n" % (self.disk_change_info["length"],),
+                "CBT Query: New length: %s\n" % (lengths_sum),
             )
             for extent in changed_disk_areas.changedArea:
                 self.disk_change_info["changedArea"].append(
                     {"start": extent.start, "length": extent.length}
                 )
+
+        if lengths_sum != self.disk_device_to_backup["capacityInBytes"]:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "CBT Query: Bad sum of lengths %s (must be %s)\n"
+                % (lengths_sum, self.disk_device_to_backup["capacityInBytes"]),
+            )
+            return False
 
     def check_vm_disks_match(self):
         """
@@ -2590,6 +2606,9 @@ class BareosVADPWrapper(object):
             "/var/tmp" + StringCodec.encode(self.file_to_backup),
             self.changed_disk_areas_json,
         )
+        # for the restoreobject we don't need changedArea data
+        del cbt_data["DiskChangeInfo"]["changedArea"]
+        self.changed_disk_areas_json = json.dumps(cbt_data)
 
     def json2cbt(self, cbt_json_string):
         """
@@ -2948,6 +2967,8 @@ class BareosVADPWrapper(object):
         dumper_log_file = open(self.dumper_stderr_log, "r")
         err_msg = dumper_log_file.read()
         dumper_log_file.close()
+        if len(err_msg) > 4000:
+            return err_msg[-4000:]
         return err_msg
 
     def check_dumper(self):
