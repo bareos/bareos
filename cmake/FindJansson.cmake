@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -55,12 +55,38 @@ find_path(
   NAMES jansson.h
   HINTS ${PC_JANSSON_INCLUDEDIR} ${PC_JANSSON_INCLUDE_DIRS}
 )
-
-find_library(
-  JANSSON_LIBRARY
-  NAMES jansson libjansson
-  HINTS ${PC_JANSSON_LIBDIR} ${PC_JANSSON_LIBRARY_DIRS}
-)
+if(WIN32)
+  find_library(
+    JANSSON_IMPLIB
+    NAMES jansson
+    HINTS ${PC_JANSSON_LIBDIR} ${PC_JANSSON_LIBRARY_DIRS}
+  )
+  get_filename_component(JANSSON_LIBDIR "${JANSSON_IMPLIB}" DIRECTORY)
+  find_library(
+    JANSSON_IMPLIB_DEBUG
+    NAMES jansson_d
+    PATHS ${JANSSON_LIBDIR} ${JANSSON_LIBDIR}/..
+    PATH_SUFFIXES "debug/lib"
+  )
+  find_file(
+    JANSSON_LIBRARY
+    NAMES jansson.dll
+    PATHS ${JANSSON_LIBDIR} ${JANSSON_LIBDIR}/..
+    PATH_SUFFIXES "bin"
+  )
+  find_file(
+    JANSSON_LIBRARY_DEBUG
+    NAMES jansson_d.dll
+    PATHS ${JANSSON_LIBDIR} ${JANSSON_LIBDIR}/..
+    PATH_SUFFIXES "debug/bin"
+  )
+else()
+  find_library(
+    JANSSON_LIBRARY
+    NAMES jansson libjansson
+    HINTS ${PC_JANSSON_LIBDIR} ${PC_JANSSON_LIBRARY_DIRS}
+  )
+endif()
 
 if(PC_JANSSON_VERSION)
   set(JANSSON_VERSION_STRING ${PC_JANSSON_VERSION})
@@ -82,7 +108,7 @@ endif()
 mark_as_advanced(JANSSON_INCLUDE_DIR JANSSON_LIBRARY)
 
 if(JANSSON_FOUND AND NOT TARGET Jansson::Jansson)
-  add_library(Jansson::Jansson UNKNOWN IMPORTED)
+  add_library(Jansson::Jansson SHARED IMPORTED)
   set_target_properties(
     Jansson::Jansson PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                 "${JANSSON_INCLUDE_DIRS}"
@@ -96,4 +122,25 @@ if(JANSSON_FOUND AND NOT TARGET Jansson::Jansson)
     APPEND
     PROPERTY IMPORTED_LOCATION "${JANSSON_LIBRARY}"
   )
+  if(JANSSON_LIBRARY_DEBUG)
+    set_property(
+      TARGET Jansson::Jansson
+      APPEND
+      PROPERTY IMPORTED_LOCATION_DEBUG "${JANSSON_LIBRARY_DEBUG}"
+    )
+  endif()
+  if(JANSSON_IMPLIB)
+    set_property(
+      TARGET Jansson::Jansson
+      APPEND
+      PROPERTY IMPORTED_IMPLIB "${JANSSON_IMPLIB}"
+    )
+  endif()
+  if(JANSSON_IMPLIB_DEBUG)
+    set_property(
+      TARGET Jansson::Jansson
+      APPEND
+      PROPERTY IMPORTED_IMPLIB_DEBUG "${JANSSON_IMPLIB_DEBUG}"
+    )
+  endif()
 endif()
