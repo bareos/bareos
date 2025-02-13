@@ -14,8 +14,6 @@ myname=$(basename "$0")
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-expected_files=2
-
 start_test
 
 mkdir -p "${tmp}/data"
