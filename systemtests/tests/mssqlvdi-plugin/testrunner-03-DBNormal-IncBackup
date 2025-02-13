@@ -16,8 +16,8 @@ myname=$(basename "$0")
 
 start_test
 
-# update first line in brands
-"${SQLCMD}" -Q "UPDATE dbnormaltest.production.brands SET brand_name='Bareos' WHERE brand_id=1"
+# update first line in samples
+"${SQLCMD}" -Q "UPDATE dbnormaltest.tests.samples SET sample_name='Bareos' WHERE sample_id=1"
 
 mkdir -p "${tmp}/data"
 echo "$0" >"${tmp}/data/$myname"

@@ -16,7 +16,7 @@ myname=$(basename "$0")
 
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBNormalTest -i  sqlfiles/SQL_drop_db.sql
 
-if "${SQLCMD}" -Q "SELECT * FROM DBNormalTest.production.brands"  | grep Electra; then
+if "${SQLCMD}" -Q "SELECT * FROM DBNormalTest.tests.samples"  | grep Bareos; then
   echo "Database is not empty"
   exit 2
 fi

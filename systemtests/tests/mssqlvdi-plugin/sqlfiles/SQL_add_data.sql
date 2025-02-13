@@ -1,8 +1,8 @@
 USE [$(myDB)]
 GO
 
-SET IDENTITY_INSERT production.brands ON;
+SET IDENTITY_INSERT tests.samples ON;
 
-INSERT INTO production.brands(brand_id,brand_name) VALUES(10,'Bareos SuperBike')
+INSERT INTO tests.samples(sample_id,sample_name) VALUES(10,'sample 10')
 
-SET IDENTITY_INSERT production.brands OFF;
+SET IDENTITY_INSERT tests.samples OFF;

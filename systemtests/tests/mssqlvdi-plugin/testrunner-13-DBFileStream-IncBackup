@@ -17,7 +17,9 @@ myname=$(basename "$0")
 start_test
 
 # update first line in brands
-"${SQLCMD}" -Q "UPDATE DBFileStreamTest.production.brands SET brand_name='Bareos' WHERE brand_id=1"
+"${SQLCMD}" -Q "UPDATE DBFileStreamTest.tests.samples SET sample_name='Bareos' WHERE sample_id=1"
+# Add a second filestream
+"${SQLCMD}" -Q "INSERT (INTO DBFileStreamTest.tests.filestreams (fstreams_id, fstream_name, fstream_binary) VALUES (NEWID(),('sample_two', (SELECT * FROM OPENROWSET (BULK 'C:\Windows\write.exe',SINGLE_BLOB) AS fstream_binary))"
 
 mkdir -p "${tmp}/data"
 echo "$0" >"${tmp}/data/$myname"

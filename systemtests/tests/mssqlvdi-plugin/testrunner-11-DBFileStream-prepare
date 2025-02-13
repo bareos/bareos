@@ -18,3 +18,4 @@ myname=$(basename "$0")
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_create_bareos_login_user.sql
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_create_schema_tables.sql
 "${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_load_data.sql
+"${SQLCMD}" -S ${COMPUTERNAME} -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_load_data_streams.sql

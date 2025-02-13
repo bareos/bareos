@@ -35,6 +35,8 @@ run_bconsole
 
 check_log "$tmp/$myname.log"
 # check that the updated content is there
-"${SQLCMD}" -Q "SELECT * FROM DBFileStreamTest.production.brands"  | grep Bareos
+"${SQLCMD}" -Q "SELECT * FROM DBFileStreamTest.tests.samples"  | grep Bareos
+
+"${SQLCMD}" -Q "SELECT * FROM DBFileStreamTest.tests.filestreams"  | grep Bareos
 
 end_test
