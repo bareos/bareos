@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,21 +53,27 @@
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
-const char* cmprs_algo_to_text(uint32_t compression_algorithm)
+static const std::string kCompressorNameUnknown = "Unknown";
+static const std::string kCompressorNameGZIP = "GZIP";
+static const std::string kCompressorNameLZO = "LZO";
+static const std::string kCompressorNameFZLZ = "FASTLZ";
+static const std::string kCompressorNameFZ4L = "LZ4";
+static const std::string kCompressorNameFZ4H = "LZ4HC";
+const std::string& CompressorName(uint32_t compression_algorithm)
 {
   switch (compression_algorithm) {
     case COMPRESS_GZIP:
-      return "GZIP";
+      return kCompressorNameGZIP;
     case COMPRESS_LZO1X:
-      return "LZO2";
+      return kCompressorNameLZO;
     case COMPRESS_FZFZ:
-      return "LZFZ";
+      return kCompressorNameFZLZ;
     case COMPRESS_FZ4L:
-      return "LZ4";
+      return kCompressorNameFZ4L;
     case COMPRESS_FZ4H:
-      return "LZ4HC";
+      return kCompressorNameFZ4H;
     default:
-      return "Unknown";
+      return kCompressorNameUnknown;
   }
 }
 
@@ -99,7 +105,7 @@ static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
                                                uint32_t compression_algorithm)
 {
   Jmsg(jcr, M_FATAL, 0, T_("%s compression not supported on this platform\n"),
-       cmprs_algo_to_text(compression_algorithm));
+       CompressorName(compression_algorithm).c_str());
 }
 
 std::size_t RequiredCompressionOutputBufferSize(uint32_t algo,
@@ -529,6 +535,66 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       return false;
   }
 
+  return true;
+}
+
+bool SetupSpecificCompressionContext(JobControlRecord& jcr,
+                                     uint32_t algo,
+                                     uint32_t compression_level)
+{
+#if defined(HAVE_LIBZ)
+  if (algo == COMPRESS_GZIP) {
+    auto* pZlibStream = reinterpret_cast<z_stream*>(jcr.compress.workset.pZLIB);
+    int zstatus
+        = deflateParams(pZlibStream, compression_level, Z_DEFAULT_STRATEGY);
+    if (pZlibStream->total_in == 0) {
+      if (zstatus != Z_OK) {
+        Jmsg(&jcr, M_FATAL, 0, T_("Compression deflateParams error: %d\n"),
+             zstatus);
+        jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+        return false;
+      }
+    } else {
+      Jmsg(&jcr, M_FATAL, 0,
+           T_("Cannot set up compression context while the buffer still "
+              "contains data."));
+      return false;
+    }
+  }
+#endif
+  if (algo == COMPRESS_FZFZ || algo == COMPRESS_FZ4L || algo == COMPRESS_FZ4H) {
+    zfast_stream_compressor compressor = COMPRESSOR_DEFAULT;
+    switch (algo) {
+      case COMPRESS_FZFZ:
+        compressor = COMPRESSOR_FASTLZ;
+        break;
+      case COMPRESS_FZ4L:
+        compressor = COMPRESSOR_LZ4;
+        break;
+      case COMPRESS_FZ4H:
+        compressor = COMPRESSOR_LZ4;
+        break;
+      default:
+        break;
+    }
+
+    auto* pZFastStream
+        = reinterpret_cast<zfast_stream*>(jcr.compress.workset.pZFAST);
+    if (pZFastStream->total_in == 0) {
+      int zstat = fastlzlibSetCompressor(pZFastStream, compressor);
+      if (zstat != Z_OK) {
+        Jmsg(&jcr, M_FATAL, 0,
+             T_("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+        jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+        return false;
+      }
+    } else {
+      Jmsg(&jcr, M_FATAL, 0,
+           T_("Cannot set up compression context while the buffer still "
+              "contains data."));
+      return false;
+    }
+  }
   return true;
 }
 
