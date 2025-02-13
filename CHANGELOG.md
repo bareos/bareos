@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bconsole: require only one password in the configuration [PR #2125]
 - openssl: unify ssl error logging [PR #2138]
 - python-bareos: Add missing dh-python build dep [PR #2151]
+- debian: Add missing build dependencies [PR #2150]
 
 ## [24.0.0] - 2024-12-16
 
@@ -376,6 +377,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2133]: https://github.com/bareos/bareos/pull/2133
 [PR #2135]: https://github.com/bareos/bareos/pull/2135
 [PR #2138]: https://github.com/bareos/bareos/pull/2138
+[PR #2150]: https://github.com/bareos/bareos/pull/2150
 [PR #2151]: https://github.com/bareos/bareos/pull/2151
 [PR #2161]: https://github.com/bareos/bareos/pull/2161
 [unreleased]: https://github.com/bareos/bareos/tree/master
