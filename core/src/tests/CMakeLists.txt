@@ -379,7 +379,7 @@ if(NOT client-only)
         ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc
         ${PROJECT_SOURCE_DIR}/src/dird/ua_audit.cc
       LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
-                     ${OPENSSL_LIBRARIES}
+                     OpenSSL::SSL OpenSSL::Crypto
     )
   endif()
   bareos_add_test(
@@ -515,7 +515,7 @@ bareos_add_test(
 )
 
 bareos_add_test(
-  wrap LINK_LIBRARIES bareos GTest::gtest_main ${OPENSSL_LIBRARIES}
+  wrap LINK_LIBRARIES bareos GTest::gtest_main OpenSSL::SSL OpenSSL::Crypto
 )
 
 if(NOT HAVE_WIN32)
