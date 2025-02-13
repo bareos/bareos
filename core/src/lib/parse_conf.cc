@@ -323,14 +323,15 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
   for (int i = 0; resource_items_[i].name; i++) {
     if (Bstrcasecmp(resource_items_[i].name, item)) {
       return i;
-    }
-    else {
+    } else {
       for (const auto& alias : resource_items_[i].aliases) {
         if (Bstrcasecmp(alias.c_str(), item)) {
-          std::string warning = "Found alias usage \"" + alias
-              + "\" in configuration which is discouraged, consider using \""
-              + resource_items_[i].name + "\" instead.";
-          if (std::find(warnings_.begin(), warnings_.end(), warning) == warnings_.end()) {
+          std::string warning
+              = "Found alias usage \"" + alias
+                + "\" in configuration which is discouraged, consider using \""
+                + resource_items_[i].name + "\" instead.";
+          if (std::find(warnings_.begin(), warnings_.end(), warning)
+              == warnings_.end()) {
             AddWarning(warning);
           }
           return i;
