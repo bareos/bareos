@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,8 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
-
-include_directories(${PostgreSQL_INCLUDE_DIR})
 
 add_library(bareossql SHARED)
 target_sources(
@@ -37,7 +35,7 @@ target_sources(
           postgresql.cc
           postgresql_batch.cc
 )
-target_link_libraries(bareossql PUBLIC bareos ${PostgreSQL_LIBRARY})
+target_link_libraries(bareossql PUBLIC bareos PostgreSQL::PostgreSQL)
 
 set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
