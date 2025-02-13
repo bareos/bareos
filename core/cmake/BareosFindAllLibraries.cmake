@@ -72,14 +72,9 @@ include(FindPostgreSQL)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(OPENSSL_USE_STATIC_LIBS 1)
 endif()
-include(FindOpenSSL)
 
-if(${OPENSSL_FOUND})
-  set(HAVE_OPENSSL 1)
-  if(OPENSSL_VERSION VERSION_LESS "1.0.2")
-    message(FATAL_ERROR "Need at least OpenSSL version 1.0.2")
-  endif()
-endif()
+find_package(OpenSSL 1.0.2 REQUIRED)
+set(HAVE_OPENSSL 1)
 
 include(BareosFindLibraryAndHeaders)
 
