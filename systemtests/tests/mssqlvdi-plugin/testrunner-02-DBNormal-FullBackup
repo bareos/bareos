@@ -36,7 +36,7 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)"
-            "$tmp/$myname.log";
+            "$tmp/$myname.log"
              echo "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
 
 end_test
