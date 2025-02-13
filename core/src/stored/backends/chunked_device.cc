@@ -681,8 +681,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
         && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
 
-      bytes_left
-          = MIN((ssize_t)count, (current_chunk_->buflen - wanted_offset));
+      bytes_left = MIN((ssize_t)count,
+                       (ssize_t)(current_chunk_->buflen - wanted_offset));
       Dmsg2(200, "Reading complete %d byte read-request from chunk offset %d\n",
             bytes_left, wanted_offset);
 
@@ -843,7 +843,7 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
             memcpy(current_chunk_->buffer + wanted_offset,
                    ((char*)buffer + offset), bytes_left);
             offset_ += bytes_left;
-            if ((wanted_offset + bytes_left) > current_chunk_->buflen) {
+            if ((wanted_offset + bytes_left) > (ssize_t)current_chunk_->buflen) {
               current_chunk_->buflen = wanted_offset + bytes_left;
             }
             current_chunk_->need_flushing = true;
