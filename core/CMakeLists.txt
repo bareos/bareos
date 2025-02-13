@@ -19,6 +19,10 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 project(bareos C CXX)
 
+if(DEBUG_TARGET_DEPENDENCIES)
+  set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL ON)
+endif()
+
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   message(
     FATAL_ERROR
@@ -886,3 +890,24 @@ configure_file(
 )
 
 bareoscopydllstobindir()
+
+if(DEBUG_TARGET_DEPENDENCIES)
+  include(BareosTargetTools)
+  get_all_targets(targets)
+
+  # resolve dependencies for all targets and write a list-file
+  set(ALL_DEPS)
+  foreach(tgt IN LISTS targets)
+    get_target_dependencies(
+      deps ${tgt} "${PROJECT_BINARY_DIR}/dep-debug/${tgt}.txt"
+    )
+    list(APPEND ALL_DEPS ${deps})
+  endforeach()
+  list(SORT ALL_DEPS)
+  list(REMOVE_DUPLICATES ALL_DEPS)
+
+  # dump interesting properties of all imported targets that are used
+  debug_deps(
+    "${ALL_DEPS}" ${PROJECT_BINARY_DIR}/dep-debug/imported-libraries.txt
+  )
+endif()
