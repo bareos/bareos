@@ -146,7 +146,8 @@ target_link_libraries(
   bareos
   PRIVATE version-obj
           bareosfastlz
-          ${OPENSSL_LIBRARIES}
+          OpenSSL::SSL
+          OpenSSL::Crypto
           ZLIB::ZLIB
           ${LZO2_LIBRARIES}
           ${CAM_LIBRARIES}

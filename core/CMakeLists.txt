@@ -194,10 +194,6 @@ endif()
 
 include(BareosFindPrograms)
 
-if(NOT ${OPENSSL_FOUND})
-  message(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
-endif()
-
 if(coverage)
   set(COVERAGE_COMPILER_FLAGS
       "-g -O0 --coverage -fprofile-arcs -ftest-coverage"

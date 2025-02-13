@@ -164,7 +164,7 @@ set(DIRD_RESTYPES
 # dird_objects is also used as library for unittests
 add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
 target_link_libraries(
-  dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} ${THREADS_THREADS}
+  dird_objects PRIVATE bareos OpenSSL::SSL OpenSSL::Crypto ${THREADS_THREADS}
 )
 
 if(HAVE_WIN32)
@@ -212,8 +212,8 @@ else()
 endif()
 
 target_link_libraries(
-  bareos-dbcheck PRIVATE bareossql bareos bareosfind ${OPENSSL_LIBRARIES}
-                         CLI11::CLI11
+  bareos-dbcheck PRIVATE bareossql bareos bareosfind OpenSSL::SSL
+                         OpenSSL::Crypto CLI11::CLI11
 )
 
 install(TARGETS bareos-dir bareos-dbcheck DESTINATION "${sbindir}")
