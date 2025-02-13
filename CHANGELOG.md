@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - debian: Add missing build dependencies [PR #2128]
 - systemtests: fail if daemons have config warnings [PR #2144]
 - contrib: check_chunk.py improve README.md instructions [PR #2147]
+- build: add support for el10 [PR #2106]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2097]: https://github.com/bareos/bareos/pull/2097
 [PR #2102]: https://github.com/bareos/bareos/pull/2102
 [PR #2105]: https://github.com/bareos/bareos/pull/2105
+[PR #2106]: https://github.com/bareos/bareos/pull/2106
 [PR #2109]: https://github.com/bareos/bareos/pull/2109
 [PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116

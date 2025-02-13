@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -94,7 +94,7 @@ CPMAddPackage(
   NAME xxHash
   VERSION 0.8.0
   GITHUB_REPOSITORY Cyan4973/xxHash
-  GIT_TAG v0.8.2
+  GIT_TAG v0.8.3
   EXCLUDE_FROM_ALL YES
   SOURCE_SUBDIR cmake_unofficial
   OPTIONS "XXHASH_BUILD_XXHSUM OFF" "DISPATCH ON"
