@@ -14,8 +14,6 @@ myname=$(basename "$0")
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-expected_files=2
-
 start_test
 
 mkdir -p "${tmp}/data"
@@ -37,6 +35,6 @@ check_for_zombie_jobs storage=File
 
 expect_grep "IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)"
             "$tmp/$myname.log"
-             echo "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
+            "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
 
 end_test
