@@ -2114,7 +2114,8 @@ json_t* json_item(ResourceItem* item, bool is_alias)
     }
   } else {
     std::string alias_description
-        = std::string("This is an alias, consider using \"") + item->name + "\" instead.";
+        = std::string("This is an alias, consider using \"") + item->name
+          + "\" instead.";
     json_object_set_new(json, "description",
                         json_string(alias_description.c_str()));
   }
