@@ -316,8 +316,6 @@ else()
   add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
 
-include(FindIntl)
-
 if(NOT MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wshadow")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wshadow")
