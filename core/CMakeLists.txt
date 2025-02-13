@@ -316,8 +316,6 @@ else()
   add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
 
-include(FindIntl)
-
 if(MSVC)
   set(BAREOS_WARNING_FLAGS
       /W4 # enable all reasonable warnings, but disable the following
