@@ -147,7 +147,7 @@ target_link_libraries(
   PRIVATE version-obj
           bareosfastlz
           ${OPENSSL_LIBRARIES}
-          ${ZLIB_LIBRARIES}
+          ZLIB::ZLIB
           ${LZO2_LIBRARIES}
           ${CAM_LIBRARIES}
           CLI11::CLI11
