@@ -69,7 +69,7 @@ static ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), 0, 0, NULL, NULL, NULL },
   { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), 0, 0, NULL, NULL, NULL },
+  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), 0, 0, NULL, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_dir),
