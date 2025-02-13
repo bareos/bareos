@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ macro(BareosCopyDllsToBinDir)
       )
         add_custom_command(
           TARGET ${TGT}
-          POST_BUILD JOB_POOL copy
+          POST_BUILD
           COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TGT}>
                   $<TARGET_RUNTIME_DLLS:${TGT}>;${DLLS_TO_COPY_MANUALLY}
           COMMAND_EXPAND_LISTS
