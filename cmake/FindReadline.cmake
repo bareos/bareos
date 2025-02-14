@@ -29,7 +29,9 @@ find_path(
 
 # Search for library
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(Readline_LIBRARY ${HOMEBREW_PREFIX}/opt/readline/lib/libreadline.a)
+  set(Readline_LIBRARY ${HOMEBREW_PREFIX}/opt/readline/lib/libreadline.a
+                       ncurses
+  )
 else()
   find_library(
     Readline_LIBRARY
