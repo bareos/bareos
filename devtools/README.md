@@ -12,6 +12,9 @@ This directory contains tools for working with the Bareos source code. As a user
 
 If step 2 fails, ensure that the environment variable `$PATH` includes a directory that is writable by the current user.
 
+>**Note:**
+>In order to be able to use the `pr-tool`, you require the `gh` GitHub CLI tool.
+>Install it and login (using `gh auth`) to your GitHub account you have your pull requests on. 
 ---
 
 ### PHP CS Fixer (for WebUI)
@@ -70,7 +73,7 @@ The PR Tool provides various workflows to simplify PR development, merging, and 
 Verify which merge requirements for your PR are met.
 
 Ensure that:
-- Pip-Tools are properly installed.
+- Pip-Tools and the GitHub CLI are properly [set up](#pip-tools)
 - Your local branch's upstream branch is part of a pull request.
 
 Run:
@@ -92,6 +95,7 @@ This command checks the following:
 > **NOTE**: When merging, the changelog is updated automatically. This command is rarely needed manually.
 
 Ensure that:
+- Pip-Tools and the GitHub CLI are properly [set up](#pip-tools).
 - There are no uncommitted changes.
 - Your local branch's upstream branch is part of a pull request.
 
@@ -104,6 +108,9 @@ This command adds an entry for the current pull request in the changelog.
 ---
 
 #### Update License
+Ensure that:
+- Pip-Tools are properly [set up](#pip-tools).
+
 Run:
 ```shell
 pr-tool update-license
@@ -114,6 +121,7 @@ This updates the `LICENSE.txt` file at the root of the Bareos repository.
 
 #### Merge
 Ensure that:
+- Pip-Tools and the GitHub CLI are properly [set up](#pip-tools).
 - There are no uncommitted changes.
 - Your local branch's upstream branch is part of a pull request.
 
@@ -135,6 +143,7 @@ Skipping the last step is possible with `--skip-merge`.
 This command outputs the fetched data of the pull request associated with the local branch.
 
 Ensure that:
+- Pip-Tools and the GitHub CLI are properly [set up](#pip-tools).
 - Your local branch's upstream branch is part of a pull request.
 
 Run:
@@ -148,7 +157,7 @@ pr-tool dump
 Create a backport branch and PR based on an existing PR.
 
 Ensure that:
-- Pip-Tools are properly installed.
+- Pip-Tools and the GitHub CLI are properly [set up](#pip-tools).
 - Your local branch's upstream branch is part of a pull request.
 - The remote your upstream branch is on is a ssh connection (not https)
 
@@ -257,9 +266,9 @@ Ensure that:
 
 Run:
 ```shell
-dist-tarball.sh [<directory>]
+dist-tarball.sh [options] [<directory>]
 ```
-This creates a tarball and stores it under `/temp` or the specified directory.
+This creates a tarball and stores it under `<directory>` (or `/tmp` if not given).
 
 Options:
 - `--fast` – Uses fast compression.
