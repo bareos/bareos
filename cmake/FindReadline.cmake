@@ -29,9 +29,7 @@ find_path(
 
 # Search for library
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(Readline_LIBRARY ${HOMEBREW_PREFIX}/opt/readline/lib/libreadline.a
-                       ncurses
-  )
+  set(Readline_LIBRARY ${HOMEBREW_PREFIX}/opt/readline/lib/libreadline.a)
 else()
   find_library(
     Readline_LIBRARY
@@ -52,7 +50,11 @@ if(Readline_FOUND AND NOT TARGET Readline::Readline)
     PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Readline_INCLUDE_DIR}"
                IMPORTED_LOCATION "${Readline_LIBRARY}"
   )
-
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set_target_properties(
+      Readline::Readline PROPERTIES INTERFACE_LINK_LIBRARIES "ncurses"
+    )
+  endif()
 endif()
 
 mark_as_advanced(Readline_ROOT_DIR Readline_INCLUDE_DIR Readline_LIBRARY)
