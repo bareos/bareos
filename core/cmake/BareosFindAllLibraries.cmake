@@ -132,7 +132,10 @@ elseif(
   )
 endif()
 
-bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+  pkg_check_modules(gfapi IMPORTED_TARGET glusterfs-api)
+endif()
 
 find_package(PAM)
 if(PAM_FOUND)
