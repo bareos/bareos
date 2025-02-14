@@ -120,7 +120,6 @@ if(HAVE_WIN32)
 endif()
 
 if(HAVE_PAM)
-  include_directories(${PAM_INCLUDE_DIRS})
   list(APPEND DIRD_OBJECTS_SRCS auth_pam.cc)
 endif()
 
@@ -188,7 +187,7 @@ if(HAVE_LMDB)
 endif()
 
 if(HAVE_PAM)
-  target_link_libraries(dird_objects PRIVATE ${PAM_LIBRARIES})
+  target_link_libraries(dird_objects PRIVATE PAM::pam)
 endif()
 
 if(HAVE_WIN32)
