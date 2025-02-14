@@ -264,9 +264,6 @@
 // Define to 1 if you have the `lgetxattr' function
 #cmakedefine HAVE_LGETXATTR @HAVE_LGETXATTR@
 
-// Define to 1 if you have libcap
-#cmakedefine HAVE_LIBCAP @HAVE_LIBCAP@
-
 // Define to 1 if you have the `util' library (-lutil)
 #cmakedefine HAVE_LIBUTIL @HAVE_LIBUTIL@
 
