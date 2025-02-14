@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -67,7 +67,7 @@ if(NOT HAVE_WIN32)
   target_link_libraries(btestls bareosfind bareos)
 
   add_executable(bpluginfo bpluginfo.cc)
-  target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} CLI11::CLI11)
+  target_link_libraries(bpluginfo bareos ${CMAKE_DL_LIBS} CLI11::CLI11)
 
   set(TOOLS_SBIN bscrypto bwild bregex)
 else()
