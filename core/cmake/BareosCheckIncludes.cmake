@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,6 @@ if(NOT MSVC)
 
   check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)
 
-  check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
   check_include_files(zlib.h HAVE_ZLIB_H)
 
   check_include_files(scsi/scsi.h HAVE_SCSI_SCSI_H)

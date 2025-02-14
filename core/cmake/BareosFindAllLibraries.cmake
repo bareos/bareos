@@ -132,11 +132,6 @@ elseif(
   )
 endif()
 
-bareosfindlibraryandheaders("cap" "sys/capability.h" "")
-if(${HAVE_CAP})
-  set(HAVE_LIBCAP 1)
-endif()
-
 bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
 
 find_package(PAM)
