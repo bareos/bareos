@@ -169,8 +169,6 @@ find_package(ZLIB REQUIRED)
 set(HAVE_LIBZ 1)
 set(HAVE_ZLIB_H 1)
 
-find_package(Readline)
-
 option(ENABLE_JANSSON "Build with Jansson library (required for director)" ON)
 if(ENABLE_JANSSON)
   find_package(Jansson REQUIRED)

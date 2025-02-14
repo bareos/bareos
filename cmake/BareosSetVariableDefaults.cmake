@@ -428,10 +428,6 @@ if(NOT postgresql)
   set(PostgreSQL_INCLUDE_DIR "")
 endif()
 
-if(NOT Readline_LIBRARY)
-  set(Readline_LIBRARY "")
-endif()
-
 if(NOT LIBZ_FOUND)
   set(ZLIB_LIBRARY "")
 endif()
