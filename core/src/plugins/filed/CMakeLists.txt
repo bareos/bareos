@@ -106,8 +106,7 @@ if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(gfapi-fd gfapi)
-  target_include_directories(gfapi-fd PRIVATE ${GFAPI_INCLUDE_DIRS})
+  target_link_libraries(gfapi-fd PRIVATE PkgConfig::gfapi)
 endif()
 
 add_subdirectory(grpc)
