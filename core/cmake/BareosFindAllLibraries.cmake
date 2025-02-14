@@ -139,7 +139,10 @@ endif()
 
 bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
 
-bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
+find_package(PAM)
+if(PAM_FOUND)
+  set(HAVE_PAM 1)
+endif()
 
 option(ENABLE_LZO "Enable LZO support" ON)
 if(ENABLE_LZO)

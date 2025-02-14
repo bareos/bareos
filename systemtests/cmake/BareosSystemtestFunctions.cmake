@@ -342,7 +342,7 @@ endfunction()
 
 macro(check_for_pamtest)
   message(STATUS "Looking for pam test requirements ...")
-  bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
+  find_package(PAM)
   bareosfindlibrary("pam_wrapper")
   find_program(PAMTESTER pamtester)
 
