@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bareos-config-libs: double quote dbconfig values [PR #2133]
 - bconsole: enable app icon on windows [PR #2131]
 - windows: fix readlink buffer size issue [PR #2161]
+- cmake: add cmake_parse_arguments policy CMP0174 [PR #2172]
 
 ### Changed
 - winbareos-native.nsi: do not package python3 plugins [PR #2085]
@@ -380,4 +381,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2150]: https://github.com/bareos/bareos/pull/2150
 [PR #2151]: https://github.com/bareos/bareos/pull/2151
 [PR #2161]: https://github.com/bareos/bareos/pull/2161
+[PR #2172]: https://github.com/bareos/bareos/pull/2172
 [unreleased]: https://github.com/bareos/bareos/tree/master
