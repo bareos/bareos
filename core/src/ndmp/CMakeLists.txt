@@ -198,12 +198,13 @@ bareos_disable_warnings(
 )
 
 target_include_directories(bareosndmp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 if(HAVE_LINUX_OS)
-  if("${TIRPC_INCLUDE_DIRS}" STREQUAL "")
-    message(FATAL_ERROR "tirpc is required but was not found.")
-  endif()
-  target_include_directories(bareosndmp PUBLIC ${TIRPC_INCLUDE_DIRS})
+  find_package(tirpc REQUIRED)
+else()
+  find_package(tirpc)
+endif()
+if(TARGET tirpc::tirpc)
+  target_link_libraries(bareosndmp PUBLIC tirpc::tirpc)
 endif()
 
 install(TARGETS bareosndmp DESTINATION ${libdir})

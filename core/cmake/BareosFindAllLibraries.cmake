@@ -152,7 +152,6 @@ endif()
 
 include(BareosFindLibrary)
 
-bareosfindlibraryandheaders("tirpc" "rpc/rpc.h" "/usr/include/tirpc")
 bareosfindlibrary("util")
 bareosfindlibrary("acl")
 if(NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
