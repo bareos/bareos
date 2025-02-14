@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bconsole: enable app icon on windows [PR #2105]
 - windows: fix readlink buffer size issue [PR #2153]
 - Fix btape fill-test problem [PR #2018]
+- cmake: add cmake_parse_arguments policy CMP0174 [PR #2169]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -66,4 +67,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2144]: https://github.com/bareos/bareos/pull/2144
 [PR #2147]: https://github.com/bareos/bareos/pull/2147
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
+[PR #2169]: https://github.com/bareos/bareos/pull/2169
 [unreleased]: https://github.com/bareos/bareos/tree/master
