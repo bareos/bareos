@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,9 +29,7 @@ find_path(
 
 # Search for library
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(Readline_LIBRARY ${HOMEBREW_PREFIX}/opt/readline/lib/libreadline.a
-                       ncurses
-  )
+  set(Readline_LIBRARY ${HOMEBREW_PREFIX}/opt/readline/lib/libreadline.a)
 else()
   find_library(
     Readline_LIBRARY
@@ -39,28 +37,24 @@ else()
     HINTS ${Readline_ROOT_DIR}/lib
   )
 endif()
-# Conditionally set READLINE_FOUND value
-if(Readline_INCLUDE_DIR
-   AND Readline_LIBRARY
-   AND Ncurses_LIBRARY
-)
-  set(READLINE_FOUND TRUE)
-else(
-  Readline_INCLUDE_DIR
-  AND Readline_LIBRARY
-  AND Ncurses_LIBRARY
-)
-  find_library(Readline_LIBRARY NAMES readline)
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(
-    Readline DEFAULT_MSG Readline_INCLUDE_DIR Readline_LIBRARY
-  )
-  mark_as_advanced(Readline_INCLUDE_DIR Readline_LIBRARY)
-endif(
-  Readline_INCLUDE_DIR
-  AND Readline_LIBRARY
-  AND Ncurses_LIBRARY
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(
+  Readline REQUIRED_VARS Readline_INCLUDE_DIR Readline_LIBRARY
 )
 
-# Hide these variables in cmake GUIs
+if(Readline_FOUND AND NOT TARGET Readline::Readline)
+  add_library(Readline::Readline SHARED IMPORTED)
+  set_target_properties(
+    Readline::Readline
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Readline_INCLUDE_DIR}"
+               IMPORTED_LOCATION "${Readline_LIBRARY}"
+  )
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set_target_properties(
+      Readline::Readline PROPERTIES INTERFACE_LINK_LIBRARIES "ncurses"
+    )
+  endif()
+endif()
+
 mark_as_advanced(Readline_ROOT_DIR Readline_INCLUDE_DIR Readline_LIBRARY)
