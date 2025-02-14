@@ -26,7 +26,6 @@ set(BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc
 include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
 
 if(HAVE_PAM)
-  include_directories(${PAM_INCLUDE_DIRS})
   list(APPEND BCONSSRCS auth_pam.cc)
 endif()
 
