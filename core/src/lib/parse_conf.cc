@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -293,6 +293,19 @@ int ConfigurationParser::GetResourceTableIndex(const char* resource_type_name)
     if (Bstrcasecmp(resource_definitions_[i].name, resource_type_name)) {
       return i;
     }
+    for (const auto& [name, groupname] : resource_definitions_[i].aliases) {
+      if (Bstrcasecmp(name.c_str(), resource_type_name)) {
+        std::string warning
+            = "Found resource alias usage \"" + name
+              + "\" in configuration which is discouraged, consider using \""
+              + resource_definitions_[i].name + "\" instead.";
+        if (std::find(warnings_.begin(), warnings_.end(), warning)
+            == warnings_.end()) {
+          AddWarning(warning);
+        }
+        return i;
+      }
+    }
   }
 
   return -1;
@@ -303,6 +316,19 @@ int ConfigurationParser::GetResourceCode(const char* resource_type_name)
   for (int i = 0; resource_definitions_[i].name; i++) {
     if (Bstrcasecmp(resource_definitions_[i].name, resource_type_name)) {
       return resource_definitions_[i].rcode;
+    }
+    for (const auto& [name, groupname] : resource_definitions_[i].aliases) {
+      if (Bstrcasecmp(name.c_str(), resource_type_name)) {
+        std::string warning
+            = "Found resource alias usage \"" + name
+              + "\" in configuration which is discouraged, consider using \""
+              + resource_definitions_[i].name + "\" instead.";
+        if (std::find(warnings_.begin(), warnings_.end(), warning)
+            == warnings_.end()) {
+          AddWarning(warning);
+        }
+        return i;
+      }
     }
   }
 
