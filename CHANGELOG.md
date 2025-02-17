@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - windows: fix readlink buffer size issue [PR #2153]
 - Fix btape fill-test problem [PR #2018]
 - cmake: add cmake_parse_arguments policy CMP0174 [PR #2169]
+- VMware plugin: fix check_mac_address() for vm.config not present [PR #2059]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2039]: https://github.com/bareos/bareos/pull/2039
 [PR #2040]: https://github.com/bareos/bareos/pull/2040
 [PR #2056]: https://github.com/bareos/bareos/pull/2056
+[PR #2059]: https://github.com/bareos/bareos/pull/2059
 [PR #2064]: https://github.com/bareos/bareos/pull/2064
 [PR #2066]: https://github.com/bareos/bareos/pull/2066
 [PR #2067]: https://github.com/bareos/bareos/pull/2067
