@@ -18,10 +18,6 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-# include_directories( ${OPENSSL_INCLUDE_DIR} ${PTHREAD_INCLUDE_DIRS}
-# ${ZLIB_INCLUDE_DIRS} ${ACL_INCLUDE_DIRS} ${LZO2_INCLUDE_DIRS}
-# ${CAP_INCLUDE_DIRS} )
-
 add_library(bareos SHARED ${BAREOS_SRCS})
 target_sources(
   bareos
@@ -148,7 +144,7 @@ target_link_libraries(
           bareosfastlz
           OpenSSL::SSL OpenSSL::Crypto
           ZLIB::ZLIB
-          ${LZO2_LIBRARIES}
+          LZO::LZO
           ${CAM_LIBRARIES}
           CLI11::CLI11
           xxHash::xxhash
