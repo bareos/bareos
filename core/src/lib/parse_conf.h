@@ -39,6 +39,8 @@
 #include <functional>
 #include <memory>
 #include <map>
+#include <vector>
+#include <string>
 
 struct ResourceItem;
 class ConfigParserStateMachine;
@@ -70,6 +72,8 @@ struct ResourceTable {
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
   BareosResource** allocated_resource_;
+  std::vector<std::pair<std::string, std::string>> aliases
+      = {}; /* Resource name and group name aliases (pair=[name, groupname]) */
 };
 
 // Common Resource definitions
