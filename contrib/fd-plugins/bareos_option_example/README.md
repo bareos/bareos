@@ -9,7 +9,7 @@ You need the package `bareos-filedaemon-python-plugin` installed on your client.
 
 ### Activate your plugin directory in the fd resource conf on the client
 ```
-FileDaemon {                          
+Client {                          
   Name = client-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins

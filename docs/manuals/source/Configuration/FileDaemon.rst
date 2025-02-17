@@ -130,7 +130,7 @@ An example File Daemon configuration file might be the following:
    #
    # "Global" File daemon configuration specifications
    #
-   FileDaemon {                          # this is me
+   Client {                          # this is me
      Name = client1-fd
      Maximum Concurrent Jobs = 20
 
