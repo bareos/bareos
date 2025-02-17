@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -3124,6 +3124,13 @@ class BareosVADPWrapper(object):
         vm_view.Destroy()
 
         for vm in all_vms:
+            if vm.config is None:
+                bareosfd.DebugMessage(
+                    100,
+                    "cannot read vm.config from VM %s\n" % (vm.name),
+                )
+                continue
+
             for dev in vm.config.hardware.device:
                 if isinstance(dev, vim.vm.device.VirtualEthernetCard):
                     if dev.macAddress not in all_mac_addr:
