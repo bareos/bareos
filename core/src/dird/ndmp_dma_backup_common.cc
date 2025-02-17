@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -199,14 +199,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
       break;
   }
 
-  // Dump level can be from 0 - 9
-  if (level < 0 || level > 9) {
-    Jmsg(jcr, M_FATAL, 0,
-         T_("NDMP dump format doesn't support more than 8 "
-            "incrementals, please run a Differential or a Full Backup\n"));
-    level = -1;
-  }
-
+  if (level < 0) { return -1; }
   return level;
 }
 
