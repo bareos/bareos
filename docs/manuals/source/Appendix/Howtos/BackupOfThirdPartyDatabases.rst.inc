@@ -77,12 +77,12 @@ Install the Bareos filedaemon including the component "Bareos FileDameon Plugins
 Manual install
 ''''''''''''''
 
-After downloading the plugin you need to copy it into :file:`C:\\Program Files\\Bareos\\Plugins`. Then you need to define the plugin directory and which plugin the bareos-filedaemon should use. You have to edit the bareos-filedaemon resource in :file:`C:\\Program Data\\bareos-fd.conf` as follows:
+After downloading the plugin you need to copy it into :file:`C:\\Program Files\\Bareos\\Plugins`. Then you need to define the plugin directory and which plugin the bareos-filedaemon should use. You have to edit the bareos-client resource in :file:`C:\\Program Data\\bareos-fd.conf` as follows:
 
 .. code-block:: bareosconfig
    :caption: MSSQL plugin configuration
 
-   FileDaemon {
+   Client {
      Name = mssqlserver-fd
      Maximum Concurrent Jobs = 20
 
