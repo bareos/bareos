@@ -2315,9 +2315,23 @@ class BareosVADPWrapper(object):
             ][0]["data"]["DiskParams"]["changeId"]
             bareosfd.DebugMessage(
                 100,
-                "get_vm_disk_cbt(): using changeId %s from restore object\n"
+                "get_vm_disk_cbt(): changeId %s from restore object, using for CBT query\n"
                 % (cbt_changeId),
             )
+            bareosfd.DebugMessage(
+                100,
+                "get_vm_disk_cbt(): changeId %s from current snapshot, saving in restore object\n"
+                % (self.disk_device_to_backup["changeId"]),
+            )
+            if self._changeid_uuid_mismatch(
+                cbt_changeId, self.disk_device_to_backup["changeId"]
+            ):
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "UUID part of changeId from previous and current snapshot mismatch, "
+                    "a new full level backup of this job is required.\n",
+                )
+                return False
 
         try:
             self._get_cbt(cbt_change_id=cbt_changeId)
@@ -2356,6 +2370,15 @@ class BareosVADPWrapper(object):
 
         self.cbt2json()
         return True
+
+    def _changeid_uuid_mismatch(self, cbt_changeid, snapshot_changeid):
+        """
+        As of VDDK documentation, the changeId (changed block ID) contains a sequence
+        number in the form <UUID>/<nnn>. If <UUID> changes, it indicates that tracking
+        information has become invalid, necessitating a full backup. Otherwise incremental
+        backups can continue in the usual pattern.
+        """
+        return cbt_changeid.split("/")[0] != snapshot_changeid.split("/")[0]
 
     def _get_cbt(self, cbt_change_id):
         """
@@ -2967,8 +2990,6 @@ class BareosVADPWrapper(object):
         dumper_log_file = open(self.dumper_stderr_log, "r")
         err_msg = dumper_log_file.read()
         dumper_log_file.close()
-        if len(err_msg) > 4000:
-            return err_msg[-4000:]
         return err_msg
 
     def check_dumper(self):
