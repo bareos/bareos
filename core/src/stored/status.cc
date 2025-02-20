@@ -200,7 +200,6 @@ static void ListDevices(JobControlRecord* jcr,
   int len;
   int bpb;
   Device* dev;
-  DeviceResource* device_resource = nullptr;
   AutochangerResource* changer;
   PoolMem msg(PM_MESSAGE);
   char b1[35], b2[35], b3[35];
@@ -221,7 +220,7 @@ static void ListDevices(JobControlRecord* jcr,
                changer->resource_name_);
     sp->send(msg, len);
 
-    foreach_alist (device_resource, changer->device_resources) {
+    for (auto* device_resource : changer->device_resources) {
       if (device_resource->dev) {
         len = Mmsg(msg, "   %s\n", device_resource->dev->print_name());
         sp->send(msg, len);
@@ -232,6 +231,7 @@ static void ListDevices(JobControlRecord* jcr,
     }
   }
 
+  DeviceResource* device_resource = nullptr;
   foreach_res (device_resource, R_DEVICE) {
     if (devicenames && !NeedToListDevice(devicenames, device_resource)) {
       continue;
