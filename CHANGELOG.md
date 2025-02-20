@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python-bareos: Add missing dh-python build dep [PR #2151]
 - debian: Add missing build dependencies [PR #2150]
 - build: add support for el10 [PR #2164]
+- VMware Plugin: Fix CBT query handling [PR #2182]
 
 ## [24.0.0] - 2024-12-16
 
@@ -384,4 +385,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2161]: https://github.com/bareos/bareos/pull/2161
 [PR #2164]: https://github.com/bareos/bareos/pull/2164
 [PR #2172]: https://github.com/bareos/bareos/pull/2172
+[PR #2182]: https://github.com/bareos/bareos/pull/2182
 [unreleased]: https://github.com/bareos/bareos/tree/master

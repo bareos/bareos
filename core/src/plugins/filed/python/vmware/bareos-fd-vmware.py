@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,7 @@ import hashlib
 import re
 import traceback
 from sys import version_info
-import urllib3.util
+import urllib3
 import requests
 
 try:
@@ -1252,6 +1252,7 @@ class BareosVADPWrapper(object):
         self.restore_vm_created = False
         self.fallback_to_full_cbt = True
         self.restore_allow_disks_mismatch = False
+        self.disk_change_info = {}
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1307,9 +1308,9 @@ class BareosVADPWrapper(object):
 
         self.si_last_keepalive = int(time.time())
 
-        bareosfd.DebugMessage(
-            100,
-            ("Successfully connected to VSphere API on host %s with user %s\n")
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "Successfully connected to VSphere API on host %s with user %s\n"
             % (self.options["vcserver"], self.options["vcuser"]),
         )
 
@@ -2261,6 +2262,7 @@ class BareosVADPWrapper(object):
                             hw_device.backing
                         ),
                         "changeId": hw_device.backing.changeId,
+                        "capacityInBytes": hw_device.capacityInBytes,
                     }
                 )
 
@@ -2313,17 +2315,26 @@ class BareosVADPWrapper(object):
             ][0]["data"]["DiskParams"]["changeId"]
             bareosfd.DebugMessage(
                 100,
-                "get_vm_disk_cbt(): using changeId %s from restore object\n"
+                "get_vm_disk_cbt(): changeId %s from restore object, using for CBT query\n"
                 % (cbt_changeId),
             )
+            bareosfd.DebugMessage(
+                100,
+                "get_vm_disk_cbt(): changeId %s from current snapshot, saving in restore object\n"
+                % (self.disk_device_to_backup["changeId"]),
+            )
+            if self._changeid_uuid_mismatch(
+                cbt_changeId, self.disk_device_to_backup["changeId"]
+            ):
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "UUID part of changeId from previous and current snapshot mismatch, "
+                    "a new full level backup of this job is required.\n",
+                )
+                return False
 
         try:
-            self.changed_disk_areas = self.vm.QueryChangedDiskAreas(
-                snapshot=self.create_snap_result,
-                deviceKey=self.disk_device_to_backup["deviceKey"],
-                startOffset=0,
-                changeId=cbt_changeId,
-            )
+            self._get_cbt(cbt_change_id=cbt_changeId)
         except vim.fault.FileFault as error:
             if cbt_changeId == "*":
                 bareosfd.JobMessage(bareosfd.M_FATAL, "Get CBT failed:\n")
@@ -2350,12 +2361,7 @@ class BareosVADPWrapper(object):
                     return False
 
                 bareosfd.JobMessage(bareosfd.M_WARNING, "Falling back to full CBT\n")
-                self.changed_disk_areas = self.vm.QueryChangedDiskAreas(
-                    snapshot=self.create_snap_result,
-                    deviceKey=self.disk_device_to_backup["deviceKey"],
-                    startOffset=0,
-                    changeId="*",
-                )
+                self._get_cbt(cbt_change_id="*")
                 bareosfd.JobMessage(bareosfd.M_INFO, "Successfully got full CBT\n")
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
@@ -2364,6 +2370,90 @@ class BareosVADPWrapper(object):
 
         self.cbt2json()
         return True
+
+    def _changeid_uuid_mismatch(self, cbt_changeid, snapshot_changeid):
+        """
+        As of VDDK documentation, the changeId (changed block ID) contains a sequence
+        number in the form <UUID>/<nnn>. If <UUID> changes, it indicates that tracking
+        information has become invalid, necessitating a full backup. Otherwise incremental
+        backups can continue in the usual pattern.
+        """
+        return cbt_changeid.split("/")[0] != snapshot_changeid.split("/")[0]
+
+    def _get_cbt(self, cbt_change_id):
+        """
+        Get CBT info for a disk
+        """
+        self.disk_change_info["startOffset"] = 0
+        self.disk_change_info["length"] = self.disk_device_to_backup["capacityInBytes"]
+        self.disk_change_info["changedArea"] = []
+        start_position = 0
+        lengths_sum = 0
+
+        if cbt_change_id == "*":
+            # Using CBT for full level backups is deprecated. Instead we send
+            # the full range so that bareo_vadp_dumper will effectively only
+            # use the allocated blocks.
+            bareosfd.DebugMessage(100, "Skipping CBT Query for full backup")
+            self.disk_change_info["length"] = self.disk_device_to_backup[
+                "capacityInBytes"
+            ]
+            self.disk_change_info["changedArea"].append(
+                {"start": 0, "length": self.disk_device_to_backup["capacityInBytes"]}
+            )
+            return
+
+        while start_position < self.disk_device_to_backup["capacityInBytes"]:
+            bareosfd.DebugMessage(
+                100,
+                "CBT Query: startOffset=%s capacityInBytes=%s\n"
+                % (start_position, self.disk_device_to_backup["capacityInBytes"]),
+            )
+            changed_disk_areas = self.vm.QueryChangedDiskAreas(
+                snapshot=self.create_snap_result,
+                deviceKey=self.disk_device_to_backup["deviceKey"],
+                startOffset=start_position,
+                changeId=cbt_change_id,
+            )
+            bareosfd.DebugMessage(
+                100,
+                "CBT Query: Got %s changedArea entries\n"
+                % (len(changed_disk_areas.changedArea),),
+            )
+            if changed_disk_areas.startOffset != start_position:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "CBT Query: Got bad startOffset %s (must be %s)\n"
+                    % (changed_disk_areas.startOffset, start_position),
+                )
+                return False
+            start_position += changed_disk_areas.length
+            bareosfd.DebugMessage(
+                100,
+                "CBT Query: New startOffset: %s (%s + %s)\n"
+                % (
+                    start_position,
+                    changed_disk_areas.startOffset,
+                    changed_disk_areas.length,
+                ),
+            )
+            lengths_sum += changed_disk_areas.length
+            bareosfd.DebugMessage(
+                100,
+                "CBT Query: New length: %s\n" % (lengths_sum),
+            )
+            for extent in changed_disk_areas.changedArea:
+                self.disk_change_info["changedArea"].append(
+                    {"start": extent.start, "length": extent.length}
+                )
+
+        if lengths_sum != self.disk_device_to_backup["capacityInBytes"]:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "CBT Query: Bad sum of lengths %s (must be %s)\n"
+                % (lengths_sum, self.disk_device_to_backup["capacityInBytes"]),
+            )
+            return False
 
     def check_vm_disks_match(self):
         """
@@ -2532,20 +2622,16 @@ class BareosVADPWrapper(object):
         cbt_data["DiskParams"]["changeId"] = self.disk_device_to_backup["changeId"]
 
         # cbt data for bareos_vadp_dumper
-        cbt_data["DiskChangeInfo"] = {}
-        cbt_data["DiskChangeInfo"]["startOffset"] = self.changed_disk_areas.startOffset
-        cbt_data["DiskChangeInfo"]["length"] = self.changed_disk_areas.length
-        cbt_data["DiskChangeInfo"]["changedArea"] = []
-        for extent in self.changed_disk_areas.changedArea:
-            cbt_data["DiskChangeInfo"]["changedArea"].append(
-                {"start": extent.start, "length": extent.length}
-            )
+        cbt_data["DiskChangeInfo"] = self.disk_change_info
 
         self.changed_disk_areas_json = json.dumps(cbt_data)
         self.writeStringToFile(
             "/var/tmp" + StringCodec.encode(self.file_to_backup),
             self.changed_disk_areas_json,
         )
+        # for the restoreobject we don't need changedArea data
+        del cbt_data["DiskChangeInfo"]["changedArea"]
+        self.changed_disk_areas_json = json.dumps(cbt_data)
 
     def json2cbt(self, cbt_json_string):
         """
@@ -3374,6 +3460,7 @@ class BareosVADPWrapper(object):
         verify_cert = True
         if self.options.get("verifyssl") != "yes":
             verify_cert = False
+            urllib3.disable_warnings()
         cookie = self._get_cookie_from_si()
         request_params = {}
         request_params["dsName"] = datastore_name
@@ -3415,6 +3502,7 @@ class BareosVADPWrapper(object):
         verify_cert = True
         if self.options.get("verifyssl") != "yes":
             verify_cert = False
+            urllib3.disable_warnings()
         cookie = self._get_cookie_from_si()
         request_params = {}
         request_params["dsName"] = datastore_name
