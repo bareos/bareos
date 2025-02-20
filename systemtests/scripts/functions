@@ -436,7 +436,6 @@ check_compression()
    BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" )
    print_debug "$BLS_OUT"
    echo "$BLS_OUT"
-   echo "Hallo"
    if OUT=$(echo "$BLS_OUT" | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "); then
       print_debug "$OUT"
    else

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,13 +57,6 @@ using namespace storagedaemon;
 #define SETTING_YES (char*)"yes"
 #define SETTING_NO (char*)"no"
 #define SETTING_UNSET (char*)"unknown"
-
-#define COMPRESSOR_NAME_GZIP (char*)"GZIP"
-#define COMPRESSOR_NAME_LZO (char*)"LZO"
-#define COMPRESSOR_NAME_FZLZ (char*)"FASTLZ"
-#define COMPRESSOR_NAME_FZ4L (char*)"LZ4"
-#define COMPRESSOR_NAME_FZ4H (char*)"LZ4HC"
-#define COMPRESSOR_NAME_UNSET (char*)"unknown"
 
 // Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
@@ -432,15 +425,13 @@ static bRC handle_write_translation(PluginContext* ctx, void* value)
 static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
-  bool retval = false;
-  uint32_t compress_buf_size = 0;
-  const char* compressorname = COMPRESSOR_NAME_UNSET;
 
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
 
+  uint32_t compress_buf_size = 0;
   if (!SetupCompressionBuffers(jcr, dcr->device_resource->autodeflate_algorithm,
                                &compress_buf_size)) {
-    goto bail_out;
+    return false;
   }
 
   // See if we need to create a new compression buffer or make sure the
@@ -456,71 +447,16 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
     }
   }
 
-  switch (dcr->device_resource->autodeflate_algorithm) {
-#if defined(HAVE_LIBZ)
-    case COMPRESS_GZIP: {
-      compressorname = COMPRESSOR_NAME_GZIP;
-      int zstat;
-      z_stream* pZlibStream;
-
-      pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
-      if ((zstat
-           = deflateParams(pZlibStream, dcr->device_resource->autodeflate_level,
-                           Z_DEFAULT_STRATEGY))
-          != Z_OK) {
-        Jmsg(ctx, M_FATAL,
-             T_("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
-        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-        goto bail_out;
-      }
-      break;
-    }
-#endif
-#if defined(HAVE_LZO)
-    case COMPRESS_LZO1X:
-      compressorname = COMPRESSOR_NAME_LZO;
-      break;
-#endif
-    case COMPRESS_FZFZ:
-      compressorname = COMPRESSOR_NAME_FZLZ;
-      [[fallthrough]];
-    case COMPRESS_FZ4L:
-      compressorname = COMPRESSOR_NAME_FZ4L;
-      [[fallthrough]];
-    case COMPRESS_FZ4H: {
-      compressorname = COMPRESSOR_NAME_FZ4H;
-      int zstat;
-      zfast_stream* pZfastStream;
-      zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
-
-      switch (dcr->device_resource->autodeflate_algorithm) {
-        case COMPRESS_FZ4L:
-        case COMPRESS_FZ4H:
-          compressor = COMPRESSOR_LZ4;
-          break;
-      }
-
-      pZfastStream = (zfast_stream*)jcr->compress.workset.pZFAST;
-      if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
-        Jmsg(ctx, M_FATAL,
-             T_("autoxflate-sd: Compression fastlzlibSetCompressor error: "
-                "%d\n"),
-             zstat);
-        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-        goto bail_out;
-      }
-      break;
-    }
-    default:
-      break;
+  uint32_t algo = dcr->device_resource->autodeflate_algorithm;
+  uint16_t compression_level = dcr->device_resource->autodeflate_level;
+  if (!SetupSpecificCompressionContext(*jcr, algo, compression_level)) {
+    Jmsg(ctx, M_FATAL, 0,
+         T_("autoxflate-sd: failed setting up auto-deflation\n"));
+    return false;
   }
-
   Jmsg(ctx, M_INFO, T_("autoxflate-sd: Compressor on device %s is %s\n"),
-       dcr->dev_name, compressorname);
-  retval = true;
-
-bail_out:
-  return retval;
+       dcr->dev_name, CompressorName(algo).c_str());
+  return true;
 }
 
 // Setup inflation for auto inflation of data streams.

@@ -30,6 +30,7 @@ macro(BareosCopyDllsToBinDir)
     set(FNAME "${CMAKE_BINARY_DIR}/required_dlls")
     set(DLLS_TO_COPY_MANUALLY C:/vcpkg/installed/x64-windows/bin/jansson.dll
                               C:/vcpkg/installed/x64-windows/bin/lzo2.dll
+                              C:/vcpkg/installed/x64-windows/bin/zlib1.dll
     )
     set(REQUIRED_DLLS ${DLLS_TO_COPY_MANUALLY})
     get_property(
