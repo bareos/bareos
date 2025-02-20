@@ -146,6 +146,8 @@ class DirectorResource
   char* log_timestamp_format = nullptr; /* Timestamp format to use in generic
                                  logging messages */
   s_password keyencrkey;                /* Key Encryption Key */
+
+  bool enable_ktls_{false};
 };
 
 /*

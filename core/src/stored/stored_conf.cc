@@ -114,6 +114,7 @@ static ResourceItem store_items[] = {
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), {config::DefaultValue{PATH_BAREOS_BACKENDDIR}, config::PlatformSpecific{}}},
 #endif
+  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res_store, enable_ktls_), { config::DefaultValue{"false"}, config::Description{"If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."}, config::IntroducedIn{23, 0, 0}}},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
   {}

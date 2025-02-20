@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,6 @@ class TlsResource {
   bool authenticate_{false}; /* Authenticate only with TLS */
   bool tls_enable_{false};
   bool tls_require_{false};
-  bool enable_ktls_{false}; /* enable support for ktls */
 
   bool IsTlsConfigured() const;
   TlsPolicy GetPolicy() const;

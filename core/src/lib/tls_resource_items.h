@@ -31,7 +31,6 @@
   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res, authenticate_), {config::DefaultValue{"false"}, config::Description{"Use TLS only to authenticate, not for encryption."}}}, \
   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), {config::DefaultValue{"true"}, config::Description{"Enable TLS support."}}}, \
   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), {config::DefaultValue{"true"}, config::Description{"If set to \"no\", Bareos can fall back to use unencrypted connections. "}}}, \
-  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res, enable_ktls_), {config::DefaultValue{"false"}, config::Description{"If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "}}}, \
   { "TlsCipherList", CFG_TYPE_STDSTR, ITEM(res, cipherlist_), {config::Description{"Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command. Leftmost element has the highest priority."}, config::PlatformSpecific{}}}, \
   { "TlsCipherSuites", CFG_TYPE_STDSTR, ITEM(res, ciphersuites_), {config::Description{"Colon separated list of valid TLSv1.3 Ciphers; see \"openssl ciphers -s -tls1_3\" command. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."}, config::PlatformSpecific{}}}, \
   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res, tls_cert_.dhfile_), {config::Description{"Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."}}}, \
