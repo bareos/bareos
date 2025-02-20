@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
-#include "dird/run_hour_validator.h"
+#include "dird/date_time.h"
 #include "dird/scheduler.h"
 #include "dird/scheduler_job_item_queue.h"
 #include "dird/scheduler_private.h"
@@ -183,7 +183,7 @@ void SchedulerPrivate::FillSchedulerJobQueueOrSleep()
 
 static time_t CalculateRuntime(time_t time, uint32_t minute)
 {
-  struct tm tm {};
+  struct tm tm{};
   Blocaltime(&time, &tm);
   tm.tm_min = minute;
   tm.tm_sec = 0;
@@ -194,11 +194,10 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 {
   Dmsg0(local_debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
 
-  RunHourValidator this_hour(time_adapter->time_source_->SystemTime());
-  this_hour.PrintDebugMessage(local_debuglevel);
-
-  RunHourValidator next_hour(this_hour.Time() + seconds_per_hour.count());
-  next_hour.PrintDebugMessage(local_debuglevel);
+  DateTime date_time_now(time_adapter->time_source_->SystemTime());
+  date_time_now.PrintDebugMessage(local_debuglevel);
+  DateTime date_time_next_hour(date_time_now.time + seconds_per_hour.count());
+  date_time_next_hour.PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
 
@@ -209,20 +208,22 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
-      bool run_this_hour = this_hour.TriggersOn(run->date_time_bitfield);
-      bool run_next_hour = next_hour.TriggersOn(run->date_time_bitfield);
+      bool run_this_hour
+          = run->date_time_mask.TriggersOnDayAndHour(date_time_now.time);
+      bool run_next_hour
+          = run->date_time_mask.TriggersOnDayAndHour(date_time_next_hour.time);
 
       Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
             run_this_hour, run_next_hour);
 
       if (run_this_hour || run_next_hour) {
-        time_t runtime = CalculateRuntime(this_hour.Time(), run->minute);
+        time_t runtime = CalculateRuntime(date_time_now.time, run->minute);
         if (run_this_hour) {
-          AddJobToQueue(job, run, this_hour.Time(), runtime,
+          AddJobToQueue(job, run, date_time_now.time, runtime,
                         JobTrigger::kScheduler);
         }
         if (run_next_hour) {
-          AddJobToQueue(job, run, this_hour.Time(),
+          AddJobToQueue(job, run, date_time_now.time,
                         runtime + seconds_per_hour.count(),
                         JobTrigger::kScheduler);
         }

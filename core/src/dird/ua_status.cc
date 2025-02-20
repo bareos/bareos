@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
-#include "dird/run_hour_validator.h"
+#include "dird/date_time.h"
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/job.h"
@@ -52,6 +52,8 @@
 #include "lib/version.h"
 
 #include <memory>
+#include <vector>
+#include <algorithm>
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 
@@ -381,13 +383,11 @@ static bool show_scheduled_preview(UaContext*,
   RunResource* run;
   PoolMem temp(PM_NAME);
 
-  RunHourValidator run_hour_validator(time_to_check);
-
   for (run = sched->run; run; run = run->next) {
     bool run_now;
     int cnt = 0;
 
-    run_now = run_hour_validator.TriggersOn(run->date_time_bitfield);
+    run_now = run->date_time_mask.TriggersOnDayAndHour(time_to_check);
 
     if (run_now) {
       // Find time (time_t) job is to be run
@@ -801,7 +801,6 @@ static void PrtRunhdr(UaContext* ua)
 
 /* Scheduling packet */
 struct sched_pkt {
-  dlink<sched_pkt> link; /* keep this as first item!!! */
   JobResource* job;
   int level;
   int priority;
@@ -863,17 +862,17 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
 }
 
 // Sort items by runtime, priority
-static int CompareByRuntimePriority(sched_pkt* p1, sched_pkt* p2)
+static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
 {
-  if (p1->runtime < p2->runtime) {
+  if (p1.runtime < p2.runtime) {
     return -1;
-  } else if (p1->runtime > p2->runtime) {
+  } else if (p1.runtime > p2.runtime) {
     return 1;
   }
 
-  if (p1->priority < p2->priority) {
+  if (p1.priority < p2.priority) {
     return -1;
-  } else if (p1->priority > p2->priority) {
+  } else if (p1.priority > p2.priority) {
     return 1;
   }
 
@@ -883,22 +882,11 @@ static int CompareByRuntimePriority(sched_pkt* p1, sched_pkt* p2)
 // Find all jobs to be run in roughly the next 24 hours.
 static void ListScheduledJobs(UaContext* ua)
 {
-  utime_t runtime;
-  RunResource* run;
-  JobResource* job;
-  int level, num_jobs = 0;
-  int priority;
-  bool hdr_printed = false;
-  auto sched = std::make_unique<dlist<sched_pkt>>();
-  sched_pkt* sp;
-  int days, i;
-
   Dmsg0(200, "enter list_sched_jobs()\n");
 
-  days = 1;
-  i = FindArgWithValue(ua, NT_("days"));
-  if (i >= 0) {
-    days = atoi(ua->argv[i]);
+  int days = 1;
+  if (const char* value = GetArgValue(ua, NT_("days"))) {
+    days = atoi(value);
     if (((days < 0) || (days > 500)) && !ua->api) {
       ua->SendMsg(T_("Ignoring invalid value for days. Max is 500.\n"));
       days = 1;
@@ -906,42 +894,43 @@ static void ListScheduledJobs(UaContext* ua)
   }
 
   // Loop through all jobs
+  JobResource* job = nullptr;
+  std::vector<sched_pkt> sched;
+  time_t now = time(nullptr);
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
         || (job->client && !job->client->enabled)) {
       continue;
     }
-    for (run = NULL; (run = find_next_run(run, job, runtime, days));) {
-      UnifiedStorageResource store;
-      level = job->JobLevel;
-      if (run->level) { level = run->level; }
-      priority = job->Priority;
-      if (run->Priority) { priority = run->Priority; }
-      if (!hdr_printed) {
-        PrtRunhdr(ua);
-        hdr_printed = true;
-      }
-      sp = (sched_pkt*)malloc(sizeof(sched_pkt));
-      sp->job = job;
-      sp->level = level;
-      sp->priority = priority;
-      sp->runtime = runtime;
-      sp->pool = run->pool;
-      GetJobStorage(&store, job, run);
-      sp->store = store.store;
-      if (sp->store) {
+    if (!job->schedule) { continue; }
+    for (RunResource* run = job->schedule->run; run; run = run->next) {
+      std::optional<time_t> next_scheduled = run->NextScheduleTime(now, days);
+      if (!next_scheduled.has_value()) { continue; }
+
+      if (sched.empty()) { PrtRunhdr(ua); }
+
+      UnifiedStorageResource storage_res;
+      GetJobStorage(&storage_res, job, run);
+      sched.push_back(
+          {.job = job,
+           .level = int(run->level ? run->level : job->JobLevel),
+           .priority = (run->Priority ? run->Priority : job->Priority),
+           .runtime = next_scheduled.value(),
+           .pool = run->pool,
+           .store = storage_res.store});
+      if (sched.back().store) {
         Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
-              sp->store->resource_name_, sp->store->media_type);
+              sched.back().store->resource_name_,
+              sched.back().store->media_type);
       } else {
         Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
       }
-      sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
-      num_jobs++;
     }
   } /* end for loop over resources */
 
-  foreach_dlist (sp, sched) { PrtRuntime(ua, sp); }
-  if (num_jobs == 0 && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
+  std::sort(sched.begin(), sched.end(), CompareByRuntimePriority);
+  for (sched_pkt& sp : sched) { PrtRuntime(ua, &sp); }
+  if (sched.empty() && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
 }

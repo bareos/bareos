@@ -40,6 +40,8 @@ set(DIRD_OBJECTS_SRCS
     check_catalog.cc
     consolidate.cc
     console_connection_lease.cc
+    date_time.cc
+    date_time_mask.cc
     dbcheck_utils.cc
     dird_globals.cc
     dir_plugins.cc
@@ -73,7 +75,6 @@ set(DIRD_OBJECTS_SRCS
     newvol.cc
     next_vol.cc
     quota.cc
-    run_hour_validator.cc
     socket_server.cc
     recycle.cc
     reload.cc
@@ -131,8 +132,17 @@ if(HAVE_WIN32)
   )
 endif()
 
-set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
-              ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc
+set(DBCHKSRCS
+    date_time.cc
+    date_time_mask.cc
+    dbcheck.cc
+    dbcheck_utils.cc
+    dird_conf.cc
+    dird_globals.cc
+    ua_acl.cc
+    ua_audit.cc
+    run_conf.cc
+    inc_conf.cc
 )
 
 set(DIRD_RESTYPES

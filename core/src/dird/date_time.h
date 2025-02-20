@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,23 +21,28 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_DATE_TIME_BITFIELD_H_
-#define BAREOS_DIRD_DATE_TIME_BITFIELD_H_
-
-#include "lib/bits.h"
+#ifndef BAREOS_DIRD_DATE_TIME_H_
+#define BAREOS_DIRD_DATE_TIME_H_
 
 namespace directordaemon {
 
-struct DateTimeBitfield {
-  char hour[NbytesForBits(24 + 1)]{0};
-  char mday[NbytesForBits(31 + 1)]{0};
-  char month[NbytesForBits(12 + 1)]{0};
-  char wday[NbytesForBits(7 + 1)]{0};
-  char wom[NbytesForBits(5 + 1)]{0};
-  char woy[NbytesForBits(54 + 1)]{0};
-  bool last_week_of_month{false};
+struct DateTime {
+  DateTime(time_t time);
+
+  bool WeekOfMonth() const;
+  bool OnLast7DaysOfMonth() const;
+  void PrintDebugMessage(int debug_level) const;
+
+  int year{0};
+  int month{0};
+  int week_of_year{0};
+  int day_of_year{0};
+  int day_of_month{0};
+  int day_of_week{0};
+  int hour{0};
+  time_t time;
 };
 
 }  // namespace directordaemon
 
-#endif  // BAREOS_DIRD_DATE_TIME_BITFIELD_H_
+#endif  // BAREOS_DIRD_DATE_TIME_H_

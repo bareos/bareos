@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,32 +21,26 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_RUN_HOUR_VALIDATOR_H_
-#define BAREOS_DIRD_RUN_HOUR_VALIDATOR_H_
+#ifndef BAREOS_DIRD_DATE_TIME_MASK_H_
+#define BAREOS_DIRD_DATE_TIME_MASK_H_
+
+#include "lib/bits.h"
 
 namespace directordaemon {
 
-struct DateTimeBitfield;
+struct DateTimeMask {
+  char hour[NbytesForBits(24 + 1)]{0};
+  char mday[NbytesForBits(31 + 1)]{0};
+  char month[NbytesForBits(12 + 1)]{0};
+  char wday[NbytesForBits(7 + 1)]{0};
+  char wom[NbytesForBits(5 + 1)]{0};
+  char woy[NbytesForBits(54 + 1)]{0};
+  bool last_7days_of_month{false};
 
-class RunHourValidator {
- public:
-  RunHourValidator(time_t time);
-  void PrintDebugMessage(int debuglevel) const;
-  bool TriggersOn(const DateTimeBitfield& date_time_bitfield);
-  time_t Time() const { return time_; }
-
- private:
-  int hour_{0};
-  int mday_{0};
-  int wday_{0};
-  int month_{0};
-  int wom_{0};
-  int woy_{0};
-  int yday_{0};
-  time_t time_{0};
-  bool is_last_week_{false};
+  bool TriggersOnDay(time_t time) const;
+  bool TriggersOnDayAndHour(time_t time) const;
 };
 
 }  // namespace directordaemon
 
-#endif  // BAREOS_DIRD_RUN_HOUR_VALIDATOR_H_
+#endif  // BAREOS_DIRD_DATE_TIME_MASK_H_
