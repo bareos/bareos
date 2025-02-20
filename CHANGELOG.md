@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - macos: update build environment [PR #2074]
 - dedupable device: fix example files [PR #2034]
 - NDMP_NATIVE: enable full restore, eject tape before unload, enable update of NDMP environment [PR #2017]
+- VMware Plugin: Fix CBT query handling [PR #2183]
 
 ### Fixed
 - plugins: postgresql add support for PostgreSQL 17 + improvements [PR #2049]
@@ -618,4 +619,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2074]: https://github.com/bareos/bareos/pull/2074
 [PR #2134]: https://github.com/bareos/bareos/pull/2134
 [PR #2162]: https://github.com/bareos/bareos/pull/2162
+[PR #2183]: https://github.com/bareos/bareos/pull/2183
 [unreleased]: https://github.com/bareos/bareos/tree/master
