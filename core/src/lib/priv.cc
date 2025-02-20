@@ -31,7 +31,7 @@
 #undef ENABLE_KEEP_READALL_CAPS_SUPPORT
 #if defined(ENABLE_CAPABILITY) && defined(HAVE_SYS_PRCTL_H)  \
     && defined(HAVE_SYS_CAPABILITY_H) && defined(HAVE_PRCTL) \
-    && defined(HAVE_SETREUID) && defined(HAVE_LIBCAP)
+    && defined(HAVE_SETREUID)
 #  include <sys/prctl.h>
 #  include <sys/capability.h>
 #  if defined(PR_SET_KEEPCAPS)
