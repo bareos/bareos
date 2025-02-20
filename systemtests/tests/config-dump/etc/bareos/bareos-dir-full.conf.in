@@ -29,10 +29,10 @@ Director {
   AuditEvents = "item11", "item12", ".*"
   # SecureEraseCommand =
   # LogTimestampFormat = "%d-%b %H:%M"
+  # EnableKtls = No
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""
@@ -75,7 +75,6 @@ Client {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""
@@ -118,7 +117,6 @@ Client {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""
@@ -164,7 +162,6 @@ Client {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""
@@ -1267,7 +1264,6 @@ Storage {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""
@@ -1739,7 +1735,6 @@ Console {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""
@@ -1772,7 +1767,6 @@ Console {
   # TlsAuthenticate = No
   TlsEnable = No
   # TlsRequire = Yes
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""
@@ -1805,7 +1799,6 @@ Console {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = No
-  # EnableKtls = No
   # TlsCipherList = ""
   # TlsCipherSuites = ""
   # TlsDhFile = ""

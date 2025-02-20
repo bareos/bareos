@@ -135,6 +135,7 @@ class ClientResource
   uint64_t max_bandwidth_per_job = 0;   /* Bandwidth limitation (global) */
 
   std::string grpc_module{};
+  bool enable_ktls{false};
 };
 
 
