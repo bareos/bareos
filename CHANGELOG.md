@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemtests: fail if daemons have config warnings [PR #2144]
 - contrib: check_chunk.py improve README.md instructions [PR #2147]
 - build: add support for el10 [PR #2106]
+- VMware Plugin: Fix CBT query handling [PR #2152]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -68,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2132]: https://github.com/bareos/bareos/pull/2132
 [PR #2144]: https://github.com/bareos/bareos/pull/2144
 [PR #2147]: https://github.com/bareos/bareos/pull/2147
+[PR #2152]: https://github.com/bareos/bareos/pull/2152
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
 [unreleased]: https://github.com/bareos/bareos/tree/master
