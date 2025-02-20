@@ -93,13 +93,6 @@
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
-        },
         "TlsCipherList": {
           "datatype": "STRING",
           "code": 0,
@@ -381,6 +374,14 @@
           "versions": "25.0.0-",
           "description": "The grpc module to use for grpc fallback."
         },
+        "EnableKtls": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "23.0.0-",
+          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."
+        },
         "TlsAuthenticate": {
           "datatype": "BOOLEAN",
           "code": 0,
@@ -401,13 +402,6 @@
           "default_value": "true",
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
-        },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "STRING",

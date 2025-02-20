@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -511,7 +511,6 @@ void BareosSocket::ParameterizeTlsCert(Tls* conn_init,
   conn_init->SetCipherList(tls_resource->cipherlist_);
   conn_init->SetCipherSuites(tls_resource->ciphersuites_);
   conn_init->SetVerifyPeer(tls_resource->tls_cert_.verify_peer_);
-  conn_init->SetEnableKtls(tls_resource->enable_ktls_);
 }
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
@@ -539,6 +538,7 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
   tls_conn_init->SetTlsPskServerContext(config);
+  tls_conn_init->SetEnableKtls(enable_ktls_);
 
   if (!tls_conn_init->init()) {
     tls_conn_init.reset();
@@ -622,6 +622,8 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource* tls_resource,
   } else {
     Dmsg2(200, "Tls is not configured %s\n", identity);
   }
+
+  tls_conn_init->SetEnableKtls(enable_ktls_);
 
   if (!tls_conn_init->init()) {
     tls_conn_init.reset();

@@ -124,6 +124,7 @@ static ResourceItem cli_items[] = {
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL},
   {"GrpcModule", CFG_TYPE_STDSTR, ITEM(res_client, grpc_module), 0, CFG_ITEM_DEFAULT, "bareos-grpc-fd-plugin-bridge",
    "25.0.0-", "The grpc module to use for grpc fallback."},
+  {"EnableKtls", CFG_TYPE_BOOL, ITEM(res_client, enable_ktls), 0, CFG_ITEM_DEFAULT, "false", "23.0.0-", "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}

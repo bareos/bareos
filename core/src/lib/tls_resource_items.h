@@ -35,9 +35,6 @@
   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "true", \
      NULL, "If set to \"no\", Bareos can fall back to use unencrypted " \
      "connections. " }, \
-  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res, enable_ktls_), 0, CFG_ITEM_DEFAULT, "false", \
-     NULL, "If set to \"yes\", Bareos will allow the SSL implementation to use " \
-     "Kernel TLS. " }, \
   { "TlsCipherList", CFG_TYPE_STDSTR, ITEM(res, cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
      NULL, "Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command." \
      " Leftmost element has the highest priority."}, \

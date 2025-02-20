@@ -70,13 +70,6 @@
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
-        },
         "TlsCipherList": {
           "datatype": "STRING",
           "code": 0,
@@ -220,13 +213,6 @@
           "default_value": "true",
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
-        },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "STRING",
