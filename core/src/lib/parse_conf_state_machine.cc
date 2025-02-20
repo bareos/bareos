@@ -225,6 +225,12 @@ ConfigParserStateMachine::ParserInitResource(int token)
 
   ResourceTable* resource_table;
   resource_table = my_config_.GetResourceTable(resource_identifier);
+  if (!resource_table) {
+    scan_err1(lexical_parser_,
+              T_("Expected a Resource name identifier, got: %s"),
+              resource_identifier);
+    return ParseInternalReturnCode::kError;
+  }
 
   bool init_done = false;
 
