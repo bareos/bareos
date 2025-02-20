@@ -14,7 +14,7 @@ export TestName
 
 JobName=backup-bareos-fd
 test_db_name="${db_name}_test"
-RESTORE_DIR="$tmp/bareos-restores/@mariadbbackup@/"
+RESTORE_DIR="${tmp}/bareos-restores/@mariadbbackup@/"
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
@@ -22,67 +22,69 @@ skip_if_root
 
 #shellcheck source=../scripts/mysql.sh
 . "${rscripts}"/mariadb.sh
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
-start_test
-
-mariadbd_init
-mariadbd_server_start
+mariadb_init
+mariadb_server_start
 
 echo "create database ${test_db_name}" | ${MARIADB_CLIENT}
 echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | ${MARIADB_CLIENT} "${test_db_name}"
 echo "insert into test (data) VALUES ('test entry 1') " | ${MARIADB_CLIENT} "${test_db_name}"
+echo "insert into test (data) VALUES ('test entry 2') " | ${MARIADB_CLIENT} "${test_db_name}"
 
-cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $tmp/log1.out
-run job=$JobName yes
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/log1.out
+setdebug level=200 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} yes
 wait
-
-status dir
+setdebug level=0 client=bareos-fd
+status director
+status client
+status storage=File
+wait
+messages
 llist jobs job=$JobName
 time
 END_OF_DATA
 
-run_bareos "$@"
-check_log $tmp/log1.out
-
-# insert data and run incremental
-echo "insert into test (data) VALUES ('test entry 2') " | ${MARIADB_CLIENT} "${test_db_name}"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+# No need to test incremental, as dumps are always full
 
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
 @$out $tmp/log1i.out
-@# run incremental again without any new data
 run job=$JobName yes
 wait
 status dir
-<<<<<<<< HEAD:systemtests/tests/py3plug-fd-contrib-mariadb-dump/testrunner
-========
 wait
 messages
 time
 llist jobs job=RestoreFile
->>>>>>>> 0cb8c6a71 (contrib: rename to mariadb-dump/bareos-fd-mariadb-dump.py):systemtests/tests/py3plug-fd-contrib-mariadb-dump/testrunner-default
 END_OF_DATA2
 
 run_bareos "$@"
 check_log $tmp/log1i.out
 
-cat <<END_OF_DATA3 >"$tmp/bconcmds"
-@$out $tmp/log2.out
+cat <<END_OF_DATA2 >"${tmp}/bconcmds"
+@$out ${tmp}/log2.out
+setdebug level=200 trace=1 timestamp=1 client=bareos-fd
 restore restorejob=RestoreFile client=bareos-fd fileset=bareos_mariadb_dump yes select all done
 wait
+setdebug level=0 client=bareos-fd
 status dir
+wait
+messages
 llist jobs job=RestoreFile
-END_OF_DATA3
+END_OF_DATA2
 
-run_bareos "$@"
-check_log $tmp/log2.out
-
-check_for_zombie_jobs storage=File
-stop_bareos
-
-check_two_logs
+run_bconsole
+expect_grep "Restore OK" "${tmp}/log2.out" "Restore OK not found!"
 
 # Check if some files are restored
 ls -lR "${RESTORE_DIR}"
@@ -91,7 +93,11 @@ if [ -z "$(ls -A "${RESTORE_DIR}")" ]; then
        estat=1
 fi
 
+check_for_zombie_jobs storage=File
+stop_bareos
+
 # delete database
+echo "drop databse ${test_db_name} to test reimport"
 ${MARIADB_CLIENT} <<< "DROP DATABASE ${test_db_name};"
 
 if ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/dev/null; then
@@ -100,13 +106,15 @@ if ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/d
 fi
 
 # restore db
+echo "restore databse with ${RESTORE_DIR}/${test_db_name}.sql "
 ${MARIADB_CLIENT} < "${RESTORE_DIR}/${test_db_name}.sql"
 
 if ! ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" >/dev/null; then
     echo "test entry not found after restore"
     estat=3
 fi
+echo "Restore tested ok"
 
-mariadbd_server_stop
+mariadb_server_stop
 
 end_test
