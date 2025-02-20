@@ -23,6 +23,13 @@ thank Kern and all contributors to Bacula and its documentation. We
 maintain a list of contributors to Bacula (until the time we’ve started
 the fork) and Bareos in our AUTHORS file.
 
+Developer Tools
+----------------------
+
+Bareos provides developer tools to ensure code quality and simplify tasks like backporting, merging, and releasing changes.
+These tools help enforce coding standards, detect issues, and automate parts of the release process.
+For more details, see the devtools/README.md file in the Bareos source repository.
+
 Contributions
 -------------
 

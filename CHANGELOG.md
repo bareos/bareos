@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
+- docs: add devtools documentation [PR #2149]
 
 ### Added
 - added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
@@ -69,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2132]: https://github.com/bareos/bareos/pull/2132
 [PR #2144]: https://github.com/bareos/bareos/pull/2144
 [PR #2147]: https://github.com/bareos/bareos/pull/2147
+[PR #2149]: https://github.com/bareos/bareos/pull/2149
 [PR #2152]: https://github.com/bareos/bareos/pull/2152
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
