@@ -3,7 +3,7 @@ Client {
   Description = "Client resource of the Director itself."
   Address = @hostname@
   Password = "@fd_password@"
-  FD PORT = @fd_port@
+  Port = @fd_port@
 }
 
 Client {
@@ -11,5 +11,5 @@ Client {
   Description = "Client resource of the Director itself."
   Address = @hostname@
   Password = "@fd_password@"
-  FD PORT = @fd2_port@
+  Port = @fd2_port@
 }
