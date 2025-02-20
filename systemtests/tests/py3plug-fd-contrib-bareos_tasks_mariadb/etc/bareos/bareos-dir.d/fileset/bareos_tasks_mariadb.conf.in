@@ -1,0 +1,12 @@
+FileSet {
+  Name = "bareos_tasks_mariadb"
+  Description = "Test the Plugin functionality."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "@python_module_name@@python_module_suffix@"
+      ":module_name=bareos_tasks.mariadb"
+      ":defaultsfile=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/my.cnf"
+  }
+}
