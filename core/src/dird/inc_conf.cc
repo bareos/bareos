@@ -773,7 +773,7 @@ static FilesetResource* GetStaticFilesetResource()
 {
   FilesetResource* res_fs = nullptr;
   ResourceTable* t = my_config->GetResourceTable("FileSet");
-  assert(t);
+  ASSERT(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
   assert(res_fs);
   return res_fs;
