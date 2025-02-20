@@ -271,8 +271,7 @@ void NewPlugins(JobControlRecord* jcr);
 void FreePlugins(JobControlRecord* jcr);
 bRC GeneratePluginEvent(JobControlRecord* jcr,
                         bEventType event,
-                        void* value = NULL,
-                        bool reverse = false);
+                        void* value = NULL);
 bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start);
 bool PluginNameStream(JobControlRecord* jcr, char* name);
 int PluginCreateFile(JobControlRecord* jcr,
