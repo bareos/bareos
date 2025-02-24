@@ -165,7 +165,7 @@ struct s_kw RunFields[] = {{"pool", 'P'},
  *   together.
  *
  */
-void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
+void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   char* p;
   int i, j;

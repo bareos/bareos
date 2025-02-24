@@ -36,7 +36,7 @@
 
 namespace console {
 
-static bool SaveResource(int type, ResourceItem* items, int pass);
+static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* reshdr,
@@ -51,7 +51,7 @@ static ConsoleResource* res_cons;
 
 /* clang-format off */
 
-static ResourceItem cons_items[] = {
+static const ResourceItem cons_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_cons, resource_name_), {config::Required{}, config::Description{"The name of this resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_cons, description_), {}},
   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), {}},
@@ -65,7 +65,7 @@ static ResourceItem cons_items[] = {
   {}
 };
 
-static ResourceItem dir_items[] = {
+static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
   { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{ "DirPort" }}},
@@ -161,7 +161,7 @@ static void FreeResource(BareosResource* res, int type)
   if (next_resource) { FreeResource(next_resource, type); }
 }
 
-static bool SaveResource(int type, ResourceItem* items, int pass)
+static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   int i;
   int error = 0;

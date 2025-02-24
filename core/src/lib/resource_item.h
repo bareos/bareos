@@ -217,7 +217,7 @@ struct ResourceItem {
    * Every new directive should have a description. */
   const char* description{};
 
-  void SetPresent() { (*allocated_resource)->SetMemberPresent(name); }
+  void SetPresent() const { (*allocated_resource)->SetMemberPresent(name); }
 
   bool IsPresent() const
   {

@@ -37,7 +37,8 @@ static void MakePathName(PoolMem& pathname, const char* str)
   }
 }
 
-void ConfigurationParser::SetResourceDefaultsParserPass1(ResourceItem* item)
+void ConfigurationParser::SetResourceDefaultsParserPass1(
+    const ResourceItem* item)
 {
   Dmsg3(900, "Item=%s defval=%s\n", item->name,
         (item->default_value) ? item->default_value : "<None>");
@@ -112,7 +113,8 @@ void ConfigurationParser::SetResourceDefaultsParserPass1(ResourceItem* item)
   }
 }
 
-void ConfigurationParser::SetResourceDefaultsParserPass2(ResourceItem* item)
+void ConfigurationParser::SetResourceDefaultsParserPass2(
+    const ResourceItem* item)
 {
   Dmsg3(900, "Item=%s defval=%s\n", item->name,
         (item->default_value) ? item->default_value : "<None>");
@@ -172,8 +174,8 @@ void ConfigurationParser::SetResourceDefaultsParserPass2(ResourceItem* item)
 
 void ConfigurationParser::SetAllResourceDefaultsIterateOverItems(
     int rcode,
-    ResourceItem items[],
-    std::function<void(ConfigurationParser&, ResourceItem*)> SetDefaults)
+    const ResourceItem items[],
+    std::function<void(ConfigurationParser&, const ResourceItem*)> SetDefaults)
 {
   int res_item_index = 0;
 
@@ -198,14 +200,14 @@ void ConfigurationParser::SetAllResourceDefaultsIterateOverItems(
 
 void ConfigurationParser::SetAllResourceDefaultsByParserPass(
     int rcode,
-    ResourceItem items[],
+    const ResourceItem items[],
     int pass)
 {
-  std::function<void(ConfigurationParser&, ResourceItem*)> SetDefaults;
+  std::function<void(ConfigurationParser&, const ResourceItem*)> SetDefaults;
 
   switch (pass) {
     case 1:
-      SetDefaults = [rcode](ConfigurationParser& c, ResourceItem* item) {
+      SetDefaults = [rcode](ConfigurationParser& c, const ResourceItem* item) {
         (*item->allocated_resource)->rcode_ = rcode;
         (*item->allocated_resource)->refcnt_ = 1;
         c.SetResourceDefaultsParserPass1(item);
@@ -224,7 +226,7 @@ void ConfigurationParser::SetAllResourceDefaultsByParserPass(
 
 void ConfigurationParser::InitResource(
     int rcode,
-    ResourceItem items[],
+    const ResourceItem items[],
     int pass,
     std::function<void()> ResourceSpecificInitializer)
 {

@@ -123,7 +123,7 @@ ConfigParserStateMachine::ScanResource(int token)
           currently_parsed_resource_.resource_items_, lexical_parser_->str);
 
       if (resource_item_index >= 0) {
-        ResourceItem* item = nullptr;
+        const ResourceItem* item = nullptr;
         item = &currently_parsed_resource_.resource_items_[resource_item_index];
         if (!item->has_no_eq()) {
           token = LexGetToken(lexical_parser_, BCT_SKIP_EOL);
