@@ -221,7 +221,7 @@ static struct s_fs_opt FS_options[]
        {NULL, 0, 0}};
 
 // Imported subroutines
-extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
+extern void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass);
 
 /* We build the current new Include and Exclude items here */
 static IncludeExcludeItem* res_incexe;
@@ -230,7 +230,7 @@ static IncludeExcludeItem* res_incexe;
 
 /* new Include/Exclude items
  * name handler value code flags default_value */
-ResourceItem newinc_items[] = {
+const ResourceItem newinc_items[] = {
   { "File", CFG_TYPE_FNAME, 0, nullptr, {}},
   { "Plugin", CFG_TYPE_PLUGINNAME, 0, nullptr, {}},
   { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR, 0, nullptr, {}},
@@ -240,7 +240,7 @@ ResourceItem newinc_items[] = {
 
 /* Items that are valid in an Options resource
  * name handler value code flags default_value */
-ResourceItem options_items[] = {
+const ResourceItem options_items[] = {
   { "Compression", CFG_TYPE_OPTION, 0, nullptr, {}},
   { "Signature", CFG_TYPE_OPTION, 0, nullptr, {}},
   { "Accurate", CFG_TYPE_OPTION, 0, nullptr, {}},
@@ -440,7 +440,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
 }
 
 // Store regex info
-static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
+static void StoreRegex(LEX* lc, const ResourceItem* item, int pass)
 {
   int token, rc;
   regex_t preg{};
@@ -489,7 +489,7 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
 }
 
 // Store reader info
-static void StorePlugin(LEX* lc, ResourceItem*, int pass)
+static void StorePlugin(LEX* lc, const ResourceItem*, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -500,7 +500,7 @@ static void StorePlugin(LEX* lc, ResourceItem*, int pass)
 }
 
 // Store Wild-card info
-static void StoreWild(LEX* lc, ResourceItem* item, int pass)
+static void StoreWild(LEX* lc, const ResourceItem* item, int pass)
 {
   int token;
   const char* type;
@@ -544,7 +544,7 @@ static void StoreWild(LEX* lc, ResourceItem* item, int pass)
 }
 
 // Store fstype info
-static void StoreFstype(LEX* lc, ResourceItem*, int pass)
+static void StoreFstype(LEX* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -568,7 +568,7 @@ static void StoreFstype(LEX* lc, ResourceItem*, int pass)
 }
 
 // Store Drivetype info
-static void StoreDrivetype(LEX* lc, ResourceItem*, int pass)
+static void StoreDrivetype(LEX* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -591,7 +591,7 @@ static void StoreDrivetype(LEX* lc, ResourceItem*, int pass)
   ScanToEol(lc);
 }
 
-static void StoreMeta(LEX* lc, ResourceItem*, int pass)
+static void StoreMeta(LEX* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -617,7 +617,7 @@ static void StoreMeta(LEX* lc, ResourceItem*, int pass)
 // New style options come here
 static void StoreOption(
     LEX* lc,
-    ResourceItem* item,
+    const ResourceItem* item,
     int pass,
     std::map<int, options_default_value_s>& option_default_values)
 {
@@ -697,7 +697,10 @@ static void StoreDefaultOptions()
 }
 
 // Come here when Options seen in Include/Exclude
-static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
+static void StoreOptionsRes(LEX* lc,
+                            const ResourceItem*,
+                            int pass,
+                            bool exclude)
 {
   int token;
   OptionsDefaultValues default_values;
@@ -784,7 +787,7 @@ static FilesetResource* GetStaticFilesetResource()
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
+static void StoreFname(LEX* lc, const ResourceItem*, int pass, bool)
 {
   int token;
 
@@ -831,7 +834,10 @@ static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
+static void StorePluginName(LEX* lc,
+                            const ResourceItem*,
+                            int pass,
+                            bool exclude)
 {
   int token;
 
@@ -877,7 +883,10 @@ static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
 }
 
 // Store exclude directory containing info
-static void StoreExcludedir(LEX* lc, ResourceItem*, int pass, bool exclude)
+static void StoreExcludedir(LEX* lc,
+                            const ResourceItem*,
+                            int pass,
+                            bool exclude)
 {
   if (exclude) {
     scan_err0(lc,
@@ -903,7 +912,7 @@ static void StoreExcludedir(LEX* lc, ResourceItem*, int pass, bool exclude)
  *  resource.  We treat the Include/Exclude like a sort of
  *  mini-resource within the FileSet resource.
  */
-static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreNewinc(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   FilesetResource* res_fs = GetStaticFilesetResource();
 
@@ -991,7 +1000,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
  * Store FileSet Include/Exclude info
  *  new style includes are handled in StoreNewinc()
  */
-void StoreInc(LEX* lc, ResourceItem* item, int index, int pass)
+void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   int token;
 

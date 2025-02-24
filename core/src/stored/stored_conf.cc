@@ -53,7 +53,7 @@
 namespace storagedaemon {
 
 static void FreeResource(BareosResource* sres, int type);
-static bool SaveResource(int type, ResourceItem* items, int pass);
+static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void DumpResource(int type,
                          BareosResource* reshdr,
                          bool sendit(void* sock, const char* fmt, ...),
@@ -73,7 +73,7 @@ static MessagesResource* res_msgs;
 
 /* clang-format off */
 
-static ResourceItem store_items[] = {
+static const ResourceItem store_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
   { "SdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, SDaddrs), {config::DefaultValue{SD_DEFAULT_PORT}}},
@@ -120,7 +120,7 @@ static ResourceItem store_items[] = {
   {}
 };
 
-static ResourceItem dir_items[] = {
+static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, password_), {config::Required{}}},
@@ -132,7 +132,7 @@ static ResourceItem dir_items[] = {
   {}
 };
 
-static ResourceItem ndmp_items[] = {
+static const ResourceItem ndmp_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_ndmp, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_ndmp, description_), {}},
   { "Username", CFG_TYPE_STR, ITEM(res_ndmp, username), {config::Required{}}},
@@ -142,7 +142,7 @@ static ResourceItem ndmp_items[] = {
   {}
 };
 
-static ResourceItem dev_items[] = {
+static const ResourceItem dev_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dev, resource_name_), {config::Required{}, config::Description{"Unique identifier of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dev, description_), {config::Description{"The Description directive provides easier human recognition, but is not used by Bareos directly."}}},
   { "MediaType", CFG_TYPE_STRNAME, ITEM(res_dev, media_type), {config::Required{}}},
@@ -211,7 +211,7 @@ static ResourceItem dev_items[] = {
   {}
 };
 
-static ResourceItem autochanger_items[] = {
+static const ResourceItem autochanger_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_changer, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_changer, description_), {}},
   { "Device", CFG_TYPE_ALIST_RES, ITEM(res_changer, device_resources), {config::Required{}, config::Code{R_DEVICE}}},
@@ -257,7 +257,10 @@ static s_kw compression_algorithms[]
        {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
        {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
 
-static void StoreAuthenticationType(LEX* lc, ResourceItem* item, int index, int)
+static void StoreAuthenticationType(LEX* lc,
+                                    const ResourceItem* item,
+                                    int index,
+                                    int)
 {
   int i;
 
@@ -280,7 +283,10 @@ static void StoreAuthenticationType(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store password either clear if for NDMP or MD5 hashed for native.
-static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAutopassword(LEX* lc,
+                              const ResourceItem* item,
+                              int index,
+                              int pass)
 {
   switch ((*item->allocated_resource)->rcode_) {
     case R_DIRECTOR:
@@ -307,7 +313,10 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
-static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreMaxblocksize(LEX* lc,
+                              const ResourceItem* item,
+                              int index,
+                              int pass)
 {
   my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
   if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
@@ -319,7 +328,7 @@ static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store the IO direction on a certain device.
-static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int)
+static void StoreIoDirection(LEX* lc, const ResourceItem* item, int index, int)
 {
   int i;
 
@@ -341,7 +350,7 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int)
 
 // Store the compression algorithm to use on a certain device.
 static void StoreCompressionalgorithm(LEX* lc,
-                                      ResourceItem* item,
+                                      const ResourceItem* item,
                                       int index,
                                       int)
 {
@@ -369,7 +378,7 @@ static void StoreCompressionalgorithm(LEX* lc,
  * callback function for init_resource
  * See ../lib/parse_conf.c, function InitResource, for more generic handling.
  */
-static void InitResourceCb(ResourceItem* item, int pass)
+static void InitResourceCb(const ResourceItem* item, int pass)
 {
   switch (pass) {
     case 1:
@@ -392,7 +401,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
 }
 
 static void ParseConfigCb(LEX* lc,
-                          ResourceItem* item,
+                          const ResourceItem* item,
                           int index,
                           int pass,
                           BareosResource**)
@@ -727,7 +736,7 @@ static void DumpResource(int type,
   }
 }
 
-static bool SaveResource(int type, ResourceItem* items, int pass)
+static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   int i;
   int error = 0;

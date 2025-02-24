@@ -33,7 +33,7 @@
 
 /* clang-format off */
 
-static ResourceItem msgs_items[] = {
+static const ResourceItem msgs_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_msgs, resource_name_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},
   { "Description", CFG_TYPE_STR, ITEM(res_msgs, description_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},
   { "MailCommand", CFG_TYPE_STDSTR, ITEM(res_msgs, mail_cmd_), {config::Code{static_cast<int>(MessageDestinationCode::kUndefined)}}},

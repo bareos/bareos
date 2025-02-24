@@ -56,7 +56,7 @@
 
 namespace filedaemon {
 
-static bool SaveResource(int type, ResourceItem* items, int pass);
+static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* reshdr,
@@ -78,7 +78,7 @@ static MessagesResource* res_msgs;
 /* clang-format off */
 
 // Client or File daemon "Global" resources
-static ResourceItem cli_items[] = {
+static const ResourceItem cli_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), {config::Required{}, config::Description{"The name of this resource. It is used to reference to it."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
   { "FdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_client, FDaddrs), {config::DefaultValue{FD_DEFAULT_PORT}}},
@@ -121,7 +121,7 @@ static ResourceItem cli_items[] = {
   {}
 };
 // Directors that can use our services
-static ResourceItem dir_items[] = {
+static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), {config::Required{}}},
@@ -165,7 +165,7 @@ static struct s_kw CryptoCiphers[]
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
        {NULL, 0}};
 
-static void StoreCipher(LEX* lc, ResourceItem* item, int index, int)
+static void StoreCipher(LEX* lc, const ResourceItem* item, int index, int)
 {
   int i;
   LexGetToken(lc, BCT_NAME);
@@ -190,7 +190,7 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function InitResource, for more generic handling.
  */
-static void InitResourceCb(ResourceItem* item, int pass)
+static void InitResourceCb(const ResourceItem* item, int pass)
 {
   switch (pass) {
     case 1:
@@ -216,7 +216,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
 static void ParseConfigCb(LEX* lc,
-                          ResourceItem* item,
+                          const ResourceItem* item,
                           int index,
                           int pass,
                           BareosResource**)
@@ -404,7 +404,7 @@ static void FreeResource(BareosResource* res, int type)
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-static bool SaveResource(int type, ResourceItem* items, int pass)
+static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   int i;
   int error = 0;

@@ -64,11 +64,11 @@ class ConfigResourcesContainer;
  * this daemon.
  */
 struct ResourceTable {
-  const char* name;      /* Resource name */
-  const char* groupname; /* Resource name in plural form */
-  ResourceItem* items;   /* List of resource keywords */
-  uint32_t rcode;        /* Code if needed */
-  uint32_t size;         /* Size of resource */
+  const char* name;          /* Resource name */
+  const char* groupname;     /* Resource name in plural form */
+  const ResourceItem* items; /* List of resource keywords */
+  uint32_t rcode;            /* Code if needed */
+  uint32_t size;             /* Size of resource */
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
   BareosResource** allocated_resource_;
@@ -175,13 +175,13 @@ struct DatatypeName {
   const char* description;
 };
 
-typedef void(INIT_RES_HANDLER)(ResourceItem* item, int pass);
+typedef void(INIT_RES_HANDLER)(const ResourceItem* item, int pass);
 typedef void(STORE_RES_HANDLER)(LEX* lc,
-                                ResourceItem* item,
+                                const ResourceItem* item,
                                 int index,
                                 int pass,
                                 BareosResource** configuration_resources);
-typedef void(PRINT_RES_HANDLER)(ResourceItem& item,
+typedef void(PRINT_RES_HANDLER)(const ResourceItem& item,
                                 OutputFormatterResource& send,
                                 bool hide_sensitive_data,
                                 bool inherited,
@@ -256,7 +256,7 @@ class ConfigurationParser {
   void RestoreResourcesContainer(std::shared_ptr<ConfigResourcesContainer>&&);
 
   void InitResource(int rcode,
-                    ResourceItem items[],
+                    const ResourceItem items[],
                     int pass,
                     std::function<void()> ResourceSpecificInitializer);
   bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
@@ -271,8 +271,9 @@ class ConfigurationParser {
                      bool hide_sensitive_data = false);
   int GetResourceCode(const char* resource_type);
   ResourceTable* GetResourceTable(const char* resource_type_name);
-  int GetResourceItemIndex(ResourceItem* res_table, const char* item);
-  ResourceItem* GetResourceItem(ResourceItem* res_table, const char* item);
+  int GetResourceItemIndex(const ResourceItem* res_table, const char* item);
+  const ResourceItem* GetResourceItem(const ResourceItem* res_table,
+                                      const char* item);
   bool GetPathOfResource(PoolMem& path,
                          const char* component,
                          const char* resourcetype,
@@ -295,7 +296,7 @@ class ConfigurationParser {
   const char* ResGroupToStr(int rcode) const;
   bool StoreResource(int rcode,
                      LEX* lc,
-                     ResourceItem* item,
+                     const ResourceItem* item,
                      int index,
                      int pass);
   void InitializeQualifiedResourceNameTypeConverter(
@@ -359,43 +360,55 @@ class ConfigurationParser {
   bool GetConfigIncludePath(PoolMem& full_path, const char* config_dir);
   bool FindConfigPath(PoolMem& full_path);
   int GetResourceTableIndex(const char* resource_type_name);
-  void StoreMsgs(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreName(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreStrname(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreStr(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreStdstr(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreDir(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreStdstrdir(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreMd5Password(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreClearpassword(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreRes(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreAlistRes(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreAlistStr(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreStdVectorStr(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreAlistDir(LEX* lc, ResourceItem* item, int index, int pass);
-  void StorePluginNames(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreDefs(LEX* lc, ResourceItem* item, int index, int pass);
-  void store_int16(LEX* lc, ResourceItem* item, int index, int pass);
-  void store_int32(LEX* lc, ResourceItem* item, int index, int pass);
-  void store_pint16(LEX* lc, ResourceItem* item, int index, int pass);
-  void store_pint32(LEX* lc, ResourceItem* item, int index, int pass);
-  void store_int64(LEX* lc, ResourceItem* item, int index, int pass);
+  void StoreMsgs(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreName(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreStrname(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreStr(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreStdstr(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreDir(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreStdstrdir(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreMd5Password(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreClearpassword(LEX* lc,
+                          const ResourceItem* item,
+                          int index,
+                          int pass);
+  void StoreRes(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreAlistRes(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreAlistStr(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreStdVectorStr(LEX* lc,
+                         const ResourceItem* item,
+                         int index,
+                         int pass);
+  void StoreAlistDir(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StorePluginNames(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreDefs(LEX* lc, const ResourceItem* item, int index, int pass);
+  void store_int16(LEX* lc, const ResourceItem* item, int index, int pass);
+  void store_int32(LEX* lc, const ResourceItem* item, int index, int pass);
+  void store_pint16(LEX* lc, const ResourceItem* item, int index, int pass);
+  void store_pint32(LEX* lc, const ResourceItem* item, int index, int pass);
+  void store_int64(LEX* lc, const ResourceItem* item, int index, int pass);
   void store_int_unit(LEX* lc,
-                      ResourceItem* item,
+                      const ResourceItem* item,
                       int index,
                       int pass,
                       bool size32,
                       enum unit_type type);
-  void store_size32(LEX* lc, ResourceItem* item, int index, int pass);
-  void store_size64(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreSpeed(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreTime(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreBit(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreBool(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreLabel(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreAddresses(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreAddressesAddress(LEX* lc, ResourceItem* item, int index, int pass);
-  void StoreAddressesPort(LEX* lc, ResourceItem* item, int index, int pass);
+  void store_size32(LEX* lc, const ResourceItem* item, int index, int pass);
+  void store_size64(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreSpeed(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreTime(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreBit(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreBool(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreLabel(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreAddresses(LEX* lc, const ResourceItem* item, int index, int pass);
+  void StoreAddressesAddress(LEX* lc,
+                             const ResourceItem* item,
+                             int index,
+                             int pass);
+  void StoreAddressesPort(LEX* lc,
+                          const ResourceItem* item,
+                          int index,
+                          int pass);
   void ScanTypes(LEX* lc,
                  MessagesResource* msg,
                  MessageDestinationCode dest_code,
@@ -406,14 +419,15 @@ class ConfigurationParser {
                  LEX_ERROR_HANDLER* ScanError,
                  LEX_WARNING_HANDLER* scan_warning) const;
   void SetAllResourceDefaultsByParserPass(int rcode,
-                                          ResourceItem items[],
+                                          const ResourceItem items[],
                                           int pass);
   void SetAllResourceDefaultsIterateOverItems(
       int rcode,
-      ResourceItem items[],
-      std::function<void(ConfigurationParser&, ResourceItem*)> SetDefaults);
-  void SetResourceDefaultsParserPass1(ResourceItem* item);
-  void SetResourceDefaultsParserPass2(ResourceItem* item);
+      const ResourceItem items[],
+      std::function<void(ConfigurationParser&, const ResourceItem*)>
+          SetDefaults);
+  void SetResourceDefaultsParserPass1(const ResourceItem* item);
+  void SetResourceDefaultsParserPass2(const ResourceItem* item);
 };
 
 
@@ -456,8 +470,8 @@ class ConfigResourcesContainer {
 bool PrintMessage(void* sock, const char* fmt, ...);
 bool IsTlsConfigured(TlsResource* tls_resource);
 
-const char* GetName(ResourceItem& item, s_kw* keywords);
-bool HasDefaultValue(ResourceItem& item, s_kw* keywords);
+const char* GetName(const ResourceItem& item, s_kw* keywords);
+bool HasDefaultValue(const ResourceItem& item, s_kw* keywords);
 
 // Data type routines
 DatatypeName* GetDatatype(int number);

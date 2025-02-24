@@ -327,8 +327,9 @@ ResourceTable* ConfigurationParser::GetResourceTable(
   return &resource_definitions_[res_table_index];
 }
 
-int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
-                                              const char* item)
+int ConfigurationParser::GetResourceItemIndex(
+    const ResourceItem* resource_items_,
+    const char* item)
 {
   for (int i = 0; resource_items_[i].name; i++) {
     if (Bstrcasecmp(resource_items_[i].name, item)) {
@@ -352,11 +353,11 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
   return -1;
 }
 
-ResourceItem* ConfigurationParser::GetResourceItem(
-    ResourceItem* resource_items_,
+const ResourceItem* ConfigurationParser::GetResourceItem(
+    const ResourceItem* resource_items_,
     const char* item)
 {
-  ResourceItem* result = nullptr;
+  const ResourceItem* result = nullptr;
   int i = -1;
 
   if (resource_items_) {

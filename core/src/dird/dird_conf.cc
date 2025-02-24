@@ -84,12 +84,12 @@ extern struct s_kw RunFields[];
  */
 static PoolMem* configure_usage_string = NULL;
 
-extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
-extern void StoreRun(LEX* lc, ResourceItem* item, int index, int pass);
+extern void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass);
+extern void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass);
 
 static void CreateAndAddUserAgentConsoleResource(
     ConfigurationParser& my_config);
-static bool SaveResource(int type, ResourceItem* items, int pass);
+static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* ures,
@@ -117,7 +117,7 @@ static UserResource* res_user;
 
 /* clang-format off */
 
-static ResourceItem dir_items[] = {
+static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
   { "Messages", CFG_TYPE_RES, ITEM(res_dir, messages), {config::Code{R_MSGS}}},
@@ -167,7 +167,7 @@ static ResourceItem dir_items[] = {
   { "WhereAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Where_ACL}, config::Description{"Specifies the base directories, where files could be restored."}}}, \
   { "PluginOptionsAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{PluginOptions_ACL}, config::Description{"Specifies the allowed plugin options. An empty strings allows all Plugin Options."}}}
 
-static ResourceItem profile_items[] = {
+static const ResourceItem profile_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_profile, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_profile, description_), {config::Description{"Additional information about the resource. Only used for UIs."}}},
   USER_ACL(res_profile, ACL_lists),
@@ -177,7 +177,7 @@ static ResourceItem profile_items[] = {
 #define ACL_PROFILE(resource) \
   { "Profile", CFG_TYPE_ALIST_RES, ITEM(resource, user_acl.profiles), {config::IntroducedIn{14, 2, 3}, config::Code{R_PROFILE}, config::Description{"Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. First the console ACL is checked then any profile the console is linked to."}}}
 
-static ResourceItem con_items[] = {
+static const ResourceItem con_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_con, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_con, description_), {}},
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con, password_), {config::Required{}}},
@@ -189,7 +189,7 @@ static ResourceItem con_items[] = {
   {}
 };
 
-static ResourceItem user_items[] = {
+static const ResourceItem user_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_user, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_user, description_), {}},
   USER_ACL(res_user, user_acl.ACL_lists),
@@ -197,7 +197,7 @@ static ResourceItem user_items[] = {
   {}
 };
 
-static ResourceItem client_items[] = {
+static const ResourceItem client_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client, Protocol), {config::IntroducedIn{13, 2, 0}, config::DefaultValue{"Native"}}},
@@ -232,7 +232,7 @@ static ResourceItem client_items[] = {
   {}
 };
 
-static ResourceItem store_items[] = {
+static const ResourceItem store_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store, Protocol), {config::DefaultValue{"Native"}}},
@@ -260,7 +260,7 @@ static ResourceItem store_items[] = {
   {}
 };
 
-static ResourceItem cat_items[] = {
+static const ResourceItem cat_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_cat, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_cat, description_), {}},
   { "DbAddress", CFG_TYPE_STR, ITEM(res_cat, db_address), {config::Alias{"Address"}}},
@@ -282,7 +282,7 @@ static ResourceItem cat_items[] = {
   {}
 };
 
-ResourceItem job_items[] = {
+const ResourceItem job_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_job, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_job, description_), {}},
   { "Type", CFG_TYPE_JOBTYPE, ITEM(res_job, JobType), {config::Required{}}},
@@ -370,7 +370,7 @@ ResourceItem job_items[] = {
   {}
 };
 
-static ResourceItem fs_items[] = {
+static const ResourceItem fs_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_fs, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_fs, description_), {}},
   { "Include", CFG_TYPE_INCEXC, ITEMC(res_fs), {config::UsesNoEquals{}, config::Code{0}}},
@@ -380,7 +380,7 @@ static ResourceItem fs_items[] = {
   {}
 };
 
-static ResourceItem sch_items[] = {
+static const ResourceItem sch_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_sch, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_sch, description_), {}},
   { "Run", CFG_TYPE_RUN, ITEM(res_sch, run), {}},
@@ -388,7 +388,7 @@ static ResourceItem sch_items[] = {
   {}
 };
 
-static ResourceItem pool_items[] = {
+static const ResourceItem pool_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_pool, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_pool, description_), {}},
   { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool, pool_type), {config::DefaultValue{"Backup"}}},
@@ -424,7 +424,7 @@ static ResourceItem pool_items[] = {
   {}
 };
 
-static ResourceItem counter_items[] = {
+static const ResourceItem counter_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_counter, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_counter, description_), {}},
   { "Minimum", CFG_TYPE_INT32, ITEM(res_counter, MinValue), {config::DefaultValue{"0"}}},
@@ -490,7 +490,7 @@ static RunScript *res_runscript;
  * new RunScript items
  * name handler value code flags default_value
  */
-static ResourceItem runscript_items[] = {
+static const ResourceItem runscript_items[] = {
   { "Command", CFG_TYPE_RUNSCRIPT_CMD, ITEMC(res_runscript), {config::Code{SHELL_CMD}}},
   { "Console", CFG_TYPE_RUNSCRIPT_CMD, ITEMC(res_runscript), {config::Code{CONSOLE_CMD}}},
   { "Target", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), {}},
@@ -723,7 +723,7 @@ json_t* json_datatype(const int type, s_jt items[])
   return json;
 }
 
-json_t* json_datatype(const int type, ResourceItem items[])
+json_t* json_datatype(const int type, const ResourceItem items[])
 {
   json_t* json = json_datatype_header(type, "sub");
   if (items) {
@@ -870,7 +870,7 @@ std::shared_ptr<T> GetRuntimeStatus(const std::string& name)
 }
 }  // namespace
 
-static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
+static bool CmdlineItem(PoolMem* buffer, const ResourceItem* item)
 {
   PoolMem temp;
   PoolMem key;
@@ -901,7 +901,7 @@ static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
   return true;
 }
 
-static bool CmdlineItems(PoolMem* buffer, ResourceItem items[])
+static bool CmdlineItems(PoolMem* buffer, const ResourceItem items[])
 {
   if (!items) { return false; }
 
@@ -959,7 +959,7 @@ void DestroyConfigureUsageString()
  * Propagate the settings from source BareosResource to dest BareosResource
  * using the RES_ITEMS array.
  */
-static void PropagateResource(ResourceItem* items,
+static void PropagateResource(const ResourceItem* items,
                               JobResource* source,
                               JobResource* dest)
 {
@@ -1133,7 +1133,9 @@ static void PropagateResource(ResourceItem* items,
 
 
 // Ensure that all required items are present
-bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
+bool ValidateResource(int res_type,
+                      const ResourceItem* items,
+                      BareosResource* res)
 {
   if (res_type == R_JOBDEFS) {
     // a jobdef don't have to be fully defined.
@@ -1224,7 +1226,7 @@ char* CatalogResource::display(POOLMEM* dst)
 
 
 static void PrintConfigRunscript(OutputFormatterResource& send,
-                                 ResourceItem& item,
+                                 const ResourceItem& item,
                                  bool inherited,
                                  bool verbose)
 {
@@ -1768,7 +1770,7 @@ static std::string PrintConfigRun(RunResource* run)
 
 
 static void PrintConfigRun(OutputFormatterResource& send,
-                           ResourceItem* item,
+                           const ResourceItem* item,
                            bool inherited)
 {
   RunResource* run = GetItemVariable<RunResource*>(*item);
@@ -2129,7 +2131,7 @@ static void FreeIncludeExcludeItem(IncludeExcludeItem* incexe)
   delete incexe;
 }
 
-static bool UpdateResourcePointer(int type, ResourceItem* items)
+static bool UpdateResourcePointer(int type, const ResourceItem* items)
 {
   switch (type) {
     case R_PROFILE:
@@ -2406,7 +2408,10 @@ static bool PopulateJobdefaults()
 
 bool PopulateDefs() { return PopulateJobdefaults(); }
 
-static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StorePooltype(LEX* lc,
+                          const ResourceItem* item,
+                          int index,
+                          int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -2429,7 +2434,10 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
+static void StoreActiononpurge(LEX* lc,
+                               const ResourceItem* item,
+                               int index,
+                               int)
 {
   uint32_t* destination = GetItemVariablePointer<uint32_t*>(*item);
 
@@ -2460,7 +2468,7 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
  * later from the SD.
  */
 static void StoreDevice(LEX* lc,
-                        ResourceItem* item,
+                        const ResourceItem* item,
                         int index,
                         int pass,
                         BareosResource** configuration_resources)
@@ -2507,7 +2515,7 @@ static void StoreDevice(LEX* lc,
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
+static void StoreMigtype(LEX* lc, const ResourceItem* item, int index)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2531,7 +2539,7 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
 }
 
 // Store JobType (backup, verify, restore)
-static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreJobtype(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2554,7 +2562,7 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
-static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreProtocoltype(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2576,7 +2584,7 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
+static void StoreReplace(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Scan Replacement options
@@ -2600,7 +2608,10 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
-static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreAuthprotocoltype(LEX* lc,
+                                  const ResourceItem* item,
+                                  int index,
+                                  int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2624,7 +2635,7 @@ static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store authentication type (Mostly for NDMP like clear or MD5).
-static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreAuthtype(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2648,7 +2659,7 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store Job Level (Full, Incremental, ...)
-static void StoreLevel(LEX* lc, ResourceItem* item, int index, int)
+static void StoreLevel(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2675,7 +2686,10 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int)
  * Store password either clear if for NDMP and catalog or MD5 hashed for
  * native.
  */
-static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAutopassword(LEX* lc,
+                              const ResourceItem* item,
+                              int index,
+                              int pass)
 {
   switch ((*item->allocated_resource)->rcode_) {
     case R_DIRECTOR:
@@ -2751,7 +2765,7 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
-static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAcl(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   alist<const char*>** alistvalue
       = GetItemVariablePointer<alist<const char*>**>(*item);
@@ -2780,7 +2794,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAudit(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   int token;
   alist<const char*>* list;
@@ -2806,7 +2820,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int, int)
+static void StoreRunscriptWhen(LEX* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2827,7 +2841,10 @@ static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int, int)
   ScanToEol(lc);
 }
 
-static void StoreRunscriptTarget(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreRunscriptTarget(LEX* lc,
+                                 const ResourceItem* item,
+                                 int,
+                                 int pass)
 {
   LexGetToken(lc, BCT_STRING);
 
@@ -2855,7 +2872,7 @@ static void StoreRunscriptTarget(LEX* lc, ResourceItem* item, int, int pass)
   ScanToEol(lc);
 }
 
-static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreRunscriptCmd(LEX* lc, const ResourceItem* item, int, int pass)
 {
   LexGetToken(lc, BCT_STRING);
 
@@ -2867,7 +2884,10 @@ static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int, int pass)
   ScanToEol(lc);
 }
 
-static void StoreShortRunscript(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreShortRunscript(LEX* lc,
+                                const ResourceItem* item,
+                                int,
+                                int pass)
 {
   LexGetToken(lc, BCT_STRING);
   alist<RunScript*>** runscripts
@@ -2924,7 +2944,7 @@ static void StoreShortRunscript(LEX* lc, ResourceItem* item, int, int pass)
  * Store a bool in a bit field without modifing hdr
  * We can also add an option to StoreBool to skip hdr
  */
-static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int, int)
+static void StoreRunscriptBool(LEX* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
@@ -2945,7 +2965,10 @@ static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int, int)
  * resource.  We treat the RunScript like a sort of
  * mini-resource within the Job resource.
  */
-static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreRunscript(LEX* lc,
+                           const ResourceItem* item,
+                           int index,
+                           int pass)
 {
   Dmsg1(200, "StoreRunscript: begin StoreRunscript pass=%i\n", pass);
 
@@ -3135,7 +3158,7 @@ std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
  * callback function for init_resource
  * See ../lib/parse_conf.cc, function InitResource, for more generic handling.
  */
-static void InitResourceCb(ResourceItem* item, int pass)
+static void InitResourceCb(const ResourceItem* item, int pass)
 {
   switch (pass) {
     case 1:
@@ -3178,7 +3201,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
 static void ParseConfigCb(LEX* lc,
-                          ResourceItem* item,
+                          const ResourceItem* item,
                           int index,
                           int pass,
                           BareosResource** configuration_resources)
@@ -3241,7 +3264,7 @@ static void ParseConfigCb(LEX* lc,
 }
 
 
-static bool HasDefaultValue(ResourceItem& item, s_jt* keywords)
+static bool HasDefaultValue(const ResourceItem& item, s_jt* keywords)
 {
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);
@@ -3259,7 +3282,7 @@ static bool HasDefaultValue(ResourceItem& item, s_jt* keywords)
 }
 
 
-static bool HasDefaultValue(ResourceItem& item, s_jl* keywords)
+static bool HasDefaultValue(const ResourceItem& item, s_jl* keywords)
 {
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);
@@ -3277,7 +3300,7 @@ static bool HasDefaultValue(ResourceItem& item, s_jl* keywords)
 }
 
 template <typename T>
-static bool HasDefaultValue(ResourceItem& item, alist<T>* values)
+static bool HasDefaultValue(const ResourceItem& item, alist<T>* values)
 {
   if (item.default_value) {
     if ((values->size() == 1)
@@ -3291,14 +3314,14 @@ static bool HasDefaultValue(ResourceItem& item, alist<T>* values)
 }
 
 
-static bool HasDefaultValueAlistConstChar(ResourceItem& item)
+static bool HasDefaultValueAlistConstChar(const ResourceItem& item)
 {
   alist<const char*>* values = GetItemVariable<alist<const char*>*>(item);
   return HasDefaultValue(item, values);
 }
 
 
-static bool HasDefaultValue(ResourceItem& item)
+static bool HasDefaultValue(const ResourceItem& item)
 {
   bool is_default = false;
 
@@ -3392,7 +3415,7 @@ static bool HasDefaultValue(ResourceItem& item)
  * See ../lib/res.cc, function BareosResource::PrintConfig, for more generic
  * handling.
  */
-static void PrintConfigCb(ResourceItem& item,
+static void PrintConfigCb(const ResourceItem& item,
                           OutputFormatterResource& send,
                           bool,
                           bool inherited,
@@ -3945,7 +3968,7 @@ static void FreeResource(BareosResource* res, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-static bool SaveResource(int type, ResourceItem* items, int pass)
+static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   BareosResource* allocated_resource
       = *dird_resource_tables[type].allocated_resource_;

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,12 +90,12 @@ static inline bool configure_write_resource(const char* filename,
   return result;
 }
 
-static inline ResourceItem* config_get_res_item(UaContext* ua,
-                                                ResourceTable* res_table,
-                                                const char* key,
-                                                const char* value)
+static inline const ResourceItem* config_get_res_item(UaContext* ua,
+                                                      ResourceTable* res_table,
+                                                      const char* key,
+                                                      const char* value)
 {
-  ResourceItem* item = NULL;
+  const ResourceItem* item = NULL;
   const char* errorcharmsg = NULL;
 
   if (res_table) {
@@ -132,7 +132,7 @@ static inline bool config_add_directive(UaContext* ua,
                                         int indent = 2)
 {
   PoolMem temp(PM_MESSAGE);
-  ResourceItem* item = NULL;
+  const ResourceItem* item = NULL;
   std::string format("%-*s%s = %s\n");
 
   const std::array<int, 15> quotable_types{

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -82,11 +82,11 @@ BAREOS_IMPORT bool ParseDirConfig(const char* configfile, int exit_code);
 extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 /* Imported subroutines */
-void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass);
-void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass);
+void StoreJobtype(LEX* lc, const ResourceItem* item, int index, int pass);
+void StoreProtocoltype(LEX* lc, const ResourceItem* item, int index, int pass);
+void StoreLevel(LEX* lc, const ResourceItem* item, int index, int pass);
+void StoreReplace(LEX* lc, const ResourceItem* item, int index, int pass);
+void StoreMigtype(LEX* lc, const ResourceItem* item, int index, int pass);
 void InitDeviceResources();
 
 static bool test_config = false;
@@ -94,7 +94,7 @@ static bool test_config = false;
 static std::string pidfile_path;
 
 /* Globals Imported */
-extern ResourceItem job_items[];
+extern const ResourceItem job_items[];
 
 
 /**

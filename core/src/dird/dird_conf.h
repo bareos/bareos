@@ -673,14 +673,14 @@ class RunResource : public BareosResource {
 
 ConfigurationParser* InitDirConfig(const char* configfile, int exit_code);
 bool PropagateJobdefs(int res_type, JobResource* res);
-bool ValidateResource(int type, ResourceItem* items, BareosResource* res);
+bool ValidateResource(int type, const ResourceItem* items, BareosResource* res);
 
 bool print_datatype_schema_json(PoolMem& buffer,
                                 int level,
                                 const int type,
-                                ResourceItem items[],
+                                const ResourceItem items[],
                                 const bool last = false);
-json_t* json_datatype(const int type, ResourceItem items[]);
+json_t* json_datatype(const int type, const ResourceItem items[]);
 const char* AuthenticationProtocolTypeToString(uint32_t auth_protocol);
 const char* JobLevelToString(int level);
 std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
