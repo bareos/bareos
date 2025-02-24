@@ -709,8 +709,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
         // See how much is left in this chunk.
         if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
-          bytes_left = MIN((ssize_t)(count - offset),
-                           (ssize_t)(current_chunk_->buflen - wanted_offset));
+          bytes_left = MIN(((ssize_t)count - offset),
+                           ((ssize_t)current_chunk_->buflen - wanted_offset));
 
           if (bytes_left > 0) {
             Dmsg2(200,
@@ -743,8 +743,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
         } else {
           /* Calculate how much data we can read from the just freshly read
            * chunk. */
-          bytes_left = MIN((ssize_t)(count - offset),
-                           (ssize_t)(current_chunk_->buflen));
+          bytes_left = MIN(((ssize_t)count - offset),
+                           (ssize_t)current_chunk_->buflen);
 
           if (bytes_left > 0) {
             Dmsg2(200,
@@ -829,7 +829,7 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
         if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left
-              = MIN((ssize_t)(count - offset),
+              = MIN(((ssize_t)count - offset),
                     (ssize_t)((current_chunk_->end_offset
                                - (current_chunk_->start_offset + wanted_offset))
                               + 1));
@@ -860,7 +860,7 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
 
         /* Calculate how much data we can fit into the just freshly created
          * chunk. */
-        bytes_left = MIN((ssize_t)(count - offset),
+        bytes_left = MIN(((ssize_t)count - offset),
                          (ssize_t)((current_chunk_->end_offset
                                     - current_chunk_->start_offset)
                                    + 1));
