@@ -638,7 +638,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(resource, "bareos-sd", bareos_sd);
 
   for (int r = 0; my_config->resource_definitions_[r].name; r++) {
-    ResourceTable& resource_table = my_config->resource_definitions_[r];
+    const ResourceTable& resource_table = my_config->resource_definitions_[r];
     json_object_set_new(bareos_sd, resource_table.name,
                         json_items(resource_table.items));
   }
