@@ -5,6 +5,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Attention VMware users
+Due to a bug in the VMware plugin it is possible that in some cases an incremental or differential backup did not pick up all changes.
+This bug was fixed in [PR #2182], but your current VMware machine backups could be broken.
+It is therefore strongly suggested to immediately schedule a full backup of your virtual machines after upgrading the file daemon and VMware plugin to 24.0.1.
+
 ### Fixed
 - cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2077]
 - Fix building ndmjob program [PR #2084]
@@ -14,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bconsole: enable app icon on windows [PR #2131]
 - windows: fix readlink buffer size issue [PR #2161]
 - cmake: add cmake_parse_arguments policy CMP0174 [PR #2172]
+- VMware Plugin: Fix CBT query handling [PR #2182]
 
 ### Changed
 - winbareos-native.nsi: do not package python3 plugins [PR #2085]
@@ -22,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python-bareos: Add missing dh-python build dep [PR #2151]
 - debian: Add missing build dependencies [PR #2150]
 - build: add support for el10 [PR #2164]
-- VMware Plugin: Fix CBT query handling [PR #2182]
 
 ## [24.0.0] - 2024-12-16
 
