@@ -72,8 +72,11 @@ struct ResourceTable {
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
   BareosResource** allocated_resource_;
-  std::vector<std::pair<std::string, std::string>> aliases
-      = {}; /* Resource name and group name aliases (pair=[name, groupname]) */
+
+  struct Alias {
+    std::string name, group_name;
+  };
+  std::vector<Alias> aliases = {}; /* Resource name and group name aliases */
 };
 
 // Common Resource definitions
