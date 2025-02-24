@@ -199,7 +199,7 @@ struct ResourceItem {
   ResourceItem() = default;
 
   const char* name{}; /* Resource name i.e. Director, ... */
-  const int type{};
+  int type{};
   std::size_t offset{};
   BareosResource** allocated_resource{};
   int32_t code{}; /* Item code/additional info */
