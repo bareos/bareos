@@ -1907,11 +1907,7 @@ are supported. The NDMP backup level will be 1, visible as trailing number in th
 Incremental Backups
 ^^^^^^^^^^^^^^^^^^^
 
-are supported. The NDMP backup level will increment with each run, until a Full (0) or Differential (1) will be made. The maximum backup level will be 9. Additional Incremental backups will result in a failed job and the message:
-
-.. code-block:: bareosmessage
-
-    2016-01-21 13:35:51 bareos-dir JobId 12: Fatal error: NDMP dump format doesn't support more than 8 incrementals, please run a Differential or a Full Backup
+are supported. The NDMP backup level will increment with each run, until a Full (0) or Differential (1) will be made. The maximum safe backup level will be 9. Additional Incremental backups may fail or work just fine, depending on the specific ndmp software/hardware used:
 
 NDMP Debugging
 ~~~~~~~~~~~~~~
