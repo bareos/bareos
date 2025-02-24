@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [24.0.1] - 2025-02-24
 
 ### Attention VMware users
@@ -392,3 +394,4 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2164]: https://github.com/bareos/bareos/pull/2164
 [PR #2172]: https://github.com/bareos/bareos/pull/2172
 [PR #2182]: https://github.com/bareos/bareos/pull/2182
+[unreleased]: https://github.com/bareos/bareos/tree/master
