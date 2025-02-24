@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: add cmake_parse_arguments policy CMP0174 [PR #2169]
 - VMware plugin: fix check_mac_address() for vm.config not present [PR #2059]
 - scheduler: 'last' keyword doesn't allow job to be visible in status dir [PR #2120]
+- fix autodeflate messages and refactor setup method [PR #2121]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -66,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116
 [PR #2120]: https://github.com/bareos/bareos/pull/2120
+[PR #2121]: https://github.com/bareos/bareos/pull/2121
 [PR #2122]: https://github.com/bareos/bareos/pull/2122
 [PR #2128]: https://github.com/bareos/bareos/pull/2128
 [PR #2130]: https://github.com/bareos/bareos/pull/2130
