@@ -33,6 +33,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
+option(ENABLE_SYSTEMTESTS "Enable the systemtest suite" ON)
 option(CPM_ONLY "Add CPM packages and exit" OFF)
 if(CPM_ONLY)
   include(BareosCpmPackages)
@@ -131,10 +132,12 @@ set(SITE
     "${CMAKE_SYSTEM_NAME}-${DISTVER}-${CMAKE_HOST_SYSTEM_PROCESSOR}"
     CACHE STRING "build name variable for CDash"
 )
-# enable "make test"
-enable_testing()
-set(CMAKE_CTEST_COMMAND ctest -V)
-include(CTest)
+if(ENABLE_SYSTEMTESTS)
+    # enable "make test"
+    enable_testing()
+    set(CMAKE_CTEST_COMMAND ctest -V)
+    include(CTest)
+endif()
 
 option(BUILD_UNIVERSAL_CLIENT
        "Override build-options to produce a limited, but universal client" OFF
@@ -207,7 +210,9 @@ if(BUILD_BAREOS_BINARIES)
     if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       add_subdirectory(contrib)
     endif()
-    add_subdirectory(systemtests)
+    if(ENABLE_SYSTEMTESTS)
+        add_subdirectory(systemtests)
+    endif()
   endif()
 endif()
 
