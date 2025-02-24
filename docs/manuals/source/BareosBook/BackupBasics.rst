@@ -72,6 +72,7 @@ Automatic and regular backups
 Regarding regular backups, the following items need to be determined:
   * At what time of day should the backup be carried out?
   * At what intervals should the backup be carried out?
+
 Usually, backups are carried out once a day (usually in the night). This ensures
 that daily production operations are not affected by the backup.
 The interval also determines what is the maximum age of a new datum before it is protected
@@ -79,7 +80,7 @@ by a backup.
 
 
 Copying the data
----------------
+----------------
 
 Computer **data that needs to be backed up** exists in a lot of different ways today, including:
   * Files
