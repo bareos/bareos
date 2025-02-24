@@ -6,7 +6,7 @@ Customizing the Configuration
 .. index::
    single: Customizing the Configuration
 
-Each Bareos component (Director, Client, Storage, Console) has its own configuration containing a set of resource definitions. These resources are very similar from one service to another, but may contain different directives (records) depending on the component. For example, in the Director configuration, the :ref:`DirectorResourceDirector` defines the name of the Director, a number of global Director parameters and his password. In the File daemon configuration, the
+Each Bareos component (Director, Client, Storage, Console) has its own configuration containing a set of resource definitions. These resources are very similar from one service to another, but may contain different directives (records) depending on the component. For example, in the Director configuration, the :ref:`DirectorResourceDirector` defines the name of the Director, a number of global Director parameters and his password. In the Client configuration, the
 :ref:`ClientResourceDirector` specifies which Directors are permitted to use the File daemon.
 
 If you install all Bareos daemons (Director, Storage and File Daemon) onto one system, the Bareos package tries its best to generate a working configuration as a basis for your individual configuration.

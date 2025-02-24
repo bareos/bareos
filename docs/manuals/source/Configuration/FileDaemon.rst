@@ -1,9 +1,9 @@
 .. _FiledConfChapter:
 
-Client/File Daemon Configuration
+Client Configuration
 ================================
 
-:index:`\ <single: Configuration; Client/File daemon>`\  :index:`\ <single: Client/File daemon Configuration>`\
+:index:`\ <single: Configuration; Client>`\  :index:`\ <single: Client Configuration>`\
 
 The Client (or File Daemon) Configuration is one of the simpler ones to specify. Generally, other than changing the Client name so that error messages are easily identified, you will not need to modify the default Client configuration file.
 
@@ -22,7 +22,7 @@ Client Resource
 
 :index:`\ <single: Resource; Client>`\  :index:`\ <single: Client Resource>`\
 
-The Client Resource (or FileDaemon) resource defines the name of the Client (as used by the Director) as well as the port on which the Client listens for Director connections.
+The Client (or FileDaemon) resource defines the name of the Client (as used by the Director) as well as the port on which the Client listens for Director connections.
 
 Start of the Client records. There must be one and only one Client resource in the configuration file, since it defines the properties of the current client program.
 
@@ -99,14 +99,14 @@ Please see the :ref:`Messages Resource <MessagesChapter>` Chapter of this manual
 Example Client Configuration File
 ---------------------------------
 
-An example File Daemon configuration file might be the following:
+An example Client file might be the following:
 
 
 
 ::
 
    #
-   # Bareos File Daemon Configuration file
+   # Bareos Client Configuration file
    #
 
    #
@@ -128,7 +128,7 @@ An example File Daemon configuration file might be the following:
    }
 
    #
-   # "Global" File daemon configuration specifications
+   # "Global" Client configuration specifications
    #
    Client {                          # this is me
      Name = client1-fd
