@@ -403,7 +403,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(resource, "bareos-tray-monitor", bareos_tray_monitor);
 
   for (int r = 0; my_config->resource_definitions_[r].name; r++) {
-    ResourceTable& resource_table = my_config->resource_definitions_[r];
+    const ResourceTable& resource_table = my_config->resource_definitions_[r];
     json_object_set_new(bareos_tray_monitor, resource_table.name,
                         json_items(resource_table.items));
   }

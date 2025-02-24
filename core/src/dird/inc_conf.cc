@@ -775,7 +775,7 @@ static void StoreOptionsRes(LEX* lc,
 static FilesetResource* GetStaticFilesetResource()
 {
   FilesetResource* res_fs = nullptr;
-  ResourceTable* t = my_config->GetResourceTable("FileSet");
+  const ResourceTable* t = my_config->GetResourceTable("FileSet");
   ASSERT(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
   assert(res_fs);

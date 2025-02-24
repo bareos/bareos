@@ -275,7 +275,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* bconsole = json_object();
   json_object_set_new(json_resource_object, "bconsole", bconsole);
 
-  ResourceTable* resource_definition = my_config->resource_definitions_;
+  const ResourceTable* resource_definition = my_config->resource_definitions_;
   for (; resource_definition->name; ++resource_definition) {
     json_object_set_new(bconsole, resource_definition->name,
                         json_items(resource_definition->items));

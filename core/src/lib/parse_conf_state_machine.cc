@@ -223,8 +223,8 @@ ConfigParserStateMachine::ParserInitResource(int token)
       break;
   }
 
-  ResourceTable* resource_table;
-  resource_table = my_config_.GetResourceTable(resource_identifier);
+  const ResourceTable* resource_table
+      = my_config_.GetResourceTable(resource_identifier);
   if (!resource_table) {
     scan_err1(lexical_parser_,
               T_("Expected a Resource name identifier, got: %s"),

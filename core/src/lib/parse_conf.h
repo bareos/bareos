@@ -212,7 +212,7 @@ class ConfigurationParser {
   int32_t r_num_{0};                      /* number of daemon resource types */
   int32_t r_own_{0};                      /* own resource type */
   BareosResource* own_resource_{nullptr}; /* Pointer to own resource */
-  ResourceTable* resource_definitions_{
+  const ResourceTable* resource_definitions_{
       0}; /* Pointer to table of permitted resources */
   std::shared_ptr<ConfigResourcesContainer> config_resources_container_;
   mutable brwlock_t res_lock_; /* Resource lock */
@@ -230,7 +230,7 @@ class ConfigurationParser {
                       PRINT_RES_HANDLER* print_res,
                       int32_t err_type,
                       int32_t r_num,
-                      ResourceTable* resources,
+                      const ResourceTable* resources,
                       const char* config_default_filename,
                       const char* config_include_dir,
                       void (*ParseConfigBeforeCb)(ConfigurationParser&),
@@ -270,7 +270,7 @@ class ConfigurationParser {
                      void* sock,
                      bool hide_sensitive_data = false);
   int GetResourceCode(const char* resource_type);
-  ResourceTable* GetResourceTable(const char* resource_type_name);
+  const ResourceTable* GetResourceTable(const char* resource_type_name);
   int GetResourceItemIndex(const ResourceItem* res_table, const char* item);
   const ResourceItem* GetResourceItem(const ResourceItem* res_table,
                                       const char* item);
