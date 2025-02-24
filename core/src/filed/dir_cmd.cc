@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1628,7 +1628,7 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
                    "%s compression support requested in fileset but not "
                    "available on this platform. Disabling "
                    "...\n",
-                   cmprs_algo_to_text(fo->Compress_algo));
+                   CompressorName(fo->Compress_algo).c_str());
               ClearBit(FO_COMPRESS, fo->flags);
               fo->Compress_algo = 0;
               break;
