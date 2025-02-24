@@ -199,6 +199,7 @@ set up a successful backup scheme.
 How to create a backup scheme:
 
 * What types of data loss should be recoverable?
+
   * Accident?
   * Attack?
   * Higher Violence?
