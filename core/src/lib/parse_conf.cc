@@ -314,25 +314,10 @@ int ConfigurationParser::GetResourceTableIndex(const char* resource_type_name)
 
 int ConfigurationParser::GetResourceCode(const char* resource_type_name)
 {
-  for (int i = 0; resource_definitions_[i].name; i++) {
-    if (Bstrcasecmp(resource_definitions_[i].name, resource_type_name)) {
-      return resource_definitions_[i].rcode;
-    }
-    for (const auto& [name, groupname] : resource_definitions_[i].aliases) {
-      if (Bstrcasecmp(name.c_str(), resource_type_name)) {
-        std::string warning
-            = "Found resource alias usage \"" + name
-              + "\" in configuration which is discouraged, consider using \""
-              + resource_definitions_[i].name + "\" instead.";
-        if (std::find(warnings_.begin(), warnings_.end(), warning)
-            == warnings_.end()) {
-          AddWarning(warning);
-        }
-        return i;
-      }
-    }
+  int index = GetResourceTableIndex(resource_type_name);
+  if (index >= 0) {
+    return resource_definitions_[index].rcode;
   }
-
   return -1;
 }
 
