@@ -4,7 +4,7 @@ Storage {
   Password = "@sd_password@"
   Device = FileStorage
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
   Maximum Concurrent Jobs = 10
 }
 
@@ -15,7 +15,7 @@ Storage {
   Device = FileStorage2
   Device = FileStorage4
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
   Maximum Concurrent Jobs = 10
 }
 
@@ -25,6 +25,6 @@ Storage {
   Password = "@sd_password@"
   Device = FileStorage3
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
   Maximum Concurrent Jobs = 10
 }

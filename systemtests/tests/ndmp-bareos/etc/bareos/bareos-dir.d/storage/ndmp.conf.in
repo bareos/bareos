@@ -22,7 +22,7 @@ Storage {
   Password = "@sd_password@"
   Device = FileStorage
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
 }
 
 
@@ -46,5 +46,5 @@ Storage {
   Password = @sd_password@
   Device = FileStorage2
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
 }

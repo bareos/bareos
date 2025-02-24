@@ -5,6 +5,6 @@ Storage {
   Device = virtual-autochanger
   Autochanger = yes
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
   MaximumConcurrentJobs = 20
 }
