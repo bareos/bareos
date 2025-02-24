@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware plugin: fix check_mac_address() for vm.config not present [PR #2059]
 - scheduler: 'last' keyword doesn't allow job to be visible in status dir [PR #2120]
 - fix autodeflate messages and refactor setup method [PR #2121]
+- stored: fix crash when using jit reservation with no matching device; fix reservation error [PR #2141]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -72,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2128]: https://github.com/bareos/bareos/pull/2128
 [PR #2130]: https://github.com/bareos/bareos/pull/2130
 [PR #2132]: https://github.com/bareos/bareos/pull/2132
+[PR #2141]: https://github.com/bareos/bareos/pull/2141
 [PR #2144]: https://github.com/bareos/bareos/pull/2144
 [PR #2147]: https://github.com/bareos/bareos/pull/2147
 [PR #2149]: https://github.com/bareos/bareos/pull/2149
