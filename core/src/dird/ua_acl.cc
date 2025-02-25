@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,12 +115,8 @@ static inline std::optional<bool> FindInAclList(alist<const char*>* list,
                                                 const char* item,
                                                 int item_length)
 {
-  // See if we have an empty list.
-  if (!list || list->empty()) { return std::nullopt; }
-
   // Search list for item
-  const char* list_value = nullptr;
-  foreach_alist (list_value, list) {
+  for (auto* list_value : list) {
     // See if this is a deny acl.
     if (*list_value == '!') {
       if (CompareAclListValueWithItem(acl, list_value, list_value + 1, item,
@@ -172,9 +168,7 @@ bool UaContext::AclAccessOk(int acl,
    * connected to. */
   if (!retval.has_value()) {
     if (user_acl->profiles && user_acl->profiles->size()) {
-      ProfileResource* profile = nullptr;
-
-      foreach_alist (profile, user_acl->profiles) {
+      for (auto* profile : *user_acl->profiles) {
         retval = FindInAclList(profile->ACL_lists[acl], acl, item, item_length);
 
         // If we found a match break the loop.
@@ -198,7 +192,6 @@ bail_out:
 bool UaContext::AclNoRestrictions(int acl)
 {
   const char* list_value;
-  ProfileResource* profile = nullptr;
 
   // If no console resource => default console and all is permitted
   if (!user_acl) { return true; }
@@ -213,18 +206,20 @@ bool UaContext::AclNoRestrictions(int acl)
     }
   }
 
-  foreach_alist (profile, user_acl->profiles) {
-    if (profile) {
-      if (profile->ACL_lists[acl]) {
-        for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
-          list_value = (char*)profile->ACL_lists[acl]->get(i);
+  if (user_acl->profiles) {
+    for (auto* profile : *user_acl->profiles) {
+      if (profile) {
+        if (profile->ACL_lists[acl]) {
+          for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
+            list_value = (char*)profile->ACL_lists[acl]->get(i);
 
-          if (*list_value == '!') { return false; }
+            if (*list_value == '!') { return false; }
 
-          if (Bstrcasecmp("*all*", list_value)) { return true; }
-        } /* for (int i = 0; */
-      }   /* if (profile->ACL_lists[acl]) */
-    }     /* if (profile) */
+            if (Bstrcasecmp("*all*", list_value)) { return true; }
+          } /* for (int i = 0; */
+        } /* if (profile->ACL_lists[acl]) */
+      } /* if (profile) */
+    }
   }
 
   return false;
