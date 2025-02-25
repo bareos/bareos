@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -355,7 +355,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
         try_autochanger = true; /* permit trying the autochanger again */
 
         continue; /* try reading again */
-    }             /* end switch */
+    } /* end switch */
     break;
   } /* end while loop */
 
@@ -409,7 +409,6 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
   bool retval = false;
-  bool have_vol = false;
 
   Enter(200);
   InitDeviceWaitTimers(dcr);
@@ -430,21 +429,8 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
 
   dev->ClearUnload();
 
-  /* have_vol defines whether or not MountNextWriteVolume should
-   * ask the Director again about what Volume to use. */
-  if (dev->CanAppend() && dcr->IsSuitableVolumeMounted()
-      && !bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) {
-    Dmsg0(190, "device already in append.\n");
-    /* At this point, the correct tape is already mounted, so
-     * we do not need to do MountNextWriteVolume(), unless
-     * we need to recycle the tape. */
-    if (dev->num_writers == 0) {
-      dev->VolCatInfo = dcr->VolCatInfo; /* structure assignment */
-    }
-    have_vol = dcr->IsTapePositionOk();
-  }
 
-  if (!have_vol) {
+  {
     dev->rLock(true);
     BlockDevice(dev, BST_DOING_ACQUIRE);
     dev->Unlock();
