@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos-config-libs: double quote dbconfig values [PR #2134]
 - windows: fix readlink buffer size issue [PR #2162]
 - stored: fix crash when using jit reservation with no matching device; fix reservation error [PR #2185]
+- VMware plugin: fix check_mac_address() for vm.config not present [PR #2178]
 
 ## [23.1.1] - 2024-12-02
 
@@ -620,6 +621,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2074]: https://github.com/bareos/bareos/pull/2074
 [PR #2134]: https://github.com/bareos/bareos/pull/2134
 [PR #2162]: https://github.com/bareos/bareos/pull/2162
+[PR #2178]: https://github.com/bareos/bareos/pull/2178
 [PR #2183]: https://github.com/bareos/bareos/pull/2183
 [PR #2185]: https://github.com/bareos/bareos/pull/2185
 [unreleased]: https://github.com/bareos/bareos/tree/master
