@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - stored: fix crash when using jit reservation with no matching device; fix reservation error [PR #2184]
+- VMware plugin: fix check_mac_address() for vm.config not present [PR #2177]
 
 ## [24.0.1] - 2025-02-24
 
@@ -396,6 +397,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2161]: https://github.com/bareos/bareos/pull/2161
 [PR #2164]: https://github.com/bareos/bareos/pull/2164
 [PR #2172]: https://github.com/bareos/bareos/pull/2172
+[PR #2177]: https://github.com/bareos/bareos/pull/2177
 [PR #2182]: https://github.com/bareos/bareos/pull/2182
 [PR #2184]: https://github.com/bareos/bareos/pull/2184
 [unreleased]: https://github.com/bareos/bareos/tree/master
