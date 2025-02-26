@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -238,8 +238,8 @@ void test_config_directive_type(
 
 void test_CFG_TYPE_AUDIT(DirectorResource* me)
 {
-  const char* val = nullptr;
-  foreach_alist (val, me->audit_events) { printf("AuditEvents = %s\n", val); }
+  ASSERT_TRUE(me->audit_events);
+  for (auto* val : me->audit_events) { printf("AuditEvents = %s\n", val); }
   EXPECT_EQ(me->audit_events->size(), 8);
 }
 
@@ -251,8 +251,8 @@ TEST_F(ConfigParser_Dir, CFG_TYPE_AUDIT)
 
 void test_CFG_TYPE_PLUGIN_NAMES(DirectorResource* me)
 {
-  const char* val = nullptr;
-  foreach_alist (val, me->plugin_names) { printf("PluginNames = %s\n", val); }
+  ASSERT_TRUE(me->plugin_names);
+  for (auto* val : me->plugin_names) { printf("PluginNames = %s\n", val); }
   EXPECT_EQ(me->plugin_names->size(), 16);
 }
 
@@ -331,8 +331,8 @@ void test_CFG_TYPE_FNAME(DirectorResource*)
 
   alist<const char*>* files
       = std::addressof(fileset1->include_items.at(0)->name_list);
-  const char* val = nullptr;
-  foreach_alist (val, files) { printf("Files = %s\n", val); }
+  ASSERT_TRUE(files);
+  for (auto* val : files) { printf("Files = %s\n", val); }
 }
 
 TEST_F(ConfigParser_Dir, CFG_TYPE_FNAME)

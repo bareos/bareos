@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -804,8 +804,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         } else {
           p->device_resources = res_changer->device_resources;
 
-          DeviceResource* q = nullptr;
-          foreach_alist (q, p->device_resources) { q->changer_res = p; }
+          for (auto* q : p->device_resources) { q->changer_res = p; }
 
           int errstat;
           if ((errstat = RwlInit(&p->changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {

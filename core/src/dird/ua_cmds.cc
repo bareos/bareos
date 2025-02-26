@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -803,14 +803,13 @@ static inline bool CancelStorageDaemonJob(UaContext* ua, const char*)
 static inline bool CancelJobs(UaContext* ua, const char*)
 {
   JobControlRecord* jcr;
-  JobId_t* JobId = nullptr;
   alist<JobId_t*>* selection;
 
   selection = select_jobs(ua, "cancel");
   if (!selection) { return true; }
 
   // Loop over the different JobIds selected.
-  foreach_alist (JobId, selection) {
+  for (auto* JobId : selection) {
     if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
 
     CancelJob(ua, jcr);
@@ -971,14 +970,13 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
 
   if (FindArgKeyword(ua, lst) > 0) {
     JobControlRecord* jcr;
-    JobId_t* JobId = nullptr;
     alist<JobId_t*>* selection;
 
     selection = select_jobs(ua, "limit");
     if (!selection) { return true; }
 
     // Loop over the different JobIds selected.
-    foreach_alist (JobId, selection) {
+    for (auto* JobId : selection) {
       if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
 
       jcr->max_bandwidth = limit;
