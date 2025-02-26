@@ -62,7 +62,6 @@ endif()
 
 if(HAVE_WIN32)
   add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
-  target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
   target_include_directories(
     mssqlvdi-fd PRIVATE ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
   )
@@ -71,6 +70,7 @@ if(HAVE_WIN32)
       mssqlvdi-fd PRIVATE ${THREADS_THREADS} bareos comsupp.lib
     )
   else()
+    target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
     target_link_libraries(mssqlvdi-fd bareos)
   endif()
   set_target_properties(
