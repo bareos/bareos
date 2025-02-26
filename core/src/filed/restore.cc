@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1014,7 +1014,7 @@ void DoRestore(JobControlRecord* jcr)
         Dmsg2(0, "Unknown stream=%d data=%s\n", rctx.stream, sd->msg);
         break;
     } /* end switch(stream) */
-  }   /* end while get_msg() */
+  } /* end while get_msg() */
 
   /* If output file is still open, it was the last one in the
    * archive since we just hit an end of file, so close the file. */
