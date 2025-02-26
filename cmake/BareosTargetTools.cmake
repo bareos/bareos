@@ -13,7 +13,9 @@ function(get_target_dependencies result_var target outfile)
       get_target_property(library_type ${library} TYPE)
       string(APPEND msg "  ${library} ${library_type}\n")
       list(APPEND required_targets ${library})
-      get_target_property(interface_link_libraries ${library} INTERFACE_LINK_LIBRARIES)
+      get_target_property(
+        interface_link_libraries ${library} INTERFACE_LINK_LIBRARIES
+      )
       if(interface_link_libraries)
         foreach(interface_library IN LISTS interface_link_libraries)
           strip_link_only(interface_library)
@@ -32,7 +34,10 @@ function(get_target_dependencies result_var target outfile)
   endforeach()
   list(SORT required_targets)
   list(REMOVE_DUPLICATES required_targets)
-  set(${result_var} ${required_targets} PARENT_SCOPE)
+  set(${result_var}
+      ${required_targets}
+      PARENT_SCOPE
+  )
   if(outfile)
     file(WRITE "${outfile}" "${msg}")
   endif()
@@ -41,36 +46,42 @@ endfunction()
 function(debug_deps targets outfile)
   set(msg)
   set(wanted_types "SHARED_LIBRARY;UNKNOWN_LIBRARY")
-  set(properties "LOCATION")
+  set(properties
+      "TYPE;INCLUDE_DIRECTORIES;INTERFACE_INCLUDE_DIRECTORIES;LOCATION"
+  )
   foreach(suffix IN ITEMS "" "_RELEASE" "_DEBUG")
     foreach(propname IN ITEMS LOCATION IMPLIB OBJECTS LIBNAME)
       list(APPEND properties "IMPORTED_${propname}${suffix}")
     endforeach()
   endforeach()
   foreach(target IN LISTS targets)
-	  get_target_property(type ${target} TYPE)
-	  if(type IN_LIST wanted_types) 
-	  get_target_property(imported ${target} IMPORTED)
-	  if(imported)
-		  string(APPEND msg "${target}:\n")
-		  foreach(property IN LISTS properties)
-        string(CONCAT _tmp ${property} " ..................... ")
-        string(SUBSTRING "${_tmp}" 0 30 prop_display)
-        get_property(propset TARGET ${target} PROPERTY ${property} SET)
-		    if(propset)
-		      get_target_property(prop ${target} ${property})
-		      string(APPEND msg "  ${prop_display} ${prop}\n")
-        else()
-          string(APPEND msg "  ${prop_display} (not set)\n")
-		    endif()
-	    endforeach()
-      string(APPEND msg "\n")
-	  endif()
-  endif()
+    get_target_property(type ${target} TYPE)
+    if(type IN_LIST wanted_types)
+      get_target_property(imported ${target} IMPORTED)
+      if(imported)
+        string(APPEND msg "${target}:\n")
+        foreach(property IN LISTS properties)
+          string(CONCAT _tmp ${property} " ..................... ")
+          string(SUBSTRING "${_tmp}" 0 30 prop_display)
+          get_property(
+            propset
+            TARGET ${target}
+            PROPERTY ${property}
+            SET
+          )
+          if(propset)
+            get_target_property(prop ${target} ${property})
+            string(APPEND msg "  ${prop_display} ${prop}\n")
+          else()
+            string(APPEND msg "  ${prop_display} (not set)\n")
+          endif()
+        endforeach()
+        string(APPEND msg "\n")
+      endif()
+    endif()
   endforeach()
   file(WRITE ${outfile} "${msg}")
 endfunction()
-
 
 function(strip_link_only target_var)
   set(target_name "${${target_var}}")
@@ -79,22 +90,36 @@ function(strip_link_only target_var)
     string(LENGTH "${target_name}" target_name_len)
     math(EXPR len "${target_name_len} - 12 - 1")
     string(SUBSTRING "${target_name}" 12 ${len} stripped)
-    set(${target_var} ${stripped} PARENT_SCOPE)
+    set(${target_var}
+        ${stripped}
+        PARENT_SCOPE
+    )
   endif()
 endfunction()
 
 function(get_all_targets var)
-    set(targets)
-    get_all_targets_recursive(targets ${CMAKE_CURRENT_SOURCE_DIR})
-    set(${var} ${targets} PARENT_SCOPE)
+  set(targets)
+  get_all_targets_recursive(targets ${CMAKE_CURRENT_SOURCE_DIR})
+  set(${var}
+      ${targets}
+      PARENT_SCOPE
+  )
 endfunction()
 
 macro(get_all_targets_recursive targets dir)
-    get_property(subdirectories DIRECTORY ${dir} PROPERTY SUBDIRECTORIES)
-    foreach(subdir ${subdirectories})
-        get_all_targets_recursive(${targets} ${subdir})
-    endforeach()
+  get_property(
+    subdirectories
+    DIRECTORY ${dir}
+    PROPERTY SUBDIRECTORIES
+  )
+  foreach(subdir ${subdirectories})
+    get_all_targets_recursive(${targets} ${subdir})
+  endforeach()
 
-    get_property(current_targets DIRECTORY ${dir} PROPERTY BUILDSYSTEM_TARGETS)
-    list(APPEND ${targets} ${current_targets})
+  get_property(
+    current_targets
+    DIRECTORY ${dir}
+    PROPERTY BUILDSYSTEM_TARGETS
+  )
+  list(APPEND ${targets} ${current_targets})
 endmacro()
