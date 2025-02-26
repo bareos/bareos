@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_H_
-#define BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_H_
+#ifndef BAREOS_PLUGINS_FILED_GRPC_BRIDGE_MODULE_BRIDGE_MODULE_H_
+#define BAREOS_PLUGINS_FILED_GRPC_BRIDGE_MODULE_BRIDGE_MODULE_H_
 
 #include <optional>
 #include <sys/stat.h>
@@ -32,6 +32,8 @@
 
 namespace bc = bareos::core;
 namespace bco = bareos::common;
+
+bool WaitForReady();
 
 bool Register(std::basic_string_view<bc::EventType> types);
 bool Unregister(std::basic_string_view<bc::EventType> types);
@@ -130,4 +132,4 @@ std::optional<int> Bareos_GetInt(bc::BareosIntVariable var);
 bool Bareos_SetFlag(bc::BareosFlagVariable var, bool val);
 std::optional<bool> Bareos_GetFlag(bc::BareosFlagVariable var);
 
-#endif  // BAREOS_PLUGINS_FILED_GRPC_TEST_MODULE_H_
+#endif  // BAREOS_PLUGINS_FILED_GRPC_BRIDGE_MODULE_BRIDGE_MODULE_H_
