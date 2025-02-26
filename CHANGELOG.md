@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - contrib: check_chunk.py improve README.md instructions [PR #2147]
 - build: add support for el10 [PR #2106]
 - VMware Plugin: Fix CBT query handling [PR #2152]
+- increase accepted warnings for windows [PR #2191]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -80,4 +81,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2152]: https://github.com/bareos/bareos/pull/2152
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
+[PR #2191]: https://github.com/bareos/bareos/pull/2191
 [unreleased]: https://github.com/bareos/bareos/tree/master
