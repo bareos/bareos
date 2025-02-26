@@ -113,10 +113,9 @@ bareos_disable_warnings(
 
 target_include_directories(
   droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
-                 ${OPENSSL_INCLUDE_DIR}
 )
 target_link_libraries(
-  droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES} ${OPENSSL_LIBRARIES}
+  droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto
 )
 
 include(DebugEdit)
