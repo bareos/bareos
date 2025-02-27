@@ -29,6 +29,7 @@ import os
 import sys
 from time import sleep
 import unittest
+import tempfile
 
 from selenium import webdriver
 from selenium.common.exceptions import *
@@ -132,6 +133,7 @@ class WrongCredentialsException(Exception):
 
 class SeleniumTest(unittest.TestCase):
 
+    chrome_user_data_dir = tempfile.TemporaryDirectory()
     browser = "chrome"
     # Used by Univention AppCenter test: 1200x800
     # Large resolution to show website without hamburger menu, e.g. 1920x1080
@@ -169,12 +171,7 @@ class SeleniumTest(unittest.TestCase):
             # chrome webdriver option: disable experimental feature
             opt = webdriver.ChromeOptions()
             # chrome webdriver option: specify user data directory
-            opt.add_argument(
-                "--user-data-dir=/tmp/chrome-user-data-"
-                + getattr(self, "profile", "none")
-                + "-"
-                + getattr(self, "testname", "none")
-            )
+            opt.add_argument("--user-data-dir=" + self.chrome_user_data_dir.name)
             # Set some options to improve reliability
             # https://stackoverflow.com/a/55307841/11755457
             opt.add_argument("--disable-extensions")
