@@ -427,38 +427,88 @@ static void ParseConfigCb(LEX* lc,
   }
 }
 
-static void MultiplyDevice(DeviceResource& multiplied_device_resource)
+static DeviceResource* CopyDevice(DeviceResource& original, int serial_number)
 {
-  /* append 0001 to the name of the existing resource */
-  multiplied_device_resource.CreateAndAssignSerialNumber(1);
+  DeviceResource* copy = new DeviceResource(original);
+  copy->CreateAndAssignSerialNumber(serial_number);
+  copy->multiplied_device_resource = std::addressof(original);
+  copy->count = 0;
+  copy->refcnt_ = 1;
+  if (copy->changer_res && copy->changer_res->device_resources) {
+    copy->changer_res->device_resources->append(copy);
+  }
 
-  multiplied_device_resource.multiplied_device_resource
-      = std::addressof(multiplied_device_resource);
+  return copy;
+}
+static void MultiplyDevice(DeviceResource& original,
+                           ConfigurationParser& config)
+{
+  // create device 0
+  std::string device0_name = original.resource_name_ + std::string("0000");
+  DeviceResource* device0 = dynamic_cast<DeviceResource*>(
+      config.GetResWithName(R_DEVICE, device0_name.c_str()));
+  if (!device0) {
+    device0 = CopyDevice(original, 0);
+    device0->autoselect = false;
+    config.AppendToResourcesChain(device0, device0->rcode_);
+  } else {
+    Dmsg0(0,
+          "Device resource \"%s\" will not implicitly create device \"%s\" "
+          "resource since there already exists a device resource with that "
+          "name.\n",
+          original.resource_name_, device0_name.c_str());
+  }
 
-  uint32_t count = multiplied_device_resource.count - 1;
+  // create autochanger
+  if (!original.changer_res) {
+    original.changer_res = new AutochangerResource();
+    original.changer_res->resource_name_
+        = strdup((original.resource_name_ + std::string("Changer")).c_str());
+    original.changer_res->changer_name = strdup("dev/null");
+    original.changer_res->changer_command = strdup("");
+    original.changer_res->device_resources = new alist<DeviceResource*>();
+    original.changer_res->device_resources->append(device0);
+    original.changer_res->device_resources->append(std::addressof(original));
+    original.changer_res->rcode_ = R_AUTOCHANGER;
+    original.changer_res->rcode_str_ = "Autochanger";
+    original.changer_res->refcnt_ = 1;
 
-  /* create the copied devices */
-  for (uint32_t i = 0; i < count; i++) {
-    DeviceResource* copied_device_resource
-        = new DeviceResource(multiplied_device_resource);
+    if (!config.GetResWithName(R_AUTOCHANGER,
+                               original.changer_res->resource_name_)) {
+      config.AppendToResourcesChain(original.changer_res, R_AUTOCHANGER);
+    } else {
+      Emsg0(M_WARNING, 0,
+            "Device resource \"%s\" will not implicitly create an autochanger "
+            "resource \"%s\" since an autochanger resource with that name "
+            "already exists.\n",
+            original.resource_name_, original.changer_res->resource_name_);
+    }
+  } else {
+    Dmsg0(0,
+          "Device resource \"%s\" will not implicitly create an autochanger "
+          "resource since it is already used by autochanger resource \"%s\".\n",
+          original.resource_name_, original.changer_res->resource_name_);
+  }
 
-    /* append 0002, 0003, ... */
-    copied_device_resource->CreateAndAssignSerialNumber(i + 2);
-
-    copied_device_resource->multiplied_device_resource
-        = std::addressof(multiplied_device_resource);
-    copied_device_resource->count = 0;
-
-    my_config->AppendToResourcesChain(copied_device_resource,
-                                      copied_device_resource->rcode_);
-
-    if (copied_device_resource->changer_res) {
-      if (copied_device_resource->changer_res->device_resources) {
-        copied_device_resource->changer_res->device_resources->append(
-            copied_device_resource);
-      }
+  // create devices 2 - count
+  for (uint32_t i = 2; i <= original.count; i++) {
+    std::string serial_number = std::string("0000") + std::to_string(i);
+    std::string copy_name = original.resource_name_
+                            + serial_number.substr(serial_number.size() - 4);
+    if (!config.GetResWithName(R_DEVICE, copy_name.c_str())) {
+      DeviceResource* copy = CopyDevice(original, i);
+      config.AppendToResourcesChain(copy, copy->rcode_);
+    } else {
+      Dmsg0(0,
+            "Device resource \"%s\" will not implicitly create device \"%s\" "
+            "resource since there already exists a device resource with that "
+            "name.\n",
+            original.resource_name_, copy_name.c_str());
     }
   }
+  // create device 1
+  original.CreateAndAssignSerialNumber(1);
+  original.multiplied_device_resource = std::addressof(original);
 }
 
 static void MultiplyConfiguredDevices(ConfigurationParser& config)
@@ -466,7 +516,7 @@ static void MultiplyConfiguredDevices(ConfigurationParser& config)
   BareosResource* p = nullptr;
   while ((p = config.GetNextRes(R_DEVICE, p))) {
     DeviceResource& d = dynamic_cast<DeviceResource&>(*p);
-    if (d.count > 1) { MultiplyDevice(d); }
+    if (d.count > 1) { MultiplyDevice(d, config); }
   }
 }
 
