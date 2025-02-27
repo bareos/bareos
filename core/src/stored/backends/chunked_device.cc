@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -681,8 +681,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
         && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
 
-      bytes_left
-          = MIN((ssize_t)count, (current_chunk_->buflen - wanted_offset));
+      bytes_left = MIN((ssize_t)count,
+                       ((ssize_t)current_chunk_->buflen - wanted_offset));
       Dmsg2(200, "Reading complete %d byte read-request from chunk offset %d\n",
             bytes_left, wanted_offset);
 
@@ -709,8 +709,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
         // See how much is left in this chunk.
         if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
-          bytes_left = MIN((ssize_t)(count - offset),
-                           (ssize_t)(current_chunk_->buflen - wanted_offset));
+          bytes_left = MIN(((ssize_t)count - offset),
+                           ((ssize_t)current_chunk_->buflen - wanted_offset));
 
           if (bytes_left > 0) {
             Dmsg2(200,
@@ -743,8 +743,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
         } else {
           /* Calculate how much data we can read from the just freshly read
            * chunk. */
-          bytes_left = MIN((ssize_t)(count - offset),
-                           (ssize_t)(current_chunk_->buflen));
+          bytes_left
+              = MIN(((ssize_t)count - offset), (ssize_t)current_chunk_->buflen);
 
           if (bytes_left > 0) {
             Dmsg2(200,
@@ -829,7 +829,7 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
         if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left
-              = MIN((ssize_t)(count - offset),
+              = MIN(((ssize_t)count - offset),
                     (ssize_t)((current_chunk_->end_offset
                                - (current_chunk_->start_offset + wanted_offset))
                               + 1));
@@ -843,7 +843,8 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
             memcpy(current_chunk_->buffer + wanted_offset,
                    ((char*)buffer + offset), bytes_left);
             offset_ += bytes_left;
-            if ((wanted_offset + bytes_left) > current_chunk_->buflen) {
+            if ((wanted_offset + bytes_left)
+                > (ssize_t)current_chunk_->buflen) {
               current_chunk_->buflen = wanted_offset + bytes_left;
             }
             current_chunk_->need_flushing = true;
@@ -860,7 +861,7 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
 
         /* Calculate how much data we can fit into the just freshly created
          * chunk. */
-        bytes_left = MIN((ssize_t)(count - offset),
+        bytes_left = MIN(((ssize_t)count - offset),
                          (ssize_t)((current_chunk_->end_offset
                                     - current_chunk_->start_offset)
                                    + 1));
