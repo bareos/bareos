@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,10 +22,10 @@
 */
 
 #include "stored/autochanger_resource.h"
+#include "stored_conf.h"
 #include "lib/alist.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
-
 namespace storagedaemon {
 
 AutochangerResource::AutochangerResource()
@@ -34,6 +34,8 @@ AutochangerResource::AutochangerResource()
     , changer_name(nullptr)
     , changer_command(nullptr)
 {
+  rcode_ = R_AUTOCHANGER;
+  rcode_str_ = "Autochanger";
   return;
 }
 
