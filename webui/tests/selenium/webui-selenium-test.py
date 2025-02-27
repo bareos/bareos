@@ -476,12 +476,15 @@ class SeleniumTest(unittest.TestCase):
         dropdown = Select(dropdown_element)
         dropdown.select_by_visible_text("English")
 
-        driver.find_element(By.ID, "submit").click()
+        self.wait_and_click(By.ID, "submit")
         try:
+            # if the login is wrong, then we will get an alert div
             driver.find_element(By.XPATH, '//div[@role="alert"]')
         except:
+            # if no alert was found, then we just wait for the spinner ...
             self.wait_for_spinner_absence()
         else:
+            # ... otherwise (i.e. if an alert was found) the login is wronng
             raise WrongCredentialsException(self.username, self.password)
 
     def logout(self):
