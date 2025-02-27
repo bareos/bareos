@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - bareosfd_test.py: allow a delta of 1.1 [PR #2033]
 - macos: update build environment [PR #2075]
+- webui: use TemporaryDir as userdatadir in Selenium test [PR #2197]
 
 ## [22.1.6] - 2024-09-10
 
@@ -725,4 +726,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2033]: https://github.com/bareos/bareos/pull/2033
 [PR #2075]: https://github.com/bareos/bareos/pull/2075
 [PR #2163]: https://github.com/bareos/bareos/pull/2163
+[PR #2197]: https://github.com/bareos/bareos/pull/2197
 [unreleased]: https://github.com/bareos/bareos/tree/master
