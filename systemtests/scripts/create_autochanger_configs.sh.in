@@ -61,7 +61,7 @@ Storage {
   Address = @hostname@
   Password = "sd_password"
   Device = autochanger-${changer_index}
-  SD Port = ${BAREOS_STORAGE_PORT}
+  Port = ${BAREOS_STORAGE_PORT}
   Media Type = LTO
   Auto Changer = yes
   MaximumConcurrentJobs=2000
