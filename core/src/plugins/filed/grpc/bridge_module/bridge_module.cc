@@ -919,8 +919,10 @@ struct plugin_thread {
 
   void join()
   {
-    in.close();
-    t.join();
+    if (t.joinable()) {
+      in.close();
+      t.join();
+    }
   }
 
   ~plugin_thread() { join(); }

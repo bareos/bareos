@@ -2153,9 +2153,71 @@ process::~process()
 {
   if (pid < 0) { return; }
 
-  kill(pid, SIGKILL);
 
-  // wait for the child to close (for now)
+  auto max_wait = std::chrono::seconds(1);
+
+  auto start = std::chrono::steady_clock::now();
+  auto end_wait = start + max_wait;
+
+  sigset_t mask;
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGCHLD);
+  sigset_t orig_mask;
+  bool set_mask = sigprocmask(SIG_BLOCK, &mask, &orig_mask) >= 0;
+
+  DebugLog(100, FMT_STRING("Managed to set mask = {}"),
+           set_mask ? "Yes" : "No");
+
+  size_t error_count = 0;
+  for (;;) {
+    auto now = std::chrono::steady_clock::now();
+
+    if (end_wait <= now) { break; }
+
+    // we know that end_wait > now, i.e. wait_left > 0
+    auto wait_left = end_wait - now;
+
+    struct timespec timeout;
+    timeout.tv_sec
+        = std::chrono::duration_cast<std::chrono::seconds>(wait_left).count();
+    timeout.tv_nsec
+        = std::chrono::duration_cast<std::chrono::nanoseconds>(wait_left)
+              .count()
+          - std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::seconds(timeout.tv_sec))
+                .count();
+
+    int status = sigtimedwait(&mask, NULL, &timeout);
+    if (status < 0) {
+      if (errno == EINTR) {
+        /* Interrupted by a signal other than SIGCHLD. */
+        continue;
+      } else if (errno == EAGAIN) {
+        DebugLog(50, FMT_STRING("Child {} is unresponsive; we are killing it"),
+                 pid);
+        kill(pid, SIGKILL);
+      } else {
+        DebugLog(50, FMT_STRING("Got error {} in sigtimedwait = {}"), errno,
+                 strerror(errno));
+        error_count += 1;
+        if (error_count > 3) {
+          // something weird is going on, lets just kill the child and
+          // go on
+          DebugLog(50, FMT_STRING("abandoning sigtimedwait, killing child..."));
+          kill(pid, SIGKILL);
+          break;
+        }
+        continue;
+      }
+    } else if (status == SIGCHLD) {
+      DebugLog(100, FMT_STRING("Got SIGCHLD"));
+      break;
+    } else {
+      DebugLog(100, FMT_STRING("Got signal {}"), status);
+      continue;
+    }
+  }
+
   for (;;) {
     int status = 0;
     if (waitpid(pid, &status, 0) < 0) {
@@ -2174,6 +2236,13 @@ process::~process()
         DebugLog(100, FMT_STRING("got status = {}"), status);
       }
     }
+  }
+
+  // if we managed to set the mask, we need to make sure to reset it again
+  if (set_mask) {
+    bool reset_mask = sigprocmask(SIG_SETMASK, &orig_mask, nullptr) >= 0;
+    DebugLog(100, FMT_STRING("Managed to reset mask = {}"),
+             reset_mask ? "Yes" : "No");
   }
 }
 
