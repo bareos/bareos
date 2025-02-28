@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@ import os
 import sys
 from time import sleep
 import unittest
+import tempfile
 
 from selenium import webdriver
 from selenium.common.exceptions import *
@@ -132,6 +133,7 @@ class WrongCredentialsException(Exception):
 
 class SeleniumTest(unittest.TestCase):
 
+    chrome_user_data_dir = tempfile.TemporaryDirectory()
     browser = "chrome"
     # Used by Univention AppCenter test: 1200x800
     # Large resolution to show website without hamburger menu, e.g. 1920x1080
@@ -169,12 +171,7 @@ class SeleniumTest(unittest.TestCase):
             # chrome webdriver option: disable experimental feature
             opt = webdriver.ChromeOptions()
             # chrome webdriver option: specify user data directory
-            opt.add_argument(
-                "--user-data-dir=/tmp/chrome-user-data-"
-                + getattr(self, "profile", "none")
-                + "-"
-                + getattr(self, "testname", "none")
-            )
+            opt.add_argument("--user-data-dir=" + self.chrome_user_data_dir.name)
             # Set some options to improve reliability
             # https://stackoverflow.com/a/55307841/11755457
             opt.add_argument("--disable-extensions")
@@ -470,14 +467,24 @@ class SeleniumTest(unittest.TestCase):
         # )
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
-        driver.find_element(By.XPATH, '(//button[@type="button"])[1]').click()
-        driver.find_element(By.LINK_TEXT, "English").click()
-        driver.find_element(By.XPATH, '//input[@id="submit"]').click()
+
+        # we want to wait until the dropdown is visible before trying
+        # to select an option
+        dropdown_element = WebDriverWait(driver, self.maxwait).until(
+            EC.presence_of_element_located((By.ID, "locale"))
+        )
+        dropdown = Select(dropdown_element)
+        dropdown.select_by_visible_text("English")
+
+        self.wait_and_click(By.ID, "submit")
         try:
+            # if the login is wrong, then we will get an alert div
             driver.find_element(By.XPATH, '//div[@role="alert"]')
         except:
+            # if no alert was found, then we just wait for the spinner ...
             self.wait_for_spinner_absence()
         else:
+            # ... otherwise (i.e. if an alert was found) the login is wronng
             raise WrongCredentialsException(self.username, self.password)
 
     def logout(self):

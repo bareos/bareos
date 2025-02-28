@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - NDMP_NATIVE: enable full restore, eject tape before unload, enable update of NDMP environment [PR #2017]
 - VMware Plugin: Fix CBT query handling [PR #2183]
 - alist: fix race condition while iterating [PR #2016]
+- webui: use TemporaryDir as userdatadir in Selenium test [PR #2196]
 
 ### Fixed
 - plugins: postgresql add support for PostgreSQL 17 + improvements [PR #2049]
@@ -626,4 +627,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2178]: https://github.com/bareos/bareos/pull/2178
 [PR #2183]: https://github.com/bareos/bareos/pull/2183
 [PR #2185]: https://github.com/bareos/bareos/pull/2185
+[PR #2196]: https://github.com/bareos/bareos/pull/2196
 [unreleased]: https://github.com/bareos/bareos/tree/master
