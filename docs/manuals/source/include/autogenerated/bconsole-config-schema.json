@@ -161,16 +161,33 @@
           "code": 0,
           "equals": true
         },
-        "DirPort": {
+        "Port": {
           "datatype": "PINT32",
           "code": 0,
           "default_value": "9101",
           "equals": true
         },
+        "DirPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "alias": true,
+          "default_value": "9101",
+          "equals": true,
+          "description": "This is an alias, consider using \"Port\" instead."
+        },
         "Address": {
           "datatype": "STRING",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "required": true
+        },
+        "DirAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "required": true,
+          "description": "This is an alias, consider using \"Address\" instead."
         },
         "Password": {
           "datatype": "MD5PASSWORD",

@@ -5,6 +5,6 @@ Storage {
   Device = FileStorage
   Device = FileStorage2
   Media Type = File
-  SD Port = @sd_port@
+  Port = @sd_port@
   Maximum Concurrent Jobs= 10
 }

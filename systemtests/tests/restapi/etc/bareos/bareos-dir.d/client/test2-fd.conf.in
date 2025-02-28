@@ -3,5 +3,5 @@ Client {
   Description = "Client resource, indentical to bareos-fd, for testing with multiple clients."
   Address = @hostname@
   Password = "@fd_password@"
-  FD PORT = @fd_port@
+  Port = @fd_port@
 }

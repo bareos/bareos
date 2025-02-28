@@ -334,19 +334,20 @@
           "equals": true,
           "required": true
         },
+        "FdAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "required": true,
+          "description": "This is an alias, consider using \"Address\" instead."
+        },
         "LanAddress": {
           "datatype": "STRING",
           "code": 0,
           "equals": true,
           "versions": "16.2.6-",
           "description": "Sets additional address used for connections between Client and Storage Daemon inside separate network."
-        },
-        "FdAddress": {
-          "datatype": "STRING",
-          "code": 0,
-          "alias": true,
-          "equals": true,
-          "description": "Alias for Address."
         },
         "Port": {
           "datatype": "PINT32",
@@ -359,7 +360,8 @@
           "code": 0,
           "alias": true,
           "default_value": "9102",
-          "equals": true
+          "equals": true,
+          "description": "This is an alias, consider using \"Port\" instead."
         },
         "Username": {
           "datatype": "STRING",
@@ -376,7 +378,9 @@
           "datatype": "AUTOPASSWORD",
           "code": 0,
           "alias": true,
-          "equals": true
+          "equals": true,
+          "required": true,
+          "description": "This is an alias, consider using \"Password\" instead."
         },
         "Catalog": {
           "datatype": "RES",
@@ -693,16 +697,17 @@
           "code": 6,
           "equals": true
         },
-        "VerifyJob": {
-          "datatype": "RES",
-          "code": 3,
-          "alias": true,
-          "equals": true
-        },
         "JobToVerify": {
           "datatype": "RES",
           "code": 3,
           "equals": true
+        },
+        "VerifyJob": {
+          "datatype": "RES",
+          "code": 3,
+          "alias": true,
+          "equals": true,
+          "description": "This is an alias, consider using \"JobToVerify\" instead."
         },
         "Catalog": {
           "datatype": "RES",
@@ -1177,16 +1182,17 @@
           "code": 6,
           "equals": true
         },
-        "VerifyJob": {
-          "datatype": "RES",
-          "code": 3,
-          "alias": true,
-          "equals": true
-        },
         "JobToVerify": {
           "datatype": "RES",
           "code": 3,
           "equals": true
+        },
+        "VerifyJob": {
+          "datatype": "RES",
+          "code": 3,
+          "alias": true,
+          "equals": true,
+          "description": "This is an alias, consider using \"JobToVerify\" instead."
         },
         "Catalog": {
           "datatype": "RES",
@@ -1599,19 +1605,20 @@
           "equals": true,
           "required": true
         },
+        "SdAddress": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "required": true,
+          "description": "This is an alias, consider using \"Address\" instead."
+        },
         "LanAddress": {
           "datatype": "STRING",
           "code": 0,
           "equals": true,
           "versions": "16.2.6-",
           "description": "Sets additional address used for connections between Client and Storage Daemon inside separate network."
-        },
-        "SdAddress": {
-          "datatype": "STRING",
-          "code": 0,
-          "alias": true,
-          "equals": true,
-          "description": "Alias for Address."
         },
         "Port": {
           "datatype": "PINT32",
@@ -1625,7 +1632,7 @@
           "alias": true,
           "default_value": "9103",
           "equals": true,
-          "description": "Alias for Port."
+          "description": "This is an alias, consider using \"Port\" instead."
         },
         "Username": {
           "datatype": "STRING",
@@ -1643,7 +1650,8 @@
           "code": 0,
           "alias": true,
           "equals": true,
-          "description": "Alias for Password."
+          "required": true,
+          "description": "This is an alias, consider using \"Password\" instead."
         },
         "Device": {
           "datatype": "DEVICE",
@@ -1837,19 +1845,32 @@
           "code": 0,
           "equals": true
         },
-        "Address": {
-          "datatype": "STRING",
-          "code": 0,
-          "alias": true,
-          "equals": true
-        },
         "DbAddress": {
           "datatype": "STRING",
           "code": 0,
           "equals": true
         },
+        "Address": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "description": "This is an alias, consider using \"DbAddress\" instead."
+        },
         "DbPort": {
           "datatype": "PINT32",
+          "code": 0,
+          "equals": true
+        },
+        "Port": {
+          "datatype": "PINT32",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "description": "This is an alias, consider using \"DbPort\" instead."
+        },
+        "DbPassword": {
+          "datatype": "AUTOPASSWORD",
           "code": 0,
           "equals": true
         },
@@ -1857,12 +1878,8 @@
           "datatype": "AUTOPASSWORD",
           "code": 0,
           "alias": true,
-          "equals": true
-        },
-        "DbPassword": {
-          "datatype": "AUTOPASSWORD",
-          "code": 0,
-          "equals": true
+          "equals": true,
+          "description": "This is an alias, consider using \"DbPassword\" instead."
         },
         "DbUser": {
           "datatype": "STRING",
@@ -1873,7 +1890,8 @@
           "datatype": "STRING",
           "code": 0,
           "alias": true,
-          "equals": true
+          "equals": true,
+          "description": "This is an alias, consider using \"DbUser\" instead."
         },
         "DbName": {
           "datatype": "STRING",
@@ -1885,6 +1903,13 @@
           "datatype": "STRING",
           "code": 0,
           "equals": true
+        },
+        "Socket": {
+          "datatype": "STRING",
+          "code": 0,
+          "alias": true,
+          "equals": true,
+          "description": "This is an alias, consider using \"DbSocket\" instead."
         },
         "MultipleConnections": {
           "datatype": "BIT",

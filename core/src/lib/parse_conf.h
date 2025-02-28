@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -81,7 +81,6 @@ struct ResourceTable {
 #define CFG_ITEM_DEFAULT 0x2    /* Default supplied */
 #define CFG_ITEM_NO_EQUALS 0x4  /* Don't scan = after name */
 #define CFG_ITEM_DEPRECATED 0x8 /* Deprecated config option */
-#define CFG_ITEM_ALIAS 0x10     /* Item is an alias for another */
 
 /*
  * CFG_ITEM_DEFAULT_PLATFORM_SPECIFIC: the value may differ between different

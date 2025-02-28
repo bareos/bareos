@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -267,7 +267,7 @@ struct s_kw;
 struct ResourceItem;
 
 json_t* json_item(s_kw* item);
-json_t* json_item(ResourceItem* item);
+json_t* json_item(ResourceItem* item, bool is_alias = false);
 json_t* json_items(ResourceItem items[]);
 #endif
 
