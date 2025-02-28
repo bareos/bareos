@@ -1,5 +1,5 @@
 Storage {
-  Name = Filechanger
+  Name = File # Not named "Filechanger" so that it can replace the default single File storage
   Description = "virtual file autochanger with autonumbered device"
   Address = @hostname@                # N.B. Use a fully qualified name here (do not use "localhost" here).
   Password = "@sd_password@"
