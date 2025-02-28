@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix autodeflate messages and refactor setup method [PR #2121]
 - stored: fix crash when using jit reservation with no matching device; fix reservation error [PR #2141]
 - Fix 32bit compilation [PR #2175]
+- config: fix issues with config directive aliases [PR #2159]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -82,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2149]: https://github.com/bareos/bareos/pull/2149
 [PR #2152]: https://github.com/bareos/bareos/pull/2152
 [PR #2153]: https://github.com/bareos/bareos/pull/2153
+[PR #2159]: https://github.com/bareos/bareos/pull/2159
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
 [PR #2175]: https://github.com/bareos/bareos/pull/2175
 [PR #2191]: https://github.com/bareos/bareos/pull/2191
