@@ -1,0 +1,1 @@
+fd-client-SecureEraseCommand.rst.inc
