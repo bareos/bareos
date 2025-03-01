@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,18 +130,19 @@ char* StorageAddressToContact(StorageResource* read_storage,
 
 static inline bool ValidateStorage(JobControlRecord* jcr)
 {
-  StorageResource* store = nullptr;
-
-  foreach_alist (store, jcr->dir_impl->res.write_storage_list) {
-    switch (store->Protocol) {
-      case APT_NATIVE:
-        continue;
-      default:
-        Jmsg(jcr, M_FATAL, 0,
-             _("Storage %s has illegal backup protocol %s for Native backup\n"),
-             store->resource_name_,
-             AuthenticationProtocolTypeToString(store->Protocol));
-        return false;
+  if (jcr->dir_impl->res.write_storage_list) {
+    for (auto* store : *jcr->dir_impl->res.write_storage_list) {
+      switch (store->Protocol) {
+        case APT_NATIVE:
+          continue;
+        default:
+          Jmsg(jcr, M_FATAL, 0,
+               _("Storage %s has illegal backup protocol %s for Native "
+                 "backup\n"),
+               store->resource_name_,
+               AuthenticationProtocolTypeToString(store->Protocol));
+          return false;
+      }
     }
   }
 
@@ -177,7 +178,6 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
 static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 {
   JobDbRecord jr;
-  JobResource* job = nullptr;
   JobId_t id;
 
   if (!jcr->dir_impl->res.job->base) {
@@ -186,7 +186,7 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 
   jr.StartTime = jcr->dir_impl->jr.StartTime;
 
-  foreach_alist (job, jcr->dir_impl->res.job->base) {
+  for (auto* job : *jcr->dir_impl->res.job->base) {
     bstrncpy(jr.Name, job->resource_name_, sizeof(jr.Name));
     jcr->db->GetBaseJobid(jcr, &jr, &id);
 
