@@ -18,8 +18,6 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-include_directories(${PostgreSQL_INCLUDE_DIR})
-
 add_library(bareossql SHARED)
 target_sources(
   bareossql
@@ -37,7 +35,7 @@ target_sources(
           postgresql.cc
           postgresql_batch.cc
 )
-target_link_libraries(bareossql PUBLIC bareos ${PostgreSQL_LIBRARY})
+target_link_libraries(bareossql PUBLIC bareos PostgreSQL::PostgreSQL)
 
 set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
