@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -314,8 +314,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
             break;
         } /* end switch */
-      }   /* end if Bstrcasecmp */
-    }     /* end for RunFields */
+      } /* end if Bstrcasecmp */
+    } /* end for RunFields */
 
     /* At this point, it is not a keyword. Check for old syle
      * Job Levels without keyword. This form is depreciated!!! */
@@ -527,8 +527,12 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           // Check for week modulo specification.
           code = atoi(lc->str + 1);
           code2 = atoi(p + 1);
-          if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
+          if (code < 0 || code > 53) {
             scan_err0(lc, T_("Week number out of range (0-53) in modulo"));
+            return;
+          }
+          if (code2 <= 0 || code2 > 53) {
+            scan_err0(lc, T_("Week interval out of range (1-53) in modulo"));
             return;
           }
           if (code > code2) {
@@ -541,10 +545,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             have_woy = true;
           }
           // Set the bits according to the modulo specification.
-          for (i = 0; i < 53; i++) {
-            if (i % code2 == 0) {
-              SetBit(i + code, res_run.date_time_bitfield.woy);
-            }
+          for (int week = code; week <= 53; week += code2) {
+            SetBit(week, res_run.date_time_bitfield.woy);
           }
         } else {
           scan_err0(lc, T_("Bad modulo time specification. Format for weekdays "
