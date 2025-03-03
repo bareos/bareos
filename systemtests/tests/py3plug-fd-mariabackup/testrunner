@@ -85,8 +85,8 @@ mysql_server_stop
 
 # Check if mariabackup has extracted some files at least
 # TODO: verify that mariabackup --prepare works and eventually do complete datbase restore
-ls -lR  "$tmp/bareos-restores/_mariabackup/"
-if [ -z "$(ls -A "$tmp"/bareos-restores/_mariabackup/)" ]; then
+ls -lR  "$tmp/bareos-restores/_maria-backup/"
+if [ -z "$(ls -A "$tmp"/bareos-restores/_maria-backup/)" ]; then
        echo "No restore data found"
        estat=1
 fi
@@ -96,9 +96,9 @@ fi
 rm -Rf mysql/data/*
 mkdir -p mysql/data/
 
-TARGETDIR=$(find ./tmp/bareos-restores/_mariabackup/4/ -type d  -name '*001')
-INCDIR1=$(find ./tmp/bareos-restores/_mariabackup/4/ -type d  -name '*002')
-INCDIR2=$(find ./tmp/bareos-restores/_mariabackup/4/ -type d  -name '*002')
+TARGETDIR=$(find ./tmp/bareos-restores/_maria-backup/4/ -type d  -name '*001')
+INCDIR1=$(find ./tmp/bareos-restores/_maria-backup/4/ -type d  -name '*002')
+INCDIR2=$(find ./tmp/bareos-restores/_maria-backup/4/ -type d  -name '*002')
 
 ${MARIABACKUP} --prepare --target-dir=${TARGETDIR}
 # after prepare a file is left in data dir, this seems to be a bug
