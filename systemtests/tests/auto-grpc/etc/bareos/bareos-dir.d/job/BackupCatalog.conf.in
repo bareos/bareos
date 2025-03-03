@@ -1,0 +1,17 @@
+Job {
+  Name = "BackupCatalog"
+  Description = "Backup the catalog database (after the nightly save)"
+  JobDefs = "DefaultJob"
+  Level = Full
+  FileSet="Catalog"
+
+  # This creates an ASCII copy of the catalog
+  # Arguments to make_catalog_backup are:
+  #  make_catalog_backup <catalog-name>
+  RunBeforeJob = "@scriptdir@/make_catalog_backup MyCatalog"
+
+  # This deletes the copy of the catalog
+  RunAfterJob  = "@scriptdir@/delete_catalog_backup MyCatalog"
+
+  Priority = 11                   # run after main backup
+}

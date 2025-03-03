@@ -677,6 +677,12 @@ waitpid()
         printf_debug "."
         sleep 1
     done
+
+    if [[ "$s" == 'Z' ]]; then
+        printf_debug " Zombie detected ... Waiting a second ..."
+        sleep 1
+        ps -p "$PID" -o s= || true
+    fi
     if [ -z "$s" ]; then
         printf_debug " OK"
         RC=0
