@@ -48,7 +48,7 @@ result_payload=tika_client.extract_only_metadata(savepkt.fname)
 
 ### Activate your plugin directory in the fd resource conf on the client
 ```
-FileDaemon {                          
+Client {                          
   Name = client-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins

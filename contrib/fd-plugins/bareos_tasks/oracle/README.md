@@ -16,7 +16,7 @@ You need the packages *bareos-filedaemon-python-plugin* installed on your client
 
 Activate your plugin directory in the *fd* resource configuration on the client
 ```
-FileDaemon {                          
+Client {                          
   Name = client-fd
   ...
   Plugin Directory = /usr/lib/bareos/plugins
