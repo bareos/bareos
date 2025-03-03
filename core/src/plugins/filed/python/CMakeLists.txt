@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -79,7 +79,9 @@ if(Python3_FOUND)
                INCLUDE_DIRECTORIES "${pymod3_include_dirs}"
                CXX_STANDARD 20
   )
-  target_compile_options(bareosfd-python3-module PUBLIC -fno-strict-aliasing)
+  if(NOT MSVC)
+    target_compile_options(bareosfd-python3-module PUBLIC -fno-strict-aliasing)
+  endif()
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
     set_property(
       TARGET bareosfd-python3-module PROPERTY COMPILE_OPTIONS
