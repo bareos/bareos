@@ -21,7 +21,7 @@
 set -e
 set -o pipefail
 set -u
-set -x
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
