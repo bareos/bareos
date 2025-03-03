@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Fix CBT query handling [PR #2152]
 - increase accepted warnings for windows [PR #2191]
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2194]
+- ndmp: remove ndmp backup level limit [PR #2188]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -86,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2159]: https://github.com/bareos/bareos/pull/2159
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
 [PR #2175]: https://github.com/bareos/bareos/pull/2175
+[PR #2188]: https://github.com/bareos/bareos/pull/2188
 [PR #2191]: https://github.com/bareos/bareos/pull/2191
 [PR #2194]: https://github.com/bareos/bareos/pull/2194
 [unreleased]: https://github.com/bareos/bareos/tree/master
