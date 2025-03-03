@@ -19,8 +19,10 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 project(bareosfastlz LANGUAGES C)
 
-add_library(
-  bareosfastlz SHARED src/fastlzlib.c src/fastlz.c src/lz4.c src/lz4hc.c
+find_package(ZLIB REQUIRED)
+add_library(bareosfastlz SHARED)
+target_sources(
+  bareosfastlz PRIVATE src/fastlzlib.c src/fastlz.c src/lz4.c src/lz4hc.c
 )
 target_include_directories(
   bareosfastlz
@@ -28,9 +30,8 @@ target_include_directories(
          $<INSTALL_INTERFACE:include>
   PRIVATE src
 )
-if(MSVC)
-  target_include_directories(bareosfastlz PUBLIC ${ZLIB_INCLUDE_DIR})
-endif()
+# we need the zlib.h from ZLIB, but won't link to zlib
+target_include_directories(bareosfastlz PUBLIC $<TARGET_PROPERTY:ZLIB::ZLIB,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(bareosfastlz PRIVATE "-DDLL_EXPORT")
 install(TARGETS bareosfastlz DESTINATION ${libdir})
 set_target_properties(

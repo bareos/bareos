@@ -24,6 +24,8 @@
 
 #include <vector>
 #include <string>
+#include "find.h"
+class JobControlRecord;
 
 bool expand_win32_fileset(findFILESET* fileset);
 bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
