@@ -83,20 +83,25 @@ if [ -z "$(ls -A "${RESTORE_DIR}")" ]; then
        estat=1
 fi
 
-# delete database
+echo "deleting database ${test_db_name}"
 $MYSQL_CLIENT <<< "DROP DATABASE ${test_db_name};"
 
 if $MYSQL_CLIENT "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/dev/null; then
     echo "database ${test_db_name} should be deleted and command should fail."
     estat=2
+else
+    echo "database ${test_db_name} was successfully deleted"
 fi
 
-# restore db
+
+echo "restoring database with ${RESTORE_DIR}/${test_db_name}.sql"
 $MYSQL_CLIENT < "${RESTORE_DIR}/${test_db_name}.sql"
 
 if ! $MYSQL_CLIENT "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" >/dev/null; then
     echo "test entry not found after restore"
     estat=3
+else
+    echo "restoring database ${test_db_name} was successful"
 fi
 
 mysql_server_stop
