@@ -448,7 +448,8 @@ static void MultiplyDevice(DeviceResource& original,
         = strdup((std::string(original.resource_name_) + "Changer").c_str());
     original.changer_res->changer_name = strdup("dev/null");
     original.changer_res->changer_command = strdup("");
-    original.changer_res->device_resources = new alist<DeviceResource*>();
+    original.changer_res->device_resources
+        = new alist<DeviceResource*>(10, not_owned_by_alist);
     original.changer_res->rcode_ = R_AUTOCHANGER;
     original.changer_res->rcode_str_ = "Autochanger";
     original.changer_res->refcnt_ = 1;
