@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -102,6 +102,10 @@ configure_file(
 )
 
 set(WEBUI_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui)
+configure_file(
+  install/apache/bareos-webui.conf.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/install/apache/bareos-webui.conf @ONLY
+)
 set(WEBUI_TESTS_DIR ${WEBUI_DIR}/tests/regress)
 if(PHP)
   configure_file(
