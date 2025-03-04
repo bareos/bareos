@@ -197,6 +197,7 @@ if(BUILD_BAREOS_BINARIES)
   )
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
   endif()
+  include(BareosOutputDirectories)
   include(BareosCpmPackages)
   # include PrefixMap before BareosCcache so hash_dir is set correctly
   include(PrefixMap)
