@@ -372,13 +372,23 @@ endif()
 
 include(FindIntl)
 
-if(NOT MSVC)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wshadow")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wshadow")
+if(MSVC)
+  set(BAREOS_WARNING_FLAGS
+      /W4 # enable all reasonable warnings, but disable the following
+      /wd4273 # inconsistent dll linkage
+      /wd4127 # conditional expression is constant
+      /wd4244 # conversion warning
+      /wd4245 # conversion warning
+      /wd4267 # conversion warning
+      /wd4389 # sign mismatch
+      /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
+  )
 else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  set(BAREOS_WARNING_FLAGS -Werror -Wall -Wextra -Wshadow)
 endif()
+list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
