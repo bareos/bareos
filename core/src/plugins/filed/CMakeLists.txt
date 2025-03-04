@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,6 +19,7 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
+include(BareosPlugins)
 
 if(HAVE_WIN32)
   include_directories(
@@ -49,8 +50,8 @@ if(ENABLE_PYTHON)
   add_subdirectory(python)
 endif()
 
-add_library(bpipe-fd MODULE bpipe/bpipe-fd.cc)
-set_target_properties(bpipe-fd PROPERTIES PREFIX "")
+bareos_add_plugin(bpipe-fd)
+target_sources(bpipe-fd PRIVATE bpipe/bpipe-fd.cc)
 install(
   TARGETS bpipe-fd
   DESTINATION ${plugindir}
@@ -61,7 +62,8 @@ if(HAVE_WIN32 OR HAVE_DARWIN_OS)
 endif()
 
 if(HAVE_WIN32)
-  add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
+  bareos_add_plugin(mssqlvdi-fd)
+  target_sources(mssqlvdi-fd PRIVATE ../../win32/plugins/filed/mssqlvdi-fd.cc)
   target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
   target_include_directories(
     mssqlvdi-fd PRIVATE ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
@@ -85,20 +87,20 @@ if(HAVE_WIN32)
 endif()
 
 if(NOT HAVE_WIN32)
-  add_library(example-plugin-fd MODULE example/example-plugin-fd.cc)
-  set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
+  bareos_add_plugin(example-plugin-fd)
+  target_sources(example-plugin-fd PRIVATE example/example-plugin-fd.cc)
 endif()
 
 if(NOT HAVE_WIN32)
-  add_library(spam-plugin-fd MODULE spam/spam.cc)
-  set_target_properties(spam-plugin-fd PROPERTIES PREFIX "")
+  bareos_add_plugin(spam-plugin-fd)
+  target_sources(spam-plugin-fd PRIVATE spam/spam.cc)
 endif()
 
 option(ENABLE_GFAPI_FD "Build gfapi-fd plugin if possible" ON)
 if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
   bareos_configure_file(GLOB_RECURSE "gfapi/gfapi-conf.d/*" COPY)
-  add_library(gfapi-fd MODULE gfapi/gfapi-fd.cc)
-  set_target_properties(gfapi-fd PROPERTIES PREFIX "")
+  bareos_add_plugin(gfapi-fd)
+  target_sources(gfapi-fd PRIVATE gfapi/gfapi-fd.cc)
   install(
     TARGETS gfapi-fd
     DESTINATION ${plugindir}

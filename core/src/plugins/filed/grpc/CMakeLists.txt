@@ -88,10 +88,8 @@ if(ENABLE_GRPC)
                       protobuf::libprotobuf
   )
 
-  add_library(grpc-fd MODULE grpc.cc grpc_impl.cc bareos_api.cc)
-  set_target_properties(
-    grpc-fd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
-  )
+  bareos_add_plugin(grpc-fd)
+  target_sources(grpc-fd PRIVATE grpc.cc grpc_impl.cc bareos_api.cc)
   target_link_libraries(grpc-fd bareos fmt::fmt grpc-proto)
   install(
     TARGETS grpc-fd
