@@ -48,7 +48,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
   )
 
   add_test(NAME bareosfd-python3-module-tester
-           COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareosfd-python3-module-tester
+           COMMAND $<TARGET_FILE:bareosfd-python3-module-tester>
   )
   set_property(
     TEST bareosfd-python3-module-tester

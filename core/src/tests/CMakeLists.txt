@@ -19,9 +19,14 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
-bareos_configure_file(GLOB_RECURSE "configs/*")
 
-include_directories(${OPENSSL_INCLUDE_DIR})
+# required to generate configuration for some SD tests
+include(BareosTargetTools)
+if(NOT client-only)
+  get_target_output_dir(BACKEND_OUTPUT_DIRECTORY bareossd-file)
+endif()
+
+bareos_configure_file(GLOB_RECURSE "configs/*")
 
 if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
   set(LINUX_KERNEL_VERSION "0.0")
@@ -43,7 +48,8 @@ if((OPENSSL_VERSION VERSION_LESS "3.0.0") OR (LINUX_KERNEL_VERSION VERSION_LESS
 )
   set(DISABLE_KTLS ON)
 else()
-
+  cmake_push_check_state()
+  set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCLUDE_DIR}")
   check_cxx_source_compiles(
     "
 #include <openssl/ssl.h>
@@ -57,6 +63,7 @@ return 0;
 "
     KTLS_DISABLED
   )
+  cmake_pop_check_state()
   if(KTLS_DISABLED)
     set(DISABLE_KTLS ON)
   endif()
@@ -533,6 +540,9 @@ bareos_add_test(
 add_executable(env_tester env_tester.cc)
 target_link_libraries(env_tester PRIVATE bareos)
 bareos_add_test(bpipe_env_test LINK_LIBRARIES GTest::gtest_main bareos)
+target_compile_definitions(
+  bpipe_env_test PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:env_tester>\""
+)
 
 bareoscopydllstobindir()
 include(DebugEdit)

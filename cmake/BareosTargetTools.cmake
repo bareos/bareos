@@ -17,6 +17,26 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+function(get_target_output_dir result_var target)
+  if(WIN32)
+    get_target_property(output_dir ${target} RUNTIME_OUTPUT_DIRECTORY)
+  else()
+    get_target_property(type ${target} TYPE)
+    if(type STREQUAL "EXECUTABLE")
+      get_target_property(output_dir ${target} RUNTIME_OUTPUT_DIRECTORY)
+    else()
+      get_target_property(output_dir ${target} LIBRARY_OUTPUT_DIRECTORY)
+    endif()
+  endif()
+  if(NOT output_dir)
+    get_target_property(output_dir ${target} BINARY_DIR)
+  endif()
+  set("${result_var}"
+      "${output_dir}"
+      PARENT_SCOPE
+  )
+endfunction()
+
 function(get_target_dependencies result_var target outfile)
   set(required_targets "")
 
