@@ -105,7 +105,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     if(TARGET ${binary_name})
       create_variable_binary_name_to_test_for_binary_name(${binary_name})
       get_target_property(
-        "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
+        "${binary_name_to_test_upcase}" "${binary_name}" RUNTIME_OUTPUT_DIRECTORY
       )
       set("${binary_name_to_test_upcase}"
           "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
@@ -123,10 +123,10 @@ else()
   )
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
     get_target_property(
-      "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
+      "${binary_name_to_test_upcase}" "${binary_name}" RUNTIME_OUTPUT_DIRECTORY
     )
     set("${binary_name_to_test_upcase}"
-        "${${binary_name_to_test_upcase}}/${binary_name}"
+        "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
     )
     message(
       "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
@@ -195,16 +195,16 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
       find_compiled_binary_and_set_binary_name_to_test_variable_for(${BINARY})
     endforeach()
 
-    get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
-    get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
+    get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd LIBRARY_OUTPUT_DIRECTORY)
+    get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd LIBRARY_OUTPUT_DIRECTORY)
     if(TARGET bareossd-droplet)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-droplet BINARY_DIR)
+      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-droplet LIBRARY_OUTPUT_DIRECTORY)
     endif()
     if(TARGET bareossd-gfapi)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
+      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi LIBRARY_OUTPUT_DIRECTORY)
     endif()
     if(TARGET bareossd-tape)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-tape BINARY_DIR)
+      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-tape LIBRARY_OUTPUT_DIRECTORY)
     endif()
     set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
