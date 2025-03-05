@@ -1471,8 +1471,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-grpc-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/grpc-fd.so
-%{plugin_dir}/grpc-python-module
-%{plugin_dir}/grpc-test-module
+%{plugin_dir}/grpc/bareos-grpc-fd-plugin-bridge
+%{plugin_dir}/grpc/grpc-test-module
 %endif
 
 %files filedaemon-python3-plugin

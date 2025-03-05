@@ -1,0 +1,32 @@
+FileSet {
+  Name = "PythonTest"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Acl Support = No
+      Xattr Support = No
+    }
+    Plugin = "@python_module_name@"
+             ":module_path=@python_plugin_module_src_test_dir@"
+             ":module_name=bareos-fd-local-fileset-acl-xattr"
+             ":filename=@tmpdir@/file-list"
+  }
+}
+
+FileSet {
+  Name = "PythonTest_do_io_in_core"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Acl Support = No
+      Xattr Support = No
+    }
+    Plugin = "@python_module_name@"
+             ":module_path=@python_plugin_module_src_test_dir@"
+             ":module_name=bareos-fd-local-fileset"
+             ":filename=@tmpdir@/file-list"
+             ":do_io_in_core=True"
+  }
+}

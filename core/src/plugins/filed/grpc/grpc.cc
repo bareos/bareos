@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -378,8 +378,8 @@ constexpr PluginInformation my_info = {
     .plugin_date = "September 2024",
     .plugin_version = "0.1.0",
     .plugin_description
-    = "This plugin is a shim that allows you to run separate programs as a"
-      "bareos plugin by the use of a grpc interface.",
+    = "This plugin is a shim that allows you to run separate programs as"
+      " bareos plugins by the use of a grpc interface.",
     .plugin_usage
     = "grpc:<grpc executable>:...\n"
       "Additional paramenters are parsed by the executable instead.\n"

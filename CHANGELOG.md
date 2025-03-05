@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2194]
 - ndmp: remove ndmp backup level limit [PR #2188]
 - reduce test-matrix [PR #2192]
+- bareos-fd: add option for grpc fallback [PR #2104]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -68,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2086]: https://github.com/bareos/bareos/pull/2086
 [PR #2097]: https://github.com/bareos/bareos/pull/2097
 [PR #2102]: https://github.com/bareos/bareos/pull/2102
+[PR #2104]: https://github.com/bareos/bareos/pull/2104
 [PR #2105]: https://github.com/bareos/bareos/pull/2105
 [PR #2106]: https://github.com/bareos/bareos/pull/2106
 [PR #2109]: https://github.com/bareos/bareos/pull/2109
