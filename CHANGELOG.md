@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - increase accepted warnings for windows [PR #2191]
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2194]
 - ndmp: remove ndmp backup level limit [PR #2188]
+- reduce test-matrix [PR #2192]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -89,5 +90,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2175]: https://github.com/bareos/bareos/pull/2175
 [PR #2188]: https://github.com/bareos/bareos/pull/2188
 [PR #2191]: https://github.com/bareos/bareos/pull/2191
+[PR #2192]: https://github.com/bareos/bareos/pull/2192
 [PR #2194]: https://github.com/bareos/bareos/pull/2194
 [unreleased]: https://github.com/bareos/bareos/tree/master
