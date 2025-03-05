@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2195]
+- reduce test-matrix [PR #2199]
 
 ## [24.0.1] - 2025-02-24
 
@@ -404,4 +405,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2182]: https://github.com/bareos/bareos/pull/2182
 [PR #2184]: https://github.com/bareos/bareos/pull/2184
 [PR #2195]: https://github.com/bareos/bareos/pull/2195
+[PR #2199]: https://github.com/bareos/bareos/pull/2199
 [unreleased]: https://github.com/bareos/bareos/tree/master
