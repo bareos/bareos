@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,9 @@
 #include <string_view>
 
 constexpr const char* environment_key = "MyVarA";
-#if HAVE_WIN32
+#if defined(TEST_PROGRAM)
+constexpr const char* env_tester = TEST_PROGRAM;
+#elif HAVE_WIN32
 constexpr const char* env_tester = "env_tester.exe";
 #else
 constexpr const char* env_tester = "./env_tester";
