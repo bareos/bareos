@@ -155,10 +155,8 @@ static ResourceItem dir_items[] = {
 static ResourceTable resources[] = {
   {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       []() { res_dir = new  DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"FileDaemon", "FileDaemons", cli_items, R_CLIENT, sizeof(ClientResource),
-      []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)},
   {"Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
-      []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)}, /* alias for filedaemon */
+      []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client), { { "FileDaemon", "FileDaemons" } }},
   {"Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
       []() { res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs)},
   {nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr}
