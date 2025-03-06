@@ -102,6 +102,10 @@ configure_file(
 )
 
 set(WEBUI_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui)
+configure_file(
+  install/apache/bareos-webui.conf.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/install/apache/bareos-webui.conf @ONLY
+)
 set(WEBUI_TESTS_DIR ${WEBUI_DIR}/tests/regress)
 if(PHP)
   configure_file(
