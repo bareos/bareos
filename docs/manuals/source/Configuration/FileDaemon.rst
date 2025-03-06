@@ -97,7 +97,7 @@ Please see the :ref:`Messages Resource <MessagesChapter>` Chapter of this manual
 
 
 Example File Daemon Configuration File
----------------------------------
+--------------------------------------
 
 An example File Daemon configuration file might be the following:
 
