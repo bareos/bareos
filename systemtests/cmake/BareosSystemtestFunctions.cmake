@@ -104,9 +104,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
     if(TARGET ${binary_name})
       create_variable_binary_name_to_test_for_binary_name(${binary_name})
-      get_target_property(
-        "${binary_name_to_test_upcase}" "${binary_name}" RUNTIME_OUTPUT_DIRECTORY
-      )
+      get_target_output_dir("${binary_name_to_test_upcase}" "${binary_name}")
       set("${binary_name_to_test_upcase}"
           "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
       )
@@ -122,9 +120,7 @@ else()
         binary_name
   )
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
-    get_target_property(
-      "${binary_name_to_test_upcase}" "${binary_name}" RUNTIME_OUTPUT_DIRECTORY
-    )
+    get_target_output_dir("${binary_name_to_test_upcase}" "${binary_name}")
     set("${binary_name_to_test_upcase}"
         "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
     )
@@ -195,16 +191,16 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
       find_compiled_binary_and_set_binary_name_to_test_variable_for(${BINARY})
     endforeach()
 
-    get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd LIBRARY_OUTPUT_DIRECTORY)
-    get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd LIBRARY_OUTPUT_DIRECTORY)
+    get_target_output_dir(FD_PLUGINS_DIR_TO_TEST bpipe-fd)
+    get_target_output_dir(SD_PLUGINS_DIR_TO_TEST autoxflate-sd)
     if(TARGET bareossd-droplet)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-droplet LIBRARY_OUTPUT_DIRECTORY)
+      get_target_output_dir(SD_BACKEND_DIR_TO_TEST bareossd-droplet)
     endif()
     if(TARGET bareossd-gfapi)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi LIBRARY_OUTPUT_DIRECTORY)
+      get_target_output_dir(SD_BACKEND_DIR_TO_TEST bareossd-gfapi)
     endif()
     if(TARGET bareossd-tape)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-tape LIBRARY_OUTPUT_DIRECTORY)
+      get_target_output_dir(SD_BACKEND_DIR_TO_TEST bareossd-tape)
     endif()
     set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
