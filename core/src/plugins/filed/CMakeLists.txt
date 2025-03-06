@@ -101,5 +101,6 @@ if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
 endif()
 
 add_subdirectory(grpc)
+add_subdirectory(hyper-v-backup)
 
 include(DebugEdit)
