@@ -5,5 +5,5 @@ Job {
   FileSet = "SelfTestStripPath"
   Type = Verify
   Level = DiskToCatalog
-  Verify Job = "backup-bareos-fd"
+  JobToVerify = "backup-bareos-fd"
 }

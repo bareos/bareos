@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,9 +30,10 @@
 
 #include <openssl/md5.h>
 #include <memory>
+#include <optional>
 
 #include "dird/client_connection_handshake_mode.h"
-#include "dird/date_time_bitfield.h"
+#include "dird/date_time_mask.h"
 #include "lib/alist.h"
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
@@ -662,7 +663,10 @@ class RunResource : public BareosResource {
   MessagesResource* msgs = nullptr;   /**< Messages override */
   uint32_t minute = 0;                /* minute to run job */
   time_t scheduled_last = {0};
-  DateTimeBitfield date_time_bitfield;
+  DateTimeMask date_time_mask;
+
+  /* Methods */
+  std::optional<time_t> NextScheduleTime(time_t start, uint32_t ndays) const;
 };
 
 ConfigurationParser* InitDirConfig(const char* configfile, int exit_code);

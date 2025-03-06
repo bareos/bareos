@@ -4,5 +4,5 @@ Storage {
   Password = "@sd_password@"
   Device = DedupStorage
   Media Type = Dedup
-  SD Port = @sd_port@
+  Port = @sd_port@
 }

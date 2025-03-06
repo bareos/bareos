@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,7 @@
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/ua_cmdstruct.h"
+#include "dird/date_time.h"
 #include "cats/sql_pooling.h"
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
@@ -1232,10 +1233,6 @@ static bool ListNextvol(UaContext* ua, int ndays)
   JobResource* job{nullptr};
   JobControlRecord* jcr;
   UnifiedStorageResource store;
-  RunResource* run;
-  utime_t runtime;
-  bool found = false;
-
   if (const char* job_name = GetArgValue(ua, "job")) {
     job = ua->GetJobResWithName(job_name);
     if (!job) {
@@ -1247,10 +1244,15 @@ static bool ListNextvol(UaContext* ua, int ndays)
   }
 
   jcr = NewDirectorJcr(DirdFreeJcr);
-  for (run = NULL; (run = find_next_run(run, job, runtime, ndays));) {
+  time_t now = time(NULL);
+  bool found = false;
+  for (RunResource* run = job->schedule->run; run; run = run->next) {
+    std::optional<time_t> next_scheduled = run->NextScheduleTime(now, ndays);
+    if (!next_scheduled.has_value()) { continue; }
+
     if (!CompleteJcrForJob(jcr, job, run->pool)) {
       found = false;
-      goto get_out;
+      break;
     }
     if (!jcr->dir_impl->jr.PoolId) {
       ua->ErrorMsg(T_("Could not find Pool for Job %s\n"), job->resource_name_);
@@ -1268,9 +1270,9 @@ static bool ListNextvol(UaContext* ua, int ndays)
     /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
     if (!FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
                                  fnv_prune)) {
-      ua->ErrorMsg(
-          T_("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
-          job->resource_name_, pr.Name, JobLevelToString(run->level));
+      ua->ErrorMsg(T_("Could not find next Volume for Job %s (Pool=%s, "
+                      "Level=%s).\n"),
+                   job->resource_name_, pr.Name, JobLevelToString(run->level));
     } else {
       ua->SendMsg(T_("The next Volume to be used by Job \"%s\" (Pool=%s, "
                      "Level=%s) will be %s\n"),
@@ -1279,8 +1281,6 @@ static bool ListNextvol(UaContext* ua, int ndays)
       found = true;
     }
   }
-
-get_out:
   if (jcr->db) {
     DbSqlClosePooledConnection(jcr, jcr->db);
     jcr->db = NULL;
@@ -1292,77 +1292,6 @@ get_out:
     return false;
   }
   return true;
-}
-
-/* For a given job, we examine all his run records
- *  to see if it is scheduled today or tomorrow. */
-RunResource* find_next_run(RunResource* run,
-                           JobResource* job,
-                           utime_t& runtime,
-                           int ndays)
-{
-  time_t now, future, endtime;
-  ScheduleResource* sched;
-  struct tm tm, runtm;
-  int mday, wday, month, wom, i;
-  int woy;
-  int day;
-
-  sched = job->schedule;
-  if (sched == NULL) { /* scheduled? */
-    return NULL;       /* no nothing to report */
-  }
-
-  /* Break down the time into components */
-  now = time(NULL);
-  endtime = now + (ndays * 60 * 60 * 24);
-
-  if (run == NULL) {
-    run = sched->run;
-  } else {
-    run = run->next;
-  }
-  for (; run; run = run->next) {
-    /* Find runs in next 24 hours.  Day 0 is today, so if
-     *   ndays=1, look at today and tomorrow. */
-    for (day = 0; day <= ndays; day++) {
-      future = now + (day * 60 * 60 * 24);
-
-      /* Break down the time into components */
-      Blocaltime(&future, &tm);
-      mday = tm.tm_mday - 1;
-      wday = tm.tm_wday;
-      month = tm.tm_mon;
-      wom = mday / 7;
-      woy = TmWoy(future);
-
-      bool is_scheduled = BitIsSet(mday, run->date_time_bitfield.mday)
-                          && BitIsSet(wday, run->date_time_bitfield.wday)
-                          && BitIsSet(month, run->date_time_bitfield.month)
-                          && BitIsSet(wom, run->date_time_bitfield.wom)
-                          && BitIsSet(woy, run->date_time_bitfield.woy);
-
-      if (is_scheduled) { /* Jobs scheduled on that day */
-        /* find time (time_t) job is to be run */
-        Blocaltime(&future, &runtm);
-        for (i = 0; i < 24; i++) {
-          if (BitIsSet(i, run->date_time_bitfield.hour)) {
-            runtm.tm_hour = i;
-            runtm.tm_min = run->minute;
-            runtm.tm_sec = 0;
-            runtime = mktime(&runtm);
-            Dmsg2(200, "now=%d runtime=%lld\n", now, runtime);
-            if ((runtime > now) && (runtime < endtime)) {
-              Dmsg2(200, "Found it level=%d %c\n", run->level, run->level);
-              return run; /* found it, return run resource */
-            }
-          }
-        }
-      }
-    }
-  } /* end for loop over runs */
-  /* Nothing found */
-  return NULL;
 }
 
 // Fill in the remaining fields of the jcr as if it is going to run the job.

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@ extern "C" {
 
 #include <system_error>
 #include <cerrno>
+#include <limits>
 
 #include "volume.h"
 #include "util.h"
@@ -226,10 +227,26 @@ data::data(open_context ctx, const config& conf)
   auto& pf = conf.pfiles[0];
   if (pf.Start != 0) { throw std::runtime_error("recordfile start != 0."); }
 
+  if (bf.End > std::numeric_limits<decltype(blocks)::size_type>::max()) {
+    throw std::runtime_error("blockfile end > decltype(blocks)::size_type");
+  }
+
+  if (pf.End > std::numeric_limits<decltype(parts)::size_type>::max()) {
+    throw std::runtime_error("recordfile end > decltype(parts)::size_type");
+  }
+
   raii_fd bfd = OpenRelative(ctx, bf.relpath.c_str());
   raii_fd pfd = OpenRelative(ctx, pf.relpath.c_str());
-  blocks = decltype(blocks){ctx.read_only, bfd.fileno(), bf.End};
-  parts = decltype(parts){ctx.read_only, pfd.fileno(), pf.End};
+  blocks = decltype(blocks){
+      ctx.read_only,
+      bfd.fileno(),
+      static_cast<decltype(blocks)::size_type>(bf.End),
+  };
+  parts = decltype(parts){
+      ctx.read_only,
+      pfd.fileno(),
+      static_cast<decltype(parts)::size_type>(pf.End),
+  };
   fds.emplace_back(std::move(bfd));
   fds.emplace_back(std::move(pfd));
 

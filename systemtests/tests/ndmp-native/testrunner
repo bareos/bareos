@@ -1,0 +1,169 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Requirements:
+# * This tests is implemented for a Isilon NDMP storage.
+# * To create and delete backup data,
+#   password-less SSH root access to the Isilon storage is required.
+# * run cmake with parameter matching your environment:
+#     -Dndmp_data_agent_address=<ip.of.data.agent> \
+#     -Dndmp_data_agent_user=<user> \
+#     -Dndmp_data_agent_password=<password>
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+exit 1
+wait_jobid()
+{
+  JOBID=$1
+  TIMEOUT=${2:-5}
+
+  while [ $TIMEOUT -gt 0 ] && ${BCONSOLE} <<< "wait jobid=${JOBID}" | grep "JobStatus=Unknown"; do
+    sleep 1
+    TIMEOUT=$((TIMEOUT-1))
+  done
+  ${BCONSOLE} <<< "wait jobid=${JOBID}"
+}
+
+check_jobid()
+{
+  JOBID=$1
+
+  wait_jobid ${JOBID}
+  #echo "messages" | ${BCONSOLE}
+  RESULT=$(${BCONSOLE} <<< "list joblog jobid=${JOBID}")
+  if grep 'Fatal error:' <<< "${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+  if ! grep 'Termination:.*OK' <<< "${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+}
+
+cleanup_isilon()
+{
+  ${SSH} rm -Rvf /ifs/home/regress/${NDMP_FILESYSTEM}
+  ${SSH} rm -Rvf /ifs/home/regress/bareos-restores-${NDMP_FILESYSTEM}
+  ${SSH} rm -Rvf /ifs/data/bareos-restores-${NDMP_FILESYSTEM}
+}
+
+start_test
+
+start_bareos
+
+BCONSOLE=bin/bconsole
+STARTJOBID=1
+NDMPCLIENT=isilon
+SSH="ssh root@${NDMP_DATA_AGENT_ADDRESS} -o StrictHostKeyChecking=no"
+NDMP_FILESYSTEM=$IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT
+
+echo "status client=$NDMPCLIENT" | ${BCONSOLE}
+echo "status director" | ${BCONSOLE}
+
+cleanup_isilon
+${SSH} mkdir -p /ifs/home/regress/${NDMP_FILESYSTEM}
+${SSH} dd if=/dev/zero of=/ifs/home/regress/${NDMP_FILESYSTEM}/full bs=1M count=20
+${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/full"
+
+echo "################ running NDMP backup full #####################"
+
+echo "run job=${NDMPCLIENT}dump level=Full yes" | ${BCONSOLE}
+check_jobid $((STARTJOBID))
+
+
+echo "################ running NDMP backup incremental #####################"
+${SSH} dd if=/dev/zero of=/ifs/home/regress/${NDMP_FILESYSTEM}/incremental bs=1M count=2
+${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
+
+echo "run job=${NDMPCLIENT}dump level=Incremental yes" | ${BCONSOLE}
+check_jobid $((STARTJOBID+1))
+# restore
+
+# remove files
+${SSH} rm -Rvf /ifs/home/regress/${NDMP_FILESYSTEM}
+
+echo "################ restore full #####################"
+# restore full
+echo "restore jobid=$((STARTJOBID)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes"  | ${BCONSOLE}
+check_jobid $((STARTJOBID+2))
+
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
+
+
+echo "################ restore full to different RELATIVE location /prefix #####################"
+# restore full to different RELATIVE location "/prefix"
+echo "restore jobid=$((STARTJOBID)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump  where=/bareos-restores-${NDMP_FILESYSTEM} all done yes"  | ${BCONSOLE}
+check_jobid $((STARTJOBID+3))
+
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
+#${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/bareos-restores-${NDMP_FILESYSTEM}/full"
+
+echo "################ restore full to different ABSOLUTE location ^/prefix #####################"
+# restore full to different ABSOLUTE location "^/prefix"
+
+echo "restore jobid=$((STARTJOBID)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump  where=^/ifs/data/bareos-restores-${NDMP_FILESYSTEM} all done yes"  | ${BCONSOLE}
+check_jobid $((STARTJOBID+4))
+
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
+#${SSH} "grep ${NDMP_FILESYSTEM} /ifs/data/bareos-restores-${NDMP_FILESYSTEM}/full"
+
+echo "################ restore incremental #####################"
+# restore incremental
+printf "restore jobid=$((STARTJOBID+1)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump select current\rmark /ifs/home/regress/${NDMP_FILESYSTEM}/incremental\rdone\ryes\r" | ${BCONSOLE}
+check_jobid $((STARTJOBID+5))
+
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental | grep ${NDMP_FILESYSTEM}"
+#${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
+
+
+# cleanup
+${SSH} rm -Rvf /ifs/home/regress/${NDMP_FILESYSTEM}
+${SSH} rm -Rvf /ifs/home/regress/bareos-restores-${NDMP_FILESYSTEM}
+${SSH} rm -Rvf /ifs/data/bareos-restores-${NDMP_FILESYSTEM}
+
+echo "################ run copy job #####################"
+# run copy job
+echo "run job=ndmp-copy-$NDMPCLIENT yes"  | ${BCONSOLE}
+echo "wait"  | ${BCONSOLE}
+echo "messages"  | ${BCONSOLE}
+
+echo "################ restore copy of full job #####################"
+# restore copy
+echo "restore jobid=$((STARTJOBID+8)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes"  | ${BCONSOLE}
+echo "wait"  | ${BCONSOLE}
+echo "messages"  | ${BCONSOLE}
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
+#${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/full"
+
+cleanup_isilon
+
+echo "################ restore copy of incremental job #####################"
+# restore copy of incremental
+echo "restore jobid=$((STARTJOBID+10)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes"  | ${BCONSOLE}
+echo "wait"  | ${BCONSOLE}
+echo "messages"  | ${BCONSOLE}
+#${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental | grep ${NDMP_FILESYSTEM}"
+
+# final cleanup
+cleanup_isilon
+
+check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+end_test

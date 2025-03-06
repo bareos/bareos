@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1824,9 +1824,6 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
   Dmsg3(200, "%s (inherited: %d, verbose: %d):\n", item.name, inherited,
         verbose);
 
-  // If this is an alias for another config keyword suppress it.
-  if (item.flags & CFG_ITEM_ALIAS) { return; }
-
   if (inherited && (!verbose)) {
     // If not in verbose mode, skip inherited directives.
     return;
@@ -2079,7 +2076,7 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
  *     "type": "ResourceItem"
  *   }
  */
-json_t* json_item(ResourceItem* item)
+json_t* json_item(ResourceItem* item, bool is_alias)
 {
   json_t* json = json_object();
 
@@ -2087,9 +2084,7 @@ json_t* json_item(ResourceItem* item)
                       json_string(DatatypeToString(item->type)));
   json_object_set_new(json, "code", json_integer(item->code));
 
-  if (item->flags & CFG_ITEM_ALIAS) {
-    json_object_set_new(json, "alias", json_true());
-  }
+  if (is_alias) { json_object_set_new(json, "alias", json_true()); }
   if (item->flags & CFG_ITEM_DEFAULT) {
     /* FIXME? would it be better to convert it to the right type before
      * returning? */
@@ -2113,8 +2108,20 @@ json_t* json_item(ResourceItem* item)
   if (item->versions) {
     json_object_set_new(json, "versions", json_string(item->versions));
   }
-  if (item->description) {
-    json_object_set_new(json, "description", json_string(item->description));
+  if (!is_alias) {
+    if (item->description) {
+      json_object_set_new(json, "description", json_string(item->description));
+    }
+  } else {
+    std::string alias_description
+        = std::string("This is an alias, consider using \"") + item->name
+          + "\" instead.";
+    if (item->description) {
+      alias_description += "\n";
+      alias_description += item->description;
+    }
+    json_object_set_new(json, "description",
+                        json_string(alias_description.c_str()));
   }
 
   return json;
@@ -2136,6 +2143,9 @@ json_t* json_items(ResourceItem items[])
   if (items) {
     for (int i = 0; items[i].name; i++) {
       json_object_set_new(json, items[i].name, json_item(&items[i]));
+      for (const auto& alias : items[i].aliases) {
+        json_object_set_new(json, alias.c_str(), json_item(&items[i], true));
+      }
     }
   }
 

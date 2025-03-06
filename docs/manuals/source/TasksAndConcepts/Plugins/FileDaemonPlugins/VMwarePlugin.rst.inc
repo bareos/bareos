@@ -23,6 +23,13 @@ Status
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
+Since :sinceVersion:`24.0.1: VMware Plugin` Previous versions of this plugin may have produced
+incomplete backups, because the CBT information was not retrieved completely in cases where
+the amount of changes was high, especially differential and incremental jobs were affected
+more probably. The issue is fixed in this version. To ensure consistent backups, it is recommended
+to run new full level jobs, as backups taken with previous versions may have an inconsonsistent
+state when restored.
+
 Since :sinceVersion:`23.0.3: VMware Plugin` the NVRAM of VMs is backed up and restored when recreating a VM to ensure it can boot without issues even when EFI enabled.
 
 Since :sinceVersion:`23.0.0: VMware Plugin` the performance is improved and the cleanup of snapshots is enhanced.

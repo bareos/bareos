@@ -48,6 +48,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/inc_conf.h"
+#include "dird/date_time.h"
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "include/auth_protocol_types.h"
@@ -220,15 +221,12 @@ static ResourceItem client_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), 0, 0, NULL, NULL, NULL },
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client, Protocol), 0, CFG_ITEM_DEFAULT, "Native", "13.2.0-", NULL },
   { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client, AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
-  { "Address", CFG_TYPE_STR, ITEM(res_client, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Address", CFG_TYPE_STR, ITEM(res_client, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "FdAddress" } },
   { "LanAddress", CFG_TYPE_STR, ITEM(res_client, lanaddress), 0, CFG_ITEM_DEFAULT, NULL, "16.2.6-",
      "Sets additional address used for connections between Client and Storage Daemon inside separate network."},
-  { "FdAddress", CFG_TYPE_STR, ITEM(res_client, address), 0, CFG_ITEM_ALIAS, NULL, NULL, "Alias for Address." },
-  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL },
-  { "FdPort", CFG_TYPE_PINT32, ITEM(res_client, FDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, FD_DEFAULT_PORT, NULL, NULL },
+  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL, { "FdPort" } },
   { "Username", CFG_TYPE_STR, ITEM(res_client, username), 0, 0, NULL, NULL, NULL },
-  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "FdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_client, password_), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
+  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "FdPassword" } },
   { "Catalog", CFG_TYPE_RES, ITEM(res_client, catalog), R_CATALOG, 0, NULL, NULL, NULL },
   { "Passive", CFG_TYPE_BOOL, ITEM(res_client, passive), 0, CFG_ITEM_DEFAULT, "false", "13.2.0-",
      "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon." },
@@ -263,15 +261,12 @@ static ResourceItem store_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_store, description_), 0, 0, NULL, NULL, NULL },
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store, Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
   { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_store, AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
-  { "Address", CFG_TYPE_STR, ITEM(res_store, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Address", CFG_TYPE_STR, ITEM(res_store, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "SdAddress" } },
   { "LanAddress", CFG_TYPE_STR, ITEM(res_store, lanaddress), 0, CFG_ITEM_DEFAULT, NULL, "16.2.6-",
      "Sets additional address used for connections between Client and Storage Daemon inside separate network."},
-  { "SdAddress", CFG_TYPE_STR, ITEM(res_store, address), 0, CFG_ITEM_ALIAS, NULL, NULL, "Alias for Address." },
-  { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
-  { "SdPort", CFG_TYPE_PINT32, ITEM(res_store, SDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, SD_DEFAULT_PORT, NULL, "Alias for Port." },
+  { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL, { "SdPort" } },
   { "Username", CFG_TYPE_STR, ITEM(res_store, username), 0, 0, NULL, NULL, NULL },
-  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "SdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_store, password_), 0, CFG_ITEM_ALIAS, NULL, NULL, "Alias for Password." },
+  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "SdPassword" } },
   { "Device", CFG_TYPE_DEVICE, ITEM(res_store, device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "MediaType", CFG_TYPE_STRNAME, ITEM(res_store, media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "AutoChanger", CFG_TYPE_BOOL, ITEM(res_store, autochanger), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -296,15 +291,12 @@ static ResourceItem cat_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_cat, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
   { "Description", CFG_TYPE_STR, ITEM(res_cat, description_), 0, 0, NULL, NULL, NULL },
-  { "Address", CFG_TYPE_STR, ITEM(res_cat, db_address), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
-  { "DbAddress", CFG_TYPE_STR, ITEM(res_cat, db_address), 0, 0, NULL, NULL, NULL },
-  { "DbPort", CFG_TYPE_PINT32, ITEM(res_cat, db_port), 0, 0, NULL, NULL, NULL },
-  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat, db_password), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
-  { "DbPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat, db_password), 0, 0, NULL, NULL, NULL },
-  { "DbUser", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, 0, NULL, NULL, NULL },
-  { "User", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
+  { "DbAddress", CFG_TYPE_STR, ITEM(res_cat, db_address), 0, 0, NULL, NULL, NULL, { "Address" } },
+  { "DbPort", CFG_TYPE_PINT32, ITEM(res_cat, db_port), 0, 0, NULL, NULL, NULL, { "Port" } },
+  { "DbPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat, db_password), 0, 0, NULL, NULL, NULL, { "Password" } },
+  { "DbUser", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, 0, NULL, NULL, NULL, { "User" } },
   { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), 0, 0, NULL, NULL, NULL },
+  { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), 0, 0, NULL, NULL, NULL, { "Socket" } },
    /* Turned off for the moment */
   { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), 0, 0, NULL, NULL, NULL },
   { "DisableBatchInsert", CFG_TYPE_BOOL, ITEM(res_cat, disable_batch_insert), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -344,8 +336,7 @@ ResourceItem job_items[] = {
   { "Client", CFG_TYPE_RES, ITEM(res_job, client), R_CLIENT, 0, NULL, NULL, NULL },
   { "FileSet", CFG_TYPE_RES, ITEM(res_job, fileset), R_FILESET, 0, NULL, NULL, NULL },
   { "Schedule", CFG_TYPE_RES, ITEM(res_job, schedule), R_SCHEDULE, 0, NULL, NULL, NULL },
-  { "VerifyJob", CFG_TYPE_RES, ITEM(res_job, verify_job), R_JOB, CFG_ITEM_ALIAS, NULL, NULL, NULL },
-  { "JobToVerify", CFG_TYPE_RES, ITEM(res_job, verify_job), R_JOB, 0, NULL, NULL, NULL },
+  { "JobToVerify", CFG_TYPE_RES, ITEM(res_job, verify_job), R_JOB, 0, NULL, NULL, NULL, { "VerifyJob" } },
   { "Catalog", CFG_TYPE_RES, ITEM(res_job, catalog), R_CATALOG, 0, NULL, "13.4.0-", NULL },
   { "JobDefs", CFG_TYPE_RES, ITEM(res_job, jobdefs), R_JOBDEFS, 0, NULL, NULL, NULL },
   { "Run", CFG_TYPE_ALIST_STR, ITEM(res_job, run_cmds), 0, 0, NULL, NULL, NULL },
@@ -940,8 +931,6 @@ static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
   const char* mod_start = nomod;
   const char* mod_end = nomod;
 
-  if (item->flags & CFG_ITEM_ALIAS) { return false; }
-
   if (item->flags & CFG_ITEM_DEPRECATED) { return false; }
 
   if (item->flags & CFG_ITEM_NO_EQUALS) {
@@ -1412,6 +1401,26 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
   send.ArrayEnd(item.name, inherited, "");
 }
 
+std::optional<time_t> RunResource::NextScheduleTime(time_t start,
+                                                    uint32_t ndays) const
+{
+  for (uint32_t d = 0; d <= ndays; ++d) {
+    if (date_time_mask.TriggersOnDay(start)) {
+      struct tm tm = {};
+      Blocaltime(&start, &tm);
+      for (int h = (d == 0 ? tm.tm_hour : 0); h < 24; ++h) {
+        if (BitIsSet(h, date_time_mask.hour)) {
+          tm.tm_hour = h;
+          tm.tm_min = minute;
+          tm.tm_sec = 0;
+          return mktime(&tm);
+        }
+      }
+    }
+    start += 24 * 60 * 60;
+  }
+  return std::nullopt;
+}
 
 static std::string PrintConfigRun(RunResource* run)
 {
@@ -1539,14 +1548,14 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 31;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.mday)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.mday)) { all_set = false; }
   }
 
   if (!all_set) {
     interval_start = -1;
 
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.mday)) {
+      if (BitIsSet(i, run->date_time_mask.mday)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1556,7 +1565,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.mday)) {
+      if (!BitIsSet(i, run->date_time_mask.mday)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %d to %d\n",
@@ -1572,7 +1581,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.mday)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.mday)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1,
               i + 1);
@@ -1585,13 +1594,13 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
 
-  /* run->wom output is 1st, 2nd... 5th comma separated
+  /* run->wom output is 1st, 2nd... 5th or last comma separated
    *                    first, second, third... is also allowed
    *                    but we ignore that for now */
   all_set = true;
   nr_items = 5;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.wom)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.wom)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1599,7 +1608,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.wom)) {
+      if (BitIsSet(i, run->date_time_mask.wom)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1609,7 +1618,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.wom)) {
+      if (!BitIsSet(i, run->date_time_mask.wom)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
@@ -1625,7 +1634,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wom)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.wom)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %s to %s\n",
               ordinals[interval_start], ordinals[i]);
@@ -1637,12 +1646,16 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(temp, " ");
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
+  if (run->date_time_mask.last_7days_of_month) {
+    PmStrcat(run_str, "last");
+    PmStrcat(run_str, " ");
+  }
 
   // run->wday output is Sun, Mon, ..., Sat comma separated
   all_set = true;
   nr_items = 7;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.wday)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.wday)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1650,7 +1663,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.wday)) {
+      if (BitIsSet(i, run->date_time_mask.wday)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1660,7 +1673,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.wday)) {
+      if (!BitIsSet(i, run->date_time_mask.wday)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
@@ -1676,7 +1689,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wday)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.wday)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %s to %s\n",
               weekdays[interval_start], weekdays[i]);
@@ -1693,7 +1706,7 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 12;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.month)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.month)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1701,7 +1714,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.month)) {
+      if (BitIsSet(i, run->date_time_mask.month)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1711,7 +1724,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.month)) {
+      if (!BitIsSet(i, run->date_time_mask.month)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from %s to %s\n",
@@ -1727,7 +1740,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.month)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.month)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from %s to %s\n",
               months[interval_start], months[i]);
@@ -1744,7 +1757,7 @@ static std::string PrintConfigRun(RunResource* run)
   all_set = true;
   nr_items = 54;
   for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_bitfield.woy)) { all_set = false; }
+    if (!BitIsSet(i, run->date_time_mask.woy)) { all_set = false; }
   }
 
   if (!all_set) {
@@ -1752,7 +1765,7 @@ static std::string PrintConfigRun(RunResource* run)
 
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_bitfield.woy)) {
+      if (BitIsSet(i, run->date_time_mask.woy)) {
         if (interval_start
             == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
@@ -1762,7 +1775,7 @@ static std::string PrintConfigRun(RunResource* run)
         }
       }
 
-      if (!BitIsSet(i, run->date_time_bitfield.woy)) {
+      if (!BitIsSet(i, run->date_time_mask.woy)) {
         if (interval_start != -1) { /* bit is unset and we are in an interval */
           if ((i - interval_start) > 1) {
             Dmsg2(200, "found end of interval from w%02d to w%02d\n",
@@ -1778,7 +1791,7 @@ static std::string PrintConfigRun(RunResource* run)
     /* See if we are still in an interval and the last bit is also set then
      * the interval stretches to the last item. */
     i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.woy)) {
+    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.woy)) {
       if ((i - interval_start) > 1) {
         Dmsg2(200, "found end of interval from w%02d to w%02d\n",
               interval_start, i);
@@ -1795,7 +1808,7 @@ static std::string PrintConfigRun(RunResource* run)
    * only "hourly" sets all bits. */
   PmStrcpy(temp, "");
   for (i = 0; i < 24; i++) {
-    if (BitIsSet(i, run->date_time_bitfield.hour)) {
+    if (BitIsSet(i, run->date_time_mask.hour)) {
       Mmsg(temp, "at %02d:%02d", i, run->minute);
       PmStrcat(run_str, temp.c_str());
     }
