@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ndmp: remove ndmp backup level limit [PR #2188]
 - reduce test-matrix [PR #2192]
 - bareos-fd: add option for grpc fallback [PR #2104]
+- Make tests optional [PR #2180]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -90,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2159]: https://github.com/bareos/bareos/pull/2159
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
 [PR #2175]: https://github.com/bareos/bareos/pull/2175
+[PR #2180]: https://github.com/bareos/bareos/pull/2180
 [PR #2188]: https://github.com/bareos/bareos/pull/2188
 [PR #2191]: https://github.com/bareos/bareos/pull/2191
 [PR #2192]: https://github.com/bareos/bareos/pull/2192
