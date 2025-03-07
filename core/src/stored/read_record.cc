@@ -185,6 +185,7 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx)
  * Any fatal error sets the status bool to false.
  */
 bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
+                             READ_CTX* ctx,
                              Session_Label* sessrec,
                              bool RecordCb(DeviceControlRecord* dcr,
                                            DeviceRecord* rec,
@@ -237,7 +238,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
         if (RecordCb) { RecordCb(dcr, trec, user_data); }
 
         FreeRecord(trec);
-        PositionDeviceToFirstFile(jcr, dcr);
+        PositionDeviceToFirstFile(jcr, &ctx->current, dcr);
 
         // After reading label, we must read first data block
         continue;
@@ -316,8 +317,7 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
       HandleSessionRecord(dcr->dev, rec, &rctx->sessrec);
       if (jcr->sd_impl->read_session.bsr) {
         // We just check block FI and FT not FileIndex
-        rec->match_stat
-            = MatchBsrBlock(jcr->sd_impl->read_session.bsr, dcr->block);
+        rec->match_stat = MatchBsrBlock(rctx->current, dcr->block);
       } else {
         rec->match_stat = 0;
       }
@@ -327,8 +327,8 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
     // Apply BootStrapRecord filter
     if (jcr->sd_impl->read_session.bsr) {
-      rec->match_stat = MatchBsr(jcr->sd_impl->read_session.bsr, rec,
-                                 &dev->VolHdr, &rctx->sessrec, jcr);
+      rec->match_stat
+          = MatchBsr(rctx->current, rec, &dev->VolHdr, &rctx->sessrec, jcr);
       if (rec->match_stat == -1) { /* no more possible matches */
         *done = true;              /* all items found, stop */
         Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file,
@@ -341,7 +341,9 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
               rec->remainder, rec->FileIndex, dev->file, dev->block_num);
         rec->remainder = 0;
         ClearBit(REC_PARTIAL_RECORD, rec->state_bits);
-        if (TryDeviceRepositioning(jcr, rec, dcr)) { return false; }
+        if (TryDeviceRepositioning(jcr, &rctx->current, rec, dcr)) {
+          return false;
+        }
         continue; /* we don't want record, read next one */
       }
     }
@@ -360,7 +362,7 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
     if (rctx->lastFileIndex != READ_NO_FILEINDEX
         && rctx->lastFileIndex != rec->FileIndex) {
       if (IsThisBsrDone(jcr->sd_impl->read_session.bsr, rec)
-          && TryDeviceRepositioning(jcr, rec, dcr)) {
+          && TryDeviceRepositioning(jcr, &rctx->current, rec, dcr)) {
         Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file,
               dev->block_num);
         return false;
@@ -396,7 +398,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
   bool done = false;
 
   rctx = new_read_context();
-  PositionDeviceToFirstFile(jcr, dcr);
+  PositionDeviceToFirstFile(jcr, &rctx->current, dcr);
   jcr->sd_impl->read_session.mount_next_volume = false;
 
   while (ok && !done) {
@@ -406,7 +408,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
     }
 
     // Read the next block into our buffers.
-    if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, RecordCb, mount_cb,
+    if (!ReadNextBlockFromDevice(dcr, rctx, &rctx->sessrec, RecordCb, mount_cb,
                                  user_data, &ok)) {
       break;
     }
