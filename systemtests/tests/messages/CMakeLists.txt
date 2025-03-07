@@ -20,6 +20,12 @@
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 if(TARGET messages_resource)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+  file(
+    GENERATE
+    OUTPUT environment.local
+    CONTENT "MESSAGES_TEST_PROGRAM=$<TARGET_FILE:messages_resource>"
+  )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
 endif()
+

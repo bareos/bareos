@@ -54,7 +54,7 @@
 #include "lib/version.h"
 
 #ifdef HAVE_WIN32
-#  include "win32/findlib/win32.h"
+#  include "findlib/win32.h"
 #endif
 
 #if defined(HAVE_DARWIN_OS)

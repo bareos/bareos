@@ -19,9 +19,12 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
-bareos_configure_file(GLOB_RECURSE "configs/*")
 
-include_directories(${OPENSSL_INCLUDE_DIR})
+# required to generate configuration for some SD tests
+include(BareosTargetTools)
+get_target_output_dir(BACKEND_OUTPUT_DIRECTORY bareossd-file)
+
+bareos_configure_file(GLOB_RECURSE "configs/*")
 
 if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
   set(LINUX_KERNEL_VERSION "0.0")
@@ -43,7 +46,8 @@ if((OPENSSL_VERSION VERSION_LESS "3.0.0") OR (LINUX_KERNEL_VERSION VERSION_LESS
 )
   set(DISABLE_KTLS ON)
 else()
-
+  cmake_push_check_state()
+  set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCLUDE_DIR}")
   check_cxx_source_compiles(
     "
 #include <openssl/ssl.h>
@@ -57,6 +61,7 @@ return 0;
 "
     KTLS_DISABLED
   )
+  cmake_pop_check_state()
   if(KTLS_DISABLED)
     set(DISABLE_KTLS ON)
   endif()
@@ -142,10 +147,6 @@ set(LINK_LIBRARIES stored_objects dird_objects console_objects bareossd bareos
                    bareossql bareosfind GTest::gtest_main
 )
 
-if(HAVE_PAM)
-  list(APPEND LINK_LIBRARIES ${PAM_LIBRARIES})
-endif()
-
 # set some path variables used during test compilation
 if(HAVE_WIN32)
   link_libraries(
@@ -197,13 +198,13 @@ if(NOT client-only)
   bareos_add_test(
     addresses_and_ports_config
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+                   GTest::gtest_main
   )
 
   bareos_add_test(
     addresses_and_ports_functions
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+                   GTest::gtest_main
   )
 
   bareos_add_test(
@@ -219,9 +220,8 @@ if(NOT client-only)
   )
 
   bareos_add_test(
-    berrno_test
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    berrno_test LINK_LIBRARIES bareos dird_objects bareosfind bareossql
+                               GTest::gtest_main
   )
   bareos_add_test(bool_string LINK_LIBRARIES bareos GTest::gtest_main)
   bareos_add_test(
@@ -247,8 +247,7 @@ if(NOT client-only)
 
   bareos_add_test(
     catalog
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES bareos dird_objects bareosfind bareossql GTest::gtest_main
     SKIP_GTEST # used by systemtest catalog
   )
 
@@ -267,9 +266,8 @@ if(NOT client-only)
                                          bareossql bareosfind GTest::gtest_main
   )
   bareos_add_test(
-    globbing_test
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    globbing_test LINK_LIBRARIES bareos dird_objects bareosfind bareossql
+                                 GTest::gtest_main
   )
   bareos_add_test(
     lib_tests
@@ -281,14 +279,12 @@ if(NOT client-only)
   )
   bareos_add_test(
     messages_resource
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES bareos dird_objects bareosfind bareossql GTest::gtest_main
     SKIP_GTEST # used by systemtest messages
   )
   bareos_add_test(
-    multicolumn_prompts
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    multicolumn_prompts LINK_LIBRARIES bareos dird_objects bareosfind bareossql
+                                       GTest::gtest_main
   )
   bareos_add_test(multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(
@@ -304,17 +300,15 @@ if(NOT client-only)
 
   bareos_add_test(
     run_on_incoming_connect_interval
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES dird_objects bareos bareosfind bareossql GTest::gtest_main
   )
   bareos_add_test(
     show_cmd_available_resources_equals_config_resources
     LINK_LIBRARIES dird_objects bareos bareosfind bareossql GTest::gtest_main
   )
   bareos_add_test(
-    scheduler
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    scheduler LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+                             GTest::gtest_main
   )
   bareos_add_test(
     scheduler_job_item_queue LINK_LIBRARIES dird_objects bareos bareosfind
@@ -345,9 +339,8 @@ if(NOT client-only)
                                     GTest::gtest_main
   )
   bareos_add_test(
-    setdevice
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    setdevice LINK_LIBRARIES bareos dird_objects bareosfind bareossql
+                             GTest::gtest_main
   )
   bareos_add_test(sort_stringvector LINK_LIBRARIES bareos GTest::gtest_main)
   bareos_add_test(
@@ -380,27 +373,24 @@ if(NOT client-only)
         ${PROJECT_SOURCE_DIR}/src/dird/inc_conf.cc
         ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc
         ${PROJECT_SOURCE_DIR}/src/dird/ua_audit.cc
-      LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
-                     ${OPENSSL_LIBRARIES}
+      LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main OpenSSL::SSL
+                     OpenSSL::Crypto
     )
   endif()
   bareos_add_test(
-    test_fileindex_list
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    test_fileindex_list LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+                                       GTest::gtest_main
   )
   bareos_add_test(
     test_sd_plugins LINK_LIBRARIES bareos bareossd GTest::gtest_main
   )
   bareos_add_test(
-    test_setdebug
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    test_setdebug LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+                                 GTest::gtest_main
   )
   bareos_add_test(
-    time_format_test
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    time_format_test LINK_LIBRARIES bareos dird_objects bareosfind bareossql
+                                    GTest::gtest_main
   )
 
 endif() # NOT client-only
@@ -517,7 +507,7 @@ bareos_add_test(
 )
 
 bareos_add_test(
-  wrap LINK_LIBRARIES bareos GTest::gtest_main ${OPENSSL_LIBRARIES}
+  wrap LINK_LIBRARIES bareos GTest::gtest_main OpenSSL::SSL OpenSSL::Crypto
 )
 
 if(NOT HAVE_WIN32)
@@ -533,6 +523,8 @@ bareos_add_test(
 add_executable(env_tester env_tester.cc)
 target_link_libraries(env_tester PRIVATE bareos)
 bareos_add_test(bpipe_env_test LINK_LIBRARIES GTest::gtest_main bareos)
+target_compile_definitions(
+  bpipe_env_test PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:env_tester>\""
+)
 
-bareoscopydllstobindir()
 include(DebugEdit)

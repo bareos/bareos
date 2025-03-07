@@ -25,14 +25,12 @@
 
 #include "include/bareos.h"
 
-#if defined(HAVE_WIN32)
-
 #  include "include/jcr.h"
 #  include "findlib/find.h"
 #  include "lib/cbuf.h"
 #  include "findlib/drivetype.h"
 #  include "findlib/fstype.h"
-#  include "win32/findlib/win32.h"
+#  include "win32.h"
 
 #  include <array>
 
@@ -643,4 +641,3 @@ void win32_cleanup_copy_thread(JobControlRecord* jcr)
   free(jcr->cp_thread);
   jcr->cp_thread = NULL;
 }
-#endif

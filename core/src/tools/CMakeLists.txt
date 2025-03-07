@@ -67,7 +67,7 @@ if(NOT HAVE_WIN32)
   target_link_libraries(btestls bareosfind bareos)
 
   add_executable(bpluginfo bpluginfo.cc)
-  target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} CLI11::CLI11)
+  target_link_libraries(bpluginfo bareos ${CMAKE_DL_LIBS} CLI11::CLI11)
 
   set(TOOLS_SBIN bscrypto bwild bregex)
 else()

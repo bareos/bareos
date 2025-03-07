@@ -65,9 +65,9 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 add_library(fd_objects STATIC ${FDSRCS})
 add_library(fd_test_objects STATIC ${FDSRCS})
 
-target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES})
+target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ZLIB::ZLIB)
 target_link_libraries(
-  fd_test_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES}
+  fd_test_objects PRIVATE bareos bareosfastlz ZLIB::ZLIB
 )
 
 if(HAVE_LMDB)
@@ -149,5 +149,4 @@ install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake
         COMPONENT filedaemon
 )
 
-bareoscopydllstobindir()
 include(DebugEdit)

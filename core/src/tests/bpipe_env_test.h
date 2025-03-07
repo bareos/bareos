@@ -26,7 +26,9 @@
 #include <string_view>
 
 constexpr const char* environment_key = "MyVarA";
-#if HAVE_WIN32
+#if defined(TEST_PROGRAM)
+constexpr const char* env_tester = TEST_PROGRAM;
+#elif HAVE_WIN32
 constexpr const char* env_tester = "env_tester.exe";
 #else
 constexpr const char* env_tester = "./env_tester";

@@ -1,13 +1,7 @@
-# CMAKE_CONFIG_TYPE is required on windows, on other OS it needs to be empty
-if [[ "$(uname -s)" =~ _NT ]]; then
-  # default to config type 'Debug', so that manual running the testrunners on
-  # windows works.
-  # When the testrunners are started by ctest, CMAKE_CONFIG_TYPE is set by
-  # ctest to the value given via the "-C <cfg>, --build-config <cfg>" parameter
-  CMAKE_CONFIG_TYPE=${CMAKE_CONFIG_TYPE:-Debug}
-else
-  CMAKE_CONFIG_TYPE=""
-fi
+# Default CMAKE_CONFIG_TYPE to be empty.
+# CTest will set this for multi-configuration builds (see ctest --build-config)
+: "${CMAKE_CONFIG_TYPE:=}"
+
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
 PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
