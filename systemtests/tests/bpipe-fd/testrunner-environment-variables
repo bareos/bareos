@@ -1,0 +1,91 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This test checks whether the environment variables for the bpipe plugin work correctly.
+# Both the read- and the writeprogram use the set environment variables
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+backup_file="${tmp}/backup_log.out"
+restore_file="${tmp}/restore_log.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+
+@$out $backup_file
+run job=backup-bareos-fd yes
+wait
+messages
+
+@$out $restore_file
+restore jobid=1 client=bareos-fd all done yes
+wait
+messages
+
+quit
+END_OF_DATA
+
+# Start the bareos daemons
+# and run the bconsole commands from ${tmp}/bconcmds
+# Further bconsole commands can be executed by "run_bconsole".
+run_bconsole
+
+# validate that backup and restore job were successfull
+if grep -q "*** Backup Error ***" "$backup_file"; then
+  cat "$backup_file"
+  return 2
+fi
+
+if grep -q "*** Restore Error ***" "$restore_file"; then
+  cat "$restore_file"
+  return 2
+fi
+
+# validate environment variables in readprogram
+expected_readprogram_output=(
+  "BareosClientName" "bpipe-fd-fd"
+  "BareosJobId" "1"
+  "BareosJobLevel" "F"
+  "BareosSinceTime" "0"
+  "BareosJobType" "B"
+)
+
+for ((i = 0; i < ${#expected_readprogram_output[@]}; i += 2)); do
+  key="${expected_readprogram_output[i]}"
+  value="${expected_readprogram_output[i + 1]}"
+  expect_grep "${key}='${value}'" \
+    "$tmp/readprogram.out" \
+    "Environment variable '$key' is wrong in readprogram, expected '${value}'."
+done
+
+# validate environment variables in writeprogram
+expected_writeprogram_output=(
+  "BareosClientName" "bpipe-fd-fd"
+  "BareosJobId" "2"
+  "BareosJobLevel" " "
+  "BareosSinceTime" "0"
+  "BareosJobType" "R"
+)
+
+for ((i = 0; i < ${#expected_writeprogram_output[@]}; i += 2)); do
+  key="${expected_writeprogram_output[i]}"
+  value="${expected_writeprogram_output[i + 1]}"
+  expect_grep "${key}='${value}'" \
+    "$tmp/writeprogram.out" \
+    "Environment variable '$key' is wrong in writeprogram, expected '${value}'."
+done
+
+end_test
