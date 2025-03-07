@@ -371,6 +371,14 @@
           "equals": true,
           "versions": "15.2.3-"
         },
+        "GrpcModule": {
+          "datatype": "STRING",
+          "code": 0,
+          "default_value": "bareos-grpc-fd-plugin-bridge",
+          "equals": true,
+          "versions": "25.0.0-",
+          "description": "The grpc module to use for grpc fallback."
+        },
         "TlsAuthenticate": {
           "datatype": "BOOLEAN",
           "code": 0,
@@ -669,6 +677,14 @@
           "default_value": "%d-%b %H:%M",
           "equals": true,
           "versions": "15.2.3-"
+        },
+        "GrpcModule": {
+          "datatype": "STRING",
+          "code": 0,
+          "default_value": "bareos-grpc-fd-plugin-bridge",
+          "equals": true,
+          "versions": "25.0.0-",
+          "description": "The grpc module to use for grpc fallback."
         },
         "TlsAuthenticate": {
           "datatype": "BOOLEAN",

@@ -5,7 +5,7 @@ FileSet {
     Options {
       signature = XXH128
     }
-    Plugin = "@python_module_name@@python_module_suffix@"
+    Plugin = "@dir_python_module_name@"
              ":module_name=bareos_tasks.pgsql"
              ":pg_host=@dbHost@"
              ":pg_user=''"
