@@ -23,7 +23,6 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 srv_name=$(basename "${BAREOS_FILEDAEMON_BINARY}" .exe)
 srv_sbindir=$(dirname "${BAREOS_FILEDAEMON_BINARY}")
 srv_rundir=$(dirname "$srv_sbindir")
-srv_rundir=$(dirname "$srv_rundir")
 srv_configdir=${BAREOS_CONFIG_DIR}
 srv_libdir="$(dirname "$(readlink "${BAREOS_FILEDAEMON_BINARY}")")"
 
