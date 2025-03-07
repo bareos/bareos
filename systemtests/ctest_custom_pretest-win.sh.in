@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,8 +22,8 @@ set -e
 set -u
 echo "PRETEST: running $0 script"
 echo "PRETEST: @TEST_INFO_TEXT@"
-echo "PRETEST: checking for executable @CMAKE_BINARY_DIR@/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe"
-if [ ! -x "@CMAKE_BINARY_DIR@/core/src/dird/${CMAKE_CONFIG_TYPE}/bareos-dir.exe" ]; then
+echo "PRETEST: checking for executable @BAREOS_DIR_TO_TEST@"
+if [ ! -x "@BAREOS_DIR_TO_TEST@" ]; then
     echo "PRETEST:  ERROR: could not find director executable. Forgot to build?"
     exit 1
 fi

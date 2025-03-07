@@ -388,12 +388,16 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
       if(NOT ${${binary_name_to_test_upcase}} STREQUAL "")
 
-        if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-          set(build_configs "Debug" "Release")
+        if(CMAKE_CONFIGURATION_TYPES)
+          set(build_configs "${CMAKE_CONFIGURATION_TYPES}")
         else()
           set(build_configs "")
         endif()
-        foreach(build_config ${build_configs})
+        foreach(
+          build_config IN
+          ITEMS ""
+          LISTS CMAKE_CONFIGURATION_TYPES
+        )
           set(${bareos_XXX_binary}
               ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME}
           )
