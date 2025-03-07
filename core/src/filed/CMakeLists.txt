@@ -149,5 +149,4 @@ install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake
         COMPONENT filedaemon
 )
 
-bareoscopydllstobindir()
 include(DebugEdit)

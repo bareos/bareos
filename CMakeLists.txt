@@ -120,7 +120,6 @@ find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
-include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
 include(ForceOption)
 

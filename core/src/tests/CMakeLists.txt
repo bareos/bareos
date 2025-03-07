@@ -527,5 +527,4 @@ target_compile_definitions(
   bpipe_env_test PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:env_tester>\""
 )
 
-bareoscopydllstobindir()
 include(DebugEdit)

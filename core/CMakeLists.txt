@@ -882,7 +882,6 @@ configure_file(
   "CTestScript.cmake.in" "${CMAKE_BINARY_DIR}/CTestScript.cmake" @ONLY
 )
 
-bareoscopydllstobindir()
 
 if(DEBUG_TARGET_DEPENDENCIES)
   include(BareosTargetTools)

@@ -114,5 +114,4 @@ install(
   DESTINATION ${datarootdir}/pixmaps/
   RENAME bareos-tray-monitor.png
 )
-bareoscopydllstobindir()
 include(DebugEdit)
