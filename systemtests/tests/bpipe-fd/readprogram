@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# output environment variables from readprogram
+echo "Environment variables from read-program:"
+echo "BareosClientName='$BareosClientName'"
+echo "BareosJobId='$BareosJobId'"
+echo "BareosJobLevel='$BareosJobLevel'"
+echo "BareosSinceTime='$BareosSinceTime'"
+echo "BareosJobType='$BareosJobType'"
