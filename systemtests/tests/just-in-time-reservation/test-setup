@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,6 @@ setup_data
 mkdir -p "${archivedir}/remote"
 
 bin/bareos start
-BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote" BAREOS_SD_PORT=${BAREOS_STORAGE2_PORT} "${rscripts}/bareos-ctl-sd" start
 bin/bareos status
 
 # make sure, director is up and running.
