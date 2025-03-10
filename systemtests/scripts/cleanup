@@ -4,7 +4,9 @@ set -u
 #shellcheck source=../environment.in
 . ./environment
 
-"${rscripts}/bareos" stop >/dev/null
+"bin/bareos" status
+"bin/bareos" stop
+"bin/bareos" status
 
 function deletefiles(){
   rm -rf "${tmp:?}"/*
