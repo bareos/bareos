@@ -35,6 +35,7 @@
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"
 #include "lib/bpipe.h"
+#include <memory>
 
 namespace filedaemon {
 thread_local PluginContext* plugin_context = NULL;
@@ -109,6 +110,8 @@ struct plugin_ctx {
 
   char where[512];
   int replace;
+
+  std::unordered_map<std::string, std::string> env{};
 };
 
 // This defines the arguments that the plugin parser understands.
@@ -171,11 +174,23 @@ BAREOS_EXPORT bRC unloadPlugin() { return bRC_OK; }
 // Create a new instance of the plugin i.e. allocate our private storage
 static bRC newPlugin(PluginContext* ctx)
 {
-  struct plugin_ctx* p_ctx
-      = (struct plugin_ctx*)malloc(sizeof(struct plugin_ctx));
+  plugin_ctx* p_ctx(new (plugin_ctx));
   if (!p_ctx) { return bRC_Error; }
-  memset(p_ctx, 0, sizeof(struct plugin_ctx));
   ctx->plugin_private_context = (void*)p_ctx; /* set our context pointer */
+
+  char backuplvl;
+  bareos_core_functions->getBareosValue(ctx, bVarLevel, &backuplvl);
+
+  int jobid;
+  bareos_core_functions->getBareosValue(ctx, bVarJobId, &jobid);
+
+  p_ctx->env.clear();
+  p_ctx->env.insert({{std::string{"BareosLevel"}, std::string{backuplvl}},
+                     {std::string{"BareosJobId"}, std::to_string(jobid)}});
+
+  Jmsg(ctx, M_INFO, "bpipe-fd: level=%c\n", backuplvl);
+  Dmsg(ctx, debuglevel, "bpipe-fd: level=%c\n", backuplvl);
+
 
   bareos_core_functions->registerBareosEvents(
       ctx, 6, bEventNewPluginOptions, bEventPluginCommand, bEventJobStart,
@@ -190,16 +205,7 @@ static bRC freePlugin(PluginContext* ctx)
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
-
-  if (p_ctx->fname) { free(p_ctx->fname); }
-
-  if (p_ctx->reader) { free(p_ctx->reader); }
-
-  if (p_ctx->writer) { free(p_ctx->writer); }
-
-  if (p_ctx->plugin_options) { free(p_ctx->plugin_options); }
-
-  free(p_ctx); /* free our private context */
+  delete (p_ctx);
   p_ctx = NULL;
   return bRC_OK;
 }
@@ -315,20 +321,7 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         }
         if (writer_codes) { free(writer_codes); }
       } else {
-
-        char backuplvl;
-        bareos_core_functions->getBareosValue(ctx, bVarLevel, &backuplvl);
-        int jobid;
-        bareos_core_functions->getBareosValue(ctx, bVarJobId, &jobid);
-
-        std::unordered_map<std::string, std::string> env{
-            {std::string{"BareosLevel"}, std::string{backuplvl}},
-            {std::string{"BareosJobId"}, std::to_string(jobid)}};
-
-        Jmsg(ctx, M_INFO, "bpipe-fd: level=%c\n", backuplvl);
-        Dmsg(ctx, debuglevel, "bpipe-fd: level=%c\n", backuplvl);
-
-        p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false, env);
+        p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false, p_ctx->env);
         Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd,
              p_ctx->reader);
         if (!p_ctx->pfd) {
