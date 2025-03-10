@@ -132,6 +132,7 @@ OS:
   win:
     native:
       TYPE: win-native
+      BUILD_SCRIPT: CD/windows/build-ninja.bat
       STAGES:
         - win-native-64-release
       ARCH:
