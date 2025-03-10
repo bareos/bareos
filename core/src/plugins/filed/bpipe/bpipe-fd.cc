@@ -315,11 +315,11 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         }
         if (writer_codes) { free(writer_codes); }
       } else {
+
         char backuplvl;
         bareos_core_functions->getBareosValue(ctx, bVarLevel, &backuplvl);
         int jobid;
         bareos_core_functions->getBareosValue(ctx, bVarJobId, &jobid);
-
 
         std::unordered_map<std::string, std::string> env{
             {std::string{"BareosLevel"}, std::string{backuplvl}},
