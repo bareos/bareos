@@ -6,7 +6,9 @@ FileSet {
     Options {
       Signature = XXH128
     }
-   #File = "@sbindir@"
-    File=<@tmpdir@/file-list
+    Plugin = "bpipe"
+             ":file=/bpipe"
+             ":reader=./readprogram"
+             ":writer=./writeprogram"
   }
 }
