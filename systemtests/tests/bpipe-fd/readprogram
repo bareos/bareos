@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "BareosLevel is $BareosLevel"
+echo "BareosJobId is $BareosJobId"
