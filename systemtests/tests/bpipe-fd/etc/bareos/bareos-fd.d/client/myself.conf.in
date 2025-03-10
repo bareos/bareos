@@ -5,8 +5,8 @@ Client {
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all filedaemon plugins (*-fd.so) from the "Plugin Directory".
   #
-  Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST"
-  Plugin Names = "bpipe-fd"
+  Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST@"
+  Plugin Names = "bpipe"
 
   Working Directory =  "@working_dir@"
   FD Port = @fd_port@
