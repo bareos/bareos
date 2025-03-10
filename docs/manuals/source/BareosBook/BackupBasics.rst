@@ -229,4 +229,3 @@ How to create a backup scheme:
 * Which data needs to be backed up?
 
 * How much data needs to be backed up?
-
