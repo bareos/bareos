@@ -101,6 +101,22 @@ and restore operations are. At the same time, the probability that the backup
 data will be lost at the same time as the original data also is higher the
 closer the backup data and the original data are.
 
+A backup of your data on the same local disk that also holds the original data will be very fast.
+However, the probability of losing the backup data together with the original data is extremely high.
+Hardware failure of the disk and/or other parts of the computer, theft or lost of your computer,
+ransomware encrypting your hard disk and other reasons of data loss will affect both the original
+and the backup data.
+
+Manually copying the data to an external hard disk regularly will solve the
+problems described above, however the probability that the backup was not done
+before a data loss is quite high as it is a manual operation. A good option for
+a laptop would be an automatic backup to a s3 cloud storage, so that backup
+will be stored independently of the local hardware and will be accessible
+from everywhere. At the same time the backups still can be made automatically
+which is the basis for a reliable backup.
+
+
+
 Restore the original data
 -------------------------
 Restoring the original data is of course the main goal of all the backup
@@ -111,12 +127,10 @@ required, it is good practice to regularly test the recovery operation.
 Depending on the recovery objective, the restore speed is also a very important
 parameter that needs to be taken into account.
 
-
-Copying over all original data again and again will quickly require a multiple
-of the original space as backup space. Also, copying over all data every time
-will result in a very high load on all involved components like CPU, Memory,
-Network and Disk I/O.
-
+It is also very important to regularly do restore tests.
+Regular restores will reveal any errors in the data backup process and give the
+administrator the security of being able to carry out a targeted and rapid
+restore when necessary.
 
 Data loss
 ---------
@@ -170,7 +184,7 @@ Every storage technology has its own properties which influence the overall syst
 The simplest solution is usually storing the backups on disk.
 Depending on the requirements on which data loss event should be recoverable, also the storage technology
 decision is a different one.
-Depending on the requirements, also different technologies can be combined so fullfill the requirements.
+Depending on the requirements, also different technologies can be combined so fulfill the requirements.
 
 How does data loss happen? What are the main reasons for data loss?
 We have three main reasons for data loss: 
@@ -178,7 +192,7 @@ We have three main reasons for data loss:
 Accidental data loss: Unintentional destruction of data.
 Hardware failure: The hardware that is used to store data is malfunctioning and can partly or completely stop working.
 Software failure: A software error can destroy data so that it cannot be read anymore.
-Human failure: Data might be deleted or destroyed unintentionally by an user or administrator.
+Human failure: Data might be deleted or destroyed unintentionally by a user or administrator.
 
 Attack: Intentional destruction of data:
 Hacking or insider activity can intentionally destroy data.
@@ -192,7 +206,7 @@ Fire, flooding and power outage
 
 
 
-All of the things presented here must be taken into account for a successful
+All the things presented here must be taken into account for a successful
 backup solution. If you include these things in your backup planning, you can
 set up a successful backup scheme.
 
