@@ -29,6 +29,7 @@ endif()
 
 project(bareos NONE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
@@ -120,7 +121,6 @@ find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
-include(BareosCopyDllsToBinDir)
 include(RemoveNDebugFlag)
 include(ForceOption)
 
@@ -196,6 +196,7 @@ if(BUILD_BAREOS_BINARIES)
   )
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
   endif()
+  include(BareosOutputDirectories)
   include(BareosCpmPackages)
   # include PrefixMap before BareosCcache so hash_dir is set correctly
   include(PrefixMap)

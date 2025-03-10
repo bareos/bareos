@@ -19,14 +19,13 @@
 
 include(BareosConfigureFile)
 
+find_package(Readline REQUIRED)
+
 set(BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc
               console_output.cc
 )
 
-include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
-
 if(HAVE_PAM)
-  include_directories(${PAM_INCLUDE_DIRS})
   list(APPEND BCONSSRCS auth_pam.cc)
 endif()
 
@@ -51,10 +50,10 @@ add_library(console_objects STATIC ${BCONSSRCS})
 
 target_link_libraries(console_objects PRIVATE bareos)
 target_link_libraries(
-  bconsole PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
+  bconsole PRIVATE console_objects Readline::Readline CLI11::CLI11
 )
 target_link_libraries(
-  bconsole-unsafe PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
+  bconsole-unsafe PRIVATE console_objects Readline::Readline CLI11::CLI11
 )
 
 bareos_configure_file(FILES bconsole.conf.in)
@@ -76,5 +75,4 @@ install(
   bareos_install_single_config_file(\"${CMAKE_CURRENT_BINARY_DIR}/bconsole.conf\" \"${configtemplatedir}\" \".\")
 "
 )
-bareoscopydllstobindir()
 include(DebugEdit)
