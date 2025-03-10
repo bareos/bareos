@@ -108,13 +108,8 @@ Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent J
 
 |sd|
 
-   - :config:option:`sd/storage/MaximumConcurrentJobs`\
-
    - :config:option:`sd/device/MaximumConcurrentJobs`\
 
-|fd|
-
-   - :config:option:`fd/client/MaximumConcurrentJobs`\
 
 For example, if you want two different jobs to run simultaneously backing up the same Client to the same Storage device, they will run concurrently only if you have set :strong:`Maximum Concurrent Jobs`\  greater than one in the :config:option:`Dir/Director`\  resource, the :config:option:`Dir/Client`\  resource, and the :config:option:`Dir/Storage`\  resource in |dir| configuration.
 
@@ -128,34 +123,51 @@ Below is a super stripped down |dir| configuration showing you the four places w
 .. code-block:: bareosconfig
    :caption: Concurrent Jobs Example
 
-   #
-   # Bareos Director Configuration /etc/bareos/bareos-dir.d/*
-   #
-   Director {
-     Name = bareos-dir
-     Maximum Concurrent Jobs = 4
-     ...
-   }
-   Job {
-     Name = "NightlySave"
-     Maximum Concurrent Jobs = 4
-     Client = bareos-fd
-     Storage = File
-     ...
-   }
-   Client {
-     Name = bareos-fd
-     Maximum Concurrent Jobs = 4
-     ...
-   }
-   Storage {
-     Name = File
-     Maximum Concurrent Jobs = 4
-     ...
-   }
+    #
+    # Bareos Director Configuration /etc/bareos/bareos-dir.d/*
+    #
+    Director {
+      Name = bareos-dir
+      Maximum Concurrent Jobs = 4
+      ...
+    }
+    Client {
+      Name = bareos-fd
+      Maximum Concurrent Jobs = 4
+      ...
+    }
+    Storage {
+      Name = File
+      Maximum Concurrent Jobs = 4
+      ...
+    }
+    Job {
+      Name = "NightlySave"
+      Maximum Concurrent Jobs = 4
+      Client = bareos-fd
+      Storage = File
+      ...
+    }
+
+
+
+.. note::
+
+   :sinceVersion:`24.0.0: Maximum Concurrent Jobs` the following directives have been deprecated and
+   can be removed from any configuration.
+
+   |sd|
+
+     - :config:option:`fd/client/MaximumConcurrentJobs`\
+
+   |fd|
+
+     - :config:option:`fd/client/MaximumConcurrentJobs`\
+
 
 
 .. _AnsiLabelsChapter:
+
 
 Tape Labels: ANSI or IBM
 ------------------------
