@@ -545,24 +545,20 @@ SectionIn 1 2 3
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   SetOutPath "$INSTDIR"
   File "bareos-config-deploy.bat"
-  !cd "${CMAKE_BINARY_DIR}\core\src\filed\${CMAKE_CONFIG_TYPE}"
+  !cd "${CMAKE_BINARY_DIR}\bin"
   File bareos-fd.exe
-  File bareos.dll
-  File bareosfastlz.dll
-  File bareosfind.dll
-  File bareoslmdb.dll
-  File iconv-2.dll
-  File intl-8.dll
-  File jansson.dll
-  File lzo2.dll
-  File pthreadVCE3.dll
-  File zlib1.dll
-  !cd "${CMAKE_BINARY_DIR}\core\src\cats\${CMAKE_CONFIG_TYPE}"
-  File libpq.dll
-
-  !cd "C:\vcpkg\installed\x64-windows\bin"
-  File libcrypto-3-x64.dll
-  File libssl-3-x64.dll
+  File "bareos.dll"
+  File "bareosfastlz.dll"
+  File "bareosfind.dll"
+  File "bareoslmdb.dll"
+  File "iconv-2.dll"
+  File "intl-8.dll"
+  File "jansson.dll"
+  File "libcrypto-3-x64.dll"
+  File "libssl-3-x64.dll"
+  File "lzo2.dll"
+  File "pthreadVCE3.dll"
+  File "zlib1.dll"
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
@@ -581,16 +577,6 @@ SectionIn 1 2 3
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
   !cd "${CMAKE_SOURCE_DIR}\core\platforms\win32"
   File "fillup.sed"
-
-!if ${CMAKE_CONFIG_TYPE} == "Debug"
-  !cd "C:\windows\system32"
-  File "msvcp140d.dll"
-  File "vcruntime140d.dll"
-  # Reading the next file from C:\windows\system32 results in file not found, so we use the full path
-  File "vcruntime140_1d.dll"
-  File "ucrtbased.dll"
-!endif
-
 SectionEnd
 
 
@@ -600,7 +586,7 @@ SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  !cd "${CMAKE_BINARY_DIR}\core\src\plugins\filed\${CMAKE_CONFIG_TYPE}"
+  !cd "${CMAKE_BINARY_DIR}\plugins"
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
   # do not package python3-fd for now
@@ -640,13 +626,28 @@ SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  !cd "${CMAKE_BINARY_DIR}\core\src\stored\${CMAKE_CONFIG_TYPE}"
+  !cd "${CMAKE_BINARY_DIR}\bin"
   File "bareossd.dll"
   File "bareos-sd.exe"
   File "btape.exe"
   File "bls.exe"
   File "bextract.exe"
   File "bscan.exe"
+
+  File "LIBPQ.dll"
+  File "bareos.dll"
+  File "bareosfastlz.dll"
+  File "bareosfind.dll"
+  File "bareossd.dll"
+  File "bareossql.dll"
+  File "iconv-2.dll"
+  File "intl-8.dll"
+  File "jansson.dll"
+  File "libcrypto-3-x64.dll"
+  File "libssl-3-x64.dll"
+  File "lzo2.dll"
+  File "pthreadVCE3.dll"
+  File "zlib1.dll"
 
   CreateDirectory "C:\bareos-storage"
 
@@ -665,8 +666,10 @@ SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  !cd "${CMAKE_BINARY_DIR}\core\src\plugins\stored\${CMAKE_CONFIG_TYPE}"
+  !cd "${CMAKE_BINARY_DIR}\plugins"
   File "autoxflate-sd.dll"
+  File "iconv-2.dll"
+  File "intl-8.dll"
   # File "python3-sd.dll"
 SectionEnd
 
@@ -702,14 +705,26 @@ SectionIn 2
   CreateDirectory "$APPDATA\${PRODUCT_NAME}\scripts"
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  !cd "${CMAKE_BINARY_DIR}\core\src\dird\${CMAKE_CONFIG_TYPE}"
-  File "*.dll"
+  !cd "${CMAKE_BINARY_DIR}\bin"
   File "bareos-dir.exe"
   File "bareos-dbcheck.exe"
-  !cd "${CMAKE_BINARY_DIR}\core\src\tools\${CMAKE_CONFIG_TYPE}"
   File "bsmtp.exe"
   File "bregex.exe"
   File "bwild.exe"
+
+  File "LIBPQ.dll"
+  File "bareos.dll"
+  File "bareosfastlz.dll"
+  File "bareosfind.dll"
+  File "bareossql.dll"
+  File "iconv-2.dll"
+  File "intl-8.dll"
+  File "jansson.dll"
+  File "libcrypto-3-x64.dll"
+  File "libssl-3-x64.dll"
+  File "lzo2.dll"
+  File "pthreadVCE3.dll"
+  File "zlib1.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
@@ -863,8 +878,28 @@ SectionIn 1 2
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
 
-  File "${CMAKE_BINARY_DIR}\core\src\qt-tray-monitor\${CMAKE_CONFIG_TYPE}\bareos-tray-monitor.exe"
-  File "${CMAKE_BINARY_DIR}\core\src\qt-tray-monitor\${CMAKE_CONFIG_TYPE}\*.dll"
+  !cd "${CMAKE_BINARY_DIR}\bin"
+  File "bareos-tray-monitor.exe"
+  File "Qt6Core.dll"
+  File "Qt6Gui.dll"
+  File "Qt6Widgets.dll"
+  File "bareos.dll"
+  File "bareosfastlz.dll"
+  File "brotlicommon.dll"
+  File "brotlidec.dll"
+  File "bz2.dll"
+  File "double-conversion.dll"
+  File "freetype.dll"
+  File "iconv-2.dll"
+  File "intl-8.dll"
+  File "jansson.dll"
+  File "libcrypto-3-x64.dll"
+  File "libpng16.dll"
+  File "libssl-3-x64.dll"
+  File "lzo2.dll"
+  File "pcre2-16.dll"
+  File "pthreadVCE3.dll"
+  File "zlib1.dll"
 
   #
   SetOutPath "$INSTDIR\platforms"
@@ -894,7 +929,7 @@ Section "Bareos Webui" SEC_WEBUI
    File /r "${PHP_BASE_DIR}\*.*"
 
    SetOutPath "$INSTDIR\bareos-webui"
-   File /r "${CMAKE_SOURCE_DIR}\webui\*.*"
+   File /r /x .gitignore "${CMAKE_SOURCE_DIR}\webui\*.*"
 
 #IfSilent skip_vc_redist_check
 #   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
@@ -987,9 +1022,19 @@ SectionIn 2
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
-  !cd "${CMAKE_BINARY_DIR}\core\src\console\${CMAKE_CONFIG_TYPE}"
+  !cd "${CMAKE_BINARY_DIR}\bin"
   File "bconsole.exe"
-  File "*.dll"
+  File "bareos.dll"
+  File "bareosfastlz.dll"
+  File "iconv-2.dll"
+  File "intl-8.dll"
+  File "jansson.dll"
+  File "libcrypto-3-x64.dll"
+  File "libssl-3-x64.dll"
+  File "lzo2.dll"
+  File "pthreadVCE3.dll"
+  File "readline.dll"
+  File "zlib1.dll"
   !insertmacro InstallConfFile "bconsole.conf"
   #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
@@ -1445,14 +1490,10 @@ done:
   File "msys-iconv-2.dll"
 
   # for password generation
-  !cd "C:\Program Files\Git\mingw64\bin"
-  File "openssl.exe"
-  File libcrypto-3-x64.dll
-  File libssl-3-x64.dll
+  File "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
+  File "C:\vcpkg\installed\x64-windows\bin\libcrypto-3-x64.dll"
+  File "C:\vcpkg\installed\x64-windows\bin\libssl-3-x64.dll"
 
-  !cd "C:\vcpkg\installed\x64-windows\debug\bin"
-  File iconv-2.dll
-  File intl-8.dll
 
   File ${CMAKE_BINARY_DIR}\core\src\console\bconsole.conf
   !cd ${CMAKE_SOURCE_DIR}\core\src\cats\ddl
