@@ -268,9 +268,9 @@ struct WMI {
       auto error_res = GetErrorInfo(0, &Info);
 
       if (FAILED(error_res)) {
-        LOG(L"Could not retrieve error info.  Err={} ({})", ErrorString(error_res), (uint64_t)error_res);
+        LOG(L"Could not retrieve error info.  Err={} ({})",
+            ErrorString(error_res), (uint64_t)error_res);
       } else {
-
         BSTR Desc = nullptr;
         GUID Guid = {};
         DWORD HelpContext = 0;
@@ -285,16 +285,16 @@ struct WMI {
 
         auto MakeStrView = [](BSTR val) -> std::wstring_view {
           if (!val) { return L"<empty>"; }
-          return { val, SysStringLen(val) };
+          return {val, SysStringLen(val)};
         };
 
 
-        LOG(L"{}({:x}:{:x}:{:x}:{:x}{:x}{:x}{:x}{:x}{:x}{:x}{:x}): {}; See {} ({})",
+        LOG(L"{}({:x}:{:x}:{:x}:{:x}{:x}{:x}{:x}{:x}{:x}{:x}{:x}): {}; See {} "
+            L"({})",
             MakeStrView(Source), Guid.Data1, Guid.Data2, Guid.Data3,
             Guid.Data4[0], Guid.Data4[1], Guid.Data4[2], Guid.Data4[3],
             Guid.Data4[4], Guid.Data4[5], Guid.Data4[6], Guid.Data4[7],
-            MakeStrView(Desc), MakeStrView(HelpFile), HelpContext
-           );
+            MakeStrView(Desc), MakeStrView(HelpFile), HelpContext);
 
         // if (Desc) { SysFreeString(Desc); }
         // if (HelpFile) { SysFreeString(HelpFile); }
@@ -322,7 +322,9 @@ class VirtualSystemExportSettingData {
       return Class{std::move(clz.value()), &wmi};
     }
 
-    WMI::Result<WMI::SystemString> GetText(const VirtualSystemExportSettingData& settings) {
+    WMI::Result<WMI::SystemString> GetText(
+        const VirtualSystemExportSettingData& settings)
+    {
       // BSTR content = nullptr;
       // auto hres = instance->GetObjectText(0, &content);
       // if (FAILED(hres)) {
@@ -350,27 +352,33 @@ class VirtualSystemExportSettingData {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"DifferentialBackupBase", settings.differential_backup_base_path)) {
+      if (!Set(instance, L"DifferentialBackupBase",
+               settings.differential_backup_base_path)) {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"DisableDifferentialOfIgnoredStorage", settings.disable_differential_of_ignored_storage)) {
+      if (!Set(instance, L"DisableDifferentialOfIgnoredStorage",
+               settings.disable_differential_of_ignored_storage)) {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"ExportForLiveMigration", settings.export_for_live_migration)) {
+      if (!Set(instance, L"ExportForLiveMigration",
+               settings.export_for_live_migration)) {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"BackupIntent", static_cast<std::uint8_t>(settings.backup_intent))) {
+      if (!Set(instance, L"BackupIntent",
+               static_cast<std::uint8_t>(settings.backup_intent))) {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"SnapshotVirtualSystem", settings.snapshot_virtual_system_path)) {
+      if (!Set(instance, L"SnapshotVirtualSystem",
+               settings.snapshot_virtual_system_path)) {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"CreateVmExportSubdirectory", settings.create_vm_export_subdirectory)) {
+      if (!Set(instance, L"CreateVmExportSubdirectory",
+               settings.create_vm_export_subdirectory)) {
         instance->Release();
         return std::nullopt;
       }
@@ -378,15 +386,19 @@ class VirtualSystemExportSettingData {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"CopyVmRuntimeInformation", settings.copy_vm_runtime_information)) {
+      if (!Set(instance, L"CopyVmRuntimeInformation",
+               settings.copy_vm_runtime_information)) {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"CopySnapshotConfiguration", static_cast<std::uint8_t>(settings.copy_snapshot_configuration))) {
+      if (!Set(instance, L"CopySnapshotConfiguration",
+               static_cast<std::uint8_t>(
+                   settings.copy_snapshot_configuration))) {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"CaptureLiveState", static_cast<std::uint8_t>(settings.capture_live_state))) {
+      if (!Set(instance, L"CaptureLiveState",
+               static_cast<std::uint8_t>(settings.capture_live_state))) {
         instance->Release();
         return std::nullopt;
       }
@@ -395,8 +407,7 @@ class VirtualSystemExportSettingData {
         BSTR text = nullptr;
         auto text_res = instance->GetObjectText(0, &text);
         if (!FAILED(text_res)) {
-          LOG(L"Instance = {}",
-              std::wstring_view{text, SysStringLen(text)});
+          LOG(L"Instance = {}", std::wstring_view{text, SysStringLen(text)});
           SysFreeString(text);
         }
       }
@@ -408,11 +419,9 @@ class VirtualSystemExportSettingData {
 
       IWbemContext* context = nullptr;
 
-      auto res3 = CoCreateInstance (CLSID_WbemContext,
-                                    NULL,
-                                    CLSCTX_INPROC_SERVER,
-                                    IID_IWbemContext,
-                                    (void**) &context);
+      auto res3
+          = CoCreateInstance(CLSID_WbemContext, NULL, CLSCTX_INPROC_SERVER,
+                             IID_IWbemContext, (void**)&context);
 
       if (FAILED(res3)) {
         LOG(L"CoCreateInstance() failed.  Err={} ({:X})",
@@ -422,15 +431,13 @@ class VirtualSystemExportSettingData {
       }
 
       IWbemObjectTextSrc* text_source;
-      auto res = CoCreateInstance (CLSID_WbemObjectTextSrc, 
-                                   NULL,
-                                   CLSCTX_INPROC_SERVER,
-                                   IID_IWbemObjectTextSrc,
-                                   (void**) &text_source);
+      auto res = CoCreateInstance(CLSID_WbemObjectTextSrc, NULL,
+                                  CLSCTX_INPROC_SERVER, IID_IWbemObjectTextSrc,
+                                  (void**)&text_source);
 
       if (FAILED(res)) {
-        LOG(L"CoCreateInstance() failed.  Err={} ({:X})",
-            WMI::ErrorString(res), (uint32_t)res);
+        LOG(L"CoCreateInstance() failed.  Err={} ({:X})", WMI::ErrorString(res),
+            (uint32_t)res);
         context->Release();
         instance->Release();
         return std::nullopt;
@@ -438,19 +445,17 @@ class VirtualSystemExportSettingData {
 
       BSTR text = nullptr;
 
-      auto res2 = text_source->GetText(0, instance,
-                                       WMI_OBJ_TEXT_CIM_DTD_2_0,
-                                       context,
-                                       &text);
+      auto res2 = text_source->GetText(0, instance, WMI_OBJ_TEXT_WMI_DTD_2_0,
+                                       context, &text);
 
       text_source->Release();
       instance->Release();
       context->Release();
 
       if (FAILED(res2)) {
-      LOG(L"GetText() failed.  Err={} ({:X})",
-          WMI::ErrorString(res2), (uint32_t)res2);
-      return std::nullopt;
+        LOG(L"GetText() failed.  Err={} ({:X})", WMI::ErrorString(res2),
+            (uint32_t)res2);
+        return std::nullopt;
       }
 
       return WMI::SystemString{text};
@@ -465,10 +470,9 @@ class VirtualSystemExportSettingData {
     template <typename U>
     WMI::Result<throwaway> Set(IWbemClassObject* instance,
                                const wchar_t* member,
-                               const std::optional<U>& value) {
-      if (value) {
-        return Set(instance, member, value.value());
-      }
+                               const std::optional<U>& value)
+    {
+      if (value) { return Set(instance, member, value.value()); }
 
       return throwaway{};
     }
@@ -483,8 +487,8 @@ class VirtualSystemExportSettingData {
       V_BSTR(&Arg) = svalue.get();
       auto result = instance->Put(member, 0, &Arg, 0);
       if (FAILED(result)) {
-        LOG(L"Set(ExportSetting, {}, {}) failed.  Err={} ({:X})",
-            member, value, WMI::ErrorString(result), (uint64_t)result);
+        LOG(L"Set(ExportSetting, {}, {}) failed.  Err={} ({:X})", member, value,
+            WMI::ErrorString(result), (uint64_t)result);
         return std::nullopt;
       }
 
@@ -492,16 +496,16 @@ class VirtualSystemExportSettingData {
     }
 
     WMI::Result<throwaway> Set(IWbemClassObject* instance,
-                                    const wchar_t* member,
-                                    bool value)
+                               const wchar_t* member,
+                               bool value)
     {
       VARIANT Arg;
       V_VT(&Arg) = VT_BOOL;
       V_BOOL(&Arg) = value;
       auto result = instance->Put(member, 0, &Arg, 0);
       if (FAILED(result)) {
-        LOG(L"Set(ExportSetting, {}, {}) failed.  Err={} ({:X})",
-            member, value, WMI::ErrorString(result), (uint64_t)result);
+        LOG(L"Set(ExportSetting, {}, {}) failed.  Err={} ({:X})", member, value,
+            WMI::ErrorString(result), (uint64_t)result);
         return std::nullopt;
       }
 
@@ -516,8 +520,8 @@ class VirtualSystemExportSettingData {
       V_UI1(&Arg) = value;
       auto result = instance->Put(member, 0, &Arg, 0);
       if (FAILED(result)) {
-        LOG(L"Set(ExportSetting, {}, {}) failed.  Err={} ({:X})",
-            member, value, WMI::ErrorString(result), (uint64_t)result);
+        LOG(L"Set(ExportSetting, {}, {}) failed.  Err={} ({:X})", member, value,
+            WMI::ErrorString(result), (uint64_t)result);
         return std::nullopt;
       }
 
@@ -525,14 +529,14 @@ class VirtualSystemExportSettingData {
     }
 
     Class(WMI::Class clz_, const WMI* service_)
-        : clz{std::move(clz_)}
-        , service{service_}
+        : clz{std::move(clz_)}, service{service_}
     {
     }
   };
 
 
-  enum class CaptureLiveState : std::uint8_t {
+  enum class CaptureLiveState : std::uint8_t
+  {
     CrashConsistent = 0,
     Saved = 1,
     AppConsistent = 2,
@@ -548,7 +552,8 @@ class VirtualSystemExportSettingData {
   //   return std::nullopt;
   // }
 
-  enum class CopySnapshotConfiguration : std::uint8_t {
+  enum class CopySnapshotConfiguration : std::uint8_t
+  {
     ExportAllSnapshots = 0,
     ExportNoSnapShots = 1,
     ExportOneSnapshot = 2,
@@ -574,7 +579,8 @@ class VirtualSystemExportSettingData {
   // {
   //   return std::nullopt;
   // }
-  // WMI::Result<void> DisableDifferentialOfIgnoredStorage(bool do_ignore = true)
+  // WMI::Result<void> DisableDifferentialOfIgnoredStorage(bool do_ignore =
+  // true)
   // {
   //   return std::nullopt;
   // }
@@ -583,15 +589,18 @@ class VirtualSystemExportSettingData {
   //   return std::nullopt;
   // }
 
-  enum class BackupIntent : std::uint8_t {
-    BackupIntentPreserveChain = 0, // i.e. we want to store full/diff separately
-    BackupIntentMerge = 1, // i.e. we want to consolidate full/diff
+  enum class BackupIntent : std::uint8_t
+  {
+    BackupIntentPreserveChain
+    = 0,                    // i.e. we want to store full/diff separately
+    BackupIntentMerge = 1,  // i.e. we want to consolidate full/diff
   };
   // WMI::Result<void> Set_BackupIntent(BackupIntent intent)
   // {
   //   return std::nullopt;
   // }
-  // WMI::Result<void> Set_ExcludeVirtualHardDisks(const std::vector<WMI::SystemString>& hard_disks)
+  // WMI::Result<void> Set_ExcludeVirtualHardDisks(const
+  // std::vector<WMI::SystemString>& hard_disks)
   // {
   //   // NOT IMPLEMENTED
   //   (void) hard_disks;
@@ -654,18 +663,19 @@ class VirtualSystemManagementService {
   struct ComputerSystem {
     IWbemClassObject* system;
 
-    WMI::Result<WMI::SystemString> Path() const {
+    WMI::Result<WMI::SystemString> Path() const
+    {
       VARIANT Arg;
       CIMTYPE Type;
-      auto hres
-        = system->Get(L"__PATH", 0, &Arg, &Type, nullptr);
+      auto hres = system->Get(L"__PATH", 0, &Arg, &Type, nullptr);
 
       if (FAILED(hres)) {
         LOG(L"Get(ComputerSystem, __PATH) failed.  Err={} ({:X})",
             WMI::ErrorString(hres), (uint64_t)hres);
         return std::nullopt;
       } else if (Type != CIM_STRING) {
-        LOG(L"Get(ComputerSystem, __PATH) returned bad type detected.  Type={}", Type);
+        LOG(L"Get(ComputerSystem, __PATH) returned bad type detected.  Type={}",
+            Type);
         return std::nullopt;
       }
       return WMI::SystemString{V_BSTR(&Arg)};
@@ -813,7 +823,8 @@ class VirtualSystemManagementService {
       //  }
 
       // BSTR system_str = nullptr;
-      // auto name_res = TargetSystem.system->GetObjectText(WBEM_FLAG_NO_FLAVORS, &system_str);
+      // auto name_res =
+      // TargetSystem.system->GetObjectText(WBEM_FLAG_NO_FLAVORS, &system_str);
       // if (FAILED(name_res)) {
       //   LOG(L"GetObjectText(ComputerSystem) failed.  Err={} ({:X})",
       //       WMI::ErrorString(name_res), (uint64_t)name_res);
@@ -857,8 +868,8 @@ class VirtualSystemManagementService {
       //     LOG(L"Get(ComputerSystem, __PATH) failed.  Err={} ({:X})",
       //         WMI::ErrorString(name_res), (uint64_t)name_res);
       //   } else {
-      //     if (Type2 != CIM_STRING) { LOG(L"Bad type detected.  Type={}", Type2); }
-      //     else { LOG(L"__PATH = {}",
+      //     if (Type2 != CIM_STRING) { LOG(L"Bad type detected.  Type={}",
+      //     Type2); } else { LOG(L"__PATH = {}",
       //                WMI::SystemString{V_BSTR(&Arg2)}.as_view()
       //               ); }
       //     VariantClear(&Arg2);
@@ -868,14 +879,15 @@ class VirtualSystemManagementService {
       //   VARIANT Arg2;
       //   CIMTYPE Type2;
       //   auto name_res
-      //     = TargetSystem.system->Get(L"__RELPATH", 0, &Arg2, &Type2, nullptr);
+      //     = TargetSystem.system->Get(L"__RELPATH", 0, &Arg2, &Type2,
+      //     nullptr);
 
       //   if (FAILED(name_res)) {
       //     LOG(L"Get(ComputerSystem, __RELPATH) failed.  Err={} ({:X})",
       //         WMI::ErrorString(name_res), (uint64_t)name_res);
       //   } else {
-      //     if (Type2 != CIM_STRING) { LOG(L"Bad type detected.  Type={}", Type2); }
-      //     else { LOG(L"__RELPATH = {}",
+      //     if (Type2 != CIM_STRING) { LOG(L"Bad type detected.  Type={}",
+      //     Type2); } else { LOG(L"__RELPATH = {}",
       //                WMI::SystemString{V_BSTR(&Arg2)}.as_view()
       //               ); }
       //     VariantClear(&Arg2);
@@ -1054,14 +1066,16 @@ bool Test(const WMI& service)
   auto vsesd = VirtualSystemExportSettingData::Class::load(service);
 
   VirtualSystemExportSettingData settings = {
-    .description = L"Hallo, Welt!"
+      .capture_live_state
+      = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+      .copy_vm_storage = false,
+      .create_vm_export_subdirectory = true,
+      .copy_vm_runtime_information = true,
   };
 
   WMI::Result options = vsesd->GetText(settings);
 
-  if (!options) {
-    return false;
-  }
+  if (!options) { return false; }
 
   auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
 
