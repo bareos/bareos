@@ -465,7 +465,7 @@ retry_fetch:
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
          "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN "
-         "('Full',"
+         "('Unlabeled', 'Full',"
          "'Recycle','Purged','Used','Append') AND Enabled=1 "
          "ORDER BY LastWritten LIMIT %d",
          edit_int64(mr->PoolId, ed1), esc_type, item);
