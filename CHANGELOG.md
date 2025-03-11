@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - stored: fix crash when using jit reservation with no matching device; fix reservation error [PR #2184]
 - VMware plugin: fix check_mac_address() for vm.config not present [PR #2177]
+- cleanup: fix multi-config tests [PR #2203]
 
 ### Changed
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2195]
@@ -406,4 +407,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2184]: https://github.com/bareos/bareos/pull/2184
 [PR #2195]: https://github.com/bareos/bareos/pull/2195
 [PR #2199]: https://github.com/bareos/bareos/pull/2199
+[PR #2203]: https://github.com/bareos/bareos/pull/2203
 [unreleased]: https://github.com/bareos/bareos/tree/master
