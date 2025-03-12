@@ -91,11 +91,14 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
     //  1. Look for volume with "Append" status.
     SetStorageidInMr(store, mr);
 
-    bstrncpy(mr->VolStatus, "Unlabeled", sizeof(mr->VolStatus));
+    bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
     if (!ok) {
-      bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
+      bstrncpy(mr->VolStatus, "Unlabeled", sizeof(mr->VolStatus));
       ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
+    }
+    if (!ok) {
+      bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     }
     
     if (!ok) {
