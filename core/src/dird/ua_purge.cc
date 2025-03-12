@@ -480,7 +480,7 @@ void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
 bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
 {
   bool status
-      = bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full")
+      = bstrcmp(mr->VolStatus, "Unlabeled") || bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full")
         || bstrcmp(mr->VolStatus, "Used") || bstrcmp(mr->VolStatus, "Error");
   if (!status) {
     ua->ErrorMsg(
@@ -797,7 +797,7 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
   JobControlRecord* jcr = ua->jcr;
   bool status;
 
-  status = bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full")
+  status = bstrcmp(mr->VolStatus, "Unlabeled") || bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full")
            || bstrcmp(mr->VolStatus, "Used") || bstrcmp(mr->VolStatus, "Error");
 
   if (status) {
