@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2409,7 +2409,6 @@ static void unfillcmd()
  */
 static bool do_unfill()
 {
-  DeviceBlock* block = g_dcr->block;
   int autochanger;
   bool rc = false;
 
@@ -2493,7 +2492,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(last_block, block)) {
+  if (CompareBlocks(last_block, g_dcr->block)) {
     if (simple) {
       Pmsg0(-1,
             T_("\nThe last block on the tape matches. Test succeeded.\n\n"));
@@ -2529,12 +2528,18 @@ static bool do_unfill()
     goto bail_out;
   }
 
+  // read volume label
+  if (int err = ReadDevVolumeLabel(g_dcr); err != VOL_OK) {
+    Pmsg1(-1, T_("Error reading label. ERR=%d\n"), err);
+    goto bail_out;
+  }
+
   /* Space to "first" block which is last block not written
    * on the previous tape.
    */
-  Pmsg2(-1, T_("Reposition from %u:%u to 0:1\n"), g_dev->file,
+  Pmsg2(-1, T_("Reposition from %u:%u to 1:0\n"), g_dev->file,
         g_dev->block_num);
-  if (!g_dev->Reposition(g_dcr, 0, 1)) {
+  if (!g_dev->Reposition(g_dcr, 1, 0)) {
     Pmsg1(-1, T_("Reposition error. ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
@@ -2544,7 +2549,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(first_block, block)) {
+  if (CompareBlocks(first_block, g_dcr->block)) {
     Pmsg0(-1, T_("\nThe first block on the second tape matches.\n\n"));
   }
 
@@ -2561,7 +2566,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), g_dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(last_block, block)) {
+  if (CompareBlocks(last_block, g_dcr->block)) {
     Pmsg0(-1, T_("\nThe last block on the second tape matches. Test "
                  "succeeded.\n\n"));
     rc = true;
