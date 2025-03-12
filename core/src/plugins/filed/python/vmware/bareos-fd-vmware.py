@@ -2155,6 +2155,46 @@ class BareosVADPWrapper(object):
         if transformer.config_spec_delayed:
             self.adapt_vm_config(transformer.config_spec_delayed)
 
+        if not self.check_created_vm(config_info):
+            return False
+
+        return True
+
+    def check_created_vm(self, config_info):
+        """
+        Consistency check recreated VM
+        """
+        # Currently, this function only checks VirtualUSB devices.
+        # VirtualUSB devices can only be attached to one VM in most cases.
+        # When recreating a VM which had a VirtualUSB device at backup time,
+        # this normally succeeds, but when powering on and the USB device
+        # is attached to a different running VM, it will disappear. When
+        # powered off, it will appear again.
+        # This is normally not a critical problem, so only emit a warning.
+
+        backup_virutal_usb_devices = [
+            device
+            for device in config_info["hardware"]["device"]
+            if device["_vimtype"] == "vim.vm.device.VirtualUSB"
+        ]
+        vm_virtual_usb_devices = [
+            device
+            for device in self.vm.config.hardware.device
+            if type(device) == vim.vm.device.VirtualUSB
+        ]
+        if len(backup_virutal_usb_devices) > 0:
+            if len(backup_virutal_usb_devices) != len(vm_virtual_usb_devices):
+                bareosfd.JobMessage(
+                    bareosfd.M_WARNING,
+                    "VirtualUSB device(s) could not be added to restored VM\n",
+                )
+            else:
+                bareosfd.JobMessage(
+                    bareosfd.M_WARNING,
+                    "VM restored with %s VirtualUSB device(s), could disappear when powered on if attached to different running VM\n"
+                    % (len(backup_virutal_usb_devices)),
+                )
+
         return True
 
     def create_vm_snapshot(self):
@@ -3972,6 +4012,8 @@ class BareosVmConfigInfoToSpec(object):
                 add_device = self._transform_virtual_pci_passthrough(device)
             elif device["_vimtype"] == "vim.vm.device.VirtualEnsoniq1371":
                 add_device = self._transform_virtual_ensoniq1371(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualUSB":
+                add_device = self._transform_virtual_usb(device)
             else:
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
@@ -4201,6 +4243,38 @@ class BareosVmConfigInfoToSpec(object):
             add_device.connectable = self._transform_connectable(device)
 
         self._transform_controllerkey_and_unitnumber(add_device, device)
+
+        return add_device
+
+    def _transform_virtual_usb(self, device):
+        add_device = vim.vm.device.VirtualUSB()
+        add_device.key = device["key"] * -1
+        if device["backing"]["_vimtype"] == "vim.vm.device.VirtualUSB.USBBackingInfo":
+            add_device.backing = vim.vm.device.VirtualUSB.USBBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualUSB.RemoteHostBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualUSB.RemoteHostBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+            add_device.backing.hostname = device["backing"]["hostname"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualUSB: %s" % (device["backing"]["_vimtype"])
+            )
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        self._transform_controllerkey_and_unitnumber(add_device, device)
+
+        add_device.family = device["family"]
+        add_device.product = device["product"]
+        add_device.speed = device["speed"]
+        add_device.vendor = device["vendor"]
 
         return add_device
 
