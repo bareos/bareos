@@ -100,7 +100,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
     if (!ok) {
       bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     }
-    
+
     if (!ok) {
       // No volume found, apply algorithm
       Dmsg4(debuglevel,
@@ -302,7 +302,7 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   }
 
   // Now see if we can use the volume as is
-  if (bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Recycle")) {
+  if (bstrcmp(mr->VolStatus, "Unlabeled") || bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Recycle")) {
     *reason = NULL;
     return;
   }
