@@ -5,6 +5,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Attention VMware users
+Due to a bug in the VMware plugin it is possible that in some cases an incremental or differential backup did not pick up all changes.
+This bug was fixed in [PR #2183], but your current VMware machine backups could be broken.
+It is therefore strongly suggested to immediately schedule a full backup of your virtual machines after upgrading the file daemon and VMware plugin to 23.1.2.
+
 ### Documentation
 - docs: add worm support paragraph [PR #2054]
 
@@ -12,7 +17,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - macos: update build environment [PR #2074]
 - dedupable device: fix example files [PR #2034]
 - NDMP_NATIVE: enable full restore, eject tape before unload, enable update of NDMP environment [PR #2017]
-- VMware Plugin: Fix CBT query handling [PR #2183]
 - alist: fix race condition while iterating [PR #2016]
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2196]
 
@@ -22,6 +26,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - windows: fix readlink buffer size issue [PR #2162]
 - stored: fix crash when using jit reservation with no matching device; fix reservation error [PR #2185]
 - VMware plugin: fix check_mac_address() for vm.config not present [PR #2178]
+- VMware Plugin: Fix CBT query handling [PR #2183]
 
 ## [23.1.1] - 2024-12-02
 
