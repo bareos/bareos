@@ -91,11 +91,15 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
     //  1. Look for volume with "Append" status.
     SetStorageidInMr(store, mr);
 
-    bstrncpy(mr->VolStatus, "Unlabeled", sizeof(mr->VolStatus));
+    bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
+    //  2. Look for volume with "Unlabeled" status.
+    if (!ok) {
+      bstrncpy(mr->VolStatus, "Unlabeled", sizeof(mr->VolStatus));
+      ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
+    }
     if (!ok) {
       bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
-      ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
     }
     
     if (!ok) {
@@ -104,18 +108,18 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
             "after find_next_vol ok=%d index=%d InChanger=%d Vstat=%s\n", ok,
             index, InChanger, mr->VolStatus);
 
-      // 2. Try finding a recycled volume
+      // 3. Try finding a recycled volume
       ok = FindRecycledVolume(jcr, InChanger, mr, store, unwanted_volumes);
       SetStorageidInMr(store, mr);
       Dmsg2(debuglevel, "FindRecycledVolume ok=%d FW=%lld\n", ok,
             static_cast<long long>(mr->FirstWritten));
       if (!ok) {
-        // 3. Try recycling any purged volume
+        // 4. Try recycling any purged volume
         ok = RecycleOldestPurgedVolume(jcr, InChanger, mr, store,
                                        unwanted_volumes);
         SetStorageidInMr(store, mr);
         if (!ok) {
-          // 4. Try pruning Volumes
+          // 5. Try pruning Volumes
           if (prune) {
             Dmsg0(debuglevel, "Call PruneVolumes\n");
             PruneVolumes(jcr, InChanger, mr, store);
@@ -128,7 +132,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
                   "after prune volumes_vol ok=%d index=%d InChanger=%d "
                   "Vstat=%s\n",
                   ok, index, InChanger, mr->VolStatus);
-            // 5. Try pulling a volume from the Scratch pool
+            // 6. Try pulling a volume from the Scratch pool
             ok = GetScratchVolume(jcr, InChanger, mr, store);
             SetStorageidInMr(store, mr); /* put StorageId in new record */
             Dmsg4(debuglevel,
@@ -146,7 +150,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       }
 
       if (!ok && create) {
-        // 6. Try "creating" a new Volume
+        // 7. Try "creating" a new Volume
         ok = newVolume(jcr, mr, store);
       }
 
@@ -167,14 +171,14 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
         if (ok && prune) {
           UaContext* ua;
           Dmsg0(debuglevel, "Try purge Volume.\n");
-          // 7.  Try to purging oldest volume only if not UA calling us.
+          // 8.  Try to purging oldest volume only if not UA calling us.
           ua = new_ua_context(jcr);
           if (jcr->dir_impl->res.pool->purge_oldest_volume && create) {
             Jmsg(jcr, M_INFO, 0, T_("Purging oldest volume \"%s\"\n"),
                  mr->VolumeName);
             ok = PurgeJobsFromVolume(ua, mr);
           } else if (jcr->dir_impl->res.pool->recycle_oldest_volume) {
-            // 8. Try recycling the oldest volume
+            // 9. Try recycling the oldest volume
             Jmsg(jcr, M_INFO, 0, T_("Pruning oldest volume \"%s\"\n"),
                  mr->VolumeName);
             ok = PruneVolume(ua, mr);
