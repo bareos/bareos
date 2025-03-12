@@ -390,8 +390,8 @@ bool GetScratchVolume(JobControlRecord* jcr,
       smr.StorageId = mr->StorageId; /* want only Scratch Volumes in changer */
     }
 
-    bstrncpy(smr.VolStatus, "Append",
-             sizeof(smr.VolStatus)); /* want only appendable volumes */
+    bstrncpy(smr.VolStatus, "Unlabeled",
+             sizeof(smr.VolStatus)); /* want only unlabeled volumes */
     bstrncpy(smr.MediaType, mr->MediaType, sizeof(smr.MediaType));
 
     /* If we do not find a valid Scratch volume, try recycling any existing
