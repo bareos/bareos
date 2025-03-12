@@ -34,6 +34,8 @@ using namespace std;
 #include <source_location>
 #include <vector>
 #include <string>
+#include <chrono>
+#include <thread>
 
 struct Logger {
   Logger(std::source_location sloc = std::source_location::current())
@@ -164,6 +166,28 @@ struct WMI {
 
   template <typename T> using Result = std::optional<T>;
 
+  struct ClassObject {
+    IWbemClassObject* system;
+
+    WMI::Result<WMI::SystemString> Path() const
+    {
+      VARIANT Arg;
+      CIMTYPE Type;
+      auto hres = system->Get(L"__PATH", 0, &Arg, &Type, nullptr);
+
+      if (FAILED(hres)) {
+        LOG(L"Get(ComputerSystem, __PATH) failed.  Err={} ({:X})",
+            WMI::ErrorString(hres), (uint64_t)hres);
+        return std::nullopt;
+      } else if (Type != CIM_STRING) {
+        LOG(L"Get(ComputerSystem, __PATH) returned bad type detected.  Type={}",
+            Type);
+        return std::nullopt;
+      }
+      return WMI::SystemString{V_BSTR(&Arg)};
+    }
+  };
+
   // template <typename T> class Result {
   //   union {
   //     T success;
@@ -252,16 +276,20 @@ struct WMI {
     return Method{std::move(copy), parameter_def};
   }
 
-  IWbemClassObject* ExecMethod(const Class& clz,
+  IWbemClassObject* ExecMethod(const ClassObject& clz,
                                const Method& method,
                                IWbemClassObject* Parameter) const
   {
     IWbemClassObject* OutParams = nullptr;
-    auto result = service->ExecMethod(clz.Name.get(), method.Name.get(), 0,
-                                      NULL, Parameter, &OutParams, NULL);
+    auto Path = clz.Path();
+    if (!Path) { return nullptr; }
+    LOG(L"Path = {}", Path->as_view());
+    auto result = service->ExecMethod(Path->get(), method.Name.get(), 0, NULL,
+                                      Parameter, &OutParams, NULL);
 
+    LOG(L"result = {}", result);
     if (FAILED(result)) {
-      LOG(L"{}->{} failed.  Err={} ({:X})", clz.Name.as_view(),
+      LOG(L"{}->{} failed.  Err={} ({:X})", Path->as_view(),
           method.Name.as_view(), ErrorString(result), (uint64_t)result);
 
       IErrorInfo* Info = nullptr;
@@ -306,7 +334,46 @@ struct WMI {
       return nullptr;
     }
 
+    LOG(L"Success! OutParams = {}", (const void*)OutParams);
     return OutParams;
+  }
+
+
+  IWbemClassObject* QueryFirst() const
+  {
+    IEnumWbemClassObject* pEnumerator = NULL;
+    auto hres = service->ExecQuery(
+        bstr_t("WQL"),
+        bstr_t("SELECT * FROM Msvm_VirtualSystemManagementService"),
+        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL,
+        &pEnumerator);
+
+    if (FAILED(hres)) {
+      LOG(L"ExportSettingData::ExecQuery() failed.  Err={} ({:X})",
+          WMI::ErrorString(hres), (uint64_t)hres);
+      return nullptr;
+    }
+
+    {
+      IWbemClassObject* pclsObj = NULL;
+      ULONG uReturn = 0;
+      HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
+
+      //      if (0 == uReturn) { break; }
+
+      VARIANT vtProp;
+
+      VariantInit(&vtProp);
+      // Get the value of the Name property
+      hr = pclsObj->Get(L"Name", 0, &vtProp, 0, 0);
+      LOG(L"Name {}", vtProp.bstrVal);
+      VariantClear(&vtProp);
+
+      pEnumerator->Release();
+      return pclsObj;
+    }
+
+    LOG(L"No instance found");
   }
 };
 
@@ -642,6 +709,14 @@ class VirtualSystemExportSettingData {
   bool disable_differential_of_ignored_storage = {};
 };
 
+WMI::SystemString ObjectAsString(IWbemClassObject* obj)
+{
+  BSTR representation = nullptr;
+  obj->GetObjectText(0, &representation);
+
+  return {representation};
+}
+
 class VirtualSystemManagementService {
   // Reference:
   // https://learn.microsoft.com/en-us/windows/win32/hyperv_v2/msvm-virtualsystemmanagementservice
@@ -798,6 +873,24 @@ class VirtualSystemManagementService {
       }
     }
     {
+      // {
+
+      //   VARIANT Arg2;
+      //   CIMTYPE Type;
+      //   auto hres = params->Get(L"ComputerSystem", 0, &Arg2, &Type, nullptr);
+
+      //   if (FAILED(hres)) {
+      //     LOG(L"Get(params, ComputerSystem) failed.  Err={} ({:X})",
+      //         WMI::ErrorString(hres), (uint64_t)hres);
+      //     return std::nullopt;
+      //   } else if (Type != CIM_REFERENCE) {
+      //     LOG(L"Get(ComputerSystem, __PATH) returned bad type detected.
+      //     Type={}",
+      //         Type);
+      //     return std::nullopt;
+      //   }
+
+      // }
       {
         auto* s = TargetSystem.system;
         BSTR class_name = nullptr;
@@ -809,18 +902,19 @@ class VirtualSystemManagementService {
       }
       VARIANT Arg;
       // VariantInit(&Arg);
-      //  Arg.vt = VT_UNKNOWN;
-      //  {
-      //    LOG(L"TargetSystem at {}", (void*) TargetSystem.system);
-      //    IUnknown* ptr = nullptr;
-      //    auto res = TargetSystem.system->QueryInterface(IID_IUnknown,
-      //    (void**)&ptr); if (FAILED(res)) {
-      //      LOG(L"QueryInterface failed.  Err=({:X})", (uint32_t) res);
-      //      return std::nullopt;
-      //    }
-      //    LOG(L"Got ptr {}", (void*)ptr);
-      //    Arg.punkVal = ptr;
-      //  }
+      // V_VT(&Arg) = VT_UNKNOWN;
+      // {
+      //   LOG(L"TargetSystem at {}", (void*) TargetSystem.system);
+      //   IUnknown* ptr = nullptr;
+      //   auto res = TargetSystem.system->QueryInterface(IID_IUnknown,
+      //                                                  (void**)&ptr);
+      //   if (FAILED(res)) {
+      //     LOG(L"QueryInterface failed.  Err=({:X})", (uint32_t) res);
+      //     return std::nullopt;
+      //   }
+      //   LOG(L"Got ptr {}", (void*)ptr);
+      //   V_UNKNOWN(&Arg) = ptr;
+      // }
 
       // BSTR system_str = nullptr;
       // auto name_res =
@@ -915,9 +1009,9 @@ class VirtualSystemManagementService {
       V_VT(&Arg) = VT_BSTR;
       V_BSTR(&Arg) = Path->get();
 
-      auto hres = params->Put(L"ComputerSystem", 0, &Arg, 0);
+      auto hres = params->Put(L"ComputerSystem", 0, &Arg, CIM_REFERENCE);
 
-      VariantClear(&Arg);
+      // VariantClear(&Arg);
 
       if (FAILED(hres)) {
         LOG(L"Put(ComputerSystem) failed.  Err={} ({:X})",
@@ -927,7 +1021,7 @@ class VirtualSystemManagementService {
     }
 
     {
-      auto* s = params;
+      auto* s = clz.class_ptr;
       BSTR class_name = nullptr;
       s->GetObjectText(0, &class_name);
 
@@ -936,31 +1030,151 @@ class VirtualSystemManagementService {
       SysFreeString(class_name);
     }
 
+    auto* obj = service->QueryFirst();
+    if (!obj) { return std::nullopt; }
 
-    auto result = service->ExecMethod(clz, export_system, params);
+    auto str = ObjectAsString(obj);
 
-    if (!result) { return std::nullopt; }
+    LOG(L"obj = {}", str.as_view());
+
+    auto result = service->ExecMethod({obj}, export_system, params);
+    LOG(L"Releasing ...");
+    obj->Release();
+    LOG(L"... done");
+
+    if (!result) {
+      LOG(L"Method failed...");
+      return std::nullopt;
+    }
 
     {
+      int i = 0;
+      LOG(L"{}", i++);
       VARIANT return_val;
       auto hres = result->Get(_bstr_t(L"ReturnValue"), 0, &return_val, NULL, 0);
+      LOG(L"{}", i++);
 
       if (FAILED(hres)) {
         LOG(L"Could not get return value.  Err={} ({:X})",
             WMI::ErrorString(hres), (uint64_t)hres);
         return std::nullopt;
       }
+      LOG(L"{}", i++);
 
-      if (return_val.vt != VT_UI4) {
+      if (V_VT(&return_val) != VT_I4) {
+        LOG(L"{} = {}", i++, return_val.vt);
         VariantClear(&return_val);
         return std::nullopt;
       }
+      LOG(L"{}", i++);
 
-      return return_val.uintVal;
+      auto actual_return = V_I4(&return_val);
+
+      LOG(L"function returned {}", actual_return);
+
+      static constexpr int ASYNC_RETURN = 4096;
+
+      if (actual_return == 4096) {
+        VARIANT JobV;
+        CIMTYPE JobType;
+        auto job_res = result->Get(_bstr_t(L"Job"), 0, &JobV, &JobType, 0);
+
+        if (FAILED(job_res)) {
+          LOG(L"Could not get job.  Err={} ({:X})", WMI::ErrorString(job_res),
+              (uint64_t)job_res);
+
+          return std::nullopt;
+        }
+
+        if (V_VT(&JobV) != VT_BSTR) {
+          LOG(L"{} = {}", i++, JobV.vt);
+          VariantClear(&JobV);
+          return std::nullopt;
+        }
+
+        if (JobType != CIM_REFERENCE) {
+          LOG(L"Bad JobType {}", i++, JobType);
+          VariantClear(&JobV);
+          return std::nullopt;
+        }
+
+        WMI::SystemString job_name{V_BSTR(&JobV)};
+        VariantClear(&JobV);
+
+        LOG(L"Found job = {}", job_name.as_view());
+
+        bool running = true;
+        while (running) {
+          // NOTE: we have to reacquire the same job over and over
+          //       as GetObject basically does a copy:
+          //       The state of that copy will never change!
+          IWbemClassObject* job = nullptr;
+          {
+            auto get_res = service->service->GetObject(job_name.get(), 0, NULL,
+                                                       &job, NULL);
+
+            if (FAILED(get_res)) {
+              LOG(L"Could not get job.  Err={} ({:X})",
+                  WMI::ErrorString(job_res), (uint64_t)job_res);
+              return std::nullopt;
+            }
+          }
+
+          LOG(L"Got Job = {}", ObjectAsString(job).as_view());
+
+          VARIANT job_state;
+          auto state_res = job->Get(L"JobState", 0, &job_state, NULL, 0);
+
+          if (FAILED(state_res)) {
+            LOG(L"Could not get job state.  Err={} ({:X})",
+                WMI::ErrorString(state_res), (uint64_t)state_res);
+            return std::nullopt;
+          }
+
+          if (V_VT(&job_state) != VT_I4) {
+            LOG(L"bad job state type = {}", job_state.vt);
+            VariantClear(&job_state);
+            return std::nullopt;
+          }
+
+          auto state = V_I4(&job_state);
+
+          enum JobState : std::int32_t
+          {
+            New = 2,
+            Starting = 3,
+            Running = 4,
+            Suspended = 5,
+            ShuttingDown = 6,
+            Completed = 7,
+            Terminated = 8,
+            Killed = 9,
+            Exception = 10,
+            Service = 11,
+            QueryPending = 12,
+          };
+
+          switch (state) {
+            case JobState::New:
+            case JobState::Starting:
+            case JobState::Running: {
+              LOG(L"Job still running in state {}.  Sleeping ...", state);
+
+              std::this_thread::sleep_for(std::chrono::seconds(1));
+            } break;
+            default: {
+              LOG(L"Job ended in state {}", state);
+              running = false;
+            } break;
+          }
+
+          job->Release();
+        }
+      }
+
+      result->Release();
+      return actual_return;
     }
-
-
-    return 0;
   }
 
  private:
@@ -1068,9 +1282,9 @@ bool Test(const WMI& service)
   VirtualSystemExportSettingData settings = {
       .capture_live_state
       = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+      .copy_vm_runtime_information = true,
       .copy_vm_storage = false,
       .create_vm_export_subdirectory = true,
-      .copy_vm_runtime_information = true,
   };
 
   WMI::Result options = vsesd->GetText(settings);
@@ -1191,7 +1405,7 @@ int main(int argc, char** argv)
   // For example, get the name of the operating system
   IEnumWbemClassObject* pEnumerator = NULL;
   hres = pSvc->ExecQuery(bstr_t("WQL"),
-                         bstr_t("SELECT * FROM Win32_OperatingSystem"),
+                         bstr_t("SELECT * FROM 32_OperatingSystem"),
                          WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
                          NULL, &pEnumerator);
 
