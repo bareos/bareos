@@ -30,6 +30,23 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
   return static_cast<std::underlying_type_t<Enum>>(e);
 }
 
+enum CIMReturnValue
+{
+  OK = 0,
+  JobStarted = 4096,
+  Failed = 32768,
+  AccessDenied = 32769,
+  NotSupported = 32770,
+  StatusIsUnknown = 32771,
+  Timeout = 32772,
+  InvalidParameter = 32773,
+  SystemIsInUsed = 32774,
+  InvalidStateForThisOperation = 32775,
+  IncorrectDataType = 32776,
+  SystemIsNotAvailable = 32777,
+  OutOfMemory = 32778,
+};
+
 
 using namespace std;
 
@@ -168,6 +185,28 @@ struct WMI {
     }
   };
 
+  struct ClassObject {
+    IWbemClassObject* system;
+
+    WMI::Result<WMI::SystemString> Path() const
+    {
+      VARIANT Arg;
+      CIMTYPE Type;
+      auto hres = system->Get(L"__PATH", 0, &Arg, &Type, nullptr);
+
+      if (FAILED(hres)) {
+        LOG(L"Get(ComputerSystem, __PATH) failed.  Err={} ({:X})",
+            WMI::ErrorString(hres), (uint64_t)hres);
+        return std::nullopt;
+      } else if (Type != CIM_STRING) {
+        LOG(L"Get(ComputerSystem, __PATH) returned bad type detected.  Type={}",
+            Type);
+        return std::nullopt;
+      }
+      return WMI::SystemString{V_BSTR(&Arg)};
+    }
+  };
+
 
   struct Method {
     struct Parameter {
@@ -210,6 +249,16 @@ struct WMI {
       }
 
       Result<throwaway> Put(const wchar_t* Name, const ComputerSystem& Value)
+      {
+        VARIANT Param;
+        V_VT(&Param) = VT_BSTR;
+        auto Path = Value.Path();
+        if (!Path) { return std::nullopt; }
+
+        return Put(Name, Path.value());
+      }
+
+      Result<throwaway> Put(const wchar_t* Name, const ClassObject& Value)
       {
         VARIANT Param;
         V_VT(&Param) = VT_BSTR;
@@ -280,28 +329,6 @@ struct WMI {
 
     return s;
   }
-
-  struct ClassObject {
-    IWbemClassObject* system;
-
-    WMI::Result<WMI::SystemString> Path() const
-    {
-      VARIANT Arg;
-      CIMTYPE Type;
-      auto hres = system->Get(L"__PATH", 0, &Arg, &Type, nullptr);
-
-      if (FAILED(hres)) {
-        LOG(L"Get(ComputerSystem, __PATH) failed.  Err={} ({:X})",
-            WMI::ErrorString(hres), (uint64_t)hres);
-        return std::nullopt;
-      } else if (Type != CIM_STRING) {
-        LOG(L"Get(ComputerSystem, __PATH) returned bad type detected.  Type={}",
-            Type);
-        return std::nullopt;
-      }
-      return WMI::SystemString{V_BSTR(&Arg)};
-    }
-  };
 
   // template <typename T> class Result {
   //   union {
@@ -521,9 +548,8 @@ struct WMI {
 
     LOG(L"function returned {}", actual_return);
 
-    static constexpr int ASYNC_RETURN = 4096;
-
-    if (actual_return != ASYNC_RETURN) { return true; }
+    if (actual_return == CIMReturnValue::OK) { return true; }
+    if (actual_return != CIMReturnValue::JobStarted) { return false; }
 
     VARIANT JobV;
     CIMTYPE JobType;
@@ -1383,104 +1409,103 @@ class VirtualSystemManagementService {
 
       LOG(L"function returned {}", actual_return);
 
-      static constexpr int ASYNC_RETURN = 4096;
+      if (actual_return == CIMReturnValue::OK) { return actual_return; }
+      if (actual_return != CIMReturnValue::JobStarted) { return std::nullopt; }
 
-      if (actual_return == 4096) {
-        VARIANT JobV;
-        CIMTYPE JobType;
-        auto job_res = result->Get(_bstr_t(L"Job"), 0, &JobV, &JobType, 0);
+      VARIANT JobV;
+      CIMTYPE JobType;
+      auto job_res = result->Get(_bstr_t(L"Job"), 0, &JobV, &JobType, 0);
 
-        if (FAILED(job_res)) {
-          LOG(L"Could not get job.  Err={} ({:X})", WMI::ErrorString(job_res),
-              (uint64_t)job_res);
+      if (FAILED(job_res)) {
+        LOG(L"Could not get job.  Err={} ({:X})", WMI::ErrorString(job_res),
+            (uint64_t)job_res);
 
-          return std::nullopt;
-        }
+        return std::nullopt;
+      }
 
-        if (V_VT(&JobV) != VT_BSTR) {
-          LOG(L"{} = {}", i++, JobV.vt);
-          VariantClear(&JobV);
-          return std::nullopt;
-        }
-
-        if (JobType != CIM_REFERENCE) {
-          LOG(L"Bad JobType {}", i++, JobType);
-          VariantClear(&JobV);
-          return std::nullopt;
-        }
-
-        WMI::SystemString job_name{std::wstring_view{V_BSTR(&JobV)}};
+      if (V_VT(&JobV) != VT_BSTR) {
+        LOG(L"{} = {}", i++, JobV.vt);
         VariantClear(&JobV);
+        return std::nullopt;
+      }
 
-        LOG(L"Found job = {}", job_name.as_view());
+      if (JobType != CIM_REFERENCE) {
+        LOG(L"Bad JobType {}", i++, JobType);
+        VariantClear(&JobV);
+        return std::nullopt;
+      }
 
-        bool running = true;
-        while (running) {
-          // NOTE: we have to reacquire the same job over and over
-          //       as GetObject basically does a copy:
-          //       The state of that copy will never change!
-          IWbemClassObject* job = nullptr;
-          {
-            auto get_res = service->service->GetObject(job_name.get(), 0, NULL,
-                                                       &job, NULL);
+      WMI::SystemString job_name{std::wstring_view{V_BSTR(&JobV)}};
+      VariantClear(&JobV);
 
-            if (FAILED(get_res)) {
-              LOG(L"Could not get job {}.  Err={} ({:X})", job_name.as_view(),
-                  WMI::ErrorString(get_res), (uint64_t)get_res);
-              return std::nullopt;
-            }
-          }
+      LOG(L"Found job = {}", job_name.as_view());
 
-          LOG(L"Got Job = {}", WMI::ObjectAsString(job).as_view());
+      bool running = true;
+      while (running) {
+        // NOTE: we have to reacquire the same job over and over
+        //       as GetObject basically does a copy:
+        //       The state of that copy will never change!
+        IWbemClassObject* job = nullptr;
+        {
+          auto get_res = service->service->GetObject(job_name.get(), 0, NULL,
+                                                     &job, NULL);
 
-          VARIANT job_state;
-          auto state_res = job->Get(L"JobState", 0, &job_state, NULL, 0);
-
-          if (FAILED(state_res)) {
-            LOG(L"Could not get job state.  Err={} ({:X})",
-                WMI::ErrorString(state_res), (uint64_t)state_res);
+          if (FAILED(get_res)) {
+            LOG(L"Could not get job {}.  Err={} ({:X})", job_name.as_view(),
+                WMI::ErrorString(get_res), (uint64_t)get_res);
             return std::nullopt;
           }
-
-          if (V_VT(&job_state) != VT_I4) {
-            LOG(L"bad job state type = {}", job_state.vt);
-            VariantClear(&job_state);
-            return std::nullopt;
-          }
-
-          auto state = V_I4(&job_state);
-
-          enum JobState : std::int32_t
-          {
-            New = 2,
-            Starting = 3,
-            Running = 4,
-            Suspended = 5,
-            ShuttingDown = 6,
-            Completed = 7,
-            Terminated = 8,
-            Killed = 9,
-            Exception = 10,
-            Service = 11,
-            QueryPending = 12,
-          };
-
-          switch (state) {
-            case JobState::New:
-            case JobState::Starting:
-            case JobState::Running: {
-              LOG(L"Job still running in state {}.  Sleeping ...", state);
-
-              std::this_thread::sleep_for(std::chrono::seconds(1));
-            } break;
-            default: {
-              LOG(L"Job ended in state {}", state);
-              running = false;
-            } break;
-          }
-
-          job->Release();
         }
+
+        LOG(L"Got Job = {}", WMI::ObjectAsString(job).as_view());
+
+        VARIANT job_state;
+        auto state_res = job->Get(L"JobState", 0, &job_state, NULL, 0);
+
+        if (FAILED(state_res)) {
+          LOG(L"Could not get job state.  Err={} ({:X})",
+              WMI::ErrorString(state_res), (uint64_t)state_res);
+          return std::nullopt;
+        }
+
+        if (V_VT(&job_state) != VT_I4) {
+          LOG(L"bad job state type = {}", job_state.vt);
+          VariantClear(&job_state);
+          return std::nullopt;
+        }
+
+        auto state = V_I4(&job_state);
+
+        enum JobState : std::int32_t
+        {
+          New = 2,
+          Starting = 3,
+          Running = 4,
+          Suspended = 5,
+          ShuttingDown = 6,
+          Completed = 7,
+          Terminated = 8,
+          Killed = 9,
+          Exception = 10,
+          Service = 11,
+          QueryPending = 12,
+        };
+
+        switch (state) {
+          case JobState::New:
+          case JobState::Starting:
+          case JobState::Running: {
+            LOG(L"Job still running in state {}.  Sleeping ...", state);
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+          } break;
+          default: {
+            LOG(L"Job ended in state {}", state);
+            running = false;
+          } break;
+        }
+
+        job->Release();
       }
 
       result->Release();
@@ -1575,23 +1600,15 @@ class VirtualSystemManagementService {
 // return false;
 // }
 
+struct ReferencePoint : public WMI::ClassObject {
+  explicit ReferencePoint(WMI::ClassObject obj)
+      : WMI::ClassObject{std::move(obj)}
+  {
+  }
+};
 
 class VirtualSystemSnapshotService : WMI::ClassObject {
  public:
-  struct Snapshot : public WMI::ClassObject {
-    explicit Snapshot(WMI::ClassObject obj) : WMI::ClassObject{std::move(obj)}
-    {
-    }
-  };
-  struct throwaway {};
-
-  enum class SnapshotType : std::int32_t
-  {
-    FullSnapshot = 2,
-    DiskSnapshot = 3,
-    RecoverySnapshot = 32768,
-  };
-
   struct Class {
     friend VirtualSystemSnapshotService;
 
@@ -1606,8 +1623,13 @@ class VirtualSystemSnapshotService : WMI::ClassObject {
       auto destroy_snapshot = wmi.LoadMethodByName(*clz, L"DestroySnapshot");
       if (!destroy_snapshot) { return std::nullopt; }
 
+      auto convert_to_reference_point
+          = wmi.LoadMethodByName(*clz, L"ConvertToReferencePoint");
+      if (!convert_to_reference_point) { return std::nullopt; }
+
       return Class{std::move(clz.value()), std::move(create_snapshot.value()),
-                   std::move(destroy_snapshot.value()), &wmi};
+                   std::move(destroy_snapshot.value()),
+                   std::move(convert_to_reference_point.value()), &wmi};
     }
 
     WMI::Result<VirtualSystemSnapshotService> Get() const
@@ -1631,19 +1653,36 @@ class VirtualSystemSnapshotService : WMI::ClassObject {
     WMI::Class clz;
     WMI::Method create_snapshot;
     WMI::Method destroy_snapshot;
+    WMI::Method convert_to_reference_point;
     const WMI* wmi;
 
    private:
     Class(WMI::Class clz_,
           WMI::Method create_snapshot_,
           WMI::Method destroy_snapshot_,
+          WMI::Method convert_to_reference_point_,
           const WMI* wmi_)
         : clz{std::move(clz_)}
         , create_snapshot{std::move(create_snapshot_)}
         , destroy_snapshot{std::move(destroy_snapshot_)}
+        , convert_to_reference_point{std::move(convert_to_reference_point_)}
         , wmi{wmi_}
     {
     }
+  };
+
+  struct Snapshot : public WMI::ClassObject {
+    explicit Snapshot(WMI::ClassObject obj) : WMI::ClassObject{std::move(obj)}
+    {
+    }
+  };
+  struct throwaway {};
+
+  enum class SnapshotType : std::int32_t
+  {
+    FullSnapshot = 2,
+    DiskSnapshot = 3,
+    RecoverySnapshot = 32768,
   };
 
   WMI::Result<Snapshot> CreateSnapshot(
@@ -1730,7 +1769,7 @@ class VirtualSystemSnapshotService : WMI::ClassObject {
       return std::nullopt;
     }
 
-    WMI::SystemString job_name{V_BSTR(&job_ref)};
+    WMI::SystemString job_name{std::wstring_view{V_BSTR(&job_ref)}};
     VariantClear(&job_ref);
 
     auto related = clz->wmi->GetRelatedOfClass(job_name.as_view(),
@@ -1751,11 +1790,79 @@ class VirtualSystemSnapshotService : WMI::ClassObject {
     return Snapshot{std::move(res)};
   }
 
-  WMI::Result<throwaway> DestroySnapshot(Snapshot&& snapshot) { return {}; }
+  WMI::Result<throwaway> DestroySnapshot(Snapshot&& snapshot)
+  {
+    auto params = clz->destroy_snapshot.CreateParamInstance();
+    if (!params) { return std::nullopt; }
 
-  struct ReferencePoint {};
+    if (!params->Put(L"AffectedSnapshot", snapshot)) { return std::nullopt; }
 
-  WMI::Result<ReferencePoint> ConvertToReferencePoint(Snapshot&&) { return {}; }
+    auto result = clz->wmi->ExecMethod(*this, clz->destroy_snapshot,
+                                       params.value().parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    // TODO: check if the job was successful
+    return throwaway{};
+  }
+
+  WMI::Result<ReferencePoint> ConvertToReferencePoint(Snapshot&& snapshot)
+  {
+    auto params = clz->convert_to_reference_point.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    // this method has an  undocumented ReferencePointSettings parameter.
+    // if set, the method will error out, so we ignore it here
+    if (!params->Put(L"AffectedSnapshot", snapshot)) { return std::nullopt; }
+
+    auto result = clz->wmi->ExecMethod(*this, clz->convert_to_reference_point,
+                                       params.value().parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    VARIANT job_ref;
+    CIMTYPE type;
+    auto hres = result->Get(L"Job", 0, &job_ref, &type, 0);
+
+    if (FAILED(hres)) {
+      LOG(L"Could not get job param.  Err={} ({:X})", WMI::ErrorString(hres),
+          (uint64_t)hres);
+
+      return std::nullopt;
+    }
+
+    if (V_VT(&job_ref) != VT_BSTR) {
+      LOG(L"Bad job ref value type.  Type = {}", job_ref.vt);
+      VariantClear(&job_ref);
+      return std::nullopt;
+    }
+
+    if (type != CIM_REFERENCE) {
+      LOG(L"Bad job type {}", type);
+      VariantClear(&job_ref);
+      return std::nullopt;
+    }
+
+    WMI::SystemString job_name{std::wstring_view{V_BSTR(&job_ref)}};
+    VariantClear(&job_ref);
+
+    auto related = clz->wmi->GetRelatedOfClass(
+        job_name.as_view(), L"Msvm_VirtualSystemReferencePoint");
+
+    if (!related) { return std::nullopt; }
+
+    if (related->size() != 1) {
+      LOG(L"Result Size != 1");
+      return std::nullopt;
+    }
+
+    auto& res = related->at(0);
+    result->Release();
+
+    return ReferencePoint{std::move(res)};
+  }
 
  private:
   VirtualSystemSnapshotService(ClassObject super, const Class* clz_)
@@ -1946,11 +2053,22 @@ bool Test(const WMI& service, bool full)
 
     if (!options) { return false; }
 
-    auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
+    {
+      auto result
+          = vsms->ExportSystemDefinition(vm.value(), directory, *options);
+      if (!result) { return false; }
+    }
 
-    if (!res) { return false; }
+    {
+      auto result = vsss->ConvertToReferencePoint(std::move(snapshot).value());
+      if (!result) { return false; }
+      LOG(L"Reference = {}", WMI::ObjectAsString(result->system).as_view());
+    }
 
-    vsss->DestroySnapshot(std::move(snapshot).value());
+    // {
+    //   auto result = vsss->DestroySnapshot(std::move(snapshot).value());
+    //   if (!result) { return false; }
+    // }
   }
 
   return true;
