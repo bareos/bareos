@@ -1873,6 +1873,88 @@ class VirtualSystemSnapshotService : WMI::ClassObject {
   const Class* clz;
 };
 
+class VirtualSystemReferencePointService : WMI::ClassObject {
+ public:
+  struct Class {
+    friend VirtualSystemReferencePointService;
+
+    static WMI::Result<Class> load(const WMI& wmi)
+    {
+      auto clz
+          = wmi.LoadClassByName(L"Msvm_VirtualSystemReferencePointService");
+      if (!clz) { return std::nullopt; }
+
+      auto destroy_reference_point
+          = wmi.LoadMethodByName(*clz, L"DestroyReferencePoint");
+      if (!destroy_reference_point) { return std::nullopt; }
+
+      return Class{std::move(clz.value()),
+                   std::move(destroy_reference_point.value()), &wmi};
+    }
+
+    WMI::Result<VirtualSystemReferencePointService> Get() const
+    {
+      WMI::SystemString query{std::wstring_view{
+          L"SELECT * FROM Msvm_VirtualSystemReferencePointService"}};
+      auto* obj = wmi->QueryFirst(query);
+      if (!obj) { return std::nullopt; }
+
+      {
+        auto str = WMI::ObjectAsString(obj);
+        LOG(L"VirtualSystemReferencePointService = {}", str.as_view());
+      }
+
+      WMI::ClassObject service{obj};
+
+      return VirtualSystemReferencePointService{std::move(service), this};
+    }
+
+   protected:
+    WMI::Class clz;
+    WMI::Method destroy_reference_point;
+    const WMI* wmi;
+
+   private:
+    Class(WMI::Class clz_,
+          WMI::Method destroy_reference_point_,
+          const WMI* wmi_)
+        : clz{std::move(clz_)}
+        , destroy_reference_point{std::move(destroy_reference_point_)}
+        , wmi{wmi_}
+    {
+    }
+  };
+
+  struct throwaway {};
+
+  WMI::Result<throwaway> DestroyReferencePoint(ReferencePoint&& reference_point)
+  {
+    auto params = clz->destroy_reference_point.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    if (!params->Put(L"AffectedReferencePoint", reference_point)) {
+      return std::nullopt;
+    }
+
+    auto result = clz->wmi->ExecMethod(*this, clz->destroy_reference_point,
+                                       params.value().parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    // TODO: check if the job was successful
+    return throwaway{};
+  }
+
+ private:
+  VirtualSystemReferencePointService(ClassObject super, const Class* clz_)
+      : ClassObject(std::move(super)), clz{clz_}
+  {
+  }
+
+  const Class* clz;
+};
+
 class VirtualSystemSnapshotSettingData {
  public:
   struct Class {
@@ -2050,7 +2132,6 @@ bool Test(const WMI& service, bool full)
     };
 
     WMI::Result options = vsesd->GetText(settings);
-
     if (!options) { return false; }
 
     {
@@ -2059,11 +2140,56 @@ bool Test(const WMI& service, bool full)
       if (!result) { return false; }
     }
 
+    auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
+    if (!refpoint) { return false; }
+    LOG(L"Reference = {}", WMI::ObjectAsString(refpoint->system).as_view());
+
+
+    auto vsrps_clz = VirtualSystemReferencePointService::Class::load(service);
+    if (!vsrps_clz) { return false; }
+
+    auto vsrps = vsrps_clz->Get();
+    if (!vsrps) { return false; }
+
+    auto incr_snapshot = vsss->CreateSnapshot(
+        vm.value(), snapshot_settings.value(),
+        VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+    if (!incr_snapshot) { return false; }
+
+    LOG(L"Incr_Snapshot = {}",
+        WMI::ObjectAsString(incr_snapshot->system).as_view());
+
+    auto incr_snapshot_path = incr_snapshot->Path();
+    if (!incr_snapshot_path) { return false; }
+
+    auto refpath = refpoint->Path();
+    if (!refpath) { return false; }
+    VirtualSystemExportSettingData incr_settings = {
+        .snapshot_virtual_system_path
+        = std::wstring{incr_snapshot_path->as_view()},
+        .differential_backup_base_path = std::wstring{refpath->as_view()},
+        .copy_snapshot_configuration = VirtualSystemExportSettingData::
+            CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+        .capture_live_state
+        = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+        .copy_vm_runtime_information = false,
+        .copy_vm_storage = true,
+        .create_vm_export_subdirectory = true,
+    };
+
+    WMI::Result incr_options = vsesd->GetText(incr_settings);
+    if (!incr_options) { return false; }
+
     {
-      auto result = vsss->ConvertToReferencePoint(std::move(snapshot).value());
+      auto fi = _bstr_t(
+          L"C:\\Users\\Administrator\\AppData\\Local\\Temp\\Incremental");
+      WMI::SystemString incr_directory{fi.GetBSTR()};
+      auto result = vsms->ExportSystemDefinition(vm.value(), incr_directory,
+                                                 *incr_options);
       if (!result) { return false; }
-      LOG(L"Reference = {}", WMI::ObjectAsString(result->system).as_view());
     }
+
+    vsrps->DestroyReferencePoint(std::move(refpoint).value());
 
     // {
     //   auto result = vsss->DestroySnapshot(std::move(snapshot).value());
