@@ -158,33 +158,6 @@ struct WMI {
     IWbemClassObject* class_ptr{};
   };
 
-  struct ComputerSystem {
-    IWbemClassObject* system;
-
-    WMI::Result<WMI::SystemString> Path() const
-    {
-      VARIANT Arg;
-      CIMTYPE Type;
-      auto hres = system->Get(L"__PATH", 0, &Arg, &Type, nullptr);
-
-      if (FAILED(hres)) {
-        LOG(L"Get(ComputerSystem, __PATH) failed.  Err={} ({:X})",
-            WMI::ErrorString(hres), (uint64_t)hres);
-        return std::nullopt;
-      } else if (Type != CIM_STRING) {
-        LOG(L"Get(ComputerSystem, __PATH) returned bad type detected.  Type={}",
-            Type);
-        return std::nullopt;
-      }
-
-      auto result = WMI::SystemString{V_BSTR(&Arg)};
-
-      LOG(L"Path = {} ({} / {})", result.as_view(), (const void*)result.get(),
-          result.size());
-      return std::move(result);
-    }
-  };
-
   struct ClassObject {
     IWbemClassObject* system;
 
@@ -207,6 +180,7 @@ struct WMI {
     }
   };
 
+  struct ComputerSystem : public WMI::ClassObject {};
 
   struct Method {
     struct Parameter {
@@ -1162,12 +1136,23 @@ class VirtualSystemManagementService : WMI::ClassObject {
           = wmi.LoadMethodByName(*clz, L"ExportSystemDefinition");
       if (!export_system) { return std::nullopt; }
 
+      auto import_system
+          = wmi.LoadMethodByName(*clz, L"ImportSystemDefinition");
+      if (!import_system) { return std::nullopt; }
+
+      auto destroy_system = wmi.LoadMethodByName(*clz, L"DestroySystem");
+      if (!destroy_system) { return std::nullopt; }
+
       auto modify_system_settings
           = wmi.LoadMethodByName(*clz, L"ModifySystemSettings");
       if (!modify_system_settings) { return std::nullopt; }
 
-      return Class{std::move(clz.value()), std::move(export_system.value()),
-                   std::move(modify_system_settings.value()), &wmi};
+      return Class{std::move(clz.value()),
+                   std::move(export_system.value()),
+                   std::move(import_system.value()),
+                   std::move(destroy_system.value()),
+                   std::move(modify_system_settings.value()),
+                   &wmi};
     }
 
     WMI::Result<VirtualSystemManagementService> Get() const
@@ -1190,10 +1175,14 @@ class VirtualSystemManagementService : WMI::ClassObject {
    private:
     Class(WMI::Class clz_,
           WMI::Method export_system_,
+          WMI::Method import_system_,
+          WMI::Method destroy_system_,
           WMI::Method modify_system_settings_,
           const WMI* service_)
         : clz{std::move(clz_)}
         , export_system{std::move(export_system_)}
+        , import_system{std::move(import_system_)}
+        , destroy_system{std::move(destroy_system_)}
         , modify_system_settings{std::move(modify_system_settings_)}
         , wmi{service_}
     {
@@ -1201,6 +1190,8 @@ class VirtualSystemManagementService : WMI::ClassObject {
 
     WMI::Class clz;
     WMI::Method export_system;
+    WMI::Method import_system;
+    WMI::Method destroy_system;
     WMI::Method modify_system_settings;
     const WMI* wmi;
   };
@@ -1227,6 +1218,130 @@ class VirtualSystemManagementService : WMI::ClassObject {
     if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
 
     return 0;
+  }
+
+  struct PlannedComputerSystem : public WMI::ComputerSystem {};
+
+  WMI::Result<PlannedComputerSystem> ImportSystemDefinition(
+      const WMI::SystemString& SystemDefinitionFile,
+      const WMI::SystemString& SnapshotFolder,
+      bool GenerateNewSystemIdentifier)
+  {
+    auto params = clz->import_system.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+    if (!params->Put(L"SystemDefinitionFile", SystemDefinitionFile)
+        || !params->Put(L"SnapshotFolder", SnapshotFolder)
+        || !params->Put(L"GenerateNewSystemIdentifier",
+                        GenerateNewSystemIdentifier)) {
+      return std::nullopt;
+    }
+
+    auto result
+        = clz->wmi->ExecMethod(*this, clz->import_system, params->parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+#if 0
+    VARIANT job_ref;
+    CIMTYPE type;
+    auto hres = result->Get(L"Job", 0, &job_ref, &type, 0);
+
+    if (FAILED(hres)) {
+      LOG(L"Could not get job param.  Err={} ({:X})", WMI::ErrorString(hres),
+          (uint64_t)hres);
+
+      return std::nullopt;
+    }
+
+    if (V_VT(&job_ref) != VT_BSTR) {
+      LOG(L"Bad job ref value type.  Type = {}", job_ref.vt);
+      VariantClear(&job_ref);
+      return std::nullopt;
+    }
+
+    if (type != CIM_REFERENCE) {
+      LOG(L"Bad job type {}", type);
+      VariantClear(&job_ref);
+      return std::nullopt;
+    }
+
+    WMI::SystemString job_name{std::wstring_view{V_BSTR(&job_ref)}};
+    VariantClear(&job_ref);
+
+    auto related = clz->wmi->GetRelatedOfClass(job_name.as_view(),
+                                               L"Msvm_PlannedComputerSystem");
+    if (!related) { return std::nullopt; }
+
+    if (related->size() != 1) {
+      LOG(L"Result Size != 1");
+      return std::nullopt;
+    }
+
+    auto& res = related->at(0);
+#else
+    VARIANT psystem_ref;
+    CIMTYPE type;
+    auto hres = result->Get(L"ImportedSystem", 0, &psystem_ref, &type, 0);
+
+    if (FAILED(hres)) {
+      LOG(L"Could not get ImportedSystem param.  Err={} ({:X})",
+          WMI::ErrorString(hres), (uint64_t)hres);
+
+      return std::nullopt;
+    }
+
+    if (V_VT(&psystem_ref) != VT_BSTR) {
+      LOG(L"Bad ImportedSystem ref value type.  Type = {}", psystem_ref.vt);
+      VariantClear(&psystem_ref);
+      return std::nullopt;
+    }
+
+    if (type != CIM_REFERENCE) {
+      LOG(L"Bad ImportedSystem type {}", type);
+      VariantClear(&psystem_ref);
+      return std::nullopt;
+    }
+
+    WMI::SystemString psystem_name{std::wstring_view{V_BSTR(&psystem_ref)}};
+    VariantClear(&psystem_ref);
+
+    LOG(L"ImportedSystemPath = {}", psystem_name.as_view());
+
+    IWbemClassObject* imported_system = nullptr;
+    auto get_res = clz->wmi->service->GetObject(psystem_name.get(), 0, NULL,
+                                                &imported_system, NULL);
+    if (FAILED(get_res)) {
+      LOG(L"GetObject({}) failed.  Err={} ({:X})", psystem_name.as_view(),
+          WMI::ErrorString(get_res), (uint32_t)get_res);
+      return std::nullopt;
+    }
+
+    LOG(L"ImportedSystem = {}", WMI::ObjectAsString(imported_system).as_view());
+
+    WMI::ClassObject res{imported_system};
+
+#endif
+
+    result->Release();
+    return PlannedComputerSystem{std::move(res)};
+  }
+
+  WMI::Result<throwaway> DestroySystem(const WMI::ComputerSystem& target)
+  {
+    auto params = clz->destroy_system.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    if (!params->Put(L"AffectedSystem", target)) { return std::nullopt; }
+
+    auto result
+        = clz->wmi->ExecMethod(*this, clz->destroy_system, params->parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    result->Release();
+    return throwaway{};
   }
 
   WMI::Result<throwaway> ModifySystemSettings(const WMI::SystemString& settings)
@@ -1709,8 +1824,14 @@ class VirtualSystemSnapshotSettingData {
   bool ignore_non_snapshottable_disks;
 };
 
+enum class TestType
+{
+  Full,
+  FullAndIncr,
+  Restore
+};
 
-bool Test(const WMI& service, bool full)
+bool Test(const WMI& service, TestType tt)
 {
   auto vsms_clz = VirtualSystemManagementService::Class::load(service);
   if (!vsms_clz) { return false; }
@@ -1727,148 +1848,172 @@ bool Test(const WMI& service, bool full)
   auto vsesd = VirtualSystemExportSettingData::Class::load(service);
   if (!vsesd) { return false; }
 
-  if (full) {
-    VirtualSystemExportSettingData settings = {
-        .capture_live_state
-        = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
-        .copy_vm_runtime_information = false,
-        .copy_vm_storage = true,
-        .create_vm_export_subdirectory = true,
-    };
+  switch (tt) {
+    case TestType::Full: {
+      VirtualSystemExportSettingData settings = {
+          .capture_live_state
+          = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+          .copy_vm_runtime_information = false,
+          .copy_vm_storage = true,
+          .create_vm_export_subdirectory = true,
+      };
 
-    WMI::Result options = vsesd->GetText(settings);
+      WMI::Result options = vsesd->GetText(settings);
 
-    if (!options) { return false; }
+      if (!options) { return false; }
 
-    auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
+      auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
 
-    if (!res) { return false; }
-  } else {
-    auto vsss_clz = VirtualSystemSnapshotService::Class::load(service);
-    if (!vsss_clz) { return false; }
+      if (!res) { return false; }
+    } break;
+    case TestType::FullAndIncr: {
+      auto vsss_clz = VirtualSystemSnapshotService::Class::load(service);
+      if (!vsss_clz) { return false; }
 
-    auto vsss = vsss_clz->Get();
-    if (!vsss) { return false; }
-
-
-    auto vsssd_clz = VirtualSystemSnapshotSettingData::Class::load(service);
-    if (!vsssd_clz) { return false; }
-
-    VirtualSystemSnapshotSettingData ssettings = {
-        .consistency_level
-        = VirtualSystemSnapshotSettingData::ConsistencyLevel::CrashConsistent,
-        .ignore_non_snapshottable_disks = true,
-    };
-
-    auto snapshot_settings = vsssd_clz->GetText(ssettings);
-
-    if (!snapshot_settings) { return false; }
-
-    LOG(L"Snapshot Settings = {}", snapshot_settings->as_view());
-
-    auto snapshot = vsss->CreateSnapshot(
-        vm.value(), snapshot_settings.value(),
-        VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
-    if (!snapshot) { return false; }
-
-    LOG(L"Snapshot = {}", WMI::ObjectAsString(snapshot->system).as_view());
-
-    auto snapshot_path = snapshot->Path();
-
-    if (!snapshot_path) { return false; }
-
-    VirtualSystemExportSettingData settings = {
-        .snapshot_virtual_system_path = std::wstring{snapshot_path->as_view()},
-        .copy_snapshot_configuration = VirtualSystemExportSettingData::
-            CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-        .capture_live_state
-        = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
-        .copy_vm_runtime_information = false,
-        .copy_vm_storage = true,
-        .create_vm_export_subdirectory = true,
-    };
-
-    WMI::Result options = vsesd->GetText(settings);
-    if (!options) { return false; }
-
-    {
-      auto result
-          = vsms->ExportSystemDefinition(vm.value(), directory, *options);
-      if (!result) { return false; }
-    }
-
-    auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
-    if (!refpoint) { return false; }
-    LOG(L"Reference = {}", WMI::ObjectAsString(refpoint->system).as_view());
+      auto vsss = vsss_clz->Get();
+      if (!vsss) { return false; }
 
 
-    auto vsrps_clz = VirtualSystemReferencePointService::Class::load(service);
-    if (!vsrps_clz) { return false; }
+      auto vsssd_clz = VirtualSystemSnapshotSettingData::Class::load(service);
+      if (!vsssd_clz) { return false; }
 
-    auto vsrps = vsrps_clz->Get();
-    if (!vsrps) { return false; }
+      VirtualSystemSnapshotSettingData ssettings = {
+          .consistency_level
+          = VirtualSystemSnapshotSettingData::ConsistencyLevel::CrashConsistent,
+          .ignore_non_snapshottable_disks = true,
+      };
 
-    auto incr_snapshot = vsss->CreateSnapshot(
-        vm.value(), snapshot_settings.value(),
-        VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
-    if (!incr_snapshot) { return false; }
+      auto snapshot_settings = vsssd_clz->GetText(ssettings);
 
-    LOG(L"Incr_Snapshot = {}",
-        WMI::ObjectAsString(incr_snapshot->system).as_view());
+      if (!snapshot_settings) { return false; }
 
-    {
-      WMI::SystemString new_snapshot_name{
-          std::wstring_view{L"Bareos Snapshot"}};
+      LOG(L"Snapshot Settings = {}", snapshot_settings->as_view());
 
-      VARIANT Name;
-      V_VT(&Name) = VT_BSTR;
-      V_BSTR(&Name) = new_snapshot_name.get();
-      incr_snapshot->system->Put(L"ElementName", 0, &Name, 0);
-      auto xml = WMI::ObjectAsXML(incr_snapshot.value());
-      if (!xml) { return false; }
-      auto rename_res = vsms->ModifySystemSettings(xml.value());
-      if (!rename_res) { return false; }
-    }
+      auto snapshot = vsss->CreateSnapshot(
+          vm.value(), snapshot_settings.value(),
+          VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+      if (!snapshot) { return false; }
 
-    LOG(L"Incr_Snapshot = {}",
-        WMI::ObjectAsString(incr_snapshot->system).as_view());
+      LOG(L"Snapshot = {}", WMI::ObjectAsString(snapshot->system).as_view());
 
-    auto incr_snapshot_path = incr_snapshot->Path();
-    if (!incr_snapshot_path) { return false; }
+      auto snapshot_path = snapshot->Path();
 
-    auto refpath = refpoint->Path();
-    if (!refpath) { return false; }
-    VirtualSystemExportSettingData incr_settings = {
-        .snapshot_virtual_system_path
-        = std::wstring{incr_snapshot_path->as_view()},
-        .differential_backup_base_path = std::wstring{refpath->as_view()},
-        .copy_snapshot_configuration = VirtualSystemExportSettingData::
-            CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-        .capture_live_state
-        = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
-        .copy_vm_runtime_information = false,
-        .copy_vm_storage = true,
-        .create_vm_export_subdirectory = true,
-    };
+      if (!snapshot_path) { return false; }
 
-    WMI::Result incr_options = vsesd->GetText(incr_settings);
-    if (!incr_options) { return false; }
+      VirtualSystemExportSettingData settings = {
+          .snapshot_virtual_system_path
+          = std::wstring{snapshot_path->as_view()},
+          .copy_snapshot_configuration = VirtualSystemExportSettingData::
+              CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+          .capture_live_state
+          = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+          .copy_vm_runtime_information = false,
+          .copy_vm_storage = true,
+          .create_vm_export_subdirectory = true,
+      };
 
-    {
-      auto fi = _bstr_t(
-          L"C:\\Users\\Administrator\\AppData\\Local\\Temp\\Incremental");
-      WMI::SystemString incr_directory{fi.GetBSTR()};
-      auto result = vsms->ExportSystemDefinition(vm.value(), incr_directory,
-                                                 *incr_options);
-      if (!result) { return false; }
-    }
+      WMI::Result options = vsesd->GetText(settings);
+      if (!options) { return false; }
 
-    vsrps->DestroyReferencePoint(std::move(refpoint).value());
+      {
+        auto result
+            = vsms->ExportSystemDefinition(vm.value(), directory, *options);
+        if (!result) { return false; }
+      }
 
-    // {
-    //   auto result = vsss->DestroySnapshot(std::move(snapshot).value());
-    //   if (!result) { return false; }
-    // }
+      auto refpoint
+          = vsss->ConvertToReferencePoint(std::move(snapshot).value());
+      if (!refpoint) { return false; }
+      LOG(L"Reference = {}", WMI::ObjectAsString(refpoint->system).as_view());
+
+
+      auto vsrps_clz = VirtualSystemReferencePointService::Class::load(service);
+      if (!vsrps_clz) { return false; }
+
+      auto vsrps = vsrps_clz->Get();
+      if (!vsrps) { return false; }
+
+      auto incr_snapshot = vsss->CreateSnapshot(
+          vm.value(), snapshot_settings.value(),
+          VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+      if (!incr_snapshot) { return false; }
+
+      LOG(L"Incr_Snapshot = {}",
+          WMI::ObjectAsString(incr_snapshot->system).as_view());
+
+      {
+        WMI::SystemString new_snapshot_name{
+            std::wstring_view{L"Bareos Snapshot"}};
+
+        VARIANT Name;
+        V_VT(&Name) = VT_BSTR;
+        V_BSTR(&Name) = new_snapshot_name.get();
+        incr_snapshot->system->Put(L"ElementName", 0, &Name, 0);
+        auto xml = WMI::ObjectAsXML(incr_snapshot.value());
+        if (!xml) { return false; }
+        auto rename_res = vsms->ModifySystemSettings(xml.value());
+        if (!rename_res) { return false; }
+      }
+
+      LOG(L"Incr_Snapshot = {}",
+          WMI::ObjectAsString(incr_snapshot->system).as_view());
+
+      auto incr_snapshot_path = incr_snapshot->Path();
+      if (!incr_snapshot_path) { return false; }
+
+      auto refpath = refpoint->Path();
+      if (!refpath) { return false; }
+      VirtualSystemExportSettingData incr_settings = {
+          .snapshot_virtual_system_path
+          = std::wstring{incr_snapshot_path->as_view()},
+          .differential_backup_base_path = std::wstring{refpath->as_view()},
+          .copy_snapshot_configuration = VirtualSystemExportSettingData::
+              CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+          .capture_live_state
+          = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+          .copy_vm_runtime_information = false,
+          .copy_vm_storage = true,
+          .create_vm_export_subdirectory = true,
+      };
+
+      WMI::Result incr_options = vsesd->GetText(incr_settings);
+      if (!incr_options) { return false; }
+
+      {
+        auto fi = _bstr_t(
+            L"C:\\Users\\Administrator\\AppData\\Local\\Temp\\Incremental");
+        WMI::SystemString incr_directory{fi.GetBSTR()};
+        auto result = vsms->ExportSystemDefinition(vm.value(), incr_directory,
+                                                   *incr_options);
+        if (!result) { return false; }
+      }
+
+      vsrps->DestroyReferencePoint(std::move(refpoint).value());
+
+      // {
+      //   auto result = vsss->DestroySnapshot(std::move(snapshot).value());
+      //   if (!result) { return false; }
+      // }
+    } break;
+    case TestType::Restore: {
+      WMI::SystemString SystemDefinitionFile{std::wstring_view{
+          L"C:"
+          L"\\Users\\Administrator\\AppData\\Local\\Temp\\ToRestore\\Debian\\Vi"
+          L"rtual Machines\\BCC1C544-EE85-41FE-9260-60627F74B850.vmcx"}};
+      WMI::SystemString SnapshotPath{std::wstring_view{
+          L"C:"
+          L"\\Users\\Administrator\\AppData\\Local\\Temp\\ToRestore\\Debian"}};
+
+      bool GenerateNewSystemIdentifier = true;
+
+      auto planned_system = vsms->ImportSystemDefinition(
+          SystemDefinitionFile, SnapshotPath, GenerateNewSystemIdentifier);
+
+      if (!planned_system) { return false; }
+
+      auto destroy_res = vsms->DestroySystem(planned_system.value());
+      if (!destroy_res) { return false; }
+    } break;
   }
 
   return true;
@@ -2121,7 +2266,7 @@ int main(int argc, char** argv)
       return 1;  // Program has failed.
     }
 
-    if (!Test({virt_service}, false)) {
+    if (!Test({virt_service}, TestType::Restore)) {
       wprintf(L"Business logic does not work!\n");
     }
   }
