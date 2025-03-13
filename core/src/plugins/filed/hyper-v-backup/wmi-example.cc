@@ -1081,16 +1081,21 @@ class VirtualSystemManagementService {
   static std::optional<VirtualSystemManagementService> load(const WMI& wmi)
   {
     auto clz = wmi.LoadClassByName(L"Msvm_VirtualSystemManagementService");
-
     if (!clz) { return std::nullopt; }
 
     auto export_system = wmi.LoadMethodByName(*clz, L"ExportSystemDefinition");
-
     if (!export_system) { return std::nullopt; }
 
+    auto modify_system_settings
+        = wmi.LoadMethodByName(*clz, L"ModifySystemSettings");
+    if (!modify_system_settings) { return std::nullopt; }
+
     return VirtualSystemManagementService{
-        std::move(clz.value()), std::move(export_system.value()), &wmi};
+        std::move(clz.value()), std::move(export_system.value()),
+        std::move(modify_system_settings.value()), &wmi};
   }
+
+  struct throwaway {};
 
   WMI::Result<WMI::ComputerSystem> GetVMByName(std::wstring_view vm_name)
   {
@@ -1513,16 +1518,40 @@ class VirtualSystemManagementService {
     }
   }
 
+  WMI::Result<throwaway> ModifySystemSettings(const WMI::SystemString& settings)
+  {
+    auto params = modify_system_settings.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    if (!params->Put(L"SystemSettings", settings)) { return std::nullopt; }
+
+    WMI::SystemString query{std::wstring_view{
+        L"SELECT * FROM Msvm_VirtualSystemManagementService"}};
+    auto* obj = service->QueryFirst(query);
+    if (!obj) { return std::nullopt; }
+
+    auto result
+        = service->ExecMethod({obj}, modify_system_settings, params->parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!service->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    return throwaway{};
+  }
+
  private:
   WMI::Class clz;
   WMI::Method export_system;
+  WMI::Method modify_system_settings;
   const WMI* service;
 
   VirtualSystemManagementService(WMI::Class clz_,
                                  WMI::Method export_system_,
+                                 WMI::Method modify_system_settings_,
                                  const WMI* service_)
       : clz{std::move(clz_)}
       , export_system{std::move(export_system_)}
+      , modify_system_settings{std::move(modify_system_settings_)}
       , service{service_}
   {
   }
@@ -2155,6 +2184,23 @@ bool Test(const WMI& service, bool full)
         vm.value(), snapshot_settings.value(),
         VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
     if (!incr_snapshot) { return false; }
+
+    LOG(L"Incr_Snapshot = {}",
+        WMI::ObjectAsString(incr_snapshot->system).as_view());
+
+    {
+      WMI::SystemString new_snapshot_name{
+          std::wstring_view{L"Bareos Snapshot"}};
+
+      VARIANT Name;
+      V_VT(&Name) = VT_BSTR;
+      V_BSTR(&Name) = new_snapshot_name.get();
+      incr_snapshot->system->Put(L"ElementName", 0, &Name, 0);
+      auto xml = WMI::ObjectAsXML(incr_snapshot.value());
+      if (!xml) { return false; }
+      auto rename_res = vsms->ModifySystemSettings(xml.value());
+      if (!rename_res) { return false; }
+    }
 
     LOG(L"Incr_Snapshot = {}",
         WMI::ObjectAsString(incr_snapshot->system).as_view());
