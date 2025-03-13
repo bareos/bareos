@@ -17,11 +17,11 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-option(BUILD_INTO_SINGLE_DIRECTORY
-       "Output all targets into the same output directories" OFF
+option(COMMON_OUTPUT_DIRECTORIES
+       "Output all targets into common output directories" OFF
 )
 
-if(BUILD_INTO_SINGLE_DIRECTORY)
+if(COMMON_OUTPUT_DIRECTORIES)
   if(CMAKE_CONFIGURATION_TYPES)
     message(
       FATAL_ERROR
