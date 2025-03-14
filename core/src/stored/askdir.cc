@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -302,7 +302,9 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   if (label == is_labeloperation::True) {
     bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
   }
-  else if (bstrncmp(vol->VolCatStatus, "Unlabeled", 10) && vol->VolCatBytes > 0) {
+  // Manually labeled volume was written on
+  else if (bstrncmp(vol->VolCatStatus, "Unlabeled", sizeof(vol->VolCatStatus))
+           && vol->VolCatBytes > 0) {
     bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
   }
   vol->VolLastWritten = time(NULL);
