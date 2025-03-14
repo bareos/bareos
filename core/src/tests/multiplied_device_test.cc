@@ -109,7 +109,7 @@ TEST(sd, MultipliedDeviceTest_ImplicitAutochangerCreation)
   EXPECT_EQ(std::string(explicit_device->changer_res->resource_name_),
             "ExplicitAutochanger");
   EXPECT_EQ(std::string(implicit_device->changer_res->resource_name_),
-            "DeviceWithImplicitAutochangerChanger");
+            "DeviceWithImplicitAutochanger");
 }
 
 TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)

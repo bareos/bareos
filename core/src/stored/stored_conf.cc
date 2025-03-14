@@ -444,8 +444,7 @@ static void MultiplyDevice(DeviceResource& original,
   // create autochanger
   if (!original.changer_res) {
     original.changer_res = new AutochangerResource();
-    original.changer_res->resource_name_
-        = strdup((std::string(original.resource_name_) + "Changer").c_str());
+    original.changer_res->resource_name_ = strdup(original.resource_name_);
     original.changer_res->changer_name = strdup("dev/null");
     original.changer_res->changer_command = strdup("");
     original.changer_res->device_resources
