@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "lib/parse_conf.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
+#include <iostream>
 
 using namespace storagedaemon;
 
@@ -42,9 +43,17 @@ static void InitGlobals()
   OSDependentInit();
 }
 
+static DeviceResource* GetDeviceResourceByName(ConfigurationParser& config,
+                                               const char* name)
+{
+  BareosResource* p = config.GetResWithName(R_DEVICE, name, false);
+  std::cout << name << p << std::endl;
+  return dynamic_cast<DeviceResource*>(p);
+}
+
 static DeviceResource* GetMultipliedDeviceResource(ConfigurationParser& config)
 {
-  const char* name = "MultipliedDeviceResource0001";
+  const char* name = "MultipliedDeviceResource";
 
   BareosResource* p = config.GetResWithName(R_DEVICE, name, false);
   DeviceResource* d = dynamic_cast<DeviceResource*>(p);
@@ -79,6 +88,30 @@ static uint32_t CountAllDeviceResources(ConfigurationParser& config)
   return count;
 }
 
+TEST(sd, MultipliedDeviceTest_ImplicitAutochangerCreation)
+{
+  InitGlobals();
+  std::string path_to_config = "configs/stored_multiplied_device/";
+
+  PConfigParser test_config(InitSdConfig(path_to_config.c_str(), M_INFO));
+  storagedaemon::my_config = test_config.get();
+  ASSERT_TRUE(test_config->ParseConfig());
+
+  DeviceResource* explicit_device
+      = GetDeviceResourceByName(*test_config, "DeviceWithExplicitAutochanger");
+  ASSERT_TRUE(explicit_device);
+  ASSERT_TRUE(explicit_device->changer_res);
+  DeviceResource* implicit_device
+      = GetDeviceResourceByName(*test_config, "DeviceWithImplicitAutochanger");
+  ASSERT_TRUE(implicit_device);
+  ASSERT_TRUE(implicit_device->changer_res);
+
+  EXPECT_EQ(std::string(explicit_device->changer_res->resource_name_),
+            "ExplicitAutochanger");
+  EXPECT_EQ(std::string(implicit_device->changer_res->resource_name_),
+            "DeviceWithImplicitAutochangerChanger");
+}
+
 TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)
 {
   InitGlobals();
@@ -91,15 +124,8 @@ TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)
   auto count = CountAllDeviceResources(*test_config);
 
   /* configurable using Device config for "AnotherMultipliedDeviceResource" */
-  int amount_to_check = 103;
+  int amount_to_check = 117;
   EXPECT_EQ(count, amount_to_check);
-}
-
-DeviceResource* GetDeviceResourceByName(ConfigurationParser& config,
-                                        const char* name)
-{
-  BareosResource* p = config.GetResWithName(R_DEVICE, name, false);
-  return dynamic_cast<DeviceResource*>(p);
 }
 
 static uint32_t CheckNamesOfConfiguredDeviceResources_1(
@@ -109,7 +135,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
   uint32_t count_devices = 0;
 
   DeviceResource* source_device_resource
-      = GetDeviceResourceByName(config, "MultipliedDeviceResource0001");
+      = GetDeviceResourceByName(config, "MultipliedDeviceResource");
   if (!source_device_resource) { return 0; }
 
   /* find all matching multiplied-devices, this includes the source device */
@@ -118,8 +144,10 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
     DeviceResource* device = dynamic_cast<DeviceResource*>(p);
     if (device->multiplied_device_resource == source_device_resource) {
       const char* name = nullptr;
-      ++count_devices;
-      switch (count_devices) {
+      switch (count_devices++) {
+        case 0:
+          name = "MultipliedDeviceResource0000";
+          break;
         case 1:
           name = "MultipliedDeviceResource0001";
           break;
@@ -136,7 +164,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
       std::string name_to_compare(name ? name : "???");
       if (name_of_device == name_to_compare) { ++count_str_ok; }
     } /* if (device->multiplied_device_resource) */
-  }   /* while GetNextRes */
+  } /* while GetNextRes */
   return count_str_ok;
 }
 
@@ -152,7 +180,7 @@ TEST(sd, MultipliedDeviceTest_CheckNames_1)
 
   auto count = CheckNamesOfConfiguredDeviceResources_1(*test_config);
 
-  EXPECT_EQ(count, 3);
+  EXPECT_EQ(count, 4);
 }
 
 static uint32_t CheckNamesOfConfiguredDeviceResources_2(
@@ -162,7 +190,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
   uint32_t count_devices = 0;
 
   DeviceResource* source_device_resource
-      = GetDeviceResourceByName(config, "AnotherMultipliedDeviceResource0001");
+      = GetDeviceResourceByName(config, "AnotherMultipliedDeviceResource");
   if (!source_device_resource) { return 0; }
 
   BareosResource* p = nullptr;
@@ -170,8 +198,10 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
     DeviceResource* device_resource = dynamic_cast<DeviceResource*>(p);
     if (device_resource->multiplied_device_resource == source_device_resource) {
       const char* name = nullptr;
-      ++count_devices;
-      switch (count_devices) {
+      switch (count_devices++) {
+        case 0:
+          name = "AnotherMultipliedDeviceResource0000";
+          break;
         case 1:
           name = "AnotherMultipliedDeviceResource0001";
           break;
@@ -198,7 +228,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
       std::string name_to_compare(name ? name : "???");
       if (name_of_device == name_to_compare) { ++count_str_ok; }
     } /* if (device_resource->multiplied_device_resource) */
-  }   /* while GetNextRes */
+  } /* while GetNextRes */
   return count_str_ok;
 }
 
@@ -214,7 +244,7 @@ TEST(sd, MultipliedDeviceTest_CheckNames_2)
 
   auto count = CheckNamesOfConfiguredDeviceResources_2(*test_config);
 
-  EXPECT_EQ(count, 100);
+  EXPECT_EQ(count, 101);
 }
 
 static uint32_t CheckAutochangerInAllDevices(ConfigurationParser& config)
@@ -306,24 +336,6 @@ TEST(sd,
   EXPECT_EQ(count, 3);
 }
 
-TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
-{
-  InitGlobals();
-  std::string path_to_config = "configs/stored_multiplied_device/";
-
-  PConfigParser test_config(InitSdConfig(path_to_config.c_str(), M_INFO));
-  storagedaemon::my_config = test_config.get();
-
-  ASSERT_TRUE(test_config->ParseConfig());
-
-  BareosResource* p;
-  p = test_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
-  ASSERT_TRUE(p);
-  DeviceResource* original_device_resource = dynamic_cast<DeviceResource*>(p);
-  EXPECT_EQ(original_device_resource,
-            original_device_resource->multiplied_device_resource);
-}
-
 TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
 {
   InitGlobals();
@@ -335,10 +347,10 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
   ASSERT_TRUE(test_config->ParseConfig());
 
   BareosResource* p;
-  p = test_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
+  p = test_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource");
   ASSERT_TRUE(p);
   DeviceResource* original_device_resource = dynamic_cast<DeviceResource*>(p);
-  p = test_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0002");
+  p = test_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
   ASSERT_TRUE(p);
   DeviceResource* multiplied_device_resource = dynamic_cast<DeviceResource*>(p);
   EXPECT_EQ(original_device_resource,
