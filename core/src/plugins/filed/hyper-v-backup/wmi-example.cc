@@ -23,6 +23,7 @@
 #include <iostream>
 #include <comdef.h>
 #include <Wbemidl.h>
+#include <atlsafe.h>
 
 template <class Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
@@ -219,6 +220,43 @@ struct WMI {
           return std::nullopt;
         }
 
+        return throwaway{};
+      }
+
+      Result<throwaway> Put(const wchar_t* Name,
+                            const std::vector<SystemString>& Value)
+      {
+        CComSafeArray<BSTR> array;
+        auto create_array_res = array.Create(ULONG{0});
+        if (FAILED(create_array_res)) {
+          LOG(L"Array.Create({}) failed.  Err={} ({:X})", 0,
+              ErrorString(create_array_res), (uint64_t)create_array_res);
+          return std::nullopt;
+        }
+
+        for (auto& str : Value) {
+          auto add_res = array.Add(str.get());
+          if (FAILED(add_res)) {
+            LOG(L"Array.Add({}) failed.  Err={} ({:X})", str.as_view(),
+                ErrorString(add_res), (uint64_t)add_res);
+            return std::nullopt;
+          }
+        }
+
+        VARIANT Param;
+        V_VT(&Param) = VT_BSTR | VT_ARRAY;
+        V_ARRAY(&Param) = array;
+        // V_BSTR(&Param) = Value.get();
+
+        auto hres = parameter->Put(Name, 0, &Param, 0);
+
+        if (FAILED(hres)) {
+          LOG(L"Put({}, [array]) failed.  Err={} ({:X})", Name,
+              ErrorString(hres), (uint64_t)hres);
+          return std::nullopt;
+        }
+
+        array.Destroy();
         return throwaway{};
       }
 
@@ -625,10 +663,19 @@ struct WMI {
 
   Result<std::vector<ClassObject>> GetRelatedOfClass(
       std::wstring_view Associate,
-      std::wstring_view Class) const
+      std::wstring_view Class,
+      std::wstring_view AssocClass = {}) const
   {
-    std::wstring query = std::format(
-        L"associators of {{{}}} where ResultClass = {}", Associate, Class);
+    std::wstring query = [&] {
+      if (AssocClass.empty()) {
+        return std::format(L"associators of {{{}}} where ResultClass = {}",
+                           Associate, Class);
+      } else {
+        return std::format(
+            L"associators of {{{}}} where ResultClass = {} AssocClass = {}",
+            Associate, Class, AssocClass);
+      }
+    }();
 
     WMI::SystemString squery{query};
 
@@ -1069,9 +1116,8 @@ class VirtualSystemExportSettingData {
 
   enum class BackupIntent : std::uint8_t
   {
-    BackupIntentPreserveChain
-    = 0,                    // i.e. we want to store full/diff separately
-    BackupIntentMerge = 1,  // i.e. we want to consolidate full/diff
+    PreserveChain = 0,  // i.e. we want to store full/diff separately
+    Merge = 1,          // i.e. we want to consolidate full/diff
   };
   // WMI::Result<void> Set_BackupIntent(BackupIntent intent)
   // {
@@ -1147,11 +1193,31 @@ class VirtualSystemManagementService : WMI::ClassObject {
           = wmi.LoadMethodByName(*clz, L"ModifySystemSettings");
       if (!modify_system_settings) { return std::nullopt; }
 
+      auto modify_resource_settings
+          = wmi.LoadMethodByName(*clz, L"ModifyResourceSettings");
+      if (!modify_resource_settings) { return std::nullopt; }
+
+      auto validate_planned_system
+          = wmi.LoadMethodByName(*clz, L"ValidatePlannedSystem");
+      if (!validate_planned_system) { return std::nullopt; }
+
+      auto realize_planned_system
+          = wmi.LoadMethodByName(*clz, L"RealizePlannedSystem");
+      if (!realize_planned_system) { return std::nullopt; }
+
+      auto import_snapshot
+          = wmi.LoadMethodByName(*clz, L"ImportSnapshotDefinitions");
+      if (!import_snapshot) { return std::nullopt; }
+
       return Class{std::move(clz.value()),
                    std::move(export_system.value()),
                    std::move(import_system.value()),
                    std::move(destroy_system.value()),
                    std::move(modify_system_settings.value()),
+                   std::move(modify_resource_settings.value()),
+                   std::move(validate_planned_system).value(),
+                   std::move(realize_planned_system).value(),
+                   std::move(import_snapshot).value(),
                    &wmi};
     }
 
@@ -1178,12 +1244,20 @@ class VirtualSystemManagementService : WMI::ClassObject {
           WMI::Method import_system_,
           WMI::Method destroy_system_,
           WMI::Method modify_system_settings_,
+          WMI::Method modify_resource_settings_,
+          WMI::Method validate_planned_system_,
+          WMI::Method realize_planned_system_,
+          WMI::Method import_snapshot_,
           const WMI* service_)
         : clz{std::move(clz_)}
         , export_system{std::move(export_system_)}
         , import_system{std::move(import_system_)}
         , destroy_system{std::move(destroy_system_)}
         , modify_system_settings{std::move(modify_system_settings_)}
+        , modify_resource_settings{std::move(modify_resource_settings_)}
+        , validate_planned_system{std::move(validate_planned_system_)}
+        , realize_planned_system{std::move(realize_planned_system_)}
+        , import_snapshot{std::move(import_snapshot_)}
         , wmi{service_}
     {
     }
@@ -1193,6 +1267,10 @@ class VirtualSystemManagementService : WMI::ClassObject {
     WMI::Method import_system;
     WMI::Method destroy_system;
     WMI::Method modify_system_settings;
+    WMI::Method modify_resource_settings;
+    WMI::Method validate_planned_system;
+    WMI::Method realize_planned_system;
+    WMI::Method import_snapshot;
     const WMI* wmi;
   };
 
@@ -1230,7 +1308,7 @@ class VirtualSystemManagementService : WMI::ClassObject {
     auto params = clz->import_system.CreateParamInstance();
     if (!params) { return std::nullopt; }
     if (!params->Put(L"SystemDefinitionFile", SystemDefinitionFile)
-        || !params->Put(L"SnapshotFolder", SnapshotFolder)
+        //|| !params->Put(L"SnapshotFolder", SnapshotFolder)
         || !params->Put(L"GenerateNewSystemIdentifier",
                         GenerateNewSystemIdentifier)) {
       return std::nullopt;
@@ -1353,6 +1431,82 @@ class VirtualSystemManagementService : WMI::ClassObject {
 
     auto result = clz->wmi->ExecMethod(*this, clz->modify_system_settings,
                                        params->parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    result->Release();
+    return throwaway{};
+  }
+
+  WMI::Result<throwaway> ModifyResourceSettings(
+      const std::vector<WMI::SystemString>& resource_settings)
+  {
+    auto params = clz->modify_resource_settings.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    if (!params->Put(L"ResourceSettings", resource_settings)) {
+      return std::nullopt;
+    }
+
+    auto result = clz->wmi->ExecMethod(*this, clz->modify_resource_settings,
+                                       params->parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    result->Release();
+    return throwaway{};
+  }
+
+  WMI::Result<throwaway> ValidatePlannedSystem(
+      const PlannedComputerSystem& planned)
+  {
+    auto params = clz->validate_planned_system.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    if (!params->Put(L"PlannedSystem", planned)) { return std::nullopt; }
+
+    auto result = clz->wmi->ExecMethod(*this, clz->validate_planned_system,
+                                       params->parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    result->Release();
+    return throwaway{};
+  }
+  WMI::Result<throwaway> RealizePlannedSystem(PlannedComputerSystem&& planned)
+  {
+    auto params = clz->realize_planned_system.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    if (!params->Put(L"PlannedSystem", planned)) { return std::nullopt; }
+
+    auto result = clz->wmi->ExecMethod(*this, clz->realize_planned_system,
+                                       params->parameter);
+    if (!result) { return std::nullopt; }
+
+    if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
+
+    result->Release();
+    return throwaway{};
+  }
+
+  WMI::Result<throwaway> ImportSnapshotDefinitions(
+      const PlannedComputerSystem& planned,
+      const WMI::SystemString& snapshot_folder)
+  {
+    auto params = clz->import_snapshot.CreateParamInstance();
+    if (!params) { return std::nullopt; }
+
+    if (!params->Put(L"PlannedSystem", planned)
+        || !params->Put(L"SnapshotFolder", snapshot_folder)) {
+      return std::nullopt;
+    }
+
+    auto result
+        = clz->wmi->ExecMethod(*this, clz->import_snapshot, params->parameter);
     if (!result) { return std::nullopt; }
 
     if (!clz->wmi->WaitForJobCompletion(result)) { return std::nullopt; }
@@ -1725,6 +1879,106 @@ class VirtualSystemReferencePointService : WMI::ClassObject {
   const Class* clz;
 };
 
+static bool UpdatePath(WMI::ClassObject& setting, std::wstring_view new_path)
+{
+  VARIANT host_resource;
+  CIMTYPE type;
+
+  auto get_res
+      = setting.system->Get(L"HostResource", 0, &host_resource, &type, 0);
+  if (FAILED(get_res)) {
+    LOG(L"Could not get HostResource.  Err={} ({})", WMI::ErrorString(get_res),
+        (uint32_t)get_res);
+    return false;
+  }
+
+  if (type != (CIM_STRING | CIM_FLAG_ARRAY)) {
+    LOG(L"Bad type of HostResource.  Type={}", type);
+    return false;
+  }
+
+  if (V_VT(&host_resource) != (VT_BSTR | VT_ARRAY)) {
+    LOG(L"Bad type of host_resource Variant.  Type={}", V_VT(&host_resource));
+    return false;
+  }
+
+  SAFEARRAY* arr = V_ARRAY(&host_resource);
+
+  if (auto dim = SafeArrayGetDim(arr); dim != 1) {
+    LOG(L"Bad array dim.  Expected 1.  Dim = {}", dim);
+    return false;
+  }
+
+  LONG lbound, ubound;
+  auto lbound_res = SafeArrayGetLBound(arr, 1, &lbound);
+  if (FAILED(lbound_res)) {
+    LOG(L"Could not get lower bound of SAFEARRAY {}.  Err={}", (const void*)arr,
+        lbound_res);
+    return false;
+  }
+  auto ubound_res = SafeArrayGetUBound(arr, 1, &ubound);
+  if (FAILED(ubound_res)) {
+    LOG(L"Could not get upper bound of SAFEARRAY {}.  Err={}", (const void*)arr,
+        ubound_res);
+    return false;
+  }
+  auto size = ubound - lbound + 1;
+  if (size != 1) {
+    LOG(L"Bad array size.  Expected 1.  Size = {}", size);
+    return false;
+  }
+
+  BSTR disk_path;
+  LONG Index = 0;
+  auto hres = SafeArrayGetElement(arr, &Index, (void*)&disk_path);
+  if (FAILED(hres)) {
+    LOG(L"Coud not get first element of array.  Err={}", hres);
+    return false;
+  }
+
+  // disk_path is now the bad path.  We need to combine its filename with the
+  // given path.
+
+  std::wstring_view dpath{disk_path, SysStringLen(disk_path)};
+
+  if (dpath.empty()) {
+    LOG(L"Got empty disk path.");
+    return false;
+  }
+
+  auto pos = dpath.find_last_of(L"\\/");
+  if (pos == dpath.npos) {
+    LOG(L"path {} is just a file name.", dpath);
+    return false;
+  }
+
+  std::wstring new_disk_path{new_path};
+  new_disk_path += L"\\";
+  new_disk_path += dpath.substr(pos + 1);
+
+  LOG(L"Updated path {} --> {}", dpath, new_disk_path);
+
+  // TODO: free disk_path; or do we ?
+
+  BSTR to_insert
+      = SysAllocStringLen(new_disk_path.data(), (UINT)new_disk_path.size());
+
+  auto put_res = SafeArrayPutElement(arr, &Index, (void*)to_insert);
+  if (FAILED(put_res)) {
+    LOG(L"Could not store updated path.  Err={}", put_res);
+    return false;
+  }
+
+  auto wput_res = setting.system->Put(L"HostResource", 0, &host_resource, type);
+  if (FAILED(wput_res)) {
+    LOG(L"Could not update HostResource.  Err={} ({})",
+        WMI::ErrorString(wput_res), (uint32_t)wput_res);
+    return false;
+  }
+
+  return true;
+}
+
 class VirtualSystemSnapshotSettingData {
  public:
   struct Class {
@@ -1851,6 +2105,8 @@ bool Test(const WMI& service, TestType tt)
   switch (tt) {
     case TestType::Full: {
       VirtualSystemExportSettingData settings = {
+          .backup_intent
+          = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
           .capture_live_state
           = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
           .copy_vm_runtime_information = false,
@@ -1903,6 +2159,8 @@ bool Test(const WMI& service, TestType tt)
       VirtualSystemExportSettingData settings = {
           .snapshot_virtual_system_path
           = std::wstring{snapshot_path->as_view()},
+          .backup_intent
+          = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
           .copy_snapshot_configuration = VirtualSystemExportSettingData::
               CopySnapshotConfiguration::ExportOneSnapshotForBackup,
           .capture_live_state
@@ -1967,6 +2225,8 @@ bool Test(const WMI& service, TestType tt)
           .snapshot_virtual_system_path
           = std::wstring{incr_snapshot_path->as_view()},
           .differential_backup_base_path = std::wstring{refpath->as_view()},
+          .backup_intent
+          = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
           .copy_snapshot_configuration = VirtualSystemExportSettingData::
               CopySnapshotConfiguration::ExportOneSnapshotForBackup,
           .capture_live_state
@@ -1998,11 +2258,12 @@ bool Test(const WMI& service, TestType tt)
     case TestType::Restore: {
       WMI::SystemString SystemDefinitionFile{std::wstring_view{
           L"C:"
-          L"\\Users\\Administrator\\AppData\\Local\\Temp\\ToRestore\\Debian\\Vi"
+          L"\\Users\\Administrator\\AppData\\Local\\Temp\\Debian\\Vi"
           L"rtual Machines\\BCC1C544-EE85-41FE-9260-60627F74B850.vmcx"}};
-      WMI::SystemString SnapshotPath{std::wstring_view{
-          L"C:"
-          L"\\Users\\Administrator\\AppData\\Local\\Temp\\ToRestore\\Debian"}};
+      WMI::SystemString SnapshotPath{
+          std::wstring_view{L"C:"
+                            L"\\Users\\Administrator\\AppData\\Local\\Temp\\Deb"
+                            L"ian\\Virtual Machines"}};
 
       bool GenerateNewSystemIdentifier = true;
 
@@ -2011,8 +2272,83 @@ bool Test(const WMI& service, TestType tt)
 
       if (!planned_system) { return false; }
 
-      auto destroy_res = vsms->DestroySystem(planned_system.value());
-      if (!destroy_res) { return false; }
+      vsms->ValidatePlannedSystem(planned_system.value());
+      // // vsms->ImportSnapshotDefinitions(planned_system.value(),
+      // //                                 SnapshotPath);
+      // WMI::SystemString SnapshotPath2{std::wstring_view{
+      //     L"C:"
+      //     L"\\Users\\Administrator\\AppData\\Local\\Temp\\Debian\\Virtual
+      //     Hard Disks"
+      //   }};
+      // vsms->ImportSnapshotDefinitions(planned_system.value(),
+      //                                 SnapshotPath2);
+
+
+      // We have now imported the system with the correct configuration.
+      // That configuration still points to the wrong Hard Disks.  We need to
+      // find every associated hard disk and change their paths to the
+      // newly restored ones.
+      auto related = service.GetRelatedOfClass(
+          planned_system->Path()->as_view(), L"Msvm_VirtualSystemSettingData",
+          L"Msvm_SettingsDefineState");
+      if (!related) { return false; }
+
+      WMI::SystemString HardDiskPath{
+          std::wstring_view{L"C:"
+                            L"\\Users\\Administrator\\AppData\\Local\\Temp\\Deb"
+                            L"ian\\Virtual Hard Disks"}};
+      LOG(L"Found {} settings", related->size());
+      for (auto& setting : related.value()) {
+        auto setting_path = setting.Path();
+        if (!setting_path) {
+          LOG(L"Could not get path to setting");
+          return false;
+        }
+        auto vhd_settings = service.GetRelatedOfClass(
+            setting_path->as_view(), L"Msvm_StorageAllocationSettingData",
+            L"Msvm_VirtualSystemSettingDataComponent");
+        if (!vhd_settings) { return false; }
+
+        // we only want to look at
+        // ResourceSubType = "Microsoft:Hyper-V:Virtual Hard Disk";
+        // ResourceType = 31;
+        // Resources
+        // std::remove_if(std::begin(vhd_settings),
+        //                std::end(vhd_settings),
+        //                []() {
+
+        //                });
+
+        for (auto& vhd_setting : vhd_settings.value()) {
+          LOG(L"vhd setting = {}",
+              WMI::ObjectAsString(vhd_setting.system).as_view());
+
+          if (!UpdatePath(vhd_setting, HardDiskPath.as_view())) {
+            return false;
+          }
+
+          LOG(L"updated vhd setting = {}",
+              WMI::ObjectAsString(vhd_setting.system).as_view());
+
+          auto xml = WMI::ObjectAsXML(vhd_setting);
+          if (!xml) { return false; }
+
+          std::vector<WMI::SystemString> resources;
+          resources.emplace_back(std::move(xml.value()));
+
+          auto update_res = vsms->ModifyResourceSettings(resources);
+          if (!update_res) { return false; }
+        }
+      }
+
+      vsms->ValidatePlannedSystem(planned_system.value());
+      auto realize_res
+          = vsms->RealizePlannedSystem(std::move(planned_system.value()));
+      if (!realize_res) { return false; }
+
+
+      // auto destroy_res = vsms->DestroySystem(planned_system.value());
+      // if (!destroy_res) { return false; }
     } break;
   }
 
