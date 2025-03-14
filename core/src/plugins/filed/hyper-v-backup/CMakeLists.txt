@@ -23,5 +23,6 @@ include(BareosConfigureFile)
 if(HAVE_WIN32)
 
   add_executable(wmi-example wmi-example.cc)
+  target_link_libraries(wmi-example CLI11::CLI11)
 
 endif()

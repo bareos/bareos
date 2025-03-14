@@ -936,6 +936,8 @@ class VirtualSystemExportSettingData {
         }
       }
 
+      LOG(L"ExportSettings = {}", WMI::ObjectAsString(instance).as_view());
+
 
       // we now need to convert this settings instance to xml formatted text
       // this is done via IWbemObjectTextSrc, see:
@@ -2085,6 +2087,287 @@ enum class TestType
   Restore
 };
 
+WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
+                                         std::wstring_view vm_name,
+                                         std::wstring_view backup_directory)
+{
+  auto vsms_clz = VirtualSystemManagementService::Class::load(service);
+  if (!vsms_clz) { return std::nullopt; }
+  auto vsss_clz = VirtualSystemSnapshotService::Class::load(service);
+  if (!vsss_clz) { return std::nullopt; }
+  auto vsesd = VirtualSystemExportSettingData::Class::load(service);
+  if (!vsesd) { return std::nullopt; }
+  auto vsssd_clz = VirtualSystemSnapshotSettingData::Class::load(service);
+  if (!vsssd_clz) { return std::nullopt; }
+
+  auto vsms = vsms_clz->Get();
+  if (!vsms) { return std::nullopt; }
+  auto vsss = vsss_clz->Get();
+  if (!vsss) { return std::nullopt; }
+
+  auto vm = service.GetVMByName(vm_name);
+
+  if (!vm) { return std::nullopt; }
+
+  WMI::SystemString directory{backup_directory};
+
+
+  VirtualSystemSnapshotSettingData ssettings = {
+      .consistency_level
+      = VirtualSystemSnapshotSettingData::ConsistencyLevel::CrashConsistent,
+      .ignore_non_snapshottable_disks = true,
+  };
+
+  auto snapshot_settings = vsssd_clz->GetText(ssettings);
+
+  if (!snapshot_settings) { return std::nullopt; }
+
+  LOG(L"Snapshot Settings = {}", snapshot_settings->as_view());
+
+  auto snapshot = vsss->CreateSnapshot(
+      vm.value(), snapshot_settings.value(),
+      VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+  if (!snapshot) { return std::nullopt; }
+
+
+  {
+    WMI::SystemString new_snapshot_name{
+        std::wstring_view{L"Bareos Snapshot - Full"}};
+
+    VARIANT Name;
+    V_VT(&Name) = VT_BSTR;
+    V_BSTR(&Name) = new_snapshot_name.get();
+    snapshot->system->Put(L"ElementName", 0, &Name, 0);
+    auto xml = WMI::ObjectAsXML(snapshot.value());
+    if (!xml) { return std::nullopt; }
+    auto rename_res = vsms->ModifySystemSettings(xml.value());
+    if (!rename_res) { return std::nullopt; }
+  }
+
+  LOG(L"Snapshot = {}", WMI::ObjectAsString(snapshot->system).as_view());
+
+  auto snapshot_path = snapshot->Path();
+  if (!snapshot_path) { return std::nullopt; }
+
+  VirtualSystemExportSettingData settings = {
+      .snapshot_virtual_system_path = std::wstring{snapshot_path->as_view()},
+      .backup_intent
+      = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+      .copy_snapshot_configuration = VirtualSystemExportSettingData::
+          CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+      .capture_live_state
+      = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+      .copy_vm_runtime_information = false,
+      .copy_vm_storage = true,
+      .create_vm_export_subdirectory = true,
+  };
+
+  WMI::Result options = vsesd->GetText(settings);
+
+  if (!options) { return std::nullopt; }
+
+  auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
+
+  if (!res) { return std::nullopt; }
+
+  auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
+  return refpoint;
+}
+
+WMI::Result<WMI::ClassObject> IncrementalBackup(
+    const WMI& service,
+    std::wstring_view vm_name,
+    std::wstring_view backup_directory,
+    std::wstring_view ref_path)
+{
+  auto vsms_clz = VirtualSystemManagementService::Class::load(service);
+  if (!vsms_clz) { return std::nullopt; }
+  auto vsss_clz = VirtualSystemSnapshotService::Class::load(service);
+  if (!vsss_clz) { return std::nullopt; }
+  auto vsesd = VirtualSystemExportSettingData::Class::load(service);
+  if (!vsesd) { return std::nullopt; }
+  auto vsssd_clz = VirtualSystemSnapshotSettingData::Class::load(service);
+  if (!vsssd_clz) { return std::nullopt; }
+
+  auto vsms = vsms_clz->Get();
+  if (!vsms) { return std::nullopt; }
+  auto vsss = vsss_clz->Get();
+  if (!vsss) { return std::nullopt; }
+
+  auto vm = service.GetVMByName(vm_name);
+  if (!vm) { return std::nullopt; }
+
+  WMI::SystemString directory{backup_directory};
+
+  VirtualSystemSnapshotSettingData ssettings = {
+      .consistency_level
+      = VirtualSystemSnapshotSettingData::ConsistencyLevel::CrashConsistent,
+      .ignore_non_snapshottable_disks = true,
+  };
+
+  auto snapshot_settings = vsssd_clz->GetText(ssettings);
+
+  if (!snapshot_settings) { return std::nullopt; }
+
+  LOG(L"Snapshot Settings = {}", snapshot_settings->as_view());
+
+  auto snapshot = vsss->CreateSnapshot(
+      vm.value(), snapshot_settings.value(),
+      VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+  if (!snapshot) { return std::nullopt; }
+
+
+  {
+    WMI::SystemString new_snapshot_name{
+        std::wstring_view{L"Bareos Snapshot - Incremental"}};
+
+    VARIANT Name;
+    V_VT(&Name) = VT_BSTR;
+    V_BSTR(&Name) = new_snapshot_name.get();
+    snapshot->system->Put(L"ElementName", 0, &Name, 0);
+    auto xml = WMI::ObjectAsXML(snapshot.value());
+    if (!xml) { return std::nullopt; }
+    auto rename_res = vsms->ModifySystemSettings(xml.value());
+    if (!rename_res) { return std::nullopt; }
+  }
+
+  LOG(L"Snapshot = {}", WMI::ObjectAsString(snapshot->system).as_view());
+
+  auto snapshot_path = snapshot->Path();
+  if (!snapshot_path) { return std::nullopt; }
+
+  // TODO: check if ref_path is actually a referenc point
+  VirtualSystemExportSettingData settings = {
+      .snapshot_virtual_system_path = std::wstring{snapshot_path->as_view()},
+      .differential_backup_base_path = std::wstring{ref_path},
+      .backup_intent
+      = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+      .copy_snapshot_configuration = VirtualSystemExportSettingData::
+          CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+      .capture_live_state
+      = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+      .copy_vm_runtime_information = false,
+      .copy_vm_storage = true,
+      .create_vm_export_subdirectory = true,
+  };
+
+  WMI::Result options = vsesd->GetText(settings);
+
+  if (!options) { return std::nullopt; }
+
+  auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
+
+  if (!res) { return std::nullopt; }
+
+  auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
+  return refpoint;
+}
+
+bool RestoreBackup(const WMI& service,
+                   std::optional<std::wstring_view> new_vm_name,
+                   std::wstring_view definition_file,
+                   std::wstring_view hard_disk_path)
+{
+  auto vsms_clz = VirtualSystemManagementService::Class::load(service);
+  if (!vsms_clz) { return false; }
+
+  auto vsms = vsms_clz->Get();
+  if (!vsms) { return false; }
+
+  WMI::SystemString SystemDefinitionFile{definition_file};
+  WMI::SystemString SnapshotPath{std::wstring_view{L""}};
+  bool GenerateNewSystemIdentifier = true;
+
+  auto planned_system = vsms->ImportSystemDefinition(
+      SystemDefinitionFile, SnapshotPath, GenerateNewSystemIdentifier);
+  if (!planned_system) { return false; }
+
+  // We have now imported the system with the correct configuration.
+  // That configuration still points to the wrong Hard Disks.  We need to
+  // find every associated hard disk and change their paths to the
+  // newly restored ones.
+  auto planned_system_path = planned_system->Path();
+  if (!planned_system_path) { return false; }
+  auto related = service.GetRelatedOfClass(planned_system_path->as_view(),
+                                           L"Msvm_VirtualSystemSettingData",
+                                           L"Msvm_SettingsDefineState");
+  if (!related) { return false; }
+
+  WMI::SystemString HardDiskPath{hard_disk_path};
+  LOG(L"Found {} settings", related->size());
+  for (auto& setting : related.value()) {
+    LOG(L"setting = {}", WMI::ObjectAsString(setting.system).as_view());
+
+    auto setting_path = setting.Path();
+    if (!setting_path) {
+      LOG(L"Could not get path to setting");
+      return false;
+    }
+    auto vhd_settings = service.GetRelatedOfClass(
+        setting_path->as_view(), L"Msvm_StorageAllocationSettingData",
+        L"Msvm_VirtualSystemSettingDataComponent");
+    if (!vhd_settings) { return false; }
+
+    // we only want to look at
+    // ResourceSubType = "Microsoft:Hyper-V:Virtual Hard Disk";
+    // ResourceType = 31;
+    // Resources
+    // std::remove_if(std::begin(vhd_settings),
+    //                std::end(vhd_settings),
+    //                []() {
+
+    //                });
+
+    for (auto& vhd_setting : vhd_settings.value()) {
+      LOG(L"vhd setting = {}",
+          WMI::ObjectAsString(vhd_setting.system).as_view());
+
+      if (!UpdatePath(vhd_setting, HardDiskPath.as_view())) { return false; }
+
+      LOG(L"updated vhd setting = {}",
+          WMI::ObjectAsString(vhd_setting.system).as_view());
+
+      auto xml = WMI::ObjectAsXML(vhd_setting);
+      if (!xml) { return false; }
+
+      std::vector<WMI::SystemString> resources;
+      resources.emplace_back(std::move(xml.value()));
+
+      auto update_res = vsms->ModifyResourceSettings(resources);
+      if (!update_res) { return false; }
+    }
+
+    if (new_vm_name) {
+      WMI::SystemString s_new_vm_name{new_vm_name.value()};
+
+      VARIANT Name;
+      V_VT(&Name) = VT_BSTR;
+      V_BSTR(&Name) = s_new_vm_name.get();
+      auto put_res = setting.system->Put(L"ElementName", 0, &Name, 0);
+      if (FAILED(put_res)) {
+        LOG(L"Rename failed.  Err={} ({:X})", WMI::ErrorString(put_res),
+            (uint32_t)put_res);
+        return false;
+      }
+      auto xml = WMI::ObjectAsXML(setting);
+      if (!xml) { return false; }
+      auto rename_res = vsms->ModifySystemSettings(xml.value());
+      if (!rename_res) { return false; }
+    }
+  }
+
+  vsms->ValidatePlannedSystem(planned_system.value());
+  auto realize_res
+      = vsms->RealizePlannedSystem(std::move(planned_system.value()));
+  if (!realize_res) { return false; }
+
+
+  // auto destroy_res = vsms->DestroySystem(planned_system.value());
+  // if (!destroy_res) { return false; }
+
+  return true;
+}
+
 bool Test(const WMI& service, TestType tt)
 {
   auto vsms_clz = VirtualSystemManagementService::Class::load(service);
@@ -2375,8 +2658,104 @@ bool Test(const WMI& service, TestType tt)
   return true;
 }
 
+#include "CLI/App.hpp"
+#include "CLI/Config.hpp"
+#include "CLI/Formatter.hpp"
+
+std::optional<std::wstring> MakeFullPath(const std::wstring& path)
+{
+  auto required_size = GetFullPathNameW(path.c_str(), 0, nullptr, 0);
+
+  if (required_size <= 0) {
+    LOG(L"Could not determine full path of dir {}", path);
+    return std::nullopt;
+  }
+
+  std::wstring full_path;
+  full_path.resize(required_size - 1);
+
+  auto required_size_2 = GetFullPathNameW(path.c_str(), full_path.size() + 1,
+                                          full_path.data(), 0);
+
+  if (required_size_2 <= 0) {
+    LOG(L"Somehow could not determine full path of dir {}", path);
+    return std::nullopt;
+  }
+
+  if (required_size_2 > full_path.size()) {
+    LOG(L"Somehow could not determine full path of dir {} ({} != {})", path,
+        required_size_2, full_path.size());
+    return std::nullopt;
+  }
+
+  full_path.resize(required_size_2);
+
+  LOG(L"Full Path of {} is {} ", path, full_path);
+  return full_path;
+}
+
 int main(int argc, char** argv)
 {
+  CLI::App app;
+
+  std::wstring vm_name;
+  std::wstring backup_dir;
+  std::wstring reference_point;
+  std::wstring new_vm_name;
+  std::wstring system_definition_file;
+  std::wstring harddisk_dir;
+  auto full = app.add_subcommand("full", "create a full backup");
+  {
+    full->add_option("-V,--vm", vm_name)->required();
+    full->add_option("-B,--backup-dir", backup_dir)
+        ->required()
+        ->check(CLI::ExistingDirectory);
+  }
+  auto incremental
+      = app.add_subcommand("incremental", "create an incremental backup");
+  {
+    incremental->add_option("-V,--vm", vm_name)->required();
+    incremental->add_option("-B,--backup-dir", backup_dir)
+        ->required()
+        ->check(CLI::ExistingDirectory);
+    incremental->add_option("-R,--reference-point", reference_point)
+        ->required();
+  }
+
+  auto restore = app.add_subcommand("restore", "restore a backup");
+  {
+    restore->add_option("-H,--harddisk-dir", harddisk_dir)
+        ->required()
+        ->check(CLI::ExistingDirectory);
+    restore->add_option("-S,--system-definition", system_definition_file)
+        ->required()
+        ->check(CLI::ExistingFile);
+    restore->add_option("-N,--new-name", new_vm_name);
+  }
+
+  app.require_subcommand(1, 1);
+
+  CLI11_PARSE(app, argc, argv);
+
+  if (!backup_dir.empty()) {
+    std::optional full_path = MakeFullPath(backup_dir);
+    if (!full_path) { return -1; }
+    backup_dir = std::move(full_path.value());
+  }
+
+  if (!harddisk_dir.empty()) {
+    std::optional full_path = MakeFullPath(harddisk_dir);
+    if (!full_path) { return -1; }
+    harddisk_dir = std::move(full_path.value());
+  }
+
+  if (!system_definition_file.empty()) {
+    std::optional full_path = MakeFullPath(system_definition_file);
+    if (!full_path) { return -1; }
+    system_definition_file = std::move(full_path.value());
+  }
+
+
   HRESULT hres;
 
   // Step 1: --------------------------------------------------
@@ -2427,23 +2806,20 @@ int main(int argc, char** argv)
     return 1;  // Program has failed.
   }
 
-  // Step 4: -----------------------------------------------------
-  // Connect to WMI through the IWbemLocator::ConnectServer method
-
-  IWbemServices* pSvc = NULL;
+  IWbemServices* virt_service = nullptr;
 
   // Connect to the root\cimv2 namespace with
   // the current user and obtain pointer pSvc
   // to make IWbemServices calls.
   hres = pLoc->ConnectServer(
-      _bstr_t(L"ROOT\\CIMV2"),  // Object path of WMI namespace
-      NULL,                     // User name. NULL = current user
-      NULL,                     // User password. NULL = current
-      0,                        // Locale. NULL indicates current
-      NULL,                     // Security flags.
-      0,                        // Authority (for example, Kerberos)
-      0,                        // Context object
-      &pSvc                     // pointer to IWbemServices proxy
+      _bstr_t(L"ROOT\\VIRTUALIZATION\\V2"),  // Object path of WMI namespace
+      NULL,                                  // User name. NULL = current user
+      NULL,                                  // User password. NULL = current
+      0,                                     // Locale. NULL indicates current
+      NULL,                                  // Security flags.
+      0,             // Authority (for example, Kerberos)
+      0,             // Context object
+      &virt_service  // pointer to IWbemServices proxy
   );
 
   if (FAILED(hres)) {
@@ -2453,13 +2829,13 @@ int main(int argc, char** argv)
     return 1;  // Program has failed.
   }
 
-  cout << "Connected to ROOT\\CIMV2 WMI namespace" << endl;
+  cout << "Connected to ROOT\\VIRTUALIZATION\\V2 WMI namespace" << endl;
 
 
   // Step 5: --------------------------------------------------
   // Set security levels on the proxy -------------------------
 
-  hres = CoSetProxyBlanket(pSvc,               // Indicates the proxy to set
+  hres = CoSetProxyBlanket(virt_service,       // Indicates the proxy to set
                            RPC_C_AUTHN_WINNT,  // RPC_C_AUTHN_xxx
                            RPC_C_AUTHZ_NONE,   // RPC_C_AUTHZ_xxx
                            NULL,               // Server principal name
@@ -2472,190 +2848,63 @@ int main(int argc, char** argv)
   if (FAILED(hres)) {
     cout << "Could not set proxy blanket. Error code = 0x" << hex << hres
          << endl;
-    pSvc->Release();
+    virt_service->Release();
     pLoc->Release();
     CoUninitialize();
     return 1;  // Program has failed.
   }
 
-  // Step 6: --------------------------------------------------
-  // Use the IWbemServices pointer to make requests of WMI ----
+  WMI wmi{virt_service};
+  if (app.got_subcommand(full)) {
+    auto refpoint = FullBackup(wmi, vm_name, backup_dir);
+    if (!refpoint) {
+      cout << "Could not create full backup" << std::endl;
+      return -1;
+    }
+    LOG(L"Reference = {}", WMI::ObjectAsString(refpoint->system).as_view());
 
-  // For example, get the name of the operating system
-  IEnumWbemClassObject* pEnumerator = NULL;
-  hres = pSvc->ExecQuery(bstr_t("WQL"),
-                         bstr_t("SELECT * FROM 32_OperatingSystem"),
-                         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-                         NULL, &pEnumerator);
+    auto Path = refpoint->Path();
 
-  if (FAILED(hres)) {
-    cout << "Query for operating system name failed."
-         << " Error code = 0x" << hex << hres << endl;
-    pSvc->Release();
-    pLoc->Release();
-    CoUninitialize();
-    return 1;  // Program has failed.
-  }
-
-  // Step 7: -------------------------------------------------
-  // Get the data from the query in step 6 -------------------
-
-  IWbemClassObject* pclsObj = NULL;
-  ULONG uReturn = 0;
-
-  while (pEnumerator) {
-    HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
-
-    if (0 == uReturn) { break; }
-
-    VARIANT vtProp;
-
-    VariantInit(&vtProp);
-    // Get the value of the Name property
-    hr = pclsObj->Get(L"Name", 0, &vtProp, 0, 0);
-    wcout << " OS Name : " << vtProp.bstrVal << endl;
-    VariantClear(&vtProp);
-
-    pclsObj->Release();
-  }
-  if (0) {
-    // Set up to call the Win32_Process::Create method
-    BSTR MethodName = SysAllocString(L"Create");
-    BSTR ClassName = SysAllocString(L"Win32_Process");
-
-    IWbemClassObject* pClass = NULL;
-    hres = pSvc->GetObject(ClassName, 0, NULL, &pClass, NULL);
-
-    IWbemClassObject* pInParamsDefinition = NULL;
-    hres = pClass->GetMethod(MethodName, 0, &pInParamsDefinition, NULL);
-
-    IWbemClassObject* pClassInstance = NULL;
-    hres = pInParamsDefinition->SpawnInstance(0, &pClassInstance);
-
-    // Create the values for the in-parameters
-    VARIANT varCommand;
-    varCommand.vt = VT_BSTR;
-    varCommand.bstrVal = _bstr_t(L"notepad.exe");
-
-    // Store the value for the in-parameters
-    hres = pClassInstance->Put(L"CommandLine", 0, &varCommand, 0);
-    wprintf(L"The command is: %s\n", V_BSTR(&varCommand));
-
-    IWbemClassObject* pOutParams = NULL;
-    hres = pSvc->ExecMethod(ClassName, MethodName, 0, NULL, pClassInstance,
-                            &pOutParams, NULL);
-
-    if (!FAILED(hres)) {
-      VARIANT varReturnValue;
-      hres = pOutParams->Get(_bstr_t(L"ReturnValue"), 0, &varReturnValue, NULL,
-                             0);
-      wprintf(L"The command succeeded.\n");
-      VariantClear(&varReturnValue);
-    } else {
-      wprintf(L"The command failed.\n");
+    if (!Path) {
+      std::wcout << L"Count not determine path of created reference point ???"
+                 << std::endl;
     }
 
-    VariantClear(&varCommand);
-    SysFreeString(ClassName);
-    SysFreeString(MethodName);
-    pClass->Release();
-    pClassInstance->Release();
-    pInParamsDefinition->Release();
-    pOutParams->Release();
+    std::wcout << L"Reference Point = '" << Path->as_view() << L"'"
+               << std::endl;
+  }
+  if (app.got_subcommand(incremental)) {
+    auto refpoint
+        = IncrementalBackup(wmi, vm_name, backup_dir, reference_point);
+    if (!refpoint) {
+      cout << "Could not create incremental backup" << std::endl;
+      return -1;
+    }
+    LOG(L"Reference = {}", WMI::ObjectAsString(refpoint->system).as_view());
+
+    auto Path = refpoint->Path();
+
+    if (!Path) {
+      std::wcout << L"Count not determine path of created reference point ???"
+                 << std::endl;
+    }
+
+    std::wcout << L"Reference Point = '" << Path->as_view() << L"'"
+               << std::endl;
+  }
+  if (app.got_subcommand(restore)) {
+    std::optional<std::wstring_view> new_name = std::nullopt;
+    if (!new_vm_name.empty()) { new_name = new_vm_name; }
+
+    if (!RestoreBackup(wmi, new_name, system_definition_file, harddisk_dir)) {
+      std::wcout << "Restore failed" << std::endl;
+    }
+    std::wcout << "Restore succeeded" << std::endl;
   }
 
-  // Cleanup
-  // ========
-
-  pSvc->Release();
-  pLoc->Release();
-  pEnumerator->Release();
-
-
-  {
-    IWbemServices* virt_service = nullptr;
-
-    // Connect to the root\cimv2 namespace with
-    // the current user and obtain pointer pSvc
-    // to make IWbemServices calls.
-    hres = pLoc->ConnectServer(
-        _bstr_t(L"ROOT\\VIRTUALIZATION\\V2"),  // Object path of WMI namespace
-        NULL,                                  // User name. NULL = current user
-        NULL,                                  // User password. NULL = current
-        0,                                     // Locale. NULL indicates current
-        NULL,                                  // Security flags.
-        0,             // Authority (for example, Kerberos)
-        0,             // Context object
-        &virt_service  // pointer to IWbemServices proxy
-    );
-
-    if (FAILED(hres)) {
-      cout << "Could not connect. Error code = 0x" << hex << hres << endl;
-      pLoc->Release();
-      CoUninitialize();
-      return 1;  // Program has failed.
-    }
-
-    cout << "Connected to ROOT\\VIRTUALIZATION\\V2 WMI namespace" << endl;
-
-
-    // Step 5: --------------------------------------------------
-    // Set security levels on the proxy -------------------------
-
-    hres
-        = CoSetProxyBlanket(virt_service,       // Indicates the proxy to set
-                            RPC_C_AUTHN_WINNT,  // RPC_C_AUTHN_xxx
-                            RPC_C_AUTHZ_NONE,   // RPC_C_AUTHZ_xxx
-                            NULL,               // Server principal name
-                            RPC_C_AUTHN_LEVEL_CALL,  // RPC_C_AUTHN_LEVEL_xxx
-                            RPC_C_IMP_LEVEL_IMPERSONATE,  // RPC_C_IMP_LEVEL_xxx
-                            NULL,                         // client identity
-                            EOAC_NONE                     // proxy capabilities
-        );
-
-    if (FAILED(hres)) {
-      cout << "Could not set proxy blanket. Error code = 0x" << hex << hres
-           << endl;
-      virt_service->Release();
-      pLoc->Release();
-      CoUninitialize();
-      return 1;  // Program has failed.
-    }
-
-    if (!Test({virt_service}, TestType::Restore)) {
-      wprintf(L"Business logic does not work!\n");
-    }
-  }
+  // Test(wmi, TestType::FullAndIncr);
 
   CoUninitialize();
 
   return 0;  // Program successfully completed.
 }
-
-// HRESULT GetRelated(PWSTR sAssociatePath, PWSTR sResultClass,
-// IWbemClassObject** ppResultObject)
-// {
-//   CStringW query;
-//   query.Format(L"associators of {%s} where ResultClass = %s", sAssociatePath,
-//   sResultClass);
-
-//   CComPtr<IEnumWbemClassObject> pEnumOb;
-
-//   HRESULT hr = m_pWbemServices->ExecQuery(
-//                                           BSTR(L"WQL"),
-//                                           CComBSTR(query),
-//                                           WBEM_FLAG_FORWARD_ONLY |
-//                                           WBEM_FLAG_RETURN_IMMEDIATELY, NULL,
-//                                           &pEnumOb));
-// ULONG uReturn = 0;
-// CComPtr<IWbemClassObject> pObject;
-// hr = pEnumOb->Next(WBEM_INFINITE, 1, &pObject, &uReturn);
-// return hr;
-// }
-// // Call the GetRelated function above with the __PATH parameter of JOB
-// CComPtr<IWbemClassObject> pOutParam = NULL;
-// CHK_HRES(this->ExecMethod(pHyperVObject, L"ConvertToReferencePoint",
-// pInParams, &pOutParam, NULL)); CComVariant jobPath;
-// CHK_HRES(pOutParam->Get(L"Job", 0, &jobPath, NULL, NULL));
-// CComPtr<IWbemClassObject> pResult;
-// GetRelated(jobPath.bstrVal, L"Msvm_VirtualSystemReferencePoint", &pResult);
