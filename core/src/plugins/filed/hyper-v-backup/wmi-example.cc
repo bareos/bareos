@@ -2299,6 +2299,8 @@ bool Test(const WMI& service, TestType tt)
                             L"ian\\Virtual Hard Disks"}};
       LOG(L"Found {} settings", related->size());
       for (auto& setting : related.value()) {
+        LOG(L"setting = {}", WMI::ObjectAsString(setting.system).as_view());
+
         auto setting_path = setting.Path();
         if (!setting_path) {
           LOG(L"Could not get path to setting");
@@ -2338,6 +2340,24 @@ bool Test(const WMI& service, TestType tt)
 
           auto update_res = vsms->ModifyResourceSettings(resources);
           if (!update_res) { return false; }
+        }
+
+        {
+          WMI::SystemString new_vm_name{std::wstring_view{L"Bareos Restored"}};
+
+          VARIANT Name;
+          V_VT(&Name) = VT_BSTR;
+          V_BSTR(&Name) = new_vm_name.get();
+          auto put_res = setting.system->Put(L"ElementName", 0, &Name, 0);
+          if (FAILED(put_res)) {
+            LOG(L"Rename failed.  Err={} ({:X})", WMI::ErrorString(put_res),
+                (uint32_t)put_res);
+            return false;
+          }
+          auto xml = WMI::ObjectAsXML(setting);
+          if (!xml) { return false; }
+          auto rename_res = vsms->ModifySystemSettings(xml.value());
+          if (!rename_res) { return false; }
         }
       }
 
