@@ -39,6 +39,8 @@ BrandingText "Bareos Installer"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\bareos-fd.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
+!define VCREDIST_URL "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+!define VCREDIST_REGPATH "Software\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
 !define INSTALLER_HELP "[/S silent install]$\r$\n\
 [/SILENTKEEPCONFIG keep config on silent upgrades]$\r$\n\
 [/WRITELOGS log to INSTDIR\install.log]$\r$\n\
@@ -177,6 +179,8 @@ ${StrRep}
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
 
+Page custom VCRedist.CustomPage
+
 ; License
 !insertmacro MUI_PAGE_LICENSE "..\..\LICENSE"
 
@@ -186,7 +190,6 @@ ${StrRep}
 
 ; Components page
 !insertmacro MUI_PAGE_COMPONENTS
-
 
 ; Custom page to get Client parameter
 Page custom getClientParameters
@@ -462,6 +465,102 @@ InstType "Standard - FileDaemon + Plugins, Traymonitor"
 InstType "Full - All Daemons, Director with PostgreSQL Catalog Database (needs local PostgreSQL Server)"
 InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
+Function VCRedist.CustomPage
+  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
+  ${If} $R1 == ""
+    ;Disable Next Button
+    GetDlgItem $0 $HWNDPARENT 1
+    EnableWindow $0 0
+
+    nsDialogs::Create 1018
+    Pop $R0
+
+    ${If} $R0 == error
+      Abort
+    ${EndIf}
+
+    !insertmacro MUI_HEADER_TEXT \
+        "Microsoft Visual C++ Redistributable" \
+        "The required Microsoft Visual C++ Redistributable could not be found."
+
+    ${NSD_CreateLabel} 0 0 100% 60u \
+        "Bareos requires the Microsoft Visual C++ Redistributable to be installed, \
+         but it could not be found on the system.$\r$\n\
+         $\r$\n\
+         The required version of the Microsoft Visual C++ Redistributable package is available at$\r$\n\
+         ${VCREDIST_URL}"
+    Pop $R0
+
+    ${NSD_CreateButton} 50u 60u 90u 16u "Open URL in browser"
+    Pop $R0
+    ${NSD_OnClick} $R0 VCRedist.OpenLink
+
+    ${NSD_CreateButton} 160u 60u 90u 16u "Copy URL to clipboard"
+    Pop $R0
+    ${NSD_OnClick} $R0 VCRedist.CopyLink
+
+    ${NSD_CreateLabel} 0 100u 100% 60u \
+        "After the required package is installed, the Next-button will be enabled and the installation can proceed."
+    Pop $R0
+
+    ${NSD_CreateTimer} VCRedist.RecheckTimer 2000
+    nsDialogs::Show
+
+  ${EndIf}
+
+FunctionEnd
+
+Function VCRedist.RecheckTimer
+  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
+  ${If} $R1 != ""
+    ${NSD_KillTimer} VCRedist.RecheckTimer
+    GetDlgItem $0 $HWNDPARENT 1
+    EnableWindow $0 1
+  ${EndIf}
+FunctionEnd
+
+Function VCRedist.OpenLink
+  Pop $R0
+  ExecShell "open" "${VCREDIST_URL}"
+FunctionEnd
+
+Function VCRedist.CopyLink
+  Pop $R0
+  Push "${VCREDIST_URL}"
+  Call CopyToClipboard
+FunctionEnd
+
+Function CopyToClipboard
+Exch $0 ;input string
+Push $1
+Push $2
+System::Call 'user32::OpenClipboard(i 0)'
+System::Call 'user32::EmptyClipboard()'
+StrLen $1 $0
+IntOp $1 $1 + 1
+System::Call 'kernel32::GlobalAlloc(i 2, i r1) i.r1'
+System::Call 'kernel32::GlobalLock(i r1) i.r2'
+System::Call 'kernel32::lstrcpyA(i r2, t r0)'
+System::Call 'kernel32::GlobalUnlock(i r1)'
+System::Call 'user32::SetClipboardData(i 1, i r1)'
+System::Call 'user32::CloseClipboard()'
+Pop $2
+Pop $1
+Pop $0
+FunctionEnd
+
+Section -CheckVCRedist
+  # non-silent install is handled on a custom page
+  IfSilent 0 CheckVCRedistEnd
+  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
+  ${If} $R1 == ""
+    MessageBox MB_OK|MB_ICONSTOP \
+      "Bareos requires Microsoft Visual C++ Redistributable to be installed.$\r$\n\
+       The installer will exit now."
+    Abort
+  ${EndIf}
+  CheckVCRedistEnd:
+SectionEnd
 
 Section -StopDaemon
   #  nsExec::ExecToLog "net stop bareos-fd"
