@@ -23,7 +23,7 @@ if(Python3_FOUND)
   bareos_add_plugin(python3-dir)
   target_sources(python3-dir PRIVATE python-dir.cc)
   install(TARGETS python3-dir DESTINATION ${plugindir})
-  target_link_libraries(python3-dir ${Python3_LIBRARIES} bareos)
+  target_link_libraries(python3-dir ${Python3_LIBRARIES} Bareos::Lib)
   target_include_directories(python3-dir PUBLIC ${Python3_INCLUDE_DIRS})
   target_compile_definitions(
     python3-dir PUBLIC PY3MODDIR=\"${Python3_SITEARCH}\"
@@ -57,7 +57,9 @@ if(Python3_FOUND)
                                                ${Python3_CCSHARED}
     )
   endif()
-  target_link_libraries(bareosdir-python3-module bareos ${Python3_LIBRARIES})
+  target_link_libraries(
+    bareosdir-python3-module Bareos::Lib ${Python3_LIBRARIES}
+  )
 
   if(NOT MSVC) # TODO: fix on MSVC
     add_test(NAME bareosdir-python3-module

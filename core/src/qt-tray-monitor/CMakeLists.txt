@@ -78,7 +78,7 @@ else()
   add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
 endif()
 
-target_link_libraries(bareos-tray-monitor PRIVATE bareos CLI11::CLI11)
+target_link_libraries(bareos-tray-monitor PRIVATE Bareos::Lib CLI11::CLI11)
 
 if(Qt4_FOUND)
   target_link_libraries(bareos-tray-monitor PRIVATE Qt4::QtGui)
