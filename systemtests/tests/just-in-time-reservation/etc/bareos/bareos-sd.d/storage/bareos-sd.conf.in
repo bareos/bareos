@@ -2,7 +2,7 @@ Storage {
   Name = bareos-sd
 
   Working Directory =  "@working_dir@"
-  SD Port = @sd_port@
+  Port = @sd_port@
   @sd_backend_config@
 
   JustInTimeReservation = Yes

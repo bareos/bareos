@@ -2,7 +2,7 @@ Client {
   Name = @basename@-fd2
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd2_port@
+  Port = @fd2_port@
 
   Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST@"
   Plugin Names = "@python_module_name@"

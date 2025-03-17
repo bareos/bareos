@@ -2,7 +2,7 @@ Client {
   Name = @basename@-fd
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd_port@
+  Port = @fd_port@
 
   Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST@"
   Plugin Names = "grpc"
