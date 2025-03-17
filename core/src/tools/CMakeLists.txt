@@ -36,7 +36,7 @@ if(HAVE_WIN32)
   )
 endif()
 add_executable(bregex ${BREGEXSRCS})
-target_link_libraries(bregex Bareos::Lib bareosfind CLI11::CLI11)
+target_link_libraries(bregex Bareos::Lib Bareos::Findlib CLI11::CLI11)
 
 set(BWILDSRCS bwild.cc)
 if(HAVE_WIN32)
@@ -52,10 +52,10 @@ target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
 
 if(NOT HAVE_MSVC)
   add_executable(drivetype drivetype.cc)
-  target_link_libraries(drivetype Bareos::Lib bareosfind)
+  target_link_libraries(drivetype Bareos::Lib Bareos::Findlib)
 
   add_executable(fstype fstype.cc)
-  target_link_libraries(fstype Bareos::Lib bareosfind)
+  target_link_libraries(fstype Bareos::Lib Bareos::Findlib)
 
   add_executable(bscrypto bscrypto.cc)
   target_link_libraries(bscrypto Bareos::Lib CLI11::CLI11)
@@ -64,7 +64,7 @@ endif()
 if(NOT HAVE_WIN32)
 
   add_executable(btestls btestls.cc)
-  target_link_libraries(btestls bareosfind Bareos::Lib)
+  target_link_libraries(btestls Bareos::Findlib Bareos::Lib)
 
   add_executable(bpluginfo bpluginfo.cc)
   target_link_libraries(bpluginfo Bareos::Lib ${CMAKE_DL_LIBS} CLI11::CLI11)
@@ -83,7 +83,7 @@ if(NOT client-only)
   set(TSTFNDSRCS testfind.cc testfind_fd.cc dummysockets.cc)
   add_executable(testfind ${TSTFNDSRCS})
   target_link_libraries(
-    testfind dird_objects Bareos::FD bareosfind CLI11::CLI11
+    testfind dird_objects Bareos::FD Bareos::Findlib CLI11::CLI11
   )
   list(APPEND TOOLS_SBIN testfind)
 
