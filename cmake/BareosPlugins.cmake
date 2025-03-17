@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,18 +17,26 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-find_package(GTest 1.8 CONFIG)
-if(GTest_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-  file(
-    GENERATE
-    OUTPUT environment.local
-    CONTENT "CATALOG_TEST_PROGRAM=$<TARGET_FILE:catalog>"
+# Create and preconfigure a plugin-target for one of the daemons
+function(bareos_add_plugin target)
+  if(target MATCHES "-dir$")
+    set(suffix "dird")
+  elseif(target MATCHES "-fd$")
+    set(suffix "filed")
+  elseif(target MATCHES "-sd$")
+    set(suffix "stored")
+  else()
+    message(
+      FATAL_ERROR "plugin target name ${target} must end in -dir, -fd or -sd"
+    )
+  endif()
+  if(PLUGIN_OUTPUT_DIRECTORY)
+    set(output_dir "${PLUGIN_OUTPUT_DIRECTORY}")
+  else()
+    set(output_dir "${CMAKE_BINARY_DIR}/core/src/plugins/${suffix}")
+  endif()
+  add_library(${target} MODULE)
+  set_target_properties(
+    ${target} PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY "${output_dir}"
   )
-else()
-  create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
-    "gtest not found or RUN_SYSTEMTESTS_ON_INSTALLED_FILES"
-  )
-endif()
+endfunction()

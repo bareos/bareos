@@ -1,13 +1,7 @@
-# CMAKE_CONFIG_TYPE is required on windows, on other OS it needs to be empty
-if [[ "$(uname -s)" =~ _NT ]]; then
-  # default to config type 'Debug', so that manual running the testrunners on
-  # windows works.
-  # When the testrunners are started by ctest, CMAKE_CONFIG_TYPE is set by
-  # ctest to the value given via the "-C <cfg>, --build-config <cfg>" parameter
-  CMAKE_CONFIG_TYPE=${CMAKE_CONFIG_TYPE:-Debug}
-else
-  CMAKE_CONFIG_TYPE=""
-fi
+# Default CMAKE_CONFIG_TYPE to be empty.
+# CTest will set this for multi-configuration builds (see ctest --build-config)
+: "${CMAKE_CONFIG_TYPE:=}"
+
 CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
 CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
 PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
@@ -128,21 +122,11 @@ export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 export PHP_EXECUTABLE="@PHP@"
 export PYTHON_EXECUTABLE="@PYTHON_EXECUTABLE@"
 
+# On Windows the symlinked programs need to find their DLLs.
+if [[ "$(uname -s)" =~ _NT ]]; then
+  PATH="$(cygpath "@CMAKE_RUNTIME_OUTPUT_DIRECTORY@"):$PATH"
+fi
 
-# On Windows native builds which allow multiple configurations(Debug/Release),
-# the binaries are created in a subdirectory named after the configuration type
-# below the corresponding CMAKE_BINARY_DIR
-PATH=\
-../../../core/src/console/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/dird/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/filed/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/stored/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/tests/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/tools/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/plugins/filed/python/python3modules/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/plugins/stored/python/python3modules/${CMAKE_CONFIG_TYPE}:\
-../../../core/src/plugins/dird/python/python3modules/${CMAKE_CONFIG_TYPE}:\
-$PATH
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
 # If there are multiple version, select the first.

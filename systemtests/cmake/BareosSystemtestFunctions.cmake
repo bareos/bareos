@@ -104,9 +104,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
     if(TARGET ${binary_name})
       create_variable_binary_name_to_test_for_binary_name(${binary_name})
-      get_target_property(
-        "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
-      )
+      get_target_output_dir("${binary_name_to_test_upcase}" "${binary_name}")
       set("${binary_name_to_test_upcase}"
           "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
       )
@@ -122,11 +120,9 @@ else()
         binary_name
   )
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
-    get_target_property(
-      "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
-    )
+    get_target_output_dir("${binary_name_to_test_upcase}" "${binary_name}")
     set("${binary_name_to_test_upcase}"
-        "${${binary_name_to_test_upcase}}/${binary_name}"
+        "${${binary_name_to_test_upcase}}/${binary_name}${CMAKE_EXECUTABLE_SUFFIX}"
     )
     message(
       "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
@@ -195,18 +191,21 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
       find_compiled_binary_and_set_binary_name_to_test_variable_for(${BINARY})
     endforeach()
 
-    get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
-    get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
+    get_target_output_dir(FD_PLUGINS_DIR_TO_TEST bpipe-fd)
+    get_target_output_dir(SD_PLUGINS_DIR_TO_TEST autoxflate-sd)
+    if(TARGET python3-dir)
+      get_target_output_dir(DIR_PLUGINS_DIR_TO_TEST python3-dir)
+    endif()
+    get_target_output_dir(SD_PLUGINS_DIR_TO_TEST autoxflate-sd)
     if(TARGET bareossd-droplet)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-droplet BINARY_DIR)
+      get_target_output_dir(SD_BACKEND_DIR_TO_TEST bareossd-droplet)
     endif()
     if(TARGET bareossd-gfapi)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
+      get_target_output_dir(SD_BACKEND_DIR_TO_TEST bareossd-gfapi)
     endif()
     if(TARGET bareossd-tape)
-      get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-tape BINARY_DIR)
+      get_target_output_dir(SD_BACKEND_DIR_TO_TEST bareossd-tape)
     endif()
-    set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
     set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
     set(WEBUI_PUBLIC_DIR_TO_TEST ${PROJECT_SOURCE_DIR}/../webui/public)
@@ -389,12 +388,16 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
       if(NOT ${${binary_name_to_test_upcase}} STREQUAL "")
 
-        if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-          set(build_configs "Debug" "Release")
+        if(CMAKE_CONFIGURATION_TYPES)
+          set(build_configs "${CMAKE_CONFIGURATION_TYPES}")
         else()
           set(build_configs "")
         endif()
-        foreach(build_config ${build_configs})
+        foreach(
+          build_config IN
+          ITEMS ""
+          LISTS CMAKE_CONFIGURATION_TYPES
+        )
           set(${bareos_XXX_binary}
               ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME}
           )
