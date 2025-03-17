@@ -3,6 +3,11 @@
 # A set of useful functions to be sourced in each test
 #
 
+#
+# Source the generic functions.
+#
+. "${rscripts}/bareos-ctl-funcs"
+
 # remove the colon from a windows path
 # required to determine the restore path as the colon is omitted if restored to
 # a subdirectory C:/test will result in C:/bareos-restores/C/test
@@ -537,6 +542,8 @@ run_bconsole()
     bconsole_file="${1:-${tmp}/bconcmds}"
     local error_code=0
     if [ -f "$bconsole_file" ]; then
+      check_config bconsole ${BAREOS_BCONSOLE_BINARY} -c ${conf} || exit $?
+
 	# 'cmd || ec=$?' is used to prevent "set -e" from killing the script
 	# before we had the chance to kill the daemons (in case of timeout)
 	if test "$debug" -eq 1 ; then
