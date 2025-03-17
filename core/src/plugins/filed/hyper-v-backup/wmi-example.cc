@@ -24,6 +24,9 @@
 #include <comdef.h>
 #include <Wbemidl.h>
 #include <atlsafe.h>
+#include <initguid.h>  // ask virtdisk.h to include guid definitions
+#include <virtdisk.h>
+#include <unordered_map>
 
 template <class Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
@@ -52,6 +55,7 @@ enum CIMReturnValue
 using namespace std;
 
 #pragma comment(lib, "wbemuuid.lib")
+#pragma comment(lib, "virtdisk.lib")
 
 #include <string_view>
 #include <optional>
@@ -71,8 +75,8 @@ struct Logger {
   template <class... Args>
   void Log(std::wformat_string<Args...> fmt, Args&&... args)
   {
-    wprintf(L"[LOG %hs:%d] %s\n", loc.function_name(), loc.line(),
-            std::format(fmt, std::forward<Args>(args)...).c_str());
+    fwprintf(stderr, L"[LOG %hs:%d] %s\n", loc.function_name(), loc.line(),
+             std::format(fmt, std::forward<Args>(args)...).c_str());
   }
 
   std::source_location loc;
@@ -861,6 +865,8 @@ class VirtualSystemExportSettingData {
       IWbemClassObject* instance = nullptr;
       auto hres = clz.class_ptr->SpawnInstance(0, &instance);
 
+      LOG(L"instance = {}", WMI::ObjectAsString(instance).as_view());
+
       if (FAILED(hres)) {
         LOG(L"Could not create instance of class {}.  Err={} ({:X})",
             clz.Name.as_view(), WMI::ErrorString(hres), (uint64_t)hres);
@@ -906,6 +912,7 @@ class VirtualSystemExportSettingData {
         instance->Release();
         return std::nullopt;
       }
+      LOG(L"CopyVmStorage = {}", settings.copy_vm_storage);
       if (!Set(instance, L"CopyVmStorage", settings.copy_vm_storage)) {
         instance->Release();
         return std::nullopt;
@@ -1028,6 +1035,7 @@ class VirtualSystemExportSettingData {
       VARIANT Arg;
       V_VT(&Arg) = VT_BOOL;
       V_BOOL(&Arg) = value;
+
       auto result = instance->Put(member, 0, &Arg, 0);
       if (FAILED(result)) {
         LOG(L"Set(ExportSetting, {}, {}) failed.  Err={} ({:X})", member, value,
@@ -1881,6 +1889,73 @@ class VirtualSystemReferencePointService : WMI::ClassObject {
   const Class* clz;
 };
 
+static WMI::Result<WMI::SystemString> HardDiskPath(WMI::ClassObject& setting)
+{
+  VARIANT host_resource;
+  CIMTYPE type;
+
+  auto get_res
+      = setting.system->Get(L"HostResource", 0, &host_resource, &type, 0);
+  if (FAILED(get_res)) {
+    LOG(L"Could not get HostResource.  Err={} ({})", WMI::ErrorString(get_res),
+        (uint32_t)get_res);
+    return std::nullopt;
+  }
+
+  if (type != (CIM_STRING | CIM_FLAG_ARRAY)) {
+    LOG(L"Bad type of HostResource.  Type={}", type);
+    return std::nullopt;
+  }
+
+  if (V_VT(&host_resource) != (VT_BSTR | VT_ARRAY)) {
+    LOG(L"Bad type of host_resource Variant.  Type={}", V_VT(&host_resource));
+    return std::nullopt;
+  }
+
+  SAFEARRAY* arr = V_ARRAY(&host_resource);
+
+  if (auto dim = SafeArrayGetDim(arr); dim != 1) {
+    LOG(L"Bad array dim.  Expected 1.  Dim = {}", dim);
+    return std::nullopt;
+  }
+
+  LONG lbound, ubound;
+  auto lbound_res = SafeArrayGetLBound(arr, 1, &lbound);
+  if (FAILED(lbound_res)) {
+    LOG(L"Could not get lower bound of SAFEARRAY {}.  Err={}", (const void*)arr,
+        lbound_res);
+    return std::nullopt;
+  }
+  auto ubound_res = SafeArrayGetUBound(arr, 1, &ubound);
+  if (FAILED(ubound_res)) {
+    LOG(L"Could not get upper bound of SAFEARRAY {}.  Err={}", (const void*)arr,
+        ubound_res);
+    return std::nullopt;
+  }
+  auto size = ubound - lbound + 1;
+  if (size != 1) {
+    LOG(L"Bad array size.  Expected 1.  Size = {}", size);
+    return std::nullopt;
+  }
+
+  BSTR disk_path;
+  LONG Index = 0;
+  auto hres = SafeArrayGetElement(arr, &Index, (void*)&disk_path);
+  if (FAILED(hres)) {
+    LOG(L"Could not get first element of array.  Err={}", hres);
+    return std::nullopt;
+  }
+
+  std::wstring_view dpath{disk_path, SysStringLen(disk_path)};
+
+  if (dpath.empty()) {
+    LOG(L"Got empty disk path.");
+    return std::nullopt;
+  }
+
+  return WMI::SystemString{dpath};
+}
+
 static bool UpdatePath(WMI::ClassObject& setting, std::wstring_view new_path)
 {
   VARIANT host_resource;
@@ -2163,12 +2238,399 @@ WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
   };
 
   WMI::Result options = vsesd->GetText(settings);
-
   if (!options) { return std::nullopt; }
 
   auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
-
   if (!res) { return std::nullopt; }
+
+  auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
+  return refpoint;
+}
+
+bool BackupDisk(const WMI::SystemString& hdd_path,
+                const wchar_t* rct_id,
+                std::wstring_view dir)
+{
+  LOG(L"backing up {} to {}", hdd_path.as_view(), dir);
+  HANDLE disk_handle = {};
+
+  VIRTUAL_STORAGE_TYPE vst = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+  };
+  auto res = OpenVirtualDisk(
+      &vst, hdd_path.get(),
+      VIRTUAL_DISK_ACCESS_READ | VIRTUAL_DISK_ACCESS_GET_INFO
+          | VIRTUAL_DISK_ACCESS_ATTACH_RO | VIRTUAL_DISK_ACCESS_METAOPS,
+      OPEN_VIRTUAL_DISK_FLAG_NONE, NULL, &disk_handle);
+  if (res != ERROR_SUCCESS) {
+    LOG(L"OpenVirtualDisk({}) failed.  Err={} ({:X})", hdd_path.as_view(),
+        WMI::ErrorString(res), (uint64_t)res);
+    return false;
+  }
+  LOG(L"Opened virual disk at {}", (const void*)disk_handle);
+  // APPLY_SNAPSHOT_VHDSET_PARAMETERS snap_params = {
+  //   .Version = APPLY_SNAPSHOT_VHDSET_VERSION_1,
+  //   .Version1 = {
+  //     //.SnapshotId = snapshot_id,
+  //   }
+  // };
+  // APPLY_SNAPSHOT_VHDSET_FLAG snap_flags;
+  // auto snap_res = ApplySnapshotVhdSet(disk_handle, &snap_params, snap_flags);
+
+  {
+    alignas(GET_VIRTUAL_DISK_INFO) char info_buffer[500] = {};
+    auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(info_buffer);
+    disk_info->Version = GET_VIRTUAL_DISK_INFO_CHANGE_TRACKING_STATE;
+    ULONG VirtualDiskInfoSize = sizeof(info_buffer);
+    ULONG SizeOut = 0;
+    auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                              disk_info, &SizeOut);
+    if (disk_res != ERROR_SUCCESS) {
+      LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})", hdd_path.as_view(),
+          WMI::ErrorString(disk_res), (uint64_t)disk_res);
+      return false;
+    }
+
+    LOG(L"Size In = {} ({}), Size Out = {}", sizeof(disk_info),
+        VirtualDiskInfoSize, SizeOut);
+
+    LOG(L"RCT = {{ Enabled = {}, NewerChanges = {}, MostRecentId = {} }}",
+        disk_info->ChangeTrackingState.Enabled,
+        disk_info->ChangeTrackingState.NewerChanges,
+        disk_info->ChangeTrackingState.MostRecentId);
+  }
+
+  GET_VIRTUAL_DISK_INFO disk_info = {
+      .Version = GET_VIRTUAL_DISK_INFO_SIZE,
+  };
+  ULONG VirtualDiskInfoSize = sizeof(disk_info);
+  ULONG SizeOut = 0;
+  auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                            &disk_info, &SizeOut);
+  if (disk_res != ERROR_SUCCESS) {
+    LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})", hdd_path.as_view(),
+        WMI::ErrorString(disk_res), (uint64_t)disk_res);
+    return false;
+  }
+
+  LOG(L"Size In = {} ({}), Size Out = {}", sizeof(disk_info),
+      VirtualDiskInfoSize, SizeOut);
+
+  LOG(L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
+      L"SectorSize = {} }}",
+      disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
+      disk_info.Size.BlockSize, disk_info.Size.SectorSize);
+
+
+  // std::wstring change_tracking_id = {};
+
+  if (rct_id) {
+    LOG(L"Doing RCT with rct_id = {}", rct_id);
+    std::vector<QUERY_CHANGES_VIRTUAL_DISK_RANGE> ranges;
+    ranges.resize(500);
+    ULONG64 Start = 0;
+    ULONG64 Size = disk_info.Size.VirtualSize;
+    std::size_t total_size = 0;
+    while (Size > 0) {
+      LOG(L"Query Start = {}, Size = {}", Start, Size);
+      ULONG64 bytes_processed = 0;
+      ULONG range_count = ranges.size();
+      auto query_res = QueryChangesVirtualDisk(
+          disk_handle, rct_id, Start, Size,
+          QUERY_CHANGES_VIRTUAL_DISK_FLAG_NONE, ranges.data(), &range_count,
+          &bytes_processed);
+
+      LOG(L"query_res = {}", query_res);
+
+      if (query_res != ERROR_SUCCESS) {
+        LOG(L"QueryChangesVirtualDisk({}, {}) failed.  Err={} ({:X})", Start,
+            Size, WMI::ErrorString(query_res), (uint32_t)query_res);
+        break;
+      }
+
+      LOG(L"Got {} ranges", range_count);
+      for (ULONG i = 0; i < range_count; ++i) {
+        LOG(L"{}: {}-{} ({} bytes)", i, ranges[i].ByteOffset,
+            ranges[i].ByteOffset + ranges[i].ByteLength, ranges[i].ByteLength);
+        total_size += ranges[i].ByteLength;
+      }
+
+      Start += bytes_processed;
+      Size -= bytes_processed;
+    }
+    LOG(L"Total byte length = {}", total_size);
+  }
+
+  ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+      = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+  auto attach_res = AttachVirtualDisk(disk_handle, NULL,
+                                      ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST
+                                          | ATTACH_VIRTUAL_DISK_FLAG_READ_ONLY,
+                                      0, &attach_params, 0);
+  if (FAILED(attach_res)) {
+    LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
+        WMI::ErrorString(attach_res), (uint32_t)attach_res);
+  }
+
+
+  std::vector<char> Buffer;
+  Buffer.resize(1024 * 1024);
+  DWORD bytes_read = 0;
+  OVERLAPPED overlapped = {};
+  if (!ReadFile(disk_handle, Buffer.data(), Buffer.size(), &bytes_read,
+                &overlapped)) {
+    auto read_res = GetLastError();
+
+    if (read_res == ERROR_IO_PENDING) {
+      if (GetOverlappedResult(disk_handle, &overlapped, &bytes_read, TRUE)) {
+        goto ok_result;
+      }
+    }
+    LOG(L"ReadFile() failed.  Err={} ({:X})", WMI::ErrorString(read_res),
+        (uint32_t)read_res);
+    return false;
+  }
+ok_result:
+  LOG(L"Read {} bytes", bytes_read);
+
+  CloseHandle(disk_handle);
+  return true;
+}
+
+WMI::Result<WMI::SystemString> GetSnapshotId(const WMI::ClassObject& snapshot)
+{
+  VARIANT Arg;
+  CIMTYPE Type;
+  auto hres = snapshot.system->Get(L"ConfigurationID", 0, &Arg, &Type, nullptr);
+
+  if (FAILED(hres)) {
+    LOG(L"Get(Snapshot, ConfigurationID) failed.  Err={} ({:X})",
+        WMI::ErrorString(hres), (uint64_t)hres);
+    return std::nullopt;
+  } else if (Type != CIM_STRING) {
+    LOG(L"Get(Snapshot, ConfigurationID) returned bad type detected.  Type={}",
+        Type);
+    return std::nullopt;
+  }
+
+  return WMI::SystemString{V_BSTR(&Arg)};
+}
+
+WMI::Result<WMI::ClassObject> GetRefPoint(const WMI& wmi,
+                                          std::wstring_view ref_path)
+{
+  WMI::SystemString copy{ref_path};
+  IWbemClassObject* ref_point = nullptr;
+  auto result = wmi.service->GetObject(copy.get(), 0, NULL, &ref_point, NULL);
+  if (FAILED(result)) {
+    LOG(L"GetRefPoint({}). Err={} ({:X})", ref_path, WMI::ErrorString(result),
+        (uint32_t)result);
+    return std::nullopt;
+  }
+
+  return WMI::ClassObject{ref_point};
+}
+
+WMI::Result<std::vector<std::wstring>> GetStringArray(
+    const WMI::ClassObject& ref_point,
+    const wchar_t* name)
+{
+  VARIANT array;
+  CIMTYPE array_type;
+
+  auto get_res = ref_point.system->Get(name, 0, &array, &array_type, 0);
+  if (FAILED(get_res)) {
+    LOG(L"Could not get HostResource.  Err={} ({})", WMI::ErrorString(get_res),
+        (uint32_t)get_res);
+    return std::nullopt;
+  }
+
+  if (array_type != (CIM_STRING | CIM_FLAG_ARRAY)) {
+    LOG(L"Bad cim array type of {}.  Type={}", name, array_type);
+    return std::nullopt;
+  }
+
+  if (V_VT(&array) != (VT_BSTR | VT_ARRAY)) {
+    LOG(L"Bad variant type of {}.  Type={}", name, array_type);
+    return std::nullopt;
+  }
+
+  SAFEARRAY* arr = V_ARRAY(&array);
+
+  if (auto dim = SafeArrayGetDim(arr); dim != 1) {
+    LOG(L"Bad array dim in {}.  Expected 1.  Dim = {}", name, dim);
+    return std::nullopt;
+  }
+
+  LONG lbound, ubound;
+  auto lbound_res = SafeArrayGetLBound(arr, 1, &lbound);
+  if (FAILED(lbound_res)) {
+    LOG(L"Could not get lower bound of SAFEARRAY {}.  Err={} ({})", name,
+        WMI::ErrorString(lbound_res), lbound_res);
+    return std::nullopt;
+  }
+  auto ubound_res = SafeArrayGetUBound(arr, 1, &ubound);
+  if (FAILED(ubound_res)) {
+    LOG(L"Could not get upper bound of SAFEARRAY {}.  Err={} ({})", name,
+        WMI::ErrorString(ubound_res), ubound_res);
+    return std::nullopt;
+  }
+
+
+  std::vector<std::wstring> vec;
+  vec.resize(ubound - lbound + 1);
+  for (LONG i = lbound; i <= ubound; ++i) {
+    BSTR entry;
+    auto hres = SafeArrayGetElement(arr, &i, &entry);
+    if (FAILED(hres)) {
+      LOG(L"Could not get {}th element of array {}.  Err={} ({})", i, name,
+          WMI::ErrorString(hres), hres);
+      return std::nullopt;
+    }
+    vec[i] = {entry};
+  }
+
+  VariantClear(&array);
+
+  return vec;
+}
+
+WMI::Result<std::unordered_map<std::wstring, std::wstring>> GetRCTsByDiskId(
+    const WMI::ClassObject& ref_point)
+{
+  auto rcti = GetStringArray(ref_point, L"ResilientChangeTrackingIdentifiers");
+  if (!rcti) { return std::nullopt; }
+  auto vdi = GetStringArray(ref_point, L"VirtualDiskIdentifiers");
+  if (!vdi) { return std::nullopt; }
+
+  if (rcti->size() != vdi->size()) {
+    LOG(L"Not every disk has rct information: rcti {} != vdi {}", rcti->size(),
+        vdi->size());
+    return std::nullopt;
+  }
+
+  std::unordered_map<std::wstring, std::wstring> result;
+  for (std::size_t i = 0; i < rcti->size(); ++i) {
+    LOG(L"Found RCT {} -> {}", vdi->at(i), rcti->at(i));
+    result.try_emplace(std::move((*vdi)[i]), std::move((*rcti)[i]));
+  }
+  return result;
+}
+
+WMI::Result<WMI::ClassObject> FullBackupWin32(
+    const WMI& service,
+    std::wstring_view vm_name,
+    std::wstring_view backup_directory)
+{
+  auto vsms_clz = VirtualSystemManagementService::Class::load(service);
+  if (!vsms_clz) { return std::nullopt; }
+  auto vsss_clz = VirtualSystemSnapshotService::Class::load(service);
+  if (!vsss_clz) { return std::nullopt; }
+  auto vsesd = VirtualSystemExportSettingData::Class::load(service);
+  if (!vsesd) { return std::nullopt; }
+  auto vsssd_clz = VirtualSystemSnapshotSettingData::Class::load(service);
+  if (!vsssd_clz) { return std::nullopt; }
+
+  auto vsms = vsms_clz->Get();
+  if (!vsms) { return std::nullopt; }
+  auto vsss = vsss_clz->Get();
+  if (!vsss) { return std::nullopt; }
+
+  auto vm = service.GetVMByName(vm_name);
+  if (!vm) { return std::nullopt; }
+
+  WMI::SystemString directory{backup_directory};
+
+
+  VirtualSystemSnapshotSettingData ssettings = {
+      .consistency_level
+      = VirtualSystemSnapshotSettingData::ConsistencyLevel::CrashConsistent,
+      .ignore_non_snapshottable_disks = true,
+  };
+
+  auto snapshot_settings = vsssd_clz->GetText(ssettings);
+  if (!snapshot_settings) { return std::nullopt; }
+
+  LOG(L"Snapshot Settings = {}", snapshot_settings->as_view());
+
+  auto snapshot = vsss->CreateSnapshot(
+      vm.value(), snapshot_settings.value(),
+      VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+  if (!snapshot) { return std::nullopt; }
+
+
+  {
+    WMI::SystemString new_snapshot_name{
+        std::wstring_view{L"Bareos Snapshot - Full"}};
+
+    VARIANT Name;
+    V_VT(&Name) = VT_BSTR;
+    V_BSTR(&Name) = new_snapshot_name.get();
+    snapshot->system->Put(L"ElementName", 0, &Name, 0);
+    auto xml = WMI::ObjectAsXML(snapshot.value());
+    if (!xml) { return std::nullopt; }
+    auto rename_res = vsms->ModifySystemSettings(xml.value());
+    if (!rename_res) { return std::nullopt; }
+  }
+
+  LOG(L"Snapshot = {}", WMI::ObjectAsString(snapshot->system).as_view());
+
+  auto snapshot_path = snapshot->Path();
+  if (!snapshot_path) { return std::nullopt; }
+
+  VirtualSystemExportSettingData settings = {
+      .snapshot_virtual_system_path = std::wstring{snapshot_path->as_view()},
+      .backup_intent
+      = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+      .copy_snapshot_configuration = VirtualSystemExportSettingData::
+          CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+      .capture_live_state
+      = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
+      .copy_vm_runtime_information = false,
+      .copy_vm_storage = false,
+      .create_vm_export_subdirectory = true,
+  };
+
+  WMI::Result options = vsesd->GetText(settings);
+  if (!options) { return std::nullopt; }
+
+  auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
+  if (!res) { return std::nullopt; }
+
+  auto snapshot_id = GetSnapshotId(snapshot.value());
+  if (!snapshot_id) { return std::nullopt; }
+
+  LOG(L"SnapshotId = {}", snapshot_id->as_view());
+
+  {
+    auto vhd_settings = service.GetRelatedOfClass(
+        snapshot_path->as_view(), L"Msvm_StorageAllocationSettingData",
+        L"Msvm_VirtualSystemSettingDataComponent");
+    if (!vhd_settings) { return std::nullopt; }
+
+    // we only want to look at
+    // ResourceSubType = "Microsoft:Hyper-V:Virtual Hard Disk";
+    // ResourceType = 31;
+    // Resources
+    // std::remove_if(std::begin(vhd_settings),
+    //                std::end(vhd_settings),
+    //                []() {
+
+    //                });
+
+    for (auto& vhd_setting : vhd_settings.value()) {
+      LOG(L"vhd setting = {}",
+          WMI::ObjectAsString(vhd_setting.system).as_view());
+
+      auto hdd_path = HardDiskPath(vhd_setting);
+      if (!hdd_path) { return std::nullopt; }
+
+      if (!BackupDisk(hdd_path.value(), nullptr, backup_directory)) {
+        return std::nullopt;
+      }
+    }
+  }
 
   auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
   return refpoint;
@@ -2178,7 +2640,8 @@ WMI::Result<WMI::ClassObject> IncrementalBackup(
     const WMI& service,
     std::wstring_view vm_name,
     std::wstring_view backup_directory,
-    std::wstring_view ref_path)
+    std::wstring_view ref_path,
+    bool use_win32_api)
 {
   auto vsms_clz = VirtualSystemManagementService::Class::load(service);
   if (!vsms_clz) { return std::nullopt; }
@@ -2247,17 +2710,57 @@ WMI::Result<WMI::ClassObject> IncrementalBackup(
       .capture_live_state
       = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
       .copy_vm_runtime_information = false,
-      .copy_vm_storage = true,
+      .copy_vm_storage = !use_win32_api,
       .create_vm_export_subdirectory = true,
   };
 
   WMI::Result options = vsesd->GetText(settings);
-
   if (!options) { return std::nullopt; }
 
   auto res = vsms->ExportSystemDefinition(vm.value(), directory, *options);
-
   if (!res) { return std::nullopt; }
+
+  if (use_win32_api) {
+    auto refpoint = GetRefPoint(service, ref_path);
+    if (!refpoint) { return std::nullopt; }
+
+    auto rct_ids = GetRCTsByDiskId(refpoint.value());
+    if (!rct_ids) { return std::nullopt; }
+
+    auto vhd_settings = service.GetRelatedOfClass(
+        snapshot_path->as_view(), L"Msvm_StorageAllocationSettingData",
+        L"Msvm_VirtualSystemSettingDataComponent");
+    if (!vhd_settings) { return std::nullopt; }
+
+    // we only want to look at
+    // ResourceSubType = "Microsoft:Hyper-V:Virtual Hard Disk";
+    // ResourceType = 31;
+    // Resources
+    // std::remove_if(std::begin(vhd_settings),
+    //                std::end(vhd_settings),
+    //                []() {
+
+    //                });
+
+    for (auto& vhd_setting : vhd_settings.value()) {
+      LOG(L"vhd setting = {}",
+          WMI::ObjectAsString(vhd_setting.system).as_view());
+
+      auto hdd_path = HardDiskPath(vhd_setting);
+      if (!hdd_path) { return std::nullopt; }
+
+      const wchar_t* rct_id = [&] {
+        if (rct_ids->size() > 0) { return rct_ids->begin()->second.c_str(); }
+        return (const wchar_t*)nullptr;
+      }();
+
+      if (!BackupDisk(hdd_path.value(), rct_id, backup_directory)) {
+        return std::nullopt;
+      }
+    }
+  }
+
+  return std::nullopt;
 
   auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
   return refpoint;
@@ -2704,12 +3207,14 @@ int main(int argc, char** argv)
   std::wstring new_vm_name;
   std::wstring system_definition_file;
   std::wstring harddisk_dir;
+  bool win32_api = false;
   auto full = app.add_subcommand("full", "create a full backup");
   {
     full->add_option("-V,--vm", vm_name)->required();
     full->add_option("-B,--backup-dir", backup_dir)
         ->required()
         ->check(CLI::ExistingDirectory);
+    full->add_option("-W,--use-win32-api", win32_api);
   }
   auto incremental
       = app.add_subcommand("incremental", "create an incremental backup");
@@ -2720,6 +3225,7 @@ int main(int argc, char** argv)
         ->check(CLI::ExistingDirectory);
     incremental->add_option("-R,--reference-point", reference_point)
         ->required();
+    incremental->add_option("-W,--use-win32-api", win32_api);
   }
 
   auto restore = app.add_subcommand("restore", "restore a backup");
@@ -2856,7 +3362,13 @@ int main(int argc, char** argv)
 
   WMI wmi{virt_service};
   if (app.got_subcommand(full)) {
-    auto refpoint = FullBackup(wmi, vm_name, backup_dir);
+    auto refpoint = [&] {
+      if (win32_api) {
+        return FullBackupWin32(wmi, vm_name, backup_dir);
+      } else {
+        return FullBackup(wmi, vm_name, backup_dir);
+      }
+    }();
     if (!refpoint) {
       cout << "Could not create full backup" << std::endl;
       return -1;
@@ -2874,8 +3386,8 @@ int main(int argc, char** argv)
                << std::endl;
   }
   if (app.got_subcommand(incremental)) {
-    auto refpoint
-        = IncrementalBackup(wmi, vm_name, backup_dir, reference_point);
+    auto refpoint = IncrementalBackup(wmi, vm_name, backup_dir, reference_point,
+                                      win32_api);
     if (!refpoint) {
       cout << "Could not create incremental backup" << std::endl;
       return -1;
