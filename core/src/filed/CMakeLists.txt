@@ -55,7 +55,8 @@ target_sources(
 )
 
 target_link_libraries(
-  fd_objects_common PRIVATE Bareos::Lib Bareos::Findlib bareosfastlz ZLIB::ZLIB
+  fd_objects_common PRIVATE Bareos::Lib Bareos::Findlib Bareos::Fastlz
+                            ZLIB::ZLIB
 )
 if(HAVE_LMDB)
   target_link_libraries(fd_objects_common PRIVATE bareoslmdb)
