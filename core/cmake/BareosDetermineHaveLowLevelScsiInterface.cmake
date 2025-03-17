@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,6 @@ if(${scsi-crypto})
   if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
     if("${HAVE_CAMLIB_H}" AND "${HAVE_CAM_SCSI_SCSI_MESSAGE_H}")
       set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-      set(CAM_LIBRARIES cam)
     else()
       set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
       message(
