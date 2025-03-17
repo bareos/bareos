@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - reduce test-matrix [PR #2192]
 - bareos-fd: add option for grpc fallback [PR #2104]
 - Make tests optional [PR #2180]
+- windows: single-config/single-output directory [PR #2211]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -98,4 +99,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2192]: https://github.com/bareos/bareos/pull/2192
 [PR #2194]: https://github.com/bareos/bareos/pull/2194
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
+[PR #2211]: https://github.com/bareos/bareos/pull/2211
 [unreleased]: https://github.com/bareos/bareos/tree/master
