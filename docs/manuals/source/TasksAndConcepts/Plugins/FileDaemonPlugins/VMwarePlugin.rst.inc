@@ -23,6 +23,11 @@ Status
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
+Since :sinceVersion:`24.0.3: VMware Plugin` The Plugin can now save and recreate
+VMs with VirtualUSB devices. Note that VirtualUSB devices could disappear when
+powering on the VM and the USB device is attached to a different running VM,
+so a warning message will be emitted when such devices are involved.
+
 Since :sinceVersion:`24.0.1: VMware Plugin` Previous versions of this plugin may have produced
 incomplete backups, because the CBT information was not retrieved completely in cases where
 the amount of changes was high, especially differential and incremental jobs were affected
@@ -70,6 +75,12 @@ Current limitations amongst others are:
    When a disk of a VM was removed and then added again on the same datastore with the same name, or when a CBT reset happened, then the plugin will detect this and request the full level CBT information, and all allocated blocks of that disk will be backed up in an incremental or differential job as if it were a full level job. The restore of such a job will work, but it will take longer than necessary. The backup will terminate with a warning and a recommendation to run a full level job to optimize restore time.
 
    Since :sinceVersion:`23.0.3: VMware Plugin` the plugin option **fallback_to_full_cbt=no** (see below) can be used to disable this and terminate the job with failure instead. This can be useful if it is desired to run a new full level job anyway.
+
+.. limitation:: VMware Plugin: Backup of templates is currently not possible
+
+   It is not possible to backup templates, because taking snapshots is not
+   supported on templates, this makes CBT based backups of template impossible.
+
 
 Requirements
 ^^^^^^^^^^^^
