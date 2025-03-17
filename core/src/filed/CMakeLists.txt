@@ -28,102 +28,85 @@ if(HAVE_WIN32)
   )
 endif()
 
-set(FDSRCS
-    accurate.cc
-    authenticate.cc
-    crypto.cc
-    evaluate_job_command.cc
-    fd_plugins.cc
-    fileset.cc
-    sd_cmds.cc
-    verify.cc
-    accurate_htable.cc
-    backup.cc
-    dir_cmd.cc
-    filed_globals.cc
-    heartbeat.cc
-    socket_server.cc
-    verify_vol.cc
-    accurate_lmdb.cc
-    compression.cc
-    estimate.cc
-    filed_conf.cc
-    restore.cc
-    status.cc
-    filed_utils.cc
+add_library(fd_objects_common OBJECT)
+target_sources(
+  fd_objects_common
+  PRIVATE accurate.cc
+          authenticate.cc
+          crypto.cc
+          evaluate_job_command.cc
+          fd_plugins.cc
+          fileset.cc
+          sd_cmds.cc
+          verify.cc
+          accurate_htable.cc
+          dir_cmd.cc
+          filed_globals.cc
+          heartbeat.cc
+          socket_server.cc
+          verify_vol.cc
+          accurate_lmdb.cc
+          compression.cc
+          estimate.cc
+          filed_conf.cc
+          restore.cc
+          status.cc
+          filed_utils.cc
 )
 
-if(HAVE_WIN32)
-  list(APPEND FDSRCS ../win32/filed/vss.cc ../win32/filed/vss_XP.cc
-       ../win32/filed/vss_W2K3.cc ../win32/filed/vss_Vista.cc
-       ../win32/generic/service.cc ../win32/generic/main.cc
-  )
-endif()
-
-include_directories(${OPENSSL_INCLUDE_DIR})
-
-add_library(fd_objects STATIC ${FDSRCS})
-add_library(fd_test_objects STATIC ${FDSRCS})
-
-target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ZLIB::ZLIB)
-target_link_libraries(fd_test_objects PRIVATE bareos bareosfastlz ZLIB::ZLIB)
-
+target_link_libraries(
+  fd_objects_common PRIVATE bareos bareosfind bareosfastlz ZLIB::ZLIB
+)
 if(HAVE_LMDB)
-  target_link_libraries(fd_objects PRIVATE bareoslmdb)
-  target_link_libraries(fd_test_objects PRIVATE bareoslmdb)
+  target_link_libraries(fd_objects_common PRIVATE bareoslmdb)
 endif()
 
+add_library(fd_backup_test OBJECT)
+target_sources(fd_backup_test PRIVATE backup.cc)
+target_compile_definitions(
+  fd_backup_test PRIVATE MAXIMUM_ALLOWED_FILES_PER_JOB=10
+)
+
+add_library(fd_backup_notest OBJECT)
+target_sources(fd_backup_notest PRIVATE backup.cc)
+
+add_library(fd_objects_notest STATIC)
+add_library(Bareos::FD ALIAS fd_objects_notest)
+target_link_libraries(
+  fd_objects_notest PRIVATE fd_objects_common fd_backup_notest
+)
+
+add_executable(bareos-fd filed.cc)
+target_link_libraries(bareos-fd PRIVATE fd_objects_notest CLI11::CLI11)
+
+add_library(fd_objects_test STATIC)
+target_link_libraries(fd_objects_test PRIVATE fd_objects_common fd_backup_test)
+add_executable(bareos-test-fd filed.cc)
+target_link_libraries(bareos-test-fd PRIVATE fd_objects_test CLI11::CLI11)
+
 if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/filed/filedres.rc.in)
-  add_executable(
-    bareos-fd WIN32 filed.cc
-                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc
+  target_sources(
+    fd_objects_common
+    PRIVATE ../win32/filed/vss.cc ../win32/filed/vss_XP.cc
+            ../win32/filed/vss_W2K3.cc ../win32/filed/vss_Vista.cc
+            ../win32/generic/service.cc ../win32/generic/main.cc
   )
-  add_executable(
-    bareos-test-fd WIN32 filed.cc
-                         ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc
-  )
-else()
-  add_executable(bareos-fd filed.cc)
-  add_executable(bareos-test-fd filed.cc)
-endif()
-
-set(BAREOS_FD_LIBRARIES bareosfind bareos ${THREADS_THREADS})
-
-if(HAVE_WIN32)
-  target_sources(bareos-fd PRIVATE ../win32/generic/main.cc)
-  target_sources(bareos-test-fd PRIVATE ../win32/generic/main.cc)
-  list(APPEND BAREOS_FD_LIBRARIES comctl32)
-
-  set(FD_COMPILE_DEFINITIONS WIN32_VSS)
-
+  target_compile_definitions(fd_objects_common PUBLIC WIN32_VSS)
   if("${WINDOWS_BITS}" STREQUAL "64")
-    list(APPEND FD_COMPILE_DEFINITIONS HAVE_VSS64)
+    target_compile_definitions(fd_objects_common PUBLIC HAVE_VSS64)
   endif()
-else()
-  set(FD_COMPILE_DEFINITIONS "")
-  set(FD_TEST_COMPILE_DEFINITIONS "")
+
+  bareos_configure_file(FILES ../win32/filed/filedres.rc.in)
+
+  foreach(tgt IN ITEMS bareos-fd bareos-test-fd)
+    set_target_properties("${tgt}" PROPERTIES WIN32_EXECUTABLE ON)
+    target_sources(
+      "${tgt}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc
+                       ../win32/generic/main.cc
+    )
+    target_link_libraries("${tgt}" PRIVATE comctl32)
+  endforeach()
 endif()
-
-list(APPEND FD_TEST_COMPILE_DEFINITIONS ${FD_COMPILE_DEFINITIONS}
-     MAXIMUM_ALLOWED_FILES_PER_JOB=10
-)
-target_compile_definitions(fd_objects PRIVATE ${FD_COMPILE_DEFINITIONS})
-target_compile_definitions(
-  fd_test_objects PRIVATE ${FD_TEST_COMPILE_DEFINITIONS}
-)
-
-target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
-target_compile_definitions(
-  bareos-test-fd PRIVATE ${FD_TEST_COMPILE_DEFINITIONS}
-)
-
-target_link_libraries(
-  bareos-fd PRIVATE fd_objects ${BAREOS_FD_LIBRARIES} CLI11::CLI11
-)
-target_link_libraries(
-  bareos-test-fd PRIVATE fd_test_objects ${BAREOS_FD_LIBRARIES} CLI11::CLI11
-)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_target_properties(

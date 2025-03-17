@@ -461,7 +461,7 @@ target_compile_definitions(
 )
 
 bareos_add_test(
-  test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
+  test_config_parser_fd LINK_LIBRARIES Bareos::FD bareos bareosfind
                                        GTest::gtest_main
 )
 bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
