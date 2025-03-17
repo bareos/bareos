@@ -21,6 +21,7 @@ project(bareosfastlz LANGUAGES C)
 
 find_package(ZLIB REQUIRED)
 add_library(bareosfastlz SHARED)
+add_library(Bareos::Fastlz ALIAS bareosfastlz)
 target_sources(
   bareosfastlz PRIVATE src/fastlzlib.c src/fastlz.c src/lz4.c src/lz4hc.c
 )
