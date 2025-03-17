@@ -1409,6 +1409,19 @@ class BareosVADPWrapper(object):
         if not self.get_vm_details():
             return bareosfd.bRC_Error
 
+        # check if attempting to backup template
+        if self.vm.config.template is True:
+            bareosfd.DebugMessage(
+                100,
+                "Error VM %s is a template\n" % (StringCodec.encode(self.vm.name)),
+            )
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Error VM %s is a template, backing up templates is currently not possible\n"
+                % (StringCodec.encode(self.vm.name)),
+            )
+            return bareosfd.bRC_Error
+
         # check if the VM supports CBT and that CBT is enabled
         if not self.vm.capability.changeTrackingSupported:
             bareosfd.DebugMessage(
