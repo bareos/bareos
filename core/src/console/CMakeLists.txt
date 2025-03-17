@@ -21,34 +21,34 @@ include(BareosConfigureFile)
 
 find_package(Readline REQUIRED)
 
-set(BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc
-              console_output.cc
+add_library(console_objects STATIC)
+target_sources(
+  console_objects PRIVATE connect_to_director.cc console_conf.cc
+                          console_globals.cc console_output.cc
 )
-
 if(HAVE_PAM)
-  list(APPEND BCONSSRCS auth_pam.cc)
+  target_sources(console_objects PRIVATE auth_pam.cc)
 endif()
+target_link_libraries(console_objects PRIVATE bareos)
+
+add_executable(bconsole)
+target_sources(bconsole PRIVATE console.cc)
+
+add_executable(bconsole-unsafe)
+target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
+target_sources(bconsole-unsafe PRIVATE console.cc)
 
 if(HAVE_WIN32)
   bareos_configure_file(FILES ../win32/console/consoleres.rc.in)
-  add_executable(
-    bconsole console.cc
-             ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
+  target_sources(
+    bconsole PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
   )
-  add_executable(
-    bconsole-unsafe console.cc
-                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
+  target_sources(
+    bconsole-unsafe
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
   )
-else()
-  add_executable(bconsole console.cc)
-  add_executable(bconsole-unsafe console.cc)
 endif()
 
-target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
-
-add_library(console_objects STATIC ${BCONSSRCS})
-
-target_link_libraries(console_objects PRIVATE bareos)
 target_link_libraries(
   bconsole PRIVATE console_objects Readline::Readline CLI11::CLI11
 )
