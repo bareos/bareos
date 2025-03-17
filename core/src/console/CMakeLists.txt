@@ -29,7 +29,7 @@ target_sources(
 if(HAVE_PAM)
   target_sources(console_objects PRIVATE auth_pam.cc)
 endif()
-target_link_libraries(console_objects PRIVATE bareos)
+target_link_libraries(console_objects PRIVATE Bareos::Lib)
 
 add_executable(bconsole)
 target_sources(bconsole PRIVATE console.cc)

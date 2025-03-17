@@ -58,7 +58,7 @@ install(
   COMPONENT filedaemon
 )
 if(HAVE_WIN32 OR HAVE_DARWIN_OS)
-  target_link_libraries(bpipe-fd bareos)
+  target_link_libraries(bpipe-fd Bareos::Lib)
 endif()
 
 if(HAVE_WIN32)
@@ -69,11 +69,11 @@ if(HAVE_WIN32)
   )
   if(MSVC)
     target_link_libraries(
-      mssqlvdi-fd PRIVATE ${THREADS_THREADS} bareos comsupp.lib
+      mssqlvdi-fd PRIVATE ${THREADS_THREADS} Bareos::Lib comsupp.lib
     )
   else()
     target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
-    target_link_libraries(mssqlvdi-fd bareos)
+    target_link_libraries(mssqlvdi-fd Bareos::Lib)
   endif()
   set_target_properties(
     mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
