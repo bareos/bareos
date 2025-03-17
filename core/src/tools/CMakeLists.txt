@@ -83,7 +83,7 @@ if(NOT client-only)
   set(TSTFNDSRCS testfind.cc testfind_fd.cc dummysockets.cc)
   add_executable(testfind ${TSTFNDSRCS})
   target_link_libraries(
-    testfind dird_objects fd_objects bareosfind CLI11::CLI11
+    testfind dird_objects Bareos::FD bareosfind CLI11::CLI11
   )
   list(APPEND TOOLS_SBIN testfind)
 
