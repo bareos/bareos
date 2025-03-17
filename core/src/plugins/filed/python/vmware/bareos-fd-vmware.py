@@ -2366,6 +2366,15 @@ class BareosVADPWrapper(object):
             cbt_changeId = self.restore_objects_by_diskpath[
                 self.disk_device_to_backup["fileNameRoot"]
             ][0]["data"]["DiskParams"]["changeId"]
+
+            if cbt_changeId is None:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Error getting CBT change ID from restoreobject for disk %s\n"
+                    % (self.disk_device_to_backup["fileNameRoot"]),
+                )
+                return False
+
             bareosfd.DebugMessage(
                 100,
                 "get_vm_disk_cbt(): changeId %s from restore object, using for CBT query\n"
