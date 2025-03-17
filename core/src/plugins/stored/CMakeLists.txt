@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -37,8 +37,8 @@ if(ENABLE_PYTHON)
   add_subdirectory(python)
 endif()
 
-add_library(autoxflate-sd MODULE autoxflate/autoxflate-sd.cc)
-set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
+bareos_add_plugin(autoxflate-sd)
+target_sources(autoxflate-sd PRIVATE autoxflate/autoxflate-sd.cc)
 
 if(MSVC)
   target_link_libraries(autoxflate-sd bareos bareosfastlz ${ZLIB_LIBRARIES})
@@ -51,12 +51,12 @@ endif()
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
 
 if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
-  add_library(scsicrypto-sd MODULE scsicrypto/scsicrypto-sd.cc)
-  set_target_properties(scsicrypto-sd PROPERTIES PREFIX "")
+  bareos_add_plugin(scsicrypto-sd)
+  target_sources(scsicrypto-sd PRIVATE scsicrypto/scsicrypto-sd.cc)
   install(TARGETS scsicrypto-sd DESTINATION ${plugindir})
 
-  add_library(scsitapealert-sd MODULE scsitapealert/scsitapealert-sd.cc)
-  set_target_properties(scsitapealert-sd PROPERTIES PREFIX "")
+  bareos_add_plugin(scsitapealert-sd)
+  target_sources(scsitapealert-sd PRIVATE scsitapealert/scsitapealert-sd.cc)
   install(TARGETS scsitapealert-sd DESTINATION ${plugindir})
   if(HAVE_DARWIN_OS)
     target_link_libraries(scsitapealert-sd bareossd)

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,18 +17,20 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-find_package(GTest 1.8 CONFIG)
-if(GTest_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-  file(
-    GENERATE
-    OUTPUT environment.local
-    CONTENT "CATALOG_TEST_PROGRAM=$<TARGET_FILE:catalog>"
-  )
-else()
-  create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
-    "gtest not found or RUN_SYSTEMTESTS_ON_INSTALLED_FILES"
-  )
+option(COMMON_OUTPUT_DIRECTORIES
+       "Output all targets into common output directories" OFF
+)
+
+if(COMMON_OUTPUT_DIRECTORIES)
+  if(CMAKE_CONFIGURATION_TYPES)
+    message(
+      FATAL_ERROR
+        "Cannot configure single output directory for multi-config build (yet)."
+    )
+  else()
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+    set(PLUGIN_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins)
+  endif()
 endif()
