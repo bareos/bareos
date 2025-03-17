@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(bareos SHARED ${BAREOS_SRCS})
+add_library(bareos SHARED)
 target_sources(
   bareos
   PRIVATE address_conf.cc
@@ -108,6 +108,8 @@ if(HAVE_WIN32)
                    ../win32/compat/winapi.cc
   )
   target_sources(bareos PRIVATE osinfo_win32.cc)
+  target_compile_definitions(bareos PRIVATE "BUILDING_DLL")
+  target_link_libraries(bareos PUBLIC ws2_32)
 else()
   target_sources(bareos PRIVATE bpipe_unix.cc)
   target_sources(bareos PRIVATE scsi_tapealert.cc)
@@ -140,17 +142,15 @@ target_compile_definitions(
 
 target_link_libraries(
   bareos
-  PRIVATE version-obj
-          bareosfastlz
-          OpenSSL::SSL
-          OpenSSL::Crypto
-          ZLIB::ZLIB
-          ${CAM_LIBRARIES}
-          CLI11::CLI11
-          xxHash::xxhash
-          utf8cpp::utf8cpp
+  PRIVATE version-obj bareosfastlz OpenSSL::SSL OpenSSL::Crypto ZLIB::ZLIB
+          CLI11::CLI11 xxHash::xxhash utf8cpp::utf8cpp
   PUBLIC ${THREADS_THREADS}
 )
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" AND HAVE_LOWLEVEL_SCSI_INTERFACE)
+  target_link_libraries(bareos PRIVATE cam)
+endif()
+
 if(ENABLE_LZO)
   target_link_libraries(bareos PRIVATE LZO::LZO)
 endif()
@@ -173,7 +173,7 @@ if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
 endif()
 
 if(ENABLE_CAPABILITY)
-  target_link_libraries(bareos PRIVATE ${CAP_LIBRARIES})
+  target_link_libraries(bareos PRIVATE cap)
 endif()
 
 if(TARGET Jansson::Jansson)
@@ -186,10 +186,5 @@ set_target_properties(
   bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                     SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-
-if(HAVE_WIN32)
-  set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-  target_link_libraries(bareos PUBLIC ws2_32)
-endif()
 
 include(DebugEdit)
