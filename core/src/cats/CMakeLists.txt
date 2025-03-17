@@ -35,7 +35,7 @@ target_sources(
           postgresql.cc
           postgresql_batch.cc
 )
-target_link_libraries(bareossql PUBLIC bareos PostgreSQL::PostgreSQL)
+target_link_libraries(bareossql PUBLIC Bareos::Lib PostgreSQL::PostgreSQL)
 
 set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"

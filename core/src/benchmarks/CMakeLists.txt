@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -56,15 +56,17 @@ macro(bareos_add_benchmark BAREOS_ADD_BENCHMARK_BENCHMARKNAME)
 endmacro()
 
 bareos_add_benchmark(
-  restore_browser_stress_test LINK_LIBRARIES bareos dird_objects bareosfind
-  bareossql benchmark::benchmark_main
+  restore_browser_stress_test LINK_LIBRARIES Bareos::Lib dird_objects
+  bareosfind bareossql benchmark::benchmark_main
 )
 
 bareos_add_benchmark(
-  poolmem_fragmentation LINK_LIBRARIES bareos benchmark::benchmark_main
+  poolmem_fragmentation LINK_LIBRARIES Bareos::Lib benchmark::benchmark_main
   ${THREADS_THREADS}
 )
 
-bareos_add_benchmark(digest LINK_LIBRARIES bareos benchmark::benchmark_main)
+bareos_add_benchmark(
+  digest LINK_LIBRARIES Bareos::Lib benchmark::benchmark_main
+)
 
 include(DebugEdit)

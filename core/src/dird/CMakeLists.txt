@@ -124,7 +124,8 @@ if(HAVE_PAM)
 endif()
 
 target_link_libraries(
-  dird_objects PRIVATE bareos OpenSSL::SSL OpenSSL::Crypto ${THREADS_THREADS}
+  dird_objects PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
+                       ${THREADS_THREADS}
 )
 
 add_executable(bareos-dir)
@@ -181,7 +182,7 @@ if(HAVE_WIN32)
 endif()
 
 target_link_libraries(
-  bareos-dbcheck PRIVATE bareossql bareos bareosfind OpenSSL::SSL
+  bareos-dbcheck PRIVATE bareossql Bareos::Lib bareosfind OpenSSL::SSL
                          OpenSSL::Crypto CLI11::CLI11
 )
 

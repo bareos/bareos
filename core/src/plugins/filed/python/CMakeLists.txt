@@ -29,7 +29,7 @@ if(Python3_FOUND)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(python3-fd ${Python3_LIBRARIES} bareos)
+  target_link_libraries(python3-fd ${Python3_LIBRARIES} Bareos::Lib)
   target_include_directories(python3-fd PUBLIC ${Python3_INCLUDE_DIRS})
   target_compile_definitions(
     python3-fd PUBLIC PY3MODDIR=\"${Python3_SITEARCH}\"
@@ -90,7 +90,9 @@ if(Python3_FOUND)
   bareos_disable_warnings(
     TARGET bareosfd-python3-module WARNINGS -Wc99-designator
   )
-  target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
+  target_link_libraries(
+    bareosfd-python3-module Bareos::Lib ${Python3_LIBRARIES}
+  )
 
   if(NOT MSVC) # TODO: fix on MSVC
     add_test(NAME bareosfd-python3-module

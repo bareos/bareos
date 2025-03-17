@@ -144,7 +144,7 @@ if(${HAVE_DYNAMIC_SD_BACKENDS})
     list(APPEND BACKEND_OBJECTS libbareossd-chunked)
   endif()
 
-  set(LIBBAREOSSD_LIBRARIES bareos ${THREADS_THREADS} ${BACKEND_OBJECTS})
+  set(LIBBAREOSSD_LIBRARIES Bareos::Lib ${THREADS_THREADS} ${BACKEND_OBJECTS})
   message(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 else()
   if(TARGET droplet)
@@ -153,13 +153,13 @@ else()
   if(${HAVE_GFAPI})
     list(APPEND LIBBAREOSSD_LIBRARIES ${GFAPI_LIBRARIES})
   endif()
-  set(LIBBAREOSSD_LIBRARIES bareos ${LIBBAREOSSD_LIBRARIES})
+  set(LIBBAREOSSD_LIBRARIES Bareos::Lib ${LIBBAREOSSD_LIBRARIES})
   message(STATUS "LIBBAREOSSD_LIBRARIES ARE ${LIBBAREOSSD_LIBRARIES}")
 endif()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 target_link_libraries(
-  bareossd PRIVATE bareos ${THREADS_THREADS} fmt::fmt-header-only
+  bareossd PRIVATE Bareos::Lib ${THREADS_THREADS} fmt::fmt-header-only
 )
 set_target_properties(
   bareossd PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
@@ -186,7 +186,7 @@ endif()
 
 target_link_libraries(stored_objects PRIVATE ${THREADS_THREADS})
 target_link_libraries(
-  bareos-sd PRIVATE stored_objects bareos bareossd bareosfind CLI11::CLI11
+  bareos-sd PRIVATE stored_objects Bareos::Lib bareossd bareosfind CLI11::CLI11
 )
 
 if(HAVE_WIN32)
@@ -199,22 +199,24 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bls ${BLSSRCS})
-target_link_libraries(bls PRIVATE bareos bareossd bareosfind CLI11::CLI11)
+target_link_libraries(bls PRIVATE Bareos::Lib bareossd bareosfind CLI11::CLI11)
 
 add_executable(bextract ${BEXTRACTSRS})
-target_link_libraries(bextract PRIVATE bareossd bareosfind bareos CLI11::CLI11)
+target_link_libraries(
+  bextract PRIVATE bareossd bareosfind Bareos::Lib CLI11::CLI11
+)
 
 add_executable(bscan ${BSCANSRCS})
 target_link_libraries(
-  bscan PRIVATE bareos bareossd bareosfind bareossql CLI11::CLI11
+  bscan PRIVATE Bareos::Lib bareossd bareosfind bareossql CLI11::CLI11
 )
 
 add_executable(btape ${BTAPESRCS})
-target_link_libraries(btape PRIVATE bareossd bareos CLI11::CLI11)
+target_link_libraries(btape PRIVATE bareossd Bareos::Lib CLI11::CLI11)
 
 add_executable(bcopy ${BCOPYSRCS})
 
-target_link_libraries(bcopy PRIVATE bareossd bareos CLI11::CLI11)
+target_link_libraries(bcopy PRIVATE bareossd Bareos::Lib CLI11::CLI11)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 
