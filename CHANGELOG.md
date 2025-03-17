@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2195]
 - reduce test-matrix [PR #2199]
 - bareos-fd: add option for grpc fallback [PR #2193]
+- windows: single-config/single-output directory [PR #2212]
 
 ## [24.0.1] - 2025-02-24
 
@@ -412,4 +413,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2195]: https://github.com/bareos/bareos/pull/2195
 [PR #2199]: https://github.com/bareos/bareos/pull/2199
 [PR #2203]: https://github.com/bareos/bareos/pull/2203
+[PR #2212]: https://github.com/bareos/bareos/pull/2212
 [unreleased]: https://github.com/bareos/bareos/tree/master
