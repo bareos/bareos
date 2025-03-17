@@ -39,7 +39,7 @@ if(HAVE_WIN32)
   target_sources(bareosfind PRIVATE win32.cc win32.h)
 endif()
 
-target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
+target_link_libraries(bareosfind PRIVATE Bareos::Lib ${ACL_LIBRARIES})
 if(MSVC)
   target_link_libraries(bareosfind PRIVATE ${THREADS_THREADS})
 endif()
