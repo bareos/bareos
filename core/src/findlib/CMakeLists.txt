@@ -19,6 +19,7 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(bareosfind SHARED)
+add_library(Bareos::Findlib ALIAS bareosfind)
 target_sources(
   bareosfind
   PRIVATE acl.cc

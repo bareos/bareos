@@ -186,7 +186,8 @@ endif()
 
 target_link_libraries(stored_objects PRIVATE ${THREADS_THREADS})
 target_link_libraries(
-  bareos-sd PRIVATE stored_objects Bareos::Lib bareossd bareosfind CLI11::CLI11
+  bareos-sd PRIVATE stored_objects Bareos::Lib bareossd Bareos::Findlib
+                    CLI11::CLI11
 )
 
 if(HAVE_WIN32)
@@ -199,16 +200,18 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bls ${BLSSRCS})
-target_link_libraries(bls PRIVATE Bareos::Lib bareossd bareosfind CLI11::CLI11)
+target_link_libraries(
+  bls PRIVATE Bareos::Lib bareossd Bareos::Findlib CLI11::CLI11
+)
 
 add_executable(bextract ${BEXTRACTSRS})
 target_link_libraries(
-  bextract PRIVATE bareossd bareosfind Bareos::Lib CLI11::CLI11
+  bextract PRIVATE bareossd Bareos::Findlib Bareos::Lib CLI11::CLI11
 )
 
 add_executable(bscan ${BSCANSRCS})
 target_link_libraries(
-  bscan PRIVATE Bareos::Lib bareossd bareosfind bareossql CLI11::CLI11
+  bscan PRIVATE Bareos::Lib bareossd Bareos::Findlib bareossql CLI11::CLI11
 )
 
 add_executable(btape ${BTAPESRCS})
