@@ -130,11 +130,11 @@ check_database() {
 check_config() {
    echo "Checking Configuration for $1"
    log_file="${tmp}/bareos-$1-config-test.out"
-   "$2" -f -t "${@:3}" &> "$log_file"
+   "$2" -t "${@:3}" &> "$log_file"
 
    if ! ${IGNORE_CONFIG_WARNINGS}; then
       if grep -q "There are configuration warnings" "$log_file"; then
-         echo "Fail: There are configuration warnings for the director when running $2 -t ${*:3}, see below." >&2
+         echo "Fail: There are configuration warnings when running $2 -t ${*:3}, see below." >&2
          cat "$log_file"
          return 7
       fi
