@@ -9,7 +9,7 @@ Client {
   # Plugin Names = ""
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd_port@
+  Port = @fd_port@
   # Read as disable everything(-) that is enable by default, plus enable TLSv1.2 in case it is not by default
   TLS Protocol = "-TLSv1,-TLSv1.1,-TLSv1.3,TLSv1.2"
   # List of ciphers that should normally be hardware accelerated, and usable by kernel kTLS, order is important.

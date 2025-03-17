@@ -3,5 +3,5 @@ Client {
   Maximum Concurrent Jobs = 20
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd_port@
+  Port = @fd_port@
 }

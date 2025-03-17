@@ -4,5 +4,5 @@ Client {
   Lmdb Threshold = 0
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd_port@
+  Port = @fd_port@
 }
