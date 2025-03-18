@@ -108,9 +108,7 @@ target_sources(
           wait.cc
 )
 
-target_link_libraries(
-  bareossd PRIVATE Bareos::Lib ${THREADS_THREADS} fmt::fmt-header-only
-)
+target_link_libraries(bareossd PRIVATE Bareos::Lib fmt::fmt-header-only)
 set_target_properties(
   bareossd PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                       SOVERSION "${BAREOS_VERSION_MAJOR}"
@@ -119,9 +117,7 @@ set_target_properties(
 if(HAVE_DYNAMIC_SD_BACKENDS)
   target_sources(bareossd PRIVATE sd_backends_dynamic.cc)
 else()
-  target_link_libraries(
-    bareossd PRIVATE Bareos::Lib ${THREADS_THREADS} ${LIBBAREOSSD_LIBRARIES}
-  )
+  target_link_libraries(bareossd PRIVATE Bareos::Lib ${LIBBAREOSSD_LIBRARIES})
 endif()
 if(TARGET droplet)
   target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
@@ -166,7 +162,7 @@ if(HAVE_WIN32)
 endif()
 target_link_libraries(
   bareos-sd PRIVATE Bareos::SD Bareos::Lib Bareos::LibSD Bareos::Findlib
-                    CLI11::CLI11 ${THREADS_THREADS}
+                    CLI11::CLI11
 )
 
 add_executable(bls)
