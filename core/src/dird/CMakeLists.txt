@@ -126,7 +126,6 @@ endif()
 
 target_link_libraries(
   dird_objects PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
-                       ${THREADS_THREADS}
 )
 
 add_executable(bareos-dir)
