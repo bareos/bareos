@@ -41,9 +41,6 @@ if(HAVE_WIN32)
 endif()
 
 target_link_libraries(bareosfind PRIVATE Bareos::Lib ${ACL_LIBRARIES})
-if(MSVC)
-  target_link_libraries(bareosfind PRIVATE ${THREADS_THREADS})
-endif()
 
 if(HAVE_DARWIN_OS)
   # dev_t is signed on Darwin
