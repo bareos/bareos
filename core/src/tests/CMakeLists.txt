@@ -344,7 +344,7 @@ if(NOT client-only)
   bareos_add_test(
     sd_statistics_thread
     LINK_LIBRARIES testing_common Bareos::Dir Bareos::Lib Bareos::SQL
-                   Bareos::Findlib ${THREADS_THREADS} GTest::gtest_main
+                   Bareos::Findlib GTest::gtest_main
   )
   bareos_add_test(
     select_functions LINK_LIBRARIES Bareos::Dir Bareos::Findlib Bareos::SQL
@@ -455,7 +455,7 @@ endif()
 # Keep alphabetically ordered
 bareos_add_test(
   cram_md5
-  LINK_LIBRARIES Bareos::Lib ${THREADS_THREADS} GTest::gtest_main
+  LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
 
@@ -514,15 +514,12 @@ if(HAVE_WIN32)
 endif()
 
 bareos_add_test(
-  thread_specific_data LINK_LIBRARIES Bareos::Lib ${THREADS_THREADS}
-                                      GTest::gtest_main
+  thread_specific_data LINK_LIBRARIES Bareos::Lib GTest::gtest_main
 )
 
 bareos_add_test(version_strings LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
-bareos_add_test(
-  channel LINK_LIBRARIES Bareos::Lib ${THREADS_THREADS} GTest::gtest_main
-)
+bareos_add_test(channel LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(
   wrap LINK_LIBRARIES Bareos::Lib GTest::gtest_main OpenSSL::SSL
