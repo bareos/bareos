@@ -145,7 +145,7 @@ if(HAVE_OPENSSL)
   set(SSL_UNIT_TEST_FILES init_openssl.cc)
 endif()
 
-set(LINK_LIBRARIES Bareos::SD Bareos::Dir console_objects Bareos::LibSD
+set(LINK_LIBRARIES Bareos::SD Bareos::Dir Bareos::Console Bareos::LibSD
                    Bareos::Lib Bareos::SQL Bareos::Findlib GTest::gtest_main
 )
 
@@ -447,7 +447,7 @@ if(HAVE_WIN32)
 endif()
 if(ENABLE_BCONSOLE)
   bareos_add_test(
-    test_config_parser_console LINK_LIBRARIES console_objects Bareos::Lib
+    test_config_parser_console LINK_LIBRARIES Bareos::Console Bareos::Lib
                                               Bareos::Findlib GTest::gtest_main
   )
 endif()
