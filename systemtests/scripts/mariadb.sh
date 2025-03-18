@@ -20,7 +20,7 @@
 #   02110-1301, USA.
 
 #
-# A set of useful functions to be sourced to run mysql/mariadb.
+# A set of useful functions to be sourced to run mariadb.
 #
 # Requirements:
 #   Environment variables:
@@ -34,9 +34,9 @@
 # as a reference.
 #
 
-mariadbd_cleanup()
+mariadb_cleanup()
 {
-    mariadbd_server_stop
+    mariadb_server_stop
 
     rm -Rf mariadb/data/*
     mkdir -p mariadb/data/
@@ -45,32 +45,32 @@ mariadbd_cleanup()
     mkdir -p ${dbHost}
 }
 
-mariadbd_init()
+mariadb_init()
 {
     # creates "my.cnf" configuration file.
     # sets MARIADB_CLIENT variable.
 
-    mariadbd_cleanup
+    mariadb_cleanup
 
     # initialize mariadb db
     if ${MARIADB_DAEMON_BINARY} --verbose --help | grep -q initialize-insecure; then
         echo "MariaDB init with --initialize-insecure"
-        ${MARIADB_DAEMON_BINARY} --defaults-file=mariadbdefaults --initialize-insecure --user="${USER}" --datadir="mariadb/data" 2>&1 | tee mariadb/mariadb_init.log
+        ${MARIADB_DAEMON_BINARY} --defaults-file=mariadbdefaults --initialize-insecure --user="${USER}" 2>&1 | tee mariadb/mariadb_init.log
         {
             echo "[client]"
             echo "socket=${dbHost}/mariadb.sock"
             echo "user=root"
         } > my.cnf
-        MARIADB_CLIENT="${MARIADB_CLIENT_BINARY}} --defaults-file=my.cnf"
+        MARIADB_CLIENT="${MARIADB_CLIENT_BINARY} --defaults-file=my.cnf"
     else
-        echo "MariaDBL init with ${MARIADB_INSTALL_DB_SCRIPT}"
-        ${MARIADB_INSTALL_DB_SCRIPT} --auth-root-authentication-method=socket --user="${USER}" --auth-root-socket-user="${USER}" --defaults-file=mariadbdefaults --datadir="mariadb/data" > mariadb/mariadb_init.log
+        echo "MariaDB init with ${MARIADB_INSTALL_DB_SCRIPT}"
+        ${MARIADB_INSTALL_DB_SCRIPT} --auth-root-authentication-method=socket --user="${USER}" --auth-root-socket-user="${USER}" --defaults-file=mariadbdefaults > mariadb/mariadb_init.log
         {
             echo "[client]"
             echo "socket=${dbHost}/mariadb.sock"
             echo "user=${USER}"
         } > my.cnf
-        MARIADB_CLIENT="${MARIADB_CLIENT_BINARY}} --defaults-file=my.cnf"
+        MARIADB_CLIENT="${MARIADB_CLIENT_BINARY} --defaults-file=my.cnf"
     fi
 }
 
@@ -86,7 +86,7 @@ mariadb_server_start()
         return 1
     fi
 
-    "${MARIADB_DAEMON_BINARY}" --defaults-file=mariaddefaults > mariadb/mariadbd.log 2>&1 &
+    "${MARIADB_DAEMON_BINARY}" --defaults-file=mariadbdefaults > mariadb/mariadbd.log 2>&1 &
 
     tries=60
     printf "waiting for Mariadbd server to start "
