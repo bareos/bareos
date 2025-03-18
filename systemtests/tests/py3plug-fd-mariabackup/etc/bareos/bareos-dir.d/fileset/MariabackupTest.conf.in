@@ -9,8 +9,8 @@ FileSet {
             "module_path=@python_plugin_module_src_test_dir@:"
             "module_name=bareos-fd-mariabackup:"
             "mycnf=my.cnf:"
-            "dumpbinary=@MARIADB_BACKUP_BINARY@ --defaults-file=mysqldefaults:"
+            "dumpbinary=@MARIADB_BACKUP_BINARY@ --defaults-file=mariadbdefaults:"
             "extradumpoptions=--user=@USER@@extradumpoptions@:"
-            "mysqlcmd=@MARIADB_CLIENT_BINARY@ --defaults-file=mysqldefaults --user=@USER@ --raw"
+            "mysqlcmd=@MARIADB_CLIENT_BINARY@ --defaults-file=mariadbdefaults --user=@USER@ --raw"
   }
 }
