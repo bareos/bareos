@@ -4,6 +4,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Removed
+- config: deprecate file daemon as alias for client in FD config [PR #2187]
+
 ### Fixed
 - cats: fix version.map.in [PR #2064]
 - webui: fix for PHP < 7.3 [PR #2067]
@@ -93,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
 [PR #2175]: https://github.com/bareos/bareos/pull/2175
 [PR #2180]: https://github.com/bareos/bareos/pull/2180
+[PR #2187]: https://github.com/bareos/bareos/pull/2187
 [PR #2188]: https://github.com/bareos/bareos/pull/2188
 [PR #2191]: https://github.com/bareos/bareos/pull/2191
 [PR #2192]: https://github.com/bareos/bareos/pull/2192
