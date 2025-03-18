@@ -104,7 +104,7 @@ static ResourceItem mon_items[] = {
 static ResourceItem dir_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_dir,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_dir,description_), 0, 0, NULL, NULL, NULL},
-  {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir,DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
+  {"Port", CFG_TYPE_PINT32, ITEM(res_dir,DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL, { "DirPort" }},
   {"Address", CFG_TYPE_STR, ITEM(res_dir,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
@@ -120,7 +120,7 @@ static ResourceItem client_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_client,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_client,description_), 0, 0, NULL, NULL, NULL},
   {"Address", CFG_TYPE_STR, ITEM(res_client,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"FdPort", CFG_TYPE_PINT32, ITEM(res_client,FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
+  {"Port", CFG_TYPE_PINT32, ITEM(res_client,FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL, { "FdPort" }},
   {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
@@ -135,11 +135,9 @@ static ResourceItem client_items[] = {
 static ResourceItem store_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_store,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_store,description_), 0, 0, NULL, NULL, NULL},
-  {"SdPort", CFG_TYPE_PINT32, ITEM(res_store,SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_store,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdAddress", CFG_TYPE_STR, ITEM(res_store,address), 0, 0, NULL, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, 0, NULL, NULL, NULL},
+  {"Port", CFG_TYPE_PINT32, ITEM(res_store,SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL, { "SdPort" }},
+  {"Address", CFG_TYPE_STR, ITEM(res_store,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "SdAddress" }},
+  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "SdPassword" }},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
