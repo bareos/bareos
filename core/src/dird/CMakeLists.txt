@@ -124,9 +124,7 @@ if(HAVE_PAM)
   target_sources(dird_objects PRIVATE auth_pam.cc)
 endif()
 
-target_link_libraries(
-  dird_objects PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
-)
+target_link_libraries(dird_objects PRIVATE Bareos::Lib OpenSSL::SSL)
 
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
@@ -183,7 +181,7 @@ endif()
 
 target_link_libraries(
   bareos-dbcheck PRIVATE Bareos::SQL Bareos::Lib Bareos::Findlib OpenSSL::SSL
-                         OpenSSL::Crypto CLI11::CLI11
+                         CLI11::CLI11
 )
 
 install(TARGETS bareos-dir bareos-dbcheck DESTINATION "${sbindir}")
