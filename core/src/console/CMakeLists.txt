@@ -22,6 +22,7 @@ include(BareosConfigureFile)
 find_package(Readline REQUIRED)
 
 add_library(console_objects STATIC)
+add_library(Bareos::Console ALIAS console_objects)
 target_sources(
   console_objects PRIVATE connect_to_director.cc console_conf.cc
                           console_globals.cc console_output.cc
