@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,13 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include(BareosConfigureFile)
 bareos_configure_file(FILES include/config.h.in)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+if(${HAVE_LMDB})
+  add_subdirectory(lmdb)
+endif()
+add_subdirectory(lib)
+add_subdirectory(findlib)
+add_subdirectory(fastlz)
 
 add_subdirectory(filed)
 
@@ -54,14 +61,7 @@ endif()
 if(ENABLE_BCONSOLE)
   add_subdirectory(console)
 endif()
-
-if(${HAVE_LMDB})
-  add_subdirectory(lmdb)
-endif()
-add_subdirectory(lib)
-add_subdirectory(findlib)
 add_subdirectory(plugins)
-add_subdirectory(fastlz)
 if(${traymonitor})
   add_subdirectory(qt-tray-monitor)
 endif()

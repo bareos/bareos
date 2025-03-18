@@ -58,7 +58,7 @@ install(
   COMPONENT filedaemon
 )
 if(HAVE_WIN32 OR HAVE_DARWIN_OS)
-  target_link_libraries(bpipe-fd bareos)
+  target_link_libraries(bpipe-fd Bareos::Lib)
 endif()
 
 if(HAVE_WIN32)
@@ -69,11 +69,9 @@ if(HAVE_WIN32)
     mssqlvdi-fd PRIVATE ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
   )
   if(MSVC)
-    target_link_libraries(
-      mssqlvdi-fd PRIVATE ${THREADS_THREADS} bareos comsupp.lib
-    )
+    target_link_libraries(mssqlvdi-fd PRIVATE Bareos::Lib comsupp.lib)
   else()
-    target_link_libraries(mssqlvdi-fd bareos)
+    target_link_libraries(mssqlvdi-fd Bareos::Lib)
   endif()
   set_target_properties(
     mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
@@ -106,8 +104,7 @@ if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(gfapi-fd gfapi)
-  target_include_directories(gfapi-fd PRIVATE ${GFAPI_INCLUDE_DIRS})
+  target_link_libraries(gfapi-fd PRIVATE PkgConfig::gfapi)
 endif()
 
 add_subdirectory(grpc)

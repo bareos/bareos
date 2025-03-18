@@ -59,6 +59,12 @@
 
 namespace filedaemon {
 
+// allow to set the allowed maximum to something lower for testing purposes
+#ifndef MAXIMUM_ALLOWED_FILES_PER_JOB
+#  define MAXIMUM_ALLOWED_FILES_PER_JOB \
+    std::numeric_limits<decltype(JobControlRecord::JobFiles)>::max()
+#endif
+
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
 #else

@@ -28,7 +28,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 COMPONENTS Core Widgets)
+find_package(Qt6 QUIET COMPONENTS Core Widgets)
 if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
 else()
@@ -78,7 +78,7 @@ else()
   add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
 endif()
 
-target_link_libraries(bareos-tray-monitor PRIVATE bareos CLI11::CLI11)
+target_link_libraries(bareos-tray-monitor PRIVATE Bareos::Lib CLI11::CLI11)
 
 if(Qt4_FOUND)
   target_link_libraries(bareos-tray-monitor PRIVATE Qt4::QtGui)
