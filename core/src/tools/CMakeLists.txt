@@ -83,12 +83,12 @@ if(NOT client-only)
   set(TSTFNDSRCS testfind.cc testfind_fd.cc dummysockets.cc)
   add_executable(testfind ${TSTFNDSRCS})
   target_link_libraries(
-    testfind dird_objects Bareos::FD Bareos::Findlib CLI11::CLI11
+    testfind Bareos::Dir Bareos::FD Bareos::Findlib CLI11::CLI11
   )
   list(APPEND TOOLS_SBIN testfind)
 
   add_executable(bdedupestimate bdedup-estimate.cc)
-  target_link_libraries(bdedupestimate Bareos::Lib bareossd CLI11::CLI11)
+  target_link_libraries(bdedupestimate Bareos::Lib Bareos::LibSD CLI11::CLI11)
   list(APPEND TOOLS_SBIN bdedupestimate)
 
   if(NOT HAVE_WIN32)

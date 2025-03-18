@@ -56,7 +56,7 @@ macro(bareos_add_benchmark BAREOS_ADD_BENCHMARK_BENCHMARKNAME)
 endmacro()
 
 bareos_add_benchmark(
-  restore_browser_stress_test LINK_LIBRARIES Bareos::Lib dird_objects
+  restore_browser_stress_test LINK_LIBRARIES Bareos::Lib Bareos::Dir
   Bareos::Findlib Bareos::SQL benchmark::benchmark_main
 )
 
