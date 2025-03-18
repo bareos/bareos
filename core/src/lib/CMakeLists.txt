@@ -143,8 +143,8 @@ target_compile_definitions(
 
 target_link_libraries(
   bareos
-  PRIVATE version-obj Bareos::Fastlz OpenSSL::SSL OpenSSL::Crypto ZLIB::ZLIB
-          CLI11::CLI11 xxHash::xxhash utf8cpp::utf8cpp
+  PRIVATE version-obj Bareos::Fastlz OpenSSL::SSL ZLIB::ZLIB CLI11::CLI11
+          xxHash::xxhash utf8cpp::utf8cpp
   PUBLIC ${THREADS_THREADS}
 )
 
