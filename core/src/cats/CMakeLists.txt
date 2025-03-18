@@ -19,6 +19,7 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(bareossql SHARED)
+add_library(Bareos::SQL ALIAS bareossql)
 target_sources(
   bareossql
   PRIVATE bvfs.cc

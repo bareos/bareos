@@ -143,7 +143,7 @@ if(HAVE_WIN32)
 endif()
 
 target_link_libraries(
-  bareos-dir PRIVATE dird_objects bareossql Bareos::Findlib CLI11::CLI11
+  bareos-dir PRIVATE dird_objects Bareos::SQL Bareos::Findlib CLI11::CLI11
 )
 
 if(HAVE_NDMP)
@@ -182,7 +182,7 @@ if(HAVE_WIN32)
 endif()
 
 target_link_libraries(
-  bareos-dbcheck PRIVATE bareossql Bareos::Lib Bareos::Findlib OpenSSL::SSL
+  bareos-dbcheck PRIVATE Bareos::SQL Bareos::Lib Bareos::Findlib OpenSSL::SSL
                          OpenSSL::Crypto CLI11::CLI11
 )
 
