@@ -33,6 +33,7 @@ if(HAVE_WIN32)
 endif()
 
 add_library(dird_objects STATIC)
+add_library(Bareos::Dir ALIAS dird_objects)
 target_sources(
   dird_objects
   PRIVATE admin.cc
