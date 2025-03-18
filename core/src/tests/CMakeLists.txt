@@ -145,7 +145,7 @@ if(HAVE_OPENSSL)
   set(SSL_UNIT_TEST_FILES init_openssl.cc)
 endif()
 
-set(LINK_LIBRARIES stored_objects dird_objects console_objects bareossd
+set(LINK_LIBRARIES Bareos::SD dird_objects console_objects Bareos::LibSD
                    Bareos::Lib Bareos::SQL Bareos::Findlib GTest::gtest_main
 )
 
@@ -210,7 +210,7 @@ if(NOT client-only)
   )
 
   bareos_add_test(
-    append_test LINK_LIBRARIES Bareos::Lib stored_objects bareossd
+    append_test LINK_LIBRARIES Bareos::Lib Bareos::SD Bareos::LibSD
                                Bareos::Findlib GTest::gtest_main
   )
 
@@ -282,7 +282,7 @@ if(NOT client-only)
       alist_test.cc bareos_test_sockets.cc bsys_test.cc dlist_test.cc
       htable_test.cc qualified_resource_name_type_converter_test.cc
       ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
-    LINK_LIBRARIES stored_objects bareossd Bareos::Lib GTest::gtest_main
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
   )
   bareos_add_test(
     messages_resource
@@ -338,7 +338,7 @@ if(NOT client-only)
   bareos_add_test(
     sd_reservation
     ${disable}
-    LINK_LIBRARIES stored_objects bareossd Bareos::Lib GTest::gtest_main
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
                    GTest::gmock
   )
   bareos_add_test(
@@ -368,7 +368,7 @@ if(NOT client-only)
     LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
   bareos_add_test(
-    test_config_parser_sd LINK_LIBRARIES stored_objects bareossd bareos
+    test_config_parser_sd LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib
                                          GTest::gtest_main
   )
   bareos_add_test(
@@ -396,7 +396,7 @@ if(NOT client-only)
                                        Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
-    test_sd_plugins LINK_LIBRARIES Bareos::Lib bareossd GTest::gtest_main
+    test_sd_plugins LINK_LIBRARIES Bareos::Lib Bareos::LibSD GTest::gtest_main
   )
   bareos_add_test(
     test_setdebug LINK_LIBRARIES dird_objects Bareos::Lib Bareos::Findlib
