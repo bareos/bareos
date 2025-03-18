@@ -68,9 +68,7 @@ if(HAVE_WIN32)
     mssqlvdi-fd PRIVATE ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
   )
   if(MSVC)
-    target_link_libraries(
-      mssqlvdi-fd PRIVATE ${THREADS_THREADS} Bareos::Lib comsupp.lib
-    )
+    target_link_libraries(mssqlvdi-fd PRIVATE Bareos::Lib comsupp.lib)
   else()
     target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
     target_link_libraries(mssqlvdi-fd Bareos::Lib)
