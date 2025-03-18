@@ -88,8 +88,8 @@ else()
 endif()
 
 if(HAVE_DARWIN_OS)
-  target_link_libraries(bareossd-fifo Bareos::Lib bareossd)
-  target_link_libraries(bareossd-gentape Bareos::Lib bareossd)
+  target_link_libraries(bareossd-fifo Bareos::Lib Bareos::LibSD)
+  target_link_libraries(bareossd-gentape Bareos::Lib Bareos::LibSD)
 endif()
 
 if(HAVE_DYNAMIC_SD_BACKENDS)

@@ -59,7 +59,7 @@ if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
   target_sources(scsitapealert-sd PRIVATE scsitapealert/scsitapealert-sd.cc)
   install(TARGETS scsitapealert-sd DESTINATION ${plugindir})
   if(HAVE_DARWIN_OS)
-    target_link_libraries(scsitapealert-sd bareossd)
+    target_link_libraries(scsitapealert-sd Bareos::LibSD)
   endif()
 endif()
 
