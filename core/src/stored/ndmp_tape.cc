@@ -358,7 +358,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       }
     } else {
       // Read the next block into our buffers.
-      if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, NULL,
+      if (!ReadNextBlockFromDevice(dcr, rctx, &rctx->sessrec, NULL,
                                    MountNextReadVolume, NULL, &ok)) {
         return false;
       }
@@ -678,15 +678,16 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
 
       Dmsg1(50, "Begin reading device=%s\n", dcr->dev->print_name());
 
-      PositionDeviceToFirstFile(jcr, dcr);
-      jcr->sd_impl->read_session.mount_next_volume = false;
-
       // Allocate a new read context for this Job.
       rctx = new_read_context();
       jcr->sd_impl->read_session.rctx = rctx;
 
+      PositionDeviceToFirstFile(jcr, &rctx->current, dcr);
+      jcr->sd_impl->read_session.mount_next_volume = false;
+
+
       // Read the first block and setup record processing.
-      if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, NULL,
+      if (!ReadNextBlockFromDevice(dcr, rctx, &rctx->sessrec, NULL,
                                    MountNextReadVolume, NULL, &ok)) {
         Jmsg1(jcr, M_FATAL, 0, T_("Read session label failed. ERR=%s\n"),
               dcr->dev->bstrerror());
