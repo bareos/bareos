@@ -285,12 +285,15 @@ Multiplied Device
 The Multiplied Device feature can be used when multiple identical devices are needed.
 In this case the :config:option:`sd/device/Count` can be added to the regarding Device resource.
 
-When the configuration is loaded the |bareosSD| will then automatically multiply this device
-:config:option:`sd/device/Count` times. The number of multiplied devices includes the original Device.
+Note that this option only has an effect if the assigned value is greater than 1.
 
-A number "0001" will be appended to name of the initial Device. All other multiplied Devices have
-increasing numbers "0002", "0003", accordingly. In the example below the name of the multiplied
-devices will be "MultiFileStorage0001", "MultiFileStorage0002", and so on.
+When the configuration is loaded, the |bareosSD| will then automatically multiply this device :config:option:`sd/device/Count` + 1 times adding suffixes to the names starting from "0000". 
+
+The multiplied device with the suffix "0000" serves a special purpose, it is implicitly assigned :config:option:`sd/device/Autoselect` to "no".
+All other multiplied devices are an exact copy of the original device.
+
+Additionally, specifying :config:option:`sd/device/Count` also implicitly creates an autochanger with the same name as the original device with all devices listet in that autochanger.
+This only happens if the original device is not already associated to another autochanger.
 
 .. code-block:: bareosconfig
    :caption: bareos-sd.d/device/multiplied_device.conf
@@ -314,6 +317,9 @@ In the |bareosDir| any of the Multiplied Devices can be referred to using their 
 
 However, in the autochanger resource of the |bareosSD| the original name of the initial
 Multiplied Device Resource can be used.
+
+You do not have to explicitly create an autochanger resource in order to use the multiplied devices.
+However, if you decide to do so, for additional customizations, this could be done as follows.
 
 .. code-block:: bareosconfig
    :caption: bareos-sd.d/autochanger/autochanger.conf
