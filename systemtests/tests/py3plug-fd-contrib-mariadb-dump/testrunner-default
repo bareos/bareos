@@ -20,18 +20,17 @@ RESTORE_DIR="${tmp}/bareos-restores/@mariadbbackup@/"
 . "${rscripts}"/functions
 skip_if_root
 
+start_test
+
 #shellcheck source=../scripts/mysql.sh
 . "${rscripts}"/mariadb.sh
 
 mariadb_init
 mariadb_server_start
 
-echo "create database ${test_db_name}" | ${MARIADB_CLIENT}
-echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | ${MARIADB_CLIENT} "${test_db_name}"
-echo "insert into test (data) VALUES ('test entry 1') " | ${MARIADB_CLIENT} "${test_db_name}"
-echo "insert into test (data) VALUES ('test entry 2') " | ${MARIADB_CLIENT} "${test_db_name}"
-
-start_test
+${MARIADB_CLIENT} <<< "create database ${test_db_name}"
+${MARIADB_CLIENT} "${test_db_name}" <<< "CREATE TABLE test (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW());"
+${MARIADB_CLIENT} "${test_db_name}" <<< "insert into test (data) VALUES ('test entry 1')"
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out ${NULL_DEV}
@@ -49,14 +48,15 @@ messages
 llist jobs job=$JobName
 time
 END_OF_DATA
-
+echo "Running first full backup"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
     exit ${estat}
 fi
-# No need to test incremental, as dumps are always full
 
+# Insert more data & rerun a job
+${MARIADB_CLIENT} "${test_db_name}" <<< "insert into test (data) VALUES ('test entry 2')"
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
 @$out $tmp/log1i.out
 run job=$JobName yes
@@ -65,13 +65,13 @@ status dir
 wait
 messages
 time
-llist jobs job=RestoreFile
+llist jobs job=$JobName
 END_OF_DATA2
+echo "Running second full backup"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/log1i.out" "Full Backup not found!"
 
-run_bareos "$@"
-check_log $tmp/log1i.out
-
-cat <<END_OF_DATA2 >"${tmp}/bconcmds"
+cat <<END_OF_DATA3 >"${tmp}/bconcmds"
 @$out ${tmp}/log2.out
 setdebug level=200 trace=1 timestamp=1 client=bareos-fd
 restore restorejob=RestoreFile client=bareos-fd fileset=bareos_mariadb_dump yes select all done
@@ -80,9 +80,10 @@ setdebug level=0 client=bareos-fd
 status dir
 wait
 messages
+time
 llist jobs job=RestoreFile
-END_OF_DATA2
-
+END_OF_DATA3
+echo "Running restore backup"
 run_bconsole
 expect_grep "Restore OK" "${tmp}/log2.out" "Restore OK not found!"
 
