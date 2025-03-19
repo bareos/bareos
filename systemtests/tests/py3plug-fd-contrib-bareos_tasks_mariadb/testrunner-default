@@ -41,15 +41,19 @@ setdebug level=200 trace=1 timestamp=1 client=bareos-fd
 run job=${JobName} yes
 wait
 messages
-
 status dir
+wait
+time
 llist jobs job=${JobName}
 END_OF_DATA
+echo "Run first full"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
 
-run_bconsole "$@"
-check_log "${tmp}/log1.out"
-
-# insert data and run incremental
+# insert data and run another job
 ${MARIADB_CLIENT} "${test_db_name}" <<< "insert into test (data) VALUES ('test entry 2') "
 
 cat <<END_OF_DATA2 >"${tmp}/bconcmds"
@@ -60,10 +64,13 @@ run job=${JobName} yes
 wait
 messages
 status dir
+wait
+time
+llist jobs job=${JobName}
 END_OF_DATA2
-
-run_bconsole "$@"
-check_log "${tmp}/log1i.out"
+echo "Run 2nd job"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/log1i.out" "Full Backup not found!"
 
 cat <<END_OF_DATA3 >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
@@ -71,16 +78,17 @@ messages
 @$out ${tmp}/log2.out
 restore restorejob=RestoreFile client=bareos-fd fileset=bareos_tasks_mariadb yes select all done
 wait
+setdebug level=0 client=bareos-fd
+wait
 messages
 status dir
+wait
+time
 llist jobs job=RestoreFile
 END_OF_DATA3
-
-run_bconsole "$@"
-check_log "${tmp}/log2.out"
-
-check_for_zombie_jobs storage=File
-check_two_logs
+echo "Run restore job"
+run_bconsole
+expect_grep "Restore OK" "${tmp}/log2.out" "Restore OK not found!"
 
 # Check if some files are restored
 ls -lR "${RESTORE_DIR}"
@@ -90,6 +98,7 @@ if [ -z "$(ls -A "${RESTORE_DIR}")" ]; then
 fi
 
 # delete database
+echo "drop database ${test_db_name}"
 ${MARIADB_CLIENT} <<< "DROP DATABASE ${test_db_name};"
 
 if ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/dev/null; then
@@ -98,6 +107,7 @@ if ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/d
 fi
 
 # restore db
+echo "restore database ${test_db_name}"
 ${MARIADB_CLIENT} < "${RESTORE_DIR}/dump-database-${test_db_name}.sql"
 
 if ! ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" >/dev/null; then
