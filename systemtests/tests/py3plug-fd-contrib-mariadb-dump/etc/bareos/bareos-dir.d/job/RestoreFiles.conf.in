@@ -5,7 +5,7 @@ Job {
   Client = bareos-fd
   FileSet = SelfTest
   Storage = File
-  Pool = Incremental
+  Pool = Full
   Messages = Standard
   Where = @tmp@/bareos-restores
 }
