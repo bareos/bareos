@@ -21,8 +21,22 @@
           "code": 9,
           "equals": true
         },
+        "Port": {
+          "datatype": "PORT",
+          "code": 0,
+          "default_value": "9101",
+          "equals": true
+        },
         "DirPort": {
           "datatype": "PORT",
+          "code": 0,
+          "alias": true,
+          "default_value": "9101",
+          "equals": true,
+          "description": "This is an alias, consider using \"Port\" instead."
+        },
+        "Address": {
+          "datatype": "ADDRESS",
           "code": 0,
           "default_value": "9101",
           "equals": true
@@ -30,20 +44,38 @@
         "DirAddress": {
           "datatype": "ADDRESS",
           "code": 0,
+          "alias": true,
+          "default_value": "9101",
+          "equals": true,
+          "description": "This is an alias, consider using \"Address\" instead."
+        },
+        "Addresses": {
+          "datatype": "ADDRESSES",
+          "code": 0,
           "default_value": "9101",
           "equals": true
         },
         "DirAddresses": {
           "datatype": "ADDRESSES",
           "code": 0,
+          "alias": true,
           "default_value": "9101",
+          "equals": true,
+          "description": "This is an alias, consider using \"Addresses\" instead."
+        },
+        "SourceAddress": {
+          "datatype": "ADDRESS",
+          "code": 0,
+          "default_value": "0",
           "equals": true
         },
         "DirSourceAddress": {
           "datatype": "ADDRESS",
           "code": 0,
+          "alias": true,
           "default_value": "0",
-          "equals": true
+          "equals": true,
+          "description": "This is an alias, consider using \"SourceAddress\" instead."
         },
         "QueryFile": {
           "datatype": "DIRECTORY",
