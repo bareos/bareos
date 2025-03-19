@@ -4010,7 +4010,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
        * the set the main directive to be set. */
       if ((res_dir->DIRaddrs) && (res_dir->DIRaddrs->size() > 0)) {
         for (int i = 0; items[i].name; i++) {
-          if (Bstrcasecmp(items[i].name, "DirAddresses")) {
+          if (Bstrcasecmp(items[i].name, "Addresses")) {
             // SetBit(i, allocated_resource->item_present_);
             ClearBit(i, allocated_resource->inherit_content_);
           }
