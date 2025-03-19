@@ -19,13 +19,8 @@
 
 # bareos_elasticsearch is only a PoC
 #install(DIRECTORY bareos_elasticsearch DESTINATION ${PYTHON_MODULE_PATH} COMPONENT filedaemon)
-# Mysql/MariaDB switch
-if(TARGET python3-fd AND MYSQL_DAEMON_BINARY AND MYSQL_CLIENT_BINARY AND MYSQL_DUMP_BINARY)
-  install(DIRECTORY bareos_mysql_dump DESTINATION ${PYTHON_MODULE_PATH} COMPONENT filedaemon)
-endif()
-if(TARGET python3-fd AND MARIADB_DAEMON_BINARY AND MARIADB_CLIENT_BINARY AND MARIADB_DUMP_BINARY)
-  install(DIRECTORY bareos-mariadb-dump DESTINATION ${PYTHON_MODULE_PATH} COMPONENT filedaemon)
-endif()
+install(DIRECTORY bareos_mysql_dump DESTINATION ${PYTHON_MODULE_PATH} COMPONENT filedaemon)
+install(DIRECTORY mariadb-dump DESTINATION ${PYTHON_MODULE_PATH} COMPONENT filedaemon)
 # bareos_option_example is only an example
 #install(DIRECTORY bareos_option_example DESTINATION ${PYTHON_MODULE_PATH} COMPONENT filedaemon)
 install(DIRECTORY bareos_tasks DESTINATION ${PYTHON_MODULE_PATH} COMPONENT filedaemon)
