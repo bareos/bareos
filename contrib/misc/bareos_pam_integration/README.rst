@@ -133,8 +133,8 @@ parameters to an already existing one if heading for PAM usage only.
 
    [localhost-dir-pam]
    enabled              = "yes"
-   diraddress           = "localhost"
-   dirport	        = 9101
+   address              = "localhost"
+   port	               = 9101
    tls_verify_peer      = false
    server_can_do_tls    = false
    server_requires_tls  = false

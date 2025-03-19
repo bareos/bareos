@@ -436,8 +436,8 @@ Configuration example
    ;------------------------------------------------------------------------------
    [backup.example.com]
    enabled = "yes"
-   diraddress = "backup.example.com"
-   dirport = 9101
+   address = "backup.example.com"
+   port = 9101
    ;catalog = "MyCatalog"
    tls_verify_peer = false
    server_can_do_tls = true

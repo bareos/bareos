@@ -770,7 +770,7 @@ What would the Bareos configuration look like to implement such a scheme?
    Storage {
      Name = DDS-4
      Address = localhost
-     SDPort = 9103
+     Port = 9103
      Password = XXXXXXXXXXXXX
      Device = FileStorage
      Media Type = 8mm
@@ -847,7 +847,7 @@ Perhaps the best way to understand the various resource records that come into p
    Storage {
      Name = File
      Address = XXXXXXXXXXX
-     SDPort = 9103
+     Port = 9103
      Password = XXXXXXXXXXXXX
      Device = FileStorage
      Media Type = File

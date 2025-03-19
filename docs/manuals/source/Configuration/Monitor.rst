@@ -161,18 +161,18 @@ An example Traymonitor configuration file might be the following:
    Client {
      Name = rufus-fd
      Address = rufus
-     FDPort = 9102           # password for FileDaemon
+     Port = 9102           # password for FileDaemon
      Password = "FYpq4yyI1y562EMS35bA0J0QC0M2L3t5cZObxT3XQxgxppTn"
    }
    Storage {
      Name = rufus-sd
      Address = rufus
-     SDPort = 9103           # password for StorageDaemon
+     Port = 9103           # password for StorageDaemon
      Password = "9usxgc307dMbe7jbD16v0PXlhD64UVasIDD0DH2WAujcDsc6"
    }
    Director {
      Name = rufus-dir
-     DIRport = 9101
+     Port = 9101
      address = rufus
    }
 
