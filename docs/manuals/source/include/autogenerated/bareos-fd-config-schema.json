@@ -194,20 +194,38 @@
         "FdAddress": {
           "datatype": "ADDRESS",
           "code": 0,
+          "alias": true,
+          "default_value": "9102",
+          "equals": true,
+          "description": "This is an alias, consider using \"Address\" instead."
+        },
+        "Addresses": {
+          "datatype": "ADDRESSES",
+          "code": 0,
           "default_value": "9102",
           "equals": true
         },
         "FdAddresses": {
           "datatype": "ADDRESSES",
           "code": 0,
+          "alias": true,
           "default_value": "9102",
+          "equals": true,
+          "description": "This is an alias, consider using \"Addresses\" instead."
+        },
+        "SourceAddress": {
+          "datatype": "ADDRESS",
+          "code": 0,
+          "default_value": "0",
           "equals": true
         },
         "FdSourceAddress": {
           "datatype": "ADDRESS",
           "code": 0,
+          "alias": true,
           "default_value": "0",
-          "equals": true
+          "equals": true,
+          "description": "This is an alias, consider using \"SourceAddress\" instead."
         },
         "WorkingDirectory": {
           "datatype": "DIRECTORY",

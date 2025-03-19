@@ -157,11 +157,19 @@
           "code": 0,
           "equals": true
         },
-        "DirPort": {
+        "Port": {
           "datatype": "PINT32",
           "code": 0,
           "default_value": "9101",
           "equals": true
+        },
+        "DirPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "alias": true,
+          "default_value": "9101",
+          "equals": true,
+          "description": "This is an alias, consider using \"Port\" instead."
         },
         "Address": {
           "datatype": "STRING",
@@ -287,11 +295,19 @@
           "equals": true,
           "required": true
         },
-        "FdPort": {
+        "Port": {
           "datatype": "PINT32",
           "code": 0,
           "default_value": "9102",
           "equals": true
+        },
+        "FdPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "alias": true,
+          "default_value": "9102",
+          "equals": true,
+          "description": "This is an alias, consider using \"Port\" instead."
         },
         "Password": {
           "datatype": "MD5PASSWORD",
@@ -411,11 +427,19 @@
           "code": 0,
           "equals": true
         },
-        "SdPort": {
+        "Port": {
           "datatype": "PINT32",
           "code": 0,
           "default_value": "9103",
           "equals": true
+        },
+        "SdPort": {
+          "datatype": "PINT32",
+          "code": 0,
+          "alias": true,
+          "default_value": "9103",
+          "equals": true,
+          "description": "This is an alias, consider using \"Port\" instead."
         },
         "Address": {
           "datatype": "STRING",
@@ -426,7 +450,10 @@
         "SdAddress": {
           "datatype": "STRING",
           "code": 0,
-          "equals": true
+          "alias": true,
+          "equals": true,
+          "required": true,
+          "description": "This is an alias, consider using \"Address\" instead."
         },
         "Password": {
           "datatype": "MD5PASSWORD",
@@ -437,7 +464,10 @@
         "SdPassword": {
           "datatype": "MD5PASSWORD",
           "code": 0,
-          "equals": true
+          "alias": true,
+          "equals": true,
+          "required": true,
+          "description": "This is an alias, consider using \"Password\" instead."
         },
         "TlsAuthenticate": {
           "datatype": "BOOLEAN",
