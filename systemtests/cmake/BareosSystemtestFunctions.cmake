@@ -550,8 +550,11 @@ macro(prepare_testdir_for_daemon_run)
   file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR})
 
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Debug)
-    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Release)
+    if(CMAKE_CONFIGURATION_TYPES)
+      foreach(build_config IN LISTS CMAKE_CONFIGURATION_TYPES)
+        file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/${build_config})
+      endforeach()
+    endif()
   endif()
 
   link_binaries_to_test_to_current_sbin_dir_with_individual_filename()
