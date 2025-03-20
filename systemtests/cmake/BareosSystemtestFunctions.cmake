@@ -16,7 +16,6 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-
 macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "data" "*.tgz" COPYONLY "")
   configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
@@ -551,8 +550,11 @@ macro(prepare_testdir_for_daemon_run)
   file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR})
 
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Debug)
-    file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/Release)
+    if(CMAKE_CONFIGURATION_TYPES)
+      foreach(build_config IN LISTS CMAKE_CONFIGURATION_TYPES)
+        file(MAKE_DIRECTORY ${CURRENT_SBIN_DIR}/${build_config})
+      endforeach()
+    endif()
   endif()
 
   link_binaries_to_test_to_current_sbin_dir_with_individual_filename()
@@ -677,14 +679,17 @@ macro(create_symlink target link)
   endif()
 endmacro()
 
-function(add_disabled_systemtest PREFIX TEST_NAME)
+function(add_disabled_systemtest PREFIX TEST_NAME COMMENT)
   set(FULL_TEST_NAME "${PREFIX}${TEST_NAME}")
-  cmake_parse_arguments(PARSE_ARGV 2 ARG "DISABLED" "COMMENT" "")
   if(NOT TEST ${FULL_TEST_NAME})
     add_test(NAME ${FULL_TEST_NAME} COMMAND false)
   endif()
   set_tests_properties(${FULL_TEST_NAME} PROPERTIES DISABLED true)
-  message(STATUS "✘ ${FULL_TEST_NAME} => disabled (${ARG_COMMENT})")
+  if(${COMMENT})
+    message(STATUS "✘ ${FULL_TEST_NAME} => disabled (${COMMENT})")
+  else()
+    message(STATUS "✘ ${FULL_TEST_NAME} => disabled")
+  endif()
 endfunction()
 
 function(add_systemtest name file)
@@ -885,11 +890,11 @@ macro(create_systemtest prefix test_subdir)
   )
   set(test_basename "${prefix}${test_subdir}")
   if(ARG_DISABLED)
-    add_disabled_systemtest(${prefix} ${test_subdir} COMMENT "${ARG_COMMENT}")
+    add_disabled_systemtest(${prefix} ${test_subdir} "${ARG_COMMENT}")
   else()
     if("${test_basename}" IN_LIST TESTS_TO_SKIP)
       message(STATUS "⛔ ${test_basename} (baseport=${BASEPORT}, SKIPPED)")
-      add_disabled_systemtest(${prefix} ${test_subdir} COMMENT "${ARG_COMMENT}")
+      add_disabled_systemtest(${prefix} ${test_subdir} "${ARG_COMMENT}")
     else()
       string(REGEX MATCH "^py3.*-fd" is_fd_python "${test_subdir}")
 
@@ -918,6 +923,18 @@ macro(create_systemtest prefix test_subdir)
     endif()
   endif()
 endmacro()
+
+function(systemtest_requires_setup test)
+  get_filename_component(basename ${CMAKE_CURRENT_BINARY_DIR} NAME)
+  get_test_property(
+    "${SYSTEMTEST_PREFIX}${basename}:${test}" FIXTURES_REQUIRED _fixtures
+  )
+  list(APPEND _fixtures "${SYSTEMTEST_PREFIX}${basename}-fixture")
+  set_tests_properties(
+    "${SYSTEMTEST_PREFIX}${basename}:${test}" PROPERTIES FIXTURES_REQUIRED
+                                                         "${_fixtures}"
+  )
+endfunction()
 
 function(systemtest_requires test required_test)
   get_filename_component(basename ${CMAKE_CURRENT_BINARY_DIR} NAME)
