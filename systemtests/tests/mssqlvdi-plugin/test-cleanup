@@ -1,7 +1,8 @@
 #!/bin/bash
+
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,24 +23,13 @@ set -e
 set -o pipefail
 set -u
 
-TestName="$(basename "$(pwd)")"
-export TestName
-
-myname=$(basename "$0")
-
 #shellcheck source=../environment.in
 . ./environment
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-start_test
-
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i  sqlfiles/SQL_drop_db.sql
+"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i  sqlfiles/SQL_drop_db.sql
 
-if "${SQLCMD}" -Q "SELECT * FROM DBNormalTest.tests.samples"  | grep Bareos; then
-  echo "Database is not empty"
-  exit 2
-fi
-
-end_test
+"${rscripts}"/cleanup
