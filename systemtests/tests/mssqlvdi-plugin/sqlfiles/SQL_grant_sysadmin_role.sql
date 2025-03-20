@@ -17,20 +17,14 @@
 --   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 --   02110-1301, USA.
 
-USE [$(myDB)]
+USE [master]
 GO
 
-INSERT INTO tests.files (fstream_id, fstream_name, fstream_binary)
-VALUES
-(
-  NEWID(),
-  'sample_one',
-  (
-    SELECT * FROM OPENROWSET
-    (BULK '$(my_file)', SINGLE_BLOB) AS x
-  )
-)
-GO
-
---  to retrieve where the blob is stored in filesystem
---  select fstream_id,fstream_name,fstream_binary.PathName() AS FilePath from tests.files;
+IF NOT EXISTS
+    (SELECT name
+     FROM master.sys.server_principals
+     WHERE name = 'bareos')
+BEGIN
+    CREATE LOGIN [bareos] WITH PASSWORD = N'Sup3rS3crEt24'
+    EXEC sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'bareos'
+END

@@ -35,10 +35,12 @@ myname=$(basename "$0")
 
 start_test
 
+echo "Incremental Data" > "${DB_FILE2}"
+
 # update first line in brands
 "${SQLCMD}" -Q "UPDATE DBFileStreamTest.tests.samples SET sample_name='Bareos' WHERE sample_id=1"
 # Add a second filestream
-"${SQLCMD}" -Q "INSERT INTO DBFileStreamTest.tests.files (fstream_id, fstream_name, fstream_binary) VALUES (NEWID(),'Bareos', (SELECT * FROM OPENROWSET (BULK 'C:\Windows\write.exe',SINGLE_BLOB) AS fstream_binary))"
+"${SQLCMD}" -Q "INSERT INTO DBFileStreamTest.tests.files (fstream_id, fstream_name, fstream_binary) VALUES (NEWID(),'Bareos', (SELECT * FROM OPENROWSET (BULK '${DB_FILE2}',SINGLE_BLOB) AS fstream_binary))"
 
 mkdir -p "${tmp}/data"
 echo "$0" >"${tmp}/data/${myname}"
