@@ -19,7 +19,14 @@
 
 function(get_target_output_dir result_var target)
   if(WIN32)
-    get_target_property(output_dir ${target} RUNTIME_OUTPUT_DIRECTORY)
+    get_target_property(type ${target} TYPE)
+    # on windows both executables and shared libraries are in the same directory
+    if((type STREQUAL "EXECUTABLE") OR (type STREQUAL "SHARED_LIBRARY"))
+      get_target_property(output_dir ${target} RUNTIME_OUTPUT_DIRECTORY)
+    else()
+      get_target_property(output_dir ${target} LIBRARY_OUTPUT_DIRECTORY)
+    endif()
+    message("${target} (${type}) -> ${output_dir}")
   else()
     get_target_property(type ${target} TYPE)
     if(type STREQUAL "EXECUTABLE")
