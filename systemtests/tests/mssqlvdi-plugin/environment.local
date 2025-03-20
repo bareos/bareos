@@ -1,7 +1,50 @@
-export FD_TRACE_NAME="${working_dir}/$(basename "$(pwd)")-fd.trace"
+# Here we set some extra variables that the tests needs.
+#
+# print_delete_trace
+#   This simply prints the fd trace and then deletes it.
+#   This makes sure that only the relevant trace from the
+#   current test is printed.
+#
+# DB_DATA_DIR
+#   This is the directory in which we create the various
+#   databases.  See the note on why this has to include
+#   a space.
+#
+# DB_FILE
+#   This file is used inside the filestream db.  It is added
+#   before the first full backup and is later used to check
+#   whether the restore worked correctly.
+#
+# DB_FILE2
+#   This file is used inside the filestream db.  It is added
+#   before the first incremental backup and is later used to
+#   check whether the restore worked correctly.
+
 
 print_delete_trace()
 {
+        local FD_TRACE_NAME="${working_dir}/$(basename "$(pwd)")-fd.trace"
         cat "${FD_TRACE_NAME}" || echo "Trace does not exist"
         rm "${FD_TRACE_NAME}" || :
 }
+
+# this looks weird but is required.
+# cygwin is not able to pass double quotes to a windows process if you tell it to
+# but it happens automatically if the thing you are trying to pass contains spaces.
+# I.e.
+# <<<${prog} x>>> -> <<<${prog} x>>>
+# <<<${prog} "x">>> -> <<<${prog} x>>>
+# <<<${prog} \"x\">>> -> <<<${prog} "\"x\"">>>
+# <<<${prog} 'x'>>> -> <<<${prog} x>>>
+# <<<${prog} '"x"'>>> -> <<<${prog} "\"x\"">>>
+# ...
+# But!
+# <<<${prog} "has space">>> -> <<<${prog} "has space">>>
+#
+# This kind quoting of quoting is required for sqlcmd ..., so a space in the name
+# is necessary
+
+DB_DATA_DIR=$(cygpath -w "${tmp}\dir with space")
+
+DB_FILE="${DB_DATA_DIR}/MY_FILE"
+DB_FILE2="${DB_DATA_DIR}/MY_FILE_2"

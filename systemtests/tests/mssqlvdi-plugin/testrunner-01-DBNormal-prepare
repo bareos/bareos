@@ -35,7 +35,9 @@ myname=$(basename "$0")
 
 start_test
 
-"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_db_normal_drop_create.sql
+# the space between db_data_dir= and ${DB_DATA_DIR} is required to convince
+# cygwin to use the right quoting (also see: environment.local)
+"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -v db_data_dir = "${DB_DATA_DIR}" -i sqlfiles/SQL_db_normal_create.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_create_bareos_login_user.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_create_schema_tables.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_load_data.sql
