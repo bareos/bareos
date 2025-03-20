@@ -908,6 +908,18 @@ macro(create_systemtest prefix test_subdir)
   endif()
 endmacro()
 
+function(systemtest_requires_setup test)
+  get_filename_component(basename ${CMAKE_CURRENT_BINARY_DIR} NAME)
+  get_test_property(
+    "${SYSTEMTEST_PREFIX}${basename}:${test}" FIXTURES_REQUIRED _fixtures
+  )
+  list(APPEND _fixtures "${SYSTEMTEST_PREFIX}${basename}-fixture")
+  set_tests_properties(
+    "${SYSTEMTEST_PREFIX}${basename}:${test}" PROPERTIES FIXTURES_REQUIRED
+                                                         "${_fixtures}"
+  )
+endfunction()
+
 function(systemtest_requires test required_test)
   get_filename_component(basename ${CMAKE_CURRENT_BINARY_DIR} NAME)
   get_test_property(
