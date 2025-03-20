@@ -20,15 +20,12 @@
 USE [master]
 GO
 
-DROP DATABASE IF EXISTS [$(myDB)]
-GO
-
 CREATE DATABASE [$(myDB)]
  CONTAINMENT = NONE
  ON  PRIMARY
 (
     NAME = N'$(myDB)',
-    FILENAME = N'C:\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\$(myDB).mdf',
+    FILENAME = N'$(db_data_dir)\$(myDB).mdf',
     SIZE = 8192KB,
     MAXSIZE = UNLIMITED,
     FILEGROWTH = 65536KB
@@ -36,13 +33,13 @@ CREATE DATABASE [$(myDB)]
  FILEGROUP [FileGroup1] CONTAINS FILESTREAM DEFAULT
 (
     NAME = N'$(myDB)Attachment',
-    FILENAME = N'C:\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\$(myDB)Attachment',
+    FILENAME = N'$(db_data_dir)\$(myDB)Attachment',
     MAXSIZE = UNLIMITED
 )
  LOG ON
 (
     NAME = N'$(myDB)_log',
-    FILENAME = N'C:\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\$(myDB)_log.ldf',
+    FILENAME = N'$(db_data_dir)\$(myDB)_log.ldf',
     SIZE = 73728KB,
     MAXSIZE = 2048GB,
     FILEGROWTH = 65536KB

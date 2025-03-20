@@ -17,11 +17,14 @@
 --   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 --   02110-1301, USA.
 
-USE [$(myDB)]
+USE [master]
+GO
 
--- drop tables
-DROP TABLE IF EXISTS tests.samples;
-DROP TABLE IF EXISTS tests.files;
-
--- drop the schemas
-DROP SCHEMA IF EXISTS tests;
+IF NOT EXISTS
+    (SELECT name
+     FROM master.sys.server_principals
+     WHERE name = 'bareos')
+BEGIN
+    CREATE LOGIN [bareos] WITH PASSWORD = N'Sup3rS3crEt24'
+    EXEC sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'bareos'
+END

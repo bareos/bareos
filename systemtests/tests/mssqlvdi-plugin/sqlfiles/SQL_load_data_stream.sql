@@ -27,7 +27,7 @@ VALUES
   'sample_one',
   (
     SELECT * FROM OPENROWSET
-    (BULK 'C:\Windows\regedit.exe', SINGLE_BLOB) AS x
+    (BULK '$(my_file)', SINGLE_BLOB) AS x
   )
 )
 GO

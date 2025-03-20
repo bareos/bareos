@@ -35,10 +35,12 @@ myname=$(basename "$0")
 
 start_test
 
-"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_db_filestream_drop_create.sql
+echo "Full Data" > "${DB_FILE}"
+
+"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest db_data_dir= "${DB_DATA_DIR}" -i sqlfiles/SQL_db_filestream_create.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_create_bareos_login_user.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_create_schema_tables_stream.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_load_data.sql
-"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_load_data_stream.sql
+"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest my_file= "${DB_FILE}" -i sqlfiles/SQL_load_data_stream.sql
 
 end_test
