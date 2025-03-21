@@ -75,22 +75,19 @@ Relax-and-Recover (ReaR) is quite easy to use with Bareos.
 Installation
 ^^^^^^^^^^^^
 
-For Bareos >= 22, ReaR > 2.7 is required.
-If ReaR > 2.7 is not part of your distribution, check the `download section on the
+For Bareos >= 22, ReaR >= 2.8 is required.
+If ReaR >= 2.8 is not part of your distribution, check the `download section on the
 ReaR website <https://relax-and-recover.org/download/>`_.
-The current (2024) stable release of ReaR is 2.7,
-therefore until a newer version is released,
-a ReaR snapshot package must be used,
-see :ref:`section-rear-snapshot-package-installation`.
 
 Configuration
 ^^^^^^^^^^^^^
 
 For ReaR to work with Bareos, the following packages must be installed:
 
-* **rear** > 2.7 (currently only via a ReaR snapshot package)
+* **rear** >= 2.8
 * **bareos-fd**
 * **bareos-bconsole**
+* **jq**
 
 Make sure you have a working |fd| configuration on the system and already did a backup of all disks you want to restore (the fileset has to include all data required to fully restore the system. A good starting point is :config:option:`dir/fileset = LinuxAll`).
 You also need the |bconsole| installed and configured,
@@ -292,22 +289,6 @@ which recreates the system without manual interaction.
 Advanced ReaR Bareos Backend Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _section-rear-snapshot-package-installation:
-
-Installing a ReaR Snapshot Package
-''''''''''''''''''''''''''''''''''
-
-The current (2024) stable release of ReaR is 2.7,
-which does not support Bareos > 22.
-Therefore until a newer version is released,
-a ReaR snapshot package must be used:
-
-* Download the ZIP file that best matches your distribution from https://github.com/rear/rear/releases/tag/snapshot
-* Unpack the ZIP file and install the package on the client.
-
-For details, refer to https://relax-and-recover.org/download/
-
-
 .. _section-named-console-for-rear:
 
 Configure a Named Console for ReaR
@@ -358,7 +339,6 @@ The corresponding :file:`/etc/bareos/bconsole.conf` on the ReaR client will look
    Director {
       Name = "bareos-dir"
       Address = "bareos.example.com"
-      Password = "a very secure password"
    }
 
    Console {
@@ -366,8 +346,8 @@ The corresponding :file:`/etc/bareos/bconsole.conf` on the ReaR client will look
       Password = "secret"
    }
 
+* :config:option:`console/director/Name`: name of the |dir|.
 * :config:option:`console/director/Address`: must be set to the DNS name or IP address of the |dir|.
-* :config:option:`console/director/Password`: will be ignored and can be empty.
 * :config:option:`console/console/Name`: must correspond to :config:option:`dir/console/Name`.
 * :config:option:`console/console/Password`: must correspond to :config:option:`dir/console/Password`.
 
