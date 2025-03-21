@@ -113,7 +113,6 @@ ConfigurationParser::ConfigurationParser(
   err_type_ = err_type;
   r_num_ = r_num;
   resource_definitions_ = resource_definitions;
-  config_resources_container_.reset(new ConfigResourcesContainer(this));
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
@@ -125,6 +124,11 @@ ConfigurationParser::ConfigurationParser(
   SaveResourceCb_ = SaveResourceCb;
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
+
+  // config resources container needs to access our members, so this
+  // needs to always happen after we initialised everything else
+  config_resources_container_
+      = std::make_shared<ConfigResourcesContainer>(this);
 }
 
 void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
