@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -82,6 +82,7 @@ class BareosSocket {
   std::atomic<int> errors; /* Incremented for each error on socket */
   std::atomic<bool> suppress_error_msgs_; /* Set to suppress error messages */
   int sleep_time_after_authentication_error;
+  bool enable_ktls_{false};
 
   struct sockaddr client_addr;  /* Client's IP address */
   struct sockaddr_in peer_addr; /* Peer's IP address */
@@ -285,6 +286,7 @@ class BareosSocket {
   void SetBnetDumpDestinationQualifiedName(
       std::string destination_qualified_name);
   bool IsBnetDumpEnabled() const { return bnet_dump_.get() != nullptr; }
+  void SetEnableKtls(bool enable_ktls) { enable_ktls_ = enable_ktls; }
 };
 
 /**

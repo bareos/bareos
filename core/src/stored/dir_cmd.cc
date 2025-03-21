@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1640,6 +1640,8 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   Dmsg0(110, "Connection OK to SD.\n");
   connect_state(ReplicateCmdState::kConnected);
 
+  storage_daemon_socket->SetEnableKtls(me->enable_ktls_);
+
   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
@@ -1732,6 +1734,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
     goto bail_out;
   }
   Dmsg0(110, "Connection OK to FD.\n");
+
+  fd->SetEnableKtls(me->enable_ktls_);
 
   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;

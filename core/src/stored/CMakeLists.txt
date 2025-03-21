@@ -93,7 +93,6 @@ set(SDSRCS
     ndmp_tape.cc
     read.cc
     sd_cmds.cc
-    sd_stats.cc
     socket_server.cc
     status.cc
 )
