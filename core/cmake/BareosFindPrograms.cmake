@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -104,7 +104,7 @@ macro(find_program_and_verify_version_string variable program
       message(CHECK_PASS "OK")
     else()
       message(CHECK_PASS "NOT OK:  it is not ${version_substr_wanted}")
-      unset(${variable})
+      unset(${variable} CACHE)
     endif()
   endif()
   list(POP_BACK CMAKE_MESSAGE_INDENT "  ")
@@ -113,19 +113,40 @@ endmacro()
 find_program_and_verify_version_string(MYSQL_DAEMON_BINARY mysqld MySQL "" "")
 find_program_and_verify_version_string(MYSQL_CLIENT_BINARY mysql MySQL "" "")
 if(NOT DEFINED MYSQL_INSTALL_DB_SCRIPT)
+  message(CHECK_START "Looking if mysql_install_db is a real file")
   find_program(MYSQL_INSTALL_DB_SCRIPT mysql_install_db)
+  if(IS_SYMLINK ${MYSQL_INSTALL_DB_SCRIPT})
+    message(CHECK_PASS "NOT OK: symlink detected")
+    unset(MYSQL_INSTALL_DB_SCRIPT CACHE)
+  else()
+    message(CHECK_PASS "OK: real file detected")
+  endif()
+endif()
+if(NOT DEFINED MYSQL_DUMP_BINARY)
+  message(CHECK_START "Looking if mysqldump is a real file")
+  find_program(MYSQL_DUMP_BINARY mysqldump)
+  if(IS_SYMLINK ${MYSQL_DUMP_BINARY})
+    message(CHECK_PASS "NOT OK: symlink detected")
+    unset(MYSQL_DUMP_BINARY CACHE)
+  else()
+    message(CHECK_PASS "OK: real file detected")
+  endif()
 endif()
 
 message(STATUS "XTRABACKUP_BINARY: ${XTRABACKUP_BINARY}")
 message(STATUS "MYSQL_DAEMON_BINARY:${MYSQL_DAEMON_BINARY}")
 message(STATUS "MYSQL_CLIENT_BINARY:${MYSQL_CLIENT_BINARY}")
+message(STATUS "MYSQL_DUMP_BINARY:${MYSQL_DUMP_BINARY}")
 message(STATUS "MYSQL_INSTALL_DB_SCRIPT: ${MYSQL_INSTALL_DB_SCRIPT}")
 
 # For mariadb: MARIADB_BACKUP_BINARY MARIADB_DAEMON_BINARY MARIADB_CLIENT_BINARY
-# MARIADB_INSTALL_DB_SCRIPT
+# MARIADB_INSTALL_DB_SCRIPT MARIADB_DUMP_BINARY
 
 if(NOT DEFINED MARIADB_BACKUP_BINARY)
   find_program(MARIADB_BACKUP_BINARY mariadb-backup)
+endif()
+if(NOT DEFINED MARIADB_DUMP_BINARY)
+  find_program(MARIADB_DUMP_BINARY mariadb-dump)
 endif()
 
 find_program_and_verify_version_string(
@@ -134,12 +155,19 @@ find_program_and_verify_version_string(
 find_program_and_verify_version_string(
   MARIADB_CLIENT_BINARY mariadb MariaDB "" ""
 )
-
 if(NOT DEFINED MARIADB_INSTALL_DB_SCRIPT)
   find_program(MARIADB_INSTALL_DB_SCRIPT mariadb-install-db)
+  message(CHECK_START "Looking if ${MARIADB_INSTALL_DB_SCRIPT} is a real file")
+  if(IS_SYMLINK ${MARIADB_INSTALL_DB_SCRIPT})
+    message(CHECK_PASS "NOT OK: symlink detected")
+    unset(MARIADB_INSTALL_DB_SCRIPT CACHE)
+  else()
+    message(CHECK_PASS "OK: real file detectedd")
+  endif()
 endif()
 
 message(STATUS "MARIADB_BACKUP_BINARY: ${MARIADB_BACKUP_BINARY}")
 message(STATUS "MARIADB_DAEMON_BINARY: ${MARIADB_DAEMON_BINARY}")
 message(STATUS "MARIADB_CLIENT_BINARY: ${MARIADB_CLIENT_BINARY}")
+message(STATUS "MARIADB_DUMP_BINARY: ${MARIADB_DUMP_BINARY}")
 message(STATUS "MARIADB_INSTALL_DB_SCRIPT: ${MARIADB_INSTALL_DB_SCRIPT}")
