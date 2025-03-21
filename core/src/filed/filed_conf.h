@@ -48,9 +48,13 @@ enum
   R_DIRECTOR = 0,
   R_CLIENT,
   R_MSGS,
+  R_NUM, /* number of entires */
+
+
+  // these two do not really exist in the configuration
+  // they exist for other purposes
   R_STORAGE,
   R_JOB,
-  R_NUM /* number of entires */
 };
 
 // Some resource attributes
