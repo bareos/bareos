@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -250,6 +250,11 @@ bool DoReloadConfig()
       && InitializeSqlPooling()) {
     Scheduler::GetMainScheduler().ClearQueue();
     reloaded = true;
+
+    // make sure that jobs that keep the last configuration alive
+    // also keep alive this config in case they (accidentally) access it.
+    backup_container->SetNext(my_config->GetResourcesContainer());
+
     Dmsg0(10, "Director's configuration file reread successfully.\n");
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, T_("Please correct the configuration in %s\n"),
