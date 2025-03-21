@@ -434,6 +434,13 @@ class ConfigurationParser {
 class ConfigResourcesContainer {
  private:
   std::chrono::time_point<std::chrono::system_clock> timestamp_{};
+  /* `next_` points to the immediate successor of this configuration.  This
+   * ensures that if something (i.e. a job) keeps alive its configuration,
+   * and accidentally accesses the global configuration afterwards (without
+   * saving it as well), then the daemon will not crash because of use
+   * after free, as the newer configurations are now also kept alive
+   * implicitly as well. */
+  std::shared_ptr<ConfigResourcesContainer> next_ = nullptr;
   FreeResourceCb_t free_res = nullptr;
 
  public:
@@ -458,6 +465,8 @@ class ConfigResourcesContainer {
 
   void SetTimestampToNow() { timestamp_ = std::chrono::system_clock::now(); }
   std::string TimeStampAsString() { return TPAsString(timestamp_); }
+
+  void SetNext(std::shared_ptr<ConfigResourcesContainer> next) { next_ = next; }
 };
 
 
