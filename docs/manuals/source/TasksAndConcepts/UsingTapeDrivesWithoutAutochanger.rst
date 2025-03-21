@@ -165,7 +165,7 @@ For example, his bareos-dir.conf file looks like the following:
    #
    Director {
      Name = ServerName
-     DIRport = 9101
+     Port = 9101
      QueryFile = "/etc/bareos/query.sql"
      Maximum Concurrent Jobs = 1
      Password = "console-pass"
@@ -257,7 +257,7 @@ For example, his bareos-dir.conf file looks like the following:
    Client {
      Name = ServerName
      Address = dionysus
-     FDPort = 9102
+     Port = 9102
      Password = "client-pass"
      File Retention = 30d
      Job Retention = 30d
@@ -267,7 +267,7 @@ For example, his bareos-dir.conf file looks like the following:
    Storage {
      Name = Tape
      Address = dionysus
-     SDPort = 9103
+     Port = 9103
      Password = "storage-pass"
      Device = Tandberg
      Media Type = MLR1

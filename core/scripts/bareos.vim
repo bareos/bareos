@@ -34,7 +34,7 @@ syn region    BacClient display start=/Client {/ end="^}"  contains=BacString,Ba
 syn match     BacC1     contained /File\s*Retention/
 syn match     BacC2     contained /Maximum\s*Concurrent\s*Jobs/
 syn match     BacC3     contained /Job\s*Retention/
-syn keyword   BacC4     contained Name Password Address Catalog AutoPrune FDPort
+syn keyword   BacC4     contained Name Password Address Catalog AutoPrune Port
 
 " FileSet {
 syn region    BacFileSet display start="FileSet {" end="^}" contains=BacString,BacComment,BacName,BacFSInc,BacFSExc,BacFS2
@@ -48,12 +48,12 @@ syn match     BacFS2     contained /Enable VSS/
 
 " Storage {
 syn region   BacSto     display start="Storage {" end="}" contains=BacName,BacComment,BacString,BacSto1,BacSto2
-syn keyword  BacSto1	contained Address SDPort Password Device Autochanger
+syn keyword  BacSto1	  contained Address Port Password Device Autochanger
 syn match    BacSto2    contained /Media\s*Type/
 
 " Director {
 syn region   BacDir     display start="Director {" end="}" contains=BacName,BacComment,BacString,BacDir,BacDir1,BacDir2
-syn keyword  BacDir1    contained DIRport QueryFile WorkingDirectory PidDirectory Password Messages
+syn keyword  BacDir1    contained Port QueryFile WorkingDirectory PidDirectory Password Messages
 syn match    BacDir2    contained /Maximum\s*Concurrent\s*Jobs/
 
 " Catalog {

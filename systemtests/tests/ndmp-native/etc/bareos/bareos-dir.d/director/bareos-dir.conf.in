@@ -10,5 +10,5 @@ Director {                            # define myself
   NDMP Snooping = yes
 
   Working Directory = "@working_dir@"
-  DirPort = @dir_port@
+  Port = @dir_port@
 }

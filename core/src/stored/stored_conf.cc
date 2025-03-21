@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,10 +76,10 @@ static MessagesResource* res_msgs;
 static ResourceItem store_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_store, description_), 0, 0, NULL, NULL, NULL},
-  {"SdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
-  {"SdAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
-  {"SdAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store, SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
-  {"SdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
+  {"Port", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL, { "SdPort" }},
+  {"Address", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL, { "SdAddress" }},
+  {"Addresses", CFG_TYPE_ADDRESSES, ITEM(res_store, SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL, { "SdAddresses" }},
+  {"SourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL, { "SdSourceAddress" }},
   {"WorkingDirectory", CFG_TYPE_DIR, ITEM(res_store, working_directory), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
