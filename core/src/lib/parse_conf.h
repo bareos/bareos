@@ -434,34 +434,28 @@ class ConfigurationParser {
 class ConfigResourcesContainer {
  private:
   std::chrono::time_point<std::chrono::system_clock> timestamp_{};
-  ConfigurationParser* config_ = nullptr;
+  FreeResourceCb_t free_res = nullptr;
 
  public:
-  BareosResource** configuration_resources_ = nullptr;
+  std::vector<BareosResource*> configuration_resources_ = {};
   ConfigResourcesContainer(ConfigurationParser* config)
+      : free_res{config->FreeResourceCb_}
+      , configuration_resources_(config->r_num_)
   {
-    config_ = config;
-    int num = config_->r_num_;
-    configuration_resources_
-        = (BareosResource**)malloc(num * sizeof(BareosResource*));
-
-    for (int i = 0; i < num; i++) { configuration_resources_[i] = nullptr; }
     Dmsg1(10, "ConfigResourcesContainer: new configuration_resources_ %p\n",
-          configuration_resources_);
+          configuration_resources_.data());
   }
 
   ~ConfigResourcesContainer()
   {
     Dmsg1(10, "ConfigResourcesContainer freeing %p %s\n",
-          configuration_resources_, TPAsString(timestamp_).c_str());
-    int num = config_->r_num_;
-    for (int j = 0; j < num; j++) {
-      config_->FreeResourceCb_(configuration_resources_[j], j);
-      configuration_resources_[j] = nullptr;
+          configuration_resources_.data(), TPAsString(timestamp_).c_str());
+
+    for (size_t i = 0; i < configuration_resources_.size(); ++i) {
+      free_res(configuration_resources_[i], i);
     }
-    free(configuration_resources_);
-    configuration_resources_ = nullptr;
   }
+
   void SetTimestampToNow() { timestamp_ = std::chrono::system_clock::now(); }
   std::string TimeStampAsString() { return TPAsString(timestamp_); }
 };
