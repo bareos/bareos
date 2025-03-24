@@ -200,7 +200,11 @@ void BareosSocketTCP::FinInit(JobControlRecord* jcr,
   SetWho(strdup(who));
   SetHost(strdup(host));
   SetPort(port);
-  memcpy(&client_addr, lclient_addr, sizeof(client_addr));
+  if (lclient_addr->sa_family == AF_INET) {
+    memcpy(&client_addr, lclient_addr, sizeof(sockaddr_in));
+  } else {
+    memcpy(&client_addr, lclient_addr, sizeof(sockaddr_in6));
+  }
   SetJcr(jcr);
 }
 
