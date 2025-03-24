@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -552,12 +552,13 @@ void FreeAddresses(dlist<IPADDR>* addrs)
   delete addrs;
 }
 
-char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len)
+char* SockaddrToAscii(const struct sockaddr_storage* sa, char* buf, int len)
 {
+  auto* addr = reinterpret_cast<const sockaddr*>(sa);
 #ifdef HAVE_INET_NTOP
   /* MA Bug 5 the problem was that i mixed up sockaddr and in_addr */
-  inet_ntop(sa->sa_family,
-            sa->sa_family == AF_INET
+  inet_ntop(addr->sa_family,
+            addr->sa_family == AF_INET
                 ? (void*)&(((struct sockaddr_in*)sa)->sin_addr)
                 : (void*)&(((struct sockaddr_in6*)sa)->sin6_addr),
             buf, len);
