@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -688,13 +688,23 @@ int BareosSocketTCP::GetPeer(char*, socklen_t) { return -1; }
 #else
 int BareosSocketTCP::GetPeer(char* buf, socklen_t buflen)
 {
-  if (peer_addr.sin_family == 0) {
+  if (peer_addr.ss_family == 0) {
     socklen_t salen = sizeof(peer_addr);
     int rval = (getpeername)(fd_, (struct sockaddr*)&peer_addr, &salen);
     if (rval < 0) return rval;
   }
-  if (!inet_ntop(peer_addr.sin_family, &peer_addr.sin_addr, buf, buflen))
+
+
+  if (peer_addr.ss_family == AF_INET) {
+    auto* ipv4 = reinterpret_cast<sockaddr_in*>(&peer_addr);
+    if (!inet_ntop(ipv4->sin_family, &ipv4->sin_addr, buf, buflen)) return -1;
+  } else if (peer_addr.ss_family == AF_INET6) {
+    auto* ipv6 = reinterpret_cast<sockaddr_in6*>(&peer_addr);
+    if (!inet_ntop(ipv6->sin6_family, &ipv6->sin6_addr, buf, buflen)) return -1;
+  } else {
+    Dmsg1(150, "Bad peer addr family: %d\n", int{peer_addr.ss_family});
     return -1;
+  }
 
   return 0;
 }
