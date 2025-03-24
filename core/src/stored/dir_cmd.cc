@@ -669,7 +669,7 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   FreeMemory(poolname);
   FreeMemory(mediatype);
   dir->signal(BNET_EOD);
-  return true;
+  return ok;
 }
 
 // Label a Volume
