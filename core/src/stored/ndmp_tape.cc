@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1121,7 +1121,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   struct ndmp_thread_server_args* ntsa;
   int new_sockfd, status;
   socklen_t clilen;
-  struct sockaddr cli_addr; /* client's address */
+  struct sockaddr_storage cli_addr; /* client's address */
   int tlog, tmax;
   int turnon = 1;
   IPADDR *ipaddr, *next;
@@ -1233,7 +1233,8 @@ extern "C" void* ndmp_thread_server(void* arg)
         // Got a connection, now accept it.
         do {
           clilen = sizeof(cli_addr);
-          new_sockfd = accept(fd_ptr->fd, &cli_addr, &clilen);
+          new_sockfd = accept(fd_ptr->fd,
+                              reinterpret_cast<sockaddr*>(&cli_addr), &clilen);
         } while (new_sockfd < 0 && errno == EINTR);
         if (new_sockfd < 0) { continue; }
 

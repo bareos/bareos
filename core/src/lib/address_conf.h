@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -112,7 +112,7 @@ const char* BuildAddressesString(dlist<IPADDR>* addrs,
                                  char* buf,
                                  int blen,
                                  bool print_port = true);
-char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len);
+char* SockaddrToAscii(const struct sockaddr_storage* sa, char* buf, int len);
 #ifdef WIN32
 #  undef HAVE_OLD_SOCKOPT
 #endif

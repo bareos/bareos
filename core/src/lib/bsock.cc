@@ -422,7 +422,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
     if (!auth_success) {
       char ipaddr_str[MAXHOSTNAMELEN]{};
-      SockaddrToAscii(&(client_addr), ipaddr_str, sizeof(ipaddr_str));
+      SockaddrToAscii(&client_addr, ipaddr_str, sizeof(ipaddr_str));
 
       switch (cram_md5_handshake.result) {
         case CramMd5Handshake::HandshakeResult::REPLAY_ATTACK: {
