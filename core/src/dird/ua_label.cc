@@ -77,6 +77,10 @@ static inline bool update_database(UaContext* ua,
     mr->Enabled = 1;
     SetStorageidInMr(ua->jcr->dir_impl->res.write_storage, mr);
 
+    if (mr->VolBytes > 0 && bstrcmp(mr->VolStatus, "Unlabeled")) {
+      bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
+    }
+    
     if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
       ua->InfoMsg(T_("Catalog record for Volume \"%s\", Slot %hd successfully "
                      "created.\n"),
@@ -263,6 +267,7 @@ bool SendLabelRequest(UaContext* ua,
   }
 
   if (retval) {
+    bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     retval = update_database(ua, mr, pr, media_record_exists);
   } else {
     ua->ErrorMsg(T_("Label command failed for Volume %s.\n"), mr->VolumeName);
