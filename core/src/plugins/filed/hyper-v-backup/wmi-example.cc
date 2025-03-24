@@ -27,6 +27,7 @@
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
 #include <unordered_map>
+#include <span>
 
 template <class Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
@@ -1956,6 +1957,29 @@ static WMI::Result<WMI::SystemString> HardDiskPath(WMI::ClassObject& setting)
   return WMI::SystemString{dpath};
 }
 
+std::optional<std::wstring> ReplacePath(std::wstring_view path_to_file,
+                                        std::wstring_view new_directory)
+{
+  if (path_to_file.empty()) {
+    LOG(L"got empty path");
+    return std::nullopt;
+  }
+
+  auto pos = path_to_file.find_last_of(L"\\/");
+  if (pos == path_to_file.npos) {
+    LOG(L"path {} is just a file name.", path_to_file);
+    return std::nullopt;
+  }
+
+  std::wstring new_disk_path{new_directory};
+  new_disk_path += L"\\";
+  new_disk_path += path_to_file.substr(pos + 1);
+
+  LOG(L"Updated path {} --> {}", path_to_file, new_disk_path);
+
+  return new_disk_path;
+}
+
 static bool UpdatePath(WMI::ClassObject& setting, std::wstring_view new_path)
 {
   VARIANT host_resource;
@@ -2018,27 +2042,16 @@ static bool UpdatePath(WMI::ClassObject& setting, std::wstring_view new_path)
 
   std::wstring_view dpath{disk_path, SysStringLen(disk_path)};
 
-  if (dpath.empty()) {
-    LOG(L"Got empty disk path.");
+  auto new_disk_path = ReplacePath(dpath, new_path);
+  if (!new_disk_path) {
+    LOG(L"could not replace directory of {} with {}", dpath, new_path);
     return false;
   }
-
-  auto pos = dpath.find_last_of(L"\\/");
-  if (pos == dpath.npos) {
-    LOG(L"path {} is just a file name.", dpath);
-    return false;
-  }
-
-  std::wstring new_disk_path{new_path};
-  new_disk_path += L"\\";
-  new_disk_path += dpath.substr(pos + 1);
-
-  LOG(L"Updated path {} --> {}", dpath, new_disk_path);
 
   // TODO: free disk_path; or do we ?
 
   BSTR to_insert
-      = SysAllocStringLen(new_disk_path.data(), (UINT)new_disk_path.size());
+      = SysAllocStringLen(new_disk_path->data(), (UINT)new_disk_path->size());
 
   auto put_res = SafeArrayPutElement(arr, &Index, (void*)to_insert);
   if (FAILED(put_res)) {
@@ -2247,22 +2260,97 @@ WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
   return refpoint;
 }
 
+bool WriteRange(HANDLE /* OVERLAPPED */ in_handle,
+                HANDLE /* SYNC */ out_handle,
+                std::span<char> Buffer,
+                ULONG64 Offset,
+                ULONG64 Size)
+{
+  ULONG64 BytesTransferred = 0;
+  while (BytesTransferred < Size) {
+    OVERLAPPED Overlapped = {};
+    Overlapped.Offset = DWORD{Offset & 0xFFFFFFFF};
+    Overlapped.OffsetHigh = DWORD{(Offset >> 32) & 0xFFFFFFFF};
+    DWORD BytesRead = 0;
+    DWORD BytesToRead
+        = (DWORD)(std::min({Buffer.size(), Size - BytesTransferred,
+                            ULONG64{std::numeric_limits<DWORD>::max()}}));
+    if (!ReadFile(in_handle, Buffer.data(), BytesToRead, &BytesRead,
+                  &Overlapped)) {
+      auto read_res = GetLastError();
+
+      if (read_res == ERROR_IO_PENDING) {
+        if (GetOverlappedResult(in_handle, &Overlapped, &BytesRead, TRUE)) {
+          goto read_ok;
+        }
+      }
+      LOG(L"ReadFile({}, {{{}, {}}}) failed.  Err={} ({:X})", BytesToRead,
+          Overlapped.Offset, Overlapped.OffsetHigh, WMI::ErrorString(read_res),
+          (uint32_t)read_res);
+      return false;
+    }
+
+  read_ok:
+    (void)Offset;
+    DWORD BytesWritten = 0;
+    DWORD BytesWrittenThisCall = 0;
+    while (BytesWritten < BytesRead) {
+      if (!WriteFile(out_handle, Buffer.data() + BytesWritten,
+                     BytesRead - BytesWritten, &BytesWrittenThisCall, NULL)) {
+        auto write_res = GetLastError();
+        LOG(L"WriteFile({}, {}) failed.  Err={} ({:X})",
+            BytesTransferred + BytesWritten, BytesRead - BytesWritten,
+            WMI::ErrorString(write_res), (uint32_t)write_res);
+        return false;
+      }
+
+      BytesWritten += BytesWrittenThisCall;
+    }
+
+    BytesTransferred += BytesWritten;
+  }
+
+  return true;
+}
+
 bool BackupDisk(const WMI::SystemString& hdd_path,
                 const wchar_t* rct_id,
                 std::wstring_view dir)
 {
-  LOG(L"backing up {} to {}", hdd_path.as_view(), dir);
+  std::optional new_path = ReplacePath(hdd_path.as_view(), dir);
+
+  if (!new_path) {
+    LOG(L"could not replace directory of {} with {}", hdd_path.as_view(), dir);
+    return false;
+  }
+
+
+  LOG(L"backing up {} to {}", hdd_path.as_view(), new_path.value());
+
+  HANDLE result_handle = CreateFileW(new_path->c_str(), GENERIC_WRITE, 0, NULL,
+                                     CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+
+  if (result_handle == INVALID_HANDLE_VALUE) {
+    auto create_res = GetLastError();
+    LOG(L"could not create file {}. Err={} ({})", new_path.value(),
+        WMI::ErrorString(create_res), create_res);
+    return false;
+  }
+
   HANDLE disk_handle = {};
 
   VIRTUAL_STORAGE_TYPE vst = {
       .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
       .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
   };
-  auto res = OpenVirtualDisk(
-      &vst, hdd_path.get(),
-      VIRTUAL_DISK_ACCESS_READ | VIRTUAL_DISK_ACCESS_GET_INFO
-          | VIRTUAL_DISK_ACCESS_ATTACH_RO | VIRTUAL_DISK_ACCESS_METAOPS,
-      OPEN_VIRTUAL_DISK_FLAG_NONE, NULL, &disk_handle);
+
+  // see: https://stackoverflow.com/a/65273895
+  OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+  params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+  params.Version2.ReadOnly = TRUE;
+  auto res
+      = OpenVirtualDisk(&vst, hdd_path.get(), VIRTUAL_DISK_ACCESS_NONE,
+                        OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
   if (res != ERROR_SUCCESS) {
     LOG(L"OpenVirtualDisk({}) failed.  Err={} ({:X})", hdd_path.as_view(),
         WMI::ErrorString(res), (uint64_t)res);
@@ -2278,28 +2366,30 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
   // APPLY_SNAPSHOT_VHDSET_FLAG snap_flags;
   // auto snap_res = ApplySnapshotVhdSet(disk_handle, &snap_params, snap_flags);
 
-  {
-    alignas(GET_VIRTUAL_DISK_INFO) char info_buffer[500] = {};
-    auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(info_buffer);
-    disk_info->Version = GET_VIRTUAL_DISK_INFO_CHANGE_TRACKING_STATE;
-    ULONG VirtualDiskInfoSize = sizeof(info_buffer);
-    ULONG SizeOut = 0;
-    auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
-                                              disk_info, &SizeOut);
-    if (disk_res != ERROR_SUCCESS) {
-      LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})", hdd_path.as_view(),
-          WMI::ErrorString(disk_res), (uint64_t)disk_res);
-      return false;
-    }
+  // {
+  //   alignas(GET_VIRTUAL_DISK_INFO) char info_buffer[500] = {};
+  //   auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(info_buffer);
+  //   disk_info->Version = GET_VIRTUAL_DISK_INFO_CHANGE_TRACKING_STATE;
+  //   ULONG VirtualDiskInfoSize = sizeof(info_buffer);
+  //   ULONG SizeOut = 0;
+  //   auto disk_res = GetVirtualDiskInformation(disk_handle,
+  //   &VirtualDiskInfoSize,
+  //                                             disk_info, &SizeOut);
+  //   if (disk_res != ERROR_SUCCESS) {
+  //     LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+  //     hdd_path.as_view(),
+  //         WMI::ErrorString(disk_res), (uint64_t)disk_res);
+  //     return false;
+  //   }
 
-    LOG(L"Size In = {} ({}), Size Out = {}", sizeof(disk_info),
-        VirtualDiskInfoSize, SizeOut);
+  //   LOG(L"Size In = {} ({}), Size Out = {}", sizeof(disk_info),
+  //       VirtualDiskInfoSize, SizeOut);
 
-    LOG(L"RCT = {{ Enabled = {}, NewerChanges = {}, MostRecentId = {} }}",
-        disk_info->ChangeTrackingState.Enabled,
-        disk_info->ChangeTrackingState.NewerChanges,
-        disk_info->ChangeTrackingState.MostRecentId);
-  }
+  //   LOG(L"RCT = {{ Enabled = {}, NewerChanges = {}, MostRecentId = {} }}",
+  //       disk_info->ChangeTrackingState.Enabled,
+  //       disk_info->ChangeTrackingState.NewerChanges,
+  //       disk_info->ChangeTrackingState.MostRecentId);
+  // }
 
   GET_VIRTUAL_DISK_INFO disk_info = {
       .Version = GET_VIRTUAL_DISK_INFO_SIZE,
@@ -2322,8 +2412,23 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
       disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
       disk_info.Size.BlockSize, disk_info.Size.SectorSize);
 
+  ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+      = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+  auto attach_res = AttachVirtualDisk(disk_handle, NULL,
+                                      ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST
+                                          | ATTACH_VIRTUAL_DISK_FLAG_READ_ONLY,
+                                      0, &attach_params, 0);
+  if (FAILED(attach_res)) {
+    LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
+        WMI::ErrorString(attach_res), (uint32_t)attach_res);
+    return false;
+  }
+
 
   // std::wstring change_tracking_id = {};
+
+  std::vector<char> Buffer;
+  Buffer.resize(1024 * 1024);
 
   if (rct_id) {
     LOG(L"Doing RCT with rct_id = {}", rct_id);
@@ -2351,9 +2456,15 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
 
       LOG(L"Got {} ranges", range_count);
       for (ULONG i = 0; i < range_count; ++i) {
-        LOG(L"{}: {}-{} ({} bytes)", i, ranges[i].ByteOffset,
-            ranges[i].ByteOffset + ranges[i].ByteLength, ranges[i].ByteLength);
-        total_size += ranges[i].ByteLength;
+        auto& range = ranges[i];
+        LOG(L"{}: {}-{} ({} bytes)", i, range.ByteOffset,
+            range.ByteOffset + range.ByteLength, range.ByteLength);
+        if (!WriteRange(disk_handle, result_handle, Buffer, range.ByteOffset,
+                        range.ByteLength)) {
+          LOG(L"Could not write range :/");
+          return false;
+        }
+        total_size += range.ByteLength;
       }
 
       Start += bytes_processed;
@@ -2362,39 +2473,8 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
     LOG(L"Total byte length = {}", total_size);
   }
 
-  ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
-      = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
-  auto attach_res = AttachVirtualDisk(disk_handle, NULL,
-                                      ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST
-                                          | ATTACH_VIRTUAL_DISK_FLAG_READ_ONLY,
-                                      0, &attach_params, 0);
-  if (FAILED(attach_res)) {
-    LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
-        WMI::ErrorString(attach_res), (uint32_t)attach_res);
-  }
-
-
-  std::vector<char> Buffer;
-  Buffer.resize(1024 * 1024);
-  DWORD bytes_read = 0;
-  OVERLAPPED overlapped = {};
-  if (!ReadFile(disk_handle, Buffer.data(), Buffer.size(), &bytes_read,
-                &overlapped)) {
-    auto read_res = GetLastError();
-
-    if (read_res == ERROR_IO_PENDING) {
-      if (GetOverlappedResult(disk_handle, &overlapped, &bytes_read, TRUE)) {
-        goto ok_result;
-      }
-    }
-    LOG(L"ReadFile() failed.  Err={} ({:X})", WMI::ErrorString(read_res),
-        (uint32_t)read_res);
-    return false;
-  }
-ok_result:
-  LOG(L"Read {} bytes", bytes_read);
-
   CloseHandle(disk_handle);
+  CloseHandle(result_handle);
   return true;
 }
 
@@ -3177,8 +3257,8 @@ std::optional<std::wstring> MakeFullPath(const std::wstring& path)
   std::wstring full_path;
   full_path.resize(required_size - 1);
 
-  auto required_size_2 = GetFullPathNameW(path.c_str(), full_path.size() + 1,
-                                          full_path.data(), 0);
+  auto required_size_2 = GetFullPathNameW(
+      path.c_str(), (DWORD)(full_path.size() + 1), full_path.data(), 0);
 
   if (required_size_2 <= 0) {
     LOG(L"Somehow could not determine full path of dir {}", path);
