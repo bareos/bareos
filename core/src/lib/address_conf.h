@@ -58,16 +58,14 @@ class IPADDR {
   IPADDR(const IPADDR& src);
 
  private:
-  IPADDR();
   i_type type = R_UNDEFINED;
   union {
-    struct sockaddr dontuse;
-    struct sockaddr_in dontuse4;
-    struct sockaddr_in6 dontuse6;
-  } saddrbuf;
-  struct sockaddr* saddr = nullptr;
-  struct sockaddr_in* saddr4 = nullptr;
-  struct sockaddr_in6* saddr6 = nullptr;
+    sockaddr addr;
+    sockaddr_in addr_in;
+    sockaddr_in6 addr_in6;
+    sockaddr_storage addr_storage = {};
+  };
+
  public:
   void SetType(i_type o);
   i_type GetType() const;
