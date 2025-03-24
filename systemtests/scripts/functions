@@ -42,72 +42,72 @@ wait_for_jobs_to_terminate ()
   max_wait_in_seconds=$2
   start_time=$SECONDS
   while (( SECONDS - start_time <= max_wait_in_seconds )); do
-    if  "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "status ${status_of_what}" | grep "No Jobs running.";
-    then
+   if  "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "status ${status_of_what}" | grep "No Jobs running.";
+      then
       break
-    fi
-    sleep 1
+   fi
+   sleep 1
   done
 }
 
 copy_configs()
 {
-    COMPONENTS="bareos-dir bareos-sd bareos-fd bconsole tray-monitor"
-    CONFIGDIRS="BASE ${TestName} $*"
-    FOUND=""
+   COMPONENTS="bareos-dir bareos-sd bareos-fd bconsole tray-monitor"
+   CONFIGDIRS="BASE ${TestName} $*"
+   FOUND=""
 
-    for component in $COMPONENTS; do
-        # try to find a config file, store the most specific.
-        FOUND=""
-        for directory in $CONFIGDIRS; do
-            if [ -f "${rconfigs}/${directory}/${component}.conf" ]; then
-                FOUND="${rconfigs}/${directory}/${component}.conf"
+   for component in $COMPONENTS; do
+      # try to find a config file, store the most specific.
+      FOUND=""
+      for directory in $CONFIGDIRS; do
+         if [ -f "${rconfigs}/${directory}/${component}.conf" ]; then
+            FOUND="${rconfigs}/${directory}/${component}.conf"
+         fi
+      done
+      if [ "$FOUND" ]; then
+         /bin/cp "${FOUND}" "${conf}"
+      else
+         # copy all config files from subdirectories,
+         # start with the most generic.
+         for directory in $CONFIGDIRS; do
+            if [ -d "${rconfigs}/${directory}/${component}.d" ]; then
+               /bin/cp -r "${rconfigs}/${directory}/${component}.d" "${conf}"
             fi
-        done
-        if [ "$FOUND" ]; then
-            /bin/cp "${FOUND}" "${conf}"
-        else
-            # copy all config files from subdirectories,
-            # start with the most generic.
-            for directory in $CONFIGDIRS; do
-                if [ -d "${rconfigs}/${directory}/${component}.d" ]; then
-                    /bin/cp -r "${rconfigs}/${directory}/${component}.d" "${conf}"
-                fi
-            done
-        fi
-    done
+         done
+      fi
+   done
 
-    # copy certificates
-    for directory in $CONFIGDIRS; do
-        if [ -d "${rconfigs}/${directory}/tls/" ]; then
-            /bin/cp -r "${rconfigs}/${directory}/tls" "${conf}"
-        fi
-    done
+   # copy certificates
+   for directory in $CONFIGDIRS; do
+   if [ -d "${rconfigs}/${directory}/tls/" ]; then
+      /bin/cp -r "${rconfigs}/${directory}/tls" "${conf}"
+   fi
+   done
 }
 
 check_encoding()
 {
    if "${BAREOS_DIRECTOR_BINARY}" -d50 -t -c "${conf}" 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
    then
-       echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
-       exit 1
+      echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
+      exit 1
    fi
 }
 
 cleanup()
 {
-    if has_tape_drive; then
-        "${rscripts}/cleanup-tape"
-    else
-        "${rscripts}/cleanup"
-    fi
+   if has_tape_drive; then
+      "${rscripts}/cleanup-tape"
+   else
+      "${rscripts}/cleanup"
+   fi
 }
 
 get_test_name()
 {
-    testscriptpath=$1
-    # get last two components of the path (subdirectory + filename)
-    printf "%s/%s\n" "$(basename "$(dirname "$testscriptpath")")" "$(basename "$testscriptpath")"
+   testscriptpath=$1
+   # get last two components of the path (subdirectory + filename)
+   printf "%s/%s\n" "$(basename "$(dirname "$testscriptpath")")" "$(basename "$testscriptpath")"
 }
 
 #
@@ -118,85 +118,85 @@ get_test_name()
 #
 setup_data()
 {
-  data_dir="${BackupDirectory}"
+   data_dir="${BackupDirectory}"
 
-  # gnu tar is required
-  if [ "$(uname -s)" == SunOS ]; then
-    GTAR='gtar'
-  else
-    GTAR='tar'
-  fi
-
-  [ -d "$data_dir" ] || mkdir "$data_dir"
-  echo "$data_dir" >"$tmp/file-list"
-
-  for tarfile in "../../data/small.tgz" "../../data/weird-files.tar.gz"; do
-   if [ ! -f "$tarfile" ]; then
-    set_error "setup_data: $tarfile not found."
-    exit 1
-   fi
-   if [[ "$(uname -s)" =~ _NT ]]; then
-     $GTAR --directory="$data_dir" -xf "$tarfile" || :  # we expect errors on windows
+   # gnu tar is required
+   if [ "$(uname -s)" == SunOS ]; then
+      GTAR='gtar'
    else
-     $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
+      GTAR='tar'
    fi
-  done
 
- # The following files in the "weird files" tar cause problems on windows, so
- # for now they are removed before the tests start.
- # TODO: Make these files also work on windows.
- if [[ "$(uname -s)" =~ _NT ]]; then
-   pushd "$data_dir" || exit 1
-   for f in 'weird-files/a-file-with-spaces-at-the-end    ' \
-    weird-files/'  ' \
-    weird-files/' ' \
-    weird-files/'0 ' \
-    weird-files/*-with-accents* \
-    weird-files/subdir/*softlink* \
-    weird-files/This-Is-A-Very-Long-Directory-Name* \
-    weird-files/'? -> ' \
-    weird-files/absolute-softlink \
-    weird-files/dangling-link \
-    weird-files/fifo \
-    weird-files/fifo-file \
-    weird-files/soft-file2 \
-    weird-files/softlink-to-softlinkee \
-    weird-files/a-file-with*
+   [ -d "$data_dir" ] || mkdir "$data_dir"
+   echo "$data_dir" >"$tmp/file-list"
 
-  do rm -Rvf "$f" || echo "failed to remove \"$f\""
-  done
-   popd || exit 1
- fi
+   for tarfile in "../../data/small.tgz" "../../data/weird-files.tar.gz"; do
+      if [ ! -f "$tarfile" ]; then
+         set_error "setup_data: $tarfile not found."
+         exit 1
+      fi
+      if [[ "$(uname -s)" =~ _NT ]]; then
+         $GTAR --directory="$data_dir" -xf "$tarfile" || :  # we expect errors on windows
+      else
+         $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
+      fi
+   done
 
-  return 0
+   # The following files in the "weird files" tar cause problems on windows, so
+   # for now they are removed before the tests start.
+   # TODO: Make these files also work on windows.
+   if [[ "$(uname -s)" =~ _NT ]]; then
+      pushd "$data_dir" || exit 1
+      for f in 'weird-files/a-file-with-spaces-at-the-end    ' \
+      weird-files/'  ' \
+      weird-files/' ' \
+      weird-files/'0 ' \
+      weird-files/*-with-accents* \
+      weird-files/subdir/*softlink* \
+      weird-files/This-Is-A-Very-Long-Directory-Name* \
+      weird-files/'? -> ' \
+      weird-files/absolute-softlink \
+      weird-files/dangling-link \
+      weird-files/fifo \
+      weird-files/fifo-file \
+      weird-files/soft-file2 \
+      weird-files/softlink-to-softlinkee \
+      weird-files/a-file-with*
+
+      do rm -Rvf "$f" || echo "failed to remove \"$f\""
+      done
+      popd || exit 1
+   fi
+
+   return 0
 }
 
 create_sparse_file()
 {
-    verbose=""
-    if [ "${1:-}" = "-v" ]; then
-      verbose="yes"
-      shift
-    fi
+   verbose=""
+   if [ "${1:-}" = "-v" ]; then
+   verbose="yes"
+   shift
+   fi
 
-    filename=${1:-sparse.dat}
-    size=${2:-100M}
+   filename=${1:-sparse.dat}
+   size=${2:-100M}
 
-    echo "start" > $filename
-    dd if=/dev/zero of=$filename bs=1 count=0 seek=$size 2>/dev/null
-    echo "end" >> $filename
+   echo "start" > $filename
+   dd if=/dev/zero of=$filename bs=1 count=0 seek=$size 2>/dev/null
+   echo "end" >> $filename
 
-    if [ "$verbose" ]; then
-        printf "$filename created.\n"
-    fi
+   if [ "$verbose" ]; then
+      printf "$filename created.\n"
+   fi
 
-    size=$(get_file_size "${filename}")
-    realsize=$(get_real_file_size "${filename}")
+   size=$(get_file_size "${filename}")
+   realsize=$(get_real_file_size "${filename}")
 
-    if [ "$realsize" -gt "$size" ]; then
-        printf "ERROR: realsize has to be smaller than size.\n"
-        return 1
-    fi
+   if [ "$realsize" -gt "$size" ]; then
+      printf "ERROR: realsize has to be smaller than size.\n"
+      return 1
+   fi
 }
 
 start_test()
@@ -232,14 +232,14 @@ start_test()
 
 require_root()
 {
-  if [ "$(id -u)" != 0 ] ; then
-    echo " "
-    echo "You must be root to run this test."
-    echo "  ===== !!!! $TestName not run at $(date +%R:%S) ==="
-    echo "  ===== !!!! $TestName not run at $(date +%R:%S) !!!! ===== " >>test.out
-    echo " "
-    exit 1
-  fi
+   if [ "$(id -u)" != 0 ] ; then
+      echo " "
+      echo "You must be root to run this test."
+      echo "  ===== !!!! $TestName not run at $(date +%R:%S) ==="
+      echo "  ===== !!!! $TestName not run at $(date +%R:%S) !!!! ===== " >>test.out
+      echo " "
+      exit 1
+   fi
 }
 
 has_tape_drive()
@@ -250,42 +250,42 @@ has_tape_drive()
 
 require_tape_drive()
 {
-if ! has_tape_drive; then
-   echo "This test $TestName needs a tape drive, but has none."
-   exit 1
-fi
+   if ! has_tape_drive; then
+      echo "This test $TestName needs a tape drive, but has none."
+      exit 1
+   fi
 }
 
 require_second_drive()
 {
-if [ "${TAPE_DRIVE1}" = "/dev/null" ]; then
-   echo "This test $TestName has a Job $JobName which needs a second drive, but has none."
-   exit 1
-fi
+   if [ "${TAPE_DRIVE1}" = "/dev/null" ]; then
+      echo "This test $TestName has a Job $JobName which needs a second drive, but has none."
+      exit 1
+   fi
 }
 
 require_autochanger()
 {
-if [ "${AUTOCHANGER}" = "/dev/null" ]; then
-   echo "This test $TestName needs an autochanger, but has none."
-   exit 1
-fi
+   if [ "${AUTOCHANGER}" = "/dev/null" ]; then
+      echo "This test $TestName needs an autochanger, but has none."
+      exit 1
+   fi
 }
 
 require_linux()
 {
-  if [ "$(uname)" != 'Linux' ]; then
-    echo "This test $TestName runs only on Linux"
-    exit 1
-  fi
+   if [ "$(uname)" != 'Linux' ]; then
+      echo "This test $TestName runs only on Linux"
+      exit 1
+   fi
 }
 
 skip_if_no_autochanger()
 {
-  if [ "${AUTOCHANGER}" = "/dev/null" ]; then
-    echo "$TestName test skipped. No autochanger."
-    exit 1
-  fi
+   if [ "${AUTOCHANGER}" = "/dev/null" ]; then
+      echo "$TestName test skipped. No autochanger."
+      exit 1
+   fi
 }
 
 is_debug()
@@ -298,53 +298,53 @@ set_debug()
 {
    debug=$1
    if is_debug; then
-     out=tee
+      out=tee
    else
-     out=output
+      out=output
    fi
 }
 
 print_debug()
 {
    if echo "$*" | grep -q ERROR > /dev/null; then
-     echo "$*" >> "$tmp/err.log"
+      echo "$*" >> "$tmp/err.log"
    fi
    if is_debug; then
-     echo "$*" >&2
+      echo "$*" >&2
    fi
 }
 
 printf_debug()
 {
    if is_debug; then
-     printf "$@" >&2
+      printf "$@" >&2
    fi
 }
 
 write_stdin_to_file()
 {
-  FILE="$1"
+   FILE="$1"
 
-  # empty file
-  >"${FILE}"
+   # empty file
+   >"${FILE}"
 
-  # read stdin and write to file
-  while read -r input; do
-    printf '%s\n' "$input" >>"${FILE}"
-  done
+   # read stdin and write to file
+   while read -r input; do
+      printf '%s\n' "$input" >>"${FILE}"
+   done
 }
 
 log_stdin()
 {
-  FILE="${1:-${tmp}/debug.log}"
+   FILE="${1:-${tmp}/debug.log}"
 
-  # read stdin and write to file
-  while read -r input; do
-    # print if debug is set
-    print_debug "$input"
-    # write to log file
-    printf '%s\n' "$input" >>"${FILE}"
-  done
+   # read stdin and write to file
+   while read -r input; do
+      # print if debug is set
+      print_debug "$input"
+      # write to log file
+      printf '%s\n' "$input" >>"${FILE}"
+   done
 }
 
 set_error()
@@ -361,8 +361,8 @@ check_files_written()
     FILES="$(awk '/FD Files Written:/ { last=$4 } END { print last }' "$LOG")"
 
     if [ "$NB" != "$FILES" ]; then
-        print_debug "ERROR: Expect $NB files, get $FILES"
-        bstat=2
+      print_debug "ERROR: Expect $NB files, get $FILES"
+      bstat=2
     fi
 }
 
@@ -372,8 +372,8 @@ check_sd_files_written()
     FILES="$(awk '/SD Files Written:/ { last=$4 } END { print last }' "$LOG")"
 
     if [[ "$FILES" -lt 1 || -z "$FILES" ]]; then
-        print_debug "ERROR: Expected number of SD files written > 0, got \"$FILES\"."
-        return 1
+      print_debug "ERROR: Expected number of SD files written > 0, got \"$FILES\"."
+      return 1
     fi
 
     return 0
@@ -415,9 +415,9 @@ is_file_compressed()
 
    print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} ?"
    if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" | grep -A1 "${FILENAME}" | grep -i "COMPRESSED"); then
-       return 0
+      return 0
    else
-       return 1
+      return 1
    fi
 }
 
@@ -453,10 +453,10 @@ check_compression()
 # Get information from logs
 get_mig_info()
 {
-    # Prev Backup JobId
-    JOBID=$1
-    LOG=$2
-    RET="$(awk -F: "BEGIN { jobid=$JOBID } "'/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/  { if (cjid == jobid) { print $2 } }' "$LOG")"
+   # Prev Backup JobId
+   JOBID=$1
+   LOG=$2
+   RET="$(awk -F: "BEGIN { jobid=$JOBID } "'/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/  { if (cjid == jobid) { print $2 } }' "$LOG")"
 }
 
 get_duration()
@@ -472,8 +472,8 @@ check_duration_gt()
 
    get_duration "$LOG"
    if [ "$RET" -gt "$TIME" ]; then
-       print_debug "Expect greater than $TIME sec, get $RET"
-       bstat=2
+      print_debug "Expect greater than $TIME sec, get $RET"
+      bstat=2
    fi
 }
 
@@ -484,8 +484,8 @@ check_duration_lt()
 
    get_duration "$LOG"
    if [ "$RET" -lt "$TIME" ]; then
-       print_debug "Expect less than $TIME sec, get $RET"
-       bstat=2
+      print_debug "Expect less than $TIME sec, get $RET"
+      bstat=2
    fi
 }
 
@@ -498,7 +498,7 @@ start_fd() {
 }
 
 start_sd() {
- ${rscripts}/bareos-ctl-sd start
+   ${rscripts}/bareos-ctl-sd start
 }
 
 start_bareos()
@@ -530,43 +530,42 @@ run_bareos()
 
 traceback()
 {
-    name="$(basename "$1")"
-    pid=$(pidof "$name")
-    if [ "$pid" != "" ]; then
-	"${rscripts}/btraceback" "$1" "$pid" "${BAREOS_WORKING_DIR}"
-    fi
+   name="$(basename "$1")"
+   pid=$(pidof "$name")
+   if [ "$pid" != "" ]; then
+      "${rscripts}/btraceback" "$1" "$pid" "${BAREOS_WORKING_DIR}"
+   fi
 }
 
 run_bconsole()
 {
-    bconsole_file="${1:-${tmp}/bconcmds}"
-    local error_code=0
-    if [ -f "$bconsole_file" ]; then
+   bconsole_file="${1:-${tmp}/bconcmds}"
+   local error_code=0
+   if [ -f "$bconsole_file" ]; then
       check_config bconsole ${BAREOS_BCONSOLE_BINARY} -c ${conf} || exit $?
-
-        # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
-        # before we had the chance to kill the daemons (in case of timeout)
-        if test "$debug" -eq 1 ; then
-            timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" || error_code=$?
-        else
-            timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null || error_code=$?
-        fi
-    fi
-    if (( error_code == 124 )); then
-        timeout 10s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "messages" || :
-        traceback "${BAREOS_FILEDAEMON_BINARY}" || :
-        traceback "${BAREOS_STORAGEDAEMON_BINARY}" || :
-        traceback "${BAREOS_DIRECTOR_BINARY}" || :
-    fi
-    return "$error_code"
+      # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
+      # before we had the chance to kill the daemons (in case of timeout)
+      if test "$debug" -eq 1 ; then
+         timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" || error_code=$?
+      else
+         timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" < "$bconsole_file" 2>&1 >/dev/null || error_code=$?
+      fi
+   fi
+   if (( error_code == 124 )); then
+      timeout 10s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "messages" || :
+      traceback "${BAREOS_FILEDAEMON_BINARY}" || :
+      traceback "${BAREOS_STORAGEDAEMON_BINARY}" || :
+      traceback "${BAREOS_DIRECTOR_BINARY}" || :
+   fi
+   return "$error_code"
 }
 
 run_btape()
 {
    if test "$debug" -eq 1 ; then
-     "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" | tee "${tmp}/btape.out"
+      "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" | tee "${tmp}/btape.out"
    else
-     "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" >"${tmp}/btape.out" 2>&1
+      "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" >"${tmp}/btape.out" 2>&1
    fi
 }
 
@@ -607,9 +606,9 @@ run_bscan_db()
 
 run_query()
 {
-    # hope that no pw is set
-    echo "run query $*"
-    PGOPTIONS="--client-min-messages=warning" psql -d "${db_name}" -q -c "$@"
+   # hope that no pw is set
+   echo "run query $*"
+   PGOPTIONS="--client-min-messages=warning" psql -d "${db_name}" -q -c "$@"
 }
 
 run_headless_dbcheck()
@@ -651,50 +650,50 @@ generate_testdata()
 }
 
 kill_process() {
-  if [ "$1" -gt 0 ] && kill -0 "$1" 2>/dev/null; then
-    kill -TERM "$1"
-    for i in $(seq 1 5); do
-      kill -0 "$1" 2>/dev/null || break
-      sleep 1
-    done
-    if kill -0 "$1" 2>/dev/null; then
-      kill -KILL "$1"
-    fi
-    if kill -0 "$1" 2>/dev/null; then
-      echo "Process $1 could not be killed." >&2
-    else
-      echo "Process $1 has exited." >&2
-    fi
-  else
-    echo "$1 is not a valid pid to kill" >&2
-  fi
+   if [ "$1" -gt 0 ] && kill -0 "$1" 2>/dev/null; then
+      kill -TERM "$1"
+      for i in $(seq 1 5); do
+         kill -0 "$1" 2>/dev/null || break
+         sleep 1
+      done
+      if kill -0 "$1" 2>/dev/null; then
+         kill -KILL "$1"
+      fi
+      if kill -0 "$1" 2>/dev/null; then
+         echo "Process $1 could not be killed." >&2
+      else
+         echo "Process $1 has exited." >&2
+      fi
+   else
+      echo "$1 is not a valid pid to kill" >&2
+   fi
 }
 
 waitpid()
 {
-    # loop until the process no longer exists, or it's a zombie.
-    local PID=$1
-    local RC=1
-    printf_debug "waiting for pid %s " "$PID"
-    local command=""
-    command=$(ps -p $PID -o command=) || true
-    printf_debug "(%s) " "$command"
-    while s=$(ps -p $PID -o s=) && [[ "$s" && "$s" != 'Z' ]]; do
-        printf_debug "."
-        sleep 1
-    done
+   # loop until the process no longer exists, or it's a zombie.
+   local PID=$1
+   local RC=1
+   printf_debug "waiting for pid %s " "$PID"
+   local command=""
+   command=$(ps -p $PID -o command=) || true
+   printf_debug "(%s) " "$command"
+   while s=$(ps -p $PID -o s=) && [[ "$s" && "$s" != 'Z' ]]; do
+      printf_debug "."
+      sleep 1
+   done
 
-    if [[ "$s" == 'Z' ]]; then
-        printf_debug " Zombie detected ... Waiting a second ..."
-        sleep 1
-        ps -p "$PID" -o s= || true
-    fi
-    if [ -z "$s" ]; then
-        printf_debug " OK"
-        RC=0
-    fi
-    printf_debug "\n"
-    return $RC
+   if [[ "$s" == 'Z' ]]; then
+      printf_debug " Zombie detected ... Waiting a second ..."
+      sleep 1
+      ps -p "$PID" -o s= || true
+   fi
+   if [ -z "$s" ]; then
+      printf_debug " OK"
+      RC=0
+   fi
+   printf_debug "\n"
+   return $RC
 }
 
 stop_bareos()
@@ -707,11 +706,11 @@ stop_bareos()
 
 run_python_unittests()
 {
-    if  PYTHONRESULT=$("$PYTHON_EXECUTABLE" -m unittest -v "$@"); then
-        print_debug "$PYTHONRESULT"
-    else
-        set_error "$PYTHONRESULT"
-    fi
+   if  PYTHONRESULT=$("$PYTHON_EXECUTABLE" -m unittest -v "$@"); then
+      print_debug "$PYTHONRESULT"
+   else
+      set_error "$PYTHONRESULT"
+   fi
 }
 
 
@@ -750,13 +749,13 @@ get_real_file_size()
    FILE="$1"
    SIZE=-1
    if [ -e "$FILE" ]; then
-     if [ "$(uname -s)" == FreeBSD ]; then
-       # gdu: GNU coreutils du
-       DU="gdu"
-     else
-       DU="du"
-     fi
-     SIZE="$(du -B 1 "$FILE" | cut -f 1)"
+      if [ "$(uname -s)" == FreeBSD ]; then
+         # gdu: GNU coreutils du
+         DU="gdu"
+      else
+         DU="du"
+      fi
+      SIZE="$(du -B 1 "$FILE" | cut -f 1)"
    fi
    print_debug "$FILE: $SIZE bytes"
    echo "$SIZE"
@@ -768,10 +767,10 @@ get_file_size()
    SIZE=-1
    if [ -e "$FILE" ]; then
      if [ "$(uname -s)" == FreeBSD ]; then
-       # gdu: GNU coreutils du
-       DU="gdu"
+         # gdu: GNU coreutils du
+         DU="gdu"
      else
-       DU="du"
+         DU="du"
      fi
      SIZE="$(${DU} -B 1 --apparent-size "$FILE" | cut -f 1)"
    fi
@@ -899,19 +898,19 @@ check_restore_diff()
    restorepath="$restoredirectory/${dest}"
    restorepath=$(remove_colon_from_windows_path "$restorepath")
    if ! perl "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
-       dstat=1
+      dstat=1
    fi
 
    # gnu diff is required
    if [ "$(uname -s)" == FreeBSD ]; then
-     DIFFTOOL='gdiff'
+      DIFFTOOL='gdiff'
    else
-     DIFFTOOL='diff'
+      DIFFTOOL='diff'
    fi
    OUT="$(LANG=C $DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${restorepath}")"
    result=$(( result + $?))
    if is_debug; then
-       printf "%s\n" "$OUT"
+      printf "%s\n" "$OUT"
    fi
 
    if [ "$result" -ne 0 ] && [ "${dstat:-0}" -eq 0 ]; then
@@ -929,11 +928,11 @@ check_restore_only_files_diff()
    #
    differences=0
    for i in "$@"; do
-     restoresubdir=$(sed 's#/\(.\):#/\1#g' <<< "$i")
-     if ! diff -ur "$i" "${RestoreDirectory}/${restoresubdir}" ; then
-       differences="$(( differences + 1 ))"
-       dstat=1
-     fi
+      restoresubdir=$(sed 's#/\(.\):#/\1#g' <<< "$i")
+      if ! diff -ur "$i" "${RestoreDirectory}/${restoresubdir}" ; then
+         differences="$(( differences + 1 ))"
+         dstat=1
+      fi
    done
 
    test "$differences" -eq 0
@@ -957,10 +956,10 @@ check_restore_files_diff()
      RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "$i")" || true
    done
    if [ "$RESTORED_FILES" ]; then
-       print_debug "given files: $*"
-       print_debug "additional restored files: $RESTORED_FILES"
-       set_error "More files then given as parameter have been restored."
-       return 1
+      print_debug "given files: $*"
+      print_debug "additional restored files: $RESTORED_FILES"
+      set_error "More files then given as parameter have been restored."
+      return 1
    fi
 
    return 0
@@ -1091,18 +1090,18 @@ update_win32()
      && [ -d "$cwd/build/src/win32/release64" ] \
    || [ -d "$cwd/release32" ] && [ -d "$cwd/release64" ]
    then
-       echo -ne "Try to upgrade the FileDaemon:\t"
-       wget -qO - "$WIN32_ADDR:8091/install"
+      echo -ne "Try to upgrade the FileDaemon:\t"
+      wget -qO - "$WIN32_ADDR:8091/install"
    fi
 }
 
 debug_wait()
 {
-  REGRESS_WAIT=${REGRESS_WAIT:-0}
-  if test "${REGRESS_WAIT}" = "1"; then
-     echo "Start Bareos under debugger and enter anything when ready ..."
-     read -r
-  fi
+   REGRESS_WAIT=${REGRESS_WAIT:-0}
+   if test "${REGRESS_WAIT}" = "1"; then
+      echo "Start Bareos under debugger and enter anything when ready ..."
+      read -r
+   fi
 }
 
 init_drive()
@@ -1118,23 +1117,23 @@ rewind_drive()
 
 load_slot1()
 {
-# Get a tape from slot1
-slot="$("${scripts}/$MTX" "${AUTOCHANGER}" loaded 0 "${TAPE_DRIVE}" "$DRIVE1")"
-case $slot in
- 0)
-    "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot="$SLOT1"
-    ;;
- "$SLOT1")
-    slot="$SLOT1"
-    ;;
- *)
-    rewind_drive "${TAPE_DRIVE}"
-    "${scripts}/$MTX" "${AUTOCHANGER}" unload "$slot"  "${TAPE_DRIVE}" "$DRIVE1"
-    "${scripts}/$MTX" "${AUTOCHANGER}" load   "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot="$SLOT1"
-    ;;
-esac
+   # Get a tape from slot1
+   slot="$("${scripts}/$MTX" "${AUTOCHANGER}" loaded 0 "${TAPE_DRIVE}" "$DRIVE1")"
+   case $slot in
+   0)
+      "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot="$SLOT1"
+      ;;
+   "$SLOT1")
+      slot="$SLOT1"
+      ;;
+   *)
+      rewind_drive "${TAPE_DRIVE}"
+      "${scripts}/$MTX" "${AUTOCHANGER}" unload "$slot"  "${TAPE_DRIVE}" "$DRIVE1"
+      "${scripts}/$MTX" "${AUTOCHANGER}" load   "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot="$SLOT1"
+      ;;
+   esac
 }
 
 #
@@ -1143,107 +1142,105 @@ esac
 #
 load_other_slot()
 {
-rewind_drive "${TAPE_DRIVE}"
-case $1 in
- 0)
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot=1
-    ;;
- $SLOT1)
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
-    slot=2
-    ;;
- $SLOT2)
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot=1
-    ;;
- *)
-    echo "Something went wrong. Expected $SLOT1 or $SLOT2, got $1"
-    exit 1
-    ;;
-esac
+   rewind_drive "${TAPE_DRIVE}"
+   case $1 in
+   0)
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot=1
+      ;;
+   $SLOT1)
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
+      slot=2
+      ;;
+   $SLOT2)
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot=1
+      ;;
+   *)
+      echo "Something went wrong. Expected $SLOT1 or $SLOT2, got $1"
+      exit 1
+      ;;
+   esac
 }
 
 expect_grep()
 {
+   local usage="Usage: ${FUNCNAME[0]} <expected_result> <log_file> [error message] [alternative result]\n    Find expected_result in log_file. Optionally, if not found, display custom error_message and/or grep for alternative that could be there instead."
+   local expected_result="$1"
+   local target_file="$2"
+   local error_message=${3:-""}
+   local possible_alternative=${4:-""}
 
-local usage="Usage: ${FUNCNAME[0]} <expected_result> <log_file> [error message] [alternative result]\n    Find expected_result in log_file. Optionally, if not found, display custom error_message and/or grep for alternative that could be there instead."
-local expected_result="$1"
-local target_file="$2"
-local error_message=${3:-""}
-local possible_alternative=${4:-""}
+   if [ $# -lt 2  ] || [ $# -gt 4  ]; then
+      echo -e "${FUNCNAME[0]} : wrong number of parameters.\n${usage}"
+      exit 1
+   fi
 
-if [ $# -lt 2  ] || [ $# -gt 4  ]; then
-    echo -e "${FUNCNAME[0]} : wrong number of parameters.\n${usage}"
-    exit 1
-fi
+   if [ ! -f ${target_file} ]; then
+      echo "\"${target_file}\" does not exist or is not a file.\n"
+      exit 1
+   fi
 
-if [ ! -f ${target_file} ]; then
-    echo "\"${target_file}\" does not exist or is not a file.\n"
-    exit 1
-fi
-
-if ! grep -q "${expected_result}" "${target_file}"; then
-  echo -e "\n*** Fail: Expected line \"${expected_result}\" was not found in log file \"${target_file}\"." >&2
-  estat=1
-  if [ "${error_message}" != "" ]; then
-    echo "---Error--->${error_message}\n" >&2
-  fi
-  if [ "${possible_alternative}" != "" ]; then
-    echo -e "---Found instead--->$(grep "${possible_alternative}" ${target_file})\n" >&2
-  fi
-fi
+   if ! grep -q "${expected_result}" "${target_file}"; then
+   echo -e "\n*** Fail: Expected line \"${expected_result}\" was not found in log file \"${target_file}\"." >&2
+   estat=1
+   if [ "${error_message}" != "" ]; then
+      echo "---Error--->${error_message}\n" >&2
+   fi
+   if [ "${possible_alternative}" != "" ]; then
+      echo -e "---Found instead--->$(grep "${possible_alternative}" ${target_file})\n" >&2
+   fi
+   fi
 }
 
 expect_not_grep()
 {
+   local usage="Usage: ${FUNCNAME[0]} <non_expected_result> <log_file> [error message]\n    Make sure non_expected_result is not in log_file. Optionally display custom error_message if found."
+   local non_expected_result="$1"
+   local target_file="$2"
+   local error_message="$3"
 
-local usage="Usage: ${FUNCNAME[0]} <non_expected_result> <log_file> [error message]\n    Make sure non_expected_result is not in log_file. Optionally display custom error_message if found."
-local non_expected_result="$1"
-local target_file="$2"
-local error_message="$3"
+   if [ $# -lt 2  ] || [ $# -gt 3  ]; then
+      echo -e "${FUNCNAME[0]} : wrong number of parameters.\n${usage}"
+      exit 1
+   fi
 
-if [ $# -lt 2  ] || [ $# -gt 3  ]; then
-    echo -e "${FUNCNAME[0]} : wrong number of parameters.\n${usage}"
-    exit 1
-fi
+   if [ ! -f ${target_file} ]; then
+      echo "\"${target_file}\" does not exist or is not a file."
+      exit 1
+   fi
 
-if [ ! -f ${target_file} ]; then
-    echo "\"${target_file}\" does not exist or is not a file."
-    exit 1
-fi
-
-if grep -q "${non_expected_result}" "${target_file}"; then
-  echo "Fail: Non expected line \"${non_expected_result}\" was found in log file \"${target_file}\"." >&2
-  estat=1
-  if [ "${error_message}" != "" ]; then
-    echo "-->${error_message}" >&2
-  fi
-fi
+   if grep -q "${non_expected_result}" "${target_file}"; then
+   echo "Fail: Non expected line \"${non_expected_result}\" was found in log file \"${target_file}\"." >&2
+   estat=1
+   if [ "${error_message}" != "" ]; then
+      echo "-->${error_message}" >&2
+   fi
+   fi
 }
 
 # Used by mysqltest
 skip_if_root()
 {
-USER="$(whoami)"
-if [ "${USER}" == "root"  ]; then
- echo "${TestName} test skipped: test cannot be run as user root."
- exit 77;
-fi
+   USER="$(whoami)"
+   if [ "${USER}" == "root"  ]; then
+      echo "${TestName} test skipped: test cannot be run as user root."
+      exit 77;
+   fi
 }
 
 skip_if_windows()
 {
-if [[ "$(uname -s)" =~ _NT ]]; then
- if [ -z "${1+x}" ]; then
-   echo "${TestName} test skipped on windows."
- else
-   echo "${TestName} test skipped on windows: $1."
- fi
- exit 77;
-fi
+   if [[ "$(uname -s)" =~ _NT ]]; then
+      if [ -z "${1+x}" ]; then
+         echo "${TestName} test skipped on windows."
+      else
+         echo "${TestName} test skipped on windows: $1."
+      fi
+      exit 77;
+   fi
 }
 
 REGRESS_DEBUG=${REGRESS_DEBUG:-0}
