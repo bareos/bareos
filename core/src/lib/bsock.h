@@ -84,7 +84,7 @@ class BareosSocket {
   int sleep_time_after_authentication_error;
 
   struct sockaddr_storage client_addr; /* Client's IP address */
-  struct sockaddr_in peer_addr;        /* Peer's IP address */
+  struct sockaddr_storage peer_addr;   /* Peer's IP address */
   void SetTlsEstablished() { tls_established_ = true; }
   bool TlsEstablished() const { return tls_established_; }
   std::shared_ptr<Tls> tls_conn;      /* Associated tls connection */
