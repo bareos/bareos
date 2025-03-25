@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -62,16 +62,7 @@ find_program(DBX dbx)
 find_program(MDB mdb)
 find_program(S3CMD s3cmd)
 find_program(MINIO minio)
-
-if(POLICY CMP0109)
-  cmake_policy(SET CMP0109 NEW)
-  find_program(SUDO sudo)
-else()
-  set(SUDO
-      "/usr/bin/sudo"
-      PARENT_SCOPE
-  )
-endif(POLICY CMP0109)
+find_program(SUDO sudo)
 
 # To test backups of mysql with percona xtrabackup, and mariadb with
 # mariabackup, we need to find the specific binaries in order to run our test
