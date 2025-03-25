@@ -28,6 +28,7 @@
 #include <virtdisk.h>
 #include <unordered_map>
 #include <span>
+#include <strsafe.h>
 
 template <class Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
@@ -2239,8 +2240,7 @@ WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
 
   VirtualSystemExportSettingData settings = {
       .snapshot_virtual_system_path = std::wstring{snapshot_path->as_view()},
-      .backup_intent
-      = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+      .backup_intent = VirtualSystemExportSettingData::BackupIntent::Merge,
       .copy_snapshot_configuration = VirtualSystemExportSettingData::
           CopySnapshotConfiguration::ExportOneSnapshotForBackup,
       .capture_live_state
@@ -2260,12 +2260,49 @@ WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
   return refpoint;
 }
 
+bool WriteFile_All(HANDLE handle, std::span<char> Data)
+{
+  if (Data.size() > std::numeric_limits<DWORD>::max()) {
+    LOG(L"WriteFile_All() failed.  Cannot write more than {} bytes at once",
+        std::numeric_limits<DWORD>::max());
+    return false;
+  }
+  DWORD BytesToWrite = (DWORD)(Data.size());
+  DWORD BytesWritten = 0;
+  DWORD BytesWrittenThisCall = 0;
+
+  char* Current = Data.data();
+
+  while (BytesToWrite > 0) {
+    if (!WriteFile(handle, Current, BytesToWrite, &BytesWrittenThisCall,
+                   NULL)) {
+      auto write_res = GetLastError();
+      LOG(L"WriteFile({}, {}) failed.  Err={} ({:X})", Current - Data.data(),
+          BytesToWrite, WMI::ErrorString(write_res), (uint32_t)write_res);
+      return false;
+    }
+
+    BytesToWrite -= BytesWrittenThisCall;
+    Current += BytesWrittenThisCall;
+  }
+
+  return true;
+}
+
 bool WriteRange(HANDLE /* OVERLAPPED */ in_handle,
                 HANDLE /* SYNC */ out_handle,
                 std::span<char> Buffer,
                 ULONG64 Offset,
                 ULONG64 Size)
 {
+  std::vector<char> Header;
+
+  Header.resize(sizeof(Offset) + sizeof(Size));
+  std::memcpy(Header.data(), &Offset, sizeof(Offset));
+  std::memcpy(Header.data() + sizeof(Offset), &Size, sizeof(Size));
+
+  if (!WriteFile_All(out_handle, Header)) { return false; }
+
   ULONG64 BytesTransferred = 0;
   while (BytesTransferred < Size) {
     OVERLAPPED Overlapped = {};
@@ -2291,23 +2328,11 @@ bool WriteRange(HANDLE /* OVERLAPPED */ in_handle,
     }
 
   read_ok:
-    (void)Offset;
-    DWORD BytesWritten = 0;
-    DWORD BytesWrittenThisCall = 0;
-    while (BytesWritten < BytesRead) {
-      if (!WriteFile(out_handle, Buffer.data() + BytesWritten,
-                     BytesRead - BytesWritten, &BytesWrittenThisCall, NULL)) {
-        auto write_res = GetLastError();
-        LOG(L"WriteFile({}, {}) failed.  Err={} ({:X})",
-            BytesTransferred + BytesWritten, BytesRead - BytesWritten,
-            WMI::ErrorString(write_res), (uint32_t)write_res);
-        return false;
-      }
-
-      BytesWritten += BytesWrittenThisCall;
+    if (!WriteFile_All(out_handle, Buffer.subspan(0, BytesRead))) {
+      return false;
     }
 
-    BytesTransferred += BytesWritten;
+    BytesTransferred += BytesRead;
   }
 
   return true;
@@ -2344,10 +2369,9 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
       .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
   };
 
-  // see: https://stackoverflow.com/a/65273895
   OPEN_VIRTUAL_DISK_PARAMETERS params = {};
   params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
-  params.Version2.ReadOnly = TRUE;
+  params.Version3.ReadOnly = TRUE;
   auto res
       = OpenVirtualDisk(&vst, hdd_path.get(), VIRTUAL_DISK_ACCESS_NONE,
                         OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
@@ -2471,6 +2495,17 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
       Size -= bytes_processed;
     }
     LOG(L"Total byte length = {}", total_size);
+  } else {
+    // ???
+    // Maybe we just open all virtual disks in the chain, and back them up
+    // seperately ??
+  }
+
+  if (auto detach_res
+      = DetachVirtualDisk(disk_handle, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+      FAILED(detach_res)) {
+    LOG(L"detach failed.  Err={} ({})", WMI::ErrorString(detach_res),
+        detach_res);
   }
 
   CloseHandle(disk_handle);
@@ -2661,8 +2696,7 @@ WMI::Result<WMI::ClassObject> FullBackupWin32(
 
   VirtualSystemExportSettingData settings = {
       .snapshot_virtual_system_path = std::wstring{snapshot_path->as_view()},
-      .backup_intent
-      = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+      .backup_intent = VirtualSystemExportSettingData::BackupIntent::Merge,
       .copy_snapshot_configuration = VirtualSystemExportSettingData::
           CopySnapshotConfiguration::ExportOneSnapshotForBackup,
       .capture_live_state
@@ -2715,6 +2749,309 @@ WMI::Result<WMI::ClassObject> FullBackupWin32(
   auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
   return refpoint;
 }
+
+DWORD
+SampleGetVirtualDiskInformation(_In_ LPCWSTR VirtualDiskPath)
+{
+  OPEN_VIRTUAL_DISK_PARAMETERS openParameters;
+  VIRTUAL_STORAGE_TYPE storageType;
+  PGET_VIRTUAL_DISK_INFO diskInfo;
+  ULONG diskInfoSize;
+  DWORD opStatus;
+
+  HANDLE vhdHandle;
+
+  UINT32 driveType;
+  UINT32 driveFormat;
+
+  GUID identifier;
+
+  ULONGLONG physicalSize;
+  ULONGLONG virtualSize;
+  ULONGLONG minInternalSize;
+  ULONG blockSize;
+  ULONG sectorSize;
+  ULONG physicalSectorSize;
+  LPCWSTR parentPath;
+  size_t parentPathSize;
+  size_t parentPathSizeRemaining;
+  HRESULT stringLengthResult;
+  GUID parentIdentifier;
+  ULONGLONG fragmentationPercentage;
+
+  vhdHandle = INVALID_HANDLE_VALUE;
+  diskInfo = NULL;
+  diskInfoSize = sizeof(GET_VIRTUAL_DISK_INFO);
+
+  diskInfo = (PGET_VIRTUAL_DISK_INFO)malloc(diskInfoSize);
+  if (diskInfo == NULL) {
+    opStatus = ERROR_NOT_ENOUGH_MEMORY;
+    goto Cleanup;
+  }
+
+  //
+  // Specify UNKNOWN for both device and vendor so the system will use the
+  // file extension to determine the correct VHD format.
+  //
+
+  storageType.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN;
+  storageType.VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN;
+
+  //
+  // Open the VHD for query access.
+  //
+  // A "GetInfoOnly" handle is a handle that can only be used to query
+  // properties or metadata.
+  //
+  // VIRTUAL_DISK_ACCESS_NONE is the only acceptable access mask for V2 handle
+  // opens. OPEN_VIRTUAL_DISK_FLAG_NO_PARENTS indicates the parent chain should
+  // not be opened.
+  //
+
+  memset(&openParameters, 0, sizeof(openParameters));
+  openParameters.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+  openParameters.Version2.GetInfoOnly = TRUE;
+
+  opStatus = OpenVirtualDisk(
+      &storageType, VirtualDiskPath, VIRTUAL_DISK_ACCESS_NONE,
+      OPEN_VIRTUAL_DISK_FLAG_NO_PARENTS, &openParameters, &vhdHandle);
+
+  if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+
+  //
+  // Get the VHD/VHDX type.
+  //
+
+  diskInfo->Version = GET_VIRTUAL_DISK_INFO_PROVIDER_SUBTYPE;
+
+  opStatus
+      = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+  if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+
+  driveType = diskInfo->ProviderSubtype;
+
+  wprintf(L"driveType = %d", driveType);
+
+  if (driveType == 2) {
+    wprintf(L" (fixed)\n");
+  } else if (driveType == 3) {
+    wprintf(L" (dynamic)\n");
+  } else if (driveType == 4) {
+    wprintf(L" (differencing)\n");
+  } else {
+    wprintf(L"\n");
+  }
+
+  //
+  // Get the VHD/VHDX format.
+  //
+
+  diskInfo->Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_STORAGE_TYPE;
+
+  opStatus
+      = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+  if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+
+  driveFormat = diskInfo->VirtualStorageType.DeviceId;
+
+  wprintf(L"driveFormat = %d", driveFormat);
+
+  if (driveFormat == VIRTUAL_STORAGE_TYPE_DEVICE_VHD) {
+    wprintf(L" (vhd)\n");
+  } else if (driveFormat == VIRTUAL_STORAGE_TYPE_DEVICE_VHDX) {
+    wprintf(L" (vhdx)\n");
+  } else {
+    wprintf(L"\n");
+  }
+
+  //
+  // Get the VHD/VHDX virtual disk size.
+  //
+
+  diskInfo->Version = GET_VIRTUAL_DISK_INFO_SIZE;
+
+  opStatus
+      = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+  if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+
+  physicalSize = diskInfo->Size.PhysicalSize;
+  virtualSize = diskInfo->Size.VirtualSize;
+  sectorSize = diskInfo->Size.SectorSize;
+  blockSize = diskInfo->Size.BlockSize;
+
+  wprintf(L"physicalSize = %I64u\n", physicalSize);
+  wprintf(L"virtualSize = %I64u\n", virtualSize);
+  wprintf(L"sectorSize = %u\n", sectorSize);
+  wprintf(L"blockSize = %u\n", blockSize);
+
+  //
+  // Get the VHD physical sector size.
+  //
+
+  diskInfo->Version = GET_VIRTUAL_DISK_INFO_VHD_PHYSICAL_SECTOR_SIZE;
+
+  opStatus
+      = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+  if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+
+  physicalSectorSize = diskInfo->VhdPhysicalSectorSize;
+
+  wprintf(L"physicalSectorSize = %u\n", physicalSectorSize);
+
+  //
+  // Get the virtual disk ID.
+  //
+
+  diskInfo->Version = GET_VIRTUAL_DISK_INFO_IDENTIFIER;
+
+  opStatus
+      = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+  if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+
+  identifier = diskInfo->Identifier;
+
+  wprintf(L"identifier = {%08X-%04X-%04X-%02X%02X%02X%02X%02X%02X%02X%02X}\n",
+          identifier.Data1, identifier.Data2, identifier.Data3,
+          identifier.Data4[0], identifier.Data4[1], identifier.Data4[2],
+          identifier.Data4[3], identifier.Data4[4], identifier.Data4[5],
+          identifier.Data4[6], identifier.Data4[7]);
+
+  //
+  // Get the VHD parent path.
+  //
+
+  if (driveType == 0x4) {
+    diskInfo->Version = GET_VIRTUAL_DISK_INFO_PARENT_LOCATION;
+
+    opStatus
+        = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+    if (opStatus != ERROR_SUCCESS) {
+      if (opStatus != ERROR_INSUFFICIENT_BUFFER) { goto Cleanup; }
+
+      free(diskInfo);
+
+      diskInfo = (PGET_VIRTUAL_DISK_INFO)malloc(diskInfoSize);
+      if (diskInfo == NULL) {
+        opStatus = ERROR_NOT_ENOUGH_MEMORY;
+        goto Cleanup;
+      }
+
+      diskInfo->Version = GET_VIRTUAL_DISK_INFO_PARENT_LOCATION;
+
+      opStatus
+          = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+      if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+    }
+
+    parentPath = diskInfo->ParentLocation.ParentLocationBuffer;
+    parentPathSizeRemaining
+        = diskInfoSize
+          - FIELD_OFFSET(GET_VIRTUAL_DISK_INFO,
+                         ParentLocation.ParentLocationBuffer);
+
+    if (diskInfo->ParentLocation.ParentResolved) {
+      wprintf(L"parentPath = '%s'\n", parentPath);
+    } else {
+      //
+      // If the parent is not resolved, the buffer is a MULTI_SZ
+      //
+
+      wprintf(L"parentPath:\n");
+
+      while ((parentPathSizeRemaining >= sizeof(parentPath[0]))
+             && (*parentPath != 0)) {
+        stringLengthResult = StringCbLengthW(
+            parentPath, parentPathSizeRemaining, &parentPathSize);
+
+        if (FAILED(stringLengthResult)) { goto Cleanup; }
+
+        wprintf(L"    '%s'\n", parentPath);
+
+        parentPathSize += sizeof(parentPath[0]);
+        parentPath = parentPath + (parentPathSize / sizeof(parentPath[0]));
+        parentPathSizeRemaining -= parentPathSize;
+      }
+    }
+
+    //
+    // Get parent ID.
+    //
+
+    diskInfo->Version = GET_VIRTUAL_DISK_INFO_PARENT_IDENTIFIER;
+
+    opStatus
+        = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+    if (opStatus != ERROR_SUCCESS) { goto Cleanup; }
+
+    parentIdentifier = diskInfo->ParentIdentifier;
+
+    wprintf(
+        L"parentIdentifier = "
+        L"{%08X-%04X-%04X-%02X%02X%02X%02X%02X%02X%02X%02X}\n",
+        parentIdentifier.Data1, parentIdentifier.Data2, parentIdentifier.Data3,
+        parentIdentifier.Data4[0], parentIdentifier.Data4[1],
+        parentIdentifier.Data4[2], parentIdentifier.Data4[3],
+        parentIdentifier.Data4[4], parentIdentifier.Data4[5],
+        parentIdentifier.Data4[6], parentIdentifier.Data4[7]);
+  }
+
+  //
+  // Get the VHD minimum internal size.
+  //
+
+  diskInfo->Version = GET_VIRTUAL_DISK_INFO_SMALLEST_SAFE_VIRTUAL_SIZE;
+
+  opStatus
+      = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+  if (opStatus == ERROR_SUCCESS) {
+    minInternalSize = diskInfo->SmallestSafeVirtualSize;
+
+    wprintf(L"minInternalSize = %I64u\n", minInternalSize);
+  } else {
+    opStatus = ERROR_SUCCESS;
+  }
+
+  //
+  // Get the VHD fragmentation percentage.
+  //
+
+  diskInfo->Version = GET_VIRTUAL_DISK_INFO_FRAGMENTATION;
+
+  opStatus
+      = GetVirtualDiskInformation(vhdHandle, &diskInfoSize, diskInfo, NULL);
+
+  if (opStatus == ERROR_SUCCESS) {
+    fragmentationPercentage = diskInfo->FragmentationPercentage;
+
+    wprintf(L"fragmentationPercentage = %I64u\n", fragmentationPercentage);
+  } else {
+    opStatus = ERROR_SUCCESS;
+  }
+
+Cleanup:
+
+  if (opStatus == ERROR_SUCCESS) {
+    wprintf(L"success\n");
+  } else {
+    wprintf(L"error = %u\n", opStatus);
+  }
+
+  if (vhdHandle != INVALID_HANDLE_VALUE) { CloseHandle(vhdHandle); }
+
+  if (diskInfo != NULL) { free(diskInfo); }
+
+  return opStatus;
+}
+
 
 WMI::Result<WMI::ClassObject> IncrementalBackup(
     const WMI& service,
@@ -2783,8 +3120,7 @@ WMI::Result<WMI::ClassObject> IncrementalBackup(
   VirtualSystemExportSettingData settings = {
       .snapshot_virtual_system_path = std::wstring{snapshot_path->as_view()},
       .differential_backup_base_path = std::wstring{ref_path},
-      .backup_intent
-      = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+      .backup_intent = VirtualSystemExportSettingData::BackupIntent::Merge,
       .copy_snapshot_configuration = VirtualSystemExportSettingData::
           CopySnapshotConfiguration::ExportOneSnapshotForBackup,
       .capture_live_state
@@ -2803,6 +3139,7 @@ WMI::Result<WMI::ClassObject> IncrementalBackup(
   if (use_win32_api) {
     auto refpoint = GetRefPoint(service, ref_path);
     if (!refpoint) { return std::nullopt; }
+    LOG(L"RefPoint = {}", WMI::ObjectAsString(refpoint->system).as_view());
 
     auto rct_ids = GetRCTsByDiskId(refpoint.value());
     if (!rct_ids) { return std::nullopt; }
@@ -2829,18 +3166,21 @@ WMI::Result<WMI::ClassObject> IncrementalBackup(
       auto hdd_path = HardDiskPath(vhd_setting);
       if (!hdd_path) { return std::nullopt; }
 
+      // TODO: we somehow have to grep the correct rct_id for the
+      // wanted hdd.
       const wchar_t* rct_id = [&] {
         if (rct_ids->size() > 0) { return rct_ids->begin()->second.c_str(); }
         return (const wchar_t*)nullptr;
       }();
+
+      std::wstring stdpath{hdd_path->as_view()};
+      SampleGetVirtualDiskInformation(stdpath.c_str());
 
       if (!BackupDisk(hdd_path.value(), rct_id, backup_directory)) {
         return std::nullopt;
       }
     }
   }
-
-  return std::nullopt;
 
   auto refpoint = vsss->ConvertToReferencePoint(std::move(snapshot).value());
   return refpoint;
@@ -2971,8 +3311,7 @@ bool Test(const WMI& service, TestType tt)
   switch (tt) {
     case TestType::Full: {
       VirtualSystemExportSettingData settings = {
-          .backup_intent
-          = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+          .backup_intent = VirtualSystemExportSettingData::BackupIntent::Merge,
           .capture_live_state
           = VirtualSystemExportSettingData::CaptureLiveState::CrashConsistent,
           .copy_vm_runtime_information = false,
@@ -3025,8 +3364,7 @@ bool Test(const WMI& service, TestType tt)
       VirtualSystemExportSettingData settings = {
           .snapshot_virtual_system_path
           = std::wstring{snapshot_path->as_view()},
-          .backup_intent
-          = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+          .backup_intent = VirtualSystemExportSettingData::BackupIntent::Merge,
           .copy_snapshot_configuration = VirtualSystemExportSettingData::
               CopySnapshotConfiguration::ExportOneSnapshotForBackup,
           .capture_live_state
@@ -3091,8 +3429,7 @@ bool Test(const WMI& service, TestType tt)
           .snapshot_virtual_system_path
           = std::wstring{incr_snapshot_path->as_view()},
           .differential_backup_base_path = std::wstring{refpath->as_view()},
-          .backup_intent
-          = VirtualSystemExportSettingData::BackupIntent::PreserveChain,
+          .backup_intent = VirtualSystemExportSettingData::BackupIntent::Merge,
           .copy_snapshot_configuration = VirtualSystemExportSettingData::
               CopySnapshotConfiguration::ExportOneSnapshotForBackup,
           .capture_live_state
@@ -3294,7 +3631,8 @@ int main(int argc, char** argv)
     full->add_option("-B,--backup-dir", backup_dir)
         ->required()
         ->check(CLI::ExistingDirectory);
-    full->add_option("-W,--use-win32-api", win32_api);
+    full->add_flag("-W,--use-win32-api", win32_api,
+                   "Use the win32 api for backing up the disks");
   }
   auto incremental
       = app.add_subcommand("incremental", "create an incremental backup");
