@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix 32bit compilation [PR #2175]
 - config: fix issues with config directive aliases [PR #2159]
 - cleanup: fix multi-config tests [PR #2202]
+- mssqlvdi-fd: add support for filestream backups [PR #2072]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -71,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2066]: https://github.com/bareos/bareos/pull/2066
 [PR #2067]: https://github.com/bareos/bareos/pull/2067
 [PR #2068]: https://github.com/bareos/bareos/pull/2068
+[PR #2072]: https://github.com/bareos/bareos/pull/2072
 [PR #2076]: https://github.com/bareos/bareos/pull/2076
 [PR #2078]: https://github.com/bareos/bareos/pull/2078
 [PR #2079]: https://github.com/bareos/bareos/pull/2079
