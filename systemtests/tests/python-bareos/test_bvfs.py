@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -288,7 +288,7 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
             **format_params
         )
         bvfs_lsfiles_BackupDirectory_limit1 = director.call(cmd)["files"]
-        # TODO: bug, this returns multiple entires
+        # TODO: bug, this returns multiple entries
         # self.assertEqual(len(bvfs_lsfiles_BackupDirectory_limit1), 1, 'Expecting 1 file from "{}", instead received: {}'.format(cmd, bvfs_lsfiles_BackupDirectory_limit1))
 
         cmd = ".bvfs_versions jobid=0 client={Client} path={BackupDirectory}/ fname={BackupFileNameExtra}".format(

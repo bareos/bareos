@@ -48,7 +48,7 @@ enum
   R_DIRECTOR = 0,
   R_CLIENT,
   R_MSGS,
-  R_NUM, /* number of entires */
+  R_NUM, /* number of entries */
 
 
   // these two do not really exist in the configuration

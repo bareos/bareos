@@ -53,7 +53,7 @@ enum
   R_MSGS,
   R_AUTOCHANGER,
   R_JOB,           // needed for Job name conversion
-  R_NUM,           // number of entires
+  R_NUM,           // number of entries
   R_CLIENT = 0xff  // dummy for bsock printing
 };
 
