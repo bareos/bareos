@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -124,34 +124,41 @@ static PluginFunctions pluginFuncs
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, nullptr, nullptr, nullptr, nullptr};
 
+enum class Mode
+{
+  Backup,
+  Restore,
+};
 // Plugin private context
 struct plugin_ctx {
-  int RestoreFD;
-  bool RestoreToFile;
-  bool DoNoRecovery;
-  bool ForceReplace;
-  bool RecoverAfterRestore;
-  char* plugin_options;
-  char* filename;
-  char* server_address;
-  char* instance;
-  char* database;
-  char* username;
-  char* password;
-  char* stopbeforemark;
-  char* stopatmark;
-  char* stopat;
-  char* ado_connect_string;
-  char* ado_query;
-  char* ado_errorstr;
-  uint32_t get_configuration_timeout;
-  wchar_t* vdsname;
-  int32_t backup_level;
-  IClientVirtualDeviceSet2* VDIDeviceSet;
-  IClientVirtualDevice* VDIDevice;
-  VDConfig VDIConfig;
-  bool AdoThreadStarted;
-  pthread_t ADOThread;
+  int RestoreFD{};
+  bool RestoreToFile{};
+  bool DoNoRecovery{};
+  bool ForceReplace{};
+  bool RecoverAfterRestore{};
+  char* plugin_options{};
+  char* filename{};
+  char* server_address{};
+  char* instance{};
+  char* database{};
+  char* username{};
+  char* password{};
+  char* stopbeforemark{};
+  char* stopatmark{};
+  char* stopat{};
+  char* ado_connect_string{};
+  char* ado_query{};
+  char* ado_errorstr{};
+  uint32_t get_configuration_timeout{};
+  wchar_t* vdsname{};
+  int32_t backup_level{};
+  IClientVirtualDeviceSet2* VDIDeviceSet{};
+  IClientVirtualDevice* VDIDevice{};
+  VDConfig VDIConfig{};
+  bool AdoThreadStarted{};
+  pthread_t ADOThread{};
+  bool completion_support{};
+  std::optional<Mode> mode{};
 };
 
 struct adoThreadContext {
@@ -232,6 +239,29 @@ BAREOS_EXPORT bRC unloadPlugin() { return bRC_OK; }
 }
 #endif
 
+static const char* explain_hr(DWORD hr)
+{
+  // Return Value	Explanation
+  // NOERROR	A command was fetched.
+  // VD_E_CLOSE	The device has been closed by the server.
+  // VD_E_TIMEOUT	No command was available and the time-out expired.
+  // VD_E_ABORT	Either the client or the server has used the SignalAbort
+  // to force a shutdown.
+  static const std::map<int, const char*> VdiRetVals{
+      {VD_E_CLOSE, "VD_E_CLOSE"},
+      {VD_E_TIMEOUT, "VD_E_TIMEOUT"},
+      {VD_E_ABORT, "VD_E_ABORT"},
+      {NO_ERROR, "NO_ERROR"},
+  };
+
+  if (auto found = VdiRetVals.find(hr); found != VdiRetVals.end()) {
+    return found->second;
+  } else {
+    return "unknown";
+  }
+}
+
+
 /**
  * The following entry points are accessed through the function pointers we
  * supplied to Bareos. Each plugin type (dir, fd, sd) has its own set of entry
@@ -250,15 +280,15 @@ static bRC newPlugin(PluginContext* ctx)
 
   if (!InitializeComSecurity()) { return bRC_Error; }
 
-  p_ctx = (plugin_ctx*)malloc(sizeof(plugin_ctx));
+  p_ctx = new plugin_ctx{};
   if (!p_ctx) { return bRC_Error; }
-  memset(p_ctx, 0, sizeof(plugin_ctx));
   ctx->plugin_private_context = (void*)p_ctx; /* set our context pointer */
 
   // Only register the events we are really interested in.
   bareos_core_functions->registerBareosEvents(
-      ctx, 6, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
-      bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions);
+      ctx, 8, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
+      bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions,
+      bEventStartBackupJob, bEventStartRestoreJob);
 
   return bRC_OK;
 }
@@ -304,7 +334,7 @@ static bRC freePlugin(PluginContext* ctx)
 
   if (p_ctx->ado_query) { free(p_ctx->ado_query); }
 
-  free(p_ctx);
+  delete p_ctx;
   p_ctx = NULL;
 
   // Tear down COM for this thread.
@@ -330,6 +360,14 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   if (!p_ctx) { return bRC_Error; }
 
   switch (event->eventType) {
+    case bEventStartBackupJob: {
+      p_ctx->mode = Mode::Backup;
+      retval = bRC_OK;
+    } break;
+    case bEventStartRestoreJob: {
+      p_ctx->mode = Mode::Restore;
+      retval = bRC_OK;
+    } break;
     case bEventLevel:
       p_ctx->backup_level = (int64_t)value;
       retval = bRC_OK;
@@ -696,6 +734,7 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   // Get the description of the COM error.
   hr = pErrorInfo->GetDescription(&pDescription);
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: GetDescription failed\n");
     pErrorInfo->Release();
     return;
   }
@@ -703,6 +742,7 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   // Get the source of the COM error.
   hr = pErrorInfo->GetSource(&pSource);
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: GetSource failed\n");
     SysFreeString(pDescription);
     pErrorInfo->Release();
     return;
@@ -712,8 +752,10 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   source = BSTR_2_str(pSource);
   description = BSTR_2_str(pDescription);
   if (source && description) {
-    Jmsg(ctx, M_FATAL, "%s(x%X): %s\n", source, hrErr, description);
-    Dmsg(ctx, debuglevel, "%s(x%X): %s\n", source, hrErr, description);
+    Jmsg(ctx, M_FATAL, "%s(0x%X): %s\n", source, hrErr, description);
+    Dmsg(ctx, debuglevel, "%s(0x%X): %s\n", source, hrErr, description);
+  } else {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: could not print error\n");
   }
 
   if (source) { free(source); }
@@ -809,6 +851,8 @@ static bool adoReportError(PluginContext* ctx)
     p_ctx->ado_errorstr = NULL;
 
     return true;
+  } else {
+    Dmsg(ctx, debuglevel, "Tried reporting error, but none were available\n");
   }
 
   return false;
@@ -941,11 +985,11 @@ static void SetAdoConnectString(PluginContext* ctx)
 
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
     Mmsg(ado_connect_string,
-         "Provider=SQLOLEDB.1;Data Source=%s;Initial Catalog=master",
+         "Provider=MSOLEDBSQL.1;Data Source=%s;Initial Catalog=master",
          p_ctx->server_address);
   } else {
     Mmsg(ado_connect_string,
-         "Provider=SQLOLEDB.1;Data Source=%s\\%s;Initial Catalog=master",
+         "Provider=MSOLEDBSQL.1;Data Source=%s\\%s;Initial Catalog=master",
          p_ctx->server_address, p_ctx->instance);
   }
 
@@ -1173,6 +1217,25 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     return false;
   }
 
+  if (!p_ctx->mode.has_value()) {
+    Jmsg(ctx, M_FATAL, "No Backup/Restore Mode was specified\n");
+    return false;
+  }
+
+  if (io->flags & (O_CREAT | O_WRONLY)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: creating restore vdi device\n");
+    if (p_ctx->mode.value() != Mode::Restore) {
+      Jmsg(ctx, M_FATAL, "Wrong [Backup]/Restore Mode was specified\n");
+      return false;
+    }
+  } else {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: creating backup vdi device\n");
+    if (p_ctx->mode.value() != Mode::Backup) {
+      Jmsg(ctx, M_FATAL, "Wrong Backup/[Restore] Mode was specified\n");
+      return false;
+    }
+  }
+
   CoCreateGuid(&vdsId);
   p_ctx->vdsname = (wchar_t*)malloc((VDS_NAME_LENGTH * sizeof(wchar_t)) + 2);
   StringFromGUID2(vdsId, p_ctx->vdsname, VDS_NAME_LENGTH);
@@ -1182,6 +1245,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
                         CLSCTX_INPROC_SERVER, IID_IClientVirtualDeviceSet2,
                         (void**)&p_ctx->VDIDeviceSet);
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: CoCreateInstance failed\n");
     comReportError(ctx, hr);
     return false;
   }
@@ -1190,6 +1254,14 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
   memset(&p_ctx->VDIConfig, 0, sizeof(p_ctx->VDIConfig));
   p_ctx->VDIConfig.deviceCount = 1;
   p_ctx->VDIConfig.features = VDF_LikePipe;
+  if (p_ctx->mode.value() == Mode::Backup) {
+    // for proper filestream backup support we need to distinguish between
+    // a VDC_Flush command and the end of the backup.  We do this
+    // by relying on VDC_Complete if its available.
+    // If its not available, we are not able to correctly handle a VDC_Flush
+    // in the middle of a backup.
+    p_ctx->VDIConfig.features |= VDF_RequestComplete;
+  }
 
   // Create the VDI device set.
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
@@ -1204,21 +1276,28 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     FreePoolMemory(instance_name);
   }
   if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: VDIDeviceSet::CreateEx failed\n");
     comReportError(ctx, hr);
     return false;
   }
 
   // Setup the right backup or restore cmdline and connect info.
-  if (io->flags & (O_CREAT | O_WRONLY)) {
-    perform_aDoRestore(ctx);
-  } else {
-    PerformAdoBackup(ctx);
+  switch (p_ctx->mode.value()) {
+    case Mode::Restore: {
+      perform_aDoRestore(ctx);
+    } break;
+    case Mode::Backup: {
+      PerformAdoBackup(ctx);
+    } break;
   }
 
   /* Ask the database server to start a backup or restore via another thread.
    * We create a new thread that handles the connection to the database. */
   status = pthread_create(&p_ctx->ADOThread, NULL, adoThread, (void*)ctx);
-  if (status != 0) { return false; }
+  if (status != 0) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: pthread_create failed\n");
+    return false;
+  }
 
   /* Track that we have started the thread and as such need to kill it when
    * we perform a close of the VDI device. */
@@ -1258,6 +1337,20 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     const char* fmt
         = "mssqlvdi-fd: IClientVirtualDeviceSet2::GetConfiguration "
           "%s: %0#x (%s)\n";
+
+    if (!(p_ctx->VDIConfig.features & VDF_CompleteEnabled)) {
+      if (p_ctx->mode.value() == Mode::Backup) {
+        Jmsg(ctx, M_INFO,
+             "VDI does not support VDC_Complete."
+             " Backing up Filestreams are not supported\n.");
+      }
+      p_ctx->completion_support = false;
+    } else {
+      p_ctx->completion_support = true;
+    }
+
+    Dmsg(ctx, debuglevel, "completion_support = %s\n",
+         p_ctx->completion_support ? "Yes" : "No");
 
     if (success) {
       snprintf(error_msg.data(), error_msg.size(), fmt, "successful",
@@ -1377,6 +1470,69 @@ bail_out:
   return false;
 }
 
+const char* command_name(DWORD commandCode)
+{
+  switch (commandCode) {
+    case VDC_Read: {
+      return "read";
+    }
+    case VDC_Write: {
+      return "write";
+    }
+    case VDC_ClearError: {
+      return "clear-error";
+    }
+    case VDC_Rewind: {
+      return "rewind";
+    }
+    case VDC_WriteMark: {
+      return "write-mark";
+    }
+    case VDC_SkipMarks: {
+      return "skip-marks";
+    }
+    case VDC_SkipBlocks: {
+      return "skip-blocks";
+    }
+    case VDC_Load: {
+      return "load";
+    }
+    case VDC_GetPosition: {
+      return "get-position";
+    }
+    case VDC_SetPosition: {
+      return "set-position";
+    }
+    case VDC_Discard: {
+      return "discard";
+    }
+    case VDC_Flush: {
+      return "flush";
+    }
+    case VDC_Snapshot: {
+      return "snapshot";
+    }
+    case VDC_MountSnapshot: {
+      return "mount-snapshot";
+    }
+    case VDC_PrepareToFreeze: {
+      return "prepare-to-freeze";
+    }
+    case VDC_FileInfoBegin: {
+      return "file-info-begin";
+    }
+    case VDC_FileInfoEnd: {
+      return "file-info-end";
+    }
+    case VDC_Complete: {
+      return "complete";
+    }
+    default: {
+      return "unknown";
+    }
+  }
+}
+
 // Perform an I/O operation to a virtual device as part of a backup or restore.
 static inline bool PerformVdiIo(PluginContext* ctx,
                                 io_pkt* io,
@@ -1386,60 +1542,90 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   VDC_Command* cmd;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  // See what command is available on the VDIDevice.
-  hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
-  if (!SUCCEEDED(hr)) {
-    Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n",
-         hr);
-    Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
-    goto bail_out;
-  }
-
-  switch (cmd->commandCode) {
-    case VDC_Read:
-      /* Make sure the write to the VDIDevice will fit e.g. not a to big IO and
-       * that we are currently writing to the device. */
-      if ((DWORD)io->count > cmd->size || io->func != IO_WRITE) {
-        *completionCode = ERROR_BAD_ENVIRONMENT;
-        goto bail_out;
-      } else {
-        memcpy(cmd->buffer, io->buf, io->count);
-        io->status = io->count;
-        *completionCode = ERROR_SUCCESS;
-      }
-      break;
-    case VDC_Write:
-      /* Make sure the read from the VDIDevice will fit e.g. not a to big IO and
-       * that we are currently reading from the device. */
-      if (cmd->size > (DWORD)io->count || io->func != IO_READ) {
-        *completionCode = ERROR_BAD_ENVIRONMENT;
-        goto bail_out;
-      } else {
-        memcpy(io->buf, cmd->buffer, cmd->size);
-        io->status = cmd->size;
-        *completionCode = ERROR_SUCCESS;
-      }
-      break;
-    case VDC_Flush:
-      io->status = 0;
-      *completionCode = ERROR_SUCCESS;
-      break;
-    case VDC_ClearError:
-      *completionCode = ERROR_SUCCESS;
-      break;
-    default:
-      *completionCode = ERROR_NOT_SUPPORTED;
+  bool quit = false;
+  while (!quit) {
+    // See what command is available on the VDIDevice.
+    hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
+    if (!SUCCEEDED(hr)) {
+      auto* explanation = explain_hr(hr);
+      Jmsg(ctx, M_ERROR,
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
+           explanation, hr);
+      Dmsg(ctx, debuglevel,
+           "mssqlvdi-fd: IClientVirtualDevice::GetCommand: Err=%s (0x%X)\n",
+           explanation, hr);
       goto bail_out;
-  }
+    }
 
-  hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
-  if (!SUCCEEDED(hr)) {
-    Jmsg(ctx, M_ERROR,
-         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
-    Dmsg(ctx, debuglevel,
-         "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
-    goto bail_out;
+
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: Command: %d:%s (size=%d)\n",
+         cmd->commandCode, command_name(cmd->commandCode), cmd->size);
+
+    switch (cmd->commandCode) {
+      case VDC_Read:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Read: %d bytes\n", cmd->size);
+        /* Make sure the write to the VDIDevice will fit e.g. not a too big IO
+         * and that we are currently writing to the device. */
+        if ((DWORD)io->count > cmd->size || io->func != IO_WRITE) {
+          *completionCode = ERROR_BAD_ENVIRONMENT;
+          goto bail_out;
+        } else {
+          memcpy(cmd->buffer, io->buf, io->count);
+          io->status = io->count;
+          *completionCode = ERROR_SUCCESS;
+        }
+        quit = true;
+        break;
+      case VDC_Write:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Write: %d bytes\n", cmd->size);
+        /* Make sure the read from the VDIDevice will fit e.g. not a too big IO
+         * and that we are currently reading from the device. */
+        if (cmd->size > (DWORD)io->count || io->func != IO_READ) {
+          *completionCode = ERROR_BAD_ENVIRONMENT;
+          goto bail_out;
+        } else {
+          memcpy(io->buf, cmd->buffer, cmd->size);
+          io->status = cmd->size;
+          *completionCode = ERROR_SUCCESS;
+        }
+        quit = true;
+        break;
+      case VDC_Flush:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Flush\n");
+        io->status = 0;
+        *completionCode = ERROR_SUCCESS;
+        if (!p_ctx->completion_support) { quit = true; }
+        break;
+      case VDC_ClearError:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: ClearError\n");
+        *completionCode = ERROR_SUCCESS;
+        break;
+      case VDC_Complete:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Complete\n");
+        io->status = 0;
+        *completionCode = ERROR_SUCCESS;
+        quit = true;
+        break;
+      default:
+        Dmsg(ctx, debuglevel, "mssqlvdi-fd: Unknown = %d\n", cmd->commandCode);
+        *completionCode = ERROR_NOT_SUPPORTED;
+        quit = true;
+        goto bail_out;
+    }
+
+    hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
+    if (!SUCCEEDED(hr)) {
+      auto* explanation = explain_hr(hr);
+      Jmsg(
+          ctx, M_ERROR,
+          "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
+          explanation, hr);
+      Dmsg(
+          ctx, debuglevel,
+          "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: Err=%s (0x%X)\n",
+          explanation, hr);
+      goto bail_out;
+    }
   }
 
   io->io_errno = 0;
@@ -1449,6 +1635,7 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   return true;
 
 bail_out:
+  Dmsg(ctx, debuglevel, "mssqlvdi-fd: IO: reached bailout ...\n");
   // Report any COM errors.
   comReportError(ctx, hr);
 
@@ -1475,35 +1662,41 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
 
   // Check if the VDI device is closed.
   if (p_ctx->VDIDevice) {
+  tryagain:
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
-    // Return Value	Explanation
-    // NOERROR	A command was fetched.
-    // VD_E_CLOSE	The device has been closed by the server.
-    // VD_E_TIMEOUT	No command was available and the time-out expired.
-    // VD_E_ABORT	Either the client or the server has used the SignalAbort
-    // to force a shutdown.
-    static const std::map<int, std::string> VdiRetVals{
-        {VD_E_CLOSE, "VD_E_CLOSE"},
-        {VD_E_TIMEOUT, "VD_E_TIMEOUT"},
-        {VD_E_ABORT, "VD_E_ABORT"},
-        {NO_ERROR, "NO_ERROR"},
-    };
 
-    std::string error_string;
-    if (auto found = VdiRetVals.find(hr); found != VdiRetVals.end()) {
-      error_string = found->second.c_str();
-    } else {
-      error_string = "Unknown error (res=";
-      error_string += std::to_string(hr);
-      error_string += ")";
-    }
-    if (hr != VD_E_CLOSE) {
+    if (hr == NO_ERROR) {
+      // we got another command for some reason
+
+      const char* type = command_name(cmd->commandCode);
+      int status = 0;
+
+      switch (cmd->commandCode) {
+        case VDC_Read: {
+          status = cmd->size;
+        } break;
+        case VDC_Write: {
+          status = cmd->size;
+        } break;
+      }
+
       Jmsg(ctx, M_ERROR,
-           "Abnormal termination, VDIDevice not closed. Result = %s\n",
-           error_string.c_str());
+           "Received command %d:%s (size = %d) when trying to close device\n",
+           cmd->commandCode, type, status);
+
+      hr = p_ctx->VDIDevice->CompleteCommand(cmd, ERROR_SUCCESS, status, 0);
+      goto tryagain;
+    }
+
+    if (hr != VD_E_CLOSE) {
+      auto* explanation = explain_hr(hr);
+
+      Jmsg(ctx, M_ERROR,
+           "Abnormal termination, VDIDevice not closed. Err=%s (0x%X)\n",
+           explanation, hr);
       Dmsg(ctx, debuglevel,
-           "Abnormal termination, VDIDevice not closed. Result = %s\n",
-           error_string.c_str());
+           "Abnormal termination, VDIDevice not closed. Err=%s (0x%X)\n",
+           explanation, hr);
       goto bail_out;
     }
   }
@@ -1647,10 +1840,12 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
   if (!p_ctx) { return bRC_Error; }
 
   if (strlen(rp->where) > 0) {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: create file -> file io\n");
     p_ctx->RestoreToFile = true;
     p_ctx->RestoreFD = -1;
     rp->create_status = CF_CORE;
   } else {
+    Dmsg(ctx, debuglevel, "mssqlvdi-fd: create file -> vdi io\n");
     rp->create_status = CF_EXTRACT;
   }
 

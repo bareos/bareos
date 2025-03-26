@@ -928,7 +928,9 @@ static void ListScheduledJobs(UaContext* ua)
     }
   } /* end for loop over resources */
 
-  std::sort(sched.begin(), sched.end(), CompareByRuntimePriority);
+  std::sort(sched.begin(), sched.end(), [](auto& l, auto& r) -> bool {
+    return CompareByRuntimePriority(l, r) < 0;
+  });
   for (sched_pkt& sp : sched) { PrtRuntime(ua, &sp); }
   if (sched.empty() && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
