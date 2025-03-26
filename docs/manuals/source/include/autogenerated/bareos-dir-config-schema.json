@@ -33,7 +33,7 @@
           "alias": true,
           "default_value": "9101",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Address": {
           "datatype": "ADDRESS",
@@ -47,7 +47,7 @@
           "alias": true,
           "default_value": "9101",
           "equals": true,
-          "description": "This is an alias, consider using \"Address\" instead."
+          "description": "This is an alias for \"Address\", use \"Address\" instead."
         },
         "Addresses": {
           "datatype": "ADDRESSES",
@@ -61,7 +61,7 @@
           "alias": true,
           "default_value": "9101",
           "equals": true,
-          "description": "This is an alias, consider using \"Addresses\" instead."
+          "description": "This is an alias for \"Addresses\", use \"Addresses\" instead."
         },
         "SourceAddress": {
           "datatype": "ADDRESS",
@@ -75,7 +75,7 @@
           "alias": true,
           "default_value": "0",
           "equals": true,
-          "description": "This is an alias, consider using \"SourceAddress\" instead."
+          "description": "This is an alias for \"SourceAddress\", use \"SourceAddress\" instead."
         },
         "QueryFile": {
           "datatype": "DIRECTORY",
@@ -372,7 +372,7 @@
           "alias": true,
           "equals": true,
           "required": true,
-          "description": "This is an alias, consider using \"Address\" instead."
+          "description": "This is an alias for \"Address\", use \"Address\" instead."
         },
         "LanAddress": {
           "datatype": "STRING",
@@ -393,7 +393,7 @@
           "alias": true,
           "default_value": "9102",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Username": {
           "datatype": "STRING",
@@ -412,7 +412,7 @@
           "alias": true,
           "equals": true,
           "required": true,
-          "description": "This is an alias, consider using \"Password\" instead."
+          "description": "This is an alias for \"Password\", use \"Password\" instead."
         },
         "Catalog": {
           "datatype": "RES",
@@ -739,7 +739,7 @@
           "code": 3,
           "alias": true,
           "equals": true,
-          "description": "This is an alias, consider using \"JobToVerify\" instead."
+          "description": "This is an alias for \"JobToVerify\", use \"JobToVerify\" instead."
         },
         "Catalog": {
           "datatype": "RES",
@@ -1224,7 +1224,7 @@
           "code": 3,
           "alias": true,
           "equals": true,
-          "description": "This is an alias, consider using \"JobToVerify\" instead."
+          "description": "This is an alias for \"JobToVerify\", use \"JobToVerify\" instead."
         },
         "Catalog": {
           "datatype": "RES",
@@ -1643,7 +1643,7 @@
           "alias": true,
           "equals": true,
           "required": true,
-          "description": "This is an alias, consider using \"Address\" instead."
+          "description": "This is an alias for \"Address\", use \"Address\" instead."
         },
         "LanAddress": {
           "datatype": "STRING",
@@ -1664,7 +1664,7 @@
           "alias": true,
           "default_value": "9103",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Username": {
           "datatype": "STRING",
@@ -1683,7 +1683,7 @@
           "alias": true,
           "equals": true,
           "required": true,
-          "description": "This is an alias, consider using \"Password\" instead."
+          "description": "This is an alias for \"Password\", use \"Password\" instead."
         },
         "Device": {
           "datatype": "DEVICE",
@@ -1887,7 +1887,7 @@
           "code": 0,
           "alias": true,
           "equals": true,
-          "description": "This is an alias, consider using \"DbAddress\" instead."
+          "description": "This is an alias for \"DbAddress\", use \"DbAddress\" instead."
         },
         "DbPort": {
           "datatype": "PINT32",
@@ -1899,7 +1899,7 @@
           "code": 0,
           "alias": true,
           "equals": true,
-          "description": "This is an alias, consider using \"DbPort\" instead."
+          "description": "This is an alias for \"DbPort\", use \"DbPort\" instead."
         },
         "DbPassword": {
           "datatype": "AUTOPASSWORD",
@@ -1911,7 +1911,7 @@
           "code": 0,
           "alias": true,
           "equals": true,
-          "description": "This is an alias, consider using \"DbPassword\" instead."
+          "description": "This is an alias for \"DbPassword\", use \"DbPassword\" instead."
         },
         "DbUser": {
           "datatype": "STRING",
@@ -1923,7 +1923,7 @@
           "code": 0,
           "alias": true,
           "equals": true,
-          "description": "This is an alias, consider using \"DbUser\" instead."
+          "description": "This is an alias for \"DbUser\", use \"DbUser\" instead."
         },
         "DbName": {
           "datatype": "STRING",
@@ -1941,7 +1941,7 @@
           "code": 0,
           "alias": true,
           "equals": true,
-          "description": "This is an alias, consider using \"DbSocket\" instead."
+          "description": "This is an alias for \"DbSocket\", use \"DbSocket\" instead."
         },
         "MultipleConnections": {
           "datatype": "BIT",

@@ -169,7 +169,7 @@
           "alias": true,
           "default_value": "9101",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Address": {
           "datatype": "STRING",
@@ -307,7 +307,7 @@
           "alias": true,
           "default_value": "9102",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Password": {
           "datatype": "MD5PASSWORD",
@@ -439,7 +439,7 @@
           "alias": true,
           "default_value": "9103",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Address": {
           "datatype": "STRING",
@@ -453,7 +453,7 @@
           "alias": true,
           "equals": true,
           "required": true,
-          "description": "This is an alias, consider using \"Address\" instead."
+          "description": "This is an alias for \"Address\", use \"Address\" instead."
         },
         "Password": {
           "datatype": "MD5PASSWORD",
@@ -467,7 +467,7 @@
           "alias": true,
           "equals": true,
           "required": true,
-          "description": "This is an alias, consider using \"Password\" instead."
+          "description": "This is an alias for \"Password\", use \"Password\" instead."
         },
         "TlsAuthenticate": {
           "datatype": "BOOLEAN",

@@ -173,7 +173,7 @@
           "alias": true,
           "default_value": "9101",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Address": {
           "datatype": "STRING",
@@ -187,7 +187,7 @@
           "alias": true,
           "equals": true,
           "required": true,
-          "description": "This is an alias, consider using \"Address\" instead."
+          "description": "This is an alias for \"Address\", use \"Address\" instead."
         },
         "Password": {
           "datatype": "MD5PASSWORD",
