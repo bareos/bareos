@@ -69,16 +69,6 @@ enum
   R_NUM /* Number of entries */
 };
 
-// Some resource attributes
-enum
-{
-  R_NAME = 0,
-  R_ADDRESS,
-  R_PASSWORD,
-  R_TYPE,
-  R_BACKUP
-};
-
 // Job Level keyword structure
 struct s_jl {
   const char* level_name; /* level keyword */
