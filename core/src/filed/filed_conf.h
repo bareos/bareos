@@ -57,15 +57,6 @@ enum
   R_JOB,
 };
 
-// Some resource attributes
-enum
-{
-  R_NAME = 0,
-  R_ADDRESS,
-  R_PASSWORD,
-  R_TYPE
-};
-
 /* Definition of the contents of each Resource */
 class DirectorResource
     : public BareosResource
