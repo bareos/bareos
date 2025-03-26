@@ -394,10 +394,10 @@ The configuration file :file:`/etc/bareos-webui/directors.ini` should look simil
 
    ; Fill in the IP-Address or FQDN of you director.
    ; E.g. alice.example.com, 127.0.0.1 or [::1]
-   diraddress = "localhost"
+   address = "localhost"
 
    ; Default value is 9101
-   dirport = 9101
+   port = 9101
 
    ; Set catalog to explicit value if you have multiple catalogs
    ;catalog = "MyCatalog"
@@ -442,8 +442,8 @@ The configuration file :file:`/etc/bareos-webui/directors.ini` should look simil
    ;------------------------------------------------------------------------------
    [another-host-dir]
    enabled = "no"
-   diraddress = "192.168.120.1"
-   dirport = 9101
+   address = "192.168.120.1"
+   port = 9101
    ;catalog = "MyCatalog"
    ;tls_verify_peer = false
    ;server_can_do_tls = false

@@ -715,7 +715,7 @@ After restarting the service, you will find a file called :file:`C:\bareos-fd.tr
 Installing multiple Windows filedaemon services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to run multiple |fd| instances on Windows. To achieve this, you need to create a service for each instance, and a configuration directory that at least has a individual fd port for each instance.
+It is possible to run multiple |fd| instances on Windows. To achieve this, you need to create a service for each instance, and a configuration directory that at least has a individual port for each instance.
 
 To create two bareos-fd services, you can call the following service create calls on the commandline on windows as administrator:
 

@@ -14,10 +14,10 @@ enabled = "yes"
 
 ; Fill in the IP-Address or FQDN of you director.
 ; E.g. alice.example.com, 127.0.0.1 or [::1]
-diraddress = "localhost"
+address = "localhost"
 
 ; Default value is @dirport@
-dirport	= @dirport@
+port	= @dirport@
 
 ; Set catalog to explicit value if you have multiple catalogs
 ;catalog = "MyCatalog"
@@ -68,8 +68,8 @@ client_requires_tls = false
 ;------------------------------------------------------------------------------
 [another-host-dir]
 enabled = "no"
-diraddress = "192.168.120.1"
-dirport = @dirport@
+address = "192.168.120.1"
+port = @dirport@
 ;catalog = "MyCatalog"
 ;pam_console_name = "username"
 ;pam_console_password = "password"

@@ -9,7 +9,7 @@ Storage {
   # Plugin Directory = "/tmp/plugindir"
   # Plugin Names = ""
   Working Directory =  "/tmp/tests/backup-bareos-test/working"
-  SD Port = 42003
+  Port = 42003
 
   @UNCOMMENT_SD_BACKEND_DIRECTORY@Backend Directory = @BACKEND_OUTPUT_DIRECTORY@
 }

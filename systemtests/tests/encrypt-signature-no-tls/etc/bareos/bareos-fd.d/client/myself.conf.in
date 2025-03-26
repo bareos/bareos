@@ -9,7 +9,7 @@ Client {
   # Plugin Names = ""
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd_port@
+  Port = @fd_port@
 
   Pki Key Pair = "@pki_keypair@"
   Pki Master Key = "@pki_master_key@"

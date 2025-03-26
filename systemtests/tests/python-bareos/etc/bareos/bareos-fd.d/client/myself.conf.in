@@ -6,5 +6,5 @@ Client {
   Plugin Names = "@python_module_name@"
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd_port@
+  Port = @fd_port@
 }
