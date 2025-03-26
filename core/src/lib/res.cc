@@ -533,7 +533,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
     // See if we are parsing an MD5 encoded password already.
     if (bstrncmp(lc->str, "[md5]", 5)) {
-      if (item->is_required()) {
+      if (item->is_required) {
         static const char* empty_password_md5_hash
             = "d41d8cd98f00b204e9800998ecf8427e";
         if (strncmp(lc->str + 5, empty_password_md5_hash,
@@ -576,7 +576,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
       unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
       char sig[100];
 
-      if (item->is_required()) {
+      if (item->is_required) {
         if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
           scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
                     (*item->allocated_resource)->resource_name_);
@@ -616,7 +616,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 
     if (pwd->value) { free(pwd->value); }
 
-    if (item->is_required()) {
+    if (item->is_required) {
       if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
         scan_err1(
             lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
@@ -1846,7 +1846,7 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
     return;
   }
 
-  if (item.is_required()) {
+  if (item.is_required) {
     // Always print required items
     print_item = true;
   }
@@ -1854,7 +1854,7 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
   if (HasDefaultValue(item)) {
     Dmsg1(200, "%s: default value\n", item.name);
 
-    if (verbose && !item.is_deprecated()) {
+    if (verbose && !item.is_deprecated) {
       /* If value has a expliciet default value and verbose mode is on,
        * display directive as inherited. */
       print_item = true;
@@ -2108,20 +2108,18 @@ json_t* json_item(const ResourceItem* item, bool is_alias)
     json_object_set_new(json, "default_value",
                         json_string(item->default_value));
   }
-  if (item->is_platform_specific()) {
+  if (item->is_platform_specific) {
     json_object_set_new(json, "platform_specific", json_true());
   }
-  if (item->is_deprecated()) {
+  if (item->is_deprecated) {
     json_object_set_new(json, "deprecated", json_true());
   }
-  if (item->has_no_eq()) {
+  if (item->uses_no_equal) {
     json_object_set_new(json, "equals", json_false());
   } else {
     json_object_set_new(json, "equals", json_true());
   }
-  if (item->is_required()) {
-    json_object_set_new(json, "required", json_true());
-  }
+  if (item->is_required) { json_object_set_new(json, "required", json_true()); }
 
   if (item->introduced_in || item->deprecated_since) {
     std::stringstream version_string;

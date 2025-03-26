@@ -62,8 +62,7 @@ struct Alias {
   std::vector<std::string> aliases;
 
   template <typename... Ts>
-  Alias(Ts... args)
-    : aliases{ std::forward<Ts>(args)...}
+  Alias(Ts... args) : aliases{std::forward<Ts>(args)...}
   {
     static_assert(sizeof...(Ts) > 0, "You need to specify at least one alias.");
   }
@@ -183,10 +182,10 @@ struct ResourceItem {
       , allocated_resource{allocated_resource_}
       , code{resource_flags.extra.value_or(0)}
       , aliases{std::move(resource_flags.aliases)}
-      , required{resource_flags.required}
-      , deprecated{resource_flags.deprecated_since.has_value()}
-      , platform_specific{resource_flags.platform_specific}
-      , no_equal{resource_flags.no_equals}
+      , is_required{resource_flags.required}
+      , is_deprecated{resource_flags.deprecated_since.has_value()}
+      , is_platform_specific{resource_flags.platform_specific}
+      , uses_no_equal{resource_flags.no_equals}
       , default_value{resource_flags.default_value}
       , introduced_in{resource_flags.introduced_in}
       , deprecated_since{resource_flags.deprecated_since}
@@ -202,10 +201,10 @@ struct ResourceItem {
   BareosResource** allocated_resource{};
   int32_t code{}; /* Item code/additional info */
   std::vector<std::string> aliases{};
-  bool required{};
-  bool deprecated{};
-  bool platform_specific{};
-  bool no_equal{};
+  bool is_required{};
+  bool is_deprecated{};
+  bool is_platform_specific{};
+  bool uses_no_equal{};
   const char* default_value{}; /* Default value */
 
   std::optional<config::Version> introduced_in{};
@@ -223,11 +222,6 @@ struct ResourceItem {
   {
     return (*allocated_resource)->IsMemberPresent(name);
   }
-
-  bool is_required() const { return required; }
-  bool is_platform_specific() const { return platform_specific; }
-  bool is_deprecated() const { return deprecated; }
-  bool has_no_eq() const { return no_equal; }
 };
 
 static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item)
