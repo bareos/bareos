@@ -125,7 +125,7 @@ ConfigParserStateMachine::ScanResource(int token)
       if (resource_item_index >= 0) {
         const ResourceItem* item = nullptr;
         item = &currently_parsed_resource_.resource_items_[resource_item_index];
-        if (!item->has_no_eq()) {
+        if (!item->uses_no_equal) {
           token = LexGetToken(lexical_parser_, BCT_SKIP_EOL);
           Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
           if (token != BCT_EQUALS) {
@@ -135,7 +135,7 @@ ConfigParserStateMachine::ScanResource(int token)
           }
         }
 
-        if (parser_pass_number_ == 1 && item->is_deprecated()) {
+        if (parser_pass_number_ == 1 && item->is_deprecated) {
           my_config_.AddWarning(std::string("using deprecated keyword ")
                                 + item->name + " on line "
                                 + std::to_string(lexical_parser_->line_no)
