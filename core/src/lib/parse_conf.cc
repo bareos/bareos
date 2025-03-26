@@ -295,17 +295,7 @@ int ConfigurationParser::GetResourceTableIndex(const char* resource_type_name)
       return i;
     }
     for (const auto& alias : resource_definitions_[i].aliases) {
-      if (Bstrcasecmp(alias.name.c_str(), resource_type_name)) {
-        std::string warning
-            = "Found resource alias usage \"" + alias.name
-              + "\" in configuration which is discouraged, consider using \""
-              + resource_definitions_[i].name + "\" instead.";
-        if (std::find(warnings_.begin(), warnings_.end(), warning)
-            == warnings_.end()) {
-          AddWarning(warning);
-        }
-        return i;
-      }
+      if (Bstrcasecmp(alias.name.c_str(), resource_type_name)) { return i; }
     }
   }
 
@@ -334,17 +324,7 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
       return i;
     } else {
       for (const auto& alias : resource_items_[i].aliases) {
-        if (Bstrcasecmp(alias.c_str(), item)) {
-          std::string warning
-              = "Found alias usage \"" + alias
-                + "\" in configuration which is discouraged, consider using \""
-                + resource_items_[i].name + "\" instead.";
-          if (std::find(warnings_.begin(), warnings_.end(), warning)
-              == warnings_.end()) {
-            AddWarning(warning);
-          }
-          return i;
-        }
+        if (Bstrcasecmp(alias.c_str(), item)) { return i; }
       }
     }
   }
