@@ -38,6 +38,8 @@ start_test
 mkdir -p "${tmp}/data"
 echo "$0" >"${tmp}/data/${myname}"
 
+cat "${conf}/bareos-fd.d/client/myself.conf"
+
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
