@@ -190,7 +190,7 @@
           "alias": true,
           "default_value": "9103",
           "equals": true,
-          "description": "This is an alias, consider using \"Port\" instead."
+          "description": "This is an alias for \"Port\", use \"Port\" instead."
         },
         "Address": {
           "datatype": "ADDRESS",
@@ -204,7 +204,7 @@
           "alias": true,
           "default_value": "9103",
           "equals": true,
-          "description": "This is an alias, consider using \"Address\" instead."
+          "description": "This is an alias for \"Address\", use \"Address\" instead."
         },
         "Addresses": {
           "datatype": "ADDRESSES",
@@ -218,7 +218,7 @@
           "alias": true,
           "default_value": "9103",
           "equals": true,
-          "description": "This is an alias, consider using \"Addresses\" instead."
+          "description": "This is an alias for \"Addresses\", use \"Addresses\" instead."
         },
         "SourceAddress": {
           "datatype": "ADDRESS",
@@ -232,7 +232,7 @@
           "alias": true,
           "default_value": "0",
           "equals": true,
-          "description": "This is an alias, consider using \"SourceAddress\" instead."
+          "description": "This is an alias for \"SourceAddress\", use \"SourceAddress\" instead."
         },
         "WorkingDirectory": {
           "datatype": "DIRECTORY",
