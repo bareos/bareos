@@ -138,7 +138,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
       return false;
     }
 
-    fd->SetEnableKtls(me->enable_ktls_);
+    fd->SetEnableKtls(me->enable_ktls);
 
     if (!fd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, client, false,
                             qualified_resource_name.c_str(),

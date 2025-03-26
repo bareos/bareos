@@ -1496,7 +1496,7 @@ static bool StorageCmd(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    storage_daemon_socket->SetEnableKtls(me->enable_ktls_);
+    storage_daemon_socket->SetEnableKtls(me->enable_ktls);
 
     if (!storage_daemon_socket->DoTlsHandshake(
             TlsPolicy::kBnetTlsAuto, me, false, qualified_resource_name.c_str(),
@@ -2081,7 +2081,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
       return nullptr;
     }
 
-    director_socket->SetEnableKtls(me->enable_ktls_);
+    director_socket->SetEnableKtls(me->enable_ktls);
 
     if (!director_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, dir_res,
                                          false, qualified_resource_name.c_str(),

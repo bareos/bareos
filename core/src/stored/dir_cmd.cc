@@ -1640,7 +1640,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   Dmsg0(110, "Connection OK to SD.\n");
   connect_state(ReplicateCmdState::kConnected);
 
-  storage_daemon_socket->SetEnableKtls(me->enable_ktls_);
+  storage_daemon_socket->SetEnableKtls(me->enable_ktls);
 
   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;
@@ -1735,7 +1735,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   }
   Dmsg0(110, "Connection OK to FD.\n");
 
-  fd->SetEnableKtls(me->enable_ktls_);
+  fd->SetEnableKtls(me->enable_ktls);
 
   if (tls_policy == TlsPolicy::kBnetTlsAuto) {
     std::string qualified_resource_name;

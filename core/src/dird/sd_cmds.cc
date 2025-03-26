@@ -133,7 +133,7 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
       return false;
     }
 
-    sd->SetEnableKtls(me->enable_ktls_);
+    sd->SetEnableKtls(me->enable_ktls);
 
     if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false,
                             qualified_resource_name.c_str(),

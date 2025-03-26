@@ -138,7 +138,7 @@ class StorageResource
 
   bool just_in_time_reservation{false};
 
-  bool enable_ktls_{false};
+  bool enable_ktls{false};
 
   StorageResource() = default;
   virtual ~StorageResource() = default;

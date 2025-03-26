@@ -115,7 +115,7 @@ static const ResourceItem cli_items[] = {
    {config::IntroducedIn{25, 0, 0},
     config::Description{"The grpc module to use for grpc fallback."},
     config::DefaultValue{"bareos-grpc-fd-plugin-bridge"}}},
-  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res_client, enable_ktls_), { config::DefaultValue{"false"}, config::Description{"If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."}, config::IntroducedIn{23, 0, 0}}},
+  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res_client, enable_ktls), { config::DefaultValue{"false"}, config::Description{"If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."}, config::IntroducedIn{23, 0, 0}}},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {}

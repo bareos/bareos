@@ -147,7 +147,7 @@ class DirectorResource
                                  logging messages */
   s_password keyencrkey;                /* Key Encryption Key */
 
-  bool enable_ktls_{false};
+  bool enable_ktls{false};
 };
 
 /*
