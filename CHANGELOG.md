@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - reduce test-matrix [PR #2199]
 - bareos-fd: add option for grpc fallback [PR #2193]
 - windows: single-config/single-output directory [PR #2212]
+- webui: use WEB_UI path in apache bareos-webui.conf file [PR #2223]
 
 ### Documentation
 - docs rear: update to rear >= 2.8 [PR #2221]
@@ -418,4 +419,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2203]: https://github.com/bareos/bareos/pull/2203
 [PR #2212]: https://github.com/bareos/bareos/pull/2212
 [PR #2221]: https://github.com/bareos/bareos/pull/2221
+[PR #2223]: https://github.com/bareos/bareos/pull/2223
 [unreleased]: https://github.com/bareos/bareos/tree/master
