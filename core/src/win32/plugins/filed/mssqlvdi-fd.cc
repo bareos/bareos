@@ -362,9 +362,11 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   switch (event->eventType) {
     case bEventStartBackupJob: {
       p_ctx->mode = Mode::Backup;
+      retval = bRC_OK;
     } break;
     case bEventStartRestoreJob: {
       p_ctx->mode = Mode::Restore;
+      retval = bRC_OK;
     } break;
     case bEventLevel:
       p_ctx->backup_level = (int64_t)value;
