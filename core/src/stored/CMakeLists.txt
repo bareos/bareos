@@ -207,7 +207,7 @@ add_executable(btape)
 target_sources(btape PRIVATE btape.cc)
 if(HAVE_WIN32)
   bareos_configure_file(FILES ../win32/stored/btaperes.rc.in)
-  target_sources(btape ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/btaperes.rc)
+  target_sources(btape PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/btaperes.rc)
 endif()
 target_link_libraries(btape PRIVATE Bareos::LibSD Bareos::Lib CLI11::CLI11)
 
