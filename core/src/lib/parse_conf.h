@@ -466,7 +466,10 @@ class ConfigResourcesContainer {
   void SetTimestampToNow() { timestamp_ = std::chrono::system_clock::now(); }
   std::string TimeStampAsString() { return TPAsString(timestamp_); }
 
-  void SetNext(std::shared_ptr<ConfigResourcesContainer> next) { next_ = next; }
+  void SetNext(std::shared_ptr<ConfigResourcesContainer> next)
+  {
+    next_ = std::move(next);
+  }
 };
 
 
