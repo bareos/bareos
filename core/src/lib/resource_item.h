@@ -154,14 +154,12 @@ struct ResourceItemFlags {
       deprecated_since = deprecated->version;
     }
     if (auto* code = get_if<config::Code>(tup)) { extra = code->value; }
-    if (auto* _ = get_if<config::Required>(tup)) { required = true; }
+    if (get_if<config::Required>(tup)) { required = true; }
     if (auto* alias = get_if<config::Alias>(tup)) {
       aliases = std::move(alias->aliases);
     }
-    if (auto* _ = get_if<config::UsesNoEquals>(tup)) { no_equals = true; }
-    if (auto* _ = get_if<config::PlatformSpecific>(tup)) {
-      platform_specific = true;
-    }
+    if (get_if<config::UsesNoEquals>(tup)) { no_equals = true; }
+    if (get_if<config::PlatformSpecific>(tup)) { platform_specific = true; }
     if (auto* desc = get_if<config::Description>(tup)) {
       description = desc->text;
     }
