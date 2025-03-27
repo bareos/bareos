@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [23.1.3] - 2025-03-27
 
 ### Fixed
 - mssqlvdi-fd: add support for filestream backups [PR #2227]
@@ -385,6 +385,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [23.1.0]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.0
 [23.1.1]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.1
 [23.1.2]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.2
+[23.1.3]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.3
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
@@ -640,4 +641,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2185]: https://github.com/bareos/bareos/pull/2185
 [PR #2196]: https://github.com/bareos/bareos/pull/2196
 [PR #2227]: https://github.com/bareos/bareos/pull/2227
-[unreleased]: https://github.com/bareos/bareos/tree/master
