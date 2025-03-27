@@ -24,6 +24,14 @@ else()
   cmake_minimum_required(VERSION 3.17...3.31)
 endif()
 
+get_property(HAVE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(HAVE_MULTI_CONFIG)
+  message(
+    FATAL_ERROR "Multi-config generators are not supported. "
+                "While they may build fine, most tests won't work currently."
+  )
+endif()
+
 project(bareos NONE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
