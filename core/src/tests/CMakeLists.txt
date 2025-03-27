@@ -175,12 +175,6 @@ else() # NOT HAVE_WIN32
   set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 endif() # HAVE_WIN32
 
-set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
-
-add_library(testing_common STATIC ${COMMON_SRC})
-
-target_link_libraries(testing_common PRIVATE ${LINK_LIBRARIES})
-
 if(HAVE_BIG_ENDIAN)
   set_tests_properties(gtest:statefile.read PROPERTIES DISABLED TRUE)
   set_tests_properties(gtest:statefile.write PROPERTIES DISABLED TRUE)
@@ -197,6 +191,10 @@ endif()
 
 # Keep alphabetically ordered
 if(NOT client-only)
+  set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
+  add_library(testing_common STATIC ${COMMON_SRC})
+  target_link_libraries(testing_common PRIVATE ${LINK_LIBRARIES})
+
   bareos_add_test(
     addresses_and_ports_config
     LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib Bareos::SQL
