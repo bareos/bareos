@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- mssqlvdi-fd: add support for filestream backups [PR #2227]
+
 ## [23.1.2] - 2025-03-12
 
 ### Attention VMware users
@@ -636,4 +639,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2183]: https://github.com/bareos/bareos/pull/2183
 [PR #2185]: https://github.com/bareos/bareos/pull/2185
 [PR #2196]: https://github.com/bareos/bareos/pull/2196
+[PR #2227]: https://github.com/bareos/bareos/pull/2227
 [unreleased]: https://github.com/bareos/bareos/tree/master
