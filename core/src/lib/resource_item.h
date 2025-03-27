@@ -75,7 +75,7 @@ struct Description {
 };
 
 struct PlatformSpecific {};
-};  // namespace config
+}  // namespace config
 
 
 template <typename What, typename... Args> struct occurances {
