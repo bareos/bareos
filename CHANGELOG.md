@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware plugin: fix check_mac_address() for vm.config not present [PR #2177]
 - cleanup: fix multi-config tests [PR #2203]
 - Fix btape fill-test problem [PR #2170]
+- mssqlvdi-fd: add support for filestream backups [PR #2229]
 
 ### Changed
 - webui: use TemporaryDir as userdatadir in Selenium test [PR #2195]
@@ -420,4 +421,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2212]: https://github.com/bareos/bareos/pull/2212
 [PR #2221]: https://github.com/bareos/bareos/pull/2221
 [PR #2223]: https://github.com/bareos/bareos/pull/2223
+[PR #2229]: https://github.com/bareos/bareos/pull/2229
 [unreleased]: https://github.com/bareos/bareos/tree/master
