@@ -2379,7 +2379,7 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
 
   OPEN_VIRTUAL_DISK_PARAMETERS params = {};
   params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
-  params.Version3.ReadOnly = TRUE;
+  params.Version2.ReadOnly = TRUE;
   auto res
       = OpenVirtualDisk(&vst, hdd_path.get(), VIRTUAL_DISK_ACCESS_NONE,
                         OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
@@ -3217,6 +3217,9 @@ std::optional<std::size_t> ReadOverlapped(HANDLE hnd,
     if (MaxBytesToRead >= std::numeric_limits<DWORD>::max()) {
       MaxBytesToRead = std::numeric_limits<DWORD>::max() - 1;
     }
+    LOG(L"reading {} bytes from {} handle at offset {}", MaxBytesToRead, hnd,
+        CurrentOffset);
+
     DWORD Error = ERROR_SUCCESS;
     if (!ReadFile(hnd, BufferStart, static_cast<DWORD>(MaxBytesToRead),
                   &BytesRead, &Overlapped)) {
@@ -3245,6 +3248,16 @@ std::optional<std::size_t> ReadOverlapped(HANDLE hnd,
         return std::nullopt;
       } break;
     }
+
+    if (BytesRead == 0) {
+      // 0 on read => EOF
+      LOG(L"could not read {} bytes from {} handle at offset {}: read returned "
+          L"0",
+          MaxBytesToRead, hnd, CurrentOffset);
+      break;
+    }
+
+    TotalBytesRead += BytesRead;
   }
 
   return TotalBytesRead;
@@ -3268,6 +3281,8 @@ std::optional<std::size_t> WriteOverlapped(HANDLE hnd,
     if (MaxBytesToWrite >= std::numeric_limits<DWORD>::max()) {
       MaxBytesToWrite = std::numeric_limits<DWORD>::max() - 1;
     }
+    LOG(L"writing {} bytes to {} handle at offset {}", MaxBytesToWrite, hnd,
+        CurrentOffset);
     DWORD Error = ERROR_SUCCESS;
     if (!WriteFile(hnd, BufferStart, static_cast<DWORD>(MaxBytesToWrite),
                    &BytesWritten, &Overlapped)) {
@@ -3293,9 +3308,162 @@ std::optional<std::size_t> WriteOverlapped(HANDLE hnd,
         return std::nullopt;
       } break;
     }
+
+    if (BytesWritten == 0) {
+      LOG(L"could not write {} bytes to {} handle at offset {}: write returned "
+          L"0",
+          MaxBytesToWrite, hnd, CurrentOffset);
+      return std::nullopt;
+    }
+
+    TotalBytesWritten += BytesWritten;
   }
 
   return TotalBytesWritten;
+}
+
+HANDLE OpenAndAttachR(const std::wstring& vhd_path)
+{
+  HANDLE disk_handle = INVALID_HANDLE_VALUE;
+  {
+    VIRTUAL_STORAGE_TYPE vst = {
+        .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+        .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+    };
+
+    OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+    params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+    params.Version2.ReadOnly = TRUE;
+    auto res
+        = OpenVirtualDisk(&vst, vhd_path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
+                          OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+    if (res != ERROR_SUCCESS) {
+      LOG(L"OpenVirtualDisk({}) failed.  Err={} ({:X})", vhd_path,
+          WMI::ErrorString(res), (uint64_t)res);
+      return INVALID_HANDLE_VALUE;
+      ;
+    }
+
+
+    ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+        = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+    auto attach_res = AttachVirtualDisk(disk_handle, NULL,
+                                        ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST,
+                                        0, &attach_params, 0);
+    if (FAILED(attach_res)) {
+      LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
+          WMI::ErrorString(attach_res), (uint32_t)attach_res);
+      CloseHandle(disk_handle);
+      return INVALID_HANDLE_VALUE;
+      ;
+    }
+  }
+
+  return disk_handle;
+}
+
+std::optional<std::size_t> VirtualSize(HANDLE disk_handle)
+{
+  GET_VIRTUAL_DISK_INFO disk_info = {
+      .Version = GET_VIRTUAL_DISK_INFO_SIZE,
+  };
+  ULONG VirtualDiskInfoSize = sizeof(disk_info);
+  ULONG SizeOut = 0;
+  auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                            &disk_info, &SizeOut);
+  if (disk_res != ERROR_SUCCESS) {
+    LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})", disk_handle,
+        WMI::ErrorString(disk_res), (uint64_t)disk_res);
+    return false;
+  }
+
+  LOG(L"Size In = {} ({}), Size Out = {}", sizeof(disk_info),
+      VirtualDiskInfoSize, SizeOut);
+
+  LOG(L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
+      L"SectorSize = {} }}",
+      disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
+      disk_info.Size.BlockSize, disk_info.Size.SectorSize);
+
+  return disk_info.Size.VirtualSize;
+}
+
+bool ComputeDiff(const std::wstring& left_path, const std::wstring& right_path)
+{
+  HANDLE left = OpenAndAttachR(left_path);
+  if (left == INVALID_HANDLE_VALUE) { return false; }
+  HANDLE right = OpenAndAttachR(right_path);
+  if (right == INVALID_HANDLE_VALUE) {
+    if (auto detach_res
+        = DetachVirtualDisk(left, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+        FAILED(detach_res)) {
+      LOG(L"detach failed.  Err={} ({})", WMI::ErrorString(detach_res),
+          detach_res);
+    }
+    CloseHandle(left);
+    return false;
+  }
+
+  bool retval = false;
+
+  std::optional left_size = VirtualSize(left);
+  std::optional right_size = VirtualSize(right);
+  if (!left_size) { goto cleanup; }
+  if (!right_size) { goto cleanup; }
+
+  {
+    std::size_t buffer_size = 1024 * 1024;
+    std::vector<char> left_buffer;
+    left_buffer.resize(buffer_size);
+    std::vector<char> right_buffer;
+    right_buffer.resize(buffer_size);
+
+    auto read_size = std::min(left_size.value(), right_size.value());
+    std::size_t CurrentOffset = 0;
+
+    while (CurrentOffset < read_size) {
+      auto current_read_size = std::min(read_size - CurrentOffset, buffer_size);
+      std::span left_span{left_buffer.data(), current_read_size};
+      std::optional left_bytes = ReadOverlapped(left, CurrentOffset, left_span);
+      std::span right_span{right_buffer.data(), current_read_size};
+      std::optional right_bytes
+          = ReadOverlapped(right, CurrentOffset, right_span);
+
+      if (!left_bytes || left_bytes.value() < current_read_size) {
+        goto cleanup;
+      }
+      if (!right_bytes || right_bytes.value() < current_read_size) {
+        goto cleanup;
+      }
+
+      if (memcmp(left_span.data(), right_span.data(), current_read_size) != 0) {
+        std::wcout << std::format(L"Diff at {}-{}", CurrentOffset,
+                                  CurrentOffset + current_read_size)
+                   << L"\n";
+      }
+
+      CurrentOffset += current_read_size;
+    }
+
+    retval = true;
+  }
+cleanup:
+  if (auto detach_res
+      = DetachVirtualDisk(left, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+      FAILED(detach_res)) {
+    LOG(L"detach failed.  Err={} ({})", WMI::ErrorString(detach_res),
+        detach_res);
+  }
+  CloseHandle(left);
+  if (auto detach_res
+      = DetachVirtualDisk(right, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+      FAILED(detach_res)) {
+    LOG(L"detach failed.  Err={} ({})", WMI::ErrorString(detach_res),
+        detach_res);
+  }
+  CloseHandle(right);
+
+  return retval;
 }
 
 bool ApplyIncrementalToVhd(const std::wstring& base_vhd_path,
@@ -3379,24 +3547,24 @@ bool ApplyIncrementalToVhd(const std::wstring& base_vhd_path,
   std::size_t RangeCount = 0;
   for (;;) {
     range_header Header;
-    std::optional read_bytes
+    std::optional header_bytes
         = ReadOverlapped(hnd, CurrentOffset, as_span(Header));
-    if (!read_bytes) { return false; }
-    if (read_bytes == 0) {
+    if (!header_bytes) { return false; }
+    if (header_bytes == 0) {
       // reached eof
       break;
     }
 
-    if (read_bytes < sizeof(Header)) {
+    if (header_bytes < sizeof(Header)) {
       LOG(L"expected header but only {} bytes are available",
-          read_bytes.value());
+          header_bytes.value());
       return false;
     }
 
     LOG(L"Offset {} => Header {{ Offset = {}, Size = {} }}", CurrentOffset,
         Header.Offset, Header.Size);
 
-    CurrentOffset += read_bytes.value();
+    CurrentOffset += header_bytes.value();
     RangeCount += 1;
 
     buffer.resize(Header.Size);
@@ -3406,15 +3574,29 @@ bool ApplyIncrementalToVhd(const std::wstring& base_vhd_path,
       return false;
     }
 
+    std::optional written_bytes
+        = WriteOverlapped(disk_handle, Header.Offset, buffer);
+    if (!written_bytes || written_bytes < Header.Size) {
+      LOG(L"could not read payload of {} bytes", Header.Size);
+      return false;
+    }
+
 
     // skip the data for now
     CurrentOffset += Header.Size;
   }
 
-
   LOG(L"Found {} ranges", RangeCount);
 
   CloseHandle(hnd);
+
+  if (auto detach_res
+      = DetachVirtualDisk(disk_handle, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+      FAILED(detach_res)) {
+    LOG(L"detach failed.  Err={} ({})", WMI::ErrorString(detach_res),
+        detach_res);
+  }
+
   CloseHandle(disk_handle);
   return true;
 }
@@ -3902,6 +4084,18 @@ int main(int argc, char** argv)
         ->check(CLI::ExistingFile);
   }
 
+  std::wstring vhd1_path;
+  std::wstring vhd2_path;
+  auto diff = app.add_subcommand("diff", "diff two vhd");
+  {
+    diff->add_option("-L,--left,left", vhd1_path)
+        ->required()
+        ->check(CLI::ExistingFile);
+    diff->add_option("-R,--right,right", vhd2_path)
+        ->required()
+        ->check(CLI::ExistingFile);
+  }
+
   app.require_subcommand(1, 1);
 
   CLI11_PARSE(app, argc, argv);
@@ -4082,6 +4276,13 @@ int main(int argc, char** argv)
       return 1;
     }
     std::wcout << "Patch succeeded" << std::endl;
+  }
+  if (app.got_subcommand(diff)) {
+    if (!ComputeDiff(vhd1_path, vhd2_path)) {
+      std::wcout << "Diff failed" << std::endl;
+      return 1;
+    }
+    std::wcout << "Diff succeeded" << std::endl;
   }
 
   // Test(wmi, TestType::FullAndIncr);
