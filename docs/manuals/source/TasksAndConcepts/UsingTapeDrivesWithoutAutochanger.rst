@@ -363,12 +363,12 @@ Finally, if you list his Volumes, you get something like the following:
    *list media
    Using default Catalog name=MyCatalog DB=bareos
    Pool: WeeklyPool
-   +-----+-----------+-------+--------+-----------+-----------------+-------+------+
-   | MeId| VolumeName| MedTyp| VolStat| VolBytes  | LastWritten     | VolRet| Recyc|
-   +-----+-----------+-------+--------+-----------+-----------------+-------+------+
-   | 5   | Friday_1  | MLR1  | Used   | 2157171998| 2003-07-11 20:20| 103680| 1    |
-   | 6   | Friday_2  | MLR1  | Append | 0         | 0               | 103680| 1    |
-   +-----+-----------+-------+--------+-----------+-----------------+-------+------+
+   +-----+-----------+-------+-----------+-----------+-----------------+-------+------+
+   | MeId| VolumeName| MedTyp| VolStat   | VolBytes  | LastWritten     | VolRet| Recyc|
+   +-----+-----------+-------+-----------+-----------+-----------------+-------+------+
+   | 5   | Friday_1  | MLR1  | Used      | 2157171998| 2003-07-11 20:20| 103680| 1    |
+   | 6   | Friday_2  | MLR1  | Unlabeled | 0         | 0               | 103680| 1    |
+   +-----+-----------+-------+-----------+-----------+-----------------+-------+------+
    Pool: MondayPool
    +-----+-----------+-------+--------+-----------+-----------------+-------+------+
    | MeId| VolumeName| MedTyp| VolStat| VolBytes  | LastWritten     | VolRet| Recyc|
