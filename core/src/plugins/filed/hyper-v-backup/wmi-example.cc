@@ -2260,7 +2260,7 @@ WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
   return refpoint;
 }
 
-bool WriteFile_All(HANDLE handle, std::span<char> Data)
+bool WriteFile_All(HANDLE handle, std::span<const char> Data)
 {
   if (Data.size() > std::numeric_limits<DWORD>::max()) {
     LOG(L"WriteFile_All() failed.  Cannot write more than {} bytes at once",
@@ -2271,7 +2271,7 @@ bool WriteFile_All(HANDLE handle, std::span<char> Data)
   DWORD BytesWritten = 0;
   DWORD BytesWrittenThisCall = 0;
 
-  char* Current = Data.data();
+  const char* Current = Data.data();
 
   while (BytesToWrite > 0) {
     if (!WriteFile(handle, Current, BytesToWrite, &BytesWrittenThisCall,
@@ -2289,19 +2289,27 @@ bool WriteFile_All(HANDLE handle, std::span<char> Data)
   return true;
 }
 
+struct range_header {
+  std::uint64_t Offset;
+  std::uint64_t Size;
+};
+
 bool WriteRange(HANDLE /* OVERLAPPED */ in_handle,
                 HANDLE /* SYNC */ out_handle,
                 std::span<char> Buffer,
                 ULONG64 Offset,
                 ULONG64 Size)
 {
-  std::vector<char> Header;
+  {
+    range_header Header;
+    Header.Offset = Offset;
+    Header.Size = Size;
 
-  Header.resize(sizeof(Offset) + sizeof(Size));
-  std::memcpy(Header.data(), &Offset, sizeof(Offset));
-  std::memcpy(Header.data() + sizeof(Offset), &Size, sizeof(Size));
+    std::span<const char> HeaderData{reinterpret_cast<const char*>(&Header),
+                                     sizeof(Header)};
 
-  if (!WriteFile_All(out_handle, Header)) { return false; }
+    if (!WriteFile_All(out_handle, HeaderData)) { return false; }
+  }
 
   ULONG64 BytesTransferred = 0;
   while (BytesTransferred < Size) {
@@ -2365,8 +2373,8 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
   HANDLE disk_handle = {};
 
   VIRTUAL_STORAGE_TYPE vst = {
-      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
-      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
   };
 
   OPEN_VIRTUAL_DISK_PARAMETERS params = {};
@@ -3186,6 +3194,231 @@ WMI::Result<WMI::ClassObject> IncrementalBackup(
   return refpoint;
 }
 
+template <typename T> std::span<char> as_span(T& val)
+{
+  return std::span<char>{reinterpret_cast<char*>(&val), sizeof(T)};
+}
+
+std::optional<std::size_t> ReadOverlapped(HANDLE hnd,
+                                          ULONG64 Offset,
+                                          std::span<char> Buffer)
+{
+  std::size_t TotalBytesRead = 0;
+  while (TotalBytesRead < Buffer.size()) {
+    auto CurrentOffset = Offset + TotalBytesRead;
+
+    OVERLAPPED Overlapped = {};
+    Overlapped.Offset = DWORD{CurrentOffset & 0xFFFFFFFF};
+    Overlapped.OffsetHigh = DWORD{(CurrentOffset >> 32) & 0xFFFFFFFF};
+
+    DWORD BytesRead = 0;
+    char* BufferStart = Buffer.data() + TotalBytesRead;
+    std::size_t MaxBytesToRead = Buffer.size() - TotalBytesRead;
+    if (MaxBytesToRead >= std::numeric_limits<DWORD>::max()) {
+      MaxBytesToRead = std::numeric_limits<DWORD>::max() - 1;
+    }
+    DWORD Error = ERROR_SUCCESS;
+    if (!ReadFile(hnd, BufferStart, static_cast<DWORD>(MaxBytesToRead),
+                  &BytesRead, &Overlapped)) {
+      Error = GetLastError();
+
+      if (Error == ERROR_IO_PENDING) {
+        if (GetOverlappedResult(hnd, &Overlapped, &BytesRead, TRUE)) {
+          Error = ERROR_SUCCESS;
+        } else {
+          Error = GetLastError();
+        }
+      }
+    }
+
+    switch (Error) {
+      case ERROR_SUCCESS: {
+        // intentionally left blank
+      } break;
+      case ERROR_HANDLE_EOF: {
+        // intentionally left blank
+      } break;
+      default: {
+        LOG(L"could not read {} bytes from {} handle at offset {}.  Err={} "
+            L"({})",
+            MaxBytesToRead, hnd, CurrentOffset, WMI::ErrorString(Error), Error);
+        return std::nullopt;
+      } break;
+    }
+  }
+
+  return TotalBytesRead;
+}
+
+std::optional<std::size_t> WriteOverlapped(HANDLE hnd,
+                                           ULONG64 Offset,
+                                           std::span<const char> Buffer)
+{
+  std::size_t TotalBytesWritten = 0;
+  while (TotalBytesWritten < Buffer.size()) {
+    auto CurrentOffset = Offset + TotalBytesWritten;
+
+    OVERLAPPED Overlapped = {};
+    Overlapped.Offset = DWORD{CurrentOffset & 0xFFFFFFFF};
+    Overlapped.OffsetHigh = DWORD{(CurrentOffset >> 32) & 0xFFFFFFFF};
+
+    DWORD BytesWritten = 0;
+    const char* BufferStart = Buffer.data() + TotalBytesWritten;
+    std::size_t MaxBytesToWrite = Buffer.size() - TotalBytesWritten;
+    if (MaxBytesToWrite >= std::numeric_limits<DWORD>::max()) {
+      MaxBytesToWrite = std::numeric_limits<DWORD>::max() - 1;
+    }
+    DWORD Error = ERROR_SUCCESS;
+    if (!WriteFile(hnd, BufferStart, static_cast<DWORD>(MaxBytesToWrite),
+                   &BytesWritten, &Overlapped)) {
+      Error = GetLastError();
+
+      if (Error == ERROR_IO_PENDING) {
+        if (GetOverlappedResult(hnd, &Overlapped, &BytesWritten, TRUE)) {
+          Error = ERROR_SUCCESS;
+        } else {
+          Error = GetLastError();
+        }
+      }
+    }
+
+    switch (Error) {
+      case ERROR_SUCCESS: {
+        // intentionally left blank
+      } break;
+      default: {
+        LOG(L"could not write {} bytes to {} handle at offset {}.  Err={} ({})",
+            MaxBytesToWrite, hnd, CurrentOffset, WMI::ErrorString(Error),
+            Error);
+        return std::nullopt;
+      } break;
+    }
+  }
+
+  return TotalBytesWritten;
+}
+
+bool ApplyIncrementalToVhd(const std::wstring& base_vhd_path,
+                           const std::wstring& inc_path)
+{
+  HANDLE disk_handle = INVALID_HANDLE_VALUE;
+  {
+    VIRTUAL_STORAGE_TYPE vst = {
+        .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+        .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+    };
+    auto res = OpenVirtualDisk(
+        &vst, base_vhd_path.c_str(),
+        VIRTUAL_DISK_ACCESS_WRITABLE | VIRTUAL_DISK_ACCESS_ATTACH_RW,
+        OPEN_VIRTUAL_DISK_FLAG_NONE, NULL, &disk_handle);
+    if (res != ERROR_SUCCESS) {
+      LOG(L"OpenVirtualDisk({}) failed.  Err={} ({:X})", base_vhd_path,
+          WMI::ErrorString(res), (uint64_t)res);
+      return false;
+    }
+
+
+    ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+        = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+    auto attach_res = AttachVirtualDisk(disk_handle, NULL,
+                                        ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST,
+                                        0, &attach_params, 0);
+    if (FAILED(attach_res)) {
+      LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
+          WMI::ErrorString(attach_res), (uint32_t)attach_res);
+      return false;
+    }
+  }
+
+  HANDLE hnd = CreateFileW(inc_path.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                           NULL, OPEN_EXISTING,
+                           FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+
+  if (hnd == INVALID_HANDLE_VALUE) {
+    auto hres = GetLastError();
+    LOG(L"could not open {}.  Err={} ({})", inc_path, WMI::ErrorString(hres),
+        hres);
+    return false;
+  }
+
+  LOG(L"Handle = {}", hnd);
+
+  struct read_result {
+    OVERLAPPED Overlapped{};
+    DWORD bytes_transferred{};
+    DWORD error_code{};
+
+    read_result(ULONG64 Offset)
+    {
+      Overlapped.Offset = DWORD{Offset & 0xFFFFFFFF};
+      Overlapped.OffsetHigh = DWORD{(Offset >> 32) & 0xFFFFFFFF};
+    }
+
+    OVERLAPPED* overlapped() { return &Overlapped; }
+
+    static read_result* get(OVERLAPPED* ptr)
+    {
+      return reinterpret_cast<read_result*>(ptr);
+    }
+
+    static void Callback(DWORD ErrorCode, DWORD BytesRead, OVERLAPPED* In)
+    {
+      auto* Res = read_result::get(In);
+      Res->bytes_transferred = BytesRead;
+      Res->error_code = ErrorCode;
+
+      LOG(L"In = {}, Error = {}, Bytes = {}", (const void*)In, ErrorCode,
+          BytesRead);
+    }
+  };
+
+  std::vector<char> buffer;
+  buffer.resize(1024 * 1024);
+
+  ULONG64 CurrentOffset = 0;
+  std::size_t RangeCount = 0;
+  for (;;) {
+    range_header Header;
+    std::optional read_bytes
+        = ReadOverlapped(hnd, CurrentOffset, as_span(Header));
+    if (!read_bytes) { return false; }
+    if (read_bytes == 0) {
+      // reached eof
+      break;
+    }
+
+    if (read_bytes < sizeof(Header)) {
+      LOG(L"expected header but only {} bytes are available",
+          read_bytes.value());
+      return false;
+    }
+
+    LOG(L"Offset {} => Header {{ Offset = {}, Size = {} }}", CurrentOffset,
+        Header.Offset, Header.Size);
+
+    CurrentOffset += read_bytes.value();
+    RangeCount += 1;
+
+    buffer.resize(Header.Size);
+    std::optional body_bytes = ReadOverlapped(hnd, CurrentOffset, buffer);
+    if (!body_bytes || body_bytes < Header.Size) {
+      LOG(L"could not read payload of {} bytes", Header.Size);
+      return false;
+    }
+
+
+    // skip the data for now
+    CurrentOffset += Header.Size;
+  }
+
+
+  LOG(L"Found {} ranges", RangeCount);
+
+  CloseHandle(hnd);
+  CloseHandle(disk_handle);
+  return true;
+}
+
 bool RestoreBackup(const WMI& service,
                    std::optional<std::wstring_view> new_vm_name,
                    std::wstring_view definition_file,
@@ -3657,6 +3890,18 @@ int main(int argc, char** argv)
     restore->add_option("-N,--new-name", new_vm_name);
   }
 
+  std::wstring base_vhd_path;
+  std::wstring patch_vhd_path;
+  auto patch = app.add_subcommand("patch", "patch a vhd");
+  {
+    patch->add_option("-B,--base", base_vhd_path)
+        ->required()
+        ->check(CLI::ExistingFile);
+    patch->add_option("-P,--patch", patch_vhd_path)
+        ->required()
+        ->check(CLI::ExistingFile);
+  }
+
   app.require_subcommand(1, 1);
 
   CLI11_PARSE(app, argc, argv);
@@ -3830,6 +4075,13 @@ int main(int argc, char** argv)
       std::wcout << "Restore failed" << std::endl;
     }
     std::wcout << "Restore succeeded" << std::endl;
+  }
+  if (app.got_subcommand(patch)) {
+    if (!ApplyIncrementalToVhd(base_vhd_path, patch_vhd_path)) {
+      std::wcout << "Patch failed" << std::endl;
+      return 1;
+    }
+    std::wcout << "Patch succeeded" << std::endl;
   }
 
   // Test(wmi, TestType::FullAndIncr);
