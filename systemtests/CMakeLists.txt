@@ -85,6 +85,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(BareosTargetTools)
 include(BareosSystemtestFunctions)
 
 # ps is required for systemtests
