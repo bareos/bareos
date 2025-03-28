@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix include-ordering on FreeBSD that could cause build issues [PR #1974]
 - deb control files: depend on python3-bareos [PR #1968]
 - windows: fix readlink buffer size issue [PR #2163]
+- alist: fix race condition while iterating [PR #2190]
 
 ### Documentation
 - docs: improve debuginfo install description (fix issue #1943) [PR #1986]
@@ -726,5 +727,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2033]: https://github.com/bareos/bareos/pull/2033
 [PR #2075]: https://github.com/bareos/bareos/pull/2075
 [PR #2163]: https://github.com/bareos/bareos/pull/2163
+[PR #2190]: https://github.com/bareos/bareos/pull/2190
 [PR #2197]: https://github.com/bareos/bareos/pull/2197
 [unreleased]: https://github.com/bareos/bareos/tree/master
