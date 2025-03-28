@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,11 +87,7 @@ static void CleanupBnetThreadServerTcp(alist<s_sockfd*>* sockfds,
   Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
 
   if (sockfds && !sockfds->empty()) {
-    s_sockfd* fd_ptr = (s_sockfd*)sockfds->first();
-    while (fd_ptr) {
-      close(fd_ptr->fd);
-      fd_ptr = (s_sockfd*)sockfds->next();
-    }
+    for (s_sockfd* fd_ptr : sockfds) { close(fd_ptr->fd); }
     sockfds->destroy();
   }
 
@@ -312,10 +308,9 @@ void BnetThreadServerTcp(
   events |= POLLPRI;
 #  endif
 
-  s_sockfd* fd_ptr = nullptr;
   int i = 0;
 
-  foreach_alist (fd_ptr, sockfds) {
+  for (auto* fd_ptr : sockfds) {
     pfds[i].fd = fd_ptr->fd;
     pfds[i].events = events;
     i++;
@@ -331,15 +326,12 @@ void BnetThreadServerTcp(
     fd_set sockset;
     FD_ZERO(&sockset);
 
-    s_sockfd* fd_ptr = nullptr;
-    foreach_alist (fd_ptr, sockfds) {
+    for (auto* fd_ptr : sockfds) {
       FD_SET((unsigned)fd_ptr->fd, &sockset);
       maxfd = std::max(fd_ptr->fd, maxfd);
     }
 
-    struct timeval timeout {
-      .tv_sec = 1, .tv_usec = 0
-    };
+    struct timeval timeout{.tv_sec = 1, .tv_usec = 0};
 
     errno = 0;
     int status = select(maxfd + 1, &sockset, NULL, NULL, &timeout);
@@ -354,7 +346,7 @@ void BnetThreadServerTcp(
       break;
     }
 
-    foreach_alist (fd_ptr, sockfds) {
+    for (auto* fd_ptr : sockfds) {
       if (FD_ISSET(fd_ptr->fd, &sockset)) {
 #else
     static constexpr int timeout_ms{1000};
@@ -373,7 +365,7 @@ void BnetThreadServerTcp(
     }
 
     int cnt = 0;
-    foreach_alist (fd_ptr, sockfds) {
+    for (auto* fd_ptr : sockfds) {
       if (pfds[cnt++].revents & events) {
 #endif
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -150,12 +150,10 @@ static inline bool trigger_plugin_event(bDirEventType eventType,
       case bRC_More:
         break;
       case bRC_Term:
-        /*
-         * Request to unload this plugin.
+        /* Request to unload this plugin.
          * As we remove the plugin from the list of plugins we decrement
          * the running index value so the next plugin gets triggered as
-         * that moved back a position in the alist.
-         */
+         * that moved back a position in the alist. */
         if (index) {
           UnloadPlugin(dird_plugin_list, ctx->plugin, *index);
           *index = ((*index) - 1);
@@ -288,10 +286,8 @@ void LoadDirPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
       return;
     }
   }
-  /*
-   * Verify that the plugin is acceptable, and print information
-   *  about it.
-   */
+  /* Verify that the plugin is acceptable, and print information
+   *  about it. */
   foreach_alist_index (i, plugin, dird_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
@@ -393,7 +389,6 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
   int i, j, len;
   Plugin* plugin;
-  PluginContext* ctx = nullptr;
   uint32_t instance;
   bDirEvent event;
   bDirEventType eventType;
@@ -447,32 +442,32 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 
       len = strlen(plugin_name);
 
-      /*
-       * See if this plugin options are for an already instantiated plugin
-       * instance.
-       */
+      /* See if this plugin options are for an already instantiated plugin
+       * instance. */
       if (jcr->plugin_ctx_list) {
-        foreach_alist (ctx, jcr->plugin_ctx_list) {
+        PluginContext* found_ctx = nullptr;
+        for (auto* ctx : *jcr->plugin_ctx_list) {
           if (ctx->instance == instance && ctx->plugin->file_len == len
               && bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
+            found_ctx = ctx;
             break;
           }
         }
 
         // Found a context in the previous loop ?
-        if (!ctx) {
+        if (!found_ctx) {
           foreach_alist_index (j, plugin, dird_plugin_list) {
             if (plugin->file_len == len
                 && bstrncasecmp(plugin->file, plugin_name, len)) {
-              ctx = instantiate_plugin(jcr, plugin, instance);
+              found_ctx = instantiate_plugin(jcr, plugin, instance);
               break;
             }
           }
         }
 
-        if (ctx) {
-          trigger_plugin_event(eventType, &event, ctx, (void*)plugin_options,
-                               NULL, NULL);
+        if (found_ctx) {
+          trigger_plugin_event(eventType, &event, found_ctx,
+                               (void*)plugin_options, NULL, NULL);
         }
       }
     }
@@ -506,13 +501,11 @@ void NewPlugins(JobControlRecord* jcr)
 // Free the plugin instances for this Job
 void FreePlugins(JobControlRecord* jcr)
 {
-  PluginContext* ctx = nullptr;
-
   if (!dird_plugin_list || !jcr->plugin_ctx_list) { return; }
 
   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
-  foreach_alist (ctx, jcr->plugin_ctx_list) {
+  for (auto* ctx : *jcr->plugin_ctx_list) {
     // Free the plugin instance
     DirplugFunc(ctx->plugin)->freePlugin(ctx);
     free(ctx->core_private_context); /* Free BAREOS private context */
@@ -784,7 +777,6 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  PluginContext* nctx;
   b_plugin_ctx* bctx;
   bRC retval = bRC_Error;
 
@@ -795,7 +787,7 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
   cnt = 0;
   foreach_jcr (njcr) {
     if (jcr->plugin_ctx_list) {
-      foreach_alist (nctx, jcr->plugin_ctx_list) {
+      for (auto* nctx : *jcr->plugin_ctx_list) {
         if (nctx->plugin == bctx->plugin) { cnt++; }
       }
     }

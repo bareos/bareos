@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -271,13 +271,12 @@ static bool ValidateCommand(JobControlRecord* jcr,
                             const char* cmd,
                             alist<const char*>* allowed_job_cmds)
 {
-  const char* allowed_job_cmd = nullptr;
   bool allowed = false;
 
   // If there is no explicit list of allowed cmds allow all cmds.
   if (!allowed_job_cmds) { return true; }
 
-  foreach_alist (allowed_job_cmd, allowed_job_cmds) {
+  for (auto* allowed_job_cmd : *allowed_job_cmds) {
     if (Bstrcasecmp(cmd, allowed_job_cmd)) {
       allowed = true;
       break;

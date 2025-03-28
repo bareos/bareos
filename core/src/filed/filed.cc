@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -350,7 +350,6 @@ static bool CheckResources()
 
     /* If everything is well, attempt to initialize our public/private keys */
     if (OK && (me->pki_encrypt || me->pki_sign)) {
-      const char* filepath = nullptr;
       /* Load our keypair */
       me->pki_keypair = crypto_keypair_new();
       if (!me->pki_keypair) {
@@ -383,7 +382,7 @@ static bool CheckResources()
 
       /* If additional signing public keys have been specified, load them up */
       if (me->pki_signing_key_files) {
-        foreach_alist (filepath, me->pki_signing_key_files) {
+        for (auto* filepath : me->pki_signing_key_files) {
           X509_KEYPAIR* keypair;
 
           keypair = crypto_keypair_new();
@@ -428,7 +427,7 @@ static bool CheckResources()
 
       /* If additional keys have been specified, load them up */
       if (me->pki_master_key_files) {
-        foreach_alist (filepath, me->pki_master_key_files) {
+        for (auto* filepath : me->pki_master_key_files) {
           X509_KEYPAIR* keypair;
 
           keypair = crypto_keypair_new();

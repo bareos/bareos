@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -807,12 +807,13 @@ bool SendExcludeList(JobControlRecord*) { return true; }
 // This checks to see if there are any non local runscripts for this job.
 static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 {
-  RunScript* cmd = nullptr;
   bool retval = false;
+
+  if (!RunScripts) { return false; }
 
   if (RunScripts->empty()) { return false; }
 
-  foreach_alist (cmd, RunScripts) {
+  for (auto* cmd : *RunScripts) {
     if (!cmd->IsLocal()) { retval = true; }
   }
 
@@ -828,7 +829,6 @@ static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
 int SendRunscriptsCommands(JobControlRecord* jcr)
 {
   int result;
-  RunScript* cmd = nullptr;
   POOLMEM *msg, *ehost;
   BareosSocket* fd = jcr->file_bsock;
   bool has_before_jobs = false;
@@ -840,7 +840,7 @@ int SendRunscriptsCommands(JobControlRecord* jcr)
 
   msg = GetPoolMemory(PM_FNAME);
   ehost = GetPoolMemory(PM_FNAME);
-  foreach_alist (cmd, jcr->dir_impl->res.job->RunScripts) {
+  for (auto* cmd : *jcr->dir_impl->res.job->RunScripts) {
     if (!cmd->target.empty()) {
       ehost = edit_job_codes(jcr, ehost, cmd->target.c_str(), "");
       Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target.c_str(), ehost);
@@ -958,9 +958,7 @@ static int RestoreObjectHandler(void* ctx, int, char** row)
 bool SendPluginOptions(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
-  int i;
   PoolMem cur_plugin_options(PM_MESSAGE);
-  const char* plugin_options;
   POOLMEM* msg;
 
   if (jcr->dir_impl->plugin_options) {
@@ -979,8 +977,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
   if (jcr->dir_impl->res.job && jcr->dir_impl->res.job->FdPluginOptions
       && jcr->dir_impl->res.job->FdPluginOptions->size()) {
     Dmsg2(200, "dird: sendpluginoptions found FdPluginOptions in res.job\n");
-    foreach_alist_index (i, plugin_options,
-                         jcr->dir_impl->res.job->FdPluginOptions) {
+    for (auto* plugin_options : jcr->dir_impl->res.job->FdPluginOptions) {
       PmStrcpy(cur_plugin_options, plugin_options);
       BashSpaces(cur_plugin_options.c_str());
 
