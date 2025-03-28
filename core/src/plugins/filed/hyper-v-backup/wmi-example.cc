@@ -3327,8 +3327,8 @@ HANDLE OpenAndAttachR(const std::wstring& vhd_path)
   HANDLE disk_handle = INVALID_HANDLE_VALUE;
   {
     VIRTUAL_STORAGE_TYPE vst = {
-        .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
-        .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+        .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
+        .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
     };
 
     OPEN_VIRTUAL_DISK_PARAMETERS params = {};
@@ -3341,23 +3341,24 @@ HANDLE OpenAndAttachR(const std::wstring& vhd_path)
       LOG(L"OpenVirtualDisk({}) failed.  Err={} ({:X})", vhd_path,
           WMI::ErrorString(res), (uint64_t)res);
       return INVALID_HANDLE_VALUE;
-      ;
     }
-
 
     ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
         = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
-    auto attach_res = AttachVirtualDisk(disk_handle, NULL,
-                                        ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST,
-                                        0, &attach_params, 0);
+    auto attach_res
+        = AttachVirtualDisk(disk_handle, NULL,
+                            ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST
+                                | ATTACH_VIRTUAL_DISK_FLAG_READ_ONLY,
+                            0, &attach_params, 0);
     if (FAILED(attach_res)) {
       LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
           WMI::ErrorString(attach_res), (uint32_t)attach_res);
       CloseHandle(disk_handle);
       return INVALID_HANDLE_VALUE;
-      ;
     }
   }
+
+  LOG(L"Opened and attached {} to {}", vhd_path, disk_handle);
 
   return disk_handle;
 }
@@ -3388,7 +3389,9 @@ std::optional<std::size_t> VirtualSize(HANDLE disk_handle)
   return disk_info.Size.VirtualSize;
 }
 
-bool ComputeDiff(const std::wstring& left_path, const std::wstring& right_path)
+bool ComputeDiff(const std::wstring& left_path,
+                 const std::wstring& right_path,
+                 size_t BlockSize)
 {
   HANDLE left = OpenAndAttachR(left_path);
   if (left == INVALID_HANDLE_VALUE) { return false; }
@@ -3406,13 +3409,16 @@ bool ComputeDiff(const std::wstring& left_path, const std::wstring& right_path)
 
   bool retval = false;
 
+  std::size_t diff_count = 0;
+
   std::optional left_size = VirtualSize(left);
   std::optional right_size = VirtualSize(right);
   if (!left_size) { goto cleanup; }
   if (!right_size) { goto cleanup; }
 
   {
-    std::size_t buffer_size = 1024 * 1024;
+    std::size_t blocks_per_read = (1024 * 1024) / BlockSize + 1;
+    std::size_t buffer_size = blocks_per_read * BlockSize;
     std::vector<char> left_buffer;
     left_buffer.resize(buffer_size);
     std::vector<char> right_buffer;
@@ -3420,7 +3426,9 @@ bool ComputeDiff(const std::wstring& left_path, const std::wstring& right_path)
 
     auto read_size = std::min(left_size.value(), right_size.value());
     std::size_t CurrentOffset = 0;
+    std::size_t CurrentBlock = 0;
 
+    std::optional<std::size_t> DiffStart{};
     while (CurrentOffset < read_size) {
       auto current_read_size = std::min(read_size - CurrentOffset, buffer_size);
       std::span left_span{left_buffer.data(), current_read_size};
@@ -3436,15 +3444,70 @@ bool ComputeDiff(const std::wstring& left_path, const std::wstring& right_path)
         goto cleanup;
       }
 
-      if (memcmp(left_span.data(), right_span.data(), current_read_size) != 0) {
-        std::wcout << std::format(L"Diff at {}-{}", CurrentOffset,
-                                  CurrentOffset + current_read_size)
-                   << L"\n";
+
+      std::size_t read_block_count = current_read_size / BlockSize;
+      for (std::size_t Block = 0; Block < read_block_count; ++Block) {
+        auto BlockOffset = Block * BlockSize;
+        if (memcmp(left_span.data() + BlockOffset,
+                   right_span.data() + BlockOffset, BlockSize)
+            != 0) {
+          if (!DiffStart) { DiffStart = CurrentOffset + BlockOffset; }
+        } else {
+          if (DiffStart) {
+            auto DiffEnd = CurrentOffset + BlockOffset;
+            std::wcout << std::format(L"Diff at {} ({} bytes)",
+                                      DiffStart.value(),
+                                      DiffEnd - DiffStart.value())
+                       << L"\n";
+            diff_count += 1;
+            DiffStart = std::nullopt;
+          }
+        }
       }
 
+      if (read_block_count * BlockSize < current_read_size) {
+        auto Diff = current_read_size - BlockSize * read_block_count;
+        auto BlockOffset = read_block_count * BlockSize;
+        if (memcmp(left_span.data() + BlockOffset,
+                   right_span.data() + BlockOffset, Diff)
+            != 0) {
+          if (!DiffStart) { DiffStart = CurrentOffset + BlockOffset; }
+        } else {
+          if (DiffStart) {
+            auto DiffEnd = CurrentOffset + BlockOffset;
+            std::wcout << std::format(L"Diff at {} ({} bytes)",
+                                      DiffStart.value(),
+                                      DiffEnd - DiffStart.value())
+                       << L"\n";
+            diff_count += 1;
+            DiffStart = std::nullopt;
+          }
+        }
+      }
+
+      CurrentBlock += read_block_count;
       CurrentOffset += current_read_size;
     }
+    if (DiffStart) {
+      auto DiffEnd = read_size;
+      std::wcout << std::format(L"Diff at {} ({} bytes)", DiffStart.value(),
+                                DiffEnd - DiffStart.value())
+                 << L"\n";
+      diff_count += 1;
+      DiffStart = std::nullopt;
+    }
 
+    if (left_size.value() < right_size.value()) {
+      std::wcout << std::format(L"{} is bigger by {} bytes\n", right_path,
+                                right_size.value() - left_size.value());
+      diff_count += 1;
+    } else if (left_size.value() > right_size.value()) {
+      std::wcout << std::format(L"{} is bigger by {} bytes\n", left_path,
+                                left_size.value() - right_size.value());
+      diff_count += 1;
+    }
+
+    std::wcout << "Found " << diff_count << " diffs\n";
     retval = true;
   }
 cleanup:
@@ -3474,6 +3537,7 @@ bool ApplyIncrementalToVhd(const std::wstring& base_vhd_path,
     VIRTUAL_STORAGE_TYPE vst = {
         .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
         .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+
     };
     auto res = OpenVirtualDisk(
         &vst, base_vhd_path.c_str(),
@@ -3510,35 +3574,6 @@ bool ApplyIncrementalToVhd(const std::wstring& base_vhd_path,
   }
 
   LOG(L"Handle = {}", hnd);
-
-  struct read_result {
-    OVERLAPPED Overlapped{};
-    DWORD bytes_transferred{};
-    DWORD error_code{};
-
-    read_result(ULONG64 Offset)
-    {
-      Overlapped.Offset = DWORD{Offset & 0xFFFFFFFF};
-      Overlapped.OffsetHigh = DWORD{(Offset >> 32) & 0xFFFFFFFF};
-    }
-
-    OVERLAPPED* overlapped() { return &Overlapped; }
-
-    static read_result* get(OVERLAPPED* ptr)
-    {
-      return reinterpret_cast<read_result*>(ptr);
-    }
-
-    static void Callback(DWORD ErrorCode, DWORD BytesRead, OVERLAPPED* In)
-    {
-      auto* Res = read_result::get(In);
-      Res->bytes_transferred = BytesRead;
-      Res->error_code = ErrorCode;
-
-      LOG(L"In = {}, Error = {}, Bytes = {}", (const void*)In, ErrorCode,
-          BytesRead);
-    }
-  };
 
   std::vector<char> buffer;
   buffer.resize(1024 * 1024);
@@ -4086,6 +4121,7 @@ int main(int argc, char** argv)
 
   std::wstring vhd1_path;
   std::wstring vhd2_path;
+  std::size_t block_size = 16 * 1024;
   auto diff = app.add_subcommand("diff", "diff two vhd");
   {
     diff->add_option("-L,--left,left", vhd1_path)
@@ -4094,6 +4130,7 @@ int main(int argc, char** argv)
     diff->add_option("-R,--right,right", vhd2_path)
         ->required()
         ->check(CLI::ExistingFile);
+    diff->add_option("-B, --block-size", block_size);
   }
 
   app.require_subcommand(1, 1);
@@ -4278,7 +4315,7 @@ int main(int argc, char** argv)
     std::wcout << "Patch succeeded" << std::endl;
   }
   if (app.got_subcommand(diff)) {
-    if (!ComputeDiff(vhd1_path, vhd2_path)) {
+    if (!ComputeDiff(vhd1_path, vhd2_path, block_size)) {
       std::wcout << "Diff failed" << std::endl;
       return 1;
     }
