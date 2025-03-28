@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,7 @@
 # Author: Philipp Storz
 #
 """
-bareos-fd-mariabckup is a plugin to backup and restore MariaDB with mariadb-backup and mbstream
+bareos-fd-mariabackup is a plugin to backup and restore MariaDB with mariadb-backup and mbstream
 """
 import os
 import json
