@@ -151,6 +151,14 @@ struct JobLogger {
   do {                                 \
     DbgLogger{}.Log(200, __VA_ARGS__); \
   } while (0)
+#define DBGC(ctx, ...)                      \
+  do {                                      \
+    DbgLogger{(ctx)}.Log(100, __VA_ARGS__); \
+  } while (0)
+#define TRCC(ctx, ...)                      \
+  do {                                      \
+    DbgLogger{(ctx)}.Log(200, __VA_ARGS__); \
+  } while (0)
 #define INFO(ctx, ...)                         \
   do {                                         \
     JobLogger{(ctx)}.Log(M_INFO, __VA_ARGS__); \
@@ -173,7 +181,7 @@ class win_error : public std::exception {
   do {                                                        \
     TRC(L"Calling {} ...", L## #__VA_ARGS__);                 \
     if (HRESULT com_hres = (__VA_ARGS__); FAILED(com_hres)) { \
-      TRC(L"... failed ({})", com_hres);                      \
+      TRC(L"... failed ({:X})", com_hres);                    \
       throw win_error{com_hres};                              \
     }                                                         \
     TRC(L"... succeeded");                                    \
@@ -402,12 +410,20 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
 
+  TRC(L"loading hyper-v succeeded");
+
   return bRC_OK;
 }
 
 // External entry point to unload the plugin
-BAREOS_EXPORT bRC unloadPlugin() { return bRC_OK; }
+BAREOS_EXPORT bRC unloadPlugin()
+{
+  TRC(L"unloading hyper-v succeeded");
+  return bRC_OK;
 }
+}
+
+const void* Pointer(const auto* x) { return static_cast<const void*>(x); }
 
 /**
  * The following entry points are accessed through the function pointers we
@@ -430,8 +446,9 @@ static bRC newPlugin(PluginContext* ctx)
     COM_CALL(wmi_locator.CoCreateInstance(CLSID_WbemLocator, 0,
                                           CLSCTX_INPROC_SERVER));
 
-    CComPtr<IWbemServices> virt_service{};
+    DBGC(ctx, L"Locator = {}", Pointer(wmi_locator.p));
 
+    CComPtr<IWbemServices> virt_service{};
     COM_CALL(wmi_locator->ConnectServer(
         _bstr_t(L"ROOT\\VIRTUALIZATION\\V2"),  // Object path of WMI namespace
         NULL,                                  // User name. NULL = current user
@@ -442,6 +459,8 @@ static bRC newPlugin(PluginContext* ctx)
         0,             // Context object
         &virt_service  // pointer to IWbemServices proxy
         ));
+
+    DBGC(ctx, L"VirtService = {}", Pointer(wmi_locator.p));
 
     INFO(ctx, L"Successfully connected to 'ROOT\\VIRTUALIZATION\\V2'");
 
@@ -480,8 +499,8 @@ static bRC newPlugin(PluginContext* ctx)
 
     return bRC_OK;
   } catch (const win_error& err) {
-    DBG(L"could not initialize com.  Err={} ({})", err.err_str(),
-        err.err_num());
+    DBGC(ctx, L"could not initialize com.  Err={} ({:X})", err.err_str(),
+         err.err_num());
     return bRC_Error;
   }
 }
