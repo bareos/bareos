@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - config: fix issues with config directive aliases [PR #2159]
 - cleanup: fix multi-config tests [PR #2202]
 - mssqlvdi-fd: add support for filestream backups [PR #2072]
+- cmake: fix not including BareosTargetTools in systemtests, needed for get_target_output_dir [PR #2232]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -110,4 +111,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
 [PR #2211]: https://github.com/bareos/bareos/pull/2211
 [PR #2220]: https://github.com/bareos/bareos/pull/2220
+[PR #2232]: https://github.com/bareos/bareos/pull/2232
 [unreleased]: https://github.com/bareos/bareos/tree/master
