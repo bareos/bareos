@@ -5,5 +5,5 @@ Director {
   MaximumConcurrentJobs = 10
   Password = "@dir_password@"
   Auditing = yes
-  DirPort = @dir_port@
+  Port = @dir_port@
 }

@@ -21,7 +21,7 @@ Bareos Security Issues
 
 -  Don’t forget that Bareos is a network program, so anyone anywhere on the network with the console program and the Director’s password can access Bareos and the backed up data.
 
--  You can restrict what IP addresses Bareos will bind to by using the appropriate DirAddress, FDAddress, or SDAddress records in the respective daemon configuration files.
+-  You can restrict what IP addresses Bareos will bind to by using the appropriate Address records in the respective daemon configuration files.
 
 -  The new systemd service uses the systemd default service type 'Simple', which will log startup errors to systemd-journal. This is particularly useful to debug starting errors. However this could also leak some sensitive information to the journal. Though the access to the systemd journal is sensitive and as such per default restricted, you might want to verify that your installation is strict enough.
 

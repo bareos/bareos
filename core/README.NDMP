@@ -290,7 +290,7 @@ Client {
 Storage {
   Name = File
   Address = ...                       # N.B. Use a fully qualified name here
-  SDPort = 9103
+  Port = 9103
   Password = ...
   Device = FileStorage
   Media Type = File

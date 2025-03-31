@@ -2,7 +2,7 @@ Director {
   Name = "bareos-dir"
   Description = "Long string 1234567890 1234567890 1234567890"
   Messages = "Daemon"
-  DirAddresses = {
+  Addresses = {
     ipv4 = {
       addr = 0.0.0.0
       port = @dir_port@
