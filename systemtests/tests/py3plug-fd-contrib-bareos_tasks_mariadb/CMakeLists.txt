@@ -45,6 +45,10 @@ elseif(NOT MARIADB_INSTALL_DB_SCRIPT)
     ${SYSTEMTEST_PREFIX} "py3plug-fd-contrib-bareos_tasks_mariadb" DISABLED
     COMMENT "MARIADB_INSTALL_DB_SCRIPT is not set."
   )
+elseif(NOT MARIADB_DUMP_BINARY)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-contrib-bareos_tasks_mariadb" DISABLED 
+    COMMENT "MARIADB_DUMP_BINARY is not set."
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX} "py3plug-fd-contrib-bareos_tasks_mariadb"
