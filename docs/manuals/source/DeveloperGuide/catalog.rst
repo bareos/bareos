@@ -406,7 +406,7 @@ created for each of the NumVols specified in the Pool resource record.
 | VolCapacityBytes | bigint    | Capacity estimate for this volume       |
 +------------------+-----------+-----------------------------------------+
 | VolStatus        | text      | | Status of media:                      |
-|                  |           | | Full, Archive, Append,                |
+|                  |           | | Unlabeled, Full, Archive, Append,     |
 |                  |           |   Recycle, Read-Only, Disabled, Error,  |
 |                  |           |   Busy                                  |
 +------------------+-----------+-----------------------------------------+
@@ -645,26 +645,26 @@ LocationLog
 
 The **LocationLog** table contains a log of all Job output.
 
-+-------------+-----------+-----------------------------------------------+
-| Column      | Data      | Remark                                        |
-| Name        | Type      |                                               |
-+=============+===========+===============================================+
-| LocLogId    | serial    | Primary Key                                   |
-+-------------+-----------+-----------------------------------------------+
-| Date        | timestamp | Time/date log record created                  |
-+-------------+-----------+-----------------------------------------------+
-| Comment     | text      | Time/date log record created                  |
-+-------------+-----------+-----------------------------------------------+
-| MediaId     | integer   | Points to Media record                        |
-+-------------+-----------+-----------------------------------------------+
-| LocationId  | integer   | Points to Location record                     |
-+-------------+-----------+-----------------------------------------------+
-| NewVolStaus | integer   | enum: Full, Archive, Append, Recycle, Purged  |
-|             |           | Read-only, Disabled, Error, Busy, Used,       |
-|             |           | Cleaning                                      |
-+-------------+-----------+-----------------------------------------------+
-| Enabled     | tinyint   | Whether or not Volume is enabled              |
-+-------------+-----------+-----------------------------------------------+
++--------------+-----------+-----------------------------------------------+
+| Column       | Data      | Remark                                        |
+| Name         | Type      |                                               |
++==============+===========+===============================================+
+| LocLogId     | serial    | Primary Key                                   |
++--------------+-----------+-----------------------------------------------+
+| Date         | timestamp | Time/date log record created                  |
++--------------+-----------+-----------------------------------------------+
+| Comment      | text      | Time/date log record created                  |
++--------------+-----------+-----------------------------------------------+
+| MediaId      | integer   | Points to Media record                        |
++--------------+-----------+-----------------------------------------------+
+| LocationId   | integer   | Points to Location record                     |
++--------------+-----------+-----------------------------------------------+
+| NewVolStatus | integer   | enum: Unlabeled, Full, Archive, Append,       |
+|              |           | Recycle, Purged, Read-only, Disabled, Error,  |
+|              |           | Busy, Used, Cleaning                          |
++--------------+-----------+-----------------------------------------------+
+| Enabled      | tinyint   | Whether or not Volume is enabled              |
++--------------+-----------+-----------------------------------------------+
 
 Version
 ~~~~~~~

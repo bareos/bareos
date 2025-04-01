@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -217,7 +217,7 @@ int CreatePool(JobControlRecord* jcr,
 void SetPoolDbrDefaultsInMediaDbr(MediaDbRecord* mr, PoolDbRecord* pr)
 {
   mr->PoolId = pr->PoolId;
-  bstrncpy(mr->VolStatus, NT_("Append"), sizeof(mr->VolStatus));
+  bstrncpy(mr->VolStatus, NT_("Unlabeled"), sizeof(mr->VolStatus));
   mr->Recycle = pr->Recycle;
   mr->VolRetention = pr->VolRetention;
   mr->VolUseDuration = pr->VolUseDuration;
