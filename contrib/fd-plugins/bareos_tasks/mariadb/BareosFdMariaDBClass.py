@@ -92,9 +92,6 @@ class BareosFdMariaDBClass(BareosFdTaskClass):
         mariadb_dump_options = self.options.get('mariadb_dump_options', '--events --single-transaction --add-drop-database --databases')
         defaultsfile = self.options.get('defaultsfile')
         system_user = self.options.get('user')
-        if not system_user:
-            # fallback to old (Bareos <= 19.2) parameter name
-            system_user = self.options.get('mariadb_user')
 
         self.debug_message("defaultsfile={}".format(defaultsfile))
 
