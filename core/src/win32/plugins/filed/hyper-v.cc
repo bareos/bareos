@@ -36,6 +36,13 @@
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
 
+// polyfill for C++23
+template <class Enum>
+constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
+{
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
+
 
 static const int debuglevel = 150;
 
@@ -164,6 +171,7 @@ struct JobLogger {
     JobLogger{(ctx)}.Log(M_INFO, __VA_ARGS__); \
   } while (0)
 
+const void* Pointer(const auto* x) { return static_cast<const void*>(x); }
 
 class win_error : public std::exception {
  public:
@@ -237,7 +245,7 @@ class String {
   BSTR value = nullptr;
 };
 
-struct WMIBaseObject {
+struct BaseObject {
   CComPtr<IWbemClassObject> ptr;
 
   IWbemClassObject* get() const { return ptr.p; }
@@ -251,8 +259,52 @@ struct WMIBaseObject {
   }
 };
 
-struct ParameterPack : WMIBaseObject {
-  void Put(const wchar_t* name, int32_t value)
+struct ClassObject : BaseObject {
+  String path() const { return String::copy(L""); }
+};
+
+struct CallResult : BaseObject {
+  void get(std::wstring_view name, VARIANT& var)
+  {
+    auto cpy = String::copy(name);
+    WMI_CALL(ptr->Get(cpy.get(), 0, &var, NULL, 0));
+  }
+
+  template <typename T> T get(const wchar_t* name) = delete;
+  template <> int32_t get<int32_t>(const wchar_t* name)
+  {
+    VARIANT param;
+
+    CIMTYPE type;
+
+    WMI_CALL(ptr->Get(name, 0, &param, &type, 0));
+
+    if (V_VT(&param) != VT_I4) {
+      // throw error
+    }
+
+    // if (type != expected_type) {
+    //   // throw error
+    // }
+
+    return V_I4(&param);
+  }
+};
+
+struct ParameterPack : BaseObject {
+  struct Proxy {
+    ParameterPack& pack;
+    const wchar_t* name;
+
+    template <typename T> void operator=(T value)
+    {
+      pack.put(name, std::forward<T>(value));
+    }
+  };
+
+  Proxy operator[](const wchar_t* name) { return Proxy{*this, name}; }
+
+  void put(const wchar_t* name, int32_t value)
   {
     VARIANT param;
 
@@ -261,7 +313,7 @@ struct ParameterPack : WMIBaseObject {
 
     WMI_CALL(ptr->Put(name, 0, &param, 0));
   }
-  void Put(const wchar_t* name, const String& value)
+  void put(const wchar_t* name, const String& value)
   {
     VARIANT param;
 
@@ -269,6 +321,11 @@ struct ParameterPack : WMIBaseObject {
     V_BSTR(&param) = value.get();
 
     WMI_CALL(ptr->Put(name, 0, &param, 0));
+  }
+  void put(const wchar_t* name, const ClassObject& obj)
+  {
+    auto path = obj.path();
+    put(name, path);
   }
 };
 
@@ -290,7 +347,7 @@ struct Class {
   String name;
   CComPtr<IWbemClassObject> ptr{};
 
-  Method load_method_by_name(std::wstring_view method_name)
+  Method load_method_by_name(std::wstring_view method_name) const
   {
     TRC(L"Loading method {}::{} ...", name.as_view(), method_name);
 
@@ -303,18 +360,42 @@ struct Class {
   }
 };
 
-struct ClassObject : WMIBaseObject {
-  String path() const { return String::copy(L""); }
-};
 
-struct CallResult : WMIBaseObject {
-  void get(std::wstring_view name, VARIANT& var)
+struct ComputerSystem : ClassObject {};
+
+struct Job : ClassObject {
+  enum State : std::int32_t
   {
-    auto cpy = String::copy(name);
-    WMI_CALL(ptr->Get(cpy.get(), 0, &var, NULL, 0));
+    New = 2,
+    Starting = 3,
+    Running = 4,
+    Suspended = 5,
+    ShuttingDown = 6,
+    Completed = 7,
+    Terminated = 8,
+    Killed = 9,
+    Exception = 10,
+    Service = 11,
+    QueryPending = 12,
+  };
+
+  static bool is_completed(State s)
+  {
+    return (s == State::Completed)
+           //        || (s == State::CompletedWithWarning)
+           || (s == State::Terminated) || (s == State::Exception)
+           || (s == State::Killed);
   }
+  State state() const { return {}; }
 };
 
+struct cim_error : public std::exception {
+  int32_t error;
+
+  const char* what() noexcept { return "cim error"; }
+
+  cim_error(int32_t err) : error{err} {}
+};
 
 struct Service {
   Service(CComPtr<IWbemServices> ptr) : com_ptr{std::move(ptr)} {}
@@ -332,9 +413,34 @@ struct Service {
     return std::move(clz);
   }
 
+  Job get_job_by_name(const String& job_name)
+  {
+    CComPtr<IWbemClassObject> job;
+    WMI_CALL(com_ptr->GetObject(job_name.get(), 0, NULL, &job, NULL));
+
+    return Job{std::move(job)};
+  }
+
+  enum CIMReturnValue
+  {
+    OK = 0,
+    JobStarted = 4096,
+    Failed = 32768,
+    AccessDenied = 32769,
+    NotSupported = 32770,
+    StatusIsUnknown = 32771,
+    Timeout = 32772,
+    InvalidParameter = 32773,
+    SystemIsInUsed = 32774,
+    InvalidStateForThisOperation = 32775,
+    IncorrectDataType = 32776,
+    SystemIsNotAvailable = 32777,
+    OutOfMemory = 32778,
+  };
+
   CallResult exec_method(const ClassObject& obj,
                          const Method& mthd,
-                         const ParameterPack& params)
+                         const ParameterPack& params) const
   {
     auto path = obj.path();
 
@@ -343,12 +449,224 @@ struct Service {
     WMI_CALL(com_ptr->ExecMethod(path.get(), mthd.name.get(), 0, NULL,
                                  params.get(), &out_params, NULL));
 
-    return CallResult{out_params};
+    CallResult result{out_params};
+
+    auto result_value = result.get<int32_t>(L"ReturnValue");
+
+    if (result_value == CIMReturnValue::OK) { return std::move(result); }
+
+    if (result_value == CIMReturnValue::JobStarted) {
+      // TODO: wait for started job
+
+      // we need to somehow get the type of the return value.
+      // this way we could do some things automatically.
+
+      // Maybe one can use IWbemClassObject::GetPropertyQualifierSet for this ?
+    }
+
+    throw new cim_error(result_value);
+  }
+
+  // returns std::nullopt if there is not exactly one match
+  std::optional<ClassObject> query_single(const String& query) const
+  {
+    CComPtr<IEnumWbemClassObject> iter{};
+    WMI_CALL(com_ptr->ExecQuery(
+        bstr_t("WQL"), query.get(),
+        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &iter));
+
+
+    CComPtr<IWbemClassObject> found{};
+    std::size_t total_count = 0;
+    for (;;) {
+      found.Release();
+      ULONG found_count = 0;
+      WMI_CALL(iter->Next(WBEM_INFINITE, 1, &found, &found_count));
+      // found_count is either 0 or 1
+      DBG(L"found {} elements matching query", found_count);
+      if (found_count == 0) { break; }
+
+      total_count += found_count;
+    }
+
+    if (total_count > 1) {
+      TRC(L"{} instances found for query {}, not sure which to choose",
+          total_count, query.as_view());
+      return std::nullopt;
+    } else if (total_count == 0) {
+      TRC(L"No instance found for query {}", query.as_view());
+      return std::nullopt;
+    } else {
+      TRC(L"found instance for query {} at {}", query.as_view(),
+          Pointer(found.p));
+      return ClassObject{found};
+    }
+  }
+
+  std::optional<ComputerSystem> get_vm_by_name(std::wstring_view vm_name)
+  {
+    auto query = std::format(
+        L"SELECT * FROM Msvm_ComputerSystem WHERE ElementName=\"{}\"", vm_name);
+    auto cpy = String::copy(query);
+
+    std::optional system = query_single(cpy);
+    if (!system) { return std::nullopt; }
+    return ComputerSystem{std::move(system).value()};
   }
 
  private:
   CComPtr<IWbemServices> com_ptr{};
 };
+
+class VirtualSystemManagementService : ClassObject {
+ public:
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemManagementService"};
+
+  static std::optional<VirtualSystemManagementService> find_instance(
+      const Service& srvc)
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+
+    auto query
+        = String::copy(L"SELECT * FROM Msvm_VirtualSystemManagementService");
+    auto obj = srvc.query_single(query);
+    if (!obj) { return std::nullopt; }
+
+    TRC(L"Instance of {} = {}", class_name, obj->to_string().as_view());
+
+    return VirtualSystemManagementService{std::move(obj).value(),
+                                          std::move(clz)};
+  }
+
+ private:
+  VirtualSystemManagementService(ClassObject self, Class clz_)
+      : ClassObject{std::move(self)}, clz{std::move(clz_)}
+  {
+  }
+
+  Class clz;
+};
+
+struct Snapshot : ClassObject {};
+
+struct VirtualSystemSnapshotSettingData {
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemSnapshotSettingService"};
+
+  enum class ConsistencyLevel
+  {
+    Unknown = 0,
+    ApplicationConsistent = 1,
+    CrashConsistent = 2,
+  };
+
+  enum class GuestBackupType
+  {
+    Undefined = 0,
+    Full = 1,
+    Copy = 2,
+  };
+
+  String as_xml() const { return String::copy(L""); }
+
+  ConsistencyLevel consistency_level;
+  GuestBackupType guest_backup_type;
+  bool ignore_non_snapshottable_disks;
+};
+
+class VirtualSystemSnapshotService : ClassObject {
+ public:
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemSnapshotService"};
+
+  enum class SnapshotType : std::int32_t
+  {
+    FullSnapshot = 2,
+    DiskSnapshot = 3,
+    RecoverySnapshot = 32768,
+  };
+
+  Snapshot create_snapshot(const Service& srvc,
+                           const ComputerSystem& sys,
+                           const VirtualSystemSnapshotSettingData& settings,
+                           SnapshotType type) const
+  {
+    auto m_create_snapshot = clz.load_method_by_name(L"CreateSnapshot");
+    auto params = m_create_snapshot.create_parameters();
+
+    params[L"AffectedSystem"] = sys;
+    params[L"SnapshotSettings"] = settings.as_xml();
+    params[L"SnapshotType"] = to_underlying(type);
+
+    auto result = srvc.exec_method(*this, m_create_snapshot, params);
+
+    return {};
+  };
+
+  static std::optional<VirtualSystemSnapshotService> find_instance(
+      const Service& srvc)
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+
+    auto query
+        = String::copy(L"SELECT * FROM Msvm_VirtualSystemSnapshotService");
+    auto obj = srvc.query_single(query);
+    if (!obj) { return std::nullopt; }
+
+    TRC(L"Instance of {} = {}", class_name, obj->to_string().as_view());
+
+    return VirtualSystemSnapshotService{std::move(obj).value(), std::move(clz)};
+  }
+
+ private:
+  VirtualSystemSnapshotService(ClassObject self, Class clz_)
+      : ClassObject{std::move(self)}, clz{std::move(clz_)}
+  {
+  }
+
+  Class clz;
+};
+
+struct VirtualSystemExportSettingData {
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemExportSettingService"};
+
+  enum class CaptureLiveState : std::uint8_t
+  {
+    CrashConsistent = 0,
+    Saved = 1,
+    AppConsistent = 2,
+  };
+
+  enum class CopySnapshotConfiguration : std::uint8_t
+  {
+    ExportAllSnapshots = 0,
+    ExportNoSnapShots = 1,
+    ExportOneSnapshot = 2,
+    ExportOneSnapshotForBackup = 3,
+  };
+
+  enum class BackupIntent : std::uint8_t
+  {
+    PreserveChain = 0,  // i.e. we want to store full/diff separately
+    Merge = 1,          // i.e. we want to consolidate full/diff
+  };
+
+  std::optional<std::wstring> description{};
+  std::optional<std::wstring> snapshot_virtual_system_path;
+  std::vector<std::wstring> excluded_virtual_hard_disk_paths;
+  std::optional<std::wstring> differential_backup_base_path;
+  BackupIntent backup_intent = {};
+  CopySnapshotConfiguration copy_snapshot_configuration = {};
+  CaptureLiveState capture_live_state = {};
+  bool copy_vm_runtime_information = {};
+  bool copy_vm_storage = {};
+  bool create_vm_export_subdirectory = {};
+  bool export_for_live_migration = {};
+  bool disable_differential_of_ignored_storage = {};
+};
+
 };  // namespace WMI
 
 struct com_context {
@@ -385,8 +703,19 @@ struct com_context {
 
 // Plugin private context
 struct plugin_ctx {
+  static plugin_ctx* get(PluginContext* ctx)
+  {
+    auto p_ctx = static_cast<plugin_ctx*>(ctx->plugin_private_context);
+    TRC(L"p_ctx = {}", Pointer(p_ctx));
+    return p_ctx;
+  }
+
   com_context ctx;
   WMI::Service virt_service;
+
+  std::vector<std::wstring> vm_names;
+
+  WMI::VirtualSystemSnapshotSettingData snapshot_settings;
 };
 
 
@@ -422,8 +751,6 @@ BAREOS_EXPORT bRC unloadPlugin()
   return bRC_OK;
 }
 }
-
-const void* Pointer(const auto* x) { return static_cast<const void*>(x); }
 
 /**
  * The following entry points are accessed through the function pointers we
@@ -508,7 +835,7 @@ static bRC newPlugin(PluginContext* ctx)
 // Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
+  auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
   delete p_ctx;
@@ -528,14 +855,82 @@ static bRC setPluginValue(PluginContext*, pVariable, void*)
   return bRC_Error;
 }
 
+struct BackupClasses {
+  WMI::VirtualSystemManagementService system_management;
+  WMI::VirtualSystemSnapshotService system_snapshot;
+};
+
+static bool StartBackupJob(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return false; }
+
+  auto& srvc = p_ctx->virt_service;
+
+  std::optional system_mgmt
+      = WMI::VirtualSystemManagementService::find_instance(srvc);
+  if (!system_mgmt) { return false; }
+  std::optional system_snap
+      = WMI::VirtualSystemSnapshotService::find_instance(srvc);
+  if (!system_mgmt) { return false; }
+
+  for (auto& vm_name : p_ctx->vm_names) {
+    auto vm = srvc.get_vm_by_name(vm_name);
+    if (!vm) { return false; }
+    auto snapshot = system_snap->create_snapshot(
+        srvc, vm.value(), p_ctx->snapshot_settings,
+        WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+  }
+
+  return false;
+}
+
 // Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
-
+  auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
-  return bRC_Error;
+  using filedaemon::bEventBackupCommand;
+  using filedaemon::bEventEndRestoreJob;
+  using filedaemon::bEventLevel;
+  using filedaemon::bEventNewPluginOptions;
+  using filedaemon::bEventPluginCommand;
+  using filedaemon::bEventRestoreCommand;
+  using filedaemon::bEventStartBackupJob;
+  using filedaemon::bEventStartRestoreJob;
+
+  switch (event->eventType) {
+    case bEventLevel: {
+      return bRC_Error;
+    } break;
+    case bEventRestoreCommand: {
+      return bRC_Error;
+    } break;
+    case bEventBackupCommand: {
+      return bRC_Error;
+    } break;
+    case bEventPluginCommand: {
+      return bRC_Error;
+    } break;
+    case bEventEndRestoreJob: {
+      return bRC_Error;
+    } break;
+    case bEventNewPluginOptions: {
+      return bRC_Error;
+    } break;
+    case bEventStartBackupJob: {
+      if (!StartBackupJob(ctx)) { return bRC_Error; }
+      return bRC_OK;
+    } break;
+    case bEventStartRestoreJob: {
+      return bRC_Error;
+    } break;
+    default: {
+      DBG(L"unknown event type {}", event->eventType);
+      return bRC_Error;
+    } break;
+  }
 }
 
 // Start the backup of a specific file
@@ -645,8 +1040,7 @@ static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
  */
 static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
-
+  auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
   return bRC_Error;
