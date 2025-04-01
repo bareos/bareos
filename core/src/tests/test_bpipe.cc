@@ -141,7 +141,7 @@ TEST(bpipe, timeout)
 TEST(bpipe, child_operates_properly)
 {
   using namespace std::chrono_literals;
-  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 1, "w");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 3, "w");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, IsNull());
@@ -150,19 +150,19 @@ TEST(bpipe, child_operates_properly)
   EXPECT_GE(fputs("First String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(750ms);
   EXPECT_GE(fputs("Second String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(750ms);
   EXPECT_GE(fputs("Third String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(750ms);
   EXPECT_GE(fputs("Fourth String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(750ms);
   EXPECT_GE(fputs("Fifth String\n", bp->wfd), 0);
   EXPECT_EQ(fflush(bp->wfd), 0);
   TimerKeepalive(*bp->timer_id);
@@ -176,7 +176,7 @@ TEST(bpipe, child_operates_properly)
 TEST(bpipe, child_operates_flaky)
 {
   using namespace std::chrono_literals;
-  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 1, "w");
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 3, "w");
   ASSERT_THAT(bp, NotNull());
   ASSERT_THAT(bp->wfd, NotNull());
   ASSERT_THAT(bp->rfd, IsNull());
