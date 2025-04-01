@@ -68,7 +68,7 @@ wait
 time
 llist jobs job=${JobName}
 END_OF_DATA2
-echo "Run 2nd job"
+echo "Run second full"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1i.out" "Full Backup not found!"
 

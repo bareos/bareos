@@ -22,7 +22,7 @@ skip_if_root
 
 start_test
 
-#shellcheck source=../scripts/mysql.sh
+#shellcheck source=../scripts/mariadb.sh
 . "${rscripts}"/mariadb.sh
 
 mariadb_init

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,7 @@ if(NOT TARGET python3-fd)
 elseif(NOT MARIADB_DUMP_BINARY)
   create_systemtest(
     ${SYSTEMTEST_PREFIX} "py3plug-fd-contrib-mariadb-dump" DISABLED COMMENT
-    "MARIABACKUP_BINARY is not set."
+    "MARIADB_DUMP_BINARY is not set."
   )
 elseif(NOT MARIADB_DAEMON_BINARY)
   create_systemtest(

@@ -839,7 +839,7 @@ This can also be used, to backup a database that is running on a remote host:
    FileSet{
      Name = "mariadb-bpipe-remote-all"
      Include {
-       Plugin = "bpipe:file=/MARIAD/dump.sql:reader=mariadb-dump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=mariadb --host=<hostname> --user=<user> --password=<password>"
+       Plugin = "bpipe:file=/MARIADB/dump.sql:reader=mariadb-dump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=mariadb --host=<hostname> --user=<user> --password=<password>"
        Options {
          Signature = XXH128
          Compression = LZ4
@@ -857,7 +857,7 @@ the restore process, e.g.:
    FileSet{
      Name = "mariadb-bpipe-remote-filerestore-all"
      Include {
-       Plugin = "bpipe:file=/MARIADBL/dump.sql:reader=mariadb-dump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=/usr/lib/bareos/scripts/bpipe-restore.sh"
+       Plugin = "bpipe:file=/MARIADB/dump.sql:reader=mariadb-dump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=/usr/lib/bareos/scripts/bpipe-restore.sh"
        Options {
          Signature = XXH128
          Compression = LZ4
@@ -957,7 +957,7 @@ MariaDB user. Default: unset, the user running the file-daemon will be used (usu
 :strong:`password`
 MariaDB password. Default: unset (better use :file:`my.cnf` to store passwords)
 
-On restore, the database dumps are restored to the sub-directory :file:`@mariadbbackup@` in the restore path.
+On restore, the database dumps are restored to the subdirectory :file:`@mariadbbackup@` in the restore tree.
 The database restore must be triggered manually (:command:`mariadb < @mariadbbackup@/DATABASENAME.sql`).
 
 
@@ -970,7 +970,7 @@ Backup of a MySQL Database
    single: MySQL; Backup
    single: Database; MySQL; Backup
 
-In this legacy section, we describe different methods to do a full backup of a MySQL database.
+In this section, we describe different methods to do a full backup of a MySQL database.
 Up to MariaDB version 11, this can also apply to any MariaDB cluster. For more recent version,
 please consult previous section.
 
