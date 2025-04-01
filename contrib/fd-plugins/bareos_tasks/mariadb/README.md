@@ -1,7 +1,7 @@
 # Bareos FileDaemon mariadb Plugin
 
-This plugin makes backup of any database found in a MariaDB cluster. Each database is stored in an individual files.
-For restore select the needed database file, found in *@MARIADB* in the catalog.
+This plugin makes backups of any database in a MariaDB cluster. Each database is stored in an individual file.
+For restore select the needed database file, found in the *@MARIADB* directory in the catalog.
 
 ## Prerequisites
 
