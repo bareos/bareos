@@ -1,11 +1,6 @@
-[client]
-# TCP port to use to connect to mariadb server
-port=@test_db_port@
-# Socket to use to connect to mariadb server
-socket=@dbHost@/mariadb.sock
-
-
-[mysqld]
+# Available only since Mariadb 10.4.6
+# use otherwise older mysqld
+[mariadbd]
 # TCP port to make available for clients
 bind-address=127.0.0.1
 port=@test_db_port@
