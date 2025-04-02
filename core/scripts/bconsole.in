@@ -1,27 +1,27 @@
 #!/bin/sh
 which dirname >/dev/null
 # does dirname exit?
-if [ $? = 0 ] ; then
-  cwd=`dirname $0`
+if [ $? = 0 ]; then
+  cwd=$(dirname $0)
   if [ x$cwd = x. ]; then
-     cwd=`pwd`
+    cwd=$(pwd)
   fi
-  if [ x$cwd = x@sbindir@ ] ; then
-     echo "bconsole not properly installed."
-     exit 1
+  if [ x$cwd = x@sbindir@ ]; then
+    echo "bconsole not properly installed."
+    exit 1
   fi
 fi
 if [ x@sbindir@ = x@confdir@ ]; then
-   echo "bconsole not properly installed."
-   exit 1
+  echo "bconsole not properly installed."
+  exit 1
 fi
 if [ x@sbindir@ = x@sysconfdir@ ]; then
-   echo "bconsole not properly installed."
-   exit 1
+  echo "bconsole not properly installed."
+  exit 1
 fi
-if [ $# = 1 ] ; then
-   echo "doing bconsole $1.conf"
-   @sbindir@/bconsole -c $1.conf
+if [ $# = 1 ]; then
+  echo "doing bconsole $1.conf"
+  @sbindir@/bconsole -c $1.conf
 else
-   @sbindir@/bconsole -c @confdir@/bconsole.conf
+  @sbindir@/bconsole -c @confdir@/bconsole.conf
 fi

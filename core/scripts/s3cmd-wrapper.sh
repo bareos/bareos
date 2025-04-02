@@ -73,31 +73,34 @@ elif [ $# -gt 3 ]; then
 fi
 
 case "$1" in
-  testconnection)
-    exec_s3cmd info "${base_url}"
-    ;;
-  list)
-    run_s3cmd ls "${volume_url}" \
-    | while read -r date time size url; do
-      [[ "${size}" !=  +([0-9]) ]] && continue
+testconnection)
+  exec_s3cmd info "${base_url}"
+  ;;
+list)
+  run_s3cmd ls "${volume_url}" |
+    while read -r date time size url; do
+      [[ "${size}" != +([0-9]) ]] && continue
       echo "${url:${#volume_url}}" "$size"
     done
-    ;;
-  stat)
-    # shellcheck disable=SC2030,SC2034
-    run_s3cmd ls "$part_url" \
-      | (read -r date time size url; echo "$size")
-    ;;
-  upload)
-    exec_s3cmd "${s3cmd_put_args[@]}" put - "$part_url"
-    ;;
-  download)
-    exec_s3cmd get "$part_url" -
-    ;;
-  remove)
-    exec_s3cmd del "$part_url"
-    ;;
-  *)
-    exit 2
-    ;;
+  ;;
+stat)
+  # shellcheck disable=SC2030,SC2034
+  run_s3cmd ls "$part_url" |
+    (
+      read -r date time size url
+      echo "$size"
+    )
+  ;;
+upload)
+  exec_s3cmd "${s3cmd_put_args[@]}" put - "$part_url"
+  ;;
+download)
+  exec_s3cmd get "$part_url" -
+  ;;
+remove)
+  exec_s3cmd del "$part_url"
+  ;;
+*)
+  exit 2
+  ;;
 esac
