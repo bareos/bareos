@@ -55,10 +55,11 @@ if [ ${estat} -ne 0 ]; then
     exit ${estat}
 fi
 
-# Insert more data & rerun a job
+# Insert more data & rerun a job with a again a full
+# mariadb-dump do only full dumps.
 ${MARIADB_CLIENT} "${test_db_name}" <<< "insert into test (data) VALUES ('test entry 2')"
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
-@$out $tmp/log1i.out
+@$out $tmp/log2.out
 run job=$JobName yes
 wait
 status dir
@@ -69,10 +70,10 @@ llist jobs job=$JobName
 END_OF_DATA2
 echo "Running second full backup"
 run_bconsole
-expect_grep "Backup OK" "${tmp}/log1i.out" "Full Backup not found!"
+expect_grep "Backup OK" "${tmp}/log2.out" "Full Backup not found!"
 
 cat <<END_OF_DATA3 >"${tmp}/bconcmds"
-@$out ${tmp}/log2.out
+@$out ${tmp}/log3.out
 setdebug level=200 trace=1 timestamp=1 client=bareos-fd
 restore restorejob=RestoreFile client=bareos-fd fileset=bareos_mariadb_dump yes select all done
 wait
@@ -85,7 +86,7 @@ llist jobs job=RestoreFile
 END_OF_DATA3
 echo "Running restore backup"
 run_bconsole
-expect_grep "Restore OK" "${tmp}/log2.out" "Restore OK not found!"
+expect_grep "Restore OK" "${tmp}/log3.out" "Restore OK not found!"
 
 # Check if some files are restored
 ls -lR "${RESTORE_DIR}"
