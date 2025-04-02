@@ -1,3 +1,5 @@
+# Available only since Mariadb 10.4.6
+# otherwise use older mysqld
 [mariadbd]
 # TCP port to make available for clients
 bind-address=127.0.0.1
