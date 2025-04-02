@@ -3,7 +3,7 @@ Job {
   Description = "Standard Restore template. Only one such job is needed for all standard Jobs/Clients/Storage ..."
   Type = Restore
   Client = bareos-fd
-  FileSet = SelfTest
+  FileSet = bareos_tasks_mariadb
   Storage = File
   Pool = Full
   Messages = Standard
