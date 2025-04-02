@@ -32,100 +32,94 @@ BACKUP_LEVEL="Full"
 SINCE_TIME="0"
 JOB_TYPE="Backup"
 
-usage()
-{
-   echo "Usage: $0 [-h] [-l <level>] [-s <since_time>] [-t <jobtype>] <action> <arguments...>"
+usage() {
+  echo "Usage: $0 [-h] [-l <level>] [-s <since_time>] [-t <jobtype>] <action> <arguments...>"
 }
 
-pre_backup()
-{
-   if [ $# -lt 2 ]; then
-      echo "pre_backup action needs 2 arguments"
-      exit 1
-   fi
+pre_backup() {
+  if [ $# -lt 2 ]; then
+    echo "pre_backup action needs 2 arguments"
+    exit 1
+  fi
 
-   #
-   # $1 - volumename
-   # $2 - outputfile
-   #
-   case ${BACKUP_LEVEL} in
-      Full)
-         ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME} --full
-         ;;
-      Incremental|Differential)
-         ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME}
-         ;;
-      *)
-         ;;
-   esac
+  #
+  # $1 - volumename
+  # $2 - outputfile
+  #
+  case ${BACKUP_LEVEL} in
+  Full)
+    ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME} --full
+    ;;
+  Incremental | Differential)
+    ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME}
+    ;;
+  *) ;;
+  esac
 }
 
-post_backup()
-{
-   if [ $# -lt 2 ]; then
-      echo "post_backup action needs 2 arguments"
-      exit 1
-   fi
+post_backup() {
+  if [ $# -lt 2 ]; then
+    echo "post_backup action needs 2 arguments"
+    exit 1
+  fi
 
-   #
-   # $1 - volumename
-   # $2 - outputfile
-   #
-   rm -f $2
+  #
+  # $1 - volumename
+  # $2 - outputfile
+  #
+  rm -f $2
 }
 
-main()
-{
-   #
-   # Parse options.
-   #
-   while getopts "hl:s:t:" arg
-   do
-      case ${arg} in
-         h|\?)
-            usage
-            exit 0
-            ;;
-         l)
-            BACKUP_LEVEL="${OPTARG}"
-            ;;
-         s)
-            SINCE_TIME="${OPTARG}"
-            ;;
-         t)
-            JOB_TYPE="${OPTARG}"
-            ;;
-         *)
-            usage
-            exit 1
-            ;;
-      esac
-   done
-   nr_shift=`expr $OPTIND - 1`
-   shift ${nr_shift}
-
-   if [ $# -lt 1 ]; then
+main() {
+  #
+  # Parse options.
+  #
+  while getopts "hl:s:t:" arg; do
+    case ${arg} in
+    h | \?)
+      usage
+      exit 0
+      ;;
+    l)
+      BACKUP_LEVEL="${OPTARG}"
+      ;;
+    s)
+      SINCE_TIME="${OPTARG}"
+      ;;
+    t)
+      JOB_TYPE="${OPTARG}"
+      ;;
+    *)
       usage
       exit 1
-   fi
+      ;;
+    esac
+  done
+  nr_shift=$(expr $OPTIND - 1)
+  shift ${nr_shift}
 
-   action=$1
-   shift
+  if [ $# -lt 1 ]; then
+    usage
+    exit 1
+  fi
 
-   case ${action} in
-      prebackup)
-         pre_backup $*
-         ;;
-      postbackup)
-         post_backup $*
-         ;;
-      *)
-         echo "Unknown action ${action}, aborting ..."
-         exit 1
-         ;;
-   esac
+  action=$1
+  shift
 
-   exit 0
+  case ${action} in
+  prebackup)
+    pre_backup $*
+    ;;
+  postbackup)
+    post_backup $*
+    ;;
+  *)
+    echo "Unknown action ${action}, aborting ..."
+    exit 1
+    ;;
+  esac
+
+  exit 0
 }
 
 main $*
