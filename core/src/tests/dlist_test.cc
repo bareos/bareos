@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -154,7 +154,7 @@ TEST(dlist, dynamic)
   EXPECT_STREQ(item->buf, "18");
   FreeItem(item);
 
-  // added more entires
+  // added more entries
   DlistFill(list, 20);
   TestForeachDlist(list);
 

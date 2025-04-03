@@ -43,6 +43,8 @@
 #include "include/compiler_macro.h"
 #include "lib/crypto.h"
 
+#include <sstream>
+
 // Set default indention e.g. 2 spaces.
 #define DEFAULT_INDENT_STRING "  "
 
@@ -252,7 +254,7 @@ void ConfigurationParser::ScanTypes(LEX* lc,
 
 // Store Messages Destination information
 void ConfigurationParser::StoreMsgs(LEX* lc,
-                                    ResourceItem* item,
+                                    const ResourceItem* item,
                                     int index,
                                     int pass)
 {
@@ -404,7 +406,10 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
  * This routine is ONLY for resource names
  * Store a name at specified address.
  */
-void ConfigurationParser::StoreName(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreName(LEX* lc,
+                                    const ResourceItem* item,
+                                    int index,
+                                    int)
 {
   std::string msg{};
 
@@ -432,7 +437,7 @@ void ConfigurationParser::StoreName(LEX* lc, ResourceItem* item, int index, int)
  * A name string is limited to MAX_RES_NAME_LENGTH
  */
 void ConfigurationParser::StoreStrname(LEX* lc,
-                                       ResourceItem* item,
+                                       const ResourceItem* item,
                                        int index,
                                        int pass)
 {
@@ -449,7 +454,7 @@ void ConfigurationParser::StoreStrname(LEX* lc,
 
 // Store a string at specified address
 void ConfigurationParser::StoreStr(LEX* lc,
-                                   ResourceItem* item,
+                                   const ResourceItem* item,
                                    int index,
                                    int pass)
 {
@@ -462,7 +467,7 @@ void ConfigurationParser::StoreStr(LEX* lc,
 
 // Store a string at specified address
 void ConfigurationParser::StoreStdstr(LEX* lc,
-                                      ResourceItem* item,
+                                      const ResourceItem* item,
                                       int index,
                                       int pass)
 {
@@ -479,7 +484,7 @@ void ConfigurationParser::StoreStdstr(LEX* lc,
  * bar (i.e. it will likely be passed to the shell later).
  */
 void ConfigurationParser::StoreDir(LEX* lc,
-                                   ResourceItem* item,
+                                   const ResourceItem* item,
                                    int index,
                                    int pass)
 {
@@ -498,7 +503,7 @@ void ConfigurationParser::StoreDir(LEX* lc,
 }
 
 void ConfigurationParser::StoreStdstrdir(LEX* lc,
-                                         ResourceItem* item,
+                                         const ResourceItem* item,
                                          int index,
                                          int pass)
 {
@@ -516,7 +521,7 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
 
 // Store a password at specified address in MD5 coding
 void ConfigurationParser::StoreMd5Password(LEX* lc,
-                                           ResourceItem* item,
+                                           const ResourceItem* item,
                                            int index,
                                            int pass)
 {
@@ -528,7 +533,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
     // See if we are parsing an MD5 encoded password already.
     if (bstrncmp(lc->str, "[md5]", 5)) {
-      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if (item->is_required) {
         static const char* empty_password_md5_hash
             = "d41d8cd98f00b204e9800998ecf8427e";
         if (strncmp(lc->str + 5, empty_password_md5_hash,
@@ -571,7 +576,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
       unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
       char sig[100];
 
-      if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+      if (item->is_required) {
         if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
           scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
                     (*item->allocated_resource)->resource_name_);
@@ -600,7 +605,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
 // Store a password at specified address in MD5 coding
 void ConfigurationParser::StoreClearpassword(LEX* lc,
-                                             ResourceItem* item,
+                                             const ResourceItem* item,
                                              int index,
                                              int pass)
 {
@@ -611,7 +616,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
 
     if (pwd->value) { free(pwd->value); }
 
-    if ((item->flags & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
+    if (item->is_required) {
       if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
         scan_err1(
             lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
@@ -634,7 +639,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
  * resource.
  */
 void ConfigurationParser::StoreRes(LEX* lc,
-                                   ResourceItem* item,
+                                   const ResourceItem* item,
                                    int index,
                                    int pass)
 {
@@ -670,7 +675,7 @@ void ConfigurationParser::StoreRes(LEX* lc,
  * If we are in pass 2, do a lookup of the resource.
  */
 void ConfigurationParser::StoreAlistRes(LEX* lc,
-                                        ResourceItem* item,
+                                        const ResourceItem* item,
                                         int index,
                                         int pass)
 {
@@ -707,7 +712,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
 
 // Store a std::string in an std::vector<std::string>.
 void ConfigurationParser::StoreStdVectorStr(LEX* lc,
-                                            ResourceItem* item,
+                                            const ResourceItem* item,
                                             int index,
                                             int pass)
 {
@@ -724,10 +729,10 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
 
       /* See if we need to drop the default value.
        *
-       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * We first check to see if the config item has the
        * flag set and currently has exactly one entry. */
       if (!item->IsPresent()) {
-        if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+        if (item->default_value && list->size() == 1) {
           if (list->at(0) == item->default_value) { list->clear(); }
         }
       }
@@ -741,7 +746,7 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
 
 // Store a string in an alist.
 void ConfigurationParser::StoreAlistStr(LEX* lc,
-                                        ResourceItem* item,
+                                        const ResourceItem* item,
                                         int index,
                                         int pass)
 {
@@ -764,10 +769,10 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
 
       /* See if we need to drop the default value from the alist.
        *
-       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * We first check to see if the config item has the
        * flag set and currently has exactly one entry. */
       if (!item->IsPresent()) {
-        if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+        if (item->default_value && list->size() == 1) {
           char* entry = (char*)list->first();
           if (bstrcmp(entry, item->default_value)) {
             list->destroy();
@@ -790,7 +795,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
  * shell later).
  */
 void ConfigurationParser::StoreAlistDir(LEX* lc,
-                                        ResourceItem* item,
+                                        const ResourceItem* item,
                                         int index,
                                         int pass)
 {
@@ -812,9 +817,9 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
 
     /* See if we need to drop the default value from the alist.
      *
-     * We first check to see if the config item has the CFG_ITEM_DEFAULT
+     * We first check to see if the config item has the
      * flag set and currently has exactly one entry. */
-    if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+    if (item->default_value && list->size() == 1) {
       char* entry;
 
       entry = (char*)list->first();
@@ -833,7 +838,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
 
 // Store a list of plugin names to load by the daemon on startup.
 void ConfigurationParser::StorePluginNames(LEX* lc,
-                                           ResourceItem* item,
+                                           const ResourceItem* item,
                                            int index,
                                            int pass)
 {
@@ -888,7 +893,10 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
  * Note, here item points to the main resource (e.g. Job, not
  *  the jobdefs, which we look up).
  */
-void ConfigurationParser::StoreDefs(LEX* lc, ResourceItem* item, int, int pass)
+void ConfigurationParser::StoreDefs(LEX* lc,
+                                    const ResourceItem* item,
+                                    int,
+                                    int pass)
 {
   BareosResource* res;
 
@@ -908,7 +916,7 @@ void ConfigurationParser::StoreDefs(LEX* lc, ResourceItem* item, int, int pass)
 
 // Store an integer at specified address
 void ConfigurationParser::store_int16(LEX* lc,
-                                      ResourceItem* item,
+                                      const ResourceItem* item,
                                       int index,
                                       int)
 {
@@ -920,7 +928,7 @@ void ConfigurationParser::store_int16(LEX* lc,
 }
 
 void ConfigurationParser::store_int32(LEX* lc,
-                                      ResourceItem* item,
+                                      const ResourceItem* item,
                                       int index,
                                       int)
 {
@@ -933,7 +941,7 @@ void ConfigurationParser::store_int32(LEX* lc,
 
 // Store a positive integer at specified address
 void ConfigurationParser::store_pint16(LEX* lc,
-                                       ResourceItem* item,
+                                       const ResourceItem* item,
                                        int index,
                                        int)
 {
@@ -945,7 +953,7 @@ void ConfigurationParser::store_pint16(LEX* lc,
 }
 
 void ConfigurationParser::store_pint32(LEX* lc,
-                                       ResourceItem* item,
+                                       const ResourceItem* item,
                                        int index,
                                        int)
 {
@@ -958,7 +966,7 @@ void ConfigurationParser::store_pint32(LEX* lc,
 
 // Store an 64 bit integer at specified address
 void ConfigurationParser::store_int64(LEX* lc,
-                                      ResourceItem* item,
+                                      const ResourceItem* item,
                                       int index,
                                       int)
 {
@@ -971,7 +979,7 @@ void ConfigurationParser::store_int64(LEX* lc,
 
 // Store a size in bytes
 void ConfigurationParser::store_int_unit(LEX* lc,
-                                         ResourceItem* item,
+                                         const ResourceItem* item,
                                          int index,
                                          int,
                                          bool size32,
@@ -1044,7 +1052,7 @@ void ConfigurationParser::store_int_unit(LEX* lc,
 
 // Store a size in bytes
 void ConfigurationParser::store_size32(LEX* lc,
-                                       ResourceItem* item,
+                                       const ResourceItem* item,
                                        int index,
                                        int pass)
 {
@@ -1053,7 +1061,7 @@ void ConfigurationParser::store_size32(LEX* lc,
 
 // Store a size in bytes
 void ConfigurationParser::store_size64(LEX* lc,
-                                       ResourceItem* item,
+                                       const ResourceItem* item,
                                        int index,
                                        int pass)
 {
@@ -1062,7 +1070,7 @@ void ConfigurationParser::store_size64(LEX* lc,
 
 // Store a speed in bytes/s
 void ConfigurationParser::StoreSpeed(LEX* lc,
-                                     ResourceItem* item,
+                                     const ResourceItem* item,
                                      int index,
                                      int pass)
 {
@@ -1070,7 +1078,10 @@ void ConfigurationParser::StoreSpeed(LEX* lc,
 }
 
 // Store a time period in seconds
-void ConfigurationParser::StoreTime(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreTime(LEX* lc,
+                                    const ResourceItem* item,
+                                    int index,
+                                    int)
 {
   utime_t utime;
   char period[500];
@@ -1109,7 +1120,10 @@ void ConfigurationParser::StoreTime(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store a yes/no in a bit field
-void ConfigurationParser::StoreBit(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreBit(LEX* lc,
+                                   const ResourceItem* item,
+                                   int index,
+                                   int)
 {
   LexGetToken(lc, BCT_NAME);
   char* bitvalue = GetItemVariablePointer<char*>(*item);
@@ -1128,7 +1142,10 @@ void ConfigurationParser::StoreBit(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store a bool in a bit field
-void ConfigurationParser::StoreBool(LEX* lc, ResourceItem* item, int index, int)
+void ConfigurationParser::StoreBool(LEX* lc,
+                                    const ResourceItem* item,
+                                    int index,
+                                    int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
@@ -1147,7 +1164,7 @@ void ConfigurationParser::StoreBool(LEX* lc, ResourceItem* item, int index, int)
 
 // Store Tape Label Type (BAREOS, ANSI, IBM)
 void ConfigurationParser::StoreLabel(LEX* lc,
-                                     ResourceItem* item,
+                                     const ResourceItem* item,
                                      int index,
                                      int)
 {
@@ -1199,7 +1216,7 @@ void ConfigurationParser::StoreLabel(LEX* lc,
  *   = { ipv4 { port = 4711 } }
  */
 void ConfigurationParser::StoreAddresses(LEX* lc,
-                                         ResourceItem* item,
+                                         const ResourceItem* item,
                                          int index,
                                          int pass)
 {
@@ -1316,7 +1333,7 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
 }
 
 void ConfigurationParser::StoreAddressesAddress(LEX* lc,
-                                                ResourceItem* item,
+                                                const ResourceItem* item,
                                                 int,
                                                 int pass)
 {
@@ -1340,7 +1357,7 @@ void ConfigurationParser::StoreAddressesAddress(LEX* lc,
 }
 
 void ConfigurationParser::StoreAddressesPort(LEX* lc,
-                                             ResourceItem* item,
+                                             const ResourceItem* item,
                                              int,
                                              int pass)
 {
@@ -1382,7 +1399,7 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
 // Generic store resource dispatcher.
 bool ConfigurationParser::StoreResource(int type,
                                         LEX* lc,
-                                        ResourceItem* item,
+                                        const ResourceItem* item,
                                         int index,
                                         int pass)
 {
@@ -1491,24 +1508,24 @@ bool ConfigurationParser::StoreResource(int type,
   return true;
 }
 
-std::string PrintNumberSiPrefixFormat(ResourceItem*, uint64_t value_in)
+std::string PrintNumberSiPrefixFormat(const ResourceItem*, uint64_t value_in)
 {
   return SizeAsSiPrefixFormat(value_in);
 }
 
-std::string Print32BitConfigNumberSiPrefixFormat(ResourceItem* item)
+std::string Print32BitConfigNumberSiPrefixFormat(const ResourceItem* item)
 {
   uint32_t value_32_bit = GetItemVariable<uint32_t>(*item);
   return PrintNumberSiPrefixFormat(item, value_32_bit);
 }
 
-std::string Print64BitConfigNumberSiPrefixFormat(ResourceItem* item)
+std::string Print64BitConfigNumberSiPrefixFormat(const ResourceItem* item)
 {
   uint64_t value_64_bit = GetItemVariable<uint64_t>(*item);
   return PrintNumberSiPrefixFormat(item, value_64_bit);
 }
 
-std::string PrintConfigTime(ResourceItem* item)
+std::string PrintConfigTime(const ResourceItem* item)
 {
   PoolMem temp;
   PoolMem timespec;
@@ -1666,7 +1683,7 @@ bool MessagesResource::PrintConfig(OutputFormatterResource& send,
   return true;
 }
 
-const char* GetName(ResourceItem& item, s_kw* keywords)
+const char* GetName(const ResourceItem& item, s_kw* keywords)
 {
   uint32_t value = GetItemVariable<uint32_t>(item);
   for (int j = 0; keywords[j].name; j++) {
@@ -1676,11 +1693,11 @@ const char* GetName(ResourceItem& item, s_kw* keywords)
 }
 
 
-bool HasDefaultValue(ResourceItem& item, s_kw* keywords)
+bool HasDefaultValue(const ResourceItem& item, s_kw* keywords)
 {
   bool is_default = false;
   const char* name = GetName(item, keywords);
-  if (item.flags & CFG_ITEM_DEFAULT) {
+  if (item.default_value) {
     is_default = Bstrcasecmp(name, item.default_value);
   } else {
     if (name == nullptr) { is_default = true; }
@@ -1688,11 +1705,11 @@ bool HasDefaultValue(ResourceItem& item, s_kw* keywords)
   return is_default;
 }
 
-static bool HasDefaultValue(ResourceItem& item)
+static bool HasDefaultValue(const ResourceItem& item)
 {
   bool is_default = false;
 
-  if (item.flags & CFG_ITEM_DEFAULT) {
+  if (item.default_value) {
     // Check for default values.
     switch (item.type) {
       case CFG_TYPE_STR:
@@ -1811,7 +1828,7 @@ static bool HasDefaultValue(ResourceItem& item)
 }
 
 
-void BareosResource::PrintResourceItem(ResourceItem& item,
+void BareosResource::PrintResourceItem(const ResourceItem& item,
                                        const ConfigurationParser& my_config,
                                        OutputFormatterResource& send,
                                        bool hide_sensitive_data,
@@ -1829,7 +1846,7 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
     return;
   }
 
-  if (item.flags & CFG_ITEM_REQUIRED) {
+  if (item.is_required) {
     // Always print required items
     print_item = true;
   }
@@ -1837,7 +1854,7 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
   if (HasDefaultValue(item)) {
     Dmsg1(200, "%s: default value\n", item.name);
 
-    if ((verbose) && (!(item.flags & CFG_ITEM_DEPRECATED))) {
+    if (verbose && !item.is_deprecated) {
       /* If value has a expliciet default value and verbose mode is on,
        * display directive as inherited. */
       print_item = true;
@@ -2026,7 +2043,7 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
                                  bool hide_sensitive_data,
                                  bool verbose)
 {
-  ResourceItem* items;
+  const ResourceItem* items;
   int rindex;
 
   // If entry is not used, then there is nothing to print.
@@ -2076,7 +2093,7 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
  *     "type": "ResourceItem"
  *   }
  */
-json_t* json_item(ResourceItem* item, bool is_alias)
+json_t* json_item(const ResourceItem* item, bool is_alias)
 {
   json_t* json = json_object();
 
@@ -2085,28 +2102,40 @@ json_t* json_item(ResourceItem* item, bool is_alias)
   json_object_set_new(json, "code", json_integer(item->code));
 
   if (is_alias) { json_object_set_new(json, "alias", json_true()); }
-  if (item->flags & CFG_ITEM_DEFAULT) {
+  if (item->default_value) {
     /* FIXME? would it be better to convert it to the right type before
      * returning? */
     json_object_set_new(json, "default_value",
                         json_string(item->default_value));
   }
-  if (item->flags & CFG_ITEM_PLATFORM_SPECIFIC) {
+  if (item->is_platform_specific) {
     json_object_set_new(json, "platform_specific", json_true());
   }
-  if (item->flags & CFG_ITEM_DEPRECATED) {
+  if (item->is_deprecated) {
     json_object_set_new(json, "deprecated", json_true());
   }
-  if (item->flags & CFG_ITEM_NO_EQUALS) {
+  if (item->uses_no_equal) {
     json_object_set_new(json, "equals", json_false());
   } else {
     json_object_set_new(json, "equals", json_true());
   }
-  if (item->flags & CFG_ITEM_REQUIRED) {
-    json_object_set_new(json, "required", json_true());
-  }
-  if (item->versions) {
-    json_object_set_new(json, "versions", json_string(item->versions));
+  if (item->is_required) { json_object_set_new(json, "required", json_true()); }
+
+  if (item->introduced_in || item->deprecated_since) {
+    std::stringstream version_string;
+    if (item->introduced_in) {
+      version_string << item->introduced_in->major << "."
+                     << item->introduced_in->minor << "."
+                     << item->introduced_in->patch;
+    }
+    version_string << "-";
+    if (item->deprecated_since) {
+      version_string << item->deprecated_since->major << "."
+                     << item->deprecated_since->minor << "."
+                     << item->deprecated_since->patch;
+    }
+    json_object_set_new(json, "versions",
+                        json_string(version_string.str().c_str()));
   }
   if (!is_alias) {
     if (item->description) {
@@ -2136,7 +2165,7 @@ json_t* json_item(s_kw* item)
   return json;
 }
 
-json_t* json_items(ResourceItem items[])
+json_t* json_items(const ResourceItem items[])
 {
   json_t* json = json_object();
 

@@ -267,8 +267,8 @@ struct s_kw;
 struct ResourceItem;
 
 json_t* json_item(s_kw* item);
-json_t* json_item(ResourceItem* item, bool is_alias = false);
-json_t* json_items(ResourceItem items[]);
+json_t* json_item(const ResourceItem* item, bool is_alias = false);
+json_t* json_items(const ResourceItem items[]);
 #endif
 
 #endif  // BAREOS_LIB_OUTPUT_FORMATTER_H_
