@@ -19,6 +19,7 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
+include(BareosWindowsResource)
 
 if(NOT ENABLE_JANSSON)
   message(FATAL_ERROR "Bareos Director requires Jansson support")
@@ -128,12 +129,9 @@ target_link_libraries(dird_objects PRIVATE Bareos::Lib OpenSSL::SSL)
 
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
+bareos_windows_resource(bareos-dir ../win32/dird/dirdres.rc.in)
 if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/dird/dirdres.rc.in)
   set_target_properties(bareos-dir PROPERTIES WIN32_EXECUTABLE ON)
-  target_sources(
-    bareos-dir PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dirdres.rc
-  )
   target_sources(
     bareos-dir PRIVATE ../win32/generic/main.cc ../win32/generic/service.cc
   )
@@ -170,15 +168,7 @@ target_sources(
           run_conf.cc
           inc_conf.cc
 )
-
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/dird/dbcheckres.rc.in)
-  target_sources(
-    bareos-dbcheck
-    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/dird/dbcheckres.rc
-  )
-endif()
-
+bareos_windows_resource(bareos-dbcheck ../win32/dird/dbcheckres.rc.in)
 target_link_libraries(
   bareos-dbcheck PRIVATE Bareos::SQL Bareos::Lib Bareos::Findlib OpenSSL::SSL
                          CLI11::CLI11

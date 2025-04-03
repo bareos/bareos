@@ -19,6 +19,7 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
+include(BareosWindowsResource)
 
 if(HAVE_WIN32)
   include_directories(
@@ -97,14 +98,10 @@ if(HAVE_WIN32)
     target_compile_definitions(fd_objects_common PUBLIC HAVE_VSS64)
   endif()
 
-  bareos_configure_file(FILES ../win32/filed/filedres.rc.in)
-
   foreach(tgt IN ITEMS bareos-fd bareos-test-fd)
     set_target_properties("${tgt}" PROPERTIES WIN32_EXECUTABLE ON)
-    target_sources(
-      "${tgt}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/filed/filedres.rc
-                       ../win32/generic/main.cc
-    )
+    bareos_windows_resource("${tgt}" ../win32/filed/filedres.rc.in)
+    target_sources("${tgt}" PRIVATE ../win32/generic/main.cc)
     target_link_libraries("${tgt}" PRIVATE comctl32)
   endforeach()
 endif()
