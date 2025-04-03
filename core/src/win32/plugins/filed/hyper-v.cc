@@ -245,6 +245,54 @@ class String {
   BSTR value = nullptr;
 };
 
+struct variant_type {
+  struct i4 {
+    static constexpr VARENUM type = VT_I4;
+    using c_type = int32_t;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)actual_type, (int)type));
+      }
+
+      return V_I4(var);
+    }
+  };
+
+  struct bstr {
+    static constexpr VARENUM type = VT_BSTR;
+    using c_type = String;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)actual_type, (int)type));
+      }
+
+      return String::wrap(V_BSTR(var));
+    }
+  };
+};
+
+struct cim_type {
+#define DEFINE_CIM_TYPE(name, vtype, ctype)        \
+  struct name {                                    \
+    using v_type = variant_type::##vtype;          \
+    static constexpr CIMTYPE c_type = CIM_##ctype; \
+  }
+
+  // these are mostly found by experimentation
+  DEFINE_CIM_TYPE(uint16, i4, UINT16);
+  DEFINE_CIM_TYPE(uint32, i4, UINT32);
+  DEFINE_CIM_TYPE(reference, bstr, REFERENCE);
+  DEFINE_CIM_TYPE(string, bstr, STRING);
+
+#undef DEFINE_CIM_TYPE
+};
+
 struct BaseObject {
   CComPtr<IWbemClassObject> ptr;
 
@@ -257,6 +305,28 @@ struct BaseObject {
 
     return String::wrap(repr);
   }
+
+  void get(std::wstring_view name, VARIANT& var)
+  {
+    auto cpy = String::copy(name);
+    WMI_CALL(ptr->Get(cpy.get(), 0, &var, NULL, 0));
+  }
+
+  template <typename CimType>
+  CimType::v_type::c_type get(const wchar_t* name) const
+  {
+    VARIANT param;
+    CIMTYPE type;
+
+    WMI_CALL(ptr->Get(name, 0, &param, &type, 0));
+
+    if (type != CimType::c_type) {
+      throw std::runtime_error(std::format("expected cimtype {}, but got {}",
+                                           (int)type, (int)CimType::c_type));
+    }
+
+    return CimType::v_type::from(&param);
+  }
 };
 
 struct ClassObject : BaseObject {
@@ -264,31 +334,7 @@ struct ClassObject : BaseObject {
 };
 
 struct CallResult : BaseObject {
-  void get(std::wstring_view name, VARIANT& var)
-  {
-    auto cpy = String::copy(name);
-    WMI_CALL(ptr->Get(cpy.get(), 0, &var, NULL, 0));
-  }
-
-  template <typename T> T get(const wchar_t* name) = delete;
-  template <> int32_t get<int32_t>(const wchar_t* name)
-  {
-    VARIANT param;
-
-    CIMTYPE type;
-
-    WMI_CALL(ptr->Get(name, 0, &param, &type, 0));
-
-    if (V_VT(&param) != VT_I4) {
-      // throw error
-    }
-
-    // if (type != expected_type) {
-    //   // throw error
-    // }
-
-    return V_I4(&param);
-  }
+  std::optional<String> job_name;
 };
 
 struct ParameterPack : BaseObject {
@@ -377,16 +423,46 @@ struct Job : ClassObject {
     Exception = 10,
     Service = 11,
     QueryPending = 12,
+
+    /* this does not appear in the documentation, but for some reason its
+     * part of the sample code given by microsoft
+     * see: https://learn.microsoft.com/en-us/windows/win32/hyperv_v2/
+     *        common-utilities-for-the-virtualization-samples-v2 */
+    CompletedWithWarnings = 32768,
   };
 
   static bool is_completed(State s)
   {
-    return (s == State::Completed)
-           //        || (s == State::CompletedWithWarning)
+    return (s == State::Completed) || (s == State::CompletedWithWarnings)
            || (s == State::Terminated) || (s == State::Exception)
            || (s == State::Killed);
   }
-  State state() const { return {}; }
+  static bool is_successful(State s)
+  {
+    return (s == State::Completed) || (s == State::CompletedWithWarnings);
+  }
+
+  std::wstring format_err() const
+  {
+    // error description + GetErrorEx
+    // uint16   ErrorCode;
+    // string   ErrorDescription;
+    // string   ErrorSummaryDescription;
+
+    auto code = get<cim_type::uint16>(L"ErrorCode");
+    auto desc = get<cim_type::string>(L"ErrorDescription");
+    auto sum_desc = get<cim_type::string>(L"ErrorSummaryDescription");
+
+    // TODO: call GetErrorEx
+
+    return std::format(L"JobError({}): {} ({})", code, desc.as_view(),
+                       sum_desc.as_view());
+  }
+
+  State state() const
+  {
+    return static_cast<State>(get<cim_type::uint16>(L"JobState"));
+  }
 };
 
 struct cim_error : public std::exception {
@@ -413,7 +489,15 @@ struct Service {
     return std::move(clz);
   }
 
-  Job get_job_by_name(const String& job_name)
+  ClassObject get_object_by_path(const String& path) const
+  {
+    CComPtr<IWbemClassObject> obj;
+    WMI_CALL(com_ptr->GetObject(path.get(), 0, NULL, &obj, NULL));
+
+    return ClassObject{std::move(obj)};
+  }
+
+  Job get_job_by_name(const String& job_name) const
   {
     CComPtr<IWbemClassObject> job;
     WMI_CALL(com_ptr->GetObject(job_name.get(), 0, NULL, &job, NULL));
@@ -438,9 +522,9 @@ struct Service {
     OutOfMemory = 32778,
   };
 
-  CallResult exec_method(const ClassObject& obj,
-                         const Method& mthd,
-                         const ParameterPack& params) const
+  std::optional<CallResult> exec_method(const ClassObject& obj,
+                                        const Method& mthd,
+                                        const ParameterPack& params) const
   {
     auto path = obj.path();
 
@@ -451,12 +535,40 @@ struct Service {
 
     CallResult result{out_params};
 
-    auto result_value = result.get<int32_t>(L"ReturnValue");
+    auto result_value = result.get<cim_type::uint32>(L"ReturnValue");
 
     if (result_value == CIMReturnValue::OK) { return std::move(result); }
 
     if (result_value == CIMReturnValue::JobStarted) {
-      // TODO: wait for started job
+      auto job_name = result.get<cim_type::reference>(L"Job");
+
+      TRC(L"Got job name = {}", job_name.as_view());
+
+      for (;;) {
+        auto job = get_job_by_name(job_name);
+        TRC(L"Job = {}", job.to_string().as_view());
+
+        auto state = job.state();
+
+        if (Job::is_completed(state)) {
+          if (Job::is_successful(state)) {
+            result.job_name.emplace(std::move(job_name));
+            return std::move(result);
+          } else {
+            // maybe this should be an exception after all
+            std::wstring jn{job_name.as_view()};
+
+            // Jmsg(ctx, M_ERROR, "Job '%ls' did not complete successfully:
+            // %ls\n",
+            //      jn.c_str(), job.format_err().c_str());
+            // write some error message here
+            return std::nullopt;
+          }
+        } else {
+          TRC(L"Job {} is still running.  Sleeping...", job_name.as_view());
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+      }
 
       // we need to somehow get the type of the return value.
       // this way we could do some things automatically.
@@ -465,6 +577,20 @@ struct Service {
     }
 
     throw new cim_error(result_value);
+  }
+
+  template <typename T>
+  T get_result(const CallResult& res, const wchar_t* name) const
+  {
+    if (res.job_name) {
+      auto related
+          = get_related_of_class(res.job_name->as_view(), T::class_name);
+      ASSERT(related.size() == 1);
+      return T{std::move(related[0])};
+    } else {
+      auto path = res.get<cim_type::reference>(name);
+      return T{get_object_by_path(path)};
+    }
   }
 
   // returns std::nullopt if there is not exactly one match
@@ -501,6 +627,48 @@ struct Service {
           Pointer(found.p));
       return ClassObject{found};
     }
+  }
+
+  std::vector<ClassObject> query_all(const String& query) const
+  {
+    CComPtr<IEnumWbemClassObject> iter{};
+    WMI_CALL(com_ptr->ExecQuery(
+        bstr_t("WQL"), query.get(),
+        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &iter));
+
+    std::vector<ClassObject> result;
+    for (;;) {
+      ClassObject next;
+      ULONG returned_count = 0;
+      WMI_CALL(iter->Next(WBEM_INFINITE, 1, &next.ptr, &returned_count));
+
+      if (returned_count == 0) { break; }
+
+      result.emplace_back(std::move(next));
+    }
+
+    return result;
+  }
+
+  std::vector<ClassObject> get_related_of_class(std::wstring_view associate,
+                                                std::wstring_view result_class,
+                                                std::wstring_view assoc_class
+                                                = {}) const
+  {
+    std::wstring query = [&] {
+      if (assoc_class.empty()) {
+        return std::format(L"associators of {{{}}} where ResultClass = {}",
+                           associate, result_class);
+      } else {
+        return std::format(
+            L"associators of {{{}}} where ResultClass = {} AssocClass = {}",
+            associate, result_class, assoc_class);
+      }
+    }();
+
+    auto squery = String::copy(query);
+
+    return query_all(squery);
   }
 
   std::optional<ComputerSystem> get_vm_by_name(std::wstring_view vm_name)
@@ -551,6 +719,9 @@ class VirtualSystemManagementService : ClassObject {
 struct ReferencePoint : ClassObject {};
 
 struct Snapshot : ClassObject {
+  static constexpr std::wstring_view class_name{
+      L"CIM_VirtualSystemSettingData"};
+
   ~Snapshot()
   {
     // todo: destroy the snapshot here if it is still valid
@@ -607,6 +778,13 @@ class VirtualSystemSnapshotService : ClassObject {
     params[L"SnapshotType"] = to_underlying(type);
 
     auto result = srvc.exec_method(*this, m_create_snapshot, params);
+
+    if (!result) {
+      // throw error
+    }
+
+    auto snapshot
+        = srvc.get_result<Snapshot>(result.value(), L"ResultingSnapshot");
 
     return {};
   };
