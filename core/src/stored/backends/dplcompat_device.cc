@@ -277,7 +277,8 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(debug_trace, "Reading chunk %s\n", obj_name.data());
+  Dmsg1(debug_trace, "Reading chunk %s/%s\n", obj_name.data(),
+        obj_chunk.data());
 
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
