@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,9 @@
 #if defined(HAVE_WIN32)
 #  include <shlwapi.h>  // for PathIsRelativeA()
 #endif
+
+// we want the real sscanf() and not bsscanf()
+#undef sscanf
 
 namespace {
 constexpr int debug_info = 110;
@@ -231,22 +234,30 @@ tl::expected<void, std::string> CrudStorage::test_connection()
 auto CrudStorage::stat(std::string_view obj_name, std::string_view obj_part)
     -> tl::expected<Stat, std::string>
 {
-  Dmsg1(debug_trace, "stat %s called\n", obj_name.data());
+  Dmsg1(debug_trace, "stat %s/%s called\n", obj_name.data(), obj_part.data());
   std::string cmdline
       = fmt::format("\"{}\" stat \"{}\" \"{}\"", m_program, obj_name, obj_part);
   auto bph{
       BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   if (!bph) { return tl::unexpected(bph.error()); }
-  auto rfh = bph->getReadFd();
-  Stat stat;
-  if (int n = fscanf(rfh, "%zu\n", &stat.size); n != 1) {
-    return tl::unexpected(
-        fmt::format("could not parse data returned by {}\n", cmdline));
-  }
-  if (auto ret = bph->close(); ret != 0) {
+  auto output = bph->getOutput();
+  auto ret = bph->close();
+  Dmsg1(debug_trace,
+        "stat returned %d\n"
+        "== Output ==\n"
+        "%s"
+        "============\n",
+        ret, output.c_str());
+  if (ret != 0) {
     Dmsg1(debug_info, "stat returned %d\n", ret);
     return tl::unexpected(
         fmt::format("Running \"{}\" returned {}\n", cmdline, ret));
+  }
+
+  Stat stat;
+  if (int n = sscanf(output.c_str(), "%zu\n", &stat.size); n != 1) {
+    return tl::unexpected(
+        fmt::format("could not parse data returned by {}\n", cmdline));
   }
   Dmsg1(debug_trace, "stat returns %zu\n", stat.size);
   return stat;
