@@ -19,6 +19,7 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
+include(BareosWindowsResource)
 
 if(HAVE_WIN32)
   include_directories(
@@ -152,12 +153,9 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bareos-sd stored.cc)
+bareos_windows_resource(bareos-sd ../win32/stored/storedres.rc.in)
 if(HAVE_WIN32)
   set_target_properties(bareos-sd PROPERTIES WIN32_EXECUTABLE ON)
-  bareos_configure_file(FILES ../win32/stored/storedres.rc.in)
-  target_sources(
-    bareos-sd PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/storedres.rc
-  )
   target_sources(bareos-sd PRIVATE ../win32/generic/main.cc)
   target_link_libraries(bareos-sd PRIVATE comctl32)
 endif()
@@ -168,36 +166,21 @@ target_link_libraries(
 
 add_executable(bls)
 target_sources(bls PRIVATE bls.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/blsres.rc.in)
-  target_sources(
-    bls PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/blsres.rc
-  )
-endif()
+bareos_windows_resource(bls ../win32/stored/blsres.rc.in)
 target_link_libraries(
   bls PRIVATE Bareos::Lib Bareos::LibSD Bareos::Findlib CLI11::CLI11
 )
 
 add_executable(bextract)
 target_sources(bextract PRIVATE bextract.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/bextractres.rc.in)
-  target_sources(
-    bextract PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bextractres.rc
-  )
-endif()
+bareos_windows_resource(bextract ../win32/stored/bextractres.rc.in)
 target_link_libraries(
   bextract PRIVATE Bareos::LibSD Bareos::Findlib Bareos::Lib CLI11::CLI11
 )
 
 add_executable(bscan)
 target_sources(bscan PRIVATE bscan.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/bscanres.rc.in)
-  target_sources(
-    bscan PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bscanres.rc
-  )
-endif()
+bareos_windows_resource(bscan ../win32/stored/bscanres.rc.in)
 target_link_libraries(
   bscan PRIVATE Bareos::Lib Bareos::LibSD Bareos::Findlib Bareos::SQL
                 CLI11::CLI11
@@ -205,12 +188,7 @@ target_link_libraries(
 
 add_executable(btape)
 target_sources(btape PRIVATE btape.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/btaperes.rc.in)
-  target_sources(
-    btape PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/btaperes.rc
-  )
-endif()
+bareos_windows_resource(btape ../win32/stored/btaperes.rc.in)
 target_link_libraries(btape PRIVATE Bareos::LibSD Bareos::Lib CLI11::CLI11)
 
 add_executable(bcopy)

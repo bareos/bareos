@@ -18,6 +18,7 @@
 #   02110-1301, USA.
 
 include(BareosConfigureFile)
+include(BareosWindowsResource)
 
 find_package(Readline REQUIRED)
 
@@ -39,16 +40,8 @@ add_executable(bconsole-unsafe)
 target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
 target_sources(bconsole-unsafe PRIVATE console.cc)
 
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/console/consoleres.rc.in)
-  target_sources(
-    bconsole PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
-  )
-  target_sources(
-    bconsole-unsafe
-    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
-  )
-endif()
+bareos_windows_resource(bconsole ../win32/console/consoleres.rc.in)
+bareos_windows_resource(bconsole-unsafe ../win32/console/consoleres.rc.in)
 
 target_link_libraries(
   bconsole PRIVATE console_objects Readline::Readline CLI11::CLI11
