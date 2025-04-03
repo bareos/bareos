@@ -875,24 +875,28 @@ A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the me
    exit 0
 
 
-.. _backup-mariadb-python:
+.. _backup-mariadb-dump-python:
 
-Backup of MariaDB Databases using the contrib Python MariaDB plugin
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Backup of MariaDB Databases using the contrib Python mariadb-dump plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
-   single: Plugin; MariaDB Backup
+   single: Plugin; MariaDB Backup; mariadb-dump
 
 The Python plugin from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/mariadb-dump
 makes a backup of all or selected MariaDB databases from the |fd| or any other MariaDB server.
-It makes use of the `mariadb-dump` command and basically grabs data from `mariadb-dump` via pipe.
+It makes use of the :command:`mariadb-dump` command and basically grabs data from :command:`mariadb-dump` via pipe.
 This plugin is suitable to backup database dumps.
+The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`@mariadbbackup@`.
+For restore select the needed database file, found in `@mariabackup@` in the restore tree.
+
+Prerequisites
+'''''''''''''
 
 Following settings must be done on the Bareos client (|fd|):
 
--  install and enable the |fd| Python plugin
-
--  install the Python MariaDB plugin (for some platforms it is available prepackaged, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+-  install package :file:`bareos-filedaemon-python3-plugin`
+-  enable the |fd| Python plugin
 
 .. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
@@ -903,8 +907,13 @@ Following settings must be done on the Bareos client (|fd|):
      Plugin Names = "python3"
    }
 
+-  install the Python contrib mariadb-dump plugin
+   for some platforms it is available prepackaged :file:`bareos-contrib-filedaemon-python-plugins`
+   on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+
 
 Configure the plugin in the |dir|:
+''''''''''''''''''''''''''''''''''
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/fileset/mariadb-dump.conf
@@ -917,48 +926,101 @@ Configure the plugin in the |dir|:
          Compression = LZ4
        }
        Plugin = "python3"
-       ":module_name=bareos-fd-mariadb-dump"
-       ":db=test,wikidb"
-       #Plugin = "python3"
-       #         ":module_name=bareos-fd-mariadb-dump"
-       #         ":host=dbhost"
-       #         ":user=bareos"
-       #         ":password=bareos"
-       #         ":defaultfile=my.cnf"
-
+                ":module_name=bareos-fd-mariadb-dump"
      }
    }
 
-In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon.
-The commented example below specifies an explicit MariaDB server called :strong:`dbhost`, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
+In the above example the plugin creates and saves a dump from all databases from the cluster running on the file-daemon.
 
-The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`@mariadbbackup@`.
+Options
+'''''''
 
 List of supported options:
 
+:strong:`defaultsfile`
+
+Default: :file:`~/.my.cnf` or system wide :file:`/etc/my.cnf`
+
+:command:`mariadb-dump` will look at default place for a configuration file.
+We recommend to use this to store host/user/password parameter. Beware that user running the |fd|
+needs to have at least read access to this file.
+
+
 :strong:`db`
-comma separated list of databases to save, where each database will be stored in a separate file. If omitted, all databases will be saved.
+comma separated list of databases to save.
+
+Default: :strong:`unset`
+
+Each database will be stored in a separate file.
+If omitted, all databases will be saved.
+
+.. code-block:: bareosconfig
+   :caption: mariadb-dump plugin db option usage
+
+    Plugin = "python3"
+             ":module_name=bareos-fd-mariadb-dump"
+             ":db=test,mariadb"
+
+
+This will backup only the databases named 'test' and 'mariadb'.
+
+
+:strong:`ignore_db`
+comma separated list of datase to exclude from backup.
+
+Default: :strong:`"performance_schema,information_schema"` are excluded
+
 
 :strong:`dumpbinary`
-command (with or without full path) to create the dumps. Default: :strong:`mariadb-dump`
+command (with or without full path) to create the dumps.
+
+Default: :strong:`mariadb-dump`
+
 
 :strong:`dumpoptions`
-options for dumpbinary, default: ":strong:`--events --single-transaction`"
+options for dumpbinary.
+
+Default: ":strong:`--events --single-transaction`"
+
 
 :strong:`drop_and_recreate`
-if not set to :strong:`false`, adds :strong:`--add-drop-database --databases` to dumpoptions
+adds to dumpoptions :command:`--add-drop-database --databases`
+
+Default: :strong:`yes`
+
 
 :strong:`host`
-MariaDB host to connect to, default: :strong:`localhost`
+MariaDB host to connect to.
+
+Default: :strong:`localhost`
+
 
 :strong:`user`
-MariaDB user. Default: unset, the user running the file-daemon will be used (usually root)
+MariaDB user.
+
+Default: unset, the user running the file-daemon will be used (usually root)
+
 
 :strong:`password`
-MariaDB password. Default: unset (better use :file:`my.cnf` to store passwords)
+MariaDB password. Default: unset
+
+Good practice recommend to use :strong:`defaultfile` option
+
+.. code-block:: sql
+   :caption: mariadb-dump plugin set minimum privileges for the backup user
+
+   GRANT USAGE ON *.* TO 'username'@'localhost' IDENTIFIED BY 'username';
+   GRANT SELECT, LOCK TABLES, SHOW VIEW, EVENT, TRIGGER ON *.* TO 'username'@'localhost'
+
 
 On restore, the database dumps are restored to the subdirectory :file:`@mariadbbackup@` in the restore tree.
-The database restore must be triggered manually (:command:`mariadb < @mariadbbackup@/DATABASENAME.sql`).
+The database restore must be triggered manually:
+
+.. code-block:: bash
+   :caption: mariadb-dump plugin restore db in cluster
+
+   mariadb < @mariadbbackup@/DATABASENAME.sql
+
 
 
 .. _backup-mysql:
