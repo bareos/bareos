@@ -37,6 +37,7 @@
 #include "lib/bpipe.h"
 
 namespace filedaemon {
+thread_local PluginContext* plugin_context = NULL;
 
 static const int debuglevel = 150;
 
@@ -314,7 +315,20 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         }
         if (writer_codes) { free(writer_codes); }
       } else {
-        p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false);
+
+        char backuplvl;
+        bareos_core_functions->getBareosValue(ctx, bVarLevel, &backuplvl);
+        int jobid;
+        bareos_core_functions->getBareosValue(ctx, bVarJobId, &jobid);
+
+        std::unordered_map<std::string, std::string> env{
+            {std::string{"BareosLevel"}, std::string{backuplvl}},
+            {std::string{"BareosJobId"}, std::to_string(jobid)}};
+
+        Jmsg(ctx, M_INFO, "bpipe-fd: level=%c\n", backuplvl);
+        Dmsg(ctx, debuglevel, "bpipe-fd: level=%c\n", backuplvl);
+
+        p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false, env);
         Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd,
              p_ctx->reader);
         if (!p_ctx->pfd) {
