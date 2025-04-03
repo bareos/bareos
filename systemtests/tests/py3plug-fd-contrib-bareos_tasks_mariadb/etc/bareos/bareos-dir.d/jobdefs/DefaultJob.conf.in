@@ -1,0 +1,12 @@
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  Level = Full
+  Client = bareos-fd
+  FileSet = "bareos_tasks_mariadb"
+  Storage = "File"
+  Messages = "Standard"
+  Pool = "Full"
+  Priority = 10
+  Write Bootstrap = "@working_dir@/%c.bsr"
+}

@@ -1,3 +1,4 @@
 @plugindir@/bareos_mysql_dump/*
+@plugindir@/mariadb-dump/*
 @plugindir@/bareos_tasks/*
 @plugindir@/openvz7/*
