@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -277,7 +277,8 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(debug_trace, "Reading chunk %s\n", obj_name.data());
+  Dmsg1(debug_trace, "Reading chunk %s/%s\n", obj_name.data(),
+        obj_chunk.data());
 
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
