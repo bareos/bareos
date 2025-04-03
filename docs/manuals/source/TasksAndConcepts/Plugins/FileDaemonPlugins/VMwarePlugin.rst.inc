@@ -99,7 +99,7 @@ First add a user account in vCenter that has full privileges by assigning the ac
 
 When using the vCenter appliance with embedded SSO, a user account usually has the structure :command:`<username>@vsphere.local`, it may be different when using Active Directory as SSO in vCenter. For the examples here, we will use :command:`bakadm@vsphere.local` with the password :command:`Bak.Adm-1234`.
 
-For more details regarding users and permissions see vSphere documentation at https://docs.vmare.com
+For more details regarding users and permissions see vSphere documentation at https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/8-0/vsphere-security-8-0.html
 
 Make sure to add or enable the following settings in your |fd| configuration:
 
