@@ -65,7 +65,8 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
         self.defaultsfile = ""
         self.databases = ""
         self.dumpbinary = "mariadb-dump"
-        self.dumpoptions = " --events --single-transaction "
+        self.dumpoptions = "--events --single-transaction".split(' ')
+        self.ignore_db = "performance_schema,information_schema".split(',')
 
     def parse_plugin_definition(self, plugindef):
         """
@@ -76,12 +77,13 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
         if "dumpbinary" in self.options:
             self.dumpbinary = self.options["dumpbinary"]
 
-        # if dumpoptions is set, we use it
+        # if dumpoptions is set, we use it removing our defaults
         if "dumpoptions" in self.options:
-            self.dumpoptions = self.options["dumpoptions"]
+            self.dumpoptions = self.options["dumpoptions"].split(' ')
+
         # default is to add the drop statement
         if not "drop_and_recreate" in self.options or not self.options["drop_and_recreate"] == "false":
-            self.dumpoptions += " --add-drop-database --databases "
+            self.dumpoptions += "--add-drop-database --databases".split(" ")
 
         #add defaults-file if specified
         if "defaultsfile" in self.options:
@@ -113,10 +115,6 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
             if isinstance(databases, bytes):
                 databases = databases.decode('UTF-8')
             self.databases = databases.splitlines()
-            if 'performance_schema' in self.databases:
-                self.databases.remove('performance_schema')
-            if 'information_schema' in self.databases:
-                self.databases.remove('information_schema')
             showDb.wait()
             returnCode = showDb.poll()
             if returnCode == None:
@@ -144,18 +142,19 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
         if 'ignore_db' in self.options:
             DebugMessage(
                 100,
-                "databases in ignore list: %s\n"
-                % (self.options['ignore_db'].split(','))
+                f"databases in ignore list: {self.options['ignore_db'].split(',')}\n"
             )
-            for ignored_cur in self.options['ignore_db'].split(','):
-                try:
-                    self.databases.remove(ignored_cur)
-                except:
-                    pass
+            # Overwrite our default with
+            self.ignore_db += self.options['ignore_db'].split(',')
+
+        for ignored_cur in self.ignore_db:
+            try:
+               self.databases.remove(ignored_cur)
+            except:
+                pass
         DebugMessage(
             100,
-            "databases to backup: %s\n"
-            % (self.databases)
+            f"databases to backup: {self.databases}\n"
         )
         return bRC_OK
 
@@ -163,7 +162,7 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
     def start_backup_file(self, savepkt):
         '''
         This method is called, when Bareos is ready to start backup a file
-        For each database to backup we create a mariadb-dump subprocess, wrting to
+        For each database to backup we create a mariadb-dump subprocess, writing to
         the pipe self.stream.stdout
         '''
         DebugMessage(
@@ -179,26 +178,37 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
                 M_ERROR,
                 "No databases to backup.\n"
             )
-            return bRC_Skip
+            return bRC_Stop
 
         db = self.databases.pop()
 
         sizeDbCommand = f"mariadb {self.mariadbconnect} -B -N -e 'SELECT (SUM(DATA_LENGTH + INDEX_LENGTH)) FROM information_schema.TABLES WHERE TABLE_SCHEMA = \"{db}\"'"
-        sizeDb = Popen(sizeDbCommand, shell=True, stdout=PIPE, stderr=PIPE)
-        size_curr_db = sizeDb.stdout.read()
-        sizeDb.wait()
-        sizereturnCode = sizeDb.poll()
+        result = run(sizeDbCommand, shell=True, check=True, capture_output=True)
+        if result.stderr:
+                JobMessage(
+                    M_ERROR,
+                    f"Getting database {db} size failed '{result.stderr.decode('utf-8')}'\n"
+                )
+                return bRC_Stop
+        if result.stdout:
+                size_curr_db = result.stdout.decode('utf-8')
+                DebugMessage(
+                    100,
+                    f"db {db} size: '{size_curr_db}'\n"
+                )
 
         statp = StatPacket()
+        statp.st_size = size_curr_db
         savepkt.statp = statp
         savepkt.fname = "@mariadbbackup@/{}.sql".format(db)
         savepkt.type = FT_REG
 
-        dumpcommand = f"{self.dumpbinary} {self.mariadbconnect} {db} {self.dumpoptions}"
+        dumpcommand = f"{self.dumpbinary} {self.mariadbconnect} {db} {' '.join(self.dumpoptions)}"
         DebugMessage(
             100,
             f"Dumper: '{dumpcommand}'\n"
         )
+        #TODO use Popen.communicate
         self.stream = Popen(dumpcommand, shell=True, stdout=PIPE, stderr=PIPE)
 
         JobMessage(
