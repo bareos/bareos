@@ -268,7 +268,7 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
 
     def end_backup_file(self):
         """
-        Check, if dump was successfull.
+        Check, if dump was successful.
         """
         # Usually the mysqldump process should have terminated here, but on some servers
         # it has not always.
