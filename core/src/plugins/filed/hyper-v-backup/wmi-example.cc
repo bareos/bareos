@@ -533,8 +533,6 @@ struct WMI {
       pEnumerator->Release();
       return pclsObj;
     }
-
-    LOG(L"No instance found");
   }
 
   static SystemString ObjectAsString(IWbemClassObject* obj)
@@ -2205,6 +2203,8 @@ WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
       .consistency_level
       = VirtualSystemSnapshotSettingData::ConsistencyLevel::CrashConsistent,
       .ignore_non_snapshottable_disks = true,
+      .guest_backup_type
+      = VirtualSystemSnapshotSettingData::GuestBackupType::Full,
   };
 
   auto snapshot_settings = vsssd_clz->GetText(ssettings);
@@ -2346,6 +2346,57 @@ bool WriteRange(HANDLE /* OVERLAPPED */ in_handle,
   return true;
 }
 
+bool GetLastRCT(HANDLE disk_handle)
+{
+  alignas(GET_VIRTUAL_DISK_INFO) char info_buffer[500] = {};
+  auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(info_buffer);
+  disk_info->Version = GET_VIRTUAL_DISK_INFO_CHANGE_TRACKING_STATE;
+  ULONG VirtualDiskInfoSize = sizeof(info_buffer);
+  ULONG SizeOut = 0;
+  auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                            disk_info, &SizeOut);
+  if (disk_res != ERROR_SUCCESS) {
+    LOG(L"GetVirtualDiskInfo() failed.  Err={} ({:X})",
+        WMI::ErrorString(disk_res), (uint64_t)disk_res);
+    return false;
+  }
+
+  LOG(L"Size In = {} ({}), Size Out = {}", sizeof(disk_info),
+      VirtualDiskInfoSize, SizeOut);
+
+  LOG(L"RCT = {{ Enabled = {}, NewerChanges = {}, MostRecentId = {} }}",
+      disk_info->ChangeTrackingState.Enabled,
+      disk_info->ChangeTrackingState.NewerChanges,
+      disk_info->ChangeTrackingState.MostRecentId);
+
+  return true;
+}
+
+bool ShowRCT(const WMI::SystemString& hdd_path)
+{
+  HANDLE disk_handle = {};
+
+  VIRTUAL_STORAGE_TYPE vst = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+  };
+
+  OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+  params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+  params.Version2.ReadOnly = TRUE;
+  auto res
+      = OpenVirtualDisk(&vst, hdd_path.get(), VIRTUAL_DISK_ACCESS_NONE,
+                        OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+  if (res != ERROR_SUCCESS) {
+    LOG(L"OpenVirtualDisk({}) failed.  Err={} ({:X})", hdd_path.as_view(),
+        WMI::ErrorString(res), (uint64_t)res);
+    return false;
+  }
+  LOG(L"Opened virual disk at {}", (const void*)disk_handle);
+
+  return GetLastRCT(disk_handle);
+}
+
 bool BackupDisk(const WMI::SystemString& hdd_path,
                 const wchar_t* rct_id,
                 std::wstring_view dir)
@@ -2398,30 +2449,7 @@ bool BackupDisk(const WMI::SystemString& hdd_path,
   // APPLY_SNAPSHOT_VHDSET_FLAG snap_flags;
   // auto snap_res = ApplySnapshotVhdSet(disk_handle, &snap_params, snap_flags);
 
-  // {
-  //   alignas(GET_VIRTUAL_DISK_INFO) char info_buffer[500] = {};
-  //   auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(info_buffer);
-  //   disk_info->Version = GET_VIRTUAL_DISK_INFO_CHANGE_TRACKING_STATE;
-  //   ULONG VirtualDiskInfoSize = sizeof(info_buffer);
-  //   ULONG SizeOut = 0;
-  //   auto disk_res = GetVirtualDiskInformation(disk_handle,
-  //   &VirtualDiskInfoSize,
-  //                                             disk_info, &SizeOut);
-  //   if (disk_res != ERROR_SUCCESS) {
-  //     LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
-  //     hdd_path.as_view(),
-  //         WMI::ErrorString(disk_res), (uint64_t)disk_res);
-  //     return false;
-  //   }
-
-  //   LOG(L"Size In = {} ({}), Size Out = {}", sizeof(disk_info),
-  //       VirtualDiskInfoSize, SizeOut);
-
-  //   LOG(L"RCT = {{ Enabled = {}, NewerChanges = {}, MostRecentId = {} }}",
-  //       disk_info->ChangeTrackingState.Enabled,
-  //       disk_info->ChangeTrackingState.NewerChanges,
-  //       disk_info->ChangeTrackingState.MostRecentId);
-  // }
+  GetLastRCT(disk_handle);
 
   GET_VIRTUAL_DISK_INFO disk_info = {
       .Version = GET_VIRTUAL_DISK_INFO_SIZE,
@@ -4132,6 +4160,12 @@ int main(int argc, char** argv)
         ->check(CLI::ExistingFile);
     diff->add_option("-B, --block-size", block_size);
   }
+  auto show_rct = app.add_subcommand("rct", "get last rct of disk");
+  {
+    show_rct->add_option("--disk,-D,disk", vhd1_path)
+        ->required()
+        ->check(CLI::ExistingFile);
+  }
 
   app.require_subcommand(1, 1);
 
@@ -4316,6 +4350,15 @@ int main(int argc, char** argv)
   }
   if (app.got_subcommand(diff)) {
     if (!ComputeDiff(vhd1_path, vhd2_path, block_size)) {
+      std::wcout << "Diff failed" << std::endl;
+      return 1;
+    }
+    std::wcout << "Diff succeeded" << std::endl;
+  }
+
+  if (app.got_subcommand(show_rct)) {
+    WMI::SystemString cpy{vhd1_path};
+    if (!ShowRCT(cpy)) {
       std::wcout << "Diff failed" << std::endl;
       return 1;
     }
