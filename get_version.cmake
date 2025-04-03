@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -15,8 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-cmake_minimum_required(VERSION 3.17)
-cmake_policy(VERSION 3.17...3.19)
+cmake_minimum_required(VERSION 3.17...3.31)
 
 if(NOT DEFINED VERSION_STRING)
   set(CMAKE_MODULE_PATH
