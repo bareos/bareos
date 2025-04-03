@@ -20,34 +20,42 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
 
-set(BSMTPSRCS bsmtp.cc)
+set(TOOLS_BIN "")
+set(TOOLS_SBIN "")
+
+add_executable(bsmtp bsmtp.cc)
+target_link_libraries(bsmtp Bareos::Lib CLI11::CLI11)
+list(APPEND TOOLS_BIN bsmtp)
 if(HAVE_WIN32)
   bareos_configure_file(FILES ../win32/tools/bsmtpres.rc.in)
-  list(APPEND BSMTPSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bsmtpres.rc)
-endif()
-add_executable(bsmtp ${BSMTPSRCS})
-target_link_libraries(bsmtp Bareos::Lib CLI11::CLI11)
-
-set(BREGEXSRCS bregex.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/tools/bregexres.rc.in)
-  list(APPEND BREGEXSRCS
-       ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bregexres.rc
+  target_sources(
+    bsmtp PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bsmtpres.rc
   )
 endif()
-add_executable(bregex ${BREGEXSRCS})
-target_link_libraries(bregex Bareos::Lib Bareos::Findlib CLI11::CLI11)
 
-set(BWILDSRCS bwild.cc)
+add_executable(bregex bregex.cc)
+target_link_libraries(bregex Bareos::Lib Bareos::Findlib CLI11::CLI11)
+list(APPEND TOOLS_BIN bregex)
+list(APPEND TOOLS_SBIN bregex)
+if(HAVE_WIN32)
+  bareos_configure_file(FILES ../win32/tools/bregexres.rc.in)
+  target_sources(
+    bregex PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bregexres.rc
+  )
+endif()
+
+add_executable(bwild bwild.cc)
+target_link_libraries(bwild Bareos::Lib CLI11::CLI11)
+list(APPEND TOOLS_BIN bwild)
+list(APPEND TOOLS_SBIN bwild)
 if(HAVE_WIN32)
   bareos_configure_file(FILES ../win32/tools/bwildres.rc.in)
-  list(APPEND BWILDSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bwildres.rc)
+  target_sources(
+    bwild PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../win32/tools/bwildres.rc
+  )
 endif()
-add_executable(bwild ${BWILDSRCS})
-target_link_libraries(bwild Bareos::Lib CLI11::CLI11)
 
-add_executable(gentestdata)
-target_sources(gentestdata PRIVATE gentestdata.cc)
+add_executable(gentestdata gentestdata.cc)
 target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
 
 if(NOT HAVE_MSVC)
@@ -59,24 +67,17 @@ if(NOT HAVE_MSVC)
 
   add_executable(bscrypto bscrypto.cc)
   target_link_libraries(bscrypto Bareos::Lib CLI11::CLI11)
+  list(APPEND TOOLS_SBIN bscrypto)
 endif()
 
 if(NOT HAVE_WIN32)
-
   add_executable(btestls btestls.cc)
   target_link_libraries(btestls Bareos::Findlib Bareos::Lib)
+  list(APPEND TOOLS_SBIN btestls)
 
   add_executable(bpluginfo bpluginfo.cc)
   target_link_libraries(bpluginfo Bareos::Lib ${CMAKE_DL_LIBS} CLI11::CLI11)
-
-  set(TOOLS_SBIN bscrypto bwild bregex)
-else()
-  set(TOOLS_SBIN bwild bregex)
-endif()
-set(TOOLS_BIN bsmtp bwild bregex)
-
-if(NOT HAVE_WIN32)
-  list(APPEND TOOLS_SBIN bpluginfo btestls)
+  list(APPEND TOOLS_SBIN bpluginfo)
 endif()
 
 if(NOT client-only)
