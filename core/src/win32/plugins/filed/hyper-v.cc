@@ -548,7 +548,14 @@ class VirtualSystemManagementService : ClassObject {
   Class clz;
 };
 
-struct Snapshot : ClassObject {};
+struct ReferencePoint : ClassObject {};
+
+struct Snapshot : ClassObject {
+  ~Snapshot()
+  {
+    // todo: destroy the snapshot here if it is still valid
+  }
+};
 
 struct VirtualSystemSnapshotSettingData {
   static constexpr std::wstring_view class_name{
@@ -603,6 +610,30 @@ class VirtualSystemSnapshotService : ClassObject {
 
     return {};
   };
+
+  void destroy_snapshot(const Service& srvc, Snapshot snapshot) const
+  {
+    auto m_destroy_snapshot = clz.load_method_by_name(L"DestroySnapshot");
+    auto params = m_destroy_snapshot.create_parameters();
+
+    params[L"AffectedSnapshot"] = snapshot;
+
+    auto result = srvc.exec_method(*this, m_destroy_snapshot, params);
+  };
+
+  ReferencePoint convert_to_reference_point(const Service& srvc,
+                                            Snapshot snapshot)
+  {
+    auto m_convert_snapshot
+        = clz.load_method_by_name(L"ConvertToReferencePoint");
+    auto params = m_convert_snapshot.create_parameters();
+
+    params[L"AffectedSnapshot"] = snapshot;
+
+    auto result = srvc.exec_method(*this, m_convert_snapshot, params);
+
+    return {};
+  }
 
   static std::optional<VirtualSystemSnapshotService> find_instance(
       const Service& srvc)
@@ -860,7 +891,7 @@ struct BackupClasses {
   WMI::VirtualSystemSnapshotService system_snapshot;
 };
 
-static bool StartBackupJob(PluginContext* ctx)
+static bool start_backup_job(PluginContext* ctx)
 {
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return false; }
@@ -920,7 +951,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       return bRC_Error;
     } break;
     case bEventStartBackupJob: {
-      if (!StartBackupJob(ctx)) { return bRC_Error; }
+      if (!start_backup_job(ctx)) { return bRC_Error; }
       return bRC_OK;
     } break;
     case bEventStartRestoreJob: {
