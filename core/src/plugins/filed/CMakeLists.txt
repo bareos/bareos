@@ -80,6 +80,7 @@ if(HAVE_WIN32)
   target_sources(hyper-v-fd PRIVATE ../../win32/plugins/filed/hyper-v.cc)
   target_link_libraries(hyper-v-fd PRIVATE ${THREADS_THREADS} bareos)
   target_link_libraries(hyper-v-fd PRIVATE wbemuuid.lib virtdisk.lib)
+  target_link_libraries(hyper-v-fd PRIVATE Jansson::Jansson)
 
   install(
     TARGETS hyper-v-fd
