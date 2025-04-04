@@ -23,6 +23,7 @@
 #include "include/filetypes.h"
 #include "fd_plugins.h"
 #include "plugins/include/common.h"
+#include <jansson.h>
 
 #include <format>
 #include <source_location>
@@ -63,6 +64,67 @@ using filedaemon::PluginFunctions;
 using filedaemon::pVariable;
 using filedaemon::restore_pkt;
 using filedaemon::save_pkt;
+
+
+std::wstring format_win32_error(DWORD error = GetLastError())
+{
+  wchar_t* buffer = nullptr;
+  // take note: buffer is allocated via LocalAlloc ~> use LocalFree to dealloc
+  auto format_success = FormatMessageW(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS
+          | FORMAT_MESSAGE_FROM_SYSTEM,
+      NULL, error, 0, reinterpret_cast<wchar_t*>(&buffer), 0, 0);
+
+  auto result = [&] {
+    if (format_success == 0) {
+      return std::format(L"non formatable error {:X} (reason = {:X})", error,
+                         GetLastError());
+    } else {
+      return std::format(L"{} ({:X})", buffer, error);
+    }
+  }();
+
+  LocalFree(buffer);
+
+  return result;
+}
+
+std::wstring utf8_to_utf16(std::string_view v)
+{
+  std::wstring result;
+  if (v.size() == 0) { return result; }
+
+  ASSERT(v.size() < static_cast<std::size_t>(std::numeric_limits<int>::max()));
+
+  int in_length = static_cast<int>(v.size());
+  int out_length = ::MultiByteToWideChar(
+      CP_UTF8,               // Source string is in UTF-8
+      MB_ERR_INVALID_CHARS,  // Conversion flags
+      v.data(),              // Source UTF-8 string pointer
+      in_length,             // Length of the source UTF-8 string, in chars
+      nullptr,               // Unused - no conversion done in this step
+      0                      // Request size of destination buffer, in wchar_ts
+  );
+
+
+  if (out_length <= 0) {
+    // throw error or some such
+  }
+
+  result.resize(out_length);
+
+
+  int conversion
+      = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, v.data(),
+                              in_length, result.data(), out_length);
+
+  if (conversion != out_length) {
+    // throw error, because something went wrong
+  }
+
+  return result;
+}
+
 
 // Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
@@ -125,6 +187,16 @@ struct DbgLogger {
     }
   }
 
+  template <class... Args>
+  void Log(int level, std::format_string<Args...> fmt, Args&&... args)
+  {
+    if (bareos_core_functions) {
+      bareos_core_functions->DebugMessage(
+          ctx, loc.function_name(), loc.line(), level, "%s\n",
+          std::format(fmt, std::forward<Args>(args)...).c_str());
+    }
+  }
+
   std::source_location loc;
   PluginContext* ctx;
 };
@@ -142,6 +214,15 @@ struct JobLogger {
     if (bareos_core_functions) {
       bareos_core_functions->JobMessage(
           ctx, loc.function_name(), loc.line(), type, 0, "%ls\n",
+          std::format(fmt, std::forward<Args>(args)...).c_str());
+    }
+  }
+  template <class... Args>
+  void Log(int type, std::format_string<Args...> fmt, Args&&... args)
+  {
+    if (bareos_core_functions) {
+      bareos_core_functions->JobMessage(
+          ctx, loc.function_name(), loc.line(), type, 0, "%s\n",
           std::format(fmt, std::forward<Args>(args)...).c_str());
     }
   }
@@ -166,19 +247,76 @@ struct JobLogger {
   do {                                      \
     DbgLogger{(ctx)}.Log(200, __VA_ARGS__); \
   } while (0)
-#define INFO(ctx, ...)                         \
+#define JINFO(ctx, ...)                        \
   do {                                         \
     JobLogger{(ctx)}.Log(M_INFO, __VA_ARGS__); \
   } while (0)
+#define JERR(ctx, ...)                          \
+  do {                                          \
+    JobLogger{(ctx)}.Log(M_ERROR, __VA_ARGS__); \
+  } while (0)
 
-const void* Pointer(const auto* x) { return static_cast<const void*>(x); }
+const void* fmt_as_ptr(auto x) { return static_cast<const void*>(x); }
+
+// Generic COM error reporting function.
+static void comReportError(PluginContext* ctx, HRESULT hrErr)
+{
+  IErrorInfo* pErrorInfo;
+  BSTR pSource = NULL;
+  BSTR pDescription = NULL;
+  HRESULT hr;
+  char *source, *description;
+
+  // See if there is anything to report.
+  hr = GetErrorInfo(0, &pErrorInfo);
+  if (hr == S_FALSE) { return; }
+
+  // Get the description of the COM error.
+  hr = pErrorInfo->GetDescription(&pDescription);
+  if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "GetDescription failed\n");
+    pErrorInfo->Release();
+    return;
+  }
+
+  // Get the source of the COM error.
+  hr = pErrorInfo->GetSource(&pSource);
+  if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "GetSource failed\n");
+    SysFreeString(pDescription);
+    pErrorInfo->Release();
+    return;
+  }
+
+  // Convert windows BSTR to normal strings.
+  source = BSTR_2_str(pSource);
+  description = BSTR_2_str(pDescription);
+  if (source && description) {
+    Jmsg(ctx, M_FATAL, "%s(0x%X): %s\n", source, hrErr, description);
+    Dmsg(ctx, debuglevel, "%s(0x%X): %s\n", source, hrErr, description);
+  } else {
+    Dmsg(ctx, debuglevel, "could not print error\n");
+  }
+
+  if (source) { free(source); }
+
+  if (description) { free(description); }
+
+  /* Generic cleanup (free the description and source as those are returned in
+   * dynamically allocated memory by the COM routines.) */
+  SysFreeString(pSource);
+  SysFreeString(pDescription);
+
+  pErrorInfo->Release();
+}
+
 
 class win_error : public std::exception {
  public:
   win_error(HRESULT res) noexcept : hres{res} {}
 
-  const char* what() noexcept { return "windows error"; }
-  std::wstring err_str() const { return {}; }
+  const char* what() const noexcept override { return "windows error"; }
+  std::wstring err_str() const { return format_win32_error(hres); }
   HRESULT err_num() const { return hres; }
 
  private:
@@ -198,6 +336,34 @@ class win_error : public std::exception {
 
 namespace WMI {
 #define WMI_CALL(...) COM_CALL(__VA_ARGS__)
+
+std::wstring format_error(HRESULT error)
+{
+  constexpr HRESULT WMI_ERROR_MASK = 0x80041000;
+  static HMODULE mod = LoadLibraryW(L"wmiutils.dll");
+
+  if (!mod) { return L"Could not load error module"; }
+
+  bool is_wmi_error
+      = error >= WMI_ERROR_MASK && error <= WMI_ERROR_MASK + 0xFFF;
+  auto flags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM
+               | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_MAX_WIDTH_MASK
+               | (is_wmi_error ? FORMAT_MESSAGE_FROM_HMODULE : 0);
+
+  auto actual_mod = is_wmi_error ? mod : 0;
+
+  wchar_t* output = nullptr;
+  auto byte_count = FormatMessageW(flags, actual_mod, error, 0, (LPWSTR)&output,
+                                   0, nullptr);
+
+  if (byte_count < 0) { return L"Unformatable error"; }
+
+  std::wstring s{std::wstring_view{output, byte_count}};
+
+  LocalFree(output);
+
+  return s;
+}
 
 class String {
  public:
@@ -306,18 +472,13 @@ struct BaseObject {
     return String::wrap(repr);
   }
 
-  void get(std::wstring_view name, VARIANT& var)
-  {
-    auto cpy = String::copy(name);
-    WMI_CALL(ptr->Get(cpy.get(), 0, &var, NULL, 0));
-  }
-
   template <typename CimType>
   CimType::v_type::c_type get(const wchar_t* name) const
   {
     VARIANT param;
     CIMTYPE type;
 
+    DBG(L"{}->get({})", fmt_as_ptr(ptr.p), name);
     WMI_CALL(ptr->Get(name, 0, &param, &type, 0));
 
     if (type != CimType::c_type) {
@@ -330,7 +491,7 @@ struct BaseObject {
 };
 
 struct ClassObject : BaseObject {
-  String path() const { return String::copy(L""); }
+  String path() const { return BaseObject::get<cim_type::string>(L"__PATH"); }
 };
 
 struct CallResult : BaseObject {
@@ -357,6 +518,7 @@ struct ParameterPack : BaseObject {
     V_VT(&param) = VT_I4;
     V_I4(&param) = value;
 
+    DBG(L"{}->put({}, {}):", fmt_as_ptr(ptr.p), name, value);
     WMI_CALL(ptr->Put(name, 0, &param, 0));
   }
   void put(const wchar_t* name, const String& value)
@@ -366,6 +528,7 @@ struct ParameterPack : BaseObject {
     V_VT(&param) = VT_BSTR;
     V_BSTR(&param) = value.get();
 
+    DBG(L"{}->put({}, {}):", fmt_as_ptr(ptr.p), name, value.as_view());
     WMI_CALL(ptr->Put(name, 0, &param, 0));
   }
   void put(const wchar_t* name, const ClassObject& obj)
@@ -468,7 +631,7 @@ struct Job : ClassObject {
 struct cim_error : public std::exception {
   int32_t error;
 
-  const char* what() noexcept { return "cim error"; }
+  const char* what() const noexcept override { return "cim error"; }
 
   cim_error(int32_t err) : error{err} {}
 };
@@ -530,10 +693,15 @@ struct Service {
 
     IWbemClassObject* out_params = nullptr;
 
+    TRC(L"calling {}.{}({}) ...", path.as_view(), mthd.name.as_view(),
+        params.to_string().as_view());
+
     WMI_CALL(com_ptr->ExecMethod(path.get(), mthd.name.get(), 0, NULL,
                                  params.get(), &out_params, NULL));
 
     CallResult result{out_params};
+
+    TRC(L"... returning {}", result.to_string().as_view());
 
     auto result_value = result.get<cim_type::uint32>(L"ReturnValue");
 
@@ -576,7 +744,7 @@ struct Service {
       // Maybe one can use IWbemClassObject::GetPropertyQualifierSet for this ?
     }
 
-    throw new cim_error(result_value);
+    throw cim_error(result_value);
   }
 
   template <typename T>
@@ -596,21 +764,25 @@ struct Service {
   // returns std::nullopt if there is not exactly one match
   std::optional<ClassObject> query_single(const String& query) const
   {
+    DBG(L"executing query {}", query.as_view());
+
     CComPtr<IEnumWbemClassObject> iter{};
     WMI_CALL(com_ptr->ExecQuery(
         bstr_t("WQL"), query.get(),
         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &iter));
 
 
-    CComPtr<IWbemClassObject> found{};
+    CComPtr<IWbemClassObject> target{};
     std::size_t total_count = 0;
     for (;;) {
-      found.Release();
+      CComPtr<IWbemClassObject> found{};
       ULONG found_count = 0;
       WMI_CALL(iter->Next(WBEM_INFINITE, 1, &found, &found_count));
       // found_count is either 0 or 1
       DBG(L"found {} elements matching query", found_count);
       if (found_count == 0) { break; }
+
+      if (total_count == 0) { target = std::move(found); }
 
       total_count += found_count;
     }
@@ -624,13 +796,15 @@ struct Service {
       return std::nullopt;
     } else {
       TRC(L"found instance for query {} at {}", query.as_view(),
-          Pointer(found.p));
-      return ClassObject{found};
+          fmt_as_ptr(target.p));
+      return ClassObject{target};
     }
   }
 
   std::vector<ClassObject> query_all(const String& query) const
   {
+    DBG(L"executing query {}", query.as_view());
+
     CComPtr<IEnumWbemClassObject> iter{};
     WMI_CALL(com_ptr->ExecQuery(
         bstr_t("WQL"), query.get(),
@@ -780,7 +954,7 @@ class VirtualSystemSnapshotService : ClassObject {
     auto result = srvc.exec_method(*this, m_create_snapshot, params);
 
     if (!result) {
-      // throw error
+      throw std::runtime_error("exec_method returned std::nullopt");
     }
 
     auto snapshot
@@ -882,7 +1056,7 @@ struct com_context {
   static com_context init_for_thread()
   {
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    if (FAILED(hr)) { throw win_error{bRC_Error}; }
+    if (FAILED(hr)) { throw win_error{hr}; }
 
     return com_context{};
   }
@@ -915,7 +1089,7 @@ struct plugin_ctx {
   static plugin_ctx* get(PluginContext* ctx)
   {
     auto p_ctx = static_cast<plugin_ctx*>(ctx->plugin_private_context);
-    TRC(L"p_ctx = {}", Pointer(p_ctx));
+    TRCC(ctx, L"p_ctx = {}", fmt_as_ptr(p_ctx));
     return p_ctx;
   }
 
@@ -925,6 +1099,13 @@ struct plugin_ctx {
   std::vector<std::wstring> vm_names;
 
   WMI::VirtualSystemSnapshotSettingData snapshot_settings;
+
+  json_t* config{nullptr};
+
+  ~plugin_ctx()
+  {
+    if (config) { json_decref(config); }
+  }
 };
 
 
@@ -982,7 +1163,7 @@ static bRC newPlugin(PluginContext* ctx)
     COM_CALL(wmi_locator.CoCreateInstance(CLSID_WbemLocator, 0,
                                           CLSCTX_INPROC_SERVER));
 
-    DBGC(ctx, L"Locator = {}", Pointer(wmi_locator.p));
+    DBGC(ctx, L"Locator = {}", fmt_as_ptr(wmi_locator.p));
 
     CComPtr<IWbemServices> virt_service{};
     COM_CALL(wmi_locator->ConnectServer(
@@ -996,9 +1177,9 @@ static bRC newPlugin(PluginContext* ctx)
         &virt_service  // pointer to IWbemServices proxy
         ));
 
-    DBGC(ctx, L"VirtService = {}", Pointer(wmi_locator.p));
+    DBGC(ctx, L"VirtService = {}", fmt_as_ptr(wmi_locator.p));
 
-    INFO(ctx, L"Successfully connected to 'ROOT\\VIRTUALIZATION\\V2'");
+    JINFO(ctx, L"Successfully connected to 'ROOT\\VIRTUALIZATION\\V2'");
 
     COM_CALL(CoSetProxyBlanket(
         virt_service,
@@ -1094,11 +1275,115 @@ static bool start_backup_job(PluginContext* ctx)
   return false;
 }
 
+const char* event_name(uint32_t event_type)
+{
+  switch (event_type) {
+    case filedaemon::bEventJobStart: {
+      return "JobStart";
+    } break;
+    case filedaemon::bEventJobEnd: {
+      return "JobEnd";
+    } break;
+    case filedaemon::bEventStartBackupJob: {
+      return "StartBackupJob";
+    } break;
+    case filedaemon::bEventEndBackupJob: {
+      return "EndBackupJob";
+    } break;
+    case filedaemon::bEventStartRestoreJob: {
+      return "StartRestoreJob";
+    } break;
+    case filedaemon::bEventEndRestoreJob: {
+      return "EndRestoreJob";
+    } break;
+    case filedaemon::bEventStartVerifyJob: {
+      return "StartVerifyJob";
+    } break;
+    case filedaemon::bEventEndVerifyJob: {
+      return "EndVerifyJob";
+    } break;
+    case filedaemon::bEventBackupCommand: {
+      return "BackupCommand";
+    } break;
+    case filedaemon::bEventRestoreCommand: {
+      return "RestoreCommand";
+    } break;
+    case filedaemon::bEventEstimateCommand: {
+      return "EstimateCommand";
+    } break;
+    case filedaemon::bEventLevel: {
+      return "Level";
+    } break;
+    case filedaemon::bEventSince: {
+      return "Since";
+    } break;
+    case filedaemon::bEventCancelCommand: {
+      return "CancelCommand";
+    } break;
+    case filedaemon::bEventRestoreObject: {
+      return "RestoreObject";
+    } break;
+    case filedaemon::bEventEndFileSet: {
+      return "EndFileSet";
+    } break;
+    case filedaemon::bEventPluginCommand: {
+      return "PluginCommand";
+    } break;
+    case filedaemon::bEventOptionPlugin: {
+      return "OptionPlugin";
+    } break;
+    case filedaemon::bEventHandleBackupFile: {
+      return "HandleBackupFile";
+    } break;
+    case filedaemon::bEventNewPluginOptions: {
+      return "NewPluginOptions";
+    } break;
+    case filedaemon::bEventVssInitializeForBackup: {
+      return "VssInitializeForBackup";
+    } break;
+    case filedaemon::bEventVssInitializeForRestore: {
+      return "VssInitializeForRestore";
+    } break;
+    case filedaemon::bEventVssSetBackupState: {
+      return "VssSetBackupState";
+    } break;
+    case filedaemon::bEventVssPrepareForBackup: {
+      return "VssPrepareForBackup";
+    } break;
+    case filedaemon::bEventVssBackupAddComponents: {
+      return "VssBackupAddComponents";
+    } break;
+    case filedaemon::bEventVssPrepareSnapshot: {
+      return "VssPrepareSnapshot";
+    } break;
+    case filedaemon::bEventVssCreateSnapshots: {
+      return "VssCreateSnapshots";
+    } break;
+    case filedaemon::bEventVssRestoreLoadComponentMetadata: {
+      return "VssRestoreLoadComponentMetadata";
+    } break;
+    case filedaemon::bEventVssRestoreSetComponentsSelected: {
+      return "VssRestoreSetComponentsSelected";
+    } break;
+    case filedaemon::bEventVssCloseRestore: {
+      return "VssCloseRestore";
+    } break;
+    case filedaemon::bEventVssBackupComplete: {
+      return "VssBackupComplete";
+    } break;
+  }
+
+  return "unknown";
+}
+
 // Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
+
+  DBGC(ctx, "received event {} ({}); value = {}", event_name(event->eventType),
+       event->eventType, value);
 
   using filedaemon::bEventBackupCommand;
   using filedaemon::bEventEndRestoreJob;
@@ -1117,19 +1402,19 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       return bRC_Error;
     } break;
     case bEventBackupCommand: {
-      return bRC_Error;
+      return parse_plugin_definition(ctx, value);
     } break;
     case bEventPluginCommand: {
-      return bRC_Error;
+      return parse_plugin_definition(ctx, value);
     } break;
     case bEventEndRestoreJob: {
       return bRC_Error;
     } break;
     case bEventNewPluginOptions: {
-      return bRC_Error;
+      return parse_plugin_definition(ctx, value);
     } break;
     case bEventStartBackupJob: {
-      if (!start_backup_job(ctx)) { return bRC_Error; }
+      // if (!start_backup_job(ctx)) { return bRC_Error; }
       return bRC_OK;
     } break;
     case bEventStartRestoreJob: {
@@ -1145,7 +1430,44 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 // Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
-  return bRC_Error;
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  try {
+    json_t* val = json_object_get(p_ctx->config, "vmname");
+    if (!val) {
+      JERR(ctx, "No 'vmname' set in config file");
+      return bRC_Error;
+    }
+    const char* vmname = json_string_value(val);
+    if (!val) {
+      JERR(ctx, "'vmname' is not a string in config file");
+      return bRC_Error;
+    }
+
+    std::wstring wname = utf8_to_utf16(vmname);
+    p_ctx->vm_names.emplace_back(std::move(wname));
+
+    if (!start_backup_job(ctx)) { return bRC_Error; }
+
+    return bRC_OK;
+  } catch (const win_error& err) {
+    DBGC(ctx, L"caught win error.  Err={} ({:X})", err.err_str(),
+         err.err_num());
+    comReportError(ctx, err.err_num());
+    return bRC_Error;
+  } catch (const WMI::cim_error& err) {
+    DBGC(ctx, L"caught cim error.  Err={} ({})", WMI::format_error(err.error),
+         static_cast<uint32_t>(err.error));
+    return bRC_Error;
+  } catch (const std::exception& ex) {
+    JERR(ctx, "caught exception: {}", ex.what());
+    return bRC_Error;
+  } catch (...) {
+    // TOOD: use JFATAL here
+    JERR(ctx, "detected an internal error.  aborting job ...");
+    return bRC_Error;
+  }
 }
 
 // Done with backup of this file
@@ -1155,6 +1477,38 @@ static bRC endBackupFile(PluginContext*)
    * backup another file */
   return bRC_OK;
 }
+
+std::size_t read_file_contents(PluginContext* ctx,
+                               HANDLE handle,
+                               char* buf,
+                               std::size_t bufsize)
+{
+  std::size_t bytes_read = 0;
+  while (bytes_read < bufsize) {
+    constexpr std::size_t max_bytes_per_call
+        = std::numeric_limits<DWORD>::max();
+    DWORD bytes_to_read = static_cast<DWORD>(
+        std::min(bufsize - bytes_read, max_bytes_per_call));
+    DWORD bytes_actually_read = 0;
+    if (!ReadFile(handle, buf + bytes_read, bytes_to_read, &bytes_actually_read,
+                  nullptr)) {
+      DBGC(ctx, "could not read from {}, bytes read = {}, bytes to read = {}",
+           fmt_as_ptr(handle), bytes_read, bytes_to_read);
+      return 0;
+    }
+
+    if (bytes_actually_read == 0) {
+      DBGC(ctx,
+           "read 0 bytes from {}, when trying to read {}; already read = {}",
+           fmt_as_ptr(handle), bytes_to_read, bytes_read);
+      break;
+    }
+
+    bytes_read += bytes_actually_read;
+  }
+  return bytes_read;
+}
+
 /**
  * Parse the plugin definition passed in.
  *
@@ -1164,61 +1518,148 @@ static bRC endBackupFile(PluginContext*)
  */
 static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 {
-  return bRC_Error;
-}
-
-// Generic COM error reporting function.
-static void comReportError(PluginContext* ctx, HRESULT hrErr)
-{
-#if 0
-  IErrorInfo* pErrorInfo;
-  BSTR pSource = NULL;
-  BSTR pDescription = NULL;
-  HRESULT hr;
-  char *source, *description;
-
-  // See if there is anything to report.
-  hr = GetErrorInfo(0, &pErrorInfo);
-  if (hr == S_FALSE) { return; }
-
-  // Get the description of the COM error.
-  hr = pErrorInfo->GetDescription(&pDescription);
-  if (!SUCCEEDED(hr)) {
-    Dmsg(ctx, debuglevel, "mssqlvdi-fd: GetDescription failed\n");
-    pErrorInfo->Release();
-    return;
+  DBGC(ctx, "parse_plugin_definition");
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) {
+    Jmsg(ctx, M_FATAL, "plugin private context not set\n");
+    return bRC_Error;
   }
 
-  // Get the source of the COM error.
-  hr = pErrorInfo->GetSource(&pSource);
-  if (!SUCCEEDED(hr)) {
-    Dmsg(ctx, debuglevel, "mssqlvdi-fd: GetSource failed\n");
-    SysFreeString(pDescription);
-    pErrorInfo->Release();
-    return;
+  std::string_view input = static_cast<const char*>(value);
+
+  DBGC(ctx, "start parsing {}", input);
+  constexpr std::string_view plugin_name = "hyper-v";
+
+  if (input.size() < plugin_name.size()) {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (its too small): %.*s\n",
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
   }
 
-  // Convert windows BSTR to normal strings.
-  source = BSTR_2_str(pSource);
-  description = BSTR_2_str(pDescription);
-  if (source && description) {
-    Jmsg(ctx, M_FATAL, "%s(0x%X): %s\n", source, hrErr, description);
-    Dmsg(ctx, debuglevel, "%s(0x%X): %s\n", source, hrErr, description);
-  } else {
-    Dmsg(ctx, debuglevel, "mssqlvdi-fd: could not print error\n");
+  if (input.substr(0, plugin_name.size()) != plugin_name) {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (wrong plugin name): %.*s\n",
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
   }
 
-  if (source) { free(source); }
+  auto rest = input.substr(plugin_name.size());
+  DBGC(ctx, "continuing with {}", rest);
 
-  if (description) { free(description); }
+  if (rest.size() == 0 || rest[0] != ':') {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (expected ':' at %llu): %.*s\n",
+         static_cast<long long unsigned>(input.size() - rest.size()),
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
 
-  /* Generic cleanup (free the description and source as those are returned in
-   * dynamically allocated memory by the COM routines.) */
-  SysFreeString(pSource);
-  SysFreeString(pDescription);
+  rest = rest.substr(1);
+  DBGC(ctx, "continuing with {}", rest);
 
-  pErrorInfo->Release();
-#endif
+  constexpr std::string_view config_path = "config";
+
+  if (rest.size() < config_path.size()) {
+    Jmsg(ctx, M_ERROR,
+         "bad plugin definition (missing data after ':' at %llu): %.*s\n",
+         static_cast<long long unsigned>(input.size() - rest.size()),
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
+
+  if (rest.substr(0, config_path.size()) != config_path) {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (unknown option at %llu): %.*s\n",
+         static_cast<long long unsigned>(input.size() - rest.size()),
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
+
+  rest = rest.substr(config_path.size());
+  DBGC(ctx, "continuing with {}", rest);
+
+  if (rest.size() == 0 || rest[0] != '=') {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (expected '=' at %llu): %.*s\n",
+         static_cast<long long unsigned>(input.size() - rest.size()),
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
+
+  rest = rest.substr(1);
+  DBGC(ctx, "continuing with {}", rest);
+
+  if (rest.size() == 0) {
+    Jmsg(ctx, M_ERROR,
+         "bad plugin definition (expected config path at %llu): %.*s\n",
+         static_cast<long long unsigned>(input.size() - rest.size()),
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
+
+  std::string path{rest};
+  DBGC(ctx, "found config path = {}", path);
+  std::wstring wpath = utf8_to_utf16(path);
+  DBGC(ctx, L"found config path = {}", wpath);
+
+  HANDLE config_handle
+      = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
+                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  DBGC(ctx, "opened {} at {}", path, fmt_as_ptr(config_handle));
+  if (config_handle == INVALID_HANDLE_VALUE) {
+    Jmsg(ctx, M_ERROR, "could not open config file %s: Err=%ls\n", path.c_str(),
+         format_win32_error().c_str());
+    return bRC_Error;
+  }
+
+  LARGE_INTEGER file_size_li = {};
+
+  if (!GetFileSizeEx(config_handle, &file_size_li)) {
+    Jmsg(ctx, M_ERROR, "could not determine size of config file %s: Err=%ls\n",
+         path.c_str(), format_win32_error().c_str());
+    CloseHandle(config_handle);
+    return bRC_Error;
+  }
+
+  std::size_t file_size = static_cast<std::size_t>(file_size_li.QuadPart);
+
+  auto file_content = std::make_unique<char[]>(file_size);
+
+  auto bytes_read
+      = read_file_contents(ctx, config_handle, file_content.get(), file_size);
+  if (bytes_read == 0) {
+    Jmsg(ctx, M_ERROR, "could read file %s: Err=%ls\n", path.c_str(),
+         format_win32_error().c_str());
+    CloseHandle(config_handle);
+    return bRC_Error;
+  } else if (bytes_read != file_size) {
+    Jmsg(ctx, M_ERROR,
+         "could read complete file %s: only %llu out of expected %llu bytes "
+         "were read\n",
+         path.c_str(), static_cast<long long unsigned>(bytes_read),
+         static_cast<long long unsigned>(file_size));
+    CloseHandle(config_handle);
+    return bRC_Error;
+  }
+
+  CloseHandle(config_handle);
+  DBGC(ctx, "sucessfully loaded config file {} into memory at {}", path,
+       fmt_as_ptr(file_content.get()));
+
+  std::string_view config_content{file_content.get(), file_size};
+
+  TRCC(ctx, "content = {}", config_content);
+
+  json_error_t jerr = {};
+  auto* json
+      = json_loadb(config_content.data(), config_content.size(),
+                   JSON_REJECT_DUPLICATES | JSON_DISABLE_EOF_CHECK, &jerr);
+
+  if (!json) {
+    JERR(ctx, "failed to parse config file {} as json: {} (at {}:{})", path,
+         jerr.text, jerr.line, jerr.column);
+    return bRC_Error;
+  }
+
+  p_ctx->config = json;
+
+  return bRC_OK;
 }
 
 static bRC pluginIO(PluginContext* ctx, io_pkt* io) { return bRC_Error; }
