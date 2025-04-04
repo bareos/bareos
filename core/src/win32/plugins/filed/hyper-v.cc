@@ -567,8 +567,34 @@ struct Class {
 
     return mthd;
   }
+
+  ClassObject create_instance() const
+  {
+    CComPtr<IWbemClassObject> instance;
+
+    TRC(L"{}->SpawnInstance()", name.as_view());
+    WMI_CALL(ptr->SpawnInstance(0, &instance));
+
+    return ClassObject{instance};
+  }
 };
 
+String format_as_xml(const BaseObject& obj)
+{
+  CComPtr<IWbemContext> context{};
+  COM_CALL(
+      context.CoCreateInstance(CLSID_WbemContext, NULL, CLSCTX_INPROC_SERVER));
+
+  CComPtr<IWbemObjectTextSrc> text_source{};
+  COM_CALL(text_source.CoCreateInstance(CLSID_WbemObjectTextSrc, NULL,
+                                        CLSCTX_INPROC_SERVER));
+  BSTR text = nullptr;
+
+  COM_CALL(text_source->GetText(0, obj.ptr, WMI_OBJ_TEXT_WMI_DTD_2_0, context,
+                                &text));
+
+  return String::wrap(text);
+}
 
 struct ComputerSystem : ClassObject {};
 
@@ -628,10 +654,79 @@ struct Job : ClassObject {
   }
 };
 
+
+enum CIMReturnValue : std::int32_t
+{
+  OK = 0,
+  JobStarted = 4096,
+  Failed = 32768,
+  AccessDenied = 32769,
+  NotSupported = 32770,
+  StatusIsUnknown = 32771,
+  Timeout = 32772,
+  InvalidParameter = 32773,
+  SystemIsInUsed = 32774,
+  InvalidStateForThisOperation = 32775,
+  IncorrectDataType = 32776,
+  SystemIsNotAvailable = 32777,
+  OutOfMemory = 32778,
+};
+
+static const wchar_t* cim_return_value_name(std::int32_t ret)
+{
+  switch (ret) {
+    case OK: {
+      return L"OK";
+    } break;
+    case JobStarted: {
+      return L"JobStarted";
+    } break;
+    case Failed: {
+      return L"Failed";
+    } break;
+    case AccessDenied: {
+      return L"AccessDenied";
+    } break;
+    case NotSupported: {
+      return L"NotSupported";
+    } break;
+    case StatusIsUnknown: {
+      return L"StatusIsUnknown";
+    } break;
+    case Timeout: {
+      return L"Timeout";
+    } break;
+    case InvalidParameter: {
+      return L"InvalidParameter";
+    } break;
+    case SystemIsInUsed: {
+      return L"SystemIsInUsed";
+    } break;
+    case InvalidStateForThisOperation: {
+      return L"InvalidStateForThisOperation";
+    } break;
+    case IncorrectDataType: {
+      return L"IncorrectDataType";
+    } break;
+    case SystemIsNotAvailable: {
+      return L"SystemIsNotAvailable";
+    } break;
+    case OutOfMemory: {
+      return L"OutOfMemory";
+    } break;
+  }
+
+  return L"Unknown";
+}
+
 struct cim_error : public std::exception {
   int32_t error;
 
   const char* what() const noexcept override { return "cim error"; }
+  const wchar_t* known_name() const noexcept
+  {
+    return cim_return_value_name(error);
+  }
 
   cim_error(int32_t err) : error{err} {}
 };
@@ -667,23 +762,6 @@ struct Service {
 
     return Job{std::move(job)};
   }
-
-  enum CIMReturnValue
-  {
-    OK = 0,
-    JobStarted = 4096,
-    Failed = 32768,
-    AccessDenied = 32769,
-    NotSupported = 32770,
-    StatusIsUnknown = 32771,
-    Timeout = 32772,
-    InvalidParameter = 32773,
-    SystemIsInUsed = 32774,
-    InvalidStateForThisOperation = 32775,
-    IncorrectDataType = 32776,
-    SystemIsNotAvailable = 32777,
-    OutOfMemory = 32778,
-  };
 
   std::optional<CallResult> exec_method(const ClassObject& obj,
                                         const Method& mthd,
@@ -753,6 +831,8 @@ struct Service {
     if (res.job_name) {
       auto related
           = get_related_of_class(res.job_name->as_view(), T::class_name);
+      DBG(L"found {} related entities of class {}", related.size(),
+          T::class_name);
       ASSERT(related.size() == 1);
       return T{std::move(related[0])};
     } else {
@@ -904,23 +984,36 @@ struct Snapshot : ClassObject {
 
 struct VirtualSystemSnapshotSettingData {
   static constexpr std::wstring_view class_name{
-      L"Msvm_VirtualSystemSnapshotSettingService"};
+      L"Msvm_VirtualSystemSnapshotSettingData"};
 
-  enum class ConsistencyLevel
+  enum class ConsistencyLevel : std::int32_t
   {
     Unknown = 0,
     ApplicationConsistent = 1,
     CrashConsistent = 2,
   };
 
-  enum class GuestBackupType
+  enum class GuestBackupType : std::int32_t
   {
     Undefined = 0,
     Full = 1,
     Copy = 2,
   };
 
-  String as_xml() const { return String::copy(L""); }
+  String as_xml(const Service& srvc) const
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+    auto inst = clz.create_instance();
+    // this isnt really correct, but i dont want to move the put() code
+    // to a base class
+    auto as_pack = ParameterPack{std::move(inst)};
+
+    as_pack[L"ConsistencyLevel"] = to_underlying(consistency_level);
+    as_pack[L"GuestBackupType"] = to_underlying(guest_backup_type);
+    as_pack[L"IgnoreNonSnapshottableDisks"] = ignore_non_snapshottable_disks;
+
+    return WMI::format_as_xml(as_pack);
+  }
 
   ConsistencyLevel consistency_level;
   GuestBackupType guest_backup_type;
@@ -948,7 +1041,7 @@ class VirtualSystemSnapshotService : ClassObject {
     auto params = m_create_snapshot.create_parameters();
 
     params[L"AffectedSystem"] = sys;
-    params[L"SnapshotSettings"] = settings.as_xml();
+    params[L"SnapshotSettings"] = settings.as_xml(srvc);
     params[L"SnapshotType"] = to_underlying(type);
 
     auto result = srvc.exec_method(*this, m_create_snapshot, params);
@@ -960,7 +1053,7 @@ class VirtualSystemSnapshotService : ClassObject {
     auto snapshot
         = srvc.get_result<Snapshot>(result.value(), L"ResultingSnapshot");
 
-    return {};
+    return snapshot;
   };
 
   void destroy_snapshot(const Service& srvc, Snapshot snapshot) const
@@ -1457,8 +1550,8 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
     comReportError(ctx, err.err_num());
     return bRC_Error;
   } catch (const WMI::cim_error& err) {
-    DBGC(ctx, L"caught cim error.  Err={} ({})", WMI::format_error(err.error),
-         static_cast<uint32_t>(err.error));
+    DBGC(ctx, L"caught cim error.  Err={}/{} ({})", err.known_name(),
+         WMI::format_error(err.error), static_cast<uint32_t>(err.error));
     return bRC_Error;
   } catch (const std::exception& ex) {
     JERR(ctx, "caught exception: {}", ex.what());
