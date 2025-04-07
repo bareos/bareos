@@ -902,11 +902,6 @@ class VirtualSystemExportSettingData {
         instance->Release();
         return std::nullopt;
       }
-      if (!Set(instance, L"SnapshotVirtualSystem",
-               settings.snapshot_virtual_system_path)) {
-        instance->Release();
-        return std::nullopt;
-      }
       if (!Set(instance, L"CreateVmExportSubdirectory",
                settings.create_vm_export_subdirectory)) {
         instance->Release();
