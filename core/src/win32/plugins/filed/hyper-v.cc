@@ -52,8 +52,8 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "April 2025"
 #define PLUGIN_VERSION "1"
 #define PLUGIN_DESCRIPTION "Bareos Hyper-V Windows File Daemon Plugin"
-#define PLUGIN_USAGE \
-  "\n  hyper-v:\n"   \
+#define PLUGIN_USAGE            \
+  "\n  hyper-v:config=<path>\n" \
   ""
 
 using filedaemon::bEvent;
@@ -65,6 +65,29 @@ using filedaemon::pVariable;
 using filedaemon::restore_pkt;
 using filedaemon::save_pkt;
 
+
+std::string format_win32_error_2(DWORD error = GetLastError())
+{
+  char* buffer = nullptr;
+  // take note: buffer is allocated via LocalAlloc ~> use LocalFree to dealloc
+  auto format_success = FormatMessageA(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS
+          | FORMAT_MESSAGE_FROM_SYSTEM,
+      NULL, error, 0, reinterpret_cast<char*>(&buffer), 0, 0);
+
+  auto result = [&] {
+    if (format_success == 0) {
+      return std::format("non formatable error {:X} (reason = {:X})", error,
+                         GetLastError());
+    } else {
+      return std::format("{} ({:X})", buffer, error);
+    }
+  }();
+
+  LocalFree(buffer);
+
+  return result;
+}
 
 std::wstring format_win32_error(DWORD error = GetLastError())
 {
@@ -108,7 +131,10 @@ std::wstring utf8_to_utf16(std::string_view v)
 
 
   if (out_length <= 0) {
-    // throw error or some such
+    auto err = GetLastError();
+    throw std::runtime_error(
+        std::format("could not convert '{}' to utf16. Err={} ({})", v,
+                    format_win32_error_2(err), err));
   }
 
   result.resize(out_length);
@@ -120,6 +146,10 @@ std::wstring utf8_to_utf16(std::string_view v)
 
   if (conversion != out_length) {
     // throw error, because something went wrong
+    throw std::runtime_error(
+        std::format("could not convert '{}' to utf16. Err=One call returned "
+                    "{}, but the next returned {}",
+                    v, out_length, conversion));
   }
 
   return result;
@@ -425,6 +455,13 @@ struct variant_type {
 
       return V_I4(var);
     }
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_I4;
+      V_I4(&result) = var;
+      return result;
+    }
   };
 
   struct bstr {
@@ -440,6 +477,36 @@ struct variant_type {
 
       return String::wrap(V_BSTR(var));
     }
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_BSTR;
+      V_BSTR(&result) = var.get();
+      return result;
+    }
+  };
+
+  struct boolean {
+    static constexpr VARENUM type = VT_BOOL;
+    using c_type = bool;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)actual_type, (int)type));
+      }
+
+      // -1 = 0xFF..FF = True, 0 = false (see BOOL type)
+      return V_BOOL(var) == -1;
+    }
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_BOOL;
+      V_BOOL(&result) = var ? BOOL{-1} : BOOL{0};
+      return result;
+    }
   };
 };
 
@@ -451,10 +518,12 @@ struct cim_type {
   }
 
   // these are mostly found by experimentation
+  DEFINE_CIM_TYPE(uint8, i4, UINT8);
   DEFINE_CIM_TYPE(uint16, i4, UINT16);
   DEFINE_CIM_TYPE(uint32, i4, UINT32);
   DEFINE_CIM_TYPE(reference, bstr, REFERENCE);
   DEFINE_CIM_TYPE(string, bstr, STRING);
+  DEFINE_CIM_TYPE(boolean, boolean, BOOLEAN);
 
 #undef DEFINE_CIM_TYPE
 };
@@ -488,6 +557,16 @@ struct BaseObject {
 
     return CimType::v_type::from(&param);
   }
+
+  template <typename CimType>
+  void put(const wchar_t* name, const CimType::v_type::c_type& value)
+  {
+    VARIANT param = CimType::v_type::into(value);
+    CIMTYPE type = CimType::c_type;
+
+    DBG(L"{}->put({}):", fmt_as_ptr(ptr.p), name);
+    WMI_CALL(ptr->Put(name, 0, &param, type));
+  }
 };
 
 struct ClassObject : BaseObject {
@@ -503,7 +582,7 @@ struct ParameterPack : BaseObject {
     ParameterPack& pack;
     const wchar_t* name;
 
-    template <typename T> void operator=(T value)
+    template <typename T> void operator=(T&& value)
     {
       pack.put(name, std::forward<T>(value));
     }
@@ -925,7 +1004,7 @@ struct Service {
     return query_all(squery);
   }
 
-  std::optional<ComputerSystem> get_vm_by_name(std::wstring_view vm_name)
+  std::optional<ComputerSystem> get_vm_by_name(std::wstring_view vm_name) const
   {
     auto query = std::format(
         L"SELECT * FROM Msvm_ComputerSystem WHERE ElementName=\"{}\"", vm_name);
@@ -936,8 +1015,90 @@ struct Service {
     return ComputerSystem{std::move(system).value()};
   }
 
+
  private:
   CComPtr<IWbemServices> com_ptr{};
+};
+
+enum class CaptureLiveState : std::uint8_t
+{
+  CrashConsistent = 0,
+  Saved = 1,
+  AppConsistent = 2,
+};
+
+enum class CopySnapshotConfiguration : std::uint8_t
+{
+  ExportAllSnapshots = 0,
+  ExportNoSnapShots = 1,
+  ExportOneSnapshot = 2,
+  ExportOneSnapshotForBackup = 3,
+};
+
+enum class BackupIntent : std::uint8_t
+{
+  PreserveChain = 0,  // i.e. we want to store full/diff separately
+  Merge = 1,          // i.e. we want to consolidate full/diff
+};
+
+struct VirtualSystemExportSettingData {
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemExportSettingData"};
+
+  String as_xml(const Service& srvc) const
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+    auto inst = clz.create_instance();
+    // this isnt really correct, but i dont want to move the put() code
+    // to a base class
+
+    if (description) {
+      inst.put<cim_type::string>(L"Description", description.value());
+    }
+    if (snapshot_virtual_system_path) {
+      inst.put<cim_type::string>(L"SnapshotVirtualSystem",
+                                 snapshot_virtual_system_path.value());
+    }
+
+    // TODO: excluded virtual hard disk paths
+
+    if (differential_backup_base_path) {
+      inst.put<cim_type::string>(L"DifferentialBackupBase",
+                                 differential_backup_base_path.value());
+    }
+    inst.put<cim_type::boolean>(L"DisableDifferentialOfIgnoredStorage",
+                                disable_differential_of_ignored_storage);
+    inst.put<cim_type::boolean>(L"ExportForLiveMigration",
+                                export_for_live_migration);
+    inst.put<cim_type::uint8>(L"BackupIntent",
+                              static_cast<std::uint8_t>(backup_intent));
+    inst.put<cim_type::boolean>(L"CreateVmExportSubdirectory",
+                                create_vm_export_subdirectory);
+    inst.put<cim_type::boolean>(L"CopyVmStorage", copy_vm_storage);
+    inst.put<cim_type::boolean>(L"CopyVmRuntimeInformation",
+                                copy_vm_runtime_information);
+    inst.put<cim_type::uint8>(L"CopySnapshotConfiguration",
+                              to_underlying(copy_snapshot_configuration));
+    inst.put<cim_type::uint8>(L"CaptureLiveState",
+                              to_underlying(capture_live_state));
+
+    TRC(L"ExportSettings = {}", inst.to_string().as_view());
+
+    return format_as_xml(inst);
+  }
+
+  std::optional<String> description{};
+  std::optional<String> snapshot_virtual_system_path;
+  std::vector<String> excluded_virtual_hard_disk_paths;
+  std::optional<String> differential_backup_base_path;
+  BackupIntent backup_intent = {};
+  CopySnapshotConfiguration copy_snapshot_configuration = {};
+  CaptureLiveState capture_live_state = {};
+  bool copy_vm_runtime_information = {};
+  bool copy_vm_storage = {};
+  bool create_vm_export_subdirectory = {};
+  bool export_for_live_migration = {};
+  bool disable_differential_of_ignored_storage = {};
 };
 
 class VirtualSystemManagementService : ClassObject {
@@ -961,6 +1122,53 @@ class VirtualSystemManagementService : ClassObject {
                                           std::move(clz)};
   }
 
+  void modify_system_settings(const Service& srvc, String new_settings) const
+  {
+    auto m_modify = clz.load_method_by_name(L"ModifySystemSettings");
+    auto params = m_modify.create_parameters();
+
+    params[L"SystemSettings"] = std::move(new_settings);
+
+    auto result = srvc.exec_method(*this, m_modify, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+  void rename(const Service& srvc,
+              ClassObject& obj,
+              const String& new_name) const
+  {
+    obj.put<cim_type::string>(L"ElementName", new_name);
+    auto xml = format_as_xml(obj);
+    modify_system_settings(srvc, std::move(xml));
+  }
+
+  void export_system_definition(
+      const Service& srvc,
+      const ComputerSystem& vm,
+      std::wstring_view directory,
+      const VirtualSystemExportSettingData& settings) const
+  {
+    DBG(L"Exporting {} to {}", vm.path().as_view(), directory);
+
+    auto settings_xml = settings.as_xml(srvc);
+
+    auto m_export = clz.load_method_by_name(L"ExportSystemDefinition");
+    auto params = m_export.create_parameters();
+
+    params[L"ExportDirectory"] = String::copy(directory);
+    params[L"ExportSettingData"] = settings_xml;
+    params[L"ComputerSystem"] = vm;
+
+    auto result = srvc.exec_method(*this, m_export, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
  private:
   VirtualSystemManagementService(ClassObject self, Class clz_)
       : ClassObject{std::move(self)}, clz{std::move(clz_)}
@@ -970,15 +1178,26 @@ class VirtualSystemManagementService : ClassObject {
   Class clz;
 };
 
-struct ReferencePoint : ClassObject {};
+struct ReferencePoint : ClassObject {
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemReferencePoint"};
+};
+
+class VirtualSystemSnapshotService;
 
 struct Snapshot : ClassObject {
   static constexpr std::wstring_view class_name{
       L"CIM_VirtualSystemSettingData"};
 
+  // const Service* srvc;
+  // const VirtualSystemSnapshotService* snapshot_srvc;
+
   ~Snapshot()
   {
     // todo: destroy the snapshot here if it is still valid
+    // if (still_exists) {
+    //   snapshot_srvc->destroy_snapshot(*srvc, std::move(this));
+    // }
   }
 };
 
@@ -1019,6 +1238,7 @@ struct VirtualSystemSnapshotSettingData {
   GuestBackupType guest_backup_type;
   bool ignore_non_snapshottable_disks;
 };
+
 
 class VirtualSystemSnapshotService : ClassObject {
  public:
@@ -1067,7 +1287,7 @@ class VirtualSystemSnapshotService : ClassObject {
   };
 
   ReferencePoint convert_to_reference_point(const Service& srvc,
-                                            Snapshot snapshot)
+                                            Snapshot snapshot) const
   {
     auto m_convert_snapshot
         = clz.load_method_by_name(L"ConvertToReferencePoint");
@@ -1077,7 +1297,16 @@ class VirtualSystemSnapshotService : ClassObject {
 
     auto result = srvc.exec_method(*this, m_convert_snapshot, params);
 
-    return {};
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+
+    // snapshot.release();
+
+    auto refpoint = srvc.get_result<ReferencePoint>(result.value(),
+                                                    L"ResultingReferencePoint");
+
+    return refpoint;
   }
 
   static std::optional<VirtualSystemSnapshotService> find_instance(
@@ -1104,44 +1333,6 @@ class VirtualSystemSnapshotService : ClassObject {
   Class clz;
 };
 
-struct VirtualSystemExportSettingData {
-  static constexpr std::wstring_view class_name{
-      L"Msvm_VirtualSystemExportSettingService"};
-
-  enum class CaptureLiveState : std::uint8_t
-  {
-    CrashConsistent = 0,
-    Saved = 1,
-    AppConsistent = 2,
-  };
-
-  enum class CopySnapshotConfiguration : std::uint8_t
-  {
-    ExportAllSnapshots = 0,
-    ExportNoSnapShots = 1,
-    ExportOneSnapshot = 2,
-    ExportOneSnapshotForBackup = 3,
-  };
-
-  enum class BackupIntent : std::uint8_t
-  {
-    PreserveChain = 0,  // i.e. we want to store full/diff separately
-    Merge = 1,          // i.e. we want to consolidate full/diff
-  };
-
-  std::optional<std::wstring> description{};
-  std::optional<std::wstring> snapshot_virtual_system_path;
-  std::vector<std::wstring> excluded_virtual_hard_disk_paths;
-  std::optional<std::wstring> differential_backup_base_path;
-  BackupIntent backup_intent = {};
-  CopySnapshotConfiguration copy_snapshot_configuration = {};
-  CaptureLiveState capture_live_state = {};
-  bool copy_vm_runtime_information = {};
-  bool copy_vm_storage = {};
-  bool create_vm_export_subdirectory = {};
-  bool export_for_live_migration = {};
-  bool disable_differential_of_ignored_storage = {};
-};
 
 };  // namespace WMI
 
@@ -1189,11 +1380,45 @@ struct plugin_ctx {
   com_context ctx;
   WMI::Service virt_service;
 
+  struct backup {
+    WMI::VirtualSystemManagementService system_srvc;
+    WMI::VirtualSystemSnapshotService snapshot_srvc;
+
+
+    struct prepared_backup {
+      WMI::Snapshot vm_snapshot;
+      std::vector<std::wstring> files_to_backup{};
+      std::vector<std::wstring> disks_to_backup{};
+      bool error = false;
+
+      bool finished() const
+      {
+        // the last thing we do is convert the snapshot into
+        // a reference point
+        return vm_snapshot.ptr.p != nullptr;
+      }
+    };
+
+    std::variant<std::monostate, prepared_backup> state;
+  };
+
+  struct restore {};
+
+  std::variant<std::monostate, backup, restore> current_state{};
+
+  std::size_t current_vm;
   std::vector<std::wstring> vm_names;
+  std::wstring directory;
 
   WMI::VirtualSystemSnapshotSettingData snapshot_settings;
 
   json_t* config{nullptr};
+
+  struct vm_to_backup {
+    WMI::Snapshot snapshot;
+  };
+
+  std::optional<vm_to_backup> current_snapshot;
 
   ~plugin_ctx()
   {
@@ -1338,11 +1563,6 @@ static bRC setPluginValue(PluginContext*, pVariable, void*)
   return bRC_Error;
 }
 
-struct BackupClasses {
-  WMI::VirtualSystemManagementService system_management;
-  WMI::VirtualSystemSnapshotService system_snapshot;
-};
-
 static bool start_backup_job(PluginContext* ctx)
 {
   auto* p_ctx = plugin_ctx::get(ctx);
@@ -1357,15 +1577,36 @@ static bool start_backup_job(PluginContext* ctx)
       = WMI::VirtualSystemSnapshotService::find_instance(srvc);
   if (!system_mgmt) { return false; }
 
-  for (auto& vm_name : p_ctx->vm_names) {
-    auto vm = srvc.get_vm_by_name(vm_name);
-    if (!vm) { return false; }
-    auto snapshot = system_snap->create_snapshot(
-        srvc, vm.value(), p_ctx->snapshot_settings,
-        WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
-  }
+  p_ctx->current_state.emplace<plugin_ctx::backup>(
+      std::move(system_mgmt.value()), std::move(system_snap.value()));
 
-  return false;
+  // for (auto& vm_name : p_ctx->vm_names) {
+  //   auto vm = srvc.get_vm_by_name(vm_name);
+  //   if (!vm) { return false; }
+  //   auto snapshot = system_snap->create_snapshot(
+  //       srvc, vm.value(), p_ctx->snapshot_settings,
+  //       WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+
+  //   system_mgmt->rename(srvc, snapshot, WMI::String::copy(L"Bareos - Full"));
+
+  //   WMI::VirtualSystemExportSettingData export_settings = {
+  //       .snapshot_virtual_system_path = snapshot.path(),
+  //       .backup_intent = WMI::BackupIntent::Merge,
+  //       .copy_snapshot_configuration =
+  //       WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+  //       .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
+  //       .copy_vm_runtime_information = true,
+  //       .copy_vm_storage = false,
+  //       .create_vm_export_subdirectory = true,
+  //   };
+
+  //   system_mgmt->export_system_definition(srvc, vm.value(), p_ctx->directory,
+  //   export_settings);
+
+  //   system_snap->convert_to_reference_point(srvc, std::move(snapshot));
+  // }
+
+  return true;
 }
 
 const char* event_name(uint32_t event_type)
@@ -1520,6 +1761,46 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   }
 }
 
+static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+
+  auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+
+  const auto& srvc = p_ctx->virt_service;
+  const auto& system_srvc = bstate.system_srvc;
+  const auto& snapshot_srvc = bstate.snapshot_srvc;
+
+  auto vm = srvc.get_vm_by_name(vm_name);
+  if (!vm) {
+    // todo: we should handle this somehow
+    exit(1);
+  }
+  auto snapshot = snapshot_srvc.create_snapshot(
+      srvc, vm.value(), p_ctx->snapshot_settings,
+      WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+
+  system_srvc.rename(srvc, snapshot, WMI::String::copy(L"Bareos - Full"));
+
+  bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
+      std::move(snapshot));
+}
+
+static void prepare_restore_object(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+  auto& prepared = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
+
+  const auto& srvc = p_ctx->virt_service;
+  const auto& system_srvc = bstate.system_srvc;
+  const auto& snapshot_srvc = bstate.snapshot_srvc;
+
+  auto refpoint = snapshot_srvc.convert_to_reference_point(
+      srvc, std::move(prepared.vm_snapshot));
+  DBGC(ctx, L"refpoint = {}", refpoint.path().as_view());
+}
+
 // Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
@@ -1527,23 +1808,78 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   if (!p_ctx) { return bRC_Error; }
 
   try {
-    json_t* val = json_object_get(p_ctx->config, "vmname");
-    if (!val) {
-      JERR(ctx, "No 'vmname' set in config file");
-      return bRC_Error;
-    }
-    const char* vmname = json_string_value(val);
-    if (!val) {
-      JERR(ctx, "'vmname' is not a string in config file");
-      return bRC_Error;
+    if (std::get_if<std::monostate>(&p_ctx->current_state)) {
+      DBG(L"Backup is not started.  Doing so now...");
+      if (!start_backup_job(ctx)) { return bRC_Error; }
     }
 
-    std::wstring wname = utf8_to_utf16(vmname);
-    p_ctx->vm_names.emplace_back(std::move(wname));
+    auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+    if (!std::get_if<plugin_ctx::backup::prepared_backup>(&bstate.state)) {
+      DBG(L"Backup is not prepared.  Doing so now...");
 
-    if (!start_backup_job(ctx)) { return bRC_Error; }
+      json_t* val = json_object_get(p_ctx->config, "vmname");
+      if (!val) {
+        JERR(ctx, "No 'vmname' set in config file");
+        return bRC_Error;
+      }
+      const char* vmname = json_string_value(val);
+      if (!val) {
+        JERR(ctx, "'vmname' is not a string in config file");
+        return bRC_Error;
+      }
 
-    return bRC_OK;
+      std::wstring wname = utf8_to_utf16(vmname);
+
+      // {
+      //   json_t* val = json_object_get(p_ctx->config, "directory");
+      //   if (!val) {
+      //     JERR(ctx, "No 'directory' set in config file");
+      //     return bRC_Error;
+      //   }
+      //   const char* directory = json_string_value(val);
+      //   if (!val) {
+      //     JERR(ctx, "'directory' is not a string in config file");
+      //     return bRC_Error;
+      //   }
+
+      //   p_ctx->directory = utf8_to_utf16(directory);
+      // }
+
+      prepare_backup(ctx, wname);
+    }
+
+    auto& prepared
+        = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
+
+    if (prepared.files_to_backup.size() > 0) {}
+
+    DBGC(ctx, L"All files were backed up");
+
+    if (prepared.disks_to_backup.size() > 0) {}
+
+    DBGC(ctx, L"All disks were backed up");
+
+    if (prepared.vm_snapshot.ptr.p) {
+      // the snapshot still exists, so we need to create a reference point now
+      // and send it via a restore object
+
+      prepare_restore_object(ctx);
+    }
+
+    DBGC(ctx, L"reference point was already created");
+
+    return bRC_Stop;
+
+    // now = time(NULL);
+    // sp->fname = p_ctx->fname;
+    // sp->type = FT_REG;
+    // sp->statp.st_mode = 0700 | S_IFREG;
+    // sp->statp.st_ctime = now;
+    // sp->statp.st_mtime = now;
+    // sp->statp.st_atime = now;
+    // sp->statp.st_size = -1;
+    // sp->statp.st_blksize = 4096;
+    // sp->statp.st_blocks = 1;
   } catch (const win_error& err) {
     DBGC(ctx, L"caught win error.  Err={} ({:X})", err.err_str(),
          err.err_num());
@@ -1564,10 +1900,34 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 }
 
 // Done with backup of this file
-static bRC endBackupFile(PluginContext*)
+static bRC endBackupFile(PluginContext* ctx)
 {
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto* bstate = std::get_if<plugin_ctx::backup>(&p_ctx->current_state);
+  if (!bstate) {
+    DBGC(ctx, "no backup was started, so there is nothing to do here");
+    return bRC_OK;
+  }
+  if (auto* prepared
+      = std::get_if<plugin_ctx::backup::prepared_backup>(&bstate->state)) {
+    if (prepared->error) {
+      // delete the snapshot here ?
+      // The destructor should just do it on its own...
+      bstate->state.emplace<std::monostate>();
+      return bRC_Error;
+    }
+
+    if (!prepared->finished()) {
+      return bRC_More;
+    } else {
+      bstate->state.emplace<std::monostate>();
+    }
+  }
   /* We would return bRC_More if we wanted startBackupFile to be called again to
    * backup another file */
+
   return bRC_OK;
 }
 
