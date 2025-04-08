@@ -59,7 +59,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         self.dumpbinary = "mariadb-backup"
         self.restorecommand = None
         self.mysqlcmd = None
-        self.mycnf = ""
+        self.mycnf = None
         self.strictIncremental = False
         self.dumpoptions = ""
         # xtrabackup_checkpoints for <11 and mariadb_backup_checkpoints for >=11
@@ -99,11 +99,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         self.connect_options = {"read_default_group": "client"}
         if "mycnf" in self.options:
             self.connect_options["read_default_file"] = self.options["mycnf"]
-            # self.mycnf = "--defaults-extra-file=%s " % self.options["mycnf"]
-            # defaults-extra-file can't be added after default-file which is
-            # set in the fileset, mycnf will be mainly used by mysqlclient
-            # python module. Can be improved.
-            self.mycnf = ""
+            self.mycnf = f"--defaults-file={self.options["mycnf"]}"
 
         # If true, incremental jobs will only be performed, if LSN has increased
         # since last call.
@@ -128,9 +124,13 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
 
         # We need to call mariadb to get the current Log Sequece Number (LSN)
         if "mysqlcmd" in self.options:
+            DebugMessage(
+                100, f"self option mysqlcmd detected {self.options["mysqlcmd"]}\n"
+            )
             self.mysqlcmd = self.options["mysqlcmd"]
         else:
-            self.mysqlcmd = "mariadb %s -r" % self.mycnf
+            self.mysqlcmd = f"mariadb {self.mycnf} --raw"
+            DebugMessage(100, f'Default in use self.mysqlcmd="{self.mysqlcmd}"\n')
 
         return bRC_OK
 
@@ -272,6 +272,11 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         We will check, if database has changed since last backup
         in the incremental case
         """
+        bareosfd.DebugMessage(100, "start_backup_job, check_plugin_option\n")
+        check_option_bRC = self.check_plugin_options()
+        if check_option_bRC != bRC_OK:
+            return check_option_bRC
+        bareosfd.DebugMessage(100, "start_backup_job, check_mariadb_version\n")
         check_version_bRC = self.check_plugin_mariadb_version()
         if check_version_bRC != bRC_OK:
             JobMessage(
@@ -279,9 +284,6 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                 "Unable to determine mariadb version\n",
             )
             return check_version_bRC
-        check_option_bRC = self.check_plugin_options()
-        if check_option_bRC != bRC_OK:
-            return check_option_bRC
         bareosfd.DebugMessage(100, "start_backup_job, level: %s\n" % chr(self.level))
         if chr(self.level) == "I":
             # We check, if we have a LSN received by restore object from previous job
