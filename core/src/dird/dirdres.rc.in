@@ -1,4 +1,4 @@
-id ICON "../../../platforms/win32/bareosfd.ico"
+id ICON "@PROJECT_SOURCE_DIR@/platforms/win32/bareosdir.ico"
 1 VERSIONINFO
 FILEVERSION     1,0,0,0
 PRODUCTVERSION  1,0,0,0
@@ -8,11 +8,11 @@ BEGIN
     BLOCK "080904E4"
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
-      VALUE "FileDescription", "Bareos File Daemon"
+      VALUE "FileDescription", "Bareos Director"
       VALUE "FileVersion", "@BAREOS_FULL_VERSION@"
-      VALUE "InternalName", "bareos-fd.exe"
-      VALUE "OriginalFilename", "bareos-fd.exe"
-      VALUE "ProductName", "Bareos File Daemon"
+      VALUE "InternalName", "bareos-dir.exe"
+      VALUE "OriginalFilename", "bareos-dir.exe"
+      VALUE "ProductName", "Bareos Director"
       VALUE "ProductVersion", "@BAREOS_FULL_VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
                               "Copyright 2013-@BAREOS_YEAR@ Bareos GmbH & Co. KG "

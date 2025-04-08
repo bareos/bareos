@@ -1,4 +1,4 @@
-id ICON "../../../platforms/win32/traymon.ico"
+id ICON "@PROJECT_SOURCE_DIR@/platforms/win32/traymon.ico"
 1 VERSIONINFO
 FILEVERSION     1,0,0,0
 PRODUCTVERSION  1,0,0,0

@@ -100,7 +100,7 @@ if(HAVE_WIN32)
 
   foreach(tgt IN ITEMS bareos-fd bareos-test-fd)
     set_target_properties("${tgt}" PROPERTIES WIN32_EXECUTABLE ON)
-    bareos_windows_resource("${tgt}" ../win32/filed/filedres.rc.in)
+    bareos_windows_resource("${tgt}" filedres.rc.in)
     target_sources("${tgt}" PRIVATE ../win32/generic/main.cc)
     target_link_libraries("${tgt}" PRIVATE comctl32)
   endforeach()

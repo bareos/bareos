@@ -129,7 +129,7 @@ target_link_libraries(dird_objects PRIVATE Bareos::Lib OpenSSL::SSL)
 
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
-bareos_windows_resource(bareos-dir ../win32/dird/dirdres.rc.in)
+bareos_windows_resource(bareos-dir dirdres.rc.in)
 if(HAVE_WIN32)
   set_target_properties(bareos-dir PROPERTIES WIN32_EXECUTABLE ON)
   target_sources(
@@ -168,7 +168,7 @@ target_sources(
           run_conf.cc
           inc_conf.cc
 )
-bareos_windows_resource(bareos-dbcheck ../win32/dird/dbcheckres.rc.in)
+bareos_windows_resource(bareos-dbcheck dbcheckres.rc.in)
 target_link_libraries(
   bareos-dbcheck PRIVATE Bareos::SQL Bareos::Lib Bareos::Findlib OpenSSL::SSL
                          CLI11::CLI11

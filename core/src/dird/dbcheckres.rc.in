@@ -1,4 +1,4 @@
-id ICON "../../../platforms/win32/bareostools.ico"
+id ICON "@PROJECT_SOURCE_DIR@/platforms/win32/bareostools.ico"
 1 VERSIONINFO
 FILEVERSION     1,0,0,0
 PRODUCTVERSION  1,0,0,0
@@ -8,14 +8,14 @@ BEGIN
     BLOCK "080904E4"
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
-      VALUE "FileDescription", "bscan utility"
+      VALUE "FileDescription", "Bareos Database Check"
       VALUE "FileVersion", "@BAREOS_FULL_VERSION@"
-      VALUE "InternalName", "bscan.exe"
-      VALUE "OriginalFilename", "bscan.exe"
-      VALUE "ProductName", "Bareos Storage Daemon"
+      VALUE "InternalName", "bareos-dbcheck.exe"
+      VALUE "OriginalFilename", "bareos-dbcheck.exe"
+      VALUE "ProductName", "Bareos Database Check"
       VALUE "ProductVersion", "@BAREOS_FULL_VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
-                              "Copyright 2015-@BAREOS_YEAR@ Bareos GmbH & Co. KG "
+                              "Copyright 2013-@BAREOS_YEAR@ Bareos GmbH & Co. KG "
       VALUE "LegalTrademarks", "Licensed under GNU AGPLv3."
                                "This program is distributed in the hope that it will be useful, "
                                "but WITHOUT ANY WARRANTY; without even the implied warranty of "
