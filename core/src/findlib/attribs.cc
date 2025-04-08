@@ -591,8 +591,7 @@ static bool set_win32_attributes(JobControlRecord* jcr,
   if (!(p_SetFileAttributesW || p_SetFileAttributesA)) { return false; }
 
   if (!p || !*p) { /* we should have attributes */
-    Dmsg2(100, "Attributes missing. of=%s ofd=%d\n", attr->ofname,
-          ofd->filedes);
+    Dmsg2(100, "Attributes missing. of=%s ofd=%d\n", attr->ofname, Bgetfd(ofd));
     if (IsBopen(ofd)) { bclose(ofd); }
     return false;
   } else {
