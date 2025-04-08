@@ -52,6 +52,8 @@ echo "Running first full backup"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
+    stop_bareos
+    mariadb_server_stop
     exit ${estat}
 fi
 
@@ -71,6 +73,11 @@ END_OF_DATA2
 echo "Running second full backup"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log2.out" "Full Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    stop_bareos
+    mariadb_server_stop
+    exit ${estat}
+fi
 
 cat <<END_OF_DATA3 >"${tmp}/bconcmds"
 @$out ${tmp}/log3.out
@@ -87,6 +94,11 @@ END_OF_DATA3
 echo "Running restore backup"
 run_bconsole
 expect_grep "Restore OK" "${tmp}/log3.out" "Restore OK not found!"
+if [ ${estat} -ne 0 ]; then
+    stop_bareos
+    mariadb_server_stop
+    exit ${estat}
+fi
 
 # Check if some files are restored
 ls -lR "${RESTORE_DIR}"

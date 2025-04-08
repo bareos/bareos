@@ -190,7 +190,8 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
             f"mariadb {self.mariadbconnect} -B -N -e 'SELECT (SUM(DATA_LENGTH + INDEX_LENGTH))"
             f" FROM information_schema.TABLES WHERE TABLE_SCHEMA = \"{db}\"'"
             )
-        result = run(sizeDbCommand, shell=True, check=True, capture_output=True)
+        shcmd = shlex.split(sizeDbCommand)
+        result = run(shcmd, check=True, stdout=PIPE, stderr=PIPE)
         if result.stderr:
                 JobMessage(
                     M_ERROR,
