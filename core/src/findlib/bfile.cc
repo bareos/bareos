@@ -369,7 +369,7 @@ extern "C" HANDLE get_osfhandle(int fd);
 void binit(BareosFilePacket* bfd)
 {
   new (bfd) BareosFilePacket();
-  bfd->filedes = -1;
+  bfd->fh = INVALID_HANDLE_VALUE;
   bfd->use_backup_api = have_win32_api();
 }
 
@@ -829,6 +829,7 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
   if (bfd->cmd_plugin && plugin_bread) {
     // invalid filehandle -> plugin does read
     if (bfd->fh == INVALID_HANDLE_VALUE) {
+      Dmsg1(400, "bread handled in plugin\n");
       return plugin_bread(bfd, buf, count);
     }
     Dmsg1(400, "bread handled in core via bfd->fh=%p\n", bfd->fh);
