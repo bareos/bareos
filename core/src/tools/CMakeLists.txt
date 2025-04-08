@@ -25,19 +25,19 @@ set(TOOLS_BIN "")
 set(TOOLS_SBIN "")
 
 add_executable(bsmtp bsmtp.cc)
-bareos_windows_resource(bsmtp ../win32/tools/bsmtpres.rc.in)
+bareos_windows_resource(bsmtp bsmtpres.rc.in)
 target_link_libraries(bsmtp Bareos::Lib CLI11::CLI11)
 list(APPEND TOOLS_BIN bsmtp)
 
 add_executable(bregex bregex.cc)
 target_link_libraries(bregex Bareos::Lib Bareos::Findlib CLI11::CLI11)
-bareos_windows_resource(bregex ../win32/tools/bregexres.rc.in)
+bareos_windows_resource(bregex bregexres.rc.in)
 list(APPEND TOOLS_BIN bregex)
 list(APPEND TOOLS_SBIN bregex)
 
 add_executable(bwild bwild.cc)
 target_link_libraries(bwild Bareos::Lib CLI11::CLI11)
-bareos_windows_resource(bwild ../win32/tools/bwildres.rc.in)
+bareos_windows_resource(bwild bwildres.rc.in)
 list(APPEND TOOLS_BIN bwild)
 list(APPEND TOOLS_SBIN bwild)
 
