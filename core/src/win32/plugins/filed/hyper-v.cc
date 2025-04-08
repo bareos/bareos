@@ -32,6 +32,7 @@
 #include <exception>
 #include <algorithm>
 
+#include <shlobj_core.h>
 #include <comdef.h>
 #include <Wbemidl.h>
 #include <atlsafe.h>
@@ -1598,8 +1599,13 @@ struct plugin_ctx {
     std::variant<std::monostate, prepared_backup> state;
   };
 
-  struct restore {};
+  struct restore {
+    std::wstring tmp_dir;
 
+    std::optional<HANDLE> hndl;
+  };
+
+  int jobid;
   std::variant<std::monostate, backup, restore> current_state{};
 
   std::wstring directory;
@@ -1715,6 +1721,10 @@ static bRC newPlugin(PluginContext* ctx)
     using filedaemon::bEventStartBackupJob;
     using filedaemon::bEventStartRestoreJob;
 
+    int jobid;
+    bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobId, &jobid);
+    p_ctx->jobid = jobid;
+
     // Only register the events we are really interested in.
     bareos_core_functions->registerBareosEvents(
         ctx, 8, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
@@ -1769,31 +1779,40 @@ static bool start_backup_job(PluginContext* ctx)
   p_ctx->current_state.emplace<plugin_ctx::backup>(
       std::move(system_mgmt.value()), std::move(system_snap.value()));
 
-  // for (auto& vm_name : p_ctx->vm_names) {
-  //   auto vm = srvc.get_vm_by_name(vm_name);
-  //   if (!vm) { return false; }
-  //   auto snapshot = system_snap->create_snapshot(
-  //       srvc, vm.value(), p_ctx->snapshot_settings,
-  //       WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+  return true;
+}
 
-  //   system_mgmt->rename(srvc, snapshot, WMI::String::copy(L"Bareos - Full"));
+static std::wstring make_temp_dir(uint64_t jobid)
+{
+  auto path_len = GetTempPathW(0, nullptr);
 
-  //   WMI::VirtualSystemExportSettingData export_settings = {
-  //       .snapshot_virtual_system_path = snapshot.path(),
-  //       .backup_intent = WMI::BackupIntent::Merge,
-  //       .copy_snapshot_configuration =
-  //       WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-  //       .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
-  //       .copy_vm_runtime_information = true,
-  //       .copy_vm_storage = false,
-  //       .create_vm_export_subdirectory = true,
-  //   };
+  if (path_len == 0) { throw werror("retrieve the users temp path"); }
 
-  //   system_mgmt->export_system_definition(srvc, vm.value(), p_ctx->directory,
-  //   export_settings);
+  std::wstring path;
+  path.resize(path_len);
 
-  //   system_snap->convert_to_reference_point(srvc, std::move(snapshot));
-  // }
+  auto written_len = GetTempPathW(path.size(), path.data());
+  path.resize(written_len);
+
+  path += L"\\Bareos-";
+  path += std::to_wstring(jobid);
+
+  if (!CreateDirectoryW(path.c_str(), 0)) {
+    throw werror("create a temporary directory");
+  }
+
+  DBG(L"temp path = {}", path);
+
+  return path;
+}
+
+static bool start_restore_job(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return false; }
+
+  std::wstring dir = make_temp_dir(p_ctx->jobid);
+  p_ctx->current_state.emplace<plugin_ctx::restore>(std::move(dir));
 
   return true;
 }
@@ -1922,7 +1941,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       return bRC_Error;
     } break;
     case bEventRestoreCommand: {
-      return bRC_Error;
+      return parse_plugin_definition(ctx, value);
     } break;
     case bEventBackupCommand: {
       return parse_plugin_definition(ctx, value);
@@ -1937,41 +1956,20 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       return parse_plugin_definition(ctx, value);
     } break;
     case bEventStartBackupJob: {
-      // if (!start_backup_job(ctx)) { return bRC_Error; }
+      DBGC(ctx, "start backup job");
+      if (!start_backup_job(ctx)) { return bRC_Error; }
       return bRC_OK;
     } break;
     case bEventStartRestoreJob: {
-      return bRC_Error;
+      DBGC(ctx, "start restore job");
+      if (!start_restore_job(ctx)) { return bRC_Error; }
+      return bRC_OK;
     } break;
     default: {
-      DBG(L"unknown event type {}", event->eventType);
+      DBGC(ctx, L"unknown event type {}", event->eventType);
       return bRC_Error;
     } break;
   }
-}
-
-static std::wstring make_temp_dir(uint64_t jobid)
-{
-  auto path_len = GetTempPathW(0, nullptr);
-
-  if (path_len == 0) { throw werror("retrieve the users temp path"); }
-
-  std::wstring path;
-  path.resize(path_len);
-
-  auto written_len = GetTempPathW(path.size(), path.data());
-  path.resize(written_len);
-
-  path += L"\\Bareos-";
-  path += std::to_wstring(jobid);
-
-  if (!CreateDirectoryW(path.c_str(), 0)) {
-    throw werror("create a temporary directory");
-  }
-
-  DBG(L"temp path = {}", path);
-
-  return path;
 }
 
 static std::wstring extract_disk_path(const WMI::ClassObject& vhd_setting)
@@ -2080,11 +2078,8 @@ static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
   const auto& system_srvc = bstate.system_srvc;
   const auto& snapshot_srvc = bstate.snapshot_srvc;
 
-
-  int jobid;
-  bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobId, &jobid);
   // do this first, so we dont create a snapshot for nothing
-  std::wstring dir = make_temp_dir(jobid);
+  std::wstring dir = make_temp_dir(p_ctx->jobid);
 
   auto vm = srvc.get_vm_by_name(vm_name);
   if (!vm) {
@@ -2134,6 +2129,7 @@ static void prepare_restore_object(PluginContext* ctx)
   DBGC(ctx, L"refpoint = {}", refpoint.path().as_view());
 }
 
+// maybe we should add the cluster name here somehow ?
 std::string create_vm_path(std::wstring_view vm_name,
                            std::wstring_view tmp_dir,
                            std::wstring_view path)
@@ -2487,12 +2483,12 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   return bRC_OK;
 }
 
-static bRC pluginIO(PluginContext* ctx, io_pkt* io)
+static bRC pluginBackupIO(PluginContext* ctx,
+                          plugin_ctx* p_ctx,
+                          plugin_ctx::backup& bstate,
+                          io_pkt* io)
 {
-  auto* p_ctx = plugin_ctx::get(ctx);
-  if (!p_ctx) { return bRC_Error; }
-
-  auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+  TRCC(ctx, "backup plugin io ({})", io->func);
   auto& prepared = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
 
   switch (io->func) {
@@ -2553,6 +2549,69 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
   }
 }
 
+static bRC pluginRestoreIO(PluginContext* ctx,
+                           plugin_ctx* p_ctx,
+                           plugin_ctx::restore& restore_ctx,
+                           io_pkt* io)
+{
+  TRCC(ctx, "restore plugin io ({})", io->func);
+
+  switch (io->func) {
+    case filedaemon::IO_OPEN: {
+      if (restore_ctx.hndl) {
+        io->hndl = restore_ctx.hndl.value();
+        io->status = IoStatus::do_io_in_core;
+        restore_ctx.hndl.reset();
+        return bRC_OK;
+      } else {
+        JERR(ctx, "could not open file {}, as no file was prepared", io->fname);
+        return bRC_Error;
+      }
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_READ: {
+      DBGC(ctx, L"bad read!");
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_WRITE: {
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      CloseHandle(io->hndl);
+    } break;
+    default: {
+      JERR(ctx, "unknown plugin io command {}", io->func);
+      return bRC_Error;
+    } break;
+  }
+  return bRC_Error;
+}
+
+static bRC pluginIO(PluginContext* ctx, io_pkt* io)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  TRCC(ctx, "plugin io ({})", io->func);
+
+  return std::visit(
+      [&](auto&& val) {
+        using T = std::decay_t<decltype(val)>;
+
+        if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
+          return pluginRestoreIO(ctx, p_ctx, val, io);
+        } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
+          return pluginBackupIO(ctx, p_ctx, val, io);
+        } else if constexpr (std::is_same_v<T, std::monostate>) {
+          JERR(ctx, "instructed to do plugin io, but plugin is not setup");
+          return bRC_Error;
+        } else {
+          static_assert(!std::is_same_v<T, T>, "type not handled");
+        }
+      },
+      p_ctx->current_state);
+}
+
 static bRC end_restore_job(PluginContext* ctx, void*) { return bRC_Error; }
 
 /**
@@ -2567,6 +2626,39 @@ static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
  */
 static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
 
+static void ensure_paths(std::wstring_view path)
+{
+  auto err = SHCreateDirectoryExW(NULL, std::wstring{path}.c_str(), NULL);
+  switch (err) {
+    case ERROR_SUCCESS: {
+      DBG(L"path '{}' already exists", path);
+    } break;
+    case ERROR_FILE_EXISTS:
+      [[fallthrough]];
+    case ERROR_ALREADY_EXISTS: {
+      DBG(L"path '{}' already exists", path);
+    } break;
+    default: {
+      throw werror("trying to create paths", err);
+    }
+  }
+}
+
+// creates the file at path and all directories above it
+static HANDLE create_file(std::wstring_view path)
+{
+  auto last_slash = path.find_last_of(L"/");
+  if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
+
+  TRC(L"creating file '{}' ...", path);
+
+  auto dwaccess = GENERIC_WRITE | FILE_ALL_ACCESS | WRITE_OWNER | WRITE_DAC
+                  | ACCESS_SYSTEM_SECURITY;
+  auto dwflags = FILE_FLAG_BACKUP_SEMANTICS;
+  return CreateFileW(std::wstring{path}.c_str(), dwaccess, FILE_SHARE_WRITE,
+                     NULL, CREATE_NEW, dwflags, NULL);
+}
+
 /**
  * This is called during restore to create the file (if necessary) We must
  * return in rp->create_status:
@@ -2579,10 +2671,103 @@ static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
  */
 static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 {
+  TRCC(ctx, "create file '{}'", rp->ofname);
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
-  return bRC_Error;
+  auto* restore_ctx = std::get_if<plugin_ctx::restore>(&p_ctx->current_state);
+  if (!restore_ctx) {
+    JERR(ctx, "instructed to create file '{}' while not in restore mode",
+         rp->ofname);
+    return bRC_Error;
+  }
+
+  if (restore_ctx->hndl) {
+    JERR(ctx,
+         "instructed to create file '{}' while another file is still being "
+         "worked on",
+         rp->ofname);
+
+    return bRC_Error;
+  }
+
+  auto actual_name = [&] {
+    std::string_view output = rp->ofname;
+    if (rp->where) {
+      std::string_view where = rp->where;
+      if (output.size() >= where.size()
+          && output.substr(0, where.size()) == where) {
+        return output.substr(where.size());
+      } else {
+        return output;
+      }
+    } else {
+      return output;
+    }
+  }();
+
+  TRCC(ctx, "actual name = {}", actual_name);
+
+  // paths that we create have the following structure:
+  // <prefix>/<vm name>/path
+  // we need to check that the path given conforms to this and extract
+  // the vm name/path.
+  constexpr std::string_view prefix = "/@hyper-v@/";
+
+  if (actual_name.size() <= prefix.size()
+      || actual_name.substr(0, prefix.size()) != prefix) {
+    JERR(ctx, "File {} was not created by this plugin (missing prefix {})",
+         actual_name, prefix);
+    return bRC_Error;
+  }
+
+  std::string_view without_prefix = actual_name.substr(prefix.size());
+
+  TRCC(ctx, "without prefix = {}", without_prefix);
+
+  auto pos = without_prefix.find_first_of("/");
+  if (pos == without_prefix.npos) {
+    JERR(ctx, "File {} was not created by this plugin (missing vm name)",
+         actual_name);
+    return bRC_Error;
+  }
+  if (pos == without_prefix.size()) {
+    JERR(ctx, "File {} was not created by this plugin (missing path)",
+         actual_name);
+    return bRC_Error;
+  }
+
+  std::string_view vm_name = without_prefix.substr(0, pos);
+  std::string_view actual_path = without_prefix.substr(pos + 1);
+
+  TRCC(ctx, "vm_name = {}, path = {}", vm_name, actual_path);
+
+  std::wstring tmp_path
+      = std::format(L"{}/{}", restore_ctx->tmp_dir, utf8_to_utf16(actual_path));
+
+  TRCC(ctx, L"tmp_path = {}", tmp_path);
+
+  try {
+    HANDLE h = create_file(tmp_path);
+    if (h == INVALID_HANDLE_VALUE) {
+      JERR(ctx, L"could not create file {}: Err={}", tmp_path,
+           format_win32_error(GetLastError()));
+      return bRC_Error;
+    }
+
+    restore_ctx->hndl = h;
+
+    DBGC(ctx, L"created file '{}'", tmp_path);
+    rp->create_status = CF_EXTRACT;
+    return bRC_OK;
+  } catch (const std::exception& ex) {
+    JERR(ctx, L"could not create file '{}'. Err={}", tmp_path,
+         utf8_to_utf16(ex.what()));
+    return bRC_Error;
+  } catch (...) {
+    JERR(ctx, L"could not create file '{}'.", tmp_path);
+    return bRC_Error;
+  }
 }
 
 /**
