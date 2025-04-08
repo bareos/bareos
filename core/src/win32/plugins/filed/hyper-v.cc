@@ -30,6 +30,7 @@
 #include <string_view>
 #include <variant>
 #include <exception>
+#include <algorithm>
 
 #include <comdef.h>
 #include <Wbemidl.h>
@@ -112,6 +113,18 @@ std::wstring format_win32_error(DWORD error = GetLastError())
   return result;
 }
 
+struct werror : std::exception {
+  werror(const char* where, DWORD err_num = GetLastError())
+  {
+    err_msg = std::format("caught error {} while trying to {}",
+                          format_win32_error_2(err_num), where);
+  }
+
+  const char* what() const noexcept override { return err_msg.c_str(); }
+
+  std::string err_msg;
+};
+
 std::wstring utf8_to_utf16(std::string_view v)
 {
   std::wstring result;
@@ -150,6 +163,47 @@ std::wstring utf8_to_utf16(std::string_view v)
         std::format("could not convert '{}' to utf16. Err=One call returned "
                     "{}, but the next returned {}",
                     v, out_length, conversion));
+  }
+
+  return result;
+}
+
+std::string utf16_to_utf8(std::wstring_view v)
+{
+  std::string result;
+  if (v.size() == 0) { return result; }
+
+  ASSERT(v.size() < static_cast<std::size_t>(std::numeric_limits<int>::max()));
+
+  int in_length = static_cast<int>(v.size());
+  int out_length = ::WideCharToMultiByte(
+      CP_UTF8,               // Convert to UTF-8
+      WC_ERR_INVALID_CHARS,  // Conversion flags
+      v.data(),              // Source UTF-16 string pointer
+      in_length,             // Length of the source UTF-16 string, in wchar_ts
+      nullptr,               // Unused - no conversion done in this step
+      0,                     // Request size of destination buffer, in bytes
+      nullptr, nullptr);
+
+  if (out_length <= 0) {
+    auto err = GetLastError();
+    throw std::runtime_error(
+        std::format("could not convert input to utf8. Err={} ({})",
+                    format_win32_error_2(err), err));
+  }
+
+  result.resize(out_length);
+
+  int conversion = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
+                                         v.data(), in_length, result.data(),
+                                         out_length, nullptr, nullptr);
+
+  if (conversion != out_length) {
+    // throw error, because something went wrong
+    throw std::runtime_error(
+        std::format("could not convert input to utf8. Err=One call returned "
+                    "{}, but the next returned {}",
+                    out_length, conversion));
   }
 
   return result;
@@ -455,6 +509,31 @@ struct variant_type {
 
       return V_I4(var);
     }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        int32_t element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.push_back(element);
+      }
+
+      return result;
+    }
+
     static VARIANT into(const c_type& var)
     {
       VARIANT result;
@@ -477,6 +556,31 @@ struct variant_type {
 
       return String::wrap(V_BSTR(var));
     }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        BSTR element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.emplace_back(String::copy(element));
+      }
+
+      return result;
+    }
+
     static VARIANT into(const c_type& var)
     {
       VARIANT result;
@@ -497,14 +601,38 @@ struct variant_type {
                                              (int)actual_type, (int)type));
       }
 
-      // -1 = 0xFF..FF = True, 0 = false (see BOOL type)
-      return V_BOOL(var) == -1;
+      return V_BOOL(var) == VARIANT_TRUE;
     }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        BOOL element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.push_back(element == VARIANT_TRUE);
+      }
+
+      return result;
+    }
+
     static VARIANT into(const c_type& var)
     {
       VARIANT result;
       V_VT(&result) = VT_BOOL;
-      V_BOOL(&result) = var ? BOOL{-1} : BOOL{0};
+      V_BOOL(&result) = var ? VARIANT_TRUE : VARIANT_FALSE;
       return result;
     }
   };
@@ -552,10 +680,66 @@ struct BaseObject {
 
     if (type != CimType::c_type) {
       throw std::runtime_error(std::format("expected cimtype {}, but got {}",
-                                           (int)type, (int)CimType::c_type));
+                                           (int)CimType::c_type, (int)type));
     }
 
     return CimType::v_type::from(&param);
+  }
+
+  template <typename CimType>
+  std::vector<typename CimType::v_type::c_type> get_array(
+      const wchar_t* name) const
+  {
+    VARIANT param;
+    CIMTYPE type;
+
+    DBG(L"{}->get({})", fmt_as_ptr(ptr.p), name);
+    WMI_CALL(ptr->Get(name, 0, &param, &type, 0));
+
+    if (type != (CimType::c_type | CIM_FLAG_ARRAY)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): expected cimtype {} | {}, but got {}",
+          fmt_as_ptr(ptr.p), (int)CimType::c_type, (int)CIM_FLAG_ARRAY,
+          (int)type));
+    }
+
+    if (V_VT(&param) != (CimType::v_type::type | VT_ARRAY)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): expected vtype {} | {}, but got {}",
+          fmt_as_ptr(ptr.p), (int)CimType::v_type::type, (int)VT_ARRAY,
+          (int)V_VT(&param)));
+    }
+
+    SAFEARRAY* arr = V_ARRAY(&param);
+
+    if (auto dim = SafeArrayGetDim(arr); dim != 1) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): expected dim 1, but got dim {}",
+          fmt_as_ptr(ptr.p), dim));
+    }
+
+    LONG lbound, ubound;
+    auto lbound_res = SafeArrayGetLBound(arr, 1, &lbound);
+    if (FAILED(lbound_res)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): could not get lower bound ({})",
+          fmt_as_ptr(ptr.p), lbound_res));
+    }
+    auto ubound_res = SafeArrayGetUBound(arr, 1, &ubound);
+    if (FAILED(ubound_res)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): could not get upper bound ({})",
+          fmt_as_ptr(ptr.p), ubound_res));
+    }
+
+    auto result = CimType::v_type::from_array(arr, lbound, ubound);
+    VariantClear(&param);
+    return result;
   }
 
   template <typename CimType>
@@ -1386,7 +1570,18 @@ struct plugin_ctx {
 
 
     struct prepared_backup {
+      std::wstring vm_name;
+      std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
+
+      // prepared_backup(std::wstring name,
+      //                 std::wstring dir,
+      //                 WMI::Snapshot snapshot)
+      //   : vm_name{std::move(name)}
+      //   , tmp_dir{std::move(dir)}
+      //   , vm_snapshot{std::move(snapshot)}
+      // {}
+
       std::vector<std::wstring> files_to_backup{};
       std::vector<std::wstring> disks_to_backup{};
       bool error = false;
@@ -1394,8 +1589,9 @@ struct plugin_ctx {
       bool finished() const
       {
         // the last thing we do is convert the snapshot into
-        // a reference point
-        return vm_snapshot.ptr.p != nullptr;
+        // a reference point, deleting the snapshot in the process
+        // so while this snapshot is still legal, we need to keep going
+        return vm_snapshot.ptr.p == nullptr;
       }
     };
 
@@ -1406,19 +1602,13 @@ struct plugin_ctx {
 
   std::variant<std::monostate, backup, restore> current_state{};
 
-  std::size_t current_vm;
-  std::vector<std::wstring> vm_names;
   std::wstring directory;
+
+  std::string current_path;
 
   WMI::VirtualSystemSnapshotSettingData snapshot_settings;
 
   json_t* config{nullptr};
-
-  struct vm_to_backup {
-    WMI::Snapshot snapshot;
-  };
-
-  std::optional<vm_to_backup> current_snapshot;
 
   ~plugin_ctx()
   {
@@ -1470,7 +1660,6 @@ BAREOS_EXPORT bRC unloadPlugin()
 static bRC newPlugin(PluginContext* ctx)
 {
   // Initialize COM for this thread.
-
   try {
     auto com = com_context::init_for_thread();
 
@@ -1761,8 +1950,128 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   }
 }
 
+static std::wstring make_temp_dir(uint64_t jobid)
+{
+  auto path_len = GetTempPathW(0, nullptr);
+
+  if (path_len == 0) { throw werror("retrieve the users temp path"); }
+
+  std::wstring path;
+  path.resize(path_len);
+
+  auto written_len = GetTempPathW(path.size(), path.data());
+  path.resize(written_len);
+
+  path += L"\\Bareos-";
+  path += std::to_wstring(jobid);
+
+  if (!CreateDirectoryW(path.c_str(), 0)) {
+    throw werror("create a temporary directory");
+  }
+
+  DBG(L"temp path = {}", path);
+
+  return path;
+}
+
+static std::wstring extract_disk_path(const WMI::ClassObject& vhd_setting)
+{
+  auto paths = vhd_setting.get_array<WMI::cim_type::string>(L"HostResource");
+  if (paths.size() != 1) {
+    // todo: we should include the format of vhd_setting here
+    //   I.e. this should be a different type!
+    throw std::runtime_error(
+        std::format("bad HostResource: expected exactly one string, but got {}",
+                    paths.size()));
+  }
+
+  DBG(L"found harddisk path {}", paths[0].as_view());
+
+  return std::wstring{paths[0].as_view()};
+}
+
+static std::vector<std::wstring> get_disk_paths_of_snapshot(
+    const WMI::Service& srvc,
+    const WMI::Snapshot& snap)
+{
+  auto settings = srvc.get_related_of_class(
+      snap.path().as_view(), L"Msvm_StorageAllocationSettingData",
+      L"Msvm_VirtualSystemSettingDataComponent");
+
+  std::vector<std::wstring> paths;
+  paths.reserve(settings.size());
+
+  for (auto& setting : settings) {
+    if (setting.get<WMI::cim_type::uint16>(L"ResourceType") != 31) {
+      DBG(L"Skipping {} because it has a bad resource type",
+          setting.path().as_view());
+      continue;
+    }
+    if (setting.get<WMI::cim_type::string>(L"ResourceSubType").as_view()
+        != std::wstring_view{L"Microsoft:Hyper-V:Virtual Hard Disk"}) {
+      DBG(L"Skipping {} because it has a bad resource sub type",
+          setting.path().as_view());
+      continue;
+    }
+
+    TRC(L"found setting {}", setting.to_string().as_view());
+
+    paths.emplace_back(extract_disk_path(setting));
+  }
+
+  return paths;
+}
+
+static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
+{
+  std::vector<std::wstring> files;
+  std::vector<std::wstring> directories;
+
+  directories.emplace_back(dir);
+
+  while (directories.size() > 0) {
+    std::wstring current_dir = std::move(directories.back());
+    directories.pop_back();
+
+    TRC(L"entering directory '{}' ...", current_dir);
+
+    std::wstring search_path = current_dir + L"\\*";
+
+    WIN32_FIND_DATAW data;
+    HANDLE finder = FindFirstFileW(search_path.c_str(), &data);
+
+    if (finder == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error(
+          std::format("could not enter generated directory {}",
+                      utf16_to_utf8(current_dir)));
+    }
+
+    do {
+      std::wstring_view entry = data.cFileName;
+      TRC(L"found '{}' ...", entry);
+
+      if (entry == L"." || entry == L"..") { continue; }
+
+      std::wstring full_path{current_dir};
+      full_path += L"\\";
+      full_path += entry;
+
+      if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+        directories.emplace_back(std::move(full_path));
+      } else {
+        files.emplace_back(std::move(full_path));
+      }
+    } while (FindNextFileW(finder, &data));
+
+    FindClose(finder);
+  }
+
+  return files;
+}
+
 static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
 {
+  TRCC(ctx, L"start backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
 
   auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
@@ -1770,6 +2079,12 @@ static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
   const auto& srvc = p_ctx->virt_service;
   const auto& system_srvc = bstate.system_srvc;
   const auto& snapshot_srvc = bstate.snapshot_srvc;
+
+
+  int jobid;
+  bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobId, &jobid);
+  // do this first, so we dont create a snapshot for nothing
+  std::wstring dir = make_temp_dir(jobid);
 
   auto vm = srvc.get_vm_by_name(vm_name);
   if (!vm) {
@@ -1782,12 +2097,30 @@ static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
 
   system_srvc.rename(srvc, snapshot, WMI::String::copy(L"Bareos - Full"));
 
-  bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
-      std::move(snapshot));
+  WMI::VirtualSystemExportSettingData export_settings = {
+      .snapshot_virtual_system_path = snapshot.path(),
+      .backup_intent = WMI::BackupIntent::Merge,
+      .copy_snapshot_configuration
+      = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+      .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
+      .copy_vm_runtime_information = true,
+      .copy_vm_storage = false,
+      .create_vm_export_subdirectory = false,
+  };
+
+  system_srvc.export_system_definition(srvc, vm.value(), dir, export_settings);
+
+  auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
+      std::wstring{vm_name}, dir, std::move(snapshot));
+
+  prepared.files_to_backup = get_files_in_dir(dir);
+  prepared.disks_to_backup
+      = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
 }
 
 static void prepare_restore_object(PluginContext* ctx)
 {
+  TRCC(ctx, L"prepare restore object");
   auto* p_ctx = plugin_ctx::get(ctx);
   auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
   auto& prepared = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
@@ -1801,9 +2134,26 @@ static void prepare_restore_object(PluginContext* ctx)
   DBGC(ctx, L"refpoint = {}", refpoint.path().as_view());
 }
 
+std::string create_vm_path(std::wstring_view vm_name,
+                           std::wstring_view tmp_dir,
+                           std::wstring_view path)
+{
+  if (path.size() < tmp_dir.size()
+      || path.substr(0, tmp_dir.size()) != tmp_dir) {
+    return utf16_to_utf8(path);
+  }
+
+  std::wstring new_path = std::format(L"@hyper-v@/{}/{}", vm_name,
+                                      path.substr(tmp_dir.size() + 1));
+
+  std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
+  return utf16_to_utf8(new_path);
+}
+
 // Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
+  TRCC(ctx, L"start backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
@@ -1851,7 +2201,27 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
     auto& prepared
         = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
 
-    if (prepared.files_to_backup.size() > 0) {}
+    if (prepared.files_to_backup.size() > 0) {
+      auto& path = prepared.files_to_backup.back();
+      DBGC(ctx, L"transforming {} ...", path);
+      p_ctx->current_path
+          = create_vm_path(prepared.vm_name, prepared.tmp_dir, path);
+      DBGC(ctx, "into {}!", p_ctx->current_path);
+      auto now = time(NULL);
+      sp->fname = p_ctx->current_path.data();
+      sp->type = FT_REG;
+
+      // todo: fix these
+      sp->statp.st_mode = 0700 | S_IFREG;
+      sp->statp.st_ctime = now;
+      sp->statp.st_mtime = now;
+      sp->statp.st_atime = now;
+      sp->statp.st_size = -1;
+      sp->statp.st_blksize = 4096;
+      sp->statp.st_blocks = 1;
+
+      return bRC_OK;
+    }
 
     DBGC(ctx, L"All files were backed up");
 
@@ -1870,16 +2240,6 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 
     return bRC_Stop;
 
-    // now = time(NULL);
-    // sp->fname = p_ctx->fname;
-    // sp->type = FT_REG;
-    // sp->statp.st_mode = 0700 | S_IFREG;
-    // sp->statp.st_ctime = now;
-    // sp->statp.st_mtime = now;
-    // sp->statp.st_atime = now;
-    // sp->statp.st_size = -1;
-    // sp->statp.st_blksize = 4096;
-    // sp->statp.st_blocks = 1;
   } catch (const win_error& err) {
     DBGC(ctx, L"caught win error.  Err={} ({:X})", err.err_str(),
          err.err_num());
@@ -1902,6 +2262,7 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 // Done with backup of this file
 static bRC endBackupFile(PluginContext* ctx)
 {
+  TRCC(ctx, "end backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
@@ -1915,19 +2276,30 @@ static bRC endBackupFile(PluginContext* ctx)
     if (prepared->error) {
       // delete the snapshot here ?
       // The destructor should just do it on its own...
+      TRCC(ctx, "prepared->error");
       bstate->state.emplace<std::monostate>();
       return bRC_Error;
     }
 
     if (!prepared->finished()) {
+      if (prepared->files_to_backup.size() > 0) {
+        DBGC(ctx, L"finishing up {}", prepared->files_to_backup.back());
+        prepared->files_to_backup.pop_back();
+      } else if (prepared->disks_to_backup.size() > 0) {
+        DBGC(ctx, L"finishing up {}", prepared->disks_to_backup.back());
+        prepared->disks_to_backup.pop_back();
+      }
+      TRCC(ctx, "more work");
       return bRC_More;
     } else {
+      TRCC(ctx, "prepared files done");
       bstate->state.emplace<std::monostate>();
     }
   }
   /* We would return bRC_More if we wanted startBackupFile to be called again to
    * backup another file */
 
+  TRCC(ctx, "no more files left");
   return bRC_OK;
 }
 
@@ -2115,7 +2487,71 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   return bRC_OK;
 }
 
-static bRC pluginIO(PluginContext* ctx, io_pkt* io) { return bRC_Error; }
+static bRC pluginIO(PluginContext* ctx, io_pkt* io)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+  auto& prepared = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
+
+  switch (io->func) {
+    case filedaemon::IO_OPEN: {
+      if (prepared.files_to_backup.size() > 0) {
+        // we are backing up a normal file
+        auto& current_file = prepared.files_to_backup.back();
+
+        HANDLE h = [&] {
+          if (io->flags & O_WRONLY) {
+            return CreateFileW(current_file.c_str(), GENERIC_WRITE,
+                               FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+          } else {
+            return CreateFileW(current_file.c_str(), GENERIC_READ,
+                               FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+          }
+        }();
+
+        io->hndl = h;
+        io->status = IoStatus::do_io_in_core;
+        return bRC_OK;
+      }
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_READ: {
+      DBGC(ctx, L"bad read!");
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_WRITE: {
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      if (prepared.files_to_backup.size() > 0) {
+        auto& current_file = prepared.files_to_backup.back();
+
+        auto res = CloseHandle(io->hndl);
+
+        io->hndl = INVALID_HANDLE_VALUE;
+        if (FAILED(res)) {
+          io->status = -1;
+        } else {
+          io->status = 0;
+        }
+
+        // we dont need these files anymore, so we just delete them
+        DeleteFileW(current_file.c_str());
+
+        return bRC_OK;
+      }
+      return bRC_Error;
+    } break;
+    default: {
+      JERR(ctx, "unknown plugin io command {}", io->func);
+      return bRC_Error;
+    } break;
+  }
+}
 
 static bRC end_restore_job(PluginContext* ctx, void*) { return bRC_Error; }
 
