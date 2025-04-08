@@ -369,7 +369,7 @@ extern "C" HANDLE get_osfhandle(int fd);
 void binit(BareosFilePacket* bfd)
 {
   new (bfd) BareosFilePacket();
-  bfd->filedes = -1;
+  bfd->fh = INVALID_HANDLE_VALUE;
   bfd->use_backup_api = have_win32_api();
 }
 
@@ -755,6 +755,7 @@ static inline int BcloseNonencrypted(BareosFilePacket* bfd)
   }
 
   if (bfd->cmd_plugin && plugin_bclose) {
+    bfd->do_io_in_core = false;
     status = plugin_bclose(bfd);
     Dmsg0(50, "==== BFD closed!!!\n");
     goto all_done;
@@ -801,6 +802,7 @@ all_done:
   bfd->mode = BF_CLOSED;
   bfd->lplugin_private_context = NULL;
   bfd->cmd_plugin = false;
+  bfd->do_io_in_core = false;
 
   return status;
 }
@@ -829,6 +831,7 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
   if (bfd->cmd_plugin && plugin_bread) {
     // invalid filehandle -> plugin does read
     if (bfd->fh == INVALID_HANDLE_VALUE) {
+      Dmsg1(400, "bread handled in plugin\n");
       return plugin_bread(bfd, buf, count);
     }
     Dmsg1(400, "bread handled in core via bfd->fh=%p\n", bfd->fh);
