@@ -153,7 +153,7 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bareos-sd stored.cc)
-bareos_windows_resource(bareos-sd ../win32/stored/storedres.rc.in)
+bareos_windows_resource(bareos-sd storedres.rc.in)
 if(HAVE_WIN32)
   set_target_properties(bareos-sd PROPERTIES WIN32_EXECUTABLE ON)
   target_sources(bareos-sd PRIVATE ../win32/generic/main.cc)
@@ -166,21 +166,21 @@ target_link_libraries(
 
 add_executable(bls)
 target_sources(bls PRIVATE bls.cc)
-bareos_windows_resource(bls ../win32/stored/blsres.rc.in)
+bareos_windows_resource(bls blsres.rc.in)
 target_link_libraries(
   bls PRIVATE Bareos::Lib Bareos::LibSD Bareos::Findlib CLI11::CLI11
 )
 
 add_executable(bextract)
 target_sources(bextract PRIVATE bextract.cc)
-bareos_windows_resource(bextract ../win32/stored/bextractres.rc.in)
+bareos_windows_resource(bextract bextractres.rc.in)
 target_link_libraries(
   bextract PRIVATE Bareos::LibSD Bareos::Findlib Bareos::Lib CLI11::CLI11
 )
 
 add_executable(bscan)
 target_sources(bscan PRIVATE bscan.cc)
-bareos_windows_resource(bscan ../win32/stored/bscanres.rc.in)
+bareos_windows_resource(bscan bscanres.rc.in)
 target_link_libraries(
   bscan PRIVATE Bareos::Lib Bareos::LibSD Bareos::Findlib Bareos::SQL
                 CLI11::CLI11
@@ -188,7 +188,7 @@ target_link_libraries(
 
 add_executable(btape)
 target_sources(btape PRIVATE btape.cc)
-bareos_windows_resource(btape ../win32/stored/btaperes.rc.in)
+bareos_windows_resource(btape btaperes.rc.in)
 target_link_libraries(btape PRIVATE Bareos::LibSD Bareos::Lib CLI11::CLI11)
 
 add_executable(bcopy)

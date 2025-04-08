@@ -40,8 +40,8 @@ add_executable(bconsole-unsafe)
 target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
 target_sources(bconsole-unsafe PRIVATE console.cc)
 
-bareos_windows_resource(bconsole ../win32/console/consoleres.rc.in)
-bareos_windows_resource(bconsole-unsafe ../win32/console/consoleres.rc.in)
+bareos_windows_resource(bconsole consoleres.rc.in)
+bareos_windows_resource(bconsole-unsafe consoleres.rc.in)
 
 target_link_libraries(
   bconsole PRIVATE console_objects Readline::Readline CLI11::CLI11
