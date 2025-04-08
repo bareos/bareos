@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 
 This program is Free Software; you can redistribute it and/or
 modify it under the terms of version three of the GNU Affero General Public
@@ -91,4 +91,15 @@ void CheckpointHandler::DoTimedCheckpoint(JobControlRecord* jcr)
   }
 }
 
+void CheckpointHandler::ResetTimer()
+{
+  const time_t now
+      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+  next_checkpoint_time_ = now + checkpoint_interval_;
+
+  Dmsg2(100, T_("Reset checkpoint time to %lld (now = %lld)"),
+        static_cast<long long>(next_checkpoint_time_),
+        static_cast<long long>(now));
+}
 }  // namespace storagedaemon
