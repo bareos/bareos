@@ -112,7 +112,7 @@ get_mariadb_server_pid()
 
 mariadb_server_stop()
 {
-    printf "shutdown Mariadbd server "
+    printf " shutdown Mariadbd server\n"
     local PID=$(get_mariadb_server_pid)
     if [ "$PID" ]; then
         kill $PID
