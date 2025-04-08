@@ -2197,9 +2197,9 @@ WMI::Result<WMI::ClassObject> FullBackup(const WMI& service,
   VirtualSystemSnapshotSettingData ssettings = {
       .consistency_level
       = VirtualSystemSnapshotSettingData::ConsistencyLevel::CrashConsistent,
-      .ignore_non_snapshottable_disks = true,
       .guest_backup_type
       = VirtualSystemSnapshotSettingData::GuestBackupType::Full,
+      .ignore_non_snapshottable_disks = true,
   };
 
   auto snapshot_settings = vsssd_clz->GetText(ssettings);
