@@ -4,12 +4,12 @@
 
 Director {
   Name = @basename@-dir
-  port = @dir_port@
+  Port = @dir_port@
   Address = @hostname@
   Password = "INVALID"
 }
 
 Console {
-  name = client-bareos-fd
-  password = secret
+  Name = client-bareos-fd
+  Password = secret
 }
