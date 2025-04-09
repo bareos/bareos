@@ -227,7 +227,7 @@ static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp);
 static bRC checkFile(PluginContext* ctx, char* fname);
 
 static bRC parse_plugin_definition(PluginContext* ctx, void* value);
-static bRC end_restore_job(PluginContext* ctx, void* value);
+static bRC end_restore_job(PluginContext* ctx);
 static void CloseVdiDeviceset(struct plugin_ctx* p_ctx);
 static bool adoReportError(PluginContext* ctx);
 
@@ -860,7 +860,9 @@ String format_as_xml(const BaseObject& obj)
   return String::wrap(text);
 }
 
-struct ComputerSystem : ClassObject {};
+struct ComputerSystem : ClassObject {
+  static constexpr std::wstring_view class_name{L"CIM_ComputerSystem"};
+};
 
 struct Job : ClassObject {
   enum State : std::int32_t
@@ -1286,6 +1288,10 @@ struct VirtualSystemExportSettingData {
   bool disable_differential_of_ignored_storage = {};
 };
 
+struct PlannedSystem : ComputerSystem {
+  static constexpr std::wstring_view class_name{L"Msvm_PlannedComputerSystem"};
+};
+
 class VirtualSystemManagementService : ClassObject {
  public:
   static constexpr std::wstring_view class_name{
@@ -1350,6 +1356,88 @@ class VirtualSystemManagementService : ClassObject {
     auto result = srvc.exec_method(*this, m_export, params);
 
     if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+  PlannedSystem import_system_definition(const Service& srvc,
+                                         const String& path_to_def,
+                                         bool generate_new_id) const
+  {
+    DBG(L"Importing {}", path_to_def.as_view());
+
+    auto m_import = clz.load_method_by_name(L"ImportSystemDefinition");
+    auto params = m_import.create_parameters();
+
+    params[L"SystemDefinitionFile"] = path_to_def;
+    params[L"GenerateNewSystemIdentifier"] = generate_new_id;
+
+    auto result = srvc.exec_method(*this, m_import, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+
+    auto system
+        = srvc.get_result<PlannedSystem>(result.value(), L"ImportedSystem");
+
+    DBG(L"imported system = {}", system.to_string().as_view());
+
+    return system;
+  }
+
+  void validate_planned_system(const Service& srvc,
+                               const PlannedSystem& sys) const
+  {
+    DBG(L"Validating {}", sys.path().as_view());
+
+    auto m_validate = clz.load_method_by_name(L"ValidatePlannedSystem");
+    auto params = m_validate.create_parameters();
+
+    params[L"PlannedSystem"] = sys;
+
+    auto result = srvc.exec_method(*this, m_validate, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+  ComputerSystem realize_planned_system(const Service& srvc,
+                                        PlannedSystem system) const
+  {
+    DBG(L"Realizing {}", system.path().as_view());
+
+    auto m_realize = clz.load_method_by_name(L"RealizePlannedSystem");
+    auto params = m_realize.create_parameters();
+
+    params[L"PlannedSystem"] = system;
+
+    auto result = srvc.exec_method(*this, m_realize, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+
+    auto new_system
+        = srvc.get_result<ComputerSystem>(result.value(), L"ResultingSystem");
+
+    return new_system;
+  }
+
+  // NOTE: technically you can destroy any system with this function,
+  //  but i dont see a situation currently where we would want to destroy
+  //  a live system, so we restrict ourselves to just planned systems for now.
+  void destroy_system(const Service& srvc, PlannedSystem system) const
+  {
+    DBG(L"Destroying {}", system.path().as_view());
+
+    auto m_destroy = clz.load_method_by_name(L"DestroySystem");
+    auto params = m_destroy.create_parameters();
+
+    params[L"AffectedSystem"] = system;
+
+    if (!srvc.exec_method(*this, m_destroy, params)) {
       throw std::runtime_error("exec_method returned std::nullopt");
     }
   }
@@ -1600,9 +1688,14 @@ struct plugin_ctx {
   };
 
   struct restore {
+    WMI::VirtualSystemManagementService system_srvc;
+
     std::wstring tmp_dir;
 
     std::optional<HANDLE> hndl;
+
+
+    std::vector<WMI::String> restored_definition_files;
   };
 
   int jobid;
@@ -1729,7 +1822,7 @@ static bRC newPlugin(PluginContext* ctx)
     bareos_core_functions->registerBareosEvents(
         ctx, 8, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
         bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions,
-        bEventStartBackupJob, bEventStartRestoreJob);
+        bEventStartBackupJob, bEventStartRestoreJob, bEventEndRestoreJob);
 
     return bRC_OK;
   } catch (const win_error& err) {
@@ -1811,8 +1904,15 @@ static bool start_restore_job(PluginContext* ctx)
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return false; }
 
+  auto& srvc = p_ctx->virt_service;
+
+  std::optional system_mgmt
+      = WMI::VirtualSystemManagementService::find_instance(srvc);
+  if (!system_mgmt) { return false; }
+
   std::wstring dir = make_temp_dir(p_ctx->jobid);
-  p_ctx->current_state.emplace<plugin_ctx::restore>(std::move(dir));
+  p_ctx->current_state.emplace<plugin_ctx::restore>(
+      std::move(system_mgmt.value()), std::move(dir));
 
   return true;
 }
@@ -1950,7 +2050,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       return parse_plugin_definition(ctx, value);
     } break;
     case bEventEndRestoreJob: {
-      return bRC_Error;
+      return end_restore_job(ctx);
     } break;
     case bEventNewPluginOptions: {
       return parse_plugin_definition(ctx, value);
@@ -2612,7 +2712,81 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
       p_ctx->current_state);
 }
 
-static bRC end_restore_job(PluginContext* ctx, void*) { return bRC_Error; }
+static bRC end_restore_job(PluginContext* ctx)
+{
+  TRCC(ctx, "end restore job");
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto* restore_ctx = std::get_if<plugin_ctx::restore>(&p_ctx->current_state);
+  if (!restore_ctx) {
+    JERR(ctx, "instructed to end restore job while not in restore mode");
+    return bRC_Error;
+  }
+
+  const auto& srvc = p_ctx->virt_service;
+  const auto& system_srvc = restore_ctx->system_srvc;
+
+  for (auto& definition_file : restore_ctx->restored_definition_files) {
+    bool generate_new_id = true;
+
+    try {
+      auto planned_system = system_srvc.import_system_definition(
+          srvc, definition_file, generate_new_id);
+
+      // TODO: this isnt great,  it would be better if this was somehow
+      //  build into the type.
+      struct SystemDestroyer {
+        const WMI::Service& srvc;
+        const WMI::VirtualSystemManagementService& system_srvc;
+        WMI::PlannedSystem* system;
+
+        void release() { system = nullptr; }
+
+        ~SystemDestroyer()
+        {
+          if (system) { system_srvc.destroy_system(srvc, std::move(*system)); }
+        }
+      };
+
+      SystemDestroyer destroyer{srvc, system_srvc, &planned_system};
+
+
+      auto settings = srvc.get_related_of_class(
+          planned_system.path().as_view(), L"Msvm_VirtualSystemSettingData",
+          L"Msvm_SettingsDefineState");
+
+      DBGC(ctx, "found {} settings", settings.size());
+
+      for (auto& setting : settings) {
+        TRCC(ctx, L"setting = {}", setting.to_string().as_view());
+
+        auto disk_settings = srvc.get_related_of_class(
+            setting.path().as_view(), L"Msvm_StorageAllocationSettingData",
+            L"Msvm_VirtualSystemSettingDataComponent");
+
+
+        DBGC(ctx, "found {} disk settings", disk_settings.size());
+
+        for (auto& disk_setting : disk_settings) {
+          TRCC(ctx, L"disk setting = {}", disk_setting.to_string().as_view());
+        }
+      }
+
+      system_srvc.validate_planned_system(srvc, planned_system);
+
+      destroyer.release();
+      system_srvc.realize_planned_system(srvc, std::move(planned_system));
+
+    } catch (const std::exception& ex) {
+      JERR(ctx, "plugin was not able to restore the vm");
+      return bRC_Error;
+    } catch (...) {
+      return bRC_Error;
+    }
+  }
+  return bRC_OK;
+}
 
 /**
  * Bareos is notifying us that a plugin name string was found,
@@ -2628,7 +2802,12 @@ static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
 
 static void ensure_paths(std::wstring_view path)
 {
-  auto err = SHCreateDirectoryExW(NULL, std::wstring{path}.c_str(), NULL);
+  std::wstring cpy{path};
+  std::replace(std::begin(cpy), std::end(cpy), '/', '\\');
+
+  DBG(L"Trying to create directories {}", cpy);
+
+  auto err = SHCreateDirectoryExW(NULL, cpy.c_str(), NULL);
   switch (err) {
     case ERROR_SUCCESS: {
       DBG(L"path '{}' already exists", path);
@@ -2657,6 +2836,16 @@ static HANDLE create_file(std::wstring_view path)
   auto dwflags = FILE_FLAG_BACKUP_SEMANTICS;
   return CreateFileW(std::wstring{path}.c_str(), dwaccess, FILE_SHARE_WRITE,
                      NULL, CREATE_NEW, dwflags, NULL);
+}
+
+static bool is_definition_file(std::string_view path)
+{
+  if (path.size() < 5) { return false; }
+
+  auto last_chars = path.substr(path.size() - 5, 5);
+  constexpr std::string_view definition_file_ending = ".vmcx";
+
+  return last_chars == definition_file_ending;
 }
 
 /**
@@ -2742,10 +2931,18 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 
   TRCC(ctx, "vm_name = {}, path = {}", vm_name, actual_path);
 
+  // we need to include the vm name to support restoring multiple vms at once
   std::wstring tmp_path
-      = std::format(L"{}/{}", restore_ctx->tmp_dir, utf8_to_utf16(actual_path));
+      = std::format(L"{}/{}/{}", restore_ctx->tmp_dir, utf8_to_utf16(vm_name),
+                    utf8_to_utf16(actual_path));
 
   TRCC(ctx, L"tmp_path = {}", tmp_path);
+
+  if (is_definition_file(actual_path)) {
+    DBGC(ctx, L"found definitions file at {}", tmp_path);
+    restore_ctx->restored_definition_files.emplace_back(
+        WMI::String::copy(tmp_path));
+  }
 
   try {
     HANDLE h = create_file(tmp_path);
