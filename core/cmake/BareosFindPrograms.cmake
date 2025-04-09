@@ -115,9 +115,9 @@ find_program_and_verify_version_string(MYSQL_CLIENT_BINARY mysql MySQL "" "")
 if(NOT DEFINED MYSQL_INSTALL_DB_SCRIPT)
   message(CHECK_START "Looking if mysql_install_db is a real file")
   find_program(MYSQL_INSTALL_DB_SCRIPT mysql_install_db)
-  # Most mariadb installation have some kind of backward compatibility
-  # old binaries names symlink'ed to mariadb binaries.
-  # here we are looking only for real mysql binaries.
+  # Most mariadb installation have some kind of backward compatibility old
+  # binaries names symlink'ed to mariadb binaries. here we are looking only for
+  # real mysql binaries.
   if(IS_SYMLINK ${MYSQL_INSTALL_DB_SCRIPT})
     message(CHECK_PASS "NOT OK: symlink detected")
     unset(MYSQL_INSTALL_DB_SCRIPT CACHE)

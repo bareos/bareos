@@ -508,8 +508,8 @@ macro(prepare_testdir_for_daemon_run)
   set(dbHost ${current_test_directory}/tmp)
   string(LENGTH ${dbHost} dbHostLength)
   if(${dbHostLength} GREATER 90)
-    # unix domain sockets (used by e.g. mariadb, mysql and psql) cannot be longer than 107
-    # chars. If too long, the socket is created under /tmp
+    # unix domain sockets (used by e.g. mariadb, mysql and psql) cannot be
+    # longer than 107 chars. If too long, the socket is created under /tmp
     set(dbHost /tmp/${TEST_NAME})
     file(MAKE_DIRECTORY ${dbHost})
   endif()
