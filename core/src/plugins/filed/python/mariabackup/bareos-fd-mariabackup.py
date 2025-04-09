@@ -99,7 +99,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         self.connect_options = {"read_default_group": "client"}
         if "mycnf" in self.options:
             self.connect_options["read_default_file"] = self.options["mycnf"]
-            self.mycnf = f"--defaults-file={self.options["mycnf"]}"
+            self.mycnf = f"--defaults-file={self.options['mycnf']}"
 
         # If true, incremental jobs will only be performed, if LSN has increased
         # since last call.
@@ -117,7 +117,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         else:
             self.dumpoptions += " --backup --stream=xbstream"
 
-        self.dumpoptions += " --extra-lsndir=%s" % self.tempdir
+        self.dumpoptions += f" --extra-lsndir={self.tempdir}"
 
         if "extradumpoptions" in self.options:
             self.dumpoptions += " " + self.options["extradumpoptions"]
@@ -125,12 +125,12 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         # We need to call mariadb to get the current Log Sequece Number (LSN)
         if "mysqlcmd" in self.options:
             DebugMessage(
-                100, f"self option mysqlcmd detected {self.options["mysqlcmd"]}\n"
+                100, f"self option mysqlcmd detected {self.options['mysqlcmd']}\n"
             )
             self.mysqlcmd = self.options["mysqlcmd"]
         else:
             self.mysqlcmd = f"mariadb {self.mycnf} --raw"
-            DebugMessage(100, f'Default in use self.mysqlcmd="{self.mysqlcmd}"\n')
+            DebugMessage(100, f"Default in use self.mysqlcmd='{self.mysqlcmd}'\n")
 
         return bRC_OK
 
