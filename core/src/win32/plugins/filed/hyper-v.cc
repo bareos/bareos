@@ -217,7 +217,7 @@ static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(PluginContext* ctx, save_pkt* sp);
+static bRC start_backup_file(PluginContext* ctx, save_pkt* sp);
 static bRC endBackupFile(PluginContext* ctx);
 static bRC pluginIO(PluginContext* ctx, io_pkt* io);
 static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
@@ -250,7 +250,7 @@ static PluginFunctions pluginFuncs
        /* Entry points into plugin */
        newPlugin,  /* new plugin instance */
        freePlugin, /* free plugin instance */
-       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       getPluginValue, setPluginValue, handlePluginEvent, start_backup_file,
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, nullptr, nullptr, nullptr, nullptr};
 
@@ -497,6 +497,55 @@ class String {
 };
 
 struct variant_type {
+  // see here: https://learn.microsoft.com/en-us/windows/win32/wmisdk/numbers
+
+  struct ui1 {
+    static constexpr VARENUM type = VT_UI1;
+    using c_type = uint8_t;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)actual_type, (int)type));
+      }
+
+      return V_UI1(var);
+    }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        uint8_t element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.push_back(element);
+      }
+
+      return result;
+    }
+
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_UI1;
+      V_UI1(&result) = var;
+      return result;
+    }
+  };
+
   struct i4 {
     static constexpr VARENUM type = VT_I4;
     using c_type = int32_t;
@@ -647,7 +696,7 @@ struct cim_type {
   }
 
   // these are mostly found by experimentation
-  DEFINE_CIM_TYPE(uint8, i4, UINT8);
+  DEFINE_CIM_TYPE(uint8, ui1, UINT8);
   DEFINE_CIM_TYPE(uint16, i4, UINT16);
   DEFINE_CIM_TYPE(uint32, i4, UINT32);
   DEFINE_CIM_TYPE(reference, bstr, REFERENCE);
@@ -1641,6 +1690,12 @@ struct com_context {
   bool active = true;
 };
 
+struct restore_object {
+  std::string name;
+  int index;
+  std::string content;
+};
+
 // Plugin private context
 struct plugin_ctx {
   static plugin_ctx* get(PluginContext* ctx)
@@ -1673,7 +1728,14 @@ struct plugin_ctx {
 
       std::vector<std::wstring> files_to_backup{};
       std::vector<std::wstring> disks_to_backup{};
+      std::vector<restore_object> restore_objects{};
       bool error = false;
+
+      std::optional<HANDLE> disk_to_backup;
+      std::size_t disk_offset;
+      std::size_t disk_full_size;
+
+      std::optional<restore_object> current_object{};
 
       bool finished() const
       {
@@ -2167,6 +2229,30 @@ static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
   return files;
 }
 
+restore_object get_info(PluginContext* ctx,
+                        std::wstring_view vm_name,
+                        const std::vector<std::wstring>& found_disks)
+{
+  restore_object obj;
+  obj.name = utf16_to_utf8(vm_name);
+  obj.index = 0;
+
+  json_t* content = json_object();
+  {
+    auto* disks = json_array();
+    for (auto& disk : found_disks) {
+      json_array_append_new(disks, json_string(utf16_to_utf8(disk).c_str()));
+    }
+    json_object_set_new(content, "disks", disks);
+  }
+
+  char* formatted = json_dumps(content, JSON_COMPACT);
+  obj.content = formatted;
+  free(formatted);
+  json_decref(content);
+  return std::move(obj);
+}
+
 static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
 {
   TRCC(ctx, L"start backup file");
@@ -2190,7 +2276,9 @@ static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
       srvc, vm.value(), p_ctx->snapshot_settings,
       WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
 
-  system_srvc.rename(srvc, snapshot, WMI::String::copy(L"Bareos - Full"));
+  system_srvc.rename(
+      srvc, snapshot,
+      WMI::String::copy(std::format(L"Bareos - {}", p_ctx->jobid)));
 
   WMI::VirtualSystemExportSettingData export_settings = {
       .snapshot_virtual_system_path = snapshot.path(),
@@ -2211,6 +2299,11 @@ static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
   prepared.files_to_backup = get_files_in_dir(dir);
   prepared.disks_to_backup
       = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
+
+  // if (full) {
+  prepared.restore_objects.emplace_back(
+      get_info(ctx, vm_name, prepared.disks_to_backup));
+  // }
 }
 
 static void prepare_restore_object(PluginContext* ctx)
@@ -2247,7 +2340,7 @@ std::string create_vm_path(std::wstring_view vm_name,
 }
 
 // Start the backup of a specific file
-static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
+static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 {
   TRCC(ctx, L"start backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
@@ -2321,9 +2414,95 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 
     DBGC(ctx, L"All files were backed up");
 
-    if (prepared.disks_to_backup.size() > 0) {}
+    if (prepared.disks_to_backup.size() > 0) {
+      auto& path = prepared.disks_to_backup.back();
+      DBGC(ctx, L"transforming {} ...", path);
+      p_ctx->current_path
+          = create_vm_path(prepared.vm_name, prepared.tmp_dir, path);
+      DBGC(ctx, "into {}!", p_ctx->current_path);
+
+      {
+        HANDLE disk_handle = {};
+
+        VIRTUAL_STORAGE_TYPE vst = {
+            .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+            .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+        };
+
+        OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+        params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+        params.Version2.ReadOnly = TRUE;
+
+        auto res = OpenVirtualDisk(&vst, path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
+                                   OPEN_VIRTUAL_DISK_FLAG_NONE, &params,
+                                   &disk_handle);
+
+        if (res != ERROR_SUCCESS) {
+          JERR(ctx, L"could not open disk {}", path);
+          return bRC_Error;
+        }
+
+        prepared.disk_to_backup = disk_handle;
+
+        GET_VIRTUAL_DISK_INFO disk_info = {
+            .Version = GET_VIRTUAL_DISK_INFO_SIZE,
+        };
+        ULONG VirtualDiskInfoSize = sizeof(disk_info);
+        ULONG SizeOut = 0;
+        auto disk_res = GetVirtualDiskInformation(
+            disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
+        if (disk_res != ERROR_SUCCESS) {
+          CloseHandle(disk_handle);
+          // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+          // hdd_path.as_view(),
+          //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
+          JERR(ctx, L"could not retrieve info for disk {}", path);
+          return bRC_Error;
+        }
+
+        DBGC(ctx,
+             L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
+             L"SectorSize = {} }}",
+             disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
+             disk_info.Size.BlockSize, disk_info.Size.SectorSize);
+        sp->statp.st_size = disk_info.Size.VirtualSize;
+        sp->statp.st_blksize = disk_info.Size.BlockSize;
+
+        prepared.disk_full_size = disk_info.Size.VirtualSize;
+        prepared.disk_offset = 0;
+      }
+
+      auto now = time(NULL);
+      sp->fname = p_ctx->current_path.data();
+      sp->type = FT_REG;
+
+      // todo: fix these
+      sp->statp.st_mode = 0700 | S_IFREG;
+      sp->statp.st_ctime = now;
+      sp->statp.st_mtime = now;
+      sp->statp.st_atime = now;
+      sp->statp.st_blksize = 4096;
+      sp->statp.st_blocks = 1;
+
+      return bRC_OK;
+    }
 
     DBGC(ctx, L"All disks were backed up");
+
+    if (prepared.restore_objects.size() > 0) {
+      prepared.current_object = std::move(prepared.restore_objects.back());
+      prepared.restore_objects.pop_back();
+
+      sp->type = FT_RESTORE_FIRST;
+      sp->object = prepared.current_object->content.data();
+      sp->object_len = prepared.current_object->content.size();
+
+      sp->object_name = prepared.current_object->name.data();
+      sp->index = prepared.current_object->index;
+
+      return bRC_OK;
+    }
+
 
     if (prepared.vm_snapshot.ptr.p) {
       // the snapshot still exists, so we need to create a reference point now
@@ -2392,8 +2571,8 @@ static bRC endBackupFile(PluginContext* ctx)
       bstate->state.emplace<std::monostate>();
     }
   }
-  /* We would return bRC_More if we wanted startBackupFile to be called again to
-   * backup another file */
+  /* We would return bRC_More if we wanted start_backup_file to be called again
+   * to backup another file */
 
   TRCC(ctx, "no more files left");
   return bRC_OK;
@@ -2613,11 +2792,89 @@ static bRC pluginBackupIO(PluginContext* ctx,
         io->status = IoStatus::do_io_in_core;
         return bRC_OK;
       }
+
+      if (prepared.disks_to_backup.size() > 0) {
+        // we are backing up a disk
+        if (!prepared.disk_to_backup) {
+          JERR(ctx,
+               L"can not open disk {} because it was not properly prepared",
+               prepared.disks_to_backup.back());
+          return bRC_Error;
+        }
+
+        ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+            = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+        auto attach_res
+            = AttachVirtualDisk(prepared.disk_to_backup.value(), NULL,
+                                ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST
+                                    | ATTACH_VIRTUAL_DISK_FLAG_READ_ONLY,
+                                0, &attach_params, 0);
+        if (FAILED(attach_res)) {
+          JERR(ctx, L"could not attach disk {} for reading",
+               prepared.disks_to_backup.back());
+          // LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
+          //     WMI::ErrorString(attach_res), (uint32_t)attach_res);
+          return bRC_Error;
+          ;
+        }
+
+        io->status = 0;
+        return bRC_OK;
+      }
       return bRC_Error;
     } break;
     case filedaemon::IO_READ: {
-      DBGC(ctx, L"bad read!");
-      return bRC_Error;
+      // we only get here when backing up a disk
+      if (!prepared.disk_to_backup) {
+        DBGC(ctx, L"bad read!");
+        return bRC_Error;
+      }
+
+      OVERLAPPED overlapped = {};
+
+      auto current_offset = prepared.disk_offset;
+      overlapped.Offset = DWORD{current_offset & 0xFFFFFFFF};
+      overlapped.OffsetHigh = DWORD{(current_offset >> 32) & 0xFFFFFFFF};
+
+      size_t possible_end = current_offset + io->count;
+      if (possible_end > prepared.disk_full_size) {
+        possible_end = prepared.disk_full_size;
+      }
+
+      auto diff = possible_end - current_offset;
+
+      if (diff == 0) {
+        TRCC(ctx, "disk is done");
+        io->status = 0;
+        return bRC_OK;
+      }
+
+      DWORD bytes_read = 0;
+      if (!ReadFile(prepared.disk_to_backup.value(), io->buf, diff, &bytes_read,
+                    &overlapped)) {
+        DWORD error = GetLastError();
+
+        if (error == ERROR_IO_PENDING) {
+          if (GetOverlappedResult(prepared.disk_to_backup.value(), &overlapped,
+                                  &bytes_read, TRUE)) {
+            goto read_ok;
+          }
+
+          error = GetLastError();
+        }
+
+        JERR(ctx, L"encountered error while trying to read disk {}: {}",
+             prepared.disks_to_backup.back(), format_win32_error(error));
+        return bRC_Error;
+      }
+    read_ok:
+
+      TRCC(ctx, L"read {} bytes from offset {}", bytes_read,
+           prepared.disk_offset);
+      prepared.disk_offset += bytes_read;
+      io->status = bytes_read;
+      return bRC_OK;
+
     } break;
     case filedaemon::IO_WRITE: {
       return bRC_Error;
@@ -2639,6 +2896,13 @@ static bRC pluginBackupIO(PluginContext* ctx,
         DeleteFileW(current_file.c_str());
 
         return bRC_OK;
+      }
+      if (prepared.disks_to_backup.size() > 0) {
+        // we are backing up a disk
+        if (prepared.disk_to_backup) {
+          CloseHandle(prepared.disk_to_backup.value());
+          prepared.disk_to_backup.reset();
+        }
       }
       return bRC_Error;
     } break;
