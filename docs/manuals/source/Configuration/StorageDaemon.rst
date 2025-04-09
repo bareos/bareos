@@ -292,7 +292,7 @@ When the configuration is loaded, the |bareosSD| will then automatically multipl
 The multiplied device with the suffix "0000" serves a special purpose, it is implicitly assigned :config:option:`sd/device/Autoselect` to "no".
 All other multiplied devices are an exact copy of the original device.
 
-Additionally, specifying :config:option:`sd/device/Count` also implicitly creates an autochanger with the same name as the original device with all devices listet in that autochanger.
+Additionally, specifying :config:option:`sd/device/Count` also implicitly creates an autochanger with the same name as the original device with all devices listed in that autochanger.
 This only happens if the original device is not already associated to another autochanger.
 
 .. code-block:: bareosconfig
