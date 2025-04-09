@@ -520,6 +520,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
           Jmsg(jcr, M_FATAL, 0, T_("Unable to setup device for this job.\n"));
           ok = false;
           break;
+        } else {
+          // we just now got a device for the first time this job,
+          // but the checkpoint timer was running for this whole time already
+          // this does not really make sense, so we should "restart"
+          // the timer.
+
+          if (checkpoints_enabled) { checkpoint_handler.ResetTimer(); }
         }
       }
 

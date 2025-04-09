@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 
 This program is Free Software; you can redistribute it and/or
 modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,8 @@ class CheckpointHandler {
   void DoVolumeChangeBackupCheckpoint(JobControlRecord* jcr);
   void SetReadyForCheckpoint() { ready_for_checkpoint_ = true; }
   bool IsReadyForCheckpoint() const { return ready_for_checkpoint_; }
+
+  void ResetTimer();
 
  private:
   void UpdateFileList(JobControlRecord* jcr);
