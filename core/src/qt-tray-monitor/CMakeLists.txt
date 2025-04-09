@@ -33,7 +33,7 @@ if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
 else()
   message(STATUS "QT6Widgets NOT found, checking for Qt5 ...")
-  find_package(Qt5 COMPONENTS Core Widgets)
+  find_package(Qt5 QUIET COMPONENTS Core Widgets)
   if(Qt5Widgets_FOUND)
     message(STATUS "Found QT5Widgets")
   else()
@@ -41,7 +41,7 @@ else()
     find_package(Qt4)
     if(NOT Qt4_FOUND)
       message(
-        FATAL_ERROR "Both Qt5 and Qt4 not found, cannot build tray-monitor"
+        FATAL_ERROR "None of Qt6, Qt5 or Qt4 found, cannot build tray-monitor."
       )
     endif()
   endif()
@@ -53,34 +53,29 @@ if(HAVE_WIN32)
   )
 endif()
 
-set(SOURCES
-    tray-monitor.cc
-    authenticate.cc
-    tray_conf.cc
-    tray-monitor.cc
-    traymenu.cc
-    systemtrayicon.cc
-    mainwindow.cc
-    monitoritem.cc
-    monitoritemthread.cc
+add_executable(bareos-tray-monitor)
+target_sources(
+  bareos-tray-monitor
+  PRIVATE tray-monitor.cc
+          authenticate.cc
+          tray_conf.cc
+          tray-monitor.cc
+          traymenu.cc
+          systemtrayicon.cc
+          mainwindow.cc
+          monitoritem.cc
+          monitoritemthread.cc
+          main.qrc
 )
+bareos_windows_resource(bareos-tray-monitor traymonres.rc.in)
 
 if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/qt-tray-monitor/traymon.rc.in)
-  list(APPEND SOURCES
-       ${CMAKE_CURRENT_BINARY_DIR}/../win32/qt-tray-monitor/traymon.rc
-  )
-endif()
-
-if(HAVE_WIN32)
-  add_executable(bareos-tray-monitor WIN32 ${SOURCES} main.qrc)
-else()
-  add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
+  set_target_properties(bareos-tray-monitor PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 
 target_link_libraries(bareos-tray-monitor PRIVATE Bareos::Lib CLI11::CLI11)
 
-if(Qt4_FOUND)
+if(TARGET Qt4::QtGui)
   target_link_libraries(bareos-tray-monitor PRIVATE Qt4::QtGui)
 endif()
 
