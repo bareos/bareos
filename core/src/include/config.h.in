@@ -120,9 +120,6 @@
 // Define to 1 if cplus_demangle exists in libdemangle
 #cmakedefine HAVE_CPLUS_DEMANGLE @HAVE_CPLUS_DEMANGLE@
 
-// Define to 1 if encryption support should be enabled
-#cmakedefine HAVE_CRYPTO @HAVE_CRYPTO@
-
 // Define to 1 if you have the <cxxabi.h> header file
 #cmakedefine HAVE_CXXABI_H @HAVE_CXXABI_H@
 
@@ -330,9 +327,6 @@
 // Define to 1 if you have the `openat' function
 #cmakedefine HAVE_OPENAT @HAVE_OPENAT@
 
-// Define to 1 if OpenSSL library is available
-#cmakedefine HAVE_OPENSSL @HAVE_OPENSSL@
-
 // Define to 1 if you have the `poll' function
 #cmakedefine HAVE_POLL @HAVE_POLL@
 
@@ -437,9 +431,6 @@
 
 // Define to 1 if you have the <sys/xattr.h> header file
 #cmakedefine HAVE_SYS_XATTR_H @HAVE_SYS_XATTR_H@
-
-// Define to 1 if TLS support should be enabled
-#cmakedefine HAVE_TLS @HAVE_TLS@
 
 // Define to 1 if you have the <ucontext.h> header file
 #cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@

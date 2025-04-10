@@ -141,10 +141,6 @@ endmacro() # bareos_add_test
 
 include(GoogleTest)
 
-if(HAVE_OPENSSL)
-  set(SSL_UNIT_TEST_FILES init_openssl.cc)
-endif()
-
 set(LINK_LIBRARIES Bareos::SD Bareos::Dir Bareos::Console Bareos::LibSD
                    Bareos::Lib Bareos::SQL Bareos::Findlib GTest::gtest_main
 )
@@ -226,14 +222,14 @@ if(NOT client-only)
   bareos_add_test(bool_string LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
   bareos_add_test(
     bsock_test_connection_setup
-    ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
+    ADDITIONAL_SOURCES init_openssl.cc
     LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
   )
 
   if(NOT DISABLE_KTLS)
     bareos_add_test(
       ktls
-      ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
+      ADDITIONAL_SOURCES init_openssl.cc
       LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
       COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
     )
@@ -426,8 +422,7 @@ if(NOT HAVE_WIN32 AND NOT client-only)
     test_bsock
     ADDITIONAL_SOURCES
       bareos_test_sockets.cc bsock_constructor_test.cc
-      bsock_cert_verify_common_names_test.cc create_resource.cc
-      ${SSL_UNIT_TEST_FILES}
+      bsock_cert_verify_common_names_test.cc create_resource.cc init_openssl.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
     COMPILE_DEFINITIONS CERTDIR=\"${CERTDIR}\"
   )

@@ -997,9 +997,7 @@ int32_t BareosSocketTCP::read_nbytes(char* ptr, int32_t nbytes)
 {
   int32_t nleft, nread;
 
-#ifdef HAVE_TLS
   if (tls_conn) { return (tls_conn->TlsBsockReadn(this, ptr, nbytes)); }
-#endif /* HAVE_TLS */
 
   nleft = nbytes;
   while (nleft > 0) {
@@ -1067,9 +1065,7 @@ int32_t BareosSocketTCP::write_nbytes(char* ptr, int32_t nbytes)
     bnet_dump_->DumpMessageAndStacktraceToFile(ptr, nbytes);
   }
 
-#ifdef HAVE_TLS
   if (tls_conn) { return (tls_conn->TlsBsockWriten(this, ptr, nbytes)); }
-#endif /* HAVE_TLS */
 
   nleft = nbytes;
   while (nleft > 0) {

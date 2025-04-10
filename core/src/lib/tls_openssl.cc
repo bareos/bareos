@@ -30,22 +30,20 @@
 #include "lib/bpoll.h"
 #include "lib/crypto_openssl.h"
 
-#if defined(HAVE_TLS) && defined(HAVE_OPENSSL)
+#include <openssl/asn1.h>
+#include <openssl/asn1t.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 
-#  include <openssl/asn1.h>
-#  include <openssl/asn1t.h>
-#  include <openssl/err.h>
-#  include <openssl/ssl.h>
-#  include <openssl/x509v3.h>
+#include "lib/bsock.h"
+#include "lib/tls_openssl.h"
+#include "lib/tls_openssl_private.h"
+#include "lib/bstringlist.h"
+#include "lib/ascii_control_characters.h"
+#include "include/jcr.h"
 
-#  include "lib/bsock.h"
-#  include "lib/tls_openssl.h"
-#  include "lib/tls_openssl_private.h"
-#  include "lib/bstringlist.h"
-#  include "lib/ascii_control_characters.h"
-#  include "include/jcr.h"
-
-#  include "parse_conf.h"
+#include "parse_conf.h"
 
 TlsOpenSsl::TlsOpenSsl() : d_(std::make_unique<TlsOpenSslPrivate>()) {}
 
@@ -187,25 +185,25 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
       extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
       if (bstrcmp(extname, "subjectAltName")) {
-#  if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
         const X509V3_EXT_METHOD* method;
-#  else
+#else
         X509V3_EXT_METHOD* method;
-#  endif
+#endif
         STACK_OF(CONF_VALUE) * val;
         CONF_VALUE* nval;
         void* extstr = NULL;
-#  if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
+#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
         const unsigned char* ext_value_data;
-#  else
+#else
         unsigned char* ext_value_data;
-#  endif
+#endif
 
         if (!(method = X509V3_EXT_get(ext))) { break; }
 
         ext_value_data = X509_EXTENSION_get_data(ext)->data;
 
-#  if (OPENSSL_VERSION_NUMBER > 0x00907000L)
+#if (OPENSSL_VERSION_NUMBER > 0x00907000L)
         if (method->it) {
           extstr = ASN1_item_d2i(NULL, &ext_value_data,
                                  X509_EXTENSION_get_data(ext)->length,
@@ -217,9 +215,9 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
                                X509_EXTENSION_get_data(ext)->length);
         }
 
-#  else
+#else
         extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
-#  endif
+#endif
 
         // Iterate through to find the dNSName field(s)
         val = method->i2v(method, extstr, NULL);
@@ -346,5 +344,3 @@ int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
 bool TlsOpenSsl::KtlsSendStatus() { return d_->KtlsSendStatus(); }
 
 bool TlsOpenSsl::KtlsRecvStatus() { return d_->KtlsRecvStatus(); }
-
-#endif /* HAVE_TLS  && HAVE_OPENSSL */

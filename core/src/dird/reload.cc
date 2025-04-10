@@ -70,14 +70,6 @@ bool CheckResources()
            configfile_name.c_str());
       return false;
     }
-
-    if (me->IsTlsConfigured()) {
-      if (!have_tls) {
-        Jmsg(nullptr, M_FATAL, 0,
-             T_("TLS required but not compiled into BAREOS.\n"));
-        return false;
-      }
-    }
   }
 
   if (!job) {
@@ -110,37 +102,8 @@ bool CheckResources()
     }
   }
 
-  ConsoleResource* cons;
-  foreach_res (cons, R_CONSOLE) {
-    if (cons->IsTlsConfigured()) {
-      if (!have_tls) {
-        Jmsg(nullptr, M_FATAL, 0,
-             T_("TLS required but not configured in BAREOS.\n"));
-        ;
-        return false;
-      }
-    }
-  }
-
-  ClientResource* client;
-  foreach_res (client, R_CLIENT) {
-    if (client->IsTlsConfigured()) {
-      if (!have_tls) {
-        Jmsg(nullptr, M_FATAL, 0, T_("TLS required but not configured.\n"));
-        return false;
-      }
-    }
-  }
-
   StorageResource *store, *nstore;
   foreach_res (store, R_STORAGE) {
-    if (store->IsTlsConfigured()) {
-      if (!have_tls) {
-        Jmsg(nullptr, M_FATAL, 0, T_("TLS required but not configured.\n"));
-        return false;
-      }
-    }
-
     /* If we collect statistics on this SD make sure any other entry pointing to
      * the same SD does not collect statistics otherwise we collect the same
      * data multiple times. */

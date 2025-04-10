@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -111,30 +111,8 @@ typedef enum
 #define CRYPTO_DIGEST_XXH128_SIZE 16 /* 128 bits */
 
 /* Maximum Message Digest Size */
-#ifdef HAVE_OPENSSL
-
-#  define CRYPTO_DIGEST_MAX_SIZE 64
-#  define CRYPTO_CIPHER_MAX_BLOCK_SIZE 32
-
-#else /* HAVE_OPENSSL */
-
-/**
- * This must be kept in sync with the available message digest algorithms.
- * Just in case someone forgets, I've added assertions
- * to CryptoDigestFinalize().
- *      MD5: 128 bits
- *      SHA-1: 160 bits
- */
-#  ifndef HAVE_SHA2
-#    define CRYPTO_DIGEST_MAX_SIZE CRYPTO_DIGEST_SHA1_SIZE
-#  else
-#    define CRYPTO_DIGEST_MAX_SIZE CRYPTO_DIGEST_SHA512_SIZE
-#  endif
-
-/* Dummy Value */
-#  define CRYPTO_CIPHER_MAX_BLOCK_SIZE 0
-
-#endif /* HAVE_OPENSSL */
+#define CRYPTO_DIGEST_MAX_SIZE 64
+#define CRYPTO_CIPHER_MAX_BLOCK_SIZE 32
 
 class DigestInitException : public std::exception {};
 
