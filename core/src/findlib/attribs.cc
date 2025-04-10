@@ -134,8 +134,6 @@ int SelectDataStream(FindFilesPacket* ff_pkt)
     }
   }
 
-
-#ifdef HAVE_CRYPTO
   if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
     switch (stream) {
       case STREAM_WIN32_DATA:
@@ -163,7 +161,6 @@ int SelectDataStream(FindFilesPacket* ff_pkt)
         return STREAM_NONE;
     }
   }
-#endif
 
   return stream;
 }

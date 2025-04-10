@@ -361,15 +361,6 @@ static int CheckResources()
     OK = false;
   }
 
-  StorageResource* store = me;
-  if (store->IsTlsConfigured()) {
-    if (!have_tls) {
-      Jmsg(nullptr, M_FATAL, 0,
-           T_("TLS required but not compiled into Bareos.\n"));
-      OK = false;
-    }
-  }
-
   DeviceResource* device_resource = nullptr;
   foreach_res (device_resource, R_DEVICE) {
     if (device_resource->drive_crypto_enabled

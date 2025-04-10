@@ -159,14 +159,6 @@ bool CheckResources()
         OK = false;
       }
     }
-    if (me->pki_encrypt || me->pki_sign) {
-#ifndef HAVE_CRYPTO
-      Jmsg(
-          nullptr, M_FATAL, 0,
-          T_("PKI encryption/signing enabled but not compiled into Bareos.\n"));
-      OK = false;
-#endif
-    }
 
     /* pki_encrypt implies pki_sign */
     if (me->pki_encrypt) { me->pki_sign = true; }
