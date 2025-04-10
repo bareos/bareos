@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2529,9 +2529,8 @@ static bool do_unfill()
   /* Space to "first" block which is last block not written
    * on the previous tape.
    */
-  Pmsg2(-1, T_("Reposition from %u:%u to 1:0\n"), dev->file,
-        dev->block_num);
-  if (!dev->Reposition(g_dcr, 1, 0)) {
+  Pmsg2(-1, T_("Reposition from %u:%u to 1:0\n"), dev->file, dev->block_num);
+  if (!dev->Reposition(dcr, 1, 0)) {
     Pmsg1(-1, T_("Reposition error. ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
@@ -2541,7 +2540,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(first_block, g_dcr->block)) {
+  if (CompareBlocks(first_block, dcr->block)) {
     Pmsg0(-1, T_("\nThe first block on the second tape matches.\n\n"));
   }
 
@@ -2558,7 +2557,7 @@ static bool do_unfill()
     Pmsg1(-1, T_("Error reading block: ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
-  if (CompareBlocks(last_block, g_dcr->block)) {
+  if (CompareBlocks(last_block, dcr->block)) {
     Pmsg0(-1, T_("\nThe last block on the second tape matches. Test "
                  "succeeded.\n\n"));
     rc = true;
