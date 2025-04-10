@@ -755,6 +755,7 @@ static inline int BcloseNonencrypted(BareosFilePacket* bfd)
   }
 
   if (bfd->cmd_plugin && plugin_bclose) {
+    bfd->do_io_in_core = false;
     status = plugin_bclose(bfd);
     Dmsg0(50, "==== BFD closed!!!\n");
     goto all_done;
@@ -801,6 +802,7 @@ all_done:
   bfd->mode = BF_CLOSED;
   bfd->lplugin_private_context = NULL;
   bfd->cmd_plugin = false;
+  bfd->do_io_in_core = false;
 
   return status;
 }
