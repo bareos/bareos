@@ -267,9 +267,6 @@
 // Define to 1 if you have the <libutil.h> header file
 #cmakedefine HAVE_LIBUTIL_H @HAVE_LIBUTIL_H@
 
-// Define to 1 if you have zlib
-#cmakedefine HAVE_LIBZ @HAVE_LIBZ@
-
 // Define to 1 if you are running Linux
 #cmakedefine HAVE_LINUX_OS @HAVE_LINUX_OS@
 
@@ -446,9 +443,6 @@
 
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@
-
-// Define to 1 if you have the <zlib.h> header file
-#cmakedefine HAVE_ZLIB_H @HAVE_ZLIB_H@
 
 // Where are shared libs stored
 #cmakedefine LIBDIR @LIBDIR@

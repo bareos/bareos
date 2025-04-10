@@ -37,9 +37,7 @@
 #include "lib/serial.h"
 #include "lib/compression.h"
 
-#ifdef HAVE_LIBZ
-#  include <zlib.h>
-#endif
+#include <zlib.h>
 
 #ifdef HAVE_LZO
 #  include <lzo/lzoconf.h>
@@ -112,11 +110,9 @@ std::size_t RequiredCompressionOutputBufferSize(uint32_t algo,
                                                 std::size_t max_input_size)
 {
   switch (algo) {
-#ifdef HAVE_LIBZ
     case COMPRESS_GZIP: {
       return compressBound(max_input_size) + 18 + sizeof(comp_stream_header);
     }
-#endif
 #ifdef HAVE_LZO
     case COMPRESS_LZO1X:
       return max_input_size + (max_input_size / 16) + 64 + 3
@@ -195,7 +191,6 @@ class z4_compressor {
   }
 };
 
-#ifdef HAVE_LIBZ
 class gzip_compressor {
   z_stream zlibStream{};
   bool init_error{false};
@@ -261,7 +256,6 @@ class gzip_compressor {
     if (!init_error) { deflateEnd(&zlibStream); }
   }
 };
-#endif
 
 #ifdef HAVE_LZO
 class lzo_compressor {
@@ -314,9 +308,7 @@ class lzo_compressor {
 #endif
 
 struct compressors {
-#ifdef HAVE_LIBZ
   std::unique_ptr<gzip_compressor> gzip{nullptr};
-#endif
 #ifdef HAVE_LZO
   std::unique_ptr<lzo_compressor> lzo{nullptr};
 #endif
@@ -363,13 +355,11 @@ result<std::size_t> ThreadlocalCompress(uint32_t algo,
 
   auto* comps = manager.thread_local_value();
   switch (algo) {
-#ifdef HAVE_LIBZ
     case COMPRESS_GZIP: {
       if (!comps->gzip) comps->gzip.reset(new gzip_compressor);
       comps->gzip->set_level(level);
       return comps->gzip->compress(input, size, output, capacity);
     } break;
-#endif
 #ifdef HAVE_LZO
     case COMPRESS_LZO1X: {
       if (!comps->lzo) comps->lzo.reset(new lzo_compressor);
@@ -411,7 +401,6 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
     case 0:
       // No compression requested.
       break;
-#ifdef HAVE_LIBZ
     case COMPRESS_GZIP: {
       z_stream* pZlibStream;
 
@@ -452,7 +441,6 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       }
       break;
     }
-#endif
 #ifdef HAVE_LZO
     case COMPRESS_LZO1X: {
       lzo_voidp pLzoMem;
@@ -542,7 +530,6 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
                                      uint32_t algo,
                                      uint32_t compression_level)
 {
-#if defined(HAVE_LIBZ)
   if (algo == COMPRESS_GZIP) {
     auto* pZlibStream = reinterpret_cast<z_stream*>(jcr.compress.workset.pZLIB);
     int zstatus
@@ -561,7 +548,6 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
       return false;
     }
   }
-#endif
   if (algo == COMPRESS_FZFZ || algo == COMPRESS_FZ4L || algo == COMPRESS_FZ4H) {
     zfast_stream_compressor compressor = COMPRESSOR_DEFAULT;
     switch (algo) {
@@ -621,7 +607,6 @@ bool SetupDecompressionBuffers(JobControlRecord* jcr,
   return true;
 }
 
-#ifdef HAVE_LIBZ
 static bool compress_with_zlib(JobControlRecord* jcr,
                                char* rbuf,
                                uint32_t rsize,
@@ -660,7 +645,6 @@ static bool compress_with_zlib(JobControlRecord* jcr,
 
   return true;
 }
-#endif
 
 #ifdef HAVE_LZO
 static bool compress_with_lzo(JobControlRecord* jcr,
@@ -744,7 +728,6 @@ bool CompressData(JobControlRecord* jcr,
 {
   *compress_len = 0;
   switch (compression_algorithm) {
-#ifdef HAVE_LIBZ
     case COMPRESS_GZIP:
       if (jcr->compress.workset.pZLIB) {
         if (!compress_with_zlib(jcr, rbuf, rsize, cbuf, max_compress_len,
@@ -753,7 +736,6 @@ bool CompressData(JobControlRecord* jcr,
         }
       }
       break;
-#endif
 #ifdef HAVE_LZO
     case COMPRESS_LZO1X:
       if (jcr->compress.workset.pLZO) {
@@ -781,7 +763,6 @@ bool CompressData(JobControlRecord* jcr,
   return true;
 }
 
-#ifdef HAVE_LIBZ
 static bool decompress_with_zlib(JobControlRecord* jcr,
                                  const char* last_fname,
                                  char** data,
@@ -859,7 +840,6 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
 
   return true;
 }
-#endif
 #ifdef HAVE_LZO
 static bool decompress_with_lzo(JobControlRecord* jcr,
                                 const char* last_fname,
@@ -1073,7 +1053,6 @@ bool DecompressData(JobControlRecord* jcr,
       /* Based on the compression used perform the actual decompression of the
        * data. */
       switch (comp_magic) {
-#ifdef HAVE_LIBZ
         case COMPRESS_GZIP:
           switch (stream) {
             case STREAM_SPARSE_COMPRESSED_DATA:
@@ -1083,7 +1062,6 @@ bool DecompressData(JobControlRecord* jcr,
               return decompress_with_zlib(jcr, last_fname, data, length, false,
                                           true, want_data_stream);
           }
-#endif
 #ifdef HAVE_LZO
         case COMPRESS_LZO1X:
           switch (stream) {
@@ -1116,7 +1094,6 @@ bool DecompressData(JobControlRecord* jcr,
       break;
     }
     default:
-#ifdef HAVE_LIBZ
       switch (stream) {
         case STREAM_SPARSE_GZIP_DATA:
           return decompress_with_zlib(jcr, last_fname, data, length, true,
@@ -1125,11 +1102,6 @@ bool DecompressData(JobControlRecord* jcr,
           return decompress_with_zlib(jcr, last_fname, data, length, false,
                                       false, want_data_stream);
       }
-#else
-      Qmsg(jcr, M_ERROR, 0,
-           T_("Compression algorithm GZIP found, but not supported!\n"));
-      return false;
-#endif
   }
 }
 
@@ -1145,14 +1117,12 @@ void CleanupCompression(JobControlRecord* jcr)
     jcr->compress.inflate_buffer = NULL;
   }
 
-#ifdef HAVE_LIBZ
   if (jcr->compress.workset.pZLIB) {
     // Free the zlib stream
     deflateEnd((z_stream*)jcr->compress.workset.pZLIB);
     free(jcr->compress.workset.pZLIB);
     jcr->compress.workset.pZLIB = NULL;
   }
-#endif
 
 #ifdef HAVE_LZO
   if (jcr->compress.workset.pLZO) {

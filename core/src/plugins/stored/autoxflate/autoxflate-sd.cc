@@ -32,9 +32,7 @@
 #include "lib/serial.h"
 #include "lib/compression.h"
 
-#if defined(HAVE_LIBZ)
-#  include <zlib.h>
-#endif
+#include <zlib.h>
 
 #include "fastlz/fastlzlib.h"
 
