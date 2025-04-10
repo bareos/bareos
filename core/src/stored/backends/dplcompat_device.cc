@@ -54,9 +54,9 @@ bool is_chunk_name(const std::string& name)
 }
 
 static const utl::options option_defaults{
-    {"chunksize", "10485760"},  // 10 MB
-    {"iothreads", "0"},        {"ioslots", "10"}, {"retries", "0"},
-    {"program_timeout", "0"},  // use default in crud_storage
+    {"chunksize", "10 MB"}, {"iothreads", "0"},       {"ioslots", "10"},
+    {"retries", "0"},       {"program_timeout", "0"},  // default in
+                                                       // crud_storage
 };
 
 unsigned long long stoull_notrailing(const std::string& str)
@@ -112,10 +112,19 @@ template <> void convert_value<>(std::string& to, const std::string& from)
   to = from;
 }
 
+void convert_size(uint64_t& to, const std::string& from)
+{
+  if (!size_to_uint64(from.c_str(), &to)) {
+    throw std::invalid_argument("Hello, World!");
+  }
+}
+
 template <typename T>
-tl::expected<utl::options*, std::string> convert(utl::options* options,
-                                                 const std::string& key,
-                                                 T& target)
+tl::expected<utl::options*, std::string> convert(
+    utl::options* options,
+    const std::string& key,
+    T& target,
+    std::function<void(T&, const std::string&)> converter = convert_value<T>)
 {
   auto node_handle = options->extract(key);
   if (node_handle.empty()) {
@@ -125,7 +134,7 @@ tl::expected<utl::options*, std::string> convert(utl::options* options,
   auto value = node_handle.mapped();
 
   try {
-    convert_value(target, value);
+    converter(target, value);
   } catch (std::invalid_argument& e) {
     return tl::unexpected(fmt::format(
         "invalid argument '{}' for option '{}': {}\n", value, key, e.what()));
@@ -149,12 +158,21 @@ std::optional<std::string> fetch_value(utl::options& options,
   return node_handle.mapped();
 }
 
-template <typename T> auto get_converter(const std::string& key, T& target)
+template <typename T>
+auto get_value_converter(const std::string& key, T& target)
 {
   return [&key, &target](utl::options* options) {
     return convert(options, key, target);
   };
 }
+
+template <typename T> auto get_size_converter(const std::string& key, T& target)
+{
+  return [&key, &target](utl::options* options) {
+    return convert(options, key, target, std::function{convert_size});
+  };
+}
+
 
 }  // namespace
 
@@ -194,12 +212,12 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
 
   if (auto conversion_result
       = tl::expected<utl::options*, std::string>{&options}
-            .and_then(get_converter("iothreads", io_threads_))
-            .and_then(get_converter("ioslots", io_slots_))
-            .and_then(get_converter("retries", retries_))
-            .and_then(get_converter("chunksize", chunk_size_))
-            .and_then(get_converter("program", program))
-            .and_then(get_converter("program_timeout", program_timeout));
+            .and_then(get_value_converter("iothreads", io_threads_))
+            .and_then(get_value_converter("ioslots", io_slots_))
+            .and_then(get_value_converter("retries", retries_))
+            .and_then(get_size_converter("chunksize", chunk_size_))
+            .and_then(get_value_converter("program", program))
+            .and_then(get_value_converter("program_timeout", program_timeout));
       !conversion_result) {
     return tl::unexpected(conversion_result.error());
   }
@@ -207,6 +225,8 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   if (program.empty()) {
     return tl::unexpected("Option 'program' is required\n"s);
   }
+
+  Dmsg0(debug_trace, "configured chunksize in bytes: %llu\n", chunk_size_);
 
   if (auto result = m_storage.set_program(program); !result) { return result; }
 
