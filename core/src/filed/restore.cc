@@ -91,11 +91,7 @@ const bool have_xattr = false;
 static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
 
 // Forward referenced functions
-#if defined(HAVE_LIBZ)
 const bool have_libz = true;
-#else
-const bool have_libz = false;
-#endif
 #if defined(HAVE_LZO)
 const bool have_lzo = true;
 #else

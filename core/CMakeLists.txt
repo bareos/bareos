@@ -568,8 +568,6 @@ if("${PAM_FOUND}")
   set(HAVE_PAM 1)
 endif()
 
-set(have_zlib "${ZLIB_FOUND}")
-
 option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
        "${HAVE_CAPABILITY_H}"
 )
