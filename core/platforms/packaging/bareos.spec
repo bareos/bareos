@@ -1564,6 +1564,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files       contrib-filedaemon-python-plugins
 %defattr(-, root, root)
 %{plugin_dir}/bareos_mysql_dump
+%{plugin_dir}/mariadb-dump
 %{plugin_dir}/bareos_tasks
 %{plugin_dir}/openvz7
 

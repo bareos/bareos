@@ -24,6 +24,7 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "redirect_output" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "mysql.sh" @ONLY "")
+  configurefilestosystemtest("systemtests" "scripts" "mariadb.sh" @ONLY "")
   configurefilestosystemtest(
     "systemtests" "scripts" "run_python_unittests.sh" @ONLY ""
   )
@@ -507,8 +508,8 @@ macro(prepare_testdir_for_daemon_run)
   set(dbHost ${current_test_directory}/tmp)
   string(LENGTH ${dbHost} dbHostLength)
   if(${dbHostLength} GREATER 90)
-    # unix domain sockets (used by mysql and psql) cannot be longer than 107
-    # chars. If too long, the socket is created under /tmp
+    # unix domain sockets (used by e.g. mariadb, mysql and psql) cannot be
+    # longer than 107 chars. If too long, the socket is created under /tmp
     set(dbHost /tmp/${TEST_NAME})
     file(MAKE_DIRECTORY ${dbHost})
   endif()
@@ -591,6 +592,7 @@ macro(prepare_test_python)
           "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgresql;"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles;"
           "${CMAKE_SOURCE_DIR}/contrib/fd-plugins;"
+          "${CMAKE_SOURCE_DIR}/contrib/fd-plugins/mariadb-dump;"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles;"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles;"
           "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_subdir_prefix}modules/\${CMAKE_CONFIG_TYPE};"
@@ -612,6 +614,7 @@ macro(prepare_test_python)
           "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgresql:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
           "${CMAKE_SOURCE_DIR}/contrib/fd-plugins:"
+          "${CMAKE_SOURCE_DIR}/contrib/fd-plugins/mariadb-dump:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
           "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_subdir_prefix}modules:"
