@@ -30,8 +30,6 @@
 #include "lib/bpoll.h"
 #include "lib/crypto_openssl.h"
 
-#if defined(HAVE_TLS) && defined(HAVE_OPENSSL)
-
 #  include <openssl/asn1.h>
 #  include <openssl/asn1t.h>
 #  include <openssl/err.h>
@@ -346,5 +344,3 @@ int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
 bool TlsOpenSsl::KtlsSendStatus() { return d_->KtlsSendStatus(); }
 
 bool TlsOpenSsl::KtlsRecvStatus() { return d_->KtlsRecvStatus(); }
-
-#endif /* HAVE_TLS  && HAVE_OPENSSL */

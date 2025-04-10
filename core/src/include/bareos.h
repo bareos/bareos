@@ -131,8 +131,4 @@
 #  include "winapi.h"
 #endif
 
-#ifndef HAVE_ZLIB_H
-#  undef HAVE_LIBZ /* no good without headers */
-#endif
-
 #endif  // BAREOS_INCLUDE_BAREOS_H_

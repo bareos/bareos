@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -428,14 +428,6 @@ if(NOT postgresql)
   set(PostgreSQL_INCLUDE_DIR "")
 endif()
 
-if(NOT Readline_LIBRARY)
-  set(Readline_LIBRARY "")
-endif()
-
-if(NOT LIBZ_FOUND)
-  set(ZLIB_LIBRARY "")
-endif()
-
 if(NOT client-only)
   if(${postgresql})
     set(HAVE_POSTGRESQL 1)
@@ -444,8 +436,6 @@ if(NOT client-only)
 endif()
 
 option(systemd "Enable systemd support" OFF)
-option(openssl "Enable openssl support" ON)
-mark_as_advanced(openssl)
 
 # ports
 set(dir_port

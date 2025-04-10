@@ -31,9 +31,7 @@ struct CompressionContext {
   uint32_t deflate_buffer_size{}; /**< Length of deflation buffer */
   uint32_t inflate_buffer_size{}; /**< Length of inflation buffer */
   struct {
-#ifdef HAVE_LIBZ
     void* pZLIB{nullptr}; /**< ZLIB compression session data */
-#endif
 #ifdef HAVE_LZO
     void* pLZO{nullptr}; /**< LZO compression session data */
 #endif

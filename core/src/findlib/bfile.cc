@@ -416,22 +416,15 @@ bool IsRestoreStreamSupported(int stream)
 {
   switch (stream) {
     // Streams known not to be supported
-#  ifndef HAVE_LIBZ
-    case STREAM_GZIP_DATA:
-    case STREAM_SPARSE_GZIP_DATA:
-    case STREAM_WIN32_GZIP_DATA:
-#  endif
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
       return false;
 
       // Known streams
-#  ifdef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_WIN32_GZIP_DATA:
-#  endif
     case STREAM_COMPRESSED_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
     case STREAM_WIN32_COMPRESSED_DATA:
@@ -449,7 +442,6 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_SHA512_DIGEST:
 #  endif
     case STREAM_XXH128_DIGEST:
-#  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
@@ -457,7 +449,6 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
     case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
     case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-#  endif    /* !HAVE_CRYPTO */
     case 0: /* compatibility with old tapes */
       return true;
   }
@@ -962,11 +953,6 @@ bool IsRestoreStreamSupported(int stream)
 {
   /* No Win32 backup on this machine */
   switch (stream) {
-#  ifndef HAVE_LIBZ
-    case STREAM_GZIP_DATA:
-    case STREAM_SPARSE_GZIP_DATA:
-    case STREAM_WIN32_GZIP_DATA:
-#  endif
 #  ifndef HAVE_DARWIN_OS
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
@@ -974,11 +960,9 @@ bool IsRestoreStreamSupported(int stream)
       return false;
 
       /* Known streams */
-#  ifdef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_WIN32_GZIP_DATA:
-#  endif
     case STREAM_COMPRESSED_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
     case STREAM_WIN32_COMPRESSED_DATA:
@@ -998,19 +982,15 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_SHA512_DIGEST:
 #  endif
     case STREAM_XXH128_DIGEST:
-#  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
     case STREAM_ENCRYPTED_WIN32_DATA:
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
-#  endif
 #  ifdef HAVE_DARWIN_OS
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
-#    ifdef HAVE_CRYPTO
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
-#    endif /* HAVE_CRYPTO */
 #  endif   /* HAVE_DARWIN_OS */
     case 0: /* compatibility with old tapes */
       return true;
