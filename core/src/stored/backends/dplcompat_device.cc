@@ -59,6 +59,26 @@ static const utl::options option_defaults{
     {"program_timeout", "0"},  // use default in crud_storage
 };
 
+unsigned long long stoull_notrailing(const std::string& str)
+{
+  size_t pos;
+  unsigned long long val = std::stoull(str, &pos);
+  if (!std::all_of(str.begin() + pos, str.end(), b_isjunkchar)) {
+    throw std::invalid_argument{"unparseable trailing characters"};
+  }
+  return val;
+}
+
+unsigned long stoul_notrailing(const std::string& str)
+{
+  size_t pos;
+  unsigned long val = std::stoul(str, &pos);
+  if (!std::all_of(str.begin() + pos, str.end(), b_isjunkchar)) {
+    throw std::invalid_argument{"unparseable trailing characters"};
+  }
+  return val;
+}
+
 // delete this, so only specializations will be considered
 template <typename T> void convert_value(T&, const std::string&) = delete;
 
@@ -66,24 +86,24 @@ template <>
 [[maybe_unused]] void convert_value<>(unsigned long long& to,
                                       const std::string& from)
 {
-  to = std::stoull(from);
+  to = stoull_notrailing(from);
 }
 
 template <>
 [[maybe_unused]] void convert_value<>(unsigned long& to,
                                       const std::string& from)
 {
-  to = std::stoul(from);
+  to = stoul_notrailing(from);
 }
 
 template <> void convert_value<>(uint8_t& to, const std::string& from)
 {
-  to = gsl::narrow<uint8_t>(std::stoul(from));
+  to = gsl::narrow<uint8_t>(stoul_notrailing(from));
 }
 
 template <> void convert_value<>(uint32_t& to, const std::string& from)
 {
-  to = gsl::narrow<uint32_t>(std::stoul(from));
+  to = gsl::narrow<uint32_t>(stoul_notrailing(from));
 }
 
 
