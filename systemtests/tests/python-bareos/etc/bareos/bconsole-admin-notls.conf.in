@@ -4,12 +4,12 @@
 
 Director {
   Name = @basename@-dir
-  DIRport = @dir_port@
+  Port = @dir_port@
   Address = @hostname@
   Password = "INVALID"
 }
 
 Console {
-  name = admin-notls
-  password = secret
+  Name = admin-notls
+  Password = secret
 }

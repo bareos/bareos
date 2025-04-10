@@ -2,6 +2,6 @@ Client {
   Name = anotherclient
 
   Working Directory =  "@working_dir@"
-  FD Port = @fd2_port@
+  Port = @fd2_port@
 
 }

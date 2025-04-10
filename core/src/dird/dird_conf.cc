@@ -121,10 +121,10 @@ static ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir,  resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of the resource." },
   { "Description", CFG_TYPE_STR, ITEM(res_dir,  description_), 0, 0, NULL, NULL, NULL },
   { "Messages", CFG_TYPE_RES, ITEM(res_dir,  messages), R_MSGS, 0, NULL, NULL, NULL },
-  { "DirPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-  { "DirAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-  { "DirAddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-  { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+  { "Port", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL, { "DirPort"} },
+  { "Address", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL, { "DirAddress" } },
+  { "Addresses", CFG_TYPE_ADDRESSES, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL, { "DirAddresses" } },
+  { "SourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL, { "DirSourceAddress" } },
   { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL },
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), 0, 0, NULL,
@@ -4010,7 +4010,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
        * the set the main directive to be set. */
       if ((res_dir->DIRaddrs) && (res_dir->DIRaddrs->size() > 0)) {
         for (int i = 0; items[i].name; i++) {
-          if (Bstrcasecmp(items[i].name, "DirAddresses")) {
+          if (Bstrcasecmp(items[i].name, "Addresses")) {
             // SetBit(i, allocated_resource->item_present_);
             ClearBit(i, allocated_resource->inherit_content_);
           }

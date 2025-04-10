@@ -542,7 +542,7 @@ When parsing the resource directives, Bareos classifies the data according to th
    .. code-block:: bareosconfig
        :caption: Listen on IPv4 and IPv6 for Bareos < 21
 
-       DirAddresses = {
+       Addresses = {
           ipv6 = { addr = :: ; port = 9101 }
        }
 
@@ -553,7 +553,7 @@ When parsing the resource directives, Bareos classifies the data according to th
    .. code-block:: bareosconfig
        :caption: Listen on IPv4 and IPv6 for Bareos >= 21 (default)
 
-       DirAddresses = {
+       Addresses = {
           ipv4 = { addr = 0.0.0.0 ; port = 9101 }
           ipv6 = { addr = :: ; port = 9101 }
        }
