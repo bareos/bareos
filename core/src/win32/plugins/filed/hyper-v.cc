@@ -298,18 +298,22 @@ struct JobLogger {
   void Log(int type, std::wformat_string<Args...> fmt, Args&&... args)
   {
     if (bareos_core_functions) {
-      bareos_core_functions->JobMessage(
-          ctx, loc.function_name(), loc.line(), type, 0, "%ls\n",
-          std::format(fmt, std::forward<Args>(args)...).c_str());
+      auto formatted = std::format(fmt, std::forward<Args>(args)...);
+      bareos_core_functions->DebugMessage(ctx, loc.function_name(), loc.line(),
+                                          200, "%ls\n", formatted.c_str());
+      bareos_core_functions->JobMessage(ctx, loc.function_name(), loc.line(),
+                                        type, 0, "%ls\n", formatted.c_str());
     }
   }
   template <class... Args>
   void Log(int type, std::format_string<Args...> fmt, Args&&... args)
   {
     if (bareos_core_functions) {
-      bareos_core_functions->JobMessage(
-          ctx, loc.function_name(), loc.line(), type, 0, "%s\n",
-          std::format(fmt, std::forward<Args>(args)...).c_str());
+      auto formatted = std::format(fmt, std::forward<Args>(args)...);
+      bareos_core_functions->DebugMessage(ctx, loc.function_name(), loc.line(),
+                                          200, "%s\n", formatted.c_str());
+      bareos_core_functions->JobMessage(ctx, loc.function_name(), loc.line(),
+                                        type, 0, "%s\n", formatted.c_str());
     }
   }
 
@@ -340,6 +344,10 @@ struct JobLogger {
 #define JERR(ctx, ...)                          \
   do {                                          \
     JobLogger{(ctx)}.Log(M_ERROR, __VA_ARGS__); \
+  } while (0)
+#define JFATAL(ctx, ...)                        \
+  do {                                          \
+    JobLogger{(ctx)}.Log(M_FATAL, __VA_ARGS__); \
   } while (0)
 
 const void* fmt_as_ptr(auto x) { return static_cast<const void*>(x); }
@@ -639,6 +647,20 @@ struct variant_type {
       V_BSTR(&result) = var.get();
       return result;
     }
+
+    static VARIANT into_array(std::span<const c_type> vals)
+    {
+      CComSafeArray<BSTR> array(vals.size());
+      for (size_t i = 0; i < vals.size(); ++i) {
+        array.SetAt(i, vals[i].get(), TRUE);
+      }
+
+      VARIANT var = {};
+      V_VT(&var) = type | VT_ARRAY;
+      V_ARRAY(&var) = array.Detach();
+
+      return var;
+    }
   };
 
   struct boolean {
@@ -802,6 +824,21 @@ struct BaseObject {
     DBG(L"{}->put({}):", fmt_as_ptr(ptr.p), name);
     WMI_CALL(ptr->Put(name, 0, &param, type));
   }
+
+  template <typename CimType>
+  void put_array(const wchar_t* name,
+                 std::span<const typename CimType::v_type::c_type> arr) const
+  {
+    VARIANT param = CimType::v_type::into_array(arr);
+
+    CIMTYPE type = CimType::c_type | CIM_FLAG_ARRAY;
+
+    DBG(L"{}->put_array({}):", fmt_as_ptr(ptr.p), name);
+    WMI_CALL(ptr->Put(name, 0, &param, type));
+
+    // TODO: leak on throw
+    VariantClear(&param);
+  }
 };
 
 struct ClassObject : BaseObject {
@@ -947,23 +984,6 @@ struct Job : ClassObject {
     return (s == State::Completed) || (s == State::CompletedWithWarnings);
   }
 
-  std::wstring format_err() const
-  {
-    // error description + GetErrorEx
-    // uint16   ErrorCode;
-    // string   ErrorDescription;
-    // string   ErrorSummaryDescription;
-
-    auto code = get<cim_type::uint16>(L"ErrorCode");
-    auto desc = get<cim_type::string>(L"ErrorDescription");
-    auto sum_desc = get<cim_type::string>(L"ErrorSummaryDescription");
-
-    // TODO: call GetErrorEx
-
-    return std::format(L"JobError({}): {} ({})", code, desc.as_view(),
-                       sum_desc.as_view());
-  }
-
   State state() const
   {
     return static_cast<State>(get<cim_type::uint16>(L"JobState"));
@@ -986,6 +1006,11 @@ enum CIMReturnValue : std::int32_t
   IncorrectDataType = 32776,
   SystemIsNotAvailable = 32777,
   OutOfMemory = 32778,
+};
+
+enum ResourceType : std::int32_t
+{
+  LogicalDisk = 31,
 };
 
 static const wchar_t* cim_return_value_name(std::int32_t ret)
@@ -1050,6 +1075,38 @@ struct cim_error : public std::exception {
 struct Service {
   Service(CComPtr<IWbemServices> ptr) : com_ptr{std::move(ptr)} {}
 
+  std::wstring format_job_err(const Job& job) const
+  {
+    // error description + GetErrorEx
+    // uint16   ErrorCode;
+    // string   ErrorDescription;
+    // string   ErrorSummaryDescription;
+
+    auto code = job.get<cim_type::uint16>(L"ErrorCode");
+    auto desc = job.get<cim_type::string>(L"ErrorDescription");
+    auto sum_desc = job.get<cim_type::string>(L"ErrorSummaryDescription");
+
+
+    auto clz = load_class_by_name(L"Msvm_ConcreteJob");
+    auto m_geterr = clz.load_method_by_name(L"GetErrorEx");
+
+    auto result = exec_method(job, m_geterr);
+
+    auto err_msg = std::format(L"JobError({}): {} ({})", code, desc.as_view(),
+                               sum_desc.as_view());
+    if (result) {
+      auto errors = result->get_array<cim_type::string>(L"Errors");
+
+      for (auto& err : errors) {
+        err_msg += L"error xml: ---\n\n";
+        err_msg += err.as_view();
+        err_msg += L"\n---\n";
+      }
+    }
+
+    return err_msg;
+  }
+
   Class load_class_by_name(std::wstring_view class_name) const
   {
     TRC(L"Loading class {} ...", class_name);
@@ -1077,6 +1134,68 @@ struct Service {
     WMI_CALL(com_ptr->GetObject(job_name.get(), 0, NULL, &job, NULL));
 
     return Job{std::move(job)};
+  }
+
+  std::optional<CallResult> exec_method(const ClassObject& obj,
+                                        const Method& mthd) const
+  {
+    auto path = obj.path();
+
+    IWbemClassObject* out_params = nullptr;
+
+    TRC(L"calling {}.{}() ...", path.as_view(), mthd.name.as_view());
+
+    WMI_CALL(com_ptr->ExecMethod(path.get(), mthd.name.get(), 0, NULL, NULL,
+                                 &out_params, NULL));
+
+    CallResult result{out_params};
+
+    TRC(L"... returning {}", result.to_string().as_view());
+
+    auto result_value = result.get<cim_type::uint32>(L"ReturnValue");
+
+    if (result_value == CIMReturnValue::OK) { return std::move(result); }
+
+    if (result_value == CIMReturnValue::JobStarted) {
+      auto job_name = result.get<cim_type::reference>(L"Job");
+
+      TRC(L"Got job name = {}", job_name.as_view());
+
+      for (;;) {
+        auto job = get_job_by_name(job_name);
+        TRC(L"Job = {}", job.to_string().as_view());
+
+        auto state = job.state();
+
+        if (Job::is_completed(state)) {
+          if (Job::is_successful(state)) {
+            result.job_name.emplace(std::move(job_name));
+            return std::move(result);
+          } else {
+            // maybe this should be an exception after all
+            std::wstring jn{job_name.as_view()};
+
+            // Jmsg(ctx, M_ERROR, "Job '%ls' did not complete successfully:
+            // %ls\n",
+            //      jn.c_str(), job.format_err().c_str());
+            // write some error message here
+            DBG(L"Job {} did not complete successfully: Err={} ({:X})",
+                job_name.as_view(), format_job_err(job), int32_t{state});
+            return std::nullopt;
+          }
+        } else {
+          TRC(L"Job {} is still running.  Sleeping...", job_name.as_view());
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+      }
+
+      // we need to somehow get the type of the return value.
+      // this way we could do some things automatically.
+
+      // Maybe one can use IWbemClassObject::GetPropertyQualifierSet for this ?
+    }
+
+    throw cim_error(result_value);
   }
 
   std::optional<CallResult> exec_method(const ClassObject& obj,
@@ -1124,6 +1243,8 @@ struct Service {
             // %ls\n",
             //      jn.c_str(), job.format_err().c_str());
             // write some error message here
+            DBG(L"Job {} did not complete successfully: Err={} ({:X})",
+                job_name.as_view(), format_job_err(job), int32_t{state});
             return std::nullopt;
           }
         } else {
@@ -1369,6 +1490,22 @@ class VirtualSystemManagementService : ClassObject {
     auto params = m_modify.create_parameters();
 
     params[L"SystemSettings"] = std::move(new_settings);
+
+    auto result = srvc.exec_method(*this, m_modify, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+
+  void modify_resource_settings(const Service& srvc,
+                                std::span<const String> resource_settings) const
+  {
+    auto m_modify = clz.load_method_by_name(L"ModifyResourceSettings");
+    auto params = m_modify.create_parameters();
+
+    params.put_array<cim_type::string>(L"ResourceSettings", resource_settings);
 
     auto result = srvc.exec_method(*this, m_modify, params);
 
@@ -1765,6 +1902,7 @@ struct plugin_ctx {
     std::vector<WMI::String> restored_definition_files;
 
     std::optional<HANDLE> disk_handle;
+    std::size_t current_offset;
 
     std::unordered_map<std::string, disk_info> disk_map;
   };
@@ -1958,7 +2096,9 @@ static std::wstring make_temp_dir(uint64_t jobid)
   auto written_len = GetTempPathW(path.size(), path.data());
   path.resize(written_len);
 
-  path += L"\\Bareos-";
+  if (path.back() != L'\\') { path += L'\\'; }
+
+  path += L"Bareos-";
   path += std::to_wstring(jobid);
 
   if (!CreateDirectoryW(path.c_str(), 0)) {
@@ -2159,6 +2299,14 @@ static std::wstring extract_disk_path(const WMI::ClassObject& vhd_setting)
   return std::wstring{paths[0].as_view()};
 }
 
+static void set_disk_path(const WMI::ClassObject& vhd_setting,
+                          std::wstring_view path)
+{
+  WMI::String args[] = {WMI::String::copy(path)};
+  vhd_setting.put_array<WMI::cim_type::string>(L"HostResource", args);
+  DBG(L"updated harddisk path to {}", path);
+}
+
 static std::vector<std::wstring> get_disk_paths_of_snapshot(
     const WMI::Service& srvc,
     const WMI::Snapshot& snap)
@@ -2171,7 +2319,8 @@ static std::vector<std::wstring> get_disk_paths_of_snapshot(
   paths.reserve(settings.size());
 
   for (auto& setting : settings) {
-    if (setting.get<WMI::cim_type::uint16>(L"ResourceType") != 31) {
+    if (setting.get<WMI::cim_type::uint16>(L"ResourceType")
+        != WMI::ResourceType::LogicalDisk) {
       DBG(L"Skipping {} because it has a bad resource type",
           setting.path().as_view());
       continue;
@@ -2262,7 +2411,7 @@ restore_object get_info(PluginContext* ctx,
   return std::move(obj);
 }
 
-static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
+static bool prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
 {
   TRCC(ctx, L"start backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
@@ -2278,8 +2427,8 @@ static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
 
   auto vm = srvc.get_vm_by_name(vm_name);
   if (!vm) {
-    // todo: we should handle this somehow
-    exit(1);
+    JFATAL(ctx, L"there are mulitple vms named {}.  Cannot continue.", vm_name);
+    return false;
   }
   auto snapshot = snapshot_srvc.create_snapshot(
       srvc, vm.value(), p_ctx->snapshot_settings,
@@ -2313,6 +2462,8 @@ static void prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
   prepared.restore_objects.emplace_back(
       get_info(ctx, vm_name, prepared.disks_to_backup));
   // }
+
+  return true;
 }
 
 static void prepare_restore_object(PluginContext* ctx)
@@ -2395,7 +2546,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       //   p_ctx->directory = utf8_to_utf16(directory);
       // }
 
-      prepare_backup(ctx, wname);
+      if (!prepare_backup(ctx, wname)) { return bRC_Error; }
     }
 
     auto& prepared
@@ -2431,7 +2582,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       DBGC(ctx, "into {}!", p_ctx->current_path);
 
       {
-        HANDLE disk_handle = {};
+        HANDLE disk_handle = INVALID_HANDLE_VALUE;
 
         VIRTUAL_STORAGE_TYPE vst = {
             .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
@@ -2447,7 +2598,8 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
                                    &disk_handle);
 
         if (res != ERROR_SUCCESS) {
-          JERR(ctx, L"could not open disk {}", path);
+          JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
+               format_win32_error(res), res);
           return bRC_Error;
         }
 
@@ -2922,7 +3074,9 @@ static bRC pluginBackupIO(PluginContext* ctx,
   }
 }
 
-static bool WriteFile_All(HANDLE handle, std::span<const char> to_write)
+static bool WriteFile_All(HANDLE handle,
+                          std::size_t offset,
+                          std::span<const char> to_write)
 {
   if (to_write.size() > std::numeric_limits<DWORD>::max()) {
     DBG(L"WriteFile_All() failed.  Cannot write more than {} bytes at once",
@@ -2935,15 +3089,34 @@ static bool WriteFile_All(HANDLE handle, std::span<const char> to_write)
   const char* current = to_write.data();
 
   while (bytes_to_write > 0) {
+    OVERLAPPED overlapped = {};
+    overlapped.Offset = DWORD{offset & 0xFF'FF'FF'FF};
+    overlapped.OffsetHigh = DWORD{(offset >> 32) & 0xFF'FF'FF'FF};
+
     DWORD bytes_written_this_call = 0;
     if (!WriteFile(handle, current, bytes_to_write, &bytes_written_this_call,
-                   NULL)) {
+                   &overlapped)) {
       auto write_res = GetLastError();
+
+      if (write_res == ERROR_IO_PENDING) {
+        TRC(L"WriteFile({}, {}, {}) -> async", fmt_as_ptr(handle),
+            offset + bytes_written, to_write.size() - bytes_written);
+
+        if (GetOverlappedResult(handle, &overlapped, &bytes_written_this_call,
+                                TRUE)) {
+          goto write_ok;
+        } else {
+          write_res = GetLastError();
+        }
+      }
+
       DBG(L"WriteFile({}, {}) failed.  Err={} ({:X})",
           current - to_write.data(), bytes_to_write,
           format_win32_error(write_res), (uint32_t)write_res);
       return false;
     }
+
+  write_ok:
 
     bytes_to_write -= bytes_written_this_call;
     current += bytes_written_this_call;
@@ -2976,11 +3149,17 @@ static bRC pluginRestoreIO(PluginContext* ctx,
             restore_ctx.disk_handle.value(), NULL,
             ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST, 0, &attach_params, 0);
         if (FAILED(attach_res)) {
+          DBGC(ctx, L"bad attach ");
           JERR(ctx, "could not attach disk {} ({}) for writing", io->fname,
                restore_ctx.disk_handle.value());
+          io->status = IoStatus::error;
           return bRC_Error;
         }
 
+        DBGC(ctx, L"good attach");
+
+        io->hndl = INVALID_HANDLE_VALUE;
+        io->status = IoStatus::success;
         return bRC_OK;
       } else {
         JERR(ctx, "could not open file {}, as no file was prepared", io->fname);
@@ -2995,22 +3174,26 @@ static bRC pluginRestoreIO(PluginContext* ctx,
     case filedaemon::IO_WRITE: {
       if (!restore_ctx.disk_handle) {
         JERR(ctx, "can not write to disk {} as it was not prepared", io->fname);
-        io->status = -1;
+        io->status = IoStatus::error;
         return bRC_Error;
       }
 
       if (io->count < 0) {
         JERR(ctx, "can not write {} bytes to disk {}", io->count, io->fname);
-        io->status = -1;
+        io->status = IoStatus::error;
         return bRC_Error;
       }
 
       if (!WriteFile_All(restore_ctx.disk_handle.value(),
+                         restore_ctx.current_offset,
                          {io->buf, static_cast<size_t>(io->count)})) {
-        io->status = -1;
+        io->status = IoStatus::error;
         return bRC_Error;
       }
 
+      restore_ctx.current_offset += io->count;
+
+      io->status = io->count;
       return bRC_OK;
     } break;
     case filedaemon::IO_CLOSE: {
@@ -3020,10 +3203,12 @@ static bRC pluginRestoreIO(PluginContext* ctx,
 
         DetachVirtualDisk(hndl, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
         CloseHandle(hndl);
+        restore_ctx.disk_handle.reset();
       } else {
         DBGC(ctx, "closing file handle {}", io->hndl);
         CloseHandle(io->hndl);
       }
+      io->hndl = INVALID_HANDLE_VALUE;
     } break;
     default: {
       JERR(ctx, "unknown plugin io command {}", io->func);
@@ -3116,6 +3301,64 @@ static bRC end_restore_job(PluginContext* ctx)
 
         for (auto& disk_setting : disk_settings) {
           TRCC(ctx, L"disk setting = {}", disk_setting.to_string().as_view());
+
+          if (disk_setting.get<WMI::cim_type::uint16>(L"ResourceType")
+              != WMI::ResourceType::LogicalDisk) {
+            DBGC(ctx, L"Skipping {} because it has a bad resource type",
+                 disk_setting.path().as_view());
+            continue;
+          }
+          if (disk_setting.get<WMI::cim_type::string>(L"ResourceSubType")
+                  .as_view()
+              != std::wstring_view{L"Microsoft:Hyper-V:Virtual Hard Disk"}) {
+            DBGC(ctx, L"Skipping {} because it has a bad resource sub type",
+                 disk_setting.path().as_view());
+            continue;
+          }
+
+          // we need to rewire the paths in the vm config, so that they point
+          // to the paths where we restored the volumes in.
+
+          auto backed_up_disk_path = extract_disk_path(disk_setting);
+
+          TRCC(ctx, L"disk path = {}", backed_up_disk_path);
+
+          auto disk_name = [&] {
+            auto last_slash = backed_up_disk_path.find_last_of(L"\\/");
+            if (last_slash == backed_up_disk_path.npos) { last_slash = -1; }
+
+            std::wstring name = backed_up_disk_path.substr(last_slash + 1,
+                                                           std::wstring::npos);
+
+            return utf16_to_utf8(name);
+          }();
+
+          TRCC(ctx, "disk name = {}", disk_name);
+
+          auto found = restore_ctx->disk_map.find(disk_name);
+          if (found == restore_ctx->disk_map.end()) {
+            // if we did not restore the volume, then just ignore it
+            DBGC(ctx, "{} was not restored, so we leave it as is", disk_name);
+            continue;
+          }
+
+          TRCC(ctx, L"pre update xml = {}",
+               format_as_xml(disk_setting).as_view());
+
+
+          auto& found_path = found->second.path;
+
+          set_disk_path(disk_setting, found_path);
+
+          TRCC(ctx, L"updated disk setting = {}",
+               disk_setting.to_string().as_view());
+
+          auto xml = format_as_xml(disk_setting);
+
+          std::vector<WMI::String> xmls;
+          xmls.emplace_back(std::move(xml));
+
+          system_srvc.modify_resource_settings(srvc, xmls);
         }
       }
 
@@ -3171,8 +3414,8 @@ static void ensure_paths(std::wstring_view path)
 
 static void create_dirs(std::wstring_view path)
 {
-  TRC(L"creating dirs in pathh {}", path);
-  auto last_slash = path.find_last_of(L"/");
+  TRC(L"creating dirs in path {}", path);
+  auto last_slash = path.find_last_of(L"\\/");
   if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
 }
 
@@ -3296,8 +3539,13 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 
   // we need to include the vm name to support restoring multiple vms at once
   std::wstring tmp_path
-      = std::format(L"{}/{}/{}", restore_ctx->tmp_dir, utf8_to_utf16(vm_name),
+      = std::format(L"{}\\{}\\{}", restore_ctx->tmp_dir, utf8_to_utf16(vm_name),
                     utf8_to_utf16(actual_path));
+
+  std::replace(std::begin(tmp_path), std::end(tmp_path), L'/', L'\\');
+  // std::replace(std::begin(tmp_path),
+  //              std::end(tmp_path),
+  //              L"\\\\"; L"\\");
 
   TRCC(ctx, L"tmp_path = {}", tmp_path);
 
@@ -3358,6 +3606,8 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
         }
       }();
 
+      TRCC(ctx, "--- 1");
+
       CREATE_VIRTUAL_DISK_PARAMETERS params;
       params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
       params.Version1 = {
@@ -3369,19 +3619,31 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
           .SourcePath = NULL,
       };
 
+      TRCC(ctx, "--- 2");
+
       auto disk_handle = INVALID_HANDLE_VALUE;
 
-      auto hres = CreateVirtualDisk(
+      auto result = CreateVirtualDisk(
           &vst, tmp_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
           CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
 
-      if (FAILED(hres)) {
+      TRCC(ctx, "--- 3");
+
+      if (result != ERROR_SUCCESS) {
+        TRCC(ctx, "--- 4");
+
         JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
-             tmp_path, format_win32_error(hres), hres);
+             tmp_path, format_win32_error(result), result);
         return bRC_Error;
       }
 
+      TRCC(ctx, "--- 5");
+
+      TRCC(ctx, L"created hard disk {} at {}", tmp_path.c_str(),
+           fmt_as_ptr(disk_handle));
+
       restore_ctx->disk_handle = disk_handle;
+      restore_ctx->current_offset = 0;
       rp->create_status = CF_EXTRACT;
 
       return bRC_OK;
