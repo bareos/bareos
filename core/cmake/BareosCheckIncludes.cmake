@@ -66,8 +66,6 @@ if(NOT MSVC)
 
   check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)
 
-  check_include_files(zlib.h HAVE_ZLIB_H)
-
   check_include_files(scsi/scsi.h HAVE_SCSI_SCSI_H)
 
   check_include_files("stddef.h;scsi/sg.h" HAVE_SCSI_SG_H)

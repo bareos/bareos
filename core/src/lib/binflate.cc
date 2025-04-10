@@ -25,9 +25,7 @@
  */
 
 #include "include/bareos.h"
-#ifdef HAVE_LIBZ
-#  include <zlib.h>
-#endif
+#include <zlib.h>
 
 /**
  * Deflate or compress and input buffer.  You must supply an
@@ -38,7 +36,6 @@
  */
 int Zdeflate(char* in, int in_len, char* out, int& out_len)
 {
-#ifdef HAVE_LIBZ
   z_stream strm;
   int ret;
 
@@ -63,9 +60,6 @@ int Zdeflate(char* in, int in_len, char* out, int& out_len)
   Dmsg1(200, "compressed=%d\n", out_len);
   (void)deflateEnd(&strm);
   return ret;
-#else
-  return 1;
-#endif
 }
 
 /**
@@ -75,7 +69,6 @@ int Zdeflate(char* in, int in_len, char* out, int& out_len)
  */
 int Zinflate(char* in, int in_len, char* out, int& out_len)
 {
-#ifdef HAVE_LIBZ
   z_stream strm;
   int ret;
 
@@ -100,7 +93,4 @@ int Zinflate(char* in, int in_len, char* out, int& out_len)
   Dmsg1(200, "Uncompressed=%d\n", out_len);
   (void)inflateEnd(&strm);
   return ret;
-#else
-  return 1;
-#endif
 }

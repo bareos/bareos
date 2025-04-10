@@ -157,8 +157,6 @@ if(NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
 endif()
 
 find_package(ZLIB REQUIRED)
-set(HAVE_LIBZ 1)
-set(HAVE_ZLIB_H 1)
 
 option(ENABLE_JANSSON "Build with Jansson library (required for director)" ON)
 if(ENABLE_JANSSON)
