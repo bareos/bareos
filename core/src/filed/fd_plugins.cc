@@ -2069,6 +2069,8 @@ static int MyPluginBclose(BareosFilePacket* bfd)
 #else
   bfd->filedes = kInvalidFiledescriptor;
 #endif
+
+  bfd->do_io_in_core = false;
   return io.status;
 }
 
