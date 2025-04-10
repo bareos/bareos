@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,6 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#include <cstring>
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
 #  include "gtest/gtest.h"
@@ -56,10 +57,14 @@ TEST(bsock, bareossockettcp_standard_constructor_test)
   EXPECT_EQ(p->errors, 0);
   EXPECT_EQ(p->suppress_error_msgs_, false);
   EXPECT_EQ(p->sleep_time_after_authentication_error, 5);
-  EXPECT_EQ(p->client_addr.sa_family, AF_UNSPEC);
-  EXPECT_EQ(p->client_addr.sa_data[0], 0);
-  EXPECT_EQ(p->peer_addr.sin_port, 0);
-  EXPECT_EQ(p->peer_addr.sin_addr.s_addr, 0);
+
+  auto* client_as_sockaddr = reinterpret_cast<sockaddr*>(&p->client_addr);
+  EXPECT_EQ(p->client_addr.ss_family, AF_UNSPEC);
+  EXPECT_EQ(client_as_sockaddr->sa_data[0], 0);
+
+  char all_zero[sizeof(p->peer_addr)] = {};
+  EXPECT_EQ(p->peer_addr.ss_family, AF_UNSPEC);
+  EXPECT_EQ(std::memcmp(&p->peer_addr, all_zero, sizeof(p->peer_addr)), 0);
 
   /* protected BAREOS_SOCKET: */
   EXPECT_EQ(p->jcr_, nullptr);

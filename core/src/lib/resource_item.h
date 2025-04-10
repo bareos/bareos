@@ -26,36 +26,197 @@
 
 #include <vector>
 #include <string>
+#include <optional>
+#include <utility>
+
+#include "lib/parse_conf.h"
 
 struct s_password;
 template <typename T> class alist;
 template <typename T> class dlist;
+
+namespace config {
+struct DefaultValue {
+  const char* value;
+};
+
+struct Version {
+  size_t major, minor, patch;
+};
+
+struct DeprecatedSince {
+  Version version;
+};
+
+struct IntroducedIn {
+  Version version;
+};
+
+struct Code {
+  size_t value;
+};
+
+struct Required {};
+
+struct Alias {
+  std::vector<std::string> aliases;
+
+  template <typename... Ts>
+  Alias(Ts... args) : aliases{std::forward<Ts>(args)...}
+  {
+    static_assert(sizeof...(Ts) > 0, "You need to specify at least one alias.");
+  }
+};
+
+struct UsesNoEquals {};
+
+struct Description {
+  const char* text;
+};
+
+struct PlatformSpecific {};
+}  // namespace config
+
+
+template <typename What, typename... Args> struct occurances {
+  static constexpr size_t value = []() {
+    if constexpr (sizeof...(Args) == 0) {
+      return 0;
+    } else {
+      return (std::is_same_v<What, Args> + ...);
+    }
+  }();
+};
+
+template <typename What, typename... Args> struct is_present {
+  static constexpr bool value{occurances<What, Args...>::value > 0};
+};
+
+
+template <typename T, typename... Ts> T* get_if(std::tuple<Ts...>& tuple)
+{
+  if constexpr (is_present<T, Ts...>::value) {
+    return &std::get<T>(tuple);
+  } else {
+    return nullptr;
+  }
+}
+
+struct ResourceItemFlags {
+  std::optional<config::Version> introduced_in{};
+  std::optional<config::Version> deprecated_since{};
+  const char* default_value{};
+  std::optional<int> extra{};
+  bool required{};
+  std::vector<std::string> aliases{};
+  bool platform_specific{};
+  bool no_equals{};
+  const char* description{};
+
+  template <typename... Types> ResourceItemFlags(Types&&... values)
+  {
+    static_assert(
+        (is_present<Types, config::DefaultValue, config::IntroducedIn,
+                    config::DeprecatedSince, config::Code, config::Required,
+                    config::Alias, config::Description,
+                    config::PlatformSpecific, config::UsesNoEquals>::value
+         && ...),
+        "only allowed flags may be used");
+
+    static_assert(occurances<config::DefaultValue, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::IntroducedIn, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::DeprecatedSince, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::Code, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::Required, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::Alias, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::Description, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::PlatformSpecific, Types...>::value <= 1,
+                  "flag may only be specified once");
+    static_assert(occurances<config::UsesNoEquals, Types...>::value <= 1,
+                  "flag may only be specified once");
+
+    std::tuple<Types...> tup{std::forward<Types>(values)...};
+
+    if (auto* defval = get_if<config::DefaultValue>(tup)) {
+      default_value = defval->value;
+    }
+    if (auto* introduced = get_if<config::IntroducedIn>(tup)) {
+      introduced_in = introduced->version;
+    }
+    if (auto* deprecated = get_if<config::DeprecatedSince>(tup)) {
+      deprecated_since = deprecated->version;
+    }
+    if (auto* code = get_if<config::Code>(tup)) { extra = code->value; }
+    if (get_if<config::Required>(tup)) { required = true; }
+    if (auto* alias = get_if<config::Alias>(tup)) {
+      aliases = std::move(alias->aliases);
+    }
+    if (get_if<config::UsesNoEquals>(tup)) { no_equals = true; }
+    if (get_if<config::PlatformSpecific>(tup)) { platform_specific = true; }
+    if (auto* desc = get_if<config::Description>(tup)) {
+      description = desc->text;
+    }
+  }
+};
 
 /*
  * This is the structure that defines the record types (items) permitted within
  * each resource. It is used to define the configuration tables.
  */
 struct ResourceItem {
-  const char* name; /* Resource name i.e. Director, ... */
-  const int type;
-  std::size_t offset;
-  BareosResource** allocated_resource;
-  int32_t code;              /* Item code/additional info */
-  uint32_t flags;            /* Flags: See CFG_ITEM_* */
-  const char* default_value; /* Default value */
-  /* version string in format: [start_version]-[end_version]
-   * start_version: directive has been introduced in this version
-   * end_version:   directive is deprecated since this version */
-  const char* versions;
+  ResourceItem(const char* name_,
+               const int type_,
+               std::size_t offset_,
+               BareosResource** allocated_resource_,
+               ResourceItemFlags&& resource_flags)
+      : name{name_}
+      , type{type_}
+      , offset{offset_}
+      , allocated_resource{allocated_resource_}
+      , code{resource_flags.extra.value_or(0)}
+      , aliases{std::move(resource_flags.aliases)}
+      , is_required{resource_flags.required}
+      , is_deprecated{resource_flags.deprecated_since.has_value()}
+      , is_platform_specific{resource_flags.platform_specific}
+      , uses_no_equal{resource_flags.no_equals}
+      , default_value{resource_flags.default_value}
+      , introduced_in{resource_flags.introduced_in}
+      , deprecated_since{resource_flags.deprecated_since}
+      , description{resource_flags.description}
+  {
+  }
+
+  ResourceItem() = default;
+
+  const char* name{}; /* Resource name i.e. Director, ... */
+  int type{};
+  std::size_t offset{};
+  BareosResource** allocated_resource{};
+  int32_t code{}; /* Item code/additional info */
+  std::vector<std::string> aliases{};
+  bool is_required{};
+  bool is_deprecated{};
+  bool is_platform_specific{};
+  bool uses_no_equal{};
+  const char* default_value{}; /* Default value */
+
+  std::optional<config::Version> introduced_in{};
+  std::optional<config::Version> deprecated_since{};
+
   /* short description of the directive, in plain text,
    * used for the documentation.
    * Full sentence.
    * Every new directive should have a description. */
-  const char* description;
+  const char* description{};
 
-  std::vector<std::string> aliases = {};
-
-  void SetPresent() { (*allocated_resource)->SetMemberPresent(name); }
+  void SetPresent() const { (*allocated_resource)->SetMemberPresent(name); }
 
   bool IsPresent() const
   {

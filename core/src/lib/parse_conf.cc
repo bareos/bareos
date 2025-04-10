@@ -92,7 +92,7 @@ ConfigurationParser::ConfigurationParser(
     PRINT_RES_HANDLER* print_res,
     int32_t err_type,
     int32_t r_num,
-    ResourceTable* resource_definitions,
+    const ResourceTable* resource_definitions,
     const char* config_default_filename,
     const char* config_include_dir,
     void (*ParseConfigBeforeCb)(ConfigurationParser&),
@@ -113,7 +113,6 @@ ConfigurationParser::ConfigurationParser(
   err_type_ = err_type;
   r_num_ = r_num;
   resource_definitions_ = resource_definitions;
-  config_resources_container_.reset(new ConfigResourcesContainer(this));
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
@@ -125,6 +124,11 @@ ConfigurationParser::ConfigurationParser(
   SaveResourceCb_ = SaveResourceCb;
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
+
+  // config resources container needs to access our members, so this
+  // needs to always happen after we initialised everything else
+  config_resources_container_
+      = std::make_shared<ConfigResourcesContainer>(this);
 }
 
 void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
@@ -319,15 +323,17 @@ int ConfigurationParser::GetResourceCode(const char* resource_type_name)
   return -1;
 }
 
-ResourceTable* ConfigurationParser::GetResourceTable(
+const ResourceTable* ConfigurationParser::GetResourceTable(
     const char* resource_type_name)
 {
   int res_table_index = GetResourceTableIndex(resource_type_name);
+  if (res_table_index == -1) { return nullptr; }
   return &resource_definitions_[res_table_index];
 }
 
-int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
-                                              const char* item)
+int ConfigurationParser::GetResourceItemIndex(
+    const ResourceItem* resource_items_,
+    const char* item)
 {
   for (int i = 0; resource_items_[i].name; i++) {
     if (Bstrcasecmp(resource_items_[i].name, item)) {
@@ -351,11 +357,11 @@ int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
   return -1;
 }
 
-ResourceItem* ConfigurationParser::GetResourceItem(
-    ResourceItem* resource_items_,
+const ResourceItem* ConfigurationParser::GetResourceItem(
+    const ResourceItem* resource_items_,
     const char* item)
 {
-  ResourceItem* result = nullptr;
+  const ResourceItem* result = nullptr;
   int i = -1;
 
   if (resource_items_) {

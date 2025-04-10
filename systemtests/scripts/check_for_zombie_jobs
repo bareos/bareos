@@ -38,6 +38,7 @@ then
   echo "  !!!! Zombie Jobs in Director !!!!"
   echo "  !!!! Zombie Jobs in Director !!!!" >>test.out
   cat "${tmp}"/dir.out
+  cat "${tmp}"/dir.out >>test.out
   echo " "
   zstat=1
   exit 1
@@ -48,6 +49,7 @@ then
   echo "  !!!! Zombie Jobs in File daemon !!!!"
   echo "  !!!! Zombie Jobs in File daemon !!!!" >>test.out
   cat "${tmp}"/fd.out
+  cat "${tmp}"/fd.out >>test.out
   echo " "
   zstat=1
   exit 1
@@ -58,6 +60,7 @@ then
   echo "  !!!! Zombie Jobs in Storage daemon !!!!"
   echo "  !!!! Zombie Jobs in Storage daemon !!!!" >>test.out
   cat "${tmp}"/sd.out
+  cat "${tmp}"/sd.out >>test.out
   echo " "
   zstat=1
   exit 1

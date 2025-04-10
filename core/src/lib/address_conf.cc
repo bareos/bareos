@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,40 +49,28 @@
 #  include <arpa/nameser.h>
 #endif
 
-IPADDR::IPADDR()
-    : type(R_UNDEFINED), saddr(nullptr), saddr4(nullptr), saddr6(nullptr)
-{
-  memset(&saddrbuf, 0, sizeof(saddrbuf));
-}
-
-IPADDR::IPADDR(const IPADDR& src) : IPADDR()
+IPADDR::IPADDR(const IPADDR& src)
 {
   type = src.type;
-  memcpy(&saddrbuf, &src.saddrbuf, sizeof(saddrbuf));
-  saddr = &saddrbuf.dontuse;
-  saddr4 = &saddrbuf.dontuse4;
-  saddr6 = &saddrbuf.dontuse6;
+  memcpy(&addr_storage, &src.addr_storage, sizeof(addr_storage));
 }
 
-IPADDR::IPADDR(int af) : IPADDR()
+IPADDR::IPADDR(int af)
 {
   type = R_EMPTY;
-  if (!(af == AF_INET6 || af == AF_INET)) {
+  if (af != AF_INET6 && af != AF_INET) {
     Emsg1(M_ERROR_TERM, 0, T_("Only ipv4 and ipv6 are supported (%d)\n"), af);
   }
 
-  memset(&saddrbuf, 0, sizeof(saddrbuf));
-  saddr = &saddrbuf.dontuse;
-  saddr4 = &saddrbuf.dontuse4;
-  saddr6 = &saddrbuf.dontuse6;
-  saddr->sa_family = af;
   switch (af) {
-    case AF_INET:
-      saddr4->sin_port = 0xffff;
-      break;
-    case AF_INET6:
-      saddr6->sin6_port = 0xffff;
-      break;
+    case AF_INET: {
+      addr_in.sin_family = af;
+      addr_in.sin_port = 0xffff;
+    } break;
+    case AF_INET6: {
+      addr_in6.sin6_family = af;
+      addr_in6.sin6_port = 0xffff;
+    } break;
   }
 
   SetAddrAny();
@@ -95,79 +83,79 @@ IPADDR::i_type IPADDR::GetType() const { return type; }
 unsigned short IPADDR::GetPortNetOrder() const
 {
   unsigned short port = 0;
-  if (saddr->sa_family == AF_INET) {
-    port = saddr4->sin_port;
+  if (addr.sa_family == AF_INET) {
+    port = addr_in.sin_port;
   } else {
-    port = saddr6->sin6_port;
+    port = addr_in6.sin6_port;
   }
   return port;
 }
 
 void IPADDR::SetPortNet(unsigned short port)
 {
-  if (saddr->sa_family == AF_INET) {
-    saddr4->sin_port = port;
+  if (addr.sa_family == AF_INET) {
+    addr_in.sin_port = port;
   } else {
-    saddr6->sin6_port = port;
+    addr_in6.sin6_port = port;
   }
 }
 
-int IPADDR::GetFamily() const { return saddr->sa_family; }
+int IPADDR::GetFamily() const { return addr.sa_family; }
 
-struct sockaddr* IPADDR::get_sockaddr() { return saddr; }
+struct sockaddr* IPADDR::get_sockaddr() { return &addr; }
 
 int IPADDR::GetSockaddrLen()
 {
-  return saddr->sa_family == AF_INET ? sizeof(*saddr4) : sizeof(*saddr6);
+  return addr.sa_family == AF_INET ? sizeof(addr_in) : sizeof(addr_in6);
 }
 void IPADDR::CopyAddr(IPADDR* src)
 {
-  if (saddr->sa_family == AF_INET) {
-    saddr4->sin_addr.s_addr = src->saddr4->sin_addr.s_addr;
+  if (addr.sa_family == AF_INET) {
+    addr_in.sin_addr.s_addr = src->addr_in.sin_addr.s_addr;
   } else {
-    saddr6->sin6_addr = src->saddr6->sin6_addr;
+    addr_in6.sin6_addr = src->addr_in6.sin6_addr;
   }
 }
 
 void IPADDR::SetAddrAny()
 {
-  if (saddr->sa_family == AF_INET) {
-    saddr4->sin_addr.s_addr = INADDR_ANY;
+  if (addr.sa_family == AF_INET) {
+    addr_in.sin_addr.s_addr = INADDR_ANY;
   } else {
-    saddr6->sin6_addr = in6addr_any;
+    addr_in6.sin6_addr = in6addr_any;
   }
 }
 
 void IPADDR::SetAddr4(struct in_addr* ip4)
 {
-  if (saddr->sa_family != AF_INET) {
+  if (addr.sa_family != AF_INET) {
     Emsg1(M_ERROR_TERM, 0,
           T_("It was tried to assign a ipv6 address to a ipv4(%d)\n"),
-          saddr->sa_family);
+          addr.sa_family);
   }
-  saddr4->sin_addr = *ip4;
+  addr_in.sin_addr = *ip4;
 }
 
 void IPADDR::SetAddr6(struct in6_addr* ip6)
 {
-  if (saddr->sa_family != AF_INET6) {
+  if (addr.sa_family != AF_INET6) {
     Emsg1(M_ERROR_TERM, 0,
           T_("It was tried to assign a ipv4 address to a ipv6(%d)\n"),
-          saddr->sa_family);
+          addr.sa_family);
   }
-  saddr6->sin6_addr = *ip6;
+  addr_in6.sin6_addr = *ip6;
 }
 
 const char* IPADDR::GetAddress(char* outputbuf, int outlen)
 {
   outputbuf[0] = '\0';
 #ifdef HAVE_INET_NTOP
-  inet_ntop(saddr->sa_family,
-            saddr->sa_family == AF_INET ? (void*)&(saddr4->sin_addr)
-                                        : (void*)&(saddr6->sin6_addr),
+  inet_ntop(addr.sa_family,
+            addr.sa_family == AF_INET ? (void*)&(addr_in.sin_addr)
+                                      : (void*)&(addr_in6.sin6_addr),
             outputbuf, outlen);
 #else
-  bstrncpy(outputbuf, inet_ntoa(saddr4->sin_addr), outlen);
+  bstrncpy(outputbuf, inet_ntoa(addr_in.sin_addr), outlen);
 #endif
   return outputbuf;
 }
@@ -552,12 +540,13 @@ void FreeAddresses(dlist<IPADDR>* addrs)
   delete addrs;
 }
 
-char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len)
+char* SockaddrToAscii(const struct sockaddr_storage* sa, char* buf, int len)
 {
+  auto* addr = reinterpret_cast<const sockaddr*>(sa);
 #ifdef HAVE_INET_NTOP
   /* MA Bug 5 the problem was that i mixed up sockaddr and in_addr */
-  inet_ntop(sa->sa_family,
-            sa->sa_family == AF_INET
+  inet_ntop(addr->sa_family,
+            addr->sa_family == AF_INET
                 ? (void*)&(((struct sockaddr_in*)sa)->sin_addr)
                 : (void*)&(((struct sockaddr_in6*)sa)->sin6_addr),
             buf, len);

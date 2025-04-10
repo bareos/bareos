@@ -36,7 +36,7 @@
 
 namespace console {
 
-static bool SaveResource(int type, ResourceItem* items, int pass);
+static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* reshdr,
@@ -51,30 +51,30 @@ static ConsoleResource* res_cons;
 
 /* clang-format off */
 
-static ResourceItem cons_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_cons, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_cons, description_), 0, 0, NULL, NULL, NULL },
-  { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), 0, 0, NULL, NULL, NULL },
-  { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), 0, 0, NULL, NULL, NULL },
-  { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons, history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Director", CFG_TYPE_STR, ITEM(res_cons, director), 0, 0, NULL, NULL, NULL },
-  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+static const ResourceItem cons_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_cons, resource_name_), {config::Required{}, config::Description{"The name of this resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_cons, description_), {}},
+  { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), {}},
+  { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), {}},
+  { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons, history_length), {config::DefaultValue{"100"}}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password_), {config::Required{}}},
+  { "Director", CFG_TYPE_STR, ITEM(res_cons, director), {}},
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), {config::DefaultValue{"0"}}},
   TLS_COMMON_CONFIG(res_cons),
   TLS_CERT_CONFIG(res_cons),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
-static ResourceItem dir_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), 0, 0, NULL, NULL, NULL },
-  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL, { "DirPort" } },
-  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "DirAddress" } },
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), 0, 0, NULL, NULL, NULL },
-  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+static const ResourceItem dir_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{ "DirPort" }}},
+  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), {config::Required{}, config::Alias{ "DirAddress" }}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), {}},
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), {config::DefaultValue{"0"}}},
   TLS_COMMON_CONFIG(res_dir),
   TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 static ResourceTable resources[] = {
@@ -161,14 +161,14 @@ static void FreeResource(BareosResource* res, int type)
   if (next_resource) { FreeResource(next_resource, type); }
 }
 
-static bool SaveResource(int type, ResourceItem* items, int pass)
+static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   int i;
   int error = 0;
 
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
-    if (items[i].flags & CFG_ITEM_REQUIRED) {
+    if (items[i].is_required) {
       if (!items[i].IsPresent()) {
         Emsg2(M_ABORT, 0,
               T_("%s item is required in %s resource, but not found.\n"),
@@ -275,7 +275,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* bconsole = json_object();
   json_object_set_new(json_resource_object, "bconsole", bconsole);
 
-  ResourceTable* resource_definition = my_config->resource_definitions_;
+  const ResourceTable* resource_definition = my_config->resource_definitions_;
   for (; resource_definition->name; ++resource_definition) {
     json_object_set_new(bconsole, resource_definition->name,
                         json_items(resource_definition->items));

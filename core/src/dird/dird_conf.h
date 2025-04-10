@@ -69,16 +69,6 @@ enum
   R_NUM /* Number of entries */
 };
 
-// Some resource attributes
-enum
-{
-  R_NAME = 0,
-  R_ADDRESS,
-  R_PASSWORD,
-  R_TYPE,
-  R_BACKUP
-};
-
 // Job Level keyword structure
 struct s_jl {
   const char* level_name; /* level keyword */
@@ -146,6 +136,8 @@ class DirectorResource
   char* log_timestamp_format = nullptr; /* Timestamp format to use in generic
                                  logging messages */
   s_password keyencrkey;                /* Key Encryption Key */
+
+  bool enable_ktls{false};
 };
 
 /*
@@ -671,14 +663,14 @@ class RunResource : public BareosResource {
 
 ConfigurationParser* InitDirConfig(const char* configfile, int exit_code);
 bool PropagateJobdefs(int res_type, JobResource* res);
-bool ValidateResource(int type, ResourceItem* items, BareosResource* res);
+bool ValidateResource(int type, const ResourceItem* items, BareosResource* res);
 
 bool print_datatype_schema_json(PoolMem& buffer,
                                 int level,
                                 const int type,
-                                ResourceItem items[],
+                                const ResourceItem items[],
                                 const bool last = false);
-json_t* json_datatype(const int type, ResourceItem items[]);
+json_t* json_datatype(const int type, const ResourceItem items[]);
 const char* AuthenticationProtocolTypeToString(uint32_t auth_protocol);
 const char* JobLevelToString(int level);
 std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
