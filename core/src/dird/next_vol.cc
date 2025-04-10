@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,11 +88,17 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
   // Find the Next Volume for Append
   DbLocker _{jcr->db};
   while (1) {
-    //  1. Look for volume with "Append" status.
+    //  1. Look for volume with "Append" or "Unlabeled" status.
     SetStorageidInMr(store, mr);
 
     bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
+    if (!ok) {
+      bstrncpy(mr->VolStatus, "Unlabeled", sizeof(mr->VolStatus));
+      ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
+    }
+    if (!ok) { bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus)); }
+
     if (!ok) {
       // No volume found, apply algorithm
       Dmsg4(debuglevel,
@@ -294,7 +300,8 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   }
 
   // Now see if we can use the volume as is
-  if (bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Recycle")) {
+  if (bstrcmp(mr->VolStatus, "Unlabeled") || bstrcmp(mr->VolStatus, "Append")
+      || bstrcmp(mr->VolStatus, "Recycle")) {
     *reason = NULL;
     return;
   }
@@ -385,8 +392,8 @@ bool GetScratchVolume(JobControlRecord* jcr,
       smr.StorageId = mr->StorageId; /* want only Scratch Volumes in changer */
     }
 
-    bstrncpy(smr.VolStatus, "Append",
-             sizeof(smr.VolStatus)); /* want only appendable volumes */
+    bstrncpy(smr.VolStatus, "Unlabeled",
+             sizeof(smr.VolStatus)); /* want only unlabeled volumes */
     bstrncpy(smr.MediaType, mr->MediaType, sizeof(smr.MediaType));
 
     /* If we do not find a valid Scratch volume, try recycling any existing
