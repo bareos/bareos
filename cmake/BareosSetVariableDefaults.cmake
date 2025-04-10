@@ -440,8 +440,6 @@ if(NOT client-only)
 endif()
 
 option(systemd "Enable systemd support" OFF)
-option(openssl "Enable openssl support" ON)
-mark_as_advanced(openssl)
 
 # ports
 set(dir_port

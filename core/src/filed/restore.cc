@@ -69,12 +69,6 @@ const bool have_darwin_os = true;
 const bool have_darwin_os = false;
 #endif
 
-#if defined(HAVE_CRYPTO)
-const bool have_crypto = true;
-#else
-const bool have_crypto = false;
-#endif
-
 #if defined(HAVE_ACL)
 const bool have_acl = true;
 #else
@@ -439,11 +433,9 @@ void DoRestore(JobControlRecord* jcr)
     if (!AdjustDecompressionBuffers(jcr)) { goto bail_out; }
   }
 
-  if (have_crypto) {
-    rctx.cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
-    if (have_darwin_os) {
-      rctx.fork_cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
-    }
+  rctx.cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
+  if (have_darwin_os) {
+    rctx.fork_cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
   }
 
   /* Get a record from the Storage daemon. We are guaranteed to

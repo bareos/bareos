@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -449,7 +449,6 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_SHA512_DIGEST:
 #  endif
     case STREAM_XXH128_DIGEST:
-#  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
@@ -457,7 +456,6 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
     case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
     case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-#  endif    /* !HAVE_CRYPTO */
     case 0: /* compatibility with old tapes */
       return true;
   }
@@ -998,20 +996,16 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_SHA512_DIGEST:
 #  endif
     case STREAM_XXH128_DIGEST:
-#  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
     case STREAM_ENCRYPTED_WIN32_DATA:
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
-#  endif
 #  ifdef HAVE_DARWIN_OS
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
-#    ifdef HAVE_CRYPTO
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
-#    endif /* HAVE_CRYPTO */
-#  endif   /* HAVE_DARWIN_OS */
+#  endif /* HAVE_DARWIN_OS */
     case 0: /* compatibility with old tapes */
       return true;
   }
