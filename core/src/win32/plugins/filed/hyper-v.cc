@@ -31,6 +31,7 @@
 #include <variant>
 #include <exception>
 #include <algorithm>
+#include <span>
 
 #include <shlobj_core.h>
 #include <comdef.h>
@@ -1696,6 +1697,11 @@ struct restore_object {
   std::string content;
 };
 
+struct disk_info {
+  std::wstring path;
+};
+
+
 // Plugin private context
 struct plugin_ctx {
   static plugin_ctx* get(PluginContext* ctx)
@@ -1756,8 +1762,11 @@ struct plugin_ctx {
 
     std::optional<HANDLE> hndl;
 
-
     std::vector<WMI::String> restored_definition_files;
+
+    std::optional<HANDLE> disk_handle;
+
+    std::unordered_map<std::string, disk_info> disk_map;
   };
 
   int jobid;
@@ -2324,16 +2333,18 @@ static void prepare_restore_object(PluginContext* ctx)
 
 // maybe we should add the cluster name here somehow ?
 std::string create_vm_path(std::wstring_view vm_name,
-                           std::wstring_view tmp_dir,
+                           std::wstring_view sub_dir,
                            std::wstring_view path)
 {
-  if (path.size() < tmp_dir.size()
-      || path.substr(0, tmp_dir.size()) != tmp_dir) {
-    return utf16_to_utf8(path);
+  auto last_slash = path.find_last_of(L"\\/");
+  if (last_slash == path.npos) {
+    // if there somehow is no slash in the path, then we just take
+    // everything.
+    last_slash = 0;
   }
 
-  std::wstring new_path = std::format(L"@hyper-v@/{}/{}", vm_name,
-                                      path.substr(tmp_dir.size() + 1));
+  std::wstring new_path = std::format(L"@hyper-v@/{}/{}/{}", vm_name, sub_dir,
+                                      path.substr(last_slash + 1));
 
   std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
   return utf16_to_utf8(new_path);
@@ -2393,8 +2404,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     if (prepared.files_to_backup.size() > 0) {
       auto& path = prepared.files_to_backup.back();
       DBGC(ctx, L"transforming {} ...", path);
-      p_ctx->current_path
-          = create_vm_path(prepared.vm_name, prepared.tmp_dir, path);
+      p_ctx->current_path = create_vm_path(prepared.vm_name, L"config", path);
       DBGC(ctx, "into {}!", p_ctx->current_path);
       auto now = time(NULL);
       sp->fname = p_ctx->current_path.data();
@@ -2417,8 +2427,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
       DBGC(ctx, L"transforming {} ...", path);
-      p_ctx->current_path
-          = create_vm_path(prepared.vm_name, prepared.tmp_dir, path);
+      p_ctx->current_path = create_vm_path(prepared.vm_name, L"disks", path);
       DBGC(ctx, "into {}!", p_ctx->current_path);
 
       {
@@ -2467,6 +2476,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
              disk_info.Size.BlockSize, disk_info.Size.SectorSize);
         sp->statp.st_size = disk_info.Size.VirtualSize;
         sp->statp.st_blksize = disk_info.Size.BlockSize;
+        sp->statp.st_blocks = disk_info.Size.SectorSize;
 
         prepared.disk_full_size = disk_info.Size.VirtualSize;
         prepared.disk_offset = 0;
@@ -2481,8 +2491,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       sp->statp.st_ctime = now;
       sp->statp.st_mtime = now;
       sp->statp.st_atime = now;
-      sp->statp.st_blksize = 4096;
-      sp->statp.st_blocks = 1;
 
       return bRC_OK;
     }
@@ -2815,7 +2823,6 @@ static bRC pluginBackupIO(PluginContext* ctx,
           // LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
           //     WMI::ErrorString(attach_res), (uint32_t)attach_res);
           return bRC_Error;
-          ;
         }
 
         io->status = 0;
@@ -2900,6 +2907,8 @@ static bRC pluginBackupIO(PluginContext* ctx,
       if (prepared.disks_to_backup.size() > 0) {
         // we are backing up a disk
         if (prepared.disk_to_backup) {
+          DetachVirtualDisk(prepared.disk_to_backup.value(),
+                            DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
           CloseHandle(prepared.disk_to_backup.value());
           prepared.disk_to_backup.reset();
         }
@@ -2913,6 +2922,36 @@ static bRC pluginBackupIO(PluginContext* ctx,
   }
 }
 
+static bool WriteFile_All(HANDLE handle, std::span<const char> to_write)
+{
+  if (to_write.size() > std::numeric_limits<DWORD>::max()) {
+    DBG(L"WriteFile_All() failed.  Cannot write more than {} bytes at once",
+        std::numeric_limits<DWORD>::max());
+    return false;
+  }
+  DWORD bytes_to_write = static_cast<DWORD>(to_write.size());
+  DWORD bytes_written = 0;
+
+  const char* current = to_write.data();
+
+  while (bytes_to_write > 0) {
+    DWORD bytes_written_this_call = 0;
+    if (!WriteFile(handle, current, bytes_to_write, &bytes_written_this_call,
+                   NULL)) {
+      auto write_res = GetLastError();
+      DBG(L"WriteFile({}, {}) failed.  Err={} ({:X})",
+          current - to_write.data(), bytes_to_write,
+          format_win32_error(write_res), (uint32_t)write_res);
+      return false;
+    }
+
+    bytes_to_write -= bytes_written_this_call;
+    current += bytes_written_this_call;
+  }
+
+  return true;
+}
+
 static bRC pluginRestoreIO(PluginContext* ctx,
                            plugin_ctx* p_ctx,
                            plugin_ctx::restore& restore_ctx,
@@ -2923,25 +2962,68 @@ static bRC pluginRestoreIO(PluginContext* ctx,
   switch (io->func) {
     case filedaemon::IO_OPEN: {
       if (restore_ctx.hndl) {
+        DBGC(ctx, "preparing file handle {}", restore_ctx.hndl.value());
         io->hndl = restore_ctx.hndl.value();
         io->status = IoStatus::do_io_in_core;
         restore_ctx.hndl.reset();
         return bRC_OK;
+      } else if (restore_ctx.disk_handle) {
+        DBGC(ctx, "preparing disk handle {}", restore_ctx.disk_handle.value());
+
+        ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+            = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+        auto attach_res = AttachVirtualDisk(
+            restore_ctx.disk_handle.value(), NULL,
+            ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST, 0, &attach_params, 0);
+        if (FAILED(attach_res)) {
+          JERR(ctx, "could not attach disk {} ({}) for writing", io->fname,
+               restore_ctx.disk_handle.value());
+          return bRC_Error;
+        }
+
+        return bRC_OK;
       } else {
         JERR(ctx, "could not open file {}, as no file was prepared", io->fname);
+        io->status = -1;
         return bRC_Error;
       }
-      return bRC_OK;
     } break;
     case filedaemon::IO_READ: {
       DBGC(ctx, L"bad read!");
       return bRC_Error;
     } break;
     case filedaemon::IO_WRITE: {
-      return bRC_Error;
+      if (!restore_ctx.disk_handle) {
+        JERR(ctx, "can not write to disk {} as it was not prepared", io->fname);
+        io->status = -1;
+        return bRC_Error;
+      }
+
+      if (io->count < 0) {
+        JERR(ctx, "can not write {} bytes to disk {}", io->count, io->fname);
+        io->status = -1;
+        return bRC_Error;
+      }
+
+      if (!WriteFile_All(restore_ctx.disk_handle.value(),
+                         {io->buf, static_cast<size_t>(io->count)})) {
+        io->status = -1;
+        return bRC_Error;
+      }
+
+      return bRC_OK;
     } break;
     case filedaemon::IO_CLOSE: {
-      CloseHandle(io->hndl);
+      if (restore_ctx.disk_handle) {
+        auto hndl = restore_ctx.disk_handle.value();
+        DBGC(ctx, "closing disk handle {}", hndl);
+
+        DetachVirtualDisk(hndl, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+        CloseHandle(hndl);
+      } else {
+        DBGC(ctx, "closing file handle {}", io->hndl);
+        CloseHandle(io->hndl);
+      }
     } break;
     default: {
       JERR(ctx, "unknown plugin io command {}", io->func);
@@ -3087,11 +3169,17 @@ static void ensure_paths(std::wstring_view path)
   }
 }
 
+static void create_dirs(std::wstring_view path)
+{
+  TRC(L"creating dirs in pathh {}", path);
+  auto last_slash = path.find_last_of(L"/");
+  if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
+}
+
 // creates the file at path and all directories above it
 static HANDLE create_file(std::wstring_view path)
 {
-  auto last_slash = path.find_last_of(L"/");
-  if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
+  create_dirs(path);
 
   TRC(L"creating file '{}' ...", path);
 
@@ -3102,12 +3190,23 @@ static HANDLE create_file(std::wstring_view path)
                      NULL, CREATE_NEW, dwflags, NULL);
 }
 
+static bool is_volume_file(std::string_view path)
+{
+  static constexpr std::string_view disks_path_start = "disks/";
+  if (path.size() < disks_path_start.size()) { return false; }
+
+  auto first_chars = path.substr(0, disks_path_start.size());
+
+  return first_chars == disks_path_start;
+}
+
 static bool is_definition_file(std::string_view path)
 {
-  if (path.size() < 5) { return false; }
+  static constexpr std::string_view definition_file_ending = ".vmcx";
+  static constexpr auto min_size = definition_file_ending.size();
+  if (path.size() < min_size) { return false; }
 
-  auto last_chars = path.substr(path.size() - 5, 5);
-  constexpr std::string_view definition_file_ending = ".vmcx";
+  auto last_chars = path.substr(path.size() - min_size, min_size);
 
   return last_chars == definition_file_ending;
 }
@@ -3209,6 +3308,85 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
   }
 
   try {
+    if (is_volume_file(actual_path)) {
+      auto last_slash = actual_path.find_last_of("\\/");
+      // we know that there is at least one slash, because
+      // it contains disks/
+      ASSERT(last_slash != actual_path.npos);
+      if (last_slash == actual_path.size()) {
+        JERR(ctx, "bad disk name {} (trailing slash)", actual_name);
+        rp->create_status = CF_ERROR;
+        return bRC_Error;
+      }
+
+      if (rp->delta_seq > 0) {
+        // TODO:
+        // we need to check that the file already exists
+        // and open it.   We should also let the write routines know,
+        // that a diff will be destored instead of a full.
+      } else {
+        std::string disk_name{
+            actual_path.substr(last_slash + 1, actual_path.npos)};
+
+        restore_ctx->disk_map[disk_name] = disk_info{tmp_path};
+      }
+
+      auto virtual_size = rp->statp.st_size;
+      auto block_size = rp->statp.st_blksize;
+      auto sector_size = rp->statp.st_blocks;
+
+      create_dirs(tmp_path);
+
+      const VIRTUAL_STORAGE_TYPE vst_vhd = {
+          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHD,
+          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+      };
+
+      const VIRTUAL_STORAGE_TYPE vst_vhdx = {
+          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
+          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+      };
+
+
+      VIRTUAL_STORAGE_TYPE vst = [&] {
+        if (actual_path.back() == 'x') {
+          DBGC(ctx, "{} -> vhdx", actual_path);
+          return vst_vhdx;
+        } else {
+          DBGC(ctx, "{} -> vhd", actual_path);
+          return vst_vhd;
+        }
+      }();
+
+      CREATE_VIRTUAL_DISK_PARAMETERS params;
+      params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
+      params.Version1 = {
+          .UniqueId = 0,  // let the system try to create a unique id
+          .MaximumSize = virtual_size,
+          .BlockSizeInBytes = block_size,
+          .SectorSizeInBytes = static_cast<ULONG>(sector_size),
+          .ParentPath = NULL,
+          .SourcePath = NULL,
+      };
+
+      auto disk_handle = INVALID_HANDLE_VALUE;
+
+      auto hres = CreateVirtualDisk(
+          &vst, tmp_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
+          CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
+
+      if (FAILED(hres)) {
+        JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
+             tmp_path, format_win32_error(hres), hres);
+        return bRC_Error;
+      }
+
+      restore_ctx->disk_handle = disk_handle;
+      rp->create_status = CF_EXTRACT;
+
+      return bRC_OK;
+    }
+
     HANDLE h = create_file(tmp_path);
     if (h == INVALID_HANDLE_VALUE) {
       JERR(ctx, L"could not create file {}: Err={}", tmp_path,
