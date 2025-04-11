@@ -157,9 +157,7 @@ else()
 endif()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
-target_link_libraries(
-  bareossd PRIVATE bareos ${THREADS_THREADS} fmt::fmt-header-only
-)
+target_link_libraries(bareossd PRIVATE bareos ${THREADS_THREADS} fmt::fmt)
 set_target_properties(
   bareossd PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                       SOVERSION "${BAREOS_VERSION_MAJOR}"
