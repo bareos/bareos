@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#define FMT_ENFORCE_COMPILE_STRING
 #include "include/bareos.h"
 
 #include "stored/stored.h"
@@ -129,23 +130,24 @@ tl::expected<utl::options*, std::string> convert(
   auto node_handle = options->extract(key);
   if (node_handle.empty()) {
     return tl::unexpected(
-        fmt::format("no value provided for option '{}'\n", key));
+        fmt::format(FMT_STRING("no value provided for option '{}'\n"), key));
   }
   auto value = node_handle.mapped();
 
   try {
     converter(target, value);
   } catch (std::invalid_argument& e) {
-    return tl::unexpected(fmt::format(
-        "invalid argument '{}' for option '{}': {}\n", value, key, e.what()));
-  } catch (std::out_of_range& e) {
     return tl::unexpected(
-        fmt::format("value '{}' for option '{}' is out of range: {}\n", value,
-                    key, e.what()));
-  } catch (gsl::narrowing_error& e) {
-    return tl::unexpected(
-        fmt::format("value '{}' for option '{}' would be truncated: {}\n",
+        fmt::format(FMT_STRING("invalid argument '{}' for option '{}': {}\n"),
                     value, key, e.what()));
+  } catch (std::out_of_range& e) {
+    return tl::unexpected(fmt::format(
+        FMT_STRING("value '{}' for option '{}' is out of range: {}\n"), value,
+        key, e.what()));
+  } catch (gsl::narrowing_error& e) {
+    return tl::unexpected(fmt::format(
+        FMT_STRING("value '{}' for option '{}' would be truncated: {}\n"),
+        value, key, e.what()));
   }
   return options;
 }
@@ -194,19 +196,17 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
 {
   auto res = utl::parse_options(dev_options);
   if (std::holds_alternative<utl::error>(res)) {
-    return tl::unexpected(
-        fmt::format("device option error: {}\n", std::get<utl::error>(res)));
+    return tl::unexpected(fmt::format(FMT_STRING("device option error: {}\n"),
+                                      std::get<utl::error>(res)));
   }
   auto options = std::get<utl::options>(res);
 
   // apply default values
   options.merge(utl::options(option_defaults));
-
-  Dmsg0(debug_info, "dev_options: %s\n", dev_options);
+  utl::Dfmt(debug_info, FMT_STRING("dev_options: {}"), dev_options);
   for (const auto& [key, value] : options) {
-    Dmsg0(debug_trace, "'%s' = '%s'\n", key.c_str(), value.c_str());
+    utl::Dfmt(debug_trace, FMT_STRING("'{}' = '{}'"), key, value);
   }
-
   std::string program;
   uint32_t program_timeout{0};
 
@@ -226,7 +226,8 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
     return tl::unexpected("Option 'program' is required\n"s);
   }
 
-  Dmsg0(debug_trace, "configured chunksize in bytes: %llu\n", chunk_size_);
+  utl::Dfmt(debug_trace, FMT_STRING("configured chunksize in bytes: {}"),
+            chunk_size_);
 
   if (auto result = m_storage.set_program(program); !result) { return result; }
 
@@ -238,13 +239,14 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
     for (const auto& option_name : *supported_options) {
       if (auto value = fetch_value(options, option_name);
           value && !m_storage.set_option(option_name, *value)) {
-        return tl::unexpected(fmt::format("Error setting option '{}' to '{}'\n",
-                                          option_name, *value));
+        return tl::unexpected(
+            fmt::format(FMT_STRING("Error setting option '{}' to '{}'\n"),
+                        option_name, *value));
       }
     }
   } else {
     return tl::unexpected(
-        fmt::format("Cannot get supported options.\nCause: {}\n",
+        fmt::format(FMT_STRING("Cannot get supported options.\nCause: {}\n"),
                     supported_options.error()));
   }
 
@@ -252,8 +254,9 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   if (!options.empty()) {
     BStringList option_names;
     for (const auto& [name, value] : options) { option_names.push_back(name); }
-    return tl::unexpected(fmt::format("Unknown options encountered: {}\n",
-                                      option_names.Join(", ")));
+    return tl::unexpected(
+        fmt::format(FMT_STRING("Unknown options encountered: {}\n"),
+                    option_names.Join(", ")));
   }
   return {};
 }
@@ -269,17 +272,18 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
   if (request->wbuflen == 0) {
-    Dmsg1(debug_info, "Not flushing empty chunk %s/%s\n", obj_name.data(),
-          obj_chunk.c_str());
+    utl::Dfmt(debug_info, FMT_STRING("Not flushing empty chunk {}/{})"),
+              obj_name, obj_chunk);
     return true;
   }
-  Dmsg1(debug_trace, "Flushing chunk %s/%s\n", obj_name.data(),
-        obj_chunk.c_str());
+  utl::Dfmt(debug_trace, FMT_STRING("Flushing chunk {}/{}"), obj_name,
+            obj_chunk);
 
   auto inflight_lease = getInflightLease(request);
   if (!inflight_lease) {
-    Dmsg0(debug_info, "Could not acquire inflight lease for %s %s\n",
-          obj_name.data(), obj_chunk.c_str());
+    utl::Dfmt(debug_info,
+              FMT_STRING("Could not acquire inflight lease for {}/{}"),
+              obj_name, obj_chunk);
     return false;
   }
 
@@ -294,15 +298,17 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
 
   if (obj_stat && obj_stat->size > request->wbuflen) {
-    Dmsg1(debug_info,
-          "Not uploading chunk %s with size %d, as chunk with size %d is "
-          "already present\n",
-          obj_name.data(), obj_stat->size, request->wbuflen);
+    utl::Dfmt(
+        debug_info,
+        FMT_STRING("Not uploading chunk {} with size {}, as chunk with size "
+                   "{} is already present"),
+        obj_name, request->wbuflen, obj_stat->size);
     return true;
   }
 
   auto obj_data = gsl::span{request->buffer, request->wbuflen};
-  Dmsg1(debug_info, "Uploading %zu bytes of data\n", request->wbuflen);
+  utl::Dfmt(debug_info, FMT_STRING("Uploading {} bytes of data"),
+            request->wbuflen);
   if (auto result = m_storage.upload(obj_name, obj_chunk, obj_data)) {
     return true;
   } else {
@@ -317,8 +323,8 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(debug_trace, "Reading chunk %s/%s\n", obj_name.data(),
-        obj_chunk.data());
+  utl::Dfmt(debug_trace, FMT_STRING("Reading chunk {}/{}"), obj_name.data(),
+            obj_chunk.data());
 
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
@@ -433,7 +439,7 @@ boffset_t DropletCompatibleDevice::d_lseek(DeviceControlRecord*,
 
       volumesize = ChunkedVolumeSize();
 
-      Dmsg1(debug_info, "Current volumesize: %lld\n", volumesize);
+      utl::Dfmt(debug_info, FMT_STRING("Current volumesize: {}"), volumesize);
 
       if (volumesize >= 0) {
         offset_ = volumesize + offset;
