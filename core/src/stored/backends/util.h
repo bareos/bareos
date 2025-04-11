@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,8 @@
 #include <string>
 #include <map>
 #include <variant>
+#include <fmt/format.h>
+#include <lib/source_location.h>
 
 namespace backends::util {
 
@@ -42,6 +44,31 @@ using options = std::map<std::string, std::string, key_comparator>;
 using error = std::string;
 
 std::variant<options, error> parse_options(std::string_view v);
+
+
+/* wrap an integer with its source location for logging */
+struct LevelAndLocation {
+  int level;
+  libbareos::source_location loc;
+
+  constexpr LevelAndLocation(int t_level,
+                             const libbareos::source_location& t_loc
+                             = libbareos::source_location::current())
+      : level(t_level), loc(t_loc)
+  {
+  }
+};
+
+/* emit a fmt-formatted debug message */
+template <typename Fmt, typename... Args>
+void Dfmt(LevelAndLocation lal, Fmt fmt, Args&&... args)
+{
+  const auto formatted
+      = fmt::format(std::forward<Fmt>(fmt), std::forward<Args>(args)...);
+  d_msg(lal.loc.file_name(), lal.loc.line(), lal.level, "%s\n",
+        formatted.c_str());
+}
+
 };  // namespace backends::util
 
 #endif  // BAREOS_STORED_BACKENDS_UTIL_H_
