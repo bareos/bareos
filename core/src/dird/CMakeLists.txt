@@ -82,6 +82,7 @@ set(DIRD_OBJECTS_SRCS
     run_conf.cc
     run_on_incoming_connect_interval.cc
     sd_cmds.cc
+    schedule.cc
     scheduler.cc
     scheduler_job_item_queue.cc
     scheduler_private.cc
@@ -139,6 +140,7 @@ set(DBCHKSRCS
     dbcheck_utils.cc
     dird_conf.cc
     dird_globals.cc
+    schedule.cc
     ua_acl.cc
     ua_audit.cc
     run_conf.cc
