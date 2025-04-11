@@ -164,6 +164,7 @@ target_sources(
           dbcheck_utils.cc
           dird_conf.cc
           dird_globals.cc
+          schedule.cc
           ua_acl.cc
           ua_audit.cc
           run_conf.cc

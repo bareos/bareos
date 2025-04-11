@@ -34,10 +34,299 @@
 #include "lib/keyword_table_s.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "schedule.h"
 
 namespace directordaemon {
 
 extern struct s_jl joblevels[];
+
+// Deformat
+template<class First, class... Rest>
+bool Deformat(std::string_view input, std::string_view fmt, First& first, Rest&... rest);
+
+// from/to string
+// :: int
+template<class T, std::enable_if_t<std::is_same_v<T, int>, int> = 0>
+std::optional<int> FromString(const std::string& str) {
+  try {
+    return std::stoi(str);
+  }
+  catch (...) {
+    return std::nullopt;
+  }
+}
+std::string ToString(int value) {
+  return std::to_string(value);
+}
+// :: MonthOfYear
+template<class T, std::enable_if_t<std::is_same_v<T, MonthOfYear>, int> = 0>
+std::optional<MonthOfYear> FromString(const std::string& str) {
+  for (size_t i = 0; i < kMonthOfYearLiterals.size(); ++i) {
+    bool equals = true;
+    for (size_t j = 0; j < kMonthOfYearLiterals[i].length(); ++j) {
+      if (kMonthOfYearLiterals[i][j] != std::tolower(str.at(j))) {
+        equals = false;
+        break;
+      }
+    }
+    if (equals) {
+      return MonthOfYear(i);
+    }
+  }
+  return std::nullopt;
+}
+std::string ToString(MonthOfYear month_of_year) {
+  return std::string(kMonthOfYearLiterals.at(int(month_of_year)));
+}
+// :: WeekOfYear
+template<class T, std::enable_if_t<std::is_same_v<T, WeekOfYear>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  auto index = FromString<int>(str.substr(1));
+  if (index && 0 <= *index && *index <= 53) {
+    return T(*index);
+  }
+  return std::nullopt;
+}
+std::string ToString(WeekOfYear week_of_year) {
+  std::string number = std::to_string(int(week_of_year));
+  return (number.length() == 1 ? "w0" + number : "w" + number);
+}
+// :: WeekOfMonth
+template<class T, std::enable_if_t<std::is_same_v<T, WeekOfMonth>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  if (str == "first" || str == "1rd") {
+    return WeekOfMonth::kFirst;
+  }
+  else if (str == "second" || str == "2nd") {
+    return WeekOfMonth::kSecond;
+  }
+  else if (str == "third" || str == "3rd") {
+    return WeekOfMonth::kThird;
+  }
+  else if (str == "fourth" || str == "4th") {
+    return WeekOfMonth::kFourth;
+  }
+  else if (str == "fifth" || str == "5th") {
+    return WeekOfMonth::kFifth;
+  }
+  else if (str == "last") {
+    return WeekOfMonth::kLast;
+  }
+  return std::nullopt;
+}
+std::string ToString(WeekOfMonth week_of_month) {
+  return std::string(kWeekOfMonthLiterals.at(int(week_of_month)));
+}
+// :: DayOfMonth
+template<class T, std::enable_if_t<std::is_same_v<T, DayOfMonth>, int> = 0>
+std::optional<DayOfMonth> FromString(const std::string& str) {
+  try {
+    return DayOfMonth(std::stoi(str));
+  }
+  catch (...) {
+    return std::nullopt;
+  }
+}
+std::string ToString(DayOfMonth value) {
+  return std::to_string(int(value));
+}
+// :: DayOfWeek
+template<class T, std::enable_if_t<std::is_same_v<T, DayOfWeek>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  for (size_t i = 0; i < kDayOfWeekLiterals.size(); ++i) {
+    bool equals = true;
+    for (size_t j = 0; j < kDayOfWeekLiterals[i].length(); ++j) {
+      if (kDayOfWeekLiterals[i][j] != std::tolower(str.at(j))) {
+        equals = false;
+        break;
+      }
+    }
+    if (equals) {
+      return DayOfWeek(i);
+    }
+  }
+  return std::nullopt;
+}
+std::string ToString(DayOfWeek day_of_week) {
+  return std::string(kDayOfWeekLiterals.at(int(day_of_week)));
+}
+// :: TimeOfDay
+template<class T, std::enable_if_t<std::is_same_v<TimeOfDay, T>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  int hour, minute;
+  if (Deformat(str, "at %:%", hour, minute)) {
+    return T({ hour, minute });
+  }
+  else if (Deformat(str, "at %:%am", hour, minute)) {
+    return T({ hour, minute });
+  }
+  else if (Deformat(str, "at %:%pm", hour, minute)) {
+    return T({ hour + 12, minute });
+  }
+  return std::nullopt;
+}
+std::string ToString(TimeOfDay time) {
+  std::string hour = std::to_string(int(time.hour));
+  std::string minute = std::to_string(int(time.minute));
+  return "at " + (hour.length() == 1 ? "0" + hour : hour) + ":" + (minute.length() == 1 ? "0" + minute : minute);
+}
+// :: Range
+template<class T, std::enable_if_t<kIsRange<T>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  typename T::Type from, to;
+  if constexpr (kFullRangeLiteral<typename T::Type>.length() > 0) {
+    if (kFullRangeLiteral<typename T::Type> == str) {
+      from = (typename T::Type)0;
+      to = (typename T::Type)kMaxValue<typename T::Type>;
+      return T({ from, to });
+    }
+  }
+  if (Deformat(str, "%-%", from, to)) {
+    return T({ from, to });
+  }
+  else if (auto value = FromString<typename T::Type>(str)) {
+    return T({ *value, *value });
+  }
+  return std::nullopt;
+}
+template<class T>
+std::string ToString(const Range<T>& range) {
+  if constexpr (kFullRangeLiteral<T>.length() > 0) {
+    if (int(range.from) == 0 && int(range.to) == kMaxValue<T>) {
+      return std::string(kFullRangeLiteral<T>);
+    }
+  }
+  if (range.from == range.to) {
+    return ToString(range.from);
+  }
+  return ToString(range.from) + "-" + ToString(range.to);
+}
+// :: List
+template<class T, std::enable_if_t<kIsList<T>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  std::vector<typename T::Type> items;
+  size_t start = 0;
+  for (size_t i = 0; i < str.length(); ++i) {
+    if (str[i] == ',') {
+      auto item = FromString<typename T::Type>(str.substr(start, i - start));
+      if (item) {
+        items.emplace_back(*item);
+      }
+      else {
+        return std::nullopt;
+      }
+      start = i + 1;
+    }
+  }
+  if (start < str.length()) {
+    auto item = FromString<typename T::Type>(str.substr(start));
+    if (item) {
+      items.emplace_back(*item);
+    }
+    else {
+      return std::nullopt;
+    }
+  }
+  return T({ items });
+}
+template<class T>
+std::string ToString(const List<T>& list) {
+  std::string result;
+  for (size_t i = 0; i < list.items.size(); ++i) {
+    result += ToString(list.items.at(i));
+    if (i + 1 < list.items.size()) {
+      result += ",";
+    }
+  }
+  return result;
+}
+// :: Schedule
+template<class T, std::enable_if_t<std::is_same_v<T, Schedule>, int> = 0>
+std::optional<Schedule> FromString(const std::string& str) {
+  Mask<MonthOfYear> month_of_year;
+  Mask<WeekOfYear> week_of_year;
+  Mask<WeekOfMonth> week_of_month;
+  Mask<DayOfMonth> day_of_month;
+  Mask<DayOfWeek> day_of_week;
+  List<DateTime> times;
+  if (Deformat(str, "% % % %", month_of_year, week_of_month, day_of_week, times)) {
+    return T(month_of_year, week_of_month, day_of_week, times);
+  }
+  if (Deformat(str, "% % %", month_of_year, day_of_week, times)) {
+    return T(month_of_year, day_of_week, times);
+  }
+  else if (Deformat(str, "% % %", month_of_year, day_of_month, times)) {
+    return T(month_of_year, day_of_month, times);
+  }
+  else if (Deformat(str, "% % %", week_of_year, day_of_week, times)) {
+    return T(week_of_year, day_of_week, times);
+  }
+  else if (Deformat(str, "% % %", week_of_month, day_of_week, times)) {
+    return T(week_of_month, day_of_week, times);
+  }
+  else if (Deformat(str, "% %", day_of_month, times)) {
+    return T(day_of_month, times);
+  }
+  else if (Deformat(str, "% %", day_of_week, times)) {
+    return T(day_of_week, times);
+  }
+  else if (Deformat(str, "%", times)) {
+    return T(times);
+  }
+  return std::nullopt;
+}
+std::string ToString(const Schedule& schedule) {
+  std::string day_mask = std::visit([](const auto& value) {
+    return std::apply([](const auto&... args) {
+      std::string result;
+      std::vector<std::string> strings = { ToString(args)... };
+      for (size_t i = 0; i < strings.size(); ++i) {
+        result += strings.at(i);
+        if (i + 1 < strings.size()) {
+          result += " ";
+        }
+      }
+      return result;
+    }, value);
+  }, schedule.day_mask);
+  return day_mask + " " + ToString(schedule.times);
+}
+
+// Deformat
+// :: base
+bool Deformat(std::string_view input, std::string_view fmt) {
+  return fmt.find('%') == std::string::npos && input == fmt;
+}
+// :: recursive
+template<class First, class... Rest>
+bool Deformat(std::string_view input, std::string_view fmt, First& first, Rest&... rest) {
+  if (input.length() < fmt.length()) {
+    return false;
+  }
+  for (size_t i = 0; i < input.length(); ++i) {
+    if (input[i] == fmt[i]) {
+      continue;
+    }
+    else if (fmt[i] == '%') {
+      size_t end = i;
+      while (end < input.length() && (i + 1 == fmt.length() || input[end] != fmt[i + 1])) {
+        ++end;
+      }
+      auto value = FromString<First>(std::string(input.substr(i, end - i)));
+      if (value) {
+        first = *value;
+      }
+      else {
+        return false;
+      }
+      return Deformat(input.substr(end), fmt.substr(i + 1), rest...);
+    }
+    else {
+      return false;
+    }
+  }
+  return true;
+}
 
 // Forward referenced subroutines
 enum e_state
