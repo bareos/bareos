@@ -1838,6 +1838,13 @@ struct disk_info {
   std::wstring path;
 };
 
+enum class JobLevel
+{
+  Full,
+  Differential,
+  Incremental,
+  None,  // this is used by eg restore
+};
 
 // Plugin private context
 struct plugin_ctx {
@@ -1908,6 +1915,12 @@ struct plugin_ctx {
   };
 
   int jobid;
+  std::string job_name;
+  std::string fd_name;
+  std::string client_name;
+  time_t since_time;
+  JobLevel job_level;
+
   std::variant<std::monostate, backup, restore> current_state{};
 
   std::wstring directory;
@@ -1956,6 +1969,107 @@ BAREOS_EXPORT bRC unloadPlugin()
   TRC(L"unloading hyper-v succeeded");
   return bRC_OK;
 }
+}
+
+static bool set_job_info(PluginContext* ctx, plugin_ctx* p_ctx)
+{
+  {
+    int jobid = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobId,
+                                                 &jobid)) {
+      JFATAL(ctx, "could not get jobid");
+      return false;
+    } else {
+      TRCC(ctx, "got jobid {}", jobid);
+    }
+    p_ctx->jobid = jobid;
+  }
+
+  {
+    char* fd_name = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarFDName,
+                                                 &fd_name)) {
+      JFATAL(ctx, "could not get fd name");
+      return false;
+    } else {
+      TRCC(ctx, "got filedaemon name {}", fd_name);
+    }
+    p_ctx->fd_name = fd_name;
+  }
+
+  {
+    char* client = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarClient,
+                                                 &client)) {
+      JFATAL(ctx, "could not get client name");
+      return false;
+    } else {
+      TRCC(ctx, "got client name {}", client);
+    }
+    p_ctx->client_name = client;
+  }
+
+  {
+    time_t since_time = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarSinceTime,
+                                                 &since_time)) {
+      JFATAL(ctx, "could not get since time");
+      return false;
+    } else {
+      TRCC(ctx, "got since time {}", since_time);
+    }
+    p_ctx->since_time = since_time;
+  }
+
+  {
+    int level = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarLevel,
+                                                 &level)) {
+      JFATAL(ctx, "could not get jobid");
+      return false;
+    } else {
+      TRCC(ctx, "got level {}", level);
+    }
+
+    switch (level) {
+      case L_FULL: {
+        p_ctx->job_level = JobLevel::Full;
+      } break;
+      case L_DIFFERENTIAL: {
+        p_ctx->job_level = JobLevel::Differential;
+      } break;
+      case L_INCREMENTAL: {
+        p_ctx->job_level = JobLevel::Incremental;
+      } break;
+      case L_NONE: {
+        p_ctx->job_level = JobLevel::None;
+      } break;
+      default: {
+        JFATAL(ctx, "unknown job level {}", level);
+        return false;
+      } break;
+    }
+  }
+
+  {
+    char* job_name = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobName,
+                                                 &job_name)) {
+      JFATAL(ctx, "could not get job name");
+      return false;
+    } else {
+      TRCC(ctx, "got job_name {}", job_name);
+    }
+    p_ctx->job_name = job_name;
+  }
+
+  return true;
 }
 
 /**
@@ -2023,10 +2137,6 @@ static bRC newPlugin(PluginContext* ctx)
     using filedaemon::bEventStartBackupJob;
     using filedaemon::bEventStartRestoreJob;
 
-    int jobid;
-    bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobId, &jobid);
-    p_ctx->jobid = jobid;
-
     // Only register the events we are really interested in.
     bareos_core_functions->registerBareosEvents(
         ctx, 8, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
@@ -2071,6 +2181,8 @@ static bool start_backup_job(PluginContext* ctx)
 
   auto& srvc = p_ctx->virt_service;
 
+  if (!set_job_info(ctx, p_ctx)) { return false; }
+
   std::optional system_mgmt
       = WMI::VirtualSystemManagementService::find_instance(srvc);
   if (!system_mgmt) { return false; }
@@ -2114,6 +2226,8 @@ static bool start_restore_job(PluginContext* ctx)
 {
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return false; }
+
+  if (!set_job_info(ctx, p_ctx)) { return false; }
 
   auto& srvc = p_ctx->virt_service;
 
@@ -2387,9 +2501,9 @@ static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
   return files;
 }
 
-restore_object get_info(PluginContext* ctx,
-                        std::wstring_view vm_name,
-                        const std::vector<std::wstring>& found_disks)
+static restore_object get_info(PluginContext* ctx,
+                               std::wstring_view vm_name,
+                               const std::vector<std::wstring>& found_disks)
 {
   restore_object obj;
   obj.name = utf16_to_utf8(vm_name);
