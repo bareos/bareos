@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2010-2011 Bacula Systems(R) SA
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -31,9 +31,7 @@
 #define JT_BACKUP 'B'  /* Backup Job */
 #define JT_RESTORE 'R' /* Restore Job */
 
-#define L_FULL 'F'         /* Full backup */
-#define L_INCREMENTAL 'I'  /* since last backup */
-#define L_DIFFERENTIAL 'D' /* since last full backup */
+#include "include/job_level.h"
 
 #define Dmsg(context, level, ...)                                             \
   if (bareos_core_functions && context) {                                     \
