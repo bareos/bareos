@@ -54,7 +54,7 @@ target_sources(
                              chunked_device.cc crud_storage.cc util.cc
 )
 target_link_libraries(
-  bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt-header-only
+  bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt
                              tl::expected
 )
 if(HAVE_WIN32)
