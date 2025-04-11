@@ -360,6 +360,7 @@ if(NOT client-only)
         ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
         ${PROJECT_SOURCE_DIR}/src/dird/dird_conf.cc
         ${PROJECT_SOURCE_DIR}/src/dird/dird_globals.cc
+        ${PROJECT_SOURCE_DIR}/src/dird/schedule.cc
         ${PROJECT_SOURCE_DIR}/src/dird/run_conf.cc
         ${PROJECT_SOURCE_DIR}/src/dird/inc_conf.cc
         ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc

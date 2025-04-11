@@ -90,6 +90,7 @@ target_sources(
           run_conf.cc
           run_on_incoming_connect_interval.cc
           sd_cmds.cc
+          schedule.cc
           scheduler.cc
           scheduler_job_item_queue.cc
           scheduler_private.cc
