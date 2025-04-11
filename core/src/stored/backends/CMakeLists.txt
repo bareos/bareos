@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -54,8 +54,7 @@ target_sources(
                              chunked_device.cc crud_storage.cc util.cc
 )
 target_link_libraries(
-  bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt
-                             tl::expected
+  bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt tl::expected
 )
 if(HAVE_WIN32)
   target_link_libraries(bareossd-dplcompat PRIVATE shlwapi)
