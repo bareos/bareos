@@ -184,9 +184,6 @@ std::optional<T> FromString(const std::string& str) {
   if (Deformat(str, "%-%", from, to)) {
     return T({ from, to });
   }
-  else if (auto value = FromString<typename T::Type>(str)) {
-    return T({ *value, *value });
-  }
   return std::nullopt;
 }
 template<class T>
@@ -196,13 +193,48 @@ std::string ToString(const Range<T>& range) {
       return std::string(kFullRangeLiteral<T>);
     }
   }
-  if (range.from == range.to) {
-    return ToString(range.from);
-  }
   return ToString(range.from) + "-" + ToString(range.to);
 }
-// :: List
+// :: Modulo
+template<class T, std::enable_if_t<kIsModulo<T>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  typename T::Type left, right;
+  if (Deformat(str, "%/%", left, right)) {
+    return T({ left, right });
+  }
+  return std::nullopt;
+}
+template<class T>
+std::string ToString(const Modulo<T>& modulo) {
+  return ToString(modulo.left) + "/" + ToString(modulo.right);
+}
 template<class T, std::enable_if_t<kIsList<T>, int> = 0>
+std::optional<T> FromString(const std::string& str);
+// :: std::variant
+template<class T>
+static constexpr bool kIsVariant = false;
+template<class... Args>
+static constexpr bool kIsVariant<std::variant<Args...>> = true;
+template<class T, size_t Index = 0, std::enable_if_t<kIsVariant<T>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  if constexpr (Index < std::variant_size_v<T>) {
+    if (auto value = FromString<std::variant_alternative_t<Index, T>>(str)) {
+      return T(*value);
+    }
+    else {
+      return FromString<T, Index + 1>(str);
+    }
+  }
+  return std::nullopt;
+}
+template<class... Args>
+std::string ToString(const std::variant<Args...>& variant) {
+  return std::visit([&](const auto& value) {
+    return ToString(value);
+  }, variant);
+}
+// :: List
+template<class T, std::enable_if_t<kIsList<T>, int>>
 std::optional<T> FromString(const std::string& str) {
   std::vector<typename T::Type> items;
   size_t start = 0;
