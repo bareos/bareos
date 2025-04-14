@@ -68,6 +68,10 @@ using filedaemon::pVariable;
 using filedaemon::restore_pkt;
 using filedaemon::save_pkt;
 
+struct json_deleter {
+  void operator()(json_t* ptr) const { json_decref(ptr); }
+};
+using json_ptr = std::unique_ptr<json_t, json_deleter>;
 
 std::string format_win32_error_2(DWORD error = GetLastError())
 {
@@ -219,11 +223,11 @@ static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
 static bRC start_backup_file(PluginContext* ctx, save_pkt* sp);
-static bRC endBackupFile(PluginContext* ctx);
+static bRC end_backup_file(PluginContext* ctx);
 static bRC pluginIO(PluginContext* ctx, io_pkt* io);
 static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
 static bRC endRestoreFile(PluginContext* ctx);
-static bRC createFile(PluginContext* ctx, restore_pkt* rp);
+static bRC create_file(PluginContext* ctx, restore_pkt* rp);
 static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp);
 static bRC checkFile(PluginContext* ctx, char* fname);
 
@@ -252,7 +256,7 @@ static PluginFunctions pluginFuncs
        newPlugin,  /* new plugin instance */
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent, start_backup_file,
-       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       end_backup_file, startRestoreFile, endRestoreFile, pluginIO, create_file,
        setFileAttributes, checkFile, nullptr, nullptr, nullptr, nullptr};
 
 
@@ -731,6 +735,20 @@ struct cim_type {
 
 struct BaseObject {
   CComPtr<IWbemClassObject> ptr;
+
+  BaseObject() = default;
+
+  BaseObject(CComPtr<IWbemClassObject> ptr_) : ptr{ptr_} {}
+  BaseObject(IWbemClassObject* ptr_) : ptr{ptr_} {}
+  BaseObject(const BaseObject&) = delete;
+  BaseObject& operator=(const BaseObject&) = delete;
+
+  BaseObject(BaseObject&& other) : BaseObject() { *this = std::move(other); }
+  BaseObject& operator=(BaseObject&& other)
+  {
+    ptr = other.ptr.Detach();
+    return *this;
+  }
 
   IWbemClassObject* get() const { return ptr.p; }
 
@@ -1652,13 +1670,13 @@ struct Snapshot : ClassObject {
   // const Service* srvc;
   // const VirtualSystemSnapshotService* snapshot_srvc;
 
-  ~Snapshot()
-  {
-    // todo: destroy the snapshot here if it is still valid
-    // if (still_exists) {
-    //   snapshot_srvc->destroy_snapshot(*srvc, std::move(this));
-    // }
-  }
+  // ~Snapshot()
+  // {
+  //   // todo: destroy the snapshot here if it is still valid
+  //   // if (still_exists) {
+  //   //   snapshot_srvc->destroy_snapshot(*srvc, std::move(this));
+  //   // }
+  // }
 };
 
 struct VirtualSystemSnapshotSettingData {
@@ -1761,8 +1779,6 @@ class VirtualSystemSnapshotService : ClassObject {
       throw std::runtime_error("exec_method returned std::nullopt");
     }
 
-    // snapshot.release();
-
     auto refpoint = srvc.get_result<ReferencePoint>(result.value(),
                                                     L"ResultingReferencePoint");
 
@@ -1829,7 +1845,39 @@ struct com_context {
 };
 
 struct restore_object {
-  std::string name;
+  enum class Type
+  {
+    Unknown = 0,
+    RctInfo = 1,
+    VmInfo = 2,
+  };
+
+  const char* name() const { return name_of(type); }
+  static constexpr const char* name_of(Type type)
+  {
+    switch (type) {
+      case Type::RctInfo: {
+        return "rct_info";
+      } break;
+      case Type::VmInfo: {
+        return "vm_info";
+      } break;
+      default: {
+        // TODO: this should throw ...
+        return "unknown";
+      } break;
+    }
+  }
+
+  static Type name_to_type(std::string_view type_name)
+  {
+    if (type_name == name_of(Type::RctInfo)) { return Type::RctInfo; }
+    if (type_name == name_of(Type::VmInfo)) { return Type::VmInfo; }
+
+    return Type::Unknown;
+  }
+
+  Type type;
   int index;
   std::string content;
 };
@@ -1889,10 +1937,8 @@ struct plugin_ctx {
 
       bool finished() const
       {
-        // the last thing we do is convert the snapshot into
-        // a reference point, deleting the snapshot in the process
-        // so while this snapshot is still legal, we need to keep going
-        return vm_snapshot.ptr.p == nullptr;
+        return !vm_snapshot.ptr && files_to_backup.empty()
+               && disks_to_backup.empty() && restore_objects.empty();
       }
     };
 
@@ -1921,6 +1967,38 @@ struct plugin_ctx {
   time_t since_time;
   JobLevel job_level;
 
+  struct rct_info {
+    std::string disk_id;
+    std::string rct_id;
+
+    json_ptr as_json() const
+    {
+      json_ptr content{json_object()};
+      {
+        json_object_set_new(content.get(), "disk_id",
+                            json_string(disk_id.c_str()));
+        json_object_set_new(content.get(), "rct_id",
+                            json_string(rct_id.c_str()));
+      }
+      return content;
+    }
+
+    static std::optional<rct_info> from_json(json_t* as_json)
+    {
+      if (!json_is_object(as_json)) { return std::nullopt; }
+      json_t* disk_id = json_object_get(as_json, "disk_id");
+      if (!disk_id || !json_is_string(disk_id)) { return std::nullopt; }
+      json_t* rct_id = json_object_get(as_json, "rct_id");
+      if (!rct_id || !json_is_string(rct_id)) { return std::nullopt; }
+
+      return rct_info{json_string_value(disk_id), json_string_value(rct_id)};
+    }
+  };
+  struct vm_info {};
+
+  std::vector<rct_info> received_rcts;
+  std::vector<vm_info> received_vms;
+
   std::variant<std::monostate, backup, restore> current_state{};
 
   std::wstring directory;
@@ -1930,6 +2008,8 @@ struct plugin_ctx {
   WMI::VirtualSystemSnapshotSettingData snapshot_settings;
 
   json_t* config{nullptr};
+
+  bool is_full() const { return job_level == JobLevel::Full; }
 
   ~plugin_ctx()
   {
@@ -2134,14 +2214,16 @@ static bRC newPlugin(PluginContext* ctx)
     using filedaemon::bEventNewPluginOptions;
     using filedaemon::bEventPluginCommand;
     using filedaemon::bEventRestoreCommand;
+    using filedaemon::bEventRestoreObject;
     using filedaemon::bEventStartBackupJob;
     using filedaemon::bEventStartRestoreJob;
 
     // Only register the events we are really interested in.
     bareos_core_functions->registerBareosEvents(
-        ctx, 8, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
+        ctx, 10, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
         bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions,
-        bEventStartBackupJob, bEventStartRestoreJob, bEventEndRestoreJob);
+        bEventStartBackupJob, bEventStartRestoreJob, bEventEndRestoreJob,
+        bEventRestoreObject);
 
     return bRC_OK;
   } catch (const win_error& err) {
@@ -2343,6 +2425,52 @@ const char* event_name(uint32_t event_type)
   return "unknown";
 }
 
+static bool handle_restore_object(PluginContext* ctx,
+                                  plugin_ctx* p_ctx,
+                                  const filedaemon::restore_object_pkt* rop)
+{
+  switch (restore_object::name_to_type(rop->object_name)) {
+    case restore_object::Type::RctInfo: {
+      json_error_t json_err;
+
+      json_ptr as_json{json_loadb(rop->object, rop->object_len, 0, &json_err)};
+      if (!as_json) {
+        JFATAL(
+            ctx,
+            "could not parse json from restore object {}: json='{}' err={}",
+            rop->object_name,
+            std::string_view{rop->object, static_cast<size_t>(rop->object_len)},
+            json_err.text);
+        return false;
+      }
+      auto info = plugin_ctx::rct_info::from_json(as_json.get());
+      if (!info) {
+        JFATAL(ctx,
+               "restore object {} contains bad json: json='{}' err=json is not "
+               "a valid rct_info object",
+               rop->object_name,
+               std::string_view{rop->object,
+                                static_cast<size_t>(rop->object_len)});
+        return false;
+      }
+
+      DBGC(ctx, "received rct {{ disk_id = {}, rct_id = {}}}", info->disk_id,
+           info->rct_id);
+
+      p_ctx->received_rcts.emplace_back(std::move(info.value()));
+
+      return true;
+    } break;
+    case restore_object::Type::VmInfo: {
+      return true;
+    } break;
+    default: {
+      JFATAL(ctx, "unknown restore object with name '{}'", rop->object_name);
+      return false;
+    } break;
+  }
+}
+
 // Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
@@ -2358,6 +2486,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   using filedaemon::bEventNewPluginOptions;
   using filedaemon::bEventPluginCommand;
   using filedaemon::bEventRestoreCommand;
+  using filedaemon::bEventRestoreObject;
   using filedaemon::bEventStartBackupJob;
   using filedaemon::bEventStartRestoreJob;
 
@@ -2388,6 +2517,13 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
     case bEventStartRestoreJob: {
       DBGC(ctx, "start restore job");
       if (!start_restore_job(ctx)) { return bRC_Error; }
+      return bRC_OK;
+    } break;
+    case bEventRestoreObject: {
+      DBGC(ctx, "receive restore object at {}", value);
+      auto* rop
+          = reinterpret_cast<const filedaemon::restore_object_pkt*>(value);
+      if (!handle_restore_object(ctx, p_ctx, rop)) { return bRC_Error; }
       return bRC_OK;
     } break;
     default: {
@@ -2506,7 +2642,7 @@ static restore_object get_info(PluginContext* ctx,
                                const std::vector<std::wstring>& found_disks)
 {
   restore_object obj;
-  obj.name = utf16_to_utf8(vm_name);
+  obj.type = restore_object::Type::VmInfo;
   obj.index = 0;
 
   json_t* content = json_object();
@@ -2516,6 +2652,8 @@ static restore_object get_info(PluginContext* ctx,
       json_array_append_new(disks, json_string(utf16_to_utf8(disk).c_str()));
     }
     json_object_set_new(content, "disks", disks);
+    json_object_set_new(content, "name",
+                        json_string(utf16_to_utf8(vm_name).c_str()));
   }
 
   char* formatted = json_dumps(content, JSON_COMPACT);
@@ -2580,6 +2718,44 @@ static bool prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
   return true;
 }
 
+static void add_rct_info(PluginContext* ctx,
+                         std::vector<restore_object>& restore_objects,
+                         const WMI::ReferencePoint& refpoint)
+{
+  using namespace WMI;
+
+  TRCC(ctx, L"refpoint = {}", refpoint.to_string().as_view());
+  auto rct_ids = refpoint.get_array<cim_type::string>(
+      L"ResilientChangeTrackingIdentifiers");
+  auto disk_ids
+      = refpoint.get_array<cim_type::string>(L"VirtualDiskIdentifiers");
+
+  for (auto& rct : rct_ids) { TRCC(ctx, L" - rct = {}", rct.as_view()); }
+
+  for (auto& disk : disk_ids) { TRCC(ctx, L" - disk = {}", disk.as_view()); }
+
+  if (rct_ids.size() != disk_ids.size()) {
+    DBGC(ctx, L"Not every disk has rct information: rct_ids {} != disk_ids {}",
+         rct_ids.size(), disk_ids.size());
+    return;
+  }
+
+  for (size_t i = 0; i < rct_ids.size(); ++i) {
+    plugin_ctx::rct_info info = {
+        utf16_to_utf8(disk_ids[i].as_view()),
+        utf16_to_utf8(rct_ids[i].as_view()),
+    };
+
+    auto content = info.as_json();
+
+    auto& obj = restore_objects.emplace_back();
+    std::string formatted = json_dumps(content.get(), JSON_COMPACT);
+    obj.content = std::move(formatted);
+    obj.type = restore_object::Type::RctInfo;
+    obj.index = 0;
+  }
+}
+
 static void prepare_restore_object(PluginContext* ctx)
 {
   TRCC(ctx, L"prepare restore object");
@@ -2591,9 +2767,14 @@ static void prepare_restore_object(PluginContext* ctx)
   const auto& system_srvc = bstate.system_srvc;
   const auto& snapshot_srvc = bstate.snapshot_srvc;
 
+  TRCC(ctx, "pre pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
   auto refpoint = snapshot_srvc.convert_to_reference_point(
       srvc, std::move(prepared.vm_snapshot));
   DBGC(ctx, L"refpoint = {}", refpoint.path().as_view());
+  TRCC(ctx, "post pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
+
+
+  add_rct_info(ctx, prepared.restore_objects, refpoint);
 }
 
 // maybe we should add the cluster name here somehow ?
@@ -2622,6 +2803,11 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
+  if (!p_ctx->is_full()) {
+    JERR(ctx, "not implemented");
+    return bRC_Stop;
+  }
+
   try {
     if (std::get_if<std::monostate>(&p_ctx->current_state)) {
       DBG(L"Backup is not started.  Doing so now...");
@@ -2644,21 +2830,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       }
 
       std::wstring wname = utf8_to_utf16(vmname);
-
-      // {
-      //   json_t* val = json_object_get(p_ctx->config, "directory");
-      //   if (!val) {
-      //     JERR(ctx, "No 'directory' set in config file");
-      //     return bRC_Error;
-      //   }
-      //   const char* directory = json_string_value(val);
-      //   if (!val) {
-      //     JERR(ctx, "'directory' is not a string in config file");
-      //     return bRC_Error;
-      //   }
-
-      //   p_ctx->directory = utf8_to_utf16(directory);
-      // }
 
       if (!prepare_backup(ctx, wname)) { return bRC_Error; }
     }
@@ -2763,26 +2934,28 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
     DBGC(ctx, L"All disks were backed up");
 
-    if (prepared.restore_objects.size() > 0) {
-      prepared.current_object = std::move(prepared.restore_objects.back());
-      prepared.restore_objects.pop_back();
-
-      sp->type = FT_RESTORE_FIRST;
-      sp->object = prepared.current_object->content.data();
-      sp->object_len = prepared.current_object->content.size();
-
-      sp->object_name = prepared.current_object->name.data();
-      sp->index = prepared.current_object->index;
-
-      return bRC_OK;
-    }
-
-
     if (prepared.vm_snapshot.ptr.p) {
       // the snapshot still exists, so we need to create a reference point now
       // and send it via a restore object
 
       prepare_restore_object(ctx);
+    }
+
+    if (prepared.restore_objects.size() > 0) {
+      prepared.current_object = std::move(prepared.restore_objects.back());
+      prepared.restore_objects.pop_back();
+
+      TRCC(ctx, "restore object {} => {}", prepared.current_object->name(),
+           prepared.current_object->content);
+
+      sp->type = FT_RESTORE_FIRST;
+      sp->object = prepared.current_object->content.data();
+      sp->object_len = prepared.current_object->content.size();
+
+      sp->object_name = const_cast<char*>(prepared.current_object->name());
+      sp->index = prepared.current_object->index;
+
+      return bRC_OK;
     }
 
     DBGC(ctx, L"reference point was already created");
@@ -2809,7 +2982,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 }
 
 // Done with backup of this file
-static bRC endBackupFile(PluginContext* ctx)
+static bRC end_backup_file(PluginContext* ctx)
 {
   TRCC(ctx, "end backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
@@ -2823,7 +2996,7 @@ static bRC endBackupFile(PluginContext* ctx)
   if (auto* prepared
       = std::get_if<plugin_ctx::backup::prepared_backup>(&bstate->state)) {
     if (prepared->error) {
-      // delete the snapshot here ?
+      // TODO: delete the snapshot here ?
       // The destructor should just do it on its own...
       TRCC(ctx, "prepared->error");
       bstate->state.emplace<std::monostate>();
@@ -3578,7 +3751,7 @@ static bool is_definition_file(std::string_view path)
  *  CF_CREATED  -- created, but no content to extract (typically directories)
  *  CF_CORE     -- let bareos core create the file
  */
-static bRC createFile(PluginContext* ctx, restore_pkt* rp)
+static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 {
   TRCC(ctx, "create file '{}'", rp->ofname);
   auto* p_ctx = plugin_ctx::get(ctx);
@@ -3720,8 +3893,6 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
         }
       }();
 
-      TRCC(ctx, "--- 1");
-
       CREATE_VIRTUAL_DISK_PARAMETERS params;
       params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
       params.Version1 = {
@@ -3733,25 +3904,17 @@ static bRC createFile(PluginContext* ctx, restore_pkt* rp)
           .SourcePath = NULL,
       };
 
-      TRCC(ctx, "--- 2");
-
       auto disk_handle = INVALID_HANDLE_VALUE;
 
       auto result = CreateVirtualDisk(
           &vst, tmp_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
           CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
 
-      TRCC(ctx, "--- 3");
-
       if (result != ERROR_SUCCESS) {
-        TRCC(ctx, "--- 4");
-
         JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
              tmp_path, format_win32_error(result), result);
         return bRC_Error;
       }
-
-      TRCC(ctx, "--- 5");
 
       TRCC(ctx, L"created hard disk {} at {}", tmp_path.c_str(),
            fmt_as_ptr(disk_handle));
