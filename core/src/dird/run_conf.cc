@@ -170,6 +170,14 @@ std::string ToString(TimeOfDay time) {
   std::string minute = std::to_string(int(time.minute));
   return "at " + (hour.length() == 1 ? "0" + hour : hour) + ":" + (minute.length() == 1 ? "0" + minute : minute);
 }
+// :: Hourly
+template<class T, std::enable_if_t<std::is_same_v<Hourly, T>, int> = 0>
+std::optional<T> FromString(const std::string& str) {
+  return str == "hourly" ? std::optional(Hourly()) : std::nullopt;
+}
+std::string ToString(const Hourly&) {
+  return "hourly";
+}
 // :: Range
 template<class T, std::enable_if_t<kIsRange<T>, int> = 0>
 std::optional<T> FromString(const std::string& str) {
@@ -280,7 +288,7 @@ std::optional<Schedule> FromString(const std::string& str) {
   Mask<WeekOfMonth> week_of_month;
   Mask<DayOfMonth> day_of_month;
   Mask<DayOfWeek> day_of_week;
-  List<DateTime> times;
+  std::variant<List<TimeOfDay>, Hourly> times;
   if (Deformat(str, "% % % %", month_of_year, week_of_month, day_of_week, times)) {
     return T(month_of_year, week_of_month, day_of_week, times);
   }
