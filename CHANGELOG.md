@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: fix not including BareosTargetTools in systemtests, needed for get_target_output_dir [PR #2232]
 - fix MaximumConcurrentJobs in docs and defaultsconfig [PR #2225]
 - cli-test: fix test on freebsd [PR #2241]
+- core: refactor config parser; fix ktls configuration; fix crashes/ub [PR #2222]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -113,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
 [PR #2211]: https://github.com/bareos/bareos/pull/2211
 [PR #2220]: https://github.com/bareos/bareos/pull/2220
+[PR #2222]: https://github.com/bareos/bareos/pull/2222
 [PR #2225]: https://github.com/bareos/bareos/pull/2225
 [PR #2232]: https://github.com/bareos/bareos/pull/2232
 [PR #2241]: https://github.com/bareos/bareos/pull/2241
