@@ -88,16 +88,7 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
   } else {
     disabled_batch_insert_ = false;
 #  if defined(USE_BATCH_FILE_INSERT)
-#    if defined(HAVE_POSTGRESQL_BATCH_FILE_INSERT) \
-        || defined(HAVE_PQISTHREADSAFE)
-#      ifdef HAVE_PQISTHREADSAFE
     have_batch_insert_ = PQisthreadsafe();
-#      else
-    have_batch_insert_ = true;
-#      endif /* HAVE_PQISTHREADSAFE */
-#    else
-    have_batch_insert_ = true;
-#    endif /* HAVE_POSTGRESQL_BATCH_FILE_INSERT || HAVE_PQISTHREADSAFE */
 #  else
     have_batch_insert_ = false;
 #  endif /* USE_BATCH_FILE_INSERT */

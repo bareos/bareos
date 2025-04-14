@@ -336,12 +336,6 @@
 // Set if you have an PostgreSQL Database
 #cmakedefine HAVE_POSTGRESQL @HAVE_POSTGRESQL@
 
-// Set if PostgreSQL DB batch insert code enabled
-#cmakedefine HAVE_POSTGRESQL_BATCH_FILE_INSERT @HAVE_POSTGRESQL_BATCH_FILE_INSERT@
-
-// Set if have PQisthreadsafe
-#cmakedefine HAVE_PQISTHREADSAFE @HAVE_PQISTHREADSAFE@
-
 // Define to 1 if you have the `prctl' function
 #cmakedefine HAVE_PRCTL @HAVE_PRCTL@
 
