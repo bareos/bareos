@@ -141,18 +141,20 @@ Mask<T> All() {
   return { { Range<T>({ T(0), T(kMaxValue<T>) }) } };
 }
 
+class Hourly {};
+
 // Schedule
 class Schedule {
 public:
   Schedule();
-  Schedule(Mask<MonthOfYear> month_of_year, Mask<WeekOfMonth> week_of_month, Mask<DayOfWeek> day_of_week, List<TimeOfDay> time);
-  Schedule(Mask<MonthOfYear> month_of_year, Mask<DayOfWeek> day_of_week, List<TimeOfDay> time);
-  Schedule(Mask<MonthOfYear> month_of_year, Mask<DayOfMonth> day_of_month, List<TimeOfDay> time);
-  Schedule(Mask<WeekOfYear> week_of_year, Mask<DayOfWeek> day_of_week, List<TimeOfDay> time);
-  Schedule(Mask<WeekOfMonth> week_of_month, Mask<DayOfWeek> day_of_week, List<TimeOfDay> time);
-  Schedule(Mask<DayOfMonth> day_of_month, List<TimeOfDay> time);
-  Schedule(Mask<DayOfWeek> day_of_week, List<TimeOfDay> time);
-  Schedule(List<TimeOfDay> time);
+  Schedule(Mask<MonthOfYear> month_of_year, Mask<WeekOfMonth> week_of_month, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule(Mask<MonthOfYear> month_of_year, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule(Mask<MonthOfYear> month_of_year, Mask<DayOfMonth> day_of_month, std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule(Mask<WeekOfYear> week_of_year, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule(Mask<WeekOfMonth> week_of_month, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule(Mask<DayOfMonth> day_of_month, std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule(Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule(std::variant<List<TimeOfDay>, Hourly> time);
 
   bool TriggersOnDay(DateTime date_time) const;
   std::vector<time_t> GetMatchingTimes(time_t from, time_t to) const;
@@ -162,7 +164,7 @@ public:
     std::tuple<Mask<MonthOfYear>, Mask<DayOfMonth>>,
     std::tuple<Mask<WeekOfYear>, Mask<DayOfWeek>>
   > day_mask;
-  List<TimeOfDay> times;
+  std::variant<List<TimeOfDay>, Hourly> times;
 };
  
 }  // namespace directordaemon
