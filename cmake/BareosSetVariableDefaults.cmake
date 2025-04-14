@@ -383,7 +383,6 @@ mark_as_advanced(python)
 option(batch-insert "Enable database batch inserts" ON)
 mark_as_advanced(batch-insert)
 if(${batch-insert})
-  set(HAVE_POSTGRESQL_BATCH_FILE_INSERT 1)
   set(USE_BATCH_FILE_INSERT 1)
 endif()
 
@@ -497,7 +496,6 @@ else()
 endif()
 
 set(HAVE_SHA2 1)
-set(HAVE_PQISTHREADSAFE 1)
 
 set(_LARGEFILE_SOURCE 1)
 set(_LARGE_FILES 1)
