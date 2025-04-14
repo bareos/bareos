@@ -54,7 +54,7 @@
   package parse_conf.h {
   class ResourceTable << STRUCT_COLOR >>  {
     const char* name;
-    ResourceItem* items;
+    const ResourceItem* items;
     uint32_t rcode;
     uint32_t size;
     std::function<void*(void* res)> initres;

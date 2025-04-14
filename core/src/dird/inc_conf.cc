@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -221,7 +221,7 @@ static struct s_fs_opt FS_options[]
        {NULL, 0, 0}};
 
 // Imported subroutines
-extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
+extern void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass);
 
 /* We build the current new Include and Exclude items here */
 static IncludeExcludeItem* res_incexe;
@@ -230,55 +230,55 @@ static IncludeExcludeItem* res_incexe;
 
 /* new Include/Exclude items
  * name handler value code flags default_value */
-ResourceItem newinc_items[] = {
-  { "File", CFG_TYPE_FNAME, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Plugin", CFG_TYPE_PLUGINNAME, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR,  0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Options", CFG_TYPE_OPTIONS, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { NULL, 0, 0, nullptr, 0, 0, NULL, NULL, NULL }
+const ResourceItem newinc_items[] = {
+  { "File", CFG_TYPE_FNAME, 0, nullptr, {}},
+  { "Plugin", CFG_TYPE_PLUGINNAME, 0, nullptr, {}},
+  { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR, 0, nullptr, {}},
+  { "Options", CFG_TYPE_OPTIONS, 0, nullptr, {}},
+  {}
 };
 
 /* Items that are valid in an Options resource
  * name handler value code flags default_value */
-ResourceItem options_items[] = {
-  { "Compression", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Signature", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Accurate", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Verify", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "OneFs", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Recurse", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Sparse", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "HardLinks", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "ReadFifo", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Replace", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Portable", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "MtimeOnly", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "KeepAtime", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Regex", CFG_TYPE_REGEX, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "RegexDir", CFG_TYPE_REGEX, 0, nullptr, 1, 0, NULL, NULL, NULL },
-  { "RegexFile", CFG_TYPE_REGEX, 0, nullptr, 2, 0, NULL, NULL, NULL },
-  { "Wild", CFG_TYPE_WILD, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "WildDir", CFG_TYPE_WILD, 0, nullptr, 1, 0, NULL, NULL, NULL },
-  { "WildFile", CFG_TYPE_WILD, 0, nullptr, 2, 0, NULL, NULL, NULL },
-  { "Exclude", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "AclSupport", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Plugin", CFG_TYPE_PLUGIN, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "IgnoreCase", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "FsType", CFG_TYPE_FSTYPE, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "HfsPlusSupport", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "NoAtime", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "EnhancedWild", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "DriveType", CFG_TYPE_DRIVETYPE, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "CheckFileChanges", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "StripPath", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "HonorNoDumpFlag", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "XAttrSupport", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Size", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Shadowing", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "AutoExclude", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "ForceEncryption", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
-  { "Meta", CFG_TYPE_META, 0, nullptr, 0, 0, 0, NULL, NULL },
-  { NULL, 0, 0, nullptr, 0, 0, NULL, NULL, NULL }
+const ResourceItem options_items[] = {
+  { "Compression", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Signature", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Accurate", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Verify", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "OneFs", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Recurse", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Sparse", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "HardLinks", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "ReadFifo", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Replace", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Portable", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "MtimeOnly", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "KeepAtime", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Regex", CFG_TYPE_REGEX, 0, nullptr, {config::Code{0}}},
+  { "RegexDir", CFG_TYPE_REGEX, 0, nullptr, {config::Code{1}}},
+  { "RegexFile", CFG_TYPE_REGEX, 0, nullptr, {config::Code{2}}},
+  { "Wild", CFG_TYPE_WILD, 0, nullptr, {config::Code{0}}},
+  { "WildDir", CFG_TYPE_WILD, 0, nullptr, {config::Code{1}}},
+  { "WildFile", CFG_TYPE_WILD, 0, nullptr, {config::Code{2}}},
+  { "Exclude", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "AclSupport", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Plugin", CFG_TYPE_PLUGIN, 0, nullptr, {}},
+  { "IgnoreCase", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "FsType", CFG_TYPE_FSTYPE, 0, nullptr, {}},
+  { "HfsPlusSupport", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "NoAtime", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "EnhancedWild", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "DriveType", CFG_TYPE_DRIVETYPE, 0, nullptr, {}},
+  { "CheckFileChanges", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "StripPath", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "HonorNoDumpFlag", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "XAttrSupport", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Size", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Shadowing", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "AutoExclude", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "ForceEncryption", CFG_TYPE_OPTION, 0, nullptr, {}},
+  { "Meta", CFG_TYPE_META, 0, nullptr, {}},
+  {}
 };
 
 /* clang-format on */
@@ -440,7 +440,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
 }
 
 // Store regex info
-static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
+static void StoreRegex(LEX* lc, const ResourceItem* item, int pass)
 {
   int token, rc;
   regex_t preg{};
@@ -489,7 +489,7 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
 }
 
 // Store reader info
-static void StorePlugin(LEX* lc, ResourceItem*, int pass)
+static void StorePlugin(LEX* lc, const ResourceItem*, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -500,7 +500,7 @@ static void StorePlugin(LEX* lc, ResourceItem*, int pass)
 }
 
 // Store Wild-card info
-static void StoreWild(LEX* lc, ResourceItem* item, int pass)
+static void StoreWild(LEX* lc, const ResourceItem* item, int pass)
 {
   int token;
   const char* type;
@@ -544,7 +544,7 @@ static void StoreWild(LEX* lc, ResourceItem* item, int pass)
 }
 
 // Store fstype info
-static void StoreFstype(LEX* lc, ResourceItem*, int pass)
+static void StoreFstype(LEX* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -568,7 +568,7 @@ static void StoreFstype(LEX* lc, ResourceItem*, int pass)
 }
 
 // Store Drivetype info
-static void StoreDrivetype(LEX* lc, ResourceItem*, int pass)
+static void StoreDrivetype(LEX* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -591,7 +591,7 @@ static void StoreDrivetype(LEX* lc, ResourceItem*, int pass)
   ScanToEol(lc);
 }
 
-static void StoreMeta(LEX* lc, ResourceItem*, int pass)
+static void StoreMeta(LEX* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -617,7 +617,7 @@ static void StoreMeta(LEX* lc, ResourceItem*, int pass)
 // New style options come here
 static void StoreOption(
     LEX* lc,
-    ResourceItem* item,
+    const ResourceItem* item,
     int pass,
     std::map<int, options_default_value_s>& option_default_values)
 {
@@ -697,7 +697,10 @@ static void StoreDefaultOptions()
 }
 
 // Come here when Options seen in Include/Exclude
-static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
+static void StoreOptionsRes(LEX* lc,
+                            const ResourceItem*,
+                            int pass,
+                            bool exclude)
 {
   int token;
   OptionsDefaultValues default_values;
@@ -772,8 +775,8 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
 static FilesetResource* GetStaticFilesetResource()
 {
   FilesetResource* res_fs = nullptr;
-  ResourceTable* t = my_config->GetResourceTable("FileSet");
-  assert(t);
+  const ResourceTable* t = my_config->GetResourceTable("FileSet");
+  ASSERT(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
   assert(res_fs);
   return res_fs;
@@ -784,7 +787,7 @@ static FilesetResource* GetStaticFilesetResource()
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
+static void StoreFname(LEX* lc, const ResourceItem*, int pass, bool)
 {
   int token;
 
@@ -831,7 +834,10 @@ static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
+static void StorePluginName(LEX* lc,
+                            const ResourceItem*,
+                            int pass,
+                            bool exclude)
 {
   int token;
 
@@ -877,7 +883,10 @@ static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
 }
 
 // Store exclude directory containing info
-static void StoreExcludedir(LEX* lc, ResourceItem*, int pass, bool exclude)
+static void StoreExcludedir(LEX* lc,
+                            const ResourceItem*,
+                            int pass,
+                            bool exclude)
 {
   if (exclude) {
     scan_err0(lc,
@@ -903,7 +912,7 @@ static void StoreExcludedir(LEX* lc, ResourceItem*, int pass, bool exclude)
  *  resource.  We treat the Include/Exclude like a sort of
  *  mini-resource within the FileSet resource.
  */
-static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreNewinc(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   FilesetResource* res_fs = GetStaticFilesetResource();
 
@@ -991,7 +1000,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
  * Store FileSet Include/Exclude info
  *  new style includes are handled in StoreNewinc()
  */
-void StoreInc(LEX* lc, ResourceItem* item, int index, int pass)
+void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   int token;
 

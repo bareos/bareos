@@ -84,12 +84,12 @@ extern struct s_kw RunFields[];
  */
 static PoolMem* configure_usage_string = NULL;
 
-extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
-extern void StoreRun(LEX* lc, ResourceItem* item, int index, int pass);
+extern void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass);
+extern void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass);
 
 static void CreateAndAddUserAgentConsoleResource(
     ConfigurationParser& my_config);
-static bool SaveResource(int type, ResourceItem* items, int pass);
+static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* ures,
@@ -117,374 +117,321 @@ static UserResource* res_user;
 
 /* clang-format off */
 
-static ResourceItem dir_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_dir,  resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_dir,  description_), 0, 0, NULL, NULL, NULL },
-  { "Messages", CFG_TYPE_RES, ITEM(res_dir,  messages), R_MSGS, 0, NULL, NULL, NULL },
-  { "DirPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-  { "DirAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-  { "DirAddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
-  { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL },
-  { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), 0, 0, NULL,
-     "14.2.0-", "Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'." },
-  { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), 0, 0, NULL,
-      "14.2.0-", "List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded." },
-  { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_dir, scripts_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_SCRIPTDIR, NULL, "Path to directory containing script files"},
-  { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
-  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
-  { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
-  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */, NULL, NULL },
-  { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
-  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "160704000" /* 5 years */, NULL, NULL },
-  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", "14.2.0-", NULL },
-  { "VerId", CFG_TYPE_STR, ITEM(res_dir, verid), 0, 0, NULL, NULL, NULL },
-  { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, keyencrkey), 1, 0, NULL, NULL, NULL },
-  { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_snooping), 0, 0, NULL, "13.2.0-", NULL },
-  { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_dir, ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", "13.2.0-", NULL },
-  { "NdmpNamelistFhinfoSetZeroForInvalidUquad", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_fhinfo_set_zero_for_invalid_u_quad), 0, CFG_ITEM_DEFAULT, "false", "20.0.6-", NULL },
-  { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
-  { "Auditing", CFG_TYPE_BOOL, ITEM(res_dir, auditing), 0, CFG_ITEM_DEFAULT, "false", "14.2.0-", NULL },
-  { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir, audit_events), 0, 0, NULL, "14.2.0-", NULL },
-  { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
-     "Specify command that will be called when bareos unlinks files." },
-  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL },
+static const ResourceItem dir_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
+  { "Messages", CFG_TYPE_RES, ITEM(res_dir, messages), {config::Code{R_MSGS}}},
+  { "DirPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}}},
+  { "DirAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}}},
+  { "DirAddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}}},
+  { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRsrc_addr), {config::DefaultValue{"0"}}},
+  { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), {config::Required{}}},
+  { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), {config::DefaultValue{PATH_BAREOS_WORKINGDIR}, config::PlatformSpecific{}}},
+  { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), {config::IntroducedIn{14, 2, 0}, config::Description{"Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'."}}},
+  { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), {config::IntroducedIn{14, 2, 0}, config::Description{"List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded."}}},
+  { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_dir, scripts_directory), {config::DefaultValue{PATH_BAREOS_SCRIPTDIR}, config::Description{"Path to directory containing script files"}, config::PlatformSpecific{}}},
+  { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), {config::IntroducedIn{12, 4, 4}, config::DefaultValue{"0"}}},
+  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir, MaxConcurrentJobs), {config::DefaultValue{"1"}}},
+  { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConsoleConnections), {config::DefaultValue{"20"}}},
+  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, password_), {config::Required{}}},
+  { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, FDConnectTimeout), {config::DefaultValue{"180"}}},
+  { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, SDConnectTimeout), {config::DefaultValue{"1800"}}},
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), {config::DefaultValue{"0"}}},
+  { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), {config::DeprecatedSince{22, 0, 0}, config::DefaultValue{"160704000"}}},
+  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), {config::DeprecatedSince{22, 0, 0}, config::IntroducedIn{14, 2, 0}, config::DefaultValue{"0"}}},
+  { "VerId", CFG_TYPE_STR, ITEM(res_dir, verid), {}},
+  { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, keyencrkey), {config::Code{1}}},
+  { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_snooping), {config::IntroducedIn{13, 2, 0}}},
+  { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_dir, ndmp_loglevel), {config::IntroducedIn{13, 2, 0}, config::DefaultValue{"4"}}},
+  { "NdmpNamelistFhinfoSetZeroForInvalidUquad", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_fhinfo_set_zero_for_invalid_u_quad), {config::IntroducedIn{20, 0, 6}, config::DefaultValue{"false"}}},
+  { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir, jcr_watchdog_time), {config::IntroducedIn{14, 2, 0}, config::Description{"Absolute time after which a Job gets terminated regardless of its progress"}}},
+  { "Auditing", CFG_TYPE_BOOL, ITEM(res_dir, auditing), {config::IntroducedIn{14, 2, 0}, config::DefaultValue{"false"}}},
+  { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir, audit_events), {config::IntroducedIn{14, 2, 0}}},
+  { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), {config::IntroducedIn{15, 2, 1}, config::Description{"Specify command that will be called when bareos unlinks files."}}},
+  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), {config::IntroducedIn{15, 2, 3}, config::DefaultValue{"%d-%b %H:%M"}}},
+  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res_dir, enable_ktls), {config::DefaultValue{"false"}, config::Description{"If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."}, config::IntroducedIn{23, 0, 0}}},
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 #define USER_ACL(resource, ACL_lists) \
-  { "JobAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Job_ACL, 0, NULL, NULL,\
-     "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources." },\
-  { "ClientAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Client_ACL, 0, NULL, NULL,\
-     "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources." },\
-  { "StorageAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Storage_ACL, 0, NULL, NULL,\
-     "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },\
-  { "ScheduleAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Schedule_ACL, 0, NULL, NULL,\
-     "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },\
-  { "PoolAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Pool_ACL, 0, NULL, NULL,\
-     "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },\
-  { "CommandAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Command_ACL, 0, NULL, NULL,\
-     "Lists the commands, this resource has access to. The special keyword *all* allows using commands." },\
-  { "FileSetAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), FileSet_ACL, 0, NULL, NULL,\
-     "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources." },\
-  { "CatalogAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Catalog_ACL, 0, NULL, NULL,\
-     "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },\
-  { "WhereAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Where_ACL, 0, NULL, NULL,\
-     "Specifies the base directories, where files could be restored." },\
-  { "PluginOptionsAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), PluginOptions_ACL, 0, NULL, NULL,\
-     "Specifies the allowed plugin options. An empty strings allows all Plugin Options." }
+  { "JobAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Job_ACL}, config::Description{"Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources."}}}, \
+  { "ClientAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Client_ACL}, config::Description{"Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources."}}}, \
+  { "StorageAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Storage_ACL}, config::Description{"Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources."}}}, \
+  { "ScheduleAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Schedule_ACL}, config::Description{"Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources."}}}, \
+  { "PoolAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Pool_ACL}, config::Description{"Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."}}}, \
+  { "CommandAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Command_ACL}, config::Description{"Lists the commands, this resource has access to. The special keyword *all* allows using commands."}}}, \
+  { "FileSetAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{FileSet_ACL}, config::Description{"Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."}}}, \
+  { "CatalogAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Catalog_ACL}, config::Description{"Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."}}}, \
+  { "WhereAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{Where_ACL}, config::Description{"Specifies the base directories, where files could be restored."}}}, \
+  { "PluginOptionsAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), {config::Code{PluginOptions_ACL}, config::Description{"Specifies the allowed plugin options. An empty strings allows all Plugin Options."}}}
 
-static ResourceItem profile_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_profile, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_profile, description_), 0, 0, NULL, NULL,
-     "Additional information about the resource. Only used for UIs." },
+static const ResourceItem profile_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_profile, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_profile, description_), {config::Description{"Additional information about the resource. Only used for UIs."}}},
   USER_ACL(res_profile, ACL_lists),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 #define ACL_PROFILE(resource) \
-  { "Profile", CFG_TYPE_ALIST_RES, ITEM(resource, user_acl.profiles), R_PROFILE, 0, NULL, "14.2.3-",\
-    "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "\
-    "First the console ACL is checked then any profile the console is linked to." }
+  { "Profile", CFG_TYPE_ALIST_RES, ITEM(resource, user_acl.profiles), {config::IntroducedIn{14, 2, 3}, config::Code{R_PROFILE}, config::Description{"Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. First the console ACL is checked then any profile the console is linked to."}}}
 
-static ResourceItem con_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_con, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Description", CFG_TYPE_STR, ITEM(res_con, description_), 0, 0, NULL, NULL, NULL },
-  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+static const ResourceItem con_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_con, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_con, description_), {}},
+  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con, password_), {config::Required{}}},
   USER_ACL(res_con, user_acl.ACL_lists),
   ACL_PROFILE(res_con),
-  { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con, use_pam_authentication_), 0, CFG_ITEM_DEFAULT,
-     "false", "18.2.4-", "If set to yes, PAM will be used to authenticate the user on this console. Otherwise, "
-     "only the credentials of this console resource are used for authentication." },
+  { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con, use_pam_authentication_), {config::IntroducedIn{18, 2, 4}, config::DefaultValue{"false"}, config::Description{"If set to yes, PAM will be used to authenticate the user on this console. Otherwise, only the credentials of this console resource are used for authentication."}}},
    TLS_COMMON_CONFIG(res_con),
    TLS_CERT_CONFIG(res_con),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
-static ResourceItem user_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_user, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Description", CFG_TYPE_STR, ITEM(res_user, description_), 0, 0, NULL, NULL, NULL },
+static const ResourceItem user_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_user, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_user, description_), {}},
   USER_ACL(res_user, user_acl.ACL_lists),
   ACL_PROFILE(res_user),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
-static ResourceItem client_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_client, description_), 0, 0, NULL, NULL, NULL },
-  { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client, Protocol), 0, CFG_ITEM_DEFAULT, "Native", "13.2.0-", NULL },
-  { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client, AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
-  { "Address", CFG_TYPE_STR, ITEM(res_client, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "FdAddress" } },
-  { "LanAddress", CFG_TYPE_STR, ITEM(res_client, lanaddress), 0, CFG_ITEM_DEFAULT, NULL, "16.2.6-",
-     "Sets additional address used for connections between Client and Storage Daemon inside separate network."},
-  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL, { "FdPort" } },
-  { "Username", CFG_TYPE_STR, ITEM(res_client, username), 0, 0, NULL, NULL, NULL },
-  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "FdPassword" } },
-  { "Catalog", CFG_TYPE_RES, ITEM(res_client, catalog), R_CATALOG, 0, NULL, NULL, NULL },
-  { "Passive", CFG_TYPE_BOOL, ITEM(res_client, passive), 0, CFG_ITEM_DEFAULT, "false", "13.2.0-",
-     "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon." },
-  { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_client, conn_from_dir_to_fd), 0, CFG_ITEM_DEFAULT, "true", "16.2.2",
-     "Let the Director initiate the network connection to the Client." },
-  { "ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_client, conn_from_fd_to_dir), 0, CFG_ITEM_DEFAULT, "false", "16.2.2",
-     "The Director will accept incoming network connection from this Client." },
-  { "Enabled", CFG_TYPE_BOOL, ITEM(res_client, enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-     "En- or disable this resource." },
-  { "HardQuota", CFG_TYPE_SIZE64, ITEM(res_client, HardQuota), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "SoftQuota", CFG_TYPE_SIZE64, ITEM(res_client, SoftQuota), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "SoftQuotaGracePeriod", CFG_TYPE_TIME, ITEM(res_client, SoftQuotaGracePeriod), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "StrictQuotas", CFG_TYPE_BOOL, ITEM(res_client, StrictQuotas), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "QuotaIncludeFailedJobs", CFG_TYPE_BOOL, ITEM(res_client, QuotaIncludeFailedJobs), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "FileRetention", CFG_TYPE_TIME, ITEM(res_client, FileRetention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "5184000" /* 60 days */, NULL, NULL },
-  { "JobRetention", CFG_TYPE_TIME, ITEM(res_client, JobRetention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "15552000" /* 180 days */, NULL, NULL },
-  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "AutoPrune", CFG_TYPE_BOOL, ITEM(res_client, AutoPrune), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
-  { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client, max_bandwidth), 0, 0, NULL, NULL, NULL },
-  { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_client, ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL },
-  { "NdmpBlockSize", CFG_TYPE_SIZE32, ITEM(res_client, ndmp_blocksize), 0, CFG_ITEM_DEFAULT, "64512", NULL, NULL },
-  { "NdmpUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, ndmp_use_lmdb), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+static const ResourceItem client_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
+  { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client, Protocol), {config::IntroducedIn{13, 2, 0}, config::DefaultValue{"Native"}}},
+  { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client, AuthType), {config::DefaultValue{"None"}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_client, address), {config::Required{}, config::Alias{ "FdAddress" }}},
+  { "LanAddress", CFG_TYPE_STR, ITEM(res_client, lanaddress), {config::IntroducedIn{16, 2, 6}, config::Description{"Sets additional address used for connections between Client and Storage Daemon inside separate network."}}},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}, config::Alias{ "FdPort" }}},
+  { "Username", CFG_TYPE_STR, ITEM(res_client, username), {}},
+  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client, password_), {config::Alias{"FdPassword"}, config::Required{}}},
+  { "Catalog", CFG_TYPE_RES, ITEM(res_client, catalog), {config::Code{R_CATALOG}}},
+  { "Passive", CFG_TYPE_BOOL, ITEM(res_client, passive), {config::IntroducedIn{13, 2, 0}, config::DefaultValue{"false"}, config::Description{"If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon."}}},
+  { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_client, conn_from_dir_to_fd), {config::IntroducedIn{16, 2, 2}, config::DefaultValue{"true"}, config::Description{"Let the Director initiate the network connection to the Client."}}},
+  { "ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_client, conn_from_fd_to_dir), {config::IntroducedIn{16, 2, 2}, config::DefaultValue{"false"}, config::Description{"The Director will accept incoming network connection from this Client."}}},
+  { "Enabled", CFG_TYPE_BOOL, ITEM(res_client, enabled), {config::DefaultValue{"true"}, config::Description{"En- or disable this resource."}}},
+  { "HardQuota", CFG_TYPE_SIZE64, ITEM(res_client, HardQuota), {config::DefaultValue{"0"}}},
+  { "SoftQuota", CFG_TYPE_SIZE64, ITEM(res_client, SoftQuota), {config::DefaultValue{"0"}}},
+  { "SoftQuotaGracePeriod", CFG_TYPE_TIME, ITEM(res_client, SoftQuotaGracePeriod), {config::DefaultValue{"0"}}},
+  { "StrictQuotas", CFG_TYPE_BOOL, ITEM(res_client, StrictQuotas), {config::DefaultValue{"false"}}},
+  { "QuotaIncludeFailedJobs", CFG_TYPE_BOOL, ITEM(res_client, QuotaIncludeFailedJobs), {config::DefaultValue{"true"}}},
+  { "FileRetention", CFG_TYPE_TIME, ITEM(res_client, FileRetention),
+    { config::DeprecatedSince{config::Version{23, 0, 0}}, config::DefaultValue{"5184000"}, config::Description{"File retention"}}},
+  { "JobRetention", CFG_TYPE_TIME, ITEM(res_client, JobRetention), {config::DeprecatedSince{23, 0, 0}, config::DefaultValue{"15552000"}}},
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client, heartbeat_interval), {config::DefaultValue{"0"}}},
+  { "AutoPrune", CFG_TYPE_BOOL, ITEM(res_client, AutoPrune), {config::DeprecatedSince{23, 0, 0}, config::DefaultValue{"false"}}},
+  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), {config::DefaultValue{"1"}}},
+  { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client, max_bandwidth), {}},
+  { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_client, ndmp_loglevel), {config::DefaultValue{"4"}}},
+  { "NdmpBlockSize", CFG_TYPE_SIZE32, ITEM(res_client, ndmp_blocksize), {config::DefaultValue{"64512"}}},
+  { "NdmpUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, ndmp_use_lmdb), {config::DefaultValue{"true"}}},
    TLS_COMMON_CONFIG(res_client),
    TLS_CERT_CONFIG(res_client),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
-static ResourceItem store_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_store, description_), 0, 0, NULL, NULL, NULL },
-  { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store, Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
-  { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_store, AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
-  { "Address", CFG_TYPE_STR, ITEM(res_store, address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "SdAddress" } },
-  { "LanAddress", CFG_TYPE_STR, ITEM(res_store, lanaddress), 0, CFG_ITEM_DEFAULT, NULL, "16.2.6-",
-     "Sets additional address used for connections between Client and Storage Daemon inside separate network."},
-  { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL, { "SdPort" } },
-  { "Username", CFG_TYPE_STR, ITEM(res_store, username), 0, 0, NULL, NULL, NULL },
-  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL, { "SdPassword" } },
-  { "Device", CFG_TYPE_DEVICE, ITEM(res_store, device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "MediaType", CFG_TYPE_STRNAME, ITEM(res_store, media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "AutoChanger", CFG_TYPE_BOOL, ITEM(res_store, autochanger), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "Enabled", CFG_TYPE_BOOL, ITEM(res_store, enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-     "En- or disable this resource." },
-  { "AllowCompression", CFG_TYPE_BOOL, ITEM(res_store, AllowCompress), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "CacheStatusInterval", CFG_TYPE_TIME, ITEM(res_store, cache_status_interval), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
-  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
-  { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "PairedStorage", CFG_TYPE_RES, ITEM(res_store, paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
-  { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth), 0, 0, NULL, NULL, NULL },
-  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "NdmpChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store, ndmp_changer_device), 0, 0, NULL, "16.2.4-",
-     "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments." },
+static const ResourceItem store_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
+  { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store, Protocol), {config::DefaultValue{"Native"}}},
+  { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_store, AuthType), {config::DefaultValue{"None"}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Alias{ "SdAddress" }, config::Required{}}},
+  { "LanAddress", CFG_TYPE_STR, ITEM(res_store, lanaddress), {config::IntroducedIn{16, 2, 6}, config::Description{"Sets additional address used for connections between Client and Storage Daemon inside separate network."}}},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdPort"}}},
+  { "Username", CFG_TYPE_STR, ITEM(res_store, username), {}},
+  { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store, password_), {config::Alias{"SdPassword"}, config::Required{}}},
+  { "Device", CFG_TYPE_DEVICE, ITEM(res_store, device), {config::Required{}, config::Code{R_DEVICE}}},
+  { "MediaType", CFG_TYPE_STRNAME, ITEM(res_store, media_type), {config::Required{}}},
+  { "AutoChanger", CFG_TYPE_BOOL, ITEM(res_store, autochanger), {config::DefaultValue{"false"}}},
+  { "Enabled", CFG_TYPE_BOOL, ITEM(res_store, enabled), {config::DefaultValue{"true"}, config::Description{"En- or disable this resource."}}},
+  { "AllowCompression", CFG_TYPE_BOOL, ITEM(res_store, AllowCompress), {config::DefaultValue{"true"}}},
+  { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store, heartbeat_interval), {config::DefaultValue{"0"}}},
+  { "CacheStatusInterval", CFG_TYPE_TIME, ITEM(res_store, cache_status_interval), {config::DefaultValue{"30"}}},
+  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentJobs), {config::DefaultValue{"1"}}},
+  { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentReadJobs), {config::DefaultValue{"0"}}},
+  { "PairedStorage", CFG_TYPE_RES, ITEM(res_store, paired_storage), {config::Code{R_STORAGE}}},
+  { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth), {}},
+  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), {config::DeprecatedSince{22, 0, 0}, config::DefaultValue{"false"}}},
+  { "NdmpChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store, ndmp_changer_device), {config::IntroducedIn{16, 2, 4}, config::Description{"Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments."}}},
    TLS_COMMON_CONFIG(res_store),
    TLS_CERT_CONFIG(res_store),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
-static ResourceItem cat_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_cat, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_cat, description_), 0, 0, NULL, NULL, NULL },
-  { "DbAddress", CFG_TYPE_STR, ITEM(res_cat, db_address), 0, 0, NULL, NULL, NULL, { "Address" } },
-  { "DbPort", CFG_TYPE_PINT32, ITEM(res_cat, db_port), 0, 0, NULL, NULL, NULL, { "Port" } },
-  { "DbPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat, db_password), 0, 0, NULL, NULL, NULL, { "Password" } },
-  { "DbUser", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, 0, NULL, NULL, NULL, { "User" } },
-  { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), 0, 0, NULL, NULL, NULL, { "Socket" } },
-   /* Turned off for the moment */
-  { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), 0, 0, NULL, NULL, NULL },
-  { "DisableBatchInsert", CFG_TYPE_BOOL, ITEM(res_cat, disable_batch_insert), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "Reconnect", CFG_TYPE_BOOL, ITEM(res_cat, try_reconnect), 0, CFG_ITEM_DEFAULT, "true",
-     "15.1.0-", "Try to reconnect a database connection when it is dropped" },
-  { "ExitOnFatal", CFG_TYPE_BOOL, ITEM(res_cat, exit_on_fatal), 0, CFG_ITEM_DEFAULT, "false",
-     "15.1.0-", "Make any fatal error in the connection to the database exit the program" },
-  { "MinConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_min_connections), 0, CFG_ITEM_DEFAULT, "1", NULL,
-     "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the minimum number of connections to a database to keep in this database pool." },
-  { "MaxConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_max_connections), 0, CFG_ITEM_DEFAULT, "5", NULL,
-     "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the maximum number of connections to a database to keep in this database pool." },
-  { "IncConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_increment_connections), 0, CFG_ITEM_DEFAULT, "1", NULL,
-    "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the number of connections to add to a database pool when not enough connections are available on the pool anymore." },
-  { "IdleTimeout", CFG_TYPE_PINT32, ITEM(res_cat, pooling_idle_timeout), 0, CFG_ITEM_DEFAULT, "30", NULL,
-     "This directive is used by the experimental database pooling functionality. Only use this for non production sites.  This sets the idle time after which a database pool should be shrinked." },
-  { "ValidateTimeout", CFG_TYPE_PINT32, ITEM(res_cat, pooling_validate_timeout), 0, CFG_ITEM_DEFAULT, "120", NULL,
-     "This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the validation timeout after which the database connection is polled to see if its still alive." },
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+static const ResourceItem cat_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_cat, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_cat, description_), {}},
+  { "DbAddress", CFG_TYPE_STR, ITEM(res_cat, db_address), {config::Alias{"Address"}}},
+  { "DbPort", CFG_TYPE_PINT32, ITEM(res_cat, db_port), {config::Alias{"Port"}}},
+  { "DbPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat, db_password), {config::Alias{"Password"}}},
+  { "DbUser", CFG_TYPE_STR, ITEM(res_cat, db_user), {config::Required{}, config::Alias{"User"}}},
+  { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), {config::Required{}}},
+  { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), {config::Alias{ "Socket" }}},
+  /* Turned off for the moment */
+  { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), {}},
+  { "DisableBatchInsert", CFG_TYPE_BOOL, ITEM(res_cat, disable_batch_insert), {config::DefaultValue{"false"}}},
+  { "Reconnect", CFG_TYPE_BOOL, ITEM(res_cat, try_reconnect), {config::IntroducedIn{15, 1, 0}, config::DefaultValue{"true"}, config::Description{"Try to reconnect a database connection when it is dropped"}}},
+  { "ExitOnFatal", CFG_TYPE_BOOL, ITEM(res_cat, exit_on_fatal), {config::IntroducedIn{15, 1, 0}, config::DefaultValue{"false"}, config::Description{"Make any fatal error in the connection to the database exit the program"}}},
+  { "MinConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_min_connections), {config::DefaultValue{"1"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the minimum number of connections to a database to keep in this database pool."}}},
+  { "MaxConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_max_connections), {config::DefaultValue{"5"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the maximum number of connections to a database to keep in this database pool."}}},
+  { "IncConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_increment_connections), {config::DefaultValue{"1"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the number of connections to add to a database pool when not enough connections are available on the pool anymore."}}},
+  { "IdleTimeout", CFG_TYPE_PINT32, ITEM(res_cat, pooling_idle_timeout), {config::DefaultValue{"30"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites.  This sets the idle time after which a database pool should be shrinked."}}},
+  { "ValidateTimeout", CFG_TYPE_PINT32, ITEM(res_cat, pooling_validate_timeout), {config::DefaultValue{"120"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the validation timeout after which the database connection is polled to see if its still alive."}}},
+  {}
 };
 
-ResourceItem job_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_job, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_job, description_), 0, 0, NULL, NULL, NULL },
-  { "Type", CFG_TYPE_JOBTYPE, ITEM(res_job, JobType), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Protocol", CFG_TYPE_PROTOCOLTYPE, ITEM(res_job, Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
-  { "BackupFormat", CFG_TYPE_STR, ITEM(res_job, backup_format), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
-  { "Level", CFG_TYPE_LEVEL, ITEM(res_job, JobLevel), 0, 0, NULL, NULL, NULL },
-  { "Messages", CFG_TYPE_RES, ITEM(res_job, messages), R_MSGS, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "Storage", CFG_TYPE_ALIST_RES, ITEM(res_job, storage), R_STORAGE, 0, NULL, NULL, NULL },
-  { "Pool", CFG_TYPE_RES, ITEM(res_job, pool), R_POOL, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-  { "FullBackupPool", CFG_TYPE_RES, ITEM(res_job, full_pool), R_POOL, 0, NULL, NULL, NULL },
-  { "VirtualFullBackupPool", CFG_TYPE_RES, ITEM(res_job, vfull_pool), R_POOL, 0, NULL, NULL, NULL },
-  { "IncrementalBackupPool", CFG_TYPE_RES, ITEM(res_job, inc_pool), R_POOL, 0, NULL, NULL, NULL },
-  { "DifferentialBackupPool", CFG_TYPE_RES, ITEM(res_job, diff_pool), R_POOL, 0, NULL, NULL, NULL },
-  { "NextPool", CFG_TYPE_RES, ITEM(res_job, next_pool), R_POOL, 0, NULL, NULL, NULL },
-  { "Client", CFG_TYPE_RES, ITEM(res_job, client), R_CLIENT, 0, NULL, NULL, NULL },
-  { "FileSet", CFG_TYPE_RES, ITEM(res_job, fileset), R_FILESET, 0, NULL, NULL, NULL },
-  { "Schedule", CFG_TYPE_RES, ITEM(res_job, schedule), R_SCHEDULE, 0, NULL, NULL, NULL },
-  { "JobToVerify", CFG_TYPE_RES, ITEM(res_job, verify_job), R_JOB, 0, NULL, NULL, NULL, { "VerifyJob" } },
-  { "Catalog", CFG_TYPE_RES, ITEM(res_job, catalog), R_CATALOG, 0, NULL, "13.4.0-", NULL },
-  { "JobDefs", CFG_TYPE_RES, ITEM(res_job, jobdefs), R_JOBDEFS, 0, NULL, NULL, NULL },
-  { "Run", CFG_TYPE_ALIST_STR, ITEM(res_job, run_cmds), 0, 0, NULL, NULL, NULL },
-   /* Root of where to restore files */
-  { "Where", CFG_TYPE_DIR, ITEM(res_job, RestoreWhere), 0, 0, NULL, NULL, NULL },
-  { "RegexWhere", CFG_TYPE_STR, ITEM(res_job, RegexWhere), 0, 0, NULL, NULL, NULL },
-  { "StripPrefix", CFG_TYPE_STR, ITEM(res_job, strip_prefix), 0, 0, NULL, NULL, NULL },
-  { "AddPrefix", CFG_TYPE_STR, ITEM(res_job, add_prefix), 0, 0, NULL, NULL, NULL },
-  { "AddSuffix", CFG_TYPE_STR, ITEM(res_job, add_suffix), 0, 0, NULL, NULL, NULL },
-   /* Where to find bootstrap during restore */
-  { "Bootstrap", CFG_TYPE_DIR, ITEM(res_job, RestoreBootstrap), 0, 0, NULL, NULL, NULL },
-   /* Where to write bootstrap file during backup */
-  { "WriteBootstrap", CFG_TYPE_DIR_OR_CMD, ITEM(res_job, WriteBootstrap), 0, 0, NULL, NULL, NULL },
-  { "WriteVerifyList", CFG_TYPE_DIR, ITEM(res_job, WriteVerifyList), 0, 0, NULL, NULL, NULL },
-  { "Replace", CFG_TYPE_REPLACE, ITEM(res_job, replace), 0, CFG_ITEM_DEFAULT, "Always", NULL, NULL },
-  { "MaximumBandwidth", CFG_TYPE_SPEED, ITEM(res_job, max_bandwidth), 0, 0, NULL, NULL, NULL },
-  { "MaxRunSchedTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunSchedTime), 0, 0, NULL, NULL, NULL },
-  { "MaxRunTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunTime), 0, 0, NULL, NULL, NULL },
-  { "FullMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, FullMaxRunTime), 0, 0, NULL, NULL, NULL },
-  { "IncrementalMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, IncMaxRunTime), 0, 0, NULL, NULL, NULL },
-  { "DifferentialMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, DiffMaxRunTime), 0, 0, NULL, NULL, NULL },
-  { "MaxWaitTime", CFG_TYPE_TIME, ITEM(res_job, MaxWaitTime), 0, 0, NULL, NULL, NULL },
-  { "MaxStartDelay", CFG_TYPE_TIME, ITEM(res_job, MaxStartDelay), 0, 0, NULL, NULL, NULL },
-  { "MaxFullInterval", CFG_TYPE_TIME, ITEM(res_job, MaxFullInterval), 0, 0, NULL, NULL, NULL },
-  { "MaxVirtualFullInterval", CFG_TYPE_TIME, ITEM(res_job, MaxVFullInterval), 0, 0, NULL, "14.4.0-", NULL },
-  { "MaxDiffInterval", CFG_TYPE_TIME, ITEM(res_job, MaxDiffInterval), 0, 0, NULL, NULL, NULL },
-  { "PrefixLinks", CFG_TYPE_BOOL, ITEM(res_job, PrefixLinks), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "PruneJobs", CFG_TYPE_BOOL, ITEM(res_job, PruneJobs), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "PruneFiles", CFG_TYPE_BOOL, ITEM(res_job, PruneFiles), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "PruneVolumes", CFG_TYPE_BOOL, ITEM(res_job, PruneVolumes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "PurgeMigrationJob", CFG_TYPE_BOOL, ITEM(res_job, PurgeMigrateJob), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "Enabled", CFG_TYPE_BOOL, ITEM(res_job, enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-     "En- or disable this resource." },
-  { "SpoolAttributes", CFG_TYPE_BOOL, ITEM(res_job, SpoolAttributes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "SpoolData", CFG_TYPE_BOOL, ITEM(res_job, spool_data), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "SpoolSize", CFG_TYPE_SIZE64, ITEM(res_job, spool_size), 0, 0, NULL, NULL, NULL },
-  { "RerunFailedLevels", CFG_TYPE_BOOL, ITEM(res_job, rerun_failed_levels), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "PreferMountedVolumes", CFG_TYPE_BOOL, ITEM(res_job, PreferMountedVolumes), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "RunBeforeJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), 0, 0, NULL, NULL, NULL },
-  { "RunAfterJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), 0, 0, NULL, NULL, NULL },
-  { "RunAfterFailedJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), 0, 0, NULL, NULL, NULL },
-  { "ClientRunBeforeJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), 0, 0, NULL, NULL, NULL },
-  { "ClientRunAfterJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), 0, 0, NULL, NULL, NULL },
-  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_job, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
-  { "RescheduleOnError", CFG_TYPE_BOOL, ITEM(res_job, RescheduleOnError), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "RescheduleInterval", CFG_TYPE_TIME, ITEM(res_job, RescheduleInterval), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
-  { "RescheduleTimes", CFG_TYPE_PINT32, ITEM(res_job, RescheduleTimes), 0, CFG_ITEM_DEFAULT, "5", NULL, NULL },
-  { "Priority", CFG_TYPE_PINT32, ITEM(res_job, Priority), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
-  { "AllowMixedPriority", CFG_TYPE_BOOL, ITEM(res_job, allow_mixed_priority), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "SelectionPattern", CFG_TYPE_STR, ITEM(res_job, selection_pattern), 0, 0, NULL, NULL, NULL },
-  { "RunScript", CFG_TYPE_RUNSCRIPT, ITEM(res_job, RunScripts), 0, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
-  { "SelectionType", CFG_TYPE_MIGTYPE, ITEM(res_job, selection_type), 0, 0, NULL, NULL, NULL },
-  { "Accurate", CFG_TYPE_BOOL, ITEM(res_job, accurate), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "AllowDuplicateJobs", CFG_TYPE_BOOL, ITEM(res_job, AllowDuplicateJobs), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "CancelLowerLevelDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelLowerLevelDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "CancelQueuedDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job, SaveFileHist), 0, CFG_ITEM_DEFAULT, "true", "14.2.0-", NULL },
-  { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, FileHistSize), 0, CFG_ITEM_DEFAULT, "10000000", "15.2.4-", NULL },
-  { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), 0, 0, NULL, NULL, NULL },
-  { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), 0, 0, NULL, NULL, NULL },
-  { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), 0, 0, NULL, NULL, NULL },
-  { "MaxConcurrentCopies", CFG_TYPE_PINT32, ITEM(res_job, MaxConcurrentCopies), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
-   /* Settings for always incremental */
-  { "AlwaysIncremental", CFG_TYPE_BOOL, ITEM(res_job, AlwaysIncremental), 0, CFG_ITEM_DEFAULT, "false", "16.2.4-",
-     "Enable/disable always incremental backup scheme." },
-  { "AlwaysIncrementalJobRetention", CFG_TYPE_TIME, ITEM(res_job, AlwaysIncrementalJobRetention), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
-     "Backup Jobs older than the specified time duration will be merged into a new Virtual backup." },
-  { "AlwaysIncrementalKeepNumber", CFG_TYPE_PINT32, ITEM(res_job, AlwaysIncrementalKeepNumber), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
-     "Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."},
-  { "AlwaysIncrementalMaxFullAge", CFG_TYPE_TIME, ITEM(res_job, AlwaysIncrementalMaxFullAge), 0, 0, NULL, "16.2.4-",
-     "If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ." },
-  { "MaxFullConsolidations", CFG_TYPE_PINT32, ITEM(res_job, MaxFullConsolidations), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
-     "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."},
-  { "RunOnIncomingConnectInterval", CFG_TYPE_TIME, ITEM(res_job, RunOnIncomingConnectInterval), 0, CFG_ITEM_DEFAULT, "0", "19.2.4-",
-    "The interval specifies the time between the most recent successful backup (counting from start time) and the "
-    "event of a client initiated connection. When this interval is exceeded the job is started automatically." },
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+const ResourceItem job_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_job, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_job, description_), {}},
+  { "Type", CFG_TYPE_JOBTYPE, ITEM(res_job, JobType), {config::Required{}}},
+  { "Protocol", CFG_TYPE_PROTOCOLTYPE, ITEM(res_job, Protocol), {config::DefaultValue{"Native"}}},
+  { "BackupFormat", CFG_TYPE_STR, ITEM(res_job, backup_format), {config::DefaultValue{"Native"}}},
+  { "Level", CFG_TYPE_LEVEL, ITEM(res_job, JobLevel), {}},
+  { "Messages", CFG_TYPE_RES, ITEM(res_job, messages), {config::Required{}, config::Code{R_MSGS}}},
+  { "Storage", CFG_TYPE_ALIST_RES, ITEM(res_job, storage), {config::Code{R_STORAGE}}},
+  { "Pool", CFG_TYPE_RES, ITEM(res_job, pool), {config::Required{}, config::Code{R_POOL}}},
+  { "FullBackupPool", CFG_TYPE_RES, ITEM(res_job, full_pool), {config::Code{R_POOL}}},
+  { "VirtualFullBackupPool", CFG_TYPE_RES, ITEM(res_job, vfull_pool), {config::Code{R_POOL}}},
+  { "IncrementalBackupPool", CFG_TYPE_RES, ITEM(res_job, inc_pool), {config::Code{R_POOL}}},
+  { "DifferentialBackupPool", CFG_TYPE_RES, ITEM(res_job, diff_pool), {config::Code{R_POOL}}},
+  { "NextPool", CFG_TYPE_RES, ITEM(res_job, next_pool), {config::Code{R_POOL}}},
+  { "Client", CFG_TYPE_RES, ITEM(res_job, client), {config::Code{R_CLIENT}}},
+  { "FileSet", CFG_TYPE_RES, ITEM(res_job, fileset), {config::Code{R_FILESET}}},
+  { "Schedule", CFG_TYPE_RES, ITEM(res_job, schedule), {config::Code{R_SCHEDULE}}},
+  { "JobToVerify", CFG_TYPE_RES, ITEM(res_job, verify_job), {config::Code{R_JOB}, config::Alias{"VerifyJob"}}},
+  { "Catalog", CFG_TYPE_RES, ITEM(res_job, catalog), {config::IntroducedIn{13, 4, 0}, config::Code{R_CATALOG}}},
+  { "JobDefs", CFG_TYPE_RES, ITEM(res_job, jobdefs), {config::Code{R_JOBDEFS}}},
+  { "Run", CFG_TYPE_ALIST_STR, ITEM(res_job, run_cmds), {}},
+  { "Where", CFG_TYPE_DIR, ITEM(res_job, RestoreWhere), {}},
+  { "RegexWhere", CFG_TYPE_STR, ITEM(res_job, RegexWhere), {}},
+  { "StripPrefix", CFG_TYPE_STR, ITEM(res_job, strip_prefix), {}},
+  { "AddPrefix", CFG_TYPE_STR, ITEM(res_job, add_prefix), {}},
+  { "AddSuffix", CFG_TYPE_STR, ITEM(res_job, add_suffix), {}},
+  { "Bootstrap", CFG_TYPE_DIR, ITEM(res_job, RestoreBootstrap), {}},
+  { "WriteBootstrap", CFG_TYPE_DIR_OR_CMD, ITEM(res_job, WriteBootstrap), {}},
+  { "WriteVerifyList", CFG_TYPE_DIR, ITEM(res_job, WriteVerifyList), {}},
+  { "Replace", CFG_TYPE_REPLACE, ITEM(res_job, replace), {config::DefaultValue{"Always"}}},
+  { "MaximumBandwidth", CFG_TYPE_SPEED, ITEM(res_job, max_bandwidth), {}},
+  { "MaxRunSchedTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunSchedTime), {}},
+  { "MaxRunTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunTime), {}},
+  { "FullMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, FullMaxRunTime), {}},
+  { "IncrementalMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, IncMaxRunTime), {}},
+  { "DifferentialMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, DiffMaxRunTime), {}},
+  { "MaxWaitTime", CFG_TYPE_TIME, ITEM(res_job, MaxWaitTime), {}},
+  { "MaxStartDelay", CFG_TYPE_TIME, ITEM(res_job, MaxStartDelay), {}},
+  { "MaxFullInterval", CFG_TYPE_TIME, ITEM(res_job, MaxFullInterval), {}},
+  { "MaxVirtualFullInterval", CFG_TYPE_TIME, ITEM(res_job, MaxVFullInterval), {config::IntroducedIn{14, 4, 0}}},
+  { "MaxDiffInterval", CFG_TYPE_TIME, ITEM(res_job, MaxDiffInterval), {}},
+  { "PrefixLinks", CFG_TYPE_BOOL, ITEM(res_job, PrefixLinks), {config::DefaultValue{"false"}}},
+  { "PruneJobs", CFG_TYPE_BOOL, ITEM(res_job, PruneJobs), {config::DefaultValue{"false"}}},
+  { "PruneFiles", CFG_TYPE_BOOL, ITEM(res_job, PruneFiles), {config::DefaultValue{"false"}}},
+  { "PruneVolumes", CFG_TYPE_BOOL, ITEM(res_job, PruneVolumes), {config::DefaultValue{"false"}}},
+  { "PurgeMigrationJob", CFG_TYPE_BOOL, ITEM(res_job, PurgeMigrateJob), {config::DefaultValue{"false"}}},
+  { "Enabled", CFG_TYPE_BOOL, ITEM(res_job, enabled), {config::DefaultValue{"true"}, config::Description{"En- or disable this resource."}}},
+  { "SpoolAttributes", CFG_TYPE_BOOL, ITEM(res_job, SpoolAttributes), {config::DefaultValue{"false"}}},
+  { "SpoolData", CFG_TYPE_BOOL, ITEM(res_job, spool_data), {config::DefaultValue{"false"}}},
+  { "SpoolSize", CFG_TYPE_SIZE64, ITEM(res_job, spool_size), {}},
+  { "RerunFailedLevels", CFG_TYPE_BOOL, ITEM(res_job, rerun_failed_levels), {config::DefaultValue{"false"}}},
+  { "PreferMountedVolumes", CFG_TYPE_BOOL, ITEM(res_job, PreferMountedVolumes), {config::DefaultValue{"true"}}},
+  { "RunBeforeJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), {}},
+  { "RunAfterJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), {}},
+  { "RunAfterFailedJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), {}},
+  { "ClientRunBeforeJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), {}},
+  { "ClientRunAfterJob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job, RunScripts), {}},
+  { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_job, MaxConcurrentJobs), {config::DefaultValue{"1"}}},
+  { "RescheduleOnError", CFG_TYPE_BOOL, ITEM(res_job, RescheduleOnError), {config::DefaultValue{"false"}}},
+  { "RescheduleInterval", CFG_TYPE_TIME, ITEM(res_job, RescheduleInterval), {config::DefaultValue{"1800"}}},
+  { "RescheduleTimes", CFG_TYPE_PINT32, ITEM(res_job, RescheduleTimes), {config::DefaultValue{"5"}}},
+  { "Priority", CFG_TYPE_PINT32, ITEM(res_job, Priority), {config::DefaultValue{"10"}}},
+  { "AllowMixedPriority", CFG_TYPE_BOOL, ITEM(res_job, allow_mixed_priority), {config::DefaultValue{"false"}}},
+  { "SelectionPattern", CFG_TYPE_STR, ITEM(res_job, selection_pattern), {}},
+  { "RunScript", CFG_TYPE_RUNSCRIPT, ITEM(res_job, RunScripts), {config::UsesNoEquals{}}},
+  { "SelectionType", CFG_TYPE_MIGTYPE, ITEM(res_job, selection_type), {}},
+  { "Accurate", CFG_TYPE_BOOL, ITEM(res_job, accurate), {config::DefaultValue{"false"}}},
+  { "AllowDuplicateJobs", CFG_TYPE_BOOL, ITEM(res_job, AllowDuplicateJobs), {config::DefaultValue{"true"}}},
+  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), {config::DeprecatedSince{24, 0, 0}, config::DefaultValue{"true"}}},
+  { "CancelLowerLevelDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelLowerLevelDuplicates), {config::DefaultValue{"false"}}},
+  { "CancelQueuedDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelQueuedDuplicates), {config::DefaultValue{"false"}}},
+  { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), {config::DefaultValue{"false"}}},
+  { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job, SaveFileHist), {config::IntroducedIn{14, 2, 0}, config::DefaultValue{"true"}}},
+  { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, FileHistSize), {config::IntroducedIn{15, 2, 4}, config::DefaultValue{"10000000"}}},
+  { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), {}},
+  { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), {}},
+  { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), {}},
+  { "MaxConcurrentCopies", CFG_TYPE_PINT32, ITEM(res_job, MaxConcurrentCopies), {config::DefaultValue{"100"}}},
+  { "AlwaysIncremental", CFG_TYPE_BOOL, ITEM(res_job, AlwaysIncremental), {config::IntroducedIn{16, 2, 4}, config::DefaultValue{"false"}, config::Description{"Enable/disable always incremental backup scheme."}}},
+  { "AlwaysIncrementalJobRetention", CFG_TYPE_TIME, ITEM(res_job, AlwaysIncrementalJobRetention), {config::IntroducedIn{16, 2, 4}, config::DefaultValue{"0"}, config::Description{"Backup Jobs older than the specified time duration will be merged into a new Virtual backup."}}},
+  { "AlwaysIncrementalKeepNumber", CFG_TYPE_PINT32, ITEM(res_job, AlwaysIncrementalKeepNumber), {config::IntroducedIn{16, 2, 4}, config::DefaultValue{"0"}, config::Description{"Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."}}},
+  { "AlwaysIncrementalMaxFullAge", CFG_TYPE_TIME, ITEM(res_job, AlwaysIncrementalMaxFullAge), {config::IntroducedIn{16, 2, 4}, config::Description{"If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ."}}},
+  { "MaxFullConsolidations", CFG_TYPE_PINT32, ITEM(res_job, MaxFullConsolidations), {config::IntroducedIn{16, 2, 4}, config::DefaultValue{"0"}, config::Description{"If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."}}},
+  { "RunOnIncomingConnectInterval", CFG_TYPE_TIME, ITEM(res_job, RunOnIncomingConnectInterval), {config::IntroducedIn{19, 2, 4}, config::DefaultValue{"0"}, config::Description{"The interval specifies the time between the most recent successful backup (counting from start time) and the event of a client initiated connection. When this interval is exceeded the job is started automatically."}}},
+  {}
 };
 
-static ResourceItem fs_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_fs, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_fs, description_), 0, 0, NULL, NULL, NULL },
-  { "Include", CFG_TYPE_INCEXC, ITEMC(res_fs), 0, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
-  { "Exclude", CFG_TYPE_INCEXC, ITEMC(res_fs), 1, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
-  { "IgnoreFileSetChanges", CFG_TYPE_BOOL, ITEM(res_fs, ignore_fs_changes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "EnableVSS", CFG_TYPE_BOOL, ITEM(res_fs, enable_vss), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+static const ResourceItem fs_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_fs, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_fs, description_), {}},
+  { "Include", CFG_TYPE_INCEXC, ITEMC(res_fs), {config::UsesNoEquals{}, config::Code{0}}},
+  { "Exclude", CFG_TYPE_INCEXC, ITEMC(res_fs), {config::UsesNoEquals{}, config::Code{1}}},
+  { "IgnoreFileSetChanges", CFG_TYPE_BOOL, ITEM(res_fs, ignore_fs_changes), {config::DefaultValue{"false"}}},
+  { "EnableVSS", CFG_TYPE_BOOL, ITEM(res_fs, enable_vss), {config::DefaultValue{"true"}}},
+  {}
 };
 
-static ResourceItem sch_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_sch, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_sch, description_), 0, 0, NULL, NULL, NULL },
-  { "Run", CFG_TYPE_RUN, ITEM(res_sch, run), 0, 0, NULL, NULL, NULL },
-  { "Enabled", CFG_TYPE_BOOL, ITEM(res_sch, enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-     "En- or disable this resource." },
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+static const ResourceItem sch_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_sch, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_sch, description_), {}},
+  { "Run", CFG_TYPE_RUN, ITEM(res_sch, run), {}},
+  { "Enabled", CFG_TYPE_BOOL, ITEM(res_sch, enabled), {config::DefaultValue{"true"}, config::Description{"En- or disable this resource."}}},
+  {}
 };
 
-static ResourceItem pool_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_pool, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_pool, description_), 0, 0, NULL, NULL, NULL },
-  { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool, pool_type), 0, CFG_ITEM_DEFAULT, "Backup", NULL, NULL },
-  { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool, label_format), 0, 0, NULL, NULL, NULL },
-  { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
-  { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool, cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN", NULL, NULL },
-  { "UseCatalog", CFG_TYPE_BOOL, ITEM(res_pool, use_catalog), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "PurgeOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, purge_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "ActionOnPurge", CFG_TYPE_ACTIONONPURGE, ITEM(res_pool, action_on_purge), 0, 0, NULL, NULL, NULL },
-  { "RecycleOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, recycle_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "RecycleCurrentVolume", CFG_TYPE_BOOL, ITEM(res_pool, recycle_current_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "MaximumVolumes", CFG_TYPE_PINT32, ITEM(res_pool, max_volumes), 0, 0, NULL, NULL, NULL },
-  { "MaximumVolumeJobs", CFG_TYPE_PINT32, ITEM(res_pool, MaxVolJobs), 0, 0, NULL, NULL, NULL },
-  { "MaximumVolumeFiles", CFG_TYPE_PINT32, ITEM(res_pool, MaxVolFiles), 0, 0, NULL, NULL, NULL },
-  { "MaximumVolumeBytes", CFG_TYPE_SIZE64, ITEM(res_pool, MaxVolBytes), 0, 0, NULL, NULL, NULL },
-  { "CatalogFiles", CFG_TYPE_BOOL, ITEM(res_pool, catalog_files), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "VolumeRetention", CFG_TYPE_TIME, ITEM(res_pool, VolRetention), 0, CFG_ITEM_DEFAULT, "31536000" /* 365 days */, NULL, NULL },
-  { "VolumeUseDuration", CFG_TYPE_TIME, ITEM(res_pool, VolUseDuration), 0, 0, NULL, NULL, NULL },
-  { "MigrationTime", CFG_TYPE_TIME, ITEM(res_pool, MigrationTime), 0, 0, NULL, NULL, NULL },
-  { "MigrationHighBytes", CFG_TYPE_SIZE64, ITEM(res_pool, MigrationHighBytes), 0, 0, NULL, NULL, NULL },
-  { "MigrationLowBytes", CFG_TYPE_SIZE64, ITEM(res_pool, MigrationLowBytes), 0, 0, NULL, NULL, NULL },
-  { "NextPool", CFG_TYPE_RES, ITEM(res_pool, NextPool), R_POOL, 0, NULL, NULL, NULL },
-  { "Storage", CFG_TYPE_ALIST_RES, ITEM(res_pool, storage), R_STORAGE, 0, NULL, NULL, NULL },
-  { "AutoPrune", CFG_TYPE_BOOL, ITEM(res_pool, AutoPrune), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "Recycle", CFG_TYPE_BOOL, ITEM(res_pool, Recycle), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "RecyclePool", CFG_TYPE_RES, ITEM(res_pool, RecyclePool), R_POOL, 0, NULL, NULL, NULL },
-  { "ScratchPool", CFG_TYPE_RES, ITEM(res_pool, ScratchPool), R_POOL, 0, NULL, NULL, NULL },
-  { "Catalog", CFG_TYPE_RES, ITEM(res_pool, catalog), R_CATALOG, 0, NULL, NULL, NULL },
-  { "FileRetention", CFG_TYPE_TIME, ITEM(res_pool, FileRetention), 0, 0, NULL, NULL, NULL },
-  { "JobRetention", CFG_TYPE_TIME, ITEM(res_pool, JobRetention), 0, 0, NULL, NULL, NULL },
-  { "MinimumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool, MinBlocksize), 0, 0, NULL, NULL, NULL },
-  { "MaximumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool, MaxBlocksize), 0, 0, NULL, "14.2.0-", NULL },
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+static const ResourceItem pool_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_pool, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_pool, description_), {}},
+  { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool, pool_type), {config::DefaultValue{"Backup"}}},
+  { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool, label_format), {}},
+  { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), {config::DeprecatedSince{23, 0, 0}}},
+  { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool, cleaning_prefix), {config::DefaultValue{"CLN"}}},
+  { "UseCatalog", CFG_TYPE_BOOL, ITEM(res_pool, use_catalog), {config::DefaultValue{"true"}}},
+  { "PurgeOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, purge_oldest_volume), {config::DefaultValue{"false"}}},
+  { "ActionOnPurge", CFG_TYPE_ACTIONONPURGE, ITEM(res_pool, action_on_purge), {}},
+  { "RecycleOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, recycle_oldest_volume), {config::DefaultValue{"false"}}},
+  { "RecycleCurrentVolume", CFG_TYPE_BOOL, ITEM(res_pool, recycle_current_volume), {config::DefaultValue{"false"}}},
+  { "MaximumVolumes", CFG_TYPE_PINT32, ITEM(res_pool, max_volumes), {}},
+  { "MaximumVolumeJobs", CFG_TYPE_PINT32, ITEM(res_pool, MaxVolJobs), {}},
+  { "MaximumVolumeFiles", CFG_TYPE_PINT32, ITEM(res_pool, MaxVolFiles), {}},
+  { "MaximumVolumeBytes", CFG_TYPE_SIZE64, ITEM(res_pool, MaxVolBytes), {}},
+  { "CatalogFiles", CFG_TYPE_BOOL, ITEM(res_pool, catalog_files), {config::DefaultValue{"true"}}},
+  { "VolumeRetention", CFG_TYPE_TIME, ITEM(res_pool, VolRetention), {config::DefaultValue{"31536000"}}},
+  { "VolumeUseDuration", CFG_TYPE_TIME, ITEM(res_pool, VolUseDuration), {}},
+  { "MigrationTime", CFG_TYPE_TIME, ITEM(res_pool, MigrationTime), {}},
+  { "MigrationHighBytes", CFG_TYPE_SIZE64, ITEM(res_pool, MigrationHighBytes), {}},
+  { "MigrationLowBytes", CFG_TYPE_SIZE64, ITEM(res_pool, MigrationLowBytes), {}},
+  { "NextPool", CFG_TYPE_RES, ITEM(res_pool, NextPool), {config::Code{R_POOL}}},
+  { "Storage", CFG_TYPE_ALIST_RES, ITEM(res_pool, storage), {config::Code{R_STORAGE}}},
+  { "AutoPrune", CFG_TYPE_BOOL, ITEM(res_pool, AutoPrune), {config::DefaultValue{"true"}}},
+  { "Recycle", CFG_TYPE_BOOL, ITEM(res_pool, Recycle), {config::DefaultValue{"true"}}},
+  { "RecyclePool", CFG_TYPE_RES, ITEM(res_pool, RecyclePool), {config::Code{R_POOL}}},
+  { "ScratchPool", CFG_TYPE_RES, ITEM(res_pool, ScratchPool), {config::Code{R_POOL}}},
+  { "Catalog", CFG_TYPE_RES, ITEM(res_pool, catalog), {config::Code{R_CATALOG}}},
+  { "FileRetention", CFG_TYPE_TIME, ITEM(res_pool, FileRetention), {}},
+  { "JobRetention", CFG_TYPE_TIME, ITEM(res_pool, JobRetention), {}},
+  { "MinimumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool, MinBlocksize), {}},
+  { "MaximumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool, MaxBlocksize), {config::IntroducedIn{14, 2, 0}}},
+  {}
 };
 
-static ResourceItem counter_items[] = {
-  { "Name", CFG_TYPE_NAME, ITEM(res_counter, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-     "The name of the resource." },
-  { "Description", CFG_TYPE_STR, ITEM(res_counter, description_), 0, 0, NULL, NULL, NULL },
-  { "Minimum", CFG_TYPE_INT32, ITEM(res_counter, MinValue), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "Maximum", CFG_TYPE_PINT32, ITEM(res_counter, MaxValue), 0, CFG_ITEM_DEFAULT, "2147483647" /* INT32_MAX */, NULL, NULL },
-  { "WrapCounter", CFG_TYPE_RES, ITEM(res_counter, WrapCounter), R_COUNTER, 0, NULL, NULL, NULL },
-  { "Catalog", CFG_TYPE_RES, ITEM(res_counter, Catalog), R_CATALOG, 0, NULL, NULL, NULL },
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+static const ResourceItem counter_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_counter, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_counter, description_), {}},
+  { "Minimum", CFG_TYPE_INT32, ITEM(res_counter, MinValue), {config::DefaultValue{"0"}}},
+  { "Maximum", CFG_TYPE_PINT32, ITEM(res_counter, MaxValue), {config::DefaultValue{"2147483647"}}},
+  { "WrapCounter", CFG_TYPE_RES, ITEM(res_counter, WrapCounter), {config::Code{R_COUNTER}}},
+  { "Catalog", CFG_TYPE_RES, ITEM(res_counter, Catalog), {config::Code{R_CATALOG}}},
+  {}
 };
 
 #include "lib/messages_resource_items.h"
@@ -543,17 +490,17 @@ static RunScript *res_runscript;
  * new RunScript items
  * name handler value code flags default_value
  */
-static ResourceItem runscript_items[] = {
- { "Command", CFG_TYPE_RUNSCRIPT_CMD, ITEMC(res_runscript), SHELL_CMD, 0, NULL, NULL, NULL },
- { "Console", CFG_TYPE_RUNSCRIPT_CMD, ITEMC(res_runscript), CONSOLE_CMD, 0, NULL, NULL, NULL },
- { "Target", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), 0, 0, NULL, NULL, NULL },
- { "RunsOnSuccess", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript,on_success), 0, 0, NULL, NULL, NULL },
- { "RunsOnFailure", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript,on_failure), 0, 0, NULL, NULL, NULL },
- { "FailJobOnError", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript,fail_on_error), 0, 0, NULL, NULL, NULL },
- { "AbortJobOnError", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript,fail_on_error), 0, 0, NULL, NULL, NULL },
- { "RunsWhen", CFG_TYPE_RUNSCRIPT_WHEN, ITEM(res_runscript,when), 0, 0, NULL, NULL, NULL },
- { "RunsOnClient", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), 0, 0, NULL, NULL, NULL },
- {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+static const ResourceItem runscript_items[] = {
+  { "Command", CFG_TYPE_RUNSCRIPT_CMD, ITEMC(res_runscript), {config::Code{SHELL_CMD}}},
+  { "Console", CFG_TYPE_RUNSCRIPT_CMD, ITEMC(res_runscript), {config::Code{CONSOLE_CMD}}},
+  { "Target", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), {}},
+  { "RunsOnSuccess", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript, on_success), {}},
+  { "RunsOnFailure", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript, on_failure), {}},
+  { "FailJobOnError", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript, fail_on_error), {}},
+  { "AbortJobOnError", CFG_TYPE_RUNSCRIPT_BOOL, ITEM(res_runscript, fail_on_error), {}},
+  { "RunsWhen", CFG_TYPE_RUNSCRIPT_WHEN, ITEM(res_runscript, when), {}},
+  { "RunsOnClient", CFG_TYPE_RUNSCRIPT_TARGET, ITEMC(res_runscript), {}},
+  {}
 };
 
 /* clang-format on */
@@ -776,7 +723,7 @@ json_t* json_datatype(const int type, s_jt items[])
   return json;
 }
 
-json_t* json_datatype(const int type, ResourceItem items[])
+json_t* json_datatype(const int type, const ResourceItem items[])
 {
   json_t* json = json_datatype_header(type, "sub");
   if (items) {
@@ -793,7 +740,7 @@ json_t* json_datatype(const int type, ResourceItem items[])
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   DatatypeName* datatype;
-  ResourceTable* resources = my_config->resource_definitions_;
+  const ResourceTable* resources = my_config->resource_definitions_;
 
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
@@ -807,7 +754,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(resource, "bareos-dir", bareos_dir);
 
   for (int r = 0; resources[r].name; r++) {
-    ResourceTable& resource_table = my_config->resource_definitions_[r];
+    const ResourceTable& resource_table = my_config->resource_definitions_[r];
     json_object_set_new(bareos_dir, resource_table.name,
                         json_items(resource_table.items));
   }
@@ -923,7 +870,7 @@ std::shared_ptr<T> GetRuntimeStatus(const std::string& name)
 }
 }  // namespace
 
-static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
+static bool CmdlineItem(PoolMem* buffer, const ResourceItem* item)
 {
   PoolMem temp;
   PoolMem key;
@@ -931,14 +878,14 @@ static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
   const char* mod_start = nomod;
   const char* mod_end = nomod;
 
-  if (item->flags & CFG_ITEM_DEPRECATED) { return false; }
+  if (item->is_deprecated) { return false; }
 
-  if (item->flags & CFG_ITEM_NO_EQUALS) {
+  if (item->uses_no_equal) {
     /* TODO: currently not supported */
     return false;
   }
 
-  if (!(item->flags & CFG_ITEM_REQUIRED)) {
+  if (!item->is_required) {
     mod_start = "[";
     mod_end = "]";
   }
@@ -954,7 +901,7 @@ static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
   return true;
 }
 
-static bool CmdlineItems(PoolMem* buffer, ResourceItem items[])
+static bool CmdlineItems(PoolMem* buffer, const ResourceItem items[])
 {
   if (!items) { return false; }
 
@@ -1012,7 +959,7 @@ void DestroyConfigureUsageString()
  * Propagate the settings from source BareosResource to dest BareosResource
  * using the RES_ITEMS array.
  */
-static void PropagateResource(ResourceItem* items,
+static void PropagateResource(const ResourceItem* items,
                               JobResource* source,
                               JobResource* dest)
 {
@@ -1186,7 +1133,9 @@ static void PropagateResource(ResourceItem* items,
 
 
 // Ensure that all required items are present
-bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
+bool ValidateResource(int res_type,
+                      const ResourceItem* items,
+                      BareosResource* res)
 {
   if (res_type == R_JOBDEFS) {
     // a jobdef don't have to be fully defined.
@@ -1196,7 +1145,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
   }
 
   for (int i = 0; items[i].name; i++) {
-    if (items[i].flags & CFG_ITEM_REQUIRED) {
+    if (items[i].is_required) {
       if (!res->IsMemberPresent(items[i].name)) {
         Jmsg(NULL, M_ERROR, 0,
              T_("\"%s\" directive in %s \"%s\" resource is required, but not "
@@ -1277,7 +1226,7 @@ char* CatalogResource::display(POOLMEM* dst)
 
 
 static void PrintConfigRunscript(OutputFormatterResource& send,
-                                 ResourceItem& item,
+                                 const ResourceItem& item,
                                  bool inherited,
                                  bool verbose)
 {
@@ -1821,7 +1770,7 @@ static std::string PrintConfigRun(RunResource* run)
 
 
 static void PrintConfigRun(OutputFormatterResource& send,
-                           ResourceItem* item,
+                           const ResourceItem* item,
                            bool inherited)
 {
   RunResource* run = GetItemVariable<RunResource*>(*item);
@@ -2182,7 +2131,7 @@ static void FreeIncludeExcludeItem(IncludeExcludeItem* incexe)
   delete incexe;
 }
 
-static bool UpdateResourcePointer(int type, ResourceItem* items)
+static bool UpdateResourcePointer(int type, const ResourceItem* items)
 {
   switch (type) {
     case R_PROFILE:
@@ -2459,7 +2408,10 @@ static bool PopulateJobdefaults()
 
 bool PopulateDefs() { return PopulateJobdefaults(); }
 
-static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StorePooltype(LEX* lc,
+                          const ResourceItem* item,
+                          int index,
+                          int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -2482,7 +2434,10 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
+static void StoreActiononpurge(LEX* lc,
+                               const ResourceItem* item,
+                               int index,
+                               int)
 {
   uint32_t* destination = GetItemVariablePointer<uint32_t*>(*item);
 
@@ -2513,7 +2468,7 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
  * later from the SD.
  */
 static void StoreDevice(LEX* lc,
-                        ResourceItem* item,
+                        const ResourceItem* item,
                         int index,
                         int pass,
                         BareosResource** configuration_resources)
@@ -2560,7 +2515,7 @@ static void StoreDevice(LEX* lc,
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
+static void StoreMigtype(LEX* lc, const ResourceItem* item, int index)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2584,7 +2539,7 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
 }
 
 // Store JobType (backup, verify, restore)
-static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreJobtype(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2607,7 +2562,7 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
-static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreProtocoltype(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2629,7 +2584,7 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
+static void StoreReplace(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Scan Replacement options
@@ -2653,7 +2608,10 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
-static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreAuthprotocoltype(LEX* lc,
+                                  const ResourceItem* item,
+                                  int index,
+                                  int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2677,7 +2635,7 @@ static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store authentication type (Mostly for NDMP like clear or MD5).
-static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int)
+static void StoreAuthtype(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2701,7 +2659,7 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int)
 }
 
 // Store Job Level (Full, Incremental, ...)
-static void StoreLevel(LEX* lc, ResourceItem* item, int index, int)
+static void StoreLevel(LEX* lc, const ResourceItem* item, int index, int)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2728,7 +2686,10 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int)
  * Store password either clear if for NDMP and catalog or MD5 hashed for
  * native.
  */
-static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAutopassword(LEX* lc,
+                              const ResourceItem* item,
+                              int index,
+                              int pass)
 {
   switch ((*item->allocated_resource)->rcode_) {
     case R_DIRECTOR:
@@ -2804,7 +2765,7 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
-static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAcl(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   alist<const char*>** alistvalue
       = GetItemVariablePointer<alist<const char*>**>(*item);
@@ -2833,7 +2794,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAudit(LEX* lc, const ResourceItem* item, int index, int pass)
 {
   int token;
   alist<const char*>* list;
@@ -2859,7 +2820,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int, int)
+static void StoreRunscriptWhen(LEX* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2880,7 +2841,10 @@ static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int, int)
   ScanToEol(lc);
 }
 
-static void StoreRunscriptTarget(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreRunscriptTarget(LEX* lc,
+                                 const ResourceItem* item,
+                                 int,
+                                 int pass)
 {
   LexGetToken(lc, BCT_STRING);
 
@@ -2908,7 +2872,7 @@ static void StoreRunscriptTarget(LEX* lc, ResourceItem* item, int, int pass)
   ScanToEol(lc);
 }
 
-static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreRunscriptCmd(LEX* lc, const ResourceItem* item, int, int pass)
 {
   LexGetToken(lc, BCT_STRING);
 
@@ -2920,7 +2884,10 @@ static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int, int pass)
   ScanToEol(lc);
 }
 
-static void StoreShortRunscript(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreShortRunscript(LEX* lc,
+                                const ResourceItem* item,
+                                int,
+                                int pass)
 {
   LexGetToken(lc, BCT_STRING);
   alist<RunScript*>** runscripts
@@ -2977,7 +2944,7 @@ static void StoreShortRunscript(LEX* lc, ResourceItem* item, int, int pass)
  * Store a bool in a bit field without modifing hdr
  * We can also add an option to StoreBool to skip hdr
  */
-static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int, int)
+static void StoreRunscriptBool(LEX* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
@@ -2998,7 +2965,10 @@ static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int, int)
  * resource.  We treat the RunScript like a sort of
  * mini-resource within the Job resource.
  */
-static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreRunscript(LEX* lc,
+                           const ResourceItem* item,
+                           int index,
+                           int pass)
 {
   Dmsg1(200, "StoreRunscript: begin StoreRunscript pass=%i\n", pass);
 
@@ -3188,7 +3158,7 @@ std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
  * callback function for init_resource
  * See ../lib/parse_conf.cc, function InitResource, for more generic handling.
  */
-static void InitResourceCb(ResourceItem* item, int pass)
+static void InitResourceCb(const ResourceItem* item, int pass)
 {
   switch (pass) {
     case 1:
@@ -3231,7 +3201,7 @@ static void InitResourceCb(ResourceItem* item, int pass)
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
 static void ParseConfigCb(LEX* lc,
-                          ResourceItem* item,
+                          const ResourceItem* item,
                           int index,
                           int pass,
                           BareosResource** configuration_resources)
@@ -3294,11 +3264,11 @@ static void ParseConfigCb(LEX* lc,
 }
 
 
-static bool HasDefaultValue(ResourceItem& item, s_jt* keywords)
+static bool HasDefaultValue(const ResourceItem& item, s_jt* keywords)
 {
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);
-  if (item.flags & CFG_ITEM_DEFAULT) {
+  if (item.default_value) {
     for (int j = 0; keywords[j].type_name; j++) {
       if (keywords[j].job_type == value) {
         is_default = Bstrcasecmp(item.default_value, keywords[j].type_name);
@@ -3312,11 +3282,11 @@ static bool HasDefaultValue(ResourceItem& item, s_jt* keywords)
 }
 
 
-static bool HasDefaultValue(ResourceItem& item, s_jl* keywords)
+static bool HasDefaultValue(const ResourceItem& item, s_jl* keywords)
 {
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);
-  if (item.flags & CFG_ITEM_DEFAULT) {
+  if (item.default_value) {
     for (int j = 0; keywords[j].level_name; j++) {
       if (keywords[j].level == value) {
         is_default = Bstrcasecmp(item.default_value, keywords[j].level_name);
@@ -3330,9 +3300,9 @@ static bool HasDefaultValue(ResourceItem& item, s_jl* keywords)
 }
 
 template <typename T>
-static bool HasDefaultValue(ResourceItem& item, alist<T>* values)
+static bool HasDefaultValue(const ResourceItem& item, alist<T>* values)
 {
-  if (item.flags & CFG_ITEM_DEFAULT) {
+  if (item.default_value) {
     if ((values->size() == 1)
         and (bstrcmp((const char*)values->get(0), item.default_value))) {
       return true;
@@ -3344,14 +3314,14 @@ static bool HasDefaultValue(ResourceItem& item, alist<T>* values)
 }
 
 
-static bool HasDefaultValueAlistConstChar(ResourceItem& item)
+static bool HasDefaultValueAlistConstChar(const ResourceItem& item)
 {
   alist<const char*>* values = GetItemVariable<alist<const char*>*>(item);
   return HasDefaultValue(item, values);
 }
 
 
-static bool HasDefaultValue(ResourceItem& item)
+static bool HasDefaultValue(const ResourceItem& item)
 {
   bool is_default = false;
 
@@ -3361,7 +3331,7 @@ static bool HasDefaultValue(ResourceItem& item)
       break;
     }
     case CFG_TYPE_RUNSCRIPT: {
-      if (item.flags & CFG_ITEM_DEFAULT) {
+      if (item.default_value) {
         /* this should not happen */
         is_default = false;
       } else {
@@ -3381,7 +3351,7 @@ static bool HasDefaultValue(ResourceItem& item)
       break;
     }
     case CFG_TYPE_RUN: {
-      if (item.flags & CFG_ITEM_DEFAULT) {
+      if (item.default_value) {
         /* this should not happen */
         is_default = false;
       } else {
@@ -3445,7 +3415,7 @@ static bool HasDefaultValue(ResourceItem& item)
  * See ../lib/res.cc, function BareosResource::PrintConfig, for more generic
  * handling.
  */
-static void PrintConfigCb(ResourceItem& item,
+static void PrintConfigCb(const ResourceItem& item,
                           OutputFormatterResource& send,
                           bool,
                           bool inherited,
@@ -3455,10 +3425,10 @@ static void PrintConfigCb(ResourceItem& item,
 
   bool print = false;
 
-  if (item.flags & CFG_ITEM_REQUIRED) { print = true; }
+  if (item.is_required) { print = true; }
 
   if (HasDefaultValue(item)) {
-    if ((verbose) && (!(item.flags & CFG_ITEM_DEPRECATED))) {
+    if (verbose && !item.is_deprecated) {
       print = true;
       inherited = true;
     }
@@ -3998,7 +3968,7 @@ static void FreeResource(BareosResource* res, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-static bool SaveResource(int type, ResourceItem* items, int pass)
+static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   BareosResource* allocated_resource
       = *dird_resource_tables[type].allocated_resource_;
@@ -4023,7 +3993,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     case R_JOB:
       /* Check Job requirements after applying JobDefs
        * Ensure that the name item is present however. */
-      if (items[0].flags & CFG_ITEM_REQUIRED) {
+      if (items[0].is_required) {
         if (!allocated_resource->IsMemberPresent(items[0].name)) {
           Emsg2(M_ERROR, 0,
                 T_("%s item is required in %s resource, but not found.\n"),

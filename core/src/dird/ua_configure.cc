@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,12 +90,13 @@ static inline bool configure_write_resource(const char* filename,
   return result;
 }
 
-static inline ResourceItem* config_get_res_item(UaContext* ua,
-                                                ResourceTable* res_table,
-                                                const char* key,
-                                                const char* value)
+static inline const ResourceItem* config_get_res_item(
+    UaContext* ua,
+    const ResourceTable* res_table,
+    const char* key,
+    const char* value)
 {
-  ResourceItem* item = NULL;
+  const ResourceItem* item = NULL;
   const char* errorcharmsg = NULL;
 
   if (res_table) {
@@ -125,14 +126,14 @@ static inline ResourceItem* config_get_res_item(UaContext* ua,
 }
 
 static inline bool config_add_directive(UaContext* ua,
-                                        ResourceTable* res_table,
+                                        const ResourceTable* res_table,
                                         const char* key,
                                         const char* value,
                                         PoolMem& resource,
                                         int indent = 2)
 {
   PoolMem temp(PM_MESSAGE);
-  ResourceItem* item = NULL;
+  const ResourceItem* item = NULL;
   std::string format("%-*s%s = %s\n");
 
   const std::array<int, 15> quotable_types{
@@ -172,11 +173,12 @@ static inline bool config_add_directive(UaContext* ua,
   return true;
 }
 
-static inline bool configure_create_resource_string(UaContext* ua,
-                                                    int first_parameter,
-                                                    ResourceTable* res_table,
-                                                    PoolMem& resourcename,
-                                                    PoolMem& resource)
+static inline bool configure_create_resource_string(
+    UaContext* ua,
+    int first_parameter,
+    const ResourceTable* res_table,
+    PoolMem& resourcename,
+    PoolMem& resource)
 {
   resource.strcat(res_table->name);
   resource.strcat(" {\n");
@@ -316,7 +318,7 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
  */
 static inline bool ConfigureAddResource(UaContext* ua,
                                         int first_parameter,
-                                        ResourceTable* res_table)
+                                        const ResourceTable* res_table)
 {
   PoolMem resource(PM_MESSAGE);
   PoolMem name(PM_MESSAGE);
@@ -403,9 +405,8 @@ static inline bool ConfigureAddResource(UaContext* ua,
 static inline bool ConfigureAdd(UaContext* ua, int resource_type_parameter)
 {
   bool result = false;
-  ResourceTable* res_table = NULL;
-
-  res_table = my_config->GetResourceTable(ua->argk[resource_type_parameter]);
+  const ResourceTable* res_table
+      = my_config->GetResourceTable(ua->argk[resource_type_parameter]);
   if ((!res_table) || (res_table->rcode == R_DEVICE)) {
     ua->ErrorMsg(T_("invalid resource type %s.\n"),
                  ua->argk[resource_type_parameter]);

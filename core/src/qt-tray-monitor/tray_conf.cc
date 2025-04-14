@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@
 
 static const std::string default_config_filename("tray-monitor.conf");
 
-static bool SaveResource(int type, ResourceItem* items, int pass);
+static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* reshdr,
@@ -83,17 +83,17 @@ static ConsoleFontResource* res_font;
  *
  * name handler value code flags default_value
  */
-static ResourceItem mon_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_monitor,resource_name_), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_monitor,description_), 0, 0, 0, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor,RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL, NULL},
-  {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
-  {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
-  {"DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor,DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL},
+static const ResourceItem mon_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_monitor, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_monitor, description_), {}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor, password), {config::Required{}}},
+  { "RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor, RefreshInterval), {config::DefaultValue{"60"}}},
+  { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor, FDConnectTimeout), {config::DefaultValue{"10"}}},
+  { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor, SDConnectTimeout), {config::DefaultValue{"10"}}},
+  { "DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor, DIRConnectTimeout), {config::DefaultValue{"10"}}},
     TLS_COMMON_CONFIG(res_monitor),
     TLS_CERT_CONFIG(res_monitor),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -101,14 +101,14 @@ static ResourceItem mon_items[] = {
  *
  * name handler value code flags default_value
  */
-static ResourceItem dir_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_dir,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_dir,description_), 0, 0, NULL, NULL, NULL},
-  {"DirPort", CFG_TYPE_PINT32, ITEM(res_dir,DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_dir,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+static const ResourceItem dir_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
+  { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), {config::Required{}}},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -116,15 +116,15 @@ static ResourceItem dir_items[] = {
  *
  * name handler value code flags default_value
  */
-static ResourceItem client_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_client,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_client,description_), 0, 0, NULL, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_client,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"FdPort", CFG_TYPE_PINT32, ITEM(res_client,FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+static const ResourceItem client_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
+  { "Address", CFG_TYPE_STR, ITEM(res_client, address), {config::Required{}}},
+  { "FdPort", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client, password), {config::Required{}}},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -132,17 +132,17 @@ static ResourceItem client_items[] = {
  *
  * name handler value code flags default_value
  */
-static ResourceItem store_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_store,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_store,description_), 0, 0, NULL, NULL, NULL},
-  {"SdPort", CFG_TYPE_PINT32, ITEM(res_store,SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL},
-  {"Address", CFG_TYPE_STR, ITEM(res_store,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdAddress", CFG_TYPE_STR, ITEM(res_store,address), 0, 0, NULL, NULL, NULL},
-  {"Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store,password), 0, 0, NULL, NULL, NULL},
+static const ResourceItem store_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
+  { "SdPort", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Required{}}},
+  { "SdAddress", CFG_TYPE_STR, ITEM(res_store, address), {}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password), {config::Required{}}},
+  { "SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password), {}},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+  {}
 };
 
 /*
@@ -150,11 +150,11 @@ static ResourceItem store_items[] = {
  *
  * name handler value code flags default_value
  */
-static ResourceItem con_font_items[] = {
-  {"Name", CFG_TYPE_NAME, ITEM(res_font,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"Description", CFG_TYPE_STR, ITEM(res_font,description_), 0, 0, NULL, NULL, NULL},
-  {"Font", CFG_TYPE_STR, ITEM(res_font,fontface), 0, 0, NULL, NULL, NULL},
-  {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
+static const ResourceItem con_font_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_font, resource_name_), {config::Required{}}},
+  { "Description", CFG_TYPE_STR, ITEM(res_font, description_), {}},
+  { "Font", CFG_TYPE_STR, ITEM(res_font, fontface), {}},
+  {}
 };
 
 /*
@@ -271,14 +271,14 @@ static void FreeResource(BareosResource* res, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-static bool SaveResource(int type, ResourceItem* items, int pass)
+static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   int i;
   int error = 0;
 
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
-    if (items[i].flags & CFG_ITEM_REQUIRED) {
+    if (items[i].is_required) {
       if (!items[i].IsPresent()) {
         Emsg2(M_ERROR_TERM, 0,
               T_("%s item is required in %s resource, but not found.\n"),
@@ -403,7 +403,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(resource, "bareos-tray-monitor", bareos_tray_monitor);
 
   for (int r = 0; my_config->resource_definitions_[r].name; r++) {
-    ResourceTable& resource_table = my_config->resource_definitions_[r];
+    const ResourceTable& resource_table = my_config->resource_definitions_[r];
     json_object_set_new(bareos_tray_monitor, resource_table.name,
                         json_items(resource_table.items));
   }
