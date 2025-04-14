@@ -15,7 +15,7 @@ endif
 
 " comments
 syn region  BacComment  display oneline start="#" end="$" keepend contains=BacTodo
-syn region	BacComment2 start="/\*"  end="\*/"
+syn region  BacComment2 start="/\*"  end="\*/"
 
 syn region  BacInclude start=/^@/ end="$"
 
@@ -26,8 +26,8 @@ syn case ignore
 syn keyword  LevelElt  contained Full Incremental Differential
 
 " todo
-syn keyword     BacTodo       contained TODO FIXME XXX NOTE
-syn region 	BacString     start=/"/ skip=/\\"/ end=/"/
+syn keyword  BacTodo       contained TODO FIXME XXX NOTE
+syn region   BacString     start=/"/ skip=/\\"/ end=/"/
 
 " Specifique Client {
 syn region    BacClient display start=/Client {/ end="^}"  contains=BacString,BacComment,BacC1,BacC2,BacC3,BacC4
@@ -58,7 +58,7 @@ syn match    BacDir2    contained /Maximum\s*Concurrent\s*Jobs/
 
 " Catalog {
 syn region   BacCat     display start="Catalog {" end="}" contains=BacName,BacComment,BacString,BacCat1
-syn keyword  BacCat1	  contained dbname user password dbport
+syn keyword  BacCat1    contained dbname user password dbport
 
 " Job {
 syn region   BacJob     display start="Job {" end="^}"     contains=BacJ1,BacJ2,BacString,BacComment,Level,BacC2,BacJ3,BacRun
@@ -80,7 +80,7 @@ syn keyword  BacRW     contained After Before Always
 
 " Schedule {
 syn region   BacSched    display start="Schedule {" end="^}" contains=BacSR,BacString,BacComment,BacName,BacRun
-syn keyword  BacS1	     contained Pool FullPool on at
+syn keyword  BacS1       contained Pool FullPool on at
 syn keyword  BacS2       contained sun mon tue wed thu fri sat sunday monday tuesday wednesday thursday friday saturday
 syn keyword  BacS3       contained jan  feb  mar  apr  may  jun  jul  aug  sep  oct  nov  dec
 syn keyword  BacS4       contained 1st 2nd  3rd  4th  5th  first second  third  fourth  fifth
@@ -132,17 +132,17 @@ HiLink BacDir       Function
 HiLink BacDir1      keyword
 HiLink BacDir2      keyword
 
-HiLink BacJob	      Function
+HiLink BacJob       Function
 HiLink BacJobDefs   Function
 HiLink BacJ1        Keyword
 HiLink BacJ2        Keyword
 HiLink BacJ3        Keyword
 
 HiLink BacClient    Function
-HiLink BacC1	      Keyword
-HiLink BacC2	      Keyword
-HiLink BacC3	      Keyword
-HiLink BacC4	      Keyword
+HiLink BacC1        Keyword
+HiLink BacC2        Keyword
+HiLink BacC3        Keyword
+HiLink BacC4        Keyword
 HiLink Level        Keyword
 
 HiLink BacSched     Function
