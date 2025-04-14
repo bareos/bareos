@@ -86,6 +86,23 @@ constexpr bool kIsRange = false;
 template<class T>
 constexpr bool kIsRange<Range<T>> = true;
 
+// Modulo
+template<class T>
+struct Modulo {
+  using Type = T;
+
+  bool Contains(T value) const {
+    return (int(value) % int(right)) == int(left);
+  }
+
+  T left, right;
+};
+// :: kIsModulo
+template<class T>
+constexpr bool kIsModulo = false;
+template<class T>
+constexpr bool kIsModulo<Modulo<T>> = true;
+
 // List
 template<class T>
 struct List {
@@ -101,13 +118,19 @@ static constexpr bool kIsList<List<T>> = true;
 
 // Mask
 template<class T>
-using Mask = List<Range<T>>;
+using Mask = List<std::variant<Range<T>, Modulo<T>, T>>;
 // :: Contains
 template<class T>
 bool Contains(const Mask<T>& mask, T value) {
   for (const auto& item : mask.items) {
-    if (item.Contains(value)) {
-      return true;
+    if (std::holds_alternative<Range<T>>(item)) {
+      return std::get<Range<T>>(item).Contains(value);
+    }
+    else if (std::holds_alternative<Range<T>>(item)) {
+      return std::get<Range<T>>(item).Contains(value);
+    }
+    else {
+      return std::get<T>(item) == value;
     }
   }
   return false;
@@ -115,7 +138,7 @@ bool Contains(const Mask<T>& mask, T value) {
 // :: all
 template<class T>
 Mask<T> All() {
-  return { { { T(0), T(kMaxValue<T>) } } };
+  return { { Range<T>({ T(0), T(kMaxValue<T>) }) } };
 }
 
 // Schedule
