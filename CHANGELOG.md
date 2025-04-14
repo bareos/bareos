@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [22.1.7] - 2025-04-14
 
 ### Fixed
 - fix include-ordering on FreeBSD that could cause build issues [PR #1974]
@@ -432,6 +432,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [22.1.4]: https://github.com/bareos/bareos/releases/tag/Release%2F22.1.4
 [22.1.5]: https://github.com/bareos/bareos/releases/tag/Release%2F22.1.5
 [22.1.6]: https://github.com/bareos/bareos/releases/tag/Release%2F22.1.6
+[22.1.7]: https://github.com/bareos/bareos/releases/tag/Release%2F22.1.7
 [Issue #1429]: https://bugs.bareos.org/view.php?id=1429
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
@@ -729,4 +730,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2163]: https://github.com/bareos/bareos/pull/2163
 [PR #2190]: https://github.com/bareos/bareos/pull/2190
 [PR #2197]: https://github.com/bareos/bareos/pull/2197
-[unreleased]: https://github.com/bareos/bareos/tree/master
