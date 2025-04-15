@@ -35,7 +35,7 @@ endmacro()
 
 add_library(backend-utils OBJECT)
 target_sources(backend-utils PRIVATE util.cc)
-target_link_libraries(backend-utils PRIVATE fmt::fmt)
+target_link_libraries(backend-utils PUBLIC fmt::fmt)
 
 if(${HAVE_GLUSTERFS})
   add_sd_backend(bareossd-gfapi)
