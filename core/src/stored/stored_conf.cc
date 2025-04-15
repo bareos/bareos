@@ -457,7 +457,7 @@ static void MultiplyDevice(DeviceResource& original,
                                original.changer_res->resource_name_)) {
       config.AppendToResourcesChain(original.changer_res, R_AUTOCHANGER);
     } else {
-      Emsg0(M_WARNING, 0,
+      Emsg0(M_INFO, 0,
             "Device resource \"%s\" will not implicitly create an autochanger "
             "resource \"%s\" since an autochanger resource with that name "
             "already exists.\n",
@@ -467,7 +467,7 @@ static void MultiplyDevice(DeviceResource& original,
     auto& devices = *original.changer_res->device_resources;
     auto it = std::find(devices.begin(), devices.end(), &original);
     if (it != devices.end()) { devices.remove(it - devices.begin()); }
-    Emsg0(M_WARNING, 0,
+    Emsg0(M_INFO, 0,
           "Device resource \"%s\" will not implicitly create autochanger "
           "\"%sChanger\" resource since it is already used by autochanger "
           "resource \"%s\".\n",
@@ -487,7 +487,7 @@ static void MultiplyDevice(DeviceResource& original,
       if (i == 0) { device->autoselect = false; }
       config.AppendToResourcesChain(device, R_DEVICE);
     } else {
-      Emsg0(M_WARNING, 0,
+      Emsg0(M_INFO, 0,
             "Device resource \"%s\" will not implicitly create device \"%s\" "
             "resource since there already exists a device resource with that "
             "name.\n",
