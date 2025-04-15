@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -36,8 +36,7 @@ endmacro()
 if(${HAVE_GLUSTERFS})
   add_sd_backend(bareossd-gfapi)
   target_sources(bareossd-gfapi PRIVATE gfapi_device.cc)
-  target_include_directories(bareossd-gfapi PUBLIC ${GFAPI_INCLUDE_DIRS})
-  target_link_libraries(bareossd-gfapi ${GFAPI_LIBRARIES})
+  target_link_libraries(bareossd-gfapi PRIVATE PkgConfig::gfapi)
 endif()
 
 if(TARGET droplet)
@@ -69,7 +68,7 @@ if(HAVE_WIN32)
   target_sources(bareossd-file PRIVATE win32_file_device.cc)
   target_sources(bareossd-fifo PRIVATE win32_fifo_device.cc)
   target_sources(bareossd-tape PRIVATE win32_tape_device.cc)
-  target_link_libraries(bareossd-file PRIVATE bareos)
+  target_link_libraries(bareossd-file PRIVATE Bareos::Lib)
   if(MSVC)
     target_link_libraries(bareossd-tape PRIVATE ${THREADS_THREADS})
     target_link_libraries(bareossd-fifo PRIVATE ${THREADS_THREADS})
@@ -89,8 +88,8 @@ else()
 endif()
 
 if(HAVE_DARWIN_OS)
-  target_link_libraries(bareossd-fifo bareos bareossd)
-  target_link_libraries(bareossd-gentape bareos bareossd)
+  target_link_libraries(bareossd-fifo Bareos::Lib Bareos::LibSD)
+  target_link_libraries(bareossd-gentape Bareos::Lib Bareos::LibSD)
 endif()
 
 if(HAVE_DYNAMIC_SD_BACKENDS)

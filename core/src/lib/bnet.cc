@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -110,7 +110,6 @@ bool BnetSend(BareosSocket* bsock) { return bsock->send(); }
  *  Returns: true  on success
  *           false on failure
  */
-#ifdef HAVE_TLS
 bool BnetTlsServer(BareosSocket* bsock,
                    const std::vector<std::string>& verify_list)
 {
@@ -199,24 +198,6 @@ err:
   bsock->CloseTlsConnectionAndFreeMemory();
   return false;
 }
-#else
-bool BnetTlsServer(std::shared_ptr<TlsImplementation> tls_implementation,
-                   BareosSocket* bsock,
-                   const std::vector<std::string>& verify_list)
-{
-  Jmsg(bsock->jcr(), M_ABORT, 0, T_("TLS enabled but not configured.\n"));
-  return false;
-}
-
-bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation,
-                   BareosSocket* bsock,
-                   bool VerifyPeer,
-                   const std::vector<std::string>& verify_list)
-{
-  Jmsg(bsock->jcr(), M_ABORT, 0, T_("TLS enabled but not configured.\n"));
-  return false;
-}
-#endif /* HAVE_TLS */
 
 /**
  * Wait for a specified time for data to appear on

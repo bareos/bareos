@@ -23,15 +23,14 @@
 
 #include "crypto.h"
 
-#ifdef HAVE_OPENSSL
-#  define VarArgMacroSelect(_1, _2, _3, _4, ...) _4
-#  define OpensslPostErrors(...)                        \
-    VarArgMacroSelect(__VA_ARGS__, OpensslPostErrors_2, \
-                      OpensslPostErrors_1)(__VA_ARGS__)
-#  define OpensslPostErrors_1(type, errstring) \
-    OpensslPostErrors_impl(__FILE__, __LINE__, (type), (errstring))
-#  define OpensslPostErrors_2(jcr, type, errstring) \
-    OpensslPostErrors_impl(__FILE__, __LINE__, (jcr), (type), (errstring))
+#define VarArgMacroSelect(_1, _2, _3, _4, ...) _4
+#define OpensslPostErrors(...)                        \
+  VarArgMacroSelect(__VA_ARGS__, OpensslPostErrors_2, \
+                    OpensslPostErrors_1)(__VA_ARGS__)
+#define OpensslPostErrors_1(type, errstring) \
+  OpensslPostErrors_impl(__FILE__, __LINE__, (type), (errstring))
+#define OpensslPostErrors_2(jcr, type, errstring) \
+  OpensslPostErrors_impl(__FILE__, __LINE__, (jcr), (type), (errstring))
 void OpensslPostErrors_impl(const char* file,
                             int line,
                             int type,
@@ -46,7 +45,5 @@ void OpensslCleanupThreads(void);
 DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type);
 
 void LogSSLError(int ssl_error);
-
-#endif /* HAVE_OPENSSL */
 
 #endif  // BAREOS_LIB_CRYPTO_OPENSSL_H_

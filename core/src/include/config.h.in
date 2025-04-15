@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -119,9 +119,6 @@
 
 // Define to 1 if cplus_demangle exists in libdemangle
 #cmakedefine HAVE_CPLUS_DEMANGLE @HAVE_CPLUS_DEMANGLE@
-
-// Define to 1 if encryption support should be enabled
-#cmakedefine HAVE_CRYPTO @HAVE_CRYPTO@
 
 // Define to 1 if you have the <cxxabi.h> header file
 #cmakedefine HAVE_CXXABI_H @HAVE_CXXABI_H@
@@ -264,17 +261,11 @@
 // Define to 1 if you have the `lgetxattr' function
 #cmakedefine HAVE_LGETXATTR @HAVE_LGETXATTR@
 
-// Define to 1 if you have libcap
-#cmakedefine HAVE_LIBCAP @HAVE_LIBCAP@
-
 // Define to 1 if you have the `util' library (-lutil)
 #cmakedefine HAVE_LIBUTIL @HAVE_LIBUTIL@
 
 // Define to 1 if you have the <libutil.h> header file
 #cmakedefine HAVE_LIBUTIL_H @HAVE_LIBUTIL_H@
-
-// Define to 1 if you have zlib
-#cmakedefine HAVE_LIBZ @HAVE_LIBZ@
 
 // Define to 1 if you are running Linux
 #cmakedefine HAVE_LINUX_OS @HAVE_LINUX_OS@
@@ -333,9 +324,6 @@
 // Define to 1 if you have the `openat' function
 #cmakedefine HAVE_OPENAT @HAVE_OPENAT@
 
-// Define to 1 if OpenSSL library is available
-#cmakedefine HAVE_OPENSSL @HAVE_OPENSSL@
-
 // Define to 1 if you have the `poll' function
 #cmakedefine HAVE_POLL @HAVE_POLL@
 
@@ -347,12 +335,6 @@
 
 // Set if you have an PostgreSQL Database
 #cmakedefine HAVE_POSTGRESQL @HAVE_POSTGRESQL@
-
-// Set if PostgreSQL DB batch insert code enabled
-#cmakedefine HAVE_POSTGRESQL_BATCH_FILE_INSERT @HAVE_POSTGRESQL_BATCH_FILE_INSERT@
-
-// Set if have PQisthreadsafe
-#cmakedefine HAVE_PQISTHREADSAFE @HAVE_PQISTHREADSAFE@
 
 // Define to 1 if you have the `prctl' function
 #cmakedefine HAVE_PRCTL @HAVE_PRCTL@
@@ -441,9 +423,6 @@
 // Define to 1 if you have the <sys/xattr.h> header file
 #cmakedefine HAVE_SYS_XATTR_H @HAVE_SYS_XATTR_H@
 
-// Define to 1 if TLS support should be enabled
-#cmakedefine HAVE_TLS @HAVE_TLS@
-
 // Define to 1 if you have the <ucontext.h> header file
 #cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
 
@@ -458,9 +437,6 @@
 
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@
-
-// Define to 1 if you have the <zlib.h> header file
-#cmakedefine HAVE_ZLIB_H @HAVE_ZLIB_H@
 
 // Where are shared libs stored
 #cmakedefine LIBDIR @LIBDIR@

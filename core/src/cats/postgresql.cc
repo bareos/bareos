@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,16 +88,7 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
   } else {
     disabled_batch_insert_ = false;
 #  if defined(USE_BATCH_FILE_INSERT)
-#    if defined(HAVE_POSTGRESQL_BATCH_FILE_INSERT) \
-        || defined(HAVE_PQISTHREADSAFE)
-#      ifdef HAVE_PQISTHREADSAFE
     have_batch_insert_ = PQisthreadsafe();
-#      else
-    have_batch_insert_ = true;
-#      endif /* HAVE_PQISTHREADSAFE */
-#    else
-    have_batch_insert_ = true;
-#    endif /* HAVE_POSTGRESQL_BATCH_FILE_INSERT || HAVE_PQISTHREADSAFE */
 #  else
     have_batch_insert_ = false;
 #  endif /* USE_BATCH_FILE_INSERT */
