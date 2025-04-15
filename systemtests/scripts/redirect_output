@@ -5,5 +5,5 @@ echo "Writing log to ${logfile}"
 if [ "${verbose}" == "1" ]; then
   exec &> >(tee "${logfile}")
 else
-  exec &> "${logfile}"
+  exec &>"${logfile}"
 fi

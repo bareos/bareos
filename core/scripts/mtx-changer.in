@@ -68,7 +68,8 @@ dbgfile="${logdir:-@logdir@}/mtx.log"
 if test ${debug_log} -ne 0; then
   touch "${dbgfile}"
 fi
-debug() {
+debug()
+{
   if test -f "${dbgfile}"; then
     echo "$(date +"%Y%m%d-%H:%M:%S") $*" >>"${dbgfile}"
   fi
@@ -77,7 +78,8 @@ debug() {
 #
 # Create a temporary file
 #
-make_temp_file() {
+make_temp_file()
+{
   TMPFILE=$(mktemp "${working_dir:-@working_dir@}/mtx.XXXXXXXXXX")
   if test "x${TMPFILE}" = "x"; then
     TMPFILE="${working_dir:-@working_dir@}/mtx.$$"
@@ -99,7 +101,8 @@ make_temp_file() {
 #  is then printed after the STDOUT produced by mtx
 #  thus we sometimes get better changer results.
 #
-make_err_file() {
+make_err_file()
+{
   ERRFILE=$(mktemp ${working_dir:-@working_dir@}/mtx.err.XXXXXXXXXX)
   if test "x${ERRFILE}" = "x"; then
     ERRFILE="${working_dir:-@working_dir@}/mtx.err.$$"
@@ -121,7 +124,8 @@ make_err_file() {
 #   We've attempted to get the appropriate OS grep targets
 #   in the code at the top of this script.
 #
-wait_for_drive() {
+wait_for_drive()
+{
   i=0
   while [ ${i} -le ${max_wait_drive} ]; do
     debug "Doing mt -f $1 status ..."
@@ -138,7 +142,8 @@ wait_for_drive() {
 
 # check parameter count on commandline
 #
-check_parm_count() {
+check_parm_count()
+{
   pCount=$1
   pCountNeed=$2
   if test ${pCount} -lt ${pCountNeed}; then
@@ -157,18 +162,18 @@ check_parm_count() {
 #  all others are a minimum of 5
 #
 case $2 in
-list | listall)
-  check_parm_count $# 2
-  ;;
-slots)
-  check_parm_count $# 2
-  ;;
-transfer)
-  check_parm_count $# 4
-  ;;
-*)
-  check_parm_count $# 5
-  ;;
+  list | listall)
+    check_parm_count $# 2
+    ;;
+  slots)
+    check_parm_count $# 2
+    ;;
+  transfer)
+    check_parm_count $# 4
+    ;;
+  *)
+    check_parm_count $# 5
+    ;;
 esac
 
 # Setup arguments
@@ -181,52 +186,52 @@ drive=$5
 debug "Parms: ${ctl} ${cmd} ${slot} ${device} ${drive}"
 
 case "${cmd}" in
-unload)
-  debug "Doing mtx -f ${ctl} unload ${slot} ${drive}"
+  unload)
+    debug "Doing mtx -f ${ctl} unload ${slot} ${drive}"
 
-  if test ${offline} -eq 1; then
-    mt -f "${device}" offline
-  fi
-  if test ${offline_sleep} -ne 0; then
-    sleep ${offline_sleep}
-  fi
-  make_err_file
-  ${MTX} -f "${ctl}" unload ${slot} ${drive} 2>"${ERRFILE}"
-  rtn=$?
-  cat "${ERRFILE}"
-  rm -f "${ERRFILE}" >/dev/null 2>&1
-  exit $rtn
-  ;;
+    if test ${offline} -eq 1; then
+      mt -f "${device}" offline
+    fi
+    if test ${offline_sleep} -ne 0; then
+      sleep ${offline_sleep}
+    fi
+    make_err_file
+    ${MTX} -f "${ctl}" unload ${slot} ${drive} 2>"${ERRFILE}"
+    rtn=$?
+    cat "${ERRFILE}"
+    rm -f "${ERRFILE}" >/dev/null 2>&1
+    exit $rtn
+    ;;
 
-load)
-  debug "Doing mtx -f ${ctl} load ${slot} ${drive}"
-  make_err_file
-  ${MTX} -f "${ctl}" load ${slot} ${drive} 2>"${ERRFILE}"
-  rtn=$?
-  if test ${load_sleep} -ne 0; then
-    sleep ${load_sleep}
-  fi
-  wait_for_drive ${device}
-  cat "${ERRFILE}"
-  rm -f "${ERRFILE}" >/dev/null 2>&1
-  exit $rtn
-  ;;
+  load)
+    debug "Doing mtx -f ${ctl} load ${slot} ${drive}"
+    make_err_file
+    ${MTX} -f "${ctl}" load ${slot} ${drive} 2>"${ERRFILE}"
+    rtn=$?
+    if test ${load_sleep} -ne 0; then
+      sleep ${load_sleep}
+    fi
+    wait_for_drive ${device}
+    cat "${ERRFILE}"
+    rm -f "${ERRFILE}" >/dev/null 2>&1
+    exit $rtn
+    ;;
 
-list)
-  debug "Doing mtx -f ${ctl} -- to list volumes"
-  make_temp_file
-  if test ${inventory} -ne 0; then
-    ${MTX} -f "${ctl}" inventory
-  fi
-  ${MTX} -f "${ctl}" status >"${TMPFILE}"
-  rtn=$?
-  #if test ${vxa_packetloader} -ne 0 ; then
-  #  cat "${TMPFILE}" | grep " *Storage Element [0-9]*:.*Full" | sed "s/ Storage Element //" | sed "s/Full :VolumeTag=//"
-  #else
-  #  cat "${TMPFILE}" | grep " Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
-  #fi
-  # We shouldn't have a difference with this pattern
-  awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
+  list)
+    debug "Doing mtx -f ${ctl} -- to list volumes"
+    make_temp_file
+    if test ${inventory} -ne 0; then
+      ${MTX} -f "${ctl}" inventory
+    fi
+    ${MTX} -f "${ctl}" status >"${TMPFILE}"
+    rtn=$?
+    #if test ${vxa_packetloader} -ne 0 ; then
+    #  cat "${TMPFILE}" | grep " *Storage Element [0-9]*:.*Full" | sed "s/ Storage Element //" | sed "s/Full :VolumeTag=//"
+    #else
+    #  cat "${TMPFILE}" | grep " Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
+    #fi
+    # We shouldn't have a difference with this pattern
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^ .*Storage Element .*[0-9]:.*Full/ {
       gsub("[ ].*Storage Element ","",$1)
       gsub("VolumeTag=","",$3)
@@ -235,39 +240,39 @@ list)
     }
 _EOT_
 
-  awk -f - "$TMPFILE" <<'_EOT_'
+    awk -f - "$TMPFILE" <<'_EOT_'
     /^Data Transfer Element [0-9]*:Full \(Storage Element [0-9]/ {
       printf "%s:%s\n",$7,$10
     }
 _EOT_
-  rm -f "${TMPFILE}" >/dev/null 2>&1
-  exit $rtn
-  ;;
+    rm -f "${TMPFILE}" >/dev/null 2>&1
+    exit $rtn
+    ;;
 
-listall)
-  #  Drive content:	  D:Drive num:F:Slot loaded:Volume Name
-  #  D:0:F:2:vol2        or D:Drive num:E
-  #  D:1:F:42:vol42
-  #  D:3:E
-  #
-  #  Slot content:
-  #  S:1:F:vol1		  S:Slot num:F:Volume Name
-  #  S:2:E	       or S:Slot num:E
-  #  S:3:F:vol4
-  #
-  #  Import/Export tray slots:
-  #  I:10:F:vol10 	  I:Slot num:F:Volume Name
-  #  I:11:E	       or I:Slot num:E
-  #  I:12:F:vol40
+  listall)
+    #  Drive content:	  D:Drive num:F:Slot loaded:Volume Name
+    #  D:0:F:2:vol2        or D:Drive num:E
+    #  D:1:F:42:vol42
+    #  D:3:E
+    #
+    #  Slot content:
+    #  S:1:F:vol1		  S:Slot num:F:Volume Name
+    #  S:2:E	       or S:Slot num:E
+    #  S:3:F:vol4
+    #
+    #  Import/Export tray slots:
+    #  I:10:F:vol10 	  I:Slot num:F:Volume Name
+    #  I:11:E	       or I:Slot num:E
+    #  I:12:F:vol40
 
-  debug "Doing mtx -f $ctl -- to list all"
-  make_temp_file
-  if test ${inventory} -ne 0; then
-    ${MTX} -f "${ctl}" inventory
-  fi
-  ${MTX} -f "${ctl}" status >"${TMPFILE}"
-  rtn=$?
-  awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
+    debug "Doing mtx -f $ctl -- to list all"
+    make_temp_file
+    if test ${inventory} -ne 0; then
+      ${MTX} -f "${ctl}" inventory
+    fi
+    ${MTX} -f "${ctl}" status >"${TMPFILE}"
+    rtn=$?
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^Data Transfer Element .*[0-9]:/ {
       gsub("Data Transfer Element ","",$1)
       match($2,/Full \(Storage Element ([0-9]{1,}) Loaded\)/)
@@ -284,7 +289,7 @@ listall)
       print "D:" $1 F $3
     }
 _EOT_
-  awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^ .*Storage Element .*[0-9]:/ {
       gsub("[ ].*Storage Element ","",$1)
       gsub("Full ",":F",$2)
@@ -293,7 +298,7 @@ _EOT_
       print "S:" $1  $2  $3
     }
 _EOT_
-  awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^ .*Storage Element .*[0-9] IMPORT\/EXPORT:/ {
       gsub("[ ].*Storage Element ","",$1)
       gsub(" IMPORT/EXPORT","",$1)
@@ -303,31 +308,31 @@ _EOT_
       print "I:"$1 $2 $3
     }
 _EOT_
-  rm -f "${TMPFILE}" >/dev/null 2>&1
-  exit $rtn
-  ;;
+    rm -f "${TMPFILE}" >/dev/null 2>&1
+    exit $rtn
+    ;;
 
-transfer)
-  slotdest=$device
-  debug "Doing transfer from ${slot} to ${slotdest}"
-  ${MTX} -f "${ctl}" transfer ${slot} ${slotdest}
-  rtn=$?
-  exit $rtn
-  ;;
+  transfer)
+    slotdest=$device
+    debug "Doing transfer from ${slot} to ${slotdest}"
+    ${MTX} -f "${ctl}" transfer ${slot} ${slotdest}
+    rtn=$?
+    exit $rtn
+    ;;
 
-loaded)
-  debug "Doing mtx -f $ctl ${drive} -- to find what is loaded"
-  make_temp_file
-  ${MTX} -f "${ctl}" status >"${TMPFILE}"
-  rtn=$?
-  awk "/^Data Transfer Element ""${drive}"":Full/ {print \$7}" "$TMPFILE"
-  awk "/^Data Transfer Element ""${drive}"":Empty/ {print 0}" "$TMPFILE"
-  rm -f "${TMPFILE}" >/dev/null 2>&1
-  exit $rtn
-  ;;
+  loaded)
+    debug "Doing mtx -f $ctl ${drive} -- to find what is loaded"
+    make_temp_file
+    ${MTX} -f "${ctl}" status >"${TMPFILE}"
+    rtn=$?
+    awk "/^Data Transfer Element ""${drive}"":Full/ {print \$7}" "$TMPFILE"
+    awk "/^Data Transfer Element ""${drive}"":Empty/ {print 0}" "$TMPFILE"
+    rm -f "${TMPFILE}" >/dev/null 2>&1
+    exit $rtn
+    ;;
 
-slots)
-  debug "Doing mtx -f ${ctl} -- to get count of slots"
-  ${MTX} -f "${ctl}" status | awk "/^  Storage Changer .*:/ {print \$5}"
-  ;;
+  slots)
+    debug "Doing mtx -f ${ctl} -- to get count of slots"
+    ${MTX} -f "${ctl}" status | awk "/^  Storage Changer .*:/ {print \$5}"
+    ;;
 esac

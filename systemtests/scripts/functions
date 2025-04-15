@@ -11,11 +11,13 @@
 # remove the colon from a windows path
 # required to determine the restore path as the colon is omitted if restored to
 # a subdirectory C:/test will result in C:/bareos-restores/C/test
-remove_colon_from_windows_path() {
+remove_colon_from_windows_path()
+{
   sed 's#/\(.\):#/\1#g' <<<"$1"
 }
 
-generate_test_data() {
+generate_test_data()
+{
   subdir=$1
   mkdir -p "$tmp/$subdir"
   for i in 1 2 3 4 5 6 7 8 9 10; do
@@ -23,7 +25,8 @@ generate_test_data() {
   done
 }
 
-last_jobid_or_zero() {
+last_jobid_or_zero()
+{
   # return the last jobid if it exists, or 0, so that
   # result + 1 is the next jobid
   "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<EOD | tail -n3 | head -n1 | cut -d'|' -f2 | xargs
@@ -34,7 +37,8 @@ FROM job_jobid_seq;
 EOD
 }
 
-wait_for_jobs_to_terminate() {
+wait_for_jobs_to_terminate()
+{
   status_of_what=$1
   max_wait_in_seconds=$2
   start_time=$SECONDS
@@ -46,7 +50,8 @@ wait_for_jobs_to_terminate() {
   done
 }
 
-copy_configs() {
+copy_configs()
+{
   COMPONENTS="bareos-dir bareos-sd bareos-fd bconsole tray-monitor"
   CONFIGDIRS="BASE ${TestName} $*"
   FOUND=""
@@ -80,14 +85,16 @@ copy_configs() {
   done
 }
 
-check_encoding() {
+check_encoding()
+{
   if "${BAREOS_DIRECTOR_BINARY}" -d50 -t -c "${conf}" 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null; then
     echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
     exit 1
   fi
 }
 
-cleanup() {
+cleanup()
+{
   if has_tape_drive; then
     "${rscripts}/cleanup-tape"
   else
@@ -95,7 +102,8 @@ cleanup() {
   fi
 }
 
-get_test_name() {
+get_test_name()
+{
   testscriptpath=$1
   # get last two components of the path (subdirectory + filename)
   printf "%s/%s\n" "$(basename "$(dirname "$testscriptpath")")" "$(basename "$testscriptpath")"
@@ -107,7 +115,8 @@ get_test_name() {
 # Initialize ${tmp}/file-list with this directory,
 # if it does not already exists.
 #
-setup_data() {
+setup_data()
+{
   data_dir="${BackupDirectory}"
 
   # gnu tar is required
@@ -160,7 +169,8 @@ setup_data() {
   return 0
 }
 
-create_sparse_file() {
+create_sparse_file()
+{
   verbose=""
   if [ "${1:-}" = "-v" ]; then
     verbose="yes"
@@ -187,7 +197,8 @@ create_sparse_file() {
   fi
 }
 
-start_test() {
+start_test()
+{
   # in case of an exit during the test,
   # call the 'end_test' function.
   trap '
@@ -217,7 +228,8 @@ start_test() {
   bin/bareos status || true
 }
 
-require_root() {
+require_root()
+{
   if [ "$(id -u)" != 0 ]; then
     echo " "
     echo "You must be root to run this test."
@@ -228,52 +240,60 @@ require_root() {
   fi
 }
 
-has_tape_drive() {
+has_tape_drive()
+{
   [ "${TAPE_DRIVE}" ] && [ "${TAPE_DRIVE}" != "/dev/null" ]
   return $?
 }
 
-require_tape_drive() {
+require_tape_drive()
+{
   if ! has_tape_drive; then
     echo "This test $TestName needs a tape drive, but has none."
     exit 1
   fi
 }
 
-require_second_drive() {
+require_second_drive()
+{
   if [ "${TAPE_DRIVE1}" = "/dev/null" ]; then
     echo "This test $TestName has a Job $JobName which needs a second drive, but has none."
     exit 1
   fi
 }
 
-require_autochanger() {
+require_autochanger()
+{
   if [ "${AUTOCHANGER}" = "/dev/null" ]; then
     echo "This test $TestName needs an autochanger, but has none."
     exit 1
   fi
 }
 
-require_linux() {
+require_linux()
+{
   if [ "$(uname)" != 'Linux' ]; then
     echo "This test $TestName runs only on Linux"
     exit 1
   fi
 }
 
-skip_if_no_autochanger() {
+skip_if_no_autochanger()
+{
   if [ "${AUTOCHANGER}" = "/dev/null" ]; then
     echo "$TestName test skipped. No autochanger."
     exit 1
   fi
 }
 
-is_debug() {
+is_debug()
+{
   test "$debug" -gt 0
   return $?
 }
 
-set_debug() {
+set_debug()
+{
   debug=$1
   if is_debug; then
     out=tee
@@ -282,7 +302,8 @@ set_debug() {
   fi
 }
 
-print_debug() {
+print_debug()
+{
   if echo "$*" | grep -q ERROR >/dev/null; then
     echo "$*" >>"$tmp/err.log"
   fi
@@ -291,13 +312,15 @@ print_debug() {
   fi
 }
 
-printf_debug() {
+printf_debug()
+{
   if is_debug; then
     printf "$@" >&2
   fi
 }
 
-write_stdin_to_file() {
+write_stdin_to_file()
+{
   FILE="$1"
 
   # empty file
@@ -309,7 +332,8 @@ write_stdin_to_file() {
   done
 }
 
-log_stdin() {
+log_stdin()
+{
   FILE="${1:-${tmp}/debug.log}"
 
   # read stdin and write to file
@@ -321,13 +345,15 @@ log_stdin() {
   done
 }
 
-set_error() {
+set_error()
+{
   estat=9
   echo "ERROR: $*" >>"$tmp/err.log"
   echo "ERROR: $*"
 }
 
-check_files_written() {
+check_files_written()
+{
   LOG=$1
   NB=$2
   FILES="$(awk '/FD Files Written:/ { last=$4 } END { print last }' "$LOG")"
@@ -338,7 +364,8 @@ check_files_written() {
   fi
 }
 
-check_sd_files_written() {
+check_sd_files_written()
+{
   LOG=$1
   FILES="$(awk '/SD Files Written:/ { last=$4 } END { print last }' "$LOG")"
 
@@ -350,7 +377,8 @@ check_sd_files_written() {
   return 0
 }
 
-check_linked_against() {
+check_linked_against()
+{
   LIB="$1"
   BIN=${2:-${BAREOS_FILEDAEMON_BINARY}}
 
@@ -366,7 +394,8 @@ check_linked_against() {
   return 0
 }
 
-bls_files_verbose() {
+bls_files_verbose()
+{
   local STORAGE=${1}
   local VOLUME=${2}
   # JobId is not yet evaluated
@@ -375,7 +404,8 @@ bls_files_verbose() {
   return $?
 }
 
-is_file_compressed() {
+is_file_compressed()
+{
   local STORAGE=${1}
   local VOLUME=${2}
   local FILENAME=${3}
@@ -388,7 +418,8 @@ is_file_compressed() {
   fi
 }
 
-check_compression() {
+check_compression()
+{
   local STORAGE=${1}
   local VOLUME=${2}
   # JobId is not yet evaluated
@@ -415,19 +446,22 @@ check_compression() {
 
 ################################################################
 # Get information from logs
-get_mig_info() {
+get_mig_info()
+{
   # Prev Backup JobId
   JOBID=$1
   LOG=$2
   RET="$(awk -F: "BEGIN { jobid=$JOBID } "'/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/  { if (cjid == jobid) { print $2 } }' "$LOG")"
 }
 
-get_duration() {
+get_duration()
+{
   LOG=$1
   RET="$(awk 'BEGIN {t["secs"]=1;t["sec"]=1;t["min"]=60;t["mins"]=60}; /Elapsed time:/ { last=$3*t[$4] } END { print last }' "$LOG")"
 }
 
-check_duration_gt() {
+check_duration_gt()
+{
   LOG="$1"
   TIME="$2"
 
@@ -438,7 +472,8 @@ check_duration_gt() {
   fi
 }
 
-check_duration_lt() {
+check_duration_lt()
+{
   LOG="$1"
   TIME="$2"
 
@@ -449,19 +484,23 @@ check_duration_lt() {
   fi
 }
 
-start_dir() {
+start_dir()
+{
   ${rscripts}/bareos-ctl-dir start
 }
 
-start_fd() {
+start_fd()
+{
   ${BAREOS_CTL_FD_RUNNER:-} ${rscripts}/bareos-ctl-fd start
 }
 
-start_sd() {
+start_sd()
+{
   ${rscripts}/bareos-ctl-sd start
 }
 
-start_bareos() {
+start_bareos()
+{
   debug_wait
   zstat=0
   estat=0
@@ -480,13 +519,15 @@ start_bareos() {
   fi
 }
 
-run_bareos() {
+run_bareos()
+{
   start_bareos "$@"
   run_bconsole
   return $?
 }
 
-traceback() {
+traceback()
+{
   name="$(basename "$1")"
   pid=$(pidof "$name")
   if [ "$pid" != "" ]; then
@@ -494,7 +535,8 @@ traceback() {
   fi
 }
 
-run_bconsole() {
+run_bconsole()
+{
   bconsole_file="${1:-${tmp}/bconcmds}"
   local error_code=0
   if [ -f "$bconsole_file" ]; then
@@ -516,7 +558,8 @@ run_bconsole() {
   return "$error_code"
 }
 
-run_btape() {
+run_btape()
+{
   if test "$debug" -eq 1; then
     "${bin}/btape" -c "${conf}" tape <"${tmp}/bconcmds" | tee "${tmp}/btape.out"
   else
@@ -524,7 +567,8 @@ run_btape() {
   fi
 }
 
-run_bscan() {
+run_bscan()
+{
   print_debug "bscanning with ${BAREOS_BSCAN_BINARY}"
   if test "$debug" -eq 1; then
     "${BAREOS_BSCAN_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bscan.out"
@@ -533,7 +577,8 @@ run_bscan() {
   fi
 }
 
-run_bls() {
+run_bls()
+{
   print_debug "bls with ${BAREOS_BLS_BINARY}"
   if test "$debug" -eq 1; then
     "${BAREOS_BLS_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bls.out"
@@ -542,7 +587,8 @@ run_bls() {
   fi
 }
 
-run_bextract() {
+run_bextract()
+{
   print_debug "bextract with ${BAREOS_BEXTRACT_BINARY}"
   if test "$debug" -eq 1; then
     "${BAREOS_BEXTRACT_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bextract.out"
@@ -551,17 +597,20 @@ run_bextract() {
   fi
 }
 
-run_bscan_db() {
+run_bscan_db()
+{
   run_bscan -n "$db_name" -u "$db_user" -P "$db_password" "$@"
 }
 
-run_query() {
+run_query()
+{
   # hope that no pw is set
   echo "run query $*"
   PGOPTIONS="--client-min-messages=warning" psql -d "${db_name}" -q -c "$@"
 }
 
-run_headless_dbcheck() {
+run_headless_dbcheck()
+{
   print_debug "checking with ${BAREOS_DBCHECK_BINARY}"
   if test "$debug" -eq 1; then
     "${BAREOS_DBCHECK_BINARY}" "${working_dir}" "${db_name}" "${db_user}" "${db_password}" --verbose -b -d 500 "$@" | tee "${tmp}/dbcheck.out"
@@ -570,7 +619,8 @@ run_headless_dbcheck() {
   fi
 }
 
-run_bcopy() {
+run_bcopy()
+{
   print_debug "bcopying with ${BAREOS_BCOPY_BINARY}"
   if test "$debug" -eq 1; then
     "${BAREOS_BCOPY_BINARY}" -c "${conf}" -d 500 "$@" </dev/null | tee "${tmp}/bcopy.out"
@@ -579,7 +629,8 @@ run_bcopy() {
   fi
 }
 
-run_bdedupestimate() {
+run_bdedupestimate()
+{
   print_debug "bestimating with ${BAREOS_BDEDUPESTIMATE_BINARY}"
   if test "$debug" -eq 1; then
     "${BAREOS_BDEDUPESTIMATE_BINARY}" -c "${conf}" -d 500 "$@" </dev/null | tee "${tmp}/bdedupestimate.out"
@@ -588,14 +639,16 @@ run_bdedupestimate() {
   fi
 }
 
-generate_testdata() {
+generate_testdata()
+{
   print_debug "creating test data with ${BAREOS_GENTESTDATA_BINARY}"
   file="$1"
   shift
   ${BAREOS_GENTESTDATA_BINARY} "$@" >"$file"
 }
 
-kill_process() {
+kill_process()
+{
   if [ "$1" -gt 0 ] && kill -0 "$1" 2>/dev/null; then
     kill -TERM "$1"
     for i in $(seq 1 5); do
@@ -615,7 +668,8 @@ kill_process() {
   fi
 }
 
-waitpid() {
+waitpid()
+{
   # loop until the process no longer exists, or it's a zombie.
   local PID=$1
   local RC=1
@@ -641,13 +695,15 @@ waitpid() {
   return $RC
 }
 
-stop_bareos() {
+stop_bareos()
+{
   ${rscripts}/bareos-ctl-dir stop
   ${rscripts}/bareos-ctl-fd stop
   ${rscripts}/bareos-ctl-sd stop
 }
 
-run_python_unittests() {
+run_python_unittests()
+{
   if PYTHONRESULT=$("$PYTHON_EXECUTABLE" -m unittest -v "$@"); then
     print_debug "$PYTHONRESULT"
   else
@@ -655,7 +711,8 @@ run_python_unittests() {
   fi
 }
 
-change_files() {
+change_files()
+{
   #
   # Use this function to modified some files after a full backup
   # so that an incremental backup will see some modified files.
@@ -683,7 +740,8 @@ change_files() {
   return 0
 }
 
-get_real_file_size() {
+get_real_file_size()
+{
   FILE="$1"
   SIZE=-1
   if [ -e "$FILE" ]; then
@@ -699,7 +757,8 @@ get_real_file_size() {
   echo "$SIZE"
 }
 
-get_file_size() {
+get_file_size()
+{
   FILE="$1"
   SIZE=-1
   if [ -e "$FILE" ]; then
@@ -715,11 +774,13 @@ get_file_size() {
   echo "$SIZE"
 }
 
-check_for_zombie_jobs() {
+check_for_zombie_jobs()
+{
   "${rscripts}/check_for_zombie_jobs" "$@"
 }
 
-change_jobname() {
+change_jobname()
+{
   if test $# -eq 1; then
     oldname=NightlySave
     newname=$1
@@ -734,7 +795,8 @@ change_jobname() {
   #  echo "Job ${oldname} changed to ${newname}"
 }
 
-check_two_logs() {
+check_two_logs()
+{
   default_backup_log="${tmp}/log1.out"
   backup_log=${1:-${default_backup_log}}
 
@@ -771,7 +833,8 @@ check_two_logs() {
   fi
 }
 
-check_log() {
+check_log()
+{
   LOG=$1
   if [ -z "$LOG" ]; then
     LOG="${tmp}/log1.out"
@@ -811,11 +874,13 @@ check_log() {
   return 0
 }
 
-check_recursive_diff_of_dirs() {
+check_recursive_diff_of_dirs()
+{
   perl "$rscripts/diff.pl" -s "$1" -d "$2"
 }
 
-check_restore_diff() {
+check_restore_diff()
+{
   # $dest will be set to
   #   * the first function parameter, or
   #   * ${BackupDirectory} (set by test), or
@@ -849,7 +914,8 @@ check_restore_diff() {
   return "$result"
 }
 
-check_restore_only_files_diff() {
+check_restore_only_files_diff()
+{
   #
   # all parameter have to be full path files.
   # They will be check for differences to the restore location.
@@ -867,7 +933,8 @@ check_restore_only_files_diff() {
   return $?
 }
 
-check_restore_files_diff() {
+check_restore_files_diff()
+{
   if ! check_restore_only_files_diff "$@"; then
     return $?
   fi
@@ -892,7 +959,8 @@ check_restore_files_diff() {
   return 0
 }
 
-check_restore_bin_diff() {
+check_restore_bin_diff()
+{
   if test "$debug" -eq 1; then
     perl "$rscripts/diff.pl" -s "${bin}" -d "${RestoreDirectory}${bin}"
     diff -ur "${bin}" "${RestoreDirectory}${bin}"
@@ -902,7 +970,8 @@ check_restore_bin_diff() {
   dstat=$?
 }
 
-check_restore_tmp_build_diff() {
+check_restore_tmp_build_diff()
+{
   if test "$debug" -eq 1; then
     perl "$rscripts/diff.pl" -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
     diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}"
@@ -918,7 +987,8 @@ check_restore_tmp_build_diff() {
 # rstat is restore status
 # zstat is zombie job(s)
 #
-end_test() {
+end_test()
+{
   # End of test.
   # Remove exit trap (set in start_test)
   trap '' EXIT
@@ -987,33 +1057,38 @@ end_test() {
   fi
 }
 
-copy_tape_confs() {
+copy_tape_confs()
+{
   "${rscripts}/cleanup-tape"
   "${rscripts}/copy-tape-confs"
 }
 
-copy_test_confs() {
+copy_test_confs()
+{
   "${rscripts}/cleanup"
   "${rscripts}/copy-test-confs"
 }
 
-disable_plugins() {
+disable_plugins()
+{
   for i in ${conf}/bareos-fd.conf; do
     sed 's/Plugin/#Plugin/' "$i" >"$tmp/1"
     cp -f "$tmp/1" "$i"
   done
 }
 
-update_win32() {
-  if [ -d "$cwd/build/src/win32/release32" ] &&
-    [ -d "$cwd/build/src/win32/release64" ] ||
-    [ -d "$cwd/release32" ] && [ -d "$cwd/release64" ]; then
+update_win32()
+{
+  if [ -d "$cwd/build/src/win32/release32" ] \
+    && [ -d "$cwd/build/src/win32/release64" ] \
+    || [ -d "$cwd/release32" ] && [ -d "$cwd/release64" ]; then
     echo -ne "Try to upgrade the FileDaemon:\t"
     wget -qO - "$WIN32_ADDR:8091/install"
   fi
 }
 
-debug_wait() {
+debug_wait()
+{
   REGRESS_WAIT=${REGRESS_WAIT:-0}
   if test "${REGRESS_WAIT}" = "1"; then
     echo "Start Bareos under debugger and enter anything when ready ..."
@@ -1021,32 +1096,35 @@ debug_wait() {
   fi
 }
 
-init_drive() {
+init_drive()
+{
   mt -f "$1" rewind
   mt -f "$1" weof
 }
 
-rewind_drive() {
+rewind_drive()
+{
   mt -f "$1" rewind
 }
 
-load_slot1() {
+load_slot1()
+{
   # Get a tape from slot1
   slot="$("${scripts}/$MTX" "${AUTOCHANGER}" loaded 0 "${TAPE_DRIVE}" "$DRIVE1")"
   case $slot in
-  0)
-    "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot="$SLOT1"
-    ;;
-  "$SLOT1")
-    slot="$SLOT1"
-    ;;
-  *)
-    rewind_drive "${TAPE_DRIVE}"
-    "${scripts}/$MTX" "${AUTOCHANGER}" unload "$slot" "${TAPE_DRIVE}" "$DRIVE1"
-    "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot="$SLOT1"
-    ;;
+    0)
+      "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot="$SLOT1"
+      ;;
+    "$SLOT1")
+      slot="$SLOT1"
+      ;;
+    *)
+      rewind_drive "${TAPE_DRIVE}"
+      "${scripts}/$MTX" "${AUTOCHANGER}" unload "$slot" "${TAPE_DRIVE}" "$DRIVE1"
+      "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot="$SLOT1"
+      ;;
   esac
 }
 
@@ -1054,31 +1132,33 @@ load_slot1() {
 # $1 has currently loaded slot, load the other one i.e. if 1, load 2;
 #    if 2, load 1; if 0 load 1
 #
-load_other_slot() {
+load_other_slot()
+{
   rewind_drive "${TAPE_DRIVE}"
   case $1 in
-  0)
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot=1
-    ;;
-  $SLOT1)
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
-    slot=2
-    ;;
-  $SLOT2)
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-    "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
-    slot=1
-    ;;
-  *)
-    echo "Something went wrong. Expected $SLOT1 or $SLOT2, got $1"
-    exit 1
-    ;;
+    0)
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot=1
+      ;;
+    $SLOT1)
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
+      slot=2
+      ;;
+    $SLOT2)
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      slot=1
+      ;;
+    *)
+      echo "Something went wrong. Expected $SLOT1 or $SLOT2, got $1"
+      exit 1
+      ;;
   esac
 }
 
-expect_grep() {
+expect_grep()
+{
   local usage="Usage: ${FUNCNAME[0]} <expected_result> <log_file> [error message] [alternative result]\n    Find expected_result in log_file. Optionally, if not found, display custom error_message and/or grep for alternative that could be there instead."
   local expected_result="$1"
   local target_file="$2"
@@ -1107,7 +1187,8 @@ expect_grep() {
   fi
 }
 
-expect_not_grep() {
+expect_not_grep()
+{
   local usage="Usage: ${FUNCNAME[0]} <non_expected_result> <log_file> [error message]\n    Make sure non_expected_result is not in log_file. Optionally display custom error_message if found."
   local non_expected_result="$1"
   local target_file="$2"
@@ -1133,7 +1214,8 @@ expect_not_grep() {
 }
 
 # Used by mysqltest
-skip_if_root() {
+skip_if_root()
+{
   USER="$(whoami)"
   if [ "${USER}" == "root" ]; then
     echo "${TestName} test skipped: test cannot be run as user root."
@@ -1141,7 +1223,8 @@ skip_if_root() {
   fi
 }
 
-skip_if_windows() {
+skip_if_windows()
+{
   if [[ "$(uname -s)" =~ _NT ]]; then
     if [ -z "${1+x}" ]; then
       echo "${TestName} test skipped on windows."

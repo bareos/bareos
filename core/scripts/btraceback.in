@@ -71,36 +71,36 @@ fi
 # Try to run a debugger on the crashing program or the generated postmortem dump for getting a strack trace.
 #
 case ${DEBUGGER} in
-DBX)
-  if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
-    ${DBX} $1 ${POSTMORTEM} <@scriptdir@/btraceback.dbx >>${WD}/bareos.$2.traceback 2>&1
-  else
-    ${DBX} $1 $2 <@scriptdir@/btraceback.dbx >>${WD}/bareos.$2.traceback 2>&1
-  fi
-  ;;
-GDB)
-  if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
-    ${GDB} -quiet $1 ${POSTMORTEM} <@scriptdir@/btraceback.gdb >>${WD}/bareos.$2.traceback 2>&1
-  else
-    ${GDB} -quiet $1 $2 <@scriptdir@/btraceback.gdb >>${WD}/bareos.$2.traceback 2>&1
-  fi
-  ;;
-MDB)
-  if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
-    ${MDB} -u $1 ${POSTMORTEM} <@scriptdir@/btraceback.mdb >>${WD}/bareos.$2.traceback 2>&1
-  else
-    ${MDB} -u -p $2 <@scriptdir@/btraceback.mdb >>${WD}/bareos.$2.traceback 2>&1
-  fi
-  ;;
-NONE)
-  echo "No debugger available on this platform," \
-    " please install one to get proper stack traces" >>${WD}/bareos.$2.traceback
-  ;;
+  DBX)
+    if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
+      ${DBX} $1 ${POSTMORTEM} <@scriptdir@/btraceback.dbx >>${WD}/bareos.$2.traceback 2>&1
+    else
+      ${DBX} $1 $2 <@scriptdir@/btraceback.dbx >>${WD}/bareos.$2.traceback 2>&1
+    fi
+    ;;
+  GDB)
+    if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
+      ${GDB} -quiet $1 ${POSTMORTEM} <@scriptdir@/btraceback.gdb >>${WD}/bareos.$2.traceback 2>&1
+    else
+      ${GDB} -quiet $1 $2 <@scriptdir@/btraceback.gdb >>${WD}/bareos.$2.traceback 2>&1
+    fi
+    ;;
+  MDB)
+    if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
+      ${MDB} -u $1 ${POSTMORTEM} <@scriptdir@/btraceback.mdb >>${WD}/bareos.$2.traceback 2>&1
+    else
+      ${MDB} -u -p $2 <@scriptdir@/btraceback.mdb >>${WD}/bareos.$2.traceback 2>&1
+    fi
+    ;;
+  NONE)
+    echo "No debugger available on this platform," \
+      " please install one to get proper stack traces" >>${WD}/bareos.$2.traceback
+    ;;
 esac
 
 #
 # Send the stack trace info to someone for analyzing or at least letting someone know we crashed.
 #
 PNAME="${PNAME} on $(hostname)"
-cat ${WD}/bareos.$2.traceback |
-  @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos ${DEBUGGER} traceback of ${PNAME}" @dump_email@
+cat ${WD}/bareos.$2.traceback \
+  | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos ${DEBUGGER} traceback of ${PNAME}" @dump_email@

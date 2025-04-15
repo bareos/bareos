@@ -1,7 +1,8 @@
 #! /bin/bash
 
 # A function to find the pid of a program.
-pidofproc() {
+pidofproc()
+{
   pid=""
   # Test syntax.
   if [ $# = 0 ]; then
@@ -36,7 +37,8 @@ pidofproc() {
   return 0
 }
 
-checkPid() {
+checkPid()
+{
   pid="$1"
   wait="${2:-0}"
   waittext="${3:-}"
@@ -63,7 +65,8 @@ checkPid() {
 }
 
 # A function to stop a program.
-killproc() {
+killproc()
+{
   RC=0
   # Test syntax.
   if [ $# = 0 ]; then
@@ -113,7 +116,8 @@ killproc() {
 }
 
 # Checks if the Database can be connected to
-check_database() {
+check_database()
+{
   echo "Checking Database connection for $1"
   log_file="${tmp}/bareos-$1-config-test.out"
   "$2" -f -t "${@:3}" &>"$log_file"
@@ -126,7 +130,8 @@ check_database() {
   return 0
 }
 # Checks if the configuration outputs warnings
-check_config() {
+check_config()
+{
   echo "Checking Configuration for $1"
   log_file="${tmp}/bareos-$1-config-test.out"
   "$2" -t "${@:3}" &>"$log_file"
@@ -143,7 +148,8 @@ check_config() {
   return 0
 }
 
-status() {
+status()
+{
   # Test syntax.
   if [ $# = 0 ]; then
     echo "Usage: status {program} {port}"
@@ -172,7 +178,8 @@ status() {
   return 3
 }
 
-success() {
+success()
+{
   MESSAGE="OK"
   if [ "$1" ]; then
     MESSAGE="OK ($1)"
@@ -181,7 +188,8 @@ success() {
   return 0
 }
 
-failure() {
+failure()
+{
   rc=$?
   echo "failed (rc=$rc)"
   return $rc

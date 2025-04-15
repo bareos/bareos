@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,13 +28,16 @@ minio_alias=$1-minio
 echo "$0: stopping minio server"
 
 tries=0
-while pidof "$minio_alias" > /dev/null; do
-  if ! pkill -f -SIGTERM "$minio_alias" ; then
+while pidof "$minio_alias" >/dev/null; do
+  if ! pkill -f -SIGTERM "$minio_alias"; then
     break
   fi
   sleep 0.1
-  (( tries++ )) && [ $tries == '100' ] \
-    && { echo "$0: could not stop minio server"; exit 1; }
+  ((tries++)) && [ $tries == '100' ] \
+    && {
+      echo "$0: could not stop minio server"
+      exit 1
+    }
 done
 
 if ! pidof "$minio_alias"; then

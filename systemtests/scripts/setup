@@ -4,18 +4,18 @@ set -e
 . "${rscripts}/functions"
 
 print_debug "drop database \"${db_name}\""
-"${scripts}/drop_bareos_database"   2>&1 > /dev/null ||\
-  echo "info: ${scripts}/drop_bareos_database failed"
+"${scripts}/drop_bareos_database" 2>&1 >/dev/null \
+  || echo "info: ${scripts}/drop_bareos_database failed"
 
 print_debug "creating database \"${db_name}\""
-"${scripts}/create_bareos_database"  2>&1 > /dev/null
+"${scripts}/create_bareos_database" 2>&1 >/dev/null
 
 print_debug "making tables  \"${db_name}\""
-"${scripts}/make_bareos_tables"  2>&1 > /dev/null
+"${scripts}/make_bareos_tables" 2>&1 >/dev/null
 
 print_debug "granting privileges database \"${db_name}\""
-"${scripts}/grant_bareos_privileges"  2>&1 > /dev/null ||\
-  echo "info: ${scripts}/grant_bareos_privileges failed"
+"${scripts}/grant_bareos_privileges" 2>&1 >/dev/null \
+  || echo "info: ${scripts}/grant_bareos_privileges failed"
 
 if lsof="$(command -v lsof)"; then
   for port in $BASEPORT $BAREOS_DIRECTOR_PORT $BAREOS_STORAGE_PORT \

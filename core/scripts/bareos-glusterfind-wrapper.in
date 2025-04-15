@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2015-2016 Planets Communications B.V.
-# Copyright (C) 2015-2016 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -32,11 +32,13 @@ BACKUP_LEVEL="Full"
 SINCE_TIME="0"
 JOB_TYPE="Backup"
 
-usage() {
+usage()
+{
   echo "Usage: $0 [-h] [-l <level>] [-s <since_time>] [-t <jobtype>] <action> <arguments...>"
 }
 
-pre_backup() {
+pre_backup()
+{
   if [ $# -lt 2 ]; then
     echo "pre_backup action needs 2 arguments"
     exit 1
@@ -47,17 +49,18 @@ pre_backup() {
   # $2 - outputfile
   #
   case ${BACKUP_LEVEL} in
-  Full)
-    ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME} --full
-    ;;
-  Incremental | Differential)
-    ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME}
-    ;;
-  *) ;;
+    Full)
+      ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME} --full
+      ;;
+    Incremental | Differential)
+      ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME}
+      ;;
+    *) ;;
   esac
 }
 
-post_backup() {
+post_backup()
+{
   if [ $# -lt 2 ]; then
     echo "post_backup action needs 2 arguments"
     exit 1
@@ -70,29 +73,30 @@ post_backup() {
   rm -f $2
 }
 
-main() {
+main()
+{
   #
   # Parse options.
   #
   while getopts "hl:s:t:" arg; do
     case ${arg} in
-    h | \?)
-      usage
-      exit 0
-      ;;
-    l)
-      BACKUP_LEVEL="${OPTARG}"
-      ;;
-    s)
-      SINCE_TIME="${OPTARG}"
-      ;;
-    t)
-      JOB_TYPE="${OPTARG}"
-      ;;
-    *)
-      usage
-      exit 1
-      ;;
+      h | \?)
+        usage
+        exit 0
+        ;;
+      l)
+        BACKUP_LEVEL="${OPTARG}"
+        ;;
+      s)
+        SINCE_TIME="${OPTARG}"
+        ;;
+      t)
+        JOB_TYPE="${OPTARG}"
+        ;;
+      *)
+        usage
+        exit 1
+        ;;
     esac
   done
   nr_shift=$(expr $OPTIND - 1)
@@ -107,16 +111,16 @@ main() {
   shift
 
   case ${action} in
-  prebackup)
-    pre_backup $*
-    ;;
-  postbackup)
-    post_backup $*
-    ;;
-  *)
-    echo "Unknown action ${action}, aborting ..."
-    exit 1
-    ;;
+    prebackup)
+      pre_backup $*
+      ;;
+    postbackup)
+      post_backup $*
+      ;;
+    *)
+      echo "Unknown action ${action}, aborting ..."
+      exit 1
+      ;;
   esac
 
   exit 0

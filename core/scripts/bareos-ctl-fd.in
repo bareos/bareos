@@ -26,54 +26,54 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 . "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
 
 case "$1" in
-start)
-  if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
-    echo "Starting the Bareos File daemon as $(whoami)"
-    OPTIONS=''
-    if [ "${BAREOS_FD_USER}" != '' ]; then
-      OPTIONS="${OPTIONS} -u ${BAREOS_FD_USER}"
+  start)
+    if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
+      echo "Starting the Bareos File daemon as $(whoami)"
+      OPTIONS=''
+      if [ "${BAREOS_FD_USER}" != '' ]; then
+        OPTIONS="${OPTIONS} -u ${BAREOS_FD_USER}"
+      fi
+
+      if [ "${BAREOS_FD_GROUP}" != '' ]; then
+        OPTIONS="${OPTIONS} -g ${BAREOS_FD_GROUP}"
+      fi
+
+      if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
+        OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+      fi
+
+      check_config fd ${BAREOS_FILEDAEMON_BINARY} $2 $3 ${OPTIONS} || exit $?
+      if [ "x${VALGRIND_FD}" = "x1" ]; then
+        valgrind --leak-check=full ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+      else
+        ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+      fi
     fi
+    ;;
 
-    if [ "${BAREOS_FD_GROUP}" != '' ]; then
-      OPTIONS="${OPTIONS} -g ${BAREOS_FD_GROUP}"
+  stop)
+    if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
+      printf "Stopping the Bareos File daemon: "
+      shift # shift away the stop
+      killproc ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT} "${@}"
     fi
+    ;;
 
-    if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
-      OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
-    fi
+  restart)
+    $0 stop
+    sleep 5
+    $0 start
+    ;;
 
-    check_config fd ${BAREOS_FILEDAEMON_BINARY} $2 $3 ${OPTIONS} || exit $?
-    if [ "x${VALGRIND_FD}" = "x1" ]; then
-      valgrind --leak-check=full ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
-    else
-      ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
-    fi
-  fi
-  ;;
+  status)
+    [ -x ${BAREOS_FILEDAEMON_BINARY} ] && status ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
+    exit $?
+    ;;
 
-stop)
-  if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
-    printf "Stopping the Bareos File daemon: "
-    shift # shift away the stop
-    killproc ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT} "${@}"
-  fi
-  ;;
-
-restart)
-  $0 stop
-  sleep 5
-  $0 start
-  ;;
-
-status)
-  [ -x ${BAREOS_FILEDAEMON_BINARY} ] && status ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
-  exit $?
-  ;;
-
-*)
-  echo "Usage: $0 {start|stop|restart|status}"
-  exit 1
-  ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
+    ;;
 esac
 
 exit 0

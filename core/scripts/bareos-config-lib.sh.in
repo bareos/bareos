@@ -50,7 +50,8 @@ XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX \
 
 os_type=$(uname -s)
 
-is_function() {
+is_function()
+{
   func=${1-}
   test "$func" && command -v "$func" >/dev/null 2>&1
   return $?
@@ -69,7 +70,8 @@ is_function() {
 #     fi
 # }
 
-contains() {
+contains()
+{
   haystack="$1"
   needle="$2"
   if [ "${haystack#*"$needle"}" != "$haystack" ]; then
@@ -79,19 +81,23 @@ contains() {
   fi
 }
 
-info() {
+info()
+{
   echo "Info: $*" >&2
 }
 
-warn() {
+warn()
+{
   echo "Warning: $*" >&2
 }
 
-error() {
+error()
+{
   echo "Error: $*" >&2
 }
 
-handle_database_scripts_command_line_parameter() {
+handle_database_scripts_command_line_parameter()
+{
   # Check if some parameters are given, try to detect old usage with db_type
   if [ $# -gt 0 ]; then
     force=${1-}
@@ -109,58 +115,71 @@ handle_database_scripts_command_line_parameter() {
   fi
 }
 
-get_config_lib_file() {
+get_config_lib_file()
+{
   # can be used in following way:
   # LIB=`bareos-config get_config_lib_file`
   # . $LIB
   echo "${BAREOS_CONFIG_LIB}"
 }
 
-get_user_fd() {
+get_user_fd()
+{
   echo "${FILE_DAEMON_USER}"
 }
 
-get_group_fd() {
+get_group_fd()
+{
   echo "${FILE_DAEMON_GROUP}"
 }
 
-get_user_sd() {
+get_user_sd()
+{
   echo "${STORAGE_DAEMON_USER}"
 }
 
-get_group_sd() {
+get_group_sd()
+{
   echo "${STORAGE_DAEMON_GROUP}"
 }
 
-get_user_dir() {
+get_user_dir()
+{
   echo "${DIRECTOR_DAEMON_USER}"
 }
 
-get_group_dir() {
+get_group_dir()
+{
   echo "${DIRECTOR_DAEMON_GROUP}"
 }
 
-get_bareos_user() {
+get_bareos_user()
+{
   echo "${DAEMON_USER}"
 }
 
-get_bareos_dir() {
+get_bareos_dir()
+{
   echo "${DAEMON_GROUP}"
 }
 
-get_working_dir() {
+get_working_dir()
+{
   echo "${BAREOS_WORKING_DIR}"
 }
 
-get_database_ddl_dir() {
+get_database_ddl_dir()
+{
   echo "${SQL_DDL_DIR}"
 }
 
-get_database_version() {
+get_database_version()
+{
   echo "${DB_VERSION}"
 }
 
-get_database_version_by_release() {
+get_database_version_by_release()
+{
   param="$1"
 
   # get release from parameter by stripping everything after the "-".
@@ -204,7 +223,8 @@ get_database_version_by_release() {
 
 _scsicrypto_cmds="bareos-sd bcopy bextract bls bscan bscrypto btape"
 _scsicrypto_config_file="${BAREOS_CONFIG_DIR}/.enable-cap_sys_rawio"
-check_scsicrypto_capabilities() {
+check_scsicrypto_capabilities()
+{
   if [ "${os_type}" != "Linux" ]; then
     error "check_scsicrypto_capabilities() is not supported on this platform"
     return 1
@@ -234,7 +254,8 @@ check_scsicrypto_capabilities() {
   fi
 }
 
-set_scsicrypto_capabilities() {
+set_scsicrypto_capabilities()
+{
   if [ "${os_type}" != "Linux" ]; then
     error "set_scsicrypto_capabilities() is not supported on this platform"
     return 1
@@ -259,7 +280,8 @@ set_scsicrypto_capabilities() {
   echo "cap_sys_rawio+ep capabilities enabled on $(date "+%F %X")" >"${_scsicrypto_config_file}"
 }
 
-unset_scsicrypto_capabilities() {
+unset_scsicrypto_capabilities()
+{
   if [ "${os_type}" != "Linux" ]; then
     error "unset_scsicrypto_capabilities() is not supported on this platform"
     return 1
@@ -283,7 +305,8 @@ unset_scsicrypto_capabilities() {
   rm -f "${_scsicrypto_config_file}"
 }
 
-setup_sd_user() {
+setup_sd_user()
+{
   #
   # Guaranties that storage-daemon user and group exists
   # and storage-daemon user belongs to the required groups.
@@ -338,7 +361,8 @@ setup_sd_user() {
   fi
 }
 
-get_config_path() {
+get_config_path()
+{
   # configuration component (either file or bareos-dir, ...)
   COMPONENT="${1}"
 
@@ -354,7 +378,8 @@ get_config_path() {
   fi
 }
 
-get_config_path2() {
+get_config_path2()
+{
   # configuration component (either file or bareos-dir, ...)
   BASEDIR="${1}"
   COMPONENT="${2}"
@@ -374,7 +399,8 @@ get_config_path2() {
   fi
 }
 
-deploy_config() {
+deploy_config()
+{
   ARGS=$#
   SOURCE=${1:-}
   DEST=${2:-}
@@ -412,7 +438,8 @@ deploy_config() {
   return $RC
 }
 
-deploy_config2() {
+deploy_config2()
+{
   #
   # Copy configuration from SOURCE to DEST and apply settings.
   # Only copies new files. It does not overwrite existing files.
@@ -446,7 +473,8 @@ deploy_config2() {
   return $RC
 }
 
-deploy_config3() {
+deploy_config3()
+{
   #
   # Copy configuration from SOURCE to DEST and apply settings.
   # Only copies new files. It does not overwrite existing files.
@@ -482,7 +510,8 @@ deploy_config3() {
   return $RC
 }
 
-get_config_param() {
+get_config_param()
+{
   #
   # get parameter values from a Bareos configuration file
   #
@@ -506,14 +535,15 @@ get_config_param() {
   fi
 
   # get parameter from configuration file
-  VALUE="$(grep -Ei "^[ 	]*${PARAM}[ 	]*=" "${CFG_FILE}" |
-    cut -d'=' -f2 |
-    sed -e 's/[ 	]*"//' -e 's/"//')"
+  VALUE="$(grep -Ei "^[ 	]*${PARAM}[ 	]*=" "${CFG_FILE}" \
+    | cut -d'=' -f2 \
+    | sed -e 's/[ 	]*"//' -e 's/"//')"
   [ "${VALUE}" ] || VALUE="${DEFAULT}"
   echo "$VALUE"
 }
 
-set_config_param() {
+set_config_param()
+{
   #
   # set parameter values to a Bareos configuration file
   #
@@ -554,7 +584,8 @@ set_config_param() {
   return
 }
 
-set_config_param_in_directory() {
+set_config_param_in_directory()
+{
   if [ "${os_type}" != "Linux" ]; then
     error "set_config_param_in_directory() is not supported on this platform"
     return 1
@@ -584,7 +615,8 @@ set_config_param_in_directory() {
   return ${RC}
 }
 
-set_config_param_in_file() {
+set_config_param_in_file()
+{
   if [ "${os_type}" != "Linux" ]; then
     error "set_config_param() is not supported on this platform"
     return 1
@@ -672,7 +704,8 @@ set_config_param_in_file() {
   fi
 }
 
-get_database_param() {
+get_database_param()
+{
   PARAM="${1-}"
   DEFAULT="${2-}"
   VALUE=""
@@ -680,18 +713,18 @@ get_database_param() {
 
   # Check if PARAM is valid
   case "${PARAM}" in
-  "dbaddress") ;;
-  "dbsocket") ;;
-  "dbport") ;;
-  "dbname") ;;
-  "dbuser") ;;
-  "dbpassword") ;;
-  *)
-    if [ -n "${DEFAULT}" ]; then
-      echo "${DEFAULT}"
-    fi
-    return 0
-    ;;
+    "dbaddress") ;;
+    "dbsocket") ;;
+    "dbport") ;;
+    "dbname") ;;
+    "dbuser") ;;
+    "dbpassword") ;;
+    *)
+      if [ -n "${DEFAULT}" ]; then
+        echo "${DEFAULT}"
+      fi
+      return 0
+      ;;
   esac
   # Retrieve PARAM line in configuration section output
   # Beware we can be called before bareos-dir is installed on system (Debian like)
@@ -711,35 +744,40 @@ get_database_param() {
   return 0
 }
 
-get_database_name() {
+get_database_name()
+{
   DEFAULT="${1-}"
   RC=0
   get_database_param "dbname" "$DEFAULT" || RC=$?
   return ${RC}
 }
 
-get_database_user() {
+get_database_user()
+{
   DEFAULT="${1-}"
   RC=0
   get_database_param "dbuser" "$DEFAULT" || RC=$?
   return ${RC}
 }
 
-get_database_password() {
+get_database_password()
+{
   DEFAULT="${1-}"
   RC=0
   get_database_param "dbpassword" "$DEFAULT" || RC=$?
   return ${RC}
 }
 
-get_config_line_parameter() {
+get_config_line_parameter()
+{
   CONFIG_RESOURCE_SECTION="$1"
   CONFIG_PARAM="$2"
   #For POSIX compliance use only *
   printf "%s" "${CONFIG_RESOURCE_SECTION}" | sed -n -e "s/[[:space:]]*${CONFIG_PARAM}[[:space:]]*=[[:space:]]*[\"]*\([^\"]*\)[\"]*[[:space:]]*$/\1/ip"
 }
 
-set_postgresql_environment_variables() {
+set_postgresql_environment_variables()
+{
   CATALOG="${1:-MyCatalog}"
 
   if ! CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" --xc Catalog "${CATALOG}"); then
@@ -756,7 +794,8 @@ set_postgresql_environment_variables() {
   export PGPASSWORD="$(get_config_line_parameter "${CONFIG}" DbPassword)"
 }
 
-is_template_sql_file() {
+is_template_sql_file()
+{
   input_file=${1-}
 
   if [ -z "${input_file}" ]; then
@@ -772,7 +811,8 @@ is_template_sql_file() {
   fi
 }
 
-get_unused_separator() {
+get_unused_separator()
+{
   # Try to find a separator character (for sed)
   # not used in source string.
 
@@ -788,7 +828,8 @@ get_unused_separator() {
   return 1
 }
 
-get_translated_sql_file() {
+get_translated_sql_file()
+{
   # replaces variables in a SQL DDL file
   # and returns the result as stdout.
 
@@ -826,7 +867,8 @@ get_translated_sql_file() {
     "${input_file}"
 }
 
-get_database_grant_privileges() {
+get_database_grant_privileges()
+{
   # Returns the DDL for granting privileges for a database user.
   # Can be used, to get the SQL commands
   # to create additional database users.
@@ -837,17 +879,17 @@ get_database_grant_privileges() {
   db_password="${3-}"
   privileges="${4-}"
   case "${privileges}" in
-  "")
-    # full access
-    privileges=""
-    ;;
-  "readonly")
-    privileges="-readonly"
-    ;;
-  *)
-    echo "Unknown privileges parameter $4"
-    return 1
-    ;;
+    "")
+      # full access
+      privileges=""
+      ;;
+    "readonly")
+      privileges="-readonly"
+      ;;
+    *)
+      echo "Unknown privileges parameter $4"
+      return 1
+      ;;
   esac
 
   sql_definitions="${SQL_DDL_DIR}/grants/postgresql${privileges}.sql"
@@ -863,7 +905,8 @@ get_database_grant_privileges() {
   return
 }
 
-translate_sql_files() {
+translate_sql_files()
+{
   # Translates all available DDL files for one database type.
   # However, currently not used, because it reduced flexibility.
 
@@ -880,7 +923,8 @@ translate_sql_files() {
   done
 }
 
-apply_dbconfig_settings() {
+apply_dbconfig_settings()
+{
   # this function is only useful on Debian Linux based distributions
   # as dbconfig-common is only available there
 
@@ -908,7 +952,8 @@ apply_dbconfig_settings() {
   fi
 }
 
-get_local_hostname() {
+get_local_hostname()
+{
   # put actual short hostname in configuration files
   if [ -n "$(command -v uname)" ]; then
     hname=$(uname -n)
@@ -923,7 +968,8 @@ get_local_hostname() {
   echo "${hname}"
 }
 
-replace() {
+replace()
+{
   if [ $# -ne 2 ]; then
     return 1
   fi
@@ -952,7 +998,8 @@ replace() {
   return 0
 }
 
-initialize_local_hostname() {
+initialize_local_hostname()
+{
   #
   # Replace all XXX_REPLACE_WITH_LOCAL_HOSTNAME by the local hostname.
   #
@@ -960,7 +1007,8 @@ initialize_local_hostname() {
   replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
 }
 
-initialize_passwords() {
+initialize_passwords()
+{
   #
   # See if we need to generate a set of random passwords.
   #
@@ -983,7 +1031,8 @@ initialize_passwords() {
   done
 }
 
-init() {
+init()
+{
   initialize_local_hostname
   initialize_passwords
 }

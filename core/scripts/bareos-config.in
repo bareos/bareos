@@ -1,7 +1,7 @@
 #!/bin/sh
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -26,14 +26,16 @@ if ! [ -r "${LIB}" ]; then
 fi
 . "${LIB}"
 
-usage() {
+usage()
+{
   cat <<-EOT
 usage: $0 <function>
 EOT
   exit 1
 }
 
-help() {
+help()
+{
   usage
 }
 

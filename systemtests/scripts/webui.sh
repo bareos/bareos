@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -38,15 +38,15 @@ export BAREOS_WEBUI_CONFDIR=${current_test_directory}/etc/bareos-webui/
 BAREOS_DIRECTOR_ADDRESS="127.0.0.1"
 
 if ! [ -d "${BAREOS_WEBUI_CONFDIR}" ]; then
-    mkdir -p "${BAREOS_WEBUI_CONFDIR}"
+  mkdir -p "${BAREOS_WEBUI_CONFDIR}"
 fi
 if ! [ -e "${BAREOS_WEBUI_CONFDIR}/directors.ini" ]; then
-printf '
+  printf '
 [localhost-dir]
 enabled = "yes"
 diraddress = "{}"
 dirport = %s
-' "${BAREOS_DIRECTOR_ADDRESS}" "${BAREOS_DIRECTOR_PORT}" > "${BAREOS_WEBUI_CONFDIR}/directors.ini"
+' "${BAREOS_DIRECTOR_ADDRESS}" "${BAREOS_DIRECTOR_PORT}" >"${BAREOS_WEBUI_CONFDIR}/directors.ini"
 fi
 
 printf "#\n# Bareos WebUI running on:\n# %s\n#\n" "${BAREOS_WEBUI_BASE_URL}"

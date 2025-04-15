@@ -12,10 +12,10 @@
 
 # check_for_zombie_jobs storage=STORAGE [client=localhost-fd]
 
-if [ $# = 2 ] ; then
-    client="$2"
+if [ $# = 2 ]; then
+  client="$2"
 else
-    client="client"
+  client="client"
 fi
 
 wait_for_jobs_to_terminate "${client}" 20
@@ -32,8 +32,7 @@ quit
 END_OF_DATA
 
 export zstat
-if ! grep "No Jobs running." "${tmp}"/dir.out >/dev/null 2>&1
-then
+if ! grep "No Jobs running." "${tmp}"/dir.out >/dev/null 2>&1; then
   echo " "
   echo "  !!!! Zombie Jobs in Director !!!!"
   echo "  !!!! Zombie Jobs in Director !!!!" >>test.out
@@ -43,8 +42,7 @@ then
   zstat=1
   exit 1
 fi
-if ! grep "No Jobs running." "${tmp}"/fd.out >/dev/null 2>&1;
-then
+if ! grep "No Jobs running." "${tmp}"/fd.out >/dev/null 2>&1; then
   echo " "
   echo "  !!!! Zombie Jobs in File daemon !!!!"
   echo "  !!!! Zombie Jobs in File daemon !!!!" >>test.out
@@ -54,8 +52,7 @@ then
   zstat=1
   exit 1
 fi
-if ! grep "No Jobs running." "${tmp}"/sd.out >/dev/null 2>&1
-then
+if ! grep "No Jobs running." "${tmp}"/sd.out >/dev/null 2>&1; then
   echo " "
   echo "  !!!! Zombie Jobs in Storage daemon !!!!"
   echo "  !!!! Zombie Jobs in Storage daemon !!!!" >>test.out
@@ -68,34 +65,34 @@ fi
 
 if ls "${tmp}"/log*.out >/dev/null 2>&1; then
 
-    if grep "ERROR" "${tmp}"/log*.out >/dev/null 2>&1; then
-        echo " "
-        echo "  !!!! ERROR in log output !!!!"
-        echo "  !!!! ERROR in log output !!!!" >>test.out
-        grep "ERROR" "${tmp}"/log*.out
-        echo " "
-        zstat=1
-        exit 1
-    fi
+  if grep "ERROR" "${tmp}"/log*.out >/dev/null 2>&1; then
+    echo " "
+    echo "  !!!! ERROR in log output !!!!"
+    echo "  !!!! ERROR in log output !!!!" >>test.out
+    grep "ERROR" "${tmp}"/log*.out
+    echo " "
+    zstat=1
+    exit 1
+  fi
 
-    if grep "Fatal Error" "${tmp}"/log*.out >/dev/null 2>&1; then
-        echo " "
-        echo "  !!!! Fatal Error in log output !!!!"
-        echo "  !!!! Fatal Error in log output !!!!" >>test.out
-        grep "Fatal Error" "${tmp}"/log*.out
-        echo " "
-        zstat=1
-        exit 1
-    fi
+  if grep "Fatal Error" "${tmp}"/log*.out >/dev/null 2>&1; then
+    echo " "
+    echo "  !!!! Fatal Error in log output !!!!"
+    echo "  !!!! Fatal Error in log output !!!!" >>test.out
+    grep "Fatal Error" "${tmp}"/log*.out
+    echo " "
+    zstat=1
+    exit 1
+  fi
 
-    if grep "glibc detected" "${tmp}"/log*.out >/dev/null 2>&1; then
-        echo " "
-        echo "  !!!! glibc detected Error in log output !!!!"
-        echo "  !!!! glibc detected Error in log output !!!!" >>test.out
-        grep "glibc detected" "${tmp}"/log*.out
-        echo " "
-        zstat=1
-        exit 1
-    fi
+  if grep "glibc detected" "${tmp}"/log*.out >/dev/null 2>&1; then
+    echo " "
+    echo "  !!!! glibc detected Error in log output !!!!"
+    echo "  !!!! glibc detected Error in log output !!!!" >>test.out
+    grep "glibc detected" "${tmp}"/log*.out
+    echo " "
+    zstat=1
+    exit 1
+  fi
 
 fi

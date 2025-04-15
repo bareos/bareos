@@ -26,51 +26,51 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 . "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
 
 case "$1" in
-start)
-  if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
-    echo "Starting the Bareos Director daemon"
-    OPTIONS=''
-    if [ "${BAREOS_DIRECTOR_USER}" != '' ]; then
-      OPTIONS="${OPTIONS} -u ${BAREOS_DIRECTOR_USER}"
+  start)
+    if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
+      echo "Starting the Bareos Director daemon"
+      OPTIONS=''
+      if [ "${BAREOS_DIRECTOR_USER}" != '' ]; then
+        OPTIONS="${OPTIONS} -u ${BAREOS_DIRECTOR_USER}"
+      fi
+
+      if [ "${BAREOS_DIRECTOR_GROUP}" != '' ]; then
+        OPTIONS="${OPTIONS} -g ${BAREOS_DIRECTOR_GROUP}"
+      fi
+
+      if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
+        OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+      fi
+
+      check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
+      check_config dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
+      "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
     fi
+    ;;
 
-    if [ "${BAREOS_DIRECTOR_GROUP}" != '' ]; then
-      OPTIONS="${OPTIONS} -g ${BAREOS_DIRECTOR_GROUP}"
+  stop)
+    if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
+      printf "Stopping the Bareos Director daemon: "
+      shift # shift away the stop
+      killproc "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}" "${@}"
     fi
+    ;;
 
-    if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
-      OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
-    fi
+  restart)
+    $0 stop
+    sleep 5
+    $0 start
+    ;;
 
-    check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
-    check_config dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
-    "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
-  fi
-  ;;
+  status)
+    [ -x "${BAREOS_DIRECTOR_BINARY}" ] && status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
+    exit $?
+    ;;
 
-stop)
-  if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
-    printf "Stopping the Bareos Director daemon: "
-    shift # shift away the stop
-    killproc "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}" "${@}"
-  fi
-  ;;
-
-restart)
-  $0 stop
-  sleep 5
-  $0 start
-  ;;
-
-status)
-  [ -x "${BAREOS_DIRECTOR_BINARY}" ] && status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
-  exit $?
-  ;;
-
-*)
-  echo "Usage: $0 {start|stop|restart|status}"
-  exit 1
-  ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
+    ;;
 esac
 
 exit 0
