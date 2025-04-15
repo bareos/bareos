@@ -533,8 +533,7 @@ endif()
 
 bareos_add_test(
   backend_parse
-  LINK_LIBRARIES bareos GTest::gtest_main
-  ADDITIONAL_SOURCES "../stored/backends/util.cc"
+  LINK_LIBRARIES bareos GTest::gtest_main backend-utils
 )
 
 add_executable(env_tester env_tester.cc)

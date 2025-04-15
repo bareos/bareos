@@ -33,6 +33,10 @@ macro(add_sd_backend backend_name)
   endif()
 endmacro()
 
+add_library(backend-utils OBJECT)
+target_sources(backend-utils PRIVATE util.cc)
+target_link_libraries(backend-utils PUBLIC fmt::fmt)
+
 if(${HAVE_GLUSTERFS})
   add_sd_backend(bareossd-gfapi)
   target_sources(bareossd-gfapi PRIVATE gfapi_device.cc)
@@ -51,10 +55,11 @@ endif()
 add_sd_backend(bareossd-dplcompat)
 target_sources(
   bareossd-dplcompat PRIVATE dplcompat_device.cc ordered_cbuf.cc
-                             chunked_device.cc crud_storage.cc util.cc
+                             chunked_device.cc crud_storage.cc
 )
 target_link_libraries(
   bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt tl::expected
+                             backend-utils
 )
 if(HAVE_WIN32)
   target_link_libraries(bareossd-dplcompat PRIVATE shlwapi)
@@ -80,10 +85,11 @@ else()
   add_sd_backend(bareossd-dedupable)
   target_sources(
     bareossd-dedupable PRIVATE dedupable_device.cc dedupable/device_options.cc
-                               dedupable/volume.cc util.cc
+                               dedupable/volume.cc
   )
   target_link_libraries(
     bareossd-dedupable PRIVATE $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>
+                               backend-utils
   )
 endif()
 
