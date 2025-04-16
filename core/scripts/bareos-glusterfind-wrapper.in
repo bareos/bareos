@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2015-2016 Planets Communications B.V.
-# Copyright (C) 2015-2016 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -34,98 +34,96 @@ JOB_TYPE="Backup"
 
 usage()
 {
-   echo "Usage: $0 [-h] [-l <level>] [-s <since_time>] [-t <jobtype>] <action> <arguments...>"
+  echo "Usage: $0 [-h] [-l <level>] [-s <since_time>] [-t <jobtype>] <action> <arguments...>"
 }
 
 pre_backup()
 {
-   if [ $# -lt 2 ]; then
-      echo "pre_backup action needs 2 arguments"
-      exit 1
-   fi
+  if [ $# -lt 2 ]; then
+    echo "pre_backup action needs 2 arguments"
+    exit 1
+  fi
 
-   #
-   # $1 - volumename
-   # $2 - outputfile
-   #
-   case ${BACKUP_LEVEL} in
-      Full)
-         ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME} --full
-         ;;
-      Incremental|Differential)
-         ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME}
-         ;;
-      *)
-         ;;
-   esac
+  #
+  # $1 - volumename
+  # $2 - outputfile
+  #
+  case ${BACKUP_LEVEL} in
+    Full)
+      ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME} --full
+      ;;
+    Incremental | Differential)
+      ${GLUSTERFIND} query $1 $2 --since-time ${SINCE_TIME}
+      ;;
+    *) ;;
+  esac
 }
 
 post_backup()
 {
-   if [ $# -lt 2 ]; then
-      echo "post_backup action needs 2 arguments"
-      exit 1
-   fi
+  if [ $# -lt 2 ]; then
+    echo "post_backup action needs 2 arguments"
+    exit 1
+  fi
 
-   #
-   # $1 - volumename
-   # $2 - outputfile
-   #
-   rm -f $2
+  #
+  # $1 - volumename
+  # $2 - outputfile
+  #
+  rm -f $2
 }
 
 main()
 {
-   #
-   # Parse options.
-   #
-   while getopts "hl:s:t:" arg
-   do
-      case ${arg} in
-         h|\?)
-            usage
-            exit 0
-            ;;
-         l)
-            BACKUP_LEVEL="${OPTARG}"
-            ;;
-         s)
-            SINCE_TIME="${OPTARG}"
-            ;;
-         t)
-            JOB_TYPE="${OPTARG}"
-            ;;
-         *)
-            usage
-            exit 1
-            ;;
-      esac
-   done
-   nr_shift=`expr $OPTIND - 1`
-   shift ${nr_shift}
-
-   if [ $# -lt 1 ]; then
-      usage
-      exit 1
-   fi
-
-   action=$1
-   shift
-
-   case ${action} in
-      prebackup)
-         pre_backup $*
-         ;;
-      postbackup)
-         post_backup $*
-         ;;
+  #
+  # Parse options.
+  #
+  while getopts "hl:s:t:" arg; do
+    case ${arg} in
+      h | \?)
+        usage
+        exit 0
+        ;;
+      l)
+        BACKUP_LEVEL="${OPTARG}"
+        ;;
+      s)
+        SINCE_TIME="${OPTARG}"
+        ;;
+      t)
+        JOB_TYPE="${OPTARG}"
+        ;;
       *)
-         echo "Unknown action ${action}, aborting ..."
-         exit 1
-         ;;
-   esac
+        usage
+        exit 1
+        ;;
+    esac
+  done
+  nr_shift=$(expr $OPTIND - 1)
+  shift ${nr_shift}
 
-   exit 0
+  if [ $# -lt 1 ]; then
+    usage
+    exit 1
+  fi
+
+  action=$1
+  shift
+
+  case ${action} in
+    prebackup)
+      pre_backup $*
+      ;;
+    postbackup)
+      post_backup $*
+      ;;
+    *)
+      echo "Unknown action ${action}, aborting ..."
+      exit 1
+      ;;
+  esac
+
+  exit 0
 }
 
 main $*

@@ -121,10 +121,10 @@ static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
   { "Messages", CFG_TYPE_RES, ITEM(res_dir, messages), {config::Code{R_MSGS}}},
-  { "DirPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}}},
-  { "DirAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}}},
-  { "DirAddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}}},
-  { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRsrc_addr), {config::DefaultValue{"0"}}},
+  { "Port", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{"DirPort"}}},
+  { "Address", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{"DirAddress"}}},
+  { "Addresses", CFG_TYPE_ADDRESSES, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{"DirAddresses"}}},
+  { "SourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRsrc_addr), {config::DefaultValue{"0"}, config::Alias{"DirSourceAddress"}}},
   { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), {config::Required{}}},
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), {config::DefaultValue{PATH_BAREOS_WORKINGDIR}, config::PlatformSpecific{}}},
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), {config::IntroducedIn{14, 2, 0}, config::Description{"Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'."}}},
@@ -202,9 +202,9 @@ static const ResourceItem client_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client, Protocol), {config::IntroducedIn{13, 2, 0}, config::DefaultValue{"Native"}}},
   { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client, AuthType), {config::DefaultValue{"None"}}},
-  { "Address", CFG_TYPE_STR, ITEM(res_client, address), {config::Required{}, config::Alias{ "FdAddress" }}},
+  { "Address", CFG_TYPE_STR, ITEM(res_client, address), {config::Required{}, config::Alias{"FdAddress"}}},
   { "LanAddress", CFG_TYPE_STR, ITEM(res_client, lanaddress), {config::IntroducedIn{16, 2, 6}, config::Description{"Sets additional address used for connections between Client and Storage Daemon inside separate network."}}},
-  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}, config::Alias{ "FdPort" }}},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}, config::Alias{"FdPort"}}},
   { "Username", CFG_TYPE_STR, ITEM(res_client, username), {}},
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client, password_), {config::Alias{"FdPassword"}, config::Required{}}},
   { "Catalog", CFG_TYPE_RES, ITEM(res_client, catalog), {config::Code{R_CATALOG}}},
@@ -237,7 +237,7 @@ static const ResourceItem store_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
   { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store, Protocol), {config::DefaultValue{"Native"}}},
   { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_store, AuthType), {config::DefaultValue{"None"}}},
-  { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Alias{ "SdAddress" }, config::Required{}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Alias{"SdAddress"}, config::Required{}}},
   { "LanAddress", CFG_TYPE_STR, ITEM(res_store, lanaddress), {config::IntroducedIn{16, 2, 6}, config::Description{"Sets additional address used for connections between Client and Storage Daemon inside separate network."}}},
   { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdPort"}}},
   { "Username", CFG_TYPE_STR, ITEM(res_store, username), {}},
@@ -268,7 +268,7 @@ static const ResourceItem cat_items[] = {
   { "DbPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat, db_password), {config::Alias{"Password"}}},
   { "DbUser", CFG_TYPE_STR, ITEM(res_cat, db_user), {config::Required{}, config::Alias{"User"}}},
   { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), {config::Required{}}},
-  { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), {config::Alias{ "Socket" }}},
+  { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), {config::Alias{"Socket"}}},
   /* Turned off for the moment */
   { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), {}},
   { "DisableBatchInsert", CFG_TYPE_BOOL, ITEM(res_cat, disable_batch_insert), {config::DefaultValue{"false"}}},
@@ -3980,7 +3980,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
        * the set the main directive to be set. */
       if ((res_dir->DIRaddrs) && (res_dir->DIRaddrs->size() > 0)) {
         for (int i = 0; items[i].name; i++) {
-          if (Bstrcasecmp(items[i].name, "DirAddresses")) {
+          if (Bstrcasecmp(items[i].name, "Addresses")) {
             // SetBit(i, allocated_resource->item_present_);
             ClearBit(i, allocated_resource->inherit_content_);
           }

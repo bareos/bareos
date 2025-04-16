@@ -10,7 +10,7 @@
 #  $2 = main pid of running program to be traced back.
 #  $3 = working directory
 #
-PNAME="`basename $1`"
+PNAME="$(basename $1)"
 WD="$3"
 
 GCORE="@GCORE@"
@@ -23,84 +23,84 @@ MDB="@MDB@"
 #
 POSTMORTEM="NONE"
 if [ -n "${DUMPCORE+x}" ]; then
+  if [ ! -z "${GCORE}" -a -x "${GCORE}" ]; then
+    POSTMORTEM="${WD}/${PNAME}.core"
+    ${GCORE} -o ${POSTMORTEM} $2 >/dev/null 2>&1
+    POSTMORTEM="${POSTMORTEM}.$2"
+    echo "Created ${POSTMORTEM} for doing postmortem debugging" >${WD}/bareos.$2.traceback
+  else
+    which gcore >/dev/null 2>&1 && GCORE="$(which gcore)" || GCORE=''
     if [ ! -z "${GCORE}" -a -x "${GCORE}" ]; then
-        POSTMORTEM="${WD}/${PNAME}.core"
-        ${GCORE} -o ${POSTMORTEM} $2 > /dev/null 2>&1
-        POSTMORTEM="${POSTMORTEM}.$2"
-        echo "Created ${POSTMORTEM} for doing postmortem debugging" > ${WD}/bareos.$2.traceback
-    else
-        which gcore > /dev/null 2>&1 && GCORE="`which gcore`" || GCORE=''
-        if [ ! -z "${GCORE}" -a -x "${GCORE}" ]; then
-            POSTMORTEM="${WD}/${PNAME}.core"
-            ${GCORE} -o ${POSTMORTEM} $2 > /dev/null 2>&1
-            POSTMORTEM="${POSTMORTEM}.$2"
-            echo "Created ${POSTMORTEM} for doing postmortem debugging" > ${WD}/bareos.$2.traceback
-        fi
+      POSTMORTEM="${WD}/${PNAME}.core"
+      ${GCORE} -o ${POSTMORTEM} $2 >/dev/null 2>&1
+      POSTMORTEM="${POSTMORTEM}.$2"
+      echo "Created ${POSTMORTEM} for doing postmortem debugging" >${WD}/bareos.$2.traceback
     fi
+  fi
 fi
 
 #
 # Try to find out what debugger is available on this platform.
 #
 if [ ! -z "${DBX}" -a -x "${DBX}" ]; then
-   DEBUGGER="DBX"
-elif [ ! -z "${GDB}" -a -x "${GDB}"  ]; then
-   DEBUGGER="GDB"
-elif [ ! -z "${MDB}" -a -x "${MDB}"  ]; then
-   DEBUGGER="MDB"
+  DEBUGGER="DBX"
+elif [ ! -z "${GDB}" -a -x "${GDB}" ]; then
+  DEBUGGER="GDB"
+elif [ ! -z "${MDB}" -a -x "${MDB}" ]; then
+  DEBUGGER="MDB"
 else
-   #
-   # If we fail to find the configured debugger do a last try to find it on the PATH.
-   #
-   which gdb > /dev/null 2>&1 && GDB="`which gdb`" || GDB=''
-   which dbx > /dev/null 2>&1 && DBX="`which dbx`" || DBX=''
-   which mdb > /dev/null 2>&1 && MDB="`which mdb`" || MDB=''
+  #
+  # If we fail to find the configured debugger do a last try to find it on the PATH.
+  #
+  which gdb >/dev/null 2>&1 && GDB="$(which gdb)" || GDB=''
+  which dbx >/dev/null 2>&1 && DBX="$(which dbx)" || DBX=''
+  which mdb >/dev/null 2>&1 && MDB="$(which mdb)" || MDB=''
 
-   if [ ! -z "${DBX}" -a -x "${DBX}" ]; then
-      DEBUGGER="DBX"
-   elif [ ! -z "${GDB}" -a -x "${GDB}"  ]; then
-      DEBUGGER="GDB"
-   elif [ ! -z "${MDB}" -a -x "${MDB}"  ]; then
-      DEBUGGER="MDB"
-   else
-      DEBUGGER="NONE"
-   fi
+  if [ ! -z "${DBX}" -a -x "${DBX}" ]; then
+    DEBUGGER="DBX"
+  elif [ ! -z "${GDB}" -a -x "${GDB}" ]; then
+    DEBUGGER="GDB"
+  elif [ ! -z "${MDB}" -a -x "${MDB}" ]; then
+    DEBUGGER="MDB"
+  else
+    DEBUGGER="NONE"
+  fi
 fi
 
 #
 # Try to run a debugger on the crashing program or the generated postmortem dump for getting a strack trace.
 #
 case ${DEBUGGER} in
-   DBX)
-      if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
-         ${DBX} $1 ${POSTMORTEM} < @scriptdir@/btraceback.dbx >> ${WD}/bareos.$2.traceback 2>&1
-      else
-         ${DBX} $1 $2 < @scriptdir@/btraceback.dbx >> ${WD}/bareos.$2.traceback 2>&1
-      fi
-      ;;
-   GDB)
-      if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
-         ${GDB} -quiet  $1 ${POSTMORTEM}  < @scriptdir@/btraceback.gdb >> ${WD}/bareos.$2.traceback 2>&1
-      else
-         ${GDB} -quiet  $1 $2 < @scriptdir@/btraceback.gdb >> ${WD}/bareos.$2.traceback 2>&1
-      fi
-      ;;
-   MDB)
-      if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
-         ${MDB} -u $1 ${POSTMORTEM} < @scriptdir@/btraceback.mdb >> ${WD}/bareos.$2.traceback 2>&1
-      else
-         ${MDB} -u -p $2 < @scriptdir@/btraceback.mdb >> ${WD}/bareos.$2.traceback 2>&1
-      fi
-      ;;
-   NONE)
-      echo "No debugger available on this platform," \
-           " please install one to get proper stack traces" >> ${WD}/bareos.$2.traceback
-      ;;
+  DBX)
+    if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
+      ${DBX} $1 ${POSTMORTEM} <@scriptdir@/btraceback.dbx >>${WD}/bareos.$2.traceback 2>&1
+    else
+      ${DBX} $1 $2 <@scriptdir@/btraceback.dbx >>${WD}/bareos.$2.traceback 2>&1
+    fi
+    ;;
+  GDB)
+    if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
+      ${GDB} -quiet $1 ${POSTMORTEM} <@scriptdir@/btraceback.gdb >>${WD}/bareos.$2.traceback 2>&1
+    else
+      ${GDB} -quiet $1 $2 <@scriptdir@/btraceback.gdb >>${WD}/bareos.$2.traceback 2>&1
+    fi
+    ;;
+  MDB)
+    if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
+      ${MDB} -u $1 ${POSTMORTEM} <@scriptdir@/btraceback.mdb >>${WD}/bareos.$2.traceback 2>&1
+    else
+      ${MDB} -u -p $2 <@scriptdir@/btraceback.mdb >>${WD}/bareos.$2.traceback 2>&1
+    fi
+    ;;
+  NONE)
+    echo "No debugger available on this platform," \
+      " please install one to get proper stack traces" >>${WD}/bareos.$2.traceback
+    ;;
 esac
 
 #
 # Send the stack trace info to someone for analyzing or at least letting someone know we crashed.
 #
-PNAME="${PNAME} on `hostname`"
-cat ${WD}/bareos.$2.traceback | \
-@sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos ${DEBUGGER} traceback of ${PNAME}" @dump_email@
+PNAME="${PNAME} on $(hostname)"
+cat ${WD}/bareos.$2.traceback \
+  | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos ${DEBUGGER} traceback of ${PNAME}" @dump_email@

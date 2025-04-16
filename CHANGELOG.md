@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make tests optional [PR #2180]
 - windows: single-config/single-output directory [PR #2211]
 - webui: use WEB_UI path in apache bareos-webui.conf file [PR #2201]
+- config: update directives and error out on bconsole config warnings [PR #2217]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -113,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2201]: https://github.com/bareos/bareos/pull/2201
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
 [PR #2211]: https://github.com/bareos/bareos/pull/2211
+[PR #2217]: https://github.com/bareos/bareos/pull/2217
 [PR #2220]: https://github.com/bareos/bareos/pull/2220
 [PR #2222]: https://github.com/bareos/bareos/pull/2222
 [PR #2225]: https://github.com/bareos/bareos/pull/2225

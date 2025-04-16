@@ -3,7 +3,7 @@ Storage {
   Maximum Concurrent Jobs = 20
 
   Working Directory =  "/tmp/tests/backup-bareos-test/working"
-  SD Port = 42003
+  Port = 42003
 
   BackendDirectory = @PATH_BAREOS_BACKENDDIR@        # default value, 1 entry
   BackendDirectory = item01,item02                   # 2 entries

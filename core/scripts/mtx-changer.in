@@ -68,7 +68,8 @@ dbgfile="${logdir:-@logdir@}/mtx.log"
 if test ${debug_log} -ne 0; then
   touch "${dbgfile}"
 fi
-debug() {
+debug()
+{
   if test -f "${dbgfile}"; then
     echo "$(date +"%Y%m%d-%H:%M:%S") $*" >>"${dbgfile}"
   fi
@@ -77,7 +78,8 @@ debug() {
 #
 # Create a temporary file
 #
-make_temp_file() {
+make_temp_file()
+{
   TMPFILE=$(mktemp "${working_dir:-@working_dir@}/mtx.XXXXXXXXXX")
   if test "x${TMPFILE}" = "x"; then
     TMPFILE="${working_dir:-@working_dir@}/mtx.$$"
@@ -99,7 +101,8 @@ make_temp_file() {
 #  is then printed after the STDOUT produced by mtx
 #  thus we sometimes get better changer results.
 #
-make_err_file() {
+make_err_file()
+{
   ERRFILE=$(mktemp ${working_dir:-@working_dir@}/mtx.err.XXXXXXXXXX)
   if test "x${ERRFILE}" = "x"; then
     ERRFILE="${working_dir:-@working_dir@}/mtx.err.$$"
@@ -121,7 +124,8 @@ make_err_file() {
 #   We've attempted to get the appropriate OS grep targets
 #   in the code at the top of this script.
 #
-wait_for_drive() {
+wait_for_drive()
+{
   i=0
   while [ ${i} -le ${max_wait_drive} ]; do
     debug "Doing mt -f $1 status ..."
@@ -138,7 +142,8 @@ wait_for_drive() {
 
 # check parameter count on commandline
 #
-check_parm_count() {
+check_parm_count()
+{
   pCount=$1
   pCountNeed=$2
   if test ${pCount} -lt ${pCountNeed}; then
@@ -226,7 +231,7 @@ case "${cmd}" in
     #  cat "${TMPFILE}" | grep " Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
     #fi
     # We shouldn't have a difference with this pattern
-    awk -F ":" -f - "${TMPFILE}" << '_EOT_'
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^ .*Storage Element .*[0-9]:.*Full/ {
       gsub("[ ].*Storage Element ","",$1)
       gsub("VolumeTag=","",$3)
@@ -235,7 +240,7 @@ case "${cmd}" in
     }
 _EOT_
 
-    awk -f - "$TMPFILE" << '_EOT_'
+    awk -f - "$TMPFILE" <<'_EOT_'
     /^Data Transfer Element [0-9]*:Full \(Storage Element [0-9]/ {
       printf "%s:%s\n",$7,$10
     }
@@ -267,7 +272,7 @@ _EOT_
     fi
     ${MTX} -f "${ctl}" status >"${TMPFILE}"
     rtn=$?
-    awk -F ":" -f - "${TMPFILE}" << '_EOT_'
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^Data Transfer Element .*[0-9]:/ {
       gsub("Data Transfer Element ","",$1)
       match($2,/Full \(Storage Element ([0-9]{1,}) Loaded\)/)
@@ -284,7 +289,7 @@ _EOT_
       print "D:" $1 F $3
     }
 _EOT_
-    awk -F ":" -f - "${TMPFILE}" << '_EOT_'
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^ .*Storage Element .*[0-9]:/ {
       gsub("[ ].*Storage Element ","",$1)
       gsub("Full ",":F",$2)
@@ -293,7 +298,7 @@ _EOT_
       print "S:" $1  $2  $3
     }
 _EOT_
-    awk -F ":" -f - "${TMPFILE}" << '_EOT_'
+    awk -F ":" -f - "${TMPFILE}" <<'_EOT_'
     /^ .*Storage Element .*[0-9] IMPORT\/EXPORT:/ {
       gsub("[ ].*Storage Element ","",$1)
       gsub(" IMPORT/EXPORT","",$1)

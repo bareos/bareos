@@ -14,10 +14,10 @@ endif
 
 
 " comments
-syn region      BacComment  display oneline start="#" end="$" keepend contains=BacTodo
-syn region	BacComment2 start="/\*"  end="\*/"
+syn region  BacComment  display oneline start="#" end="$" keepend contains=BacTodo
+syn region  BacComment2 start="/\*"  end="\*/"
 
-syn region      BacInclude start=/^@/ end="$"
+syn region  BacInclude start=/^@/ end="$"
 
 syntax region xCond start=/\w+\s*{/ms=e+1 end=/}/me=s-1
 syntax keyword BacName Name
@@ -26,15 +26,15 @@ syn case ignore
 syn keyword  LevelElt  contained Full Incremental Differential
 
 " todo
-syn keyword     BacTodo       contained TODO FIXME XXX NOTE
-syn region 	BacString     start=/"/ skip=/\\"/ end=/"/
+syn keyword  BacTodo       contained TODO FIXME XXX NOTE
+syn region   BacString     start=/"/ skip=/\\"/ end=/"/
 
 " Specifique Client {
 syn region    BacClient display start=/Client {/ end="^}"  contains=BacString,BacComment,BacC1,BacC2,BacC3,BacC4
 syn match     BacC1     contained /File\s*Retention/
 syn match     BacC2     contained /Maximum\s*Concurrent\s*Jobs/
 syn match     BacC3     contained /Job\s*Retention/
-syn keyword   BacC4     contained Name Password Address Catalog AutoPrune FDPort
+syn keyword   BacC4     contained Name Password Address FDAddress Catalog AutoPrune Port FDPort
 
 " FileSet {
 syn region    BacFileSet display start="FileSet {" end="^}" contains=BacString,BacComment,BacName,BacFSInc,BacFSExc,BacFS2
@@ -48,17 +48,17 @@ syn match     BacFS2     contained /Enable VSS/
 
 " Storage {
 syn region   BacSto     display start="Storage {" end="}" contains=BacName,BacComment,BacString,BacSto1,BacSto2
-syn keyword  BacSto1	contained Address SDPort Password Device Autochanger
+syn keyword  BacSto1    contained Address SDAddress Port SDPort Password Device Autochanger
 syn match    BacSto2    contained /Media\s*Type/
 
 " Director {
 syn region   BacDir     display start="Director {" end="}" contains=BacName,BacComment,BacString,BacDir,BacDir1,BacDir2
-syn keyword  BacDir1    contained DIRport QueryFile WorkingDirectory PidDirectory Password Messages
+syn keyword  BacDir1    contained Port DirPort QueryFile WorkingDirectory PidDirectory Password Messages
 syn match    BacDir2    contained /Maximum\s*Concurrent\s*Jobs/
 
 " Catalog {
 syn region   BacCat     display start="Catalog {" end="}" contains=BacName,BacComment,BacString,BacCat1
-syn keyword  BacCat1	contained dbname user password dbport
+syn keyword  BacCat1    contained dbname user password dbport
 
 " Job {
 syn region   BacJob     display start="Job {" end="^}"     contains=BacJ1,BacJ2,BacString,BacComment,Level,BacC2,BacJ3,BacRun
@@ -79,12 +79,12 @@ syn keyword  BacR4     contained Command
 syn keyword  BacRW     contained After Before Always
 
 " Schedule {
-syn region   BacSched     display start="Schedule {" end="^}" contains=BacSR,BacString,BacComment,BacName,BacRun
-syn keyword  BacS1	  contained Pool FullPool on at
-syn keyword  BacS2        contained sun mon tue wed thu fri sat sunday monday tuesday wednesday thursday friday saturday
-syn keyword  BacS3        contained jan  feb  mar  apr  may  jun  jul  aug  sep  oct  nov  dec
-syn keyword  BacS4        contained 1st 2nd  3rd  4th  5th  first second  third  fourth  fifth
-syn region   BacSR        contained display start="Run = " end="$"  contains=BacS1,BacS2,BacS3,BacS4,LevelElt
+syn region   BacSched    display start="Schedule {" end="^}" contains=BacSR,BacString,BacComment,BacName,BacRun
+syn keyword  BacS1       contained Pool FullPool on at
+syn keyword  BacS2       contained sun mon tue wed thu fri sat sunday monday tuesday wednesday thursday friday saturday
+syn keyword  BacS3       contained jan  feb  mar  apr  may  jun  jul  aug  sep  oct  nov  dec
+syn keyword  BacS4       contained 1st 2nd  3rd  4th  5th  first second  third  fourth  fifth
+syn region   BacSR       contained display start="Run = " end="$"  contains=BacS1,BacS2,BacS3,BacS4,LevelElt
 
 syn keyword  BacSpecial   false  true yes no
 
@@ -132,17 +132,17 @@ HiLink BacDir       Function
 HiLink BacDir1      keyword
 HiLink BacDir2      keyword
 
-HiLink BacJob	    Function
+HiLink BacJob       Function
 HiLink BacJobDefs   Function
 HiLink BacJ1        Keyword
 HiLink BacJ2        Keyword
 HiLink BacJ3        Keyword
 
 HiLink BacClient    Function
-HiLink BacC1	    Keyword
-HiLink BacC2	    Keyword
-HiLink BacC3	    Keyword
-HiLink BacC4	    Keyword
+HiLink BacC1        Keyword
+HiLink BacC2        Keyword
+HiLink BacC3        Keyword
+HiLink BacC4        Keyword
 HiLink Level        Keyword
 
 HiLink BacSched     Function

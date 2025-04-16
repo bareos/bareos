@@ -6,6 +6,6 @@ Storage {
   # otherwise all storage plugins (*-sd.so) from the "Plugin Directory".
   #
   Working Directory =  "@working_dir@"
-  SD Port = @sd_port@
+  Port = @sd_port@
   @sd_backend_config@
 }

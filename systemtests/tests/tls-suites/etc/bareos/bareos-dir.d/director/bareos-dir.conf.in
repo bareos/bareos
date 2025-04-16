@@ -8,7 +8,7 @@ Director {                            # define myself
   Subscriptions = 10
 
   Working Directory =  "@working_dir@"
-  DirPort = @dir_port@
+  Port = @dir_port@
 
   Tls Cipher Suites = "TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_8_SHA256:TLS_AES_128_CCM_SHA256"
 }

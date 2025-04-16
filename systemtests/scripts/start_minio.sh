@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,7 +18,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
 set -e
 set -u
 
@@ -30,7 +29,7 @@ minio_alias="$2"-minio
 
 . environment
 
-if ! "${MINIO}" -v > /dev/null 2>&1; then
+if ! "${MINIO}" -v >/dev/null 2>&1; then
   echo "$0: could not find minio binary"
   exit 1
 fi
@@ -44,11 +43,14 @@ mkdir "$minio_tmp_data_dir"
 echo "$0: starting minio server"
 
 tries=0
-while pidof "$minio_alias" > /dev/null; do
+while pidof "$minio_alias" >/dev/null; do
   kill -SIGTERM "$(pidof "$minio_alias")"
   sleep 0.1
-  (( tries++ )) && [ "$tries" == '100' ] \
-    && { echo "$0: could not stop minio server"; exit 2; }
+  ((tries++)) && [ "$tries" == '100' ] \
+    && {
+      echo "$0: could not stop minio server"
+      exit 2
+    }
 done
 
 export MINIO_DOMAIN=localhost,127.0.0.1
@@ -65,18 +67,21 @@ else
   certs=""
 fi
 
-exec -a "$minio_alias" "${MINIO}" server ${certs} --address ":${minio_port_number}" "$minio_tmp_data_dir" > "$logdir"/minio.log 2>"$logdir"/minio_err.log &
+exec -a "$minio_alias" "${MINIO}" server ${certs} --address ":${minio_port_number}" "$minio_tmp_data_dir" >"$logdir"/minio.log 2>"$logdir"/minio_err.log &
 
-if ! pidof ${MINIO} > /dev/null; then
+if ! pidof ${MINIO} >/dev/null; then
   echo "$0: could not start minio server"
   exit 2
 fi
 
 tries=0
-while ! s3cmd --config=${S3CFG} --no-check-certificate ls S3:// > /dev/null 2>&1; do
+while ! s3cmd --config=${S3CFG} --no-check-certificate ls S3:// >/dev/null 2>&1; do
   sleep 0.1
-  (( tries++ )) && [ "$tries" == '100' ] \
-    && { echo "$0: could not start minio server"; exit 3; }
+  ((tries++)) && [ "$tries" == '100' ] \
+    && {
+      echo "$0: could not start minio server"
+      exit 3
+    }
 done
 
 exit 0

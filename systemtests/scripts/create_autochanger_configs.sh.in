@@ -45,17 +45,17 @@ for changer_index in {0..9}; do
 
   echo "Creating devices for autochanger ${changer_device}"
 
-####
-  cat << EOF >> "${autochanger_conf_file}"
+  ####
+  cat <<EOF >>"${autochanger_conf_file}"
 Autochanger {
   Name = "autochanger-${changer_index}"
   Changer Device = ${changer_device}
 
   Changer Command = "${rscripts}/mtx-changer %c %o %S %a %d"
 EOF
-####
+  ####
 
-  cat << EOF >> "${dir_storage_conf_file}"
+  cat <<EOF >>"${dir_storage_conf_file}"
 Storage {
   Name = Tape-${changer_index}
   Address = @hostname@
@@ -76,14 +76,14 @@ EOF
     bareos_tape_device_name=$(echo "tapedrive-${drive_index}-${tape_device}" | sed 's/\//\./g')
     echo "  Attaching ${tape_device} to autochanger"
 
-#### add the type device
-    cat << EOF >> ${conf}/bareos-sd.d/autochanger/autochanger.conf
+    #### add the type device
+    cat <<EOF >>${conf}/bareos-sd.d/autochanger/autochanger.conf
   Device=${bareos_tape_device_name}
 EOF
-####
+    ####
 
     echo "  Creating Device ${bareos_tape_device_name}"
-    cat << EOF >> "${tape_device_conf_file}"
+    cat <<EOF >>"${tape_device_conf_file}"
 Device {
     Name = "${bareos_tape_device_name}"
     DeviceType = tape
@@ -104,11 +104,11 @@ Device {
 
 EOF
 
-  (( drive_index=drive_index+1 ))
+    ((drive_index = drive_index + 1))
   done # for tape_device in ${!tape_devices}; do
 
-  echo "" >> "${autochanger_conf_file}"
-  echo "}" >> "${autochanger_conf_file}"
+  echo "" >>"${autochanger_conf_file}"
+  echo "}" >>"${autochanger_conf_file}"
 
 done # for changer_index in {0..9}; do
 

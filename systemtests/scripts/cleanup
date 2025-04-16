@@ -8,7 +8,8 @@ set -u
 "bin/bareos" stop
 "bin/bareos" status
 
-function deletefiles(){
+function deletefiles()
+{
   rm -rf "${tmp:?}"/*
   rm -rf "${logdir:?}"/*.log
   rm -rf "${working:?}"/*.bsr "${working:?}"/log*.sd
@@ -21,7 +22,7 @@ function deletefiles(){
   rm -rf "${working:?}"/CLEANUPMARKER
   rm -rf "${working:?}"/plugins/*
   rm -rf "${archivedir:?}"/*
-  rm -f  "${config_directory_dir_additional_test_config}"/*
+  rm -f "${config_directory_dir_additional_test_config}"/*
   find . -name "gigaslam.gif" -exec rm -f {} \;
   # cleanup chrome user data (selenium tests)
   rm -rf /tmp/chrome-user-data-*

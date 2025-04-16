@@ -4,12 +4,12 @@
 
 Director {
   Name = @basename@-dir
-  DIRport = @dir_port@
+  Port = @dir_port@
   Address = @hostname@
   Password = "INVALID"
 }
 
 Console {
-  name = limited-operator
-  password = secret
+  Name = limited-operator
+  Password = secret
 }

@@ -76,10 +76,10 @@ static MessagesResource* res_msgs;
 static const ResourceItem store_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
-  { "SdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, SDaddrs), {config::DefaultValue{SD_DEFAULT_PORT}}},
-  { "SdAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDaddrs), {config::DefaultValue{SD_DEFAULT_PORT}}},
-  { "SdAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store, SDaddrs), {config::DefaultValue{SD_DEFAULT_PORT}}},
-  { "SdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), {config::DefaultValue{"0"}}},
+  { "Port", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, SDaddrs), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdPort"}}},
+  { "Address", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDaddrs), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdAddress"}}},
+  { "Addresses", CFG_TYPE_ADDRESSES, ITEM(res_store, SDaddrs), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdAddresses"}}},
+  { "SourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), {config::DefaultValue{"0"}, config::Alias{"SdSourceAddress"}}},
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_store, working_directory), {config::DefaultValue{PATH_BAREOS_WORKINGDIR}, config::PlatformSpecific{}}},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), {config::DefaultValue{PATH_BAREOS_BACKENDDIR}, config::PlatformSpecific{}}},

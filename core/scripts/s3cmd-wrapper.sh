@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -56,10 +56,12 @@ if [ -n "${storage_class}" ]; then
   s3cmd_put_args+=("--storage-class=${storage_class}")
 fi
 
-run_s3cmd() {
+run_s3cmd()
+{
   "$s3cmd_prog" "${s3cmd_common_args[@]}" "$@"
 }
-exec_s3cmd() {
+exec_s3cmd()
+{
   exec "$s3cmd_prog" "${s3cmd_common_args[@]}" "$@"
 }
 
@@ -78,15 +80,18 @@ case "$1" in
     ;;
   list)
     run_s3cmd ls "${volume_url}" \
-    | while read -r date time size url; do
-      [[ "${size}" !=  +([0-9]) ]] && continue
-      echo "${url:${#volume_url}}" "$size"
-    done
+      | while read -r date time size url; do
+        [[ "${size}" != +([0-9]) ]] && continue
+        echo "${url:${#volume_url}}" "$size"
+      done
     ;;
   stat)
     # shellcheck disable=SC2030,SC2034
     run_s3cmd ls "$part_url" \
-      | (read -r date time size url; echo "$size")
+      | (
+        read -r date time size url
+        echo "$size"
+      )
     ;;
   upload)
     exec_s3cmd "${s3cmd_put_args[@]}" put - "$part_url"

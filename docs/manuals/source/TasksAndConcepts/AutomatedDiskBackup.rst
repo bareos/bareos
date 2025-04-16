@@ -272,7 +272,7 @@ The Director’s configuration file is as follows:
    Client {
      Name = client-fd
      Address = client
-     FDPort = 9102
+     Port = 9102
      Password = " *** CHANGE ME ***"
      AutoPrune = yes      # Prune expired Jobs/Files
      Job Retention = 6 months
