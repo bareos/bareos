@@ -1848,7 +1848,7 @@ struct restore_object {
   enum class Type
   {
     Unknown = 0,
-    RctInfo = 1,
+    ReferencePoint = 1,
     VmInfo = 2,
   };
 
@@ -1856,8 +1856,8 @@ struct restore_object {
   static constexpr const char* name_of(Type type)
   {
     switch (type) {
-      case Type::RctInfo: {
-        return "rct_info";
+      case Type::ReferencePoint: {
+        return "ref_point";
       } break;
       case Type::VmInfo: {
         return "vm_info";
@@ -1871,7 +1871,9 @@ struct restore_object {
 
   static Type name_to_type(std::string_view type_name)
   {
-    if (type_name == name_of(Type::RctInfo)) { return Type::RctInfo; }
+    if (type_name == name_of(Type::ReferencePoint)) {
+      return Type::ReferencePoint;
+    }
     if (type_name == name_of(Type::VmInfo)) { return Type::VmInfo; }
 
     return Type::Unknown;
@@ -1912,6 +1914,7 @@ struct plugin_ctx {
 
 
     struct prepared_backup {
+      WMI::ComputerSystem current_vm;
       std::wstring vm_name;
       std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
@@ -1967,36 +1970,64 @@ struct plugin_ctx {
   time_t since_time;
   JobLevel job_level;
 
-  struct rct_info {
-    std::string disk_id;
-    std::string rct_id;
+  struct ref_point {
+    std::string vm_id;
+    std::string ref_path;
 
     json_ptr as_json() const
     {
       json_ptr content{json_object()};
       {
-        json_object_set_new(content.get(), "disk_id",
-                            json_string(disk_id.c_str()));
-        json_object_set_new(content.get(), "rct_id",
-                            json_string(rct_id.c_str()));
+        json_object_set_new(content.get(), "vm_id", json_string(vm_id.c_str()));
+        json_object_set_new(content.get(), "ref_path",
+                            json_string(ref_path.c_str()));
       }
       return content;
     }
 
-    static std::optional<rct_info> from_json(json_t* as_json)
+    static std::optional<ref_point> from_json(json_t* as_json)
     {
       if (!json_is_object(as_json)) { return std::nullopt; }
-      json_t* disk_id = json_object_get(as_json, "disk_id");
-      if (!disk_id || !json_is_string(disk_id)) { return std::nullopt; }
-      json_t* rct_id = json_object_get(as_json, "rct_id");
-      if (!rct_id || !json_is_string(rct_id)) { return std::nullopt; }
+      json_t* vm_id = json_object_get(as_json, "vm_id");
+      if (!vm_id || !json_is_string(vm_id)) { return std::nullopt; }
+      json_t* ref_path = json_object_get(as_json, "ref_path");
+      if (!ref_path || !json_is_string(ref_path)) { return std::nullopt; }
 
-      return rct_info{json_string_value(disk_id), json_string_value(rct_id)};
+      return ref_point{json_string_value(vm_id), json_string_value(ref_path)};
     }
   };
-  struct vm_info {};
+  struct vm_info {
+    std::string external_name;  // name shown to the user
+    std::string internal_name;  // guid identifiying the vm
 
-  std::vector<rct_info> received_rcts;
+    json_ptr as_json() const
+    {
+      json_ptr content{json_object()};
+      {
+        json_object_set_new(content.get(), "internal",
+                            json_string(internal_name.c_str()));
+        json_object_set_new(content.get(), "external",
+                            json_string(external_name.c_str()));
+      }
+      return content;
+    }
+
+    static std::optional<vm_info> from_json(json_t* as_json)
+    {
+      if (!json_is_object(as_json)) { return std::nullopt; }
+      json_t* internal = json_object_get(as_json, "internal");
+      if (!internal || !json_is_string(internal)) { return std::nullopt; }
+      json_t* external = json_object_get(as_json, "external");
+      if (!external || !json_is_string(external)) { return std::nullopt; }
+
+      return vm_info{
+          json_string_value(external),
+          json_string_value(internal),
+      };
+    }
+  };
+
+  std::vector<ref_point> received_reference_points;
   std::vector<vm_info> received_vms;
 
   std::variant<std::monostate, backup, restore> current_state{};
@@ -2430,7 +2461,7 @@ static bool handle_restore_object(PluginContext* ctx,
                                   const filedaemon::restore_object_pkt* rop)
 {
   switch (restore_object::name_to_type(rop->object_name)) {
-    case restore_object::Type::RctInfo: {
+    case restore_object::Type::ReferencePoint: {
       json_error_t json_err;
 
       json_ptr as_json{json_loadb(rop->object, rop->object_len, 0, &json_err)};
@@ -2443,25 +2474,54 @@ static bool handle_restore_object(PluginContext* ctx,
             json_err.text);
         return false;
       }
-      auto info = plugin_ctx::rct_info::from_json(as_json.get());
-      if (!info) {
+      auto refpoint = plugin_ctx::ref_point::from_json(as_json.get());
+      if (!refpoint) {
         JFATAL(ctx,
                "restore object {} contains bad json: json='{}' err=json is not "
-               "a valid rct_info object",
+               "a valid refpoint object",
                rop->object_name,
                std::string_view{rop->object,
                                 static_cast<size_t>(rop->object_len)});
         return false;
       }
 
-      DBGC(ctx, "received rct {{ disk_id = {}, rct_id = {}}}", info->disk_id,
-           info->rct_id);
+      DBGC(ctx, "received refpoint {{ vm_id = {}, ref_path = {} }}",
+           refpoint->vm_id, refpoint->ref_path);
 
-      p_ctx->received_rcts.emplace_back(std::move(info.value()));
+      p_ctx->received_reference_points.emplace_back(
+          std::move(refpoint.value()));
 
       return true;
     } break;
     case restore_object::Type::VmInfo: {
+      json_error_t json_err;
+
+      json_ptr as_json{json_loadb(rop->object, rop->object_len, 0, &json_err)};
+      if (!as_json) {
+        JFATAL(
+            ctx,
+            "could not parse json from restore object {}: json='{}' err={}",
+            rop->object_name,
+            std::string_view{rop->object, static_cast<size_t>(rop->object_len)},
+            json_err.text);
+        return false;
+      }
+      auto vminfo = plugin_ctx::vm_info::from_json(as_json.get());
+      if (!vminfo) {
+        JFATAL(ctx,
+               "restore object {} contains bad json: json='{}' err=json is not "
+               "a valid vminfo object",
+               rop->object_name,
+               std::string_view{rop->object,
+                                static_cast<size_t>(rop->object_len)});
+        return false;
+      }
+
+      DBGC(ctx, "received vminfo {{ internal_name = {}, external_name = {} }}",
+           vminfo->internal_name, vminfo->external_name);
+
+      p_ctx->received_vms.emplace_back(std::move(vminfo.value()));
+
       return true;
     } break;
     default: {
@@ -2638,28 +2698,22 @@ static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
 }
 
 static restore_object get_info(PluginContext* ctx,
-                               std::wstring_view vm_name,
-                               const std::vector<std::wstring>& found_disks)
+                               const WMI::ComputerSystem& system)
 {
+  plugin_ctx::vm_info info;
+  info.external_name = utf16_to_utf8(
+      system.get<WMI::cim_type::string>(L"ElementName").as_view());
+  info.internal_name
+      = utf16_to_utf8(system.get<WMI::cim_type::string>(L"Name").as_view());
+
   restore_object obj;
   obj.type = restore_object::Type::VmInfo;
   obj.index = 0;
+  char* formatted = json_dumps(info.as_json().get(), JSON_COMPACT);
 
-  json_t* content = json_object();
-  {
-    auto* disks = json_array();
-    for (auto& disk : found_disks) {
-      json_array_append_new(disks, json_string(utf16_to_utf8(disk).c_str()));
-    }
-    json_object_set_new(content, "disks", disks);
-    json_object_set_new(content, "name",
-                        json_string(utf16_to_utf8(vm_name).c_str()));
-  }
-
-  char* formatted = json_dumps(content, JSON_COMPACT);
   obj.content = formatted;
   free(formatted);
-  json_decref(content);
+
   return std::move(obj);
 }
 
@@ -2704,56 +2758,76 @@ static bool prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
   system_srvc.export_system_definition(srvc, vm.value(), dir, export_settings);
 
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
-      std::wstring{vm_name}, dir, std::move(snapshot));
+      std::move(vm.value()), std::wstring{vm_name}, dir, std::move(snapshot));
 
   prepared.files_to_backup = get_files_in_dir(dir);
   prepared.disks_to_backup
       = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
 
-  // if (full) {
-  prepared.restore_objects.emplace_back(
-      get_info(ctx, vm_name, prepared.disks_to_backup));
-  // }
+  // we should probably do this every backup (if it changed)
+  if (p_ctx.JobLevel == JobLevel::Full) {
+    prepared.restore_objects.emplace_back(get_info(ctx, prepared.current_vm));
+  }
 
   return true;
 }
 
-static void add_rct_info(PluginContext* ctx,
-                         std::vector<restore_object>& restore_objects,
-                         const WMI::ReferencePoint& refpoint)
+static void add_ref_point(PluginContext* ctx,
+                          const WMI::ComputerSystem& system,
+                          std::vector<restore_object>& restore_objects,
+                          const WMI::ReferencePoint& refpoint)
 {
   using namespace WMI;
 
   TRCC(ctx, L"refpoint = {}", refpoint.to_string().as_view());
-  auto rct_ids = refpoint.get_array<cim_type::string>(
-      L"ResilientChangeTrackingIdentifiers");
-  auto disk_ids
-      = refpoint.get_array<cim_type::string>(L"VirtualDiskIdentifiers");
+  TRCC(ctx, L"system = {}", system.to_string().as_view());
 
-  for (auto& rct : rct_ids) { TRCC(ctx, L" - rct = {}", rct.as_view()); }
+  plugin_ctx::ref_point ref_point;
+  ref_point.vm_id
+      = utf16_to_utf8(system.get<cim_type::string>(L"Name").as_view());
+  ref_point.ref_path = utf16_to_utf8(refpoint.path().as_view());
 
-  for (auto& disk : disk_ids) { TRCC(ctx, L" - disk = {}", disk.as_view()); }
 
-  if (rct_ids.size() != disk_ids.size()) {
-    DBGC(ctx, L"Not every disk has rct information: rct_ids {} != disk_ids {}",
-         rct_ids.size(), disk_ids.size());
-    return;
-  }
+  auto& obj = restore_objects.emplace_back();
 
-  for (size_t i = 0; i < rct_ids.size(); ++i) {
-    plugin_ctx::rct_info info = {
-        utf16_to_utf8(disk_ids[i].as_view()),
-        utf16_to_utf8(rct_ids[i].as_view()),
-    };
+  char* content = json_dumps(ref_point.as_json().get(), JSON_COMPACT);
 
-    auto content = info.as_json();
+  obj.content = content;
+  obj.type = restore_object::Type::ReferencePoint;
+  obj.index = 0;
 
-    auto& obj = restore_objects.emplace_back();
-    std::string formatted = json_dumps(content.get(), JSON_COMPACT);
-    obj.content = std::move(formatted);
-    obj.type = restore_object::Type::RctInfo;
-    obj.index = 0;
-  }
+  free(content);
+
+  // auto rct_ids = refpoint.get_array<cim_type::string>(
+  //     L"ResilientChangeTrackingIdentifiers");
+  // auto disk_ids
+  //     = refpoint.get_array<cim_type::string>(L"VirtualDiskIdentifiers");
+
+  // for (auto& rct : rct_ids) { TRCC(ctx, L" - rct = {}", rct.as_view()); }
+
+  // for (auto& disk : disk_ids) { TRCC(ctx, L" - disk = {}", disk.as_view()); }
+
+  // if (rct_ids.size() != disk_ids.size()) {
+  //   DBGC(ctx, L"Not every disk has rct information: rct_ids {} != disk_ids
+  //   {}",
+  //        rct_ids.size(), disk_ids.size());
+  //   return;
+  // }
+
+  // for (size_t i = 0; i < rct_ids.size(); ++i) {
+  //   plugin_ctx::rct_info info = {
+  //       utf16_to_utf8(disk_ids[i].as_view()),
+  //       utf16_to_utf8(rct_ids[i].as_view()),
+  //   };
+
+  //   auto content = info.as_json();
+
+  //   auto& obj = restore_objects.emplace_back();
+  //   std::string formatted = json_dumps(content.get(), JSON_COMPACT);
+  //   obj.content = std::move(formatted);
+  //   obj.type = restore_object::Type::RctInfo;
+  //   obj.index = 0;
+  // }
 }
 
 static void prepare_restore_object(PluginContext* ctx)
@@ -2774,7 +2848,7 @@ static void prepare_restore_object(PluginContext* ctx)
   TRCC(ctx, "post pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
 
 
-  add_rct_info(ctx, prepared.restore_objects, refpoint);
+  add_ref_point(ctx, prepared.current_vm, prepared.restore_objects, refpoint);
 }
 
 // maybe we should add the cluster name here somehow ?
