@@ -1,0 +1,10 @@
+Storage {
+  Name = File       # Same name to replace the default single File storage
+  Description = "virtual file autochanger with autonumbered device"
+  Address = @hostname@                # N.B. Use a fully qualified name here (do not use "localhost" here).
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  # Better to keep this synchronized with storage->device->vfile Count parameters
+  Maximum Concurrent Jobs = 10
+}

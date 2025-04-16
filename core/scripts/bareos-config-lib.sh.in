@@ -977,7 +977,10 @@ replace()
   SEARCH="$1"
   REPLACE="$2"
 
-  grep -l "${SEARCH}" "${BAREOS_CONFIG_DIR}"/*.conf "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf 2>/dev/null | while read -r file; do
+  grep -l "${SEARCH}" \
+    "${BAREOS_CONFIG_DIR}"/*.conf "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf \
+    "${BAREOS_CONFIG_DIR}"/*.conf.example "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf.example "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf.example \
+    2>/dev/null | while read -r file; do
     if [ -f "${file}" ]; then
       if grep -q "${SEARCH}" "$file"; then
         # do a log-message only if file will be changed, not always
