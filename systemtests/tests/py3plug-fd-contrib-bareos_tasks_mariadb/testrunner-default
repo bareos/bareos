@@ -59,7 +59,7 @@ ${MARIADB_CLIENT} "${test_db_name}" <<< "insert into test (data) VALUES ('test e
 cat <<END_OF_DATA2 >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out ${tmp}/log1i.out
+@$out ${tmp}/log2.out
 run job=${JobName} yes
 wait
 messages
@@ -70,12 +70,12 @@ llist jobs job=${JobName}
 END_OF_DATA2
 echo "Run second full"
 run_bconsole
-expect_grep "Backup OK" "${tmp}/log1i.out" "Full Backup not found!"
+expect_grep "Backup OK" "${tmp}/log2.out" "Full Backup not found!"
 
 cat <<END_OF_DATA3 >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out ${tmp}/log2.out
+@$out ${tmp}/log3.out
 restore restorejob=RestoreFile client=bareos-fd fileset=bareos_tasks_mariadb yes select all done
 wait
 setdebug level=0 client=bareos-fd
@@ -88,7 +88,7 @@ llist jobs job=RestoreFile
 END_OF_DATA3
 echo "Run restore job"
 run_bconsole
-expect_grep "Restore OK" "${tmp}/log2.out" "Restore OK not found!"
+expect_grep "Restore OK" "${tmp}/log3.out" "Restore OK not found!"
 
 # Check if some files are restored
 ls -lR "${RESTORE_DIR}"
