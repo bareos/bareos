@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: fix not including BareosTargetTools in systemtests, needed for get_target_output_dir [PR #2235]
 - fix MaximumConcurrentJobs in docs and defaultsconfig [PR #2238]
 - cli-test: fix test on freebsd [PR #2242]
+- core: fix ktls configuration; fix crashes/ub [PR #2246]
 
 ## [24.0.2] - 2025-03-27
 
@@ -433,4 +434,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2235]: https://github.com/bareos/bareos/pull/2235
 [PR #2238]: https://github.com/bareos/bareos/pull/2238
 [PR #2242]: https://github.com/bareos/bareos/pull/2242
+[PR #2246]: https://github.com/bareos/bareos/pull/2246
 [unreleased]: https://github.com/bareos/bareos/tree/master
