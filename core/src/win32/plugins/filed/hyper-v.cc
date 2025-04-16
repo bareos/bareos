@@ -27,6 +27,7 @@
 
 #include <format>
 #include <source_location>
+#include <stdexcept>
 #include <string_view>
 #include <variant>
 #include <exception>
@@ -1916,6 +1917,7 @@ struct plugin_ctx {
     struct prepared_backup {
       WMI::ComputerSystem current_vm;
       std::wstring vm_name;
+      std::optional<WMI::ReferencePoint> refpoint;
       std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
 
@@ -2580,6 +2582,10 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       return bRC_OK;
     } break;
     case bEventRestoreObject: {
+      if (value == nullptr) {
+        DBGC(ctx, "received end of restore objects");
+        return bRC_OK;
+      }
       DBGC(ctx, "receive restore object at {}", value);
       auto* rop
           = reinterpret_cast<const filedaemon::restore_object_pkt*>(value);
@@ -2717,7 +2723,73 @@ static restore_object get_info(PluginContext* ctx,
   return std::move(obj);
 }
 
-static bool prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
+static std::optional<WMI::ComputerSystem> get_system_by_name(
+    PluginContext* ctx,
+    const plugin_ctx* p_ctx,
+    const WMI::Service& srvc,
+    std::string_view vm_name)
+{
+  auto wname = utf8_to_utf16(vm_name);
+  auto vm = srvc.get_vm_by_name(wname);
+  if (!vm) {
+    // TODO: this could also mean that there are no vms with that name ...
+    //  if there is no such vm, we should just create an error, so that the
+    //  other found vms can still get backed up.
+    //  Maybe this should always just be an error ?
+    JFATAL(ctx, "there are mulitple vms named {}.  Cannot continue.", vm_name);
+    return std::nullopt;
+  }
+
+  if (!p_ctx->is_full()) {
+    // we can only backup this vm incrementally, if we backed it up before.
+    // In that case it should have a corresponding vm_info entry.
+
+    std::string vm_internal_name
+        = utf16_to_utf8(vm->get<WMI::cim_type::string>(L"Name").as_view());
+
+    bool found = false;
+    for (auto& vm_info : p_ctx->received_vms) {
+      if (vm_info.internal_name == vm_internal_name) { found = true; }
+    }
+
+    if (!found) {
+      JFATAL(ctx, "Cannot continue with {}.  No full backup was found.",
+             vm_name);
+      return std::nullopt;
+    }
+  }
+  return std::move(vm);
+}
+
+WMI::ReferencePoint ref_point_of_system(PluginContext* ctx,
+                                        const plugin_ctx* p_ctx,
+                                        const WMI::Service& srvc,
+                                        const WMI::ComputerSystem& system)
+{
+  std::string path;
+
+  std::string vm_id
+      = utf16_to_utf8(system.get<WMI::cim_type::string>(L"Name").as_view());
+
+  for (auto& refp : p_ctx->received_reference_points) {
+    if (refp.vm_id == vm_id) { path = refp.ref_path; }
+  }
+
+  if (path.empty()) {
+    // TODO: this should use the input name, otherwise the user will have no
+    //  idea what to do!
+    throw std::runtime_error(
+        std::format("no reference point found for vm {}", vm_id));
+  }
+
+  auto found = srvc.get_object_by_path(WMI::String::copy(utf8_to_utf16(path)));
+
+  DBGC(ctx, L"found reference point = {}", found.to_string().as_view());
+
+  return WMI::ReferencePoint{std::move(found)};
+}
+
+static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 {
   TRCC(ctx, L"start backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
@@ -2728,14 +2800,13 @@ static bool prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
   const auto& system_srvc = bstate.system_srvc;
   const auto& snapshot_srvc = bstate.snapshot_srvc;
 
+  auto vm = get_system_by_name(ctx, p_ctx, srvc, vm_name);
+
+  if (!vm) { return false; }
+
   // do this first, so we dont create a snapshot for nothing
   std::wstring dir = make_temp_dir(p_ctx->jobid);
 
-  auto vm = srvc.get_vm_by_name(vm_name);
-  if (!vm) {
-    JFATAL(ctx, L"there are mulitple vms named {}.  Cannot continue.", vm_name);
-    return false;
-  }
   auto snapshot = snapshot_srvc.create_snapshot(
       srvc, vm.value(), p_ctx->snapshot_settings,
       WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
@@ -2744,28 +2815,50 @@ static bool prepare_backup(PluginContext* ctx, std::wstring_view vm_name)
       srvc, snapshot,
       WMI::String::copy(std::format(L"Bareos - {}", p_ctx->jobid)));
 
-  WMI::VirtualSystemExportSettingData export_settings = {
-      .snapshot_virtual_system_path = snapshot.path(),
-      .backup_intent = WMI::BackupIntent::Merge,
-      .copy_snapshot_configuration
-      = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-      .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
-      .copy_vm_runtime_information = true,
-      .copy_vm_storage = false,
-      .create_vm_export_subdirectory = false,
-  };
+  std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
+  if (p_ctx->is_full()) {
+    WMI::VirtualSystemExportSettingData export_settings = {
+        .snapshot_virtual_system_path = snapshot.path(),
+        .backup_intent = WMI::BackupIntent::Merge,
+        .copy_snapshot_configuration
+        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
+        .copy_vm_runtime_information = true,
+        .copy_vm_storage = false,
+        .create_vm_export_subdirectory = false,
+    };
 
-  system_srvc.export_system_definition(srvc, vm.value(), dir, export_settings);
+    system_srvc.export_system_definition(srvc, vm.value(), dir,
+                                         export_settings);
+  } else {
+    refpoint = ref_point_of_system(ctx, p_ctx, srvc, vm.value());
+
+    WMI::VirtualSystemExportSettingData export_settings = {
+        .snapshot_virtual_system_path = snapshot.path(),
+        .differential_backup_base_path = refpoint->path(),
+        .backup_intent = WMI::BackupIntent::Merge,
+        .copy_snapshot_configuration
+        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
+        .copy_vm_runtime_information = true,
+        .copy_vm_storage = false,
+        .create_vm_export_subdirectory = false,
+    };
+
+    system_srvc.export_system_definition(srvc, vm.value(), dir,
+                                         export_settings);
+  }
 
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
-      std::move(vm.value()), std::wstring{vm_name}, dir, std::move(snapshot));
+      std::move(vm.value()), utf8_to_utf16(vm_name), std::move(refpoint), dir,
+      std::move(snapshot));
 
   prepared.files_to_backup = get_files_in_dir(dir);
   prepared.disks_to_backup
       = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
 
   // we should probably do this every backup (if it changed)
-  if (p_ctx.JobLevel == JobLevel::Full) {
+  if (p_ctx->is_full()) {
     prepared.restore_objects.emplace_back(get_info(ctx, prepared.current_vm));
   }
 
@@ -2870,17 +2963,113 @@ std::string create_vm_path(std::wstring_view vm_name,
   return utf16_to_utf8(new_path);
 }
 
+std::wstring format_guid(const GUID& guid)
+{
+  //
+  wchar_t guid_storage[sizeof("{6B29FC40-CA47-1067-B31D-00DD010662DA}")];
+  if (StringFromGUID2(guid, guid_storage, std::size(guid_storage)) == 0) {
+    throw std::runtime_error("could not format guid");
+  }
+
+  return std::wstring{guid_storage};
+}
+
+static void LogAllParents(PluginContext* ctx,
+                          HANDLE disk_handle,
+                          std::wstring_view path)
+{
+  {
+    GET_VIRTUAL_DISK_INFO id = {
+        .Version = GET_VIRTUAL_DISK_INFO_IDENTIFIER,
+    };
+    ULONG VirtualDiskInfoSize = sizeof(id);
+    ULONG SizeOut = 0;
+    auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                              &id, &SizeOut);
+    if (disk_res != ERROR_SUCCESS) {
+      JERR(ctx, L"could not retrieve info for disk {}", path);
+    } else {
+      GUID identifier = id.Identifier;
+
+      DBGC(ctx, L"disk id {} => {}", path, format_guid(identifier));
+    }
+  }
+
+  {
+    GET_VIRTUAL_DISK_INFO id = {
+        .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
+    };
+    ULONG VirtualDiskInfoSize = sizeof(id);
+    ULONG SizeOut = 0;
+    auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                              &id, &SizeOut);
+    if (disk_res != ERROR_SUCCESS) {
+      JERR(ctx, L"could not retrieve info for disk {}", path);
+      return;
+    }
+
+    GUID identifier = id.VirtualDiskId;
+
+    DBGC(ctx, L"disk virt id {} => {}", path, format_guid(identifier));
+  }
+
+  std::vector<char> buffer;
+  buffer.resize(1024);
+
+  auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(buffer.data());
+  disk_info->Version = GET_VIRTUAL_DISK_INFO_PARENT_LOCATION;
+
+  ULONG VirtualDiskInfoSize = std::size(buffer);
+  ULONG SizeOut = 0;
+  auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                            disk_info, &SizeOut);
+  if (disk_res != ERROR_SUCCESS) {
+    JERR(ctx, L"could not retrieve parent for disk {}", path);
+    return;
+  }
+
+  DBGC(ctx, L"Parent = {{ Resolved = {}, Path = {} }}",
+       disk_info->ParentLocation.ParentResolved,
+       disk_info->ParentLocation.ParentLocationBuffer);
+
+  if (disk_info->ParentLocation.ParentResolved) {
+    HANDLE parent_handle = INVALID_HANDLE_VALUE;
+
+    VIRTUAL_STORAGE_TYPE vst = {
+        .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+        .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+    };
+
+    OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+    params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+    params.Version2.ReadOnly = TRUE;
+    params.Version2.GetInfoOnly = TRUE;
+
+    auto res
+        = OpenVirtualDisk(&vst, disk_info->ParentLocation.ParentLocationBuffer,
+                          VIRTUAL_DISK_ACCESS_NONE, OPEN_VIRTUAL_DISK_FLAG_NONE,
+                          &params, &parent_handle);
+
+    if (res != ERROR_SUCCESS) {
+      JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
+           format_win32_error(res), res);
+      CloseHandle(parent_handle);
+      return;
+    }
+
+    LogAllParents(ctx, parent_handle,
+                  disk_info->ParentLocation.ParentLocationBuffer);
+
+    CloseHandle(parent_handle);
+  }
+}
+
 // Start the backup of a specific file
 static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 {
   TRCC(ctx, L"start backup file");
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
-
-  if (!p_ctx->is_full()) {
-    JERR(ctx, "not implemented");
-    return bRC_Stop;
-  }
 
   try {
     if (std::get_if<std::monostate>(&p_ctx->current_state)) {
@@ -2903,9 +3092,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
         return bRC_Error;
       }
 
-      std::wstring wname = utf8_to_utf16(vmname);
-
-      if (!prepare_backup(ctx, wname)) { return bRC_Error; }
+      if (!prepare_backup(ctx, vmname)) { return bRC_Error; }
     }
 
     auto& prepared
@@ -2964,33 +3151,88 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
         prepared.disk_to_backup = disk_handle;
 
-        GET_VIRTUAL_DISK_INFO disk_info = {
-            .Version = GET_VIRTUAL_DISK_INFO_SIZE,
-        };
-        ULONG VirtualDiskInfoSize = sizeof(disk_info);
-        ULONG SizeOut = 0;
-        auto disk_res = GetVirtualDiskInformation(
-            disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
-        if (disk_res != ERROR_SUCCESS) {
-          CloseHandle(disk_handle);
-          // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
-          // hdd_path.as_view(),
-          //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
-          JERR(ctx, L"could not retrieve info for disk {}", path);
-          return bRC_Error;
+        {
+          GET_VIRTUAL_DISK_INFO disk_info = {
+              .Version = GET_VIRTUAL_DISK_INFO_SIZE,
+          };
+          ULONG VirtualDiskInfoSize = sizeof(disk_info);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+            // hdd_path.as_view(),
+            //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve info for disk {}", path);
+            return bRC_Error;
+          }
+
+          DBGC(
+              ctx,
+              L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
+              L"SectorSize = {} }}",
+              disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
+              disk_info.Size.BlockSize, disk_info.Size.SectorSize);
+          sp->statp.st_size = disk_info.Size.VirtualSize;
+          sp->statp.st_blksize = disk_info.Size.BlockSize;
+          sp->statp.st_blocks = disk_info.Size.SectorSize;
+
+          prepared.disk_full_size = disk_info.Size.VirtualSize;
+          prepared.disk_offset = 0;
         }
 
-        DBGC(ctx,
-             L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
-             L"SectorSize = {} }}",
-             disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
-             disk_info.Size.BlockSize, disk_info.Size.SectorSize);
-        sp->statp.st_size = disk_info.Size.VirtualSize;
-        sp->statp.st_blksize = disk_info.Size.BlockSize;
-        sp->statp.st_blocks = disk_info.Size.SectorSize;
 
-        prepared.disk_full_size = disk_info.Size.VirtualSize;
-        prepared.disk_offset = 0;
+        {
+          GET_VIRTUAL_DISK_INFO id = {
+              .Version = GET_VIRTUAL_DISK_INFO_IDENTIFIER,
+          };
+          ULONG VirtualDiskInfoSize = sizeof(id);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &id, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+            // hdd_path.as_view(),
+            //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve info for disk {}", path);
+            return bRC_Error;
+          }
+
+          GUID identifier = id.Identifier;
+
+          DBGC(ctx, L"disk id = {}", format_guid(identifier));
+        }
+
+        {
+          GET_VIRTUAL_DISK_INFO id = {
+              .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
+          };
+          ULONG VirtualDiskInfoSize = sizeof(id);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &id, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+            // hdd_path.as_view(),
+            //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve info for disk {}", path);
+            return bRC_Error;
+          }
+
+          LogAllParents(ctx, disk_handle, path);
+
+          GUID identifier = id.VirtualDiskId;
+
+          DBGC(ctx, L"disk virt id = {}", format_guid(identifier));
+        }
+      }
+
+      if (!p_ctx->is_full()) {
+        JERR(ctx, "not implemented");
+        return bRC_Stop;
       }
 
       auto now = time(NULL);
@@ -3005,6 +3247,12 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
       return bRC_OK;
     }
+
+    if (!p_ctx->is_full()) {
+      JERR(ctx, "not implemented");
+      return bRC_Stop;
+    }
+
 
     DBGC(ctx, L"All disks were backed up");
 
