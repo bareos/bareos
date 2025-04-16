@@ -52,9 +52,9 @@ os_type=$(uname -s)
 
 is_function()
 {
-    func=${1-}
-    test "$func" && command -v "$func" > /dev/null 2>&1
-    return $?
+  func=${1-}
+  test "$func" && command -v "$func" >/dev/null 2>&1
+  return $?
 }
 
 # does not work on all shells (only bash),
@@ -70,171 +70,175 @@ is_function()
 #     fi
 # }
 
-contains() {
-    haystack="$1"
-    needle="$2"
-    if [ "${haystack#*"$needle"}" != "$haystack" ]; then
-        return 0    # $needle is in $haystack
-    else
-        return 1    # $needle is not in $haystack
-    fi
+contains()
+{
+  haystack="$1"
+  needle="$2"
+  if [ "${haystack#*"$needle"}" != "$haystack" ]; then
+    return 0 # $needle is in $haystack
+  else
+    return 1 # $needle is not in $haystack
+  fi
 }
 
 info()
 {
-    echo "Info: $*" >&2
+  echo "Info: $*" >&2
 }
 
 warn()
 {
-    echo "Warning: $*" >&2
+  echo "Warning: $*" >&2
 }
 
 error()
 {
-    echo "Error: $*" >&2
+  echo "Error: $*" >&2
 }
 
 handle_database_scripts_command_line_parameter()
 {
-    # Check if some parameters are given, try to detect old usage with db_type
-    if [ $# -gt 0 ]; then
-        force=${1-}
-        if [ "${force}" = "-f" ]; then
-           export FORCE="yes"
-           shift || true
-        fi
-        db_type=${1-}
-        if [ "${db_type}" = "postgresql" ];then
-            warn "Parameter db_type is no more needed"
-        elif [ -n "$db_type" ];then
-            error "db_type ${db_type} is no more supported, only postgresql"
-            exit 1
-        fi
+  # Check if some parameters are given, try to detect old usage with db_type
+  if [ $# -gt 0 ]; then
+    force=${1-}
+    if [ "${force}" = "-f" ]; then
+      export FORCE="yes"
+      shift || true
     fi
+    db_type=${1-}
+    if [ "${db_type}" = "postgresql" ]; then
+      warn "Parameter db_type is no more needed"
+    elif [ -n "$db_type" ]; then
+      error "db_type ${db_type} is no more supported, only postgresql"
+      exit 1
+    fi
+  fi
 }
 
 get_config_lib_file()
 {
-    # can be used in following way:
-    # LIB=`bareos-config get_config_lib_file`
-    # . $LIB
-    echo "${BAREOS_CONFIG_LIB}"
+  # can be used in following way:
+  # LIB=`bareos-config get_config_lib_file`
+  # . $LIB
+  echo "${BAREOS_CONFIG_LIB}"
 }
 
 get_user_fd()
 {
-    echo "${FILE_DAEMON_USER}"
+  echo "${FILE_DAEMON_USER}"
 }
 
 get_group_fd()
 {
-    echo "${FILE_DAEMON_GROUP}"
+  echo "${FILE_DAEMON_GROUP}"
 }
 
 get_user_sd()
 {
-    echo "${STORAGE_DAEMON_USER}"
+  echo "${STORAGE_DAEMON_USER}"
 }
 
 get_group_sd()
 {
-    echo "${STORAGE_DAEMON_GROUP}"
+  echo "${STORAGE_DAEMON_GROUP}"
 }
 
 get_user_dir()
 {
-    echo "${DIRECTOR_DAEMON_USER}"
+  echo "${DIRECTOR_DAEMON_USER}"
 }
 
 get_group_dir()
 {
-    echo "${DIRECTOR_DAEMON_GROUP}"
+  echo "${DIRECTOR_DAEMON_GROUP}"
 }
 
 get_bareos_user()
 {
-   echo "${DAEMON_USER}"
+  echo "${DAEMON_USER}"
 }
 
 get_bareos_dir()
 {
-   echo "${DAEMON_GROUP}"
+  echo "${DAEMON_GROUP}"
 }
 
 get_working_dir()
 {
-    echo "${BAREOS_WORKING_DIR}"
+  echo "${BAREOS_WORKING_DIR}"
 }
 
 get_database_ddl_dir()
 {
-    echo "${SQL_DDL_DIR}"
+  echo "${SQL_DDL_DIR}"
 }
 
 get_database_version()
 {
-    echo "${DB_VERSION}"
+  echo "${DB_VERSION}"
 }
 
 get_database_version_by_release()
 {
-    param="$1"
+  param="$1"
 
-    # get release from parameter by stripping everything after the "-".
-    # Example parameter: 13.2.2-926.1
-    release=$(echo "${param}" | sed 's/-.*//')
-    if [ -z "$release" ]; then
-        error "failed to get database version for release ${param}"
-        return 1
+  # get release from parameter by stripping everything after the "-".
+  # Example parameter: 13.2.2-926.1
+  release=$(echo "${param}" | sed 's/-.*//')
+  if [ -z "$release" ]; then
+    error "failed to get database version for release ${param}"
+    return 1
+  fi
+
+  MAP="${SQL_DDL_DIR}/versions.map"
+  if [ ! -r "${MAP}" ]; then
+    error "failed to read Bareos database versions map file ${MAP}"
+    return 1
+  fi
+
+  MARKER=0
+  VERSIONS=$(
+    cat "${MAP}"
+    echo "$release=${MARKER}"
+  )
+
+  # add marker to list,
+  # sort the list reverse, assuming versions x.y.z  and lines x.y.z=db_version,
+  # get entry one line after marker
+  db_version=$(printf "%s" "${VERSIONS}" | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn | sed -r -n "/[0-9.]+.*=$MARKER$/{ N; s/(.*)=(.*)\n(.*)=(.*)/\4/p }")
+
+  if [ -z "${db_version}" ]; then
+    db_version=$(sed -n "s/^default=//p" "${MAP}")
+    if [ "${db_version}" ]; then
+      warn "no database version defined for release ${release} (${param}). Using default version: ${db_version}"
+    else
+      error "neither found database version for release ${release} (${param}), nor found default database version in map file ${MAP}"
+      return 1
     fi
+  fi
 
-    MAP="${SQL_DDL_DIR}/versions.map"
-    if [ ! -r "${MAP}" ]; then
-        error "failed to read Bareos database versions map file ${MAP}"
-        return 1
-    fi
-
-    MARKER=0
-    VERSIONS=$(cat "${MAP}"; echo "$release=${MARKER}")
-
-    # add marker to list,
-    # sort the list reverse, assuming versions x.y.z  and lines x.y.z=db_version,
-    # get entry one line after marker
-    db_version=$(printf "%s" "${VERSIONS}" | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn | sed -r -n "/[0-9.]+.*=$MARKER$/{ N; s/(.*)=(.*)\n(.*)=(.*)/\4/p }")
-
-    if [ -z "${db_version}" ]; then
-        db_version=$(sed -n "s/^default=//p" "${MAP}")
-        if [ "${db_version}" ]; then
-            warn "no database version defined for release ${release} (${param}). Using default version: ${db_version}"
-        else
-            error "neither found database version for release ${release} (${param}), nor found default database version in map file ${MAP}"
-            return 1
-        fi
-    fi
-
-    echo "${db_version}"
-    return
+  echo "${db_version}"
+  return
 }
 
 _scsicrypto_cmds="bareos-sd bcopy bextract bls bscan bscrypto btape"
 _scsicrypto_config_file="${BAREOS_CONFIG_DIR}/.enable-cap_sys_rawio"
 check_scsicrypto_capabilities()
 {
-  if [ "${os_type}" != "Linux" ];then
-      error "check_scsicrypto_capabilities() is not supported on this platform"
-      return 1
+  if [ "${os_type}" != "Linux" ]; then
+    error "check_scsicrypto_capabilities() is not supported on this platform"
+    return 1
   fi
   if [ "$(command -v getcap)" = "" ] || [ "$(command -v setcap)" = "" ]; then
-      error "getcap and setcap commands are mandatory"
-      return 1
+    error "getcap and setcap commands are mandatory"
+    return 1
   fi
-  if [ -f "${_scsicrypto_config_file}" ];then
+  if [ -f "${_scsicrypto_config_file}" ]; then
     cap_missing_conf=0
   else
     cap_missing_conf=1
   fi
-  for c in ${_scsicrypto_cmds};do
+  for c in ${_scsicrypto_cmds}; do
     if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
       if ! r="$(setcap -v cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
         warn "${r}"
@@ -242,7 +246,7 @@ check_scsicrypto_capabilities()
       fi
     fi
   done
-  if [ ${cap_missing_conf} -ne 0 ];then
+  if [ ${cap_missing_conf} -ne 0 ]; then
     warn "One of the tools are not configured for scsi crypto."
     warn "Run set_scsicrypto_capabilities to fix capabilities."
   else
@@ -252,20 +256,20 @@ check_scsicrypto_capabilities()
 
 set_scsicrypto_capabilities()
 {
-  if [ "${os_type}" != "Linux" ];then
-      error "set_scsicrypto_capabilities() is not supported on this platform"
-      return 1
+  if [ "${os_type}" != "Linux" ]; then
+    error "set_scsicrypto_capabilities() is not supported on this platform"
+    return 1
   fi
-  for c in ${_scsicrypto_cmds};do
+  for c in ${_scsicrypto_cmds}; do
     if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
       # Need to affect the bareos group (debian)
       if ! r="$(chgrp "${STORAGE_DAEMON_GROUP}" "${BAREOS_SBIN_DIR}/${c}")"; then
-          error "Setting group to ${STORAGE_DAEMON_GROUP} failed on ${c}"
-          return 1
+        error "Setting group to ${STORAGE_DAEMON_GROUP} failed on ${c}"
+        return 1
       fi
       if ! r="$(chmod o-rwx "${BAREOS_SBIN_DIR}/${c}")"; then
-          error "Setting chmod o-rwx failed on ${c}"
-          return 1
+        error "Setting chmod o-rwx failed on ${c}"
+        return 1
       fi
       if ! r="$(setcap cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
         error "setcap on ${c} has failed - ${r}"
@@ -273,28 +277,28 @@ set_scsicrypto_capabilities()
       fi
     fi
   done
-  echo "cap_sys_rawio+ep capabilities enabled on $(date "+%F %X")" > "${_scsicrypto_config_file}"
+  echo "cap_sys_rawio+ep capabilities enabled on $(date "+%F %X")" >"${_scsicrypto_config_file}"
 }
 
 unset_scsicrypto_capabilities()
 {
-  if [ "${os_type}" != "Linux" ];then
-      error "unset_scsicrypto_capabilities() is not supported on this platform"
-      return 1
+  if [ "${os_type}" != "Linux" ]; then
+    error "unset_scsicrypto_capabilities() is not supported on this platform"
+    return 1
   fi
-  for c in ${_scsicrypto_cmds};do
+  for c in ${_scsicrypto_cmds}; do
     if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
       if ! r="$(setcap -q -r "${BAREOS_SBIN_DIR}/${c}")"; then
-          # Don't fail if binary had capabilities set.
-          warn "setcap -r on ${c} has failed - ${r}"
+        # Don't fail if binary had capabilities set.
+        warn "setcap -r on ${c} has failed - ${r}"
       fi
       if ! r="$(chmod o+rx "${BAREOS_SBIN_DIR}/${c}")"; then
-          error "Restoring chmod o+rx failed on ${c}"
-          return 1
+        error "Restoring chmod o+rx failed on ${c}"
+        return 1
       fi
       if ! r="$(chgrp root "${BAREOS_SBIN_DIR}/${c}")"; then
-          error "Restoring group to root failed on ${c}"
-          return 1
+        error "Restoring group to root failed on ${c}"
+        return 1
       fi
     fi
   done
@@ -303,340 +307,340 @@ unset_scsicrypto_capabilities()
 
 setup_sd_user()
 {
-    #
-    # Guaranties that storage-daemon user and group exists
-    # and storage-daemon user belongs to the required groups.
-    #
-    # normally, storage-daemon user
-    # is already installed by the package preinstall script.
-    #
-    if [ "${os_type}" != "Linux" ];then
-        error "setup_sd_user() is not supported on this platform"
-        return 1
+  #
+  # Guaranties that storage-daemon user and group exists
+  # and storage-daemon user belongs to the required groups.
+  #
+  # normally, storage-daemon user
+  # is already installed by the package preinstall script.
+  #
+  if [ "${os_type}" != "Linux" ]; then
+    error "setup_sd_user() is not supported on this platform"
+    return 1
+  fi
+
+  getent group "${STORAGE_DAEMON_GROUP}" >/dev/null || groupadd -r "${STORAGE_DAEMON_GROUP}"
+
+  # Build list of additional groups the user should be in.
+  ADD_GROUPS=""
+  for sec_group in ${SEC_GROUPS}; do
+    if getent group "${sec_group}"; then
+      [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="${sec_group}" || ADD_GROUPS="${ADD_GROUPS},${sec_group}"
     fi
+  done
 
-    getent group "${STORAGE_DAEMON_GROUP}" > /dev/null || groupadd -r "${STORAGE_DAEMON_GROUP}"
+  #
+  # If the user doesn't exist create a new one otherwise modify it to have the wanted secondary groups.
+  #
+  if [ -z "${STORAGE_DAEMON_USER}" ]; then
+    info "SKIPPED: no storage daemon user specified."
+    return 0
+  fi
 
-    # Build list of additional groups the user should be in.
-    ADD_GROUPS=""
-    for sec_group in ${SEC_GROUPS}; do
-        if getent group "${sec_group}"; then
-            [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="${sec_group}" || ADD_GROUPS="${ADD_GROUPS},${sec_group}"
-        fi
-    done
-
-    #
-    # If the user doesn't exist create a new one otherwise modify it to have the wanted secondary groups.
-    #
-    if [ -z "${STORAGE_DAEMON_USER}" ]; then
-        info "SKIPPED: no storage daemon user specified."
-        return 0
+  if getent passwd "${STORAGE_DAEMON_USER}" >/dev/null; then
+    if [ "${STORAGE_DAEMON_USER}" != "root" ]; then
+      #
+      # If the user was already created before,
+      # Make sure the correct primary group is set otherwise fix it.
+      #
+      if [ "$(id -gn "${STORAGE_DAEMON_USER}")" != "${STORAGE_DAEMON_GROUP}" ]; then
+        usermod -g "${STORAGE_DAEMON_GROUP}" "${STORAGE_DAEMON_USER}" || warn "failed to add groups ${STORAGE_DAEMON_GROUP} to ${STORAGE_DAEMON_USER}"
+      fi
+      #
+      # Add the storage_daemon_user to additional groups
+      #
+      if [ -n "${ADD_GROUPS}" ]; then
+        usermod -a -G "${ADD_GROUPS}" "${STORAGE_DAEMON_USER}" || warn "failed: ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}"
+      fi
     fi
-
-    if getent passwd "${STORAGE_DAEMON_USER}" > /dev/null; then
-        if [ "${STORAGE_DAEMON_USER}" != "root" ]; then
-            #
-            # If the user was already created before,
-            # Make sure the correct primary group is set otherwise fix it.
-            #
-            if [ "$(id -gn "${STORAGE_DAEMON_USER}")" != "${STORAGE_DAEMON_GROUP}" ]; then
-                usermod -g "${STORAGE_DAEMON_GROUP}" "${STORAGE_DAEMON_USER}" || warn "failed to add groups ${STORAGE_DAEMON_GROUP} to ${STORAGE_DAEMON_USER}"
-            fi
-            #
-            # Add the storage_daemon_user to additional groups
-            #
-            if [ -n "${ADD_GROUPS}" ]; then
-                usermod -a -G "${ADD_GROUPS}" "${STORAGE_DAEMON_USER}" || warn "failed: ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}"
-            fi
-        fi
-    else
-        #
-        # User doesn't exist so create a new storage_daemon_user with additional groups
-        #
-        useradd -r --comment "bareos" --home "${BAREOS_WORKING_DIR}" -g "${STORAGE_DAEMON_GROUP}" -G "${ADD_GROUPS}" --shell /bin/false "${STORAGE_DAEMON_USER}" || warn "failed to create user ${STORAGE_DAEMON_USER}"
-    fi
+  else
+    #
+    # User doesn't exist so create a new storage_daemon_user with additional groups
+    #
+    useradd -r --comment "bareos" --home "${BAREOS_WORKING_DIR}" -g "${STORAGE_DAEMON_GROUP}" -G "${ADD_GROUPS}" --shell /bin/false "${STORAGE_DAEMON_USER}" || warn "failed to create user ${STORAGE_DAEMON_USER}"
+  fi
 }
 
 get_config_path()
 {
-    # configuration component (either file or bareos-dir, ...)
-    COMPONENT="${1}"
+  # configuration component (either file or bareos-dir, ...)
+  COMPONENT="${1}"
 
-    if [ -f "${COMPONENT}" ]; then
-        printf "%s" "${COMPONENT}"
-    elif [ -f "${BAREOS_CONFIG_DIR}/${COMPONENT}.conf" ]; then
-        printf "%s" "${BAREOS_CONFIG_DIR}/${COMPONENT}.conf"
-    elif [ -d "${BAREOS_CONFIG_DIR}/${COMPONENT}.d/" ]; then
-        printf "%s" "${BAREOS_CONFIG_DIR}/${COMPONENT}.d/"
-    else
-        warn "failed to find config for component \"${COMPONENT}\"."
-        return 1
-    fi
+  if [ -f "${COMPONENT}" ]; then
+    printf "%s" "${COMPONENT}"
+  elif [ -f "${BAREOS_CONFIG_DIR}/${COMPONENT}.conf" ]; then
+    printf "%s" "${BAREOS_CONFIG_DIR}/${COMPONENT}.conf"
+  elif [ -d "${BAREOS_CONFIG_DIR}/${COMPONENT}.d/" ]; then
+    printf "%s" "${BAREOS_CONFIG_DIR}/${COMPONENT}.d/"
+  else
+    warn "failed to find config for component \"${COMPONENT}\"."
+    return 1
+  fi
 }
 
 get_config_path2()
 {
-    # configuration component (either file or bareos-dir, ...)
-    BASEDIR="${1}"
-    COMPONENT="${2}"
+  # configuration component (either file or bareos-dir, ...)
+  BASEDIR="${1}"
+  COMPONENT="${2}"
 
-    if ! [ -d "${BASEDIR}" ]; then
-        warn "base directory \"${BASEDIR}\" does not exists."
-        return 1
-    fi
+  if ! [ -d "${BASEDIR}" ]; then
+    warn "base directory \"${BASEDIR}\" does not exists."
+    return 1
+  fi
 
-    if [ -f "${BASEDIR}/${COMPONENT}.conf" ]; then
-        printf "%s" "${BASEDIR}/${COMPONENT}.conf"
-    elif [ -d "${BASEDIR}/${COMPONENT}.d/" ]; then
-        printf "%s" "${BASEDIR}/${COMPONENT}.d/"
-    else
-        warn "failed to find config for component \"${COMPONENT}\" in directory \"${BASEDIR}\"."
-        return 1
-    fi
+  if [ -f "${BASEDIR}/${COMPONENT}.conf" ]; then
+    printf "%s" "${BASEDIR}/${COMPONENT}.conf"
+  elif [ -d "${BASEDIR}/${COMPONENT}.d/" ]; then
+    printf "%s" "${BASEDIR}/${COMPONENT}.d/"
+  else
+    warn "failed to find config for component \"${COMPONENT}\" in directory \"${BASEDIR}\"."
+    return 1
+  fi
 }
 
 deploy_config()
 {
-   ARGS=$#
-   SOURCE=${1:-}
-   DEST=${2:-}
-   COMPONENT=${3:-}
+  ARGS=$#
+  SOURCE=${1:-}
+  DEST=${2:-}
+  COMPONENT=${3:-}
 
-   [ -d "${SOURCE}" ] || return 1
-   [ -n "${DEST}" ] || return 1
+  [ -d "${SOURCE}" ] || return 1
+  [ -n "${DEST}" ] || return 1
 
-   RC=0
-   if [ $ARGS -eq 2 ]; then
-      deploy_config2 "${SOURCE}" "${DEST}" || RC=$?
-   elif [ $ARGS -eq 3 ]; then
-      deploy_config3 "${SOURCE}" "${DEST}" "${COMPONENT}" || RC=$?
-   else
-      RC=1
-   fi
+  RC=0
+  if [ $ARGS -eq 2 ]; then
+    deploy_config2 "${SOURCE}" "${DEST}" || RC=$?
+  elif [ $ARGS -eq 3 ]; then
+    deploy_config3 "${SOURCE}" "${DEST}" "${COMPONENT}" || RC=$?
+  else
+    RC=1
+  fi
 
-   if [ $RC -eq 0 ]; then
-      initialize_local_hostname
-      initialize_passwords
-      if [ "${DAEMON_USER}" ] && [ "${DAEMON_GROUP}" ]; then
-         chown -R "${DAEMON_USER}":"${DAEMON_GROUP}" "${DEST}"
-      fi
-      # chmod ... X: set x on directories, but not on files.
-      if [ "$os_type" = "Darwin" ]; then
-         # MacOS users from the "admin" group should be able to change the configuration files.
-         chgrp -R admin "${DEST}"
-         chmod -R ug=rwX,o= "${DEST}"
-      else
-         # This also changes permissions of .rndpwd from 0400 to 0640
-         chmod -R u=rwX,g=rX,o= "${DEST}"
-      fi
-   fi
+  if [ $RC -eq 0 ]; then
+    initialize_local_hostname
+    initialize_passwords
+    if [ "${DAEMON_USER}" ] && [ "${DAEMON_GROUP}" ]; then
+      chown -R "${DAEMON_USER}":"${DAEMON_GROUP}" "${DEST}"
+    fi
+    # chmod ... X: set x on directories, but not on files.
+    if [ "$os_type" = "Darwin" ]; then
+      # MacOS users from the "admin" group should be able to change the configuration files.
+      chgrp -R admin "${DEST}"
+      chmod -R ug=rwX,o= "${DEST}"
+    else
+      # This also changes permissions of .rndpwd from 0400 to 0640
+      chmod -R u=rwX,g=rX,o= "${DEST}"
+    fi
+  fi
 
-   return $RC
+  return $RC
 }
 
 deploy_config2()
 {
-   #
-   # Copy configuration from SOURCE to DEST and apply settings.
-   # Only copies new files. It does not overwrite existing files.
-   #
-   # Returns:
-   #   0: if new config files have been copied
-   #   1: otherwise (on error or if no new config files are available)
-   #
+  #
+  # Copy configuration from SOURCE to DEST and apply settings.
+  # Only copies new files. It does not overwrite existing files.
+  #
+  # Returns:
+  #   0: if new config files have been copied
+  #   1: otherwise (on error or if no new config files are available)
+  #
 
-   SOURCE=${1:-}
-   DEST=${2:-}
+  SOURCE=${1:-}
+  DEST=${2:-}
 
-   RC=1
+  RC=1
 
-   [ -d "${SOURCE}" ] || return 1
-   if ! [ -e "${DEST}" ]; then
-      mkdir -p "${DEST}"
-   fi
+  [ -d "${SOURCE}" ] || return 1
+  if ! [ -e "${DEST}" ]; then
+    mkdir -p "${DEST}"
+  fi
 
-   #
-   # Copy all files, but do not overwrite existing file.
-   # Use verbose to detect, when new files have been copied.
-   # On MacOS, only single letter cp options are available.
-   #
-   #OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
-   OUT="$(cp -v -r -n "${SOURCE}/." "${DEST}/.")"
-   if [ "${OUT}" ]; then
-      RC=0
-   fi
+  #
+  # Copy all files, but do not overwrite existing file.
+  # Use verbose to detect, when new files have been copied.
+  # On MacOS, only single letter cp options are available.
+  #
+  #OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
+  OUT="$(cp -v -r -n "${SOURCE}/." "${DEST}/.")"
+  if [ "${OUT}" ]; then
+    RC=0
+  fi
 
-   return $RC
+  return $RC
 }
 
 deploy_config3()
 {
-   #
-   # Copy configuration from SOURCE to DEST and apply settings.
-   # Only copies new files. It does not overwrite existing files.
-   #
-   # Returns:
-   #   0: if new config files have been copied
-   #   1: otherwise (on error or if no new config files are available)
-   #
+  #
+  # Copy configuration from SOURCE to DEST and apply settings.
+  # Only copies new files. It does not overwrite existing files.
+  #
+  # Returns:
+  #   0: if new config files have been copied
+  #   1: otherwise (on error or if no new config files are available)
+  #
 
-   SOURCE=${1:-}
-   DEST=${2:-}
-   COMPONENT=${3:-}
+  SOURCE=${1:-}
+  DEST=${2:-}
+  COMPONENT=${3:-}
 
-   [ -d "${SOURCE}" ] || return 1
-   if ! [ -e "${DEST}" ]; then
-      mkdir -p "${DEST}"
-   fi
+  [ -d "${SOURCE}" ] || return 1
+  if ! [ -e "${DEST}" ]; then
+    mkdir -p "${DEST}"
+  fi
 
-   if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${SOURCE}" "${COMPONENT}")"; then
-      return 1
-   fi
+  if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${SOURCE}" "${COMPONENT}")"; then
+    return 1
+  fi
 
-   RC=0
-   if [ -d "${SOURCE_CONFIG_PATH}" ]; then
-      deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/" || RC=$?
-   else
-      DEST_CONFIG_PATH="${DEST}/${COMPONENT}.conf"
-      if [ ! -f "${DEST_CONFIG_PATH}" ]; then
-         cp "${SOURCE_CONFIG_PATH}" "${DEST_CONFIG_PATH}" || RC=$?
-      fi
-   fi
+  RC=0
+  if [ -d "${SOURCE_CONFIG_PATH}" ]; then
+    deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/" || RC=$?
+  else
+    DEST_CONFIG_PATH="${DEST}/${COMPONENT}.conf"
+    if [ ! -f "${DEST_CONFIG_PATH}" ]; then
+      cp "${SOURCE_CONFIG_PATH}" "${DEST_CONFIG_PATH}" || RC=$?
+    fi
+  fi
 
-   return $RC
+  return $RC
 }
 
 get_config_param()
 {
-   #
-   # get parameter values from a Bareos configuration file
-   #
+  #
+  # get parameter values from a Bareos configuration file
+  #
 
-   # configuration file
-   CFG_FILE="${1-}"
-   # section, currently ignored
-   SECTION="${2-}"
-   # name of the section, currently ignored
-   NAME="${3-}"
-   # parameter to get from config file
-   PARAM="${4-}"
-   # default value, if parameter is not found
-   DEFAULT="${5-}"
+  # configuration file
+  CFG_FILE="${1-}"
+  # section, currently ignored
+  SECTION="${2-}"
+  # name of the section, currently ignored
+  NAME="${3-}"
+  # parameter to get from config file
+  PARAM="${4-}"
+  # default value, if parameter is not found
+  DEFAULT="${5-}"
 
-   if [ ! -r "${CFG_FILE}" ]; then
-      warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
-      # if default value is given, return it anyway
-      [ "${DEFAULT}" ] && echo "${DEFAULT}"
-      return 1
-   fi
+  if [ ! -r "${CFG_FILE}" ]; then
+    warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
+    # if default value is given, return it anyway
+    [ "${DEFAULT}" ] && echo "${DEFAULT}"
+    return 1
+  fi
 
-   # get parameter from configuration file
-   VALUE="$(grep -Ei "^[ 	]*${PARAM}[ 	]*=" "${CFG_FILE}" |\
-      cut -d'=' -f2 | \
-      sed -e 's/[ 	]*"//' -e 's/"//')"
-   [ "${VALUE}" ] || VALUE="${DEFAULT}"
-   echo "$VALUE"
+  # get parameter from configuration file
+  VALUE="$(grep -Ei "^[ 	]*${PARAM}[ 	]*=" "${CFG_FILE}" \
+    | cut -d'=' -f2 \
+    | sed -e 's/[ 	]*"//' -e 's/"//')"
+  [ "${VALUE}" ] || VALUE="${DEFAULT}"
+  echo "$VALUE"
 }
 
 set_config_param()
 {
-    #
-    # set parameter values to a Bareos configuration file
-    #
+  #
+  # set parameter values to a Bareos configuration file
+  #
 
-    # Limitations:
-    # - multiple directives in one line,
-    #   separated by ";"
-    #   (could by handled by RS="\n|;", but this could cause problems with other lines)
-    #   Possible workaround: get expanded config by "bareos-* --xc"
-    # - "}" must be the only character in a line
-    # - between "{" and the first directive must be a line break
-    # - Name directive must come before directive to modify,
-    #   preferably Name is the first directive of a resource
-    # - does not handle includes ("@" and include scripts)
-    #   Possible workaround: get expanded config by "bareos-* --xc"
+  # Limitations:
+  # - multiple directives in one line,
+  #   separated by ";"
+  #   (could by handled by RS="\n|;", but this could cause problems with other lines)
+  #   Possible workaround: get expanded config by "bareos-* --xc"
+  # - "}" must be the only character in a line
+  # - between "{" and the first directive must be a line break
+  # - Name directive must come before directive to modify,
+  #   preferably Name is the first directive of a resource
+  # - does not handle includes ("@" and include scripts)
+  #   Possible workaround: get expanded config by "bareos-* --xc"
 
-    # configuration component (either file or bareos-dir, ...)
-    COMPONENT="${1}"
-    # section / resource type
-    SECTION="${2}"
-    # name of the section, currently ignored
-    NAME="${3}"
-    # parameter to set in the config file
-    PARAM="${4}"
-    # value to set
-    VALUE="${5}"
+  # configuration component (either file or bareos-dir, ...)
+  COMPONENT="${1}"
+  # section / resource type
+  SECTION="${2}"
+  # name of the section, currently ignored
+  NAME="${3}"
+  # parameter to set in the config file
+  PARAM="${4}"
+  # value to set
+  VALUE="${5}"
 
-    if ! CONFIG_PATH=$(get_config_path "${COMPONENT}"); then
-        return 1
-    fi
+  if ! CONFIG_PATH=$(get_config_path "${COMPONENT}"); then
+    return 1
+  fi
 
-    if [ -d "${CONFIG_PATH}" ]; then
-        set_config_param_in_directory "${CONFIG_PATH}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
-    else
-        set_config_param_in_file "${CONFIG_PATH}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
-    fi
+  if [ -d "${CONFIG_PATH}" ]; then
+    set_config_param_in_directory "${CONFIG_PATH}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
+  else
+    set_config_param_in_file "${CONFIG_PATH}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
+  fi
 
-    return
+  return
 }
 
 set_config_param_in_directory()
 {
-    if [ "${os_type}" != "Linux" ];then
-        error "set_config_param_in_directory() is not supported on this platform"
-        return 1
-    fi
-    # configuration file
-    DIRECTORY="${1}"
-    # section / resource type
-    SECTION=$(echo "${2}" | tr '[:upper:]' '[:lower:]')
-    # name of the section, currently ignored
-    NAME="${3}"
-    # parameter to set in the config file
-    PARAM="${4}"
-    # value to set
-    VALUE="${5}"
+  if [ "${os_type}" != "Linux" ]; then
+    error "set_config_param_in_directory() is not supported on this platform"
+    return 1
+  fi
+  # configuration file
+  DIRECTORY="${1}"
+  # section / resource type
+  SECTION=$(echo "${2}" | tr '[:upper:]' '[:lower:]')
+  # name of the section, currently ignored
+  NAME="${3}"
+  # parameter to set in the config file
+  PARAM="${4}"
+  # value to set
+  VALUE="${5}"
 
-    if ! [ -e "${DIRECTORY}/${SECTION}" ]; then
-        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: directory ${DIRECTORY}/${SECTION} does not exist"
-        return 1
-    fi
+  if ! [ -e "${DIRECTORY}/${SECTION}" ]; then
+    warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: directory ${DIRECTORY}/${SECTION} does not exist"
+    return 1
+  fi
 
-    FILE="${DIRECTORY}/${SECTION}/${NAME}.conf"
-    if ! [ -f "${FILE}" ]; then
-        printf "%s {\n  Name = %s\n}\n" "${SECTION}" "${NAME}" > "${FILE}"
-    fi
-    RC=0
-    set_config_param_in_file "${FILE}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}" || RC=$?
-    return ${RC}
+  FILE="${DIRECTORY}/${SECTION}/${NAME}.conf"
+  if ! [ -f "${FILE}" ]; then
+    printf "%s {\n  Name = %s\n}\n" "${SECTION}" "${NAME}" >"${FILE}"
+  fi
+  RC=0
+  set_config_param_in_file "${FILE}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}" || RC=$?
+  return ${RC}
 }
 
 set_config_param_in_file()
 {
-    if [ "${os_type}" != "Linux" ];then
-        error "set_config_param() is not supported on this platform"
-        return 1
-    fi
+  if [ "${os_type}" != "Linux" ]; then
+    error "set_config_param() is not supported on this platform"
+    return 1
+  fi
 
-    # configuration file
-    FILE="${1}"
-    # section / resource type
-    SECTION="${2}"
-    # name of the section, currently ignored
-    NAME="${3}"
-    # parameter to set in the config file
-    PARAM="${4}"
-    # value to set
-    VALUE="${5}"
+  # configuration file
+  FILE="${1}"
+  # section / resource type
+  SECTION="${2}"
+  # name of the section, currently ignored
+  NAME="${3}"
+  # parameter to set in the config file
+  PARAM="${4}"
+  # value to set
+  VALUE="${5}"
 
-    if [ ! -w "${FILE}" ]; then
-        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't access file '${FILE}'"
-        return 1
-    fi
+  if [ ! -w "${FILE}" ]; then
+    warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't access file '${FILE}'"
+    return 1
+  fi
 
-    TEMP="$(mktemp)"
-    RC=0
-    $AWK -v SECTION="${SECTION}" -v NAME="${NAME}" -v PARAM="${PARAM}" -v VALUE="${VALUE}" '
+  TEMP="$(mktemp)"
+  RC=0
+  $AWK -v SECTION="${SECTION}" -v NAME="${NAME}" -v PARAM="${PARAM}" -v VALUE="${VALUE}" '
   BEGIN {
     IGNORECASE = 1;
     FS = "=";
@@ -683,366 +687,355 @@ set_config_param_in_file()
   printed == 1 {
     printed = 0
   }
-    ' "${FILE}" > "${TEMP}" || RC=$?
-    if [ ${RC} -ne 0 ]; then
-        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replace failed"
-        rm -f "${TEMP}"
-        return 1
-    fi
+    ' "${FILE}" >"${TEMP}" || RC=$?
+  if [ ${RC} -ne 0 ]; then
+    warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replace failed"
+    rm -f "${TEMP}"
+    return 1
+  fi
 
-    chown --reference="${FILE}" "${TEMP}"
-    chmod --reference="${FILE}" "${TEMP}"
+  chown --reference="${FILE}" "${TEMP}"
+  chmod --reference="${FILE}" "${TEMP}"
 
-    if ! mv "${TEMP}" "${FILE}"; then
-        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replacing ${FILE} failed"
-        rm -f "${TEMP}"
-        return 1
-    fi
+  if ! mv "${TEMP}" "${FILE}"; then
+    warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replacing ${FILE} failed"
+    rm -f "${TEMP}"
+    return 1
+  fi
 }
 
 get_database_param()
 {
-    PARAM="${1-}"
-    DEFAULT="${2-}"
-    VALUE=""
-    CATALOG="${CATALOG:-MyCatalog}"
+  PARAM="${1-}"
+  DEFAULT="${2-}"
+  VALUE=""
+  CATALOG="${CATALOG:-MyCatalog}"
 
-    # Check if PARAM is valid
-    case "${PARAM}" in
-        "dbaddress")
-            ;;
-        "dbsocket")
-            ;;
-        "dbport")
-            ;;
-        "dbname")
-            ;;
-        "dbuser")
-            ;;
-        "dbpassword")
-            ;;
-        *)
-            if [ -n "${DEFAULT}" ]; then
-                echo "${DEFAULT}"
-            fi
-            return 0
-            ;;
-    esac
-    # Retrieve PARAM line in configuration section output
-    # Beware we can be called before bareos-dir is installed on system (Debian like)
-    if [ -x "${BAREOS_DIRECTOR_BINARY}" ];then
-        CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" --xc Catalog "$CATALOG")
-        if ! VALUE="$(get_config_line_parameter "${CONFIG}" "${PARAM}")"
-        then
-            # if default value is given, return it anyway
-            if [ -n "${DEFAULT}" ]; then
-                VALUE="${DEFAULT}"
-            fi
-        fi
-    else
-        warn "${BAREOS_DIRECTOR_BINARY} not found"
+  # Check if PARAM is valid
+  case "${PARAM}" in
+    "dbaddress") ;;
+    "dbsocket") ;;
+    "dbport") ;;
+    "dbname") ;;
+    "dbuser") ;;
+    "dbpassword") ;;
+    *)
+      if [ -n "${DEFAULT}" ]; then
+        echo "${DEFAULT}"
+      fi
+      return 0
+      ;;
+  esac
+  # Retrieve PARAM line in configuration section output
+  # Beware we can be called before bareos-dir is installed on system (Debian like)
+  if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
+    CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" --xc Catalog "$CATALOG")
+    if ! VALUE="$(get_config_line_parameter "${CONFIG}" "${PARAM}")"; then
+      # if default value is given, return it anyway
+      if [ -n "${DEFAULT}" ]; then
+        VALUE="${DEFAULT}"
+      fi
     fi
-    [ -z "${VALUE}" ] && VALUE="${DEFAULT}"
-    echo "${VALUE}"
-    return 0
+  else
+    warn "${BAREOS_DIRECTOR_BINARY} not found"
+  fi
+  [ -z "${VALUE}" ] && VALUE="${DEFAULT}"
+  echo "${VALUE}"
+  return 0
 }
 
 get_database_name()
 {
-    DEFAULT="${1-}"
-    RC=0
-    get_database_param "dbname" "$DEFAULT" || RC=$?
-    return ${RC}
+  DEFAULT="${1-}"
+  RC=0
+  get_database_param "dbname" "$DEFAULT" || RC=$?
+  return ${RC}
 }
 
 get_database_user()
 {
-    DEFAULT="${1-}"
-    RC=0
-    get_database_param "dbuser" "$DEFAULT" || RC=$?
-    return ${RC}
+  DEFAULT="${1-}"
+  RC=0
+  get_database_param "dbuser" "$DEFAULT" || RC=$?
+  return ${RC}
 }
 
 get_database_password()
 {
-    DEFAULT="${1-}"
-    RC=0
-    get_database_param "dbpassword" "$DEFAULT" || RC=$?
-    return ${RC}
+  DEFAULT="${1-}"
+  RC=0
+  get_database_param "dbpassword" "$DEFAULT" || RC=$?
+  return ${RC}
 }
 
 get_config_line_parameter()
 {
-    CONFIG_RESOURCE_SECTION="$1"
-    CONFIG_PARAM="$2"
-    #For POSIX compliance use only *
-    printf "%s" "${CONFIG_RESOURCE_SECTION}" | sed -n -e "s/[[:space:]]*${CONFIG_PARAM}[[:space:]]*=[[:space:]]*[\"]*\([^\"]*\)[\"]*[[:space:]]*$/\1/ip"
+  CONFIG_RESOURCE_SECTION="$1"
+  CONFIG_PARAM="$2"
+  #For POSIX compliance use only *
+  printf "%s" "${CONFIG_RESOURCE_SECTION}" | sed -n -e "s/[[:space:]]*${CONFIG_PARAM}[[:space:]]*=[[:space:]]*[\"]*\([^\"]*\)[\"]*[[:space:]]*$/\1/ip"
 }
 
 set_postgresql_environment_variables()
 {
-    CATALOG="${1:-MyCatalog}"
+  CATALOG="${1:-MyCatalog}"
 
-    if ! CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" --xc Catalog "${CATALOG}"); then
-        error "Failed to get configuration of catalog $CATALOG"
-        error "${CONFIG}"
-        return 1
-    fi
+  if ! CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" --xc Catalog "${CATALOG}"); then
+    error "Failed to get configuration of catalog $CATALOG"
+    error "${CONFIG}"
+    return 1
+  fi
 
-    export PGHOST="$(get_config_line_parameter "${CONFIG}" DbAddress)"
-    export PGPORT="$(get_config_line_parameter "${CONFIG}" DbPort)"
-    export PGSOCKET="$(get_config_line_parameter "${CONFIG}" DbSocket)"
-    export PGDATABASE="$(get_config_line_parameter "${CONFIG}" DbName)"
-    export PGUSER="$(get_config_line_parameter "${CONFIG}" DbUser)"
-    export PGPASSWORD="$(get_config_line_parameter "${CONFIG}" DbPassword)"
+  export PGHOST="$(get_config_line_parameter "${CONFIG}" DbAddress)"
+  export PGPORT="$(get_config_line_parameter "${CONFIG}" DbPort)"
+  export PGSOCKET="$(get_config_line_parameter "${CONFIG}" DbSocket)"
+  export PGDATABASE="$(get_config_line_parameter "${CONFIG}" DbName)"
+  export PGUSER="$(get_config_line_parameter "${CONFIG}" DbUser)"
+  export PGPASSWORD="$(get_config_line_parameter "${CONFIG}" DbPassword)"
 }
 
 is_template_sql_file()
 {
-    input_file=${1-}
+  input_file=${1-}
 
-    if [ -z "${input_file}" ]; then
-        return 1
-    fi
+  if [ -z "${input_file}" ]; then
+    return 1
+  fi
 
-
-    if ! grep -E "@DB_NAME@|@DB_USER@|@DB_PASS@|@DB_VERSION@" "${input_file}" > /dev/null 2>&1
-    then
-        # no variables found in file, this file is not a template.
-        return 0
-    else
-        # variables found, this file is a template, therefore return FALSE
-        return 1
-    fi
+  if ! grep -E "@DB_NAME@|@DB_USER@|@DB_PASS@|@DB_VERSION@" "${input_file}" >/dev/null 2>&1; then
+    # no variables found in file, this file is not a template.
+    return 0
+  else
+    # variables found, this file is a template, therefore return FALSE
+    return 1
+  fi
 }
 
 get_unused_separator()
 {
-    # Try to find a separator character (for sed)
-    # not used in source string.
+  # Try to find a separator character (for sed)
+  # not used in source string.
 
-    source="${1:-}"
-    sep=""
-    candidates="# , / % + - _ ; = ° §"
-    for sep in ${candidates}; do
-      if ! contains "${source}" "${sep}"; then
-        printf "%s" "${sep}"
-        return 0
-      fi
-    done
-    return 1
+  source="${1:-}"
+  sep=""
+  candidates="# , / % + - _ ; = ° §"
+  for sep in ${candidates}; do
+    if ! contains "${source}" "${sep}"; then
+      printf "%s" "${sep}"
+      return 0
+    fi
+  done
+  return 1
 }
 
 get_translated_sql_file()
 {
-    # replaces variables in a SQL DDL file
-    # and returns the result as stdout.
+  # replaces variables in a SQL DDL file
+  # and returns the result as stdout.
 
-    input_file=${1-}
+  input_file=${1-}
 
-    if [ -z "${input_file}" ]; then
-        return 1
-    fi
+  if [ -z "${input_file}" ]; then
+    return 1
+  fi
 
-    if [ ! -f "${input_file}" ]; then
-        return 2
-    fi
+  if [ ! -f "${input_file}" ]; then
+    return 2
+  fi
 
-    db_name="${db_name:-$(get_database_name @db_name@)}"
-    db_user="${db_user:-$(get_database_user @db_user@)}"
-    # if $db_password is defined but empty, an empty password will be used ("-" instead of ":-")
-    db_password="${db_password-$(get_database_password @db_password@)}"
-    db_version=$(get_database_version)
-    # Try to find a separator character (for sed) not used in db_password.
-    RC=0
-    sep="$(get_unused_separator)" || RC=$?
-    if [ ${RC} -ne 0 ]; then
-      error "Not able to find a free separator for sed not used in your password"
-      return 3
-    fi
+  db_name="${db_name:-$(get_database_name @db_name@)}"
+  db_user="${db_user:-$(get_database_user @db_user@)}"
+  # if $db_password is defined but empty, an empty password will be used ("-" instead of ":-")
+  db_password="${db_password-$(get_database_password @db_password@)}"
+  db_version=$(get_database_version)
+  # Try to find a separator character (for sed) not used in db_password.
+  RC=0
+  sep="$(get_unused_separator)" || RC=$?
+  if [ ${RC} -ne 0 ]; then
+    error "Not able to find a free separator for sed not used in your password"
+    return 3
+  fi
 
-    if [ "${db_password}" != "" ]; then
-        db_password="PASSWORD '${db_password}'"
-    fi
+  if [ "${db_password}" != "" ]; then
+    db_password="PASSWORD '${db_password}'"
+  fi
 
-    sed -e "s${sep}@DB_NAME@${sep}${db_name}${sep}" \
-        -e "s${sep}@DB_USER@${sep}${db_user}${sep}" \
-        -e "s${sep}@DB_PASS@${sep}${db_password}${sep}" \
-        -e "s${sep}@DB_VERSION@${sep}${db_version}${sep}" \
-        "${input_file}"
+  sed -e "s${sep}@DB_NAME@${sep}${db_name}${sep}" \
+    -e "s${sep}@DB_USER@${sep}${db_user}${sep}" \
+    -e "s${sep}@DB_PASS@${sep}${db_password}${sep}" \
+    -e "s${sep}@DB_VERSION@${sep}${db_version}${sep}" \
+    "${input_file}"
 }
 
 get_database_grant_privileges()
 {
-    # Returns the DDL for granting privileges for a database user.
-    # Can be used, to get the SQL commands
-    # to create additional database users.
-    # If requested, this user can be limited to read-only database access.
+  # Returns the DDL for granting privileges for a database user.
+  # Can be used, to get the SQL commands
+  # to create additional database users.
+  # If requested, this user can be limited to read-only database access.
 
-    #db_name="$1"
-    db_user="${2-}"
-    db_password="${3-}"
-    privileges="${4-}"
-    case "${privileges}" in
-        "")
-            # full access
-            privileges=""
-            ;;
-        "readonly")
-            privileges="-readonly"
-            ;;
-        *)
-            echo "Unknown privileges parameter $4"
-            return 1
-            ;;
-    esac
+  #db_name="$1"
+  db_user="${2-}"
+  db_password="${3-}"
+  privileges="${4-}"
+  case "${privileges}" in
+    "")
+      # full access
+      privileges=""
+      ;;
+    "readonly")
+      privileges="-readonly"
+      ;;
+    *)
+      echo "Unknown privileges parameter $4"
+      return 1
+      ;;
+  esac
 
-    sql_definitions="${SQL_DDL_DIR}/grants/postgresql${privileges}.sql"
+  sql_definitions="${SQL_DDL_DIR}/grants/postgresql${privileges}.sql"
 
-    if [ -n "${sql_definitions}" ]; then
-        if [ ! -f "${sql_definitions}" ]; then
-            echo "Unable to open database table definitions in file ${sql_definitions}"
-            return 1
-        fi
-        get_translated_sql_file "${sql_definitions}"
+  if [ -n "${sql_definitions}" ]; then
+    if [ ! -f "${sql_definitions}" ]; then
+      echo "Unable to open database table definitions in file ${sql_definitions}"
+      return 1
     fi
+    get_translated_sql_file "${sql_definitions}"
+  fi
 
-    return
+  return
 }
 
 translate_sql_files()
 {
-    # Translates all available DDL files for one database type.
-    # However, currently not used, because it reduced flexibility.
+  # Translates all available DDL files for one database type.
+  # However, currently not used, because it reduced flexibility.
 
-    SOURCE_DIR=${1:-$SQL_DDL_DIR}
-    DEST_DIR=${2:-"@working_dir@/ddl"}
+  SOURCE_DIR=${1:-$SQL_DDL_DIR}
+  DEST_DIR=${2:-"@working_dir@/ddl"}
 
-    for i in $(find "$SOURCE_DIR" -name "postgresql*.sql" -print | cut -d'/' -f2-); do
-        dest_file="${DEST_DIR}/${i}"
-        mkdir -p "$(dirname "${dest_file}")"
-        # in case of errors, remove file
-        if ! get_translated_sql_file "${SOURCE_DIR}/${i}" > "${dest_file}"
-        then
-            rm -f "${dest_file}"
-        fi
-    done
+  for i in $(find "$SOURCE_DIR" -name "postgresql*.sql" -print | cut -d'/' -f2-); do
+    dest_file="${DEST_DIR}/${i}"
+    mkdir -p "$(dirname "${dest_file}")"
+    # in case of errors, remove file
+    if ! get_translated_sql_file "${SOURCE_DIR}/${i}" >"${dest_file}"; then
+      rm -f "${dest_file}"
+    fi
+  done
 }
 
 apply_dbconfig_settings()
 {
-    # this function is only useful on Debian Linux based distributions
-    # as dbconfig-common is only available there
+  # this function is only useful on Debian Linux based distributions
+  # as dbconfig-common is only available there
 
-    # check if dbconfig configuration file exists
-    [ -r "/etc/dbconfig-common/bareos-database-common.conf" ] || return 0
-    . /etc/dbconfig-common/bareos-database-common.conf
+  # check if dbconfig configuration file exists
+  [ -r "/etc/dbconfig-common/bareos-database-common.conf" ] || return 0
+  . /etc/dbconfig-common/bareos-database-common.conf
 
-    # check if dbconfig is enabled
-    [ "${dbc_install}" = "true" ] && [ "${dbc_upgrade}" = "true" ] || return 0
+  # check if dbconfig is enabled
+  [ "${dbc_install}" = "true" ] && [ "${dbc_upgrade}" = "true" ] || return 0
 
-    if [ -n "${dbc_dbserver}" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbaddress" "${dbc_dbserver}"
-    fi
+  if [ -n "${dbc_dbserver}" ]; then
+    set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbaddress" "${dbc_dbserver}"
+  fi
 
-    if [ -n "${dbc_dbuser}" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbuser" "\"${dbc_dbuser}\""
-    fi
+  if [ -n "${dbc_dbuser}" ]; then
+    set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbuser" "\"${dbc_dbuser}\""
+  fi
 
-    if [ -n "${dbc_dbname}" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbname" "\"${dbc_dbname}\""
-    fi
+  if [ -n "${dbc_dbname}" ]; then
+    set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbname" "\"${dbc_dbname}\""
+  fi
 
-    if [ "${dbc_authmethod_user}" != "ident" ] && [ "${dbc_dbpass}" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbpassword" "\"${dbc_dbpass}\""
-    fi
+  if [ "${dbc_authmethod_user}" != "ident" ] && [ "${dbc_dbpass}" ]; then
+    set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbpassword" "\"${dbc_dbpass}\""
+  fi
 }
 
 get_local_hostname()
 {
-    # put actual short hostname in configuration files
-    if [ -n "$(command -v uname)" ]; then
-        hname=$(uname -n)
-    fi
-    if [ -z "${hname}" ] && [ -f '/etc/hostname' ]; then
-        hname="$(cut -d '.' -f1 '/etc/hostname')"
-    fi
-    if [ -z "${hname}" ]; then
-        # set to "localhost"
-        hname='localhost'
-    fi
-    echo "${hname}"
+  # put actual short hostname in configuration files
+  if [ -n "$(command -v uname)" ]; then
+    hname=$(uname -n)
+  fi
+  if [ -z "${hname}" ] && [ -f '/etc/hostname' ]; then
+    hname="$(cut -d '.' -f1 '/etc/hostname')"
+  fi
+  if [ -z "${hname}" ]; then
+    # set to "localhost"
+    hname='localhost'
+  fi
+  echo "${hname}"
 }
 
 replace()
 {
-    if [ $# -ne 2 ]; then
-        return 1
-    fi
+  if [ $# -ne 2 ]; then
+    return 1
+  fi
 
-    SEARCH="$1"
-    REPLACE="$2"
+  SEARCH="$1"
+  REPLACE="$2"
 
-    grep -l "${SEARCH}" "${BAREOS_CONFIG_DIR}"/*.conf "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf 2>/dev/null | while read -r file
-    do
-        if [ -f "${file}" ]; then
-            if grep -q "${SEARCH}" "$file"; then
-                # do a log-message only if file will be changed, not always
-                if echo "${SEARCH}" | grep -q "_PASSWORD_"; then
-                  info "replacing '${SEARCH}' in ${file}"
-                else
-                  info "replacing '${SEARCH}' with '${REPLACE}' in ${file}"
-                fi
-                # trying to refactor in place as a variable will lead to errors. 
-                if [ "$os_type" = "Darwin" ] || [ "$os_type" = "FreeBSD" ]; then
-                     sed -i "" "s#${SEARCH}#${REPLACE}#g" "${file}"
-                else
-                     sed --in-place "s#${SEARCH}#${REPLACE}#g" "${file}"
-                fi
-            fi
+  grep -l "${SEARCH}" \
+    "${BAREOS_CONFIG_DIR}"/*.conf "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf \
+    "${BAREOS_CONFIG_DIR}"/*.conf.example "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf.example "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf.example \
+    2>/dev/null | while read -r file; do
+    if [ -f "${file}" ]; then
+      if grep -q "${SEARCH}" "$file"; then
+        # do a log-message only if file will be changed, not always
+        if echo "${SEARCH}" | grep -q "_PASSWORD_"; then
+          info "replacing '${SEARCH}' in ${file}"
+        else
+          info "replacing '${SEARCH}' with '${REPLACE}' in ${file}"
         fi
-    done
-    return 0
+        # trying to refactor in place as a variable will lead to errors.
+        if [ "$os_type" = "Darwin" ] || [ "$os_type" = "FreeBSD" ]; then
+          sed -i "" "s#${SEARCH}#${REPLACE}#g" "${file}"
+        else
+          sed --in-place "s#${SEARCH}#${REPLACE}#g" "${file}"
+        fi
+      fi
+    fi
+  done
+  return 0
 }
 
 initialize_local_hostname()
 {
-    #
-    # Replace all XXX_REPLACE_WITH_LOCAL_HOSTNAME by the local hostname.
-    #
-    hname=$(get_local_hostname)
-    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
+  #
+  # Replace all XXX_REPLACE_WITH_LOCAL_HOSTNAME by the local hostname.
+  #
+  hname=$(get_local_hostname)
+  replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
 }
-
 
 initialize_passwords()
 {
-    #
-    # See if we need to generate a set of random passwords.
-    #
-    if [ ! -f "${BAREOS_CONFIG_DIR}"/.rndpwd ]; then
-        for string in ${PASSWORD_SUBST}
-        do
-           pass="$(RANDFILE=/dev/urandom openssl rand -base64 33)"
-           echo "${string}=${pass}" >> "${BAREOS_CONFIG_DIR}"/.rndpwd
-        done
-        chmod 400 "${BAREOS_CONFIG_DIR}"/.rndpwd
-    fi
-
-    # Source the passwords
-    . "${BAREOS_CONFIG_DIR}"/.rndpwd
-
-    for string in ${PASSWORD_SUBST}
-    do
-        eval "pass=\${$string}"
-        if [ -n "${pass}" ]; then
-            replace "${string}" "${pass}"
-        fi
+  #
+  # See if we need to generate a set of random passwords.
+  #
+  if [ ! -f "${BAREOS_CONFIG_DIR}"/.rndpwd ]; then
+    for string in ${PASSWORD_SUBST}; do
+      pass="$(RANDFILE=/dev/urandom openssl rand -base64 33)"
+      echo "${string}=${pass}" >>"${BAREOS_CONFIG_DIR}"/.rndpwd
     done
+    chmod 400 "${BAREOS_CONFIG_DIR}"/.rndpwd
+  fi
+
+  # Source the passwords
+  . "${BAREOS_CONFIG_DIR}"/.rndpwd
+
+  for string in ${PASSWORD_SUBST}; do
+    eval "pass=\${$string}"
+    if [ -n "${pass}" ]; then
+      replace "${string}" "${pass}"
+    fi
+  done
 }
 
 init()
 {
-    initialize_local_hostname
-    initialize_passwords
+  initialize_local_hostname
+  initialize_passwords
 }

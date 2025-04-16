@@ -20,6 +20,7 @@
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycle.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/storage/File.conf.sample
+@(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/storage/File.conf.example
 lib/bareos/scripts/delete_catalog_backup
 lib/bareos/scripts/make_catalog_backup
 sbin/bareos-dir
