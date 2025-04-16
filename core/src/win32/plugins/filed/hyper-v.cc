@@ -1897,6 +1897,149 @@ enum class JobLevel
   None,  // this is used by eg restore
 };
 
+static WMI::String extract_disk_path(const WMI::ClassObject& vhd_setting)
+{
+  auto paths = vhd_setting.get_array<WMI::cim_type::string>(L"HostResource");
+  if (paths.size() != 1) {
+    // todo: we should include the format of vhd_setting here
+    //   I.e. this should be a different type!
+    throw std::runtime_error(
+        std::format("bad HostResource: expected exactly one string, but got {}",
+                    paths.size()));
+  }
+
+  DBG(L"found harddisk path {}", paths[0].as_view());
+
+  return std::move(paths[0]);
+}
+
+struct analyzed_ref_point {
+  struct disk {
+    GUID virt_disk_id;
+    WMI::String rct_id;
+  };
+  std::vector<disk> contained_disks;
+};
+
+static std::wstring format_guid(const GUID& guid)
+{
+  //
+  wchar_t guid_storage[sizeof("{6B29FC40-CA47-1067-B31D-00DD010662DA}")];
+  if (StringFromGUID2(guid, guid_storage, std::size(guid_storage)) == 0) {
+    throw std::runtime_error("could not format guid");
+  }
+
+  return std::wstring{guid_storage};
+}
+
+
+GUID get_id_of_disk(PluginContext* ctx, const wchar_t* path)
+{
+  HANDLE disk_handle = INVALID_HANDLE_VALUE;
+
+  VIRTUAL_STORAGE_TYPE vst = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+  };
+
+  OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+  params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+  params.Version2.ReadOnly = TRUE;
+  params.Version2.GetInfoOnly = TRUE;
+
+  auto res
+      = OpenVirtualDisk(&vst, path, VIRTUAL_DISK_ACCESS_NONE,
+                        OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+
+  if (res != ERROR_SUCCESS) {
+    JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
+         format_win32_error(res), res);
+    CloseHandle(disk_handle);
+    throw std::runtime_error("internal error");
+  }
+  GET_VIRTUAL_DISK_INFO id = {
+      .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
+  };
+  ULONG VirtualDiskInfoSize = sizeof(id);
+  ULONG SizeOut = 0;
+  auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                            &id, &SizeOut);
+  if (disk_res != ERROR_SUCCESS) {
+    JERR(ctx, L"could not retrieve info for disk {}", path);
+    CloseHandle(disk_handle);
+    throw std::runtime_error("internal error");
+  }
+
+  GUID identifier = id.VirtualDiskId;
+
+  DBGC(ctx, L"disk virt id {} => {}", path, format_guid(identifier));
+  CloseHandle(disk_handle);
+  return identifier;
+}
+
+analyzed_ref_point analyze_ref_point(PluginContext* ctx,
+                                     const WMI::Service& srvc,
+                                     const WMI::ReferencePoint& refpoint)
+{
+  auto rct_ids = refpoint.get_array<WMI::cim_type::string>(
+      L"ResilientChangeTrackingIdentifiers");
+  auto disk_ids
+      = refpoint.get_array<WMI::cim_type::string>(L"VirtualDiskIdentifiers");
+
+  for (auto& rct : rct_ids) { TRCC(ctx, L" - rct = {}", rct.as_view()); }
+
+  for (auto& disk : disk_ids) { TRCC(ctx, L" - disk = {}", disk.as_view()); }
+
+
+  if (rct_ids.size() != disk_ids.size()) {
+    DBGC(ctx, L"Not every disk has rct information: rct_ids {} != disk_ids {} ",
+         rct_ids.size(), disk_ids.size());
+    throw std::runtime_error(std::format(
+        "Not every disk has rct information: rct_ids {} != disk_ids {}",
+        rct_ids.size(), disk_ids.size()));
+  }
+
+  analyzed_ref_point analyzed;
+
+  for (size_t i = 0; i < rct_ids.size(); ++i) {
+    constexpr auto fixup_instance_id
+        = [](std::wstring_view input) -> std::wstring {
+      std::wstring result;
+      result.reserve(input.size() + 5);  // guess that there are 5 slashes
+
+      for (auto c : input) {
+        if (c == L'\\') { result += L'\\'; }
+        result += c;
+      }
+
+      return result;
+    };
+
+    auto fixed_id = fixup_instance_id(disk_ids[i].as_view());
+
+    TRCC(ctx, L"id {} => {}", disk_ids[i].as_view(), fixed_id);
+
+    auto query = std::format(
+        L"select * from Msvm_StorageAllocationSettingData where "
+        L"InstanceID='{}'",
+        fixed_id);
+    auto found_disk_setting = srvc.query_single(WMI::String::copy(query));
+    if (!found_disk_setting) {
+      DBGC(ctx, L"disk {} from reference point does not exist anymore",
+           disk_ids[i].as_view());
+      continue;
+    }
+
+    auto path = extract_disk_path(found_disk_setting.value());
+
+    auto id = get_id_of_disk(ctx, path.get());
+
+    analyzed.contained_disks.emplace_back(id, std::move(rct_ids[i]));
+  }
+
+  return analyzed;
+}
+
 // Plugin private context
 struct plugin_ctx {
   static plugin_ctx* get(PluginContext* ctx)
@@ -1913,11 +2056,10 @@ struct plugin_ctx {
     WMI::VirtualSystemManagementService system_srvc;
     WMI::VirtualSystemSnapshotService snapshot_srvc;
 
-
     struct prepared_backup {
       WMI::ComputerSystem current_vm;
       std::wstring vm_name;
-      std::optional<WMI::ReferencePoint> refpoint;
+      std::optional<analyzed_ref_point> refpoint;
       std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
 
@@ -1930,13 +2072,14 @@ struct plugin_ctx {
       // {}
 
       std::vector<std::wstring> files_to_backup{};
-      std::vector<std::wstring> disks_to_backup{};
+      std::vector<WMI::String> disks_to_backup{};
       std::vector<restore_object> restore_objects{};
       bool error = false;
 
       std::optional<HANDLE> disk_to_backup;
       std::size_t disk_offset;
       std::size_t disk_full_size;
+      const wchar_t* rct_id;
 
       std::optional<restore_object> current_object{};
 
@@ -1944,6 +2087,11 @@ struct plugin_ctx {
       {
         return !vm_snapshot.ptr && files_to_backup.empty()
                && disks_to_backup.empty() && restore_objects.empty();
+      }
+
+      ~prepared_backup()
+      {
+        if (disk_to_backup) { CloseHandle(disk_to_backup.value()); }
       }
     };
 
@@ -2599,22 +2747,6 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   }
 }
 
-static std::wstring extract_disk_path(const WMI::ClassObject& vhd_setting)
-{
-  auto paths = vhd_setting.get_array<WMI::cim_type::string>(L"HostResource");
-  if (paths.size() != 1) {
-    // todo: we should include the format of vhd_setting here
-    //   I.e. this should be a different type!
-    throw std::runtime_error(
-        std::format("bad HostResource: expected exactly one string, but got {}",
-                    paths.size()));
-  }
-
-  DBG(L"found harddisk path {}", paths[0].as_view());
-
-  return std::wstring{paths[0].as_view()};
-}
-
 static void set_disk_path(const WMI::ClassObject& vhd_setting,
                           std::wstring_view path)
 {
@@ -2623,7 +2755,7 @@ static void set_disk_path(const WMI::ClassObject& vhd_setting,
   DBG(L"updated harddisk path to {}", path);
 }
 
-static std::vector<std::wstring> get_disk_paths_of_snapshot(
+static std::vector<WMI::String> get_disk_paths_of_snapshot(
     const WMI::Service& srvc,
     const WMI::Snapshot& snap)
 {
@@ -2631,7 +2763,7 @@ static std::vector<std::wstring> get_disk_paths_of_snapshot(
       snap.path().as_view(), L"Msvm_StorageAllocationSettingData",
       L"Msvm_VirtualSystemSettingDataComponent");
 
-  std::vector<std::wstring> paths;
+  std::vector<WMI::String> paths;
   paths.reserve(settings.size());
 
   for (auto& setting : settings) {
@@ -2849,8 +2981,11 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
                                          export_settings);
   }
 
+  std::optional<analyzed_ref_point> analyzed;
+  if (refpoint) { analyzed = analyze_ref_point(ctx, srvc, refpoint.value()); }
+
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
-      std::move(vm.value()), utf8_to_utf16(vm_name), std::move(refpoint), dir,
+      std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed), dir,
       std::move(snapshot));
 
   prepared.files_to_backup = get_files_in_dir(dir);
@@ -2890,37 +3025,6 @@ static void add_ref_point(PluginContext* ctx,
   obj.index = 0;
 
   free(content);
-
-  // auto rct_ids = refpoint.get_array<cim_type::string>(
-  //     L"ResilientChangeTrackingIdentifiers");
-  // auto disk_ids
-  //     = refpoint.get_array<cim_type::string>(L"VirtualDiskIdentifiers");
-
-  // for (auto& rct : rct_ids) { TRCC(ctx, L" - rct = {}", rct.as_view()); }
-
-  // for (auto& disk : disk_ids) { TRCC(ctx, L" - disk = {}", disk.as_view()); }
-
-  // if (rct_ids.size() != disk_ids.size()) {
-  //   DBGC(ctx, L"Not every disk has rct information: rct_ids {} != disk_ids
-  //   {}",
-  //        rct_ids.size(), disk_ids.size());
-  //   return;
-  // }
-
-  // for (size_t i = 0; i < rct_ids.size(); ++i) {
-  //   plugin_ctx::rct_info info = {
-  //       utf16_to_utf8(disk_ids[i].as_view()),
-  //       utf16_to_utf8(rct_ids[i].as_view()),
-  //   };
-
-  //   auto content = info.as_json();
-
-  //   auto& obj = restore_objects.emplace_back();
-  //   std::string formatted = json_dumps(content.get(), JSON_COMPACT);
-  //   obj.content = std::move(formatted);
-  //   obj.type = restore_object::Type::RctInfo;
-  //   obj.index = 0;
-  // }
 }
 
 static void prepare_restore_object(PluginContext* ctx)
@@ -2961,17 +3065,6 @@ std::string create_vm_path(std::wstring_view vm_name,
 
   std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
   return utf16_to_utf8(new_path);
-}
-
-std::wstring format_guid(const GUID& guid)
-{
-  //
-  wchar_t guid_storage[sizeof("{6B29FC40-CA47-1067-B31D-00DD010662DA}")];
-  if (StringFromGUID2(guid, guid_storage, std::size(guid_storage)) == 0) {
-    throw std::runtime_error("could not format guid");
-  }
-
-  return std::wstring{guid_storage};
 }
 
 static void LogAllParents(PluginContext* ctx,
@@ -3123,8 +3216,11 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
-      DBGC(ctx, L"transforming {} ...", path);
-      p_ctx->current_path = create_vm_path(prepared.vm_name, L"disks", path);
+
+
+      DBGC(ctx, L"transforming {} ...", path.as_view());
+      p_ctx->current_path
+          = create_vm_path(prepared.vm_name, L"disks", path.as_view());
       DBGC(ctx, "into {}!", p_ctx->current_path);
 
       {
@@ -3139,16 +3235,19 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
         params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
         params.Version2.ReadOnly = TRUE;
 
-        auto res = OpenVirtualDisk(&vst, path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
+        auto res = OpenVirtualDisk(&vst, path.get(), VIRTUAL_DISK_ACCESS_NONE,
                                    OPEN_VIRTUAL_DISK_FLAG_NONE, &params,
                                    &disk_handle);
 
         if (res != ERROR_SUCCESS) {
-          JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
+          JERR(ctx, L"could not open disk {}: Err={} ({:X})", path.as_view(),
                format_win32_error(res), res);
           return bRC_Error;
         }
 
+        if (prepared.disk_to_backup) {
+          CloseHandle(prepared.disk_to_backup.value());
+        }
         prepared.disk_to_backup = disk_handle;
 
         {
@@ -3164,7 +3263,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
             // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
             // hdd_path.as_view(),
             //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
-            JERR(ctx, L"could not retrieve info for disk {}", path);
+            JERR(ctx, L"could not retrieve info for disk {}", path.as_view());
             return bRC_Error;
           }
 
@@ -3182,29 +3281,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
           prepared.disk_offset = 0;
         }
 
-
-        {
-          GET_VIRTUAL_DISK_INFO id = {
-              .Version = GET_VIRTUAL_DISK_INFO_IDENTIFIER,
-          };
-          ULONG VirtualDiskInfoSize = sizeof(id);
-          ULONG SizeOut = 0;
-          auto disk_res = GetVirtualDiskInformation(
-              disk_handle, &VirtualDiskInfoSize, &id, &SizeOut);
-          if (disk_res != ERROR_SUCCESS) {
-            CloseHandle(disk_handle);
-            // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
-            // hdd_path.as_view(),
-            //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
-            JERR(ctx, L"could not retrieve info for disk {}", path);
-            return bRC_Error;
-          }
-
-          GUID identifier = id.Identifier;
-
-          DBGC(ctx, L"disk id = {}", format_guid(identifier));
-        }
-
         {
           GET_VIRTUAL_DISK_INFO id = {
               .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
@@ -3218,20 +3294,42 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
             // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
             // hdd_path.as_view(),
             //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
-            JERR(ctx, L"could not retrieve info for disk {}", path);
+            JERR(ctx, L"could not retrieve info for disk {}", path.as_view());
             return bRC_Error;
           }
 
-          LogAllParents(ctx, disk_handle, path);
+          //          LogAllParents(ctx, disk_handle, path.as_view());
 
           GUID identifier = id.VirtualDiskId;
 
           DBGC(ctx, L"disk virt id = {}", format_guid(identifier));
+
+          prepared.rct_id = nullptr;
+          if (prepared.refpoint) {
+            for (auto& disk : prepared.refpoint->contained_disks) {
+              if (IsEqualGUID(disk.virt_disk_id, identifier)) {
+                prepared.rct_id = disk.rct_id.get();
+                break;
+              }
+            }
+            if (prepared.rct_id == nullptr) {
+              // no disk found
+              JERR(ctx,
+                   L"cannot backup {} as it was not part of the last backup.  "
+                   L"It will be part of the next full.",
+                   path.as_view());
+              prepared.disks_to_backup.pop_back();
+              return bRC_Skip;
+            } else {
+              DBGC(ctx, L"using rct id {} for disk {}", prepared.rct_id,
+                   path.as_view());
+            }
+          }
         }
       }
 
       if (!p_ctx->is_full()) {
-        JERR(ctx, "not implemented");
+        JFATAL(ctx, "not implemented");
         return bRC_Stop;
       }
 
@@ -3249,7 +3347,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     }
 
     if (!p_ctx->is_full()) {
-      JERR(ctx, "not implemented");
+      JFATAL(ctx, "not implemented");
       return bRC_Stop;
     }
 
@@ -3330,7 +3428,8 @@ static bRC end_backup_file(PluginContext* ctx)
         DBGC(ctx, L"finishing up {}", prepared->files_to_backup.back());
         prepared->files_to_backup.pop_back();
       } else if (prepared->disks_to_backup.size() > 0) {
-        DBGC(ctx, L"finishing up {}", prepared->disks_to_backup.back());
+        DBGC(ctx, L"finishing up {}",
+             prepared->disks_to_backup.back().as_view());
         prepared->disks_to_backup.pop_back();
       }
       TRCC(ctx, "more work");
@@ -3567,7 +3666,7 @@ static bRC pluginBackupIO(PluginContext* ctx,
         if (!prepared.disk_to_backup) {
           JERR(ctx,
                L"can not open disk {} because it was not properly prepared",
-               prepared.disks_to_backup.back());
+               prepared.disks_to_backup.back().as_view());
           return bRC_Error;
         }
 
@@ -3580,7 +3679,7 @@ static bRC pluginBackupIO(PluginContext* ctx,
                                 0, &attach_params, 0);
         if (FAILED(attach_res)) {
           JERR(ctx, L"could not attach disk {} for reading",
-               prepared.disks_to_backup.back());
+               prepared.disks_to_backup.back().as_view());
           // LOG(L"AttachVirtualDisk() failed.  Err={} ({:X})",
           //     WMI::ErrorString(attach_res), (uint32_t)attach_res);
           return bRC_Error;
@@ -3632,7 +3731,8 @@ static bRC pluginBackupIO(PluginContext* ctx,
         }
 
         JERR(ctx, L"encountered error while trying to read disk {}: {}",
-             prepared.disks_to_backup.back(), format_win32_error(error));
+             prepared.disks_to_backup.back().as_view(),
+             format_win32_error(error));
         return bRC_Error;
       }
     read_ok:
@@ -3930,14 +4030,14 @@ static bRC end_restore_job(PluginContext* ctx)
 
           auto backed_up_disk_path = extract_disk_path(disk_setting);
 
-          TRCC(ctx, L"disk path = {}", backed_up_disk_path);
+          TRCC(ctx, L"disk path = {}", backed_up_disk_path.as_view());
 
           auto disk_name = [&] {
-            auto last_slash = backed_up_disk_path.find_last_of(L"\\/");
-            if (last_slash == backed_up_disk_path.npos) { last_slash = -1; }
+            auto view = backed_up_disk_path.as_view();
+            auto last_slash = view.find_last_of(L"\\/");
+            if (last_slash == view.npos) { last_slash = -1; }
 
-            std::wstring name = backed_up_disk_path.substr(last_slash + 1,
-                                                           std::wstring::npos);
+            std::wstring name{view.substr(last_slash + 1, std::wstring::npos)};
 
             return utf16_to_utf8(name);
           }();
