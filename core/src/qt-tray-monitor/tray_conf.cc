@@ -104,7 +104,7 @@ static const ResourceItem mon_items[] = {
 static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
-  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}}, { "DirPort" }},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{"DirPort"}}},
   { "Address", CFG_TYPE_STR, ITEM(res_dir, address), {config::Required{}}},
     TLS_COMMON_CONFIG(res_dir),
     TLS_CERT_CONFIG(res_dir),
@@ -120,7 +120,7 @@ static const ResourceItem client_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
   { "Address", CFG_TYPE_STR, ITEM(res_client, address), {config::Required{}}},
-  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}}, { "FdPort" }},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}, config::Alias{"FdPort"}}},
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client, password), {config::Required{}}},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
@@ -135,9 +135,9 @@ static const ResourceItem client_items[] = {
 static const ResourceItem store_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_store, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
-  { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}}, { "SdPort" }},
-  { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Required{}}, { "SdAddress" }},
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password), {config::Required{}}, { "SdPassword" }},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdPort"}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Required{}, config::Alias{"SdAddress"}}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password), {config::Required{}, config::Alias{"SdPassword"}}},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
   {}

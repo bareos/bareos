@@ -68,8 +68,8 @@ static const ResourceItem cons_items[] = {
 static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_dir, description_), {}},
-  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{ "DirPort" }}},
-  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), {config::Required{}, config::Alias{ "DirAddress" }}},
+  { "Port", CFG_TYPE_PINT32, ITEM(res_dir, DIRport), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{"DirPort"}}},
+  { "Address", CFG_TYPE_STR, ITEM(res_dir, address), {config::Required{}, config::Alias{"DirAddress"}}},
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir, password_), {}},
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), {config::DefaultValue{"0"}}},
   TLS_COMMON_CONFIG(res_dir),
