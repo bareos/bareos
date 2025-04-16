@@ -520,7 +520,7 @@ struct variant_type {
     {
       if (auto actual_type = V_VT(var); actual_type != type) {
         throw std::runtime_error(std::format("expected variant {}, but got {}",
-                                             (int)actual_type, (int)type));
+                                             (int)type, (int)actual_type));
       }
 
       return V_UI1(var);
@@ -567,7 +567,7 @@ struct variant_type {
     {
       if (auto actual_type = V_VT(var); actual_type != type) {
         throw std::runtime_error(std::format("expected variant {}, but got {}",
-                                             (int)actual_type, (int)type));
+                                             (int)type, (int)actual_type));
       }
 
       return V_I4(var);
@@ -614,7 +614,7 @@ struct variant_type {
     {
       if (auto actual_type = V_VT(var); actual_type != type) {
         throw std::runtime_error(std::format("expected variant {}, but got {}",
-                                             (int)actual_type, (int)type));
+                                             (int)type, (int)actual_type));
       }
 
       return String::wrap(V_BSTR(var));
