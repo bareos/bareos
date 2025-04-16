@@ -91,7 +91,7 @@ static ResourceItem cli_items[] = {
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_client, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client, scripts_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_SCRIPTDIR, NULL, "Path to directory containing script files"},
-  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "1000", NULL, NULL},
+  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "1000", "-24.0.0", NULL},
   {"MaximumWorkersPerJob", CFG_TYPE_PINT32, ITEM(res_client, MaxWorkersPerJob), 0, CFG_ITEM_DEFAULT, "2", "23.0.0-",
    "The maximum number of worker threads that bareos will use during backup."},
   {"Messages", CFG_TYPE_RES, ITEM(res_client, messages), R_MSGS, 0, NULL, NULL, NULL},
@@ -114,7 +114,7 @@ static ResourceItem cli_items[] = {
   {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_client, allowed_script_dirs), 0, 0, NULL, NULL, NULL},
   {"AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_client, allowed_job_cmds), 0, 0, NULL, NULL, NULL},
   {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_client, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
-  {"AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, always_use_lmdb), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "false", NULL,
+  {"AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, always_use_lmdb), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "false", "-24.0.0",
    "Ensure that bareos always chooses the lmdb backend for accurate information regardless of the file list size.  Use LmdbThreshold = 0 instead."
   },
   {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client, lmdb_threshold), 0, 0, NULL, NULL,
@@ -124,6 +124,7 @@ static ResourceItem cli_items[] = {
   {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL},
   {"GrpcModule", CFG_TYPE_STDSTR, ITEM(res_client, grpc_module), 0, CFG_ITEM_DEFAULT, "bareos-grpc-fd-plugin-bridge",
    "25.0.0-", "The grpc module to use for grpc fallback."},
+  {"EnableKtls", CFG_TYPE_BOOL, ITEM(res_client, enable_ktls), 0, CFG_ITEM_DEFAULT, "false", "23.0.0-", "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}

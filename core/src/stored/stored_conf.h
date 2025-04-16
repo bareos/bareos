@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@ enum
   R_MSGS,
   R_AUTOCHANGER,
   R_JOB,           // needed for Job name conversion
-  R_NUM,           // number of entires
+  R_NUM,           // number of entries
   R_CLIENT = 0xff  // dummy for bsock printing
 };
 
@@ -137,6 +137,8 @@ class StorageResource
   uint64_t max_bandwidth_per_job = 0;   /**< Bandwidth limitation (global) */
 
   bool just_in_time_reservation{false};
+
+  bool enable_ktls{false};
 
   StorageResource() = default;
   virtual ~StorageResource() = default;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1009,7 +1009,7 @@ static bool SetipCmd(UaContext* ua, const char*)
 
   if (client->address) { free(client->address); }
 
-  SockaddrToAscii(&(ua->UA_sock->client_addr), buf, sizeof(buf));
+  SockaddrToAscii(&ua->UA_sock->client_addr, buf, sizeof(buf));
   client->address = strdup(buf);
   ua->SendMsg(T_("Client \"%s\" address set to %s\n"), client->resource_name_,
               client->address);

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -773,7 +773,7 @@ static FilesetResource* GetStaticFilesetResource()
 {
   FilesetResource* res_fs = nullptr;
   ResourceTable* t = my_config->GetResourceTable("FileSet");
-  assert(t);
+  ASSERT(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
   assert(res_fs);
   return res_fs;

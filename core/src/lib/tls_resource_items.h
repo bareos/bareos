@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,9 +35,6 @@
   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "true", \
      NULL, "If set to \"no\", Bareos can fall back to use unencrypted " \
      "connections. " }, \
-  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res, enable_ktls_), 0, CFG_ITEM_DEFAULT, "false", \
-     NULL, "If set to \"yes\", Bareos will allow the SSL implementation to use " \
-     "Kernel TLS. " }, \
   { "TlsCipherList", CFG_TYPE_STDSTR, ITEM(res, cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
      NULL, "Colon separated list of valid TLSv1.2 and lower Ciphers; see \"openssl ciphers\" command." \
      " Leftmost element has the highest priority."}, \

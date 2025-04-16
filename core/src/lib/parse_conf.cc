@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -112,7 +112,6 @@ ConfigurationParser::ConfigurationParser(
   err_type_ = err_type;
   r_num_ = r_num;
   resource_definitions_ = resource_definitions;
-  config_resources_container_.reset(new ConfigResourcesContainer(this));
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
@@ -124,6 +123,11 @@ ConfigurationParser::ConfigurationParser(
   SaveResourceCb_ = SaveResourceCb;
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
+
+  // config resources container needs to access our members, so this
+  // needs to always happen after we initialised everything else
+  config_resources_container_
+      = std::make_shared<ConfigResourcesContainer>(this);
 }
 
 void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
@@ -313,6 +317,7 @@ ResourceTable* ConfigurationParser::GetResourceTable(
     const char* resource_type_name)
 {
   int res_table_index = GetResourceTableIndex(resource_type_name);
+  if (res_table_index == -1) { return nullptr; }
   return &resource_definitions_[res_table_index];
 }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,8 +138,8 @@ static ResourceItem dir_items[] = {
   { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */, NULL, NULL },
   { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "160704000" /* 5 years */, NULL, NULL },
-  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", "14.2.0-", NULL },
+  { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "160704000" /* 5 years */, "-22.0.0", NULL },
+  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", "14.2.0-22.0.0", NULL },
   { "VerId", CFG_TYPE_STR, ITEM(res_dir, verid), 0, 0, NULL, NULL, NULL },
   { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, keyencrkey), 1, 0, NULL, NULL, NULL },
   { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_snooping), 0, 0, NULL, "13.2.0-", NULL },
@@ -151,6 +151,7 @@ static ResourceItem dir_items[] = {
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
   { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL },
+  { "EnableKtls", CFG_TYPE_BOOL, ITEM(res_dir, enable_ktls), 0, CFG_ITEM_DEFAULT, "false", "23.0.0-", "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."},
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -243,10 +244,10 @@ static ResourceItem client_items[] = {
   { "SoftQuotaGracePeriod", CFG_TYPE_TIME, ITEM(res_client, SoftQuotaGracePeriod), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "StrictQuotas", CFG_TYPE_BOOL, ITEM(res_client, StrictQuotas), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "QuotaIncludeFailedJobs", CFG_TYPE_BOOL, ITEM(res_client, QuotaIncludeFailedJobs), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "FileRetention", CFG_TYPE_TIME, ITEM(res_client, FileRetention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "5184000" /* 60 days */, NULL, NULL },
-  { "JobRetention", CFG_TYPE_TIME, ITEM(res_client, JobRetention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "15552000" /* 180 days */, NULL, NULL },
+  { "FileRetention", CFG_TYPE_TIME, ITEM(res_client, FileRetention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "5184000" /* 60 days */, "-23.0.0", NULL },
+  { "JobRetention", CFG_TYPE_TIME, ITEM(res_client, JobRetention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "15552000" /* 180 days */, "-23.0.0", NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "AutoPrune", CFG_TYPE_BOOL, ITEM(res_client, AutoPrune), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL },
+  { "AutoPrune", CFG_TYPE_BOOL, ITEM(res_client, AutoPrune), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", "-23.0.0", NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client, max_bandwidth), 0, 0, NULL, NULL, NULL },
   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_client, ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL },
@@ -284,7 +285,7 @@ static ResourceItem store_items[] = {
   { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "PairedStorage", CFG_TYPE_RES, ITEM(res_store, paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth), 0, 0, NULL, NULL, NULL },
-  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL },
+  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", "-22.0.0", NULL },
   { "NdmpChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store, ndmp_changer_device), 0, 0, NULL, "16.2.4-",
      "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments." },
    TLS_COMMON_CONFIG(res_store),
@@ -400,7 +401,7 @@ ResourceItem job_items[] = {
   { "SelectionType", CFG_TYPE_MIGTYPE, ITEM(res_job, selection_type), 0, 0, NULL, NULL, NULL },
   { "Accurate", CFG_TYPE_BOOL, ITEM(res_job, accurate), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "AllowDuplicateJobs", CFG_TYPE_BOOL, ITEM(res_job, AllowDuplicateJobs), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "true", NULL, NULL },
+  { "AllowHigherDuplicates", CFG_TYPE_BOOL, ITEM(res_job, AllowHigherDuplicates), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "true", "-24.0.0", NULL },
   { "CancelLowerLevelDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelLowerLevelDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "CancelQueuedDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -454,7 +455,7 @@ static ResourceItem pool_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_pool, description_), 0, 0, NULL, NULL, NULL },
   { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool, pool_type), 0, CFG_ITEM_DEFAULT, "Backup", NULL, NULL },
   { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool, label_format), 0, 0, NULL, NULL, NULL },
-  { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
+  { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), 0, CFG_ITEM_DEPRECATED, NULL, "-23.0.0", NULL },
   { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool, cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN", NULL, NULL },
   { "UseCatalog", CFG_TYPE_BOOL, ITEM(res_pool, use_catalog), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
   { "PurgeOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, purge_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },

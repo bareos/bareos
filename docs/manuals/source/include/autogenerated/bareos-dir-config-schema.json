@@ -128,7 +128,8 @@
           "code": 0,
           "default_value": "160704000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-22.0.0"
         },
         "StatisticsCollectInterval": {
           "datatype": "PINT32",
@@ -136,7 +137,7 @@
           "default_value": "0",
           "deprecated": true,
           "equals": true,
-          "versions": "14.2.0-"
+          "versions": "14.2.0-22.0.0"
         },
         "VerId": {
           "datatype": "STRING",
@@ -202,6 +203,14 @@
           "equals": true,
           "versions": "15.2.3-"
         },
+        "EnableKtls": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "23.0.0-",
+          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."
+        },
         "TlsAuthenticate": {
           "datatype": "BOOLEAN",
           "code": 0,
@@ -222,13 +231,6 @@
           "default_value": "true",
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
-        },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "STRING",
@@ -449,14 +451,16 @@
           "code": 0,
           "default_value": "5184000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "JobRetention": {
           "datatype": "TIME",
           "code": 0,
           "default_value": "15552000",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "HeartbeatInterval": {
           "datatype": "TIME",
@@ -469,7 +473,8 @@
           "code": 0,
           "default_value": "false",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "MaximumConcurrentJobs": {
           "datatype": "PINT32",
@@ -520,13 +525,6 @@
           "default_value": "true",
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
-        },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "STRING",
@@ -981,7 +979,8 @@
           "code": 0,
           "default_value": "true",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-24.0.0"
         },
         "CancelLowerLevelDuplicates": {
           "datatype": "BOOLEAN",
@@ -1465,7 +1464,8 @@
           "code": 0,
           "default_value": "true",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-24.0.0"
         },
         "CancelLowerLevelDuplicates": {
           "datatype": "BOOLEAN",
@@ -1715,7 +1715,8 @@
           "code": 0,
           "default_value": "false",
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-22.0.0"
         },
         "NdmpChangerDevice": {
           "datatype": "STRNAME",
@@ -1744,13 +1745,6 @@
           "default_value": "true",
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
-        },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "STRING",
@@ -2039,7 +2033,8 @@
           "datatype": "LABEL",
           "code": 0,
           "deprecated": true,
-          "equals": true
+          "equals": true,
+          "versions": "-23.0.0"
         },
         "CleaningPrefix": {
           "datatype": "STRNAME",
@@ -2498,13 +2493,6 @@
           "default_value": "true",
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
-        },
-        "EnableKtls": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "equals": true,
-          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
         },
         "TlsCipherList": {
           "datatype": "STRING",

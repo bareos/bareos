@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -114,7 +114,7 @@ void test_alist_dynamic()
   // does foreach work for empty lists?
   TestForeachAlist(list);
 
-  // create empty list, which is prepared for a number of entires
+  // create empty list, which is prepared for a number of entries
   list = new alist<const char*>(10);
   EXPECT_EQ(list->size(), 0);
 
@@ -136,7 +136,7 @@ void test_alist_dynamic()
   EXPECT_STREQ(buf, "18");
   free(buf);
 
-  // added more entires
+  // added more entries
   AlistFill(list, 20);
   TestForeachAlist(list);
 
