@@ -1923,7 +1923,6 @@ struct analyzed_ref_point {
 
 static std::wstring format_guid(const GUID& guid)
 {
-  //
   wchar_t guid_storage[sizeof("{6B29FC40-CA47-1067-B31D-00DD010662DA}")];
   if (StringFromGUID2(guid, guid_storage, std::size(guid_storage)) == 0) {
     throw std::runtime_error("could not format guid");
@@ -3209,128 +3208,27 @@ static void LogAllParents(PluginContext* ctx,
   }
 }
 
-static std::wstring get_base_path(PluginContext* ctx, std::wstring_view path)
+static std::wstring make_disk_path(VIRTUAL_STORAGE_TYPE vst, GUID disk_guid)
 {
-  std::vector<char> buffer;
-  buffer.resize(1024);
-
-  std::wstring current_path{path};
-
-  for (;;) {
-    HANDLE disk_handle = INVALID_HANDLE_VALUE;
-
-    // open the disk
-    {
-      DBGC(ctx, L"opening path {}", current_path);
-      VIRTUAL_STORAGE_TYPE vst = {
-          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
-          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
-      };
-
-      OPEN_VIRTUAL_DISK_PARAMETERS params = {};
-      params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
-      params.Version2.ReadOnly = TRUE;
-      params.Version2.GetInfoOnly = TRUE;
-
-      auto res = OpenVirtualDisk(
-          &vst, current_path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
-          OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
-
-      if (res != ERROR_SUCCESS) {
-        JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
-             format_win32_error(res), res);
-        CloseHandle(disk_handle);
-        throw werror("opening a disk", res);
-      }
-    }
-
-    // get the sub type
-    {
-      GET_VIRTUAL_DISK_INFO subtype
-          = {.Version = GET_VIRTUAL_DISK_INFO_PROVIDER_SUBTYPE};
-      ULONG VirtualDiskInfoSize = std::size(buffer);
-      ULONG SizeOut = 0;
-
-      auto subtype_res = GetVirtualDiskInformation(
-          disk_handle, &VirtualDiskInfoSize, &subtype, &SizeOut);
-      if (subtype_res != ERROR_SUCCESS) {
-        DBGC(ctx, L"could not retrieve subtype info for disk {}", current_path);
-        CloseHandle(disk_handle);
-        throw werror("get disk subtype info", subtype_res);
-      }
-
-      enum DiskSubtype : decltype(subtype.ProviderSubtype)
-      {
-        Fixed = 2,
-        Expandable = 3,
-        Differencing = 4,
-      };
-
-      switch (subtype.ProviderSubtype) {
-        case DiskSubtype::Fixed: {
-          DBGC(ctx, L"{} => Fixed", current_path);
-          // we are done here
-          CloseHandle(disk_handle);
-          return current_path;
-        } break;
-        case DiskSubtype::Expandable: {
-          DBGC(ctx, L"{} => Expandable", current_path);
-          // we are done here
-          CloseHandle(disk_handle);
-          return current_path;
-        } break;
-        case DiskSubtype::Differencing: {
-          DBGC(ctx, L"{} => Differencing", current_path);
-          // we need to continue to the parent
-        } break;
-        default: {
-          DBGC(ctx, L"{} => Unknown ({})", current_path,
-               subtype.ProviderSubtype);
-          CloseHandle(disk_handle);
-          throw std::runtime_error(std::format(
-              "encountered unknown disk provider subtype {} for disk {}",
-              subtype.ProviderSubtype, utf16_to_utf8(current_path)));
-        } break;
-      }
-    }
-
-    // move to the parent
-    {
-      auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(buffer.data());
-      disk_info->Version = GET_VIRTUAL_DISK_INFO_PARENT_LOCATION;
-
-      ULONG VirtualDiskInfoSize = std::size(buffer);
-      ULONG SizeOut = 0;
-      auto disk_res = GetVirtualDiskInformation(
-          disk_handle, &VirtualDiskInfoSize, disk_info, &SizeOut);
-      if (disk_res != ERROR_SUCCESS) {
-        DBGC(ctx, L"could not retrieve parent for disk {}", current_path);
-        CloseHandle(disk_handle);
-        throw werror(std::format("get disk parent location for disk {}",
-                                 utf16_to_utf8(current_path)),
-                     disk_res);
-      }
-
-
-      DBGC(ctx, L"Parent = {{ Resolved = {}, Path = {} }}",
-           disk_info->ParentLocation.ParentResolved,
-           disk_info->ParentLocation.ParentLocationBuffer);
-
-      if (!disk_info->ParentLocation.ParentResolved) {
-        // this shouldnt happen as we were able to open the disk ...
-        DBGC(ctx, L"could not resolve parent for disk {}:  Paths={}",
-             current_path, disk_info->ParentLocation.ParentLocationBuffer);
-        CloseHandle(disk_handle);
+  std::wstring_view file_ending = [vst] {
+    switch (vst.DeviceId) {
+      case VIRTUAL_STORAGE_TYPE_DEVICE_ISO: {
+        return L"iso";
+      } break;
+      case VIRTUAL_STORAGE_TYPE_DEVICE_VHD: {
+        return L"vhd";
+      } break;
+      case VIRTUAL_STORAGE_TYPE_DEVICE_VHDX: {
+        return L"vhdx";
+      } break;
+      default: {
         throw std::runtime_error(
-            std::format("could not resolve parent location for disk {}",
-                        utf16_to_utf8(current_path)));
-      }
-
-      current_path = disk_info->ParentLocation.ParentLocationBuffer;
+            std::format("unkown device type {}", vst.DeviceId));
+      } break;
     }
-
-    CloseHandle(disk_handle);
-  }
+  }();
+  std::wstring name = format_guid(disk_guid);
+  return std::format(L"{}.{}", name, file_ending);
 }
 
 // queries the disk for changes, and returns the end of the segment
@@ -3359,6 +3257,8 @@ static std::size_t insert_changes(HANDLE disk_handle,
     ranges.push_back(
         range{.start = vdisk_ranges[i].ByteOffset,
               .end = vdisk_ranges[i].ByteOffset + vdisk_ranges[i].ByteLength});
+
+    TRC(L"range {}: {} - {}", i, ranges.back().start, ranges.back().end);
   }
 
   return start + bytes_processed;
@@ -3426,13 +3326,15 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       auto& path = prepared.disks_to_backup.back();
 
 
+      VIRTUAL_STORAGE_TYPE vst = {
+          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+      };
+
+      GUID disk_id = {};
+
       {
         HANDLE disk_handle = INVALID_HANDLE_VALUE;
-
-        VIRTUAL_STORAGE_TYPE vst = {
-            .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
-            .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
-        };
 
         OPEN_VIRTUAL_DISK_PARAMETERS params = {};
         params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
@@ -3472,14 +3374,14 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
           //          LogAllParents(ctx, disk_handle, path.as_view());
 
-          GUID identifier = id.VirtualDiskId;
+          disk_id = id.VirtualDiskId;
 
-          DBGC(ctx, L"disk virt id = {}", format_guid(identifier));
+          DBGC(ctx, L"disk virt id = {}", format_guid(disk_id));
 
           prepared.rct_id = nullptr;
           if (prepared.refpoint) {
             for (auto& disk : prepared.refpoint->contained_disks) {
-              if (IsEqualGUID(disk.virt_disk_id, identifier)) {
+              if (IsEqualGUID(disk.virt_disk_id, disk_id)) {
                 prepared.rct_id = disk.rct_id.get();
                 break;
               }
@@ -3497,6 +3399,26 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
                    path.as_view());
             }
           }
+        }
+
+        {
+          GET_VIRTUAL_DISK_INFO disk_info
+              = {.Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_STORAGE_TYPE};
+          ULONG VirtualDiskInfoSize = sizeof(disk_info);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+            // hdd_path.as_view(),
+            //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve storage type for disk {}",
+                 path.as_view());
+            return bRC_Error;
+          }
+
+          vst = disk_info.VirtualStorageType;
         }
 
         {
@@ -3542,10 +3464,10 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
         }
       }
 
-      auto base_path = get_base_path(ctx, path.as_view());
-      DBGC(ctx, L"transforming {} ...", base_path);
+      auto disk_path = make_disk_path(vst, disk_id);
+      DBGC(ctx, L"transforming {} ...", disk_path);
       p_ctx->current_path
-          = create_vm_path(prepared.vm_name, L"disks", base_path);
+          = create_vm_path(prepared.vm_name, L"disks", disk_path);
       DBGC(ctx, "into {}!", p_ctx->current_path);
       TRCC(ctx, "delta seq = {}", prepared.delta_seq);
 
