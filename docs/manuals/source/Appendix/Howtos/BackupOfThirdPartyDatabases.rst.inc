@@ -734,21 +734,314 @@ See :ref:`plugin-postgresql-fd`.
 
 
 
+.. _backup-mariadb:
+
+Backup of MariaDB Database(s)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. index::
+   single: MariaDB; Backup
+   single: Cluster; Database; MariaDB; Backup
+
+In this section, we describe different methods to do a full backup of a MariaDB database.
+If you want to do `PITR` backup and restore, we advice to use the dedicated plugin.
+See :ref:`backup-MariaDB-mariabackup`.
+
+
+Backup of a MariaDB Database by using the RunScript directive
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: RunScript; Example
+
+One method to backup a MariaDB database is to use the :command:`mariadb-dump` tool to dump the database
+into a file and then backup it as a normal file. After the backup, the file can be removed. It may
+also be an option not to remove it, so that the latest version is always available immediately.
+On the next job run it will be overwritten anyway.
+
+This can be done by using :config:option:`dir/job/RunScript`\  directives, for example:
+
+.. code-block:: bareosconfig
+   :caption: RunScript job resource for a MariaDB dump backup
+
+   Job {
+     Name = "BackupMariaDBDatabase"
+     JobDefs = "DefaultJob"
+     Client = dbserver-fd
+     Level = Full
+     FileSet="Database"
+
+     # This creates a dump of our database in the local filesystem on the Client
+     RunScript {
+       FailJobOnError = Yes
+       RunsOnClient = Yes
+       RunsWhen = Before
+       Command = "sh -c 'mariadb-dump --user=<username> --password=<password> --opt --all-databases > /var/lib/bareos/mariadb_dump.sql'"
+     }
+
+     # This deletes the dump in the local filesystem on the Client
+     RunScript {
+       RunsOnSuccess = Yes
+       RunsOnClient = Yes
+       RunsWhen = After
+       Command = "rm /var/lib/bareos/mariadb_dump.sql"
+     }
+   }
+
+   FileSet {
+     Name = "Database"
+     Include {
+       Options {
+         Signature = XXH128
+         Compression = LZ4
+       }
+       # database dump file
+       File = "/var/lib/bareos/mariadb_dump.sql"
+     }
+   }
+
+Note that redirecting the :command:`mariadb-dump` output to a file requires to run the whole command
+line through a shell, otherwise the :command:`mariadb-dump` would not know what do with the
+:command:`>` character and the job would fail. As no shell features like redirection or piping are
+used for the :command:`rm`, the :command:`sh -c` is not needed there.
+See :config:option:`dir/job/RunScript`\  for more details.
+
+
+Backup of a MariaDB Database by using the bpipe plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: bpipe; MariaDB backup
+
+Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information
+about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the Include section of a
+FileSet, e.g.:
+
+.. code-block:: bareosconfig
+   :caption: bpipe fileset for MariaDB backup
+
+   FileSet {
+     Name = "mariadb-bpipe-all"
+     Include {
+       Plugin = "bpipe:file=/MARIADB/dump.sql:reader=mariadb-dump --user=<user> --password=<password> --opt --all-databases:writer=mariadb --user=<user> --password=<password>"
+       Options {
+         Signature = XXH128
+         Compression = LZ4
+       }
+     }
+   }
+
+This can also be used, to backup a database that is running on a remote host:
+
+.. code-block:: bareosconfig
+   :caption: bpipe directive to backup a MariaDB database that is running on a remote host
+
+   FileSet{
+     Name = "mariadb-bpipe-remote-all"
+     Include {
+       Plugin = "bpipe:file=/MARIADB/dump.sql:reader=mariadb-dump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=mariadb --host=<hostname> --user=<user> --password=<password>"
+       Options {
+         Signature = XXH128
+         Compression = LZ4
+       }
+     }
+   }
+
+If you do not want a direct restore of your data in your plugin directive, as shown in the examples above,
+there is the possibility to restore the dump to the filesystem first, which offers you more control over
+the restore process, e.g.:
+
+.. code-block:: bareosconfig
+   :caption: bpipe directive to backup a MariaDB database and restore the dump to the filesystem first
+
+   FileSet{
+     Name = "mariadb-bpipe-remote-filerestore-all"
+     Include {
+       Plugin = "bpipe:file=/MARIADB/dump.sql:reader=mariadb-dump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=/usr/lib/bareos/scripts/bpipe-restore.sh"
+       Options {
+         Signature = XXH128
+         Compression = LZ4
+       }
+     }
+   }
+
+A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the method above might look like the following one:
+
+.. code-block:: bareosconfig
+   :caption: bpipe shell script for a restore to filesystem
+
+   #!/bin/bash
+   cat - > /tmp/dump.sql
+   exit 0
+
+
+.. _backup-mariadb-dump-python:
+
+Backup of MariaDB Databases using the contrib Python mariadb-dump plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: Plugin; MariaDB Backup; mariadb-dump
+
+The Python plugin from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/mariadb-dump
+makes a backup of all or selected MariaDB databases from the |fd| or any other MariaDB server.
+It makes use of the :command:`mariadb-dump` command and basically grabs data from :command:`mariadb-dump` via pipe.
+This plugin is suitable to backup database dumps.
+The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`@mariadbbackup@`.
+For restore select the needed database file, found in `@mariabackup@` in the restore tree.
+
+Prerequisites
+'''''''''''''
+
+Following settings must be done on the Bareos client (|fd|):
+
+-  install package :file:`bareos-filedaemon-python3-plugin`
+-  enable the |fd| Python plugin
+
+.. code-block:: bareosconfig
+   :caption: bareos-fd.d/client/myself.conf
+
+   Client {
+     ...
+     Plugin Directory = /usr/lib64/bareos/plugins
+     Plugin Names = "python3"
+   }
+
+-  install the Python contrib mariadb-dump plugin
+   for some platforms it is available prepackaged :file:`bareos-contrib-filedaemon-python-plugins`
+   on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+
+
+Configure the plugin in the |dir|:
+''''''''''''''''''''''''''''''''''
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/fileset/mariadb-dump.conf
+
+   FileSet {
+     Name = "mariadb-dump"
+     Include {
+       Options {
+         Signature = XXH128
+         Compression = LZ4
+       }
+       Plugin = "python3"
+                ":module_name=bareos-fd-mariadb-dump"
+     }
+   }
+
+In the above example the plugin creates and saves a dump from all databases from the cluster running on the file-daemon.
+
+Options
+'''''''
+
+List of supported options:
+
+:strong:`defaultsfile`
+
+Default: :file:`~/.my.cnf` or system wide :file:`/etc/my.cnf`
+
+:command:`mariadb-dump` will look at default place for a configuration file.
+We recommend to use this to store host/user/password parameter. Beware that user running the |fd|
+needs to have at least read access to this file.
+
+
+:strong:`db`
+comma separated list of databases to save.
+
+Default: :strong:`unset`
+
+Each database will be stored in a separate file.
+If omitted, all databases will be saved.
+
+.. code-block:: bareosconfig
+   :caption: mariadb-dump plugin db option usage
+
+    Plugin = "python3"
+             ":module_name=bareos-fd-mariadb-dump"
+             ":db=test,mariadb"
+
+
+This will backup only the databases named 'test' and 'mariadb'.
+
+
+:strong:`ignore_db`
+comma separated list of datase to exclude from backup.
+
+Default: :strong:`"performance_schema,information_schema"` are excluded
+
+
+:strong:`dumpbinary`
+command (with or without full path) to create the dumps.
+
+Default: :strong:`mariadb-dump`
+
+
+:strong:`dumpoptions`
+options for dumpbinary.
+
+Default: ":strong:`--events --single-transaction`"
+
+
+:strong:`drop_and_recreate`
+adds to dumpoptions :command:`--add-drop-database --databases`
+
+Default: :strong:`yes`
+
+
+:strong:`host`
+MariaDB host to connect to.
+
+Default: :strong:`localhost`
+
+
+:strong:`user`
+MariaDB user.
+
+Default: unset, the user running the file-daemon will be used (usually root)
+
+
+:strong:`password`
+MariaDB password. Default: unset
+
+Good practice recommend to use :strong:`defaultfile` option
+
+.. code-block:: sql
+   :caption: mariadb-dump plugin set minimum privileges for the backup user
+
+   GRANT USAGE ON *.* TO 'username'@'localhost' IDENTIFIED BY 'username';
+   GRANT SELECT, LOCK TABLES, SHOW VIEW, EVENT, TRIGGER ON *.* TO 'username'@'localhost'
+
+
+On restore, the database dumps are restored to the subdirectory :file:`@mariadbbackup@` in the restore tree.
+The database restore must be triggered manually:
+
+.. code-block:: bash
+   :caption: mariadb-dump plugin restore db in cluster
+
+   mariadb < @mariadbbackup@/DATABASENAME.sql
+
+
+
 .. _backup-mysql:
 
 Backup of a MySQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: MySQL; Backup>`
-:index:`\ <single: Database; MySQL; Backup>`
+.. index::
+   single: MySQL; Backup
+   single: Database; MySQL; Backup
 
 In this section, we describe different methods to do a full backup of a MySQL database.
+Up to MariaDB version 11, this can also apply to any MariaDB cluster. For more recent version,
+please consult previous section.
 
 
 Backup of a MySQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: RunScript; Example>`\
+.. index::
+   single: RunScript; Example
 
 One method to backup a MySQL database is to use the :command:`mysqldump` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
@@ -798,7 +1091,8 @@ Note that redirecting the :command:`mysqldump` output to a file requires to run 
 Backup of a MySQL Database by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: bpipe; MySQL backup>`\
+.. index::
+   single: bpipe; MySQL backup
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
@@ -901,7 +1195,7 @@ Configure the plugin in the |dir|:
          #         ":module_name=bareos_mysql_dump"
          #         ":mysqlhost=dbhost"
          #         ":mysqluser=bareos"
-         #         ":mysqlpassword=bareos"         
+         #         ":mysqlpassword=bareos"
        }
    }
 

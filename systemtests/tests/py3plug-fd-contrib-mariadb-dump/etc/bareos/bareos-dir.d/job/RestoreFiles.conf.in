@@ -1,0 +1,10 @@
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  Client = bareos-fd
+  FileSet = "bareos-mariadb-dump"
+  Storage = "File"
+  Pool = "Full"
+  Messages = Standard
+  Where = @tmp@/bareos-restores
+}
