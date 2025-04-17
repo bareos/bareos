@@ -2040,6 +2040,14 @@ analyzed_ref_point analyze_ref_point(PluginContext* ctx,
   return analyzed;
 }
 
+struct range {
+  std::size_t start;
+  std::size_t end;
+
+  std::size_t size() const { return end - start; }
+  bool empty() const { return start == end; }
+};
+
 // Plugin private context
 struct plugin_ctx {
   static plugin_ctx* get(PluginContext* ctx)
@@ -2070,7 +2078,7 @@ struct plugin_ctx {
       //   : vm_name{std::move(name)}
       //   , tmp_dir{std::move(dir)}
       //   , vm_snapshot{std::move(snapshot)}
-      // {}
+      // {/}
 
       std::vector<std::wstring> files_to_backup{};
       std::vector<WMI::String> disks_to_backup{};
@@ -2078,11 +2086,12 @@ struct plugin_ctx {
       bool error = false;
 
       std::optional<HANDLE> disk_to_backup;
-      std::size_t disk_offset;
-      std::size_t disk_full_size;
       const wchar_t* rct_id;
 
       std::optional<restore_object> current_object{};
+
+      std::vector<range> ranges_to_read;
+      range leftover;  // this range has yet to be checked for changes
 
       bool finished() const
       {
@@ -3324,6 +3333,37 @@ static std::wstring get_base_path(PluginContext* ctx, std::wstring_view path)
   }
 }
 
+// queries the disk for changes, and returns the end of the segment
+// that was queried
+static std::size_t insert_changes(HANDLE disk_handle,
+                                  const wchar_t* rct_id,
+                                  std::size_t start,
+                                  std::size_t end,
+                                  std::vector<range>& ranges)
+{
+  QUERY_CHANGES_VIRTUAL_DISK_RANGE vdisk_ranges[50];
+  ULONG range_count = std::size(vdisk_ranges);
+  ULONG64 size = static_cast<ULONG64>(end - start);
+  ULONG64 bytes_processed = 0;
+  auto query_res = QueryChangesVirtualDisk(
+      disk_handle, rct_id, start, size, QUERY_CHANGES_VIRTUAL_DISK_FLAG_NONE,
+      vdisk_ranges, &range_count, &bytes_processed);
+
+  if (query_res != ERROR_SUCCESS) {
+    throw werror("querying disks for changes", query_res);
+  }
+
+  TRC(L"got {} ranges", range_count);
+
+  for (ULONG i = 0; i < range_count; ++i) {
+    ranges.push_back(
+        range{.start = vdisk_ranges[i].ByteOffset,
+              .end = vdisk_ranges[i].ByteOffset + vdisk_ranges[i].ByteLength});
+  }
+
+  return start + bytes_processed;
+}
+
 // Start the backup of a specific file
 static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 {
@@ -3414,37 +3454,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
         prepared.disk_to_backup = disk_handle;
 
         {
-          GET_VIRTUAL_DISK_INFO disk_info = {
-              .Version = GET_VIRTUAL_DISK_INFO_SIZE,
-          };
-          ULONG VirtualDiskInfoSize = sizeof(disk_info);
-          ULONG SizeOut = 0;
-          auto disk_res = GetVirtualDiskInformation(
-              disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
-          if (disk_res != ERROR_SUCCESS) {
-            CloseHandle(disk_handle);
-            // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
-            // hdd_path.as_view(),
-            //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
-            JERR(ctx, L"could not retrieve info for disk {}", path.as_view());
-            return bRC_Error;
-          }
-
-          DBGC(
-              ctx,
-              L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
-              L"SectorSize = {} }}",
-              disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
-              disk_info.Size.BlockSize, disk_info.Size.SectorSize);
-          sp->statp.st_size = disk_info.Size.VirtualSize;
-          sp->statp.st_blksize = disk_info.Size.BlockSize;
-          sp->statp.st_blocks = disk_info.Size.SectorSize;
-
-          prepared.disk_full_size = disk_info.Size.VirtualSize;
-          prepared.disk_offset = 0;
-        }
-
-        {
           GET_VIRTUAL_DISK_INFO id = {
               .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
           };
@@ -3487,6 +3496,48 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
               DBGC(ctx, L"using rct id {} for disk {}", prepared.rct_id,
                    path.as_view());
             }
+          }
+        }
+
+        {
+          GET_VIRTUAL_DISK_INFO disk_info = {
+              .Version = GET_VIRTUAL_DISK_INFO_SIZE,
+          };
+          ULONG VirtualDiskInfoSize = sizeof(disk_info);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            // LOG(L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+            // hdd_path.as_view(),
+            //     WMI::ErrorString(disk_res), (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve info for disk {}", path.as_view());
+            return bRC_Error;
+          }
+
+          DBGC(
+              ctx,
+              L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
+              L"SectorSize = {} }}",
+              disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
+              disk_info.Size.BlockSize, disk_info.Size.SectorSize);
+          sp->statp.st_size = disk_info.Size.VirtualSize;
+          sp->statp.st_blksize = disk_info.Size.BlockSize;
+          sp->statp.st_blocks = disk_info.Size.SectorSize;
+
+          prepared.ranges_to_read.clear();
+          if (prepared.rct_id) {
+            auto last_byte = insert_changes(disk_handle, prepared.rct_id, 0,
+                                            disk_info.Size.VirtualSize,
+                                            prepared.ranges_to_read);
+            prepared.leftover
+                = range{.start = last_byte, .end = disk_info.Size.VirtualSize};
+          } else {
+            prepared.ranges_to_read.push_back(
+                {.start = 0, .end = disk_info.Size.VirtualSize});
+            prepared.leftover = range{.start = disk_info.Size.VirtualSize,
+                                      .end = disk_info.Size.VirtualSize};
           }
         }
       }
@@ -3870,20 +3921,37 @@ static bRC pluginBackupIO(PluginContext* ctx,
         return bRC_Error;
       }
 
+      while (prepared.ranges_to_read.empty()) {
+        if (prepared.leftover.empty()) {
+          TRCC(ctx, "disk is done");
+          io->status = 0;
+          return bRC_OK;
+        } else {
+          auto last_byte
+              = insert_changes(prepared.disk_to_backup.value(), prepared.rct_id,
+                               prepared.leftover.start, prepared.leftover.end,
+                               prepared.ranges_to_read);
+          prepared.leftover.start = last_byte;
+        }
+      }
+
+      auto& current_range = prepared.ranges_to_read.front();
+
       OVERLAPPED overlapped = {};
 
-      auto current_offset = prepared.disk_offset;
+      auto current_offset = current_range.start;
       overlapped.Offset = DWORD{current_offset & 0xFFFFFFFF};
       overlapped.OffsetHigh = DWORD{(current_offset >> 32) & 0xFFFFFFFF};
 
       size_t possible_end = current_offset + io->count;
-      if (possible_end > prepared.disk_full_size) {
-        possible_end = prepared.disk_full_size;
+      if (possible_end > current_range.end) {
+        possible_end = current_range.end;
       }
 
       auto diff = possible_end - current_offset;
 
       if (diff == 0) {
+        // TODO: this cannot happen, so remove it
         TRCC(ctx, "disk is done");
         io->status = 0;
         return bRC_OK;
@@ -3911,9 +3979,13 @@ static bRC pluginBackupIO(PluginContext* ctx,
     read_ok:
 
       TRCC(ctx, L"read {} bytes from offset {}", bytes_read,
-           prepared.disk_offset);
-      prepared.disk_offset += bytes_read;
+           current_range.start);
       io->status = bytes_read;
+
+      current_range.start += bytes_read;
+      if (current_range.empty()) {
+        prepared.ranges_to_read.erase(prepared.ranges_to_read.begin());
+      }
       return bRC_OK;
 
     } break;
