@@ -187,6 +187,19 @@ option(ENABLE_GRPC "Build with grpc support" OFF)
 
 if(ENABLE_GRPC)
   find_package(Protobuf 3.12.0 REQUIRED)
+  # Workaround of https://github.com/protocolbuffers/protobuf/issues/18307 The
+  # latest (BSD variants) protobuf builds are forcibly bound to libupd, so
+  # find_package(gRPC...) will fail with Targets not yet defined:
+  # protobuf::libupb, protobuf::protoc-gen-upb, protobuf::protoc-gen-upbdefs,
+  # protobuf::protoc-gen-upb_minitable Try to satisfy it temporally.
+  #
+  find_library(UPB_LIBRARIES NAMES upb)
+  if(UPB_LIBRARIES)
+    add_library(protobuf::libupb STATIC IMPORTED)
+    add_executable(protobuf::protoc-gen-upb IMPORTED)
+    add_executable(protobuf::protoc-gen-upbdefs IMPORTED)
+    add_executable(protobuf::protoc-gen-upb_minitable IMPORTED)
+  endif()
   find_package(gRPC REQUIRED)
 endif()
 
