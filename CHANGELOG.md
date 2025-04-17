@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix MaximumConcurrentJobs in docs and defaultsconfig [PR #2225]
 - cli-test: fix test on freebsd [PR #2241]
 - core: refactor config parser; fix ktls configuration; fix crashes/ub [PR #2222]
+- contrib add support for mariadb 11+ [PR #2215]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -116,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2201]: https://github.com/bareos/bareos/pull/2201
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
 [PR #2211]: https://github.com/bareos/bareos/pull/2211
+[PR #2215]: https://github.com/bareos/bareos/pull/2215
 [PR #2217]: https://github.com/bareos/bareos/pull/2217
 [PR #2220]: https://github.com/bareos/bareos/pull/2220
 [PR #2222]: https://github.com/bareos/bareos/pull/2222

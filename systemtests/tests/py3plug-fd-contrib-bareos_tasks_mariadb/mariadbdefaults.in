@@ -1,0 +1,16 @@
+# Available only since Mariadb 10.4.6
+# otherwise use older mysqld
+[mariadbd]
+# TCP port to make available for clients
+bind-address=127.0.0.1
+port=@test_db_port@
+# Socket to make available for clients
+socket=@dbHost@/mariadb.sock
+# Where MariaDB should store all its data
+datadir=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mariadb/data
+# Write test-local pid file
+pid-file=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mariadb/mariadb.pid
+# Workaround for Ubuntu 22
+innodb-use-native-aio = OFF
+# Use local tmp dir
+tmpdir=@dbHost@

@@ -18,27 +18,22 @@ export TestName
 skip_if_root
 
 JobName=backup-bareos-fd
-MARIABACKUP="${MARIADB_BACKUP_BINARY} --defaults-file=mysqldefaults"
+MARIABACKUP="${MARIADB_BACKUP_BINARY} --defaults-file=mariadbdefaults"
 mariabackup_test_db="${db_name}_mariabackup"
 
-# override MYSQL_*_BINARY variables to be able to use mysql.sh
-MYSQL_DAEMON_BINARY="${MARIADB_DAEMON_BINARY}"
-MYSQL_CLIENT_BINARY="${MARIADB_CLIENT_BINARY}"
-MYSQL_INSTALL_DB_SCRIPT="${MARIADB_INSTALL_DB_SCRIPT}"
+#shellcheck source=../scripts/mariadb.sh
+. "${rscripts}"/mariadb.sh
 
-#shellcheck source=../scripts/mysql.sh
-. "${rscripts}"/mysql.sh
+mariadb_init
+mariadb_server_start
 
-start_test
+echo "create database ${mariabackup_test_db}" | ${MARIADB_CLIENT}
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | ${MARIADB_CLIENT} "${mariabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 1') " | ${MARIADB_CLIENT} "${mariabackup_test_db}"
 
 # TODO test job failed when Accurate is On
 
-mysql_init
-mysql_server_start
-
-echo "create database ${mariabackup_test_db}" | ${MYSQL_CLIENT}
-echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | ${MYSQL_CLIENT} "${mariabackup_test_db}"
-echo "insert into test (data) VALUES ('test entry 1') " | ${MYSQL_CLIENT} "${mariabackup_test_db}"
+start_test
 
 cat <<END_OF_DATA1 >"${tmp}/bconcmds"
 @$out ${tmp}/log1.out
@@ -58,7 +53,7 @@ if [ ${estat} -ne 0 ]; then
 fi
 
 # insert data and run incremental
-${MYSQL_CLIENT} "${mariabackup_test_db}" <<< "insert into test (data) VALUES ('test entry 2')"
+${MARIADB_CLIENT} "${mariabackup_test_db}" <<< "insert into test (data) VALUES ('test entry 2')"
 
 cat <<END_OF_DATA2 >"${tmp}/bconcmds"
 @$out ${tmp}/log2.out
@@ -122,11 +117,11 @@ if [ -z "$(ls -A "${tmp}"/bareos-restores/_mariadb-backup/)" ]; then
        estat=1
 fi
 
-mysql_server_stop
+mariadb_server_stop
 
 # create new empty data dir
-rm -Rf mysql/data/*
-mkdir -p mysql/data/
+rm -Rf mariadb/data/*
+mkdir -p mariadb/data/
 
 TARGETDIR=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*001')
 INCDIR1=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*002')
@@ -137,24 +132,24 @@ ${MARIABACKUP} --prepare --target-dir="${TARGETDIR}"
 # Then, apply the incremental changes to the base full backup:
 ${MARIABACKUP} --prepare --target-dir="${TARGETDIR}" --incremental-dir="${INCDIR1}"
 # after prepare a file is left in data dir, this seems to be a bug
-rm -Rvf mysql/data/*
+rm -Rvf mariadb/data/*
 # Finally transfer the restore
 ${MARIABACKUP} --copy-back --target-dir="${TARGETDIR}"
 
-mysql_server_start
+mariadb_server_start
 
-if ! echo "SELECT * from test " | ${MYSQL_CLIENT} "${mariabackup_test_db}" | grep "test entry 1"; then
+if ! echo "SELECT * from test " | ${MARIADB_CLIENT} "${mariabackup_test_db}" | grep "test entry 1"; then
     echo "test entry 1 not found"
     estat=2
 fi
 
-if ! echo "SELECT * from test " | ${MYSQL_CLIENT} "${mariabackup_test_db}" | grep "test entry 2"; then
+if ! echo "SELECT * from test " | ${MARIADB_CLIENT} "${mariabackup_test_db}" | grep "test entry 2"; then
     echo "test entry 2 not found"
     estat=3
 fi
 
 check_for_zombie_jobs storage=File
 
-mysql_server_stop
+mariadb_server_stop
 
 end_test
