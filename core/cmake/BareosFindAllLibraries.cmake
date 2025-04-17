@@ -165,7 +165,18 @@ endif()
 option(ENABLE_GRPC "Build with grpc support" OFF)
 
 if(ENABLE_GRPC)
-  find_package(Protobuf 3.12.0 REQUIRED)
+
+  # on suse 15.6 find_package(Protobuf) succeeds, but its broken! so we need to
+  # first try to load the config version, and only choose the FindProtobuf
+  # version when that does not succeed. Sadly the version for the protobuf
+  # package is messed up! The protobuf (cpp) package often also contains the
+  # protoc compiler but those two components have completely different
+  # versioning schemes. There is no portable way to say "i want version >=
+  # 3.12.0 of libprotobuf", so we just dont check it at all.
+  find_package(Protobuf CONFIG)
+  if(NOT Protobuf_FOUND)
+    find_package(Protobuf REQUIRED)
+  endif()
   find_package(gRPC REQUIRED)
 endif()
 
