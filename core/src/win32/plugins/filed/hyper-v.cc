@@ -121,7 +121,7 @@ std::wstring format_win32_error(DWORD error = GetLastError())
 }
 
 struct werror : std::exception {
-  werror(const char* where, DWORD err_num = GetLastError())
+  werror(std::string_view where, DWORD err_num = GetLastError())
   {
     err_msg = std::format("caught error {} while trying to {}",
                           format_win32_error_2(err_num), where);
@@ -2062,6 +2062,7 @@ struct plugin_ctx {
       std::optional<analyzed_ref_point> refpoint;
       std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
+      uint32_t delta_seq;
 
       // prepared_backup(std::wstring name,
       //                 std::wstring dir,
@@ -2123,6 +2124,7 @@ struct plugin_ctx {
   struct ref_point {
     std::string vm_id;
     std::string ref_path;
+    uint32_t delta_seq;
 
     json_ptr as_json() const
     {
@@ -2131,6 +2133,8 @@ struct plugin_ctx {
         json_object_set_new(content.get(), "vm_id", json_string(vm_id.c_str()));
         json_object_set_new(content.get(), "ref_path",
                             json_string(ref_path.c_str()));
+        json_object_set_new(content.get(), "delta_seq",
+                            json_integer(delta_seq));
       }
       return content;
     }
@@ -2142,8 +2146,11 @@ struct plugin_ctx {
       if (!vm_id || !json_is_string(vm_id)) { return std::nullopt; }
       json_t* ref_path = json_object_get(as_json, "ref_path");
       if (!ref_path || !json_is_string(ref_path)) { return std::nullopt; }
+      json_t* delta_seq = json_object_get(as_json, "delta_seq");
+      if (!delta_seq || !json_is_integer(delta_seq)) { return std::nullopt; }
 
-      return ref_point{json_string_value(vm_id), json_string_value(ref_path)};
+      return ref_point{json_string_value(vm_id), json_string_value(ref_path),
+                       static_cast<uint32_t>(json_integer_value(delta_seq))};
     }
   };
   struct vm_info {
@@ -2419,6 +2426,33 @@ static bRC freePlugin(PluginContext* ctx)
 {
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
+
+  std::visit(
+      [&](auto&& val) {
+        using T = std::decay_t<decltype(val)>;
+
+        if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
+        } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
+          auto* prepared
+              = std::get_if<plugin_ctx::backup::prepared_backup>(&val.state);
+          if (!prepared) { return; }
+
+          if (prepared->vm_snapshot.ptr.p) {
+            val.snapshot_srvc.destroy_snapshot(
+                p_ctx->virt_service, std::move(prepared->vm_snapshot));
+          }
+
+          if (prepared->disk_to_backup) {
+            CloseHandle(prepared->disk_to_backup.value());
+            prepared->disk_to_backup.reset();
+          }
+        } else if constexpr (std::is_same_v<T, std::monostate>) {
+          // nothing to do here
+        } else {
+          static_assert(!std::is_same_v<T, T>, "type not handled");
+        }
+      },
+      p_ctx->current_state);
 
   delete p_ctx;
 
@@ -2894,6 +2928,7 @@ static std::optional<WMI::ComputerSystem> get_system_by_name(
 }
 
 WMI::ReferencePoint ref_point_of_system(PluginContext* ctx,
+                                        uint32_t* delta_seq,
                                         const plugin_ctx* p_ctx,
                                         const WMI::Service& srvc,
                                         const WMI::ComputerSystem& system)
@@ -2904,7 +2939,11 @@ WMI::ReferencePoint ref_point_of_system(PluginContext* ctx,
       = utf16_to_utf8(system.get<WMI::cim_type::string>(L"Name").as_view());
 
   for (auto& refp : p_ctx->received_reference_points) {
-    if (refp.vm_id == vm_id) { path = refp.ref_path; }
+    if (refp.vm_id == vm_id) {
+      path = refp.ref_path;
+      *delta_seq = refp.delta_seq;
+      break;
+    }
   }
 
   if (path.empty()) {
@@ -2948,6 +2987,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
       WMI::String::copy(std::format(L"Bareos - {}", p_ctx->jobid)));
 
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
+  uint32_t delta_seq = 0;
   if (p_ctx->is_full()) {
     WMI::VirtualSystemExportSettingData export_settings = {
         .snapshot_virtual_system_path = snapshot.path(),
@@ -2963,7 +3003,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
     system_srvc.export_system_definition(srvc, vm.value(), dir,
                                          export_settings);
   } else {
-    refpoint = ref_point_of_system(ctx, p_ctx, srvc, vm.value());
+    refpoint = ref_point_of_system(ctx, &delta_seq, p_ctx, srvc, vm.value());
 
     WMI::VirtualSystemExportSettingData export_settings = {
         .snapshot_virtual_system_path = snapshot.path(),
@@ -2986,7 +3026,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
       std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed), dir,
-      std::move(snapshot));
+      std::move(snapshot), delta_seq + 1);
 
   prepared.files_to_backup = get_files_in_dir(dir);
   prepared.disks_to_backup
@@ -3003,6 +3043,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 static void add_ref_point(PluginContext* ctx,
                           const WMI::ComputerSystem& system,
                           std::vector<restore_object>& restore_objects,
+                          uint32_t delta_seq,
                           const WMI::ReferencePoint& refpoint)
 {
   using namespace WMI;
@@ -3014,6 +3055,7 @@ static void add_ref_point(PluginContext* ctx,
   ref_point.vm_id
       = utf16_to_utf8(system.get<cim_type::string>(L"Name").as_view());
   ref_point.ref_path = utf16_to_utf8(refpoint.path().as_view());
+  ref_point.delta_seq = delta_seq;
 
 
   auto& obj = restore_objects.emplace_back();
@@ -3045,7 +3087,8 @@ static void prepare_restore_object(PluginContext* ctx)
   TRCC(ctx, "post pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
 
 
-  add_ref_point(ctx, prepared.current_vm, prepared.restore_objects, refpoint);
+  add_ref_point(ctx, prepared.current_vm, prepared.restore_objects,
+                prepared.delta_seq, refpoint);
 }
 
 // maybe we should add the cluster name here somehow ?
@@ -3157,6 +3200,130 @@ static void LogAllParents(PluginContext* ctx,
   }
 }
 
+static std::wstring get_base_path(PluginContext* ctx, std::wstring_view path)
+{
+  std::vector<char> buffer;
+  buffer.resize(1024);
+
+  std::wstring current_path{path};
+
+  for (;;) {
+    HANDLE disk_handle = INVALID_HANDLE_VALUE;
+
+    // open the disk
+    {
+      DBGC(ctx, L"opening path {}", current_path);
+      VIRTUAL_STORAGE_TYPE vst = {
+          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+      };
+
+      OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+      params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+      params.Version2.ReadOnly = TRUE;
+      params.Version2.GetInfoOnly = TRUE;
+
+      auto res = OpenVirtualDisk(
+          &vst, current_path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
+          OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+
+      if (res != ERROR_SUCCESS) {
+        JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
+             format_win32_error(res), res);
+        CloseHandle(disk_handle);
+        throw werror("opening a disk", res);
+      }
+    }
+
+    // get the sub type
+    {
+      GET_VIRTUAL_DISK_INFO subtype
+          = {.Version = GET_VIRTUAL_DISK_INFO_PROVIDER_SUBTYPE};
+      ULONG VirtualDiskInfoSize = std::size(buffer);
+      ULONG SizeOut = 0;
+
+      auto subtype_res = GetVirtualDiskInformation(
+          disk_handle, &VirtualDiskInfoSize, &subtype, &SizeOut);
+      if (subtype_res != ERROR_SUCCESS) {
+        DBGC(ctx, L"could not retrieve subtype info for disk {}", current_path);
+        CloseHandle(disk_handle);
+        throw werror("get disk subtype info", subtype_res);
+      }
+
+      enum DiskSubtype : decltype(subtype.ProviderSubtype)
+      {
+        Fixed = 2,
+        Expandable = 3,
+        Differencing = 4,
+      };
+
+      switch (subtype.ProviderSubtype) {
+        case DiskSubtype::Fixed: {
+          DBGC(ctx, L"{} => Fixed", current_path);
+          // we are done here
+          CloseHandle(disk_handle);
+          return current_path;
+        } break;
+        case DiskSubtype::Expandable: {
+          DBGC(ctx, L"{} => Expandable", current_path);
+          // we are done here
+          CloseHandle(disk_handle);
+          return current_path;
+        } break;
+        case DiskSubtype::Differencing: {
+          DBGC(ctx, L"{} => Differencing", current_path);
+          // we need to continue to the parent
+        } break;
+        default: {
+          DBGC(ctx, L"{} => Unknown ({})", current_path,
+               subtype.ProviderSubtype);
+          CloseHandle(disk_handle);
+          throw std::runtime_error(std::format(
+              "encountered unknown disk provider subtype {} for disk {}",
+              subtype.ProviderSubtype, utf16_to_utf8(current_path)));
+        } break;
+      }
+    }
+
+    // move to the parent
+    {
+      auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(buffer.data());
+      disk_info->Version = GET_VIRTUAL_DISK_INFO_PARENT_LOCATION;
+
+      ULONG VirtualDiskInfoSize = std::size(buffer);
+      ULONG SizeOut = 0;
+      auto disk_res = GetVirtualDiskInformation(
+          disk_handle, &VirtualDiskInfoSize, disk_info, &SizeOut);
+      if (disk_res != ERROR_SUCCESS) {
+        DBGC(ctx, L"could not retrieve parent for disk {}", current_path);
+        CloseHandle(disk_handle);
+        throw werror(std::format("get disk parent location for disk {}",
+                                 utf16_to_utf8(current_path)),
+                     disk_res);
+      }
+
+
+      DBGC(ctx, L"Parent = {{ Resolved = {}, Path = {} }}",
+           disk_info->ParentLocation.ParentResolved,
+           disk_info->ParentLocation.ParentLocationBuffer);
+
+      if (!disk_info->ParentLocation.ParentResolved) {
+        // this shouldnt happen as we were able to open the disk ...
+        DBGC(ctx, L"could not resolve parent for disk {}:  Paths={}",
+             current_path, disk_info->ParentLocation.ParentLocationBuffer);
+        CloseHandle(disk_handle);
+        throw std::runtime_error(
+            std::format("could not resolve parent location for disk {}",
+                        utf16_to_utf8(current_path)));
+      }
+
+      current_path = disk_info->ParentLocation.ParentLocationBuffer;
+    }
+
+    CloseHandle(disk_handle);
+  }
+}
+
 // Start the backup of a specific file
 static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 {
@@ -3199,6 +3366,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       auto now = time(NULL);
       sp->fname = p_ctx->current_path.data();
       sp->type = FT_REG;
+      ClearAllBits(FO_MAX, sp->flags);
 
       // todo: fix these
       sp->statp.st_mode = 0700 | S_IFREG;
@@ -3217,11 +3385,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
 
-
-      DBGC(ctx, L"transforming {} ...", path.as_view());
-      p_ctx->current_path
-          = create_vm_path(prepared.vm_name, L"disks", path.as_view());
-      DBGC(ctx, "into {}!", p_ctx->current_path);
 
       {
         HANDLE disk_handle = INVALID_HANDLE_VALUE;
@@ -3328,14 +3491,24 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
         }
       }
 
-      if (!p_ctx->is_full()) {
-        JFATAL(ctx, "not implemented");
-        return bRC_Stop;
-      }
+      auto base_path = get_base_path(ctx, path.as_view());
+      DBGC(ctx, L"transforming {} ...", base_path);
+      p_ctx->current_path
+          = create_vm_path(prepared.vm_name, L"disks", base_path);
+      DBGC(ctx, "into {}!", p_ctx->current_path);
+      TRCC(ctx, "delta seq = {}", prepared.delta_seq);
 
       auto now = time(NULL);
       sp->fname = p_ctx->current_path.data();
       sp->type = FT_REG;
+      // bareos is a bit weird,  if we tell it that we use delta seqs
+      // it overwrites delta_seq by delta_seq + 1 (???), so we
+      // need to decrement it here first, so that bareos makes it correct again
+      // by incrementing it.
+      sp->delta_seq = prepared.delta_seq - 1;
+      ClearAllBits(FO_MAX, sp->flags);
+      // SetBit(FO_SPARSE, sp->flags);
+      SetBit(FO_DELTA, sp->flags);
 
       // todo: fix these
       sp->statp.st_mode = 0700 | S_IFREG;
