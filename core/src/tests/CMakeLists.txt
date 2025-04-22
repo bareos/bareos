@@ -356,7 +356,6 @@ if(NOT client-only)
       test_dir_plugins
       ADDITIONAL_SOURCES
         ${PROJECT_SOURCE_DIR}/src/dird/date_time.cc
-        ${PROJECT_SOURCE_DIR}/src/dird/date_time_mask.cc
         ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
         ${PROJECT_SOURCE_DIR}/src/dird/dird_conf.cc
         ${PROJECT_SOURCE_DIR}/src/dird/dird_globals.cc

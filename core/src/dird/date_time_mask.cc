@@ -22,7 +22,6 @@
 */
 
 #include "include/bareos.h"
-#include "dird/date_time_mask.h"
 #include "dird/date_time.h"
 
 #include <array>
