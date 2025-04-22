@@ -1427,37 +1427,27 @@ std::string ToString(const Range<T>& range) {
   }
   return ToString(range.from) + "-" + ToString(range.to);
 }
-// :: List
+// :: std::vector
 template<class T>
-std::string ToString(const List<T>& list) {
+std::string ToString(const std::vector<T>& vec) {
   std::string result;
-  for (size_t i = 0; i < list.items.size(); ++i) {
-    result += ToString(list.items.at(i));
-    if (i + 1 < list.items.size()) {
-      result += ",";
+  for (size_t i = 0; i < vec.size(); ++i) {
+    result += ToString(vec.at(i));
+    if (i + 1 < vec.size()) {
+      result += ' ';
     }
   }
   return result;
 }
 // :: Schedule
 std::string ToString(const Schedule& schedule) {
-  std::string day_mask = std::visit([](const auto& value) {
-    return std::apply([](const auto&... args) {
-      std::string result;
-      std::vector<std::string> strings = { ToString(args)... };
-      for (size_t i = 0; i < strings.size(); ++i) {
-        if (strings.at(i) == "monthly" || strings.at(i) == "weekly" || strings.at(i) == "daily") {
-          continue;
-        }
-        result += strings.at(i);
-        if (i + 1 < strings.size()) {
-          result += " ";
-        }
-      }
-      return result;
-    }, value);
-  }, schedule.day_mask);
-  return day_mask + " " + ToString(schedule.times);
+  std::string day_str = ToString(schedule.day_masks);
+  if (!day_str.empty()) {
+    return day_str + " " + ToString(schedule.times);
+  }
+  else {
+  return ToString(schedule.times);
+}
 }
 
 static std::string PrintConfigRun(RunResource* run)
