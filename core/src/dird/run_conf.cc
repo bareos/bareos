@@ -45,9 +45,6 @@ template<class First, class... Rest>
 bool Deformat(std::string_view input, std::string_view fmt, First& first, Rest&... rest);
 
 // FromString
-// :: forward
-template<class T, std::enable_if_t<kIsList<T>, int> = 0>
-std::optional<T> FromString(const std::string& str);
 // :: int
 template<class T, std::enable_if_t<std::is_same_v<T, int>, int> = 0>
 std::optional<int> FromString(const std::string& str) {
@@ -193,69 +190,6 @@ std::optional<T> FromString(const std::string& str) {
     else {
       return FromString<T, Index + 1>(str);
     }
-  }
-  return std::nullopt;
-}
-// :: List
-template<class T, std::enable_if_t<kIsList<T>, int>>
-std::optional<T> FromString(const std::string& str) {
-  std::vector<typename T::Type> items;
-  size_t start = 0;
-  for (size_t i = 0; i < str.length(); ++i) {
-    if (str[i] == ',') {
-      auto item = FromString<typename T::Type>(str.substr(start, i - start));
-      if (item) {
-        items.emplace_back(*item);
-      }
-      else {
-        return std::nullopt;
-      }
-      start = i + 1;
-    }
-  }
-  if (start < str.length()) {
-    auto item = FromString<typename T::Type>(str.substr(start));
-    if (item) {
-      items.emplace_back(*item);
-    }
-    else {
-      return std::nullopt;
-    }
-  }
-  return T({ items });
-}
-// :: Schedule
-template<class T, std::enable_if_t<std::is_same_v<T, Schedule>, int> = 0>
-std::optional<Schedule> FromString(const std::string& str) {
-  Mask<MonthOfYear> month_of_year;
-  Mask<WeekOfYear> week_of_year;
-  Mask<WeekOfMonth> week_of_month;
-  Mask<DayOfMonth> day_of_month;
-  Mask<DayOfWeek> day_of_week;
-  std::variant<List<TimeOfDay>, Hourly> times;
-  if (Deformat(str, "% % % %", month_of_year, week_of_month, day_of_week, times)) {
-    return T(month_of_year, week_of_month, day_of_week, times);
-  }
-  if (Deformat(str, "% % %", month_of_year, day_of_week, times)) {
-    return T(month_of_year, day_of_week, times);
-  }
-  else if (Deformat(str, "% % %", month_of_year, day_of_month, times)) {
-    return T(month_of_year, day_of_month, times);
-  }
-  else if (Deformat(str, "% % %", week_of_year, day_of_week, times)) {
-    return T(week_of_year, day_of_week, times);
-  }
-  else if (Deformat(str, "% % %", week_of_month, day_of_week, times)) {
-    return T(week_of_month, day_of_week, times);
-  }
-  else if (Deformat(str, "% %", day_of_month, times)) {
-    return T(day_of_month, times);
-  }
-  else if (Deformat(str, "% %", day_of_week, times)) {
-    return T(day_of_week, times);
-  }
-  else if (Deformat(str, "%", times)) {
-    return T(times);
   }
   return std::nullopt;
 }

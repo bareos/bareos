@@ -103,35 +103,20 @@ constexpr bool kIsModulo = false;
 template<class T>
 constexpr bool kIsModulo<Modulo<T>> = true;
 
-// List
-template<class T>
-struct List {
-  using Type = T;
-  
-  std::vector<T> items;
-};
-// :: kIsList
-template<class T>
-static constexpr bool kIsList = false;
-template<class T>
-static constexpr bool kIsList<List<T>> = true;
-
 // Mask
 template<class T>
-using Mask = List<std::variant<Range<T>, Modulo<T>, T>>;
+using Mask = std::variant<Range<T>, Modulo<T>, T>;
 // :: Contains
 template<class T>
 bool Contains(const Mask<T>& mask, T value) {
-  for (const auto& item : mask.items) {
-    if (std::holds_alternative<Range<T>>(item)) {
-      return std::get<Range<T>>(item).Contains(value);
-    }
-    else if (std::holds_alternative<Range<T>>(item)) {
-      return std::get<Range<T>>(item).Contains(value);
-    }
-    else {
-      return std::get<T>(item) == value;
-    }
+  if (std::holds_alternative<Range<T>>(mask)) {
+    return std::get<Range<T>>(mask).Contains(value);
+  }
+  else if (std::holds_alternative<Range<T>>(mask)) {
+    return std::get<Range<T>>(mask).Contains(value);
+  }
+  else {
+    return std::get<T>(mask) == value;
   }
   return false;
 }
@@ -141,30 +126,50 @@ Mask<T> All() {
   return { { Range<T>({ T(0), T(kMaxValue<T>) }) } };
 }
 
+// Hourly
 class Hourly {};
 
 // Schedule
 class Schedule {
 public:
-  Schedule();
-  Schedule(Mask<MonthOfYear> month_of_year, Mask<WeekOfMonth> week_of_month, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
-  Schedule(Mask<MonthOfYear> month_of_year, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
-  Schedule(Mask<MonthOfYear> month_of_year, Mask<DayOfMonth> day_of_month, std::variant<List<TimeOfDay>, Hourly> time);
-  Schedule(Mask<WeekOfYear> week_of_year, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
-  Schedule(Mask<WeekOfMonth> week_of_month, Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
-  Schedule(Mask<DayOfMonth> day_of_month, std::variant<List<TimeOfDay>, Hourly> time);
-  Schedule(Mask<DayOfWeek> day_of_week, std::variant<List<TimeOfDay>, Hourly> time);
-  Schedule(std::variant<List<TimeOfDay>, Hourly> time);
+  Schedule() = default;
+
+  template<class T>
+  bool IsRestricted() const {
+    for (const auto& mask : day_masks) {
+      if (std::holds_alternative<Mask<T>>(mask)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  template<class T>
+  bool TriggersOn(T value) const {
+    if (!IsRestricted<T>()) {
+      return true;
+    }
+    for (const auto& mask : day_masks) {
+      if (std::holds_alternative<Mask<T>>(mask)) {
+        if (Contains(std::get<Mask<T>>(mask), value)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
   bool TriggersOnDay(DateTime date_time) const;
   std::vector<time_t> GetMatchingTimes(time_t from, time_t to) const;
 
-  std::variant<
-    std::tuple<Mask<MonthOfYear>, Mask<WeekOfMonth>, Mask<DayOfWeek>>,
-    std::tuple<Mask<MonthOfYear>, Mask<DayOfMonth>>,
-    std::tuple<Mask<WeekOfYear>, Mask<DayOfWeek>>
-  > day_mask;
-  std::variant<List<TimeOfDay>, Hourly> times;
+  std::vector<std::variant<
+    Mask<MonthOfYear>,
+    Mask<WeekOfYear>,
+    Mask<WeekOfMonth>,
+    Mask<DayOfMonth>,
+    Mask<DayOfWeek>
+  >> day_masks;
+  std::variant<std::vector<TimeOfDay>, Hourly> times = Hourly();
 };
  
 }  // namespace directordaemon
