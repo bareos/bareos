@@ -1409,11 +1409,6 @@ std::string ToString(const std::variant<Args...>& variant) {
 // :: Range
 template<class T>
 std::string ToString(const Range<T>& range) {
-  if constexpr (kFullRangeLiteral<T>.length() > 0) {
-    if (int(range.from) == 0 && int(range.to) == kMaxValue<T>) {
-      return std::string(kFullRangeLiteral<T>);
-    }
-  }
   return ToString(range.from) + "-" + ToString(range.to);
 }
 // :: std::vector

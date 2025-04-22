@@ -50,20 +50,6 @@ constexpr int kMaxValue<DayOfMonth> = 30;
 template<>
 constexpr int kMaxValue<DayOfWeek> = 6;
 
-// kFullRangeLiteral
-template<class T>
-constexpr std::string_view kFullRangeLiteral = "";
-template<>
-constexpr std::string_view kFullRangeLiteral<MonthOfYear> = "monthly";
-template<>
-constexpr std::string_view kFullRangeLiteral<WeekOfYear> = "weekly";
-template<>
-constexpr std::string_view kFullRangeLiteral<WeekOfMonth> = "weekly";
-template<>
-constexpr std::string_view kFullRangeLiteral<DayOfMonth> = "daily";
-template<>
-constexpr std::string_view kFullRangeLiteral<DayOfWeek> = "daily";
-
 // Range
 template<class T>
 struct Range {
@@ -133,6 +119,7 @@ class Hourly {};
 class Schedule {
 public:
   Schedule() = default;
+  Schedule(const std::variant<std::vector<TimeOfDay>, Hourly>& times);
 
   template<class T>
   bool IsRestricted() const {
@@ -169,7 +156,7 @@ public:
     Mask<DayOfMonth>,
     Mask<DayOfWeek>
   >> day_masks;
-  std::variant<std::vector<TimeOfDay>, Hourly> times = Hourly();
+  std::variant<std::vector<TimeOfDay>, Hourly> times = std::vector<TimeOfDay>{};
 };
  
 }  // namespace directordaemon
