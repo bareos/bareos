@@ -313,21 +313,6 @@ static struct s_keyw keyw[] = {{NT_("on"), s_none, 0},
                                {NT_("fifth"), s_wom, 4},
                                {NULL, s_none, 0}};
 
-static bool have_hour, have_mday, have_wday, have_month, have_wom;
-static bool have_at, have_woy;
-
-static void set_defaults(RunResource& res_run)
-{
-  have_hour = have_mday = have_wday = have_month = have_wom = have_woy = false;
-  have_at = false;
-  SetBitRange(0, 23, res_run.date_time_mask.hour);
-  SetBitRange(0, 30, res_run.date_time_mask.mday);
-  SetBitRange(0, 6, res_run.date_time_mask.wday);
-  SetBitRange(0, 11, res_run.date_time_mask.month);
-  SetBitRange(0, 4, res_run.date_time_mask.wom);
-  SetBitRange(0, 53, res_run.date_time_mask.woy);
-}
-
 // Keywords (RHS) permitted in Run records
 struct s_kw RunFields[] = {{"pool", 'P'},
                            {"fullpool", 'f'},
@@ -358,14 +343,14 @@ struct s_kw RunFields[] = {{"pool", 'P'},
  */
 void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
 {
-  char* p;
   int i, j;
   int options = lc->options;
-  int token, state, state2 = 0, code = 0, code2 = 0;
+  int token, code = 0;
   bool found;
   utime_t utime;
   BareosResource* res;
   RunResource res_run;
+  std::vector<std::string> tokens;
 
   lc->options |= LOPT_NO_IDENT; /* Want only "strings" */
 
@@ -524,16 +509,10 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
 
   /* Scan schedule times.
    * Default is: daily at 0:0 */
-  state = s_none;
-  set_defaults(res_run);
-
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
-    int len;
-    bool pm = false;
-    bool am = false;
     switch (token) {
       case BCT_NUMBER:
-        state = s_mday;
+        tokens.emplace_back(lc->str);
         code = atoi(lc->str) - 1;
         if (code < 0 || code > 30) {
           scan_err0(lc, T_("Day number out of range (1-31)"));
@@ -542,16 +521,20 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
         break;
       case BCT_NAME: /* This handles drop through from keyword */
       case BCT_UNQUOTED_STRING:
+        if (tokens.size() > 0 && tokens.back() == "at") {
+          tokens.back() += " ";
+          tokens.back() += lc->str;
+        }
+        else {
+          tokens.emplace_back(lc->str);
+        }
         if (strchr(lc->str, (int)'-')) {
-          state = s_range;
           break;
         }
         if (strchr(lc->str, (int)':')) {
-          state = s_time;
           break;
         }
         if (strchr(lc->str, (int)'/')) {
-          state = s_modulo;
           break;
         }
         if (lc->str_len == 3 && (lc->str[0] == 'w' || lc->str[0] == 'W')
@@ -561,13 +544,11 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
             scan_err0(lc, T_("Week number out of range (0-53)"));
             return;
           }
-          state = s_woy; /* Week of year */
           break;
         }
         // Everything else must be a keyword
         for (i = 0; keyw[i].name; i++) {
           if (Bstrcasecmp(lc->str, keyw[i].name)) {
-            state = keyw[i].state;
             code = keyw[i].code;
             i = 0;
             break;
@@ -586,301 +567,35 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
         return;
         break;
     }
-    switch (state) {
-      case s_none:
-        continue;
-      case s_mday: /* Day of month */
-        if (!have_mday) {
-          ClearBitRange(0, 30, res_run.date_time_mask.mday);
-          have_mday = true;
-        }
-        SetBit(code, res_run.date_time_mask.mday);
-        break;
-      case s_month: /* Month of year */
-        if (!have_month) {
-          ClearBitRange(0, 11, res_run.date_time_mask.month);
-          have_month = true;
-        }
-        SetBit(code, res_run.date_time_mask.month);
-        break;
-      case s_wday: /* Week day */
-        if (!have_wday) {
-          ClearBitRange(0, 6, res_run.date_time_mask.wday);
-          have_wday = true;
-        }
-        SetBit(code, res_run.date_time_mask.wday);
-        break;
-      case s_wom: /* Week of month 1st, ... */
-        if (!have_wom) {
-          ClearBitRange(0, 4, res_run.date_time_mask.wom);
-          have_wom = true;
-        }
-        SetBit(code, res_run.date_time_mask.wom);
-        break;
-      case s_woy:
-        if (!have_woy) {
-          ClearBitRange(0, 53, res_run.date_time_mask.woy);
-          have_woy = true;
-        }
-        SetBit(code, res_run.date_time_mask.woy);
-        break;
-      case s_time: /* Time */
-        if (!have_at) {
-          scan_err0(lc, T_("Time must be preceded by keyword AT."));
-          return;
-        }
-        if (!have_hour) { ClearBitRange(0, 23, res_run.date_time_mask.hour); }
-        //       Dmsg1(000, "s_time=%s\n", lc->str);
-        p = strchr(lc->str, ':');
-        if (!p) {
-          scan_err0(lc, T_("Time logic error.\n"));
-          return;
-        }
-        *p++ = 0;             /* Separate two halves */
-        code = atoi(lc->str); /* Pick up hour */
-        code2 = atoi(p);      /* Pick up minutes */
-        len = strlen(p);
-        if (len >= 2) { p += 2; }
-        if (Bstrcasecmp(p, "pm")) {
-          pm = true;
-        } else if (Bstrcasecmp(p, "am")) {
-          am = true;
-        } else if (len != 2) {
-          scan_err0(lc, T_("Bad time specification."));
-          return;
-        }
-        /* Note, according to NIST, 12am and 12pm are ambiguous and
-         *  can be defined to anything.  However, 12:01am is the same
-         *  as 00:01 and 12:01pm is the same as 12:01, so we define
-         *  12am as 00:00 and 12pm as 12:00. */
-        if (pm) {
-          // Convert to 24 hour time
-          if (code != 12) { code += 12; }
-        } else if (am && code == 12) {
-          // AM
-          code -= 12;
-        }
-        if (code < 0 || code > 23 || code2 < 0 || code2 > 59) {
-          scan_err0(lc, T_("Bad time specification."));
-          return;
-        }
-        SetBit(code, res_run.date_time_mask.hour);
-        res_run.minute = code2;
-        have_hour = true;
-        break;
-      case s_at:
-        have_at = true;
-        break;
-      case s_last:
-        res_run.date_time_mask.last_7days_of_month = true;
-        if (!have_wom) {
-          ClearBitRange(0, 4, res_run.date_time_mask.wom);
-          have_wom = true;
-        }
-        break;
-      case s_modulo:
-        p = strchr(lc->str, '/');
-        if (!p) {
-          scan_err0(lc, T_("Modulo logic error.\n"));
-          return;
-        }
-        *p++ = 0; /* Separate two halves */
+  }
 
-        if (IsAnInteger(lc->str) && IsAnInteger(p)) {
-          // Check for day modulo specification.
-          code = atoi(lc->str) - 1;
-          code2 = atoi(p);
-          if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, T_("Bad day specification in modulo."));
-            return;
-          }
-          if (code > code2) {
-            scan_err0(lc, T_("Bad day specification, offset must always be <= "
-                             "than modulo."));
-            return;
-          }
-          if (!have_mday) {
-            ClearBitRange(0, 30, res_run.date_time_mask.mday);
-            have_mday = true;
-          }
-          // Set the bits according to the modulo specification.
-          for (i = 0; i < 31; i++) {
-            if (i % code2 == 0) {
-              SetBit(i + code, res_run.date_time_mask.mday);
-            }
-          }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3
-                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
-                   && IsAnInteger(p + 1)) {
-          // Check for week modulo specification.
-          code = atoi(lc->str + 1);
-          code2 = atoi(p + 1);
-          if (code < 0 || code > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53) in modulo"));
-            return;
-          }
-          if (code2 <= 0 || code2 > 53) {
-            scan_err0(lc, T_("Week interval out of range (1-53) in modulo"));
-            return;
-          }
-          if (code > code2) {
-            scan_err0(lc, T_("Bad week number specification in modulo, offset "
-                             "must always be <= than modulo."));
-            return;
-          }
-          if (!have_woy) {
-            ClearBitRange(0, 53, res_run.date_time_mask.woy);
-            have_woy = true;
-          }
-          // Set the bits according to the modulo specification.
-          for (int week = code; week <= 53; week += code2) {
-            SetBit(week, res_run.date_time_mask.woy);
-          }
-        } else {
-          scan_err0(lc, T_("Bad modulo time specification. Format for weekdays "
-                           "is '01/02', for yearweeks is 'w01/w02'."));
-          return;
+  for (std::string str : tokens) {
+    for (char& ch : str) {
+      if (std::isupper(ch)) {
+        ch = std::tolower(ch);
+      }
+    }
+    auto day_spec = FromString<std::variant<
+      Mask<MonthOfYear>,
+      Mask<WeekOfYear>,
+      Mask<WeekOfMonth>,
+      Mask<DayOfMonth>,
+      Mask<DayOfWeek>
+    >>(str);
+    if (day_spec) {
+      res_run.schedule.day_masks.emplace_back(*day_spec);
+    }
+    auto time_spec = FromString<std::variant<TimeOfDay, Hourly>>(str);
+    if (time_spec) {
+      if (std::holds_alternative<TimeOfDay>(*time_spec)) {
+        if (std::holds_alternative<Hourly>(res_run.schedule.times)) {
+          res_run.schedule.times = std::vector<TimeOfDay>();
         }
-        break;
-      case s_range:
-        p = strchr(lc->str, '-');
-        if (!p) {
-          scan_err0(lc, T_("Range logic error.\n"));
-          return;
-        }
-        *p++ = 0; /* Separate two halves */
-
-        if (IsAnInteger(lc->str) && IsAnInteger(p)) {
-          // Check for day range.
-          code = atoi(lc->str) - 1;
-          code2 = atoi(p) - 1;
-          if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, T_("Bad day range specification."));
-            return;
-          }
-          if (!have_mday) {
-            ClearBitRange(0, 30, res_run.date_time_mask.mday);
-            have_mday = true;
-          }
-          if (code < code2) {
-            SetBitRange(code, code2, res_run.date_time_mask.mday);
-          } else {
-            SetBitRange(code, 30, res_run.date_time_mask.mday);
-            SetBitRange(0, code2, res_run.date_time_mask.mday);
-          }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3
-                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
-                   && IsAnInteger(p + 1)) {
-          // Check for week of year range.
-          code = atoi(lc->str + 1);
-          code2 = atoi(p + 1);
-          if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53)"));
-            return;
-          }
-          if (!have_woy) {
-            ClearBitRange(0, 53, res_run.date_time_mask.woy);
-            have_woy = true;
-          }
-          if (code < code2) {
-            SetBitRange(code, code2, res_run.date_time_mask.woy);
-          } else {
-            SetBitRange(code, 53, res_run.date_time_mask.woy);
-            SetBitRange(0, code2, res_run.date_time_mask.woy);
-          }
-        } else {
-          // lookup first half of keyword range (week days or months).
-          lcase(lc->str);
-          for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(lc->str, keyw[i].name)) {
-              state = keyw[i].state;
-              code = keyw[i].code;
-              i = 0;
-              break;
-            }
-          }
-          if (i != 0
-              || (state != s_month && state != s_wday && state != s_wom)) {
-            scan_err0(lc, T_("Invalid month, week or position day range"));
-            return;
-          }
-
-          // Lookup end of range.
-          lcase(p);
-          for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(p, keyw[i].name)) {
-              state2 = keyw[i].state;
-              code2 = keyw[i].code;
-              i = 0;
-              break;
-            }
-          }
-          if (i != 0 || state != state2 || code == code2) {
-            scan_err0(lc, T_("Invalid month, weekday or position range"));
-            return;
-          }
-          if (state == s_wday) {
-            if (!have_wday) {
-              ClearBitRange(0, 6, res_run.date_time_mask.wday);
-              have_wday = true;
-            }
-            if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_mask.wday);
-            } else {
-              SetBitRange(code, 6, res_run.date_time_mask.wday);
-              SetBitRange(0, code2, res_run.date_time_mask.wday);
-            }
-          } else if (state == s_month) {
-            if (!have_month) {
-              ClearBitRange(0, 11, res_run.date_time_mask.month);
-              have_month = true;
-            }
-            if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_mask.month);
-            } else {
-              // This is a bit odd, but we accept it anyway
-              SetBitRange(code, 11, res_run.date_time_mask.month);
-              SetBitRange(0, code2, res_run.date_time_mask.month);
-            }
-          } else {
-            // Must be position
-            if (!have_wom) {
-              ClearBitRange(0, 4, res_run.date_time_mask.wom);
-              have_wom = true;
-            }
-            if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_mask.wom);
-            } else {
-              SetBitRange(code, 4, res_run.date_time_mask.wom);
-              SetBitRange(0, code2, res_run.date_time_mask.wom);
-            }
-          }
-        }
-        break;
-      case s_hourly:
-        have_hour = true;
-        SetBitRange(0, 23, res_run.date_time_mask.hour);
-        break;
-      case s_weekly:
-        have_mday = have_wom = have_woy = true;
-        SetBitRange(0, 30, res_run.date_time_mask.mday);
-        SetBitRange(0, 4, res_run.date_time_mask.wom);
-        SetBitRange(0, 53, res_run.date_time_mask.woy);
-        break;
-      case s_daily:
-        have_mday = true;
-        SetBitRange(0, 6, res_run.date_time_mask.wday);
-        break;
-      case s_monthly:
-        have_month = true;
-        SetBitRange(0, 11, res_run.date_time_mask.month);
-        break;
-      default:
-        scan_err0(lc, T_("Unexpected run state\n"));
-        return;
-        break;
+        std::get<std::vector<TimeOfDay>>(res_run.schedule.times).emplace_back(std::get<TimeOfDay>(*time_spec));
+      }
+      else {
+        res_run.schedule.times = Hourly(); 
+      }
     }
   }
 

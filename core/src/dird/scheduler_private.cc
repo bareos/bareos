@@ -181,21 +181,12 @@ void SchedulerPrivate::FillSchedulerJobQueueOrSleep()
   }
 }
 
-static time_t CalculateRuntime(time_t time, uint32_t minute)
-{
-  struct tm tm{};
-  Blocaltime(&time, &tm);
-  tm.tm_min = minute;
-  tm.tm_sec = 0;
-  return mktime(&tm);
-}
-
 void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 {
   Dmsg0(local_debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
 
-  DateTime date_time_now(time_adapter->time_source_->SystemTime());
-  date_time_now.PrintDebugMessage(local_debuglevel);
+  time_t now = time_adapter->time_source_->SystemTime();
+  Date_time_now.PrintDebugMessage(local_debuglevel);
   DateTime date_time_next_hour(date_time_now.GetTime() + seconds_per_hour.count());
   date_time_next_hour.PrintDebugMessage(local_debuglevel);
 
@@ -208,26 +199,9 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
-      bool run_this_hour
-          = run->date_time_mask.TriggersOnDayAndHour(date_time_now.GetTime());
-      bool run_next_hour
-          = run->date_time_mask.TriggersOnDayAndHour(date_time_next_hour.GetTime());
-
-      Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
-            run_this_hour, run_next_hour);
-
-      if (run_this_hour || run_next_hour) {
-        time_t runtime = CalculateRuntime(date_time_now.GetTime(), run->minute);
-        if (run_this_hour) {
-          AddJobToQueue(job, run, date_time_now.GetTime(), runtime,
-                        JobTrigger::kScheduler);
-        }
-        if (run_next_hour) {
-          AddJobToQueue(job, run, date_time_now.GetTime(),
-                        runtime + seconds_per_hour.count(),
-                        JobTrigger::kScheduler);
-        }
-      }
+      for (auto runtime : run->schedule.GetMatchingTimes(now, now + 60 * 60)) {
+          AddJobToQueue(job, run, now, runtime, JobTrigger::kScheduler);
+              }
     }
   }
   Dmsg0(local_debuglevel, "Finished AddJobsForThisAndNextHourToQueue\n");
