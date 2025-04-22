@@ -214,10 +214,10 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
         job->resource_name_);
 
   if (run != nullptr) {
-    if ((runtime - run->scheduled_last) < 61) { return; }
+    if ((runtime - run->scheduled_last) <= 60) { return; }
   }
 
-  if ((runtime + 59) < now) { return; }
+  if ((runtime + 60) <= now) { return; }
 
   try {
     Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.\n",

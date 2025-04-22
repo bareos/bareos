@@ -41,7 +41,6 @@ set(DIRD_OBJECTS_SRCS
     consolidate.cc
     console_connection_lease.cc
     date_time.cc
-    date_time_mask.cc
     dbcheck_utils.cc
     dird_globals.cc
     dir_plugins.cc
@@ -135,7 +134,6 @@ endif()
 
 set(DBCHKSRCS
     date_time.cc
-    date_time_mask.cc
     dbcheck.cc
     dbcheck_utils.cc
     dird_conf.cc
