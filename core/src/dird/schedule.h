@@ -109,11 +109,11 @@ using Mask = std::variant<Range<T>, Modulo<T>, T>;
 // :: Contains
 template<class T>
 bool Contains(const Mask<T>& mask, T value) {
-  if (std::holds_alternative<Range<T>>(mask)) {
-    return std::get<Range<T>>(mask).Contains(value);
+  if (auto* range = std::get_if<Range<T>>(&mask)) {
+    return range->Contains(value);
   }
-  else if (std::holds_alternative<Range<T>>(mask)) {
-    return std::get<Range<T>>(mask).Contains(value);
+  else if (auto* modulo = std::get_if<Modulo<T>>(&mask)) {
+    return modulo->Contains(value);
   }
   else {
     return std::get<T>(mask) == value;
