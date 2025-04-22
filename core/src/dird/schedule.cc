@@ -25,6 +25,9 @@
 
 namespace directordaemon {
 
+Schedule::Schedule(const std::variant<std::vector<TimeOfDay>, Hourly>& _times)
+  : times(_times) {}
+
 bool Schedule::TriggersOnDay(DateTime date_time) const {
   return TriggersOn(MonthOfYear(date_time.month)) && 
     TriggersOn(WeekOfYear(date_time.week_of_year)) &&

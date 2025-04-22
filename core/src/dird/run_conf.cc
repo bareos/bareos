@@ -155,13 +155,6 @@ std::optional<T> FromString(const std::string& str) {
 template<class T, std::enable_if_t<kIsRange<T>, int> = 0>
 std::optional<T> FromString(const std::string& str) {
   typename T::Type from, to;
-  if constexpr (kFullRangeLiteral<typename T::Type>.length() > 0) {
-    if (kFullRangeLiteral<typename T::Type> == str) {
-      from = (typename T::Type)0;
-      to = (typename T::Type)kMaxValue<typename T::Type>;
-      return T({ from, to });
-    }
-  }
   if (Deformat(str, "%-%", from, to)) {
     return T({ from, to });
   }
@@ -476,35 +469,65 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
     }
   }
 
-  for (std::string str : tokens) {
+  Schedule schedule;
+  for (std::string token_str : tokens) {
+    std::string str = token_str;
     for (char& ch : str) {
       if (std::isupper(ch)) {
         ch = std::tolower(ch);
       }
     }
-    auto day_spec = FromString<std::variant<
+    if (str == "daily" || str == "weekly" || str == "monthly") {
+      if (pass == 1) {
+        scan_warn1(lc, "Run directive includes token \"%s\", which is deprecated and does nothing", token_str.c_str());
+      }
+      continue;
+    }
+    if (auto day_spec = FromString<std::variant<
       Mask<MonthOfYear>,
       Mask<WeekOfYear>,
       Mask<WeekOfMonth>,
       Mask<DayOfMonth>,
       Mask<DayOfWeek>
-    >>(str);
-    if (day_spec) {
-      res_run.schedule.day_masks.emplace_back(*day_spec);
+      >>(str)) {
+      schedule.day_masks.emplace_back(*day_spec);
     }
-    auto time_spec = FromString<std::variant<TimeOfDay, Hourly>>(str);
-    if (time_spec) {
-      if (std::holds_alternative<TimeOfDay>(*time_spec)) {
-        if (std::holds_alternative<Hourly>(res_run.schedule.times)) {
-          res_run.schedule.times = std::vector<TimeOfDay>();
+    else if (auto time_spec = FromString<std::variant<TimeOfDay, Hourly>>(str)) {
+      if (auto* time_of_day = std::get_if<TimeOfDay>(&time_spec.value())) {
+        if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+          times_of_day->emplace_back(*time_of_day);
         }
-        std::get<std::vector<TimeOfDay>>(res_run.schedule.times).emplace_back(std::get<TimeOfDay>(*time_spec));
+        else {
+          if (pass == 1) {
+            scan_warn2(lc, "Run directive specified both \"hourly\" and \"%s\", falling back to \"%s\"", token_str.c_str(), token_str.c_str());
+          }
+          schedule.times = std::vector<TimeOfDay>{ *time_of_day };
+        }
       }
       else {
-        res_run.schedule.times = Hourly(); 
+        if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+          if (!times_of_day->empty()) {
+            scan_warn2(lc, "Run directive specified both \"hourly\" and \"%s\", falling back to \"%s\"", token_str.c_str(), token_str.c_str());
+          }
+        }
+        schedule.times = Hourly(); 
       }
     }
+    else {
+      scan_err1(lc, T_("Could not parse Run directive because of illegal token \"%s\""), token_str.c_str());
+    }
   }
+  if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+    if (times_of_day->empty()) {
+      times_of_day->emplace_back(TimeOfDay(0, 0));
+    }
+  }
+  auto now = time(nullptr);
+  if (pass == 1 && schedule.GetMatchingTimes(now, now + 60 * 60 * 24 * 366).empty()) {
+    scan_warn0(lc, "Run directive schedule never runs in the next 366 days");
+  }
+  res_run.schedule = schedule;
+  
 
   /* Allocate run record, copy new stuff into it,
    * and append it to the list of run records
