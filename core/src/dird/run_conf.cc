@@ -498,19 +498,20 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
           times_of_day->emplace_back(*time_of_day);
         }
         else {
-          if (pass == 1) {
-            scan_warn2(lc, "Run directive specified both \"hourly\" and \"%s\", falling back to \"%s\"", token_str.c_str(), token_str.c_str());
-          }
-          schedule.times = std::vector<TimeOfDay>{ *time_of_day };
+          std::get<Hourly>(schedule.times).minutes.insert(time_of_day->minute);
         }
       }
       else {
         if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
-          if (!times_of_day->empty()) {
-            scan_warn2(lc, "Run directive specified both \"hourly\" and \"%s\", falling back to \"%s\"", token_str.c_str(), token_str.c_str());
+          std::set<int> minutes;
+          for (const TimeOfDay& other_time_of_day : *times_of_day) {
+            minutes.insert(other_time_of_day.minute);
           }
+          schedule.times = Hourly({ std::move(minutes) });
         }
-        schedule.times = Hourly(); 
+        else {
+          schedule.times = Hourly();
+        }
       }
     }
     else {
@@ -520,6 +521,11 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
   if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
     if (times_of_day->empty()) {
       times_of_day->emplace_back(TimeOfDay(0, 0));
+    }
+  }
+  else if (auto* hourly = std::get_if<Hourly>(&schedule.times)) {
+    if (hourly->minutes.empty()) {
+      hourly->minutes.insert(0);
     }
   }
   auto now = time(nullptr);

@@ -40,13 +40,15 @@ std::vector<time_t> Schedule::GetMatchingTimes(time_t from, time_t to) const {
   for (time_t day = from; day < to + 60 * 60 * 24; day += 60 * 60 * 24) {
     DateTime date_time(day);
     if (TriggersOnDay(date_time)) {
-      if (std::holds_alternative<Hourly>(times)) {
+      if (auto* hourly = std::get_if<Hourly>(&times)) {
         for (int hour = 0; hour < 24; ++hour) {
           date_time.hour = hour;
-          date_time.minute = 0;
-          time_t runtime = date_time.GetTime();
-          if (from <= runtime && runtime <= to) {
-            list.push_back(runtime);
+          for (int minute : hourly->minutes) {
+            date_time.minute = minute;
+            time_t runtime = date_time.GetTime();
+            if (from <= runtime && runtime <= to) {
+              list.push_back(runtime);
+            }
           }
         }
       }

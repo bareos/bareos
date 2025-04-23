@@ -33,6 +33,7 @@
 #include <vector>
 #include <array>
 #include <variant>
+#include <set>
 
 namespace directordaemon {
 
@@ -113,7 +114,9 @@ Mask<T> All() {
 }
 
 // Hourly
-class Hourly {};
+struct Hourly {
+  std::set<int> minutes;
+};
 
 // Schedule
 class Schedule {
