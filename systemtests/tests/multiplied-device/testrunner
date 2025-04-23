@@ -2,10 +2,17 @@
 set -e
 set -o pipefail
 set -u
+
 #
-# Run a simple backup
-#   then restore it.
+# This systemtest validates that devices, multiplied using the 'Count' directive,
+# work and can be used as any other device.
+# To validate the devices behaviour, we perform the following actions:
+#  - backups
+#  - restores
+#  - purges
+#  - truncates
 #
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -18,8 +25,6 @@ JobName=backup-bareos-fd
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -37,6 +42,7 @@ setdevice storage=File device=MultiFileStorage0003 autoselect=yes
 run job=backup-to-pool1 level=Full yes
 run job=backup-to-pool2 level=Full yes
 run job=backup-to-pool3 level=Full yes
+@sleep 1
 run job=backup-to-pool1 level=Full yes
 run job=backup-to-pool2 level=Full yes
 run job=backup-to-pool3 level=Full yes
@@ -95,46 +101,57 @@ check_two_logs
 check_restore_diff ${BackupDirectory}
 
 #make sure all the setdevice commands were successful
-grep "3000 OK setdevice=MultiFileStorage0001 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1 &&
-grep "3000 OK setdevice=MultiFileStorage0002 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1 &&
-grep "3000 OK setdevice=MultiFileStorage0003 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1
-if test $? -ne 0 ; then
-  echo "The setdevice command failed for a MultiFileStorage."
-  estat=1;
-fi
+expect_grep "3000 OK setdevice=MultiFileStorage0001 autoselect=1" \
+  "${tmp}"/log1.out \
+  "The setdevice command failed for MultiFileStorage0001."
+expect_grep "3000 OK setdevice=MultiFileStorage0002 autoselect=1" \
+  "${tmp}"/log1.out \
+  "The setdevice command failed for MultiFileStorage0002."
+expect_grep "3000 OK setdevice=MultiFileStorage0003 autoselect=1" \
+  "${tmp}"/log1.out \
+  "The setdevice command failed for MultiFileStorage0003."
 
-if test $estat -ne 1 ; then
-  #make sure all MultiFileStorage devices are used
-  grep "Using Device \"MultiFileStorage0001\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
-  grep "Using Device \"MultiFileStorage0002\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
-  grep "Using Device \"MultiFileStorage0003\"" "${tmp}"/log1.out >/dev/null 2>&1
-  if test $? -ne 0 ; then
-    echo "Not all MultiFileStorage devices are used."
-    estat=1;
-  fi
-fi
+#make sure all MultiFileStorage devices are used
+expect_grep "Using Device \"MultiFileStorage0001\"" \
+  "${tmp}"/log1.out \
+  "\"MultiFileStorage0001\" not in use."
+expect_grep "Using Device \"MultiFileStorage0002\"" \
+  "${tmp}"/log1.out \
+  "\"MultiFileStorage0002\" not in use."
+expect_grep "Using Device \"MultiFileStorage0003\"" \
+  "${tmp}"/log1.out \
+  "\"MultiFileStorage0003\" not in use."
 
 #make sure all volumes are purged
-grep "There are no more Jobs associated with Volume \"Full-0001\". Marking it purged." "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "There are no more Jobs associated with Volume \"Full-0002\". Marking it purged." "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "There are no more Jobs associated with Volume \"Full-0003\". Marking it purged." "${tmp}"/log3.out >/dev/null 2>&1
-if test $? -ne 0 ; then
-  echo "The Purge command failed for a MultiFileStorage."
-  estat=1;
-fi
-
+expect_grep "There are no more Jobs associated with Volume \"Full-0001\". Marking it purged." \
+  "${tmp}"/log3.out \
+  "The Purge command failed for a MultifileStorage."
+expect_grep "There are no more Jobs associated with Volume \"Full-0002\". Marking it purged." \
+  "${tmp}"/log3.out \
+  "The Purge command failed for a MultifileStorage."
+expect_grep "There are no more Jobs associated with Volume \"Full-0003\". Marking it purged." \
+  "${tmp}"/log3.out \
+  "The Purge command failed for a MultifileStorage."
 
 #make sure all volumes are correctly truncated with the correct drive
-grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0001\" Device=\"MultiFileStorage0000\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0002\" Device=\"MultiFileStorage0001\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0003\" Device=\"MultiFileStorage0002\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "The volume 'Full-0001' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "The volume 'Full-0002' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1 &&
-grep "The volume 'Full-0003' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1
-if test $? -ne 0 ; then
-  echo "The Truncate command failed for a MultiFileStorage."
-  estat=1;
-fi
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0001\" Device=\"MultiFileStorage0000\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for a MultiFileStorage."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0002\" Device=\"MultiFileStorage0001\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for a MultiFileStorage."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0003\" Device=\"MultiFileStorage0002\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for a MultiFileStorage."
+expect_grep "The volume 'Full-0001' has been truncated." \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for a MultiFileStorage."
+expect_grep "The volume 'Full-0002' has been truncated." \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for a MultiFileStorage."
+expect_grep "The volume 'Full-0003' has been truncated." \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for a MultiFileStorage."
 
 # make sure the devices really have been truncated
 for i in 1 2 3; do
@@ -146,32 +163,23 @@ for i in 1 2 3; do
 done
 
 # check if the relabel went correctly
-grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"fakevolume\" Device=\"FileStorage\" (storage)" "${tmp}"/log4.out >/dev/null 2>&1
-if test $? -ne 0 ; then
-  echo "The fakevolume relabel failed."
-  estat=1;
-fi
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"fakevolume\" Device=\"FileStorage\" (storage)" \
+  "${tmp}"/log4.out \
+  "The fakevolume relabel failed."
 
 # make sure exact number of orphaned storages is found
-grep "Found 2 orphaned Storage records" "${tmp}"/log4.out >/dev/null 2>&1
-if test $? -ne 0 ; then
-  echo "The delete command failed to find the exact number of fakestorages."
-  estat=1;
-fi
+expect_grep "Found 2 orphaned Storage records" \
+  "${tmp}"/log4.out \
+  "The delete command failed to find the exact number of fakestorages."
 
 # make sure storage 'File' cannot be deleted
-grep "The given storage 'File' either does not exist at all, or still exists in the configuration." "${tmp}"/log4.out >/dev/null 2>&1
-if test $? -ne 0 ; then
-  echo "The delete command failed for an existing storage."
-  estat=1;
-fi
-
+expect_grep "The given storage 'File' either does not exist at all, or still exists in the configuration." \
+  "${tmp}"/log4.out \
+  "The delete command failed for an existing storage."
 
 # make sure extra storages fakestorage1 cannot be deleted
-grep "Orphaned storage 'fakestorage1' is being used by volume 'fakevolume'" "${tmp}"/log4.out >/dev/null 2>&1
-if test $? -ne 0 ; then
-  echo "The delete command failed to detect fakestorages related to other medias."
-  estat=1;
-fi
+expect_grep "Orphaned storage 'fakestorage1' is being used by volume 'fakevolume'" \
+  "${tmp}"/log4.out \
+  "The delete command failed to detect fakestorages related to other medias."
 
 end_test
