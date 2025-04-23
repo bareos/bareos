@@ -139,10 +139,10 @@ std::optional<T> FromString(const std::string& str) {
     return T({ hour, minute });
   }
   else if (Deformat(str, "at %:%am", hour, minute)) {
-    return T({ hour, minute });
+    return T({ (hour % 12), minute });
   }
   else if (Deformat(str, "at %:%pm", hour, minute)) {
-    return T({ hour + 12, minute });
+    return T({ (hour % 12) + 12, minute });
   }
   return std::nullopt;
 }
