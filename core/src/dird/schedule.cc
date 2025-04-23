@@ -26,16 +26,22 @@
 namespace directordaemon {
 
 Schedule::Schedule(const std::variant<std::vector<TimeOfDay>, Hourly>& _times)
-  : times(_times) {}
-
-bool Schedule::TriggersOnDay(DateTime date_time) const {
-  return TriggersOn(MonthOfYear(date_time.month)) && 
-    TriggersOn(WeekOfYear(date_time.week_of_year)) &&
-    (TriggersOn(WeekOfMonth(date_time.week_of_month)) || (date_time.OnLast7DaysOfMonth() && TriggersOn(WeekOfMonth::kLast))) &&
-    TriggersOn(DayOfMonth(date_time.day_of_month)) &&
-    TriggersOn(DayOfWeek(date_time.day_of_week));
+    : times(_times)
+{
 }
-std::vector<time_t> Schedule::GetMatchingTimes(time_t from, time_t to) const {
+
+bool Schedule::TriggersOnDay(DateTime date_time) const
+{
+  return TriggersOn(MonthOfYear(date_time.month))
+         && TriggersOn(WeekOfYear(date_time.week_of_year))
+         && (TriggersOn(WeekOfMonth(date_time.week_of_month))
+             || (date_time.OnLast7DaysOfMonth()
+                 && TriggersOn(WeekOfMonth::kLast)))
+         && TriggersOn(DayOfMonth(date_time.day_of_month))
+         && TriggersOn(DayOfWeek(date_time.day_of_week));
+}
+std::vector<time_t> Schedule::GetMatchingTimes(time_t from, time_t to) const
+{
   std::vector<time_t> list;
   for (time_t day = from; day < to + 60 * 60 * 24; day += 60 * 60 * 24) {
     DateTime date_time(day);
@@ -46,25 +52,20 @@ std::vector<time_t> Schedule::GetMatchingTimes(time_t from, time_t to) const {
           for (int minute : hourly->minutes) {
             date_time.minute = minute;
             time_t runtime = date_time.GetTime();
-            if (from <= runtime && runtime <= to) {
-              list.push_back(runtime);
-            }
+            if (from <= runtime && runtime <= to) { list.push_back(runtime); }
           }
         }
-      }
-      else {
+      } else {
         for (const auto& time : std::get<std::vector<TimeOfDay>>(times)) {
           date_time.hour = time.hour;
           date_time.minute = time.minute;
           time_t runtime = date_time.GetTime();
-          if (from <= runtime && runtime <= to) {
-            list.push_back(runtime);
-          }
+          if (from <= runtime && runtime <= to) { list.push_back(runtime); }
         }
       }
     }
   }
   return list;
 }
-   
-} // namespace directordaemon
+
+}  // namespace directordaemon

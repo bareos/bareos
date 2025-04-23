@@ -68,7 +68,7 @@ DateTime::DateTime(time_t time)
   second = tm.tm_sec;
   dst_ = tm.tm_isdst;
   gmt_offset_ = tm.tm_gmtoff;
-  time_zone_ = tm.tm_zone;  
+  time_zone_ = tm.tm_zone;
 }
 
 bool DateTime::OnLast7DaysOfMonth() const
@@ -78,7 +78,8 @@ bool DateTime::OnLast7DaysOfMonth() const
   return last_day - kDaysPerWeek < day_of_year;
 }
 
-time_t DateTime::GetTime() const {
+time_t DateTime::GetTime() const
+{
   struct tm tm = {};
   tm.tm_year = year - 1900;
   tm.tm_mon = month;
@@ -96,8 +97,9 @@ time_t DateTime::GetTime() const {
 
 void DateTime::PrintDebugMessage(int debug_level) const
 {
-  Dmsg8(debug_level, "now = %x: h=%d m=%d md=%d wd=%d woy=%d yday=%d\n ", GetTime(),
-        hour, month, day_of_month, day_of_week, week_of_year, day_of_year);
+  Dmsg8(debug_level, "now = %x: h=%d m=%d md=%d wd=%d woy=%d yday=%d\n ",
+        GetTime(), hour, month, day_of_month, day_of_week, week_of_year,
+        day_of_year);
 }
 
 }  // namespace directordaemon

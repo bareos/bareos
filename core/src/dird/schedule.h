@@ -38,29 +38,22 @@
 namespace directordaemon {
 
 // kMaxValue
-template<class T>
-constexpr int kMaxValue = 0;
-template<>
-constexpr int kMaxValue<MonthOfYear> = 11;
-template<>
-constexpr int kMaxValue<WeekOfYear> = 53;
-template<>
-constexpr int kMaxValue<WeekOfMonth> = 4;
-template<>
-constexpr int kMaxValue<DayOfMonth> = 30;
-template<>
-constexpr int kMaxValue<DayOfWeek> = 6;
+template <class T> constexpr int kMaxValue = 0;
+template <> constexpr int kMaxValue<MonthOfYear> = 11;
+template <> constexpr int kMaxValue<WeekOfYear> = 53;
+template <> constexpr int kMaxValue<WeekOfMonth> = 4;
+template <> constexpr int kMaxValue<DayOfMonth> = 30;
+template <> constexpr int kMaxValue<DayOfWeek> = 6;
 
 // Range
-template<class T>
-struct Range {
+template <class T> struct Range {
   using Type = T;
 
-  bool Contains(T value) const {
+  bool Contains(T value) const
+  {
     if (from <= to) {
       return from <= value && value <= to;
-    }
-    else {
+    } else {
       return from <= value || value <= to;
     }
   }
@@ -68,49 +61,42 @@ struct Range {
   T from, to;
 };
 // :: kIsRange
-template<class T>
-constexpr bool kIsRange = false;
-template<class T>
-constexpr bool kIsRange<Range<T>> = true;
+template <class T> constexpr bool kIsRange = false;
+template <class T> constexpr bool kIsRange<Range<T>> = true;
 
 // Modulo
-template<class T>
-struct Modulo {
+template <class T> struct Modulo {
   using Type = T;
 
-  bool Contains(T value) const {
+  bool Contains(T value) const
+  {
     return (int(value) % int(right)) == int(left);
   }
 
   T left, right;
 };
 // :: kIsModulo
-template<class T>
-constexpr bool kIsModulo = false;
-template<class T>
-constexpr bool kIsModulo<Modulo<T>> = true;
+template <class T> constexpr bool kIsModulo = false;
+template <class T> constexpr bool kIsModulo<Modulo<T>> = true;
 
 // Mask
-template<class T>
-using Mask = std::variant<Range<T>, Modulo<T>, T>;
+template <class T> using Mask = std::variant<Range<T>, Modulo<T>, T>;
 // :: Contains
-template<class T>
-bool Contains(const Mask<T>& mask, T value) {
+template <class T> bool Contains(const Mask<T>& mask, T value)
+{
   if (auto* range = std::get_if<Range<T>>(&mask)) {
     return range->Contains(value);
-  }
-  else if (auto* modulo = std::get_if<Modulo<T>>(&mask)) {
+  } else if (auto* modulo = std::get_if<Modulo<T>>(&mask)) {
     return modulo->Contains(value);
-  }
-  else {
+  } else {
     return std::get<T>(mask) == value;
   }
   return false;
 }
 // :: all
-template<class T>
-Mask<T> All() {
-  return { { Range<T>({ T(0), T(kMaxValue<T>) }) } };
+template <class T> Mask<T> All()
+{
+  return {{Range<T>({T(0), T(kMaxValue<T>)})}};
 }
 
 // Hourly
@@ -120,48 +106,42 @@ struct Hourly {
 
 // Schedule
 class Schedule {
-public:
+ public:
   Schedule() = default;
   Schedule(const std::variant<std::vector<TimeOfDay>, Hourly>& times);
-
-  template<class T>
-  bool IsRestricted() const {
-    for (const auto& mask : day_masks) {
-      if (std::holds_alternative<Mask<T>>(mask)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  template<class T>
-  bool TriggersOn(T value) const {
-    if (!IsRestricted<T>()) {
-      return true;
-    }
-    for (const auto& mask : day_masks) {
-      if (std::holds_alternative<Mask<T>>(mask)) {
-        if (Contains(std::get<Mask<T>>(mask), value)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
 
   bool TriggersOnDay(DateTime date_time) const;
   std::vector<time_t> GetMatchingTimes(time_t from, time_t to) const;
 
-  std::vector<std::variant<
-    Mask<MonthOfYear>,
-    Mask<WeekOfYear>,
-    Mask<WeekOfMonth>,
-    Mask<DayOfMonth>,
-    Mask<DayOfWeek>
-  >> day_masks;
+  std::vector<std::variant<Mask<MonthOfYear>,
+                           Mask<WeekOfYear>,
+                           Mask<WeekOfMonth>,
+                           Mask<DayOfMonth>,
+                           Mask<DayOfWeek>>>
+      day_masks;
   std::variant<std::vector<TimeOfDay>, Hourly> times = std::vector<TimeOfDay>{};
+
+ private:
+  template <class T> bool IsRestricted() const
+  {
+    for (const auto& mask : day_masks) {
+      if (std::holds_alternative<Mask<T>>(mask)) { return true; }
+    }
+    return false;
+  }
+
+  template <class T> bool TriggersOn(T value) const
+  {
+    if (!IsRestricted<T>()) { return true; }
+    for (const auto& mask : day_masks) {
+      if (std::holds_alternative<Mask<T>>(mask)) {
+        if (Contains(std::get<Mask<T>>(mask), value)) { return true; }
+      }
+    }
+    return false;
+  }
 };
- 
+
 }  // namespace directordaemon
 
 #endif  // BAREOS_DIRD_SCHEDULE_H_

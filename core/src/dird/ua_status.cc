@@ -384,7 +384,8 @@ static bool show_scheduled_preview(UaContext*,
 
   for (run = sched->run; run; run = run->next) {
     int cnt = 0;
-    for (auto runtime : run->schedule.GetMatchingTimes(time_to_check, time_to_check + 60 * 60)) {
+    for (auto runtime : run->schedule.GetMatchingTimes(
+             time_to_check, time_to_check + 60 * 60)) {
       bstrftime_wd(dt, sizeof(dt), runtime);
       date_len = strlen(dt);
       if (date_len > *max_date_len) {

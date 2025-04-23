@@ -41,23 +41,27 @@ namespace directordaemon {
 extern struct s_jl joblevels[];
 
 // Deformat
-template<class First, class... Rest>
-bool Deformat(std::string_view input, std::string_view fmt, First& first, Rest&... rest);
+template <class First, class... Rest>
+bool Deformat(std::string_view input,
+              std::string_view fmt,
+              First& first,
+              Rest&... rest);
 
 // FromString
 // :: int
-template<class T, std::enable_if_t<std::is_same_v<T, int>, int> = 0>
-std::optional<int> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<T, int>, int> = 0>
+std::optional<int> FromString(const std::string& str)
+{
   try {
     return std::stoi(str);
-  }
-  catch (...) {
+  } catch (...) {
     return std::nullopt;
   }
 }
 // :: MonthOfYear
-template<class T, std::enable_if_t<std::is_same_v<T, MonthOfYear>, int> = 0>
-std::optional<MonthOfYear> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<T, MonthOfYear>, int> = 0>
+std::optional<MonthOfYear> FromString(const std::string& str)
+{
   for (size_t i = 0; i < kMonthOfYearLiterals.size(); ++i) {
     bool equals = true;
     for (size_t j = 0; j < kMonthOfYearLiterals[i].length(); ++j) {
@@ -66,57 +70,51 @@ std::optional<MonthOfYear> FromString(const std::string& str) {
         break;
       }
     }
-    if (equals) {
-      return MonthOfYear(i);
-    }
+    if (equals) { return MonthOfYear(i); }
   }
   return std::nullopt;
 }
 // :: WeekOfYear
-template<class T, std::enable_if_t<std::is_same_v<T, WeekOfYear>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<T, WeekOfYear>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   auto index = FromString<int>(str.substr(1));
-  if (index && 0 <= *index && *index <= 53) {
-    return T(*index);
-  }
+  if (index && 0 <= *index && *index <= 53) { return T(*index); }
   return std::nullopt;
 }
 // :: WeekOfMonth
-template<class T, std::enable_if_t<std::is_same_v<T, WeekOfMonth>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<T, WeekOfMonth>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   if (str == "first" || str == "1rd") {
     return WeekOfMonth::kFirst;
-  }
-  else if (str == "second" || str == "2nd") {
+  } else if (str == "second" || str == "2nd") {
     return WeekOfMonth::kSecond;
-  }
-  else if (str == "third" || str == "3rd") {
+  } else if (str == "third" || str == "3rd") {
     return WeekOfMonth::kThird;
-  }
-  else if (str == "fourth" || str == "4th") {
+  } else if (str == "fourth" || str == "4th") {
     return WeekOfMonth::kFourth;
-  }
-  else if (str == "fifth" || str == "5th") {
+  } else if (str == "fifth" || str == "5th") {
     return WeekOfMonth::kFifth;
-  }
-  else if (str == "last") {
+  } else if (str == "last") {
     return WeekOfMonth::kLast;
   }
   return std::nullopt;
 }
 // :: DayOfMonth
-template<class T, std::enable_if_t<std::is_same_v<T, DayOfMonth>, int> = 0>
-std::optional<DayOfMonth> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<T, DayOfMonth>, int> = 0>
+std::optional<DayOfMonth> FromString(const std::string& str)
+{
   try {
     return DayOfMonth(std::stoi(str));
-  }
-  catch (...) {
+  } catch (...) {
     return std::nullopt;
   }
 }
 // :: DayOfWeek
-template<class T, std::enable_if_t<std::is_same_v<T, DayOfWeek>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<T, DayOfWeek>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   for (size_t i = 0; i < kDayOfWeekLiterals.size(); ++i) {
     bool equals = true;
     for (size_t j = 0; j < kDayOfWeekLiterals[i].length(); ++j) {
@@ -125,62 +123,57 @@ std::optional<T> FromString(const std::string& str) {
         break;
       }
     }
-    if (equals) {
-      return DayOfWeek(i);
-    }
+    if (equals) { return DayOfWeek(i); }
   }
   return std::nullopt;
 }
 // :: TimeOfDay
-template<class T, std::enable_if_t<std::is_same_v<TimeOfDay, T>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<TimeOfDay, T>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   int hour, minute;
   if (Deformat(str, "at %:%", hour, minute)) {
-    return T({ hour, minute });
-  }
-  else if (Deformat(str, "at %:%am", hour, minute)) {
-    return T({ (hour % 12), minute });
-  }
-  else if (Deformat(str, "at %:%pm", hour, minute)) {
-    return T({ (hour % 12) + 12, minute });
+    return T({hour, minute});
+  } else if (Deformat(str, "at %:%am", hour, minute)) {
+    return T({(hour % 12), minute});
+  } else if (Deformat(str, "at %:%pm", hour, minute)) {
+    return T({(hour % 12) + 12, minute});
   }
   return std::nullopt;
 }
 // :: Hourly
-template<class T, std::enable_if_t<std::is_same_v<Hourly, T>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, std::enable_if_t<std::is_same_v<Hourly, T>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   return str == "hourly" ? std::optional(Hourly()) : std::nullopt;
 }
 // :: Range
-template<class T, std::enable_if_t<kIsRange<T>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, std::enable_if_t<kIsRange<T>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   typename T::Type from, to;
-  if (Deformat(str, "%-%", from, to)) {
-    return T({ from, to });
-  }
+  if (Deformat(str, "%-%", from, to)) { return T({from, to}); }
   return std::nullopt;
 }
 // :: Modulo
-template<class T, std::enable_if_t<kIsModulo<T>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, std::enable_if_t<kIsModulo<T>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   typename T::Type left, right;
-  if (Deformat(str, "%/%", left, right)) {
-    return T({ left, right });
-  }
+  if (Deformat(str, "%/%", left, right)) { return T({left, right}); }
   return std::nullopt;
 }
 // :: std::variant
-template<class T>
-static constexpr bool kIsVariant = false;
-template<class... Args>
+template <class T> static constexpr bool kIsVariant = false;
+template <class... Args>
 static constexpr bool kIsVariant<std::variant<Args...>> = true;
-template<class T, size_t Index = 0, std::enable_if_t<kIsVariant<T>, int> = 0>
-std::optional<T> FromString(const std::string& str) {
+template <class T, size_t Index = 0, std::enable_if_t<kIsVariant<T>, int> = 0>
+std::optional<T> FromString(const std::string& str)
+{
   if constexpr (Index < std::variant_size_v<T>) {
     if (auto value = FromString<std::variant_alternative_t<Index, T>>(str)) {
       return T(*value);
-    }
-    else {
+    } else {
       return FromString<T, Index + 1>(str);
     }
   }
@@ -189,34 +182,35 @@ std::optional<T> FromString(const std::string& str) {
 
 // Deformat
 // :: base
-bool Deformat(std::string_view input, std::string_view fmt) {
+bool Deformat(std::string_view input, std::string_view fmt)
+{
   return fmt.find('%') == std::string::npos && input == fmt;
 }
 // :: recursive
-template<class First, class... Rest>
-bool Deformat(std::string_view input, std::string_view fmt, First& first, Rest&... rest) {
-  if (input.length() < fmt.length()) {
-    return false;
-  }
+template <class First, class... Rest>
+bool Deformat(std::string_view input,
+              std::string_view fmt,
+              First& first,
+              Rest&... rest)
+{
+  if (input.length() < fmt.length()) { return false; }
   for (size_t i = 0; i < input.length(); ++i) {
     if (input[i] == fmt[i]) {
       continue;
-    }
-    else if (fmt[i] == '%') {
+    } else if (fmt[i] == '%') {
       size_t end = i;
-      while (end < input.length() && (i + 1 == fmt.length() || input[end] != fmt[i + 1])) {
+      while (end < input.length()
+             && (i + 1 == fmt.length() || input[end] != fmt[i + 1])) {
         ++end;
       }
       auto value = FromString<First>(std::string(input.substr(i, end - i)));
       if (value) {
         first = *value;
-      }
-      else {
+      } else {
         return false;
       }
       return Deformat(input.substr(end), fmt.substr(i + 1), rest...);
-    }
-    else {
+    } else {
       return false;
     }
   }
@@ -455,8 +449,7 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
         if (tokens.size() > 0 && tokens.back() == "at") {
           tokens.back() += " ";
           tokens.back() += lc->str;
-        }
-        else {
+        } else {
           tokens.emplace_back(lc->str);
         }
         break;
@@ -473,67 +466,62 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
   for (std::string token_str : tokens) {
     std::string str = token_str;
     for (char& ch : str) {
-      if (std::isupper(ch)) {
-        ch = std::tolower(ch);
-      }
+      if (std::isupper(ch)) { ch = std::tolower(ch); }
     }
     if (str == "daily" || str == "weekly" || str == "monthly") {
       if (pass == 1) {
-        scan_warn1(lc, "Run directive includes token \"%s\", which is deprecated and does nothing", token_str.c_str());
+        scan_warn1(lc,
+                   "Run directive includes token \"%s\", which is deprecated "
+                   "and does nothing",
+                   token_str.c_str());
       }
       continue;
     }
-    if (auto day_spec = FromString<std::variant<
-      Mask<MonthOfYear>,
-      Mask<WeekOfYear>,
-      Mask<WeekOfMonth>,
-      Mask<DayOfMonth>,
-      Mask<DayOfWeek>
-      >>(str)) {
+    if (auto day_spec = FromString<
+            std::variant<Mask<MonthOfYear>, Mask<WeekOfYear>, Mask<WeekOfMonth>,
+                         Mask<DayOfMonth>, Mask<DayOfWeek>>>(str)) {
       schedule.day_masks.emplace_back(*day_spec);
-    }
-    else if (auto time_spec = FromString<std::variant<TimeOfDay, Hourly>>(str)) {
+    } else if (auto time_spec
+               = FromString<std::variant<TimeOfDay, Hourly>>(str)) {
       if (auto* time_of_day = std::get_if<TimeOfDay>(&time_spec.value())) {
-        if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+        if (auto* times_of_day
+            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
           times_of_day->emplace_back(*time_of_day);
-        }
-        else {
+        } else {
           std::get<Hourly>(schedule.times).minutes.insert(time_of_day->minute);
         }
-      }
-      else {
-        if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+      } else {
+        if (auto* times_of_day
+            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
           std::set<int> minutes;
           for (const TimeOfDay& other_time_of_day : *times_of_day) {
             minutes.insert(other_time_of_day.minute);
           }
-          schedule.times = Hourly({ std::move(minutes) });
-        }
-        else {
+          schedule.times = Hourly({std::move(minutes)});
+        } else {
           schedule.times = Hourly();
         }
       }
-    }
-    else {
-      scan_err1(lc, T_("Could not parse Run directive because of illegal token \"%s\""), token_str.c_str());
-    }
-  }
-  if (auto* times_of_day = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
-    if (times_of_day->empty()) {
-      times_of_day->emplace_back(TimeOfDay(0, 0));
+    } else {
+      scan_err1(
+          lc,
+          T_("Could not parse Run directive because of illegal token \"%s\""),
+          token_str.c_str());
     }
   }
-  else if (auto* hourly = std::get_if<Hourly>(&schedule.times)) {
-    if (hourly->minutes.empty()) {
-      hourly->minutes.insert(0);
-    }
+  if (auto* times_of_day
+      = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+    if (times_of_day->empty()) { times_of_day->emplace_back(TimeOfDay(0, 0)); }
+  } else if (auto* hourly = std::get_if<Hourly>(&schedule.times)) {
+    if (hourly->minutes.empty()) { hourly->minutes.insert(0); }
   }
   auto now = time(nullptr);
-  if (pass == 1 && schedule.GetMatchingTimes(now, now + 60 * 60 * 24 * 366).empty()) {
+  if (pass == 1
+      && schedule.GetMatchingTimes(now, now + 60 * 60 * 24 * 366).empty()) {
     scan_warn0(lc, "Run directive schedule never runs in the next 366 days");
   }
   res_run.schedule = schedule;
-  
+
 
   /* Allocate run record, copy new stuff into it,
    * and append it to the list of run records
