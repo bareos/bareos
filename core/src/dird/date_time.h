@@ -31,49 +31,149 @@
 namespace directordaemon {
 
 // MonthOfYear
-enum class MonthOfYear {
-  kJan, kFeb, kMar, kApr, kMai, kJun, kJul, kAug, kSep, kOct, kNov, kDec,
+enum class MonthOfYear
+{
+  kJan,
+  kFeb,
+  kMar,
+  kApr,
+  kMai,
+  kJun,
+  kJul,
+  kAug,
+  kSep,
+  kOct,
+  kNov,
+  kDec,
 };
 constexpr std::array<std::string_view, 12> kMonthOfYearLiterals = {
-  "jan", "feb", "mar", "apr", "mai", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+    "jan", "feb", "mar", "apr", "mai", "jun",
+    "jul", "aug", "sep", "oct", "nov", "dec",
 };
 // WeekOfYear
-enum class WeekOfYear {
-  kW00, kW01, kW02, kW03, kW04, kW05, kW06, kW07, kW08, kW09,
-  kW10, kW11, kW12, kW13, kW14, kW15, kW16, kW17, kW18, kW19,
-  kW20, kW21, kW22, kW23, kW24, kW25, kW26, kW27, kW28, kW29,
-  kW30, kW31, kW32, kW33, kW34, kW35, kW36, kW37, kW38, kW39,
-  kW40, kW41, kW42, kW43, kW44, kW45, kW46, kW47, kW48, kW49,
-  kW50, kW51, kW52, kW53,
+enum class WeekOfYear
+{
+  kW00,
+  kW01,
+  kW02,
+  kW03,
+  kW04,
+  kW05,
+  kW06,
+  kW07,
+  kW08,
+  kW09,
+  kW10,
+  kW11,
+  kW12,
+  kW13,
+  kW14,
+  kW15,
+  kW16,
+  kW17,
+  kW18,
+  kW19,
+  kW20,
+  kW21,
+  kW22,
+  kW23,
+  kW24,
+  kW25,
+  kW26,
+  kW27,
+  kW28,
+  kW29,
+  kW30,
+  kW31,
+  kW32,
+  kW33,
+  kW34,
+  kW35,
+  kW36,
+  kW37,
+  kW38,
+  kW39,
+  kW40,
+  kW41,
+  kW42,
+  kW43,
+  kW44,
+  kW45,
+  kW46,
+  kW47,
+  kW48,
+  kW49,
+  kW50,
+  kW51,
+  kW52,
+  kW53,
 };
 // WeekOfMonth
-enum class WeekOfMonth {
-  kFirst, kSecond, kThird, kFourth, kFifth, kLast,
+enum class WeekOfMonth
+{
+  kFirst,
+  kSecond,
+  kThird,
+  kFourth,
+  kFifth,
+  kLast,
 };
-constexpr std::array<std::string_view, 6> kWeekOfMonthLiterals = {
-  "first", "second", "third", "fourth", "fifth", "last"
-};
+constexpr std::array<std::string_view, 6> kWeekOfMonthLiterals
+    = {"first", "second", "third", "fourth", "fifth", "last"};
 // DayOfMonth
-enum class DayOfMonth {
-  k0, k1, k2, k3, k4, k5, k6, k7, k8, k9,
-  k10, k11, k12, k13, k14, k15, k16, k17, k18, k19,
-  k20, k21, k22, k23, k24, k25, k26, k27, k28, k29,
+enum class DayOfMonth
+{
+  k0,
+  k1,
+  k2,
+  k3,
+  k4,
+  k5,
+  k6,
+  k7,
+  k8,
+  k9,
+  k10,
+  k11,
+  k12,
+  k13,
+  k14,
+  k15,
+  k16,
+  k17,
+  k18,
+  k19,
+  k20,
+  k21,
+  k22,
+  k23,
+  k24,
+  k25,
+  k26,
+  k27,
+  k28,
+  k29,
   k30,
 };
 // DayOfWeek
-enum class DayOfWeek {
-  kSun, kMon, kTue, kWed, kThu, kFri, kSat,
+enum class DayOfWeek
+{
+  kSun,
+  kMon,
+  kTue,
+  kWed,
+  kThu,
+  kFri,
+  kSat,
 };
 constexpr std::array<std::string_view, 7> kDayOfWeekLiterals = {
-  "sun", "mon", "tue", "wed", "thu", "fri", "sat",
+    "sun", "mon", "tue", "wed", "thu", "fri", "sat",
 };
 
 // TimeOfDay
 struct TimeOfDay {
-  TimeOfDay(int h, int min)
-    : hour(h), minute(min) {}
-  TimeOfDay(int h, int min, int sec)
-    : hour(h), minute(min), second(sec) {}
+  TimeOfDay(int h, int min) : hour(h), minute(min) {}
+  TimeOfDay(int h, int min, int sec) : hour(h), minute(min), second(sec) {}
 
   int hour, minute;
   int second = 0;
@@ -97,10 +197,11 @@ struct DateTime {
   int hour{0};
   int minute{0};
   int second{0};
-private:
-  int dst_ = 0; // daylight saving time
-  int gmt_offset_ = 0; // seconds east of UTC
-  std::string_view time_zone_; // abbreviated
+
+ private:
+  int dst_ = 0;                 // daylight saving time
+  int gmt_offset_ = 0;          // seconds east of UTC
+  std::string_view time_zone_;  // abbreviated
 };
 
 }  // namespace directordaemon

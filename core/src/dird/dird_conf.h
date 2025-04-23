@@ -654,7 +654,7 @@ class RunResource : public BareosResource {
   StorageResource* storage = nullptr; /**< Storage override */
   MessagesResource* msgs = nullptr;   /**< Messages override */
   time_t scheduled_last = {0};
-  Schedule schedule = Schedule{std::vector{ TimeOfDay(0, 0) }};
+  Schedule schedule = Schedule{std::vector{TimeOfDay(0, 0)}};
 
   /* Methods */
   std::optional<time_t> NextScheduleTime(time_t start, uint32_t ndays) const;

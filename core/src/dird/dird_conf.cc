@@ -1352,89 +1352,89 @@ std::optional<time_t> RunResource::NextScheduleTime(time_t start,
                                                     uint32_t ndays) const
 {
   auto times = schedule.GetMatchingTimes(start, start + 60 * 60 * 24 * ndays);
-  if (times.empty()) {
-    return std::nullopt;
-  }
+  if (times.empty()) { return std::nullopt; }
   return times.front();
 }
 
 // ToString
 // :: int
-std::string ToString(int value) {
-  return std::to_string(value);
-}
+std::string ToString(int value) { return std::to_string(value); }
 // :: MonthOfYear
-std::string ToString(MonthOfYear month_of_year) {
+std::string ToString(MonthOfYear month_of_year)
+{
   return std::string(kMonthOfYearLiterals.at(int(month_of_year)));
 }
 // :: WeekOfYear
-std::string ToString(WeekOfYear week_of_year) {
+std::string ToString(WeekOfYear week_of_year)
+{
   std::string number = std::to_string(int(week_of_year));
   return (number.length() == 1 ? "w0" + number : "w" + number);
 }
 // :: WeekOfMonth
-std::string ToString(WeekOfMonth week_of_month) {
+std::string ToString(WeekOfMonth week_of_month)
+{
   return std::string(kWeekOfMonthLiterals.at(int(week_of_month)));
 }
 // :: DayOfMonth
-std::string ToString(DayOfMonth value) {
-  return std::to_string(int(value));
-}
+std::string ToString(DayOfMonth value) { return std::to_string(int(value)); }
 // :: DayOfWeek
-std::string ToString(DayOfWeek day_of_week) {
+std::string ToString(DayOfWeek day_of_week)
+{
   return std::string(kDayOfWeekLiterals.at(int(day_of_week)));
 }
 // :: TimeOfDay
-std::string ToString(TimeOfDay time) {
+std::string ToString(TimeOfDay time)
+{
   std::string hour = std::to_string(int(time.hour));
   std::string minute = std::to_string(int(time.minute));
-  return "at " + (hour.length() == 1 ? "0" + hour : hour) + ":" + (minute.length() == 1 ? "0" + minute : minute);
+  return "at " + (hour.length() == 1 ? "0" + hour : hour) + ":"
+         + (minute.length() == 1 ? "0" + minute : minute);
 }
 // :: Hourly
-std::string ToString(const Hourly& hourly) {
+std::string ToString(const Hourly& hourly)
+{
   std::string result = "hourly";
   for (int minute : hourly.minutes) {
     std::string minute_str = std::to_string(int(minute));
-    result += " at 00:" + (minute_str.length() == 1 ? "0" + minute_str : minute_str);
+    result += " at 00:"
+              + (minute_str.length() == 1 ? "0" + minute_str : minute_str);
   }
   return result;
 }
 // :: Modulo
-template<class T>
-std::string ToString(const Modulo<T>& modulo) {
+template <class T> std::string ToString(const Modulo<T>& modulo)
+{
   return ToString(modulo.left) + "/" + ToString(modulo.right);
 }
 // :: std::variant
-template<class... Args>
-std::string ToString(const std::variant<Args...>& variant) {
-  return std::visit([&](const auto& value) {
-    return ToString(value);
-  }, variant);
+template <class... Args>
+std::string ToString(const std::variant<Args...>& variant)
+{
+  return std::visit([&](const auto& value) { return ToString(value); },
+                    variant);
 }
 // :: Range
-template<class T>
-std::string ToString(const Range<T>& range) {
+template <class T> std::string ToString(const Range<T>& range)
+{
   return ToString(range.from) + "-" + ToString(range.to);
 }
 // :: std::vector
-template<class T>
-std::string ToString(const std::vector<T>& vec) {
+template <class T> std::string ToString(const std::vector<T>& vec)
+{
   std::string result;
   for (size_t i = 0; i < vec.size(); ++i) {
     result += ToString(vec.at(i));
-    if (i + 1 < vec.size()) {
-      result += ' ';
-    }
+    if (i + 1 < vec.size()) { result += ' '; }
   }
   return result;
 }
 // :: Schedule
-std::string ToString(const Schedule& schedule) {
+std::string ToString(const Schedule& schedule)
+{
   std::string day_str = ToString(schedule.day_masks);
   if (!day_str.empty()) {
     return day_str + " " + ToString(schedule.times);
-  }
-  else {
+  } else {
     return ToString(schedule.times);
   }
 }
@@ -1513,7 +1513,6 @@ static std::string PrintConfigRun(RunResource* run)
     Mmsg(temp, "accurate=\"%s\" ", "yes");
     PmStrcat(run_str, temp.c_str());
   }
-
 
 
   return run_str.c_str() + ToString(run->schedule);
