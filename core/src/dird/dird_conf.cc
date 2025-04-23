@@ -1391,8 +1391,13 @@ std::string ToString(TimeOfDay time) {
   return "at " + (hour.length() == 1 ? "0" + hour : hour) + ":" + (minute.length() == 1 ? "0" + minute : minute);
 }
 // :: Hourly
-std::string ToString(const Hourly&) {
-  return "hourly";
+std::string ToString(const Hourly& hourly) {
+  std::string result = "hourly";
+  for (int minute : hourly.minutes) {
+    std::string minute_str = std::to_string(int(minute));
+    result += " at 00:" + (minute_str.length() == 1 ? "0" + minute_str : minute_str);
+  }
+  return result;
 }
 // :: Modulo
 template<class T>
