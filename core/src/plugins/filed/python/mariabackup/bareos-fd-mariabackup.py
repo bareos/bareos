@@ -59,7 +59,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         self.dumpbinary = "mariadb-backup"
         self.restorecommand = None
         self.mysqlcmd = None
-        self.mycnf = None
+        self.mycnf = ""
         self.strictIncremental = False
         self.dumpoptions = ""
         # xtrabackup_checkpoints for <11 and mariadb_backup_checkpoints for >=11
