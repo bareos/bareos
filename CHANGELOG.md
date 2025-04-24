@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cli-test: fix test on freebsd [PR #2241]
 - core: refactor config parser; fix ktls configuration; fix crashes/ub [PR #2222]
 - contrib add support for mariadb 11+ [PR #2215]
+- mariabackup: reset self.mycnf to string type [PR #2252]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -124,4 +125,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2225]: https://github.com/bareos/bareos/pull/2225
 [PR #2232]: https://github.com/bareos/bareos/pull/2232
 [PR #2241]: https://github.com/bareos/bareos/pull/2241
+[PR #2252]: https://github.com/bareos/bareos/pull/2252
 [unreleased]: https://github.com/bareos/bareos/tree/master
