@@ -3991,6 +3991,12 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   BareosResource* allocated_resource
       = *dird_resource_tables[type].allocated_resource_;
 
+  // Job resources are validated after applying JobDefs
+  if (type != R_JOB && type != R_JOBDEFS) {
+    if (pass == 1 && !ValidateResource(type, items, allocated_resource)) {
+      return false;
+    }
+  }
   switch (type) {
     case R_DIRECTOR: {
       /* IP Addresses can be set by multiple directives.
@@ -4006,8 +4012,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       }
       break;
     }
-    case R_JOBDEFS:
-      break;
     case R_JOB:
       /* Check Job requirements after applying JobDefs
        * Ensure that the name item is present however. */
@@ -4021,10 +4025,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       }
       break;
     default:
-      // Ensure that all required items are present
-      if (pass == 1 && !ValidateResource(type, items, allocated_resource)) {
-        return false;
-      }
       break;
   }
 
