@@ -80,8 +80,10 @@
         "QueryFile": {
           "datatype": "DIRECTORY",
           "code": 0,
+          "default_value": "/usr/lib/bareos/scripts/query.sql",
+          "platform_specific": true,
           "equals": true,
-          "required": true
+          "description": "File containing queries used by the bconsole 'query' command."
         },
         "WorkingDirectory": {
           "datatype": "DIRECTORY",
@@ -107,7 +109,7 @@
         "ScriptsDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "default_value": "/usr/local/lib/bareos/scripts",
+          "default_value": "/usr/lib/bareos/scripts",
           "platform_specific": true,
           "equals": true,
           "description": "Path to directory containing script files"
