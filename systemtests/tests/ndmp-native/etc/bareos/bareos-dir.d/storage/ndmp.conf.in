@@ -1,0 +1,15 @@
+Storage {
+  Name = ndmp
+  Address = @ndmp_tape_and_robot_agent_address@
+  Port = 10000
+  Protocol = NDMPv4
+  Auth Type = MD5
+  Username = "@ndmp_tape_and_robot_agent_user@"
+  Password = "@ndmp_tape_and_robot_agent_password@"
+  Maximum Concurrent Jobs = 1
+  Autochanger = yes
+  MediaType = NDMP-Tape
+
+  Device = "@ndmp_tape_and_robot_agent_tape_device@"  # use "status storage" to determine the tape device
+  NDMP Changer Device = "@ndmp_tape_and_robot_agent_changer_device@"  # use "status storage" to determine the changer device
+}
