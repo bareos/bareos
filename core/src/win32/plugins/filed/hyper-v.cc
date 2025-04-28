@@ -4399,6 +4399,10 @@ static bRC end_restore_job(PluginContext* ctx)
 
       system_srvc.validate_planned_system(srvc, planned_system);
 
+      // todo: disconnect/delete ethernet (in case the original vm still uses
+      // it)
+      //   maybe change some path root settings
+
       destroyer.release();
       system_srvc.realize_planned_system(srvc, std::move(planned_system));
 
