@@ -2042,10 +2042,122 @@ analyzed_ref_point analyze_ref_point(PluginContext* ctx,
 struct range {
   std::size_t start;
   std::size_t end;
+  bool started;
 
   std::size_t size() const { return end - start; }
   bool empty() const { return start == end; }
 };
+
+struct backed_up_disk {
+  std::string path;
+  std::string backed_up_name;
+};
+
+struct ref_point {
+  std::string vm_id;
+  std::string ref_path;
+  uint32_t delta_seq;
+
+  json_ptr as_json() const
+  {
+    json_ptr content{json_object()};
+    {
+      json_object_set_new(content.get(), "vm_id", json_string(vm_id.c_str()));
+      json_object_set_new(content.get(), "ref_path",
+                          json_string(ref_path.c_str()));
+      json_object_set_new(content.get(), "delta_seq", json_integer(delta_seq));
+    }
+    return content;
+  }
+
+  static std::optional<ref_point> from_json(json_t* as_json)
+  {
+    if (!json_is_object(as_json)) { return std::nullopt; }
+    json_t* vm_id = json_object_get(as_json, "vm_id");
+    if (!vm_id || !json_is_string(vm_id)) { return std::nullopt; }
+    json_t* ref_path = json_object_get(as_json, "ref_path");
+    if (!ref_path || !json_is_string(ref_path)) { return std::nullopt; }
+    json_t* delta_seq = json_object_get(as_json, "delta_seq");
+    if (!delta_seq || !json_is_integer(delta_seq)) { return std::nullopt; }
+
+    return ref_point{json_string_value(vm_id), json_string_value(ref_path),
+                     static_cast<uint32_t>(json_integer_value(delta_seq))};
+  }
+};
+
+struct vm_info {
+  std::string external_name;  // name shown to the user
+  std::string internal_name;  // guid identifiying the vm
+
+  std::vector<backed_up_disk> disks;
+
+  json_ptr as_json() const
+  {
+    json_ptr content{json_object()};
+    {
+      json_object_set_new(content.get(), "internal",
+                          json_string(internal_name.c_str()));
+      json_object_set_new(content.get(), "external",
+                          json_string(external_name.c_str()));
+
+      json_ptr arr{json_array()};
+
+      for (auto& disk : disks) {
+        json_ptr jdisk{json_object()};
+        json_object_set_new(jdisk.get(), "current",
+                            json_string(disk.path.c_str()));
+        json_object_set_new(jdisk.get(), "saved",
+                            json_string(disk.backed_up_name.c_str()));
+        json_array_append_new(arr.get(), jdisk.release());
+      };
+
+      json_object_set_new(content.get(), "disks", arr.release());
+    }
+    return content;
+  }
+
+  static std::optional<vm_info> from_json(json_t* as_json)
+  {
+    if (!json_is_object(as_json)) { return std::nullopt; }
+    json_t* internal = json_object_get(as_json, "internal");
+    if (!internal || !json_is_string(internal)) { return std::nullopt; }
+    json_t* external = json_object_get(as_json, "external");
+    if (!external || !json_is_string(external)) { return std::nullopt; }
+    json_t* disks = json_object_get(as_json, "disks");
+    if (!disks || !json_is_array(disks)) { return std::nullopt; }
+
+    std::vector<backed_up_disk> backed_up_disks;
+    backed_up_disks.reserve(json_array_size(disks));
+
+    for (size_t i = 0; i < json_array_size(disks); ++i) {
+      json_t* jdisk = json_array_get(disks, i);
+
+      if (!jdisk || !json_is_object(jdisk)) { return std::nullopt; }
+
+      json_t* current = json_object_get(jdisk, "current");
+      if (!current || !json_is_string(current)) { return std::nullopt; }
+      json_t* saved = json_object_get(jdisk, "saved");
+      if (!saved || !json_is_string(saved)) { return std::nullopt; }
+
+      backed_up_disks.emplace_back(json_string_value(current),
+                                   json_string_value(saved));
+    }
+
+
+    return vm_info{json_string_value(external), json_string_value(internal),
+                   std::move(backed_up_disks)};
+  }
+};
+
+std::optional<std::string_view> get_saved_disk_path(const vm_info& info,
+                                                    std::string_view disk_path)
+{
+  for (auto& disk : info.disks) {
+    if (disk.path == disk_path) { return disk.backed_up_name; }
+  }
+
+  return std::nullopt;
+}
 
 // Plugin private context
 struct plugin_ctx {
@@ -2082,6 +2194,9 @@ struct plugin_ctx {
       std::vector<std::wstring> files_to_backup{};
       std::vector<WMI::String> disks_to_backup{};
       std::vector<restore_object> restore_objects{};
+
+      std::vector<backed_up_disk> backed_up_disks{};
+
       bool error = false;
 
       std::optional<HANDLE> disk_to_backup;
@@ -2117,6 +2232,7 @@ struct plugin_ctx {
     std::vector<WMI::String> restored_definition_files;
 
     std::optional<HANDLE> disk_handle;
+    std::optional<range> current_range;
     std::size_t current_offset;
 
     std::unordered_map<std::string, disk_info> disk_map;
@@ -2128,69 +2244,6 @@ struct plugin_ctx {
   std::string client_name;
   time_t since_time;
   JobLevel job_level;
-
-  struct ref_point {
-    std::string vm_id;
-    std::string ref_path;
-    uint32_t delta_seq;
-
-    json_ptr as_json() const
-    {
-      json_ptr content{json_object()};
-      {
-        json_object_set_new(content.get(), "vm_id", json_string(vm_id.c_str()));
-        json_object_set_new(content.get(), "ref_path",
-                            json_string(ref_path.c_str()));
-        json_object_set_new(content.get(), "delta_seq",
-                            json_integer(delta_seq));
-      }
-      return content;
-    }
-
-    static std::optional<ref_point> from_json(json_t* as_json)
-    {
-      if (!json_is_object(as_json)) { return std::nullopt; }
-      json_t* vm_id = json_object_get(as_json, "vm_id");
-      if (!vm_id || !json_is_string(vm_id)) { return std::nullopt; }
-      json_t* ref_path = json_object_get(as_json, "ref_path");
-      if (!ref_path || !json_is_string(ref_path)) { return std::nullopt; }
-      json_t* delta_seq = json_object_get(as_json, "delta_seq");
-      if (!delta_seq || !json_is_integer(delta_seq)) { return std::nullopt; }
-
-      return ref_point{json_string_value(vm_id), json_string_value(ref_path),
-                       static_cast<uint32_t>(json_integer_value(delta_seq))};
-    }
-  };
-  struct vm_info {
-    std::string external_name;  // name shown to the user
-    std::string internal_name;  // guid identifiying the vm
-
-    json_ptr as_json() const
-    {
-      json_ptr content{json_object()};
-      {
-        json_object_set_new(content.get(), "internal",
-                            json_string(internal_name.c_str()));
-        json_object_set_new(content.get(), "external",
-                            json_string(external_name.c_str()));
-      }
-      return content;
-    }
-
-    static std::optional<vm_info> from_json(json_t* as_json)
-    {
-      if (!json_is_object(as_json)) { return std::nullopt; }
-      json_t* internal = json_object_get(as_json, "internal");
-      if (!internal || !json_is_string(internal)) { return std::nullopt; }
-      json_t* external = json_object_get(as_json, "external");
-      if (!external || !json_is_string(external)) { return std::nullopt; }
-
-      return vm_info{
-          json_string_value(external),
-          json_string_value(internal),
-      };
-    }
-  };
 
   std::vector<ref_point> received_reference_points;
   std::vector<vm_info> received_vms;
@@ -2666,7 +2719,7 @@ static bool handle_restore_object(PluginContext* ctx,
             json_err.text);
         return false;
       }
-      auto refpoint = plugin_ctx::ref_point::from_json(as_json.get());
+      auto refpoint = ref_point::from_json(as_json.get());
       if (!refpoint) {
         JFATAL(ctx,
                "restore object {} contains bad json: json='{}' err=json is not "
@@ -2698,7 +2751,7 @@ static bool handle_restore_object(PluginContext* ctx,
             json_err.text);
         return false;
       }
-      auto vminfo = plugin_ctx::vm_info::from_json(as_json.get());
+      auto vminfo = vm_info::from_json(as_json.get());
       if (!vminfo) {
         JFATAL(ctx,
                "restore object {} contains bad json: json='{}' err=json is not "
@@ -2878,13 +2931,15 @@ static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
 }
 
 static restore_object get_info(PluginContext* ctx,
-                               const WMI::ComputerSystem& system)
+                               const WMI::ComputerSystem& system,
+                               const std::vector<backed_up_disk>& disks)
 {
-  plugin_ctx::vm_info info;
+  vm_info info;
   info.external_name = utf16_to_utf8(
       system.get<WMI::cim_type::string>(L"ElementName").as_view());
   info.internal_name
       = utf16_to_utf8(system.get<WMI::cim_type::string>(L"Name").as_view());
+  info.disks = disks;
 
   restore_object obj;
   obj.type = restore_object::Type::VmInfo;
@@ -3012,6 +3067,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
                                          export_settings);
   } else {
     refpoint = ref_point_of_system(ctx, &delta_seq, p_ctx, srvc, vm.value());
+    delta_seq += 1;
 
     WMI::VirtualSystemExportSettingData export_settings = {
         .snapshot_virtual_system_path = snapshot.path(),
@@ -3034,16 +3090,11 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
       std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed), dir,
-      std::move(snapshot), delta_seq + 1);
+      std::move(snapshot), delta_seq);
 
   prepared.files_to_backup = get_files_in_dir(dir);
   prepared.disks_to_backup
       = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
-
-  // we should probably do this every backup (if it changed)
-  if (p_ctx->is_full()) {
-    prepared.restore_objects.emplace_back(get_info(ctx, prepared.current_vm));
-  }
 
   return true;
 }
@@ -3059,7 +3110,7 @@ static void add_ref_point(PluginContext* ctx,
   TRCC(ctx, L"refpoint = {}", refpoint.to_string().as_view());
   TRCC(ctx, L"system = {}", system.to_string().as_view());
 
-  plugin_ctx::ref_point ref_point;
+  ref_point ref_point;
   ref_point.vm_id
       = utf16_to_utf8(system.get<cim_type::string>(L"Name").as_view());
   ref_point.ref_path = utf16_to_utf8(refpoint.path().as_view());
@@ -3095,6 +3146,9 @@ static void prepare_restore_object(PluginContext* ctx)
   TRCC(ctx, "post pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
 
 
+  prepared.restore_objects.emplace_back(
+      get_info(ctx, prepared.current_vm, prepared.backed_up_disks));
+
   add_ref_point(ctx, prepared.current_vm, prepared.restore_objects,
                 prepared.delta_seq, refpoint);
 }
@@ -3105,14 +3159,19 @@ std::string create_vm_path(std::wstring_view vm_name,
                            std::wstring_view path)
 {
   auto last_slash = path.find_last_of(L"\\/");
-  if (last_slash == path.npos) {
-    // if there somehow is no slash in the path, then we just take
-    // everything.
-    last_slash = 0;
-  }
+  auto cutoff_point = [&] {
+    if (last_slash == path.npos) {
+      // if there somehow is no slash in the path, then we just take
+      // everything.
+      return decltype(last_slash){0};
+    } else {
+      // skip the slash
+      return last_slash + 1;
+    }
+  }();
 
   std::wstring new_path = std::format(L"@hyper-v@/{}/{}/{}", vm_name, sub_dir,
-                                      path.substr(last_slash + 1));
+                                      path.substr(cutoff_point));
 
   std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
   return utf16_to_utf8(new_path);
@@ -3471,17 +3530,24 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       DBGC(ctx, "into {}!", p_ctx->current_path);
       TRCC(ctx, "delta seq = {}", prepared.delta_seq);
 
+      prepared.backed_up_disks.emplace_back(utf16_to_utf8(path.as_view()),
+                                            utf16_to_utf8(disk_path));
+
       auto now = time(NULL);
       sp->fname = p_ctx->current_path.data();
       sp->type = FT_REG;
+      ClearAllBits(FO_MAX, sp->flags);
       // bareos is a bit weird,  if we tell it that we use delta seqs
       // it overwrites delta_seq by delta_seq + 1 (???), so we
       // need to decrement it here first, so that bareos makes it correct again
       // by incrementing it.
-      sp->delta_seq = prepared.delta_seq - 1;
-      ClearAllBits(FO_MAX, sp->flags);
+      if (prepared.delta_seq) {
+        sp->delta_seq = prepared.delta_seq - 1;
+        SetBit(FO_DELTA, sp->flags);
+      } else {
+        sp->delta_seq = 0;
+      }
       // SetBit(FO_SPARSE, sp->flags);
-      SetBit(FO_DELTA, sp->flags);
 
       // todo: fix these
       sp->statp.st_mode = 0700 | S_IFREG;
@@ -3491,12 +3557,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
       return bRC_OK;
     }
-
-    if (!p_ctx->is_full()) {
-      JFATAL(ctx, "not implemented");
-      return bRC_Stop;
-    }
-
 
     DBGC(ctx, L"All disks were backed up");
 
@@ -3859,18 +3919,56 @@ static bRC pluginBackupIO(PluginContext* ctx,
 
       auto& current_range = prepared.ranges_to_read.front();
 
+      DBGC(ctx, L"current_range = {{ Start = {}, End = {}, Started = {} }}",
+           current_range.start, current_range.end, current_range.started);
+
+      char* buffer = io->buf;
+      int32_t cnt = io->count;
+
+      DBGC(ctx, L"buffer = {}, cnt = {}", fmt_as_ptr(buffer), cnt);
+
+      if (!current_range.started) {
+        // we need to add the range information into the backup stream
+        if (cnt < 2 * sizeof(std::size_t)) {
+          JERR(ctx, "cannot handle buffer that is this small");
+          return bRC_Error;
+        }
+
+        memcpy(buffer, &current_range.start, sizeof(current_range.start));
+        buffer += sizeof(current_range.start);
+        memcpy(buffer, &current_range.end, sizeof(current_range.end));
+        buffer += sizeof(current_range.end);
+
+        cnt -= sizeof(current_range.end) + sizeof(current_range.start);
+        current_range.started = true;
+
+        io->status = io->count - cnt;
+
+        return bRC_OK;
+      }
+
+      DBGC(ctx, L"buffer = {}, cnt = {}", fmt_as_ptr(buffer), cnt);
+
       OVERLAPPED overlapped = {};
 
-      auto current_offset = current_range.start;
+      std::size_t current_offset = current_range.start;
+      TRCC(ctx, L"current_offset = {}", current_offset);
+
       overlapped.Offset = DWORD{current_offset & 0xFFFFFFFF};
       overlapped.OffsetHigh = DWORD{(current_offset >> 32) & 0xFFFFFFFF};
 
-      size_t possible_end = current_offset + io->count;
+      TRCC(ctx, L"overlapped = {{ Low = {}, High = {} }}", overlapped.Offset,
+           overlapped.OffsetHigh);
+
+      size_t possible_end = current_offset + cnt;
+      TRCC(ctx, L"possible_end = {}", possible_end);
       if (possible_end > current_range.end) {
         possible_end = current_range.end;
+        TRCC(ctx, L"possible_end (updated) = {}", possible_end);
       }
 
       auto diff = possible_end - current_offset;
+      TRCC(ctx, L"diff = {}", diff);
 
       if (diff == 0) {
         // TODO: this cannot happen, so remove it
@@ -3879,12 +3977,16 @@ static bRC pluginBackupIO(PluginContext* ctx,
         return bRC_OK;
       }
 
+      TRCC(ctx, L"disk to backup = {}",
+           fmt_as_ptr(prepared.disk_to_backup.value()));
+
       DWORD bytes_read = 0;
-      if (!ReadFile(prepared.disk_to_backup.value(), io->buf, diff, &bytes_read,
+      if (!ReadFile(prepared.disk_to_backup.value(), buffer, diff, &bytes_read,
                     &overlapped)) {
         DWORD error = GetLastError();
 
         if (error == ERROR_IO_PENDING) {
+          TRCC(ctx, L"result is pending");
           if (GetOverlappedResult(prepared.disk_to_backup.value(), &overlapped,
                                   &bytes_read, TRUE)) {
             goto read_ok;
@@ -4060,14 +4162,51 @@ static bRC pluginRestoreIO(PluginContext* ctx,
         return bRC_Error;
       }
 
-      if (!WriteFile_All(restore_ctx.disk_handle.value(),
-                         restore_ctx.current_offset,
-                         {io->buf, static_cast<size_t>(io->count)})) {
-        io->status = IoStatus::error;
-        return bRC_Error;
-      }
+      char* buffer = io->buf;
+      int32_t cnt = io->count;
 
-      restore_ctx.current_offset += io->count;
+      while (cnt > 0) {
+        if (!restore_ctx.current_range) {
+          // we need to read a range
+          if (cnt < 2 * sizeof(std::size_t)) {
+            JERR(ctx,
+                 "expected range information, but got small buffer ({} bytes) "
+                 "for file {}",
+                 cnt, io->fname);
+            io->status = IoStatus::error;
+            return bRC_Error;
+          }
+
+          range& r = restore_ctx.current_range.emplace();
+
+          memcpy(&r.start, buffer, sizeof(r.start));
+          buffer += sizeof(r.start);
+          memcpy(&r.end, buffer, sizeof(r.end));
+          buffer += sizeof(r.end);
+
+          cnt -= sizeof(r.start) + sizeof(r.end);
+        }
+
+        auto bytes_written = cnt;
+        if (bytes_written > restore_ctx.current_range->size()) {
+          bytes_written = restore_ctx.current_range->size();
+        }
+
+        if (!WriteFile_All(restore_ctx.disk_handle.value(),
+                           restore_ctx.current_range->start,
+                           {buffer, static_cast<size_t>(bytes_written)})) {
+          io->status = IoStatus::error;
+          return bRC_Error;
+        }
+
+        restore_ctx.current_range->start += bytes_written;
+        if (restore_ctx.current_range->empty()) {
+          restore_ctx.current_range.reset();
+        }
+        restore_ctx.current_offset += bytes_written;
+        buffer += bytes_written;
+        cnt -= bytes_written;
+      }
 
       io->status = io->count;
       return bRC_OK;
@@ -4158,6 +4297,24 @@ static bRC end_restore_job(PluginContext* ctx)
 
       SystemDestroyer destroyer{srvc, system_srvc, &planned_system};
 
+      auto& backed_up_vm = [&]() -> const vm_info& {
+        auto external_name = utf16_to_utf8(
+            planned_system.get<WMI::cim_type::string>(L"ElementName")
+                .as_view());
+        vm_info* info = nullptr;
+        for (auto& vm : p_ctx->received_vms) {
+          if (vm.external_name == external_name) {
+            info = &vm;
+            // we want the _last_ vm_info, so we continue here
+          }
+        }
+
+        if (!info) {
+          throw std::runtime_error(std::format("unknown vm {}", external_name));
+        }
+
+        return *info;
+      }();
 
       auto settings = srvc.get_related_of_class(
           planned_system.path().as_view(), L"Msvm_VirtualSystemSettingData",
@@ -4195,26 +4352,28 @@ static bRC end_restore_job(PluginContext* ctx)
           // we need to rewire the paths in the vm config, so that they point
           // to the paths where we restored the volumes in.
 
-          auto backed_up_disk_path = extract_disk_path(disk_setting);
+          auto path_during_backup = extract_disk_path(disk_setting);
 
-          TRCC(ctx, L"disk path = {}", backed_up_disk_path.as_view());
+          TRCC(ctx, L"disk path = {}", path_during_backup.as_view());
 
-          auto disk_name = [&] {
-            auto view = backed_up_disk_path.as_view();
-            auto last_slash = view.find_last_of(L"\\/");
-            if (last_slash == view.npos) { last_slash = -1; }
+          std::optional new_path = get_saved_disk_path(
+              backed_up_vm, utf16_to_utf8(path_during_backup.as_view()));
 
-            std::wstring name{view.substr(last_slash + 1, std::wstring::npos)};
+          if (!new_path) {
+            // if we did not restore the volume, then just ignore it
+            DBGC(ctx, L"{} was not restored, so we leave it as is",
+                 path_during_backup.as_view());
+            continue;
+          }
 
-            return utf16_to_utf8(name);
-          }();
+          DBGC(ctx, "saved path = {}", new_path.value());
 
-          TRCC(ctx, "disk name = {}", disk_name);
-
-          auto found = restore_ctx->disk_map.find(disk_name);
+          auto found
+              = restore_ctx->disk_map.find(std::string(new_path.value()));
           if (found == restore_ctx->disk_map.end()) {
             // if we did not restore the volume, then just ignore it
-            DBGC(ctx, "{} was not restored, so we leave it as is", disk_name);
+            DBGC(ctx, "{} was not found in map, so we leave it as is",
+                 new_path.value());
             continue;
           }
 
@@ -4342,7 +4501,7 @@ static bool is_definition_file(std::string_view path)
  */
 static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 {
-  TRCC(ctx, "create file '{}'", rp->ofname);
+  TRCC(ctx, "create file '{}' (deltaseq = {})", rp->ofname, rp->delta_seq);
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
@@ -4431,6 +4590,28 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         WMI::String::copy(tmp_path));
   }
 
+
+  const VIRTUAL_STORAGE_TYPE vst_vhd = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHD,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+  };
+
+  const VIRTUAL_STORAGE_TYPE vst_vhdx = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+  };
+
+
+  VIRTUAL_STORAGE_TYPE vst = [&] {
+    if (actual_path.back() == 'x') {
+      DBGC(ctx, "{} -> vhdx", actual_path);
+      return vst_vhdx;
+    } else {
+      DBGC(ctx, "{} -> vhd", actual_path);
+      return vst_vhd;
+    }
+  }();
+
   try {
     if (is_volume_file(actual_path)) {
       auto last_slash = actual_path.find_last_of("\\/");
@@ -4443,70 +4624,88 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         return bRC_Error;
       }
 
+      auto disk_handle = INVALID_HANDLE_VALUE;
+
       if (rp->delta_seq > 0) {
         // TODO:
         // we need to check that the file already exists
         // and open it.   We should also let the write routines know,
         // that a diff will be destored instead of a full.
+
+        std::string disk_name{
+            actual_path.substr(last_slash + 1, actual_path.npos)};
+
+        auto found = restore_ctx->disk_map.find(disk_name);
+
+        if (found == restore_ctx->disk_map.end()) {
+          JERR(ctx,
+               "Somehow we are trying to restore an incremental image of {}, "
+               "but the full was not restored first",
+               disk_name);
+          return bRC_Error;
+        }
+
+        disk_info& info = found->second;
+
+        DBGC(ctx, L"found in disk map {} => {}", utf8_to_utf16(disk_name),
+             info.path);
+
+        OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+        params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+        params.Version2.ReadOnly = FALSE;
+        params.Version2.GetInfoOnly = FALSE;
+
+        auto result = OpenVirtualDisk(
+            &vst, info.path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
+            OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+
+
+        if (result != ERROR_SUCCESS) {
+          JERR(ctx,
+               L"could not open hard disk at {} for writing.  Err={} ({:X})",
+               tmp_path, format_win32_error(result), result);
+          return bRC_Error;
+        }
+
+        TRCC(ctx, L"open hard disk {} at {}", info.path,
+             fmt_as_ptr(disk_handle));
       } else {
         std::string disk_name{
             actual_path.substr(last_slash + 1, actual_path.npos)};
 
+        DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), tmp_path);
         restore_ctx->disk_map[disk_name] = disk_info{tmp_path};
-      }
 
-      auto virtual_size = rp->statp.st_size;
-      auto block_size = rp->statp.st_blksize;
-      auto sector_size = rp->statp.st_blocks;
+        auto virtual_size = rp->statp.st_size;
+        auto block_size = rp->statp.st_blksize;
+        auto sector_size = rp->statp.st_blocks;
 
-      create_dirs(tmp_path);
+        create_dirs(tmp_path);
 
-      const VIRTUAL_STORAGE_TYPE vst_vhd = {
-          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHD,
-          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
-      };
+        CREATE_VIRTUAL_DISK_PARAMETERS params;
+        params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
+        params.Version1 = {
+            .UniqueId = 0,  // let the system try to create a unique id
+            .MaximumSize = virtual_size,
+            .BlockSizeInBytes = block_size,
+            .SectorSizeInBytes = static_cast<ULONG>(sector_size),
+            .ParentPath = NULL,
+            .SourcePath = NULL,
+        };
 
-      const VIRTUAL_STORAGE_TYPE vst_vhdx = {
-          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
-          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
-      };
+        auto result = CreateVirtualDisk(
+            &vst, tmp_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
+            CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
 
-
-      VIRTUAL_STORAGE_TYPE vst = [&] {
-        if (actual_path.back() == 'x') {
-          DBGC(ctx, "{} -> vhdx", actual_path);
-          return vst_vhdx;
-        } else {
-          DBGC(ctx, "{} -> vhd", actual_path);
-          return vst_vhd;
+        if (result != ERROR_SUCCESS) {
+          JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
+               tmp_path, format_win32_error(result), result);
+          return bRC_Error;
         }
-      }();
 
-      CREATE_VIRTUAL_DISK_PARAMETERS params;
-      params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
-      params.Version1 = {
-          .UniqueId = 0,  // let the system try to create a unique id
-          .MaximumSize = virtual_size,
-          .BlockSizeInBytes = block_size,
-          .SectorSizeInBytes = static_cast<ULONG>(sector_size),
-          .ParentPath = NULL,
-          .SourcePath = NULL,
-      };
-
-      auto disk_handle = INVALID_HANDLE_VALUE;
-
-      auto result = CreateVirtualDisk(
-          &vst, tmp_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
-          CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
-
-      if (result != ERROR_SUCCESS) {
-        JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
-             tmp_path, format_win32_error(result), result);
-        return bRC_Error;
+        TRCC(ctx, L"created hard disk {} at {}", tmp_path.c_str(),
+             fmt_as_ptr(disk_handle));
       }
-
-      TRCC(ctx, L"created hard disk {} at {}", tmp_path.c_str(),
-           fmt_as_ptr(disk_handle));
 
       restore_ctx->disk_handle = disk_handle;
       restore_ctx->current_offset = 0;
