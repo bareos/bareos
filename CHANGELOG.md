@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Note: on FreeBSD unmodified configuration changes from Bareos <= 24 will get removed and
   replaced by the new default configuration of the current package.
 - Glusterfs FD plugin and SD backend is deprecated and will get removed in 26.
+### Configuring a disk Autochanger
+If you want to run multiple jobs in parallel to the same disk storage,
+you can now simply specify the `count` directive in the (Storage -> Device) configuration
+to the number you've specified in `MaximumConcurrentJobs` (Director -> Storage).
+
+If you want to migrate from your manually configured disk autochanger to simply using the `count` directive:
+1. remove the disk autochanger resource
+2. have a storage device with a specified `count` directive (with value >1)
+3. wherever you used the disk autochanger name before, use the name of the device from step 2.
 
 ### Removed
 - config: deprecate file daemon as alias for client in FD config [PR #2187]
