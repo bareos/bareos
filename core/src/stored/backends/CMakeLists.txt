@@ -34,7 +34,7 @@ macro(add_sd_backend backend_name)
 endmacro()
 
 add_library(backend-utils OBJECT)
-target_sources(backend-utils PRIVATE util.cc)
+target_sources(backend-utils PUBLIC util.cc)
 target_link_libraries(backend-utils PUBLIC fmt::fmt)
 
 if(${HAVE_GLUSTERFS})
