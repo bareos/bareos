@@ -1851,6 +1851,7 @@ struct restore_object {
     Unknown = 0,
     ReferencePoint = 1,
     VmInfo = 2,
+    DiskName = 3,
   };
 
   const char* name() const { return name_of(type); }
@@ -1862,6 +1863,9 @@ struct restore_object {
       } break;
       case Type::VmInfo: {
         return "vm_info";
+      } break;
+      case Type::DiskName: {
+        return "disk_name";
       } break;
       default: {
         // TODO: this should throw ...
@@ -1876,6 +1880,8 @@ struct restore_object {
       return Type::ReferencePoint;
     }
     if (type_name == name_of(Type::VmInfo)) { return Type::VmInfo; }
+
+    if (type_name == name_of(Type::DiskName)) { return Type::DiskName; }
 
     return Type::Unknown;
   }
@@ -2146,6 +2152,35 @@ struct vm_info {
 
     return vm_info{json_string_value(external), json_string_value(internal),
                    std::move(backed_up_disks)};
+  }
+};
+
+struct disk_name {
+  std::wstring directory;
+  std::wstring guid;
+
+  json_ptr as_json() const
+  {
+    json_ptr content{json_object()};
+    {
+      json_object_set_new(content.get(), "directory",
+                          json_string(utf16_to_utf8(directory).c_str()));
+      json_object_set_new(content.get(), "guid",
+                          json_string(utf16_to_utf8(guid).c_str()));
+    }
+    return content;
+  }
+
+  static std::optional<disk_name> from_json(json_t* as_json)
+  {
+    if (!json_is_object(as_json)) { return std::nullopt; }
+    json_t* directory = json_object_get(as_json, "directory");
+    if (!directory || !json_is_string(directory)) { return std::nullopt; }
+    json_t* guid = json_object_get(as_json, "guid");
+    if (!guid || !json_is_string(guid)) { return std::nullopt; }
+
+    return disk_name{utf8_to_utf16(json_string_value(directory)),
+                     utf8_to_utf16(json_string_value(guid))};
   }
 };
 
@@ -3323,6 +3358,34 @@ static std::size_t insert_changes(HANDLE disk_handle,
   return start + bytes_processed;
 }
 
+static std::wstring directory_path(const wchar_t* path)
+{
+  auto buflen = GetFullPathNameW(path, 0, nullptr, nullptr);
+
+  // TODO: we should handle this gracefully
+  ASSERT(buflen != 0);
+
+  std::wstring res;
+  res.resize(buflen);
+
+  wchar_t* file_part = nullptr;
+  auto bytes_written
+      = GetFullPathNameW(path, res.size(), res.data(), &file_part);
+
+  ASSERT(bytes_written != 0);
+
+  // buflen includes NUL, but bytes_written does not (on success)
+  // TODO: we should also handle this gracefully
+  ASSERT(bytes_written < buflen);
+
+  // file_part may be a nullptr, if path was just a directory somehow
+  auto dir_size = file_part ? file_part - res.data() : bytes_written;
+
+  res.resize(dir_size);
+
+  return res;
+}
+
 // Start the backup of a specific file
 static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 {
@@ -3383,7 +3446,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
-
 
       VIRTUAL_STORAGE_TYPE vst = {
           .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
@@ -3459,6 +3521,18 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
             }
           }
         }
+
+        {
+          disk_name name;
+          name.directory = directory_path(path.get());
+          name.guid = format_guid(disk_id);
+
+          auto& obj = prepared.restore_objects.emplace_back();
+          obj.content = json_dumps(name.as_json().get(), JSON_COMPACT);
+          obj.type = restore_object::Type::DiskName;
+          obj.index = 0;
+        }
+
 
         {
           GET_VIRTUAL_DISK_INFO disk_info
@@ -4631,11 +4705,6 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       auto disk_handle = INVALID_HANDLE_VALUE;
 
       if (rp->delta_seq > 0) {
-        // TODO:
-        // we need to check that the file already exists
-        // and open it.   We should also let the write routines know,
-        // that a diff will be destored instead of a full.
-
         std::string disk_name{
             actual_path.substr(last_slash + 1, actual_path.npos)};
 
