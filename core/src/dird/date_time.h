@@ -47,8 +47,8 @@ enum class MonthOfYear
   kDec,
 };
 constexpr std::array<std::string_view, 12> kMonthOfYearLiterals = {
-    "jan", "feb", "mar", "apr", "mai", "jun",
-    "jul", "aug", "sep", "oct", "nov", "dec",
+    "January", "February", "March", "April", "Mai", "June",
+    "Juli", "August", "September", "October", "November", "December",
 };
 // WeekOfYear
 enum class WeekOfYear
@@ -167,7 +167,7 @@ enum class DayOfWeek
   kSat,
 };
 constexpr std::array<std::string_view, 7> kDayOfWeekLiterals = {
-    "sun", "mon", "tue", "wed", "thu", "fri", "sat",
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
 };
 
 // TimeOfDay

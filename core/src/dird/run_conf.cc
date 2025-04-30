@@ -35,6 +35,9 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "schedule.h"
+#include "lib/bsys.h"
+
+#include <charconv>
 
 namespace directordaemon {
 
@@ -52,25 +55,21 @@ bool Deformat(std::string_view input,
 template <class T, std::enable_if_t<std::is_same_v<T, int>, int> = 0>
 std::optional<int> FromString(const std::string& str)
 {
-  try {
-    return std::stoi(str);
-  } catch (...) {
-    return std::nullopt;
+  int value = 0;
+  auto [ptr, ec] = std::from_chars(str.c_str(), str.c_str() + str.length(), value);
+  if (ec == std::errc() && ptr == str.c_str() + str.length()) {
+    return value;
   }
+  return std::nullopt;
 }
 // :: MonthOfYear
 template <class T, std::enable_if_t<std::is_same_v<T, MonthOfYear>, int> = 0>
 std::optional<MonthOfYear> FromString(const std::string& str)
 {
   for (size_t i = 0; i < kMonthOfYearLiterals.size(); ++i) {
-    bool equals = true;
-    for (size_t j = 0; j < kMonthOfYearLiterals[i].length(); ++j) {
-      if (kMonthOfYearLiterals[i][j] != std::tolower(str.at(j))) {
-        equals = false;
-        break;
-      }
+    if (Bstrcasecmp(str.c_str(), kMonthOfYearLiterals.at(i).data()) || (str.length() == 3 && bstrncasecmp(str.c_str(), kMonthOfYearLiterals.at(i).data(), 3))) {
+      return MonthOfYear(i);
     }
-    if (equals) { return MonthOfYear(i); }
   }
   return std::nullopt;
 }
@@ -78,6 +77,9 @@ std::optional<MonthOfYear> FromString(const std::string& str)
 template <class T, std::enable_if_t<std::is_same_v<T, WeekOfYear>, int> = 0>
 std::optional<T> FromString(const std::string& str)
 {
+  if (str.size() == 0 || str.at(0) != 'w') {
+    return std::nullopt;
+  }
   auto index = FromString<int>(str.substr(1));
   if (index && 0 <= *index && *index <= 53) { return T(*index); }
   return std::nullopt;
@@ -86,7 +88,7 @@ std::optional<T> FromString(const std::string& str)
 template <class T, std::enable_if_t<std::is_same_v<T, WeekOfMonth>, int> = 0>
 std::optional<T> FromString(const std::string& str)
 {
-  if (str == "first" || str == "1rd") {
+  if (str == "first" || str == "1st") {
     return WeekOfMonth::kFirst;
   } else if (str == "second" || str == "2nd") {
     return WeekOfMonth::kSecond;
@@ -105,25 +107,20 @@ std::optional<T> FromString(const std::string& str)
 template <class T, std::enable_if_t<std::is_same_v<T, DayOfMonth>, int> = 0>
 std::optional<DayOfMonth> FromString(const std::string& str)
 {
-  try {
-    return DayOfMonth(std::stoi(str));
-  } catch (...) {
-    return std::nullopt;
+  auto number = FromString<int>(str);
+  if (number && (0 <= *number && *number <= 30)) {
+    return T(*number);
   }
+  return std::nullopt;
 }
 // :: DayOfWeek
 template <class T, std::enable_if_t<std::is_same_v<T, DayOfWeek>, int> = 0>
 std::optional<T> FromString(const std::string& str)
 {
   for (size_t i = 0; i < kDayOfWeekLiterals.size(); ++i) {
-    bool equals = true;
-    for (size_t j = 0; j < kDayOfWeekLiterals[i].length(); ++j) {
-      if (kDayOfWeekLiterals[i][j] != std::tolower(str.at(j))) {
-        equals = false;
-        break;
-      }
+    if (Bstrcasecmp(str.c_str(), kDayOfWeekLiterals.at(i).data()) || (str.length() == 3 && bstrncasecmp(str.c_str(), kDayOfWeekLiterals.at(i).data(), 3))) {
+      return DayOfWeek(i);
     }
-    if (equals) { return DayOfWeek(i); }
   }
   return std::nullopt;
 }
