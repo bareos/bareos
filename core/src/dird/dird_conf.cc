@@ -1362,7 +1362,7 @@ std::string ToString(int value) { return std::to_string(value); }
 // :: MonthOfYear
 std::string ToString(MonthOfYear month_of_year)
 {
-  return std::string(kMonthOfYearLiterals.at(int(month_of_year)));
+  return std::string(kMonthOfYearLiterals.at(int(month_of_year)).substr(0, 3));
 }
 // :: WeekOfYear
 std::string ToString(WeekOfYear week_of_year)
@@ -1373,7 +1373,7 @@ std::string ToString(WeekOfYear week_of_year)
 // :: WeekOfMonth
 std::string ToString(WeekOfMonth week_of_month)
 {
-  return std::string(kWeekOfMonthLiterals.at(int(week_of_month)));
+  return std::string(kWeekOfMonthLiterals.at(int(week_of_month)).substr(0, 3));
 }
 // :: DayOfMonth
 std::string ToString(DayOfMonth value) { return std::to_string(int(value)); }
