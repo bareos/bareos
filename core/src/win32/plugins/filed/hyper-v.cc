@@ -346,6 +346,10 @@ struct JobLogger {
   do {                                         \
     JobLogger{(ctx)}.Log(M_INFO, __VA_ARGS__); \
   } while (0)
+#define JWARN(ctx, ...)                           \
+  do {                                            \
+    JobLogger{(ctx)}.Log(M_WARNING, __VA_ARGS__); \
+  } while (0)
 #define JERR(ctx, ...)                          \
   do {                                          \
     JobLogger{(ctx)}.Log(M_ERROR, __VA_ARGS__); \
@@ -2157,7 +2161,7 @@ struct vm_info {
 
 struct disk_name {
   std::wstring directory;
-  std::wstring guid;
+  std::wstring name;
 
   json_ptr as_json() const
   {
@@ -2165,8 +2169,8 @@ struct disk_name {
     {
       json_object_set_new(content.get(), "directory",
                           json_string(utf16_to_utf8(directory).c_str()));
-      json_object_set_new(content.get(), "guid",
-                          json_string(utf16_to_utf8(guid).c_str()));
+      json_object_set_new(content.get(), "name",
+                          json_string(utf16_to_utf8(name).c_str()));
     }
     return content;
   }
@@ -2176,11 +2180,11 @@ struct disk_name {
     if (!json_is_object(as_json)) { return std::nullopt; }
     json_t* directory = json_object_get(as_json, "directory");
     if (!directory || !json_is_string(directory)) { return std::nullopt; }
-    json_t* guid = json_object_get(as_json, "guid");
-    if (!guid || !json_is_string(guid)) { return std::nullopt; }
+    json_t* name = json_object_get(as_json, "name");
+    if (!name || !json_is_string(name)) { return std::nullopt; }
 
     return disk_name{utf8_to_utf16(json_string_value(directory)),
-                     utf8_to_utf16(json_string_value(guid))};
+                     utf8_to_utf16(json_string_value(name))};
   }
 };
 
@@ -2282,6 +2286,7 @@ struct plugin_ctx {
 
   std::vector<ref_point> received_reference_points;
   std::vector<vm_info> received_vms;
+  std::vector<disk_name> received_disks;
 
   std::variant<std::monostate, backup, restore> current_state{};
 
@@ -2804,6 +2809,37 @@ static bool handle_restore_object(PluginContext* ctx,
 
       return true;
     } break;
+    case restore_object::Type::DiskName: {
+      json_error_t json_err;
+
+      json_ptr as_json{json_loadb(rop->object, rop->object_len, 0, &json_err)};
+      if (!as_json) {
+        JFATAL(
+            ctx,
+            "could not parse json from restore object {}: json='{}' err={}",
+            rop->object_name,
+            std::string_view{rop->object, static_cast<size_t>(rop->object_len)},
+            json_err.text);
+        return false;
+      }
+      auto name = disk_name::from_json(as_json.get());
+      if (!name) {
+        JFATAL(ctx,
+               "restore object {} contains bad json: json='{}' err=json is not "
+               "a valid diskname object",
+               rop->object_name,
+               std::string_view{rop->object,
+                                static_cast<size_t>(rop->object_len)});
+        return false;
+      }
+
+      DBGC(ctx, L"received diskname {{ directory = {}, name = {} }}",
+           name->directory, name->name);
+
+      p_ctx->received_disks.emplace_back(std::move(name.value()));
+
+      return true;
+    }
     default: {
       JFATAL(ctx, "unknown restore object with name '{}'", rop->object_name);
       return false;
@@ -3523,18 +3559,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
         }
 
         {
-          disk_name name;
-          name.directory = directory_path(path.get());
-          name.guid = format_guid(disk_id);
-
-          auto& obj = prepared.restore_objects.emplace_back();
-          obj.content = json_dumps(name.as_json().get(), JSON_COMPACT);
-          obj.type = restore_object::Type::DiskName;
-          obj.index = 0;
-        }
-
-
-        {
           GET_VIRTUAL_DISK_INFO disk_info
               = {.Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_STORAGE_TYPE};
           ULONG VirtualDiskInfoSize = sizeof(disk_info);
@@ -3606,6 +3630,18 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
       prepared.backed_up_disks.emplace_back(utf16_to_utf8(path.as_view()),
                                             utf16_to_utf8(disk_path));
+
+      {
+        disk_name name;
+        name.directory = directory_path(path.get());
+        name.name = disk_path;
+
+        auto& obj = prepared.restore_objects.emplace_back();
+        obj.content = json_dumps(name.as_json().get(), JSON_COMPACT);
+        obj.type = restore_object::Type::DiskName;
+        obj.index = 0;
+      }
+
 
       auto now = time(NULL);
       sp->fname = p_ctx->current_path.data();
@@ -4532,6 +4568,58 @@ static void create_dirs(std::wstring_view path)
   if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
 }
 
+
+static std::optional<std::wstring> original_path_of_disk(
+    PluginContext* ctx,
+    plugin_ctx* p_ctx,
+    std::string_view disk_name)
+{
+  std::wstring found;
+
+  auto wdisk_name = utf8_to_utf16(disk_name);
+
+  for (auto& received_disk : p_ctx->received_disks) {
+    if (wdisk_name == received_disk.name) {
+      DBGC(ctx, L"disk {} => original directory {}", wdisk_name,
+           received_disk.directory);
+      found = received_disk.directory;
+      break;
+    }
+  }
+
+
+  if (found.empty()) {
+    JWARN(ctx,
+          L"Could not determine the original directory of the disk {}.  "
+          L"Somehow this information was lost.  Disk will be restored to a "
+          L"temporary location instead",
+          wdisk_name);
+    return std::nullopt;
+  }
+
+  if (!PathFileExistsW(found.c_str())) {
+    JWARN(ctx,
+          L"Original directory '{}' of the disk {} does not exist anymore.  "
+          L"Disk will be restored to a temporary location instead",
+          found, wdisk_name);
+    return std::nullopt;
+  }
+
+  std::wstring complete_path = std::move(found);
+  complete_path += L"\\";
+  complete_path += wdisk_name;
+
+  if (PathFileExistsW(complete_path.c_str())) {
+    JWARN(ctx,
+          L"Original path '{}' of the disk {} already exists.  Disk will be "
+          L"restored to a temporary location instead",
+          complete_path, wdisk_name);
+    return std::nullopt;
+  }
+
+  return complete_path;
+}
+
 // creates the file at path and all directories above it
 static HANDLE create_file(std::wstring_view path)
 {
@@ -4746,8 +4834,11 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         std::string disk_name{
             actual_path.substr(last_slash + 1, actual_path.npos)};
 
-        DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), tmp_path);
-        restore_ctx->disk_map[disk_name] = disk_info{tmp_path};
+        auto created_path
+            = original_path_of_disk(ctx, p_ctx, disk_name).value_or(tmp_path);
+
+        DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
+        restore_ctx->disk_map[disk_name] = disk_info{created_path};
 
         auto virtual_size = rp->statp.st_size;
         auto block_size = rp->statp.st_blksize;
@@ -4767,12 +4858,12 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         };
 
         auto result = CreateVirtualDisk(
-            &vst, tmp_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
+            &vst, created_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
             CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
 
         if (result != ERROR_SUCCESS) {
           JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
-               tmp_path, format_win32_error(result), result);
+               created_path, format_win32_error(result), result);
           return bRC_Error;
         }
 
