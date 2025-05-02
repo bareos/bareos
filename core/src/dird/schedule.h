@@ -70,10 +70,10 @@ template <class T> struct Modulo {
 
   bool Contains(T value) const
   {
-    return (int(value) % int(right)) == int(left);
+    return (int(value) % int(divisor)) == int(remainder);
   }
 
-  T left, right;
+  T remainder, divisor;
 };
 // :: kIsModulo
 template <class T> constexpr bool kIsModulo = false;

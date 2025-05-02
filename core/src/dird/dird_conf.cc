@@ -1404,7 +1404,7 @@ std::string ToString(const Hourly& hourly)
 // :: Modulo
 template <class T> std::string ToString(const Modulo<T>& modulo)
 {
-  return ToString(modulo.left) + "/" + ToString(modulo.right);
+  return ToString(modulo.remainder) + "/" + ToString(modulo.divisor);
 }
 // :: std::variant
 template <class... Args>
