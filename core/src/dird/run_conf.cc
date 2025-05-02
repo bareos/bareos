@@ -43,9 +43,9 @@ namespace directordaemon {
 
 extern struct s_jl joblevels[];
 
-// Deformat
+// Scan
 template <class First, class... Rest>
-bool Deformat(std::string_view input,
+bool Scan(std::string_view input,
               std::string_view fmt,
               First& first,
               Rest&... rest);
@@ -129,11 +129,11 @@ template <class T, std::enable_if_t<std::is_same_v<TimeOfDay, T>, int> = 0>
 std::optional<T> FromString(const std::string& str)
 {
   int hour, minute;
-  if (Deformat(str, "at %:%", hour, minute)) {
+  if (Scan(str, "at %:%", hour, minute)) {
     return T({hour, minute});
-  } else if (Deformat(str, "at %:%am", hour, minute)) {
+  } else if (Scan(str, "at %:%am", hour, minute)) {
     return T({(hour % 12), minute});
-  } else if (Deformat(str, "at %:%pm", hour, minute)) {
+  } else if (Scan(str, "at %:%pm", hour, minute)) {
     return T({(hour % 12) + 12, minute});
   }
   return std::nullopt;
@@ -149,7 +149,7 @@ template <class T, std::enable_if_t<kIsRange<T>, int> = 0>
 std::optional<T> FromString(const std::string& str)
 {
   typename T::Type from, to;
-  if (Deformat(str, "%-%", from, to)) { return T({from, to}); }
+  if (Scan(str, "%-%", from, to)) { return T({from, to}); }
   return std::nullopt;
 }
 // :: Modulo
@@ -157,7 +157,7 @@ template <class T, std::enable_if_t<kIsModulo<T>, int> = 0>
 std::optional<T> FromString(const std::string& str)
 {
   typename T::Type left, right;
-  if (Deformat(str, "%/%", left, right)) { return T({left, right}); }
+  if (Scan(str, "%/%", left, right)) { return T({left, right}); }
   return std::nullopt;
 }
 // :: std::variant
@@ -177,15 +177,15 @@ std::optional<T> FromString(const std::string& str)
   return std::nullopt;
 }
 
-// Deformat
+// Scan
 // :: base
-bool Deformat(std::string_view input, std::string_view fmt)
+bool Scan(std::string_view input, std::string_view fmt)
 {
   return fmt.find('%') == std::string::npos && input == fmt;
 }
 // :: recursive
 template <class First, class... Rest>
-bool Deformat(std::string_view input,
+bool Scan(std::string_view input,
               std::string_view fmt,
               First& first,
               Rest&... rest)
@@ -206,7 +206,7 @@ bool Deformat(std::string_view input,
       } else {
         return false;
       }
-      return Deformat(input.substr(end), fmt.substr(i + 1), rest...);
+      return Scan(input.substr(end), fmt.substr(i + 1), rest...);
     } else {
       return false;
     }
