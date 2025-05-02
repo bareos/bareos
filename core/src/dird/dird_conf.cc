@@ -1413,10 +1413,10 @@ std::string ToString(const std::variant<Args...>& variant)
   return std::visit([&](const auto& value) { return ToString(value); },
                     variant);
 }
-// :: Range
-template <class T> std::string ToString(const Range<T>& range)
+// :: Interval
+template <class T> std::string ToString(const Interval<T>& range)
 {
-  return ToString(range.from) + "-" + ToString(range.to);
+  return ToString(range.first) + "-" + ToString(range.last);
 }
 // :: std::vector
 template <class T> std::string ToString(const std::vector<T>& vec)

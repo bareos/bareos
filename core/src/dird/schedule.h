@@ -45,24 +45,24 @@ template <> constexpr int kMaxValue<WeekOfMonth> = 4;
 template <> constexpr int kMaxValue<DayOfMonth> = 30;
 template <> constexpr int kMaxValue<DayOfWeek> = 6;
 
-// Range
-template <class T> struct Range {
+// Interval
+template <class T> struct Interval {
   using Type = T;
 
   bool Contains(T value) const
   {
-    if (from <= to) {
-      return from <= value && value <= to;
+    if (first <= last) {
+      return first <= value && value <= last;
     } else {
-      return from <= value || value <= to;
+      return first <= value || value <= last;
     }
   }
 
-  T from, to;
+  T first, last;
 };
 // :: kIsRange
 template <class T> constexpr bool kIsRange = false;
-template <class T> constexpr bool kIsRange<Range<T>> = true;
+template <class T> constexpr bool kIsRange<Interval<T>> = true;
 
 // Modulo
 template <class T> struct Modulo {
@@ -80,11 +80,11 @@ template <class T> constexpr bool kIsModulo = false;
 template <class T> constexpr bool kIsModulo<Modulo<T>> = true;
 
 // Mask
-template <class T> using Mask = std::variant<Range<T>, Modulo<T>, T>;
+template <class T> using Mask = std::variant<Interval<T>, Modulo<T>, T>;
 // :: Contains
 template <class T> bool Contains(const Mask<T>& mask, T value)
 {
-  if (auto* range = std::get_if<Range<T>>(&mask)) {
+  if (auto* range = std::get_if<Interval<T>>(&mask)) {
     return range->Contains(value);
   } else if (auto* modulo = std::get_if<Modulo<T>>(&mask)) {
     return modulo->Contains(value);
@@ -96,7 +96,7 @@ template <class T> bool Contains(const Mask<T>& mask, T value)
 // :: all
 template <class T> Mask<T> All()
 {
-  return {{Range<T>({T(0), T(kMaxValue<T>)})}};
+  return {{Interval<T>({T(0), T(kMaxValue<T>)})}};
 }
 
 // Hourly

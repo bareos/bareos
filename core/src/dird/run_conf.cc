@@ -144,7 +144,7 @@ std::optional<T> FromString(const std::string& str)
 {
   return str == "hourly" ? std::optional(Hourly()) : std::nullopt;
 }
-// :: Range
+// :: Interval
 template <class T, std::enable_if_t<kIsRange<T>, int> = 0>
 std::optional<T> FromString(const std::string& str)
 {
