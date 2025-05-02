@@ -289,7 +289,7 @@ Note that this option only has an effect if the assigned value is greater than 1
 
 When the configuration is loaded, the |bareosSD| will automatically multiply this device :config:option:`sd/device/Count` + 1 times adding suffixes to the names starting from "0000". 
 
-The multiplied device with the suffix "0000" serves a special purpose, it is implicitly assigned :config:option:`sd/device/Autoselect` to "no".
+The multiplied device with the suffix "0000" serves a special purpose, it is implicitly assigned :config:option:`sd/device/AutoSelect` to "no".
 All other multiplied devices are an exact copy of the original device.
 
 Additionally, specifying :config:option:`sd/device/Count` also implicitly creates an autochanger with the same name as the original device with all devices listed in that autochanger.
@@ -339,16 +339,19 @@ when you want to run multiple jobs at once to the same storage device.
 
 Since the :config:option:`sd/device/Count` directive creates an implicit autochanger of the same name as the device,
 you don't have to touch your storage configuration in the director.
-Storage {
-  Name = File
-  Address = @hostname@
-  Password = "@sd_password@"
-  Device = MultiFileStorage
-  Media Type = File
-  Maximum Concurrent Jobs = 10
-}
 
-Just make sure that :config:option:`dir/device/MaximumConcurrentJobs` is specified, otherwise jobs will still not run in parallel.
+.. code-block:: bareosconfig
+   
+   Storage {
+      Name = File
+      Address = @hostname@
+      Password = "@sd_password@"
+      Device = MultiFileStorage
+      Media Type = File
+      Maximum Concurrent Jobs = 10
+   }
+
+Just make sure that :config:option:`dir/storage/MaximumConcurrentJobs` is specified, otherwise jobs will still not run in parallel.
 
 .. _MessagesResource1:
 
