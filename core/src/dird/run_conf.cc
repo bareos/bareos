@@ -43,139 +43,155 @@ namespace directordaemon {
 
 extern struct s_jl joblevels[];
 
-// Scan
 template <class First, class... Rest>
 bool Scan(std::string_view input,
               std::string_view fmt,
               First& first,
               Rest&... rest);
 
-// FromString
-// :: int
-template <class T, std::enable_if_t<std::is_same_v<T, int>, int> = 0>
-std::optional<int> FromString(const std::string& str)
-{
-  int value = 0;
-  auto [ptr, ec] = std::from_chars(str.c_str(), str.c_str() + str.length(), value);
-  if (ec == std::errc() && ptr == str.c_str() + str.length()) {
-    return value;
-  }
-  return std::nullopt;
-}
-// :: MonthOfYear
-template <class T, std::enable_if_t<std::is_same_v<T, MonthOfYear>, int> = 0>
-std::optional<MonthOfYear> FromString(const std::string& str)
-{
-  for (size_t i = 0; i < kMonthOfYearLiterals.size(); ++i) {
-    if (Bstrcasecmp(str.c_str(), kMonthOfYearLiterals.at(i).data()) || (str.length() == 3 && bstrncasecmp(str.c_str(), kMonthOfYearLiterals.at(i).data(), 3))) {
-      return MonthOfYear(i);
+template<class T>
+struct Parser {
+  static std::optional<T> Parse(std::string_view str);
+};
+
+template<>
+struct Parser<int> {
+  static std::optional<int> Parse(std::string_view str)
+  {
+    int value = 0;
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.length(), value);
+    if (ec == std::errc() && ptr == str.data() + str.length()) {
+      return value;
     }
-  }
-  return std::nullopt;
-}
-// :: WeekOfYear
-template <class T, std::enable_if_t<std::is_same_v<T, WeekOfYear>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  if (str.size() == 0 || str.at(0) != 'w') {
     return std::nullopt;
   }
-  auto index = FromString<int>(str.substr(1));
-  if (index && 0 <= *index && *index <= 53) { return T(*index); }
-  return std::nullopt;
-}
-// :: WeekOfMonth
-template <class T, std::enable_if_t<std::is_same_v<T, WeekOfMonth>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  if (str == "first" || str == "1st") {
-    return WeekOfMonth::kFirst;
-  } else if (str == "second" || str == "2nd") {
-    return WeekOfMonth::kSecond;
-  } else if (str == "third" || str == "3rd") {
-    return WeekOfMonth::kThird;
-  } else if (str == "fourth" || str == "4th") {
-    return WeekOfMonth::kFourth;
-  } else if (str == "fifth" || str == "5th") {
-    return WeekOfMonth::kFifth;
-  } else if (str == "last") {
-    return WeekOfMonth::kLast;
-  }
-  return std::nullopt;
-}
-// :: DayOfMonth
-template <class T, std::enable_if_t<std::is_same_v<T, DayOfMonth>, int> = 0>
-std::optional<DayOfMonth> FromString(const std::string& str)
-{
-  auto number = FromString<int>(str);
-  if (number && (0 <= *number && *number <= 30)) {
-    return T(*number);
-  }
-  return std::nullopt;
-}
-// :: DayOfWeek
-template <class T, std::enable_if_t<std::is_same_v<T, DayOfWeek>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  for (size_t i = 0; i < kDayOfWeekLiterals.size(); ++i) {
-    if (Bstrcasecmp(str.c_str(), kDayOfWeekLiterals.at(i).data()) || (str.length() == 3 && bstrncasecmp(str.c_str(), kDayOfWeekLiterals.at(i).data(), 3))) {
-      return DayOfWeek(i);
+};
+template<>
+struct Parser<MonthOfYear> {
+  static std::optional<MonthOfYear> Parse(std::string_view str)
+  {
+    for (size_t i = 0; i < kMonthOfYearLiterals.size(); ++i) {
+      if (str.length() == kMonthOfYearLiterals.at(i).length() || str.length() == 3) {
+        if (bstrncasecmp(str.data(), kMonthOfYearLiterals.at(i).data(), str.length())) {
+          return MonthOfYear(i);
+        }
+      }
     }
+    return std::nullopt;
   }
-  return std::nullopt;
-}
-// :: TimeOfDay
-template <class T, std::enable_if_t<std::is_same_v<TimeOfDay, T>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  int hour, minute;
-  if (Scan(str, "at %:%", hour, minute)) {
-    return T({hour, minute});
-  } else if (Scan(str, "at %:%am", hour, minute)) {
-    return T({(hour % 12), minute});
-  } else if (Scan(str, "at %:%pm", hour, minute)) {
-    return T({(hour % 12) + 12, minute});
-  }
-  return std::nullopt;
-}
-// :: Hourly
-template <class T, std::enable_if_t<std::is_same_v<Hourly, T>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  return str == "hourly" ? std::optional(Hourly()) : std::nullopt;
-}
-// :: Interval
-template <class T, std::enable_if_t<kIsRange<T>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  typename T::Type from, to;
-  if (Scan(str, "%-%", from, to)) { return T({from, to}); }
-  return std::nullopt;
-}
-// :: Modulo
-template <class T, std::enable_if_t<kIsModulo<T>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  typename T::Type left, right;
-  if (Scan(str, "%/%", left, right)) { return T({left, right}); }
-  return std::nullopt;
-}
-// :: std::variant
-template <class T> static constexpr bool kIsVariant = false;
-template <class... Args>
-static constexpr bool kIsVariant<std::variant<Args...>> = true;
-template <class T, size_t Index = 0, std::enable_if_t<kIsVariant<T>, int> = 0>
-std::optional<T> FromString(const std::string& str)
-{
-  if constexpr (Index < std::variant_size_v<T>) {
-    if (auto value = FromString<std::variant_alternative_t<Index, T>>(str)) {
-      return T(*value);
-    } else {
-      return FromString<T, Index + 1>(str);
+};
+template<>
+struct Parser<WeekOfYear> {
+  static std::optional<WeekOfYear> Parse(std::string_view str)
+  {
+    if (str.size() == 0 || str.at(0) != 'w') {
+      return std::nullopt;
     }
+    auto index = Parser<int>::Parse(str.substr(1));
+    if (index && 0 <= *index && *index <= 53) { return WeekOfYear{*index}; }
+    return std::nullopt;
   }
-  return std::nullopt;
-}
+};
+template<>
+struct Parser<WeekOfMonth> {
+  static std::optional<WeekOfMonth> Parse(std::string_view str)
+  {
+    if (str == "first" || str == "1st") {
+      return WeekOfMonth::kFirst;
+    } else if (str == "second" || str == "2nd") {
+      return WeekOfMonth::kSecond;
+    } else if (str == "third" || str == "3rd") {
+      return WeekOfMonth::kThird;
+    } else if (str == "fourth" || str == "4th") {
+      return WeekOfMonth::kFourth;
+    } else if (str == "fifth" || str == "5th") {
+      return WeekOfMonth::kFifth;
+    } else if (str == "last") {
+      return WeekOfMonth::kLast;
+    }
+    return std::nullopt;
+  }
+};
+template<>
+struct Parser<DayOfMonth> {
+  static std::optional<DayOfMonth> Parse(std::string_view str)
+  {
+    auto number = Parser<int>::Parse(str);
+    if (number && (1 <= *number && *number <= 31)) {
+      return DayOfMonth{*number - 1};
+    }
+    return std::nullopt;
+  }
+};
+template<>
+struct Parser<DayOfWeek> {
+  static std::optional<DayOfWeek> Parse(std::string_view str)
+  {
+    for (size_t i = 0; i < kDayOfWeekLiterals.size(); ++i) {
+      if (str.length() == kDayOfWeekLiterals.at(i).length() || str.length() == 3) {
+        if (bstrncasecmp(str.data(), kDayOfWeekLiterals.at(i).data(), str.length())) {
+          return DayOfWeek{int(i)};
+        }
+      }
+    }
+    return std::nullopt;
+  }
+};
+template<>
+struct Parser<TimeOfDay> {
+  static std::optional<TimeOfDay> Parse(std::string_view str)
+  {
+    int hour, minute;
+    if (Scan(str, "at %:%", hour, minute)) {
+      return TimeOfDay{hour, minute};
+    } else if (Scan(str, "at %:%am", hour, minute)) {
+      return TimeOfDay{(hour % 12), minute};
+    } else if (Scan(str, "at %:%pm", hour, minute)) {
+      return TimeOfDay{(hour % 12) + 12, minute};
+    }
+    return std::nullopt;
+  }
+};
+template<>
+struct Parser<Hourly> {
+  static std::optional<Hourly> Parse(std::string_view str)
+  {
+    return str == "hourly" ? std::optional{Hourly{}} : std::nullopt;
+  }
+};
+template<class T>
+struct Parser<Interval<T>> {
+  static std::optional<Interval<T>> Parse(std::string_view str)
+  {
+    T first, last;
+    if (Scan(str, "%-%", first, last)) { return Interval<T>{first, last}; }
+    return std::nullopt;
+  }
+};
+template<class T>
+struct Parser<Modulo<T>> {
+  static std::optional<Modulo<T>> Parse(std::string_view str)
+  {
+    T remainder, divisor;
+    if (Scan(str, "%/%", remainder, divisor)) { return Modulo<T>{remainder, divisor}; }
+    return std::nullopt;
+  }
+};
+template<class... Args>
+struct Parser<std::variant<Args...>> {
+  template<size_t Index = 0>
+  static std::optional<std::variant<Args...>> Parse(std::string_view str)
+  {
+    static_assert(Index < sizeof...(Args), "Index out of bounds.");
+    if (auto value = Parser<std::variant_alternative_t<Index, std::variant<Args...>>>::Parse(str)) {
+      return std::variant<Args...>{*value};
+    }
+    if constexpr (Index + 1 < sizeof...(Args)) {
+      return Parse<Index + 1>(str);
+    }
+    return std::nullopt;
+  }
+};
 
 // Scan
 // :: base
@@ -200,7 +216,7 @@ bool Scan(std::string_view input,
              && (i + 1 == fmt.length() || input[end] != fmt[i + 1])) {
         ++end;
       }
-      auto value = FromString<First>(std::string(input.substr(i, end - i)));
+      auto value = Parser<First>::Parse(std::string(input.substr(i, end - i)));
       if (value) {
         first = *value;
       } else {
@@ -474,12 +490,12 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
       }
       continue;
     }
-    if (auto day_spec = FromString<
+    if (auto day_spec = Parser<
             std::variant<Mask<MonthOfYear>, Mask<WeekOfYear>, Mask<WeekOfMonth>,
-                         Mask<DayOfMonth>, Mask<DayOfWeek>>>(str)) {
+                         Mask<DayOfMonth>, Mask<DayOfWeek>>>::Parse(str)) {
       schedule.day_masks.emplace_back(*day_spec);
     } else if (auto time_spec
-               = FromString<std::variant<TimeOfDay, Hourly>>(str)) {
+               = Parser<std::variant<TimeOfDay, Hourly>>::Parse(str)) {
       if (auto* time_of_day = std::get_if<TimeOfDay>(&time_spec.value())) {
         if (auto* times_of_day
             = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
@@ -502,7 +518,7 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
     } else {
       scan_err1(
           lc,
-          T_("Could not parse Run directive because of illegal token \"%s\""),
+          T_("Could not Parse Run directive because of illegal token \"%s\""),
           token_str.c_str());
     }
   }
