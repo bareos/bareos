@@ -60,9 +60,6 @@ template <class T> struct Interval {
 
   T first, last;
 };
-// :: kIsRange
-template <class T> constexpr bool kIsRange = false;
-template <class T> constexpr bool kIsRange<Interval<T>> = true;
 
 // Modulo
 template <class T> struct Modulo {
@@ -75,9 +72,6 @@ template <class T> struct Modulo {
 
   T remainder, divisor;
 };
-// :: kIsModulo
-template <class T> constexpr bool kIsModulo = false;
-template <class T> constexpr bool kIsModulo<Modulo<T>> = true;
 
 // Mask
 template <class T> using Mask = std::variant<Interval<T>, Modulo<T>, T>;
