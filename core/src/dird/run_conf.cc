@@ -143,11 +143,17 @@ struct Parser<TimeOfDay> {
   {
     int hour, minute;
     if (Scan(str, "at %:%", hour, minute)) {
-      return TimeOfDay{hour, minute};
+      if (0 <= hour && hour <= 23 && 0 <= minute && minute <= 59) {
+        return TimeOfDay{hour, minute};
+      }
     } else if (Scan(str, "at %:%am", hour, minute)) {
-      return TimeOfDay{(hour % 12), minute};
+      if (0 <= hour && hour <= 12 && 0 <= minute && minute <= 59) {
+        return TimeOfDay{(hour % 12), minute};
+      }
     } else if (Scan(str, "at %:%pm", hour, minute)) {
-      return TimeOfDay{(hour % 12) + 12, minute};
+      if (0 <= hour && hour <= 12 && 0 <= minute && minute <= 59) {
+        return TimeOfDay{(hour % 12) + 12, minute};
+      }
     }
     return std::nullopt;
   }
