@@ -407,8 +407,7 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
     }
   } /* end for found */
 
-  /* Scan schedule times.
-   * Default is: daily at 0:0 */
+  /* Scan schedule tokens. */
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
     switch (token) {
       case BCT_NUMBER:
@@ -432,7 +431,7 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
     }
   }
 
-  Schedule schedule;
+  Schedule schedule; // defaults to "daily at 00:00"
   for (std::string token_str : tokens) {
     std::string str = token_str;
     for (char& ch : str) {
