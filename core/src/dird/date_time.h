@@ -24,153 +24,156 @@
 #ifndef BAREOS_DIRD_DATE_TIME_H_
 #define BAREOS_DIRD_DATE_TIME_H_
 
+#include "include/baconfig.h"
+
 #include <array>
 #include <string>
 #include <ctime>
+#include <stdexcept>
 
 namespace directordaemon {
 
-// MonthOfYear
-enum class MonthOfYear
-{
-  kJan,
-  kFeb,
-  kMar,
-  kApr,
-  kMai,
-  kJun,
-  kJul,
-  kAug,
-  kSep,
-  kOct,
-  kNov,
-  kDec,
+struct MonthOfYear {
+  static constexpr std::array<std::string_view, 12> kNames = {
+      "January", "February", "March",     "April",   "Mai",      "June",
+      "Juli",    "August",   "September", "October", "November", "December",
+  };
+
+  static MonthOfYear FromIndex(size_t index)
+  {
+    ASSERT(index < kNames.size());
+    return {kNames.at(index)};
+  }
+  static std::optional<MonthOfYear> FromName(std::string_view name)
+  {
+    for (std::string_view other_name : kNames) {
+      if (name.length() == other_name.length() || name.length() == 3) {
+        if (bstrncasecmp(name.data(), other_name.data(), name.length())) {
+          return MonthOfYear{other_name};
+        }
+      }
+    }
+    return std::nullopt;
+  }
+
+  constexpr size_t Index() const
+  {
+    for (size_t i = 0; i < kNames.size(); ++i) {
+      if (kNames.at(i).data() == name.data()) { return i; }
+    }
+    throw std::logic_error{"Illegal MonthOfYear instance."};
+  }
+  operator int() const { return Index(); }
+
+  std::string_view name;
+
+ private:
+  MonthOfYear() = default;
 };
-constexpr std::array<std::string_view, 12> kMonthOfYearLiterals = {
-    "January", "February", "March", "April", "Mai", "June",
-    "Juli", "August", "September", "October", "November", "December",
+class WeekOfYear {
+ public:
+  WeekOfYear() = default;
+  WeekOfYear(int value) : _value(value) { ASSERT(0 <= value && value <= 53); }
+
+  operator int() const { return _value; }
+
+ private:
+  int _value;
 };
-// WeekOfYear
-enum class WeekOfYear
-{
-  kW00,
-  kW01,
-  kW02,
-  kW03,
-  kW04,
-  kW05,
-  kW06,
-  kW07,
-  kW08,
-  kW09,
-  kW10,
-  kW11,
-  kW12,
-  kW13,
-  kW14,
-  kW15,
-  kW16,
-  kW17,
-  kW18,
-  kW19,
-  kW20,
-  kW21,
-  kW22,
-  kW23,
-  kW24,
-  kW25,
-  kW26,
-  kW27,
-  kW28,
-  kW29,
-  kW30,
-  kW31,
-  kW32,
-  kW33,
-  kW34,
-  kW35,
-  kW36,
-  kW37,
-  kW38,
-  kW39,
-  kW40,
-  kW41,
-  kW42,
-  kW43,
-  kW44,
-  kW45,
-  kW46,
-  kW47,
-  kW48,
-  kW49,
-  kW50,
-  kW51,
-  kW52,
-  kW53,
-};
-// WeekOfMonth
-enum class WeekOfMonth
-{
-  kFirst,
-  kSecond,
-  kThird,
-  kFourth,
-  kFifth,
-  kLast,
-};
-constexpr std::array<std::string_view, 6> kWeekOfMonthLiterals
-    = {"first", "second", "third", "fourth", "fifth", "last"};
-// DayOfMonth
-enum class DayOfMonth
-{
-  k0,
-  k1,
-  k2,
-  k3,
-  k4,
-  k5,
-  k6,
-  k7,
-  k8,
-  k9,
-  k10,
-  k11,
-  k12,
-  k13,
-  k14,
-  k15,
-  k16,
-  k17,
-  k18,
-  k19,
-  k20,
-  k21,
-  k22,
-  k23,
-  k24,
-  k25,
-  k26,
-  k27,
-  k28,
-  k29,
-  k30,
-};
-// DayOfWeek
-enum class DayOfWeek
-{
-  kSun,
-  kMon,
-  kTue,
-  kWed,
-  kThu,
-  kFri,
-  kSat,
-};
-constexpr std::array<std::string_view, 7> kDayOfWeekLiterals = {
-  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+struct WeekOfMonth {
+  static constexpr std::array<std::string_view, 6> kNames = {
+      "first", "second", "third", "fourth", "last", "fifth",
+  };
+  static constexpr std::array<std::string_view, 6> kAlternativeNames = {
+      "1st", "2nd", "3rd", "4th", "last", "5th",
+  };
+  static_assert(kNames.size() == kAlternativeNames.size());
+
+  static WeekOfMonth FromIndex(size_t index)
+  {
+    ASSERT(index < kNames.size());
+    return {kNames.at(index)};
+  }
+  static std::optional<WeekOfMonth> FromName(std::string_view name)
+  {
+    for (size_t i = 0; i < kNames.size(); ++i) {
+      if (name.length() == kNames.at(i).length() || name.length() == 3) {
+        if (bstrncasecmp(name.data(), kNames.at(i).data(), name.length())) {
+          return WeekOfMonth{kNames.at(i)};
+        }
+      } else if (name.length() == kAlternativeNames.at(i).length()) {
+        if (bstrncasecmp(name.data(), kAlternativeNames.at(i).data(),
+                         name.length())) {
+          return WeekOfMonth{kNames.at(i)};
+        }
+      }
+    }
+    return std::nullopt;
+  }
+
+  constexpr size_t Index() const
+  {
+    for (size_t i = 0; i < kNames.size(); ++i) {
+      if (kNames.at(i).data() == name.data()) { return i; }
+    }
+    throw std::logic_error{"Illegal WeekOfMonth instance."};
+  }
+  operator int() const { return Index(); }
+
+  std::string_view name;
+
+ private:
+  WeekOfMonth() = default;
 };
 
-// TimeOfDay
+class DayOfMonth {
+ public:
+  DayOfMonth() = default;
+  DayOfMonth(int value) : _value(value) { ASSERT(0 <= value && value <= 30); }
+
+  operator int() const { return _value; }
+
+ private:
+  int _value;
+};
+struct DayOfWeek {
+  static constexpr std::array<std::string_view, 7> kNames = {
+      "Sunday",   "Monday", "Tuesday",  "Wednesday",
+      "Thursday", "Friday", "Saturday",
+  };
+
+  static DayOfWeek FromIndex(size_t index)
+  {
+    ASSERT(index < kNames.size());
+    return {kNames.at(index)};
+  }
+  static std::optional<DayOfWeek> FromName(std::string_view name)
+  {
+    for (std::string_view other_name : kNames) {
+      if (name.length() == other_name.length() || name.length() == 3) {
+        if (bstrncasecmp(name.data(), other_name.data(), name.length())) {
+          return DayOfWeek{other_name};
+        }
+      }
+    }
+    return std::nullopt;
+  }
+
+  constexpr size_t Index() const
+  {
+    for (size_t i = 0; i < kNames.size(); ++i) {
+      if (kNames.at(i).data() == name.data()) { return i; }
+    }
+    throw std::logic_error{"Illegal DayOfWeek instance."};
+  }
+  operator int() const { return Index(); }
+
+  std::string_view name;
+
+ private:
+  DayOfWeek() = default;
+};
+
 struct TimeOfDay {
   TimeOfDay(int h, int min) : hour(h), minute(min) {}
   TimeOfDay(int h, int min, int sec) : hour(h), minute(min), second(sec) {}
@@ -179,7 +182,6 @@ struct TimeOfDay {
   int second = 0;
 };
 
-// DateTime
 struct DateTime {
   DateTime(time_t time);
 
@@ -199,8 +201,8 @@ struct DateTime {
   int second{0};
 
  private:
-  int dst_ = 0;                 // daylight saving time
-  int gmt_offset_ = 0;          // seconds east of UTC
+  int dst_ = 0;            // daylight saving time
+  int gmt_offset_ = 0;     // seconds east of UTC
   std::string time_zone_;  // abbreviated
 };
 

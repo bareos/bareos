@@ -63,14 +63,7 @@ template<>
 struct Parser<MonthOfYear> {
   static std::optional<MonthOfYear> Parse(std::string_view str)
   {
-    for (size_t i = 0; i < kMonthOfYearLiterals.size(); ++i) {
-      if (str.length() == kMonthOfYearLiterals.at(i).length() || str.length() == 3) {
-        if (bstrncasecmp(str.data(), kMonthOfYearLiterals.at(i).data(), str.length())) {
-          return MonthOfYear(i);
-        }
-      }
-    }
-    return std::nullopt;
+    return MonthOfYear::FromName(str);
   }
 };
 template<>
@@ -89,24 +82,10 @@ template<>
 struct Parser<WeekOfMonth> {
   static std::optional<WeekOfMonth> Parse(std::string_view str)
   {
-    if (str == "first" || str == "1st") {
-      return WeekOfMonth::kFirst;
-    } else if (str == "second" || str == "2nd") {
-      return WeekOfMonth::kSecond;
-    } else if (str == "third" || str == "3rd") {
-      return WeekOfMonth::kThird;
-    } else if (str == "fourth" || str == "4th") {
-      return WeekOfMonth::kFourth;
-    } else if (str == "fifth" || str == "5th") {
-      return WeekOfMonth::kFifth;
-    } else if (str == "last") {
-      return WeekOfMonth::kLast;
-    }
-    return std::nullopt;
+    return WeekOfMonth::FromName(str);
   }
 };
-template<>
-struct Parser<DayOfMonth> {
+template <> struct Parser<DayOfMonth> {
   static std::optional<DayOfMonth> Parse(std::string_view str)
   {
     auto number = Parser<int>::Parse(str);
@@ -120,14 +99,7 @@ template<>
 struct Parser<DayOfWeek> {
   static std::optional<DayOfWeek> Parse(std::string_view str)
   {
-    for (size_t i = 0; i < kDayOfWeekLiterals.size(); ++i) {
-      if (str.length() == kDayOfWeekLiterals.at(i).length() || str.length() == 3) {
-        if (bstrncasecmp(str.data(), kDayOfWeekLiterals.at(i).data(), str.length())) {
-          return DayOfWeek{int(i)};
-        }
-      }
-    }
-    return std::nullopt;
+    return DayOfWeek::FromName(str);
   }
 };
 template<>

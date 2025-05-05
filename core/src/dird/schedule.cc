@@ -32,13 +32,13 @@ Schedule::Schedule(const std::variant<std::vector<TimeOfDay>, Hourly>& _times)
 
 bool Schedule::TriggersOnDay(DateTime date_time) const
 {
-  return TriggersOn(MonthOfYear(date_time.month))
+  return TriggersOn(MonthOfYear::FromIndex(date_time.month))
          && TriggersOn(WeekOfYear(date_time.week_of_year))
-         && (TriggersOn(WeekOfMonth(date_time.week_of_month))
+         && (TriggersOn(WeekOfMonth::FromIndex(date_time.week_of_month))
              || (date_time.OnLast7DaysOfMonth()
-                 && TriggersOn(WeekOfMonth::kLast)))
+                 && TriggersOn(*WeekOfMonth::FromName("last"))))
          && TriggersOn(DayOfMonth(date_time.day_of_month))
-         && TriggersOn(DayOfWeek(date_time.day_of_week));
+         && TriggersOn(DayOfWeek::FromIndex(date_time.day_of_week));
 }
 std::vector<time_t> Schedule::GetMatchingTimes(time_t from, time_t to) const
 {
