@@ -37,27 +37,14 @@
 
 namespace directordaemon {
 
-// kMaxValue
-template <class T> constexpr int kMaxValue = 0;
-template <> constexpr int kMaxValue<MonthOfYear> = 11;
-template <> constexpr int kMaxValue<WeekOfYear> = 53;
-template <> constexpr int kMaxValue<WeekOfMonth> = 4;
-template <> constexpr int kMaxValue<DayOfMonth> = 30;
-template <> constexpr int kMaxValue<DayOfWeek> = 6;
-
-// Interval
 template <class T> struct Interval {
   T first, last;
 };
-
-// Modulo
 template <class T> struct Modulo {
   T remainder, divisor;
 };
-
-// Mask
 template <class T> using Mask = std::variant<Interval<T>, Modulo<T>, T>;
-// :: Contains
+
 template <class T> bool Contains(const Interval<T>& interval, T value)
 {
   if (int(interval.first) <= int(interval.last)) {
@@ -79,12 +66,10 @@ template <class T> bool Contains(const Mask<T>& mask, T value)
                     mask);
 }
 
-// Hourly
 struct Hourly {
   std::set<int> minutes;
 };
 
-// Schedule
 class Schedule {
  public:
   Schedule() = default;
