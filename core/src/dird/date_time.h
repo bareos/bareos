@@ -25,7 +25,7 @@
 #define BAREOS_DIRD_DATE_TIME_H_
 
 #include <array>
-#include <string_view>
+#include <string>
 #include <ctime>
 
 namespace directordaemon {
@@ -201,7 +201,7 @@ struct DateTime {
  private:
   int dst_ = 0;                 // daylight saving time
   int gmt_offset_ = 0;          // seconds east of UTC
-  std::string_view time_zone_;  // abbreviated
+  std::string time_zone_;  // abbreviated
 };
 
 }  // namespace directordaemon
