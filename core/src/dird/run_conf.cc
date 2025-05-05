@@ -43,14 +43,7 @@ namespace directordaemon {
 
 extern struct s_jl joblevels[];
 
-template <class First, class... Rest>
-bool Scan(std::string_view input,
-              std::string_view fmt,
-              First& first,
-              Rest&... rest);
-
-template<class T>
-struct Parser {
+template <class T> struct Parser {
   static std::optional<T> Parse(std::string_view str);
 };
 
@@ -141,18 +134,35 @@ template<>
 struct Parser<TimeOfDay> {
   static std::optional<TimeOfDay> Parse(std::string_view str)
   {
-    int hour, minute;
-    if (Scan(str, "at %:%", hour, minute)) {
-      if (0 <= hour && hour <= 23 && 0 <= minute && minute <= 59) {
-        return TimeOfDay{hour, minute};
+    static constexpr std::string_view kPrefix{"at "};
+    if (str.find(kPrefix) != 0) { return std::nullopt; }
+    str = str.substr(std::string_view{kPrefix}.length());
+    size_t index = str.find(':');
+    if (str.find("am") == str.length() - 2) {
+      str = str.substr(0, str.length() - 2);
+      auto hour = Parser<int>::Parse(str.substr(0, index));
+      auto minute = Parser<int>::Parse(str.substr(index + 1));
+      if (hour && minute) {
+        if (0 <= *hour && *hour <= 12 && 0 <= *minute && *minute <= 59) {
+          return TimeOfDay{(*hour % 12), *minute};
+        }
       }
-    } else if (Scan(str, "at %:%am", hour, minute)) {
-      if (0 <= hour && hour <= 12 && 0 <= minute && minute <= 59) {
-        return TimeOfDay{(hour % 12), minute};
+    } else if (str.find("pm") == str.length() - 2) {
+      str = str.substr(0, str.length() - 2);
+      auto hour = Parser<int>::Parse(str.substr(0, index));
+      auto minute = Parser<int>::Parse(str.substr(index + 1));
+      if (hour && minute) {
+        if (0 <= *hour && *hour <= 12 && 0 <= *minute && *minute <= 59) {
+          return TimeOfDay{(*hour % 12) + 12, *minute};
+        }
       }
-    } else if (Scan(str, "at %:%pm", hour, minute)) {
-      if (0 <= hour && hour <= 12 && 0 <= minute && minute <= 59) {
-        return TimeOfDay{(hour % 12) + 12, minute};
+    } else {
+      auto hour = Parser<int>::Parse(str.substr(0, index));
+      auto minute = Parser<int>::Parse(str.substr(index + 1));
+      if (hour && minute) {
+        if (0 <= *hour && *hour <= 23 && 0 <= *minute && *minute <= 59) {
+          return TimeOfDay{*hour, *minute};
+        }
       }
     }
     return std::nullopt;
@@ -169,8 +179,11 @@ template<class T>
 struct Parser<Interval<T>> {
   static std::optional<Interval<T>> Parse(std::string_view str)
   {
-    T first, last;
-    if (Scan(str, "%-%", first, last)) { return Interval<T>{first, last}; }
+    size_t index = str.find('-');
+    if (index == std::string::npos) { return std::nullopt; }
+    auto first = Parser<T>::Parse(str.substr(0, index));
+    auto last = Parser<T>::Parse(str.substr(index + 1));
+    if (first && last) { return Interval<T>{*first, *last}; }
     return std::nullopt;
   }
 };
@@ -178,8 +191,11 @@ template<class T>
 struct Parser<Modulo<T>> {
   static std::optional<Modulo<T>> Parse(std::string_view str)
   {
-    T remainder, divisor;
-    if (Scan(str, "%/%", remainder, divisor)) { return Modulo<T>{remainder, divisor}; }
+    size_t index = str.find('/');
+    if (index == std::string::npos) { return std::nullopt; }
+    auto remainder = Parser<T>::Parse(str.substr(0, index));
+    auto divisor = Parser<T>::Parse(str.substr(index + 1));
+    if (remainder && divisor) { return Modulo<T>{*remainder, *divisor}; }
     return std::nullopt;
   }
 };
@@ -198,43 +214,6 @@ struct Parser<std::variant<Args...>> {
     return std::nullopt;
   }
 };
-
-// Scan
-// :: base
-bool Scan(std::string_view input, std::string_view fmt)
-{
-  return fmt.find('%') == std::string::npos && input == fmt;
-}
-// :: recursive
-template <class First, class... Rest>
-bool Scan(std::string_view input,
-              std::string_view fmt,
-              First& first,
-              Rest&... rest)
-{
-  if (input.length() < fmt.length()) { return false; }
-  for (size_t i = 0; i < input.length(); ++i) {
-    if (input[i] == fmt[i]) {
-      continue;
-    } else if (fmt[i] == '%') {
-      size_t end = i;
-      while (end < input.length()
-             && (i + 1 == fmt.length() || input[end] != fmt[i + 1])) {
-        ++end;
-      }
-      auto value = Parser<First>::Parse(std::string(input.substr(i, end - i)));
-      if (value) {
-        first = *value;
-      } else {
-        return false;
-      }
-      return Scan(input.substr(end), fmt.substr(i + 1), rest...);
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
 
 // Forward referenced subroutines
 enum e_state
