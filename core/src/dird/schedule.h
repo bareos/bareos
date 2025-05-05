@@ -47,50 +47,36 @@ template <> constexpr int kMaxValue<DayOfWeek> = 6;
 
 // Interval
 template <class T> struct Interval {
-  using Type = T;
-
-  bool Contains(T value) const
-  {
-    if (first <= last) {
-      return first <= value && value <= last;
-    } else {
-      return first <= value || value <= last;
-    }
-  }
-
   T first, last;
 };
 
 // Modulo
 template <class T> struct Modulo {
-  using Type = T;
-
-  bool Contains(T value) const
-  {
-    return (int(value) % int(divisor)) == int(remainder);
-  }
-
   T remainder, divisor;
 };
 
 // Mask
 template <class T> using Mask = std::variant<Interval<T>, Modulo<T>, T>;
 // :: Contains
+template <class T> bool Contains(const Interval<T>& interval, T value)
+{
+  if (int(interval.first) <= int(interval.last)) {
+    return int(interval.first) <= int(value)
+           && int(value) <= int(interval.last);
+  } else {
+    return int(interval.first) <= int(value)
+           || int(value) <= int(interval.last);
+  }
+}
+template <class T> bool Contains(const Modulo<T>& modulo, T value)
+{
+  return (int(value) % int(modulo.divisor)) == int(modulo.remainder);
+}
+template <class T> bool Contains(const T& a, T b) { return int(a) == int(b); }
 template <class T> bool Contains(const Mask<T>& mask, T value)
 {
-  if (auto* range = std::get_if<Interval<T>>(&mask)) {
-    return range->Contains(value);
-  } else if (auto* modulo = std::get_if<Modulo<T>>(&mask)) {
-    return modulo->Contains(value);
-  } else {
-    return std::get<T>(mask) == value;
-  }
-  return false;
-}
-// :: all
-template <class T> Mask<T> All()
-{
-  return {{Interval<T>({T(0), T(kMaxValue<T>)})}};
+  return std::visit([&value](const auto& x) { return Contains(x, value); },
+                    mask);
 }
 
 // Hourly
