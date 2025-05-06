@@ -35,12 +35,12 @@ if(VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE)
   )
 endif()
 
-install(TARGETS bareos_vadp_dumper DESTINATION "${CMAKE_INSTALL_SBINDIR}")
+install(TARGETS bareos_vadp_dumper DESTINATION "${sbindir}")
 install(
   FILES bareos_vadp_dumper_wrapper.sh
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
-  DESTINATION "${CMAKE_INSTALL_SBINDIR}"
+  DESTINATION "${sbindir}"
 )
 
 include(DebugEdit)
