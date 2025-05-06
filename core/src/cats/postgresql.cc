@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -259,6 +259,13 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   }
 bail_out:
   unlock_mutex(mutex);
+
+  // if we could not establish this connection, then nobody else would be
+  // using this, so we can just pretend that this is a private connection.
+  // this is necessary since its 1) not safe to lock the db if this function
+  // fails (as maybe the lock creation is the thing that failed!) and 2)
+  // you are not allowed to use strerror() without locking the db.
+  if (!retval) { is_private_ = true; }
   return retval;
 }
 
