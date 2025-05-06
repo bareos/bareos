@@ -53,7 +53,7 @@ static int LastDayOfMonth(int year, int month)
   }
 }
 
-bool DateTime::WeekOfMonth() const { return day_of_month / 7; }
+int DateTime::WeekOfMonth() const { return day_of_month / 7; }
 bool DateTime::OnLast7DaysOfMonth() const
 {
   auto last_day = LastDayOfMonth(year, month);
@@ -71,6 +71,7 @@ DateTime::DateTime(time_t time_) : time(time_)
   month = tm.tm_mon;
   day_of_year = tm.tm_yday;
   hour = tm.tm_hour;
+  year = tm.tm_year;
 }
 
 void DateTime::PrintDebugMessage(int debug_level) const

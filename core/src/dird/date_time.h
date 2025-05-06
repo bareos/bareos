@@ -29,7 +29,7 @@ namespace directordaemon {
 struct DateTime {
   DateTime(time_t time);
 
-  bool WeekOfMonth() const;
+  int WeekOfMonth() const;
   bool OnLast7DaysOfMonth() const;
   void PrintDebugMessage(int debug_level) const;
 
