@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -218,7 +218,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   ClearFoundInUse();
 
   PmStrcpy(unwanted_volumes, "");
-  for (int vol_index = 1; vol_index < 20; vol_index++) {
+  for (int vol_index = 1; vol_index < 200; vol_index++) {
     BashSpaces(media_type);
     BashSpaces(pool_name);
     BashSpaces(unwanted_volumes.c_str());
