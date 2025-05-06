@@ -223,7 +223,7 @@ enum ndmp9_message {
 /*
  * Common message bodies
  */
-%extern bool_t xdr_ndmp9_no_arguments();
+%extern bool_t xdr_ndmp9_no_arguments(register XDR *xdrs, uint64_t *objp);
 %#define ndmp9_no_arguments int
 
 struct ndmp9_just_error_reply {

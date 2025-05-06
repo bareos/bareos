@@ -34,6 +34,12 @@
  *
  */
 
+// C23 changed the semantics of a function declaration without parameters
+#if __STDC_VERSION__ >= 202311L
+#define VARARG_PARAMETER_LIST ...
+#else
+#define VARARG_PARAMETER_LIST
+#endif
 
 #include "ndmlib.h"
 
@@ -74,7 +80,7 @@ void ndmnmb_snoop(struct ndmlog* log,
 {
   int rc, nl, i;
   char buf[2048];
-  int (*ndmpp)();
+  int (*ndmpp)(VARARG_PARAMETER_LIST);
   int level5 = 5;
   int level6 = 6;
 

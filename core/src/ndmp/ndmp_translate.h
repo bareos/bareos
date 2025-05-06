@@ -34,6 +34,13 @@
  *
  */
 
+// C23 changed the semantics of a function declaration without parameters
+#if __STDC_VERSION__ >= 202311L
+#define VARARG_PARAMETER_LIST ...
+#else
+#define VARARG_PARAMETER_LIST
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -153,15 +160,15 @@ struct reqrep_xlate {
   int vx_message;
   ndmp9_message v9_message;
 
-  int (*request_xto9)(/* void *vxbody, void *v9body */);
-  int (*request_9tox)(/* void *v9body, void *vxbody */);
-  int (*reply_xto9)(/* void *vxbody, void *v9body */);
-  int (*reply_9tox)(/* void *v9body, void *vxbody */);
+  int (*request_xto9)(VARARG_PARAMETER_LIST/* void *vxbody, void *v9body */);
+  int (*request_9tox)(VARARG_PARAMETER_LIST/* void *v9body, void *vxbody */);
+  int (*reply_xto9)(VARARG_PARAMETER_LIST/* void *vxbody, void *v9body */);
+  int (*reply_9tox)(VARARG_PARAMETER_LIST/* void *v9body, void *vxbody */);
 
-  int (*free_request_xto9)(/* void *v9body */);
-  int (*free_request_9tox)(/* void *vxbody */);
-  int (*free_reply_xto9)(/* void *v9body */);
-  int (*free_reply_9tox)(/* void *vxbody */);
+  int (*free_request_xto9)(VARARG_PARAMETER_LIST/* void *v9body */);
+  int (*free_request_9tox)(VARARG_PARAMETER_LIST/* void *vxbody */);
+  int (*free_reply_xto9)(VARARG_PARAMETER_LIST/* void *v9body */);
+  int (*free_reply_9tox)(VARARG_PARAMETER_LIST/* void *vxbody */);
 };
 
 struct reqrep_xlate_version_table {
