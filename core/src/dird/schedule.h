@@ -78,30 +78,25 @@ class Schedule {
   bool TriggersOnDay(DateTime date_time) const;
   std::vector<time_t> GetMatchingTimes(time_t from, time_t to) const;
 
-  std::vector<std::variant<Mask<MonthOfYear>,
-                           Mask<WeekOfYear>,
-                           Mask<WeekOfMonth>,
-                           Mask<DayOfMonth>,
-                           Mask<DayOfWeek>>>
+  std::tuple<std::vector<Mask<MonthOfYear>>,
+             std::vector<Mask<WeekOfYear>>,
+             std::vector<Mask<WeekOfMonth>>,
+             std::vector<Mask<DayOfMonth>>,
+             std::vector<Mask<DayOfWeek>>>
       day_masks;
   std::variant<std::vector<TimeOfDay>, Hourly> times = std::vector<TimeOfDay>{};
 
  private:
   template <class T> bool IsRestricted() const
   {
-    for (const auto& mask : day_masks) {
-      if (std::holds_alternative<Mask<T>>(mask)) { return true; }
-    }
-    return false;
+    return !std::get<std::vector<Mask<T>>>(day_masks).empty();
   }
 
   template <class T> bool TriggersOn(T value) const
   {
     if (!IsRestricted<T>()) { return true; }
-    for (const auto& mask : day_masks) {
-      if (std::holds_alternative<Mask<T>>(mask)) {
-        if (Contains(std::get<Mask<T>>(mask), value)) { return true; }
-      }
+    for (const auto& mask : std::get<std::vector<Mask<T>>>(day_masks)) {
+      if (Contains(mask, value)) { return true; }
     }
     return false;
   }

@@ -203,12 +203,19 @@ std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::War
                      "and does nothing");
       continue;
     }
-    if (auto day_spec = Parser<
-            std::variant<Mask<MonthOfYear>, Mask<WeekOfYear>, Mask<WeekOfMonth>,
-                          Mask<DayOfMonth>, Mask<DayOfWeek>>>::Parse(lower_str)) {
-      schedule.day_masks.emplace_back(*day_spec);
+    if (auto day_spec
+        = Parser<std::variant<Mask<MonthOfYear>, Mask<WeekOfYear>,
+                              Mask<WeekOfMonth>, Mask<DayOfMonth>,
+                              Mask<DayOfWeek>>>::Parse(lower_str)) {
+      std::visit(
+          [&](auto&& value) {
+            using T = std::remove_reference_t<decltype(value)>;
+            std::get<std::vector<T>>(schedule.day_masks)
+                .emplace_back(std::move(value));
+          },
+          day_spec.value());
     } else if (auto time_spec
-                = Parser<std::variant<TimeOfDay, Hourly>>::Parse(lower_str)) {
+               = Parser<std::variant<TimeOfDay, Hourly>>::Parse(lower_str)) {
       if (auto* time_of_day = std::get_if<TimeOfDay>(&time_spec.value())) {
         if (auto* times_of_day
             = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
