@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "stored/askdir.h"
 
+#include "lib/parse_conf.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 
@@ -218,7 +219,37 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   ClearFoundInUse();
 
   PmStrcpy(unwanted_volumes, "");
-  for (int vol_index = 1; vol_index < 200; vol_index++) {
+
+  std::size_t device_count = 0;
+
+  {
+    ResLocker _{my_config};
+
+    BareosResource* found_dev = nullptr;
+    foreach_res (found_dev, R_DEVICE) { device_count += 1; }
+  }
+
+  if (device_count == 0) {
+    Emsg0(M_ERROR, 0,
+          "Trying to find a volume, but there are apparently no devices.");
+    // not sure what happened here, but this should hopefully be enough
+    device_count = 100;
+  }
+
+  // x >> 3 == x / 8 ~ 10% * x
+  // there should never be a need to ask for more volumes than there are devices
+  // because each device should only be allowed to reserve one volume, but we
+  // add some headroom here in case some recommended volume is broken or
+  // in case some devices are currently reserving multiple volumes
+  // (maybe they are currently switching volumes)
+  std::size_t ask_limit = device_count + (device_count >> 3);
+
+  Dmsg0(400, "device count = %llu => ask limit = %llu\n",
+        static_cast<long long unsigned>(device_count),
+        static_cast<long long unsigned>(ask_limit));
+
+  // use <= because we start counting at 1
+  for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
     BashSpaces(media_type);
     BashSpaces(pool_name);
     BashSpaces(unwanted_volumes.c_str());
