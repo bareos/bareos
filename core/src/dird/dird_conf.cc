@@ -1412,6 +1412,21 @@ std::string ToString(const std::variant<Args...>& variant)
 {
   return std::visit([](const auto& value) { return ToString(value); }, variant);
 }
+// :: std::tuple
+template <class... Args> std::string ToString(const std::tuple<Args...>& tuple)
+{
+  std::vector<std::string> str_list;
+  std::apply(
+      [&](auto&&... args) { (str_list.emplace_back(ToString(args)), ...); },
+      tuple);
+  std::string result;
+  for (const std::string& str : str_list) {
+    if (str.empty()) { continue; }
+    if (!result.empty()) { result += ' '; }
+    result += str;
+  }
+  return result;
+}
 // :: Interval
 template <class T> std::string ToString(const Interval<T>& range)
 {
@@ -1430,8 +1445,9 @@ template <class T> std::string ToString(const std::vector<T>& vec)
 // :: Schedule
 std::string ToString(const Schedule& schedule)
 {
-  if (!schedule.day_masks.empty()) {
-    return ToString(schedule.day_masks) + " " + ToString(schedule.times);
+  std::string day_str = ToString(schedule.day_masks);
+  if (!day_str.empty()) {
+    return day_str + " " + ToString(schedule.times);
   } else {
     return ToString(schedule.times);
   }
