@@ -125,33 +125,33 @@ expect_grep "Using Device \"MultiFileStorage0003\"" \
 #make sure all volumes are purged
 expect_grep "There are no more Jobs associated with Volume \"Full-0001\". Marking it purged." \
   "${tmp}"/log3.out \
-  "The Purge command failed for a MultifileStorage."
+  "The Purge command failed for Volume \"Full-0001\"."
 expect_grep "There are no more Jobs associated with Volume \"Full-0002\". Marking it purged." \
   "${tmp}"/log3.out \
-  "The Purge command failed for a MultifileStorage."
+  "The Purge command failed for Volume \"Full-0002\"."
 expect_grep "There are no more Jobs associated with Volume \"Full-0003\". Marking it purged." \
   "${tmp}"/log3.out \
-  "The Purge command failed for a MultifileStorage."
+  "The Purge command failed for Volume \"Full-0003\"."
 
 #make sure all volumes are correctly truncated with the correct drive
 expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0001\" Device=\"MultiFileStorage0000\" (storage)" \
   "${tmp}"/log3.out \
-  "The Truncate command failed for a MultiFileStorage."
-expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0002\" Device=\"MultiFileStorage0001\" (storage)" \
-  "${tmp}"/log3.out \
-  "The Truncate command failed for a MultiFileStorage."
-expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0003\" Device=\"MultiFileStorage0002\" (storage)" \
-  "${tmp}"/log3.out \
-  "The Truncate command failed for a MultiFileStorage."
+  "The Truncate command failed for Volume \"Full-0001\"."
 expect_grep "The volume 'Full-0001' has been truncated." \
   "${tmp}"/log3.out \
-  "The Truncate command failed for a MultiFileStorage."
+  "The Truncate command failed for Volume \"Full-0001\"."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0002\" Device=\"MultiFileStorage0001\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Full-0002\"."
 expect_grep "The volume 'Full-0002' has been truncated." \
   "${tmp}"/log3.out \
-  "The Truncate command failed for a MultiFileStorage."
+  "The Truncate command failed for Volume \"Full-0002\"."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0003\" Device=\"MultiFileStorage0002\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Full-0003\"."
 expect_grep "The volume 'Full-0003' has been truncated." \
   "${tmp}"/log3.out \
-  "The Truncate command failed for a MultiFileStorage."
+  "The Truncate command failed for Volume \"Full-0003\"."
 
 # make sure the devices really have been truncated
 for i in 1 2 3; do
@@ -170,7 +170,7 @@ expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"fakevolume\" Device
 # make sure exact number of orphaned storages is found
 expect_grep "Found 2 orphaned Storage records" \
   "${tmp}"/log4.out \
-  "The delete command failed to find the exact number of fakestorages."
+  "The delete command failed to find the exact number of orphaned fakestorages."
 
 # make sure storage 'File' cannot be deleted
 expect_grep "The given storage 'File' either does not exist at all, or still exists in the configuration." \
