@@ -194,6 +194,9 @@ bareos_disable_warnings(
   -Wmissing-field-initializers
   -Wunused-but-set-variable
   -Wdeprecated-non-prototype
+  -Wcast-function-type
+  -Wincompatible-pointer-types
+  -Wold-style-definition
   C_ONLY
 )
 
