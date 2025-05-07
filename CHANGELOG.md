@@ -5,6 +5,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Storage -> Device `Count` behavior changes
+
+If the `Count` directive is specified with a value > 1,
+duplicated devices will be created starting from serial-number 0000 up to `Count`.
+The 0000 device is automatically assigned 'Autoselect=No'. 
+Additionally, an autochanger resource is created with the name of the device the `Count` directive is specified for.
+The duplicated devices will be assigned to this autochanger unless they are used in another autochanger already.
+
+See explanations and example in documentation https://docs.bareos.org/TasksAndConcepts/VolumeManagement.html#concurrent-disk-jobs
+
 ### Configuring a disk Autochanger
 If you want to run multiple jobs in parallel to the same disk storage,
 you can now simply specify the `count` directive in the (Storage -> Device) configuration
