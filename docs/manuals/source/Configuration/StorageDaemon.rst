@@ -302,6 +302,7 @@ This only happens if the original device is not already associated to another au
      Count = 3 # create devices MultiFileStorage0000, ..., MultiFileStorage0003
 
      Name = MultiFileStorage
+     Description = "File device. Will be multiplied 4 times"
      Media Type = File
      Archive Device = /home/testuser/multiplied-device-test/storage
      LabelMedia = yes
@@ -335,12 +336,13 @@ However, if you decide to do so, for additional customizations, this could be do
 When the configuration is exported, again only the name of the initial Multiplied Device Resource will be printed.
 
 The Multiplied Device feature can be used when multiple identical devices are needed, e.g.
-when you want to run multiple jobs at once to the same storage device.
+when you want to run multiple jobs at once to the same storage :config:option:`sd/device/ArchiveDevice` location.
 
 Since the :config:option:`sd/device/Count` directive creates an implicit autochanger of the same name as the device,
 you don't have to touch your storage configuration in the director.
 
 .. code-block:: bareosconfig
+   :caption: bareos-dir.d/storage/File.conf
    
    Storage {
       Name = File
@@ -352,6 +354,7 @@ you don't have to touch your storage configuration in the director.
    }
 
 Just make sure that :config:option:`dir/storage/MaximumConcurrentJobs` is specified, otherwise jobs will still not run in parallel.
+We advise to set it to the same value as the :config:option:`sd/device/Count` used.
 
 .. _MessagesResource1:
 
