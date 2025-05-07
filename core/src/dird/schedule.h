@@ -107,6 +107,19 @@ class Schedule {
   }
 };
 
+template<class T> struct Parser;
+// expose for unit testing
+template<> struct Parser<Schedule> {
+  struct Error {
+    std::string message;
+  };
+  struct Warnings {
+    std::vector<std::string> messages;
+  };
+  static std::pair<std::variant<Schedule, Error>, Warnings> Parse(const std::vector<std::string>& tokens);
+  static std::pair<std::variant<Schedule, Error>, Warnings> Parse(std::string_view str);
+};
+
 }  // namespace directordaemon
 
 #endif  // BAREOS_DIRD_SCHEDULE_H_
