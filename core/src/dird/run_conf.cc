@@ -189,6 +189,85 @@ struct Parser<std::variant<Args...>> {
     return std::nullopt;
   }
 };
+std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::Warnings> Parser<Schedule>::Parse(const std::vector<std::string>& tokens)
+{
+  std::vector<std::string> warnings;
+  Schedule schedule;
+  for (std::string token_str : tokens) {
+    std::string lower_str = token_str;
+    for (char& ch : lower_str) {
+      if (std::isupper(ch)) { ch = std::tolower(ch); }
+    }
+    if (lower_str == "daily" || lower_str == "weekly" || lower_str == "monthly") {
+      warnings.emplace_back("Run directive includes token \"" + lower_str + "\", which is deprecated "
+                     "and does nothing");
+      continue;
+    }
+    if (auto day_spec = Parser<
+            std::variant<Mask<MonthOfYear>, Mask<WeekOfYear>, Mask<WeekOfMonth>,
+                          Mask<DayOfMonth>, Mask<DayOfWeek>>>::Parse(lower_str)) {
+      schedule.day_masks.emplace_back(*day_spec);
+    } else if (auto time_spec
+                = Parser<std::variant<TimeOfDay, Hourly>>::Parse(lower_str)) {
+      if (auto* time_of_day = std::get_if<TimeOfDay>(&time_spec.value())) {
+        if (auto* times_of_day
+            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+          times_of_day->emplace_back(*time_of_day);
+        } else {
+          std::get<Hourly>(schedule.times).minutes.insert(time_of_day->minute);
+        }
+      } else {
+        if (auto* times_of_day
+            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+          std::set<int> minutes;
+          for (const TimeOfDay& other_time_of_day : *times_of_day) {
+            minutes.insert(other_time_of_day.minute);
+          }
+          schedule.times = Hourly{{std::move(minutes)}};
+        } else {
+          schedule.times = Hourly{};
+        }
+      }
+    } else {
+      return { Error{std::string{"Could not parse Run directive because of illegal token \""} + token_str + "\"" }, { std::move(warnings) } };
+    }
+  }
+  if (auto* times_of_day
+      = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+    if (times_of_day->empty()) { times_of_day->emplace_back(TimeOfDay(0, 0)); }
+  } else if (auto* hourly = std::get_if<Hourly>(&schedule.times)) {
+    if (hourly->minutes.empty()) { hourly->minutes.insert(0); }
+  }
+  auto now = time(nullptr);
+  if (schedule.GetMatchingTimes(now, now + 60 * 60 * 24 * 366).empty()) {
+    warnings.emplace_back("Run directive schedule never runs in the next 366 days");
+  }
+  return { schedule, { std::move(warnings) } };
+}
+std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::Warnings> Parser<Schedule>::Parse(std::string_view str)
+{
+  std::vector<std::string> tokens{""};
+  for (char ch : str) {
+    if (ch == ',') {
+      continue;
+    }
+    if (ch == ' ') {
+      if (tokens.back() != "at") {
+        tokens.emplace_back();
+      }
+      else {
+        tokens.back() += ' ';
+      }
+    }
+    else {
+      tokens.back() += ch;
+    }
+  }
+  if (tokens.back().empty()) {
+    tokens.pop_back();
+  }
+  return Parse(tokens);
+}
 
 // Forward referenced subroutines
 enum e_state
@@ -434,66 +513,18 @@ void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
     }
   }
 
-  Schedule schedule; // defaults to "daily at 00:00"
-  for (std::string token_str : tokens) {
-    std::string str = token_str;
-    for (char& ch : str) {
-      if (std::isupper(ch)) { ch = std::tolower(ch); }
-    }
-    if (str == "daily" || str == "weekly" || str == "monthly") {
-      if (pass == 1) {
-        scan_warn1(lc,
-                   "Run directive includes token \"%s\", which is deprecated "
-                   "and does nothing",
-                   token_str.c_str());
-      }
-      continue;
-    }
-    if (auto day_spec = Parser<
-            std::variant<Mask<MonthOfYear>, Mask<WeekOfYear>, Mask<WeekOfMonth>,
-                         Mask<DayOfMonth>, Mask<DayOfWeek>>>::Parse(str)) {
-      schedule.day_masks.emplace_back(*day_spec);
-    } else if (auto time_spec
-               = Parser<std::variant<TimeOfDay, Hourly>>::Parse(str)) {
-      if (auto* time_of_day = std::get_if<TimeOfDay>(&time_spec.value())) {
-        if (auto* times_of_day
-            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
-          times_of_day->emplace_back(*time_of_day);
-        } else {
-          std::get<Hourly>(schedule.times).minutes.insert(time_of_day->minute);
-        }
-      } else {
-        if (auto* times_of_day
-            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
-          std::set<int> minutes;
-          for (const TimeOfDay& other_time_of_day : *times_of_day) {
-            minutes.insert(other_time_of_day.minute);
-          }
-          schedule.times = Hourly({std::move(minutes)});
-        } else {
-          schedule.times = Hourly();
-        }
-      }
-    } else {
-      scan_err1(
-          lc,
-          T_("Could not Parse Run directive because of illegal token \"%s\""),
-          token_str.c_str());
+  auto [result, warnings] = Parser<Schedule>::Parse(tokens);
+  if (pass == 1) {
+    for (const std::string& warning : warnings.messages) {
+      scan_warn0(lc, warning.c_str());
     }
   }
-  if (auto* times_of_day
-      = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
-    if (times_of_day->empty()) { times_of_day->emplace_back(TimeOfDay(0, 0)); }
-  } else if (auto* hourly = std::get_if<Hourly>(&schedule.times)) {
-    if (hourly->minutes.empty()) { hourly->minutes.insert(0); }
+  if (auto* schedule = std::get_if<Schedule>(&result)) {
+    res_run.schedule = *schedule;
   }
-  auto now = time(nullptr);
-  if (pass == 1
-      && schedule.GetMatchingTimes(now, now + 60 * 60 * 24 * 366).empty()) {
-    scan_warn0(lc, "Run directive schedule never runs in the next 366 days");
+  else {
+    scan_err0(lc, std::get<Parser<Schedule>::Error>(result).message.c_str()); 
   }
-  res_run.schedule = schedule;
-
 
   /* Allocate run record, copy new stuff into it,
    * and append it to the list of run records
