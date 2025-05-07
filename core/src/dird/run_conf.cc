@@ -107,7 +107,7 @@ struct Parser<TimeOfDay> {
   static std::optional<TimeOfDay> Parse(std::string_view str)
   {
     static constexpr std::string_view kPrefix{"at "};
-    if (str.find(kPrefix) != 0) { return std::nullopt; }
+    if (str.find_first_of(kPrefix) != 0) { return std::nullopt; }
     str = str.substr(std::string_view{kPrefix}.length());
     size_t index = str.find(':');
     if (str.find("am") == str.length() - 2) {
@@ -130,6 +130,9 @@ struct Parser<TimeOfDay> {
       }
     } else {
       auto hour = Parser<int>::Parse(str.substr(0, index));
+      if (index == 0) { // such that "hourly at :XX" is valid
+        hour = std::optional{0};
+      }
       auto minute = Parser<int>::Parse(str.substr(index + 1));
       if (hour && minute) {
         if (0 <= *hour && *hour <= 23 && 0 <= *minute && *minute <= 59) {
