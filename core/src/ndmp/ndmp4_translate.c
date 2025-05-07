@@ -103,6 +103,14 @@ extern int ndmp_9to4_error(ndmp9_error* error9, ndmp4_error* error4)
   return 0;
 }
 
+int ndmp_4to9_error_gen(void* input, void* output) {
+  return ndmp_4to9_error(input, output);
+}
+
+int ndmp_9to4_error_gen(void* input, void* output) {
+  return ndmp_9to4_error(input, output);
+}
+
 
 /*
  * ndmp_pval
@@ -193,7 +201,7 @@ struct enum_conversion ndmp_49_addr_type[] = {
     END_ENUM_CONVERSION_TABLE};
 
 
-extern int ndmp_4to9_addr(ndmp4_addr* addr4, ndmp9_addr* addr9)
+int ndmp_4to9_addr(ndmp4_addr* addr4, ndmp9_addr* addr9)
 {
   switch (addr4->addr_type) {
     case NDMP4_ADDR_LOCAL:
@@ -218,7 +226,7 @@ extern int ndmp_4to9_addr(ndmp4_addr* addr4, ndmp9_addr* addr9)
   return 0;
 }
 
-extern int ndmp_9to4_addr(ndmp9_addr* addr9, ndmp4_addr* addr4)
+int ndmp_9to4_addr(ndmp9_addr* addr9, ndmp4_addr* addr4)
 {
   ndmp4_tcp_addr* tcp;
 
@@ -431,16 +439,20 @@ int ndmp_9to4_auth_attr(ndmp9_auth_attr* auth_attr9,
  * just error reply
  */
 
-int ndmp_4to9_connect_open_request(ndmp4_connect_open_request* request4,
-                                   ndmp9_connect_open_request* request9)
+int ndmp_4to9_connect_open_request(void* input, void* output)
 {
+  ndmp4_connect_open_request* request4 = input;
+  ndmp9_connect_open_request* request9 = output;
+
   CNVT_TO_9(request4, request9, protocol_version);
   return 0;
 }
 
-int ndmp_9to4_connect_open_request(ndmp9_connect_open_request* request9,
-                                   ndmp4_connect_open_request* request4)
+int ndmp_9to4_connect_open_request(void* input, void* output)
 {
+  ndmp9_connect_open_request* request9 = input;
+  ndmp4_connect_open_request* request4 = output;
+
   CNVT_FROM_9(request4, request9, protocol_version);
   return 0;
 }
@@ -452,10 +464,11 @@ int ndmp_9to4_connect_open_request(ndmp9_connect_open_request* request9,
  */
 
 
-int ndmp_4to9_connect_client_auth_request(
-    ndmp4_connect_client_auth_request* request4,
-    ndmp9_connect_client_auth_request* request9)
+int ndmp_4to9_connect_client_auth_request(void* input, void* output)
 {
+  ndmp4_connect_client_auth_request* request4 = input;
+  ndmp9_connect_client_auth_request* request9 = output;
+
   int rc;
 
   rc = ndmp_4to9_auth_data(&request4->auth_data, &request9->auth_data);
@@ -463,10 +476,11 @@ int ndmp_4to9_connect_client_auth_request(
   return rc;
 }
 
-int ndmp_9to4_connect_client_auth_request(
-    ndmp9_connect_client_auth_request* request9,
-    ndmp4_connect_client_auth_request* request4)
+int ndmp_9to4_connect_client_auth_request(void* input, void* output)
 {
+  ndmp9_connect_client_auth_request* request9 = input;
+  ndmp4_connect_client_auth_request* request4 = output;
+
   int rc;
 
   rc = ndmp_9to4_auth_data(&request9->auth_data, &request4->auth_data);
@@ -483,17 +497,19 @@ int ndmp_9to4_connect_client_auth_request(
 // ndmp_connect_server_auth
 
 /* TBD */
-int ndmp_4to9_connect_server_auth_request(
-    ndmp4_connect_server_auth_request* request4,
-    ndmp9_connect_server_auth_request* request9)
+int ndmp_4to9_connect_server_auth_request(void* input, void* output)
 {
+  ndmp4_connect_server_auth_request* request4 = input;
+  ndmp9_connect_server_auth_request* request9 = output;
+
   return -1;
 }
 
-int ndmp_9to4_connect_server_auth_request(
-    ndmp9_connect_server_auth_request* request9,
-    ndmp4_connect_server_auth_request* request4)
+int ndmp_9to4_connect_server_auth_request(void* input, void* output)
 {
+  ndmp9_connect_server_auth_request* request9 = input;
+  ndmp4_connect_server_auth_request* request4 = output;
+
   return -1;
 }
 
@@ -508,10 +524,11 @@ int ndmp_9to4_connect_server_auth_request(
  * no args request
  */
 
-int ndmp_4to9_config_get_host_info_reply(
-    ndmp4_config_get_host_info_reply* reply4,
-    ndmp9_config_get_host_info_reply* reply9)
+int ndmp_4to9_config_get_host_info_reply(void* input, void* output)
 {
+  ndmp4_config_get_host_info_reply* reply4 = input;
+  ndmp9_config_get_host_info_reply* reply9 = output;
+
   int n_error = 0;
 
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
@@ -523,10 +540,11 @@ int ndmp_4to9_config_get_host_info_reply(
   return n_error;
 }
 
-int ndmp_9to4_config_get_host_info_reply(
-    ndmp9_config_get_host_info_reply* reply9,
-    ndmp4_config_get_host_info_reply* reply4)
+int ndmp_9to4_config_get_host_info_reply(void* input, void* output)
 {
+  ndmp9_config_get_host_info_reply* reply9 = input;
+  ndmp4_config_get_host_info_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
   CNVT_STRDUP_FROM_9x(reply4, reply9, hostname, config_info.hostname);
   CNVT_STRDUP_FROM_9x(reply4, reply9, os_type, config_info.os_type);
@@ -542,10 +560,11 @@ int ndmp_9to4_config_get_host_info_reply(
  * no args request
  */
 
-int ndmp_4to9_config_get_connection_type_reply(
-    ndmp4_config_get_connection_type_reply* reply4,
-    ndmp9_config_get_connection_type_reply* reply9)
+int ndmp_4to9_config_get_connection_type_reply(void* input, void* output)
 {
+  ndmp4_config_get_connection_type_reply* reply4 = input;
+  ndmp9_config_get_connection_type_reply* reply9 = output;
+
   int n_error = 0;
   unsigned int i;
 
@@ -570,10 +589,11 @@ int ndmp_4to9_config_get_connection_type_reply(
   return n_error;
 }
 
-int ndmp_9to4_config_get_connection_type_reply(
-    ndmp9_config_get_connection_type_reply* reply9,
-    ndmp4_config_get_connection_type_reply* reply4)
+int ndmp_9to4_config_get_connection_type_reply(void* input, void* output)
 {
+  ndmp9_config_get_connection_type_reply* reply9 = input;
+  ndmp4_config_get_connection_type_reply* reply4 = output;
+
   int i = 0;
 
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
@@ -596,10 +616,11 @@ int ndmp_9to4_config_get_connection_type_reply(
 
 // ndmp_config_get_auth_attr
 
-int ndmp_4to9_config_get_auth_attr_request(
-    struct ndmp4_config_get_auth_attr_request* request4,
-    struct ndmp9_config_get_auth_attr_request* request9)
+int ndmp_4to9_config_get_auth_attr_request(void* input, void* output)
 {
+  struct ndmp4_config_get_auth_attr_request* request4 = input;
+  struct ndmp9_config_get_auth_attr_request* request9 = output;
+
   int n_error = 0;
   int rc;
 
@@ -612,10 +633,11 @@ int ndmp_4to9_config_get_auth_attr_request(
   return n_error;
 }
 
-int ndmp_9to4_config_get_auth_attr_request(
-    struct ndmp9_config_get_auth_attr_request* request9,
-    struct ndmp4_config_get_auth_attr_request* request4)
+int ndmp_9to4_config_get_auth_attr_request(void* input, void* output)
 {
+  struct ndmp9_config_get_auth_attr_request* request9 = input;
+  struct ndmp4_config_get_auth_attr_request* request4 = output;
+
   int n_error = 0;
   int rc;
 
@@ -628,10 +650,11 @@ int ndmp_9to4_config_get_auth_attr_request(
   return n_error;
 }
 
-int ndmp_4to9_config_get_auth_attr_reply(
-    struct ndmp4_config_get_auth_attr_reply* reply4,
-    struct ndmp9_config_get_auth_attr_reply* reply9)
+int ndmp_4to9_config_get_auth_attr_reply(void* input, void* output)
 {
+  struct ndmp4_config_get_auth_attr_reply* reply4 = input;
+  struct ndmp9_config_get_auth_attr_reply* reply9 = output;
+
   int n_error = 0;
 
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
@@ -641,10 +664,11 @@ int ndmp_4to9_config_get_auth_attr_reply(
   return n_error;
 }
 
-int ndmp_9to4_config_get_auth_attr_reply(
-    struct ndmp9_config_get_auth_attr_reply* reply9,
-    struct ndmp4_config_get_auth_attr_reply* reply4)
+int ndmp_9to4_config_get_auth_attr_reply(void* input, void* output)
 {
+  struct ndmp9_config_get_auth_attr_reply* reply9 = input;
+  struct ndmp4_config_get_auth_attr_reply* reply4 = output;
+
   int n_error = 0;
 
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
@@ -660,10 +684,11 @@ int ndmp_9to4_config_get_auth_attr_reply(
  * no args request
  */
 
-int ndmp_4to9_config_get_server_info_reply(
-    ndmp4_config_get_server_info_reply* reply4,
-    ndmp9_config_get_server_info_reply* reply9)
+int ndmp_4to9_config_get_server_info_reply(void* input, void* output)
 {
+  ndmp4_config_get_server_info_reply* reply4 = input;
+  ndmp9_config_get_server_info_reply* reply9 = output;
+
   unsigned int i, n_error = 0;
 
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
@@ -697,10 +722,11 @@ int ndmp_4to9_config_get_server_info_reply(
   return n_error;
 }
 
-int ndmp_9to4_config_get_server_info_reply(
-    ndmp9_config_get_server_info_reply* reply9,
-    ndmp4_config_get_server_info_reply* reply4)
+int ndmp_9to4_config_get_server_info_reply(void* input, void* output)
 {
+  ndmp9_config_get_server_info_reply* reply9 = input;
+  ndmp4_config_get_server_info_reply* reply4 = output;
+
   int i = 0;
 
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
@@ -733,10 +759,11 @@ int ndmp_9to4_config_get_server_info_reply(
  * no args request
  */
 
-int ndmp_4to9_config_get_butype_info_reply(
-    ndmp4_config_get_butype_info_reply* reply4,
-    ndmp9_config_get_butype_info_reply* reply9)
+int ndmp_4to9_config_get_butype_info_reply(void* input, void* output)
 {
+  ndmp4_config_get_butype_info_reply* reply4 = input;
+  ndmp9_config_get_butype_info_reply* reply9 = output;
+
   int n;
   int i;
 
@@ -777,10 +804,11 @@ int ndmp_4to9_config_get_butype_info_reply(
   return 0;
 }
 
-int ndmp_9to4_config_get_butype_info_reply(
-    ndmp9_config_get_butype_info_reply* reply9,
-    ndmp4_config_get_butype_info_reply* reply4)
+int ndmp_9to4_config_get_butype_info_reply(void* input, void* output)
 {
+  ndmp9_config_get_butype_info_reply* reply9 = input;
+  ndmp4_config_get_butype_info_reply* reply4 = output;
+
   int n;
   int i;
 
@@ -825,9 +853,11 @@ int ndmp_9to4_config_get_butype_info_reply(
  * no args request
  */
 
-int ndmp_4to9_config_get_fs_info_reply(ndmp4_config_get_fs_info_reply* reply4,
-                                       ndmp9_config_get_fs_info_reply* reply9)
+int ndmp_4to9_config_get_fs_info_reply(void* input, void* output)
 {
+  ndmp4_config_get_fs_info_reply* reply4 = input;
+  ndmp9_config_get_fs_info_reply* reply9 = output;
+
   int n;
   int i;
 
@@ -867,9 +897,11 @@ int ndmp_4to9_config_get_fs_info_reply(ndmp4_config_get_fs_info_reply* reply4,
   return 0;
 }
 
-int ndmp_9to4_config_get_fs_info_reply(ndmp9_config_get_fs_info_reply* reply9,
-                                       ndmp4_config_get_fs_info_reply* reply4)
+int ndmp_9to4_config_get_fs_info_reply(void* input, void* output)
 {
+  ndmp9_config_get_fs_info_reply* reply9 = input;
+  ndmp4_config_get_fs_info_reply* reply4 = output;
+
   int n;
   int i;
 
@@ -1017,10 +1049,11 @@ int ndmp_9to4_device_info_vec_dup(ndmp9_device_info* devinf9,
   return 0;
 }
 
-int ndmp_4to9_config_get_tape_info_reply(
-    ndmp4_config_get_tape_info_reply* reply4,
-    ndmp9_config_get_tape_info_reply* reply9)
+int ndmp_4to9_config_get_tape_info_reply(void* input, void* output)
 {
+  ndmp4_config_get_tape_info_reply* reply4 = input;
+  ndmp9_config_get_tape_info_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
 
   ndmp_4to9_device_info_vec_dup(reply4->tape_info.tape_info_val,
@@ -1032,10 +1065,11 @@ int ndmp_4to9_config_get_tape_info_reply(
   return 0;
 }
 
-int ndmp_9to4_config_get_tape_info_reply(
-    ndmp9_config_get_tape_info_reply* reply9,
-    ndmp4_config_get_tape_info_reply* reply4)
+int ndmp_9to4_config_get_tape_info_reply(void* input, void* output)
 {
+  ndmp9_config_get_tape_info_reply* reply9 = input;
+  ndmp4_config_get_tape_info_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
 
   ndmp_9to4_device_info_vec_dup(reply9->config_info.tape_info.tape_info_val,
@@ -1047,10 +1081,11 @@ int ndmp_9to4_config_get_tape_info_reply(
   return 0;
 }
 
-int ndmp_4to9_config_get_scsi_info_reply(
-    ndmp4_config_get_scsi_info_reply* reply4,
-    ndmp9_config_get_scsi_info_reply* reply9)
+int ndmp_4to9_config_get_scsi_info_reply(void* input, void* output)
 {
+  ndmp4_config_get_scsi_info_reply* reply4 = input;
+  ndmp9_config_get_scsi_info_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
 
   ndmp_4to9_device_info_vec_dup(reply4->scsi_info.scsi_info_val,
@@ -1062,10 +1097,11 @@ int ndmp_4to9_config_get_scsi_info_reply(
   return 0;
 }
 
-int ndmp_9to4_config_get_scsi_info_reply(
-    ndmp9_config_get_scsi_info_reply* reply9,
-    ndmp4_config_get_scsi_info_reply* reply4)
+int ndmp_9to4_config_get_scsi_info_reply(void* input, void* output)
 {
+  ndmp9_config_get_scsi_info_reply* reply9 = input;
+  ndmp4_config_get_scsi_info_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
 
   ndmp_9to4_device_info_vec_dup(reply9->config_info.scsi_info.scsi_info_val,
@@ -1087,17 +1123,21 @@ int ndmp_9to4_config_get_scsi_info_reply(
  * ndmp_scsi_open
  * just error reply
  */
-int ndmp_4to9_scsi_open_request(ndmp4_scsi_open_request* request4,
-                                ndmp9_scsi_open_request* request9)
+int ndmp_4to9_scsi_open_request(void* input, void* output)
 {
+  ndmp4_scsi_open_request* request4 = input;
+  ndmp9_scsi_open_request* request9 = output;
+
   request9->device = NDMOS_API_STRDUP(request4->device);
   if (!request9->device) { return -1; /* no memory */ }
   return 0;
 }
 
-int ndmp_9to4_scsi_open_request(ndmp9_scsi_open_request* request9,
-                                ndmp4_scsi_open_request* request4)
+int ndmp_9to4_scsi_open_request(void* input, void* output)
 {
+  ndmp9_scsi_open_request* request9 = input;
+  ndmp4_scsi_open_request* request4 = output;
+
   request4->device = NDMOS_API_STRDUP(request9->device);
   if (!request4->device) { return -1; /* no memory */ }
   return 0;
@@ -1113,9 +1153,11 @@ int ndmp_9to4_scsi_open_request(ndmp9_scsi_open_request* request9,
  * no args request
  */
 
-int ndmp_4to9_scsi_get_state_reply(ndmp4_scsi_get_state_reply* reply4,
-                                   ndmp9_scsi_get_state_reply* reply9)
+int ndmp_4to9_scsi_get_state_reply(void* input, void* output)
 {
+  ndmp4_scsi_get_state_reply* reply4 = input;
+  ndmp9_scsi_get_state_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
   CNVT_TO_9(reply4, reply9, target_controller);
   CNVT_TO_9(reply4, reply9, target_id);
@@ -1124,9 +1166,11 @@ int ndmp_4to9_scsi_get_state_reply(ndmp4_scsi_get_state_reply* reply4,
   return 0;
 }
 
-int ndmp_9to4_scsi_get_state_reply(ndmp9_scsi_get_state_reply* reply9,
-                                   ndmp4_scsi_get_state_reply* reply4)
+int ndmp_9to4_scsi_get_state_reply(void* input, void* output)
 {
+  ndmp9_scsi_get_state_reply* reply9 = input;
+  ndmp4_scsi_get_state_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
   CNVT_FROM_9(reply4, reply9, target_controller);
   CNVT_FROM_9(reply4, reply9, target_id);
@@ -1157,9 +1201,11 @@ int ndmp_9to4_scsi_get_state_reply(ndmp9_scsi_get_state_reply* reply9,
  * ndmp_scsi_execute_cdb
  */
 
-int ndmp_4to9_execute_cdb_request(ndmp4_execute_cdb_request* request4,
-                                  ndmp9_execute_cdb_request* request9)
+int ndmp_4to9_execute_cdb_request(void* input, void* output)
 {
+  ndmp4_execute_cdb_request* request4 = input;
+  ndmp9_execute_cdb_request* request9 = output;
+
   int n_error = 0;
   uint32_t len;
   char* p;
@@ -1220,9 +1266,11 @@ int ndmp_4to9_execute_cdb_request(ndmp4_execute_cdb_request* request4,
   return 0;
 }
 
-int ndmp_9to4_execute_cdb_request(ndmp9_execute_cdb_request* request9,
-                                  ndmp4_execute_cdb_request* request4)
+int ndmp_9to4_execute_cdb_request(void* input, void* output)
 {
+  ndmp9_execute_cdb_request* request9 = input;
+  ndmp4_execute_cdb_request* request4 = output;
+
   int n_error = 0;
   uint32_t len;
   char* p;
@@ -1283,9 +1331,11 @@ int ndmp_9to4_execute_cdb_request(ndmp9_execute_cdb_request* request9,
   return 0;
 }
 
-int ndmp_4to9_execute_cdb_reply(ndmp4_execute_cdb_reply* reply4,
-                                ndmp9_execute_cdb_reply* reply9)
+int ndmp_4to9_execute_cdb_reply(void* input, void* output)
 {
+  ndmp4_execute_cdb_reply* reply4 = input;
+  ndmp9_execute_cdb_reply* reply9 = output;
+
   uint32_t len;
   char* p;
 
@@ -1327,9 +1377,11 @@ int ndmp_4to9_execute_cdb_reply(ndmp4_execute_cdb_reply* reply4,
   return 0;
 }
 
-int ndmp_9to4_execute_cdb_reply(ndmp9_execute_cdb_reply* reply9,
-                                ndmp4_execute_cdb_reply* reply4)
+int ndmp_9to4_execute_cdb_reply(void* input, void* output)
 {
+  ndmp9_execute_cdb_reply* reply9 = input;
+  ndmp4_execute_cdb_reply* reply4 = output;
+
   uint32_t len;
   char* p;
 
@@ -1390,9 +1442,11 @@ struct enum_conversion ndmp_49_tape_open_mode[] = {
     END_ENUM_CONVERSION_TABLE};
 
 
-int ndmp_4to9_tape_open_request(ndmp4_tape_open_request* request4,
-                                ndmp9_tape_open_request* request9)
+int ndmp_4to9_tape_open_request(void* input, void* output)
 {
+  ndmp4_tape_open_request* request4 = input;
+  ndmp9_tape_open_request* request9 = output;
+
   int n_error = 0;
   int rc;
 
@@ -1415,16 +1469,20 @@ int ndmp_4to9_tape_open_request(ndmp4_tape_open_request* request4,
   return n_error;
 }
 
-int ndmp_4to9_tape_open_free_request(ndmp9_tape_open_request* request9)
+int ndmp_4to9_tape_open_free_request(void* data)
 {
+  ndmp9_tape_open_request* request9 = data;
+
   NDMOS_API_FREE(request9->device);
   request9->device = NULL;
   return 0;
 }
 
-int ndmp_9to4_tape_open_request(ndmp9_tape_open_request* request9,
-                                ndmp4_tape_open_request* request4)
+int ndmp_9to4_tape_open_request(void* input, void* output)
 {
+  ndmp9_tape_open_request* request9 = input;
+  ndmp4_tape_open_request* request4 = output;
+
   int n_error = 0;
   int rc;
 
@@ -1448,9 +1506,11 @@ int ndmp_9to4_tape_open_request(ndmp9_tape_open_request* request9,
  ****************************************************************
  */
 
-extern int ndmp_4to9_tape_get_state_reply(ndmp4_tape_get_state_reply* reply4,
-                                          ndmp9_tape_get_state_reply* reply9)
+int ndmp_4to9_tape_get_state_reply(void* input, void* output)
 {
+  ndmp4_tape_get_state_reply* reply4 = input;
+  ndmp9_tape_get_state_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
   CNVT_TO_9(reply4, reply9, flags);
   CNVT_VUL_TO_9(reply4, reply9, file_num);
@@ -1481,9 +1541,11 @@ extern int ndmp_4to9_tape_get_state_reply(ndmp4_tape_get_state_reply* reply4,
   return 0;
 }
 
-extern int ndmp_9to4_tape_get_state_reply(ndmp9_tape_get_state_reply* reply9,
-                                          ndmp4_tape_get_state_reply* reply4)
+int ndmp_9to4_tape_get_state_reply(void* input, void* output)
 {
+  ndmp9_tape_get_state_reply* reply9 = input;
+  ndmp4_tape_get_state_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
   CNVT_FROM_9(reply4, reply9, flags);
   CNVT_VUL_FROM_9(reply4, reply9, file_num);
@@ -1534,9 +1596,11 @@ struct enum_conversion ndmp_49_tape_mtio_op[] = {
     END_ENUM_CONVERSION_TABLE};
 
 
-int ndmp_4to9_tape_mtio_request(ndmp4_tape_mtio_request* request4,
-                                ndmp9_tape_mtio_request* request9)
+int ndmp_4to9_tape_mtio_request(void* input, void* output)
 {
+  ndmp4_tape_mtio_request* request4 = input;
+  ndmp9_tape_mtio_request* request9 = output;
+
   int n_error = 0;
   int rc;
 
@@ -1551,9 +1615,11 @@ int ndmp_4to9_tape_mtio_request(ndmp4_tape_mtio_request* request4,
   return n_error;
 }
 
-int ndmp_9to4_tape_mtio_request(ndmp9_tape_mtio_request* request9,
-                                ndmp4_tape_mtio_request* request4)
+int ndmp_9to4_tape_mtio_request(void* input, void* output)
 {
+  ndmp9_tape_mtio_request* request9 = input;
+  ndmp4_tape_mtio_request* request4 = output;
+
   int n_error = 0;
   int rc;
 
@@ -1568,17 +1634,21 @@ int ndmp_9to4_tape_mtio_request(ndmp9_tape_mtio_request* request9,
   return n_error;
 }
 
-int ndmp_4to9_tape_mtio_reply(ndmp4_tape_mtio_reply* reply4,
-                              ndmp9_tape_mtio_reply* reply9)
+int ndmp_4to9_tape_mtio_reply(void* input, void* output)
 {
+  ndmp4_tape_mtio_reply* reply4 = input;
+  ndmp9_tape_mtio_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
   CNVT_TO_9(reply4, reply9, resid_count);
   return 0;
 }
 
-int ndmp_9to4_tape_mtio_reply(ndmp9_tape_mtio_reply* reply9,
-                              ndmp4_tape_mtio_reply* reply4)
+int ndmp_9to4_tape_mtio_reply(void* input, void* output)
 {
+  ndmp9_tape_mtio_reply* reply9 = input;
+  ndmp4_tape_mtio_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
   CNVT_FROM_9(reply4, reply9, resid_count);
   return 0;
@@ -1587,9 +1657,11 @@ int ndmp_9to4_tape_mtio_reply(ndmp9_tape_mtio_reply* reply9,
 
 // ndmp_tape_write
 
-int ndmp_4to9_tape_write_request(ndmp4_tape_write_request* request4,
-                                 ndmp9_tape_write_request* request9)
+int ndmp_4to9_tape_write_request(void* input, void* output)
 {
+  ndmp4_tape_write_request* request4 = input;
+  ndmp9_tape_write_request* request9 = output;
+
   uint32_t len;
   char* p;
 
@@ -1606,9 +1678,11 @@ int ndmp_4to9_tape_write_request(ndmp4_tape_write_request* request4,
   return 0;
 }
 
-int ndmp_9to4_tape_write_request(ndmp9_tape_write_request* request9,
-                                 ndmp4_tape_write_request* request4)
+int ndmp_9to4_tape_write_request(void* input, void* output)
 {
+  ndmp9_tape_write_request* request9 = input;
+  ndmp4_tape_write_request* request4 = output;
+
   uint32_t len;
   char* p;
 
@@ -1625,17 +1699,21 @@ int ndmp_9to4_tape_write_request(ndmp9_tape_write_request* request9,
   return 0;
 }
 
-int ndmp_4to9_tape_write_reply(ndmp4_tape_write_reply* reply4,
-                               ndmp9_tape_write_reply* reply9)
+int ndmp_4to9_tape_write_reply(void* input, void* output)
 {
+  ndmp4_tape_write_reply* reply4 = input;
+  ndmp9_tape_write_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
   CNVT_TO_9(reply4, reply9, count);
   return 0;
 }
 
-int ndmp_9to4_tape_write_reply(ndmp9_tape_write_reply* reply9,
-                               ndmp4_tape_write_reply* reply4)
+int ndmp_9to4_tape_write_reply(void* input, void* output)
 {
+  ndmp9_tape_write_reply* reply9 = input;
+  ndmp4_tape_write_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
   CNVT_FROM_9(reply4, reply9, count);
   return 0;
@@ -1644,23 +1722,29 @@ int ndmp_9to4_tape_write_reply(ndmp9_tape_write_reply* reply9,
 
 // ndmp_tape_read
 
-int ndmp_4to9_tape_read_request(ndmp4_tape_read_request* request4,
-                                ndmp9_tape_read_request* request9)
+int ndmp_4to9_tape_read_request(void* input, void* output)
 {
+  ndmp4_tape_read_request* request4 = input;
+  ndmp9_tape_read_request* request9 = output;
+
   CNVT_TO_9(request4, request9, count);
   return 0;
 }
 
-int ndmp_9to4_tape_read_request(ndmp9_tape_read_request* request9,
-                                ndmp4_tape_read_request* request4)
+int ndmp_9to4_tape_read_request(void* input, void* output)
 {
+  ndmp9_tape_read_request* request9 = input;
+  ndmp4_tape_read_request* request4 = output;
+
   CNVT_FROM_9(request4, request9, count);
   return 0;
 }
 
-int ndmp_4to9_tape_read_reply(ndmp4_tape_read_reply* reply4,
-                              ndmp9_tape_read_reply* reply9)
+int ndmp_4to9_tape_read_reply(void* input, void* output)
 {
+  ndmp4_tape_read_reply* reply4 = input;
+  ndmp9_tape_read_reply* reply9 = output;
+
   uint32_t len;
   char* p;
 
@@ -1682,9 +1766,11 @@ int ndmp_4to9_tape_read_reply(ndmp4_tape_read_reply* reply4,
   return 0;
 }
 
-int ndmp_9to4_tape_read_reply(ndmp9_tape_read_reply* reply9,
-                              ndmp4_tape_read_reply* reply4)
+int ndmp_9to4_tape_read_reply(void* input, void* output)
 {
+  ndmp9_tape_read_reply* reply9 = input;
+  ndmp4_tape_read_reply* reply4 = output;
+
   uint32_t len;
   char* p;
 
@@ -1772,9 +1858,11 @@ struct enum_conversion ndmp_49_mover_halt_reason[] = {
     END_ENUM_CONVERSION_TABLE};
 
 
-extern int ndmp_4to9_mover_get_state_reply(ndmp4_mover_get_state_reply* reply4,
-                                           ndmp9_mover_get_state_reply* reply9)
+int ndmp_4to9_mover_get_state_reply(void* input, void* output)
 {
+  ndmp4_mover_get_state_reply* reply4 = input;
+  ndmp9_mover_get_state_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
   CNVT_E_TO_9(reply4, reply9, state, ndmp_49_mover_state);
   CNVT_E_TO_9(reply4, reply9, pause_reason, ndmp_49_mover_pause_reason);
@@ -1793,9 +1881,11 @@ extern int ndmp_4to9_mover_get_state_reply(ndmp4_mover_get_state_reply* reply4,
   return 0;
 }
 
-extern int ndmp_9to4_mover_get_state_reply(ndmp9_mover_get_state_reply* reply9,
-                                           ndmp4_mover_get_state_reply* reply4)
+int ndmp_9to4_mover_get_state_reply(void* input, void* output)
 {
+  ndmp9_mover_get_state_reply* reply9 = input;
+  ndmp4_mover_get_state_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
   CNVT_E_FROM_9(reply4, reply9, state, ndmp_49_mover_state);
   CNVT_E_FROM_9(reply4, reply9, pause_reason, ndmp_49_mover_pause_reason);
@@ -1814,17 +1904,21 @@ extern int ndmp_9to4_mover_get_state_reply(ndmp9_mover_get_state_reply* reply9,
   return 0;
 }
 
-int ndmp_9to4_mover_get_state_free_reply(ndmp4_mover_get_state_reply* reply4)
+int ndmp_9to4_mover_get_state_free_reply(void* data)
 {
+  ndmp4_mover_get_state_reply* reply4 = data;
+
   //    ndmp_9to4_addr_free(&reply4->data_connection_addr);
   return 0;
 }
 
 // ndmp_mover_listen
 
-int ndmp_4to9_mover_listen_request(ndmp4_mover_listen_request* request4,
-                                   ndmp9_mover_listen_request* request9)
+int ndmp_4to9_mover_listen_request(void* input, void* output)
 {
+  ndmp4_mover_listen_request* request4 = input;
+  ndmp9_mover_listen_request* request9 = output;
+
   int rc;
 
   rc = CNVT_E_TO_9(request4, request9, mode, ndmp_49_mover_mode);
@@ -1835,9 +1929,11 @@ int ndmp_4to9_mover_listen_request(ndmp4_mover_listen_request* request4,
   return 0;
 }
 
-int ndmp_9to4_mover_listen_request(ndmp9_mover_listen_request* request9,
-                                   ndmp4_mover_listen_request* request4)
+int ndmp_9to4_mover_listen_request(void* input, void* output)
 {
+  ndmp9_mover_listen_request* request9 = input;
+  ndmp4_mover_listen_request* request4 = output;
+
   int rc;
 
   rc = CNVT_E_FROM_9(request4, request9, mode, ndmp_49_mover_mode);
@@ -1850,9 +1946,11 @@ int ndmp_9to4_mover_listen_request(ndmp9_mover_listen_request* request9,
   return 0;
 }
 
-int ndmp_4to9_mover_listen_reply(ndmp4_mover_listen_reply* reply4,
-                                 ndmp9_mover_listen_reply* reply9)
+int ndmp_4to9_mover_listen_reply(void* input, void* output)
 {
+  ndmp4_mover_listen_reply* reply4 = input;
+  ndmp9_mover_listen_reply* reply9 = output;
+
   int n_error = 0;
 
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
@@ -1863,9 +1961,11 @@ int ndmp_4to9_mover_listen_reply(ndmp4_mover_listen_reply* reply4,
   return n_error;
 }
 
-int ndmp_9to4_mover_listen_reply(ndmp9_mover_listen_reply* reply9,
-                                 ndmp4_mover_listen_reply* reply4)
+int ndmp_9to4_mover_listen_reply(void* input, void* output)
 {
+  ndmp9_mover_listen_reply* reply9 = input;
+  ndmp4_mover_listen_reply* reply4 = output;
+
   int n_error = 0;
 
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
@@ -1881,9 +1981,11 @@ int ndmp_9to4_mover_listen_reply(ndmp9_mover_listen_reply* reply9,
  * just error reply
  */
 
-int ndmp_4to9_mover_connect_request(ndmp4_mover_connect_request* request4,
-                                    ndmp9_mover_connect_request* request9)
+int ndmp_4to9_mover_connect_request(void* input, void* output)
 {
+  ndmp4_mover_connect_request* request4 = input;
+  ndmp9_mover_connect_request* request9 = output;
+
   int rc;
 
   rc = CNVT_E_TO_9(request4, request9, mode, ndmp_49_mover_mode);
@@ -1891,9 +1993,11 @@ int ndmp_4to9_mover_connect_request(ndmp4_mover_connect_request* request4,
   return ndmp_4to9_addr(&request4->addr, &request9->addr);
 }
 
-int ndmp_9to4_mover_connect_request(ndmp9_mover_connect_request* request9,
-                                    ndmp4_mover_connect_request* request4)
+int ndmp_9to4_mover_connect_request(void* input, void* output)
 {
+  ndmp9_mover_connect_request* request9 = input;
+  ndmp4_mover_connect_request* request4 = output;
+
   int rc;
 
   rc = CNVT_E_FROM_9(request4, request9, mode, ndmp_49_mover_mode);
@@ -1907,18 +2011,20 @@ int ndmp_9to4_mover_connect_request(ndmp9_mover_connect_request* request9,
  * just error reply
  */
 
-int ndmp_4to9_mover_set_record_size_request(
-    ndmp4_mover_set_record_size_request* request4,
-    ndmp9_mover_set_record_size_request* request9)
+int ndmp_4to9_mover_set_record_size_request(void* input, void* output)
 {
+  ndmp4_mover_set_record_size_request* request4 = input;
+  ndmp9_mover_set_record_size_request* request9 = output;
+
   CNVT_TO_9x(request4, request9, len, record_size);
   return 0;
 }
 
-int ndmp_9to4_mover_set_record_size_request(
-    ndmp9_mover_set_record_size_request* request9,
-    ndmp4_mover_set_record_size_request* request4)
+int ndmp_9to4_mover_set_record_size_request(void* input, void* output)
 {
+  ndmp9_mover_set_record_size_request* request9 = input;
+  ndmp4_mover_set_record_size_request* request4 = output;
+
   CNVT_FROM_9x(request4, request9, len, record_size);
   return 0;
 }
@@ -1929,17 +2035,21 @@ int ndmp_9to4_mover_set_record_size_request(
  * just error reply
  */
 
-int ndmp_4to9_mover_set_window_request(ndmp4_mover_set_window_request* request4,
-                                       ndmp9_mover_set_window_request* request9)
+int ndmp_4to9_mover_set_window_request(void* input, void* output)
 {
+  ndmp4_mover_set_window_request* request4 = input;
+  ndmp9_mover_set_window_request* request9 = output;
+
   CNVT_TO_9(request4, request9, offset);
   CNVT_TO_9(request4, request9, length);
   return 0;
 }
 
-int ndmp_9to4_mover_set_window_request(ndmp9_mover_set_window_request* request9,
-                                       ndmp4_mover_set_window_request* request4)
+int ndmp_9to4_mover_set_window_request(void* input, void* output)
 {
+  ndmp9_mover_set_window_request* request9 = input;
+  ndmp4_mover_set_window_request* request4 = output;
+
   CNVT_FROM_9(request4, request9, offset);
   CNVT_FROM_9(request4, request9, length);
   return 0;
@@ -1966,17 +2076,21 @@ int ndmp_9to4_mover_set_window_request(ndmp9_mover_set_window_request* request9,
  * just error reply
  */
 
-int ndmp_4to9_mover_read_request(ndmp4_mover_read_request* request4,
-                                 ndmp9_mover_read_request* request9)
+int ndmp_4to9_mover_read_request(void* input, void* output)
 {
+  ndmp4_mover_read_request* request4 = input;
+  ndmp9_mover_read_request* request9 = output;
+
   CNVT_TO_9(request4, request9, offset);
   CNVT_TO_9(request4, request9, length);
   return 0;
 }
 
-int ndmp_9to4_mover_read_request(ndmp9_mover_read_request* request9,
-                                 ndmp4_mover_read_request* request4)
+int ndmp_9to4_mover_read_request(void* input, void* output)
 {
+  ndmp9_mover_read_request* request9 = input;
+  ndmp4_mover_read_request* request4 = output;
+
   CNVT_FROM_9(request4, request9, offset);
   CNVT_FROM_9(request4, request9, length);
   return 0;
@@ -2112,9 +2226,11 @@ struct enum_conversion ndmp_49_data_halt_reason[] = {
     {NDMP4_DATA_HALT_CONNECT_ERROR, NDMP9_DATA_HALT_CONNECT_ERROR},
     END_ENUM_CONVERSION_TABLE};
 
-extern int ndmp_4to9_data_get_state_reply(ndmp4_data_get_state_reply* reply4,
-                                          ndmp9_data_get_state_reply* reply9)
+int ndmp_4to9_data_get_state_reply(void* input, void* output)
 {
+  ndmp4_data_get_state_reply* reply4 = input;
+  ndmp9_data_get_state_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
   CNVT_E_TO_9(reply4, reply9, operation, ndmp_49_data_operation);
   CNVT_E_TO_9(reply4, reply9, state, ndmp_49_data_state);
@@ -2133,9 +2249,11 @@ extern int ndmp_4to9_data_get_state_reply(ndmp4_data_get_state_reply* reply4,
   return 0;
 }
 
-extern int ndmp_9to4_data_get_state_reply(ndmp9_data_get_state_reply* reply9,
-                                          ndmp4_data_get_state_reply* reply4)
+int ndmp_9to4_data_get_state_reply(void* input, void* output)
 {
+  ndmp9_data_get_state_reply* reply9 = input;
+  ndmp4_data_get_state_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
   CNVT_E_FROM_9(reply4, reply9, operation, ndmp_49_data_operation);
   CNVT_E_FROM_9(reply4, reply9, state, ndmp_49_data_state);
@@ -2160,10 +2278,11 @@ extern int ndmp_9to4_data_get_state_reply(ndmp9_data_get_state_reply* reply9,
  * just error reply
  */
 
-int ndmp_4to9_data_start_backup_request(
-    ndmp4_data_start_backup_request* request4,
-    ndmp9_data_start_backup_request* request9)
+int ndmp_4to9_data_start_backup_request(void* input, void* output)
 {
+  ndmp4_data_start_backup_request* request4 = input;
+  ndmp9_data_start_backup_request* request9 = output;
+
   int n_error = 0;
 
   CNVT_STRDUP_TO_9x(request4, request9, butype_name, bu_type);
@@ -2178,10 +2297,11 @@ int ndmp_4to9_data_start_backup_request(
   return n_error;
 }
 
-int ndmp_9to4_data_start_backup_request(
-    ndmp9_data_start_backup_request* request9,
-    ndmp4_data_start_backup_request* request4)
+int ndmp_9to4_data_start_backup_request(void* input, void* output)
 {
+  ndmp9_data_start_backup_request* request9 = input;
+  ndmp4_data_start_backup_request* request4 = output;
+
   int n_error = 0;
 
   CNVT_STRDUP_FROM_9x(request4, request9, butype_name, bu_type);
@@ -2201,10 +2321,11 @@ int ndmp_9to4_data_start_backup_request(
  * just error reply
  */
 
-int ndmp_4to9_data_start_recover_request(
-    ndmp4_data_start_recover_request* request4,
-    ndmp9_data_start_recover_request* request9)
+int ndmp_4to9_data_start_recover_request(void* input, void* output)
 {
+  ndmp4_data_start_recover_request* request4 = input;
+  ndmp9_data_start_recover_request* request9 = output;
+
   int n_error = 0;
 
   CNVT_STRDUP_TO_9x(request4, request9, butype_name, bu_type);
@@ -2224,10 +2345,11 @@ int ndmp_4to9_data_start_recover_request(
   return n_error;
 }
 
-int ndmp_9to4_data_start_recover_request(
-    ndmp9_data_start_recover_request* request9,
-    ndmp4_data_start_recover_request* request4)
+int ndmp_9to4_data_start_recover_request(void* input, void* output)
 {
+  ndmp9_data_start_recover_request* request9 = input;
+  ndmp4_data_start_recover_request* request4 = output;
+
   int n_error = 0;
 
   CNVT_STRDUP_FROM_9x(request4, request9, butype_name, bu_type);
@@ -2257,9 +2379,11 @@ int ndmp_9to4_data_start_recover_request(
  * no args request
  */
 
-int ndmp_4to9_data_get_env_reply(ndmp4_data_get_env_reply* reply4,
-                                 ndmp9_data_get_env_reply* reply9)
+int ndmp_4to9_data_get_env_reply(void* input, void* output)
 {
+  ndmp4_data_get_env_reply* reply4 = input;
+  ndmp9_data_get_env_reply* reply9 = output;
+
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
 
   ndmp_4to9_pval_vec_dup(reply4->env.env_val, &reply9->env.env_val,
@@ -2270,16 +2394,20 @@ int ndmp_4to9_data_get_env_reply(ndmp4_data_get_env_reply* reply4,
   return 0;
 }
 
-int ndmp_4to9_data_get_env_free_reply(ndmp9_data_get_env_reply* reply9)
+int ndmp_4to9_data_get_env_free_reply(void* data)
 {
+  ndmp9_data_get_env_reply* reply9 = data;
+
   ndmp_4to9_pval_vec_free(reply9->env.env_val, reply9->env.env_len);
 
   return 0;
 }
 
-int ndmp_9to4_data_get_env_reply(ndmp9_data_get_env_reply* reply9,
-                                 ndmp4_data_get_env_reply* reply4)
+int ndmp_9to4_data_get_env_reply(void* input, void* output)
 {
+  ndmp9_data_get_env_reply* reply9 = input;
+  ndmp4_data_get_env_reply* reply4 = output;
+
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
 
   ndmp_9to4_pval_vec_dup(reply9->env.env_val, &reply4->env.env_val,
@@ -2298,9 +2426,11 @@ int ndmp_9to4_data_get_env_reply(ndmp9_data_get_env_reply* reply9,
 /*
  * ndmp_data_listen
  */
-int ndmp_4to9_data_listen_request(ndmp4_data_listen_request* request4,
-                                  ndmp9_data_listen_request* request9)
+int ndmp_4to9_data_listen_request(void* input, void* output)
 {
+  ndmp4_data_listen_request* request4 = input;
+  ndmp9_data_listen_request* request9 = output;
+
   int rc;
 
   rc = CNVT_E_TO_9(request4, request9, addr_type, ndmp_49_addr_type);
@@ -2309,9 +2439,11 @@ int ndmp_4to9_data_listen_request(ndmp4_data_listen_request* request4,
   return 0;
 }
 
-int ndmp_9to4_data_listen_request(ndmp9_data_listen_request* request9,
-                                  ndmp4_data_listen_request* request4)
+int ndmp_9to4_data_listen_request(void* input, void* output)
 {
+  ndmp9_data_listen_request* request9 = input;
+  ndmp4_data_listen_request* request4 = output;
+
   int rc;
 
   rc = CNVT_E_FROM_9(request4, request9, addr_type, ndmp_49_addr_type);
@@ -2322,9 +2454,11 @@ int ndmp_9to4_data_listen_request(ndmp9_data_listen_request* request9,
   return 0;
 }
 
-int ndmp_4to9_data_listen_reply(ndmp4_data_listen_reply* reply4,
-                                ndmp9_data_listen_reply* reply9)
+int ndmp_4to9_data_listen_reply(void* input, void* output)
 {
+  ndmp4_data_listen_reply* reply4 = input;
+  ndmp9_data_listen_reply* reply9 = output;
+
   int n_error = 0;
 
   CNVT_E_TO_9(reply4, reply9, error, ndmp_49_error);
@@ -2335,9 +2469,11 @@ int ndmp_4to9_data_listen_reply(ndmp4_data_listen_reply* reply4,
   return n_error;
 }
 
-int ndmp_9to4_data_listen_reply(ndmp9_data_listen_reply* reply9,
-                                ndmp4_data_listen_reply* reply4)
+int ndmp_9to4_data_listen_reply(void* input, void* output)
 {
+  ndmp9_data_listen_reply* reply9 = input;
+  ndmp4_data_listen_reply* reply4 = output;
+
   int n_error = 0;
 
   CNVT_E_FROM_9(reply4, reply9, error, ndmp_49_error);
@@ -2354,15 +2490,19 @@ int ndmp_9to4_data_listen_reply(ndmp9_data_listen_reply* reply9,
  * just error reply
  */
 
-int ndmp_4to9_data_connect_request(ndmp4_data_connect_request* request4,
-                                   ndmp9_data_connect_request* request9)
+int ndmp_4to9_data_connect_request(void* input, void* output)
 {
+  ndmp4_data_connect_request* request4 = input;
+  ndmp9_data_connect_request* request9 = output;
+
   return ndmp_4to9_addr(&request4->addr, &request9->addr);
 }
 
-int ndmp_9to4_data_connect_request(ndmp9_data_connect_request* request9,
-                                   ndmp4_data_connect_request* request4)
+int ndmp_9to4_data_connect_request(void* input, void* output)
 {
+  ndmp9_data_connect_request* request9 = input;
+  ndmp4_data_connect_request* request4 = output;
+
   return ndmp_9to4_addr(&request9->addr, &request4->addr);
 }
 
@@ -2377,10 +2517,11 @@ int ndmp_9to4_data_connect_request(ndmp9_data_connect_request* request9,
  * just error reply
  */
 
-int ndmp_4to9_notify_data_halted_request(
-    ndmp4_notify_data_halted_post* request4,
-    ndmp9_notify_data_halted_request* request9)
+int ndmp_4to9_notify_data_halted_request(void* input, void* output)
 {
+  ndmp4_notify_data_halted_post* request4 = input;
+  ndmp9_notify_data_halted_request* request9 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2393,10 +2534,11 @@ int ndmp_4to9_notify_data_halted_request(
   return n_error;
 }
 
-int ndmp_9to4_notify_data_halted_request(
-    ndmp9_notify_data_halted_request* request9,
-    ndmp4_notify_data_halted_post* request4)
+int ndmp_9to4_notify_data_halted_request(void* input, void* output)
 {
+  ndmp9_notify_data_halted_request* request9 = input;
+  ndmp4_notify_data_halted_post* request4 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2426,10 +2568,11 @@ struct enum_conversion ndmp_49_connect_reason[] = {
     {NDMP4_REFUSED, NDMP9_REFUSED},
     END_ENUM_CONVERSION_TABLE};
 
-int ndmp_4to9_notify_connection_status_request(
-    ndmp4_notify_connection_status_post* request4,
-    ndmp9_notify_connected_request* request9)
+int ndmp_4to9_notify_connection_status_request(void* input, void* output)
 {
+  ndmp4_notify_connection_status_post* request4 = input;
+  ndmp9_notify_connected_request* request9 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2446,10 +2589,11 @@ int ndmp_4to9_notify_connection_status_request(
   return n_error;
 }
 
-int ndmp_9to4_notify_connection_status_request(
-    ndmp9_notify_connected_request* request9,
-    ndmp4_notify_connection_status_post* request4)
+int ndmp_9to4_notify_connection_status_request(void* input, void* output)
 {
+  ndmp9_notify_connected_request* request9 = input;
+  ndmp4_notify_connection_status_post* request4 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2472,10 +2616,11 @@ int ndmp_9to4_notify_connection_status_request(
  * just error reply
  */
 
-int ndmp_4to9_notify_mover_halted_request(
-    ndmp4_notify_mover_halted_post* request4,
-    ndmp9_notify_mover_halted_request* request9)
+int ndmp_4to9_notify_mover_halted_request(void* input, void* output)
 {
+  ndmp4_notify_mover_halted_post* request4 = input;
+  ndmp9_notify_mover_halted_request* request9 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2488,10 +2633,11 @@ int ndmp_4to9_notify_mover_halted_request(
   return n_error;
 }
 
-int ndmp_9to4_notify_mover_halted_request(
-    ndmp9_notify_mover_halted_request* request9,
-    ndmp4_notify_mover_halted_post* request4)
+int ndmp_9to4_notify_mover_halted_request(void* input, void* output)
 {
+  ndmp9_notify_mover_halted_request* request9 = input;
+  ndmp4_notify_mover_halted_post* request4 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2510,10 +2656,11 @@ int ndmp_9to4_notify_mover_halted_request(
  * just error reply
  */
 
-int ndmp_4to9_notify_mover_paused_request(
-    ndmp4_notify_mover_paused_post* request4,
-    ndmp9_notify_mover_paused_request* request9)
+int ndmp_4to9_notify_mover_paused_request(void* input, void* output)
 {
+  ndmp4_notify_mover_paused_post* request4 = input;
+  ndmp9_notify_mover_paused_request* request9 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2528,10 +2675,11 @@ int ndmp_4to9_notify_mover_paused_request(
   return n_error;
 }
 
-int ndmp_9to4_notify_mover_paused_request(
-    ndmp9_notify_mover_paused_request* request9,
-    ndmp4_notify_mover_paused_post* request4)
+int ndmp_9to4_notify_mover_paused_request(void* input, void* output)
 {
+  ndmp9_notify_mover_paused_request* request9 = input;
+  ndmp4_notify_mover_paused_post* request4 = output;
+
   int n_error = 0;
   int rc;
 
@@ -2552,17 +2700,21 @@ int ndmp_9to4_notify_mover_paused_request(
  * just error reply
  */
 
-int ndmp_4to9_notify_data_read_request(ndmp4_notify_data_read_post* request4,
-                                       ndmp9_notify_data_read_request* request9)
+int ndmp_4to9_notify_data_read_request(void* input, void* output)
 {
+  ndmp4_notify_data_read_post* request4 = input;
+  ndmp9_notify_data_read_request* request9 = output;
+
   CNVT_TO_9(request4, request9, offset);
   CNVT_TO_9(request4, request9, length);
   return 0;
 }
 
-int ndmp_9to4_notify_data_read_request(ndmp9_notify_data_read_request* request9,
-                                       ndmp4_notify_data_read_post* request4)
+int ndmp_9to4_notify_data_read_request(void* input, void* output)
 {
+  ndmp9_notify_data_read_request* request9 = input;
+  ndmp4_notify_data_read_post* request4 = output;
+
   CNVT_FROM_9(request4, request9, offset);
   CNVT_FROM_9(request4, request9, length);
   return 0;
@@ -2588,17 +2740,21 @@ struct enum_conversion ndmp_49_recovery_status[] = {
     END_ENUM_CONVERSION_TABLE};
 
 
-int ndmp_4to9_log_file_request(ndmp4_log_file_post* request4,
-                               ndmp9_log_file_request* request9)
+int ndmp_4to9_log_file_request(void* input, void* output)
 {
+  ndmp4_log_file_post* request4 = input;
+  ndmp9_log_file_request* request9 = output;
+
   CNVT_E_TO_9(request4, request9, recovery_status, ndmp_49_recovery_status);
   CNVT_STRDUP_TO_9(request4, request9, name);
   return 0;
 }
 
-int ndmp_9to4_log_file_request(ndmp9_log_file_request* request9,
-                               ndmp4_log_file_post* request4)
+int ndmp_9to4_log_file_request(void* input, void* output)
 {
+  ndmp9_log_file_request* request9 = input;
+  ndmp4_log_file_post* request4 = output;
+
   CNVT_E_FROM_9(request4, request9, recovery_status, ndmp_49_recovery_status);
   CNVT_STRDUP_FROM_9(request4, request9, name);
   return 0;
@@ -2621,9 +2777,11 @@ struct enum_conversion ndmp_49_log_type[] = {
     END_ENUM_CONVERSION_TABLE};
 
 
-int ndmp_4to9_log_message_request(ndmp4_log_message_post* request4,
-                                  ndmp9_log_message_request* request9)
+int ndmp_4to9_log_message_request(void* input, void* output)
 {
+  ndmp4_log_message_post* request4 = input;
+  ndmp9_log_message_request* request9 = output;
+
   CNVT_E_TO_9(request4, request9, log_type, ndmp_49_log_type);
   CNVT_TO_9(request4, request9, message_id);
   CNVT_STRDUP_TO_9(request4, request9, entry);
@@ -2645,15 +2803,19 @@ int ndmp_4to9_log_message_request(ndmp4_log_message_post* request4,
   return 0;
 }
 
-int ndmp_4to9_log_message_free_request(ndmp9_log_message_request* request9)
+int ndmp_4to9_log_message_free_request(void* data)
 {
+  ndmp9_log_message_request* request9 = data;
+
   CNVT_FREE(request9, entry);
   return 0;
 }
 
-int ndmp_9to4_log_message_request(ndmp9_log_message_request* request9,
-                                  ndmp4_log_message_post* request4)
+int ndmp_9to4_log_message_request(void* input, void* output)
 {
+  ndmp9_log_message_request* request9 = input;
+  ndmp4_log_message_post* request4 = output;
+
   CNVT_E_FROM_9(request4, request9, log_type, ndmp_49_log_type);
   CNVT_FROM_9(request4, request9, message_id);
   CNVT_STRDUP_TO_9(request4, request9, entry);
@@ -2701,7 +2863,7 @@ struct enum_conversion ndmp_49_file_type[] = {
     {NDMP4_FILE_OTHER, NDMP9_FILE_OTHER},
     END_ENUM_CONVERSION_TABLE};
 
-extern int ndmp_4to9_file_stat(ndmp4_file_stat* fstat4,
+int ndmp_4to9_file_stat(ndmp4_file_stat* fstat4,
                                ndmp9_file_stat* fstat9,
                                ndmp9_u_quad node,
                                ndmp9_u_quad fh_info)
@@ -2735,7 +2897,7 @@ extern int ndmp_4to9_file_stat(ndmp4_file_stat* fstat4,
   return 0;
 }
 
-extern int ndmp_9to4_file_stat(ndmp9_file_stat* fstat9, ndmp4_file_stat* fstat4)
+int ndmp_9to4_file_stat(ndmp9_file_stat* fstat9, ndmp4_file_stat* fstat4)
 {
   CNVT_E_FROM_9(fstat4, fstat9, ftype, ndmp_49_file_type);
 
@@ -2772,9 +2934,11 @@ extern int ndmp_9to4_file_stat(ndmp9_file_stat* fstat9, ndmp4_file_stat* fstat4)
  * ndmp_fh_add_file_request
  */
 
-int ndmp_4to9_fh_add_file_request(ndmp4_fh_add_file_post* request4,
-                                  ndmp9_fh_add_file_request* request9)
+int ndmp_4to9_fh_add_file_request(void* input, void* output)
 {
+  ndmp4_fh_add_file_post* request4 = input;
+  ndmp9_fh_add_file_request* request9 = output;
+
   int n_ent = request4->files.files_len;
   int i;
   unsigned int j;
@@ -2820,8 +2984,10 @@ int ndmp_4to9_fh_add_file_request(ndmp4_fh_add_file_post* request4,
   return 0;
 }
 
-int ndmp_4to9_fh_add_file_free_request(ndmp9_fh_add_file_request* request9)
+int ndmp_4to9_fh_add_file_free_request(void* data)
 {
+  ndmp9_fh_add_file_request* request9 = data;
+
   int i;
 
   for (i = 0; i < request9->files.files_len; i++) {
@@ -2833,9 +2999,11 @@ int ndmp_4to9_fh_add_file_free_request(ndmp9_fh_add_file_request* request9)
   return 0;
 }
 
-int ndmp_9to4_fh_add_file_request(ndmp9_fh_add_file_request* request9,
-                                  ndmp4_fh_add_file_post* request4)
+int ndmp_9to4_fh_add_file_request(void* input, void* output)
 {
+  ndmp9_fh_add_file_request* request9 = input;
+  ndmp4_fh_add_file_post* request4 = output;
+
   int n_ent = request9->files.files_len;
   int i;
   ndmp4_file* table;
@@ -2874,9 +3042,11 @@ int ndmp_9to4_fh_add_file_request(ndmp9_fh_add_file_request* request9,
  * ndmp_fh_add_unix_dir
  */
 
-int ndmp_4to9_fh_add_dir_request(ndmp4_fh_add_dir_post* request4,
-                                 ndmp9_fh_add_dir_request* request9)
+int ndmp_4to9_fh_add_dir_request(void* input, void* output)
 {
+  ndmp4_fh_add_dir_post* request4 = input;
+  ndmp9_fh_add_dir_request* request9 = output;
+
   int n_ent = request4->dirs.dirs_len;
   int i;
   unsigned int j;
@@ -2913,8 +3083,10 @@ int ndmp_4to9_fh_add_dir_request(ndmp4_fh_add_dir_post* request4,
   return 0;
 }
 
-int ndmp_4to9_fh_add_dir_free_request(ndmp9_fh_add_dir_request* request9)
+int ndmp_4to9_fh_add_dir_free_request(void* data)
 {
+  ndmp9_fh_add_dir_request* request9 = data;
+
   int i;
 
   if (request9) {
@@ -2934,9 +3106,11 @@ int ndmp_4to9_fh_add_dir_free_request(ndmp9_fh_add_dir_request* request9)
   return 0;
 }
 
-int ndmp_9to4_fh_add_dir_request(ndmp9_fh_add_dir_request* request9,
-                                 ndmp4_fh_add_dir_post* request4)
+int ndmp_9to4_fh_add_dir_request(void* input, void* output)
 {
+  ndmp9_fh_add_dir_request* request9 = input;
+  ndmp4_fh_add_dir_post* request4 = output;
+
   int n_ent = request9->dirs.dirs_len;
   int i;
   ndmp4_dir* table;
@@ -2967,8 +3141,10 @@ int ndmp_9to4_fh_add_dir_request(ndmp9_fh_add_dir_request* request9,
   return 0;
 }
 
-int ndmp_9to4_fh_add_dir_free_request(ndmp4_fh_add_dir_post* request4)
+int ndmp_9to4_fh_add_dir_free_request(void* data)
 {
+  ndmp4_fh_add_dir_post* request4 = data;
+
   int i;
 
   if (request4) {
@@ -3000,9 +3176,11 @@ int ndmp_9to4_fh_add_dir_free_request(ndmp4_fh_add_dir_post* request4)
  * ndmp_fh_add_node_request
  */
 
-int ndmp_4to9_fh_add_node_request(ndmp4_fh_add_node_post* request4,
-                                  ndmp9_fh_add_node_request* request9)
+int ndmp_4to9_fh_add_node_request(void* input, void* output)
 {
+  ndmp4_fh_add_node_post* request4 = input;
+  ndmp9_fh_add_node_request* request9 = output;
+
   int n_ent = request4->nodes.nodes_len;
   int i;
   unsigned int j;
@@ -3037,8 +3215,10 @@ int ndmp_4to9_fh_add_node_request(ndmp4_fh_add_node_post* request4,
   return 0;
 }
 
-int ndmp_4to9_fh_add_node_free_request(ndmp9_fh_add_node_request* request9)
+int ndmp_4to9_fh_add_node_free_request(void* data)
 {
+  ndmp9_fh_add_node_request* request9 = data;
+
   if (request9) {
     if (request9->nodes.nodes_val) {
       NDMOS_API_FREE(request9->nodes.nodes_val);
@@ -3048,9 +3228,11 @@ int ndmp_4to9_fh_add_node_free_request(ndmp9_fh_add_node_request* request9)
   return 0;
 }
 
-int ndmp_9to4_fh_add_node_request(ndmp9_fh_add_node_request* request9,
-                                  ndmp4_fh_add_node_post* request4)
+int ndmp_9to4_fh_add_node_request(void* input, void* output)
 {
+  ndmp9_fh_add_node_request* request9 = input;
+  ndmp4_fh_add_node_post* request4 = output;
+
   int n_ent = request9->nodes.nodes_len;
   int i;
   ndmp4_node* table;
@@ -3078,8 +3260,10 @@ int ndmp_9to4_fh_add_node_request(ndmp9_fh_add_node_request* request9,
   return 0;
 }
 
-int ndmp_9to4_fh_add_node_free_request(ndmp4_fh_add_node_post* request4)
+int ndmp_9to4_fh_add_node_free_request(void* data)
 {
+  ndmp4_fh_add_node_post* request4 = data;
+
   if (request4) {
     if (request4->nodes.nodes_val) {
       NDMOS_API_FREE(request4->nodes.nodes_val);
@@ -3096,7 +3280,7 @@ int ndmp_9to4_fh_add_node_free_request(ndmp4_fh_add_node_post* request4)
 
 #define NO_ARG_REQUEST ndmp_xtox_no_arguments, ndmp_xtox_no_arguments
 
-#define JUST_ERROR_REPLY ndmp_4to9_error, ndmp_9to4_error
+#define JUST_ERROR_REPLY ndmp_4to9_error_gen, ndmp_9to4_error_gen
 
 #define NO_ARG_REQUEST_JUST_ERROR_REPLY NO_ARG_REQUEST, JUST_ERROR_REPLY
 
