@@ -34,12 +34,6 @@
  *
  */
 
-#if __GNUC__ >= 15
-#define EMPTY_PARAMETER_LIST ...
-#else
-#define EMPTY_PARAMETER_LIST
-#endif
-
 #include "ndmlib.h"
 
 
@@ -79,7 +73,7 @@ void ndmnmb_snoop(struct ndmlog* log,
 {
   int rc, nl, i;
   char buf[2048];
-  int (*ndmpp)(EMPTY_PARAMETER_LIST);
+  int (*ndmpp)(int vers, int msg, void* data, int lineno, char* buf);
   int level5 = 5;
   int level6 = 6;
 
