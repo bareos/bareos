@@ -870,9 +870,15 @@ endif()
 
 print_variables("${DUMP_VARS}")
 
-# REPEAT_UNTIL requires cmake 3.17+
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
-  set(REPEAT_UNTIL "")
+if(ENABLE_SANITIZERS)
+  # sanitizer-build needs more resources, so run fewer tests in parallel
+  set(CTEST_PARALLEL_LEVEL "PARALLEL_LEVEL 5")
+elseif(NOT DEFINED ENV{CTEST_PARALLEL_LEVEL})
+  # default to 10 parallel tests
+  set(CTEST_PARALLEL_LEVEL "PARALLEL_LEVEL 10")
+else()
+  # use the user's environment setting
+  set(CTEST_PARALLEL_LEVEL "")
 endif()
 
 configure_file(
