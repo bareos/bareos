@@ -1297,23 +1297,23 @@ Catalog {
 Schedule {
   Name = "WeeklyCycleAfterBackup"
   Description = "This schedule does the catalog. It starts after the WeeklyCycle."
-  Run = Full mon-fri at 21:10
+  Run = Full Mon-Fri at 21:10
   # Enabled = Yes
 }
 
 Schedule {
   Name = "WeeklyCycle"
   # Description =
-  Run = Full first sat at 21:00
-  Run = Differential second-fifth sat at 21:00
-  Run = Incremental mon-fri at 21:00
+  Run = Full first Sat at 21:00
+  Run = Differential second-fifth Sat at 21:00
+  Run = Incremental Mon-Fri at 21:00
   # Enabled = Yes
 }
 
 Schedule {
   Name = "LastSunday"
   # Description =
-  Run = last sun at 20:00
+  Run = last Sun at 20:00
   # Enabled = Yes
 }
 
