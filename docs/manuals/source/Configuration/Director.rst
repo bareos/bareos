@@ -166,13 +166,13 @@ Some examples for Schedule resources
 
    Schedule {
       Name = "HourlyAt15"
-      Run = hourly at 00:15 # run every hour with minute=15 (i.e. 00:15, ..., 23:15)
+      Run = hourly at :15 # run every hour with minute=15 (i.e. at 00:15, ..., at 23:15)
    }
 
    Schedule {
       Name = "Daily"
       Run = at 20:00 # run daily at 20:00
-      Run = at 08:00 at 19:00 # run daily at 08:00 and 19:00
+      Run = at 08:00 at 19:00 # run daily at 08:00 and at 19:00
    }
 
    Schedule {

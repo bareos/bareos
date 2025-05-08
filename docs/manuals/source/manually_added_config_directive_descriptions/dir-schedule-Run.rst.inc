@@ -37,7 +37,73 @@ SpoolData=yes|no
    :index:`\ <single: SpoolData>`\  :index:`\ <single: Directive; Spool Data>`\  tells Bareos to use or not to use spooling for the specific job.
 
 
-The run schedule to run the Job can be specified in the following way in pseudo-BNF:
+To define on what day the schedule is triggered, you can supply specifiers from the following categories:
+- month of year (jan, feb, ...)
+- week of year (w00, w01, ...)
+- week of month (1st, ..., 5th, last)
+- day of month (1, 2, ...)
+- day of week (mon, tue, ...)
+
+If you do not specify any of these, the schedule triggers every day.
+
+For a schedule to be triggered on a certain day, it must match with a specifier from all categories (if given):
+``jan mon``
+   triggers every monday in january
+
+You can specify multiple keywords from the same category:
+``jan, feb mon``
+   triggers every monday in january and february
+
+You can also specify a range for a category:
+``mar-dec``
+   triggers every day from march to december
+``jan, mar, jun-aug``
+   triggers every day in january, march, june, juli, august
+
+The order you specify keywords is irrelevant:
+``jan, feb mon``
+is the same as
+``feb mon jan``
+Though for the sake of readabilty it makes sense to specify them in the order the categories are listed above.
+
+For advanced schedules, you can specify a modulo operation:
+``w00/w02``
+   triggers every day on even weeks (of the year).
+``1/2``
+   triggers every odd day (of the month).
+
+If a schedule triggers on a day, you can specify at which time(s) the schedule is triggered by supplying specifiers from the following categories:
+- time of day (at 12:15, at 09:45pm, ...)
+- hourly
+
+If you do not specify any of these, the schedule is triggers at 00:00.
+
+For example
+``mon at 12:15``
+   triggers every monday at 12:15
+``mon at 18:00, at 20:15``
+   triggers every monday at 18:00 and 20:15, so runs twice on mondays!
+
+``mon hourly``
+   runs every monday every full hour, so 24 times on mondays (at 00:00, ..., at 23:00)! 
+
+``hourly at :15``
+or
+``hourly at 00:15``
+or
+``hourly at 13:15``
+   triggers every day, every hour at quater past (at 00:15, ..., at 23:15)!
+Note that specifying a hour in that case has no effect whatsoever.
+
+``hourly at :15, :30``
+   triggers twice an hour at quarter past and half past.
+
+Again, the order you specify keywords is irrelevant:
+``jan first mon at 20:15``
+is the same as
+``mon at 20:15 first jan``
+
+The following Pseudo-BNF defines the syntax for specifying a schedule:
 
 .. code-block:: bnf
    :caption: schedule run
@@ -45,17 +111,17 @@ The run schedule to run the Job can be specified in the following way in pseudo-
    <month-of-year>        ::= jan | feb | mar | apr | may | jun | jul | aug | sep | oct | nov | dec | january | ... | december
    <week-of-year>         ::= w00 | ... | w53 // where w01 is the first week of the year according to ISO8601
    <week-of-month>        ::= 1st |2nd | 3rd | 4th | 5th | first | second | third | fourth | fifth | last
-   <day-of-month>         ::= 1|...|31
+   <day-of-month>         ::= 1 | ... | 31
    <day-of-week>          ::= sun | mon | tue | wed | thu | fri | sat | sunday | ... | saturday
 
    <range>                ::= <month-of-year>-<month-of-year> | ... | <day-of-week>-<day-of-week>
    <modulo>               ::= <week-of-year>/<week-of-year> | <day-of-month>/<day-of-month>
 
-   <time-of-day-24>       ::= (0 | ... | 23):(0 | ... | 59)
+   <time-of-day-24>       ::= [(0 | ... | 23)]:(0 | ... | 59)
    <time-of-day-12>       ::= (0 | ... | 12):(0 | ... | 59)(am | pm)
    <time-of-day>          ::= at(<time-of-day-24> | <time-of-day-12>)
    
    <cycle>                ::= monthly | weekly | daily // these keywords are deprecated since they have not effect on the schedule
    <schedule>             ::= ((<month-of-year> | ... | <day-of-week>) | <range> | <modulo> | <time-of-day> | hourly | <cycle>) [[,]<schedule>] 
 
-if no run schedule is specified, it defaults to "at 00:00" (i.e. run every day at 00:00).
+if no schedule is specified, we fallback to "at 00:00" (i.e. run every day at 00:00).
