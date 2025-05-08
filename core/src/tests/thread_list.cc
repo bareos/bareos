@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,8 @@
 #include <mutex>
 #include <random>
 #include <thread>
+
+#include "include/config.h"
 
 class WaitCondition {
  public:
@@ -90,6 +92,7 @@ static void* ShutdownCallback(void* data)
 
 static constexpr int maximum_thread_count = 10;
 
+#if !defined(HAVE_WIN32)
 TEST(thread_list, thread_list_startup_and_shutdown)
 {
   std::unique_ptr<ThreadList> t(std::make_unique<ThreadList>());
@@ -112,6 +115,7 @@ TEST(thread_list, thread_list_startup_and_shutdown)
 
   EXPECT_EQ(thread_counter, maximum_thread_count);
 }
+#endif
 
 static void* ThreadHandlerSleepRandomTime(ConfigurationParser*, void*)
 {

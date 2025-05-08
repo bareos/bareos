@@ -482,12 +482,6 @@ endif()
 
 bareos_add_test(thread_list LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
-if(HAVE_WIN32)
-  set_tests_properties(
-    gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
-  )
-endif()
-
 bareos_add_test(
   thread_specific_data LINK_LIBRARIES Bareos::Lib GTest::gtest_main
 )
