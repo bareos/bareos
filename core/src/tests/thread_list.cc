@@ -90,6 +90,7 @@ static void* ShutdownCallback(void* data)
 
 static constexpr int maximum_thread_count = 10;
 
+#if !defined(WIN32) && !defined(_WIN32) && !defined(__WIN32)
 TEST(thread_list, thread_list_startup_and_shutdown)
 {
   std::unique_ptr<ThreadList> t(std::make_unique<ThreadList>());
@@ -112,6 +113,7 @@ TEST(thread_list, thread_list_startup_and_shutdown)
 
   EXPECT_EQ(thread_counter, maximum_thread_count);
 }
+#endif
 
 static void* ThreadHandlerSleepRandomTime(ConfigurationParser*, void*)
 {

@@ -555,6 +555,9 @@ run_bconsole()
     traceback "${BAREOS_STORAGEDAEMON_BINARY}" || :
     traceback "${BAREOS_DIRECTOR_BINARY}" || :
   fi
+
+  print_debug "----- console returned with ${error_code} -----"
+
   return "$error_code"
 }
 

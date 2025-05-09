@@ -89,19 +89,23 @@ macro(bareos_gtest_add_tests testname)
     BAREOS_GTEST_ADD_TESTS "${options}" "${oneValueArgs}" "${multiValueArgs}"
     ${ARGN}
   )
-  gtest_add_tests(
-    TARGET ${testname}
-    TEST_PREFIX gtest:
-    TEST_LIST found_tests
-  )
   if(BAREOS_GTEST_ADD_TESTS_DISABLE)
     message("DISABELING ${found_tests}")
-    set_tests_properties(${found_tests} PROPERTIES DISABLED TRUE)
+    gtest_discover_tests(
+      ${testname}
+      TEST_PREFIX gtest:
+      PROPERTIES
+      TIMEOUT 120 SKIP_RETURN_CODE 77 DISABLED TRUE
+    )
+  else()
+    gtest_discover_tests(
+      ${testname}
+      TEST_PREFIX gtest:
+      PROPERTIES
+      TIMEOUT 120 SKIP_RETURN_CODE 77
+    )
   endif()
 
-  set_tests_properties(
-    ${found_tests} PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77
-  )
 endmacro() # bareos_gtest_add_tests
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
@@ -119,6 +123,7 @@ macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
     ${BAREOS_ADD_TEST_TESTNAME} ${BAREOS_ADD_TEST_TESTNAME}.cc
                                 ${BAREOS_ADD_TEST_ADDITIONAL_SOURCES}
   )
+
   target_link_libraries(
     ${BAREOS_ADD_TEST_TESTNAME} ${BAREOS_ADD_TEST_LINK_LIBRARIES}
   )
@@ -184,21 +189,6 @@ set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
 add_library(testing_common STATIC ${COMMON_SRC})
 
 target_link_libraries(testing_common PRIVATE ${LINK_LIBRARIES})
-
-if(HAVE_BIG_ENDIAN)
-  set_tests_properties(gtest:statefile.read PROPERTIES DISABLED TRUE)
-  set_tests_properties(gtest:statefile.write PROPERTIES DISABLED TRUE)
-  set_tests_properties(
-    gtest:statefile.handle_truncated_jobs PROPERTIES DISABLED TRUE
-  )
-  set_tests_properties(
-    gtest:statefile.handle_truncated_headers PROPERTIES DISABLED TRUE
-  )
-  set_tests_properties(
-    gtest:statefile.handle_nonexisting_file PROPERTIES DISABLED TRUE
-  )
-endif()
-
 # Keep alphabetically ordered
 if(NOT client-only)
   bareos_add_test(
@@ -242,14 +232,10 @@ if(NOT client-only)
       ktls
       ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
       LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
-      COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
+      COMPILE_DEFINITIONS
+        ${KTLS_DEFINITIONS} DISABLE TRUE # we need to find a good solution for
+                                         # this
     )
-    set_tests_properties(gtest:ktls.v12_send PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v12_recv PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v12_256_send PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v13_send PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v13_recv PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v13_256_send PROPERTIES LABELS broken)
   endif()
 
   bareos_add_test(
@@ -417,13 +403,6 @@ if(HAVE_EXECINFO_H
    AND HAVE_BACKTRACE_SYMBOLS
 )
   bareos_add_test(test_backtrace LINK_LIBRARIES bareos GTest::gtest_main)
-  # Backtrace doesn't work correctly when ASan is enabled, do we shouldn't test
-  # in that case
-  if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address")
-    set_tests_properties(
-      gtest:Backtrace.test_backtrace PROPERTIES DISABLED TRUE
-    )
-  endif()
 endif() # HAVE_EXECINFO_H ..
 
 if(NOT HAVE_WIN32 AND NOT client-only)
@@ -497,20 +476,16 @@ bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(test_output_formatter LINK_LIBRARIES GTest::gtest_main bareos)
 
-bareos_add_test(
-  statefile
-  LINK_LIBRARIES bareos GTest::gtest_main
-  COMPILE_DEFINITIONS TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
-                      TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
-)
-
-bareos_add_test(thread_list LINK_LIBRARIES bareos GTest::gtest_main)
-
-if(HAVE_WIN32)
-  set_tests_properties(
-    gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
+if(NOT HAVE_BIG_ENDIAN)
+  bareos_add_test(
+    statefile
+    LINK_LIBRARIES bareos GTest::gtest_main
+    COMPILE_DEFINITIONS TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
+                        TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
   )
 endif()
+
+bareos_add_test(thread_list LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(
   thread_specific_data LINK_LIBRARIES bareos ${THREADS_THREADS}
