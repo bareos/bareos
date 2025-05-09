@@ -25,6 +25,8 @@
 #include <vector>
 #include <chrono>
 #include <cstdio>
+#include <span>
+#include <unordered_map>
 
 #include <Windows.h>
 #include <guiddef.h>
@@ -221,6 +223,138 @@ static constexpr VSS_ID ASR_WRITER_ID
        0x4426,
        {0x9C, 0x58, 0x53, 0x1A, 0xA6, 0x35, 0x5F, 0xC4}};
 
+struct win_error : std::exception {
+  win_error(const char*, DWORD) {}
+
+  const char* what() const { return ""; }
+};
+
+struct com_error : std::exception {
+  com_error(const char* where, HRESULT) {}
+
+  const char* what() const { return ""; }
+};
+
+std::vector<std::wstring> list_volumes()
+{
+  std::vector<std::wstring> volumes;
+  wchar_t VolumeGUID[MAX_PATH];
+  HANDLE iter = FindFirstVolumeW(VolumeGUID, sizeof(VolumeGUID));
+
+  if (iter == INVALID_HANDLE_VALUE) {
+    throw win_error("FindFirstVolumeW", GetLastError());
+  }
+
+  for (;;) {
+    volumes.emplace_back(VolumeGUID);
+    printf("Volume '%ls'\n", volumes.back().c_str());
+
+    if (!FindNextVolumeW(iter, VolumeGUID, sizeof(VolumeGUID))) {
+      auto err = GetLastError();
+      if (err == ERROR_NO_MORE_FILES) { break; }
+      throw win_error("FindNextVolumeW", err);
+    }
+  }
+
+  FindVolumeClose(iter);
+
+  return volumes;
+}
+
+struct VssSnapshot {
+  static VssSnapshot create(CComPtr<IVssBackupComponents> vss,
+                            std::span<const std::wstring> volumes)
+  {
+    wchar_t guid_storage[64] = {};
+    GUID snapshot_guid = GUID_NULL;
+
+    COM_CALL(vss->StartSnapshotSet(&snapshot_guid));
+
+    StringFromGUID2(snapshot_guid, guid_storage, sizeof(guid_storage));
+    printf("snapshot set => %ls\n", guid_storage);
+
+    BackupAborter aborter{vss};
+
+    for (auto& vol : volumes) {
+      VSS_ID volume_id = {};
+      vss->AddToSnapshotSet(const_cast<VSS_PWSZ>(vol.c_str()), GUID_NULL,
+                            &volume_id);
+
+      StringFromGUID2(volume_id, guid_storage, sizeof(guid_storage));
+      printf("%ls => %ls\n", vol.c_str(), guid_storage);
+    }
+
+    CComPtr<IVssAsync> prepare_job;
+    COM_CALL(vss->PrepareForBackup(&prepare_job));
+    WaitOnJob(prepare_job);
+
+    CComPtr<IVssAsync> snapshot_job;
+    COM_CALL(vss->DoSnapshotSet(&snapshot_job));
+    WaitOnJob(snapshot_job);
+
+    aborter.backup_components = nullptr;  // not needed anymore
+
+    return {snapshot_guid};
+  }
+
+  GUID snapshot_guid;
+
+  auto snapshotted_paths(CComPtr<IVssBackupComponents> vss)
+  {
+    std::unordered_map<std::wstring, std::wstring> paths;
+    CComPtr<IVssEnumObject> iter;
+    COM_CALL(
+        vss->Query(GUID_NULL, VSS_OBJECT_NONE, VSS_OBJECT_SNAPSHOT, &iter));
+
+    VSS_OBJECT_PROP prop;
+
+    for (;;) {
+      ULONG fetched_count;
+      auto err = iter->Next(1, &prop, &fetched_count);
+
+      if (fetched_count == 0) { break; }
+
+      throw_on_error(err, "iter->Next(1, &prop, &fetched_count)");
+
+      wchar_t guid_storage[64] = {};
+      StringFromGUID2(prop.Obj.Snap.m_SnapshotSetId, guid_storage,
+                      sizeof(guid_storage));
+      printf("found guid => %ls\n", guid_storage);
+
+      if (prop.Obj.Snap.m_SnapshotSetId == snapshot_guid) {
+        printf("%ls => %ls\n", prop.Obj.Snap.m_pwszOriginalVolumeName,
+               prop.Obj.Snap.m_pwszSnapshotDeviceObject);
+
+        paths.emplace(prop.Obj.Snap.m_pwszOriginalVolumeName,
+                      prop.Obj.Snap.m_pwszSnapshotDeviceObject);
+      }
+
+      VssFreeSnapshotProperties(&prop.Obj.Snap);
+    }
+
+    return std::move(paths);
+  }
+
+  void delete_snapshot(CComPtr<IVssBackupComponents> vss)
+  {
+    GUID bad_snapshot;
+    LONG deleted_count;
+
+    COM_CALL(vss->DeleteSnapshots(snapshot_guid, VSS_OBJECT_SNAPSHOT_SET, FALSE,
+                                  &deleted_count, &bad_snapshot));
+  }
+
+ private:
+  struct BackupAborter {
+    ~BackupAborter()
+    {
+      if (backup_components) { backup_components->AbortBackup(); }
+    }
+
+    CComPtr<IVssBackupComponents>& backup_components;
+  };
+};
+
 void dump_data()
 {
   COM_CALL(CoInitializeEx(NULL, COINIT_MULTITHREADED));
@@ -235,18 +369,6 @@ void dump_data()
   COM_CALL(CreateVssBackupComponents(&backup_components));
 
   COM_CALL(backup_components->InitializeForBackup());
-
-  struct BackupAborter {
-    ~BackupArborter()
-    {
-      if (backup_components) { backup_components->AbortBackup(); }
-    }
-
-    CComPtr<IVssBackupComponents>& backup_components;
-  };
-
-  // TODO: this only needs to be done between StartSnapshotSet/DoSnapshotSet
-  BackupAborter _{backup_components};
 
   bool select_components = true;
   bool backup_bootable_system_state = false;
@@ -417,6 +539,47 @@ void dump_data()
       COM_CALL(component->FreeComponentInfo(info));
     }
   }
+
+  auto volumes = list_volumes();
+
+  auto snapshot = VssSnapshot::create(backup_components, volumes);
+
+  auto paths = snapshot.snapshotted_paths(backup_components);
+
+  std::size_t buffer_size = 64 * 1024;
+  auto buffer = std::make_unique<char[]>(buffer_size);
+
+  for (auto& [path, copy] : paths) {
+    HANDLE hndl = CreateFileW(copy.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
+                              OPEN_ALWAYS,
+                              FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS
+                                  | FILE_FLAG_SEQUENTIAL_SCAN,
+                              NULL);
+
+    if (hndl == INVALID_HANDLE_VALUE) {
+      throw win_error("CreateFileW", GetLastError());
+    }
+
+    std::size_t byte_count = 0;
+
+    for (;;) {
+      DWORD bytes_read = 0;
+
+      if (!ReadFile(hndl, buffer.get(), buffer_size, &bytes_read, NULL)) {
+        throw win_error("ReadFile", GetLastError());
+      }
+
+      if (bytes_read == 0) { break; }
+
+      byte_count += bytes_read;
+    }
+
+    printf("%ls => %llu bytes\n", path.c_str(), byte_count);
+
+    CloseHandle(hndl);
+  }
+
+  snapshot.delete_snapshot(backup_components);
 
   backup_components.Release();
 }
