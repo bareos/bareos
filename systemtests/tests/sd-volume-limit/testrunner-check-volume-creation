@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Run 30 jobs in parallel
+#  and check that more than 20 volumes were created,
+#  as well as checking that no job was waiting on a volume.
+#
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+start_log="${tmp}/start.log"
+messages="${tmp}/messages.log"
+volume_list="${tmp}/volumes.log"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${start_log}
+END_OF_DATA
+
+for _ in {1..40}; do
+  cat <<END_OF_DATA >>"${tmp}/bconcmds"
+  run job=backup-bareos-fd level=Full yes
+END_OF_DATA
+done
+
+cat <<END_OF_DATA >>"$tmp/bconcmds"
+@$out ${messages}
+wait
+messages
+@$out ${volume_list}
+list volumes
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Full-0022" \
+  "${volume_list}" \
+  "Too few volumes were created!"
+
+expect_not_grep "Please use the \"label\" command to create a new Volume for:" \
+  "${messages}" \
+  "Job is waiting on a volume => bad limit!"
+
+end_test
