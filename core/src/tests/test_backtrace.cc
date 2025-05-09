@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,9 +26,17 @@
 #include <string>
 #include <vector>
 
+
+// Backtrace doesn't work correctly when ASan is enabled, do we shouldn't test
+// in that case
+
+#if !defined(BAREOS_ADDRESS_SANITIZER)
+
 TEST(Backtrace, test_backtrace)
 {
   std::vector<BacktraceInfo> bt(Backtrace(0, 1));
   ASSERT_EQ(bt.size(), 1);
   EXPECT_NE(bt[0].function_call_.find("Backtrace"), std::string::npos);
 }
+
+#endif

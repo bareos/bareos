@@ -59,7 +59,7 @@
 #include "lib/compression.h"
 
 #if defined(WIN32_VSS)
-#  include "win32/findlib/win32.h"
+#  include "findlib/win32.h"
 #  include "vss.h"
 #endif
 
@@ -1611,10 +1611,8 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
         // See if a compression flag is set in this option block.
         if (BitIsSet(FO_COMPRESS, fo->flags)) {
           switch (fo->Compress_algo) {
-#if defined(HAVE_LIBZ)
             case COMPRESS_GZIP:
               break;
-#endif
 #if defined(HAVE_LZO)
             case COMPRESS_LZO1X:
               break;

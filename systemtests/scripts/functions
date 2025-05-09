@@ -539,17 +539,21 @@ run_bconsole()
 {
   bconsole_file="${1:-${tmp}/bconcmds}"
   local error_code=0
+  local timeout=${BCONSOLE_TIMEOUT:-180s}
   if [ -f "$bconsole_file" ]; then
     check_config bconsole ${BAREOS_BCONSOLE_BINARY} -c ${conf} || exit $?
     # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
     # before we had the chance to kill the daemons (in case of timeout)
     if test "$debug" -eq 1; then
-      timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <"$bconsole_file" || error_code=$?
+      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <"$bconsole_file" || error_code=$?
     else
-      timeout 100s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <"$bconsole_file" 2>&1 >/dev/null || error_code=$?
+      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <"$bconsole_file" 2>&1 >/dev/null || error_code=$?
     fi
   fi
   if ((error_code == 124)); then
+    echo "+----------------------------------------+" >&2
+    echo "| bconsole timed out, getting tracebacks |" >&2
+    echo "+----------------------------------------+" >&2
     timeout 10s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<<"messages" || :
     traceback "${BAREOS_FILEDAEMON_BINARY}" || :
     traceback "${BAREOS_STORAGEDAEMON_BINARY}" || :

@@ -62,6 +62,8 @@ if(ENABLE_SANITIZERS)
     set(CMAKE_C_FLAGS
         "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
     )
+
+    add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
@@ -69,9 +71,11 @@ if(ENABLE_SANITIZERS)
     set(CMAKE_C_FLAGS
         "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
     )
+    add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+    add_compile_definitions(BAREOS_ADDRESS_SANITIZER=1)
   else()
     message(
       FATAL_ERROR
@@ -193,10 +197,6 @@ else()
 endif()
 
 include(BareosFindPrograms)
-
-if(NOT ${OPENSSL_FOUND})
-  message(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
-endif()
 
 if(coverage)
   set(COVERAGE_COMPILER_FLAGS
@@ -320,8 +320,6 @@ else()
   add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
 
-include(FindIntl)
-
 if(MSVC)
   set(BAREOS_WARNING_FLAGS
       /W4 # enable all reasonable warnings, but disable the following
@@ -404,8 +402,6 @@ if(MSVC)
 else()
   set(LOCALEDIR \"${CMAKE_INSTALL_LOCALEDIR}\")
 endif()
-
-set(HAVE_CRYPTO 1)
 
 include(TestBigEndian)
 test_big_endian(IS_BIGENDIAN)
@@ -572,23 +568,9 @@ set(CCVERSION ${CMAKE_CXX_COMPILER_VERSION})
 set(CXX ${CMAKE_CXX_COMPILER})
 set(CXXVERSION ${CMAKE_CXX_COMPILER_VERSION})
 
-if("${HAVE_OPENSSL}")
-  set(HAVE_TLS "1")
-endif()
-
-if(NOT openssl)
-  unset(HAVE_OPENSSL)
-  unset(HAVE_TLS)
-endif()
-
 if("${PAM_FOUND}")
   set(HAVE_PAM 1)
 endif()
-
-set(have_tls "${HAVE_TLS}")
-set(have_crypto "${HAVE_CRYPTO}")
-set(have_openssl "${HAVE_OPENSSL}")
-set(have_zlib "${ZLIB_FOUND}")
 
 option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
        "${HAVE_CAPABILITY_H}"
@@ -787,8 +769,6 @@ message(
   "   readline support:             ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  "
 )
-message("   TLS support:                  ${have_tls} ")
-message("   Encryption support:           ${have_crypto} ")
 message(
   "   OpenSSL support:              ${OPENSSL_FOUND} ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES} "
 )
@@ -890,9 +870,15 @@ endif()
 
 print_variables("${DUMP_VARS}")
 
-# REPEAT_UNTIL requires cmake 3.17+
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
-  set(REPEAT_UNTIL "")
+if(ENABLE_SANITIZERS)
+  # sanitizer-build needs more resources, so run fewer tests in parallel
+  set(CTEST_PARALLEL_LEVEL "PARALLEL_LEVEL 5")
+elseif(NOT DEFINED ENV{CTEST_PARALLEL_LEVEL})
+  # default to 10 parallel tests
+  set(CTEST_PARALLEL_LEVEL "PARALLEL_LEVEL 10")
+else()
+  # use the user's environment setting
+  set(CTEST_PARALLEL_LEVEL "")
 endif()
 
 configure_file(

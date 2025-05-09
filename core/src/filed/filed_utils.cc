@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -158,14 +158,6 @@ bool CheckResources()
               configfile.c_str());
         OK = false;
       }
-    }
-    if (me->pki_encrypt || me->pki_sign) {
-#ifndef HAVE_CRYPTO
-      Jmsg(
-          nullptr, M_FATAL, 0,
-          T_("PKI encryption/signing enabled but not compiled into Bareos.\n"));
-      OK = false;
-#endif
     }
 
     /* pki_encrypt implies pki_sign */
