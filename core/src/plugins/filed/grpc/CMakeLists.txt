@@ -115,6 +115,7 @@ if(ENABLE_GRPC)
     # we need to link to python3, because otherwise we will not be able to load
     # python-fd.so
     bareos-grpc-fd-plugin-bridge fmt::fmt grpc-proto Python3::Module
+    ${CMAKE_DL_LIBS}
   )
   install(
     TARGETS bareos-grpc-fd-plugin-bridge

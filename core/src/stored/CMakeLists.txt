@@ -118,6 +118,7 @@ set_target_properties(
 
 if(HAVE_DYNAMIC_SD_BACKENDS)
   target_sources(bareossd PRIVATE sd_backends_dynamic.cc)
+  target_link_libraries(bareossd PRIVATE ${CMAKE_DL_LIBS})
 else()
   target_link_libraries(bareossd PRIVATE Bareos::Lib ${LIBBAREOSSD_LIBRARIES})
 endif()
