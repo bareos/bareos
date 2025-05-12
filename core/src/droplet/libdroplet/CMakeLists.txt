@@ -111,11 +111,9 @@ bareos_disable_warnings(
   ADD_FOR_LTO
 )
 
-target_include_directories(
-  droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
-)
+target_include_directories(droplet PUBLIC include ${JSONC_INCLUDE_DIRS})
 target_link_libraries(
-  droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES} OpenSSL::SSL
+  droplet PRIVATE LibXml2::LibXml2 ${JSONC_LIBRARIES} OpenSSL::SSL
 )
 
 include(DebugEdit)
