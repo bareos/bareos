@@ -52,29 +52,6 @@ if(NOT build_client_only)
   message("Backends are now ${BACKENDS}")
 endif()
 
-set(BACKEND_OBJECTS "") # backend shared objects
-
-if(HAVE_DYNAMIC_SD_BACKENDS)
-  if(GFAPI_LIBRARIES)
-    list(APPEND BACKEND_OBJECTS libbareossd-gfapi)
-  endif()
-
-  if(TARGET droplet)
-    list(APPEND BACKEND_OBJECTS libbareossd-droplet)
-    list(APPEND BACKEND_OBJECTS libbareossd-chunked)
-  endif()
-
-  message(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
-else()
-  if(TARGET droplet)
-    list(APPEND LIBBAREOSSD_LIBRARIES droplet)
-  endif()
-  if(HAVE_GFAPI)
-    list(APPEND LIBBAREOSSD_LIBRARIES PkgConfig::gfapi)
-  endif()
-  message(STATUS "LIBBAREOSSD_LIBRARIES ARE ${LIBBAREOSSD_LIBRARIES}")
-endif()
-
 add_library(bareossd SHARED)
 add_library(Bareos::LibSD ALIAS bareossd)
 target_sources(
@@ -119,8 +96,6 @@ set_target_properties(
 if(HAVE_DYNAMIC_SD_BACKENDS)
   target_sources(bareossd PRIVATE sd_backends_dynamic.cc)
   target_link_libraries(bareossd PRIVATE ${CMAKE_DL_LIBS})
-else()
-  target_link_libraries(bareossd PRIVATE Bareos::Lib ${LIBBAREOSSD_LIBRARIES})
 endif()
 
 add_library(stored_objects STATIC)
