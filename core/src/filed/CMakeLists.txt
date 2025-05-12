@@ -93,10 +93,7 @@ if(HAVE_WIN32)
             ../win32/filed/vss_W2K3.cc ../win32/filed/vss_Vista.cc
             ../win32/generic/service.cc ../win32/generic/main.cc
   )
-  target_compile_definitions(fd_objects_common PUBLIC WIN32_VSS)
-  if("${WINDOWS_BITS}" STREQUAL "64")
-    target_compile_definitions(fd_objects_common PUBLIC HAVE_VSS64)
-  endif()
+  target_compile_definitions(fd_objects_common PUBLIC WIN32_VSS HAVE_VSS64)
 
   foreach(tgt IN ITEMS bareos-fd bareos-test-fd)
     set_target_properties("${tgt}" PROPERTIES WIN32_EXECUTABLE ON)

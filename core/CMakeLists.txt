@@ -864,7 +864,6 @@ endif()
 
 if(HAVE_WIN32)
   message("   WINDOWS_VERSION:              ${WINDOWS_VERSION}")
-  message("   WINDOWS_BITS:                 ${WINDOWS_BITS}")
   message("   WINEPATH environment:         $ENV{WINEPATH}")
 endif()
 

@@ -513,15 +513,9 @@ set(ENABLE_NLS
 mark_as_advanced(ENABLE_NLS)
 
 if(HAVE_WIN32)
-
   if(NOT DEFINED WINDOWS_VERSION)
     set(WINDOWS_VERSION 0x600)
   endif()
-
-  if(NOT DEFINED WINDOWS_BITS)
-    set(WINDOWS_BITS 64)
-  endif()
-
 endif() # HAVE_WIN32
 
 if(DEFINED do-static-code-checks)
