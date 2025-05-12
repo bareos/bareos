@@ -47,6 +47,9 @@
 /* pull in the generated queries definitions */
 #  include "postgresql_queries.inc"
 
+#  include <sstream>
+#  include <string_view>
+
 /* -----------------------------------------------------------------------
  *
  *   PostgreSQL dependent defines and subroutines
@@ -162,6 +165,19 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
   return retval;
 }
 
+static std::string AddEscapes(std::string_view src,
+                              const std::vector<char>& to_escape)
+{
+  std::string out;
+  for (char ch : src) {
+    if (std::find(to_escape.begin(), to_escape.end(), ch) != to_escape.end()) {
+      out += '\\';
+    }
+    out += ch;
+  }
+  return out;
+}
+
 /**
  * Now actually open the database.  This can generate errors, which are returned
  * in the errmsg
@@ -203,15 +219,29 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
 
   // If connection fails, try at 5 sec intervals for 30 seconds.
   for (int retry = 0; retry < 6; retry++) {
-    db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
-                              port,          /* default port */
-                              NULL,          /* pg options */
-                              NULL,          /* tty, ignored */
-                              db_name_,      /* database name */
-                              db_user_,      /* login name */
-                              db_password_); /* password */
+    std::stringstream conninfo;
+    if (db_address_) {
+      conninfo << "host='" << AddEscapes(db_address_, {'\'', '\\'}) << "' ";
+    }
+    if (port) {
+      conninfo << "port='" << AddEscapes(port, {'\'', '\\'}) << "' ";
+    }
+    if (db_name_) {
+      conninfo << "dbname='" << AddEscapes(db_name_, {'\'', '\\'}) << "' ";
+    }
+    if (db_user_) {
+      conninfo << "user='" << AddEscapes(db_user_, {'\'', '\\'}) << "' ";
+    }
+    if (db_password_) {
+      conninfo << "password='" << AddEscapes(db_password_, {'\'', '\\'})
+                << "' ";
+    }
+    conninfo << "sslmode='disable'";
 
-    // If no connect, try once more in case it is a timing problem
+    db_handle_ = PQconnectdb(conninfo.str().c_str());
+
+    // If connecting does not succeed, try again in case it was a timing
+    // problem
     if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
 
     // free memory if not successful
