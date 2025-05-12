@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -97,36 +97,50 @@ static inline void SetString(char** destination, std::string_view value)
 static std::string GetStringFromPyErrorHandler()
 {
   PyObject *type, *value, *traceback;
-  PyObject* tracebackModule;
   std::string error_string;
 
   PyErr_Fetch(&type, &value, &traceback);
+  if (!type && !value && !traceback) {
+    return "No python error could be fetched.";
+  }
   PyErr_NormalizeException(&type, &value, &traceback);
 
-  tracebackModule = PyImport_ImportModule("traceback");
-  if (tracebackModule != NULL) {
-    PyObject *tbList, *emptyString, *strRetval;
-
-    tbList = PyObject_CallMethod(tracebackModule, (char*)"format_exception",
-                                 (char*)"OOO", type,
-                                 value == NULL ? Py_None : value,
-                                 traceback == NULL ? Py_None : traceback);
-
-    emptyString = PyUnicode_FromString("");
-    strRetval
-        = PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
-
-    error_string = std::string(PyUnicode_AsUTF8(strRetval));
-
-    Py_DECREF(tbList);
-    Py_DECREF(emptyString);
-    Py_DECREF(strRetval);
-    Py_DECREF(tracebackModule);
+  PyObject* tracebackModule = PyImport_ImportModule("traceback");
+  if (!tracebackModule) {
+    PyObject *tbList = nullptr, *emptyString = nullptr, *strRetval = nullptr;
+    if ((tbList = PyObject_CallMethod(tracebackModule, (char*)"format_exception",
+                                      (char*)"OOO", type,
+                                      value == NULL ? Py_None : value,
+                                      traceback == NULL ? Py_None : traceback))) {
+      if ((emptyString = PyUnicode_FromString(""))) {
+        if ((strRetval = PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList))) {
+          if (const char* err = PyUnicode_AsUTF8(strRetval)) {
+            error_string = err;
+          }
+          else {
+            error_string = "Unspecified error, retrieving error message failed.";
+          }
+        }
+        else {
+          error_string = "Calling method 'join' failed.";
+        }
+      }
+      else {
+        error_string = "Unable to retrieve empty-string.";
+      }
+    }
+    else {
+      error_string = "Calling method 'format_exception' failed.";
+    }
+    Py_XDECREF(tbList);
+    Py_XDECREF(emptyString);
+    Py_XDECREF(strRetval);
+    Py_XDECREF(tracebackModule);
   } else {
-    error_string = std::string("Unable to import traceback module.");
+    error_string = "Unable to import traceback module.";
   }
 
-  Py_DECREF(type);
+  Py_XDECREF(type);
   Py_XDECREF(value);
   Py_XDECREF(traceback);
 
