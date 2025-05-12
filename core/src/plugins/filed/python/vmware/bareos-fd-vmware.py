@@ -562,6 +562,14 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if not self.vadp.get_vm_disk_cbt():
                 return bareosfd.bRC_Error
 
+            bareosfd.DebugMessage(
+                100,
+                "content of restoreobject %s: %s\n"
+                % (
+                    StringCodec.encode(self.vadp.file_to_backup),
+                    self.vadp.changed_disk_areas_json,
+                ),
+            )
             self.create_restoreobject_savepacket(
                 savepkt,
                 StringCodec.encode(self.vadp.file_to_backup[: -len("_cbt.json")]),
@@ -1312,6 +1320,12 @@ class BareosVADPWrapper(object):
             bareosfd.M_INFO,
             "Successfully connected to VSphere API on host %s with user %s\n"
             % (self.options["vcserver"], self.options["vcuser"]),
+        )
+
+        bareosfd.DebugMessage(
+            100,
+            "connect_vmware(): AboutInfo: %s\n"
+            % (json.dumps(self.si.content.about, cls=VmomiJSONEncoder)),
         )
 
         return True
@@ -2279,7 +2293,9 @@ class BareosVADPWrapper(object):
         Get the disk devices from the created snapshot
         Assumption: Snapshot successfully created
         """
-        self.get_disk_devices(self.create_snap_result.config.hardware.device)
+        self.get_disk_devices(
+            self.create_snap_result.config.hardware.device, from_snapshot=True
+        )
 
     def get_vm_disk_devices(self):
         """
@@ -2287,7 +2303,7 @@ class BareosVADPWrapper(object):
         """
         self.get_disk_devices(self.vm.config.hardware.device)
 
-    def get_disk_devices(self, devicespec):
+    def get_disk_devices(self, devicespec, from_snapshot=False):
         """
         Get disk devices from a devicespec
         """
@@ -2318,6 +2334,13 @@ class BareosVADPWrapper(object):
                         "capacityInBytes": hw_device.capacityInBytes,
                     }
                 )
+
+                if from_snapshot and hw_device.backing.changeId is None:
+                    bareosfd.JobMessage(
+                        bareosfd.M_WARNING,
+                        "The snapshot of disk %s has no changeId, subsequent incremental backup not possible.\n"
+                        % (hw_device.backing.fileName),
+                    )
 
     def get_vm_disk_root_filename(self, disk_device_backing):
         """
@@ -2370,7 +2393,8 @@ class BareosVADPWrapper(object):
             if cbt_changeId is None:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    "Error getting CBT change ID from restoreobject for disk %s\n"
+                    "No CBT change ID from previous backup for disk %s, "
+                    "new full level backup of this job is required.\n"
                     % (self.disk_device_to_backup["fileNameRoot"]),
                 )
                 return False
@@ -2456,7 +2480,7 @@ class BareosVADPWrapper(object):
             # Using CBT for full level backups is deprecated. Instead we send
             # the full range so that bareo_vadp_dumper will effectively only
             # use the allocated blocks.
-            bareosfd.DebugMessage(100, "Skipping CBT Query for full backup")
+            bareosfd.DebugMessage(100, "Skipping CBT Query for full backup\n")
             self.disk_change_info["length"] = self.disk_device_to_backup[
                 "capacityInBytes"
             ]
