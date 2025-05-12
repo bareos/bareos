@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,14 +116,19 @@ static std::string GetStringFromPyErrorHandler()
     strRetval
         = PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = std::string(PyUnicode_AsUTF8(strRetval));
+    if (const char* err = PyUnicode_AsUTF8(strRetval)) {
+      error_string = err;
+    }
+    else {
+      error_string = "Unspecified error, retrieving error message failed.";
+    }
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);
     Py_DECREF(strRetval);
     Py_DECREF(tracebackModule);
   } else {
-    error_string = std::string("Unable to import traceback module.");
+    error_string = "Unable to import traceback module.";
   }
 
   Py_DECREF(type);
