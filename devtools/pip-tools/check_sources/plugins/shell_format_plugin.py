@@ -20,25 +20,27 @@
 from shutil import which
 import logging
 import subprocess
+import pathlib
 import re
+from ..registry import register_modifier
 
 shfmt_exe = which("shfmt")
 if shfmt_exe:
-    logging.getLogger(__name__).info("using executable {}".format(shfmt_exe))
+    logging.getLogger(__name__).debug("using executable %s", shfmt_exe)
 else:
     logging.getLogger(__name__).error("cannot find a shfmt executable")
 
+shebang_pattern = re.compile(r"^#!\s*/(?:\S*/)*(env\s+)?(?:bash|sh)\b")
 
-shebang_pattern = r"^#!\s*/(?:\S*/)*(?:bash|sh)\b"
 
-
-def is_shell_content(file_content):
+def is_shell_content(file_content: str):
     return re.match(shebang_pattern, file_content) is not None
 
 
-def invoke_shell_format(file_path, file_content, *argv):
-    if not is_shell_content(file_content):
-        return file_content
+def invoke_shell_format(file_path: pathlib.Path, file_content: str, *argv):
+    if not str(file_path).endswith(".sh") or str(file_path).endswith(".sh.in"):
+        if not is_shell_content(file_content):
+            return file_content
 
     invocation = [shfmt_exe] + list(argv) + [file_path]
     try:
@@ -48,26 +50,18 @@ def invoke_shell_format(file_path, file_content, *argv):
             stderr=subprocess.PIPE,
             encoding="utf-8",
             universal_newlines=True,
+            check=True,
         )
     except OSError as exc:
-        raise Exception(
-            "Command '{}' failed to start: {}".format(
-                subprocess.list2cmdline(invocation), exc
-            )
-        )
+        raise OSError(
+            f"Command '{subprocess.list2cmdline(invocation)}' failed to start: {exc} from exc"
+        ) from exc
     return proc.stdout
 
 
-if __name__ == "__main__":
-    logging.getLogger().setLevel(logging.DEBUG)
-    exit(0)
-
-
-from ..registry import register_modifier
-
-
 @register_modifier("*", name="shell-format check")
-def check_shell_format(file_path, file_content, **kwargs):
+def check_shell_format(file_path: pathlib.Path, file_content: str, **kwargs):
+    _ = kwargs
     return invoke_shell_format(
         file_path,
         file_content,
