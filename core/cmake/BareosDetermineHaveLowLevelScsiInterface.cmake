@@ -21,6 +21,7 @@
 
 if(${scsi-crypto})
 
+  add_library(bareos-low-level-scsi INTERFACE)
   # LINUX: check if HAVE_SCSI_SG_H and HAVE_SCSI_SCSI_H are true
   if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     if("${HAVE_SCSI_SG_H}" AND "${HAVE_SCSI_SCSI_H}")
@@ -52,6 +53,7 @@ if(${scsi-crypto})
   if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
     if("${HAVE_CAMLIB_H}" AND "${HAVE_CAM_SCSI_SCSI_MESSAGE_H}")
       set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
+      target_link_libraries(bareos-low-level-scsi PRIVATE cam)
     else()
       set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
       message(
@@ -87,4 +89,7 @@ if(${scsi-crypto})
     endif()
   endif()
 
+  if(HAVE_LOWLEVEL_SCSI_INTERFACE)
+    add_library(Bareos::LowLevelScsi ALIAS bareos-low-level-scsi)
+  endif()
 endif()

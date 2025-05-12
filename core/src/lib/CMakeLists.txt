@@ -146,8 +146,8 @@ target_link_libraries(
   PUBLIC ${THREADS_THREADS}
 )
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" AND HAVE_LOWLEVEL_SCSI_INTERFACE)
-  target_link_libraries(bareos PRIVATE cam)
+if(TARGET Bareos::LowLevelScsi)
+  target_link_libraries(bareos PRIVATE Bareos::LowLevelScsi)
 endif()
 
 if(ENABLE_LZO)
