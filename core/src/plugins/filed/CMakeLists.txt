@@ -68,9 +68,7 @@ if(HAVE_WIN32)
     target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
     target_link_libraries(mssqlvdi-fd Bareos::Lib)
   endif()
-  set_target_properties(
-    mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
-  )
+  set_target_properties(mssqlvdi-fd PROPERTIES PREFIX "")
 
   install(
     TARGETS mssqlvdi-fd

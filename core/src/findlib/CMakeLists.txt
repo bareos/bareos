@@ -51,9 +51,6 @@ set_target_properties(
   bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                         SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-if(HAVE_WIN32)
-  set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-endif()
 
 install(
   TARGETS bareosfind

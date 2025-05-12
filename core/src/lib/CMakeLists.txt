@@ -109,7 +109,6 @@ if(HAVE_WIN32)
                    ../win32/compat/winapi.cc
   )
   target_sources(bareos PRIVATE osinfo_win32.cc)
-  target_compile_definitions(bareos PRIVATE "BUILDING_DLL")
   target_link_libraries(bareos PUBLIC ws2_32)
 else()
   target_sources(bareos PRIVATE bpipe_unix.cc)
