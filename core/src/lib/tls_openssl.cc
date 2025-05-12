@@ -185,25 +185,16 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
       extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
       if (bstrcmp(extname, "subjectAltName")) {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
         const X509V3_EXT_METHOD* method;
-#else
-        X509V3_EXT_METHOD* method;
-#endif
         STACK_OF(CONF_VALUE) * val;
         CONF_VALUE* nval;
         void* extstr = NULL;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
         const unsigned char* ext_value_data;
-#else
-        unsigned char* ext_value_data;
-#endif
 
         if (!(method = X509V3_EXT_get(ext))) { break; }
 
         ext_value_data = X509_EXTENSION_get_data(ext)->data;
 
-#if (OPENSSL_VERSION_NUMBER > 0x00907000L)
         if (method->it) {
           extstr = ASN1_item_d2i(NULL, &ext_value_data,
                                  X509_EXTENSION_get_data(ext)->length,
@@ -214,10 +205,6 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
           extstr = method->d2i(NULL, &ext_value_data,
                                X509_EXTENSION_get_data(ext)->length);
         }
-
-#else
-        extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
-#endif
 
         // Iterate through to find the dNSName field(s)
         val = method->i2v(method, extstr, NULL);

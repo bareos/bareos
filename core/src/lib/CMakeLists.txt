@@ -91,7 +91,6 @@ target_sources(
           tls.cc
           tls_conf.cc
           tls_openssl.cc
-          tls_openssl_crl.cc
           tls_openssl_private.cc
           tree.cc
           try_tls_handshake_as_a_server.cc

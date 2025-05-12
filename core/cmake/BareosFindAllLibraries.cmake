@@ -73,8 +73,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(OPENSSL_USE_STATIC_LIBS 1)
 endif()
 
-find_package(OpenSSL 1.0.2 REQUIRED)
-set(HAVE_OPENSSL 1)
+find_package(OpenSSL 1.1.1 REQUIRED)
 
 include(BareosFindLibraryAndHeaders)
 
