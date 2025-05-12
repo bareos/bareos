@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -48,6 +48,7 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 class TestBareosFd(unittest.TestCase):
     def test_ModuleDicts(self):
+        print("test_ModuleDicts")
         # help (bareosfd)
         print(bareosfd.bCFs)
         print(bareosfd.CF_ERROR)
@@ -74,6 +75,7 @@ class TestBareosFd(unittest.TestCase):
     #     self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
 
     def test_RestoreObject(self):
+        print("test_RestoreObject")
         test_RestoreObject = bareosfd.RestoreObject()
         self.assertEqual(
             'RestoreObject(object_name="", object="", plugin_name="<NULL>", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
@@ -97,6 +99,7 @@ class TestBareosFd(unittest.TestCase):
         # )
 
     def test_StatPacket(self):
+        print("test_StatPacket")
         timestamp = time.time()
         test_StatPacket = bareosfd.StatPacket()
 
@@ -134,6 +137,7 @@ class TestBareosFd(unittest.TestCase):
         )
 
     def test_SavePacket(self):
+        print("test_SavePacket")
         test_SavePacket = bareosfd.SavePacket(fname="testfilename")
         self.assertEqual(
             'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="<NULL>", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
@@ -141,6 +145,7 @@ class TestBareosFd(unittest.TestCase):
         )
 
     def test_RestorePacket(self):
+        print("test_RestorePacket")
         test_RestorePacket = bareosfd.RestorePacket()
         self.assertEqual(
             'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="<NULL>", ofname="<NULL>", olname="<NULL>", where="<NULL>", RegexWhere="<NULL>", replace=0, create_status=0)',
@@ -148,6 +153,7 @@ class TestBareosFd(unittest.TestCase):
         )
 
     def test_IoPacket(self):
+        print("test_IoPacket")
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
             'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="<NULL>", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
@@ -155,6 +161,7 @@ class TestBareosFd(unittest.TestCase):
         )
 
     def test_AclPacket(self):
+        print("test_AclPacket")
         test_AclPacket = bareosfd.AclPacket()
         test_AclPacket.content = bytearray(b"Hello ACL")
         self.assertEqual(
@@ -162,6 +169,7 @@ class TestBareosFd(unittest.TestCase):
         )
 
     def test_XattrPacket(self):
+        print("test_XattrPacket")
         test_XattrPacket = bareosfd.XattrPacket()
         self.assertEqual(
             'XattrPacket(fname="<NULL>", name="", value="")', str(test_XattrPacket)
