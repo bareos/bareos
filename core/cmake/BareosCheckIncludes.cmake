@@ -62,8 +62,6 @@ if(NOT MSVC)
 
   include(CheckSymbolExists)
 
-  check_include_files(glusterfs/api/glfs.h HAVE_GLUSTERFS_API_GLFS_H)
-
   check_include_files(sys/prctl.h HAVE_SYS_PRCTL_H)
 
   check_include_files(scsi/scsi.h HAVE_SCSI_SCSI_H)

@@ -33,7 +33,7 @@ macro(add_sd_backend backend_name)
   endif()
 endmacro()
 
-if(${HAVE_GLUSTERFS})
+if(HAVE_GFAPI)
   add_sd_backend(bareossd-gfapi)
   target_sources(bareossd-gfapi PRIVATE gfapi_device.cc)
   target_link_libraries(bareossd-gfapi PRIVATE PkgConfig::gfapi)

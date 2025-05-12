@@ -608,10 +608,9 @@ if("${HAVE_SYS_XATTR_H}" OR "${HAVE_SYS_EXTATTR_H}")
   set(have_xattr YES)
 endif()
 
-if(${HAVE_GLUSTERFS_API_GLFS_H})
-  set(HAVE_GLUSTERFS 1)
+if(gfapi_FOUND)
+  set(HAVE_GFAPI 1)
 endif()
-set(have_glusterfs ${HAVE_GLUSTERFS_API_GLFS_H})
 
 if(NOT HAVE_WIN32)
   if(${ndmp})
@@ -634,7 +633,7 @@ if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
 endif()
 
-if(${HAVE_GLUSTERFS})
+if(HAVE_GFAPI)
   list(APPEND PLUGINS gfapi)
 endif()
 
@@ -649,7 +648,7 @@ if(build_client_only)
 else()
   set(BACKENDS unix_tape_device.d)
   list(APPEND BACKENDS unix_fifo_device.d)
-  if(${HAVE_GLUSTERFS})
+  if(HAVE_GFAPI)
     list(APPEND BACKENDS gfapi_device.d)
   endif()
   if(TARGET droplet)
@@ -800,18 +799,7 @@ message("   XATTR support:                ${have_xattr} ")
 message(
   "   SCSI Crypto support:          ${scsi-crypto} ${HAVE_LOWLEVEL_SCSI_INTERFACE} "
 )
-message(
-  "   GFAPI(GLUSTERFS) support:     ${GFAPI_FOUND} ${GFAPI_LIBRARIES} ${GFAPI_INCLUDE_DIRS} "
-)
-message(
-  "   CEPH RADOS support:           ${RADOS_FOUND} ${RADOS_LIBRARIES} ${RADOS_INCLUDE_DIRS} "
-)
-message(
-  "   RADOS striping support:       ${RADOSSTRIPER_FOUND} ${RADOSSTRIPER_LIBRARIES} ${RADOSSTRIPER_INCLUDE_DIRS} "
-)
-message(
-  "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
-)
+message("   GFAPI(GLUSTERFS) support:     ${gfapi_FOUND} ")
 message(
   "   Python3 support:              ${Python3_FOUND} ${Python3_VERSION} ${Python3_INCLUDE_DIRS} ${Python3_EXECUTABLE}"
 )

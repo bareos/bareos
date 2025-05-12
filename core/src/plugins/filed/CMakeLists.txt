@@ -88,7 +88,7 @@ if(NOT HAVE_WIN32)
 endif()
 
 option(ENABLE_GFAPI_FD "Build gfapi-fd plugin if possible" ON)
-if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
+if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
   bareos_configure_file(GLOB_RECURSE "gfapi/gfapi-conf.d/*" COPY)
   bareos_add_plugin(gfapi-fd)
   target_sources(gfapi-fd PRIVATE gfapi/gfapi-fd.cc)
