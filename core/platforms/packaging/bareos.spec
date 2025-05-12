@@ -1094,9 +1094,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir /etc/bareos-webui
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
-%config %attr(644,root,root) /etc/bareos/bareos-dir.d/console/admin.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/console/admin.conf.example
 %config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-admin.conf
-%config %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
 %config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-readonly.conf
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 %endif
@@ -1257,47 +1257,47 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_mandir}/man8/btape.8.gz
 %{_sbindir}/bscrypto
 %{_sbindir}/btape
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Tape.conf.example
-%attr(0640, %{storage_daemon_user},  %{daemon_group}) %{_sysconfdir}/%{name}/bareos-sd.d/autochanger/autochanger-0.conf.example
-%attr(0640, %{storage_daemon_user},  %{daemon_group}) %{_sysconfdir}/%{name}/bareos-sd.d/device/tapedrive-0.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Tape.conf.example
+%attr(0640, %{storage_daemon_user},  %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/autochanger/autochanger-0.conf.example
+%attr(0640, %{storage_daemon_user},  %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/device/tapedrive-0.conf.example
 %{plugin_dir}/scsicrypto-sd.so
 %{plugin_dir}/scsitapealert-sd.so
 
 %files storage-fifo
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-fifo*.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/NULL.conf.example
-%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/NULL.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/storage/NULL.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/device/NULL.conf.example
 
 %files storage-dedupable
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-dedupable*.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Dedupable.conf.example
-%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/Dedupable.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Dedupable.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/device/Dedupable.conf.example
 
 %if 0%{?droplet}
 %files storage-droplet
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-droplet*.so
-%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example
-%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/S3_ObjectStorage.conf.example
+%attr(0640, %{director_daemon_user},%{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/device/S3_ObjectStorage.conf.example
 %dir %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/
-%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/*.example
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/*.example
 %endif
 
 %files storage-dplcompat
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-dplcompat*.so
 %{script_dir}/s3cmd-wrapper.sh
-%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/dplcompat.conf.example
-%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/dplcompat.conf.example
+%attr(0640, %{director_daemon_user},%{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/storage/dplcompat.conf.example
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/device/dplcompat.conf.example
 
 %if 0%{?glusterfs}
 %files storage-glusterfs
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-gfapi*.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Gluster.conf.example
-%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/GlusterStorage.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Gluster.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %config(noreplace) %{_sysconfdir}/%{name}/bareos-sd.d/device/GlusterStorage.conf.example
 %endif
 
 # not client_only
@@ -1493,9 +1493,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-ldap-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-ldap.py*
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ldap.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ldap.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/restore-ldap.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ldap.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ldap.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/job/restore-ldap.conf.example
 
 %files filedaemon-libcloud-python-plugin
 %defattr(-, root, root)
@@ -1505,8 +1505,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir %{plugin_dir}/bareos_libcloud_api
 %{plugin_dir}/bareos_libcloud_api/*
 
-#attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/fileset/plugin-libcloud.conf.example
-#attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-libcloud.conf.example
+#attr(0640, #{director_daemon_user}, #{daemon_group}) #config(noreplace) #{_sysconfdir}/#{name}/bareos-dir.d/fileset/plugin-libcloud.conf.example
+#attr(0640, #{director_daemon_user}, #{daemon_group}) #config(noreplace) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-libcloud.conf.example
 
 %files filedaemon-postgresql-python-plugin
 %defattr(-, root, root)
@@ -1548,9 +1548,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-glusterfs-plugin
 %{script_dir}/bareos-glusterfind-wrapper
 %{plugin_dir}/gfapi-fd.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-gfapi.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/BackupGFAPI.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreGFAPI.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-gfapi.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/job/BackupGFAPI.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreGFAPI.conf.example
 %endif
 
 %if 0%{?contrib}
