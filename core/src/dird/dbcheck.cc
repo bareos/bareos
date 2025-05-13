@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -920,8 +920,8 @@ int main(int argc, char* argv[])
   db = db_init_database(nullptr, db_driver, db_name.c_str(), user.c_str(),
                         password.c_str(), dbhost.c_str(), dbport, nullptr,
                         false, false, false, false);
-  if (!db->OpenDatabase(nullptr)) {
-    Emsg1(M_FATAL, 0, "%s", db->strerror());
+  if (auto err = db->OpenDatabase(nullptr)) {
+    Emsg1(M_FATAL, 0, "%s", err);
     return 1;
   }
 

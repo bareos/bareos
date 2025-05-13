@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,7 @@ class BareosDbPostgresql : public BareosDb {
  private:
   void SqlFieldSeek(int field) override { field_number_ = field; }
   int SqlNumFields(void) override { return num_fields_; }
-  bool OpenDatabase(JobControlRecord* jcr) override;
+  const char* OpenDatabase(JobControlRecord* jcr) override;
   void CloseDatabase(JobControlRecord* jcr) override;
   void EscapeString(JobControlRecord* jcr,
                     char* snew,
