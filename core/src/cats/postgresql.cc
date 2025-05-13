@@ -177,96 +177,89 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
+const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
 {
-  bool retval = false;
   int errstat;
   char buf[10], *port;
 
-  lock_mutex(mutex);
-  if (connected_) {
-    retval = true;
-    goto bail_out;
-  }
+
+  struct pthread_lock {
+    pthread_mutex_t* mut;
+
+    pthread_lock(pthread_mutex_t& mut_) : mut{&mut_} { lock_mutex(*mut); }
+
+    ~pthread_lock() { unlock_mutex(*mut); }
+  };
+
+  pthread_lock _{mutex};
+  if (connected_) { return nullptr; }
 
   if ((errstat = RwlInit(&lock_)) != 0) {
     BErrNo be;
     Mmsg1(errmsg, T_("Unable to initialize DB lock. ERR=%s\n"),
           be.bstrerror(errstat));
-    goto bail_out;
+    return errmsg;
   }
 
-  {
-    DbLocker _{this};
+  DbLocker db_lock{this};
 
-    if (db_port_) {
-      Bsnprintf(buf, sizeof(buf), "%d", db_port_);
-      port = buf;
-    } else {
-      port = NULL;
-    }
-
-    // If connection fails, try at 5 sec intervals for 30 seconds.
-    for (int retry = 0; retry < 6; retry++) {
-      db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
-                                port,          /* default port */
-                                NULL,          /* pg options */
-                                NULL,          /* tty, ignored */
-                                db_name_,      /* database name */
-                                db_user_,      /* login name */
-                                db_password_); /* password */
-
-      // If no connect, try once more in case it is a timing problem
-      if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
-
-      // free memory if not successful
-      PQfinish(db_handle_);
-      db_handle_ = nullptr;
-
-      Bmicrosleep(5, 0);
-    }
-
-    Dmsg0(50, "pg_real_connect %s\n",
-          PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
-    Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
-          (db_password_ == NULL) ? "(NULL)" : db_password_);
-
-    if (PQstatus(db_handle_) != CONNECTION_OK) {
-      Mmsg2(errmsg,
-            T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-               "Possible causes: SQL server not running; password incorrect; "
-               "max_connections exceeded.\n(%s)\n"),
-            db_name_, db_user_, PQerrorMessage(db_handle_));
-      goto bail_out;
-    }
-
-    connected_ = true;
-    if (!CheckTablesVersion(jcr)) { goto bail_out; }
-
-    SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
-    SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
-    SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
-
-    /* Tell PostgreSQL we are using standard conforming strings
-     * and avoid warnings such as:
-     *  WARNING:  nonstandard use of \\ in a string literal */
-    SqlQueryWithoutHandler("SET standard_conforming_strings=on");
-
-    // Check that encoding is SQL_ASCII
-    CheckDatabaseEncoding(jcr);
-
-    retval = true;
+  if (db_port_) {
+    Bsnprintf(buf, sizeof(buf), "%d", db_port_);
+    port = buf;
+  } else {
+    port = NULL;
   }
-bail_out:
-  unlock_mutex(mutex);
 
-  // if we could not establish this connection, then nobody else would be
-  // using this, so we can just pretend that this is a private connection.
-  // this is necessary since its 1) not safe to lock the db if this function
-  // fails (as maybe the lock creation is the thing that failed!) and 2)
-  // you are not allowed to use strerror() without locking the db.
-  if (!retval) { is_private_ = true; }
-  return retval;
+  // If connection fails, try at 5 sec intervals for 30 seconds.
+  for (int retry = 0; retry < 6; retry++) {
+    db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
+                              port,          /* default port */
+                              NULL,          /* pg options */
+                              NULL,          /* tty, ignored */
+                              db_name_,      /* database name */
+                              db_user_,      /* login name */
+                              db_password_); /* password */
+
+    // If no connect, try once more in case it is a timing problem
+    if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
+
+    // free memory if not successful
+    PQfinish(db_handle_);
+    db_handle_ = nullptr;
+
+    Bmicrosleep(5, 0);
+  }
+
+  Dmsg0(50, "pg_real_connect %s\n",
+        PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
+  Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
+        (db_password_ == NULL) ? "(NULL)" : db_password_);
+
+  if (PQstatus(db_handle_) != CONNECTION_OK) {
+    Mmsg2(errmsg,
+          T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
+             "Possible causes: SQL server not running; password incorrect; "
+             "max_connections exceeded.\n(%s)\n"),
+          db_name_, db_user_, PQerrorMessage(db_handle_));
+    return errmsg;
+  }
+
+  connected_ = true;
+  if (!CheckTablesVersion(jcr)) { return errmsg; }
+
+  SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
+  SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
+  SqlQueryWithoutHandler("SET client_min_messages TO WARNING");
+
+  /* Tell PostgreSQL we are using standard conforming strings
+   * and avoid warnings such as:
+   *  WARNING:  nonstandard use of \\ in a string literal */
+  SqlQueryWithoutHandler("SET standard_conforming_strings=on");
+
+  // Check that encoding is SQL_ASCII
+  CheckDatabaseEncoding(jcr);
+
+  return nullptr;
 }
 
 void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)

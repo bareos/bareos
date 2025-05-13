@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
   if (db == nullptr) {
     Emsg0(M_ERROR_TERM, 0, T_("Could not init Bareos database\n"));
   }
-  if (!db->OpenDatabase(nullptr)) { Emsg0(M_ERROR_TERM, 0, db->strerror()); }
+  if (auto err = db->OpenDatabase(nullptr)) { Emsg0(M_ERROR_TERM, 0, err); }
   Dmsg0(200, "Database opened\n");
   if (g_verbose) {
     Pmsg2(000, T_("Using Database: %s, User: %s\n"), db_name.c_str(),

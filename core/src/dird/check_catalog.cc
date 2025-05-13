@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,12 +68,12 @@ bool CheckCatalog(cat_op mode)
     }
 
 
-    if (!db->OpenDatabase(NULL)) {
+    if (auto err = db->OpenDatabase(NULL)) {
       Pmsg2(000, T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
-            catalog->resource_name_, catalog->db_name, db->strerror());
+            catalog->resource_name_, catalog->db_name, err);
       Jmsg(NULL, M_FATAL, 0,
            T_("Could not open Catalog \"%s\", database \"%s\": %s\n"),
-           catalog->resource_name_, catalog->db_name, db->strerror());
+           catalog->resource_name_, catalog->db_name, err);
       db->CloseDatabase(NULL);
       OK = false;
       goto bail_out;
