@@ -17,17 +17,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-function(bareos_windows_resource target in_file)
+function(bareos_windows_resource target)
   if(HAVE_WIN32)
-    if(IS_ABSOLUTE "${in_file}")
-      file(RELATIVE_PATH rel_file "${CMAKE_CURRENT_SOURCE_DIR}" "${in_file}")
-      set(out_file "${CMAKE_CURRENT_BINARY_DIR}/${rel_file}")
-    else()
-      set(out_file "${CMAKE_CURRENT_BINARY_DIR}/${in_file}")
-    endif()
-    string(REGEX REPLACE ".in\$" "" out_file "${out_file}")
-    message(STATUS "creating file ${out_file}")
-    configure_file(${in_file} ${out_file} @ONLY NEWLINE_STYLE UNIX)
-    target_sources(${target} PRIVATE ${out_file})
+    bareos_configure_file(RESULT_VAR file_list FILES ${ARGN})
+    target_sources(${target} PRIVATE ${file_list})
   endif()
 endfunction()

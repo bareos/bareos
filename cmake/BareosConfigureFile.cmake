@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,7 +21,9 @@
 # to its template or into the corresponding CMAKE_CURRENT_BINARY_DIR
 
 function(bareos_configure_file)
-  cmake_parse_arguments(ARG "IN_TREE;COPY" "" "FILES;GLOB;GLOB_RECURSE" ${ARGN})
+  cmake_parse_arguments(
+    ARG "IN_TREE;COPY" "RESULT_VAR" "FILES;GLOB;GLOB_RECURSE" ${ARGN}
+  )
   set(file_list "")
   if(ARG_FILES)
     list(APPEND file_list ${ARG_FILES})
@@ -35,6 +37,7 @@ function(bareos_configure_file)
     file(GLOB glob_lst ${ARG_GLOB})
     list(APPEND file_list ${glob_lst})
   endif()
+  set(created_files "")
   foreach(in_file ${file_list})
     if(ARG_IN_TREE)
       set(out_file "${in_file}")
@@ -64,5 +67,12 @@ function(bareos_configure_file)
         file(CREATE_LINK "${in_file}" "${out_file}" SYMBOLIC)
       endif()
     endif()
+    list(APPEND created_files "${out_file}")
   endforeach()
+  if(ARG_RESULT_VAR)
+    set(${ARG_RESULT_VAR}
+        ${created_files}
+        PARENT_SCOPE
+    )
+  endif()
 endfunction()
