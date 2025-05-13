@@ -114,9 +114,6 @@ static CounterResource* res_counter;
 static DeviceResource* res_dev;
 static UserResource* res_user;
 
-
-static std::string query_file_path
-    = std::string(PATH_BAREOS_SCRIPTDIR) + "/query.sql";
 /* clang-format off */
 static const ResourceItem dir_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
@@ -126,7 +123,7 @@ static const ResourceItem dir_items[] = {
   { "Address", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{"DirAddress"}}},
   { "Addresses", CFG_TYPE_ADDRESSES, ITEM(res_dir, DIRaddrs), {config::DefaultValue{DIR_DEFAULT_PORT}, config::Alias{"DirAddresses"}}},
   { "SourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir, DIRsrc_addr), {config::DefaultValue{"0"}, config::Alias{"DirSourceAddress"}}},
-  { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), {config::DefaultValue{query_file_path.c_str()}, config::Description{"File containing queries used by the bconsole 'query' command."}, config::PlatformSpecific{}}},
+  { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), {config::DefaultValue{PATH_BAREOS_SCRIPTDIR "/query.sql"}, config::Description{"File containing queries used by the bconsole 'query' command."}, config::PlatformSpecific{}}},
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), {config::DefaultValue{PATH_BAREOS_WORKINGDIR}, config::PlatformSpecific{}}},
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), {config::IntroducedIn{14, 2, 0}, config::Description{"Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'."}}},
   { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), {config::IntroducedIn{14, 2, 0}, config::Description{"List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded."}}},
