@@ -103,6 +103,7 @@ BuildRequires: fmt-devel
 # use Developer Toolset 8 compiler as standard is too old
 %if 0%{?rhel} && 0%{?rhel} <= 9
 BuildRequires: gcc-toolset-14-gcc
+BuildRequires: gcc-toolset-14-annobin-plugin-gcc
 BuildRequires: gcc-toolset-14-gcc-c++
 %endif
 
