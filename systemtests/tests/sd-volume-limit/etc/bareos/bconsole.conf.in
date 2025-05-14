@@ -4,7 +4,7 @@
 
 Director {
   Name = @basename@-dir
-  Port = @dir_port@
+  DIRPort = @dir_port@
   Address = @hostname@
   Password = "@dir_password@"
 }
