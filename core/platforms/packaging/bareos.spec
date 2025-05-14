@@ -51,16 +51,8 @@ Vendor:     The Bareos Team
 %define CMAKE_BUILDDIR       cmake-build
 
 
-# rhel/centos 6 must not be built with libtirpc installed
-%if 0%{?rhel} == 6
-BuildConflicts: libtirpc-devel
-%endif
-
-# fedora 28: rpc was removed from libc
-%if 0%{?fedora} >= 28 || 0%{?rhel} > 7 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150300
 BuildRequires: rpcgen
 BuildRequires: libtirpc-devel
-%endif
 
 %if 0%{?fedora} || 0%{?suse_version}
 BuildRequires: fmt-devel
@@ -108,10 +100,11 @@ BuildRequires: fmt-devel
 %define __python python3
 %endif
 
-# use Developer Toolset 8 compiler as standard is too old
-%if 0%{?rhel} == 7
-BuildRequires: devtoolset-8-gcc
-BuildRequires: devtoolset-8-gcc-c++
+# use modernized GCC 14 toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} <= 9
+BuildRequires: gcc-toolset-14-gcc
+BuildRequires: gcc-toolset-14-annobin-plugin-gcc
+BuildRequires: gcc-toolset-14-gcc-c++
 %endif
 
 # rhel <=8 does not have grpc
@@ -219,11 +212,6 @@ BuildRequires: passwd
 
 %if 0%{?rhel} && 0%{?rhel} < 9
 BuildRequires: redhat-lsb
-%endif
-
-# older versions require additional release packages
-%if 0%{?rhel}   && 0%{?rhel} <= 6
-BuildRequires: redhat-release
 %endif
 
 %if 0%{?fedora}
@@ -474,9 +462,7 @@ Summary:    LDAP Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
-%if 0%{?rhel} != 7
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
 Requires:   python3-ldap
 
 
@@ -485,36 +471,28 @@ Summary:    Libcloud Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
-%if 0%{?rhel} != 7
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
 
 %package    filedaemon-postgresql-python-plugin
 Summary:    PostgreSQL Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
-%if 0%{?rhel} != 7
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
 
 %package    filedaemon-percona-xtrabackup-python-plugin
 Summary:    Percona xtrabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
-%if 0%{?rhel} != 7
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
 
 %package    filedaemon-mariabackup-python-plugin
 Summary:    Mariabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
-%if 0%{?rhel} != 7
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
 
 
 %package    storage-python3-plugin
@@ -551,10 +529,7 @@ Summary:        Bareos VMware plugin
 Group:          Productivity/Archiving/Backup
 Requires:       bareos-vadp-dumper
 Requires:       bareos-filedaemon-python-plugin >= 15.2
-
-%if 0%{?rhel} != 7
 Suggests:       bareos-filedaemon-python3-plugin = %{version}
-%endif
 
 %description -n bareos-vmware-plugin
 Uses the VMware API to take snapshots of running VMs and takes
@@ -727,9 +702,7 @@ This package provides some additional tools, not part of the Bareos project.
 Summary:     Additional File Daemon Python plugins, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
 Requires:    bareos-filedaemon-python-plugin
-%if 0%{?rhel} != 7
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
 
 %description contrib-filedaemon-python-plugins
 %{dscr}
@@ -741,9 +714,7 @@ This package provides additional File Daemon Python plugins, not part of the Bar
 Summary:     Additional Director Python plugins, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
 Requires:    bareos-director-python-plugin
-%if 0%{?rhel} != 7
 Suggests:   bareos-director-python3-plugin = %{version}
-%endif
 
 %description contrib-director-python-plugins
 %{dscr}
@@ -881,9 +852,9 @@ export MTX=/usr/sbin/mtx
 mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
 
-# use Developer Toolset 8 compiler as standard is too old
-%if 0%{?rhel} == 7
-source /opt/rh/devtoolset-8/enable
+# use modernized GCC 14 toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} <= 9
+source /opt/rh/gcc-toolset-14/enable
 %endif
 
 # use modern compiler on suse
