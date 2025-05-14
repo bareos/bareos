@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - contrib add support for mariadb 11+ [PR #2249]
 - mariabackup: reset self.mycnf to string type [PR #2254]
 - config: fix Director -> Director resource [PR #2274]
+- mtx-changer: make mandatory test mt-st versus cpio-mt [PR #2257]
 
 ### Changed
 - config: add virtual file changer example + documentation [PR #2248]
@@ -444,5 +445,6 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2248]: https://github.com/bareos/bareos/pull/2248
 [PR #2249]: https://github.com/bareos/bareos/pull/2249
 [PR #2254]: https://github.com/bareos/bareos/pull/2254
+[PR #2257]: https://github.com/bareos/bareos/pull/2257
 [PR #2274]: https://github.com/bareos/bareos/pull/2274
 [unreleased]: https://github.com/bareos/bareos/tree/master
