@@ -113,7 +113,6 @@ static CounterResource* res_counter;
 static DeviceResource* res_dev;
 static UserResource* res_user;
 
-
 /* clang-format off */
 
 static ResourceItem dir_items[] = {
@@ -124,7 +123,7 @@ static ResourceItem dir_items[] = {
   { "DirAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
   { "DirAddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir,  DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
   { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_SCRIPTDIR "/query.sql", NULL, "File containing queries used by the bconsole 'query' command."},
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL },
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), 0, 0, NULL,
      "14.2.0-", "Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'." },
@@ -3991,6 +3990,12 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   BareosResource* allocated_resource
       = *dird_resource_tables[type].allocated_resource_;
 
+  // Job resources are validated after applying JobDefs
+  if (type != R_JOB && type != R_JOBDEFS) {
+    if (pass == 1 && !ValidateResource(type, items, allocated_resource)) {
+      return false;
+    }
+  }
   switch (type) {
     case R_DIRECTOR: {
       /* IP Addresses can be set by multiple directives.
@@ -4006,8 +4011,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       }
       break;
     }
-    case R_JOBDEFS:
-      break;
     case R_JOB:
       /* Check Job requirements after applying JobDefs
        * Ensure that the name item is present however. */
@@ -4021,10 +4024,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       }
       break;
     default:
-      // Ensure that all required items are present
-      if (pass == 1 && !ValidateResource(type, items, allocated_resource)) {
-        return false;
-      }
       break;
   }
 

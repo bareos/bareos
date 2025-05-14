@@ -212,7 +212,7 @@
         "BackendDirectory": {
           "datatype": "DIRECTORY_LIST",
           "code": 0,
-          "default_value": "/usr/lib/bareos/backends",
+          "default_value": "/usr/lib64/bareos/backends",
           "platform_specific": true,
           "equals": true
         },
@@ -237,7 +237,7 @@
         "ScriptsDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "default_value": "/usr/local/lib/bareos/scripts",
+          "default_value": "/usr/lib/bareos/scripts",
           "platform_specific": true,
           "equals": true,
           "description": "Path to directory containing script files"
