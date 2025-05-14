@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mariabackup: reset self.mycnf to string type [PR #2252]
 - dird: fix bugs in DateTime [PR #2260]
 - config: fix Director -> Director resource [PR #2259]
+- mtx-changer: make mandatory test mt-st versus cpio-mt [PR #2256]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -128,6 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2232]: https://github.com/bareos/bareos/pull/2232
 [PR #2241]: https://github.com/bareos/bareos/pull/2241
 [PR #2252]: https://github.com/bareos/bareos/pull/2252
+[PR #2256]: https://github.com/bareos/bareos/pull/2256
 [PR #2259]: https://github.com/bareos/bareos/pull/2259
 [PR #2260]: https://github.com/bareos/bareos/pull/2260
 [unreleased]: https://github.com/bareos/bareos/tree/master
