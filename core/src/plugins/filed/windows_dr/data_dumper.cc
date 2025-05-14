@@ -41,12 +41,31 @@
 #include <atlbase.h>
 #include <atlcomcli.h>
 
-void dump_data();
+#include "file_format.h"
 
-int main()
+#include "CLI/App.hpp"
+#include "CLI/Config.hpp"
+#include "CLI/Formatter.hpp"
+
+void dump_data();
+void restore_data();
+
+int main(int argc, char* argv[])
 {
+  CLI::App app;
+
+  auto* save = app.add_subcommand("save");
+  auto* restore = app.add_subcommand("restore");
+
+  app.require_subcommand(1, 1);
+
+  CLI11_PARSE(app, argc, argv);
   try {
-    dump_data();
+    if (*save) {
+      dump_data();
+    } else if (*restore) {
+      restore_data();
+    }
 
     return 0;
   } catch (const std::exception& ex) {
@@ -373,40 +392,6 @@ struct part_header {
   uint8_t type;
 };
 
-struct mbr_header {};
-struct mbr_entry {};
-
-struct gpt_header {};
-struct gpt_entry {};
-
-struct partition_info_raw {};
-struct partition_info_mbr {
-  uint32_t CheckSum;
-  uint32_t Signature;
-};
-struct partition_info_gpt {
-  GUID DiskId;
-  uint64_t StartingUsableOffset;
-  uint64_t UsableLength;
-  uint32_t MaxPartitionCount;
-};
-
-using partition_info
-    = std::variant<partition_info_raw, partition_info_mbr, partition_info_gpt>;
-
-struct partition_layout {
-  partition_info info;
-  std::vector<PARTITION_INFORMATION_EX> partition_infos;
-};
-
-struct partition_extent {
-  std::size_t partition_offset;
-  std::size_t handle_offset;
-  std::size_t length;
-
-  HANDLE hndl;
-};
-
 struct disk {
   std::vector<partition_extent> extents;
 };
@@ -581,121 +566,12 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
   return result;
 }
 
-template <std::size_t N>
-static constexpr uint64_t build_magic(const char (&str)[N])
-{
-  static_assert(N <= 9);
-  static_assert(N > 0);
-
-  uint64_t value = 0;
-  for (std::size_t i = 0; i < (N - 1); ++i) { value = (value << 8) | str[i]; }
-
-  return value;
-}
-
-template <typename T> static void write_stream(std::ostream& stream, const T& t)
-{
-  stream.write(reinterpret_cast<const char*>(&t), sizeof(t));
-}
-
-template <typename T, typename F, typename... Is>
-void for_each(T& t, F f, std::integer_sequence<Is...>)
-{
-  auto l = {f(std::get<Is>(t))...};
-}
-
-struct writer {
-  template <typename T> void operator()(const T& t)
-  {
-    write_stream(*stream, t);
-  }
-
-  std::ostream* stream;
-};
-
-struct reader {
-  template <typename T> void operator()(T& t) { read_stream(*stream, t); }
-
-  std::ostream* stream;
-};
-
-template <typename... Args>
-static void write_stream(std::ostream& stream, std::tuple<Args...>& args)
-{
-  auto Idx = std::make_index_sequence<sizeof...(Args)>;
-
-  for_each(args, writer{&stream}, Idx());
-}
-
-template <typename... Args>
-static void read_stream(std::ostream& stream, std::tuple<Args...>& args)
-{
-  auto Idx = std::make_index_sequence<sizeof...(Args)>;
-
-  for_each(args, reader{&stream}, Idx());
-}
-
-struct file_header {
-  // BAreos Disaster recOvery
-  static constexpr std::uint64_t magic_value = build_magic("badrfile");
-
-  uint32_t disk_count;
-
-
-  file_header(uint32_t disk_count_) : disk_count{disk_count_} {}
-
-  auto data() { return std::tuple{disk_count}; }
-
-  void write(std::ostream& stream)
-  {
-    write_stream(stream, magic_value);
-    write_stream(stream, disk_count);
-  }
-};
-
 void WriteHeader(const disk_map& map)
 {
   file_header header(map.size());
 
-  write_stream(std::cout, header.data());
+  header.write(std::cout);
 }
-
-struct disk_header {
-  static constexpr std::uint64_t magic_value = build_magic("badrdisk");
-
-  uint64_t cylinder_count;
-  uint32_t media_type;
-  uint32_t tracks_per_cylinder;
-  uint32_t sectors_per_track;
-  uint32_t bytes_per_sector;
-  uint32_t extent_count;
-
-  disk_header(uint64_t cylinder_count_,
-              uint32_t media_type_,
-              uint32_t tracks_per_cylinder_,
-              uint32_t sectors_per_track_,
-              uint32_t bytes_per_sector_,
-              uint32_t extent_count_)
-      : cylinder_count{cylinder_count_}
-      , media_type{media_type_}
-      , tracks_per_cylinder{tracks_per_cylinder_}
-      , sectors_per_track{sectors_per_track_}
-      , bytes_per_sector{bytes_per_sector_}
-      , extent_count{extent_count_}
-  {
-  }
-
-  void write(std::ostream& stream)
-  {
-    write_stream(stream, magic_value);
-    write_stream(stream, cylinder_count);
-    write_stream(stream, media_type);
-    write_stream(stream, tracks_per_cylinder);
-    write_stream(stream, sectors_per_track);
-    write_stream(stream, bytes_per_sector);
-    write_stream(stream, extent_count);
-  }
-};
 
 void WriteDiskHeader(const disk& Disk, const DISK_GEOMETRY& geo)
 {
@@ -705,138 +581,6 @@ void WriteDiskHeader(const disk& Disk, const DISK_GEOMETRY& geo)
 
   header.write(std::cout);
 }
-
-enum part_type : uint8_t
-{
-  Raw = 0,
-  Mbr = 1,
-  Gpt = 2,
-};
-
-struct part_table_header {
-  static constexpr auto magic_value = build_magic("badrtabl");
-  uint32_t partition_count;
-  uint32_t part_table_size_in_bytes;
-  uint8_t part_table_type;
-  uint32_t Datum0;
-  uint64_t Datum1;
-  uint64_t Datum2;
-
-  part_table_header(uint32_t partition_count_,
-                    uint32_t part_table_size_,
-                    part_type part_type,
-                    uint32_t Datum0_,
-                    uint64_t Datum1_,
-                    uint64_t Datum2_)
-      : partition_count{partition_count_}
-      , part_table_type{part_type}
-      , Datum0{Datum0_}
-      , Datum1{Datum1_}
-      , Datum2{Datum2_}
-  {
-  }
-
-  void write(std::ostream& stream)
-  {
-    write_stream(stream, magic_value);
-    write_stream(stream, partition_count);
-    write_stream(stream, part_table_type);
-    write_stream(stream, Datum0);
-    write_stream(stream, Datum1);
-    write_stream(stream, Datum2);
-  }
-};
-
-struct part_table_entry {
-  static constexpr auto magic_value = build_magic("badrtent");
-
-  uint64_t partition_offset;
-  uint64_t partition_length;
-  uint32_t partition_number;
-  uint8_t partition_style;
-  bool rewrite_partition;
-  bool is_service_partition;
-
-  part_table_entry(const PARTITION_INFORMATION_EX& info)
-      : partition_offset{(uint64_t)info.StartingOffset.QuadPart}
-      , partition_length{(uint64_t)info.PartitionLength.QuadPart}
-      , partition_number{info.PartitionNumber}
-      , partition_style{(uint8_t)info.PartitionStyle}
-      , rewrite_partition{info.RewritePartition != 0}
-      , is_service_partition{info.IsServicePartition != 0}
-  {
-  }
-
-  void write(std::ostream& stream)
-  {
-    write_stream(stream, magic_value);
-    write_stream(stream, partition_offset);
-    write_stream(stream, partition_length);
-    write_stream(stream, partition_number);
-    write_stream(stream, partition_style);
-    write_stream(stream, rewrite_partition);
-    write_stream(stream, is_service_partition);
-  }
-};
-
-void write_guid(std::ostream& stream, GUID guid)
-{
-  write_stream(stream, guid.Data1);
-  write_stream(stream, guid.Data2);
-  write_stream(stream, guid.Data3);
-  write_stream(stream, guid.Data4);
-}
-
-struct part_table_entry_gpt_data {
-  GUID partition_type;
-  GUID partition_id;
-  uint64_t attributes;
-  wchar_t name[36];
-
-  part_table_entry_gpt_data(const PARTITION_INFORMATION_GPT& gpt)
-      : partition_type{gpt.PartitionType}
-      , partition_id{gpt.PartitionId}
-      , attributes{gpt.Attributes}
-  {
-    static_assert(sizeof(name) == sizeof(gpt.Name));
-    std::memcpy(name, gpt.Name, sizeof(gpt.Name));
-  }
-
-  void write(std::ostream& stream)
-  {
-    write_guid(stream, partition_type);
-    write_guid(stream, partition_id);
-    write_stream(stream, attributes);
-    write_stream(stream, name);
-  }
-};
-
-struct part_table_entry_mbr_data {
-  GUID partition_id;
-  uint32_t num_hidden_sectors;
-  uint8_t partition_type;
-  bool bootable;
-  bool recognized;
-
-
-  part_table_entry_mbr_data(const PARTITION_INFORMATION_MBR& mbr)
-      : partition_id{mbr.PartitionId}
-      , num_hidden_sectors{mbr.HiddenSectors}
-      , partition_type{(uint8_t)mbr.PartitionType}
-      , bootable{mbr.BootIndicator == TRUE}
-      , recognized{mbr.RecognizedPartition == TRUE}
-  {
-  }
-
-  void write(std::ostream& stream)
-  {
-    write_guid(stream, partition_id);
-    write_stream(stream, num_hidden_sectors);
-    write_stream(stream, partition_type);
-    write_stream(stream, bootable);
-    write_stream(stream, recognized);
-  }
-};
 
 template <class... Ts> struct overloads : Ts... {
   using Ts::operator()...;
@@ -895,6 +639,7 @@ void copy_stream(HANDLE hndl,
                  std::size_t length,
                  std::ostream& stream)
 {
+#if 0
   DWORD off_low = offset & 0xFFFFFFFF;
   LONG off_high = (offset >> 32) & 0xFFFFFFFF;
   SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
@@ -921,26 +666,10 @@ void copy_stream(HANDLE hndl,
 
     bytes_to_read -= bytes_read;
   }
+#else
+  return;
+#endif
 }
-
-
-struct extent_header {
-  static constexpr auto magic_value = build_magic("badrxtnt");
-
-  uint64_t offset;
-  uint64_t length;
-
-  extent_header(const partition_extent& ex)
-      : offset{ex.partition_offset}, length{ex.length}
-  {
-  }
-
-  void write(std::ostream& stream)
-  {
-    write_stream(stream, offset);
-    write_stream(stream, length);
-  }
-};
 
 void WriteDiskData(const disk& disk_extents)
 {
@@ -1017,7 +746,7 @@ std::optional<DISK_GEOMETRY> GetDiskGeometry(HANDLE disk)
   auto res = DeviceIoControl(disk, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &geo,
                              sizeof(geo), &bytes_written, NULL);
 
-  if (sizeof(geo) != sizeof(bytes_written)) {
+  if (sizeof(geo) != bytes_written) {
     fprintf(stderr, "drive geometry: bad read.  got %d bytes\n", bytes_written);
     return std::nullopt;
   }
@@ -1299,45 +1028,6 @@ void dump_data()
     WriteDiskHeader(disk, geo.value());
     WriteDiskPartTable(disk, layout.value());
     WriteDiskData(disk);
-  }
-
-  for (auto& [path, copy] : paths) {
-    /* we read from the shadow copy, but get information from the live system
-     * this is necessary since we can only get some metadata from the live
-     * system. */
-    HANDLE shadow = CreateFileW(
-        copy.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS
-            | FILE_FLAG_SEQUENTIAL_SCAN,
-        NULL);
-
-    if (shadow == INVALID_HANDLE_VALUE) {
-      fprintf(stderr, "volume %ls (%ls) -> could not shadow copy\n",
-              path.c_str(), copy.c_str());
-      throw win_error("CreateFileW", GetLastError());
-    }
-
-    fprintf(stderr, "shadow %ls -> %p\n", copy.c_str(), shadow);
-
-#if 0
-    std::size_t byte_count = 0;
-
-    for (;;) {
-      DWORD bytes_read = 0;
-
-      if (!ReadFile(shadow, buffer.get(), buffer_size, &bytes_read, NULL)) {
-        throw win_error("ReadFile", GetLastError());
-      }
-
-      if (bytes_read == 0) { break; }
-
-      byte_count += bytes_read;
-    }
-
-    fprintf(stderr, "%ls => %llu bytes\n", path.c_str(), byte_count);
-#endif
-
-    CloseHandle(shadow);
   }
 
   snapshot.delete_snapshot(backup_components);
