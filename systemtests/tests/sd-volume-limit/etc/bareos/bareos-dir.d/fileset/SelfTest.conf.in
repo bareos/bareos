@@ -1,0 +1,11 @@
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Plugin = "bpipe"
+             ":file=/tmp/my-file"
+             ":reader=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/slow-read.sh"
+             ":writer=sh -c 'cat >/tmp/my-file'"
+  }
+}

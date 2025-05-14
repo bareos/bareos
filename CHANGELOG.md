@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: use WEB_UI path in apache bareos-webui.conf file [PR #2201]
 - config: update directives and error out on bconsole config warnings [PR #2217]
 - config: add virtual file changer example + documentation [PR #2090]
+- stored: fix sd volume limit [PR #2264]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -132,4 +133,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2256]: https://github.com/bareos/bareos/pull/2256
 [PR #2259]: https://github.com/bareos/bareos/pull/2259
 [PR #2260]: https://github.com/bareos/bareos/pull/2260
+[PR #2264]: https://github.com/bareos/bareos/pull/2264
 [unreleased]: https://github.com/bareos/bareos/tree/master
