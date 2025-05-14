@@ -57,9 +57,9 @@ check_jobid()
 
 cleanup_isilon()
 {
-  ${SSH} rm -Rvf /ifs/home/regress/${NDMP_FILESYSTEM}
-  ${SSH} rm -Rvf /ifs/home/regress/bareos-restores-${NDMP_FILESYSTEM}
-  ${SSH} rm -Rvf /ifs/data/bareos-restores-${NDMP_FILESYSTEM}
+  ${SSH} rm -Rf /ifs/home/regress/${NDMP_FILESYSTEM}
+  ${SSH} rm -Rf /ifs/home/regress/bareos-restores-${NDMP_FILESYSTEM}
+  ${SSH} rm -Rf /ifs/data/bareos-restores-${NDMP_FILESYSTEM}
 }
 
 start_test
@@ -80,6 +80,9 @@ ${SSH} mkdir -p /ifs/home/regress/${NDMP_FILESYSTEM}
 ${SSH} dd if=/dev/zero of=/ifs/home/regress/${NDMP_FILESYSTEM}/full bs=1M count=20
 ${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/full"
 ${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile" < sbin/bareos_dir-ndmp-bareos
+# we need an additional file, so the restore doesn't pick the last file of the volume and
+# data stream
+${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile2" < sbin/bareos_sd-ndmp-bareos
 
 echo "################ running NDMP backup full #####################"
 
@@ -99,7 +102,7 @@ done
 # restore
 
 # remove files
-${SSH} rm -Rvf /ifs/home/regress/${NDMP_FILESYSTEM}
+${SSH} rm -Rf /ifs/home/regress/${NDMP_FILESYSTEM}
 
 echo "################ restore single file #####################"
 # restore  single file
@@ -116,7 +119,7 @@ check_jobid $((STARTJOBID+${ID}))
 ${SSH} "cat /ifs/home/regress/${NDMP_FILESYSTEM}/testfile" | diff - sbin/bareos_dir-ndmp-bareos
 
 # remove files
-${SSH} rm -Rvf /ifs/home/regress/${NDMP_FILESYSTEM}
+${SSH} rm -Rf /ifs/home/regress/${NDMP_FILESYSTEM}
 
 
 echo "################ restore full #####################"
@@ -156,11 +159,8 @@ check_jobid $((STARTJOBID+${ID}))
 ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental | grep ${NDMP_FILESYSTEM}"
 #${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
 
-
 # cleanup
-${SSH} rm -Rvf /ifs/home/regress/${NDMP_FILESYSTEM}
-${SSH} rm -Rvf /ifs/home/regress/bareos-restores-${NDMP_FILESYSTEM}
-${SSH} rm -Rvf /ifs/data/bareos-restores-${NDMP_FILESYSTEM}
+cleanup_isilon
 
 echo "################ run copy job #####################"
 # run copy job
