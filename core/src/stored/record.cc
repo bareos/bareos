@@ -935,7 +935,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     }
 
     Dmsg6(450,
-          "rd_rec_blk() got FI=%s SessId=%d Strm=%s len=%u\n"
+          "rd_rec_blk() got FI=%s SessId=%d Strm=%s len=%u "
           "remlen=%d data_len=%d\n",
           FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
           stream_to_ascii(buf2, rec->Stream, rec->FileIndex), data_bytes,
