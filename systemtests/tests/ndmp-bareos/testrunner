@@ -80,6 +80,9 @@ ${SSH} mkdir -p /ifs/home/regress/${NDMP_FILESYSTEM}
 ${SSH} dd if=/dev/zero of=/ifs/home/regress/${NDMP_FILESYSTEM}/full bs=1M count=20
 ${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/full"
 ${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile" < sbin/bareos_dir-ndmp-bareos
+# we need an additional file, so the restore doesn't pick the last file of the volume and
+# data stream
+${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile2" < sbin/bareos_sd-ndmp-bareos
 
 echo "################ running NDMP backup full #####################"
 
