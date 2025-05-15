@@ -89,23 +89,12 @@ macro(bareos_gtest_add_tests testname)
     BAREOS_GTEST_ADD_TESTS "${options}" "${oneValueArgs}" "${multiValueArgs}"
     ${ARGN}
   )
-  if(BAREOS_GTEST_ADD_TESTS_DISABLE)
-    message("DISABELING ${found_tests}")
-    gtest_discover_tests(
-      ${testname}
-      TEST_PREFIX gtest:
-      PROPERTIES
-      TIMEOUT 120 SKIP_RETURN_CODE 77 DISABLED TRUE
-    )
-  else()
-    gtest_discover_tests(
-      ${testname}
-      TEST_PREFIX gtest:
-      PROPERTIES
-      TIMEOUT 120 SKIP_RETURN_CODE 77
-    )
-  endif()
-
+  gtest_discover_tests(
+    ${testname}
+    TEST_PREFIX gtest:
+    PROPERTIES
+    TIMEOUT 120 SKIP_RETURN_CODE 77 DISABLED ${BAREOS_GTEST_ADD_TESTS_DISABLE}
+  )
 endmacro() # bareos_gtest_add_tests
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
