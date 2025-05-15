@@ -20,10 +20,12 @@
 */
 
 #include "file_format.h"
+#include "error.h"
 
 #include <iostream>
 #include <string>
 #include <format>
+#include <span>
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
 
@@ -78,10 +80,71 @@ partition_table ReadDiskPartTable(std::istream& stream)
   return {};
 }
 
+void WritePartitionTable(HANDLE output, const partition_layout& table)
+{
+  std::vector<char> buffer;
+
+  auto part_count = table.partition_infos.size();
+
+  buffer.resize(
+      offsetof(DRIVE_LAYOUT_INFORMATION_EX, PartitionEntry[part_count]));
+
+  if (!DeviceIoControl(output, IOCTL_DISK_SET_DRIVE_LAYOUT_EX, buffer.data(),
+                       buffer.size(), nullptr, 0, NULL, NULL)) {
+    fprintf(stderr, "coudl not set partition info. Err=%d\n", GetLastError());
+  }
+}
+
+void write_buffer(HANDLE output, std::span<const char> buffer)
+{
+  std::size_t offset = 0;
+
+  while (offset != buffer.size()) {
+    DWORD bytes_written;
+
+    if (!WriteFile(output, buffer.data() + offset,
+                   (DWORD)(buffer.size() - offset), &bytes_written, NULL)) {
+      throw win_error("WriteFileW", GetLastError());
+    }
+
+    offset += bytes_written;
+  }
+}
+
+void copy_output(std::istream& stream,
+                 std::size_t offset,
+                 std::size_t length,
+                 HANDLE output)
+{
+#if !defined(DO_DRY)
+  std::vector<char> buffer;
+  buffer.resize(4 * 1024 * 1024);
+
+  DWORD off_low = offset & 0xFFFFFFFF;
+  LONG off_high = (offset >> 32) & 0xFFFFFFFF;
+  SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
+
+  std::size_t bytes_to_read = length;
+
+  while (bytes_to_read > 0) {
+    stream.read(buffer.data(), buffer.size());
+
+    assert(stream.gcount() == (std::streamsize)buffer.size());
+
+    write_buffer(output, buffer);
+  }
+#endif
+}
+
 void ReadExtent(std::istream& stream, HANDLE output)
 {
   extent_header header;
   header.read(stream);
+
+  fprintf(stderr, "Extent: Offset=%llu Length=%llu\n", header.offset,
+          header.length);
+
+  copy_output(stream, header.offset, header.length, output);
 }
 
 void restore_data()
@@ -136,6 +199,8 @@ void restore_data()
       ReadExtent(std::cin, output);
       fprintf(stderr, "reading extent ... done\n");
     }
+
+    WritePartitionTable(output, part_table);
 
     CloseHandle(output);
   }
