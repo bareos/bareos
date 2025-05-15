@@ -562,6 +562,14 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if not self.vadp.get_vm_disk_cbt():
                 return bareosfd.bRC_Error
 
+            bareosfd.DebugMessage(
+                100,
+                "content of restoreobject %s: %s\n"
+                % (
+                    StringCodec.encode(self.vadp.file_to_backup),
+                    self.vadp.changed_disk_areas_json,
+                ),
+            )
             self.create_restoreobject_savepacket(
                 savepkt,
                 StringCodec.encode(self.vadp.file_to_backup[: -len("_cbt.json")]),
@@ -1314,6 +1322,12 @@ class BareosVADPWrapper(object):
             % (self.options["vcserver"], self.options["vcuser"]),
         )
 
+        bareosfd.DebugMessage(
+            100,
+            "connect_vmware(): AboutInfo: %s\n"
+            % (json.dumps(self.si.content.about, cls=VmomiJSONEncoder)),
+        )
+
         return True
 
     def _handle_connect_vmware_exception(self, caught_exception):
@@ -1407,6 +1421,19 @@ class BareosVADPWrapper(object):
         - get disk devices
         """
         if not self.get_vm_details():
+            return bareosfd.bRC_Error
+
+        # check if attempting to backup template
+        if self.vm.config.template is True:
+            bareosfd.DebugMessage(
+                100,
+                "Error VM %s is a template\n" % (StringCodec.encode(self.vm.name)),
+            )
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Error VM %s is a template, backing up templates is currently not possible\n"
+                % (StringCodec.encode(self.vm.name)),
+            )
             return bareosfd.bRC_Error
 
         # check if the VM supports CBT and that CBT is enabled
@@ -2155,6 +2182,46 @@ class BareosVADPWrapper(object):
         if transformer.config_spec_delayed:
             self.adapt_vm_config(transformer.config_spec_delayed)
 
+        if not self.check_created_vm(config_info):
+            return False
+
+        return True
+
+    def check_created_vm(self, config_info):
+        """
+        Consistency check recreated VM
+        """
+        # Currently, this function only checks VirtualUSB devices.
+        # VirtualUSB devices can only be attached to one VM in most cases.
+        # When recreating a VM which had a VirtualUSB device at backup time,
+        # this normally succeeds, but when powering on and the USB device
+        # is attached to a different running VM, it will disappear. When
+        # powered off, it will appear again.
+        # This is normally not a critical problem, so only emit a warning.
+
+        backup_virutal_usb_devices = [
+            device
+            for device in config_info["hardware"]["device"]
+            if device["_vimtype"] == "vim.vm.device.VirtualUSB"
+        ]
+        vm_virtual_usb_devices = [
+            device
+            for device in self.vm.config.hardware.device
+            if type(device) == vim.vm.device.VirtualUSB
+        ]
+        if len(backup_virutal_usb_devices) > 0:
+            if len(backup_virutal_usb_devices) != len(vm_virtual_usb_devices):
+                bareosfd.JobMessage(
+                    bareosfd.M_WARNING,
+                    "VirtualUSB device(s) could not be added to restored VM\n",
+                )
+            else:
+                bareosfd.JobMessage(
+                    bareosfd.M_WARNING,
+                    "VM restored with %s VirtualUSB device(s), could disappear when powered on if attached to different running VM\n"
+                    % (len(backup_virutal_usb_devices)),
+                )
+
         return True
 
     def create_vm_snapshot(self):
@@ -2226,7 +2293,9 @@ class BareosVADPWrapper(object):
         Get the disk devices from the created snapshot
         Assumption: Snapshot successfully created
         """
-        self.get_disk_devices(self.create_snap_result.config.hardware.device)
+        self.get_disk_devices(
+            self.create_snap_result.config.hardware.device, from_snapshot=True
+        )
 
     def get_vm_disk_devices(self):
         """
@@ -2234,7 +2303,7 @@ class BareosVADPWrapper(object):
         """
         self.get_disk_devices(self.vm.config.hardware.device)
 
-    def get_disk_devices(self, devicespec):
+    def get_disk_devices(self, devicespec, from_snapshot=False):
         """
         Get disk devices from a devicespec
         """
@@ -2265,6 +2334,13 @@ class BareosVADPWrapper(object):
                         "capacityInBytes": hw_device.capacityInBytes,
                     }
                 )
+
+                if from_snapshot and hw_device.backing.changeId is None:
+                    bareosfd.JobMessage(
+                        bareosfd.M_WARNING,
+                        "The snapshot of disk %s has no changeId, subsequent incremental backup not possible.\n"
+                        % (hw_device.backing.fileName),
+                    )
 
     def get_vm_disk_root_filename(self, disk_device_backing):
         """
@@ -2313,6 +2389,16 @@ class BareosVADPWrapper(object):
             cbt_changeId = self.restore_objects_by_diskpath[
                 self.disk_device_to_backup["fileNameRoot"]
             ][0]["data"]["DiskParams"]["changeId"]
+
+            if cbt_changeId is None:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "No CBT change ID from previous backup for disk %s, "
+                    "new full level backup of this job is required.\n"
+                    % (self.disk_device_to_backup["fileNameRoot"]),
+                )
+                return False
+
             bareosfd.DebugMessage(
                 100,
                 "get_vm_disk_cbt(): changeId %s from restore object, using for CBT query\n"
@@ -2394,7 +2480,7 @@ class BareosVADPWrapper(object):
             # Using CBT for full level backups is deprecated. Instead we send
             # the full range so that bareo_vadp_dumper will effectively only
             # use the allocated blocks.
-            bareosfd.DebugMessage(100, "Skipping CBT Query for full backup")
+            bareosfd.DebugMessage(100, "Skipping CBT Query for full backup\n")
             self.disk_change_info["length"] = self.disk_device_to_backup[
                 "capacityInBytes"
             ]
@@ -3972,6 +4058,8 @@ class BareosVmConfigInfoToSpec(object):
                 add_device = self._transform_virtual_pci_passthrough(device)
             elif device["_vimtype"] == "vim.vm.device.VirtualEnsoniq1371":
                 add_device = self._transform_virtual_ensoniq1371(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualUSB":
+                add_device = self._transform_virtual_usb(device)
             else:
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
@@ -4201,6 +4289,38 @@ class BareosVmConfigInfoToSpec(object):
             add_device.connectable = self._transform_connectable(device)
 
         self._transform_controllerkey_and_unitnumber(add_device, device)
+
+        return add_device
+
+    def _transform_virtual_usb(self, device):
+        add_device = vim.vm.device.VirtualUSB()
+        add_device.key = device["key"] * -1
+        if device["backing"]["_vimtype"] == "vim.vm.device.VirtualUSB.USBBackingInfo":
+            add_device.backing = vim.vm.device.VirtualUSB.USBBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualUSB.RemoteHostBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualUSB.RemoteHostBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+            add_device.backing.hostname = device["backing"]["hostname"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualUSB: %s" % (device["backing"]["_vimtype"])
+            )
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        self._transform_controllerkey_and_unitnumber(add_device, device)
+
+        add_device.family = device["family"]
+        add_device.product = device["product"]
+        add_device.speed = device["speed"]
+        add_device.vendor = device["vendor"]
 
         return add_device
 
