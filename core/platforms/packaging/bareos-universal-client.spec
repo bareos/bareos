@@ -75,7 +75,12 @@ BuildRequires: openssl
 BuildRequires: libcap-devel
 BuildRequires: mtx
 
-
+# use modernized GCC 14 toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} <= 9
+BuildRequires: gcc-toolset-14-gcc
+BuildRequires: gcc-toolset-14-annobin-plugin-gcc
+BuildRequires: gcc-toolset-14-gcc-c++
+%endif
 
 %if 0%{?suse_version}
 
@@ -103,11 +108,6 @@ BuildRequires: passwd
 
 %if 0%{?rhel} && 0%{?rhel} < 9
 BuildRequires: redhat-lsb
-%endif
-
-# older versions require additional release packages
-%if 0%{?rhel}   && 0%{?rhel} <= 6
-BuildRequires: redhat-release
 %endif
 
 %if 0%{?fedora}
@@ -201,9 +201,9 @@ export MTX=/usr/sbin/mtx
 mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
 
-# use Developer Toolset 8 compiler as standard is too old
-%if 0%{?rhel} == 7
-source /opt/rh/devtoolset-8/enable
+# use modernized GCC 14 toolchain for C++20 support
+%if 0%{?rhel} && 0%{?rhel} <= 9
+source /opt/rh/gcc-toolset-14/enable
 %endif
 
 # use modern compiler on suse
