@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - config: add virtual file changer example + documentation [PR #2248]
+- stored: fix sd volume limit [PR #2276]
 
 ## [24.0.2] - 2025-03-27
 
@@ -447,4 +448,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2254]: https://github.com/bareos/bareos/pull/2254
 [PR #2257]: https://github.com/bareos/bareos/pull/2257
 [PR #2274]: https://github.com/bareos/bareos/pull/2274
+[PR #2276]: https://github.com/bareos/bareos/pull/2276
 [unreleased]: https://github.com/bareos/bareos/tree/master

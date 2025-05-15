@@ -21,7 +21,7 @@ JobName=BackupCatalog
 start_test
 
 # cleanup previous restore
-if [ -d "${tmp}/bareos-restores/" ];then
+if [ -d "${tmp}/bareos-restores/" ]; then
   rm -rvf "${tmp}/bareos-restores"
 fi
 
@@ -39,12 +39,15 @@ status client
 status storage=File
 wait
 messages
-@#
-@# now do a restore
-@#
-@$out $tmp/log2.out
-wait
-messages
+END_OF_DATA
+
+run_bconsole
+
+#
+# now do a restore
+#
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
 restore client=bareos-fd fileset=Catalog where=$tmp/bareos-restores select all done yes
 wait
 messages
@@ -54,14 +57,15 @@ list filesets
 END_OF_DATA
 
 run_bconsole
+
 check_for_zombie_jobs storage=File
 check_two_logs
 
 CATALOG_BACKUP_FILE="${tmp}/bareos-restores/${working}/${db_name}.sql"
 
 if ! [ -r "${CATALOG_BACKUP_FILE}" ]; then
-    set_error "Failed to find Catalog backup file '${CATALOG_BACKUP_FILE}'."
-    end_test
+  set_error "Failed to find Catalog backup file '${CATALOG_BACKUP_FILE}'."
+  end_test
 fi
 
 stop_bareos
@@ -75,30 +79,30 @@ print_debug "Deleting tables in database \"${db_name}\" "
 
 # Check if the drop remove all tables
 if [ -n "$(psql --no-psqlrc -q -d "${db_name}" -t -c "\dt+")" ]; then
-    print_debug "There's still tables on \"${db_name}\" the rest of the test is invalid"
-    estat=1
-    end_test
+  print_debug "There's still tables on \"${db_name}\" the rest of the test is invalid"
+  estat=1
+  end_test
 fi
 
 print_debug "Restore the database \"${db_name}\" with sql dump"
 if ! psql --no-psqlrc -q -d "${db_name}" -f "${CATALOG_BACKUP_FILE}"; then
-    print_debug "The restore psql command failed on \"${db_name}\" "
-    estat=2
-    end_test
+  print_debug "The restore psql command failed on \"${db_name}\" "
+  estat=2
+  end_test
 fi
 
 if [ -z "$(psql --no-psqlrc -q -d "${db_name}" -t -c "\dt+")" ]; then
-    print_debug "There not enough tables restored on \"${db_name}\" test failed"
-    estat=3
-    end_test
+  print_debug "There not enough tables restored on \"${db_name}\" test failed"
+  estat=3
+  end_test
 fi
 
 NEWVERSIONID="$(psql --no-psqlrc -q -d "${db_name}" -t -c "select max(versionid) from version;" | head -n1 | sed -e 's, ,,g')"
 print_debug "Compare Old version ${OLDVERSIONID} to ${NEWVERSIONID}"
 
 if [ "$OLDVERSIONID" -ne "$NEWVERSIONID" ]; then
-    print_debug "VERSIONID differs on \"${db_name}\" $OLDVERSIONID versus $NEWVERSIONID"
-    estat=4
+  print_debug "VERSIONID differs on \"${db_name}\" $OLDVERSIONID versus $NEWVERSIONID"
+  estat=4
 fi
 
 #
