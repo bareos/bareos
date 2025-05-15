@@ -100,7 +100,7 @@ BuildRequires: fmt-devel
 %define __python python3
 %endif
 
-# use Developer Toolset 8 compiler as standard is too old
+# use modernized GCC 14 toolchain for C++20 support
 %if 0%{?rhel} && 0%{?rhel} <= 9
 BuildRequires: gcc-toolset-14-gcc
 BuildRequires: gcc-toolset-14-annobin-plugin-gcc
