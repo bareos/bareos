@@ -89,18 +89,11 @@ macro(bareos_gtest_add_tests testname)
     BAREOS_GTEST_ADD_TESTS "${options}" "${oneValueArgs}" "${multiValueArgs}"
     ${ARGN}
   )
-  gtest_add_tests(
-    TARGET ${testname}
+  gtest_discover_tests(
+    ${testname}
     TEST_PREFIX gtest:
-    TEST_LIST found_tests
-  )
-  if(BAREOS_GTEST_ADD_TESTS_DISABLE)
-    message("DISABELING ${found_tests}")
-    set_tests_properties(${found_tests} PROPERTIES DISABLED TRUE)
-  endif()
-
-  set_tests_properties(
-    ${found_tests} PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77
+    PROPERTIES
+    TIMEOUT 120 SKIP_RETURN_CODE 77 DISABLED ${BAREOS_GTEST_ADD_TESTS_DISABLE}
   )
 endmacro() # bareos_gtest_add_tests
 
@@ -119,6 +112,7 @@ macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
     ${BAREOS_ADD_TEST_TESTNAME} ${BAREOS_ADD_TEST_TESTNAME}.cc
                                 ${BAREOS_ADD_TEST_ADDITIONAL_SOURCES}
   )
+
   target_link_libraries(
     ${BAREOS_ADD_TEST_TESTNAME} ${BAREOS_ADD_TEST_LINK_LIBRARIES}
   )
@@ -141,17 +135,9 @@ endmacro() # bareos_add_test
 
 include(GoogleTest)
 
-if(HAVE_OPENSSL)
-  set(SSL_UNIT_TEST_FILES init_openssl.cc)
-endif()
-
-set(LINK_LIBRARIES stored_objects dird_objects console_objects bareossd bareos
-                   bareossql bareosfind GTest::gtest_main
+set(LINK_LIBRARIES Bareos::SD Bareos::Dir Bareos::Console Bareos::LibSD
+                   Bareos::Lib Bareos::SQL Bareos::Findlib GTest::gtest_main
 )
-
-if(HAVE_PAM)
-  list(APPEND LINK_LIBRARIES ${PAM_LIBRARIES})
-endif()
 
 # set some path variables used during test compilation
 if(HAVE_WIN32)
@@ -179,104 +165,86 @@ else() # NOT HAVE_WIN32
   set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 endif() # HAVE_WIN32
 
-set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
-
-add_library(testing_common STATIC ${COMMON_SRC})
-
-target_link_libraries(testing_common PRIVATE ${LINK_LIBRARIES})
-
-if(HAVE_BIG_ENDIAN)
-  set_tests_properties(gtest:statefile.read PROPERTIES DISABLED TRUE)
-  set_tests_properties(gtest:statefile.write PROPERTIES DISABLED TRUE)
-  set_tests_properties(
-    gtest:statefile.handle_truncated_jobs PROPERTIES DISABLED TRUE
-  )
-  set_tests_properties(
-    gtest:statefile.handle_truncated_headers PROPERTIES DISABLED TRUE
-  )
-  set_tests_properties(
-    gtest:statefile.handle_nonexisting_file PROPERTIES DISABLED TRUE
-  )
-endif()
-
 # Keep alphabetically ordered
 if(NOT client-only)
+  set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
+  add_library(testing_common STATIC ${COMMON_SRC})
+  target_link_libraries(testing_common PRIVATE ${LINK_LIBRARIES})
+
   bareos_add_test(
     addresses_and_ports_config
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib Bareos::SQL
+                   testing_common GTest::gtest_main
   )
 
   bareos_add_test(
     addresses_and_ports_functions
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib Bareos::SQL
+                   testing_common GTest::gtest_main
   )
 
   bareos_add_test(
-    append_test LINK_LIBRARIES bareos stored_objects bareossd bareosfind
-                               GTest::gtest_main
+    append_test LINK_LIBRARIES Bareos::Lib Bareos::SD Bareos::LibSD
+                               Bareos::Findlib GTest::gtest_main
   )
 
   bareos_add_test(
     bad_configs
     configure
-    LINK_LIBRARIES testing_common dird_objects bareosfind bareossql
+    LINK_LIBRARIES testing_common Bareos::Dir Bareos::Findlib Bareos::SQL
                    GTest::gtest_main
   )
 
   bareos_add_test(
-    berrno_test
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    berrno_test LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib
+                               Bareos::SQL GTest::gtest_main
   )
-  bareos_add_test(bool_string LINK_LIBRARIES bareos GTest::gtest_main)
+  bareos_add_test(bool_string LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
   bareos_add_test(
     bsock_test_connection_setup
-    ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
+    ADDITIONAL_SOURCES init_openssl.cc
     LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
   )
 
   if(NOT DISABLE_KTLS)
     bareos_add_test(
       ktls
-      ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
+      ADDITIONAL_SOURCES init_openssl.cc
       LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
-      COMPILE_DEFINITIONS ${KTLS_DEFINITIONS}
+      COMPILE_DEFINITIONS
+        ${KTLS_DEFINITIONS} DISABLE TRUE # we need to find a good solution for
+                                         # this
     )
-    set_tests_properties(gtest:ktls.v12_send PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v12_recv PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v12_256_send PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v13_send PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v13_recv PROPERTIES LABELS broken)
-    set_tests_properties(gtest:ktls.v13_256_send PROPERTIES LABELS broken)
   endif()
 
   bareos_add_test(
     catalog
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib Bareos::SQL
+                   GTest::gtest_main
     SKIP_GTEST # used by systemtest catalog
   )
 
-  bareos_add_test(cli_test LINK_LIBRARIES bareos CLI11::CLI11 GTest::gtest_main)
+  bareos_add_test(
+    cli_test LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main
+  )
 
   bareos_add_test(
-    configure LINK_LIBRARIES testing_common dird_objects bareosfind bareossql
-                             GTest::gtest_main
+    configure LINK_LIBRARIES testing_common Bareos::Dir Bareos::Findlib
+                             Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
-    dir_fd_connection LINK_LIBRARIES testing_common dird_objects bareos
-                                     bareossql bareosfind GTest::gtest_main
+    dir_fd_connection
+    LINK_LIBRARIES testing_common Bareos::Dir Bareos::Lib Bareos::SQL
+                   Bareos::Findlib GTest::gtest_main
   )
   bareos_add_test(
-    dir_statistics_thread LINK_LIBRARIES testing_common dird_objects bareos
-                                         bareossql bareosfind GTest::gtest_main
+    dir_statistics_thread
+    LINK_LIBRARIES testing_common Bareos::Dir Bareos::Lib Bareos::SQL
+                   Bareos::Findlib GTest::gtest_main
   )
   bareos_add_test(
-    globbing_test
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    globbing_test LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib
+                                 Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
     lib_tests
@@ -284,18 +252,17 @@ if(NOT client-only)
       alist_test.cc bareos_test_sockets.cc bsys_test.cc dlist_test.cc
       htable_test.cc qualified_resource_name_type_converter_test.cc
       ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
-    LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
   )
   bareos_add_test(
     messages_resource
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib Bareos::SQL
+                   GTest::gtest_main
     SKIP_GTEST # used by systemtest messages
   )
   bareos_add_test(
-    multicolumn_prompts
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    multicolumn_prompts LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib
+                                       Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(
@@ -306,26 +273,28 @@ if(NOT client-only)
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(
-    runjob LINK_LIBRARIES dird_objects bareosfind bareossql GTest::gtest_main
+    runjob LINK_LIBRARIES Bareos::Dir Bareos::Findlib Bareos::SQL
+                          GTest::gtest_main
   )
 
   bareos_add_test(
     run_on_incoming_connect_interval
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib Bareos::SQL
+                   GTest::gtest_main
   )
   bareos_add_test(
     show_cmd_available_resources_equals_config_resources
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql GTest::gtest_main
+    LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib Bareos::SQL
+                   GTest::gtest_main
   )
   bareos_add_test(
-    scheduler
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    scheduler LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib
+                             Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
-    scheduler_job_item_queue LINK_LIBRARIES dird_objects bareos bareosfind
-                                            bareossql GTest::gtest_main
+    scheduler_job_item_queue
+    LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib Bareos::SQL
+                   GTest::gtest_main
   )
   bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES})
   if(TARGET droplet)
@@ -339,40 +308,41 @@ if(NOT client-only)
   bareos_add_test(
     sd_reservation
     ${disable}
-    LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
                    GTest::gmock
   )
   bareos_add_test(
     sd_statistics_thread
-    LINK_LIBRARIES testing_common dird_objects bareos bareossql bareosfind
-                   ${THREADS_THREADS} GTest::gtest_main
+    LINK_LIBRARIES testing_common Bareos::Dir Bareos::Lib Bareos::SQL
+                   Bareos::Findlib GTest::gtest_main
   )
   bareos_add_test(
-    select_functions LINK_LIBRARIES dird_objects bareosfind bareossql
+    select_functions LINK_LIBRARIES Bareos::Dir Bareos::Findlib Bareos::SQL
                                     GTest::gtest_main
   )
   bareos_add_test(
-    setdevice
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    setdevice LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib
+                             Bareos::SQL GTest::gtest_main
   )
-  bareos_add_test(sort_stringvector LINK_LIBRARIES bareos GTest::gtest_main)
+  bareos_add_test(
+    sort_stringvector LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  )
   bareos_add_test(
     test_config_parser_dir
-    LINK_LIBRARIES dird_objects bareos bareosfind testing_common bareossql
-                   GTest::gtest_main
+    LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib testing_common
+                   Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
     test_crc32
     ADDITIONAL_SOURCES ../stored/crc32/crc32.cc
-    LINK_LIBRARIES bareos GTest::gtest_main
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
   bareos_add_test(
-    test_config_parser_sd LINK_LIBRARIES stored_objects bareossd bareos
+    test_config_parser_sd LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib
                                          GTest::gtest_main
   )
   bareos_add_test(
-    test_db_list_ctx LINK_LIBRARIES bareos bareossql GTest::gtest_main
+    test_db_list_ctx LINK_LIBRARIES Bareos::Lib Bareos::SQL GTest::gtest_main
   )
   if(NOT MSVC)
     bareos_add_test(
@@ -387,27 +357,24 @@ if(NOT client-only)
         ${PROJECT_SOURCE_DIR}/src/dird/inc_conf.cc
         ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc
         ${PROJECT_SOURCE_DIR}/src/dird/ua_audit.cc
-      LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
-                     ${OPENSSL_LIBRARIES}
+      LINK_LIBRARIES Bareos::Lib Bareos::SQL Bareos::Findlib GTest::gtest_main
+                     OpenSSL::SSL OpenSSL::Crypto
     )
   endif()
   bareos_add_test(
-    test_fileindex_list
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    test_fileindex_list LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib
+                                       Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
-    test_sd_plugins LINK_LIBRARIES bareos bareossd GTest::gtest_main
+    test_sd_plugins LINK_LIBRARIES Bareos::Lib Bareos::LibSD GTest::gtest_main
   )
   bareos_add_test(
-    test_setdebug
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    test_setdebug LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib
+                                 Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
-    time_format_test
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+    time_format_test LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib
+                                    Bareos::SQL GTest::gtest_main
   )
 
 endif() # NOT client-only
@@ -416,14 +383,7 @@ if(HAVE_EXECINFO_H
    AND HAVE_BACKTRACE
    AND HAVE_BACKTRACE_SYMBOLS
 )
-  bareos_add_test(test_backtrace LINK_LIBRARIES bareos GTest::gtest_main)
-  # Backtrace doesn't work correctly when ASan is enabled, do we shouldn't test
-  # in that case
-  if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address")
-    set_tests_properties(
-      gtest:Backtrace.test_backtrace PROPERTIES DISABLED TRUE
-    )
-  endif()
+  bareos_add_test(test_backtrace LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 endif() # HAVE_EXECINFO_H ..
 
 if(NOT HAVE_WIN32 AND NOT client-only)
@@ -431,8 +391,7 @@ if(NOT HAVE_WIN32 AND NOT client-only)
     test_bsock
     ADDITIONAL_SOURCES
       bareos_test_sockets.cc bsock_constructor_test.cc
-      bsock_cert_verify_common_names_test.cc create_resource.cc
-      ${SSL_UNIT_TEST_FILES}
+      bsock_cert_verify_common_names_test.cc create_resource.cc init_openssl.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
     COMPILE_DEFINITIONS CERTDIR=\"${CERTDIR}\"
   )
@@ -440,46 +399,48 @@ endif() # NOT HAVE_WIN32 AND NOT client-only
 
 if(HAVE_WIN32)
   bareos_add_test(
-    test_unicode_conversion LINK_LIBRARIES bareos GTest::gtest_main
+    test_unicode_conversion LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
   bareos_add_test(
     test_path_conversion
     ADDITIONAL_SOURCES compat_old_conversion.cc
-    LINK_LIBRARIES bareos GTest::gtest_main
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
 endif()
 if(ENABLE_BCONSOLE)
   bareos_add_test(
-    test_config_parser_console LINK_LIBRARIES console_objects bareos bareosfind
-                                              GTest::gtest_main
+    test_config_parser_console LINK_LIBRARIES Bareos::Console Bareos::Lib
+                                              Bareos::Findlib GTest::gtest_main
   )
 endif()
 
 # Keep alphabetically ordered
 bareos_add_test(
   cram_md5
-  LINK_LIBRARIES bareos ${THREADS_THREADS} GTest::gtest_main
+  LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
 
-bareos_add_test(job_control_record LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(job_control_record LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
-bareos_add_test(test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(
+  test_acl_entry_syntax LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+)
 
-bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(test_bsnprintf LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 add_executable(test_bpipe_prog)
 target_sources(test_bpipe_prog PRIVATE test_bpipe_prog.cc)
-bareos_add_test(test_bpipe LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(test_bpipe LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 target_compile_definitions(
   test_bpipe PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:test_bpipe_prog>\""
 )
 
 bareos_add_test(
-  test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
+  test_config_parser_fd LINK_LIBRARIES Bareos::FD Bareos::Lib Bareos::Findlib
                                        GTest::gtest_main
 )
-bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(test_edit LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 if(NOT MSVC)
   bareos_add_test(
@@ -488,43 +449,39 @@ if(NOT MSVC)
       ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
       ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
       ${PROJECT_SOURCE_DIR}/src/filed/filed_globals.cc
-    LINK_LIBRARIES bareos bareosfind GTest::gtest_main
+    LINK_LIBRARIES Bareos::Lib Bareos::Findlib GTest::gtest_main
   )
 endif()
-bareos_add_test(test_is_name_valid LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(test_is_name_valid LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
-bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)
-
-bareos_add_test(test_output_formatter LINK_LIBRARIES GTest::gtest_main bareos)
+bareos_add_test(test_poolmem LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(
-  statefile
-  LINK_LIBRARIES bareos GTest::gtest_main
-  COMPILE_DEFINITIONS TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
-                      TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
+  test_output_formatter LINK_LIBRARIES GTest::gtest_main Bareos::Lib
 )
 
-bareos_add_test(thread_list LINK_LIBRARIES bareos GTest::gtest_main)
-
-if(HAVE_WIN32)
-  set_tests_properties(
-    gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
+if(NOT HAVE_BIG_ENDIAN)
+  bareos_add_test(
+    statefile
+    LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+    COMPILE_DEFINITIONS TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
+                        TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
   )
 endif()
 
+bareos_add_test(thread_list LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
+
 bareos_add_test(
-  thread_specific_data LINK_LIBRARIES bareos ${THREADS_THREADS}
-                                      GTest::gtest_main
+  thread_specific_data LINK_LIBRARIES Bareos::Lib GTest::gtest_main
 )
 
-bareos_add_test(version_strings LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(version_strings LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
+
+bareos_add_test(channel LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(
-  channel LINK_LIBRARIES bareos ${THREADS_THREADS} GTest::gtest_main
-)
-
-bareos_add_test(
-  wrap LINK_LIBRARIES bareos GTest::gtest_main ${OPENSSL_LIBRARIES}
+  wrap LINK_LIBRARIES Bareos::Lib GTest::gtest_main OpenSSL::SSL
+                      OpenSSL::Crypto
 )
 
 if(NOT HAVE_WIN32)
@@ -533,13 +490,13 @@ endif()
 
 bareos_add_test(
   backend_parse
-  LINK_LIBRARIES bareos GTest::gtest_main
+  LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   ADDITIONAL_SOURCES "../stored/backends/util.cc"
 )
 
 add_executable(env_tester env_tester.cc)
-target_link_libraries(env_tester PRIVATE bareos)
-bareos_add_test(bpipe_env_test LINK_LIBRARIES GTest::gtest_main bareos)
+target_link_libraries(env_tester PRIVATE Bareos::Lib)
+bareos_add_test(bpipe_env_test LINK_LIBRARIES GTest::gtest_main Bareos::Lib)
 target_compile_definitions(
   bpipe_env_test PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:env_tester>\""
 )

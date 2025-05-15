@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,20 +34,3 @@ if(CHFLAGS_IS_A_STUB)
 endif()
 
 check_symbol_exists(poll poll.h HAVE_POLL)
-
-if(HAVE_GLUSTERFS_API_GLFS_H)
-  cmake_push_check_state()
-  set(CMAKE_REQUIRED_LIBRARIES ${GFAPI_LIBRARIES})
-  check_cxx_source_compiles(
-    "
-#include <glusterfs/api/glfs.h>
-int main(void)
-{
-       /* new glfs_ftruncate() passes two additional args */
-       return glfs_ftruncate(NULL, 0, NULL, NULL);
-}
-"
-    GLFS_FTRUNCATE_HAS_FOUR_ARGS
-  )
-  cmake_pop_check_state()
-endif()

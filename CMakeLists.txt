@@ -18,13 +18,18 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  cmake_minimum_required(VERSION 3.25)
-  cmake_policy(SET CMP0141 NEW) # allow to disable /Zi from cmake debug switches
-                                # on MSVC
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  cmake_minimum_required(VERSION 3.25...3.31)
 else()
-  cmake_minimum_required(VERSION 3.17)
-  cmake_policy(VERSION 3.17...3.31)
+  cmake_minimum_required(VERSION 3.17...3.31)
+endif()
+
+get_property(HAVE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(HAVE_MULTI_CONFIG)
+  message(
+    FATAL_ERROR "Multi-config generators are not supported. "
+                "While they may build fine, most tests won't work currently."
+  )
 endif()
 
 project(bareos NONE)

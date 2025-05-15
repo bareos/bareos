@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,24 +16,10 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(TEST_SRC # drivetype_test.cc
-    # fstype_test.cc
-)
-
-add_executable(test_findlib ${TEST_SRC})
-target_link_libraries(test_findlib PRIVATE bareosfind bareos GTest::gtest_main)
-
-add_test(NAME test_findlib COMMAND "test_findlib")
-set_property(
-  TEST test_findlib
-  PROPERTY
-    ENVIRONMENT
-    "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/findlib"
-  PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
-)
-
-add_dependencies(check test_findlib)
-
-include(DebugEdit)
+function(bareos_windows_resource target)
+  if(HAVE_WIN32)
+    bareos_configure_file(RESULT_VAR file_list FILES ${ARGN})
+    target_sources(${target} PRIVATE ${file_list})
+  endif()
+endfunction()

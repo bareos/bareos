@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@
 #undef ENABLE_KEEP_READALL_CAPS_SUPPORT
 #if defined(ENABLE_CAPABILITY) && defined(HAVE_SYS_PRCTL_H)  \
     && defined(HAVE_SYS_CAPABILITY_H) && defined(HAVE_PRCTL) \
-    && defined(HAVE_SETREUID) && defined(HAVE_LIBCAP)
+    && defined(HAVE_SETREUID)
 #  include <sys/prctl.h>
 #  include <sys/capability.h>
 #  if defined(PR_SET_KEEPCAPS)

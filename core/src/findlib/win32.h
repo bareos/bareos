@@ -2,7 +2,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,11 +19,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_WIN32_FINDLIB_WIN32_H_
-#define BAREOS_WIN32_FINDLIB_WIN32_H_
+#ifndef BAREOS_FINDLIB_WIN32_H_
+#define BAREOS_FINDLIB_WIN32_H_
 
 #include <vector>
 #include <string>
+#include "find.h"
+class JobControlRecord;
 
 bool expand_win32_fileset(findFILESET* fileset);
 bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
@@ -37,4 +39,4 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
                               char* data,
                               const int32_t length);
 
-#endif  // BAREOS_WIN32_FINDLIB_WIN32_H_
+#endif  // BAREOS_FINDLIB_WIN32_H_

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,59 +18,44 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(BAREOSFIND_SRCS
-    acl.cc
-    attribs.cc
-    bfile.cc
-    create_file.cc
-    drivetype.cc
-    enable_priv.cc
-    find_one.cc
-    find.cc
-    fstype.cc
-    match.cc
-    mkpath.cc
-    shadowing.cc
-    xattr.cc
+add_library(bareosfind SHARED)
+add_library(Bareos::Findlib ALIAS bareosfind)
+target_sources(
+  bareosfind
+  PRIVATE acl.cc
+          attribs.cc
+          bfile.cc
+          create_file.cc
+          drivetype.cc
+          enable_priv.cc
+          find_one.cc
+          find.cc
+          fstype.cc
+          match.cc
+          mkpath.cc
+          shadowing.cc
+          xattr.cc
 )
-
 if(HAVE_WIN32)
-  list(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
+  target_sources(bareosfind PRIVATE win32.cc win32.h)
 endif()
 
-include_directories(${OPENSSL_INCLUDE_DIR})
+target_link_libraries(bareosfind PRIVATE Bareos::Lib ${ACL_LIBRARIES})
 
-add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
-if(MSVC)
-  target_link_libraries(
-    bareosfind PRIVATE bareos ${ACL_LIBRARIES} ${THREADS_THREADS}
-  )
-else()
-  target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
-endif()
 if(HAVE_DARWIN_OS)
-  target_compile_options(bareosfind PRIVATE -Wno-sign-compare)
   # dev_t is signed on Darwin
+  target_compile_options(bareosfind PRIVATE -Wno-sign-compare)
 endif()
+
+set_target_properties(
+  bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                        SOVERSION "${BAREOS_VERSION_MAJOR}"
+)
 
 install(
   TARGETS bareosfind
   DESTINATION ${libdir}
   COMPONENT filedaemon
 )
-
-set_target_properties(
-  bareosfind
-  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-             SOVERSION "${BAREOS_VERSION_MAJOR}"
-             DEFINE_SYMBOL "BUILDING_DLL"
-)
-if(HAVE_WIN32)
-  set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-endif()
-
-if(NOT HAVE_WIN32 AND GTest_FOUND)
-  # add_subdirectory(unittests)
-endif()
 
 include(DebugEdit)

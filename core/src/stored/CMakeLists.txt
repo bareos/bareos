@@ -19,6 +19,7 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
+include(BareosWindowsResource)
 
 if(HAVE_WIN32)
   include_directories(
@@ -37,7 +38,7 @@ if(NOT build_client_only)
   if(NOT HAVE_WIN32)
     list(APPEND BACKENDS dedupable_device.d)
   endif()
-  if(${HAVE_GLUSTERFS})
+  if(HAVE_GFAPI)
     list(APPEND BACKENDS gfapi_device.d)
   endif()
   if(TARGET droplet)
@@ -51,170 +52,121 @@ if(NOT build_client_only)
   message("Backends are now ${BACKENDS}")
 endif()
 
-set(LIBBAREOSSD_SRCS
-    acquire.cc
-    ansi_label.cc
-    askdir.cc
-    autochanger.cc
-    autochanger_resource.cc
-    block.cc
-    bsr.cc
-    butil.cc
-    crc32/crc32.cc
-    dev.cc
-    device.cc
-    device_control_record.cc
-    device_resource.cc
-    ebcdic.cc
-    label.cc
-    lock.cc
-    mount.cc
-    read_record.cc
-    record.cc
-    reserve.cc
-    scan.cc
-    sd_device_control_record.cc
-    sd_plugins.cc
-    sd_stats.cc
-    spool.cc
-    stored_globals.cc
-    stored_conf.cc
-    vol_mgr.cc
-    wait.cc
+add_library(bareossd SHARED)
+add_library(Bareos::LibSD ALIAS bareossd)
+target_sources(
+  bareossd
+  PRIVATE acquire.cc
+          ansi_label.cc
+          askdir.cc
+          autochanger.cc
+          autochanger_resource.cc
+          block.cc
+          bsr.cc
+          butil.cc
+          crc32/crc32.cc
+          dev.cc
+          device.cc
+          device_control_record.cc
+          device_resource.cc
+          ebcdic.cc
+          label.cc
+          lock.cc
+          mount.cc
+          read_record.cc
+          record.cc
+          reserve.cc
+          scan.cc
+          sd_device_control_record.cc
+          sd_plugins.cc
+          sd_stats.cc
+          spool.cc
+          stored_globals.cc
+          stored_conf.cc
+          vol_mgr.cc
+          wait.cc
 )
 
-set(SDSRCS
-    append.cc
-    authenticate.cc
-    checkpoint_handler.cc
-    dir_cmd.cc
-    fd_cmds.cc
-    job.cc
-    mac.cc
-    ndmp_tape.cc
-    read.cc
-    sd_cmds.cc
-    socket_server.cc
-    status.cc
-)
-
-if(HAVE_WIN32)
-  list(APPEND SDSRCS ../win32/generic/main.cc ../win32/generic/service.cc)
-endif()
-
-set(BTAPESRCS btape.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/btaperes.rc.in)
-  list(APPEND BTAPESRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/btaperes.rc)
-endif()
-
-set(BLSSRCS bls.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/blsres.rc.in)
-  list(APPEND BLSSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/blsres.rc)
-endif()
-
-set(BEXTRACTSRS bextract.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/bextractres.rc.in)
-  list(APPEND BEXTRACTSRS
-       ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bextractres.rc
-  )
-endif()
-
-set(BSCANSRCS bscan.cc)
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/bscanres.rc.in)
-  list(APPEND BSCANSRCS ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/bscanres.rc)
-endif()
-
-set(BCOPYSRCS bcopy.cc)
-
-set(STORED_RESTYPES autochanger device director ndmp messages storage)
-
-set(BACKEND_OBJECTS "") # backend shared objects
-
-if(${HAVE_DYNAMIC_SD_BACKENDS})
-  if(GFAPI_LIBRARIES)
-    list(APPEND BACKEND_OBJECTS libbareossd-gfapi)
-  endif()
-
-  if(TARGET droplet)
-    list(APPEND BACKEND_OBJECTS libbareossd-droplet)
-    list(APPEND BACKEND_OBJECTS libbareossd-chunked)
-  endif()
-
-  set(LIBBAREOSSD_LIBRARIES bareos ${THREADS_THREADS} ${BACKEND_OBJECTS})
-  message(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
-else()
-  if(TARGET droplet)
-    list(APPEND LIBBAREOSSD_LIBRARIES droplet)
-  endif()
-  if(${HAVE_GFAPI})
-    list(APPEND LIBBAREOSSD_LIBRARIES ${GFAPI_LIBRARIES})
-  endif()
-  set(LIBBAREOSSD_LIBRARIES bareos ${LIBBAREOSSD_LIBRARIES})
-  message(STATUS "LIBBAREOSSD_LIBRARIES ARE ${LIBBAREOSSD_LIBRARIES}")
-endif()
-
-add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
-target_link_libraries(
-  bareossd PRIVATE bareos ${THREADS_THREADS} fmt::fmt-header-only
-)
+target_link_libraries(bareossd PRIVATE Bareos::Lib fmt::fmt-header-only)
 set_target_properties(
   bareossd PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                       SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 
-if(${HAVE_DYNAMIC_SD_BACKENDS})
+if(HAVE_DYNAMIC_SD_BACKENDS)
   target_sources(bareossd PRIVATE sd_backends_dynamic.cc)
-else()
-  target_link_libraries(bareossd PRIVATE ${LIBBAREOSSD_LIBRARIES})
+  target_link_libraries(bareossd PRIVATE ${CMAKE_DL_LIBS})
 endif()
 
-add_library(stored_objects STATIC ${SDSRCS})
-
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/stored/storedres.rc.in)
-  add_executable(
-    bareos-sd WIN32 stored.cc
-                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/stored/storedres.rc
-  )
-else()
-  add_executable(bareos-sd WIN32 stored.cc)
-endif()
-
-target_link_libraries(stored_objects PRIVATE ${THREADS_THREADS})
-target_link_libraries(
-  bareos-sd PRIVATE stored_objects bareos bareossd bareosfind CLI11::CLI11
+add_library(stored_objects STATIC)
+add_library(Bareos::SD ALIAS stored_objects)
+target_sources(
+  stored_objects
+  PRIVATE append.cc
+          authenticate.cc
+          checkpoint_handler.cc
+          dir_cmd.cc
+          fd_cmds.cc
+          job.cc
+          mac.cc
+          ndmp_tape.cc
+          read.cc
+          sd_cmds.cc
+          socket_server.cc
+          status.cc
 )
-
 if(HAVE_WIN32)
+  target_sources(
+    stored_objects PRIVATE ../win32/generic/main.cc ../win32/generic/service.cc
+  )
+endif()
+
+if(HAVE_NDMP)
+  target_link_libraries(stored_objects PRIVATE bareosndmp)
+endif()
+
+add_executable(bareos-sd stored.cc)
+bareos_windows_resource(bareos-sd storedres.rc.in)
+if(HAVE_WIN32)
+  set_target_properties(bareos-sd PROPERTIES WIN32_EXECUTABLE ON)
   target_sources(bareos-sd PRIVATE ../win32/generic/main.cc)
   target_link_libraries(bareos-sd PRIVATE comctl32)
 endif()
-if(HAVE_NDMP)
-  target_link_libraries(stored_objects PRIVATE bareosndmp)
-  target_link_libraries(bareos-sd PRIVATE bareosndmp)
-endif()
-
-add_executable(bls ${BLSSRCS})
-target_link_libraries(bls PRIVATE bareos bareossd bareosfind CLI11::CLI11)
-
-add_executable(bextract ${BEXTRACTSRS})
-target_link_libraries(bextract PRIVATE bareossd bareosfind bareos CLI11::CLI11)
-
-add_executable(bscan ${BSCANSRCS})
 target_link_libraries(
-  bscan PRIVATE bareos bareossd bareosfind bareossql CLI11::CLI11
+  bareos-sd PRIVATE Bareos::SD Bareos::Lib Bareos::LibSD Bareos::Findlib
+                    CLI11::CLI11
 )
 
-add_executable(btape ${BTAPESRCS})
-target_link_libraries(btape PRIVATE bareossd bareos CLI11::CLI11)
+add_executable(bls)
+target_sources(bls PRIVATE bls.cc)
+bareos_windows_resource(bls blsres.rc.in)
+target_link_libraries(
+  bls PRIVATE Bareos::Lib Bareos::LibSD Bareos::Findlib CLI11::CLI11
+)
 
-add_executable(bcopy ${BCOPYSRCS})
+add_executable(bextract)
+target_sources(bextract PRIVATE bextract.cc)
+bareos_windows_resource(bextract bextractres.rc.in)
+target_link_libraries(
+  bextract PRIVATE Bareos::LibSD Bareos::Findlib Bareos::Lib CLI11::CLI11
+)
 
-target_link_libraries(bcopy PRIVATE bareossd bareos CLI11::CLI11)
+add_executable(bscan)
+target_sources(bscan PRIVATE bscan.cc)
+bareos_windows_resource(bscan bscanres.rc.in)
+target_link_libraries(
+  bscan PRIVATE Bareos::Lib Bareos::LibSD Bareos::Findlib Bareos::SQL
+                CLI11::CLI11
+)
+
+add_executable(btape)
+target_sources(btape PRIVATE btape.cc)
+bareos_windows_resource(btape btaperes.rc.in)
+target_link_libraries(btape PRIVATE Bareos::LibSD Bareos::Lib CLI11::CLI11)
+
+add_executable(bcopy)
+target_sources(bcopy PRIVATE bcopy.cc)
+target_link_libraries(bcopy PRIVATE Bareos::LibSD Bareos::Lib CLI11::CLI11)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 
@@ -230,9 +182,5 @@ install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 install(DIRECTORY DESTINATION "${archivedir}")
 
 add_subdirectory(backends)
-
-if(TARGET droplet)
-  target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
-endif()
 
 include(DebugEdit)

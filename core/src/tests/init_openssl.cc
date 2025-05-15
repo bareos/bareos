@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,10 +28,6 @@ void InitOpenSsl()
   if (init_once_per_test_application) {
     init_once_per_test_application = false;
     SSL_load_error_strings();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    SSL_library_init();
-#else
     OPENSSL_init_ssl(0, NULL);
-#endif
   }
 }

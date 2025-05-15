@@ -35,13 +35,8 @@ if(HAVE_WIN32)
     ${PROJECT_SOURCE_DIR}/src/plugins/filed
   )
 
-  link_directories(
-    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
-  )
-  if(WINDOWS_BITS EQUAL 64)
-    # work around https://bugs.python.org/issue4709
-    add_definitions(-DMS_WIN64)
-  endif()
+  # work around https://bugs.python.org/issue4709
+  add_definitions(-DMS_WIN64)
 endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
@@ -58,7 +53,7 @@ install(
   COMPONENT filedaemon
 )
 if(HAVE_WIN32 OR HAVE_DARWIN_OS)
-  target_link_libraries(bpipe-fd bareos)
+  target_link_libraries(bpipe-fd Bareos::Lib)
 endif()
 
 if(HAVE_WIN32)
@@ -68,16 +63,12 @@ if(HAVE_WIN32)
     mssqlvdi-fd PRIVATE ${PROJECT_SOURCE_DIR}/src/win32/vdi/include
   )
   if(MSVC)
-    target_link_libraries(
-      mssqlvdi-fd PRIVATE ${THREADS_THREADS} bareos comsupp.lib
-    )
+    target_link_libraries(mssqlvdi-fd PRIVATE Bareos::Lib comsupp.lib)
   else()
     target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
-    target_link_libraries(mssqlvdi-fd bareos)
+    target_link_libraries(mssqlvdi-fd Bareos::Lib)
   endif()
-  set_target_properties(
-    mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
-  )
+  set_target_properties(mssqlvdi-fd PROPERTIES PREFIX "")
 
   install(
     TARGETS mssqlvdi-fd
@@ -97,7 +88,7 @@ if(NOT HAVE_WIN32)
 endif()
 
 option(ENABLE_GFAPI_FD "Build gfapi-fd plugin if possible" ON)
-if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
+if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
   bareos_configure_file(GLOB_RECURSE "gfapi/gfapi-conf.d/*" COPY)
   bareos_add_plugin(gfapi-fd)
   target_sources(gfapi-fd PRIVATE gfapi/gfapi-fd.cc)
@@ -106,8 +97,7 @@ if(HAVE_GLUSTERFS AND ENABLE_GFAPI_FD)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(gfapi-fd gfapi)
-  target_include_directories(gfapi-fd PRIVATE ${GFAPI_INCLUDE_DIRS})
+  target_link_libraries(gfapi-fd PRIVATE PkgConfig::gfapi)
 endif()
 
 add_subdirectory(grpc)

@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - config: update directives and error out on bconsole config warnings [PR #2217]
 - config: add virtual file changer example + documentation [PR #2090]
 - stored: fix sd volume limit [PR #2264]
+- various cmake improvements [PR #2176]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -113,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2159]: https://github.com/bareos/bareos/pull/2159
 [PR #2169]: https://github.com/bareos/bareos/pull/2169
 [PR #2175]: https://github.com/bareos/bareos/pull/2175
+[PR #2176]: https://github.com/bareos/bareos/pull/2176
 [PR #2180]: https://github.com/bareos/bareos/pull/2180
 [PR #2187]: https://github.com/bareos/bareos/pull/2187
 [PR #2188]: https://github.com/bareos/bareos/pull/2188

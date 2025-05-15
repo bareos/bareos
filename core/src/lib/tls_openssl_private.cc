@@ -26,7 +26,6 @@
 
 #include "lib/bpoll.h"
 #include "lib/crypto_openssl.h"
-#include "lib/tls_openssl_crl.h"
 
 #include "lib/ascii_control_characters.h"
 #include "lib/parse_conf.h"
@@ -59,15 +58,7 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
 
   /* the SSL_CTX object is the factory that creates
    * openssl objects, so initialize this first */
-#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
-#  error "OPENSSL VERSION < 1.0.2 not supported"
-#endif
-
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
   openssl_ctx_ = SSL_CTX_new(TLS_method());
-#else
-  openssl_ctx_ = SSL_CTX_new(SSLv23_method());
-#endif
 
   if (!openssl_ctx_) {
     OpensslPostErrors(M_FATAL, T_("Error initializing SSL context"));
@@ -153,14 +144,12 @@ bool TlsOpenSslPrivate::init()
     return false;
   }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
   // use the default tls 1.3 cipher suites if nothing is set
   if (!ciphersuites_.empty()
       && SSL_CTX_set_ciphersuites(openssl_ctx_, ciphersuites_.c_str()) != 1) {
     OpensslPostErrors(M_ERROR, "Error setting cipher suite");
     return false;
   }
-#endif
 
   if (pem_callback_ == nullptr) {
     pem_callback_ = CryptoDefaultPemCallback;
@@ -188,14 +177,6 @@ bool TlsOpenSslPrivate::init()
     Dmsg0(100, T_("Either a certificate file or a directory must be"
                   " specified as a verification store\n"));
   }
-
-#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) \
-    && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  if (!crlfile_.empty()) {
-    std::lock_guard<std::mutex> lg(file_access_mutex_);
-    if (!SetCertificateRevocationList(crlfile_, openssl_ctx_)) { return false; }
-  }
-#endif
 
   if (!certfile_.empty()) {
     std::lock_guard<std::mutex> lg(file_access_mutex_);

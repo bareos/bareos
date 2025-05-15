@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -359,15 +359,6 @@ static int CheckResources()
           T_("No Working Directory defined in %s. Cannot continue.\n"),
           configfile_name.c_str());
     OK = false;
-  }
-
-  StorageResource* store = me;
-  if (store->IsTlsConfigured()) {
-    if (!have_tls) {
-      Jmsg(nullptr, M_FATAL, 0,
-           T_("TLS required but not compiled into Bareos.\n"));
-      OK = false;
-    }
   }
 
   DeviceResource* device_resource = nullptr;

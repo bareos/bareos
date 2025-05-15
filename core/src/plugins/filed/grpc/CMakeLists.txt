@@ -90,7 +90,7 @@ if(ENABLE_GRPC)
 
   bareos_add_plugin(grpc-fd)
   target_sources(grpc-fd PRIVATE grpc.cc grpc_impl.cc bareos_api.cc)
-  target_link_libraries(grpc-fd bareos fmt::fmt grpc-proto)
+  target_link_libraries(grpc-fd Bareos::Lib fmt::fmt grpc-proto)
   install(
     TARGETS grpc-fd
     DESTINATION ${plugindir}
@@ -115,6 +115,7 @@ if(ENABLE_GRPC)
     # we need to link to python3, because otherwise we will not be able to load
     # python-fd.so
     bareos-grpc-fd-plugin-bridge fmt::fmt grpc-proto Python3::Module
+    ${CMAKE_DL_LIBS}
   )
   install(
     TARGETS bareos-grpc-fd-plugin-bridge

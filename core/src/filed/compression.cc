@@ -35,9 +35,7 @@
 #include "filed/filed_jcr_impl.h"
 #include "lib/compression.h"
 
-#if defined(HAVE_LIBZ)
-#  include <zlib.h>
-#endif
+#include <zlib.h>
 
 #include "fastlz/fastlzlib.h"
 

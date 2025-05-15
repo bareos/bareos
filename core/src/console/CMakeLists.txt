@@ -18,43 +18,36 @@
 #   02110-1301, USA.
 
 include(BareosConfigureFile)
+include(BareosWindowsResource)
 
-set(BCONSSRCS connect_to_director.cc console_conf.cc console_globals.cc
-              console_output.cc
+find_package(Readline REQUIRED)
+
+add_library(console_objects STATIC)
+add_library(Bareos::Console ALIAS console_objects)
+target_sources(
+  console_objects PRIVATE connect_to_director.cc console_conf.cc
+                          console_globals.cc console_output.cc
 )
-
-include_directories(${Readline_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIR})
-
 if(HAVE_PAM)
-  include_directories(${PAM_INCLUDE_DIRS})
-  list(APPEND BCONSSRCS auth_pam.cc)
+  target_sources(console_objects PRIVATE auth_pam.cc)
 endif()
+target_link_libraries(console_objects PRIVATE Bareos::Lib)
 
-if(HAVE_WIN32)
-  bareos_configure_file(FILES ../win32/console/consoleres.rc.in)
-  add_executable(
-    bconsole console.cc
-             ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
-  )
-  add_executable(
-    bconsole-unsafe console.cc
-                    ${CMAKE_CURRENT_BINARY_DIR}/../win32/console/consoleres.rc
-  )
-else()
-  add_executable(bconsole console.cc)
-  add_executable(bconsole-unsafe console.cc)
-endif()
+add_executable(bconsole)
+target_sources(bconsole PRIVATE console.cc)
 
+add_executable(bconsole-unsafe)
 target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
+target_sources(bconsole-unsafe PRIVATE console.cc)
 
-add_library(console_objects STATIC ${BCONSSRCS})
+bareos_windows_resource(bconsole consoleres.rc.in)
+bareos_windows_resource(bconsole-unsafe consoleres.rc.in)
 
-target_link_libraries(console_objects PRIVATE bareos)
 target_link_libraries(
-  bconsole PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
+  bconsole PRIVATE console_objects Readline::Readline CLI11::CLI11
 )
 target_link_libraries(
-  bconsole-unsafe PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
+  bconsole-unsafe PRIVATE console_objects Readline::Readline CLI11::CLI11
 )
 
 bareos_configure_file(FILES bconsole.conf.in)

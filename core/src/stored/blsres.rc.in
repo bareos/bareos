@@ -1,4 +1,4 @@
-id ICON "../../../platforms/win32/bareossd.ico"
+id ICON "@PROJECT_SOURCE_DIR@/platforms/win32/bareostools.ico"
 1 VERSIONINFO
 FILEVERSION     1,0,0,0
 PRODUCTVERSION  1,0,0,0
@@ -8,10 +8,10 @@ BEGIN
     BLOCK "080904E4"
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
-      VALUE "FileDescription", "Bareos Storage Daemon"
+      VALUE "FileDescription", "bls utility"
       VALUE "FileVersion", "@BAREOS_FULL_VERSION@"
-      VALUE "InternalName", "bareos-sd.exe"
-      VALUE "OriginalFilename", "bareos-sd.exe"
+      VALUE "InternalName", "bls.exe"
+      VALUE "OriginalFilename", "bls.exe"
       VALUE "ProductName", "Bareos Storage Daemon"
       VALUE "ProductVersion", "@BAREOS_FULL_VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "

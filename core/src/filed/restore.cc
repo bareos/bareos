@@ -54,7 +54,7 @@
 #include "lib/version.h"
 
 #ifdef HAVE_WIN32
-#  include "win32/findlib/win32.h"
+#  include "findlib/win32.h"
 #endif
 
 #if defined(HAVE_DARWIN_OS)
@@ -67,12 +67,6 @@ namespace filedaemon {
 const bool have_darwin_os = true;
 #else
 const bool have_darwin_os = false;
-#endif
-
-#if defined(HAVE_CRYPTO)
-const bool have_crypto = true;
-#else
-const bool have_crypto = false;
 #endif
 
 #if defined(HAVE_ACL)
@@ -97,18 +91,6 @@ const bool have_xattr = false;
 static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
 
 // Forward referenced functions
-#if defined(HAVE_LIBZ)
-const bool have_libz = true;
-#else
-const bool have_libz = false;
-#endif
-#if defined(HAVE_LZO)
-const bool have_lzo = true;
-#else
-const bool have_lzo = false;
-#endif
-const bool have_fastlz = true;
-
 static void FreeSignature(r_ctx& rctx);
 static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx);
 
@@ -435,15 +417,11 @@ void DoRestore(JobControlRecord* jcr)
   }
   jcr->buf_size = sd->message_length;
 
-  if (have_libz || have_lzo || have_fastlz) {
-    if (!AdjustDecompressionBuffers(jcr)) { goto bail_out; }
-  }
+  if (!AdjustDecompressionBuffers(jcr)) { goto bail_out; }
 
-  if (have_crypto) {
-    rctx.cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
-    if (have_darwin_os) {
-      rctx.fork_cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
-    }
+  rctx.cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
+  if (have_darwin_os) {
+    rctx.fork_cipher_ctx.buf = GetMemory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
   }
 
   /* Get a record from the Storage daemon. We are guaranteed to

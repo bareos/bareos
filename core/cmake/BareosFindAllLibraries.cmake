@@ -67,19 +67,13 @@ else()
   endif()
 endif()
 
-include(FindPostgreSQL)
+find_package(PostgreSQL)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(OPENSSL_USE_STATIC_LIBS 1)
 endif()
-include(FindOpenSSL)
 
-if(${OPENSSL_FOUND})
-  set(HAVE_OPENSSL 1)
-  if(OPENSSL_VERSION VERSION_LESS "1.0.2")
-    message(FATAL_ERROR "Need at least OpenSSL version 1.0.2")
-  endif()
-endif()
+find_package(OpenSSL 1.1.1 REQUIRED)
 
 include(BareosFindLibraryAndHeaders)
 
@@ -136,51 +130,36 @@ elseif(
       "vmware options were set but VMware Vix Disklib was not found. Cannot run vmware tests."
   )
 endif()
-if(NOT MSVC)
-  bareosfindlibraryandheaders("pthread" "pthread.h" "")
-endif()
-bareosfindlibraryandheaders("cap" "sys/capability.h" "")
-bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
 
-bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+  pkg_check_modules(gfapi IMPORTED_TARGET glusterfs-api)
+endif()
+
+find_package(PAM)
+if(PAM_FOUND)
+  set(HAVE_PAM 1)
+endif()
 
 option(ENABLE_LZO "Enable LZO support" ON)
 if(ENABLE_LZO)
-  bareosfindlibraryandheaders("lzo2" "lzo/lzoconf.h" "")
-  if(${LZO2_FOUND})
-    set(HAVE_LZO 1)
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-      set(LZO2_LIBRARIES "${HOMEBREW_PREFIX}/opt/lzo/lib/liblzo2.a")
-    endif()
-  endif()
+  find_package(LZO REQUIRED)
+  set(HAVE_LZO 1)
 endif()
 
 include(BareosFindLibrary)
 
-bareosfindlibraryandheaders("tirpc" "rpc/rpc.h" "/usr/include/tirpc")
 bareosfindlibrary("util")
-bareosfindlibrary("dl")
 bareosfindlibrary("acl")
 if(NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
   find_package(GTest 1.8 CONFIG)
 endif()
 
-if(${HAVE_CAP})
-  set(HAVE_LIBCAP 1)
-endif()
-
-find_package(ZLIB)
-if(${ZLIB_FOUND})
-  set(HAVE_LIBZ 1)
-  # yes its actually libz vs zlib ...
-  set(HAVE_ZLIB_H 1)
-endif()
-
-find_package(Readline)
+find_package(ZLIB REQUIRED)
 
 option(ENABLE_JANSSON "Build with Jansson library (required for director)" ON)
 if(ENABLE_JANSSON)
-  find_package(Jansson)
+  find_package(Jansson REQUIRED)
 endif()
 
 option(ENABLE_GRPC "Build with grpc support" OFF)
@@ -195,6 +174,5 @@ if(NOT MSVC)
 else()
   find_package(pthread)
 endif()
-if(MSVC)
-  find_package(Intl)
-endif()
+
+find_package(Intl)

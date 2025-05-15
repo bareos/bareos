@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -111,12 +111,9 @@ bareos_disable_warnings(
   ADD_FOR_LTO
 )
 
-target_include_directories(
-  droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
-                 ${OPENSSL_INCLUDE_DIR}
-)
+target_include_directories(droplet PUBLIC include ${JSONC_INCLUDE_DIRS})
 target_link_libraries(
-  droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES} ${OPENSSL_LIBRARIES}
+  droplet PRIVATE LibXml2::LibXml2 ${JSONC_LIBRARIES} OpenSSL::SSL
 )
 
 include(DebugEdit)

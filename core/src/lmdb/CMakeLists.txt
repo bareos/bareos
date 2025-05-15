@@ -38,7 +38,6 @@ set_target_properties(
                         SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 if(HAVE_WIN32)
-  set_target_properties(bareoslmdb PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
   target_link_libraries(bareoslmdb ntdll)
 endif()
 

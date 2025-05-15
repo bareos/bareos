@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -383,7 +383,6 @@ mark_as_advanced(python)
 option(batch-insert "Enable database batch inserts" ON)
 mark_as_advanced(batch-insert)
 if(${batch-insert})
-  set(HAVE_POSTGRESQL_BATCH_FILE_INSERT 1)
   set(USE_BATCH_FILE_INSERT 1)
 endif()
 
@@ -428,14 +427,6 @@ if(NOT postgresql)
   set(PostgreSQL_INCLUDE_DIR "")
 endif()
 
-if(NOT Readline_LIBRARY)
-  set(Readline_LIBRARY "")
-endif()
-
-if(NOT LIBZ_FOUND)
-  set(ZLIB_LIBRARY "")
-endif()
-
 if(NOT client-only)
   if(${postgresql})
     set(HAVE_POSTGRESQL 1)
@@ -444,8 +435,6 @@ if(NOT client-only)
 endif()
 
 option(systemd "Enable systemd support" OFF)
-option(openssl "Enable openssl support" ON)
-mark_as_advanced(openssl)
 
 # ports
 set(dir_port
@@ -507,7 +496,6 @@ else()
 endif()
 
 set(HAVE_SHA2 1)
-set(HAVE_PQISTHREADSAFE 1)
 
 set(_LARGEFILE_SOURCE 1)
 set(_LARGE_FILES 1)
@@ -525,15 +513,9 @@ set(ENABLE_NLS
 mark_as_advanced(ENABLE_NLS)
 
 if(HAVE_WIN32)
-
   if(NOT DEFINED WINDOWS_VERSION)
     set(WINDOWS_VERSION 0x600)
   endif()
-
-  if(NOT DEFINED WINDOWS_BITS)
-    set(WINDOWS_BITS 64)
-  endif()
-
 endif() # HAVE_WIN32
 
 if(DEFINED do-static-code-checks)

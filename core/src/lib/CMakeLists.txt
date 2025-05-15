@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,132 +18,116 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-include_directories(
-  ${OPENSSL_INCLUDE_DIR} ${PTHREAD_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS}
-  ${ACL_INCLUDE_DIRS} ${LZO2_INCLUDE_DIRS} ${CAP_INCLUDE_DIRS}
-)
-
-set(BAREOS_SRCS
-    address_conf.cc
-    alist.cc
-    attr.cc
-    attribs.cc
-    bareos_universal_initialiser.cc
-    backtrace.cc
-    base64.cc
-    berrno.cc
-    bget_msg.cc
-    binflate.cc
-    bnet_server_tcp.cc
-    bnet.cc
-    bnet_network_dump.cc
-    bnet_network_dump_private.cc
-    bpipe.cc
-    breg.cc
-    bregex.cc
-    bsnprintf.cc
-    bsock.cc
-    bsock_tcp.cc
-    bstringlist.cc
-    bsys.cc
-    btime.cc
-    btimers.cc
-    cbuf.cc
-    cli.cc
-    connection_pool.cc
-    cram_md5.cc
-    crypto.cc
-    crypto_cache.cc
-    crypto_openssl.cc
-    crypto_wrap.cc
-    daemon.cc
-    devlock.cc
-    dlist_string.cc
-    edit.cc
-    fnmatch.cc
-    guid_to_name.cc
-    hmac.cc
-    htable.cc
-    jcr.cc
-    lockmgr.cc
-    mem_pool.cc
-    message.cc
-    messages_resource.cc
-    mntent_cache.cc
-    monotonic_buffer.cc
-    output_formatter.cc
-    output_formatter_resource.cc
-    passphrase.cc
-    path_list.cc
-    plugins.cc
-    bpoll.cc
-    priv.cc
-    recent_job_results_list.cc
-    rblist.cc
-    runscript.cc
-    rwlock.cc
-    scan.cc
-    scsi_crypto.cc
-    scsi_lli.cc
-    serial.cc
-    signal.cc
-    status_packet.cc
-    thread_list.cc
-    thread_specific_data.cc
-    tls.cc
-    tls_conf.cc
-    tls_openssl.cc
-    tls_openssl_crl.cc
-    tls_openssl_private.cc
-    tree.cc
-    try_tls_handshake_as_a_server.cc
-    compression.cc
-    util.cc
-    var.cc
-    watchdog.cc
-    xxhash.cc
+add_library(bareos SHARED)
+add_library(Bareos::Lib ALIAS bareos)
+target_sources(
+  bareos
+  PRIVATE address_conf.cc
+          alist.cc
+          attr.cc
+          attribs.cc
+          bareos_universal_initialiser.cc
+          backtrace.cc
+          base64.cc
+          berrno.cc
+          bget_msg.cc
+          binflate.cc
+          bnet_server_tcp.cc
+          bnet.cc
+          bnet_network_dump.cc
+          bnet_network_dump_private.cc
+          bpipe.cc
+          breg.cc
+          bregex.cc
+          bsnprintf.cc
+          bsock.cc
+          bsock_tcp.cc
+          bstringlist.cc
+          bsys.cc
+          btime.cc
+          btimers.cc
+          cbuf.cc
+          cli.cc
+          connection_pool.cc
+          cram_md5.cc
+          crypto.cc
+          crypto_cache.cc
+          crypto_openssl.cc
+          crypto_wrap.cc
+          daemon.cc
+          devlock.cc
+          dlist_string.cc
+          edit.cc
+          fnmatch.cc
+          guid_to_name.cc
+          hmac.cc
+          htable.cc
+          jcr.cc
+          lockmgr.cc
+          mem_pool.cc
+          message.cc
+          messages_resource.cc
+          mntent_cache.cc
+          monotonic_buffer.cc
+          output_formatter.cc
+          output_formatter_resource.cc
+          passphrase.cc
+          path_list.cc
+          plugins.cc
+          bpoll.cc
+          priv.cc
+          recent_job_results_list.cc
+          rblist.cc
+          runscript.cc
+          rwlock.cc
+          scan.cc
+          scsi_crypto.cc
+          scsi_lli.cc
+          serial.cc
+          signal.cc
+          status_packet.cc
+          thread_list.cc
+          thread_specific_data.cc
+          tls.cc
+          tls_conf.cc
+          tls_openssl.cc
+          tls_openssl_private.cc
+          tree.cc
+          try_tls_handshake_as_a_server.cc
+          compression.cc
+          util.cc
+          var.cc
+          watchdog.cc
+          xxhash.cc
 )
 
 if(HAVE_WIN32)
-  list(APPEND BAREOS_SRCS bpipe_win32.cc)
-else()
-  list(APPEND BAREOS_SRCS bpipe_unix.cc)
-endif()
-
-if(HAVE_WIN32)
-  list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
-       ../win32/compat/winapi.cc
+  target_sources(bareos PRIVATE bpipe_win32.cc)
+  target_sources(
+    bareos PRIVATE ../win32/compat/compat.cc ../win32/compat/glob.cc
+                   ../win32/compat/winapi.cc
   )
-  set_source_files_properties(
-    ../win32/compat/winapi.cc ../win32/compat/service.cc
-    ../win32/generic/service.cc osinfo_win32.cc
-  )
-
+  target_sources(bareos PRIVATE osinfo_win32.cc)
+  target_link_libraries(bareos PUBLIC ws2_32)
 else()
-  list(APPEND BAREOS_SRCS scsi_tapealert.cc)
+  target_sources(bareos PRIVATE bpipe_unix.cc)
+  target_sources(bareos PRIVATE scsi_tapealert.cc)
+  target_sources(bareos PRIVATE osinfo.cc)
 endif()
 
-set(BAREOSCFG_SRCS
-    bareos_resource.cc
-    configured_tls_policy_getter.cc
-    lex.cc
-    parse_bsr.cc
-    res.cc
-    parse_conf.cc
-    parse_conf_init_resource.cc
-    parse_conf_state_machine.cc
-    res.cc
-    qualified_resource_name_type_converter.cc
+target_sources(
+  bareos
+  PRIVATE bareos_resource.cc
+          configured_tls_policy_getter.cc
+          lex.cc
+          parse_bsr.cc
+          res.cc
+          parse_conf.cc
+          parse_conf_init_resource.cc
+          parse_conf_state_machine.cc
+          res.cc
+          qualified_resource_name_type_converter.cc
 )
-list(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
-
-if(HAVE_WIN32)
-  list(APPEND BAREOS_SRCS osinfo_win32.cc)
-else()
-  list(APPEND BAREOS_SRCS osinfo.cc)
-endif()
-
-add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 
 add_library(version-obj OBJECT version.cc)
 target_compile_definitions(
@@ -157,10 +141,18 @@ target_compile_definitions(
 
 target_link_libraries(
   bareos
-  PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${LZO2_LIBRARIES}
-          ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash utf8cpp::utf8cpp
+  PRIVATE version-obj Bareos::Fastlz OpenSSL::SSL ZLIB::ZLIB CLI11::CLI11
+          xxHash::xxhash utf8cpp::utf8cpp ${CMAKE_DL_LIBS}
   PUBLIC ${THREADS_THREADS}
 )
+
+if(TARGET Bareos::LowLevelScsi)
+  target_link_libraries(bareos PRIVATE Bareos::LowLevelScsi)
+endif()
+
+if(ENABLE_LZO)
+  target_link_libraries(bareos PRIVATE LZO::LZO)
+endif()
 
 if(XXHASH_ENABLE_DISPATCH)
   set_source_files_properties(
@@ -180,7 +172,7 @@ if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
 endif()
 
 if(ENABLE_CAPABILITY)
-  target_link_libraries(bareos PRIVATE ${CAP_LIBRARIES})
+  target_link_libraries(bareos PRIVATE cap)
 endif()
 
 if(TARGET Jansson::Jansson)
@@ -193,10 +185,5 @@ set_target_properties(
   bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                     SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-
-if(HAVE_WIN32)
-  set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
-  target_link_libraries(bareos PUBLIC ws2_32)
-endif()
 
 include(DebugEdit)

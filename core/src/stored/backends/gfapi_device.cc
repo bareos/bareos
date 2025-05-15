@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -484,7 +484,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord*)
   struct stat st;
 
   if (gfd_) {
-    if (glfs_ftruncate(gfd_, 0) != 0) {
+    if (glfs_ftruncate(gfd_, 0, NULL, NULL) != 0) {
       BErrNo be;
 
       Mmsg2(errmsg, T_("Unable to truncate device %s. ERR=%s\n"), prt_name,

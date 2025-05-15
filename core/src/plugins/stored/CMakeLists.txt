@@ -22,15 +22,9 @@ if(HAVE_WIN32)
   include_directories(
     ${PROJECT_SOURCE_DIR}/src/win32/generic
     ${PROJECT_SOURCE_DIR}/src/win32/stored
-    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
   )
-  link_directories(
-    ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
-  )
-  if(WINDOWS_BITS EQUAL 64)
-    # work around https://bugs.python.org/issue4709
-    add_definitions(-DMS_WIN64)
-  endif()
+  # work around https://bugs.python.org/issue4709
+  add_definitions(-DMS_WIN64)
 endif()
 
 if(ENABLE_PYTHON)
@@ -41,11 +35,11 @@ bareos_add_plugin(autoxflate-sd)
 target_sources(autoxflate-sd PRIVATE autoxflate/autoxflate-sd.cc)
 
 if(MSVC)
-  target_link_libraries(autoxflate-sd bareos bareosfastlz ${ZLIB_LIBRARIES})
+  target_link_libraries(autoxflate-sd Bareos::Lib Bareos::Fastlz ZLIB::ZLIB)
 else()
   target_link_libraries(
-    autoxflate-sd bareos bareosfastlz
-    $<$<PLATFORM_ID:Windows>:${ZLIB_LIBRARIES}>
+    autoxflate-sd Bareos::Lib Bareos::Fastlz
+    $<$<PLATFORM_ID:Windows>:ZLIB::ZLIB>
   )
 endif()
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
@@ -59,7 +53,7 @@ if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
   target_sources(scsitapealert-sd PRIVATE scsitapealert/scsitapealert-sd.cc)
   install(TARGETS scsitapealert-sd DESTINATION ${plugindir})
   if(HAVE_DARWIN_OS)
-    target_link_libraries(scsitapealert-sd bareossd)
+    target_link_libraries(scsitapealert-sd Bareos::LibSD)
   endif()
 endif()
 
