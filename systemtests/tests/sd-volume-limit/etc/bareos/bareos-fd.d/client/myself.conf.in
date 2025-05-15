@@ -7,4 +7,5 @@ Client {
   Working Directory =  "@working_dir@"
   Port = @fd_port@
 
+  Maximum Workers Per Job = 0
 }

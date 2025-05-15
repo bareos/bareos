@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: fix bugs in DateTime [PR #2260]
 - config: fix Director -> Director resource [PR #2259]
 - mtx-changer: make mandatory test mt-st versus cpio-mt [PR #2256]
+- packaging: set all `*.conf.examples` as %config(noreplace) [PR #2268]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -136,4 +137,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2259]: https://github.com/bareos/bareos/pull/2259
 [PR #2260]: https://github.com/bareos/bareos/pull/2260
 [PR #2264]: https://github.com/bareos/bareos/pull/2264
+[PR #2268]: https://github.com/bareos/bareos/pull/2268
 [unreleased]: https://github.com/bareos/bareos/tree/master
