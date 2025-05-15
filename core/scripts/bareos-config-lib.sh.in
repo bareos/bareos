@@ -457,6 +457,7 @@ deploy_config2()
   [ -d "${SOURCE}" ] || return 1
   if ! [ -e "${DEST}" ]; then
     mkdir -p "${DEST}"
+    chmod 2750 "${DEST}"
   fi
 
   #
@@ -491,6 +492,7 @@ deploy_config3()
   [ -d "${SOURCE}" ] || return 1
   if ! [ -e "${DEST}" ]; then
     mkdir -p "${DEST}"
+    chmod 2750 "${DEST}"
   fi
 
   if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${SOURCE}" "${COMPONENT}")"; then

@@ -1,8 +1,8 @@
 
-@dir(bareos,root,0750) %%ETCDIR%%/bareos-fd.d/
-@dir(bareos,root,0750) %%ETCDIR%%/bareos-fd.d/client
-@dir(bareos,root,0750) %%ETCDIR%%/bareos-fd.d/director
-@dir(bareos,root,0750) %%ETCDIR%%/bareos-fd.d/messages
+@dir(bareos,root,2750) %%ETCDIR%%/bareos-fd.d/
+@dir(bareos,root,2750) %%ETCDIR%%/bareos-fd.d/client
+@dir(bareos,root,2750) %%ETCDIR%%/bareos-fd.d/director
+@dir(bareos,root,2750) %%ETCDIR%%/bareos-fd.d/messages
 @sample(bareos,root,0640) %%ETCDIR%%/bareos-fd.d/client/myself.conf.sample
 @sample(bareos,root,0640) %%ETCDIR%%/bareos-fd.d/director/bareos-dir.conf.sample
 @sample(bareos,root,0640) %%ETCDIR%%/bareos-fd.d/director/bareos-mon.conf.sample
