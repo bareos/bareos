@@ -56,11 +56,6 @@ OS:
       IMAGE: "ubuntu22.04"
       ARCH:
         - x86_64
-    "20.04":
-      TYPE: deb
-      IMAGE: "ubuntu20.04"
-      ARCH:
-        - x86_64
   SUSE:
     "15":
       TYPE: rpm
