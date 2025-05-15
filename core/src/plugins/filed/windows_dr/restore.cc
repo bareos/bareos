@@ -80,21 +80,6 @@ partition_table ReadDiskPartTable(std::istream& stream)
   return {};
 }
 
-void WritePartitionTable(HANDLE output, const partition_layout& table)
-{
-  std::vector<char> buffer;
-
-  auto part_count = table.partition_infos.size();
-
-  buffer.resize(
-      offsetof(DRIVE_LAYOUT_INFORMATION_EX, PartitionEntry[part_count]));
-
-  if (!DeviceIoControl(output, IOCTL_DISK_SET_DRIVE_LAYOUT_EX, buffer.data(),
-                       buffer.size(), nullptr, 0, NULL, NULL)) {
-    fprintf(stderr, "coudl not set partition info. Err=%d\n", GetLastError());
-  }
-}
-
 void write_buffer(HANDLE output, std::span<const char> buffer)
 {
   std::size_t offset = 0;
@@ -109,6 +94,66 @@ void write_buffer(HANDLE output, std::span<const char> buffer)
 
     offset += bytes_written;
   }
+}
+
+struct gpt_header {
+  uint64_t signature;
+  uint32_t revision;
+  uint32_t header_size;
+  uint32_t crc32_sum;
+  uint32_t reserved_0;
+
+  uint64_t lba_location;
+  uint64_t backup_lba_location;
+  uint64_t first_usable_lba;
+
+  GUID disk_guid;
+
+  uint64_t table_lba_location;
+
+  uint32_t partition_count;
+  uint32_t entry_size;
+  uint32_t table_crc32_sum;
+};
+
+static_assert(sizeof(gpt_header) == 96);
+
+struct gpt_entry {
+  GUID partition_type;
+  GUID id;
+  uint64_t start;
+  uint64_t end;  // inclusive!
+  uint64_t attributes;
+  wchar_t name[36];
+};
+
+static_assert(sizeof(gpt_entry) == 128);
+
+gpt_header MakeGptHeader(const partition_info_gpt&) { return {}; }
+
+gpt_entry MakeGptEntry() { return {}; }
+
+void WritePartitionTable(HANDLE output,
+                         const partition_layout& table,
+                         std::size_t disk_size)
+{
+  auto* Gpt = std::get_if<partition_info_gpt>(&table.info);
+  if (!Gpt) { return; }
+
+  auto header = MakeGptHeader(*Gpt);
+
+  char sector[512] = {};
+
+  std::memcpy(sector, &header, sizeof(header));
+
+  {
+    DWORD off_low = 512;
+    LONG off_high = 0;
+
+    SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
+  }
+
+  write_buffer(output, sector);
 }
 
 void copy_output(std::istream& stream,
@@ -190,6 +235,18 @@ void restore_data()
       return;
     }
 
+    ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+        = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+    auto attach_res = AttachVirtualDisk(output, NULL,
+                                        ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST,
+                                        0, &attach_params, 0);
+
+    if (attach_res != ERROR_SUCCESS) {
+      fprintf(stderr, "AttachVirtualDisk(%ls) returned %d\n", disk_path.c_str(),
+              attach_res);
+      return;
+    }
+
 
     fprintf(stderr, "reading part table ...\n");
     auto part_table = ReadDiskPartTable(std::cin);
@@ -200,7 +257,8 @@ void restore_data()
       fprintf(stderr, "reading extent ... done\n");
     }
 
-    WritePartitionTable(output, part_table);
+    partition_layout layout;
+    WritePartitionTable(output, layout, disk_header.disk_size);
 
     CloseHandle(output);
   }
