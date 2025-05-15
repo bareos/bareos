@@ -379,4 +379,6 @@ struct extent_header {
   }
 };
 
+#define DO_DRY 1
+
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_FILE_FORMAT_H_
