@@ -42,6 +42,7 @@
 #include <atlcomcli.h>
 
 #include "file_format.h"
+#include "error.h"
 
 #include "CLI/App.hpp"
 #include "CLI/Config.hpp"
@@ -245,18 +246,6 @@ static constexpr VSS_ID ASR_WRITER_ID
        0x11FE,
        0x4426,
        {0x9C, 0x58, 0x53, 0x1A, 0xA6, 0x35, 0x5F, 0xC4}};
-
-struct win_error : std::exception {
-  win_error(const char*, DWORD) {}
-
-  const char* what() const { return ""; }
-};
-
-struct com_error : std::exception {
-  com_error(const char* where, HRESULT) {}
-
-  const char* what() const { return ""; }
-};
 
 std::vector<std::wstring> list_volumes()
 {
@@ -639,7 +628,7 @@ void copy_stream(HANDLE hndl,
                  std::size_t length,
                  std::ostream& stream)
 {
-#if 0
+#if !defined(DO_DRY)
   DWORD off_low = offset & 0xFFFFFFFF;
   LONG off_high = (offset >> 32) & 0xFFFFFFFF;
   SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
@@ -666,8 +655,6 @@ void copy_stream(HANDLE hndl,
 
     bytes_to_read -= bytes_read;
   }
-#else
-  return;
 #endif
 }
 
