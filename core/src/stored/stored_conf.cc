@@ -452,7 +452,7 @@ static void MultiplyDevice(DeviceResource& original,
     original.changer_res->rcode_ = R_AUTOCHANGER;
     original.changer_res->rcode_str_ = "Autochanger";
     original.changer_res->refcnt_ = 1;
-
+    original.changer_command = strdup("");
     if (!config.GetResWithName(R_AUTOCHANGER,
                                original.changer_res->resource_name_)) {
       config.AppendToResourcesChain(original.changer_res, R_AUTOCHANGER);
