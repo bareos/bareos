@@ -161,9 +161,7 @@ bool DeviceResource::PrintConfig(OutputFormatterResource& send,
                                  bool hide_sensitive_data,
                                  bool verbose)
 {
-  if (multiplied_device_resource) {
-    return false;
-  }
+  if (multiplied_device_resource) { return false; }
   BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
   return true;
 }
