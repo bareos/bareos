@@ -41,6 +41,9 @@
 #include <atlbase.h>
 #include <atlcomcli.h>
 
+#include <fcntl.h>
+#include <io.h>
+
 #include "file_format.h"
 #include "error.h"
 
@@ -48,8 +51,8 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
-void dump_data();
-void restore_data();
+void dump_data(std::ostream&);
+void restore_data(std::istream&);
 
 int main(int argc, char* argv[])
 {
@@ -63,9 +66,11 @@ int main(int argc, char* argv[])
   CLI11_PARSE(app, argc, argv);
   try {
     if (*save) {
-      dump_data();
+      _setmode(_fileno(stdout), _O_BINARY);
+      dump_data(std::cout);
     } else if (*restore) {
-      restore_data();
+      _setmode(_fileno(stdin), _O_BINARY);
+      restore_data(std::cin);
     }
 
     return 0;
@@ -555,27 +560,31 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
   return result;
 }
 
-void WriteHeader(const disk_map& map)
+void WriteHeader(std::ostream& stream, const disk_map& map)
 {
   file_header header(map.size());
 
-  header.write(std::cout);
+  header.write(stream);
 }
 
-void WriteDiskHeader(const disk& Disk, const DISK_GEOMETRY& geo)
+void WriteDiskHeader(std::ostream& stream,
+                     const disk& Disk,
+                     const DISK_GEOMETRY& geo)
 {
   disk_header header(geo.Cylinders.QuadPart, geo.MediaType,
                      geo.TracksPerCylinder, geo.SectorsPerTrack,
                      geo.BytesPerSector, Disk.extents.size());
 
-  header.write(std::cout);
+  header.write(stream);
 }
 
 template <class... Ts> struct overloads : Ts... {
   using Ts::operator()...;
 };
 
-void WriteDiskPartTable(const disk& Disk, const partition_layout& layout)
+void WriteDiskPartTable(std::ostream& stream,
+                        const disk& Disk,
+                        const partition_layout& layout)
 {
   {
     auto header = std::visit(
@@ -598,24 +607,24 @@ void WriteDiskPartTable(const disk& Disk, const partition_layout& layout)
         },
         layout.info);
     header.partition_count = layout.partition_infos.size();
-    header.write(std::cout);
+    header.write(stream);
   }
 
 
   for (auto& info : layout.partition_infos) {
     part_table_entry ent(info);
 
-    ent.write(std::cout);
+    ent.write(stream);
     switch (info.PartitionStyle) {
       case PARTITION_STYLE_MBR: {
         part_table_entry_mbr_data data(info.Mbr);
 
-        data.write(std::cout);
+        data.write(stream);
       } break;
       case PARTITION_STYLE_GPT: {
         part_table_entry_gpt_data data(info.Gpt);
 
-        data.write(std::cout);
+        data.write(stream);
       } break;
       default: { /* intentionally left blank */
       } break;
@@ -658,14 +667,14 @@ void copy_stream(HANDLE hndl,
 #endif
 }
 
-void WriteDiskData(const disk& disk_extents)
+void WriteDiskData(std::ostream& stream, const disk& disk_extents)
 {
   for (auto& extent : disk_extents.extents) {
     extent_header header(extent);
 
-    header.write(std::cout);
+    header.write(stream);
 
-    copy_stream(extent.hndl, extent.handle_offset, extent.length, std::cout);
+    copy_stream(extent.hndl, extent.handle_offset, extent.length, stream);
   }
 }
 
@@ -741,7 +750,7 @@ std::optional<DISK_GEOMETRY> GetDiskGeometry(HANDLE disk)
   return geo;
 }
 
-void dump_data()
+void dump_data(std::ostream& stream)
 {
   COM_CALL(CoInitializeEx(NULL, COINIT_MULTITHREADED));
 
@@ -977,7 +986,7 @@ void dump_data()
     CloseHandle(volume);
   }
 
-  WriteHeader(disks);
+  WriteHeader(stream, disks);
 
   for (auto& [id, disk] : disks) {
     fprintf(stderr, "disk %zu extents\n", id);
@@ -1012,9 +1021,9 @@ void dump_data()
     auto geo = GetDiskGeometry(hndl);
     if (!geo) { continue; }
 
-    WriteDiskHeader(disk, geo.value());
-    WriteDiskPartTable(disk, layout.value());
-    WriteDiskData(disk);
+    WriteDiskHeader(stream, disk, geo.value());
+    WriteDiskPartTable(stream, disk, layout.value());
+    WriteDiskData(stream, disk);
   }
 
   snapshot.delete_snapshot(backup_components);

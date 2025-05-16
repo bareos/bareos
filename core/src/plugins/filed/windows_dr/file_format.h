@@ -80,8 +80,20 @@ template <typename T> static void write_stream(std::ostream& stream, const T& t)
 
 template <typename T> static void read_stream(std::istream& stream, T& t)
 {
+#if 0
+  auto read_bytes = stream.sgetn(reinterpret_cast<char*>(&t), sizeof(t));
+#else
   stream.read(reinterpret_cast<char*>(&t), sizeof(t));
-  fprintf(stderr, "read %lld bytes\n", stream.gcount());
+  auto read_bytes = stream.gcount();
+#endif
+  fprintf(stderr, "read %lld/%llu bytes\n", read_bytes, sizeof(t));
+
+  if (read_bytes != (std::streamsize)sizeof(t)) {
+    fprintf(stderr, "fail: %s | good: %s | eof: %s | bad: %s\n",
+            stream.fail() ? "yes" : "no", stream.good() ? "yes" : "no",
+            stream.eof() ? "yes" : "no", stream.bad() ? "yes" : "no");
+  }
+
 
   if constexpr (std::is_same_v<std::uint32_t, T>) {
     fprintf(stderr, "read %s\n", std::format("{}", t).c_str());
@@ -92,7 +104,7 @@ template <typename T>
 static void expect_stream(std::istream& stream, const T& expected)
 {
   T value;
-  stream.read(reinterpret_cast<char*>(&value), sizeof(value));
+  read_stream(stream, value);
 
   assert(value == expected);
 }
