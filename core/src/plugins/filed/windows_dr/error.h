@@ -32,7 +32,7 @@ struct win_error : std::exception {
 };
 
 struct com_error : std::exception {
-  com_error(const char* where, HRESULT) {}
+  com_error(const char*, HRESULT) {}
 
   const char* what() const { return ""; }
 };
