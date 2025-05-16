@@ -29,6 +29,7 @@
 #include <variant>
 #include <cassert>
 #include <format>
+#include <span>
 
 #include <Windows.h>
 #include <guiddef.h>
@@ -136,24 +137,18 @@ struct file_header {
 struct disk_header {
   static constexpr std::uint64_t magic_value = build_magic("badrdisk");
 
-  uint64_t cylinder_count;
+  uint64_t disk_size;
   uint32_t media_type;
-  uint32_t tracks_per_cylinder;
-  uint32_t sectors_per_track;
   uint32_t bytes_per_sector;
   uint32_t extent_count;
 
   disk_header() = default;
-  disk_header(uint64_t cylinder_count_,
+  disk_header(uint64_t disk_size_,
               uint32_t media_type_,
-              uint32_t tracks_per_cylinder_,
-              uint32_t sectors_per_track_,
               uint32_t bytes_per_sector_,
               uint32_t extent_count_)
-      : cylinder_count{cylinder_count_}
+      : disk_size{disk_size_}
       , media_type{media_type_}
-      , tracks_per_cylinder{tracks_per_cylinder_}
-      , sectors_per_track{sectors_per_track_}
       , bytes_per_sector{bytes_per_sector_}
       , extent_count{extent_count_}
   {
@@ -162,10 +157,8 @@ struct disk_header {
   void write(std::ostream& stream) const
   {
     write_stream(stream, magic_value);
-    write_stream(stream, cylinder_count);
+    write_stream(stream, disk_size);
     write_stream(stream, media_type);
-    write_stream(stream, tracks_per_cylinder);
-    write_stream(stream, sectors_per_track);
     write_stream(stream, bytes_per_sector);
     write_stream(stream, extent_count);
   }
@@ -173,10 +166,8 @@ struct disk_header {
   void read(std::istream& stream)
   {
     expect_stream(stream, magic_value);
-    read_stream(stream, cylinder_count);
+    read_stream(stream, disk_size);
     read_stream(stream, media_type);
-    read_stream(stream, tracks_per_cylinder);
-    read_stream(stream, sectors_per_track);
     read_stream(stream, bytes_per_sector);
     read_stream(stream, extent_count);
   }
@@ -197,6 +188,7 @@ struct part_table_header {
   uint32_t Datum0;
   uint64_t Datum1;
   uint64_t Datum2;
+  char Data[16];
 
   part_table_header() = default;
   part_table_header(uint32_t partition_count_,
@@ -204,13 +196,17 @@ struct part_table_header {
                     part_type part_type,
                     uint32_t Datum0_,
                     uint64_t Datum1_,
-                    uint64_t Datum2_)
+                    uint64_t Datum2_,
+                    std::span<const char> Data_ = {})
       : partition_count{partition_count_}
       , part_table_type{part_type}
       , Datum0{Datum0_}
       , Datum1{Datum1_}
       , Datum2{Datum2_}
+      , Data{}
   {
+    assert(Data_.size() <= std::size(Data));
+    memcpy(Data, Data_.data(), Data_.size());
   }
 
   void write(std::ostream& stream) const
@@ -221,6 +217,7 @@ struct part_table_header {
     write_stream(stream, Datum0);
     write_stream(stream, Datum1);
     write_stream(stream, Datum2);
+    write_stream(stream, Data);
   }
 
   void read(std::istream& stream)
@@ -231,6 +228,7 @@ struct part_table_header {
     read_stream(stream, Datum0);
     read_stream(stream, Datum1);
     read_stream(stream, Datum2);
+    read_stream(stream, Data);
   }
 };
 
