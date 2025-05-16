@@ -38,12 +38,14 @@ struct partition_info_raw {};
 struct partition_info_mbr {
   uint32_t CheckSum;
   uint32_t Signature;
+  char bootstrap[446];
 };
 struct partition_info_gpt {
   GUID DiskId;
   uint64_t StartingUsableOffset;
   uint64_t UsableLength;
   uint32_t MaxPartitionCount;
+  char bootstrap[446];
 };
 
 using partition_info
@@ -185,10 +187,12 @@ struct part_table_header {
   uint32_t partition_count;
   uint32_t part_table_size_in_bytes;
   uint8_t part_table_type;
+  // at this point we should just divide this into header + data ...
   uint32_t Datum0;
   uint64_t Datum1;
   uint64_t Datum2;
   char Data[16];
+  char Data2[446];
 
   part_table_header() = default;
   part_table_header(uint32_t partition_count_,
@@ -197,16 +201,20 @@ struct part_table_header {
                     uint32_t Datum0_,
                     uint64_t Datum1_,
                     uint64_t Datum2_,
-                    std::span<const char> Data_ = {})
+                    std::span<const char> Data_ = {},
+                    std::span<const char> Data2_ = {})
       : partition_count{partition_count_}
       , part_table_type{part_type}
       , Datum0{Datum0_}
       , Datum1{Datum1_}
       , Datum2{Datum2_}
       , Data{}
+      , Data2{}
   {
     assert(Data_.size() <= std::size(Data));
     memcpy(Data, Data_.data(), Data_.size());
+    assert(Data2_.size() <= std::size(Data2));
+    memcpy(Data2, Data2_.data(), Data2_.size());
   }
 
   void write(std::ostream& stream) const
@@ -218,6 +226,7 @@ struct part_table_header {
     write_stream(stream, Datum1);
     write_stream(stream, Datum2);
     write_stream(stream, Data);
+    write_stream(stream, Data2);
   }
 
   void read(std::istream& stream)
@@ -229,6 +238,7 @@ struct part_table_header {
     read_stream(stream, Datum1);
     read_stream(stream, Datum2);
     read_stream(stream, Data);
+    read_stream(stream, Data2);
   }
 };
 

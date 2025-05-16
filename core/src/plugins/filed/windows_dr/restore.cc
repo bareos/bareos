@@ -66,16 +66,21 @@ partition_layout ReadDiskPartTable(std::istream& stream)
       layout.info = partition_info_raw{};
     } break;
     case part_type::Mbr: {
-      layout.info = partition_info_mbr{.CheckSum = header.Datum0,
-                                       .Signature = (uint32_t)header.Datum1};
+      partition_info_mbr mbr{.CheckSum = header.Datum0,
+                             .Signature = (uint32_t)header.Datum1};
+      memcpy(mbr.bootstrap, header.Data2, sizeof(header.Data2));
+      layout.info = mbr;
     } break;
     case part_type::Gpt: {
-      layout.info = partition_info_gpt{
+      partition_info_gpt gpt{
           .DiskId = std::bit_cast<GUID>(header.Data),
           .StartingUsableOffset = header.Datum1,
           .UsableLength = header.Datum2,
           .MaxPartitionCount = header.Datum0,
       };
+
+      memcpy(gpt.bootstrap, header.Data2, sizeof(header.Data2));
+      layout.info = gpt;
 
     } break;
   }
@@ -362,12 +367,7 @@ struct mbr_entry {
 static_assert(sizeof(mbr_entry) == 16);
 
 struct mbr {
-  char bootstrap[440];
-  // the next two members are optional and can be
-  // used for more bootstrap space
-  char unique_id[4];
-  char reserved[2];
-  //
+  char bootstrap[446];
   mbr_entry entries[4];
   uint8_t check[2];
 };
@@ -376,7 +376,9 @@ static_assert(sizeof(mbr) == 512);
 
 #pragma pack(pop)
 
-void WriteProtectionMBR(HANDLE output, std::uint64_t end_lba)
+void WriteProtectionMBR(HANDLE output,
+                        std::uint64_t end_lba,
+                        std::span<const char> bootstrap)
 {
   static constexpr uint8_t gpt_type = 0xEE;
 
@@ -399,9 +401,8 @@ void WriteProtectionMBR(HANDLE output, std::uint64_t end_lba)
   mbr protective_mbr = {};
   protective_mbr.entries[0] = gpt_entry;
 
-  memset(protective_mbr.bootstrap, 0xBB, sizeof(protective_mbr.bootstrap));
-  memset(protective_mbr.unique_id, 0xDE, sizeof(protective_mbr.unique_id));
-  memset(protective_mbr.reserved, 0xAC, sizeof(protective_mbr.reserved));
+  assert(bootstrap.size() <= std::size(protective_mbr.bootstrap));
+  memcpy(protective_mbr.bootstrap, bootstrap.data(), bootstrap.size());
 
   protective_mbr.check[0] = 0x55;
   protective_mbr.check[1] = 0xAA;
@@ -421,7 +422,7 @@ void WritePartitionTable(HANDLE output,
                          std::size_t disk_size)
 {
   if (auto* Gpt = std::get_if<partition_info_gpt>(&table.info)) {
-    WriteProtectionMBR(output, disk_size / 512 - 1);
+    WriteProtectionMBR(output, disk_size / 512 - 1, Gpt->bootstrap);
 
     {
       DWORD off_low = 1024;
