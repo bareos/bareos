@@ -443,15 +443,9 @@ static void MultiplyDevice(DeviceResource& original,
 {
   // create autochanger
   if (!original.changer_res) {
-    original.changer_res = new AutochangerResource();
-    original.changer_res->resource_name_ = strdup(original.resource_name_);
-    original.changer_res->changer_name = strdup("dev/null");
-    original.changer_res->changer_command = strdup("");
-    original.changer_res->device_resources
-        = new alist<DeviceResource*>(10, not_owned_by_alist);
-    original.changer_res->rcode_ = R_AUTOCHANGER;
-    original.changer_res->rcode_str_ = "Autochanger";
-    original.changer_res->refcnt_ = 1;
+    original.changer_res = AutochangerResource::CreateImplicitAutochanger(
+                               std::string(original.resource_name_))
+                               .release();
     original.changer_command = strdup("");
     if (!config.GetResWithName(R_AUTOCHANGER,
                                original.changer_res->resource_name_)) {

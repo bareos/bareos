@@ -26,6 +26,9 @@
 
 #include "lib/bareos_resource.h"
 
+#include <string>
+#include <memory>
+
 template <typename T> class alist;
 
 namespace storagedaemon {
@@ -34,6 +37,10 @@ class DeviceResource;
 class AutochangerResource : public BareosResource {
  public:
   AutochangerResource();
+
+  static std::unique_ptr<AutochangerResource> CreateImplicitAutochanger(
+      const std::string& device_name);
+
   virtual ~AutochangerResource() = default;
   AutochangerResource& operator=(const AutochangerResource& rhs);
   bool PrintConfig(OutputFormatterResource& send,
@@ -47,6 +54,8 @@ class AutochangerResource : public BareosResource {
   char* changer_name{nullptr};    /**< Changer device name */
   char* changer_command{nullptr}; /**< Changer command  -- external program */
   brwlock_t changer_lock;         /**< One changer operation at a time */
+ private:
+  bool implicitly_created_{false};
 };
 } /* namespace storagedaemon */
 
