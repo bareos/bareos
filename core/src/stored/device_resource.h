@@ -103,16 +103,9 @@ class DeviceResource : public BareosResource {
                    const ConfigurationParser& /* unused */,
                    bool hide_sensitive_data = false,
                    bool verbose = false) override;
-  void MultipliedDeviceRestoreBaseName();
-  void MultipliedDeviceRestoreNumberedName();
   bool Validate() override;
 
   std::unique_ptr<DeviceResource> CreateCopy(const std::string& copy_name);
-
- private:
-  std::string multiplied_device_resource_base_name; /** < base name without
-                                                     appended numbers */
-  char* temporarily_swapped_numbered_name;
 };
 } /* namespace storagedaemon */
 

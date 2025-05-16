@@ -68,13 +68,7 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
   for (auto* device_resource : original_alist) {
-    if (device_resource->multiplied_device_resource) {
-      if (device_resource->multiplied_device_resource == device_resource) {
-        DeviceResource* d = new DeviceResource(*device_resource);
-        d->MultipliedDeviceRestoreBaseName();
-        temp_alist->append(d);
-      }
-    } else {
+    if (!device_resource->multiplied_device_resource) {
       DeviceResource* d = new DeviceResource(*device_resource);
       temp_alist->append(d);
     }
