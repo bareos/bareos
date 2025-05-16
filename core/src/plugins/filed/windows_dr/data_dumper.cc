@@ -752,6 +752,8 @@ std::optional<std::vector<partition_cover>> CrossCheckPartitionsAndExtents(
   return covers;
 }
 
+
+// on linux we can get the disk_geometry with the HDIO_GETGEO ioctl
 std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
 {
   DISK_GEOMETRY_EX geo;
