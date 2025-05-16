@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,19 +22,29 @@
 */
 
 #include "stored/autochanger_resource.h"
+#include "stored_conf.h"
 #include "lib/alist.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
-
 namespace storagedaemon {
 
 AutochangerResource::AutochangerResource()
-    : BareosResource()
-    , device_resources(nullptr)
-    , changer_name(nullptr)
-    , changer_command(nullptr)
 {
-  return;
+  rcode_ = R_AUTOCHANGER;
+  rcode_str_ = "Autochanger";
+}
+
+std::unique_ptr<AutochangerResource>
+AutochangerResource::CreateImplicitAutochanger(const std::string& device_name)
+{
+  auto autochanger = std::make_unique<AutochangerResource>();
+  autochanger->device_resources
+      = new alist<DeviceResource*>(10, not_owned_by_alist);
+  autochanger->resource_name_ = strdup(device_name.c_str());
+  autochanger->changer_name = strdup("/dev/null");
+  autochanger->changer_command = strdup("");
+  autochanger->implicitly_created_ = true;
+  return autochanger;
 }
 
 AutochangerResource& AutochangerResource::operator=(
@@ -53,17 +63,12 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
                                       bool hide_sensitive_data,
                                       bool verbose)
 {
+  if (implicitly_created_) { return false; }
   alist<DeviceResource*>* original_alist = device_resources;
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
   for (auto* device_resource : original_alist) {
-    if (device_resource->multiplied_device_resource) {
-      if (device_resource->multiplied_device_resource == device_resource) {
-        DeviceResource* d = new DeviceResource(*device_resource);
-        d->MultipliedDeviceRestoreBaseName();
-        temp_alist->append(d);
-      }
-    } else {
+    if (!device_resource->multiplied_device_resource) {
       DeviceResource* d = new DeviceResource(*device_resource);
       temp_alist->append(d);
     }
