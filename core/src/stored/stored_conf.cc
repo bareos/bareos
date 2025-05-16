@@ -454,7 +454,7 @@ static void MultiplyDevice(DeviceResource& original,
     if (it != devices.end()) { devices.remove(it - devices.begin()); }
     Emsg0(M_INFO, 0,
           "Device resource \"%s\" will not implicitly create autochanger "
-          "\"%sChanger\" resource since it is already used by autochanger "
+          "\"%s\" resource since it is already used by autochanger "
           "resource \"%s\".\n",
           original.resource_name_, original.resource_name_,
           original.changer_res->resource_name_);
