@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,9 @@
 #include "stored/dev.h"
 #include "stored/io_direction.h"
 #include "lib/bareos_resource.h"
+
+#include <string>
+#include <memory>
 
 namespace storagedaemon {
 
@@ -100,10 +103,11 @@ class DeviceResource : public BareosResource {
                    const ConfigurationParser& /* unused */,
                    bool hide_sensitive_data = false,
                    bool verbose = false) override;
-  void CreateAndAssignSerialNumber(uint16_t number);
   void MultipliedDeviceRestoreBaseName();
   void MultipliedDeviceRestoreNumberedName();
   bool Validate() override;
+
+  std::unique_ptr<DeviceResource> CreateCopy(const std::string& copy_name);
 
  private:
   std::string multiplied_device_resource_base_name; /** < base name without

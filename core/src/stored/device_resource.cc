@@ -200,22 +200,14 @@ void DeviceResource::MultipliedDeviceRestoreNumberedName()
   temporarily_swapped_numbered_name = nullptr;
 }
 
-void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
+std::unique_ptr<DeviceResource> DeviceResource::CreateCopy(
+    const std::string& copy_name)
 {
-  if (multiplied_device_resource_base_name.empty()) {
-    /* save the original name which is
-     * the base name for multiplied devices */
-    multiplied_device_resource_base_name = resource_name_;
-  }
-
-  std::string tmp_name = multiplied_device_resource_base_name;
-
-  char b[4 + 1];
-  ::sprintf(b, "%04d", number < 10000 ? number : 9999);
-  tmp_name += b;
-
-  free(resource_name_);
-  resource_name_ = strdup(tmp_name.c_str());
+  auto device = std::make_unique<DeviceResource>(*this);
+  device->resource_name_ = strdup(copy_name.c_str());
+  device->multiplied_device_resource = this;
+  device->count = 0;
+  return device;
 }
 
 static void WarnOnSetMaxBlockSize(const DeviceResource& resource)
