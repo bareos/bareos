@@ -2150,7 +2150,14 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
       rc.next_pool = select_pool_resource(ua);
     }
   } else if (!rc.next_pool) {
-    rc.next_pool = rc.pool->NextPool; /* use default */
+    // use next pool from job
+    if (rc.job->next_pool) {
+      rc.next_pool = rc.job->next_pool;
+    }
+    // use next pool from pool
+    else {
+      rc.next_pool = rc.pool->NextPool;
+    }
   }
   if (rc.next_pool) {
     Dmsg1(100, "Using next pool %s\n", rc.next_pool->resource_name_);
