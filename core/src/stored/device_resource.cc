@@ -41,7 +41,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
     , mount_point(nullptr)
     , mount_command(nullptr)
     , unmount_command(nullptr)
-    , temporarily_swapped_numbered_name(nullptr) /* should not copy */
 {
   if (other.media_type) { media_type = strdup(other.media_type); }
   if (other.archive_device_string) {
@@ -98,8 +97,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   }
   count = other.count;
   multiplied_device_resource = other.multiplied_device_resource;
-  multiplied_device_resource_base_name
-      = other.multiplied_device_resource_base_name;
   dev = other.dev;
   changer_res = other.changer_res;
 }
@@ -152,11 +149,8 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   unmount_command = rhs.unmount_command;
   count = rhs.count;
   multiplied_device_resource = rhs.multiplied_device_resource;
-  multiplied_device_resource_base_name
-      = rhs.multiplied_device_resource_base_name;
   dev = rhs.dev;
   changer_res = rhs.changer_res;
-  temporarily_swapped_numbered_name = rhs.temporarily_swapped_numbered_name;
 
   return *this;
 }
@@ -168,36 +162,10 @@ bool DeviceResource::PrintConfig(OutputFormatterResource& send,
                                  bool verbose)
 {
   if (multiplied_device_resource) {
-    if (multiplied_device_resource == this) {
-      MultipliedDeviceRestoreBaseName();
-      BareosResource::PrintConfig(send, *my_config, hide_sensitive_data,
-                                  verbose);
-      MultipliedDeviceRestoreNumberedName();
-    } else {
-      /* do not print the multiplied devices */
-      return false;
-    }
-  } else {
-    BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
+    return false;
   }
+  BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
   return true;
-}
-
-
-void DeviceResource::MultipliedDeviceRestoreBaseName()
-{
-  temporarily_swapped_numbered_name = resource_name_;
-  resource_name_
-      = const_cast<char*>(multiplied_device_resource_base_name.c_str());
-}
-
-void DeviceResource::MultipliedDeviceRestoreNumberedName()
-{
-  /* call MultipliedDeviceRestoreBaseName() before */
-  ASSERT(temporarily_swapped_numbered_name);
-
-  resource_name_ = temporarily_swapped_numbered_name;
-  temporarily_swapped_numbered_name = nullptr;
 }
 
 std::unique_ptr<DeviceResource> DeviceResource::CreateCopy(
