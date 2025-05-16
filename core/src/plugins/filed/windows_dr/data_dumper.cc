@@ -32,6 +32,7 @@
 #include <cassert>
 #include <algorithm>
 #include <fstream>
+#include <limits>
 
 #include <Windows.h>
 #include <guiddef.h>
@@ -511,6 +512,38 @@ std::optional<partition_layout> partitioning(DRIVE_LAYOUT_INFORMATION_EX* info)
   return std::nullopt;
 }
 
+void read_volume_file(HANDLE hndl, std::span<char> buffer)
+{
+  alignas(4096) char real_buffer[4096];
+
+  std::size_t bytes_to_read = buffer.size();
+  std::size_t total_bytes = 0;
+  while (total_bytes < bytes_to_read) {
+    DWORD bytes_read = 0;
+
+    if (!ReadFile(hndl, real_buffer, (DWORD)std::size(real_buffer), &bytes_read,
+                  NULL)) {
+      auto err = GetLastError();
+      fprintf(stderr, "could not read from %p: Err=%d\n", hndl, err);
+
+      throw win_error("ReadFile", err);
+    }
+
+    if (bytes_read != std::size(real_buffer)) {
+      fprintf(stderr, "premature reading end.  Still %llu bytes to go...",
+              bytes_to_read);
+      return;
+    }
+
+    DWORD read_size
+        = (DWORD)std::min(std::size(real_buffer), bytes_to_read - total_bytes);
+
+    std::memcpy(buffer.data() + total_bytes, real_buffer, read_size);
+
+    total_bytes += read_size;
+  }
+}
+
 std::optional<partition_layout> GetPartitionLayout(HANDLE device)
 {
   std::vector<char> buffer;
@@ -541,10 +574,17 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
 
   switch (info->PartitionStyle) {
     case PARTITION_STYLE_MBR: {
-      result.info = partition_info_mbr{
+      partition_info_mbr mbr{
           std::bit_cast<std::uint32_t>(info->Mbr.CheckSum),
           std::bit_cast<std::uint32_t>(info->Mbr.Signature),
       };
+      result.info = mbr;
+
+      DWORD off_low = 0;
+      LONG off_high = 0;
+      SetFilePointer(device, off_low, &off_high, FILE_BEGIN);
+      read_volume_file(device, mbr.bootstrap);
+
       fprintf(stderr, "mbr partitioning\n");
     } break;
     case PARTITION_STYLE_RAW: {
@@ -552,12 +592,20 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
       fprintf(stderr, "raw partitioning style => nothing to do\n");
     } break;
     case PARTITION_STYLE_GPT: {
-      result.info = partition_info_gpt{
+      partition_info_gpt gpt{
           info->Gpt.DiskId,
           std::bit_cast<std::uint64_t>(info->Gpt.StartingUsableOffset),
           std::bit_cast<std::uint64_t>(info->Gpt.UsableLength),
           std::bit_cast<std::uint32_t>(info->Gpt.MaxPartitionCount),
       };
+
+      DWORD off_low = 0;
+      LONG off_high = 0;
+      SetFilePointer(device, off_low, &off_high, FILE_BEGIN);
+      read_volume_file(device, gpt.bootstrap);
+
+      result.info = gpt;
+      fprintf(stderr, "gpt partitioning\n");
     } break;
     default: {
       fprintf(stderr, "unknown partitioning\n");
@@ -608,7 +656,7 @@ void WriteDiskPartTable(std::ostream& stream,
             },
             [](const partition_info_mbr& mbr) {
               part_table_header header(0, 0, part_type::Mbr, mbr.CheckSum,
-                                       mbr.Signature, 0);
+                                       mbr.Signature, 0, {}, mbr.bootstrap);
               return header;
             },
             [](const partition_info_gpt& gpt) {
@@ -618,7 +666,8 @@ void WriteDiskPartTable(std::ostream& stream,
                   gpt.StartingUsableOffset, gpt.UsableLength,
                   std::span<const char>(
                       reinterpret_cast<const char*>(&gpt.DiskId),
-                      sizeof(gpt.DiskId)));
+                      sizeof(gpt.DiskId)),
+                  gpt.bootstrap);
               return header;
             },
         },
@@ -1018,10 +1067,11 @@ void dump_data(std::ostream& stream)
     std::wstring disk_path
         = std::wstring(L"\\\\.\\PhysicalDrive") + std::to_wstring(id);
 
-    HANDLE hndl
-        = CreateFileW(disk_path.c_str(), 0,
-                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    HANDLE hndl = CreateFileW(
+        disk_path.c_str(), GENERIC_READ,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+        OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_BACKUP_SEMANTICS,
+        NULL);
 
     if (hndl == INVALID_HANDLE_VALUE) {
       fprintf(stderr, "could not open %ls\n", disk_path.c_str());
