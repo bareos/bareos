@@ -31,6 +31,7 @@
 #include <bit>
 #include <cassert>
 #include <algorithm>
+#include <fstream>
 
 #include <Windows.h>
 #include <guiddef.h>
@@ -52,7 +53,7 @@
 #include "CLI/Formatter.hpp"
 
 void dump_data(std::ostream&);
-void restore_data(std::istream&);
+void restore_data(std::istream&, bool raw_file);
 
 int main(int argc, char* argv[])
 {
@@ -60,6 +61,12 @@ int main(int argc, char* argv[])
 
   auto* save = app.add_subcommand("save");
   auto* restore = app.add_subcommand("restore");
+  std::string filename;
+  restore->add_option("--from", filename,
+                      "read from this file instead of stdin");
+  bool raw_file;
+  restore->add_flag("--raw", raw_file);
+
 
   app.require_subcommand(1, 1);
 
@@ -69,8 +76,15 @@ int main(int argc, char* argv[])
       _setmode(_fileno(stdout), _O_BINARY);
       dump_data(std::cout);
     } else if (*restore) {
-      _setmode(_fileno(stdin), _O_BINARY);
-      restore_data(std::cin);
+      if (filename.empty()) {
+        _setmode(_fileno(stdin), _O_BINARY);
+        restore_data(std::cin, raw_file);
+      } else {
+        fprintf(stderr, "using %s as input\n", filename.c_str());
+        std::ifstream infile{filename,
+                             std::ios_base::in | std::ios_base::binary};
+        restore_data(infile, raw_file);
+      }
     }
 
     return 0;
@@ -569,11 +583,10 @@ void WriteHeader(std::ostream& stream, const disk_map& map)
 
 void WriteDiskHeader(std::ostream& stream,
                      const disk& Disk,
-                     const DISK_GEOMETRY& geo)
+                     const DISK_GEOMETRY_EX& geo)
 {
-  disk_header header(geo.Cylinders.QuadPart, geo.MediaType,
-                     geo.TracksPerCylinder, geo.SectorsPerTrack,
-                     geo.BytesPerSector, Disk.extents.size());
+  disk_header header(geo.DiskSize.QuadPart, geo.Geometry.MediaType,
+                     geo.Geometry.BytesPerSector, Disk.extents.size());
 
   header.write(stream);
 }
@@ -599,9 +612,13 @@ void WriteDiskPartTable(std::ostream& stream,
               return header;
             },
             [](const partition_info_gpt& gpt) {
+              static_assert(sizeof(gpt.DiskId) == 16);
               part_table_header header(
                   0, 0, part_type::Gpt, gpt.MaxPartitionCount,
-                  gpt.StartingUsableOffset, gpt.UsableLength);
+                  gpt.StartingUsableOffset, gpt.UsableLength,
+                  std::span<const char>(
+                      reinterpret_cast<const char*>(&gpt.DiskId),
+                      sizeof(gpt.DiskId)));
               return header;
             },
         },
@@ -735,17 +752,17 @@ std::optional<std::vector<partition_cover>> CrossCheckPartitionsAndExtents(
   return covers;
 }
 
-std::optional<DISK_GEOMETRY> GetDiskGeometry(HANDLE disk)
+std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
 {
-  DISK_GEOMETRY geo;
+  DISK_GEOMETRY_EX geo;
   DWORD bytes_written = 0;
-  auto res = DeviceIoControl(disk, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &geo,
-                             sizeof(geo), &bytes_written, NULL);
+  auto res = DeviceIoControl(disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0,
+                             &geo, sizeof(geo), &bytes_written, NULL);
 
-  if (sizeof(geo) != bytes_written) {
-    fprintf(stderr, "drive geometry: bad read.  got %d bytes\n", bytes_written);
-    return std::nullopt;
-  }
+  // if (sizeof(geo) != bytes_written) {
+  //   fprintf(stderr, "drive geometry: bad read.  got %d bytes\n",
+  //   bytes_written); return std::nullopt;
+  // }
 
   return geo;
 }
