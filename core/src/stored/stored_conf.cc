@@ -429,15 +429,6 @@ static void ParseConfigCb(LEX* lc,
   }
 }
 
-static DeviceResource* CopyDevice(DeviceResource& original, int serial_number)
-{
-  DeviceResource* copy = new DeviceResource(original);
-  copy->CreateAndAssignSerialNumber(serial_number);
-  copy->multiplied_device_resource = std::addressof(original);
-  copy->count = 0;
-  copy->refcnt_ = 1;
-  return copy;
-}
 static void MultiplyDevice(DeviceResource& original,
                            ConfigurationParser& config)
 {
@@ -477,7 +468,7 @@ static void MultiplyDevice(DeviceResource& original,
     DeviceResource* device = dynamic_cast<DeviceResource*>(
         config.GetResWithName(R_DEVICE, device_name.c_str()));
     if (!device) {
-      device = CopyDevice(original, i);
+      device = original.CreateCopy(device_name).release();
       if (i == 0) { device->autoselect = false; }
       config.AppendToResourcesChain(device, R_DEVICE);
     } else {
