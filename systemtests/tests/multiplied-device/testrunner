@@ -96,7 +96,6 @@ run_bconsole
 mv ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf_backup ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf
 mv ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf_backup ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf
 
-
 check_two_logs
 check_restore_diff ${BackupDirectory}
 
@@ -155,7 +154,7 @@ expect_grep "The volume 'Full-0003' has been truncated." \
 
 # make sure the devices really have been truncated
 for i in 1 2 3; do
-  size=$(wc -c < "storage/Full-000${i}")
+  size=$(wc -c <"storage/Full-000${i}")
   if [ "$size" -ge 300 ]; then
     echo "file storage/Full-000$i" was not truncated
     estat=3
