@@ -29,14 +29,22 @@
 namespace storagedaemon {
 
 AutochangerResource::AutochangerResource()
-    : BareosResource()
-    , device_resources(nullptr)
-    , changer_name(nullptr)
-    , changer_command(nullptr)
 {
   rcode_ = R_AUTOCHANGER;
   rcode_str_ = "Autochanger";
-  return;
+}
+
+std::unique_ptr<AutochangerResource>
+AutochangerResource::CreateImplicitAutochanger(const std::string& device_name)
+{
+  auto autochanger = std::make_unique<AutochangerResource>();
+  autochanger->device_resources
+      = new alist<DeviceResource*>(10, not_owned_by_alist);
+  autochanger->resource_name_ = strdup(device_name.c_str());
+  autochanger->changer_name = strdup("/dev/null");
+  autochanger->changer_command = strdup("");
+  autochanger->implicitly_created_ = true;
+  return autochanger;
 }
 
 AutochangerResource& AutochangerResource::operator=(
@@ -55,6 +63,7 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
                                       bool hide_sensitive_data,
                                       bool verbose)
 {
+  if (implicitly_created_) { return false; }
   alist<DeviceResource*>* original_alist = device_resources;
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
