@@ -308,47 +308,112 @@ gpt_entry MakeGptEntry(const PARTITION_INFORMATION_EX& info)
   return entry;
 }
 
+#pragma pack(push, 1)
 struct chs {
   // chs = cylinder, head, sector
-  uint8_t cylinder;
-  uint8_t head;
-  uint8_t sector;
+  uint8_t data[3]{};
+
+  chs() = default;
+  chs(std::uint16_t cylinder,  // 10 bits
+      std::uint8_t head,       // 8 bits
+      std::uint8_t sector      // 6 bits
+  )
+  {
+    data[0] = head;
+    data[1] = sector | (cylinder << 6) & 0b11;
+    data[2] = (cylinder & 0b11111111);
+  }
+
+  static chs from_lba(std::uint64_t lba, DISK_GEOMETRY geo)
+  {
+    // lba = ((cylinder * geo.TracksPerCylinder) + head) * geo.SectorsPerTrack
+    //             + (sector - 1)
+
+    std::uint64_t sector = lba % geo.SectorsPerTrack + 1;
+    auto rest = lba / geo.SectorsPerTrack;
+
+    std::uint64_t head = rest % geo.TracksPerCylinder;
+    std::uint64_t cylinder = rest / geo.TracksPerCylinder;
+
+
+    if (sector > 63 || head > 255 || cylinder > 1023) {
+      // offset is too large, so just return the largest one
+      return chs((std::uint16_t)(geo.Cylinders.QuadPart - 1),
+                 (std::uint8_t)(geo.TracksPerCylinder - 1),
+                 (std::uint8_t)(geo.SectorsPerTrack - 1));
+    }
+
+    return chs((std::uint16_t)cylinder, (std::uint8_t)head,
+               (std::uint8_t)sector);
+  }
 };
 
-#pragma pack(push, 1)
-struct mbr {
+static_assert(sizeof(chs) == 3);
+
+struct mbr_entry {
   uint8_t bootable;
-  chs start_chs[3];
+  chs start_chs;
   uint8_t os_type;
-  chs end_chs[3];
+  chs end_chs;
   uint32_t start_lba;
   uint32_t end_lba;
 };
-#pragma pop(push)
 
-static_assert(sizeof(mbr) == 16);
+static_assert(sizeof(mbr_entry) == 16);
 
-void WriteProtectionMBR(HANDLE output)
+struct mbr {
+  char bootstrap[440];
+  // the next two members are optional and can be
+  // used for more bootstrap space
+  char unique_id[4];
+  char reserved[2];
+  //
+  mbr_entry entries[4];
+  uint8_t check[2];
+};
+
+static_assert(sizeof(mbr) == 512);
+
+#pragma pack(pop)
+
+void WriteProtectionMBR(HANDLE output, std::uint64_t end_lba)
 {
+  static constexpr uint8_t gpt_type = 0xEE;
+
+  DISK_GEOMETRY geo = {.Cylinders = {5221},
+                       .MediaType = {},
+                       .TracksPerCylinder = 255,
+                       .SectorsPerTrack = 64,
+                       .BytesPerSector = 512};
+
+  mbr_entry gpt_entry = {
+      .bootable = 0,  // if you dont understand gpt, dont boot this
+      .start_chs = chs::from_lba(1, geo),
+      .os_type = gpt_type,
+      .end_chs = chs::from_lba(end_lba, geo),
+      .start_lba = 1,
+      .end_lba = (std::uint32_t)std::max(
+          end_lba, (std::uint64_t)std::numeric_limits<std::uint32_t>::max()),
+  };
+
+  mbr protective_mbr = {};
+  protective_mbr.entries[0] = gpt_entry;
+
+  memset(protective_mbr.bootstrap, 0xBB, sizeof(protective_mbr.bootstrap));
+  memset(protective_mbr.unique_id, 0xDE, sizeof(protective_mbr.unique_id));
+  memset(protective_mbr.reserved, 0xAC, sizeof(protective_mbr.reserved));
+
+  protective_mbr.check[0] = 0x55;
+  protective_mbr.check[1] = 0xAA;
+
+  static_assert(sizeof(mbr) == 512);
   {
     DWORD off_low = 0;
     LONG off_high = 0;
 
     SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
   }
-
-  static constexpr uint8_t protective_mbr_type = 0xEE;
-
-  mbr ProctiveMBR = {
-      .bootable = 0,  // if you dont understand gpt, dont boot this
-      .start_chs = {0, 0, 1},
-      .os_type = protective_mbr_type,
-      .end_chs = {},  // TODO
-      .start_lba = 1,
-      .end_lba = 0,  // TODO
-  };
-
-  write_buffer(output);
+  write_buffer(output, as_span(protective_mbr));
 }
 
 void WritePartitionTable(HANDLE output,
@@ -356,7 +421,7 @@ void WritePartitionTable(HANDLE output,
                          std::size_t disk_size)
 {
   if (auto* Gpt = std::get_if<partition_info_gpt>(&table.info)) {
-    WriteProtectionMBR(output);
+    WriteProtectionMBR(output, disk_size / 512 - 1);
 
     {
       DWORD off_low = 1024;
