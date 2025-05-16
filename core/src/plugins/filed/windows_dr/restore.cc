@@ -46,10 +46,7 @@ disk_info ReadDiskHeader(std::istream& stream)
   disk_header header;
   header.read(stream);
 
-  std::uint64_t disk_size = header.cylinder_count;
-  disk_size *= header.tracks_per_cylinder;
-  disk_size *= header.sectors_per_track;
-  disk_size *= header.bytes_per_sector;
+  std::uint64_t disk_size = header.disk_size;
 
   return {disk_size, header.extent_count};
 }
@@ -74,10 +71,12 @@ partition_layout ReadDiskPartTable(std::istream& stream)
     } break;
     case part_type::Gpt: {
       layout.info = partition_info_gpt{
+          .DiskId = std::bit_cast<GUID>(header.Data),
           .StartingUsableOffset = header.Datum1,
           .UsableLength = header.Datum2,
           .MaxPartitionCount = header.Datum0,
       };
+
     } break;
   }
 
@@ -173,8 +172,8 @@ static_assert(sizeof(gpt_header) == 92);
 struct gpt_entry {
   GUID partition_type;
   GUID id;
-  uint64_t start;
-  uint64_t end;  // inclusive!
+  uint64_t start_lba;
+  uint64_t end_lba;  // inclusive!
   uint64_t attributes;
   wchar_t name[36];
 };
@@ -264,9 +263,26 @@ gpt_header MakeGptHeader(const partition_info_gpt& info,
                          uint64_t disk_size)
 {
   gpt_header header;
+
   header.lba_location = 1;
+  std::uint64_t lba_count = disk_size / 512;
+  header.backup_lba_location = lba_count - 1;
+
+  {
+    wchar_t guid_storage[64] = {};
+
+    StringFromGUID2(info.DiskId, guid_storage, sizeof(guid_storage));
+    fprintf(stderr, "disk id: %ls\n", guid_storage);
+  }
+
+  fprintf(stderr, "disk size = %llu, lbas = %llu, loc = %llx\n", disk_size,
+          lba_count, header.backup_lba_location);
+
+  fprintf(stderr, "usable start = %llu, usable length = %llu\n",
+          info.StartingUsableOffset, info.UsableLength);
   header.first_usable_lba = info.StartingUsableOffset / 512;
-  header.last_usable_lba = header.first_usable_lba + info.UsableLength / 512;
+  header.last_usable_lba
+      = header.first_usable_lba + info.UsableLength / 512 - 1;
 
   header.disk_guid = info.DiskId;
   header.table_lba_location = 2;
@@ -274,10 +290,6 @@ gpt_header MakeGptHeader(const partition_info_gpt& info,
   header.partition_count = info.MaxPartitionCount;
   header.entry_size = sizeof(gpt_entry);
   header.table_crc32_sum = table_crc.get();
-
-  std::uint64_t lba_count = disk_size / 512;
-
-  header.backup_lba_location = lba_count - 1;
 
   header.crc32_sum = ccitt_crc{}.update(as_span(header)).get();
 
@@ -289,11 +301,54 @@ gpt_entry MakeGptEntry(const PARTITION_INFORMATION_EX& info)
   gpt_entry entry;
   entry.partition_type = info.Gpt.PartitionType;
   entry.id = info.Gpt.PartitionId;
-  entry.start = info.StartingOffset.QuadPart;
-  entry.end = entry.start + info.PartitionLength.QuadPart - 1;
+  entry.start_lba = info.StartingOffset.QuadPart / 512;
+  entry.end_lba = entry.start_lba + info.PartitionLength.QuadPart / 512 - 1;
   entry.attributes = info.Gpt.Attributes;
   std::memcpy(entry.name, info.Gpt.Name, sizeof(entry.name));
   return entry;
+}
+
+struct chs {
+  // chs = cylinder, head, sector
+  uint8_t cylinder;
+  uint8_t head;
+  uint8_t sector;
+};
+
+#pragma pack(push, 1)
+struct mbr {
+  uint8_t bootable;
+  chs start_chs[3];
+  uint8_t os_type;
+  chs end_chs[3];
+  uint32_t start_lba;
+  uint32_t end_lba;
+};
+#pragma pop(push)
+
+static_assert(sizeof(mbr) == 16);
+
+void WriteProtectionMBR(HANDLE output)
+{
+  {
+    DWORD off_low = 0;
+    LONG off_high = 0;
+
+    SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
+  }
+
+  static constexpr uint8_t protective_mbr_type = 0xEE;
+
+  mbr ProctiveMBR = {
+      .bootable = 0,  // if you dont understand gpt, dont boot this
+      .start_chs = {0, 0, 1},
+      .os_type = protective_mbr_type,
+      .end_chs = {},  // TODO
+      .start_lba = 1,
+      .end_lba = 0,  // TODO
+  };
+
+  write_buffer(output);
 }
 
 void WritePartitionTable(HANDLE output,
@@ -301,6 +356,8 @@ void WritePartitionTable(HANDLE output,
                          std::size_t disk_size)
 {
   if (auto* Gpt = std::get_if<partition_info_gpt>(&table.info)) {
+    WriteProtectionMBR(output);
+
     {
       DWORD off_low = 1024;
       LONG off_high = 0;
@@ -313,8 +370,15 @@ void WritePartitionTable(HANDLE output,
       auto entry = MakeGptEntry(part);
 
       table_crc.update(as_span(entry));
+      write_buffer(output, as_span(entry));
+    }
 
-      write_buffer(output, std::span<char>((char*)&entry, sizeof(entry)));
+    for (size_t i = 0;
+         i < Gpt->MaxPartitionCount - table.partition_infos.size(); ++i) {
+      gpt_entry entry;
+      memset(&entry, 0, sizeof(entry));
+      table_crc.update(as_span(entry));
+      write_buffer(output, as_span(entry));
     }
 
     auto header = MakeGptHeader(*Gpt, table_crc, disk_size);
@@ -376,59 +440,73 @@ void ReadExtent(std::istream& stream, HANDLE output)
   copy_output(stream, header.offset, header.length, output);
 }
 
-void restore_data(std::istream& stream)
+void restore_data(std::istream& stream, bool raw_file)
 {
   fprintf(stderr, "reading header\n");
   auto disk_count = ReadHeader(stream);
 
   fprintf(stderr, "disk count = %lu\n", disk_count);
   for (std::size_t i = 0; i < disk_count; ++i) {
-    auto disk_path = std::format(L"disk-{}.vhdx", i);
-
     fprintf(stderr, "reading disk header\n");
     auto disk_header = ReadDiskHeader(stream);
     fprintf(stderr, "reading disk header ... done\n");
 
-    VIRTUAL_STORAGE_TYPE vst
-        = {.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
-           .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT};
-
     HANDLE output = INVALID_HANDLE_VALUE;
 
-    CREATE_VIRTUAL_DISK_PARAMETERS params = {
-      .Version = CREATE_VIRTUAL_DISK_VERSION_2,
-      .Version2 = {
-        .UniqueId = {},
-        .MaximumSize = disk_header.disk_size,
-        .BlockSizeInBytes = {},
-        .SectorSizeInBytes = {},
-        .PhysicalSectorSizeInBytes = {},
-        .ParentPath = nullptr,
-        .SourcePath = nullptr,
-      },
-    };
+    if (raw_file) {
+      auto disk_path = std::format(L"disk-{}.raw", i);
 
-    fprintf(stderr, "creating disk\n");
-    DWORD hres = CreateVirtualDisk(
-        &vst, disk_path.c_str(), VIRTUAL_DISK_ACCESS_NONE, NULL,
-        CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &output);
+      output = CreateFileW(disk_path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE,
+                           NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    if (hres != ERROR_SUCCESS) {
-      fprintf(stderr, "CreateVirtualDisk(%ls) returned %d\n", disk_path.c_str(),
-              hres);
-      return;
-    }
+      if (output == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "could not open %ls: Err=%d\n", disk_path.c_str(),
+                GetLastError());
 
-    ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
-        = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
-    auto attach_res = AttachVirtualDisk(output, NULL,
-                                        ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST,
-                                        0, &attach_params, 0);
+        return;
+      }
+    } else {
+      auto disk_path = std::format(L"disk-{}.vhdx", i);
 
-    if (attach_res != ERROR_SUCCESS) {
-      fprintf(stderr, "AttachVirtualDisk(%ls) returned %d\n", disk_path.c_str(),
-              attach_res);
-      return;
+      VIRTUAL_STORAGE_TYPE vst
+          = {.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
+             .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT};
+
+      CREATE_VIRTUAL_DISK_PARAMETERS params = {
+        .Version = CREATE_VIRTUAL_DISK_VERSION_2,
+        .Version2 = {
+          .UniqueId = {},
+          .MaximumSize = disk_header.disk_size,
+          .BlockSizeInBytes = {},
+          .SectorSizeInBytes = {},
+          .PhysicalSectorSizeInBytes = {},
+          .ParentPath = nullptr,
+          .SourcePath = nullptr,
+        },
+      };
+
+      fprintf(stderr, "creating disk\n");
+      DWORD hres = CreateVirtualDisk(
+          &vst, disk_path.c_str(), VIRTUAL_DISK_ACCESS_NONE, NULL,
+          CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &output);
+
+      if (hres != ERROR_SUCCESS) {
+        fprintf(stderr, "CreateVirtualDisk(%ls) returned %d\n",
+                disk_path.c_str(), hres);
+        return;
+      }
+
+      ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+          = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+      auto attach_res = AttachVirtualDisk(
+          output, NULL, ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST, 0,
+          &attach_params, 0);
+
+      if (attach_res != ERROR_SUCCESS) {
+        fprintf(stderr, "AttachVirtualDisk(%ls) returned %d\n",
+                disk_path.c_str(), attach_res);
+        return;
+      }
     }
 
 
