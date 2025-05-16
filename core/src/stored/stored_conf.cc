@@ -499,7 +499,14 @@ static void MultiplyConfiguredDevices(ConfigurationParser& config)
   BareosResource* p = nullptr;
   while ((p = config.GetNextRes(R_DEVICE, p))) {
     DeviceResource& d = dynamic_cast<DeviceResource&>(*p);
-    if (d.count > 1) { MultiplyDevice(d, config); }
+    if (d.count > 1 && d.count < 10000) {
+      MultiplyDevice(d, config);
+    } else if (d.count >= 10000) {
+      Emsg0(M_CONFIG_ERROR, 0,
+            "Count directive in device \"%s\" is %u, but must be in range 1 < "
+            "Count < 10000.\n",
+            d.resource_name_, d.count);
+    }
   }
 }
 
