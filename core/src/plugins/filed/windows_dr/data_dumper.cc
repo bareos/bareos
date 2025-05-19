@@ -530,8 +530,10 @@ void read_volume_file(HANDLE hndl, std::span<char> buffer)
     }
 
     if (bytes_read != std::size(real_buffer)) {
-      fprintf(stderr, "premature reading end.  Still %llu bytes to go...",
-              bytes_to_read);
+      fprintf(stderr,
+              "premature reading end.  Only read %d bytes, but still %llu "
+              "bytes to go...\n",
+              bytes_read, bytes_to_read);
       return;
     }
 
@@ -721,7 +723,20 @@ void copy_stream(HANDLE hndl,
     }
 
     if (bytes_read == 0) {
-      fprintf(stderr, "premature reading end.  Still %llu bytes to go...",
+      {
+        LARGE_INTEGER dist = {};
+        dist.QuadPart = 0;
+        LARGE_INTEGER new_pos = {};
+        if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
+          fprintf(stderr, "coud not determine size: Err=%d\n", GetLastError());
+        } else {
+          fprintf(stderr, "Reading (%llu, %llu) of %p.  Current = %llu\n",
+                  offset, length, hndl, new_pos.QuadPart);
+        }
+      }
+
+      fprintf(stderr,
+              "premature reading end (read 0).  Still %llu bytes to go...\n",
               bytes_to_read);
       return;
     }
@@ -740,6 +755,8 @@ void WriteDiskData(std::ostream& stream, const disk& disk_extents)
 
     header.write(stream);
 
+    fprintf(stderr, "copying extent (%llu, %llu)\n", extent.handle_offset,
+            extent.length);
     copy_stream(extent.hndl, extent.handle_offset, extent.length, stream);
   }
 }
@@ -1044,6 +1061,21 @@ void dump_data(std::ostream& stream)
               path.c_str(), copy.c_str());
       CloseHandle(volume);
       throw win_error("CreateFileW", GetLastError());
+    }
+    {
+      DWORD bytes_returned;
+      if (!DeviceIoControl(shadow,                        // handle to file
+                           FSCTL_ALLOW_EXTENDED_DASD_IO,  // dwIoControlCode
+                           NULL,                          // lpInBuffer
+                           0,                             // nInBufferSize
+                           NULL,                          // lpOutBuffer
+                           0,                             // nOutBufferSize
+                           &bytes_returned, NULL)) {
+        fprintf(stderr, "---- could not enable extended access (Err=%d) ----\n",
+                GetLastError());
+      } else {
+        fprintf(stderr, "---- extended access enabled ----\n");
+      }
     }
 
     fprintf(stderr, "shadow %ls -> %p\n", copy.c_str(), shadow);
