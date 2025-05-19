@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,7 @@ from ..registry import register_checker
 
 @register_checker("*", name="shebang in executables")
 def check_shebang(file_path, file_content, **kwargs):
+    _ = kwargs
     if os.access(file_path, os.X_OK):
         return file_content[0:2] == "#!"
     else:
@@ -31,6 +32,7 @@ def check_shebang(file_path, file_content, **kwargs):
 
 @register_checker("*.py", name="python shebang")
 def check_python_shebang(file_path, file_content, **kwargs):
+    _ = kwargs
     if os.access(file_path, os.X_OK):
         return (
             file_content.startswith("#!/usr/bin/env python\n")

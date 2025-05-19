@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,10 +20,11 @@
 from shutil import which
 import logging
 import subprocess
+from ..registry import register_modifier
 
 clang_format_exe = which("clang-format")
 if clang_format_exe:
-    logging.getLogger(__name__).info("using executable {}".format(clang_format_exe))
+    logging.getLogger(__name__).info("using executable %s", clang_format_exe)
 else:
     logging.getLogger(__name__).error("cannot find a clang-format executable")
 
@@ -38,35 +39,25 @@ def invoke_clang_format(source_text, *argv):
             stderr=subprocess.PIPE,
             encoding="utf-8",
             universal_newlines=True,
+            check=True,
         )
     except OSError as exc:
-        raise Exception(
-            "Command '{}' failed to start: {}".format(
-                subprocess.list2cmdline(invocation), exc
-            )
-        )
+        raise OSError(
+            f"Command '{subprocess.list2cmdline(invocation)}' failed to start: {exc} from exc"
+        ) from exc
 
     if proc.returncode:
-        raise Exception(
-            "Command '{}' returned non-zero exit status {}".format(
-                subprocess.list2cmdline(invocation), proc.returncode
-            ),
+        cmd = subprocess.list2cmdline(invocation)
+        raise OSError(
+            f"Command '{cmd}' returned non-zero exit status {proc.returncode}",
             proc.stderr,
         )
     return proc.stdout
 
 
-if __name__ == "__main__":
-    logging.getLogger().setLevel(logging.DEBUG)
-    # print(clang_format_file(Path(sys.argv[1])))
-    exit(0)
-
-
-from ..registry import register_modifier
-
-
 @register_modifier("*.c", "*.cc", "*.h", name="clang-format check")
 def check_clang_format(file_path, file_content, **kwargs):
+    _ = kwargs
     return invoke_clang_format(
-        file_content, "-style=file", "-assume-filename={}".format(file_path)
+        file_content, "-style=file", f"-assume-filename={file_path}"
     )

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -50,12 +50,12 @@ def load_plugins(plugin_whitelist=None):
     all_plugins = list_plugins()
     if plugin_whitelist:
         for plugin_name in plugin_whitelist:
-            if plugin_name in all_plugins.keys():
-                logger.debug("loading plugin '{}'".format(plugin_name))
+            if plugin_name in all_plugins:
+                logger.debug("loading plugin '%s'", plugin_name)
                 import_module(all_plugins[plugin_name])
             else:
-                logger.error("cannot find plugin {} - skipping.".format(plugin_name))
+                logger.error("cannot find plugin %s - skipping.", plugin_name)
     else:
         for plugin_shortname, plugin_fullname in all_plugins.items():
-            logger.debug("loading plugin {}".format(plugin_shortname))
+            logger.debug("loading plugin %s", plugin_shortname)
             import_module(plugin_fullname)
