@@ -26,4 +26,6 @@ target_link_libraries(
   dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES}
 )
 
+add_executable(copy copy.cc)
+
 include(DebugEdit)
