@@ -16,11 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mtx-changer: make mandatory test mt-st versus cpio-mt [PR #2257]
 - packaging: set all `*.conf.examples` as %config(noreplace) [PR #2271]
 - disable bareosfd-python3-module-test on FreeBSD [PR #2280]
+- stored: fix sd volume limit [PR #2276]
 
 ### Changed
 - config: add virtual file changer example + documentation [PR #2248]
-- stored: fix sd volume limit [PR #2276]
-- various cmake improvements (partial) [PR #2277]
+- various cmake improvements (partial backport only) [PR #2277]
 
 ## [24.0.2] - 2025-03-27
 
