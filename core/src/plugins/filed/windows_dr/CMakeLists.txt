@@ -22,6 +22,8 @@ include(BareosConfigureFile)
 
 add_executable(dr-dumper data_dumper.cc restore.cc)
 
-target_link_libraries(dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11)
+target_link_libraries(
+  dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES}
+)
 
 include(DebugEdit)
