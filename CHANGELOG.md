@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mariabackup: reset self.mycnf to string type [PR #2254]
 - config: fix Director -> Director resource [PR #2274]
 - mtx-changer: make mandatory test mt-st versus cpio-mt [PR #2257]
+- packaging: set all `*.conf.examples` as %config(noreplace) [PR #2271]
 
 ### Changed
 - config: add virtual file changer example + documentation [PR #2248]
@@ -448,6 +449,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2249]: https://github.com/bareos/bareos/pull/2249
 [PR #2254]: https://github.com/bareos/bareos/pull/2254
 [PR #2257]: https://github.com/bareos/bareos/pull/2257
+[PR #2271]: https://github.com/bareos/bareos/pull/2271
 [PR #2274]: https://github.com/bareos/bareos/pull/2274
 [PR #2276]: https://github.com/bareos/bareos/pull/2276
 [PR #2277]: https://github.com/bareos/bareos/pull/2277
