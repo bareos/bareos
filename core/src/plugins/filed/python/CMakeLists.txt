@@ -108,6 +108,11 @@ if(Python3_FOUND)
         LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
         "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
     )
+    if(CMAKE_SYSTEM_NAME MATCHES FreeBSD)
+      # the testscript randomly segfaults on FreeBSD during the CI-build, so we
+      # disable it for now.
+      set_property(TEST bareosfd-python3-module PROPERTY DISABLED true)
+    endif()
     add_test(
       NAME python-simple-test-example
       COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test/simple-test-example.py
