@@ -38,7 +38,7 @@ target_sources(chunked-device PRIVATE ordered_cbuf.cc chunked_device.cc)
 
 add_library(backend-utils STATIC)
 target_sources(backend-utils PRIVATE util.cc)
-target_link_libraries(backend-utils PUBLIC fmt::fmt)
+target_link_libraries(backend-utils PUBLIC Bareos::Lib fmt::fmt)
 
 if(HAVE_GFAPI)
   add_sd_backend(bareossd-gfapi)
