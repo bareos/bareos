@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,12 +29,14 @@ to:
   // This is a waste of space
 """
 
-from ..registry import register_modifier
 import re
+from ..registry import register_modifier
 
 replace_regexp = re.compile(r"\/\*\*?\n.*\*(.*)\n.*\*/", flags=re.MULTILINE)
 
 
 @register_modifier("*.cc", "*.c", "*.h", name="compact three-line comments")
 def shrink_three_line_comments(file_path, file_content, **kwargs):
+    _ = file_path
+    _ = kwargs
     return replace_regexp.sub("//\\1", file_content)

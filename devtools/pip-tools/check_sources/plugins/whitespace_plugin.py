@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,8 @@ from ..registry import register_modifier
 
 @register_modifier("*", name="trailing spaces")
 def strip_tailing_whitespace(file_path, file_content, **kwargs):
+    _ = file_path
+    _ = kwargs
     lines = []
     for line in file_content.split("\n"):
         # rst file use ".. " as comment marker.
@@ -33,11 +35,14 @@ def strip_tailing_whitespace(file_path, file_content, **kwargs):
 
 @register_modifier("*", name="trailing newlines")
 def strip_tailing_newlines(file_path, file_content, **kwargs):
+    _ = file_path
+    _ = kwargs
     return file_content.rstrip("\n") + "\n"
 
 
 @register_modifier("*", name="dos line-endings")
 def fix_dos_lineendings(file_path, file_content, **kwargs):
+    _ = kwargs
     if (
         file_path.match("*.bat")
         or file_path.match("*.cmd")

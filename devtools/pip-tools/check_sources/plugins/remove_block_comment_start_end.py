@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -39,8 +39,8 @@ should remain untouched
 
 """
 
-from ..registry import register_modifier
 import re
+from ..registry import register_modifier
 
 replace_regexp = re.compile(
     r"(?<!^)/\*+\n\s+\*([\s\S]*?)\n\s+\*/", flags=re.MULTILINE | re.DOTALL
@@ -49,4 +49,6 @@ replace_regexp = re.compile(
 
 @register_modifier("*.cc", "*.c", "*.h", name="compress c block comments")
 def shrink_block_comment_start_end(file_path, file_content, **kwargs):
+    _ = file_path
+    _ = kwargs
     return replace_regexp.sub("/*\\1 */", file_content)
