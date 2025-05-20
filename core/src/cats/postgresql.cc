@@ -165,19 +165,6 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
   return retval;
 }
 
-static std::string AddEscapes(std::string_view src,
-                              const std::vector<char>& to_escape)
-{
-  std::string out;
-  for (char ch : src) {
-    if (std::find(to_escape.begin(), to_escape.end(), ch) != to_escape.end()) {
-      out += '\\';
-    }
-    out += ch;
-  }
-  return out;
-}
-
 /**
  * Now actually open the database.  This can generate errors, which are returned
  * in the errmsg
@@ -219,26 +206,36 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
 
   // If connection fails, try at 5 sec intervals for 30 seconds.
   for (int retry = 0; retry < 6; retry++) {
-    std::stringstream conninfo;
+    std::vector<const char*> keys;
+    std::vector<const char*> values;
     if (db_address_) {
-      conninfo << "host='" << AddEscapes(db_address_, {'\'', '\\'}) << "' ";
+      keys.emplace_back("host");
+      values.emplace_back(db_address_);
     }
     if (port) {
-      conninfo << "port='" << AddEscapes(port, {'\'', '\\'}) << "' ";
+      keys.emplace_back("port");
+      values.emplace_back(port);
     }
     if (db_name_) {
-      conninfo << "dbname='" << AddEscapes(db_name_, {'\'', '\\'}) << "' ";
+      keys.emplace_back("dbname");
+      values.emplace_back(db_name_);
     }
     if (db_user_) {
-      conninfo << "user='" << AddEscapes(db_user_, {'\'', '\\'}) << "' ";
+      keys.emplace_back("user");
+      values.emplace_back(db_user_);
     }
     if (db_password_) {
-      conninfo << "password='" << AddEscapes(db_password_, {'\'', '\\'})
-                << "' ";
+      keys.emplace_back("password");
+      values.emplace_back(db_password_);
     }
-    conninfo << "sslmode='disable'";
+    keys.emplace_back("sslmode");
+    values.emplace_back("disable");
 
-    db_handle_ = PQconnectdb(conninfo.str().c_str());
+    keys.emplace_back(nullptr);
+    values.emplace_back(nullptr);
+    ASSERT(keys.size() == values.size());
+
+    db_handle_ = PQconnectdbParams(keys.data(), values.data(), true);
 
     // If connecting does not succeed, try again in case it was a timing
     // problem
@@ -259,8 +256,8 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   if (PQstatus(db_handle_) != CONNECTION_OK) {
     Mmsg2(errmsg,
           T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-             "Possible causes: SQL server not running; password incorrect; "
-             "max_connections exceeded.\n(%s)\n"),
+              "Possible causes: SQL server not running; password incorrect; "
+              "server requires ssl; max_connections exceeded.\n(%s)\n"),
           db_name_, db_user_, PQerrorMessage(db_handle_));
     return errmsg;
   }
