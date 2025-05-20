@@ -241,6 +241,15 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     // problem
     if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
 
+    auto err = PQerrorMessage(db_handle_);
+    if (!err) { err = "unknown reason"; }
+    Dmsg1(50, "Could not connect to db: Err=%s\n", err);
+    Mmsg2(errmsg,
+          T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
+             "Possible causes: SQL server not running; password incorrect; "
+             "server requires ssl; max_connections exceeded.\n(%s)\n"),
+          db_name_, db_user_, err);
+
     // free memory if not successful
     PQfinish(db_handle_);
     db_handle_ = nullptr;
@@ -248,19 +257,11 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     Bmicrosleep(5, 0);
   }
 
-  Dmsg0(50, "pg_real_connect %s\n",
-        PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
+  Dmsg0(50, "pg_real_connect %s\n", db_handle_ ? "ok" : "failed");
   Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
         (db_password_ == NULL) ? "(NULL)" : db_password_);
 
-  if (PQstatus(db_handle_) != CONNECTION_OK) {
-    Mmsg2(errmsg,
-          T_("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-              "Possible causes: SQL server not running; password incorrect; "
-              "server requires ssl; max_connections exceeded.\n(%s)\n"),
-          db_name_, db_user_, PQerrorMessage(db_handle_));
-    return errmsg;
-  }
+  if (!db_handle_) { return errmsg; }
 
   connected_ = true;
   if (!CheckTablesVersion(jcr)) { return errmsg; }
