@@ -134,16 +134,48 @@ partition_layout ReadDiskPartTable(std::istream& stream)
   return layout;
 }
 
-void write_buffer(HANDLE output, std::span<const char> buffer)
+void write_buffer(HANDLE output,
+                  std::size_t start,
+                  std::span<const char> buffer)
 {
   std::size_t offset = 0;
 
-  while (offset != buffer.size()) {
-    DWORD bytes_written;
+  fprintf(
+      stderr,
+      "%llu: %02X %02X %02X %02X %02X %02X ... %02X %02X %02X %02X %02X %02X\n",
+      start, (unsigned char)buffer[0], (unsigned char)buffer[1],
+      (unsigned char)buffer[2], (unsigned char)buffer[3],
+      (unsigned char)buffer[4], (unsigned char)buffer[5],
+      (unsigned char)buffer[buffer.size() - 6],
+      (unsigned char)buffer[buffer.size() - 5],
+      (unsigned char)buffer[buffer.size() - 4],
+      (unsigned char)buffer[buffer.size() - 3],
+      (unsigned char)buffer[buffer.size() - 2],
+      (unsigned char)buffer[buffer.size() - 1]);
 
-    if (!WriteFile(output, buffer.data() + offset,
-                   (DWORD)(buffer.size() - offset), &bytes_written, NULL)) {
-      throw win_error("WriteFileW", GetLastError());
+  while (offset != buffer.size()) {
+    OVERLAPPED overlapped = {};
+    overlapped.Offset = (DWORD)(start + offset);
+    overlapped.OffsetHigh = (DWORD)((start + offset) >> 32);
+
+    DWORD bytes_written = 0;
+
+    assert(!WriteFile(output, buffer.data() + offset,
+                      (DWORD)(buffer.size() - offset), NULL, &overlapped));
+    auto err = GetLastError();
+
+    if (err != ERROR_IO_PENDING) {
+      fprintf(stderr, "WriteFile(no-async): could not write (%llu, %llu): %d\n",
+              offset, buffer.size() - offset, err);
+      assert(err == ERROR_IO_PENDING);
+    }
+
+    if (!GetOverlappedResult(output, &overlapped, &bytes_written, TRUE)) {
+      err = GetLastError();
+      fprintf(stderr, "WriteFile: could not write (%llu, %llu): %d\n", offset,
+              buffer.size() - offset, err);
+
+      throw win_error("WriteFileW", err);
     }
 
     offset += bytes_written;
@@ -206,6 +238,18 @@ template <typename T> std::span<const char> as_span(const T& val)
   return {reinterpret_cast<const char*>(&val), sizeof(T)};
 }
 
+template <typename T> std::span<const char> byte_span(const std::vector<T>& val)
+{
+  std::span<const char> result{reinterpret_cast<const char*>(val.data()),
+                               sizeof(T) * val.size()};
+
+  fprintf(stderr, "first bytes: %02X %02X %02X %02X %02X %02X\n",
+          (unsigned char)result[0], (unsigned char)result[1],
+          (unsigned char)result[2], (unsigned char)result[3],
+          (unsigned char)result[4], (unsigned char)result[5]);
+  return result;
+}
+
 gpt_header MakeGptHeader(const partition_info_gpt& info,
                          ccitt_crc table_crc,
                          uint64_t disk_size)
@@ -248,6 +292,14 @@ gpt_entry MakeGptEntry(const PARTITION_INFORMATION_EX& info)
 {
   gpt_entry entry;
   entry.partition_type = info.Gpt.PartitionType;
+
+  wchar_t guid_storage[64] = {};
+
+  StringFromGUID2(info.Gpt.PartitionType, guid_storage, sizeof(guid_storage));
+  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
+  StringFromGUID2(entry.partition_type, guid_storage, sizeof(guid_storage));
+  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
+
   entry.id = info.Gpt.PartitionId;
   entry.start_lba = info.StartingOffset.QuadPart / 512;
   entry.end_lba = entry.start_lba + info.PartitionLength.QuadPart / 512 - 1;
@@ -325,7 +377,7 @@ void WriteProtectionMBR(HANDLE output,
 {
   static constexpr uint8_t gpt_type = 0xEE;
 
-  DISK_GEOMETRY geo = {.Cylinders = {5221},
+  DISK_GEOMETRY geo = {.Cylinders = {4177},
                        .MediaType = {},
                        .TracksPerCylinder = 255,
                        .SectorsPerTrack = 64,
@@ -351,13 +403,8 @@ void WriteProtectionMBR(HANDLE output,
   protective_mbr.check[1] = 0xAA;
 
   static_assert(sizeof(mbr) == 512);
-  {
-    DWORD off_low = 0;
-    LONG off_high = 0;
 
-    SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
-  }
-  write_buffer(output, as_span(protective_mbr));
+  write_buffer(output, 0, as_span(protective_mbr));
 }
 
 void WritePartitionTable(HANDLE output,
@@ -367,27 +414,32 @@ void WritePartitionTable(HANDLE output,
   if (auto* Gpt = std::get_if<partition_info_gpt>(&table.info)) {
     WriteProtectionMBR(output, disk_size / 512 - 1, Gpt->bootstrap);
 
-    {
-      DWORD off_low = 1024;
-      LONG off_high = 0;
-
-      SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
-    }
+    std::size_t table_offset = 1024;
 
     ccitt_crc table_crc;
-    for (auto& part : table.partition_infos) {
-      auto entry = MakeGptEntry(part);
 
+    std::size_t partition_count = table.partition_infos.size();
+    std::size_t rounded_size = (partition_count + 3) / 4 * 4;
+    // we can only write in 512byte bursts, so make sure
+    // that we always write in multiple of 4 entries at once
+    std::vector<gpt_entry> entries;
+    entries.reserve(rounded_size);
+    for (auto& part : table.partition_infos) {
+      auto& entry = entries.emplace_back(MakeGptEntry(part));
       table_crc.update(as_span(entry));
-      write_buffer(output, as_span(entry));
     }
+
+    entries.resize(rounded_size);
+    write_buffer(output, table_offset, byte_span(entries));
+    table_offset += sizeof(gpt_entry) * partition_count;
 
     for (size_t i = 0;
          i < Gpt->MaxPartitionCount - table.partition_infos.size(); ++i) {
       gpt_entry entry;
       memset(&entry, 0, sizeof(entry));
       table_crc.update(as_span(entry));
-      write_buffer(output, as_span(entry));
+      // write_buffer(output, table_offset, as_span(entry));
+      table_offset += sizeof(entry);
     }
 
     auto header = MakeGptHeader(*Gpt, table_crc, disk_size);
@@ -396,14 +448,7 @@ void WritePartitionTable(HANDLE output,
 
     std::memcpy(sector, &header, sizeof(header));
 
-    {
-      DWORD off_low = 512;
-      LONG off_high = 0;
-
-      SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
-    }
-
-    write_buffer(output, sector);
+    write_buffer(output, 512, as_span(sector));
   } else if (auto* Mbr = std::get_if<partition_info_mbr>(&table.info)) {
     // todo
     fprintf(stderr, "cant restore mbr yet\n");
@@ -422,18 +467,26 @@ void copy_output(std::istream& stream,
   std::vector<char> buffer;
   buffer.resize(4 * 1024 * 1024);
 
-  DWORD off_low = offset & 0xFFFFFFFF;
-  LONG off_high = (offset >> 32) & 0xFFFFFFFF;
-  SetFilePointer(output, off_low, &off_high, FILE_BEGIN);
-
   std::size_t bytes_to_read = length;
 
   while (bytes_to_read > 0) {
-    stream.read(buffer.data(), buffer.size());
+    auto bytes_this_call = std::min(bytes_to_read, buffer.size());
 
-    assert(stream.gcount() == (std::streamsize)buffer.size());
+    stream.read(buffer.data(), bytes_this_call);
 
-    write_buffer(output, buffer);
+    auto read_this_call = stream.gcount();
+
+    if (read_this_call != (std::streamsize)bytes_this_call) {
+      fprintf(stderr, "read %llu/%llu, got %llu\n", bytes_this_call,
+              bytes_to_read, read_this_call);
+
+      assert(read_this_call == (std::streamsize)bytes_this_call);
+    }
+
+    write_buffer(output, offset + (length - bytes_to_read),
+                 {std::begin(buffer), bytes_this_call});
+
+    bytes_to_read -= bytes_this_call;
   }
 #endif
 }
