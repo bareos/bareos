@@ -1122,6 +1122,17 @@ void dump_data(std::ostream& stream)
     auto geo = GetDiskGeometry(hndl);
     if (!geo) { continue; }
 
+    fprintf(stderr,
+            "disk geometry:\n"
+            " - Size: %llu\n"
+            " - Cylinders: %llu\n"
+            " - Tracks/C: %lu\n"
+            " - Sectors/T: %lu\n"
+            " - Bytes/S: %lu\n",
+            geo->DiskSize.QuadPart, geo->Geometry.Cylinders.QuadPart,
+            geo->Geometry.TracksPerCylinder, geo->Geometry.SectorsPerTrack,
+            geo->Geometry.BytesPerSector);
+
     WriteDiskHeader(stream, disk, geo.value());
     WriteDiskPartTable(stream, disk, layout.value());
     WriteDiskData(stream, disk);
