@@ -170,6 +170,7 @@ std::unique_ptr<DeviceResource> DeviceResource::CreateCopy(
     const std::string& copy_name)
 {
   auto device = std::make_unique<DeviceResource>(*this);
+  if (device->resource_name_) { free(device->resource_name_); }
   device->resource_name_ = strdup(copy_name.c_str());
   device->multiplied_device_resource = this;
   device->count = 0;
