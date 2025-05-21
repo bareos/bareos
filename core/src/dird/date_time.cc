@@ -91,7 +91,15 @@ time_t DateTime::GetTime() const
   tm.tm_sec = second;
   tm.tm_isdst = dst_;
   tm.tm_gmtoff = gmt_offset_;
-  tm.tm_zone = time_zone_.data();
+  if constexpr (std::is_same_v<decltype(tm.tm_zone), const char*>) {
+    tm.tm_zone = time_zone_.c_str();
+  }
+  else if (std::is_same_v<decltype(tm.tm_zone), char*>){
+    tm.tm_zone = strdup(time_zone_.data());
+  }
+  else {
+    static_assert("Unexpected type of tm.tm_zone.");
+  }
   return mktime(&tm);
 }
 
