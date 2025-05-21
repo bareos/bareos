@@ -181,7 +181,7 @@ struct Parser<std::variant<Args...>> {
   {
     static_assert(Index < sizeof...(Args), "Index out of bounds.");
     if (auto value = Parser<std::variant_alternative_t<Index, std::variant<Args...>>>::Parse(str)) {
-      return std::variant<Args...>{*value};
+      return std::make_optional<std::variant<Args...>>(std::move(*value));
     }
     if constexpr (Index + 1 < sizeof...(Args)) {
       return Parse<Index + 1>(str);
