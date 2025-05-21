@@ -42,7 +42,7 @@ struct MonthOfYear {
   static MonthOfYear FromIndex(size_t index)
   {
     ASSERT(index < kNames.size());
-    return {kNames.at(index)};
+    return MonthOfYear{kNames.at(index)};
   }
   static std::optional<MonthOfYear> FromName(std::string_view name)
   {
@@ -68,7 +68,8 @@ struct MonthOfYear {
   std::string_view name;
 
  private:
-  MonthOfYear() = default;
+  MonthOfYear(std::string_view _name)
+    : name(_name) {}
 };
 class WeekOfYear {
  public:
@@ -92,7 +93,7 @@ struct WeekOfMonth {
   static WeekOfMonth FromIndex(size_t index)
   {
     ASSERT(index < kNames.size());
-    return {kNames.at(index)};
+    return WeekOfMonth{kNames.at(index)};
   }
   static std::optional<WeekOfMonth> FromName(std::string_view name)
   {
@@ -123,7 +124,8 @@ struct WeekOfMonth {
   std::string_view name;
 
  private:
-  WeekOfMonth() = default;
+  WeekOfMonth(std::string_view _name)
+    : name(_name) {}
 };
 
 class DayOfMonth {
@@ -145,7 +147,7 @@ struct DayOfWeek {
   static DayOfWeek FromIndex(size_t index)
   {
     ASSERT(index < kNames.size());
-    return {kNames.at(index)};
+    return DayOfWeek{kNames.at(index)};
   }
   static std::optional<DayOfWeek> FromName(std::string_view name)
   {
@@ -171,7 +173,8 @@ struct DayOfWeek {
   std::string_view name;
 
  private:
-  DayOfWeek() = default;
+  DayOfWeek(std::string_view _name)
+    : name(_name) {}
 };
 
 struct TimeOfDay {
