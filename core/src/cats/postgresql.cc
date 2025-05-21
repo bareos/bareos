@@ -47,9 +47,6 @@
 /* pull in the generated queries definitions */
 #  include "postgresql_queries.inc"
 
-#  include <sstream>
-#  include <string_view>
-
 /* -----------------------------------------------------------------------
  *
  *   PostgreSQL dependent defines and subroutines
@@ -204,44 +201,43 @@ const char* BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     port = NULL;
   }
 
+  std::vector<const char*> keys;
+  std::vector<const char*> values;
+  if (db_address_) {
+    keys.emplace_back("host");
+    values.emplace_back(db_address_);
+  }
+  if (port) {
+    keys.emplace_back("port");
+    values.emplace_back(port);
+  }
+  if (db_name_) {
+    keys.emplace_back("dbname");
+    values.emplace_back(db_name_);
+  }
+  if (db_user_) {
+    keys.emplace_back("user");
+    values.emplace_back(db_user_);
+  }
+  if (db_password_) {
+    keys.emplace_back("password");
+    values.emplace_back(db_password_);
+  }
+  keys.emplace_back("sslmode");
+  values.emplace_back("disable");
+
+  keys.emplace_back(nullptr);
+  values.emplace_back(nullptr);
+  ASSERT(keys.size() == values.size());
   // If connection fails, try at 5 sec intervals for 30 seconds.
   for (int retry = 0; retry < 6; retry++) {
-    std::vector<const char*> keys;
-    std::vector<const char*> values;
-    if (db_address_) {
-      keys.emplace_back("host");
-      values.emplace_back(db_address_);
-    }
-    if (port) {
-      keys.emplace_back("port");
-      values.emplace_back(port);
-    }
-    if (db_name_) {
-      keys.emplace_back("dbname");
-      values.emplace_back(db_name_);
-    }
-    if (db_user_) {
-      keys.emplace_back("user");
-      values.emplace_back(db_user_);
-    }
-    if (db_password_) {
-      keys.emplace_back("password");
-      values.emplace_back(db_password_);
-    }
-    keys.emplace_back("sslmode");
-    values.emplace_back("disable");
-
-    keys.emplace_back(nullptr);
-    values.emplace_back(nullptr);
-    ASSERT(keys.size() == values.size());
-
     db_handle_ = PQconnectdbParams(keys.data(), values.data(), true);
 
     // If connecting does not succeed, try again in case it was a timing
     // problem
     if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
 
-    auto err = PQerrorMessage(db_handle_);
+    const char* err = PQerrorMessage(db_handle_);
     if (!err) { err = "unknown reason"; }
     Dmsg1(50, "Could not connect to db: Err=%s\n", err);
     Mmsg2(errmsg,

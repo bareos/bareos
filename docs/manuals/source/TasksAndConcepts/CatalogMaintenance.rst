@@ -243,8 +243,10 @@ Remote PostgreSQL Database
 
 When configuring bareos with a remote database, you need a PostgreSQL superuser login account able to connect to the remote database host.
 
-Note that the PostgreSQL connection must not be a ssl-connection.
-If the PostgreSQL server only allows ssl-connections, the database can not be opened.
+.. note::
+
+   The PostgreSQL connection must not be a ssl-connection.
+   If the PostgreSQL server only allows ssl-connections, the database can not be opened.
 
 Your first step is to check the connection from the |dir| host into the database.
 You can then export the needed environment PG variable, and execute the scripts in the same order than local installation.
