@@ -46,7 +46,7 @@ To define on what day the schedule is triggered, you can supply specifiers from 
 
 If you do not specify any of these, the schedule triggers every day.
 
-For a schedule to be triggered on a certain day, it must match with a specifier from all categories (if given):
+For a schedule to be triggered on a certain day, it must match with a specifier from all specified categories:
 ``jan mon``
    triggers every monday in january
 
@@ -110,7 +110,7 @@ The following Pseudo-BNF defines the syntax for specifying a schedule:
 
    <month-of-year>        ::= jan | feb | mar | apr | may | jun | jul | aug | sep | oct | nov | dec | january | ... | december
    <week-of-year>         ::= w00 | ... | w53 // where w01 is the first week of the year according to ISO8601
-   <week-of-month>        ::= 1st |2nd | 3rd | 4th | 5th | first | second | third | fourth | fifth | last
+   <week-of-month>        ::= 1st | 2nd | 3rd | 4th | 5th | first | second | third | fourth | fifth | last
    <day-of-month>         ::= 1 | ... | 31
    <day-of-week>          ::= sun | mon | tue | wed | thu | fri | sat | sunday | ... | saturday
 

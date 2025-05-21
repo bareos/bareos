@@ -56,7 +56,7 @@ struct MonthOfYear {
     return std::nullopt;
   }
 
-  constexpr size_t Index() const
+  size_t Index() const
   {
     for (size_t i = 0; i < kNames.size(); ++i) {
       if (kNames.at(i).data() == name.data()) { return i; }
@@ -111,7 +111,7 @@ struct WeekOfMonth {
     return std::nullopt;
   }
 
-  constexpr size_t Index() const
+  size_t Index() const
   {
     for (size_t i = 0; i < kNames.size(); ++i) {
       if (kNames.at(i).data() == name.data()) { return i; }
@@ -159,7 +159,7 @@ struct DayOfWeek {
     return std::nullopt;
   }
 
-  constexpr size_t Index() const
+  size_t Index() const
   {
     for (size_t i = 0; i < kNames.size(); ++i) {
       if (kNames.at(i).data() == name.data()) { return i; }
