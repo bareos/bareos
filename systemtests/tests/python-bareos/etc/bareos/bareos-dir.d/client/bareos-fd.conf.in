@@ -1,7 +1,7 @@
 Client {
   Name = bareos-fd
   Description = "Client resource of the Director itself."
-  Address = @hostname@
+  Address = 127.0.0.1
   Password = "@fd_password@"
   Port = @fd_port@
 }

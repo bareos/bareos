@@ -5,7 +5,7 @@
 Director {
   Name = @basename@-dir
   Port = @dir_port@
-  Address = @hostname@
+  Address = 127.0.0.1
   Password = "INVALID"
 }
 

@@ -1,6 +1,6 @@
 Storage {
   Name = File
-  Address = @hostname@
+  Address = 127.0.0.1
   Password = "@sd_password@"
   Device = FileStorage
   Media Type = File
