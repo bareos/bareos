@@ -54,21 +54,17 @@ static int LastDayOfMonth(int year, int month)
 
 DateTime::DateTime(time_t time)
 {
-  struct tm tm = {};
-  Blocaltime(&time, &tm);
-  year = 1900 + tm.tm_year;
-  month = tm.tm_mon;
+  Blocaltime(&time, &original_time_);
+  year = 1900 + original_time_.tm_year;
+  month = original_time_.tm_mon;
   week_of_year = TmWoy(time);
-  week_of_month = (tm.tm_mday - 1) / 7;
-  day_of_year = tm.tm_yday;
-  day_of_month = tm.tm_mday - 1;
-  day_of_week = tm.tm_wday;
-  hour = tm.tm_hour;
-  minute = tm.tm_min;
-  second = tm.tm_sec;
-  dst_ = tm.tm_isdst;
-  gmt_offset_ = tm.tm_gmtoff;
-  time_zone_ = tm.tm_zone;
+  week_of_month = (original_time_.tm_mday - 1) / 7;
+  day_of_year = original_time_.tm_yday;
+  day_of_month = original_time_.tm_mday - 1;
+  day_of_week = original_time_.tm_wday;
+  hour = original_time_.tm_hour;
+  minute = original_time_.tm_min;
+  second = original_time_.tm_sec;
 }
 
 bool DateTime::OnLast7DaysOfMonth() const
@@ -80,7 +76,7 @@ bool DateTime::OnLast7DaysOfMonth() const
 
 time_t DateTime::GetTime() const
 {
-  struct tm tm = {};
+  struct tm tm = original_time_;
   tm.tm_year = year - 1900;
   tm.tm_mon = month;
   tm.tm_yday = day_of_year;
@@ -89,17 +85,6 @@ time_t DateTime::GetTime() const
   tm.tm_hour = hour;
   tm.tm_min = minute;
   tm.tm_sec = second;
-  tm.tm_isdst = dst_;
-  tm.tm_gmtoff = gmt_offset_;
-  if constexpr (std::is_same_v<decltype(tm.tm_zone), const char*>) {
-    tm.tm_zone = time_zone_.c_str();
-  }
-  else if (std::is_same_v<decltype(tm.tm_zone), char*>){
-    tm.tm_zone = strdup(time_zone_.data());
-  }
-  else {
-    static_assert("Unexpected type of tm.tm_zone.");
-  }
   return mktime(&tm);
 }
 
@@ -109,5 +94,23 @@ void DateTime::PrintDebugMessage(int debug_level) const
         GetTime(), hour, month, day_of_month, day_of_week, week_of_year,
         day_of_year);
 }
+
+std::ostream& operator<<(std::ostream& stream, const DateTime& date_time)
+{
+  stream << "DateTime{";
+  stream << "yr=" << date_time.year << ", ";
+  stream << "mon=" << date_time.month << ", ";
+  stream << "yweek=" << date_time.week_of_year << ", ";
+  stream << "mweek=" << date_time.week_of_month << ", ";
+  stream << "yday=" << date_time.day_of_year << ", ";
+  stream << "mday=" << date_time.day_of_month << ", ";
+  stream << "wday=" << date_time.day_of_week << ", ";
+  stream << "hr=" << date_time.hour << ", ";
+  stream << "min=" << date_time.minute << ", ";
+  stream << "sec=" << date_time.second;
+  stream << '}';
+  return stream;
+}
+
 
 }  // namespace directordaemon

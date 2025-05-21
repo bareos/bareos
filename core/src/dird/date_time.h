@@ -203,10 +203,11 @@ struct DateTime {
   int minute{0};
   int second{0};
 
+  friend std::ostream& operator<<(std::ostream& stream,
+                                  const DateTime& date_time);
+
  private:
-  int dst_ = 0;            // daylight saving time
-  int gmt_offset_ = 0;     // seconds east of UTC
-  std::string time_zone_;  // abbreviated
+  tm original_time_;
 };
 
 }  // namespace directordaemon
