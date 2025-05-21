@@ -26,6 +26,9 @@
 #include "lib/alist.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
+
+#include <unordered_set>
+
 namespace storagedaemon {
 
 AutochangerResource::AutochangerResource()
@@ -64,11 +67,19 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
                                       bool verbose)
 {
   if (implicitly_created_) { return false; }
+  std::unordered_set<DeviceResource*> original_copy_devices;
   alist<DeviceResource*>* original_alist = device_resources;
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
   for (auto* device_resource : original_alist) {
-    if (!device_resource->multiplied_device_resource) {
+    if (DeviceResource* original_copy_device = device_resource->multiplied_device_resource) {
+      if (original_copy_devices.find(original_copy_device) == original_copy_devices.end()) {
+        DeviceResource* d = new DeviceResource(*original_copy_device);
+        temp_alist->append(d);    
+        original_copy_devices.insert(original_copy_device);
+      }
+    }
+    else {
       DeviceResource* d = new DeviceResource(*device_resource);
       temp_alist->append(d);
     }
