@@ -284,21 +284,32 @@ enum
   kSunday = 7
 };
 
-TEST_F(SchedulerTest, parse_schedule_correctly) {
-  static std::vector<std::pair<std::string_view, std::string_view>> kSchedules = {
-    {"", "at 00:00"},
-    {"hourly", "hourly at 00:00"},
-    {"hourly at :15", "hourly at 00:15"}, {"hourly at 00:15", "hourly at 00:15"}, {"hourly at 13:15", "hourly at 00:15"},
-    {"at 20:00", "at 20:00"}, {"daily at 20:00", "at 20:00"},
-    {"w00/w02 Fri at 23:10", "w00/w02 Fri at 23:10"},
-    {"Mon-Fri", "Mon-Fri at 00:00"}, {"Mon, Tue, Wed-Fri, Sat", "Mon, Tue, Wed-Fri, Sat at 00:00"}, 
-  };
+TEST_F(SchedulerTest, parse_schedule_correctly)
+{
+  static std::vector<std::pair<std::string_view, std::string_view>> kSchedules
+      = {
+          {"", "at 00:00"},
+          {"hourly", "hourly at 00:00"},
+          {"hourly at :15", "hourly at 00:15"},
+          {"hourly at 00:15", "hourly at 00:15"},
+          {"hourly at 13:15", "hourly at 00:15"},
+          {"at 20:00", "at 20:00"},
+          {"daily at 20:00", "at 20:00"},
+          {"w00/w02 Fri at 23:10", "w00/w02 Fri at 23:10"},
+          {"Mon-Fri", "Mon-Fri at 00:00"},
+          {"Mon, Tue, Wed-Fri, Sat", "Mon, Tue, Wed-Fri, Sat at 00:00"},
+      };
   for (auto [schedule, expected_generated] : kSchedules) {
     auto [result, warnings] = Parser<Schedule>::Parse(schedule);
-    EXPECT_TRUE(std::holds_alternative<Schedule>(result)) << "Could not parse '" << schedule << "'" << std::endl << std::get<Parser<Schedule>::Error>(result).message;
+    EXPECT_TRUE(std::holds_alternative<Schedule>(result))
+        << "Could not parse '" << schedule << "'" << std::endl
+        << std::get<Parser<Schedule>::Error>(result).message;
     if (std::holds_alternative<Schedule>(result)) {
       std::string generated = ToString(std::get<Schedule>(result));
-      EXPECT_EQ(expected_generated, generated) << "Generated schedule string \"" << generated << "\" does not match the expected string \"" << expected_generated << "\"";
+      EXPECT_EQ(expected_generated, generated)
+          << "Generated schedule string \"" << generated
+          << "\" does not match the expected string \"" << expected_generated
+          << "\"";
     }
   }
 }

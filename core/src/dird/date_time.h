@@ -68,8 +68,7 @@ struct MonthOfYear {
   std::string_view name;
 
  private:
-  MonthOfYear(std::string_view _name)
-    : name(_name) {}
+  MonthOfYear(std::string_view _name) : name(_name) {}
 };
 class WeekOfYear {
  public:
@@ -124,8 +123,7 @@ struct WeekOfMonth {
   std::string_view name;
 
  private:
-  WeekOfMonth(std::string_view _name)
-    : name(_name) {}
+  WeekOfMonth(std::string_view _name) : name(_name) {}
 };
 
 class DayOfMonth {
@@ -173,8 +171,7 @@ struct DayOfWeek {
   std::string_view name;
 
  private:
-  DayOfWeek(std::string_view _name)
-    : name(_name) {}
+  DayOfWeek(std::string_view _name) : name(_name) {}
 };
 
 struct TimeOfDay {

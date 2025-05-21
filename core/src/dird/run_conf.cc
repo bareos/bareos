@@ -47,39 +47,32 @@ template <class T> struct Parser {
   static std::optional<T> Parse(std::string_view str);
 };
 
-template<>
-struct Parser<int> {
+template <> struct Parser<int> {
   static std::optional<int> Parse(std::string_view str)
   {
     int value = 0;
-    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.length(), value);
-    if (ec == std::errc() && ptr == str.data() + str.length()) {
-      return value;
-    }
+    auto [ptr, ec]
+        = std::from_chars(str.data(), str.data() + str.length(), value);
+    if (ec == std::errc() && ptr == str.data() + str.length()) { return value; }
     return std::nullopt;
   }
 };
-template<>
-struct Parser<MonthOfYear> {
+template <> struct Parser<MonthOfYear> {
   static std::optional<MonthOfYear> Parse(std::string_view str)
   {
     return MonthOfYear::FromName(str);
   }
 };
-template<>
-struct Parser<WeekOfYear> {
+template <> struct Parser<WeekOfYear> {
   static std::optional<WeekOfYear> Parse(std::string_view str)
   {
-    if (str.size() == 0 || str.at(0) != 'w') {
-      return std::nullopt;
-    }
+    if (str.size() == 0 || str.at(0) != 'w') { return std::nullopt; }
     auto index = Parser<int>::Parse(str.substr(1));
     if (index && 0 <= *index && *index <= 53) { return WeekOfYear{*index}; }
     return std::nullopt;
   }
 };
-template<>
-struct Parser<WeekOfMonth> {
+template <> struct Parser<WeekOfMonth> {
   static std::optional<WeekOfMonth> Parse(std::string_view str)
   {
     return WeekOfMonth::FromName(str);
@@ -95,15 +88,13 @@ template <> struct Parser<DayOfMonth> {
     return std::nullopt;
   }
 };
-template<>
-struct Parser<DayOfWeek> {
+template <> struct Parser<DayOfWeek> {
   static std::optional<DayOfWeek> Parse(std::string_view str)
   {
     return DayOfWeek::FromName(str);
   }
 };
-template<>
-struct Parser<TimeOfDay> {
+template <> struct Parser<TimeOfDay> {
   static std::optional<TimeOfDay> Parse(std::string_view str)
   {
     static constexpr std::string_view kPrefix{"at "};
@@ -130,7 +121,7 @@ struct Parser<TimeOfDay> {
       }
     } else {
       auto hour = Parser<int>::Parse(str.substr(0, index));
-      if (index == 0) { // such that "hourly at :XX" is valid
+      if (index == 0) {  // such that "hourly at :XX" is valid
         hour = std::optional{0};
       }
       auto minute = Parser<int>::Parse(str.substr(index + 1));
@@ -143,15 +134,13 @@ struct Parser<TimeOfDay> {
     return std::nullopt;
   }
 };
-template<>
-struct Parser<Hourly> {
+template <> struct Parser<Hourly> {
   static std::optional<Hourly> Parse(std::string_view str)
   {
     return str == "hourly" ? std::optional{Hourly{}} : std::nullopt;
   }
 };
-template<class T>
-struct Parser<Interval<T>> {
+template <class T> struct Parser<Interval<T>> {
   static std::optional<Interval<T>> Parse(std::string_view str)
   {
     size_t index = str.find('-');
@@ -162,8 +151,7 @@ struct Parser<Interval<T>> {
     return std::nullopt;
   }
 };
-template<class T>
-struct Parser<Modulo<T>> {
+template <class T> struct Parser<Modulo<T>> {
   static std::optional<Modulo<T>> Parse(std::string_view str)
   {
     size_t index = str.find('/');
@@ -174,22 +162,23 @@ struct Parser<Modulo<T>> {
     return std::nullopt;
   }
 };
-template<class... Args>
-struct Parser<std::variant<Args...>> {
-  template<size_t Index = 0>
+template <class... Args> struct Parser<std::variant<Args...>> {
+  template <size_t Index = 0>
   static std::optional<std::variant<Args...>> Parse(std::string_view str)
   {
     static_assert(Index < sizeof...(Args), "Index out of bounds.");
-    if (auto value = Parser<std::variant_alternative_t<Index, std::variant<Args...>>>::Parse(str)) {
+    if (auto value
+        = Parser<std::variant_alternative_t<Index, std::variant<Args...>>>::
+            Parse(str)) {
       return std::make_optional<std::variant<Args...>>(std::move(*value));
     }
-    if constexpr (Index + 1 < sizeof...(Args)) {
-      return Parse<Index + 1>(str);
-    }
+    if constexpr (Index + 1 < sizeof...(Args)) { return Parse<Index + 1>(str); }
     return std::nullopt;
   }
 };
-std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::Warnings> Parser<Schedule>::Parse(const std::vector<std::string>& tokens)
+std::pair<std::variant<Schedule, Parser<Schedule>::Error>,
+          Parser<Schedule>::Warnings>
+Parser<Schedule>::Parse(const std::vector<std::string>& tokens)
 {
   std::vector<std::string> warnings;
   Schedule schedule;
@@ -198,7 +187,8 @@ std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::War
     for (char& ch : lower_str) {
       if (std::isupper(ch)) { ch = std::tolower(ch); }
     }
-    if (lower_str == "daily" || lower_str == "weekly" || lower_str == "monthly") {
+    if (lower_str == "daily" || lower_str == "weekly"
+        || lower_str == "monthly") {
       warnings.emplace_back("Run directive includes token \"" + lower_str + "\", which is deprecated "
                      "and does nothing");
       continue;
@@ -236,7 +226,11 @@ std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::War
         }
       }
     } else {
-      return { Error{std::string{"Could not parse Run directive because of illegal token \""} + token_str + "\"" }, { std::move(warnings) } };
+      return {
+          Error{std::string{
+                    "Could not parse Run directive because of illegal token \""}
+                + token_str + "\""},
+          {std::move(warnings)}};
     }
   }
   if (auto* times_of_day
@@ -247,32 +241,29 @@ std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::War
   }
   auto now = time(nullptr);
   if (schedule.GetMatchingTimes(now, now + 60 * 60 * 24 * 366).empty()) {
-    warnings.emplace_back("Run directive schedule never runs in the next 366 days");
+    warnings.emplace_back(
+        "Run directive schedule never runs in the next 366 days");
   }
-  return { schedule, { std::move(warnings) } };
+  return {schedule, {std::move(warnings)}};
 }
-std::pair<std::variant<Schedule, Parser<Schedule>::Error>, Parser<Schedule>::Warnings> Parser<Schedule>::Parse(std::string_view str)
+std::pair<std::variant<Schedule, Parser<Schedule>::Error>,
+          Parser<Schedule>::Warnings>
+Parser<Schedule>::Parse(std::string_view str)
 {
   std::vector<std::string> tokens{""};
   for (char ch : str) {
-    if (ch == ',') {
-      continue;
-    }
+    if (ch == ',') { continue; }
     if (ch == ' ') {
       if (tokens.back() != "at") {
         tokens.emplace_back();
-      }
-      else {
+      } else {
         tokens.back() += ' ';
       }
-    }
-    else {
+    } else {
       tokens.back() += ch;
     }
   }
-  if (tokens.back().empty()) {
-    tokens.pop_back();
-  }
+  if (tokens.back().empty()) { tokens.pop_back(); }
   return Parse(tokens);
 }
 
@@ -528,9 +519,8 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
   }
   if (auto* schedule = std::get_if<Schedule>(&result)) {
     res_run.schedule = *schedule;
-  }
-  else {
-    scan_err0(lc, std::get<Parser<Schedule>::Error>(result).message.c_str()); 
+  } else {
+    scan_err0(lc, std::get<Parser<Schedule>::Error>(result).message.c_str());
   }
 
   /* Allocate run record, copy new stuff into it,
