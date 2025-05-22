@@ -55,6 +55,7 @@ static int LastDayOfMonth(int year, int month)
 DateTime::DateTime(time_t time)
 {
   Blocaltime(&time, &original_time_);
+  original_time_.tm_isdst = -1;
   year = 1900 + original_time_.tm_year;
   month = original_time_.tm_mon;
   week_of_year = TmWoy(time);
