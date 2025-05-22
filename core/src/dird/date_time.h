@@ -97,11 +97,12 @@ struct WeekOfMonth {
   static std::optional<WeekOfMonth> FromName(std::string_view name)
   {
     for (size_t i = 0; i < kNames.size(); ++i) {
-      if (name.length() == kNames.at(i).length() || name.length() == 3) {
+      if (name.length() == kNames.at(i).length()) {
         if (bstrncasecmp(name.data(), kNames.at(i).data(), name.length())) {
           return WeekOfMonth{kNames.at(i)};
         }
-      } else if (name.length() == kAlternativeNames.at(i).length()) {
+      }
+      if (name.length() == kAlternativeNames.at(i).length()) {
         if (bstrncasecmp(name.data(), kAlternativeNames.at(i).data(),
                          name.length())) {
           return WeekOfMonth{kNames.at(i)};
