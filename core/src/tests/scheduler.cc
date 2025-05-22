@@ -38,6 +38,7 @@
 #include "tests/scheduler_time_source.h"
 #include "dird/scheduler_system_time_source.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <iostream>
@@ -297,6 +298,7 @@ TEST_F(SchedulerTest, parse_schedule_correctly)
           {"daily at 20:00", "at 20:00"},
           {"w00/w02 Fri at 23:10", "w00/w02 Fri at 23:10"},
           {"Mon-Fri", "Mon-Fri at 00:00"},
+          {"1st saturday at 20:00", "first Sat at 20:00"},
           {"Mon, Tue, Wed-Fri, Sat", "Mon, Tue, Wed-Fri, Sat at 00:00"},
       };
   for (auto [schedule, expected_generated] : kSchedules) {
@@ -310,6 +312,192 @@ TEST_F(SchedulerTest, parse_schedule_correctly)
           << "Generated schedule string \"" << generated
           << "\" does not match the expected string \"" << expected_generated
           << "\"";
+    }
+  }
+}
+
+struct DateTimeValidator {
+  virtual ~DateTimeValidator() = default;
+  
+  virtual bool operator()(const DateTime& date_time) const = 0;
+  virtual std::string String() const = 0;
+};
+template <class T> class ValueValidator : public DateTimeValidator {
+ public:
+  ValueValidator(const std::vector<T>& valid_values)
+      : valid_values_(valid_values)
+  {
+  }
+  ValueValidator(T value) : valid_values_({value}) {}
+
+  virtual bool operator()(const DateTime& date_time) const override
+  {
+    return std::find(valid_values_.begin(), valid_values_.end(),
+                     Get<T>(date_time))
+           != valid_values_.end();
+  }
+
+  virtual std::string String() const override
+  {
+    std::string result;
+    result += "ValueValidator{";
+    for (size_t i = 0; i < valid_values_.size(); ++i) {
+      result += valid_values_.at(i).name;
+      if (i + 1 < valid_values_.size()) { result += ", "; }
+    }
+    result += "}";
+    return result;
+  }
+
+ private:
+  template <class U> static auto Get(const DateTime& date_time)
+  {
+    if constexpr (std::is_same_v<U, MonthOfYear>) {
+      return MonthOfYear::FromIndex(date_time.month);
+    } else if constexpr (std::is_same_v<U, WeekOfYear>) {
+      return date_time.week_of_year;
+    } else if constexpr (std::is_same_v<U, WeekOfMonth>) {
+      return date_time.week_of_month;
+    } else if constexpr (std::is_same_v<U, DayOfMonth>) {
+      return date_time.day_of_month;
+    } else if constexpr (std::is_same_v<U, DayOfWeek>) {
+      return DayOfWeek::FromIndex(date_time.day_of_week);
+    } else if constexpr (std::is_same_v<U, TimeOfDay>) {
+      return TimeOfDay{date_time.hour, date_time.minute};
+    } else {
+      static_assert("Invalid template argument.");
+    }
+  }
+
+  std::vector<T> valid_values_;
+};
+template <class T>
+std::shared_ptr<DateTimeValidator> MakeValidator(const T& value)
+{
+  return std::make_shared<ValueValidator<T>>(value);
+}
+template <class T>
+std::shared_ptr<DateTimeValidator> MakeValidator(const std::vector<T>& values)
+{
+  return std::make_shared<ValueValidator<T>>(values);
+}
+
+TEST_F(SchedulerTest, trigger_correctly)
+{
+  static constexpr time_t kTimeStart = 0;
+  static constexpr int kDays = 365;
+
+  static std::vector<
+      std::tuple<std::string_view, std::optional<int>,
+                 std::vector<std::shared_ptr<DateTimeValidator>>>>
+      kSchedules = {
+          {"", kDays, {}},
+          {"jan", 31, {}},
+          {"mon", 52, {MakeValidator(*DayOfWeek::FromName("Monday"))}},
+          {"mon, fri",
+           105,
+           {MakeValidator(std::vector{*DayOfWeek::FromName("Monday"),
+                                      *DayOfWeek::FromName("Friday")})}},
+          {
+              "jan mon, fri feb",
+              18,
+              {MakeValidator(std::vector{*DayOfWeek::FromName("Monday"),
+                                         *DayOfWeek::FromName("Friday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("January"),
+                                         *MonthOfYear::FromName("February")})},
+          },
+          {"apr mon, fri dec-feb",
+           34,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Monday"),
+                                         *DayOfWeek::FromName("Friday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("December"),
+                                         *MonthOfYear::FromName("January"),
+                                         *MonthOfYear::FromName("February"),
+                                         *MonthOfYear::FromName("April")}),
+           }},
+          {"fri-tue, dec-feb",
+           64,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Friday"),
+                                         *DayOfWeek::FromName("Saturday"),
+                                         *DayOfWeek::FromName("Sunday"),
+                                         *DayOfWeek::FromName("Monday"),
+                                         *DayOfWeek::FromName("Tuesday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("December"),
+                                         *MonthOfYear::FromName("January"),
+                                         *MonthOfYear::FromName("February")}),
+           }},
+          {"Last sunday, february, Mar at 20:00",
+           2,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Sunday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("February"),
+                                         *MonthOfYear::FromName("March")}),
+           }},
+          {"1st, second, 3rd, Last sunday, february, Mar at 20:00",
+           8,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Sunday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("February"),
+                                         *MonthOfYear::FromName("March")}),
+           }},
+          {"w00-w22 fri at 20:00",
+           22,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Friday")}),
+           }},
+          {"w00-w22 mon at 20:00",
+           21,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Monday")}),
+           }},
+          {"w00/w10 mon at 20:00",
+           5,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Monday")}),
+           }},
+          {"w00/w02 mon at 20:00 jan mon",
+           2,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Monday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("January")}),
+           }},
+          {"w01/w02 mon at 20:00 jan",
+           2,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Monday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("January")}),
+           }},
+          {"w01/w02 thu at 20:00 jan",
+           3,
+           {
+               MakeValidator(std::vector{*DayOfWeek::FromName("Thursday")}),
+               MakeValidator(std::vector{*MonthOfYear::FromName("January")}),
+           }},
+      };
+  for (auto [schedule, expected_count, validators] : kSchedules) {
+    auto [result, warnings] = Parser<Schedule>::Parse(schedule);
+    EXPECT_TRUE(std::holds_alternative<Schedule>(result))
+        << "Could not parse '" << schedule << "'" << std::endl
+        << std::get<Parser<Schedule>::Error>(result).message;
+    auto times = std::get<Schedule>(result).GetMatchingTimes(
+        kTimeStart, kTimeStart + kDays * 24 * 60 * 60);
+    if (expected_count.has_value()) {
+      EXPECT_EQ(times.size(), expected_count.value())
+          << "In schedule \"" << schedule << "\", matching times count "
+          << times.size() << " does not match expected count "
+          << expected_count.value();
+    }
+    for (auto time : times) {
+      DateTime date_time{time};
+      for (const auto& validator : validators) {
+        EXPECT_TRUE((*validator)(date_time))
+            << "In schedule \"" << schedule << "\", matching time " << time
+            << " did not suffice all validators:" << std::endl
+            << validator->String() << std::endl
+            << date_time;
+      }
     }
   }
 }
