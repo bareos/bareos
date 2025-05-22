@@ -514,6 +514,8 @@ std::optional<partition_layout> partitioning(DRIVE_LAYOUT_INFORMATION_EX* info)
 
 void read_volume_file(HANDLE hndl, std::span<char> buffer)
 {
+  fprintf(stderr, "reading bootstrap (size = %llu)\n", buffer.size());
+
   alignas(4096) char real_buffer[4096];
 
   std::size_t bytes_to_read = buffer.size();
@@ -544,6 +546,20 @@ void read_volume_file(HANDLE hndl, std::span<char> buffer)
 
     total_bytes += read_size;
   }
+
+
+  fprintf(stderr,
+          "%bootstrap: %02X %02X %02X %02X %02X %02X ... %02X %02X %02X %02X "
+          "%02X %02X\n",
+          (unsigned char)buffer[0], (unsigned char)buffer[1],
+          (unsigned char)buffer[2], (unsigned char)buffer[3],
+          (unsigned char)buffer[4], (unsigned char)buffer[5],
+          (unsigned char)buffer[buffer.size() - 6],
+          (unsigned char)buffer[buffer.size() - 5],
+          (unsigned char)buffer[buffer.size() - 4],
+          (unsigned char)buffer[buffer.size() - 3],
+          (unsigned char)buffer[buffer.size() - 2],
+          (unsigned char)buffer[buffer.size() - 1]);
 }
 
 std::optional<partition_layout> GetPartitionLayout(HANDLE device)
@@ -580,12 +596,12 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
           std::bit_cast<std::uint32_t>(info->Mbr.CheckSum),
           std::bit_cast<std::uint32_t>(info->Mbr.Signature),
       };
-      result.info = mbr;
-
       DWORD off_low = 0;
       LONG off_high = 0;
       SetFilePointer(device, off_low, &off_high, FILE_BEGIN);
       read_volume_file(device, mbr.bootstrap);
+
+      result.info = mbr;
 
       fprintf(stderr, "mbr partitioning\n");
     } break;

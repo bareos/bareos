@@ -313,21 +313,51 @@ struct chs {
   // chs = cylinder, head, sector
   uint8_t data[3]{};
 
+
+  struct for_mbr {};
+  struct for_gpt {};
+
   chs() = default;
+
   chs(std::uint16_t cylinder,  // 10 bits
       std::uint8_t head,       // 8 bits
       std::uint8_t sector      // 6 bits
   )
   {
     data[0] = head;
-    if (cylinder > (1 << 10)) { cylinder = 0x3FF; }
     data[1] = sector;
     data[1] |= ((cylinder >> 8) & 0b11) << 6;
     data[2] = (cylinder & 0b11111111);
   }
-
-  static chs from_lba(std::uint64_t lba, DISK_GEOMETRY geo)
+  chs(for_mbr,
+      std::uint64_t cylinder,  // 10 bits
+      std::uint8_t head,       // 8 bits
+      std::uint8_t sector      // 6 bits
+      )
+      : chs(cylinder >= (1 << 10) ? (1 << 10) - 1 : cylinder, head, sector)
   {
+  }
+  chs(for_gpt,
+      std::uint64_t cylinder,  // 10 bits
+      std::uint8_t head,       // 8 bits
+      std::uint8_t sector      // 6 bits
+      )
+      : chs(cylinder >= (1 << 10) ? (cylinder & ((1 << 10) - 1)) : cylinder,
+            head,
+            sector)
+  {
+  }
+
+  static chs from_lba(std::uint64_t lba, bool mbr, DISK_GEOMETRY geo)
+  {
+    auto make = [mbr](auto c, auto h, auto s) {
+      if (mbr) {
+        return chs(for_mbr{}, c, h, s);
+      } else {
+        return chs(for_gpt{}, c, h, s);
+      }
+    };
+
     // lba = ((cylinder * geo.TracksPerCylinder) + head) * geo.SectorsPerTrack
     //             + (sector - 1)
 
@@ -343,15 +373,23 @@ struct chs {
     // 0 <   sector   <= SectorsPerTrack (63)
 
     if (sector > geo.SectorsPerTrack || head >= geo.TracksPerCylinder
-        || cylinder >= geo.Cylinders.QuadPart) {
+        || cylinder >= (std::uint64_t)geo.Cylinders.QuadPart) {
       // offset is too large, so just return the largest one
-      return chs((std::uint16_t)(geo.Cylinders.QuadPart - 1),
-                 (std::uint8_t)(geo.TracksPerCylinder - 1),
-                 (std::uint8_t)(geo.SectorsPerTrack));
+
+      fprintf(stderr, "lba %llu => (%llu, %llu, %llu)\n", lba,
+              (long long unsigned)(geo.Cylinders.QuadPart - 1),
+              (long long unsigned)(geo.TracksPerCylinder - 1),
+              (long long unsigned)(geo.SectorsPerTrack));
+
+      return make(geo.Cylinders.QuadPart - 1,
+                  (std::uint8_t)(geo.TracksPerCylinder - 1),
+                  (std::uint8_t)(geo.SectorsPerTrack));
     }
 
-    return chs((std::uint16_t)cylinder, (std::uint8_t)head,
-               (std::uint8_t)sector);
+    fprintf(stderr, "lba %llu => (%llu, %llu, %llu)\n", lba,
+            (long long unsigned)(cylinder), (long long unsigned)(head),
+            (long long unsigned)(sector));
+    return make(cylinder, (std::uint8_t)head, (std::uint8_t)sector);
   }
 };
 
@@ -407,10 +445,12 @@ mbr_entry MakeMbrEntry(const PARTITION_INFORMATION_EX& info)
   entry.os_type = info.Mbr.PartitionType;
   entry.start_lba = info.StartingOffset.QuadPart / 512;
   entry.lba_count = info.PartitionLength.QuadPart / 512;
-  fprintf(stderr, "mbr lba (%llu, %llu)\n", entry.start_lba, entry.lba_count);
-  entry.start_chs = chs::from_lba(entry.start_lba, hardcoded_geo);
-  entry.end_chs
-      = chs::from_lba(entry.start_lba + entry.lba_count - 1, hardcoded_geo);
+  fprintf(stderr, "mbr lba (%llu, %llu)\n",
+          static_cast<long long unsigned>(entry.start_lba),
+          static_cast<long long unsigned>(entry.lba_count));
+  entry.start_chs = chs::from_lba(entry.start_lba, true, hardcoded_geo);
+  entry.end_chs = chs::from_lba(entry.start_lba + entry.lba_count - 1, true,
+                                hardcoded_geo);
 
   return entry;
 }
@@ -449,12 +489,20 @@ void WriteProtectionMBR(HANDLE output,
   mbr_entry gpt_entry = {
       .attributes
       = mbr_entry::attrs::None,  // if you dont understand gpt, dont boot this
-      .start_chs = chs::from_lba(1, hardcoded_geo),
+      .start_chs = chs::from_lba(1, false, hardcoded_geo),
       .os_type = gpt_type,
-      .end_chs = chs::from_lba(end_lba, hardcoded_geo),
+      .end_chs = chs::from_lba(end_lba, false, hardcoded_geo),
       .start_lba = 1,
-      .lba_count = (std::uint32_t)std::max(
+
+
+  // windows does not comply with the spec here, so we do it the windows
+  // way by default
+#if COMPLY_WITH_SPEC
+      .lba_count = (std::uint32_t)std::min(
           end_lba, (std::uint64_t)std::numeric_limits<std::uint32_t>::max()),
+#else
+      .lba_count = std::numeric_limits<std::uint32_t>::max(),
+#endif
   };
 
   mbr protective_mbr = {};
