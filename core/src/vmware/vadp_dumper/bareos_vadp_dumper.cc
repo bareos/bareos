@@ -1556,10 +1556,9 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
         uint64 intersection_end = std::min(allocated_end, changed_end);
 
         if (verbose) {
-          fprintf(
-              stderr, "Found intersection: [%llu, %llu]\n",
-              static_cast<long long unsigned>(intersection_start) static_cast<
-                  long long unsigned>(intersection_end));
+          fprintf(stderr, "Found intersection: [%llu, %llu]\n",
+                  static_cast<long long unsigned>(intersection_start),
+                  static_cast<long long unsigned>(intersection_end));
         }
 
         // the if condition implies that this always holds true
@@ -1587,8 +1586,8 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
               stderr,
               "allocated_end(%llu) <= changed_end(%llu) -> allocated_index = "
               "%llu\n",
-              static_cast<long long unsigned>(
-                  allocated_end) static_cast<long long unsigned>(changed_end),
+              static_cast<long long unsigned>(allocated_end),
+              static_cast<long long unsigned>(changed_end),
               static_cast<long long unsigned>(allocated_index));
         }
       } else {
@@ -1596,13 +1595,11 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
         // to continue to the next one
 
         if (verbose) {
-          fprintf(
-              stderr,
-              "allocated_end(%llu) > changed_end(%llu) -> break allocated "
-              "loop\n",
-              static_cast<long long unsigned>(
-                  allocated_end) static_cast<long long unsigned>(changed_end),
-              static_cast<long long unsigned>(allocated_index));
+          fprintf(stderr,
+                  "allocated_end(%llu) > changed_end(%llu) -> break allocated "
+                  "loop\n",
+                  static_cast<long long unsigned>(allocated_end),
+                  static_cast<long long unsigned>(changed_end));
         }
         break;
       }
