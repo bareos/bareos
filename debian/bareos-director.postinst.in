@@ -24,7 +24,7 @@ permissions()
 {
     for dir in /etc/bareos/bareos-dir-export/ /etc/bareos/bareos-dir-export/client; do
         chown ${daemon_user}:${daemon_group} "$dir"
-        chmod 750 "$dir"
+        chmod 2750 "$dir"
     done
 }
 

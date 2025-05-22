@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: fix sd volume limit [PR #2264]
 - various cmake improvements [PR #2176]
 - packaging: use GCC 14 for RHEL 8/9 [PR #2275]
+- setgid on configdirs [PR #2270]
 
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -140,6 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2260]: https://github.com/bareos/bareos/pull/2260
 [PR #2264]: https://github.com/bareos/bareos/pull/2264
 [PR #2268]: https://github.com/bareos/bareos/pull/2268
+[PR #2270]: https://github.com/bareos/bareos/pull/2270
 [PR #2275]: https://github.com/bareos/bareos/pull/2275
 [PR #2278]: https://github.com/bareos/bareos/pull/2278
 [unreleased]: https://github.com/bareos/bareos/tree/master
