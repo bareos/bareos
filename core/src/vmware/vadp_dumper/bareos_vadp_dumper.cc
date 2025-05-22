@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
    Copyright (C) 2015-2015 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -42,6 +42,27 @@
 
 #include <jansson.h>
 #include <cassert>
+
+
+// this is basically assert(...) which cannot be turned off
+#define ensure(...) \
+  ensure_impl(__FILE__, __FUNCTION__, __LINE__, #__VA_ARGS__, __VA_ARGS__)
+
+void ensure_impl(const char* file,
+                 const char* function,
+                 int line,
+                 const char* context,
+                 bool value)
+{
+  if (value) { return; }
+
+  fprintf(stderr, "assertion failure(%s:%s:%d): '%s' does not hold!", file,
+          function, line, context);
+
+  fflush(stderr);
+
+  exit(-4);
+}
 
 /*
  * json_array_foreach macro was added in jansson version 2.5
@@ -1325,6 +1346,7 @@ struct vec {
       data = reinterpret_cast<pointer>(
           realloc(data, sizeof(value_type) * capacity));
     }
+    ensure(count < capacity);
     data[count++] = b;
   }
 
@@ -1332,7 +1354,7 @@ struct vec {
 
   reference operator[](size_t i)
   {
-    assert(i < count);
+    ensure(i < count);
     return data[i];
   }
 
@@ -1393,7 +1415,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
    * which are both allocated and have changed. To visualise this:
    *
    * sectors    0 1 2 3 4 5 6 7 8 9
-   * changed     [. . .] [. .]   [.] (as list: (1-3), (5-6))
+   * changed     [. . .] [. .]   [.] (as list: (1-3), (5-6), (9))
    * allocated [. .] [. . . . .]     (as list: (0-1), (3-7))
    * saved:      [.] [.] [. .]       (as list: (1), (3), (5-6))
    *
@@ -1417,7 +1439,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
    * unallocated blocks and allocated blocks that were not changed.
    * In this specific implementation, popping of the changed list happens
    * automatically in each iteration of the outermost loop (since we just
-   * iterate over them), whereas popping the allocated list happens byr
+   * iterate over them), whereas popping the allocated list happens by
    * advancing the current_block index.
    */
 
@@ -1468,6 +1490,16 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
     uint64 changed_length = json_integer_value(length_str);
     uint64 changed_end = changed_start + changed_length;
 
+    if (verbose) {
+      fprintf(stderr,
+              "Looking at cbt entry [%llu] = { start = %llu, length = %llu, "
+              "end = %llu }\n",
+              static_cast<long long unsigned>(changed_index),
+              static_cast<long long unsigned>(changed_start),
+              static_cast<long long unsigned>(changed_length),
+              static_cast<long long unsigned>(changed_end));
+    }
+
     if (changed_start == changed_end) {
       fprintf(stderr,
               "Found an empty changed block at index %llu. Skipping...\n",
@@ -1477,13 +1509,25 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
     changed_count += changed_length;
 
-    while (allocated_index < allocated.size()) {
+    auto allocated_size = allocated.size();
+    while (allocated_index < allocated_size) {
       auto& block = allocated[allocated_index];
 
       // allocated blocks are given us terms of sectors
       auto allocated_start = block.offset * DEFAULT_SECTOR_SIZE;
       auto allocated_length = block.length * DEFAULT_SECTOR_SIZE;
       auto allocated_end = allocated_start + allocated_length;
+
+      if (verbose) {
+        fprintf(stderr,
+                "Looking at allocated block: [%llu/%llu] = { start = %llu, "
+                "length = %llu, end = %llu }\n",
+                static_cast<long long unsigned>(allocated_index),
+                static_cast<long long unsigned>(allocated_size),
+                static_cast<long long unsigned>(allocated_start),
+                static_cast<long long unsigned>(allocated_length),
+                static_cast<long long unsigned>(allocated_end));
+      }
 
       if (allocated_start == allocated_end) {
         fprintf(stderr,
@@ -1506,8 +1550,15 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
         uint64 intersection_end = std::min(allocated_end, changed_end);
 
+        if (verbose) {
+          fprintf(
+              stderr, "Found intersection: [%llu, %llu]\n",
+              static_cast<long long unsigned>(intersection_start) static_cast<
+                  long long unsigned>(intersection_end));
+        }
+
         // the if condition implies that this always holds true
-        assert(intersection_start < intersection_end);
+        ensure(intersection_start < intersection_end);
 
         uint64 intersection_length = intersection_end - intersection_start;
 
@@ -1515,6 +1566,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
         if (!process_single_cbt(buffer, intersection_start,
                                 intersection_length)) {
+          if (verbose) { fprintf(stderr, "could not process intersection!\n"); }
           return false;
         }
       }
@@ -1524,9 +1576,29 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
         // block, otherwise we might miss an intersection with the next
         // changed block
         allocated_index += 1;
+
+        if (verbose) {
+          fprintf(
+              stderr,
+              "allocated_end(%llu) <= changed_end(%llu) -> allocated_index = "
+              "%llu\n",
+              static_cast<long long unsigned>(
+                  allocated_end) static_cast<long long unsigned>(changed_end),
+              static_cast<long long unsigned>(allocated_index));
+        }
       } else {
         // ... otherwise we are done with this changed block and we want
         // to continue to the next one
+
+        if (verbose) {
+          fprintf(
+              stderr,
+              "allocated_end(%llu) > changed_end(%llu) -> break allocated "
+              "loop\n",
+              static_cast<long long unsigned>(
+                  allocated_end) static_cast<long long unsigned>(changed_end),
+              static_cast<long long unsigned>(allocated_index));
+        }
         break;
       }
     }
