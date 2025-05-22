@@ -31,10 +31,10 @@
 #include <virtdisk.h>
 #include <zlib.h>
 
-DISK_GEOMETRY hardcoded_geo = {.Cylinders = {4177},
+DISK_GEOMETRY hardcoded_geo = {.Cylinders = {},
                                .MediaType = {},
                                .TracksPerCylinder = 255,
-                               .SectorsPerTrack = 64,
+                               .SectorsPerTrack = 63,
                                .BytesPerSector = 512};
 
 std::uint32_t ReadHeader(std::istream& stream)
@@ -141,6 +141,38 @@ partition_layout ReadDiskPartTable(std::istream& stream)
   return layout;
 }
 
+void WriteOverlapped(HANDLE hndl,
+                     std::size_t offset,
+                     const char* buffer,
+                     DWORD size,
+                     DWORD* bytes_written)
+{
+  OVERLAPPED overlapped = {};
+  overlapped.Offset = (DWORD)offset;
+  overlapped.OffsetHigh = (DWORD)(offset >> 32);
+
+  if (WriteFile(hndl, buffer, size, bytes_written, &overlapped)) { return; }
+
+  auto err = GetLastError();
+
+  if (err == ERROR_IO_PENDING) {
+    if (!GetOverlappedResult(hndl, &overlapped, bytes_written, TRUE)) {
+      err = GetLastError();
+      fprintf(stderr, "WriteFile: could not write (%llu, %llu): %d\n",
+              static_cast<long long unsigned>(offset),
+              static_cast<long long unsigned>(size), err);
+
+      throw win_error("WriteFileW", err);
+    }
+    return;
+  }
+
+  fprintf(stderr, "WriteFile: could not write (%llu, %llu): %d\n",
+          static_cast<long long unsigned>(offset),
+          static_cast<long long unsigned>(size), err);
+  throw win_error("WriteFileW", err);
+}
+
 void write_buffer(HANDLE output,
                   std::size_t start,
                   std::span<const char> buffer)
@@ -161,29 +193,10 @@ void write_buffer(HANDLE output,
       (unsigned char)buffer[buffer.size() - 1]);
 
   while (offset != buffer.size()) {
-    OVERLAPPED overlapped = {};
-    overlapped.Offset = (DWORD)(start + offset);
-    overlapped.OffsetHigh = (DWORD)((start + offset) >> 32);
-
     DWORD bytes_written = 0;
 
-    assert(!WriteFile(output, buffer.data() + offset,
-                      (DWORD)(buffer.size() - offset), NULL, &overlapped));
-    auto err = GetLastError();
-
-    if (err != ERROR_IO_PENDING) {
-      fprintf(stderr, "WriteFile(no-async): could not write (%llu, %llu): %d\n",
-              offset, buffer.size() - offset, err);
-      assert(err == ERROR_IO_PENDING);
-    }
-
-    if (!GetOverlappedResult(output, &overlapped, &bytes_written, TRUE)) {
-      err = GetLastError();
-      fprintf(stderr, "WriteFile: could not write (%llu, %llu): %d\n", offset,
-              buffer.size() - offset, err);
-
-      throw win_error("WriteFileW", err);
-    }
+    WriteOverlapped(output, start + offset, buffer.data() + offset,
+                    (DWORD)(buffer.size() - offset), &bytes_written);
 
     offset += bytes_written;
   }
@@ -307,7 +320,9 @@ struct chs {
   )
   {
     data[0] = head;
-    data[1] = sector | (cylinder << 6) & 0b11;
+    if (cylinder > (1 << 10)) { cylinder = 0x3FF; }
+    data[1] = sector;
+    data[1] |= ((cylinder >> 8) & 0b11) << 6;
     data[2] = (cylinder & 0b11111111);
   }
 
@@ -322,12 +337,17 @@ struct chs {
     std::uint64_t head = rest % geo.TracksPerCylinder;
     std::uint64_t cylinder = rest / geo.TracksPerCylinder;
 
+    // valid chs is:
+    // 0 <= cylinders <  Cylinders
+    // 0 <=   head    <  TracksPerCylinder (255)
+    // 0 <   sector   <= SectorsPerTrack (63)
 
-    if (sector > 63 || head > 255 || cylinder > 1023) {
+    if (sector > geo.SectorsPerTrack || head >= geo.TracksPerCylinder
+        || cylinder >= geo.Cylinders.QuadPart) {
       // offset is too large, so just return the largest one
       return chs((std::uint16_t)(geo.Cylinders.QuadPart - 1),
                  (std::uint8_t)(geo.TracksPerCylinder - 1),
-                 (std::uint8_t)(geo.SectorsPerTrack - 1));
+                 (std::uint8_t)(geo.SectorsPerTrack));
     }
 
     return chs((std::uint16_t)cylinder, (std::uint8_t)head,
@@ -349,7 +369,7 @@ struct mbr_entry {
   uint8_t os_type;
   chs end_chs;
   uint32_t start_lba;
-  uint32_t end_lba;
+  uint32_t lba_count;
 };
 
 static_assert(sizeof(mbr_entry) == 16);
@@ -357,7 +377,7 @@ static_assert(sizeof(mbr_entry) == 16);
 struct mbr {
   char bootstrap[446];
   mbr_entry entries[4];
-  uint8_t check[2];
+  uint8_t check[2] = {0x55, 0xAA};
 };
 
 static_assert(sizeof(mbr) == 512);
@@ -373,17 +393,24 @@ mbr_entry MakeMbrEntry(const PARTITION_INFORMATION_EX& info)
 
   mbr_entry entry = {};
 
+  if (info.Mbr.PartitionType == PARTITION_ENTRY_UNUSED) { return entry; }
+
   if (info.Mbr.BootIndicator) { entry.attributes = mbr_entry::attrs::Bootable; }
 
   wchar_t guid_storage[64] = {};
   StringFromGUID2(info.Mbr.PartitionId, guid_storage, sizeof(guid_storage));
   fprintf(stderr, "mbr partition guid: %ls\n", guid_storage);
 
+  fprintf(stderr, "mbr partition (%llu, %llu)\n", info.StartingOffset.QuadPart,
+          info.PartitionLength.QuadPart);
+
   entry.os_type = info.Mbr.PartitionType;
   entry.start_lba = info.StartingOffset.QuadPart / 512;
-  entry.end_lba = entry.start_lba + info.PartitionLength.QuadPart / 512 - 1;
+  entry.lba_count = info.PartitionLength.QuadPart / 512;
+  fprintf(stderr, "mbr lba (%llu, %llu)\n", entry.start_lba, entry.lba_count);
   entry.start_chs = chs::from_lba(entry.start_lba, hardcoded_geo);
-  entry.end_chs = chs::from_lba(entry.end_lba, hardcoded_geo);
+  entry.end_chs
+      = chs::from_lba(entry.start_lba + entry.lba_count - 1, hardcoded_geo);
 
   return entry;
 }
@@ -426,7 +453,7 @@ void WriteProtectionMBR(HANDLE output,
       .os_type = gpt_type,
       .end_chs = chs::from_lba(end_lba, hardcoded_geo),
       .start_lba = 1,
-      .end_lba = (std::uint32_t)std::max(
+      .lba_count = (std::uint32_t)std::max(
           end_lba, (std::uint64_t)std::numeric_limits<std::uint32_t>::max()),
   };
 
@@ -435,9 +462,6 @@ void WriteProtectionMBR(HANDLE output,
 
   assert(bootstrap.size() <= std::size(protective_mbr.bootstrap));
   memcpy(protective_mbr.bootstrap, bootstrap.data(), bootstrap.size());
-
-  protective_mbr.check[0] = 0x55;
-  protective_mbr.check[1] = 0xAA;
 
   static_assert(sizeof(mbr) == 512);
 
@@ -488,9 +512,6 @@ void WritePartitionTable(HANDLE output,
 
     write_buffer(output, 512, as_span(sector));
   } else if (auto* Mbr = std::get_if<partition_info_mbr>(&table.info)) {
-    // todo
-    fprintf(stderr, "cant restore mbr yet\n");
-
     mbr GeneratedMbr = {};
 
     static_assert(sizeof(GeneratedMbr.bootstrap) == sizeof(Mbr->bootstrap));
@@ -566,6 +587,20 @@ void restore_data(std::istream& stream, bool raw_file)
     fprintf(stderr, "reading disk header\n");
     auto disk_header = ReadDiskHeader(stream);
     fprintf(stderr, "reading disk header ... done\n");
+
+
+    std::size_t bytes_per_cylinder
+        = 1 * std::size_t{hardcoded_geo.BytesPerSector}
+          * std::size_t{hardcoded_geo.SectorsPerTrack}
+          * std::size_t{hardcoded_geo.TracksPerCylinder};
+
+    hardcoded_geo.Cylinders.QuadPart
+        = disk_header.disk_size / bytes_per_cylinder;
+
+    fprintf(stderr, "%llu / %llu = %llu cylinders\n",
+            static_cast<long long unsigned>(disk_header.disk_size),
+            static_cast<long long unsigned>(bytes_per_cylinder),
+            static_cast<long long unsigned>(hardcoded_geo.Cylinders.QuadPart));
 
     HANDLE output = INVALID_HANDLE_VALUE;
 
