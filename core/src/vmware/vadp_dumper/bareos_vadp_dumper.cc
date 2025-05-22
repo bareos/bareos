@@ -1345,6 +1345,7 @@ struct vec {
       }
       data = reinterpret_cast<pointer>(
           realloc(data, sizeof(value_type) * capacity));
+      ensure(data);
     }
     ensure(count < capacity);
     data[count++] = b;
@@ -1374,8 +1375,11 @@ struct vec {
  */
 static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 {
+  const std::size_t allocated_size = allocated.size();
+
   if (verbose) {
-    fprintf(stderr, "Allocated Blocks:\n");
+    fprintf(stderr, "Allocated Blocks (size=%llu):\n",
+            static_cast<long long unsigned>(allocated_size));
     for (size_t i = 0; i < allocated.size(); ++i) {
       auto& block = allocated[i];
       auto boffset = block.offset * DEFAULT_SECTOR_SIZE;
@@ -1456,6 +1460,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
   uint64 saved_count = 0;
 
   json_t* cbt_entry = nullptr;
+
   json_array_foreach(changed_blocks, changed_index, cbt_entry)
   {
     // Get the two members we are interested in.
@@ -1509,8 +1514,8 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
 
     changed_count += changed_length;
 
-    auto allocated_size = allocated.size();
     while (allocated_index < allocated_size) {
+      ensure(allocated.size() == allocated_size);
       auto& block = allocated[allocated_index];
 
       // allocated blocks are given us terms of sectors
