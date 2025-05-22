@@ -25,10 +25,17 @@
 #include <iostream>
 #include <string>
 #include <format>
+#include <stdexcept>
 #include <span>
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
 #include <zlib.h>
+
+DISK_GEOMETRY hardcoded_geo = {.Cylinders = {4177},
+                               .MediaType = {},
+                               .TracksPerCylinder = 255,
+                               .SectorsPerTrack = 64,
+                               .BytesPerSector = 512};
 
 std::uint32_t ReadHeader(std::istream& stream)
 {
@@ -288,26 +295,6 @@ gpt_header MakeGptHeader(const partition_info_gpt& info,
   return header;
 }
 
-gpt_entry MakeGptEntry(const PARTITION_INFORMATION_EX& info)
-{
-  gpt_entry entry;
-  entry.partition_type = info.Gpt.PartitionType;
-
-  wchar_t guid_storage[64] = {};
-
-  StringFromGUID2(info.Gpt.PartitionType, guid_storage, sizeof(guid_storage));
-  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
-  StringFromGUID2(entry.partition_type, guid_storage, sizeof(guid_storage));
-  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
-
-  entry.id = info.Gpt.PartitionId;
-  entry.start_lba = info.StartingOffset.QuadPart / 512;
-  entry.end_lba = entry.start_lba + info.PartitionLength.QuadPart / 512 - 1;
-  entry.attributes = info.Gpt.Attributes;
-  std::memcpy(entry.name, info.Gpt.Name, sizeof(entry.name));
-  return entry;
-}
-
 #pragma pack(push, 1)
 struct chs {
   // chs = cylinder, head, sector
@@ -351,7 +338,13 @@ struct chs {
 static_assert(sizeof(chs) == 3);
 
 struct mbr_entry {
-  uint8_t bootable;
+  enum attrs : std::uint8_t
+  {
+    None = 0,
+    Bootable = (1 << 7),
+  };
+
+  attrs attributes;
   chs start_chs;
   uint8_t os_type;
   chs end_chs;
@@ -371,23 +364,67 @@ static_assert(sizeof(mbr) == 512);
 
 #pragma pack(pop)
 
+mbr_entry MakeMbrEntry(const PARTITION_INFORMATION_EX& info)
+{
+  if (info.PartitionStyle != PARTITION_STYLE_MBR) {
+    throw std::invalid_argument{
+        "cannot create mbr partition from non mbr partition"};
+  }
+
+  mbr_entry entry = {};
+
+  if (info.Mbr.BootIndicator) { entry.attributes = mbr_entry::attrs::Bootable; }
+
+  wchar_t guid_storage[64] = {};
+  StringFromGUID2(info.Mbr.PartitionId, guid_storage, sizeof(guid_storage));
+  fprintf(stderr, "mbr partition guid: %ls\n", guid_storage);
+
+  entry.os_type = info.Mbr.PartitionType;
+  entry.start_lba = info.StartingOffset.QuadPart / 512;
+  entry.end_lba = entry.start_lba + info.PartitionLength.QuadPart / 512 - 1;
+  entry.start_chs = chs::from_lba(entry.start_lba, hardcoded_geo);
+  entry.end_chs = chs::from_lba(entry.end_lba, hardcoded_geo);
+
+  return entry;
+}
+
+gpt_entry MakeGptEntry(const PARTITION_INFORMATION_EX& info)
+{
+  if (info.PartitionStyle != PARTITION_STYLE_GPT) {
+    throw std::invalid_argument{
+        "cannot create gpt partition from non gpt partition"};
+  }
+
+  gpt_entry entry;
+  entry.partition_type = info.Gpt.PartitionType;
+
+  wchar_t guid_storage[64] = {};
+
+  StringFromGUID2(info.Gpt.PartitionType, guid_storage, sizeof(guid_storage));
+  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
+  StringFromGUID2(entry.partition_type, guid_storage, sizeof(guid_storage));
+  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
+
+  entry.id = info.Gpt.PartitionId;
+  entry.start_lba = info.StartingOffset.QuadPart / 512;
+  entry.end_lba = entry.start_lba + info.PartitionLength.QuadPart / 512 - 1;
+  entry.attributes = info.Gpt.Attributes;
+  std::memcpy(entry.name, info.Gpt.Name, sizeof(entry.name));
+  return entry;
+}
+
 void WriteProtectionMBR(HANDLE output,
                         std::uint64_t end_lba,
                         std::span<const char> bootstrap)
 {
   static constexpr uint8_t gpt_type = 0xEE;
 
-  DISK_GEOMETRY geo = {.Cylinders = {4177},
-                       .MediaType = {},
-                       .TracksPerCylinder = 255,
-                       .SectorsPerTrack = 64,
-                       .BytesPerSector = 512};
-
   mbr_entry gpt_entry = {
-      .bootable = 0,  // if you dont understand gpt, dont boot this
-      .start_chs = chs::from_lba(1, geo),
+      .attributes
+      = mbr_entry::attrs::None,  // if you dont understand gpt, dont boot this
+      .start_chs = chs::from_lba(1, hardcoded_geo),
       .os_type = gpt_type,
-      .end_chs = chs::from_lba(end_lba, geo),
+      .end_chs = chs::from_lba(end_lba, hardcoded_geo),
       .start_lba = 1,
       .end_lba = (std::uint32_t)std::max(
           end_lba, (std::uint64_t)std::numeric_limits<std::uint32_t>::max()),
@@ -412,6 +449,7 @@ void WritePartitionTable(HANDLE output,
                          std::size_t disk_size)
 {
   if (auto* Gpt = std::get_if<partition_info_gpt>(&table.info)) {
+    // we still have to add support for shared gpt/mbr partitions
     WriteProtectionMBR(output, disk_size / 512 - 1, Gpt->bootstrap);
 
     std::size_t table_offset = 1024;
@@ -452,6 +490,22 @@ void WritePartitionTable(HANDLE output,
   } else if (auto* Mbr = std::get_if<partition_info_mbr>(&table.info)) {
     // todo
     fprintf(stderr, "cant restore mbr yet\n");
+
+    mbr GeneratedMbr = {};
+
+    static_assert(sizeof(GeneratedMbr.bootstrap) == sizeof(Mbr->bootstrap));
+    memcpy(GeneratedMbr.bootstrap, Mbr->bootstrap, sizeof(Mbr->bootstrap));
+
+    if (table.partition_infos.size() > 4) {
+      throw std::runtime_error(
+          "cannot restore mbr with more than 4 partitions");
+    }
+
+    for (std::size_t i = 0; i < table.partition_infos.size(); ++i) {
+      GeneratedMbr.entries[i] = MakeMbrEntry(table.partition_infos[i]);
+    }
+
+    write_buffer(output, 0, as_span(GeneratedMbr));
   } else {
     // todo
     fprintf(stderr, "cant restore raw yet\n");
