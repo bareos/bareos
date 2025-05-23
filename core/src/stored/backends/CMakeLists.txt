@@ -38,6 +38,7 @@ target_sources(chunked-device PRIVATE ordered_cbuf.cc chunked_device.cc)
 
 add_library(backend-utils STATIC)
 target_sources(backend-utils PRIVATE util.cc)
+target_link_libraries(backend-utils PUBLIC Bareos::Lib fmt::fmt)
 
 if(HAVE_GFAPI)
   add_sd_backend(bareossd-gfapi)
@@ -53,8 +54,8 @@ endif()
 add_sd_backend(bareossd-dplcompat)
 target_sources(bareossd-dplcompat PRIVATE dplcompat_device.cc crud_storage.cc)
 target_link_libraries(
-  bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt-header-only
-                             tl::expected chunked-device backend-utils
+  bareossd-dplcompat PRIVATE Microsoft.GSL::GSL fmt::fmt tl::expected
+                             chunked-device backend-utils
 )
 if(HAVE_WIN32)
   target_link_libraries(bareossd-dplcompat PRIVATE shlwapi)
