@@ -256,8 +256,8 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
     BashSpaces(media_type);
     BashSpaces(pool_name);
     BashSpaces(unwanted_volumes.c_str());
-    dir->fsend(Find_media, jcr->Job, vol_index, pool_name, media_type,
-               unwanted_volumes.c_str());
+    dir->fsend(Find_media, jcr->Job, static_cast<int>(vol_index), pool_name,
+               media_type, unwanted_volumes.c_str());
     UnbashSpaces(media_type);
     UnbashSpaces(pool_name);
     UnbashSpaces(unwanted_volumes.c_str());
@@ -291,7 +291,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
         continue;
       }
     }
-    Dmsg2(debuglevel, "No vol. index %d return false. dev=%s\n", vol_index,
+    Dmsg2(debuglevel, "No vol. index %zu return false. dev=%s\n", vol_index,
           dev->print_name());
     break;
   }

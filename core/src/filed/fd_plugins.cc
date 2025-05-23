@@ -1024,7 +1024,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   if (auto [cmd, ctx] = find_plugin_from_list(
           jcr, original_cmd, plugin_ctx_list, bEventEstimateCommand);
       ctx) {
-    Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
+    Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%zu\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd.c_str(), cmd.size());
 
     /* We put the current plugin pointer, and the plugin context into the jcr,

@@ -306,12 +306,12 @@ BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
                             xattr_value_list)) {
     Mmsg1(jcr->errmsg,
           T_("Failed to Serialize extended attributes on file \"%s\" (expected "
-             "len %lu != actual len %lu)\n"),
+             "len %" PRIu32 " != actual len %" PRIu32 ")\n"),
           xattr_data->last_fname, expected_serialize_len,
           xattr_data->content_length);
     Dmsg1(100,
           T_("Failed to Serialize extended attributes on file \"%s\" (expected "
-             "len %lu != actual len %lu)\n"),
+             "len %" PRIu32 " != actual len %" PRIu32 ")\n"),
           xattr_data->last_fname, expected_serialize_len,
           xattr_data->content_length);
     return BxattrExitCode::kError;
