@@ -486,6 +486,9 @@ class BareosSqlError : public std::runtime_error {
   BareosSqlError(const char* what) : std::runtime_error(what) {}
 };
 
+// used in SqlQuery method
+struct SqlDiscardResult {};
+
 class BareosDb : public BareosDbQueryEnum {
  protected:
   brwlock_t lock_; /**< Transaction lock */
@@ -901,7 +904,8 @@ class BareosDb : public BareosDbQueryEnum {
   void FillQuery(PoolMem& query, SQL_QUERY predefined_query, ...);
 
   bool SqlQuery(SQL_QUERY query, ...);
-  bool SqlQuery(const char* query, int flags = 0);
+  bool SqlQuery(const char* query);
+  bool SqlQuery(const char* query, SqlDiscardResult);
   bool SqlQuery(const char* query, DB_RESULT_HANDLER* ResultHandler, void* ctx);
 
   /* sql_update.cc */
@@ -978,7 +982,8 @@ class BareosDb : public BareosDbQueryEnum {
   virtual int SqlNumFields(void) = 0;
   virtual void SqlFreeResult(void) = 0;
   virtual SQL_ROW SqlFetchRow(void) = 0;
-  virtual bool SqlQueryWithoutHandler(const char* query, int flags = 0) = 0;
+  virtual bool SqlQueryWithoutHandler(const char* query) = 0;
+  virtual bool SqlQueryWithoutHandler(const char* query, SqlDiscardResult) = 0;
   virtual bool SqlQueryWithHandler(const char* query,
                                    DB_RESULT_HANDLER* ResultHandler,
                                    void* ctx)
@@ -1020,9 +1025,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool try_reconnect,
                            bool exit_on_fatal,
                            bool need_private = false);
-
-/* SqlQuery Query Flags */
-#define QF_STORE_RESULT 0x01
 
 /* flush the batch insert connection every x changes */
 #define BATCH_FLUSH 800000

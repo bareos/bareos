@@ -214,7 +214,11 @@ class MockDatabase : public BareosDb {
   {
     return true;
   }
-  virtual bool SqlQueryWithoutHandler(const char*, int) override
+  virtual bool SqlQueryWithoutHandler(const char*) override
+  {
+    return true;
+  }
+  virtual bool SqlQueryWithoutHandler(const char*, SqlDiscardResult) override
   {
     return true;
   }
