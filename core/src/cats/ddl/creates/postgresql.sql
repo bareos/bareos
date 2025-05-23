@@ -171,7 +171,7 @@ CREATE TABLE Media
     VolWrites         BIGINT      DEFAULT 0,
     VolCapacityBytes  BIGINT      DEFAULT 0,
     VolStatus         TEXT        NOT NULL
-        CHECK (VolStatus IN ('Full', 'Archive', 'Append',
+        CHECK (VolStatus IN ('Unlabeled', 'Full', 'Archive', 'Append',
               'Recycle', 'Purged', 'Read-Only', 'Disabled',
               'Error', 'Busy', 'Used', 'Cleaning', 'Scratch')),
     Enabled           SMALLINT    DEFAULT 1,
@@ -304,7 +304,7 @@ CREATE TABLE LocationLog (
     MediaId           INTEGER DEFAULT 0,
     LocationId        INTEGER DEFAULT 0,
     NewVolStatus              TEXT NOT NULL
-        CHECK (NewVolStatus IN ('Full', 'Archive', 'Append',
+        CHECK (NewVolStatus IN ('Unlabeled', 'Full', 'Archive', 'Append',
               'Recycle', 'Purged', 'Read-Only', 'Disabled',
               'Error', 'Busy', 'Used', 'Cleaning', 'Scratch')),
     newenabled        SMALLINT,
@@ -750,7 +750,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2240;
-INSERT INTO Version (VersionId) VALUES (2240);
+DELETE FROM Version WHERE VersionId<=2250;
+INSERT INTO Version (VersionId) VALUES (2250);
 
 -- Make sure we have appropriate permissions

@@ -334,6 +334,11 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   if (label == is_labeloperation::True) {
     bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
   }
+  // Manually labeled volume was written on
+  else if (bstrncmp(vol->VolCatStatus, "Unlabeled", sizeof(vol->VolCatStatus))
+           && vol->VolCatBytes > 0) {
+    bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
+  }
   vol->VolLastWritten = time(NULL);
   PmStrcpy(volume_name, vol->VolCatName);
   BashSpaces(volume_name);
