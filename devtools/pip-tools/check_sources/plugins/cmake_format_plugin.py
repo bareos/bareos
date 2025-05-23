@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,10 +18,9 @@
 #   02110-1301, USA.
 
 import logging
-from pathlib import Path
-
 from cmakelang.format.__main__ import get_config, process_file
 from cmakelang.configuration import Configuration
+from ..registry import register_modifier
 
 
 def format_cmake_file(file_path, file_content):
@@ -33,25 +32,13 @@ def format_cmake_file(file_path, file_content):
     # check if formatting was aborted
     if not reflow_valid:
         logging.info(
-            "{}: contains long lines that cannot be split automatically".format(
-                file_path
-            )
+            "%s: contains long lines that cannot be split automatically", file_path
         )
 
     return out_text
 
 
-if __name__ == "__main__":
-    import sys
-
-    logging.getLogger().setLevel(logging.DEBUG)
-    print(format_cmake_file(Path(sys.argv[1])))
-    exit(0)
-
-
-from ..registry import register_modifier
-
-
 @register_modifier("CMakeLists.txt", "*.cmake", name="cmake format")
 def modify_cmake_format(file_path, file_content, **kwargs):
+    _ = kwargs
     return format_cmake_file(file_path, file_content)

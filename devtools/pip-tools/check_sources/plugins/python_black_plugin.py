@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,6 +18,7 @@
 #   02110-1301, USA.
 
 import logging
+from black import format_file_contents, Mode, NothingChanged, InvalidInput
 from ..registry import register_modifier
 
 logger = logging.getLogger(__name__)
@@ -25,12 +26,11 @@ logger = logging.getLogger(__name__)
 
 @register_modifier("*.py", name="python black")
 def format_python_black(file_path, file_content, **kwargs):
-    from black import format_file_contents, Mode, NothingChanged, InvalidInput
-
+    _ = kwargs
     try:
         return format_file_contents(file_content, fast=False, mode=Mode())
     except NothingChanged:
         return file_content
     except InvalidInput:
-        logger.warning("{} is not valid python code.".format(file_path))
+        logger.warning("%s is not valid python code.", file_path)
         return file_content
