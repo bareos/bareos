@@ -302,7 +302,7 @@ bail_out:
 static bool IsEventForThisPlugin(Plugin* plugin, const char* name, int len)
 {
   Dmsg4(debuglevel, "IsEventForThisPlugin? name=%s len=%d plugin=%s plen=%d\n",
-        name, len, plugin->file, plugin->file_len);
+        name ? name : "(null)", len, plugin->file, plugin->file_len);
   if (!name) { /* if no plugin name, all plugins get it */
     return true;
   }
@@ -555,8 +555,8 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     int i{};
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
-        Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
-              (name == NULL) ? 1 : 0);
+        Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n",
+              name ? name : "(null)", name ? 1 : 0);
         continue;
       }
 
