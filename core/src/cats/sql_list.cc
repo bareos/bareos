@@ -70,7 +70,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
 {
   DbLocker _{this};
 
-  if (!SqlQuery(query, QF_STORE_RESULT)) {
+  if (!SqlQuery(query)) {
     Mmsg(errmsg, T_("Query failed: %s\n"), sql_strerror());
     if (verbose) { sendit->Decoration(errmsg); }
     return false;

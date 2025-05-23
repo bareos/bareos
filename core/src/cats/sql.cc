@@ -206,7 +206,7 @@ bool BareosDb::QueryDb(JobControlRecord* jcr,
 
   SqlFreeResult();
   Dmsg1(1000, "query: %s\n", select_cmd);
-  if (!SqlQuery(select_cmd, QF_STORE_RESULT)) {
+  if (!SqlQuery(select_cmd)) {
     msg_(loc.file_name(), loc.line(), errmsg, T_("query %s failed:\n%s\n"),
          select_cmd, sql_strerror());
     j_msg(loc.file_name(), loc.line(), jcr, M_FATAL, 0, "%s", errmsg);
