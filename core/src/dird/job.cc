@@ -1841,12 +1841,11 @@ bail_out:
 }
 
 /* TODO: redirect command ouput to job log */
-bool RunConsoleCommand(JobControlRecord*, const char* cmd)
+bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd)
 {
   UaContext* ua;
   bool ok;
-  JobControlRecord* ljcr = new_control_jcr("-RunScript-", JT_CONSOLE);
-  ua = new_ua_context(ljcr);
+  ua = new_ua_context(jcr);
   /* run from runscript and check if commands are authorized */
   ua->runscript = true;
   Mmsg(ua->cmd, "%s", cmd);
@@ -1854,7 +1853,6 @@ bool RunConsoleCommand(JobControlRecord*, const char* cmd)
   ParseUaArgs(ua);
   ok = Do_a_command(ua);
   FreeUaContext(ua);
-  FreeJcr(ljcr);
   return ok;
 }
 
