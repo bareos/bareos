@@ -308,6 +308,35 @@ gpt_header MakeGptHeader(const partition_info_gpt& info,
   return header;
 }
 
+gpt_header MakeBackupGptHeader(const partition_info_gpt& info,
+                               ccitt_crc table_crc,
+                               uint64_t this_lba,
+                               uint64_t other_lba,
+                               uint64_t table_lba)
+{
+  gpt_header header;
+
+  header.lba_location = this_lba;
+  header.backup_lba_location = other_lba;
+
+  fprintf(stderr, "usable start = %llu, usable length = %llu\n",
+          info.StartingUsableOffset, info.UsableLength);
+  header.first_usable_lba = info.StartingUsableOffset / 512;
+  header.last_usable_lba
+      = header.first_usable_lba + info.UsableLength / 512 - 1;
+
+  header.disk_guid = info.DiskId;
+  header.table_lba_location = table_lba;
+
+  header.partition_count = info.MaxPartitionCount;
+  header.entry_size = sizeof(gpt_entry);
+  header.table_crc32_sum = table_crc.get();
+
+  header.crc32_sum = ccitt_crc{}.update(as_span(header)).get();
+
+  return header;
+}
+
 #pragma pack(push, 1)
 struct chs {
   // chs = cylinder, head, sector
@@ -522,7 +551,8 @@ void WritePartitionTable(HANDLE output,
 {
   if (auto* Gpt = std::get_if<partition_info_gpt>(&table.info)) {
     // we still have to add support for shared gpt/mbr partitions
-    WriteProtectionMBR(output, disk_size / 512 - 1, Gpt->bootstrap);
+    std::size_t last_lba = disk_size / 512 - 1;
+    WriteProtectionMBR(output, last_lba, Gpt->bootstrap);
 
     std::size_t table_offset = 1024;
 
@@ -540,7 +570,16 @@ void WritePartitionTable(HANDLE output,
     }
 
     entries.resize(rounded_size);
+
+    auto table_size = sizeof(gpt_entry) * Gpt->MaxPartitionCount;
+    auto backup_table_offset = last_lba * 512 - table_size;
+
+    fprintf(stderr,
+            "last lba = %llu, backup gpt start = %llu, table size = %llu, "
+            "backup table offset = %llu\n",
+            last_lba, last_lba * 512, table_size, backup_table_offset);
     write_buffer(output, table_offset, byte_span(entries));
+    write_buffer(output, backup_table_offset, byte_span(entries));
     table_offset += sizeof(gpt_entry) * partition_count;
 
     for (size_t i = 0;
@@ -552,13 +591,19 @@ void WritePartitionTable(HANDLE output,
       table_offset += sizeof(entry);
     }
 
-    auto header = MakeGptHeader(*Gpt, table_crc, disk_size);
+    auto header = MakeBackupGptHeader(*Gpt, table_crc, 1, last_lba, 2);
 
     char sector[512] = {};
 
     std::memcpy(sector, &header, sizeof(header));
 
     write_buffer(output, 512, as_span(sector));
+
+    auto backup_header = MakeBackupGptHeader(*Gpt, table_crc, last_lba, 1,
+                                             backup_table_offset / 512);
+    std::memcpy(sector, &backup_header, sizeof(backup_header));
+
+    write_buffer(output, last_lba * 512, as_span(sector));
   } else if (auto* Mbr = std::get_if<partition_info_mbr>(&table.info)) {
     mbr GeneratedMbr = {};
 
