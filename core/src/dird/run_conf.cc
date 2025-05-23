@@ -165,18 +165,18 @@ struct s_kw RunFields[] = {{"pool", 'P'},
  *   together.
  *
  */
-void StoreRun(LEX* lc, const ResourceItem* item, int index, int pass)
+void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
 {
   char* p;
   int i, j;
-  int options = lc->options;
+  auto options = lc->options;
   int token, state, state2 = 0, code = 0, code2 = 0;
   bool found;
   utime_t utime;
   BareosResource* res;
   RunResource res_run;
 
-  lc->options |= LOPT_NO_IDENT; /* Want only "strings" */
+  lc->options.set(lexer::options::NoIdent); /* Want only "strings" */
 
   // Scan for Job level "full", "incremental", ...
   for (found = true; found;) {

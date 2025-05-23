@@ -248,8 +248,8 @@ int InsertTreeHandler(void* ctx, int, char** row)
   node->fhinfo = str_to_int64(row[6]);
   node->fhnode = str_to_int64(row[7]);
   Dmsg8(150,
-        "node=0x%p JobId=%s FileIndex=%s Delta=%s node.delta=%d LinkFI=%d, "
-        "fhinfo=%d, fhnode=%d\n",
+        "node=%p JobId=%s FileIndex=%s Delta=%s node.delta=%d LinkFI=%d, "
+        "fhinfo=%" PRIu64 ", fhnode=%" PRIu64 "\n",
         node, row[3], row[2], row[5], node->delta_seq, LinkFI, node->fhinfo,
         node->fhnode);
 

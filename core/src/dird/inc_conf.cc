@@ -221,7 +221,7 @@ static struct s_fs_opt FS_options[]
        {NULL, 0, 0}};
 
 // Imported subroutines
-extern void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass);
+extern void StoreInc(lexer* lc, const ResourceItem* item, int index, int pass);
 
 /* We build the current new Include and Exclude items here */
 static IncludeExcludeItem* res_incexe;
@@ -344,7 +344,7 @@ bool FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
 }
 
 // Check if the configured options are valid.
-static inline void IsInPermittedSet(LEX* lc,
+static inline void IsInPermittedSet(lexer* lc,
                                     const char* SetType,
                                     const char* permitted_set)
 {
@@ -374,17 +374,17 @@ static inline void IsInPermittedSet(LEX* lc,
  *
  * This code is also used inside an Options resource.
  */
-static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
+static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
 {
   int i;
   char option[64];
-  int lcopts = lc->options;
+  auto lcopts = lc->options;
   struct s_sz_matching size_matching;
 
   memset(option, 0, sizeof(option));
-  lc->options |= LOPT_STRING;     /* force string */
-  LexGetToken(lc, BCT_STRING);    /* expect at least one option */
-  if (keyword == INC_KW_VERIFY) { /* special case */
+  lc->options.set(lexer::options::ForceString); /* force string */
+  LexGetToken(lc, BCT_STRING);                  /* expect at least one option */
+  if (keyword == INC_KW_VERIFY) {               /* special case */
     IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
     bstrncat(opts, lc->str, optlen);
@@ -440,7 +440,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
 }
 
 // Store regex info
-static void StoreRegex(LEX* lc, const ResourceItem* item, int pass)
+static void StoreRegex(lexer* lc, const ResourceItem* item, int pass)
 {
   int token, rc;
   regex_t preg{};
@@ -489,7 +489,7 @@ static void StoreRegex(LEX* lc, const ResourceItem* item, int pass)
 }
 
 // Store reader info
-static void StorePlugin(LEX* lc, const ResourceItem*, int pass)
+static void StorePlugin(lexer* lc, const ResourceItem*, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -500,7 +500,7 @@ static void StorePlugin(LEX* lc, const ResourceItem*, int pass)
 }
 
 // Store Wild-card info
-static void StoreWild(LEX* lc, const ResourceItem* item, int pass)
+static void StoreWild(lexer* lc, const ResourceItem* item, int pass)
 {
   int token;
   const char* type;
@@ -544,7 +544,7 @@ static void StoreWild(LEX* lc, const ResourceItem* item, int pass)
 }
 
 // Store fstype info
-static void StoreFstype(LEX* lc, const ResourceItem*, int pass)
+static void StoreFstype(lexer* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -568,7 +568,7 @@ static void StoreFstype(LEX* lc, const ResourceItem*, int pass)
 }
 
 // Store Drivetype info
-static void StoreDrivetype(LEX* lc, const ResourceItem*, int pass)
+static void StoreDrivetype(lexer* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -591,7 +591,7 @@ static void StoreDrivetype(LEX* lc, const ResourceItem*, int pass)
   ScanToEol(lc);
 }
 
-static void StoreMeta(LEX* lc, const ResourceItem*, int pass)
+static void StoreMeta(lexer* lc, const ResourceItem*, int pass)
 {
   int token;
 
@@ -616,7 +616,7 @@ static void StoreMeta(LEX* lc, const ResourceItem*, int pass)
 
 // New style options come here
 static void StoreOption(
-    LEX* lc,
+    lexer* lc,
     const ResourceItem* item,
     int pass,
     std::map<int, options_default_value_s>& option_default_values)
@@ -697,7 +697,7 @@ static void StoreDefaultOptions()
 }
 
 // Come here when Options seen in Include/Exclude
-static void StoreOptionsRes(LEX* lc,
+static void StoreOptionsRes(lexer* lc,
                             const ResourceItem*,
                             int pass,
                             bool exclude)
@@ -787,7 +787,7 @@ static FilesetResource* GetStaticFilesetResource()
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StoreFname(LEX* lc, const ResourceItem*, int pass, bool)
+static void StoreFname(lexer* lc, const ResourceItem*, int pass, bool)
 {
   int token;
 
@@ -834,7 +834,7 @@ static void StoreFname(LEX* lc, const ResourceItem*, int pass, bool)
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StorePluginName(LEX* lc,
+static void StorePluginName(lexer* lc,
                             const ResourceItem*,
                             int pass,
                             bool exclude)
@@ -883,7 +883,7 @@ static void StorePluginName(LEX* lc,
 }
 
 // Store exclude directory containing info
-static void StoreExcludedir(LEX* lc,
+static void StoreExcludedir(lexer* lc,
                             const ResourceItem*,
                             int pass,
                             bool exclude)
@@ -912,7 +912,10 @@ static void StoreExcludedir(LEX* lc,
  *  resource.  We treat the Include/Exclude like a sort of
  *  mini-resource within the FileSet resource.
  */
-static void StoreNewinc(LEX* lc, const ResourceItem* item, int index, int pass)
+static void StoreNewinc(lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int pass)
 {
   FilesetResource* res_fs = GetStaticFilesetResource();
 
@@ -980,10 +983,10 @@ static void StoreNewinc(LEX* lc, const ResourceItem* item, int index, int pass)
     // store the pointer from res_incexe in each appropriate container
     if (item->code == 0) { /* include */
       res_fs->include_items.push_back(res_incexe);
-      Dmsg1(900, "num_includes=%d\n", res_fs->include_items.size());
+      Dmsg1(900, "num_includes=%" PRIuz "\n", res_fs->include_items.size());
     } else { /* exclude */
       res_fs->exclude_items.push_back(res_incexe);
-      Dmsg1(900, "num_excludes=%d\n", res_fs->exclude_items.size());
+      Dmsg1(900, "num_excludes=%" PRIuz "\n", res_fs->exclude_items.size());
     }
     res_incexe = nullptr;
   }
@@ -1000,7 +1003,7 @@ static void StoreNewinc(LEX* lc, const ResourceItem* item, int index, int pass)
  * Store FileSet Include/Exclude info
  *  new style includes are handled in StoreNewinc()
  */
-void StoreInc(LEX* lc, const ResourceItem* item, int index, int pass)
+void StoreInc(lexer* lc, const ResourceItem* item, int index, int pass)
 {
   int token;
 
