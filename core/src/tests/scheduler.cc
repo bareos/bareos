@@ -318,7 +318,7 @@ TEST_F(SchedulerTest, parse_schedule_correctly)
 
 struct DateTimeValidator {
   virtual ~DateTimeValidator() = default;
-  
+
   virtual bool operator()(const DateTime& date_time) const = 0;
   virtual std::string String() const = 0;
 };
@@ -384,7 +384,21 @@ std::shared_ptr<DateTimeValidator> MakeValidator(const std::vector<T>& values)
 
 TEST_F(SchedulerTest, trigger_correctly)
 {
-  static constexpr time_t kTimeStart = 0;
+  // We construct the start-time from DateTime such that it is the same across
+  // different time zones.
+  DateTime start_date_time{0};
+  start_date_time.year = 1970;
+  start_date_time.month = 0;
+  start_date_time.week_of_year = 1;
+  start_date_time.week_of_month = 0;
+  start_date_time.day_of_year = 0;
+  start_date_time.day_of_month = 0;
+  start_date_time.day_of_week = 4;
+  start_date_time.hour = 12;
+  start_date_time.minute = 0;
+  start_date_time.second = 0;
+  const time_t start_time = start_date_time.GetTime();
+
   static constexpr int kDays = 365;
 
   static std::vector<
@@ -482,7 +496,7 @@ TEST_F(SchedulerTest, trigger_correctly)
         << "Could not parse '" << schedule << "'" << std::endl
         << std::get<Parser<Schedule>::Error>(result).message;
     auto times = std::get<Schedule>(result).GetMatchingTimes(
-        kTimeStart, kTimeStart + kDays * 24 * 60 * 60);
+        start_time, start_time + kDays * 24 * 60 * 60);
     if (expected_count.has_value()) {
       EXPECT_EQ(times.size(), expected_count.value())
           << "In schedule \"" << schedule << "\", matching times count "
