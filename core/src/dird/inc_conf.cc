@@ -378,13 +378,13 @@ static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
 {
   int i;
   char option[64];
-  int lcopts = lc->options;
+  auto lcopts = lc->options;
   struct s_sz_matching size_matching;
 
   memset(option, 0, sizeof(option));
-  lc->options |= LOPT_STRING;     /* force string */
-  LexGetToken(lc, BCT_STRING);    /* expect at least one option */
-  if (keyword == INC_KW_VERIFY) { /* special case */
+  lc->options.set(lexer::options::ForceString); /* force string */
+  LexGetToken(lc, BCT_STRING);                  /* expect at least one option */
+  if (keyword == INC_KW_VERIFY) {               /* special case */
     IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
     bstrncat(opts, lc->str, optlen);
@@ -912,7 +912,10 @@ static void StoreExcludedir(lexer* lc,
  *  resource.  We treat the Include/Exclude like a sort of
  *  mini-resource within the FileSet resource.
  */
-static void StoreNewinc(lexer* lc, const ResourceItem* item, int index, int pass)
+static void StoreNewinc(lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int pass)
 {
   FilesetResource* res_fs = GetStaticFilesetResource();
 
