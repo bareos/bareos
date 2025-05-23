@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -369,7 +369,6 @@ bool reRunCmd(UaContext* ua, const char*)
  */
 int DoRunCmd(UaContext* ua, const char*)
 {
-  JobControlRecord* jcr = NULL;
   RunContext rc;
   int status, length;
   bool valid_response;
@@ -379,15 +378,16 @@ int DoRunCmd(UaContext* ua, const char*)
 
   if (!ScanCommandLineArguments(ua, rc)) { return 0; }
 
-  /* Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
-   * before returning. */
-  if (!jcr) {
-    jcr = NewDirectorJcr(DirdFreeJcr);
-    SetJcrDefaults(jcr, rc.job);
-    jcr->dir_impl->unlink_bsr
-        = ua->jcr->dir_impl->unlink_bsr; /* copy unlink flag from caller */
-    ua->jcr->dir_impl->unlink_bsr = false;
-  }
+  /* Create JobControlRecord to run job. */
+  auto jcr = std::unique_ptr<JobControlRecord,
+                             std::function<void(JobControlRecord*)>>(
+      NewDirectorJcr(DirdFreeJcr),
+      [&](JobControlRecord* to_delete) { FreeJcr(to_delete); });
+  // SetupJob(ua->jcr);
+  SetJcrDefaults(jcr.get(), rc.job);
+  jcr->dir_impl->unlink_bsr
+      = ua->jcr->dir_impl->unlink_bsr; /* copy unlink flag from caller */
+  ua->jcr->dir_impl->unlink_bsr = false;
 
   // Transfer JobIds to new restore Job
   if (ua->jcr->JobIds) {
@@ -402,7 +402,7 @@ int DoRunCmd(UaContext* ua, const char*)
   }
 
 try_again:
-  if (!ResetRestoreContext(ua, jcr, rc)) { goto bail_out; }
+  if (!ResetRestoreContext(ua, jcr.get(), rc)) { return 0; }
 
   // Run without prompting?
   if (ua->batch || FindArg(ua, NT_("yes")) > 0) { goto start_job; }
@@ -417,7 +417,9 @@ try_again:
   if (do_pool_overrides) {
     switch (jcr->getJobType()) {
       case JT_BACKUP:
-        if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) { ApplyPoolOverrides(jcr); }
+        if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+          ApplyPoolOverrides(jcr.get());
+        }
         break;
       default:
         break;
@@ -427,11 +429,11 @@ try_again:
 
   /* Prompt User to see if all run job parameters are correct, and
    * allow him to modify them. */
-  if (!DisplayJobParameters(ua, jcr, rc)) { goto bail_out; }
+  if (!DisplayJobParameters(ua, jcr.get(), rc)) { return 0; }
 
   // Prompt User until we have a valid response.
   do {
-    if (!GetCmd(ua, T_("OK to run? (yes/mod/no): "))) { goto bail_out; }
+    if (!GetCmd(ua, T_("OK to run? (yes/mod/no): "))) { return 0; }
 
     /* Empty line equals yes, anything other we compare
      * the cmdline for the length of the given input unless
@@ -464,14 +466,14 @@ try_again:
   }
 
   // Allow the user to modify the settings
-  status = ModifyJobParameters(ua, jcr, rc);
+  status = ModifyJobParameters(ua, jcr.get(), rc);
   switch (status) {
     case 0:
       goto try_again;
     case 1:
       break;
     case -1:
-      goto bail_out;
+      return 0;
   }
 
   /* For interactive runs we set IgnoreLevelPoolOverrides as we already
@@ -489,7 +491,7 @@ try_again:
     Dmsg1(900, "Running a job; its spool_data = %d\n",
           jcr->dir_impl->spool_data);
 
-    JobId = RunJob(jcr);
+    JobId = RunJob(jcr.get());
 
     Dmsg4(100, "JobId=%u NewJobId=%d using pool %s priority=%d\n",
           (int)jcr->JobId, JobId, jcr->dir_impl->res.pool->resource_name_,
@@ -504,8 +506,6 @@ try_again:
                                edit_int64(jcr->JobId, buf));
     }
 
-    FreeJcr(jcr); /* release jcr */
-
     if (JobId == 0) {
       ua->ErrorMsg(T_("Job failed.\n"));
     } else {
@@ -518,11 +518,6 @@ try_again:
 
     return JobId;
   }
-
-bail_out:
-  ua->SendMsg(T_("Job not run.\n"));
-  FreeJcr(jcr);
-
   return 0; /* do not run */
 }
 
@@ -2080,7 +2075,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             break;
         }
       } /* end strcase compare */
-    }   /* end keyword loop */
+    } /* end keyword loop */
 
     // End of keyword for loop -- if not found, we got a bogus keyword
     if (!kw_ok) {
@@ -2150,7 +2145,14 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
       rc.next_pool = select_pool_resource(ua);
     }
   } else if (!rc.next_pool) {
-    rc.next_pool = rc.pool->NextPool; /* use default */
+    // use next pool from job
+    if (ua->jcr->dir_impl->res.job->next_pool) {
+      rc.next_pool = ua->jcr->dir_impl->res.job->next_pool;
+    }
+    // use next pool from pool
+    else {
+      rc.next_pool = rc.pool->NextPool;
+    }
   }
   if (rc.next_pool) {
     Dmsg1(100, "Using next pool %s\n", rc.next_pool->resource_name_);
