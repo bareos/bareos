@@ -130,15 +130,15 @@ static std::string GetStringFromPyErrorHandler()
     else {
       error_string = "Calling method 'format_exception' failed.";
     }
-    Py_DECREF(tbList);
-    Py_DECREF(emptyString);
-    Py_DECREF(strRetval);
-    Py_DECREF(tracebackModule);
+    Py_XDECREF(tbList);
+    Py_XDECREF(emptyString);
+    Py_XDECREF(strRetval);
+    Py_XDECREF(tracebackModule);
   } else {
     error_string = "Unable to import traceback module.";
   }
 
-  Py_DECREF(type);
+  Py_XDECREF(type);
   Py_XDECREF(value);
   Py_XDECREF(traceback);
 
