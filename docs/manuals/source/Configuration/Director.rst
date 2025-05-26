@@ -156,6 +156,7 @@ An example schedule resource that is named WeeklyCycle and runs a job with level
 
 
 Some examples for Schedule resources
+
 .. code-block:: bareosconfig
    :caption: Schedule Examples
 

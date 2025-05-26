@@ -48,17 +48,17 @@ If you do not specify any of these, the schedule triggers every day.
 
 For a schedule to be triggered on a certain day, it must match with a specifier from all specified categories:
 ``jan mon``
-   triggers every monday in january
+triggers every monday in january
 
 You can specify multiple keywords from the same category:
 ``jan, feb mon``
-   triggers every monday in january and february
+triggers every monday in january and february
 
 You can also specify a range for a category:
 ``mar-dec``
-   triggers every day from march to december
+triggers every day from march to december
 ``jan, mar, jun-aug``
-   triggers every day in january, march, june, juli, august
+triggers every day in january, march, june, juli, august
 
 The order you specify keywords is irrelevant:
 ``jan, feb mon``
@@ -68,9 +68,9 @@ Though for the sake of readabilty it makes sense to specify them in the order th
 
 For advanced schedules, you can specify a modulo operation:
 ``w00/w02``
-   triggers every day on even weeks (of the year).
+triggers every day on even weeks (of the year).
 ``1/2``
-   triggers every odd day (of the month).
+triggers every odd day (of the month).
 
 If a schedule triggers on a day, you can specify at which time(s) the schedule is triggered by supplying specifiers from the following categories:
 - time of day (at 12:15, at 09:45pm, ...)
@@ -80,23 +80,23 @@ If you do not specify any of these, the schedule is triggers at 00:00.
 
 For example
 ``mon at 12:15``
-   triggers every monday at 12:15
+triggers every monday at 12:15
 ``mon at 18:00, at 20:15``
-   triggers every monday at 18:00 and 20:15, so runs twice on mondays!
+triggers every monday at 18:00 and 20:15, so runs twice on mondays!
 
 ``mon hourly``
-   runs every monday every full hour, so 24 times on mondays (at 00:00, ..., at 23:00)! 
+runs every monday every full hour, so 24 times on mondays (at 00:00, ..., at 23:00)! 
 
 ``hourly at :15``
 or
 ``hourly at 00:15``
 or
 ``hourly at 13:15``
-   triggers every day, every hour at quater past (at 00:15, ..., at 23:15)!
+triggers every day, every hour at quater past (at 00:15, ..., at 23:15)!
 Note that specifying a hour in that case has no effect whatsoever.
 
 ``hourly at :15, :30``
-   triggers twice an hour at quarter past and half past.
+triggers twice an hour at quarter past and half past.
 
 Again, the order you specify keywords is irrelevant:
 ``jan first mon at 20:15``
