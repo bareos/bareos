@@ -239,9 +239,6 @@ int main(int argc, char* argv[])
   // if configured, start threads and connect to Director.
   StartConnectToDirectorThreads();
 
-  volatile char* ptr = nullptr;
-  *ptr = 0;
-
   // start socket server to listen for new connections.
   StartSocketServer(me->FDaddrs);
 

@@ -112,6 +112,9 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   BareosSocket* sd;
   bool ok = true;
 
+  volatile char* ptr = nullptr;
+  *ptr = 0;
+
   sd = jcr->store_bsock;
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
