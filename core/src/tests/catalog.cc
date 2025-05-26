@@ -40,13 +40,6 @@
 using directordaemon::InitDirConfig;
 using directordaemon::my_config;
 
-int main(int argc, char** argv)
-{
-  testing::InitGoogleTest(&argc, argv);
-
-  return RUN_ALL_TESTS();
-}
-
 class CatalogTest : public ::testing::Test {
  protected:
   std::string catalog_backend_name;
@@ -136,7 +129,7 @@ TEST_F(CatalogTest, database)
       "  '19.2.4~pre1035.d5f227724 (22Nov19) "
       "Linux-5.3.11-200.fc30.x86_64,redhat,Fedora release 30 (Thirty)')"};
 
-  ASSERT_TRUE(db->SqlQuery(client_query.c_str()));
+  ASSERT_TRUE(db->SqlQuery(client_query.c_str(), SqlDiscardResult{}));
 
   std::string job_query{
       "INSERT INTO Job "
@@ -151,7 +144,7 @@ TEST_F(CatalogTest, database)
       "  '2019-11-27 15:04:49', "
       "  '2019-11-27 15:04:48') "};
 
-  ASSERT_TRUE(db->SqlQuery(job_query.c_str()));
+  ASSERT_TRUE(db->SqlQuery(job_query.c_str(), SqlDiscardResult{}));
 
   result = db->FindLastJobStartTimeForJobAndClient(jcr, "backup-bareos-fd",
                                                    "bareos-fd", stime);
