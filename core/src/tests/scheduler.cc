@@ -299,6 +299,7 @@ TEST_F(SchedulerTest, parse_schedule_correctly)
           {"w00/w02 Fri at 23:10", "w00/w02 Fri at 23:10"},
           {"Mon-Fri", "Mon-Fri at 00:00"},
           {"1st saturday at 20:00", "first Sat at 20:00"},
+          {"on 1st saturday at 20:00", "first Sat at 20:00"},
           {"Mon, Tue, Wed-Fri, Sat", "Mon, Tue, Wed-Fri, Sat at 00:00"},
       };
   for (auto [schedule, expected_generated] : kSchedules) {

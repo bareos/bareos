@@ -122,6 +122,6 @@ The following Pseudo-BNF defines the syntax for specifying a schedule:
    <time-of-day>          ::= at(<time-of-day-24> | <time-of-day-12>)
    
    <cycle>                ::= monthly | weekly | daily // these keywords are deprecated since they have not effect on the schedule
-   <schedule>             ::= ((<month-of-year> | ... | <day-of-week>) | <range> | <modulo> | <time-of-day> | hourly | <cycle>) [[,]<schedule>] 
+   <schedule>             ::= [on] ((<month-of-year> | ... | <day-of-week>) | <range> | <modulo> | <time-of-day> | hourly | <cycle>) [[,]<schedule>] 
 
 if no schedule is specified, we fallback to "at 00:00" (i.e. run every day at 00:00).

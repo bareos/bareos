@@ -182,10 +182,16 @@ Parser<Schedule>::Parse(const std::vector<std::string>& tokens)
 {
   std::vector<std::string> warnings;
   Schedule schedule;
-  for (std::string token_str : tokens) {
-    std::string lower_str = token_str;
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    std::string lower_str = tokens[i];
     for (char& ch : lower_str) {
       if (std::isupper(ch)) { ch = std::tolower(ch); }
+    }
+    if (lower_str == "on") {
+      if (i != 0) {
+        warnings.emplace_back("Token \"on\" should only appear at the start of the schedule.");
+      }
+      continue;
     }
     if (lower_str == "daily" || lower_str == "weekly"
         || lower_str == "monthly") {
@@ -229,7 +235,7 @@ Parser<Schedule>::Parse(const std::vector<std::string>& tokens)
       return {
           Error{std::string{
                     "Could not parse Run directive because of illegal token \""}
-                + token_str + "\""},
+                + tokens[i] + "\""},
           {std::move(warnings)}};
     }
   }
