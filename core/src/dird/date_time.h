@@ -30,8 +30,13 @@
 #include <string>
 #include <ctime>
 #include <stdexcept>
+#include <chrono>
 
 namespace directordaemon {
+
+constexpr auto kSecondsPerMinute = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes(1)).count();
+constexpr auto kSecondsPerHour = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(1)).count();
+constexpr auto kSecondsPerDay = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::hours(24)).count();
 
 struct MonthOfYear {
   static constexpr std::array<std::string_view, 12> kNames = {

@@ -43,7 +43,7 @@ bool Schedule::TriggersOnDay(DateTime date_time) const
 std::vector<time_t> Schedule::GetMatchingTimes(time_t from, time_t to) const
 {
   std::vector<time_t> list;
-  for (time_t day = from; day < to + 60 * 60 * 24; day += 60 * 60 * 24) {
+  for (time_t day = from; day < to + kSecondsPerDay; day += kSecondsPerDay) {
     DateTime date_time(day);
     if (TriggersOnDay(date_time)) {
       if (auto* hourly = std::get_if<Hourly>(&times)) {

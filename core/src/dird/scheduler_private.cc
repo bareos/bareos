@@ -186,7 +186,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
   time_t now = time_adapter->time_source_->SystemTime();
   DateTime(now).PrintDebugMessage(local_debuglevel);
-  DateTime(now + 60 * 60).PrintDebugMessage(local_debuglevel);
+  DateTime(now + kSecondsPerHour).PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
 
@@ -197,7 +197,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
-      for (auto runtime : run->schedule.GetMatchingTimes(now, now + 60 * 60)) {
+      for (auto runtime : run->schedule.GetMatchingTimes(now, now + kSecondsPerHour)) {
         AddJobToQueue(job, run, now, runtime, JobTrigger::kScheduler);
       }
     }
