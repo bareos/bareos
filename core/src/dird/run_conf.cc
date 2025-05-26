@@ -246,7 +246,7 @@ Parser<Schedule>::Parse(const std::vector<std::string>& tokens)
     if (hourly->minutes.empty()) { hourly->minutes.insert(0); }
   }
   auto now = time(nullptr);
-  if (schedule.GetMatchingTimes(now, now + 60 * 60 * 24 * 366).empty()) {
+  if (schedule.GetMatchingTimes(now, now + kSecondsPerDay * 366).empty()) {
     warnings.emplace_back(
         "Run directive schedule never runs in the next 366 days");
   }

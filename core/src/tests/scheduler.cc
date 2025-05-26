@@ -497,7 +497,7 @@ TEST_F(SchedulerTest, trigger_correctly)
         << "Could not parse '" << schedule << "'" << std::endl
         << std::get<Parser<Schedule>::Error>(result).message;
     auto times = std::get<Schedule>(result).GetMatchingTimes(
-        start_time, start_time + kDays * 24 * 60 * 60);
+        start_time, start_time + kDays * kSecondsPerDay);
     if (expected_count.has_value()) {
       EXPECT_EQ(times.size(), expected_count.value())
           << "In schedule \"" << schedule << "\", matching times count "

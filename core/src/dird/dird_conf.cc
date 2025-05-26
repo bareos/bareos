@@ -1351,7 +1351,7 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
 std::optional<time_t> RunResource::NextScheduleTime(time_t start,
                                                     uint32_t ndays) const
 {
-  auto times = schedule.GetMatchingTimes(start, start + 60 * 60 * 24 * ndays);
+  auto times = schedule.GetMatchingTimes(start, start + kSecondsPerDay * ndays);
   if (times.empty()) { return std::nullopt; }
   return times.front();
 }
