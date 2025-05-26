@@ -133,8 +133,7 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
   SQL_ROW row;
   bool retval = false;
 
-  if (!SqlQueryWithoutHandler("SELECT getdatabaseencoding()",
-                              QF_STORE_RESULT)) {
+  if (!SqlQueryWithoutHandler("SELECT getdatabaseencoding()")) {
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     return false;
   }
@@ -538,7 +537,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
   Dmsg1(500, "SqlQueryWithHandler starts with '%s'\n", query);
 
   DbLocker _{this};
-  if (!SqlQueryWithoutHandler(query, QF_STORE_RESULT)) {
+  if (!SqlQueryWithoutHandler(query)) {
     Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), query, sql_strerror());
     Dmsg0(500, "SqlQueryWithHandler failed\n");
     return false;
@@ -568,7 +567,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
  * Returns:  true  on success
  *           false on failure
  */
-bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query, int)
+bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query)
 {
   int i;
   bool retry = true;
@@ -661,6 +660,73 @@ bail_out:
 
 ok_out:
   return retval;
+}
+bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query,
+                                                SqlDiscardResult)
+{
+  constexpr int kMaximumTries = 2;
+
+  AssertOwnership();
+  Dmsg1(500, "SqlQueryWithoutHandler (discard result) starts with '%s'\n",
+        query);
+
+  // try query until successfull or maxium number of tries
+  for (int current_try = 0; current_try < kMaximumTries; ++current_try) {
+    std::unique_ptr<PGresult, std::function<void(PGresult*)>> result = nullptr;
+    // try to exectute query in a 5 sec interval 10 times
+    for (int i = 0; i < 10; i++) {
+      if ((result = std::unique_ptr<PGresult, std::function<void(PGresult*)>>(
+               PQexec(db_handle_, query), PQclear))) {
+        break;
+      }
+      Bmicrosleep(5, 0);
+    }
+
+    switch (PQresultStatus(result.get())) {
+      case PGRES_TUPLES_OK:
+      case PGRES_COMMAND_OK:
+        Dmsg0(500, "We have a result, it is discarded.\n");
+        return true;
+      case PGRES_FATAL_ERROR:
+        Dmsg1(50, "Result status fatal: %s, %s\n", query, sql_strerror());
+        if (exit_on_fatal_) {
+          Emsg1(M_ERROR_TERM, 0, "Fatal database error: %s\n", sql_strerror());
+        }
+
+        /* Only try reconnecting when no transaction is pending.
+         * Reconnecting within a transaction will lead to an aborted
+         * transaction anyway so we better follow our old error path. */
+        if (!try_reconnect_ || transaction_
+            || current_try + 1 == kMaximumTries) {
+          return false;
+        }
+
+        PQreset(db_handle_);
+
+        if (PQstatus(db_handle_) == CONNECTION_OK) {
+          // Reset the connection settings.
+          // prevent leak
+          result = std::unique_ptr<PGresult, std::function<void(PGresult*)>>(
+              PQexec(db_handle_,
+                     "SET datestyle TO 'ISO, YMD';"
+                     "SET cursor_tuple_fraction=1;"
+                     "SET standard_conforming_strings=on;"
+                     "SET client_min_messages TO WARNING;"),
+              PQclear);
+
+          if (!result || PQresultStatus(result.get()) != PGRES_COMMAND_OK) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+        break;
+      default:
+        Dmsg1(50, "Result status failed: %s\n", query);
+        return false;
+    }
+  }
+  return false;
 }
 
 void BareosDbPostgresql::SqlFreeResult(void)
