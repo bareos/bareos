@@ -255,7 +255,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       mr.set_label_date = true;
       if (mr.InitialWrite == 0) { mr.InitialWrite = jcr->start_time; }
       Dmsg2(400, "label=%d labeldate=%lld\n", label,
-            (long long int)mr.LabelDate);
+            static_cast<long long int>(mr.LabelDate));
     } else {
       // Sanity check for VolFiles to be increasing
       if (sdmr.VolFiles < mr.VolFiles) {

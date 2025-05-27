@@ -511,8 +511,8 @@ extern "C" void* jobq_server(void* arg)
         Dmsg1(2300, "moved JobId=%d from wait to ready queue\n",
               je->jcr->JobId);
         je = jn; /* Point to next waiting job */
-      }          /* end for loop */
-    }            /* end if */
+      } /* end for loop */
+    } /* end if */
 
     Dmsg0(2300, "Done checking wait queue.\n");
 
@@ -597,7 +597,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
     bstrftime(dt2, sizeof(dt2), jcr->sched_time);
     Dmsg4(2300,
           "Rescheduled Job %s to re-run in %d seconds.(now=%lld,then=%lld)\n",
-          jcr->Job, (int)jcr->dir_impl->res.job->RescheduleInterval,
+          jcr->Job,
+          static_cast<int>(jcr->dir_impl->res.job->RescheduleInterval),
           static_cast<long long>(now), static_cast<long long>(jcr->sched_time));
     Jmsg(jcr, M_INFO, 0,
          T_("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),

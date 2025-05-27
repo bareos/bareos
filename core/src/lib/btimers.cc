@@ -67,7 +67,7 @@ btimer_t* StartChildTimer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
   RegisterWatchdog(wid->wd);
 
   Dmsg3(debuglevel, "Start child timer %p, pid %" PRIiz " for %d secs.\n", wid,
-        (ssize_t)pid, wait);
+        static_cast<ssize_t>(pid), wait);
   return wid;
 }
 
@@ -79,7 +79,7 @@ void StopChildTimer(btimer_t* wid)
     return;
   }
   Dmsg2(debuglevel, "Stop child timer %p pid %" PRIiz "\n", wid,
-        (ssize_t)wid->pid);
+        static_cast<ssize_t>(wid->pid));
   StopBtimer(wid);
 }
 
@@ -102,7 +102,7 @@ static void CallbackChildTimer(watchdog_t* self)
     wid->killed = true;
 
     Dmsg2(debuglevel, "watchdog %p term PID %" PRIiz "\n", self,
-          (ssize_t)wid->pid);
+          static_cast<ssize_t>(wid->pid));
 
     /* Kill -TERM the specified PID, and reschedule a -KILL for 5 seconds
      * later. (Warning: this should let dvd-writepart enough time to term
@@ -114,7 +114,7 @@ static void CallbackChildTimer(watchdog_t* self)
   } else {
     /* This is the second call - Terminate with prejudice. */
     Dmsg2(debuglevel, "watchdog %p kill PID %" PRIiz "\n", self,
-          (ssize_t)wid->pid);
+          static_cast<ssize_t>(wid->pid));
 
     kill(wid->pid, SIGKILL);
 

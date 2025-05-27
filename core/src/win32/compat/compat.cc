@@ -96,7 +96,7 @@ bool InitializeComSecurity()
       if (!InitSuccessFull()) {
         Dmsg1(0,
               "InitializeComSecurity: CoInitializeSecurity returned 0x%08lX\n",
-              (long unsigned)h);
+              static_cast<long unsigned>(h));
       }
     }
 
