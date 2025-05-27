@@ -56,8 +56,7 @@
 #include "lib/version.h"
 #include <cinttypes>
 
-namespace directordaemon {
-
+namespace {
 /* Commands sent to File daemon */
 inline constexpr const char restorecmd[]
     = "restore replace=%c prelinks=%d where=%s\n";
@@ -79,6 +78,9 @@ inline constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
 
 /* Responses received from the Storage daemon */
 inline constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
+}  // namespace
+
+namespace directordaemon {
 
 static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
 {

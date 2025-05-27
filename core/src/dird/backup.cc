@@ -57,8 +57,7 @@
 #include "lib/version.h"
 #include "lib/bpipe.h"
 
-namespace directordaemon {
-
+namespace {
 /* Commands sent to File daemon */
 inline constexpr const char backupcmd[] = "backup FileIndex=%" PRIu32 "\n";
 inline constexpr const char storaddrcmd[]
@@ -74,7 +73,9 @@ inline constexpr const char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u "
       "ReadBytes=%llu JobBytes=%llu Errors=%u "
       "VSS=%d Encrypt=%d\n";
+}  // namespace
 
+namespace directordaemon {
 static inline bool ValidateClient(JobControlRecord* jcr)
 {
   switch (jcr->dir_impl->res.client->Protocol) {
