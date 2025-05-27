@@ -71,6 +71,7 @@ static struct s_sd_cmds sd_cmds[] = {
     {NULL, NULL} /* list terminator */
 };
 
+namespace {
 // Responses sent to the Remote Storage daemon
 inline constexpr const char NO_open[]
     = "3901 Error replicate session already open\n";
@@ -85,6 +86,7 @@ inline constexpr const char OK_start_replicate[]
 inline constexpr const char Job_start[] = "3010 Job %s start\n";
 inline constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+}  // namespace
 
 /**
  * After receiving a connection (in socket_server.c) if it is

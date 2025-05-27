@@ -75,24 +75,24 @@ inline constexpr const char replicatecmd[]
     = "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
 // Get Job names in Pool
-inline constexpr char sql_job[]
+inline constexpr const char sql_job[]
     = "SELECT DISTINCT Job.Name from Job,Pool"
       " WHERE Pool.Name='%s' AND Job.PoolId=Pool.PoolId";
 
 // Get JobIds from regex'ed Job names
-inline constexpr char sql_jobids_from_job[]
+inline constexpr const char sql_jobids_from_job[]
     = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
       " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
       " ORDER by Job.StartTime";
 
 // Get Client names in Pool
-inline constexpr char sql_client[]
+inline constexpr const char sql_client[]
     = "SELECT DISTINCT Client.Name from Client,Pool,Job"
       " WHERE Pool.Name='%s' AND Job.ClientId=Client.ClientId AND"
       " Job.PoolId=Pool.PoolId";
 
 // Get JobIds from regex'ed Client names
-inline constexpr char sql_jobids_from_client[]
+inline constexpr const char sql_jobids_from_client[]
     = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool,Client"
       " WHERE Client.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
       " AND Job.ClientId=Client.ClientId AND Job.Type IN ('B','C')"
@@ -100,13 +100,13 @@ inline constexpr char sql_jobids_from_client[]
       " ORDER by Job.StartTime";
 
 // Get Volume names in Pool
-inline constexpr char sql_vol[]
+inline constexpr const char sql_vol[]
     = "SELECT DISTINCT VolumeName FROM Media,Pool WHERE"
       " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
       " Media.PoolId=Pool.PoolId AND Pool.Name='%s'";
 
 // Get JobIds from regex'ed Volume names
-inline constexpr char sql_jobids_from_vol[]
+inline constexpr const char sql_jobids_from_vol[]
     = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Media,JobMedia,Job"
       " WHERE Media.VolumeName='%s' AND Media.MediaId=JobMedia.MediaId"
       " AND JobMedia.JobId=Job.JobId AND Job.Type IN ('B','C')"
@@ -114,7 +114,7 @@ inline constexpr char sql_jobids_from_vol[]
       " ORDER by Job.StartTime";
 
 // Get JobIds from the smallest volume
-inline constexpr char sql_smallest_vol[]
+inline constexpr const char sql_smallest_vol[]
     = "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
       " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
       " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
@@ -122,7 +122,7 @@ inline constexpr char sql_smallest_vol[]
       " ORDER BY VolBytes ASC LIMIT 1";
 
 // Get JobIds from the oldest volume
-inline constexpr char sql_oldest_vol[]
+inline constexpr const char sql_oldest_vol[]
     = "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
       " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
       " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
@@ -130,14 +130,14 @@ inline constexpr char sql_oldest_vol[]
       " ORDER BY LastWritten ASC LIMIT 1";
 
 // Get JobIds when we have selected MediaId
-inline constexpr char sql_jobids_from_mediaid[]
+inline constexpr const char sql_jobids_from_mediaid[]
     = "SELECT DISTINCT Job.JobId,Job.StartTime FROM JobMedia,Job"
       " WHERE JobMedia.JobId=Job.JobId AND JobMedia.MediaId IN (%s)"
       " AND Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
       " ORDER by Job.StartTime";
 
 // Get the number of bytes in the pool
-inline constexpr char sql_pool_bytes[]
+inline constexpr const char sql_pool_bytes[]
     = "SELECT SUM(JobBytes) FROM Job WHERE JobId IN"
       " (SELECT DISTINCT Job.JobId from Pool,Job,Media,JobMedia WHERE"
       " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
@@ -146,17 +146,17 @@ inline constexpr char sql_pool_bytes[]
       " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId)";
 
 // Get the number of bytes in the Jobs
-inline constexpr char sql_job_bytes[]
+inline constexpr const char sql_job_bytes[]
     = "SELECT SUM(JobBytes) FROM Job WHERE JobId IN (%s)";
 
 // Get Media Ids in Pool
-inline constexpr char sql_mediaids[]
+inline constexpr const char sql_mediaids[]
     = "SELECT MediaId FROM Media,Pool WHERE"
       " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
       " Media.PoolId=Pool.PoolId AND Pool.Name='%s' ORDER BY LastWritten ASC";
 
 // Get JobIds in Pool longer than specified time
-inline constexpr char sql_pool_time[]
+inline constexpr const char sql_pool_time[]
     = "SELECT DISTINCT Job.JobId FROM Pool,Job,Media,JobMedia WHERE"
       " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
       " VolStatus IN ('Full','Used','Error') AND Media.Enabled=1 AND"
@@ -168,7 +168,7 @@ inline constexpr char sql_pool_time[]
  * Get JobIds from successfully completed backup jobs which have not been copied
  * before
  */
-inline constexpr char sql_jobids_of_pool_uncopied_jobs[]
+inline constexpr const char sql_jobids_of_pool_uncopied_jobs[]
     = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
       " WHERE Pool.Name = '%s' AND Pool.PoolId = Job.PoolId"
       " AND Job.Type IN ('B','A') AND Job.JobStatus IN ('T','W')"
@@ -180,7 +180,7 @@ inline constexpr char sql_jobids_of_pool_uncopied_jobs[]
       " ORDER by Job.StartTime";
 
 // Migrate NDMP Job MetaData.
-inline constexpr char sql_migrate_ndmp_metadata[]
+inline constexpr const char sql_migrate_ndmp_metadata[]
     = "UPDATE File SET JobId=%s "
       "WHERE JobId=%s "
       "AND Name NOT IN ("
@@ -189,7 +189,7 @@ inline constexpr char sql_migrate_ndmp_metadata[]
       "WHERE JobId=%s)";
 
 // Copy NDMP Job MetaData.
-inline constexpr char sql_copy_ndmp_metadata[]
+inline constexpr const char sql_copy_ndmp_metadata[]
     = "INSERT INTO File (FileIndex, JobId, PathId, Name, DeltaSeq, MarkId, "
       "LStat, MD5) "
       "SELECT FileIndex, %s, PathId, Name, DeltaSeq, MarkId, LStat, MD5 "

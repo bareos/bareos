@@ -78,6 +78,7 @@ static struct s_fd_cmds fd_cmds[] = {
     {"read close", ReadCloseSession},   {NULL, NULL} /* list terminator */
 };
 
+namespace {
 /* Commands from the File daemon that require additional scanning */
 inline constexpr const char read_open[]
     = "read open session = %127s %ld %ld %ld %ld %ld %ld\n";
@@ -94,6 +95,7 @@ inline constexpr const char ERROR_append[] = "3903 Error append data\n";
 inline constexpr const char Job_start[] = "3010 Job %s start\n";
 inline constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+}  // namespace
 
 /**
  * After receiving a connection (in dircmd.c) if it is
