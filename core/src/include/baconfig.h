@@ -568,9 +568,4 @@ inline const char* first_path_separator(const char* path)
 #  define PRItime "ld"
 #endif
 
-#ifdef HAVE_WIN32
-#else
-#endif
-
-
 #endif  // BAREOS_INCLUDE_BACONFIG_H_

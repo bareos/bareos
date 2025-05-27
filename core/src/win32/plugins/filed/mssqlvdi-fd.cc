@@ -752,8 +752,8 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   source = BSTR_2_str(pSource);
   description = BSTR_2_str(pDescription);
   if (source && description) {
-    Jmsg(ctx, M_FATAL, "%s(x%08lX): %s\n", source, hrErr, description);
-    Dmsg(ctx, debuglevel, "%s(x%08lX): %s\n", source, hrErr, description);
+    Jmsg(ctx, M_FATAL, "%s(0x%08lX): %s\n", source, hrErr, description);
+    Dmsg(ctx, debuglevel, "%s(0x%08lX): %s\n", source, hrErr, description);
   } else {
     Dmsg(ctx, debuglevel, "mssqlvdi-fd: could not print error\n");
   }
