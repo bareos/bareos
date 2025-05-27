@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- ndmp: remove ndmp backup level limit [PR #2247]
+
 ## [24.0.3] - 2025-05-19
 
 ### Fixed
@@ -449,6 +452,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2238]: https://github.com/bareos/bareos/pull/2238
 [PR #2242]: https://github.com/bareos/bareos/pull/2242
 [PR #2246]: https://github.com/bareos/bareos/pull/2246
+[PR #2247]: https://github.com/bareos/bareos/pull/2247
 [PR #2248]: https://github.com/bareos/bareos/pull/2248
 [PR #2249]: https://github.com/bareos/bareos/pull/2249
 [PR #2254]: https://github.com/bareos/bareos/pull/2254
