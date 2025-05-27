@@ -50,7 +50,7 @@
 namespace storagedaemon {
 
 /* Static variables */
-constexpr const char ferrmsg[] = "3900 Invalid command\n";
+inline constexpr const char ferrmsg[] = "3900 Invalid command\n";
 
 /* Imported functions */
 
@@ -78,22 +78,24 @@ static struct s_fd_cmds fd_cmds[] = {
     {"read close", ReadCloseSession},   {NULL, NULL} /* list terminator */
 };
 
+namespace {
 /* Commands from the File daemon that require additional scanning */
-constexpr const char read_open[]
+inline constexpr const char read_open[]
     = "read open session = %127s %ld %ld %ld %ld %ld %ld\n";
 
 /* Responses sent to the File daemon */
-constexpr const char NO_open[] = "3901 Error session already open\n";
-constexpr const char NOT_opened[] = "3902 Error session not opened\n";
-constexpr const char OK_end[] = "3000 OK end\n";
-constexpr const char OK_close[] = "3000 OK close Status = %d\n";
-constexpr const char OK_open[] = "3000 OK open ticket = %d\n";
-constexpr const char ERROR_append[] = "3903 Error append data\n";
+inline constexpr const char NO_open[] = "3901 Error session already open\n";
+inline constexpr const char NOT_opened[] = "3902 Error session not opened\n";
+inline constexpr const char OK_end[] = "3000 OK end\n";
+inline constexpr const char OK_close[] = "3000 OK close Status = %d\n";
+inline constexpr const char OK_open[] = "3000 OK open ticket = %d\n";
+inline constexpr const char ERROR_append[] = "3903 Error append data\n";
 
 /* Responses sent to the Director */
-constexpr const char Job_start[] = "3010 Job %s start\n";
-constexpr const char Job_end[]
+inline constexpr const char Job_start[] = "3010 Job %s start\n";
+inline constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+}  // namespace
 
 /**
  * After receiving a connection (in dircmd.c) if it is

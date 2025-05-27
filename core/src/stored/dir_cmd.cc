@@ -81,53 +81,58 @@
 /* Imported variables */
 extern void terminate_child();
 
-namespace storagedaemon {
-
+namespace {
 /* Commands received from director that need scanning */
-constexpr const char setbandwidth[] = "setbandwidth=%lld Job=%127s";
-constexpr const char setdebugv0cmd[] = "setdebug=%d trace=%d";
-constexpr const char setdebugv1cmd[] = "setdebug=%d trace=%d timestamp=%d";
-constexpr const char cancelcmd[] = "cancel Job=%127s";
-constexpr const char relabelcmd[]
+inline constexpr const char setbandwidth[] = "setbandwidth=%lld Job=%127s";
+inline constexpr const char setdebugv0cmd[] = "setdebug=%d trace=%d";
+inline constexpr const char setdebugv1cmd[]
+    = "setdebug=%d trace=%d timestamp=%d";
+inline constexpr const char cancelcmd[] = "cancel Job=%127s";
+inline constexpr const char relabelcmd[]
     = "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
       "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
-constexpr const char labelcmd[]
+inline constexpr const char labelcmd[]
     = "label %127s VolumeName=%127s PoolName=%127s "
       "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
-constexpr const char mountslotcmd[] = "mount %127s drive=%hd slot=%hd";
-constexpr const char mountcmd[] = "mount %127s drive=%hd";
-constexpr const char unmountcmd[] = "unmount %127s drive=%hd";
-constexpr const char releasecmd[] = "release %127s drive=%hd";
-constexpr const char readlabelcmd[] = "readlabel %127s Slot=%hd drive=%hd";
-constexpr const char replicatecmd[]
+inline constexpr const char mountslotcmd[] = "mount %127s drive=%hd slot=%hd";
+inline constexpr const char mountcmd[] = "mount %127s drive=%hd";
+inline constexpr const char unmountcmd[] = "unmount %127s drive=%hd";
+inline constexpr const char releasecmd[] = "release %127s drive=%hd";
+inline constexpr const char readlabelcmd[]
+    = "readlabel %127s Slot=%hd drive=%hd";
+inline constexpr const char replicatecmd[]
     = "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
       "Authorization=%100s";
-constexpr const char passiveclientcmd[]
+inline constexpr const char passiveclientcmd[]
     = "passive client address=%s port=%d ssl=%d";
-constexpr const char resolvecmd[] = "resolve %s";
-constexpr const char pluginoptionscmd[] = "pluginoptions %s";
+inline constexpr const char resolvecmd[] = "resolve %s";
+inline constexpr const char pluginoptionscmd[] = "pluginoptions %s";
 
 /* Responses sent to Director */
-constexpr const char derrmsg[] = "3900 Invalid command:";
-constexpr const char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
-constexpr const char OKsetdebugv1[]
+inline constexpr const char derrmsg[] = "3900 Invalid command:";
+inline constexpr const char OKsetdebugv0[]
+    = "3000 OK setdebug=%d tracefile=%s\n";
+inline constexpr const char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
-constexpr const char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
-constexpr const char invalid_cmd[]
+inline constexpr const char OKsetdevice[]
+    = "3000 OK setdevice=%s autoselect=%d\n";
+inline constexpr const char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
-constexpr const char OK_bootstrap[] = "3000 OK bootstrap\n";
-constexpr const char ERROR_bootstrap[] = "3904 Error bootstrap\n";
-constexpr const char OK_replicate[] = "3000 OK replicate\n";
-constexpr const char BADcmd[] = "3991 Bad %s command: %s\n";
-constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
-constexpr const char OKpassive[] = "2000 OK passive client\n";
-constexpr const char OKpluginoptions[] = "2000 OK plugin options\n";
-constexpr const char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
+inline constexpr const char OK_bootstrap[] = "3000 OK bootstrap\n";
+inline constexpr const char ERROR_bootstrap[] = "3904 Error bootstrap\n";
+inline constexpr const char OK_replicate[] = "3000 OK replicate\n";
+inline constexpr const char BADcmd[] = "3991 Bad %s command: %s\n";
+inline constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+inline constexpr const char OKpassive[] = "2000 OK passive client\n";
+inline constexpr const char OKpluginoptions[] = "2000 OK plugin options\n";
+inline constexpr const char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
 
 #define MAX_SETDEVICE_NAME_LENGTH 128  // including the trailing zero
-constexpr const char setdevice_autoselect[]
+inline constexpr const char setdevice_autoselect[]
     = "setdevice device=%127s autoselect=%d";
+}  // namespace
 
+namespace storagedaemon {
 /* Forward referenced functions */
 // static bool ActionOnPurgeCmd(JobControlRecord *jcr);
 static bool BootstrapCmd(JobControlRecord* jcr);
@@ -769,11 +774,11 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
 
       // The following 3000 OK label. string is scanned in ua_label.c
-      dir->fsend(
-          "3000 OK label. VolFiles=%" PRIu32 " VolBytes=%s Volume=\"%s\""
-          " Device=%s\n",
-          dev->file, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1), newname,
-          dev->print_name());
+      dir->fsend("3000 OK label. VolFiles=%" PRIu32
+                 " VolBytes=%s Volume=\"%s\""
+                 " Device=%s\n",
+                 dev->file, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1),
+                 newname, dev->print_name());
       break;
     case VOL_NO_MEDIA:
       dir->fsend(T_("3914 Failed to label Volume (no media): ERR=%s\n"),

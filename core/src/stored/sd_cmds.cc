@@ -49,7 +49,7 @@ namespace storagedaemon {
 /* Imported variables */
 
 /* Static variables */
-constexpr const char serrmsg[] = "3900 Invalid command\n";
+inline constexpr const char serrmsg[] = "3900 Invalid command\n";
 
 /* Imported functions */
 
@@ -71,18 +71,22 @@ static struct s_sd_cmds sd_cmds[] = {
     {NULL, NULL} /* list terminator */
 };
 
+namespace {
 // Responses sent to the Remote Storage daemon
-constexpr const char NO_open[] = "3901 Error replicate session already open\n";
-constexpr const char NOT_opened[] = "3902 Error replicate session not opened\n";
-constexpr const char ERROR_replicate[] = "3903 Error replicate data\n";
-constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
-constexpr const char OK_start_replicate[]
+inline constexpr const char NO_open[]
+    = "3901 Error replicate session already open\n";
+inline constexpr const char NOT_opened[]
+    = "3902 Error replicate session not opened\n";
+inline constexpr const char ERROR_replicate[] = "3903 Error replicate data\n";
+inline constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
+inline constexpr const char OK_start_replicate[]
     = "3000 OK start replicate ticket = %d\n";
 
 // Responses sent to the Director
-constexpr const char Job_start[] = "3010 Job %s start\n";
-constexpr const char Job_end[]
+inline constexpr const char Job_start[] = "3010 Job %s start\n";
+inline constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+}  // namespace
 
 /**
  * After receiving a connection (in socket_server.c) if it is

@@ -48,35 +48,38 @@
 #include "lib/thread_specific_data.h"
 #include "lib/watchdog.h"
 
-namespace directordaemon {
+namespace {
 
 /* Commands sent to Storage daemon */
-constexpr const char jobcmd[]
+inline constexpr const char jobcmd[]
     = "JobId=%s job=%s job_name=%s client_name=%s "
       "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
       "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
       "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%" PRIu64
       " "
       "Protocol=%d BackupFormat=%s\n";
-constexpr const char use_storage[]
+inline constexpr const char use_storage[]
     = "use storage=%s media_type=%s pool_name=%s "
       "pool_type=%s append=%d copy=%d stripe=%d\n";
-constexpr const char use_device[] = "use device=%s\n";
+inline constexpr const char use_device[] = "use device=%s\n";
 // static char query_device[] =
 //   "query device=%s";
 
 /* Response from Storage daemon */
-constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
-constexpr const char OK_job[]
+inline constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
+inline constexpr const char OK_job[]
     = "3000 OK Job SDid=%d SDtime=%d Authorization=%100s\n";
-constexpr const char OK_nextrun[] = "3000 OK Job Authorization=%100s\n";
-constexpr const char OK_device[] = "3000 OK use device device=%s\n";
+inline constexpr const char OK_nextrun[] = "3000 OK Job Authorization=%100s\n";
+inline constexpr const char OK_device[] = "3000 OK use device device=%s\n";
 
 /* Storage Daemon requests */
-constexpr const char Job_start[] = "3010 Job %127s start\n";
-constexpr const char Job_end[]
+inline constexpr const char Job_start[] = "3010 Job %127s start\n";
+inline constexpr const char Job_end[]
     = "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld "
       "JobErrors=%u\n";
+}  // namespace
+
+namespace directordaemon {
 
 /* Forward referenced functions */
 extern "C" void* msg_thread(void* arg);

@@ -56,28 +56,31 @@
 #include "lib/version.h"
 #include <cinttypes>
 
-namespace directordaemon {
-
+namespace {
 /* Commands sent to File daemon */
-constexpr const char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
-constexpr const char restorecmdR[]
+inline constexpr const char restorecmd[]
+    = "restore replace=%c prelinks=%d where=%s\n";
+inline constexpr const char restorecmdR[]
     = "restore replace=%c prelinks=%d regexwhere=%s\n";
-constexpr const char storaddrcmd[]
+inline constexpr const char storaddrcmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%s\n";
-constexpr const char setauthorizationcmd[]
+inline constexpr const char setauthorizationcmd[]
     = "setauthorization Authorization=%s\n";
-constexpr const char passiveclientcmd[]
+inline constexpr const char passiveclientcmd[]
     = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-constexpr const char OKrestore[] = "2000 OK restore\n";
-constexpr const char OKstore[] = "2000 OK storage\n";
-constexpr const char OKstoreend[] = "2000 OK storage end\n";
-constexpr const char OKAuthorization[] = "2000 OK Authorization\n";
-constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
+inline constexpr const char OKrestore[] = "2000 OK restore\n";
+inline constexpr const char OKstore[] = "2000 OK storage\n";
+inline constexpr const char OKstoreend[] = "2000 OK storage end\n";
+inline constexpr const char OKAuthorization[] = "2000 OK Authorization\n";
+inline constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
 
 /* Responses received from the Storage daemon */
-constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
+inline constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
+}  // namespace
+
+namespace directordaemon {
 
 static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
 {

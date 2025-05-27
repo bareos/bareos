@@ -47,25 +47,25 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
-namespace storagedaemon {
-
+namespace {
 // Responses sent to the Director
-constexpr const char Job_end[]
+inline constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 // Responses received from Storage Daemon
-constexpr const char OK_start_replicate[]
+inline constexpr const char OK_start_replicate[]
     = "3000 OK start replicate ticket = %d\n";
-constexpr const char OK_replicate[] = "3000 OK replicate data\n";
-constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
-constexpr const char OK_data[] = "3000 OK data\n";
+inline constexpr const char OK_replicate[] = "3000 OK replicate data\n";
+inline constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
+inline constexpr const char OK_data[] = "3000 OK data\n";
 
 // Commands sent to Storage Daemon
-constexpr const char start_replicate[] = "start replicate\n";
-constexpr const char ReplicateData[] = "replicate data %d\n";
-constexpr const char end_replicate[] = "end replicate\n";
+inline constexpr const char start_replicate[] = "start replicate\n";
+inline constexpr const char ReplicateData[] = "replicate data %d\n";
+inline constexpr const char end_replicate[] = "end replicate\n";
+}  // namespace
 
-
+namespace storagedaemon {
 /* last callback information of our job */
 struct cb_data {
   bool found_first_sos_label{false};

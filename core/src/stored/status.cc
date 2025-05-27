@@ -46,11 +46,12 @@
 namespace storagedaemon {
 
 /* Static variables */
-constexpr const char statuscmd[] = "status %s\n";
-constexpr const char dotstatuscmd[] = ".status %127s\n";
+inline constexpr const char statuscmd[] = "status %s\n";
+inline constexpr const char dotstatuscmd[] = ".status %127s\n";
 
-constexpr const char OKdotstatus[] = "3000 OK .status\n";
-constexpr const char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
+inline constexpr const char OKdotstatus[] = "3000 OK .status\n";
+inline constexpr const char DotStatusJob[]
+    = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 /* Forward referenced functions */
 static void SendBlockedStatus(Device* dev, StatusPacket* sp);

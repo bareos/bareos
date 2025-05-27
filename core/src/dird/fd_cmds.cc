@@ -58,37 +58,42 @@
 
 #include <algorithm>
 
+namespace {
+
+/* Commands sent to File daemon */
+inline constexpr const char filesetcmd[] = "fileset%s\n"; /* set full fileset */
+inline constexpr const char jobcmd[]
+    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
+inline constexpr const char jobcmdssl[]
+    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
+/* Note, mtime_only is not used here -- implemented as file option */
+inline constexpr const char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
+inline constexpr const char runscriptcmd[]
+    = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
+inline constexpr const char runbeforenowcmd[] = "RunBeforeNow\n";
+inline constexpr const char restoreobjectendcmd[] = "restoreobject end\n";
+inline constexpr const char bandwidthcmd[]
+    = "setbandwidth=%" PRId64 " Job=%s\n";
+inline constexpr const char pluginoptionscmd[] = "pluginoptions %s\n";
+inline constexpr const char getSecureEraseCmd[] = "getSecureEraseCmd\n";
+
+/* Responses received from File daemon */
+inline constexpr const char OKinc[] = "2000 OK include\n";
+inline constexpr const char OKjob[] = "2000 OK Job";
+inline constexpr const char OKlevel[] = "2000 OK level\n";
+inline constexpr const char OKRunScript[] = "2000 OK RunScript\n";
+inline constexpr const char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
+inline constexpr const char OKRestoreObject[] = "2000 OK ObjectRestored\n";
+inline constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+inline constexpr const char OKPluginOptions[] = "2000 OK PluginOptions\n";
+inline constexpr const char OKgetSecureEraseCmd[]
+    = "2000 OK FDSecureEraseCmd %s\n";
+}  // namespace
 
 namespace directordaemon {
 
 const int debuglevel = 400;
 
-/* Commands sent to File daemon */
-constexpr const char filesetcmd[] = "fileset%s\n"; /* set full fileset */
-constexpr const char jobcmd[]
-    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
-constexpr const char jobcmdssl[]
-    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
-/* Note, mtime_only is not used here -- implemented as file option */
-constexpr const char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
-constexpr const char runscriptcmd[]
-    = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
-constexpr const char runbeforenowcmd[] = "RunBeforeNow\n";
-constexpr const char restoreobjectendcmd[] = "restoreobject end\n";
-constexpr const char bandwidthcmd[] = "setbandwidth=%" PRId64 " Job=%s\n";
-constexpr const char pluginoptionscmd[] = "pluginoptions %s\n";
-constexpr const char getSecureEraseCmd[] = "getSecureEraseCmd\n";
-
-/* Responses received from File daemon */
-constexpr const char OKinc[] = "2000 OK include\n";
-constexpr const char OKjob[] = "2000 OK Job";
-constexpr const char OKlevel[] = "2000 OK level\n";
-constexpr const char OKRunScript[] = "2000 OK RunScript\n";
-constexpr const char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-constexpr const char OKRestoreObject[] = "2000 OK ObjectRestored\n";
-constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
-constexpr const char OKPluginOptions[] = "2000 OK PluginOptions\n";
-constexpr const char OKgetSecureEraseCmd[] = "2000 OK FDSecureEraseCmd %s\n";
 
 /* External functions */
 extern DirectorResource* director;
