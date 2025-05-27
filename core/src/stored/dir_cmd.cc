@@ -81,8 +81,7 @@
 /* Imported variables */
 extern void terminate_child();
 
-namespace storagedaemon {
-
+namespace {
 /* Commands received from director that need scanning */
 inline constexpr const char setbandwidth[] = "setbandwidth=%lld Job=%127s";
 inline constexpr const char setdebugv0cmd[] = "setdebug=%d trace=%d";
@@ -131,7 +130,9 @@ inline constexpr const char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
 #define MAX_SETDEVICE_NAME_LENGTH 128  // including the trailing zero
 inline constexpr const char setdevice_autoselect[]
     = "setdevice device=%127s autoselect=%d";
+}  // namespace
 
+namespace storagedaemon {
 /* Forward referenced functions */
 // static bool ActionOnPurgeCmd(JobControlRecord *jcr);
 static bool BootstrapCmd(JobControlRecord* jcr);

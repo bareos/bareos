@@ -47,8 +47,7 @@
 #include "lib/edit.h"
 #include "include/jcr.h"
 
-namespace storagedaemon {
-
+namespace {
 // Responses sent to the Director
 inline constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
@@ -64,8 +63,9 @@ inline constexpr const char OK_data[] = "3000 OK data\n";
 inline constexpr const char start_replicate[] = "start replicate\n";
 inline constexpr const char ReplicateData[] = "replicate data %d\n";
 inline constexpr const char end_replicate[] = "end replicate\n";
+}  // namespace
 
-
+namespace storagedaemon {
 /* last callback information of our job */
 struct cb_data {
   bool found_first_sos_label{false};
