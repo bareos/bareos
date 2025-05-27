@@ -1,0 +1,13 @@
+
+#
+# A NDMP Client.
+#
+Client {
+  Name = ndmp
+  Address = @ndmp_data_agent_address@
+  Port = 10000
+  Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = MD5                           # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "@ndmp_data_agent_user@"       # username of the NDMP user on the DATA AGENT e.g. storage box being backuped.
+  Password = "@ndmp_data_agent_password@"   # password of the NDMP user on the DATA AGENT e.g. storage box being backuped.
+}
