@@ -55,9 +55,9 @@
 namespace storagedaemon {
 
 /* Responses sent to the daemon */
-constexpr const char OK_data[] = "3000 OK data\n";
-constexpr const char OK_append[] = "3000 OK append data\n";
-constexpr const char OK_replicate[] = "3000 OK replicate data\n";
+inline constexpr const char OK_data[] = "3000 OK data\n";
+inline constexpr const char OK_append[] = "3000 OK append data\n";
+inline constexpr const char OK_replicate[] = "3000 OK replicate data\n";
 
 ProcessedFileData::ProcessedFileData(DeviceRecord* record)
     : volsessionid_(record->VolSessionId)
