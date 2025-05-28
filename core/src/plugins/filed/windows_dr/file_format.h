@@ -116,8 +116,10 @@ static void expect_stream(std::istream& stream, const T& expected)
 
 struct file_header {
   static constexpr std::uint64_t magic_value = build_magic("badrfile");
+  static constexpr std::uint32_t current_version = 0;
 
   uint32_t disk_count;
+  uint32_t version = current_version;
 
 
   file_header() = default;
@@ -127,12 +129,14 @@ struct file_header {
   {
     write_stream(stream, magic_value);
     write_stream(stream, disk_count);
+    write_stream(stream, version);
   }
 
   void read(std::istream& stream)
   {
     expect_stream(stream, magic_value);
     read_stream(stream, disk_count);
+    read_stream(stream, version);
   }
 };
 
