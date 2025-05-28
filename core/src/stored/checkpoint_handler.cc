@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #include "stored/stored_jcr_impl.h"
 #include "stored/device_control_record.h"
 
+#include <chrono>
+
 namespace storagedaemon {
 
 CheckpointHandler::CheckpointHandler(time_t interval)
