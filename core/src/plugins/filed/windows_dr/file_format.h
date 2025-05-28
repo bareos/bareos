@@ -31,8 +31,8 @@
 #include <format>
 #include <span>
 
-#include <Windows.h>
 #include <guiddef.h>
+#include <Windows.h>
 
 struct partition_info_raw {};
 struct partition_info_mbr {
@@ -196,7 +196,6 @@ struct part_table_header {
 
   part_table_header() = default;
   part_table_header(uint32_t partition_count_,
-                    uint32_t part_table_size_,
                     part_type part_type,
                     uint32_t Datum0_,
                     uint64_t Datum1_,
@@ -399,6 +398,6 @@ struct extent_header {
   }
 };
 
-#define DO_DRY 1
+// #define DO_DRY 1
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_FILE_FORMAT_H_
