@@ -1591,7 +1591,7 @@ bool SetDeviceCommand::Cmd(UaContext* ua, const char*)
   auto arguments = ScanCommandLine(ua);
 
   if (arguments.empty()) {
-    ua->SendCmdUsage(" ");
+    ua->SendCmdUsage("");
     return false;
   }
 
@@ -2051,8 +2051,10 @@ static bool TruncateCmd(UaContext* ua, const char*)
 
   if (int i = FindArgWithValue(ua, "drive"); i >= 0) {
     if (!IsAnInteger(ua->argv[i])) {
-      ua->SendCmdUsage(T_("Drive number must be integer but was : %s\n"),
-                       ua->argv[i]);
+      PoolMem msg;
+      msg.bsprintf(T_("Drive number must be integer but was : %s\n"),
+                   ua->argv[i]);
+      ua->SendCmdUsage(msg.c_str());
     } else {
       drive_number = atoi(ua->argv[i]);
       parsed_args++;
