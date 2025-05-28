@@ -1630,26 +1630,19 @@ void UaContext::InfoMsg(const char* fmt, ...)
 }
 
 
-void UaContext::SendCmdUsage(const char* fmt, ...)
+void UaContext::SendCmdUsage(const char* message)
 {
-  va_list arg_ptr;
-  PoolMem message;
   PoolMem usage;
 
   /* send current buffer */
   send->SendBuffer();
 
-  va_start(arg_ptr, fmt);
-  message.Bvsprintf(fmt, arg_ptr);
-  va_end(arg_ptr);
-
-  if (cmddef) {
-    if (cmddef->key && cmddef->usage) {
-      usage.bsprintf("\nUSAGE: %s %s\n", cmddef->key, cmddef->usage);
-      message.strcat(usage);
-    }
+  if (cmddef && cmddef->key && cmddef->usage) {
+    usage.bsprintf("%s\nUSAGE: %s %s\n", message, cmddef->key, cmddef->usage);
+  } else {
+    usage.strcpy(message);
   }
 
-  send->message(NULL, message);
+  send->message(NULL, usage);
 }
 } /* namespace directordaemon */
