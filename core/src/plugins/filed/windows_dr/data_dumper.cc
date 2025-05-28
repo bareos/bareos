@@ -506,8 +506,8 @@ std::optional<partition_layout> partitioning(DRIVE_LAYOUT_INFORMATION_EX* info)
     fprintf(stderr, "    number: %d\n", entry.PartitionNumber);
     fprintf(stderr, "    rewrite?: %s\n",
             entry.RewritePartition ? "yes" : "no");
-    fprintf(stderr, "    service?: %s\n",
-            entry.IsServicePartition ? "yes" : "no");
+    // fprintf(stderr, "    service?: %s\n",
+    //         entry.IsServicePartition ? "yes" : "no");
   }
   return std::nullopt;
 }
@@ -549,7 +549,7 @@ void read_volume_file(HANDLE hndl, std::span<char> buffer)
 
 
   fprintf(stderr,
-          "%bootstrap: %02X %02X %02X %02X %02X %02X ... %02X %02X %02X %02X "
+          "bootstrap: %02X %02X %02X %02X %02X %02X ... %02X %02X %02X %02X "
           "%02X %02X\n",
           (unsigned char)buffer[0], (unsigned char)buffer[1],
           (unsigned char)buffer[2], (unsigned char)buffer[3],
@@ -661,26 +661,24 @@ template <class... Ts> struct overloads : Ts... {
   using Ts::operator()...;
 };
 
-void WriteDiskPartTable(std::ostream& stream,
-                        const disk& Disk,
-                        const partition_layout& layout)
+void WriteDiskPartTable(std::ostream& stream, const partition_layout& layout)
 {
   {
     auto header = std::visit(
         overloads{
             [](const partition_info_raw&) {
-              part_table_header header(0, 0, part_type::Raw, 0, 0, 0);
+              part_table_header header(0, part_type::Raw, 0, 0, 0);
               return header;
             },
             [](const partition_info_mbr& mbr) {
-              part_table_header header(0, 0, part_type::Mbr, mbr.CheckSum,
+              part_table_header header(0, part_type::Mbr, mbr.CheckSum,
                                        mbr.Signature, 0, {}, mbr.bootstrap);
               return header;
             },
             [](const partition_info_gpt& gpt) {
               static_assert(sizeof(gpt.DiskId) == 16);
               part_table_header header(
-                  0, 0, part_type::Gpt, gpt.MaxPartitionCount,
+                  0, part_type::Gpt, gpt.MaxPartitionCount,
                   gpt.StartingUsableOffset, gpt.UsableLength,
                   std::span<const char>(
                       reinterpret_cast<const char*>(&gpt.DiskId),
@@ -842,6 +840,8 @@ std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
   DWORD bytes_written = 0;
   auto res = DeviceIoControl(disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0,
                              &geo, sizeof(geo), &bytes_written, NULL);
+
+  if (res != TRUE) { return std::nullopt; }
 
   // if (sizeof(geo) != bytes_written) {
   //   fprintf(stderr, "drive geometry: bad read.  got %d bytes\n",
@@ -1150,7 +1150,7 @@ void dump_data(std::ostream& stream)
             geo->Geometry.BytesPerSector);
 
     WriteDiskHeader(stream, disk, geo.value());
-    WriteDiskPartTable(stream, disk, layout.value());
+    WriteDiskPartTable(stream, layout.value());
     WriteDiskData(stream, disk);
   }
 
