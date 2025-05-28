@@ -48,7 +48,7 @@
 #include "lib/thread_specific_data.h"
 #include "lib/watchdog.h"
 
-namespace directordaemon {
+namespace {
 
 /* Commands sent to Storage daemon */
 inline constexpr const char jobcmd[]
@@ -77,6 +77,9 @@ inline constexpr const char Job_start[] = "3010 Job %127s start\n";
 inline constexpr const char Job_end[]
     = "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld "
       "JobErrors=%u\n";
+}  // namespace
+
+namespace directordaemon {
 
 /* Forward referenced functions */
 extern "C" void* msg_thread(void* arg);

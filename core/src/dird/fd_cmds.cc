@@ -58,10 +58,7 @@
 
 #include <algorithm>
 
-
-namespace directordaemon {
-
-const int debuglevel = 400;
+namespace {
 
 /* Commands sent to File daemon */
 inline constexpr const char filesetcmd[] = "fileset%s\n"; /* set full fileset */
@@ -91,6 +88,12 @@ inline constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
 inline constexpr const char OKPluginOptions[] = "2000 OK PluginOptions\n";
 inline constexpr const char OKgetSecureEraseCmd[]
     = "2000 OK FDSecureEraseCmd %s\n";
+}  // namespace
+
+namespace directordaemon {
+
+const int debuglevel = 400;
+
 
 /* External functions */
 extern DirectorResource* director;
