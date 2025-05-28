@@ -52,13 +52,14 @@
 #include <condition_variable>
 #include "lib/channel.h"
 
-namespace storagedaemon {
-
+namespace {
 /* Responses sent to the daemon */
-static char OK_data[] = "3000 OK data\n";
-static char OK_append[] = "3000 OK append data\n";
-static char OK_replicate[] = "3000 OK replicate data\n";
+inline constexpr const char OK_data[] = "3000 OK data\n";
+inline constexpr const char OK_append[] = "3000 OK append data\n";
+inline constexpr const char OK_replicate[] = "3000 OK replicate data\n";
+}  // namespace
 
+namespace storagedaemon {
 ProcessedFileData::ProcessedFileData(DeviceRecord* record)
     : volsessionid_(record->VolSessionId)
     , volsessiontime_(record->VolSessionTime)

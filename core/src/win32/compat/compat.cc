@@ -95,8 +95,8 @@ bool InitializeComSecurity()
     {
       if (!InitSuccessFull()) {
         Dmsg1(0,
-              "InitializeComSecurity: CoInitializeSecurity returned 0x%08X\n",
-              h);
+              "InitializeComSecurity: CoInitializeSecurity returned 0x%08lX\n",
+              static_cast<long unsigned>(h));
       }
     }
 
@@ -368,7 +368,7 @@ std::wstring FromUtf8(std::string_view utf8)
     errno = b_errno_win32;
     BErrNo be;
     Dmsg3(300,
-          "Error during conversion! Expected %d chars but only got %d: %s\n",
+          "Error during conversion! Expected %lu chars but only got %lu: %s\n",
           required, written, be.bstrerror());
 
     return {};
@@ -406,7 +406,7 @@ std::string FromUtf16(std::wstring_view utf16)
     errno = b_errno_win32;
     BErrNo be;
     Dmsg1(300,
-          "Error during conversion! Expected %d chars but only got %d: %s\n",
+          "Error during conversion! Expected %lu chars but only got %lu: %s\n",
           required, written, be.bstrerror());
 
     return {};
@@ -469,8 +469,8 @@ static std::wstring NormalizePath(std::wstring_view p)
     errno = b_errno_win32;
     BErrNo be;
     Dmsg3(300,
-          "Error while getting full path of %s; allocated %d chars but needed "
-          "%d: %s\n",
+          "Error while getting full path of %s; allocated %lu chars but needed "
+          "%lu: %s\n",
           FromUtf16(p).c_str(), required, written, be.bstrerror());
   }
 
@@ -1115,7 +1115,8 @@ static inline bool GetVolumeMountPointData(const char* filename,
     }
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", utf16.c_str());
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%ls)\n",
+            utf16.c_str());
       return false;
     }
 
@@ -1187,7 +1188,8 @@ static inline ssize_t GetSymlinkData(const char* filename,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", utf16.c_str());
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%ls)\n",
+            utf16.c_str());
       return -1;
     }
   } else if (p_GetFileAttributesA) {
@@ -1320,7 +1322,7 @@ static int GetWindowsFileInfo(const char* filename,
   if (p_FindFirstFileW) { /* use unicode */
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
-    Dmsg1(debuglevel, "FindFirstFileW=%s\n", FromUtf16(utf16).c_str());
+    Dmsg1(debuglevel, "FindFirstFileW=%ls\n", utf16.c_str());
     fh = p_FindFirstFileW(utf16.c_str(), &info_w);
 #if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
@@ -1490,9 +1492,10 @@ static int GetWindowsFileInfo(const char* filename,
           break;
         }
         default:
-          Dmsg1(debuglevel,
-                "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n",
-                *pdwReserved0);
+          Dmsg1(
+              debuglevel,
+              "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %lu\n",
+              *pdwReserved0);
           break;
       }
     }
@@ -1524,9 +1527,10 @@ static int GetWindowsFileInfo(const char* filename,
           sb->st_mode |= S_IFREG;
           break;
         default:
-          Dmsg1(debuglevel,
-                "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n",
-                *pdwReserved0);
+          Dmsg1(
+              debuglevel,
+              "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %lu\n",
+              *pdwReserved0);
           break;
       }
     }
@@ -1594,7 +1598,7 @@ int fstat(intptr_t fd, struct stat* sb)
   // We store the full windows file attributes into st_rdev.
   sb->st_rdev = info.dwFileAttributes;
 
-  Dmsg3(debuglevel, "st_rdev=%d sizino=%d ino=%lld\n", sb->st_rdev,
+  Dmsg3(debuglevel, "st_rdev=%d sizino=%llu ino=%lld\n", sb->st_rdev,
         sizeof(sb->st_ino), (long long)sb->st_ino);
 
   sb->st_size = info.nFileSizeHigh;
@@ -1823,7 +1827,7 @@ int stat(const char* filename, struct stat* sb)
   }
   rval = 0;
 
-  Dmsg3(debuglevel, "sizino=%d ino=%lld filename=%s\n", sizeof(sb->st_ino),
+  Dmsg3(debuglevel, "sizino=%llu ino=%lld filename=%s\n", sizeof(sb->st_ino),
         (long long)sb->st_ino, filename);
 
   return rval;
@@ -2057,22 +2061,10 @@ static void LogEvent(DWORD event_type, const char* message)
 extern "C" void syslog(int severity, const char* fmt, ...)
 {
   va_list arg_ptr;
-  int len, maxlen;
-  POOLMEM* msg;
-
-  msg = GetPoolMemory(PM_EMSG);
-
-  for (;;) {
-    maxlen = SizeofPoolMemory(msg) - 1;
-    va_start(arg_ptr, fmt);
-    len = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (len < 0 || len >= (maxlen - 5)) {
-      msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-      continue;
-    }
-    break;
-  }
+  PoolMem msg;
+  va_start(arg_ptr, fmt);
+  msg.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
 
   auto prio = syslog_event_priority(severity & LOG_PRIMASK);
 
@@ -2084,23 +2076,22 @@ extern "C" void syslog(int severity, const char* fmt, ...)
     case LOG_CRIT:
       [[fallthrough]];
     case LOG_ERR: {
-      LogEvent(EVENTLOG_ERROR_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_ERROR_TYPE, msg.c_str());
     } break;
     case LOG_WARNING: {
-      LogEvent(EVENTLOG_WARNING_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_WARNING_TYPE, msg.c_str());
     } break;
     case LOG_NOTICE:
       [[fallthrough]];
     case LOG_INFO:
       [[fallthrough]];
     case LOG_DEBUG: {
-      LogEvent(EVENTLOG_INFORMATION_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_INFORMATION_TYPE, msg.c_str());
     } break;
     default: {
-      LogEvent(EVENTLOG_ERROR_TYPE, (const char*)msg);
+      LogEvent(EVENTLOG_ERROR_TYPE, msg.c_str());
     } break;
   }
-  FreeMemory(msg);
 }
 
 struct passwd* getpwuid(uid_t) { return NULL; }
@@ -2157,14 +2148,14 @@ DIR* opendir(const char* path)
     goto bail_out;
   }
 
-  Dmsg3(debuglevel, "opendir(%s)\n\tspec=%s,\n\tFindFirstFile returns %d\n",
+  Dmsg3(debuglevel, "opendir(%s)\n\tspec=%s,\n\tFindFirstFile returns %p\n",
         path, rval->spec, rval->dirh);
 
   rval->offset = 0;
   if (rval->dirh == INVALID_HANDLE_VALUE) { goto bail_out; }
 
   if (rval->valid_w) {
-    Dmsg1(debuglevel, "\tFirstFile=%s\n", rval->data_w.cFileName);
+    Dmsg1(debuglevel, "\tFirstFile=%ls\n", rval->data_w.cFileName);
   }
 
   if (rval->valid_a) {

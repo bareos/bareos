@@ -85,11 +85,11 @@ ConfigurationParser::~ConfigurationParser() = default;
 
 ConfigurationParser::ConfigurationParser(
     const char* cf,
-    LEX_ERROR_HANDLER* ScanError,
-    LEX_WARNING_HANDLER* scan_warning,
-    INIT_RES_HANDLER* init_res,
-    STORE_RES_HANDLER* store_res,
-    PRINT_RES_HANDLER* print_res,
+    lexer::error_handler* scan_error,
+    lexer::warning_handler* scan_warning,
+    resource_initer* init_res,
+    resource_storer* store_res,
+    resource_printer* print_res,
     int32_t err_type,
     int32_t r_num,
     const ResourceTable* resource_definitions,
@@ -105,7 +105,7 @@ ConfigurationParser::ConfigurationParser(
   cf_ = cf == nullptr ? "" : cf;
   use_config_include_dir_ = false;
   config_include_naming_format_ = "%s/%s/%s.conf";
-  scan_error_ = ScanError;
+  scan_error_ = scan_error;
   scan_warning_ = scan_warning;
   init_res_ = init_res;
   store_res_ = store_res;
@@ -189,36 +189,34 @@ bool ConfigurationParser::ParseConfig()
 }
 
 void ConfigurationParser::lex_error(const char* cf,
-                                    LEX_ERROR_HANDLER* ScanError,
-                                    LEX_WARNING_HANDLER* scan_warning) const
+                                    lexer::error_handler* scan_error,
+                                    lexer::warning_handler* scan_warning) const
 {
   // We must create a lex packet to print the error
-  LEX* lexical_parser_ = (LEX*)malloc(sizeof(LEX));
-  memset(lexical_parser_, 0, sizeof(LEX));
+  lexer lexical_parser_{};
 
-  if (ScanError) {
-    lexical_parser_->ScanError = ScanError;
+  if (scan_error) {
+    lexical_parser_.scan_error = scan_error;
   } else {
-    LexSetDefaultErrorHandler(lexical_parser_);
+    LexSetDefaultErrorHandler(&lexical_parser_);
   }
 
   if (scan_warning) {
-    lexical_parser_->scan_warning = scan_warning;
+    lexical_parser_.scan_warning = scan_warning;
   } else {
-    LexSetDefaultWarningHandler(lexical_parser_);
+    LexSetDefaultWarningHandler(&lexical_parser_);
   }
 
-  LexSetErrorHandlerErrorType(lexical_parser_, err_type_);
+  LexSetErrorHandlerErrorType(&lexical_parser_, err_type_);
   BErrNo be;
-  scan_err2(lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
+  scan_err2(&lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
             be.bstrerror());
-  free(lexical_parser_);
 }
 
 bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
                                           void* caller_ctx,
-                                          LEX_ERROR_HANDLER* scan_error,
-                                          LEX_WARNING_HANDLER* scan_warning)
+                                          lexer::error_handler* scan_error,
+                                          lexer::warning_handler* scan_warning)
 {
   ConfigParserStateMachine state_machine(config_file_name, caller_ctx,
                                          scan_error, scan_warning, *this);
@@ -595,9 +593,7 @@ bool ConfigurationParser::DumpResources(bool sendit(void* sock,
   return result;
 }
 
-void ConfigurationParser::DumpResources(bool sendit(void* sock,
-                                                    const char* fmt,
-                                                    ...),
+void ConfigurationParser::DumpResources(sender* sendit,
                                         void* sock,
                                         bool hide_sensitive_data)
 {

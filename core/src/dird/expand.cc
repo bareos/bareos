@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -238,7 +238,7 @@ static var_rc_t lookup_counter_var(var_t*,
       // -1 => return size of array
       if (var_index == -1) {
         Mmsg(buf, "%d", counter->CurrentValue);
-        *val_len = Mmsg(buf, "%d", strlen(buf.c_str()));
+        *val_len = Mmsg(buf, "%" PRIuz, strlen(buf.c_str()));
         *val_ptr = strdup(buf.c_str());
         *val_size = 0; /* don't try to free val_ptr */
         return VAR_OK;
@@ -368,7 +368,7 @@ static var_rc_t lookup_var(var_t* ctx,
   }
 
   buf.check_size(p - val);
-  Dmsg2(100, "val=%s len=%d\n", val, p - val);
+  Dmsg2(100, "val=%s len=%lld\n", val, static_cast<long long>(p - val));
 
   // Make a copy of item, and pass it back
   v = (char*)malloc(p - val + 1);

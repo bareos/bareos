@@ -53,19 +53,21 @@
 #include "lib/util.h"
 #include "lib/version.h"
 
-namespace directordaemon {
-
+namespace {
 /* Commands sent to File daemon */
-static char verifycmd[] = "verify level=%s\n";
-static char storaddrcmd[]
+inline constexpr const char verifycmd[] = "verify level=%s\n";
+inline constexpr const char storaddrcmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%s\n";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
+inline constexpr const char passiveclientcmd[]
+    = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-static char OKverify[] = "2000 OK verify\n";
-static char OKstore[] = "2000 OK storage\n";
-static char OKpassiveclient[] = "2000 OK passive client\n";
+inline constexpr const char OKverify[] = "2000 OK verify\n";
+inline constexpr const char OKstore[] = "2000 OK storage\n";
+inline constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
+}  // namespace
 
+namespace directordaemon {
 /* Forward referenced functions */
 static void PrtFname(JobControlRecord* jcr);
 static int MissingHandler(void* ctx, int num_fields, char** row);

@@ -81,51 +81,58 @@
 /* Imported variables */
 extern void terminate_child();
 
-namespace storagedaemon {
-
+namespace {
 /* Commands received from director that need scanning */
-static char setbandwidth[] = "setbandwidth=%lld Job=%127s";
-static char setdebugv0cmd[] = "setdebug=%d trace=%d";
-static char setdebugv1cmd[] = "setdebug=%d trace=%d timestamp=%d";
-static char cancelcmd[] = "cancel Job=%127s";
-static char relabelcmd[]
+inline constexpr const char setbandwidth[] = "setbandwidth=%lld Job=%127s";
+inline constexpr const char setdebugv0cmd[] = "setdebug=%d trace=%d";
+inline constexpr const char setdebugv1cmd[]
+    = "setdebug=%d trace=%d timestamp=%d";
+inline constexpr const char cancelcmd[] = "cancel Job=%127s";
+inline constexpr const char relabelcmd[]
     = "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
       "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
-static char labelcmd[]
+inline constexpr const char labelcmd[]
     = "label %127s VolumeName=%127s PoolName=%127s "
       "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
-static char mountslotcmd[] = "mount %127s drive=%hd slot=%hd";
-static char mountcmd[] = "mount %127s drive=%hd";
-static char unmountcmd[] = "unmount %127s drive=%hd";
-static char releasecmd[] = "release %127s drive=%hd";
-static char readlabelcmd[] = "readlabel %127s Slot=%hd drive=%hd";
-static char replicatecmd[]
+inline constexpr const char mountslotcmd[] = "mount %127s drive=%hd slot=%hd";
+inline constexpr const char mountcmd[] = "mount %127s drive=%hd";
+inline constexpr const char unmountcmd[] = "unmount %127s drive=%hd";
+inline constexpr const char releasecmd[] = "release %127s drive=%hd";
+inline constexpr const char readlabelcmd[]
+    = "readlabel %127s Slot=%hd drive=%hd";
+inline constexpr const char replicatecmd[]
     = "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
       "Authorization=%100s";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d";
-static char resolvecmd[] = "resolve %s";
-static char pluginoptionscmd[] = "pluginoptions %s";
+inline constexpr const char passiveclientcmd[]
+    = "passive client address=%s port=%d ssl=%d";
+inline constexpr const char resolvecmd[] = "resolve %s";
+inline constexpr const char pluginoptionscmd[] = "pluginoptions %s";
 
 /* Responses sent to Director */
-static char derrmsg[] = "3900 Invalid command:";
-static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
-static char OKsetdebugv1[]
+inline constexpr const char derrmsg[] = "3900 Invalid command:";
+inline constexpr const char OKsetdebugv0[]
+    = "3000 OK setdebug=%d tracefile=%s\n";
+inline constexpr const char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
-static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
-static char invalid_cmd[]
+inline constexpr const char OKsetdevice[]
+    = "3000 OK setdevice=%s autoselect=%d\n";
+inline constexpr const char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
-static char OK_bootstrap[] = "3000 OK bootstrap\n";
-static char ERROR_bootstrap[] = "3904 Error bootstrap\n";
-static char OK_replicate[] = "3000 OK replicate\n";
-static char BADcmd[] = "3991 Bad %s command: %s\n";
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKpassive[] = "2000 OK passive client\n";
-static char OKpluginoptions[] = "2000 OK plugin options\n";
-static char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
+inline constexpr const char OK_bootstrap[] = "3000 OK bootstrap\n";
+inline constexpr const char ERROR_bootstrap[] = "3904 Error bootstrap\n";
+inline constexpr const char OK_replicate[] = "3000 OK replicate\n";
+inline constexpr const char BADcmd[] = "3991 Bad %s command: %s\n";
+inline constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+inline constexpr const char OKpassive[] = "2000 OK passive client\n";
+inline constexpr const char OKpluginoptions[] = "2000 OK plugin options\n";
+inline constexpr const char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
 
 #define MAX_SETDEVICE_NAME_LENGTH 128  // including the trailing zero
-static char setdevice_autoselect[] = "setdevice device=%127s autoselect=%d";
+inline constexpr const char setdevice_autoselect[]
+    = "setdevice device=%127s autoselect=%d";
+}  // namespace
 
+namespace storagedaemon {
 /* Forward referenced functions */
 // static bool ActionOnPurgeCmd(JobControlRecord *jcr);
 static bool BootstrapCmd(JobControlRecord* jcr);
@@ -306,7 +313,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
     if (!found) { /* command not found */
       PoolMem err_msg;
       Mmsg(err_msg, "%s %s\n", derrmsg, dir->msg);
-      dir->fsend(err_msg.c_str());
+      dir->fsend("%s", err_msg.c_str());
       break;
     }
   }
@@ -401,7 +408,8 @@ static bool SetdebugCmd(JobControlRecord* jcr)
     return dir->fsend(OKsetdebugv1, level, GetTrace(), GetTimestamp(),
                       tracefilename.c_str());
   } else {
-    Dmsg3(50, "level=%d trace=%d\n", level, GetTrace(), tracefilename.c_str());
+    Dmsg3(50, "level=%d trace=%d tracefilename=%s\n", level, GetTrace(),
+          tracefilename.c_str());
     return dir->fsend(OKsetdebugv0, level, tracefilename.c_str());
   }
 }
@@ -536,8 +544,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
   pthread_cond_signal(&jcr->sd_impl->job_end_wait); /* wake waiting job */
   jcr->MyThreadSendSignal(kTimeoutSignal);
 
-  dir->fsend(T_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId,
-             jcr->Job, reason);
+  dir->fsend(T_("3000 JobId=%" PRIu32 " Job=\"%s\" marked to be %s.\n"),
+             jcr->JobId, jcr->Job, reason);
   FreeJcr(jcr);
 
 bail_out:
@@ -766,10 +774,11 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
 
       // The following 3000 OK label. string is scanned in ua_label.c
-      dir->fsend(
-          "3000 OK label. VolFiles=%lu VolBytes=%s Volume=\"%s\" Device=%s\n",
-          dev->file, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1), newname,
-          dev->print_name());
+      dir->fsend("3000 OK label. VolFiles=%" PRIu32
+                 " VolBytes=%s Volume=\"%s\""
+                 " Device=%s\n",
+                 dev->file, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1),
+                 newname, dev->print_name());
       break;
     case VOL_NO_MEDIA:
       dir->fsend(T_("3914 Failed to label Volume (no media): ERR=%s\n"),

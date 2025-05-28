@@ -45,6 +45,7 @@
 #include <sys/types.h>
 
 #include "include/config.h"
+#include "include/compiler_macro.h"
 
 #include "lib/version.h"
 #include "include/bc_types.h"
@@ -330,13 +331,13 @@ typedef struct s_bareosFuncs {
                     int type,
                     utime_t mtime,
                     const char* fmt,
-                    ...);
+                    ...) PRINTF_LIKE(6, 7);
   bRC (*DebugMessage)(PluginContext* ctx,
                       const char* file,
                       int line,
                       int level,
                       const char* fmt,
-                      ...);
+                      ...) PRINTF_LIKE(5, 6);
   void* (*bareosMalloc)(PluginContext* ctx,
                         const char* file,
                         int line,

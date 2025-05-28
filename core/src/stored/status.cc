@@ -46,11 +46,12 @@
 namespace storagedaemon {
 
 /* Static variables */
-static char statuscmd[] = "status %s\n";
-static char dotstatuscmd[] = ".status %127s\n";
+inline constexpr const char statuscmd[] = "status %s\n";
+inline constexpr const char dotstatuscmd[] = ".status %127s\n";
 
-static char OKdotstatus[] = "3000 OK .status\n";
-static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
+inline constexpr const char OKdotstatus[] = "3000 OK .status\n";
+inline constexpr const char DotStatusJob[]
+    = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 /* Forward referenced functions */
 static void SendBlockedStatus(Device* dev, StatusPacket* sp);
@@ -413,9 +414,10 @@ static void ListStatusHeader(StatusPacket* sp)
 
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
 
-  len = Mmsg(msg,
-             T_("Daemon started %s. Jobs: run=%zu, running=%d, %s binary\n"),
-             dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
+  len = Mmsg(
+      msg,
+      T_("Daemon started %s. Jobs: run=%" PRIuz ", running=%d, %s binary\n"),
+      dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
@@ -951,7 +953,7 @@ bool DotstatusCmd(JobControlRecord* jcr)
   Dmsg1(200, "cmd=%s\n", cmd.c_str());
 
   if (Bstrcasecmp(cmd.c_str(), "current")) {
-    dir->fsend(OKdotstatus, cmd.c_str());
+    dir->fsend(OKdotstatus);
     foreach_jcr (njcr) {
       if (njcr->JobId != 0) {
         dir->fsend(DotStatusJob, njcr->JobId, njcr->getJobStatus(),
@@ -960,7 +962,7 @@ bool DotstatusCmd(JobControlRecord* jcr)
     }
     endeach_jcr(njcr);
   } else if (Bstrcasecmp(cmd.c_str(), "last")) {
-    dir->fsend(OKdotstatus, cmd.c_str());
+    dir->fsend(OKdotstatus);
     if (RecentJobResultsList::Count() > 0) {
       RecentJobResultsList::JobResult job
           = RecentJobResultsList::GetMostRecentJobResult();
