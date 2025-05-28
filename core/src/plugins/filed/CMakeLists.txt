@@ -77,7 +77,7 @@ if(HAVE_WIN32)
   )
 
   bareos_add_plugin(hyper-v-fd)
-  target_compile_definitions(hyper-v-fd PUBLIC WINDOWS_VERSION=0xA01)
+  target_compile_definitions(hyper-v-fd PUBLIC _WIN32_WINNT=0xA01)
   target_sources(hyper-v-fd PRIVATE ../../win32/plugins/filed/hyper-v.cc)
   target_link_libraries(hyper-v-fd PRIVATE ${THREADS_THREADS} bareos)
   target_link_libraries(
