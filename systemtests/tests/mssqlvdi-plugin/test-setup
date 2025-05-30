@@ -46,4 +46,4 @@ mkdir -p "${DB_DATA_DIR}"
 # If this test does not work, uncomment the following line:
 # This will add a bareos login as sysadmin.
 # Dont forget to delete it afterwards!
-"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -i sqlfiles/SQL_grant_sysadmin_role.sql
+# "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -i sqlfiles/SQL_grant_sysadmin_role.sql
