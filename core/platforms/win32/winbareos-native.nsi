@@ -2147,6 +2147,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\msys-2*.dll"
   Delete "$INSTDIR\vcruntime140*.dll"
   Delete "$INSTDIR\ucrtbase*.dll"
+  Delete "$INSTDIR\xxhash.dll"
 
 
 # logs
