@@ -658,6 +658,7 @@ SectionIn 1 2 3
   File "lzo2.dll"
   File "pthreadVCE3.dll"
   File "zlib1.dll"
+  File "xxhash.dll"
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
