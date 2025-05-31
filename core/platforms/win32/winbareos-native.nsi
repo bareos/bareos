@@ -658,6 +658,7 @@ SectionIn 1 2 3
   File "lzo2.dll"
   File "pthreadVCE3.dll"
   File "zlib1.dll"
+  File "xxhash.dll"
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
@@ -688,6 +689,7 @@ SectionIn 1 2 3
   !cd "${CMAKE_BINARY_DIR}\plugins"
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
+  File "hyper-v-fd.dll"
   # do not package python3-fd for now
   # File "python3-fd.dll"
 SectionEnd
@@ -2146,6 +2148,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\msys-2*.dll"
   Delete "$INSTDIR\vcruntime140*.dll"
   Delete "$INSTDIR\ucrtbase*.dll"
+  Delete "$INSTDIR\xxhash.dll"
 
 
 # logs

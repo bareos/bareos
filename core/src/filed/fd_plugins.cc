@@ -1382,7 +1382,11 @@ int PluginCreateFile(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
+#if HAVE_WIN32
+  rp.hndl = INVALID_HANDLE_VALUE;
+#else
   rp.filedes = kInvalidFiledescriptor;
+#endif
 
   Dmsg4(debuglevel,
         "call plugin createFile stream=%d type=%d LinkFI=%d File=%s\n",
@@ -1404,7 +1408,11 @@ int PluginCreateFile(JobControlRecord* jcr,
     return CF_ERROR;
   }
 
+#if HAVE_WIN32
+  bfd->fh = rp.hndl;
+#else
   bfd->filedes = rp.filedes;
+#endif
   switch (rp.create_status) {
     case CF_ERROR:
       Qmsg1(jcr, M_ERROR, 0,
@@ -1473,7 +1481,11 @@ bool PluginSetAttributes(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
+#if HAVE_WIN32
+  rp.hndl = INVALID_HANDLE_VALUE;
+#else
   rp.filedes = kInvalidFiledescriptor;
+#endif
 
   PlugFunc(plugin)->setFileAttributes(jcr->plugin_ctx, &rp);
 
@@ -1931,7 +1943,11 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
+#if HAVE_WIN32
+  io.hndl = INVALID_HANDLE_VALUE;
+#else   // HAVE_WIN32
   io.filedes = kInvalidFiledescriptor;
+#endif  // HAVE_WIN32
 
   io.func = IO_OPEN;
   io.fname = fname;
@@ -1959,9 +1975,34 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   //  2.: - Set io.status to bareosfd.iostat_do_in_plugin.
   //        This will call the plugin to do the IO itself.
 
-  bfd->filedes = io.filedes;
-
   if (io.status == IoStatus::do_io_in_core) { bfd->do_io_in_core = true; }
+
+#if HAVE_WIN32
+  bfd->fh = io.hndl;
+
+  if (bfd->do_io_in_core) {
+    if (io.hndl != INVALID_HANDLE_VALUE) {
+      Dmsg1(debuglevel,
+            "bopen: plugin asks for core to do the read/write via HANDLE "
+            "%d\n",
+            io.hndl);
+      return 0;
+    } else {
+      Dmsg1(debuglevel,
+            "bopen: ERROR: plugin asks for core to do read/write but did not "
+            "return a valid HANDLE: %d\n",
+            io.hndl);
+      return -2;
+    }
+  } else {
+    Dmsg1(debuglevel,
+          "bopen: plugin wants to do read/write itself. status: %d\n",
+          io.status);
+    bfd->fh = INVALID_HANDLE_VALUE;
+    return io.status;
+  }
+#else
+  bfd->filedes = io.filedes;
 
   if (bfd->do_io_in_core) {
     if (io.filedes != kInvalidFiledescriptor) {
@@ -1973,7 +2014,7 @@ static int MyPluginBopen(BareosFilePacket* bfd,
       return io.filedes;
     } else {
       Dmsg1(debuglevel,
-            "bopen: ERROR: plugin wants to do read/write itself but did not "
+            "bopen: ERROR: plugin asks for core to do read/write but did not "
             "return a valid filedescriptor: %d\n",
             io.filedes);
       return -2;
@@ -1985,6 +2026,7 @@ static int MyPluginBopen(BareosFilePacket* bfd,
     bfd->filedes = 0;  // set filedes to 0 as otherwise IsBopen() fails.
     return io.status;
   }
+#endif
 }
 
 /**
@@ -2001,7 +2043,11 @@ static int MyPluginBclose(BareosFilePacket* bfd)
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
+#if HAVE_WIN32
+  io.hndl = bfd->fh;
+#else
   io.filedes = bfd->filedes;
+#endif
 
   io.func = IO_CLOSE;
 
@@ -2016,7 +2062,13 @@ static int MyPluginBclose(BareosFilePacket* bfd)
   }
 
   Dmsg1(debuglevel, "plugin_bclose stat=%d\n", io.status);
+#if HAVE_WIN32
+  bfd->fh = INVALID_HANDLE_VALUE;
+#else
   bfd->filedes = kInvalidFiledescriptor;
+#endif
+
+  bfd->do_io_in_core = false;
   return io.status;
 }
 
@@ -2034,7 +2086,11 @@ static ssize_t MyPluginBread(BareosFilePacket* bfd, void* buf, size_t count)
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
+#if HAVE_WIN32
+  io.hndl = bfd->fh;
+#else
   io.filedes = bfd->filedes;
+#endif
 
   io.func = IO_READ;
   io.count = count;

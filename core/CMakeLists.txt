@@ -361,6 +361,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC)
     add_definitions(
       -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -D_WIN32_WINNT=${WINDOWS_VERSION}
+      -DWINVER=${WINDOWS_VERSION}
     )
     # add parallel builds (-MP)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")

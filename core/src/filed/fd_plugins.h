@@ -132,7 +132,11 @@ struct restore_pkt {
   int replace{};                         /* Replace flag */
   int create_status{};                   /* Status from createFile() */
   uint32_t delta_seq{};                  /* Delta sequence number */
+#if HAVE_WIN32
+  HANDLE hndl;
+#else
   int filedes{}; /* file descriptor to read/write in core */
+#endif
   int32_t pkt_end{sizeof(restore_pkt)}; /* End packet sentinel */
 };
 
@@ -159,8 +163,12 @@ struct io_pkt {
   int32_t whence{};                 /* Lseek argument */
   boffset_t offset{};               /* Lseek argument */
   bool win32{};                     /* Win32 GetLastError returned */
-  int filedes{};                    /* file descriptor to read/write in core */
-  int32_t pkt_end{sizeof(io_pkt)};  /* End packet sentinel */
+#if HAVE_WIN32
+  HANDLE hndl{}; /* file descriptor to read/write in core */
+#else
+  int filedes{}; /* file descriptor to read/write in core */
+#endif
+  int32_t pkt_end{sizeof(io_pkt)}; /* End packet sentinel */
 };
 
 struct acl_pkt {

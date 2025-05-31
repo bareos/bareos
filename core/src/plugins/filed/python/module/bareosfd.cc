@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -530,7 +530,11 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->fname = io->fname;
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
+#if HAVE_WIN32
+    pIoPkt->filedes = reinterpret_cast<int>(io->hndl);
+#else
     pIoPkt->filedes = io->filedes;
+#endif
 
     if (io->func == IO_WRITE && io->count > 0) {
       /* Only initialize the buffer with read data when we are writing and
@@ -561,7 +565,11 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, io_pkt* io)
   io->lerror = pIoPkt->lerror;
   io->win32 = pIoPkt->win32;
   io->status = pIoPkt->status;
+#if HAVE_WIN32
+  io->hndl = reinterpret_cast<HANDLE>(pIoPkt->filedes);
+#else
   io->filedes = pIoPkt->filedes;
+#endif
 
   if (io->func == IO_READ && io->status > 0) {
     // Only copy back the data when doing a read and there is data.
@@ -735,7 +743,11 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->RegexWhere = rp->RegexWhere;
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
+#if HAVE_WIN32
+    pRestorePacket->filedes = reinterpret_cast<int>(rp->hndl);
+#else
     pRestorePacket->filedes = rp->filedes;
+#endif
   }
 
   return pRestorePacket;
@@ -746,7 +758,11 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
 {
   // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
+#if HAVE_WIN32
+  rp->hndl = reinterpret_cast<HANDLE>(pRestorePacket->filedes);
+#else
   rp->filedes = pRestorePacket->filedes;
+#endif
 }
 
 /**
