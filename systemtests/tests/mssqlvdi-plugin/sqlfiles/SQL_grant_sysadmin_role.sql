@@ -19,12 +19,6 @@
 
 USE [master]
 GO
-
-IF NOT EXISTS
-    (SELECT name
-     FROM master.sys.server_principals
-     WHERE name = 'bareos')
-BEGIN
-    CREATE LOGIN [bareos] WITH PASSWORD = N'Sup3rS3crEt24'
-    EXEC sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'bareos'
-END
+DROP LOGIN bareos
+CREATE LOGIN [bareos] WITH PASSWORD = N'Sup3rS3crEt24'
+EXEC sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'bareos'
