@@ -32,6 +32,7 @@
 #include "dird/scheduler.h"
 #include "dird/jcr_util.h"
 #include <utility>
+#include <chrono>
 
 namespace directordaemon {
 
