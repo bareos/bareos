@@ -102,8 +102,6 @@ endif()
 
 add_subdirectory(grpc)
 
-if(HAVE_WIN32)
-  add_subdirectory(windows_dr)
-endif()
+add_subdirectory(windows_dr)
 
 include(DebugEdit)
