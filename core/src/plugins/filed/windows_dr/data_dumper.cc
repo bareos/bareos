@@ -87,8 +87,8 @@ part_table_entry from_win32(const PARTITION_INFORMATION_EX& info)
 part_table_entry_gpt_data from_win32(const PARTITION_INFORMATION_GPT& gpt)
 {
   part_table_entry_gpt_data Result = {};
-  Result.partition_type = gpt.PartitionType;
-  Result.partition_id = gpt.PartitionId;
+  Result.partition_type = to_disk_format(gpt.PartitionType);
+  Result.partition_id = to_disk_format(gpt.PartitionId);
   Result.attributes = gpt.Attributes;
 
   static_assert(sizeof(Result.name) == sizeof(gpt.Name));
@@ -101,7 +101,7 @@ part_table_entry_mbr_data from_win32(const PARTITION_INFORMATION_MBR& mbr)
 {
   part_table_entry_mbr_data Result = {};
 
-  Result.partition_id = mbr.PartitionId;
+  Result.partition_id = to_disk_format(mbr.PartitionId);
   Result.num_hidden_sectors = mbr.HiddenSectors;
   Result.partition_type = (uint8_t)mbr.PartitionType;
   Result.bootable = mbr.BootIndicator == TRUE;
@@ -668,7 +668,7 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
     } break;
     case PARTITION_STYLE_GPT: {
       partition_info_gpt gpt{
-          info->Gpt.DiskId,
+          to_disk_format(info->Gpt.DiskId),
           std::bit_cast<std::uint64_t>(info->Gpt.StartingUsableOffset),
           std::bit_cast<std::uint64_t>(info->Gpt.UsableLength),
           std::bit_cast<std::uint32_t>(info->Gpt.MaxPartitionCount),
