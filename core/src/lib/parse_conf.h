@@ -369,7 +369,10 @@ class ConfigurationParser {
   void StoreStdstr(lexer* lc, const ResourceItem* item, int index, int pass);
   void StoreDir(lexer* lc, const ResourceItem* item, int index, int pass);
   void StoreStdstrdir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreMd5Password(lexer* lc, const ResourceItem* item, int index, int pass);
+  void StoreMd5Password(lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int pass);
   void StoreClearpassword(lexer* lc,
                           const ResourceItem* item,
                           int index,
@@ -382,7 +385,10 @@ class ConfigurationParser {
                          int index,
                          int pass);
   void StoreAlistDir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StorePluginNames(lexer* lc, const ResourceItem* item, int index, int pass);
+  void StorePluginNames(lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int pass);
   void StoreDefs(lexer* lc, const ResourceItem* item, int index, int pass);
   void store_int16(lexer* lc, const ResourceItem* item, int index, int pass);
   void store_int32(lexer* lc, const ResourceItem* item, int index, int pass);

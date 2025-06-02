@@ -83,7 +83,10 @@ extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 /* Imported subroutines */
 void StoreJobtype(lexer* lc, const ResourceItem* item, int index, int pass);
-void StoreProtocoltype(lexer* lc, const ResourceItem* item, int index, int pass);
+void StoreProtocoltype(lexer* lc,
+                       const ResourceItem* item,
+                       int index,
+                       int pass);
 void StoreLevel(lexer* lc, const ResourceItem* item, int index, int pass);
 void StoreReplace(lexer* lc, const ResourceItem* item, int index, int pass);
 void StoreMigtype(lexer* lc, const ResourceItem* item, int index, int pass);

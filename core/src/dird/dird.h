@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -199,7 +199,7 @@ struct RuntimeStorageStatus final {
   std::mutex ndmp_deviceinfo_lock;       /**< Any access to the list devices is
                                             controlled by this lock */
 #if HAVE_NDMP
-  struct smc_element_address_assignment storage_mapping {};
+  struct smc_element_address_assignment storage_mapping{};
   std::list<ndmp_deviceinfo_t> ndmp_deviceinfo;
 #endif
 };

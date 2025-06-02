@@ -2560,7 +2560,10 @@ static void StoreJobtype(lexer* lc, const ResourceItem* item, int index, int)
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
-static void StoreProtocoltype(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreProtocoltype(lexer* lc,
+                              const ResourceItem* item,
+                              int index,
+                              int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2870,7 +2873,10 @@ static void StoreRunscriptTarget(lexer* lc,
   ScanToEol(lc);
 }
 
-static void StoreRunscriptCmd(lexer* lc, const ResourceItem* item, int, int pass)
+static void StoreRunscriptCmd(lexer* lc,
+                              const ResourceItem* item,
+                              int,
+                              int pass)
 {
   LexGetToken(lc, BCT_STRING);
 

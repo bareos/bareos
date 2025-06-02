@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -215,8 +215,8 @@ bool UaContext::AclNoRestrictions(int acl)
 
           if (Bstrcasecmp("*all*", list_value)) { return true; }
         } /* for (int i = 0; */
-      }   /* if (profile->ACL_lists[acl]) */
-    }     /* if (profile) */
+      } /* if (profile->ACL_lists[acl]) */
+    } /* if (profile) */
   }
 
   return false;

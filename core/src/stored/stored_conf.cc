@@ -328,7 +328,10 @@ static void StoreMaxblocksize(lexer* lc,
 }
 
 // Store the IO direction on a certain device.
-static void StoreIoDirection(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreIoDirection(lexer* lc,
+                             const ResourceItem* item,
+                             int index,
+                             int)
 {
   int i;
 
