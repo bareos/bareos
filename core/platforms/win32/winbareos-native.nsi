@@ -686,11 +686,18 @@ SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
+
   !cd "${CMAKE_BINARY_DIR}\plugins"
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
   # do not package python3-fd for now
   # File "python3-fd.dll"
+
+  # Write dr-dumper to normal install dir for now
+  SetOutPath "$INSTDIR"
+  !cd "${CMAKE_BINARY_DIR}\bin"
+  File "dr-dumper.exe"
+
 SectionEnd
 
 
