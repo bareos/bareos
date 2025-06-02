@@ -31,9 +31,6 @@
 #include <format>
 #include <span>
 
-#include <guiddef.h>
-#include <Windows.h>
-
 struct guid {
   char Data[16];
 };
@@ -45,7 +42,7 @@ struct partition_info_mbr {
   char bootstrap[446];
 };
 struct partition_info_gpt {
-  GUID DiskId;
+  guid DiskId;
   uint64_t StartingUsableOffset;
   uint64_t UsableLength;
   uint32_t MaxPartitionCount;
@@ -273,25 +270,19 @@ struct part_table_entry {
   }
 };
 
-static inline void write_guid(std::ostream& stream, const GUID& guid)
+static inline void write_guid(std::ostream& stream, const guid& id)
 {
-  write_stream(stream, guid.Data1);
-  write_stream(stream, guid.Data2);
-  write_stream(stream, guid.Data3);
-  write_stream(stream, guid.Data4);
+  write_stream(stream, id.Data);
 }
 
-static inline void read_guid(std::istream& stream, GUID& guid)
+static inline void read_guid(std::istream& stream, guid& id)
 {
-  read_stream(stream, guid.Data1);
-  read_stream(stream, guid.Data2);
-  read_stream(stream, guid.Data3);
-  read_stream(stream, guid.Data4);
+  read_stream(stream, id.Data);
 }
 
 struct part_table_entry_gpt_data {
-  GUID partition_type;
-  GUID partition_id;
+  guid partition_type;
+  guid partition_id;
   uint64_t attributes;
   wchar_t name[36];
 
@@ -315,7 +306,7 @@ struct part_table_entry_gpt_data {
 };
 
 struct part_table_entry_mbr_data {
-  GUID partition_id;
+  guid partition_id;
   uint32_t num_hidden_sectors;
   uint8_t partition_type;
   bool bootable;

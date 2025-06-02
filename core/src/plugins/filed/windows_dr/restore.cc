@@ -81,7 +81,7 @@ partition_layout ReadDiskPartTable(std::istream& stream)
     } break;
     case part_type::Gpt: {
       partition_info_gpt gpt{
-          .DiskId = std::bit_cast<GUID>(header.Data),
+          .DiskId = std::bit_cast<guid>(header.Data),
           .StartingUsableOffset = header.Datum1,
           .UsableLength = header.Datum2,
           .MaxPartitionCount = header.Datum0,
@@ -119,7 +119,7 @@ partition_layout ReadDiskPartTable(std::istream& stream)
         info.Mbr.BootIndicator = data.bootable ? TRUE : FALSE;
         info.Mbr.RecognizedPartition = data.recognized ? TRUE : FALSE;
         info.Mbr.HiddenSectors = data.num_hidden_sectors;
-        info.Mbr.PartitionId = data.partition_id;
+        info.Mbr.PartitionId = from_disk_format(data.partition_id);
       } break;
       case PARTITION_STYLE_GPT: {
         fprintf(stderr, "read gpt ...\n");
@@ -129,8 +129,8 @@ partition_layout ReadDiskPartTable(std::istream& stream)
 
         fprintf(stderr, "gpt name = '%.36ls'\n", data.name);
 
-        info.Gpt.PartitionType = data.partition_type;
-        info.Gpt.PartitionId = data.partition_id;
+        info.Gpt.PartitionType = from_disk_format(data.partition_type);
+        info.Gpt.PartitionId = from_disk_format(data.partition_id);
         info.Gpt.Attributes = data.attributes;
         static_assert(sizeof(data.name) == sizeof(info.Gpt.Name));
         memcpy(info.Gpt.Name, data.name, sizeof(data.name));
@@ -280,10 +280,11 @@ gpt_header MakeGptHeader(const partition_info_gpt& info,
   std::uint64_t lba_count = disk_size / 512;
   header.backup_lba_location = lba_count - 1;
 
+  GUID DiskId = from_disk_format(info.DiskId);
   {
     wchar_t guid_storage[64] = {};
 
-    StringFromGUID2(info.DiskId, guid_storage, sizeof(guid_storage));
+    StringFromGUID2(DiskId, guid_storage, sizeof(guid_storage));
     fprintf(stderr, "disk id: %ls\n", guid_storage);
   }
 
@@ -296,7 +297,7 @@ gpt_header MakeGptHeader(const partition_info_gpt& info,
   header.last_usable_lba
       = header.first_usable_lba + info.UsableLength / 512 - 1;
 
-  header.disk_guid = info.DiskId;
+  header.disk_guid = DiskId;
   header.table_lba_location = 2;
 
   header.partition_count = info.MaxPartitionCount;
@@ -325,7 +326,7 @@ gpt_header MakeBackupGptHeader(const partition_info_gpt& info,
   header.last_usable_lba
       = header.first_usable_lba + info.UsableLength / 512 - 1;
 
-  header.disk_guid = info.DiskId;
+  header.disk_guid = from_disk_format(info.DiskId);
   header.table_lba_location = table_lba;
 
   header.partition_count = info.MaxPartitionCount;
