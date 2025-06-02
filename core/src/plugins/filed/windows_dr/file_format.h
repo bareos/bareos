@@ -34,6 +34,10 @@
 #include <guiddef.h>
 #include <Windows.h>
 
+struct guid {
+  char Data[16];
+};
+
 struct partition_info_raw {};
 struct partition_info_mbr {
   uint32_t CheckSum;
@@ -51,19 +55,6 @@ struct partition_info_gpt {
 using partition_info
     = std::variant<partition_info_raw, partition_info_mbr, partition_info_gpt>;
 
-struct partition_layout {
-  partition_info info;
-  std::vector<PARTITION_INFORMATION_EX> partition_infos;
-};
-
-struct partition_extent {
-  std::size_t partition_offset;
-  std::size_t handle_offset;
-  std::size_t length;
-
-  HANDLE hndl;
-};
-
 template <std::size_t N>
 static constexpr uint64_t build_magic(const char (&str)[N])
 {
@@ -71,7 +62,9 @@ static constexpr uint64_t build_magic(const char (&str)[N])
   static_assert(N > 0);
 
   uint64_t value = 0;
-  for (std::size_t i = 0; i < (N - 1); ++i) { value = (value << 8) | str[i]; }
+  for (std::size_t i = 0; i < (N - 1); ++i) {
+    value = (value << 8) | str[(N - 2) - i];
+  }
 
   return value;
 }
@@ -256,15 +249,6 @@ struct part_table_entry {
   bool is_service_partition;
 
   part_table_entry() = default;
-  part_table_entry(const PARTITION_INFORMATION_EX& info)
-      : partition_offset{(uint64_t)info.StartingOffset.QuadPart}
-      , partition_length{(uint64_t)info.PartitionLength.QuadPart}
-      , partition_number{info.PartitionNumber}
-      , partition_style{(uint8_t)info.PartitionStyle}
-      , rewrite_partition{info.RewritePartition != 0}
-      , is_service_partition{info.IsServicePartition != 0}
-  {
-  }
 
   void write(std::ostream& stream) const
   {
@@ -312,14 +296,6 @@ struct part_table_entry_gpt_data {
   wchar_t name[36];
 
   part_table_entry_gpt_data() = default;
-  part_table_entry_gpt_data(const PARTITION_INFORMATION_GPT& gpt)
-      : partition_type{gpt.PartitionType}
-      , partition_id{gpt.PartitionId}
-      , attributes{gpt.Attributes}
-  {
-    static_assert(sizeof(name) == sizeof(gpt.Name));
-    std::memcpy(name, gpt.Name, sizeof(gpt.Name));
-  }
 
   void write(std::ostream& stream) const
   {
@@ -347,14 +323,6 @@ struct part_table_entry_mbr_data {
 
 
   part_table_entry_mbr_data() = default;
-  part_table_entry_mbr_data(const PARTITION_INFORMATION_MBR& mbr)
-      : partition_id{mbr.PartitionId}
-      , num_hidden_sectors{mbr.HiddenSectors}
-      , partition_type{(uint8_t)mbr.PartitionType}
-      , bootable{mbr.BootIndicator == TRUE}
-      , recognized{mbr.RecognizedPartition == TRUE}
-  {
-  }
 
   void write(std::ostream& stream) const
   {
@@ -382,10 +350,6 @@ struct extent_header {
   uint64_t length;
 
   extent_header() = default;
-  extent_header(const partition_extent& ex)
-      : offset{ex.partition_offset}, length{ex.length}
-  {
-  }
 
   void write(std::ostream& stream) const
   {
@@ -401,7 +365,5 @@ struct extent_header {
     read_stream(stream, length);
   }
 };
-
-// #define DO_DRY 1
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_FILE_FORMAT_H_
