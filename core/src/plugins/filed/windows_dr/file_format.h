@@ -29,7 +29,10 @@
 #include <variant>
 #include <cassert>
 #include <format>
+#include <cstring>
 #include <span>
+
+static_assert(sizeof(char16_t) == 2);
 
 struct guid {
   char Data[16];
@@ -79,7 +82,7 @@ template <typename T> static void read_stream(std::istream& stream, T& t)
   stream.read(reinterpret_cast<char*>(&t), sizeof(t));
   auto read_bytes = stream.gcount();
 #endif
-  fprintf(stderr, "read %lld/%llu bytes\n", read_bytes, sizeof(t));
+  fprintf(stderr, "read %zi/%zu bytes\n", read_bytes, sizeof(t));
 
   if (read_bytes != (std::streamsize)sizeof(t)) {
     fprintf(stderr, "fail: %s | good: %s | eof: %s | bad: %s\n",
@@ -110,6 +113,9 @@ struct file_header {
 
   uint32_t disk_count;
   uint32_t version = current_version;
+  // todo: we should add _all_ disk sizes here
+  // this makes it easier for the restore code to decide to which disk
+  // it should restore to!
 
 
   file_header() = default;
@@ -283,7 +289,7 @@ struct part_table_entry_gpt_data {
   guid partition_type;
   guid partition_id;
   uint64_t attributes;
-  wchar_t name[36];
+  char16_t name[36];
 
   part_table_entry_gpt_data() = default;
 
