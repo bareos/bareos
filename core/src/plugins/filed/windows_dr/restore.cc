@@ -42,6 +42,9 @@ std::uint32_t ReadHeader(std::istream& stream)
 {
   file_header header;
   header.read(stream);
+
+  assert(header.version == file_header::current_version);
+
   return header.disk_count;
 }
 
