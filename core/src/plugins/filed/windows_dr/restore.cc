@@ -21,6 +21,7 @@
 
 #include "file_format.h"
 #include "error.h"
+#include "common.h"
 
 #include <iostream>
 #include <string>
@@ -58,7 +59,6 @@ disk_info ReadDiskHeader(std::istream& stream)
 
   return {disk_size, header.extent_count};
 }
-
 
 partition_layout ReadDiskPartTable(std::istream& stream)
 {
