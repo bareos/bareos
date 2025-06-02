@@ -179,7 +179,6 @@ enum part_type : uint8_t
 struct part_table_header {
   static constexpr auto magic_value = build_magic("badrtabl");
   uint32_t partition_count;
-  uint32_t part_table_size_in_bytes;
   uint8_t part_table_type;
   // at this point we should just divide this into header + data ...
   uint32_t Datum0;
@@ -242,8 +241,8 @@ struct part_table_entry {
   uint64_t partition_length;
   uint32_t partition_number;
   uint8_t partition_style;
-  bool rewrite_partition;
-  bool is_service_partition;
+  bool rewrite_partition;     // (useless ?)
+  bool is_service_partition;  // (useless ?)
 
   part_table_entry() = default;
 
@@ -307,10 +306,10 @@ struct part_table_entry_gpt_data {
 
 struct part_table_entry_mbr_data {
   guid partition_id;
-  uint32_t num_hidden_sectors;
+  uint32_t num_hidden_sectors;  // (useless ?)
   uint8_t partition_type;
   bool bootable;
-  bool recognized;
+  bool recognized;  // (useless ?)
 
 
   part_table_entry_mbr_data() = default;
