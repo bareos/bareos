@@ -20,7 +20,7 @@
 include(BareosDisableWarnings)
 include(BareosConfigureFile)
 
-add_executable(dr-dumper data_dumper.cc restore.cc)
+add_executable(dr-dumper data_dumper.cc restore.cc common.cc)
 
 target_link_libraries(
   dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES}
