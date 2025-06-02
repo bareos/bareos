@@ -20,12 +20,19 @@
 include(BareosDisableWarnings)
 include(BareosConfigureFile)
 
-add_executable(dr-dumper data_dumper.cc restore.cc common.cc)
+if(HAVE_WIN32)
+  add_executable(dr-dumper data_dumper.cc restore.cc common.cc)
 
-target_link_libraries(
-  dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES}
-)
+  target_link_libraries(
+    dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES}
+  )
 
-add_executable(copy copy.cc)
+  add_executable(copy copy.cc)
+else()
+  add_executable(dr-dumper restore_linux.cc generic_restore.cc)
+  target_link_libraries(
+    dr-dumper CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
+  )
+endif()
 
 include(DebugEdit)

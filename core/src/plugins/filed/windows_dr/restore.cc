@@ -445,13 +445,13 @@ struct mbr_entry {
 
 static_assert(sizeof(mbr_entry) == 16);
 
-struct mbr {
+struct mbr_table {
   char bootstrap[446];
   mbr_entry entries[4];
   uint8_t check[2] = {0x55, 0xAA};
 };
 
-static_assert(sizeof(mbr) == 512);
+static_assert(sizeof(mbr_table) == 512);
 
 #pragma pack(pop)
 
@@ -538,13 +538,13 @@ void WriteProtectionMBR(HANDLE output,
 #endif
   };
 
-  mbr protective_mbr = {};
+  mbr_table protective_mbr = {};
   protective_mbr.entries[0] = gpt_entry;
 
   assert(bootstrap.size() <= std::size(protective_mbr.bootstrap));
   memcpy(protective_mbr.bootstrap, bootstrap.data(), bootstrap.size());
 
-  static_assert(sizeof(mbr) == 512);
+  static_assert(sizeof(mbr_table) == 512);
 
   write_buffer(output, 0, as_span(protective_mbr));
 }
@@ -609,7 +609,7 @@ void WritePartitionTable(HANDLE output,
 
     write_buffer(output, last_lba * 512, as_span(sector));
   } else if (auto* Mbr = std::get_if<partition_info_mbr>(&table.info)) {
-    mbr GeneratedMbr = {};
+    mbr_table GeneratedMbr = {};
 
     static_assert(sizeof(GeneratedMbr.bootstrap) == sizeof(Mbr->bootstrap));
     memcpy(GeneratedMbr.bootstrap, Mbr->bootstrap, sizeof(Mbr->bootstrap));
