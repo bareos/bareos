@@ -658,6 +658,7 @@ SectionIn 1 2 3
   File "lzo2.dll"
   File "pthreadVCE3.dll"
   File "zlib1.dll"
+  File "xxhash.dll"
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
@@ -2146,6 +2147,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\msys-2*.dll"
   Delete "$INSTDIR\vcruntime140*.dll"
   Delete "$INSTDIR\ucrtbase*.dll"
+  Delete "$INSTDIR\xxhash.dll"
 
 
 # logs
