@@ -48,10 +48,67 @@
 
 #include "file_format.h"
 #include "error.h"
+#include "common.h"
 
 #include "CLI/App.hpp"
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
+
+struct partition_extent {
+  std::size_t partition_offset;
+  std::size_t handle_offset;
+  std::size_t length;
+
+  HANDLE hndl;
+};
+
+extent_header header_of(const partition_extent& ext)
+{
+  extent_header header = {};
+
+  header.offset = ext.partition_offset;
+  header.length = ext.length;
+
+  return header;
+}
+
+part_table_entry from_win32(const PARTITION_INFORMATION_EX& info)
+{
+  part_table_entry Result = {};
+  Result.partition_offset = (uint64_t)info.StartingOffset.QuadPart;
+  Result.partition_length = (uint64_t)info.PartitionLength.QuadPart;
+  Result.partition_number = info.PartitionNumber;
+  Result.partition_style = (uint8_t)info.PartitionStyle;
+  Result.rewrite_partition = info.RewritePartition != 0;
+  Result.is_service_partition = info.IsServicePartition != 0;
+  return Result;
+}
+
+part_table_entry_gpt_data from_win32(const PARTITION_INFORMATION_GPT& gpt)
+{
+  part_table_entry_gpt_data Result = {};
+  Result.partition_type = gpt.PartitionType;
+  Result.partition_id = gpt.PartitionId;
+  Result.attributes = gpt.Attributes;
+
+  static_assert(sizeof(Result.name) == sizeof(gpt.Name));
+  std::memcpy(Result.name, gpt.Name, sizeof(gpt.Name));
+
+  return Result;
+}
+
+part_table_entry_mbr_data from_win32(const PARTITION_INFORMATION_MBR& mbr)
+{
+  part_table_entry_mbr_data Result = {};
+
+  Result.partition_id = mbr.PartitionId;
+  Result.num_hidden_sectors = mbr.HiddenSectors;
+  Result.partition_type = (uint8_t)mbr.PartitionType;
+  Result.bootable = mbr.BootIndicator == TRUE;
+  Result.recognized = mbr.RecognizedPartition == TRUE;
+
+  return Result;
+}
 
 void dump_data(std::ostream&);
 void restore_data(std::istream&, bool raw_file);
@@ -694,17 +751,17 @@ void WriteDiskPartTable(std::ostream& stream, const partition_layout& layout)
 
 
   for (auto& info : layout.partition_infos) {
-    part_table_entry ent(info);
+    part_table_entry ent = from_win32(info);
 
     ent.write(stream);
     switch (info.PartitionStyle) {
       case PARTITION_STYLE_MBR: {
-        part_table_entry_mbr_data data(info.Mbr);
+        part_table_entry_mbr_data data = from_win32(info.Mbr);
 
         data.write(stream);
       } break;
       case PARTITION_STYLE_GPT: {
-        part_table_entry_gpt_data data(info.Gpt);
+        part_table_entry_gpt_data data = from_win32(info.Gpt);
 
         data.write(stream);
       } break;
@@ -765,7 +822,7 @@ void copy_stream(HANDLE hndl,
 void WriteDiskData(std::ostream& stream, const disk& disk_extents)
 {
   for (auto& extent : disk_extents.extents) {
-    extent_header header(extent);
+    extent_header header = header_of(extent);
 
     header.write(stream);
 
