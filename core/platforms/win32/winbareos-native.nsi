@@ -2094,6 +2094,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bextract.exe"
   Delete "$INSTDIR\bscan.exe"
   Delete "$INSTDIR\bconsole.exe"
+  Delete "$INSTDIR\dr-dumper.exe"
   Delete "$INSTDIR\bareos-config-deploy.bat"
 
   Delete "$INSTDIR\*bareos.dll"
